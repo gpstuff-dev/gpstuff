@@ -334,7 +334,7 @@ end
         B = B'; B = B(:);
         
         switch gpcf.sparse
-          case 'FITC'
+          case 'FIC'
             Kuum = gpcf_sexp_trcov(gpcf, u);
             Kvffm=ones(n,1)*gpcf.magnSigma2;  
             Kfum = gpcf_sexp_cov(gpcf, x, u);

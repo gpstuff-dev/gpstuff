@@ -29,7 +29,7 @@ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'sparse', 'FITC', 'jitterSigmas', 1);
+gp = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'sparse', 'FIC', 'jitterSigmas', 1);
 gp.inducing = x(1:3:end)
 % full model
 gp2 = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1)

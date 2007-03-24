@@ -332,7 +332,7 @@ end
         B = B'; B = B(:);
         
         switch gpcf.sparse
-          case 'FITC'
+          case 'FIC'
             Kuum = gpcf_matern32_trcov(gpcf, u);
             Kvffm=ones(n,1).*gpcf.magnSigma2;  
             Kfum = gpcf_matern32_cov(gpcf, x, u);

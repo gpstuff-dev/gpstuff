@@ -245,7 +245,7 @@ end
 
 if isfield(gpcf, 'sparse')
   switch gpcf.sparse
-   case 'FITC'
+   case 'FIC'
     W =varargin{3};
     B = sum(W);
     C=invC*invC';

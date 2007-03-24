@@ -60,7 +60,7 @@ for i1=1:nmc
     Luu = chol(K_uu)';
     % Evaluate the Lambda (La) for specific model
     switch gp.sparse
-     case 'FITC'
+     case 'FIC'
       % Q_ff = K_fu*inv(K_uu)*K_fu'
       % Here we need only the diag(Q_ff), which is evaluated below
       B=Luu\(K_fu');
