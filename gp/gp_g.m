@@ -14,7 +14,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
 %	[G, GDATA, GPRIOR] = GP_G(GP, P, T) also returns separately  the
 %	data and prior contributions to the gradient.
 %
-%	See also
+%	See also   
 %
 
 % Copyright (c) 2006      Jarno Vanhatalo
