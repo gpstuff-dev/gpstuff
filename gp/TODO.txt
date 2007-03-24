@@ -1,0 +1,87 @@
+%   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
+%   Last modified: 2007-01-22 18:34:39 EET
+
+PERUS GP RAKENNE:
+------------------
+- SPARSE malleista
+  * FITC 
+    + perustoteutus (tehty)
+    + t-malli
+    + katkaistu kovarianssi
+  * PITC
+    + perustoteutus (tehty)
+    + t-malli
+    + t-malli + lohkomalli kohinalle
+    + katkaistu kovarianssi
+- FULL malli
+  * perustoteutus (tehty)
+  * katkaistu kovarianssi
+
+- latenttien muuttujien sämläys. LISÄTTY opt.latent_opt -> vanhoja
+  demoja yms. rikki 
+
+- Luokitteluun tarvitaan vielä classprior toteutus (latent_mh funktioon)
+
+%-------------------------------------------------
+- muuta kaikkiin gpcf_*:n : 
+            if strcmp(varargin{i},'noiseSigmas2')
+                if size(varargin{i},2) ~= gpcf.ndata
+                    gpcf.noiseSigmas2 = varargin{i+1};
+                else
+                    error('the size of noiseSigmas2 is wrong, has to be
+1xNDATA')
+                end
+            elseif strcmp(varargin{i},'fh_sampling')
+                gpcf.fh_sampling = varargin{i+1};
+            else
+                error('Wrong parameter name!')
+            end
+
+Olisi paljon selkeämpi näin
+
+      for i=3:2:length(varargin)-1
+        switch varargin{i}
+          case 'noiseSigmas2'
+            if size(varargin{i},2) ~= gpcf.ndata
+              gpcf.noiseSigmas2 = varargin{i+1};
+            else
+              error('the size of noiseSigmas2 is wrong, has to be 1xNDATA')
+            end
+          case 'fh_sampling'
+            gpcf.fh_sampling = varargin{i+1};
+          otherwise
+            error('Wrong parameter name!')
+        end
+      end
+
+%-------------------------------------------------
+
+- lisää kaikkiin opteihin (hmc2_opt, sls_opt jne) .repeat kenttä
+
+GP_MC:
+------
+- puuttuu regressio-ongelman kohdalla opetus ja testivirheen
+  laskenta ja printtaus (tällä hetkellä laskee ja printtaa väärin).
+- Recappendiin täytyy muuttaa training errorin laskenta latenttien
+  muuttujien tapauksessa. Parempi voisi olla esim. ottaa errorit
+  diagn:n kautta 
+- diagnostiikan printtaus ylipäänsä toteutettava uudestaan.
+   * Voisi toteuttaa esim. siten, että kukin sämpleri alustettaisiin
+     gp_mc:n alussa, jolloin nämä laittaisivat gp_mc:n sisällä olevaan
+     structuuriin omille diagnostiikoilleen lokerot
+     nimineen. Sämpläyksen aikana näihin sitten lisättäisiin lukuarvot
+     printattaviksi. 
+   * Mietittävä vielä
+
+- poista lvpoisson_e, *_g ja latent_hmc2:sta  kohta "diag(Lav)" ja korvaa nopeammalla.
+
+- Toteuta Materniin gradhelp
+
+- Indusoivien pisteiden sämpläys
+Tämä täytyy huomioida recordin käsittelyssä. Nyt tällä hetkellä U
+annetaan erillisenä parametrina -> vaatii jonkin verran muokkausta 
+
+EXPECTATION PROPAGATION rakenne
+---------------------------------
+- Luokittelu
+- Poisson likelihood
