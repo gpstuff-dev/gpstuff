@@ -39,7 +39,7 @@ function gp = gp_init(do, varargin)
 %       Creates a sparse Gaussian process of type 'TYPE' and adds following fields into the
 %       Gaussian process structure GP:
 %         sparse         = Defines the type of sparse Gaussian process. Supported types are
-%                          FITC
+%                          FIC
 %
 %	GP = GPINIT('SET', GP, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GP.
