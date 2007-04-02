@@ -35,3 +35,7 @@ if isfield(gp, 'noise')
 end
 
 w = log(w);
+% $$$ 
+% $$$ if isfield(gp, 'X_u')
+% $$$     w = [w gp.X_u(:)'];
+% $$$ end

@@ -103,13 +103,14 @@ if strcmp(do, 'init')
         end
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
-            if strcmp(varargin{i},'magnSigma2')
+            switch varargin{i}
+              case 'magnSigma2'
                 gpcf.magnSigma2 = varargin{i+1};
-            elseif strcmp(varargin{i},'lengthScale')
+              case 'lengthScale'
                 gpcf.lengthScale = varargin{i+1};
-            elseif strcmp(varargin{i},'fh_sampling')
+              case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
-            else
+              otherwise
                 error('Wrong parameter name!')
             end    
         end
@@ -124,13 +125,14 @@ if strcmp(do, 'set')
     gpcf = varargin{1};
     % Loop through all the parameter values that are changed
     for i=2:2:length(varargin)-1
-        if strcmp(varargin{i},'magnSigma2')
+        switch varargin{i}
+          case 'magnSigma2'
             gpcf.magnSigma2 = varargin{i+1};
-        elseif strcmp(varargin{i},'lengthScale')
+          case 'lengthScale'
             gpcf.lengthScale = varargin{i+1};
-        elseif strcmp(varargin{i},'fh_sampling')
+          case 'fh_sampling'
             gpcf.fh_sampling = varargin{i+1};
-        else
+          otherwise
             error('Wrong parameter name!')
         end    
     end
@@ -285,7 +287,7 @@ end
 % $$$     end
     end
     
-    function [g, gdata, gprior]  = gpcf_sexp_g(gpcf, x, t, g, gdata, gprior, invC, varargin)
+    function [g, gdata, gprior]  = gpcf_sexp_g(gpcf, x, t, g, gdata, gprior, varargin)
     %GPCF_SEXP_G Evaluate gradient of error for SE covariance function.
     %
     %	Descriptioni
@@ -317,87 +319,16 @@ end
     end
     
     % First check if sparse model is used
-    if isfield(gpcf, 'sparse')
-        % Evaluate the help matrices for the gradient evaluation (see
-        % gpcf_sexp_trcov)
-        
-        A = varargin{1};             % u x f
-                                     %  invC = b in the gp_g
-        u = varargin{2};
-        iKuuKuf = varargin{4};
-        w = varargin{3};
-        W = gtimes(iKuuKuf,w');       % u x f
-        B = gtimes(iKuuKuf,invC.^2);  % u x f 
-                                      % take a transpose and put into a vector for later use
-        A = A'; A = A(:);
-        W = W'; W = W(:);
-        B = B'; B = B(:);
-        
-        switch gpcf.sparse
-          case 'FIC'
-            Kuum = gpcf_sexp_trcov(gpcf, u);
-            Kvffm=ones(n,1)*gpcf.magnSigma2;  
-            Kfum = gpcf_sexp_cov(gpcf, x, u);
-            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-            if length(gpcf.lengthScale) == 1
-                % In the case of isotropic SEXP
-                s = 1./gpcf.lengthScale.^2;
-                dist = 0;
-                dist2 = 0;
-                for i=1:m
-                    D = gminus(x(:,i),u(:,i)');
-                    D2= gminus(u(:,i),u(:,i)');
-                    dist = dist + D.^2;
-                    dist2 = dist2 + D2.^2;
-                end
-                Kful = 2.*s.*Kfum.*dist;
-                Kuul = 2.*s.*Kuum.*dist2;
-                % First three rows evalute the y'*inv*(d/dt)*inv*y part to the gradient
-                bdl = (2.*(invC*Kful)-(invC*iKuuKuf')*Kuul)*(iKuuKuf*invC');
-                Kuul = iKuuKuf'*Kuul;  % f x u
-                Kuul = Kuul(:);        
-                Kful = Kful(:);        
-                % here is evaluated bd = bdl - tr(B*Kful)+tr(B*Kuul), where B and K* are matrices
-                Bdl = bdl - 2*sum(B.*Kful)+sum(B.*Kuul);
-                % evalute the tr(inv*d/dt) part to the gradient
-                Cdl = 2.*sum(A.*Kful)-sum(A.*Kuul(:))-2.*sum(W.*Kful)+sum(W.*Kuul);
-            else
-                % In the case ARD is used
-                for i=1:m  
-                    s = 1./gpcf.lengthScale(i).^2;        % set the length
-                    dist = gminus(x(:,i),u(:,i)');
-                    dist2 = gminus(u(:,i),u(:,i)');
-                    Kful = 2.*s.*Kfum.*dist.^2;
-                    Kuul = 2.*s.*Kuum.*dist2.^2;
-                    % First three rows evalute the y'*inv*(d/dt)*inv*y part to the gradient
-                    bdl = (2.*(invC*Kful)-(invC*iKuuKuf')*Kuul)*(iKuuKuf*invC');
-                    Kuul = iKuuKuf'*Kuul;  % f x u
-                    Kuul = Kuul(:);        
-                    Kful = Kful(:);        
-                    % here is evaluated bd = bdl - tr(B*Kful)+tr(B*Kuul), where B and K* are matrices
-                    Bdl(i) = bdl - 2*sum(B.*Kful)+sum(B.*Kuul);
-                    % evalute the tr(inv*d/dt) part to the gradient
-                    Cdl(i) = 2.*sum(A.*Kful)-sum(A.*Kuul(:))-2.*sum(W.*Kful)+sum(W.*Kuul);
-                end
-            end
-            % Evaluate help matrix for calculations of derivatives with respect to the magnSigma2
-            Bdm = (2.*invC*Kfum-(invC*iKuuKuf')*Kuum)*(iKuuKuf*invC');
-            Kuum = iKuuKuf'*Kuum;
-            Kuum = Kuum(:);
-            Kfum = Kfum(:);
-            % here is evaluated bdm = bdm - tr(B*Kfum)+tr(B*Kuum), where B and K* are matrices
-            Bdm = Bdm + invC.^2*Kvffm-2.*sum(B.*Kfum)+sum(B.*Kuum);
-            Cdm = 2.*sum(A.*Kfum)-sum(A.*Kuum)+w'*Kvffm-2.*sum(W.*Kfum)+sum(W.*Kuum);
-        end
-        %here evaluate the help arguments for full model
-    else
+    switch gpcf.type
+      case 'FULL'
         % Evaluate help arguments for gradient evaluation
         % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
         % Cdm and invC are symmetric matricess of same size. This is 67 times faster 
         % with n=215 
+        invC = varargin{1};
         Cdm = gpcf_sexp_trcov(gpcf, x);
         invCv=invC(:);
-        b = varargin{1};
+        b = varargin{2};
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
             % In the case of isotropic SEXP
@@ -422,11 +353,65 @@ end
         end
         Bdm = b'*(Cdm*b);
         Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
+              
+      case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+        % Evaluate the help matrices for the gradient evaluation (see
+        % gpcf_sexp_trcov)
+        
+        DE_Kuu = varargin{1};             % u x u
+        DE_Kuf = varargin{2};             % u x f
+        DE_Kff = varargin{3};             % mask(R, M) (block/band) diagonal
+        
+        u = gpcf.X_u;
+        
+        % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
+        % NOTE! Here we have already taken into account that the parameters are transformed 
+        % through log() and thus dK/dlog(p) = p * dK/dp
+        K_uu = gpcf_sexp_trcov(gpcf, u);
+        K_uf = gpcf_sexp_cov(gpcf, u, x);
+        Cv_ff = gpcf_sexp_trvar(gpcf, x);
+        
+        % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+        if length(gpcf.lengthScale) == 1
+            % In the case of an isotropic SEXP
+            s = 1./gpcf.lengthScale.^2;
+            dist = 0;
+            dist2 = 0;
+            for i=1:m
+                D = gminus(u(:,i),x(:,i)');
+                D2= gminus(u(:,i),u(:,i)');
+                dist = dist + D.^2;
+                dist2 = dist2 + D2.^2;
+            end
+            dist = 2.*s.*K_uf.*dist;
+            dist2 = 2.*s.*K_uu.*dist2;
+            DKuf_l = dist(:);
+            DKuu_l = dist2(:);
+        else
+            % In the case ARD is used
+            for i=1:m  
+                s = 1./gpcf.lengthScale(i).^2;        % set the length
+                dist = gminus(u(:,i),x(:,i)');
+                dist2 = gminus(u(:,i),u(:,i)');
+                dist = 2.*s.*K_uf.*dist.^2;
+                dist2 = 2.*s.*K_uu.*dist2.^2;
+                
+                DKuf_l(:,i) = dist(:);         % Matrix of size uf x m
+                DKuu_l(:,i) = dist2(:);        % Matrix of size uu x m
+            end
+        end
     end
-    
+
     % Evaluate the gdata and gprior with respect to magnSigma2
     i1 = i1+1;
-    gdata(i1) = 0.5.*(Cdm - Bdm);
+    switch gpcf.type
+      case 'FULL'
+        gdata(i1) = 0.5.*(Cdm - Bdm);
+      case 'FIC'
+        gdata(i1) = DE_Kuu(:)'*K_uu(:) + DE_Kuf(:)'*K_uf(:) + gpcf.magnSigma2.*sum(DE_Kff);
+      case {'PIC_BLOCK', 'PIC_BAND'}
+        
+    end
     gprior(i1)=feval(gpp.magnSigma2.fg, ...
                      gpcf.magnSigma2, ...
                      gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
@@ -455,16 +440,24 @@ end
     if length(gpcf.lengthScale)>1
         for i2=1:gpcf.nin
             i1=i1+1;
-            gdata(i1)=0.5.*(Cdl(i2) - Bdl(i2));
+            switch gpcf.type
+              case 'FULL'
+                gdata(i1)=0.5.*(Cdl(i2) - Bdl(i2));
+              case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+                gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
+            end
             gprior(i1)=feval(gpp.lengthScale.fg, ...
                              gpcf.lengthScale(i2), ...
                              gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
         end
     else
         i1=i1+1;
-        D = Cdl;
-        %  gdata(i1)=0.5.*(sum(invCv.*D(:)) - bt*(D*b));
-        gdata(i1)=0.5.*(Cdl - Bdl);
+        switch gpcf.type
+          case 'FULL'
+            gdata(i1)=0.5.*(Cdl - Bdl);
+          case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+            gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
+        end
         gprior(i1)=feval(gpp.lengthScale.fg, ...
                          gpcf.lengthScale, ...
                          gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
@@ -472,7 +465,8 @@ end
     
     g = gdata + gprior;
     end
-
+    
+   
     function C = gpcf_sexp_cov(gpcf, x1, x2)
     % GP_SEXP_COV     Evaluate covariance matrix between two input vectors. 
     %
@@ -537,7 +531,7 @@ end
         cov_C=C;
     end
     end
-
+    
     function C = gpcf_sexp_trcov(gpcf, x)
     % GP_SEXP_TRCOV     Evaluate training covariance matrix of inputs. 
     %
@@ -750,3 +744,185 @@ end
 % $$$ end
 % $$$ 
 % $$$ Cdm(Cdm<eps)=0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% $$$     gpp=gpcf.p;
+% $$$     [n, m] =size(x);
+% $$$     
+% $$$     i1=0;i2=1;
+% $$$     if ~isempty(g)
+% $$$         i1 = length(g);
+% $$$     end
+% $$$     
+% $$$     % First check if sparse model is used
+% $$$     if isfield(gpcf, 'sparse')
+% $$$         % Evaluate the help matrices for the gradient evaluation (see
+% $$$         % gpcf_sexp_trcov)
+% $$$         
+% $$$         A = varargin{1};             % u x f
+% $$$                                      %  invC = b in the gp_g
+% $$$         u = varargin{2};
+% $$$         iKuuKuf = varargin{4};
+% $$$         w = varargin{3};
+% $$$         W = gtimes(iKuuKuf,w');       % u x f
+% $$$         B = gtimes(iKuuKuf,invC.^2);  % u x f 
+% $$$                                       % take a transpose and put into a vector for later use
+% $$$         A = A'; A = A(:);
+% $$$         W = W'; W = W(:);
+% $$$         B = B'; B = B(:);
+% $$$         
+% $$$         switch gpcf.sparse
+% $$$           case 'FIC'
+% $$$             Kuum = gpcf_sexp_trcov(gpcf, u);
+% $$$             Kvffm=ones(n,1)*gpcf.magnSigma2;  
+% $$$             Kfum = gpcf_sexp_cov(gpcf, x, u);
+% $$$             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+% $$$             if length(gpcf.lengthScale) == 1
+% $$$                 % In the case of isotropic SEXP
+% $$$                 s = 1./gpcf.lengthScale.^2;
+% $$$                 dist = 0;
+% $$$                 dist2 = 0;
+% $$$                 for i=1:m
+% $$$                     D = gminus(x(:,i),u(:,i)');
+% $$$                     D2= gminus(u(:,i),u(:,i)');
+% $$$                     dist = dist + D.^2;
+% $$$                     dist2 = dist2 + D2.^2;
+% $$$                 end
+% $$$                 Kful = 2.*s.*Kfum.*dist;
+% $$$                 Kuul = 2.*s.*Kuum.*dist2;
+% $$$                 % First three rows evalute the y'*inv*(d/dt)*inv*y part to the gradient
+% $$$                 bdl = (2.*(invC*Kful)-(invC*iKuuKuf')*Kuul)*(iKuuKuf*invC');
+% $$$                 Kuul = iKuuKuf'*Kuul;  % f x u
+% $$$                 Kuul = Kuul(:);        
+% $$$                 Kful = Kful(:);        
+% $$$                 % here is evaluated bd = bdl - tr(B*Kful)+tr(B*Kuul), where B and K* are matrices
+% $$$                 Bdl = bdl - 2*sum(B.*Kful)+sum(B.*Kuul);
+% $$$                 % evalute the tr(inv*d/dt) part to the gradient
+% $$$                 Cdl = 2.*sum(A.*Kful)-sum(A.*Kuul(:))-2.*sum(W.*Kful)+sum(W.*Kuul);
+% $$$             else
+% $$$                 % In the case ARD is used
+% $$$                 for i=1:m  
+% $$$                     s = 1./gpcf.lengthScale(i).^2;        % set the length
+% $$$                     dist = gminus(x(:,i),u(:,i)');
+% $$$                     dist2 = gminus(u(:,i),u(:,i)');
+% $$$                     Kful = 2.*s.*Kfum.*dist.^2;
+% $$$                     Kuul = 2.*s.*Kuum.*dist2.^2;
+% $$$                     % First three rows evalute the y'*inv*(d/dt)*inv*y part to the gradient
+% $$$                     bdl = (2.*(invC*Kful)-(invC*iKuuKuf')*Kuul)*(iKuuKuf*invC');
+% $$$                     Kuul = iKuuKuf'*Kuul;  % f x u
+% $$$                     Kuul = Kuul(:);        
+% $$$                     Kful = Kful(:);        
+% $$$                     % here is evaluated bd = bdl - tr(B*Kful)+tr(B*Kuul), where B and K* are matrices
+% $$$                     Bdl(i) = bdl - 2*sum(B.*Kful)+sum(B.*Kuul);
+% $$$                     % evalute the tr(inv*d/dt) part to the gradient
+% $$$                     Cdl(i) = 2.*sum(A.*Kful)-sum(A.*Kuul(:))-2.*sum(W.*Kful)+sum(W.*Kuul);
+% $$$                 end
+% $$$             end
+% $$$             % Evaluate help matrix for calculations of derivatives with respect to the magnSigma2
+% $$$             Bdm = (2.*invC*Kfum-(invC*iKuuKuf')*Kuum)*(iKuuKuf*invC');
+% $$$             Kuum = iKuuKuf'*Kuum;
+% $$$             Kuum = Kuum(:);
+% $$$             Kfum = Kfum(:);
+% $$$             % here is evaluated bdm = bdm - tr(B*Kfum)+tr(B*Kuum), where B and K* are matrices
+% $$$             Bdm = Bdm + invC.^2*Kvffm-2.*sum(B.*Kfum)+sum(B.*Kuum);
+% $$$             Cdm = 2.*sum(A.*Kfum)-sum(A.*Kuum)+w'*Kvffm-2.*sum(W.*Kfum)+sum(W.*Kuum);
+% $$$         end
+% $$$         %here evaluate the help arguments for full model
+% $$$     else
+% $$$         % Evaluate help arguments for gradient evaluation
+% $$$         % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
+% $$$         % Cdm and invC are symmetric matricess of same size. This is 67 times faster 
+% $$$         % with n=215 
+% $$$         Cdm = gpcf_sexp_trcov(gpcf, x);
+% $$$         invCv=invC(:);
+% $$$         b = varargin{1};
+% $$$         % loop over all the lengthScales
+% $$$         if length(gpcf.lengthScale) == 1
+% $$$             % In the case of isotropic SEXP
+% $$$             s = 2./gpcf.lengthScale.^2;
+% $$$             dist = 0;
+% $$$             for i=1:m
+% $$$                 D = gminus(x(:,i),x(:,i)');
+% $$$                 dist = dist + D.^2;
+% $$$             end
+% $$$             D = Cdm.*s.*dist;
+% $$$             Bdl = b'*(D*b);
+% $$$             Cdl = sum(invCv.*D(:)); % help arguments for lengthScale 
+% $$$         else
+% $$$             % In the case ARD is used
+% $$$             for i=1:m  
+% $$$                 s = 2./gpcf.lengthScale(i).^2;
+% $$$                 dist = gminus(x(:,i),x(:,i)');
+% $$$                 D = Cdm.*s.*dist.^2;
+% $$$                 Bdl(i) = b'*(D*b);
+% $$$                 Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
+% $$$             end
+% $$$         end
+% $$$         Bdm = b'*(Cdm*b);
+% $$$         Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
+% $$$     end
+% $$$     
+% $$$     % Evaluate the gdata and gprior with respect to magnSigma2
+% $$$     i1 = i1+1;
+% $$$     gdata(i1) = 0.5.*(Cdm - Bdm);
+% $$$     gprior(i1)=feval(gpp.magnSigma2.fg, ...
+% $$$                      gpcf.magnSigma2, ...
+% $$$                      gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
+% $$$     % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
+% $$$     if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
+% $$$         i1=i1+1;
+% $$$         gprior(i1)=...
+% $$$             feval(gpp.lengthScale.p.s.fg, ...
+% $$$                   gpp.lengthScale.a.s,...
+% $$$                   gpp.lengthScale.p.s.a, 'x').*gpp.lengthScale.a.s - 1 ...
+% $$$             +feval(gpp.lengthScale.fg, ...
+% $$$                    gpcf.lengthScale, ...
+% $$$                    gpp.lengthScale.a, 's').*gpp.lengthScale.a.s;
+% $$$         if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+% $$$             i1=i1+1;
+% $$$             gprior(i1)=...
+% $$$                 feval(gpp.lengthScale.p.nu.fg, ...
+% $$$                       gpp.lengthScale.a.nu,...
+% $$$                       gpp.lengthScale.p.nu.a, 'x').*gpp.lengthScale.a.nu -1 ...
+% $$$                 +feval(gpp.lengthScale.fg, ...
+% $$$                        gpcf.lengthScale, ...
+% $$$                        gpp.lengthScale.a, 'nu').*gpp.lengthScale.a.nu;
+% $$$         end
+% $$$     end
+% $$$     % Evaluate the data contribution of gradient with respect to lengthScale
+% $$$     if length(gpcf.lengthScale)>1
+% $$$         for i2=1:gpcf.nin
+% $$$             i1=i1+1;
+% $$$             gdata(i1)=0.5.*(Cdl(i2) - Bdl(i2));
+% $$$             gprior(i1)=feval(gpp.lengthScale.fg, ...
+% $$$                              gpcf.lengthScale(i2), ...
+% $$$                              gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
+% $$$         end
+% $$$     else
+% $$$         i1=i1+1;
+% $$$         D = Cdl;
+% $$$         %  gdata(i1)=0.5.*(sum(invCv.*D(:)) - bt*(D*b));
+% $$$         gdata(i1)=0.5.*(Cdl - Bdl);
+% $$$         gprior(i1)=feval(gpp.lengthScale.fg, ...
+% $$$                          gpcf.lengthScale, ...
+% $$$                          gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
+% $$$     end
+% $$$     
+% $$$     g = gdata + gprior;
+% $$$     end

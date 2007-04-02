@@ -17,6 +17,15 @@ function gp = gp_unpak(gp, w)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+% $$$ if isfield(gp, 'X_u')
+% $$$     nu = size(gp.X_u,1);
+% $$$     lw = length(w);
+% $$$     gp.X_u = reshape(w(lw-nu*gp.nin+1:end), size(gp.X_u));
+% $$$         
+% $$$     w = w(1:lw-nu*gp.nin);
+% $$$ end
+
+
 w(w<-10)=-10;
 w(w>10)=10;
 w=exp(w);

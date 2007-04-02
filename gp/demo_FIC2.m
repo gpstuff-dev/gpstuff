@@ -1,4 +1,4 @@
-function demo_gpSparse2
+function demo_FIC2
 %DEMO_GPREGR    Regression problem demonstration for 2-input 
 %              function with Gaussian process
 %
@@ -22,31 +22,24 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-% $$$ gpcf1 = gpcf_sexp('init', nin, 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
-% $$$ gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-% $$$ gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-% $$$ gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-
-gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
-
 % Set the prior for the parameters of covariance functions 
-% $$$ gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});    % MUUTA tässä invgam_p saman näköiseksi kuin gpcf_sexp('set'...)
-% $$$ gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
-% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});    % MUUTA tässä invgam_p saman näköiseksi kuin gpcf_sexp('set'...)
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'sparse', 'FIC', 'jitterSigmas', 1);
-U = x(1:4:end,:);
-% full model
-gp2 = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1)
+gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1);
+U = x(1:8:end,:);
+gp = gp_init('set', gp, 'X_u', U);
+
+
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1);
+U = x(1:8:end,:);
+gp = gp_init('set', gp, 'X_u', U);
+
 
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
@@ -73,7 +66,7 @@ gp2=gp_unpak(gp2,w);
 
 opt=gp_mcopt;
 opt.repeat=1;
-opt.nsamples=10;
+opt.nsamples=100;
 opt.hmc_opt.steps=10;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
@@ -84,35 +77,47 @@ hmc2('state', sum(100*clock));
 t = cputime;
 [r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], [], U);
 tsparse = cputime - t;
-% Sample full model
-t = cputime;
-[r2,g2,rstate2]=gp_mc(opt, gp2, x, y);
-tfull = cputime - t;
-
-% $$$ opt.hmc_opt.stepadj=0.08;
-% $$$ opt.nsamples=300;
-% $$$ opt.hmc_opt.steps=10;
-% $$$ opt.hmc_opt.persistence=1;
-% $$$ opt.hmc_opt.decay=0.6;
-% $$$ 
-% $$$ [r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
 
 % New input
 [p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);
 p=[p1(:) p2(:)];
 
 % The predictions for the new inputs of sparse model
-rr=thin(r,10,1);
-%[yn, covYn]= gp_fwds(rr, x, y, p);
-% $$$ yn= gp_fwds(rr, x, y, p);
-% $$$ Ey = mean(squeeze(yn)');
-Ey= gp_fwd(rr, x, y, p);
+rr=thin(r,10,2);
+yn = gp_fwds(rr, x, y, p, U);
+Ey = mean(squeeze(yn)');
+
 pred = zeros(size(p1));
 pred(:)=Ey;
 figure
 mesh(p1,p2,pred);
 qc=caxis;
 title('sparse')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% full model
+gp2 = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1)
+
+% Sample full model
+t = cputime;
+[r2,g2,rstate2]=gp_mc(opt, gp2, x, y);
+tfull = cputime - t;
 
 % The predictions for the new inputs of full model
 rr2=thin(r2,1,1);

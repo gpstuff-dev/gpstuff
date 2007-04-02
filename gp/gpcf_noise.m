@@ -213,8 +213,8 @@ eprior=eprior...
        -sum(log(gpcf.noiseSigmas2));
 
 
-function [g, gdata, gprior]  = gpcf_noise_g(gpcf, p, t, g, gdata, gprior, invC, varargin)
-%GPCF_NOISE_G Evaluate gradient of error for SE covariance function.
+function [g, gdata, gprior]  = gpcf_noise_g(gpcf, x, t, g, gdata, gprior, varargin)
+%GPCF_NOISE_G Evaluate gradient of error for NOISE covariance function.
 %
 %	Description
 %	G = GPCF_NOISE_G(W, GPCF, X, T, invC, B) takes a gp hyper-parameter  
@@ -230,7 +230,7 @@ function [g, gdata, gprior]  = gpcf_noise_g(gpcf, p, t, g, gdata, gprior, invC, 
 %
 
 % Copyright (c) 1998-2001 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2006-2007 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -243,30 +243,25 @@ if ~isempty(g)
   i1 = length(g);
 end
 
-if isfield(gpcf, 'sparse')
-  switch gpcf.sparse
-   case 'FIC'
-    W =varargin{3};
-    B = sum(W);
-    C=invC*invC';
-  end
-else
-  b = varargin{1};
-  B=trace(invC);
-  C=b'*b;
-end
-% $$$ b = invC\t;
-% $$$ B=trace(invC);
-% $$$ C=b'*b;
-
-% Evaluate the data and prior contribution of gradient with respect to 
-% noiseSigmas
 i1=i1+1;
-D=gpcf.noiseSigmas2;
-gdata(i1)=0.5.*D.*(B - C); 
+    D=gpcf.noiseSigmas2;
+switch gpcf.type
+  case 'FULL'
+    invC = varargin{1};
+    b = varargin{2};
+    B=trace(invC);
+    C=b'*b;    
+    
+    gdata(i1)=0.5.*D.*(B - C); 
+  case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+    R =varargin{3};
+    gdata(i1) = D.*sum(R);
+end
+
 gprior(i1)=feval(gpp.noiseSigmas2.fg, ...
                  gpcf.noiseSigmas2, ...
                  gpp.noiseSigmas2.a, 'x').*gpcf.noiseSigmas2-1;
+
 g = gdata + gprior;
 
 function C = gpcf_noise_cov(gpcf, x1, x2)

@@ -1,6 +1,6 @@
 function demo_gpSparse
-%DEMO_GPSparse    Regression problem demonstration for 2-input 
-%              function with Gaussian process
+%DEMO_GPSparse    Regression problem demonstration for 1-input 
+%                 function with Gaussian process
 %
 %    Description
 %    The problem consist of a data with two input variables

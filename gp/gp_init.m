@@ -3,15 +3,23 @@ function gp = gp_init(do, varargin)
 %
 %	Description
 %
-%	GP = GP_INIT('INIT', NIN, 'LIKELIH', GPCF, NOISE, VARARGIN) Creates a  
-%       Gaussian Process model with a single output. Takes the number of inputs  
-%	NIN together with string 'LIKELIH' which and spesifies likelihood function 
-%       used, GPCF array which specify the covariance functions and NOISE array 
-%       which specify the noise functions used for Gaussian process. At minimum 
-%       one covariance function has to be given. With VARAGIN can be set fields 
-%       into different values VARARGIN = 'FIELD1', VALUE1, 'FIELD2', VALUE2, ... 
+%	GP = GP_INIT('INIT', 'TYPE', NIN, 'LIKELIH', GPCF, NOISE, VARARGIN) 
+%       Creates a Gaussian Process model with a single output. Takes the number 
+%	of inputs  NIN together with string 'LIKELIH' which spesifies likelihood 
+%       function used, GPCF array which specify the covariance functions and NOISE 
+%       array which specify the noise functions used for Gaussian process. At minimum 
+%       one covariance function has to be given. TYPE defines the type of GP, possible 
+%       types are  
+%       'FULL'        (full GP), 
+%       'FIC'         (fully independent conditional), 
+%       'PIC_BLOCK'   (block partially independent condional), 
+%       'PIC_BAND'    (banded partially independent condional), 
 %
-%	The fields and initial values in GP are:
+%       With VARAGIN can be set fields into different values 
+%       VARARGIN = 'FIELD1', VALUE1, 'FIELD2', VALUE2, ... 
+%
+%	The fields and default values in GP are:
+%         type           = 'FULL'
 %	  nin            = number of inputs
 %	  nout           = number of outputs: always 1
 %         cf             = struct of covariance functions
@@ -35,11 +43,6 @@ function gp = gp_init(do, varargin)
 %         latentValues   = Vector of latent values (not needed for regression)
 %                          (empty matrix if likelih ~= 'regr')
 %
-%	GP = GP_INIT('INIT', NIN, 'LIKELIH', GPCF, NOISE, 'SPARSE', 'TYPE', VARARGIN) 
-%       Creates a sparse Gaussian process of type 'TYPE' and adds following fields into the
-%       Gaussian process structure GP:
-%         sparse         = Defines the type of sparse Gaussian process. Supported types are
-%                          FIC, PIC_BLOCK, PIC_BAND 
 %
 %	GP = GPINIT('SET', GP, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GP.
@@ -65,75 +68,81 @@ end
 
 % Initialize the Gaussian process
 if strcmp(do, 'init')
-
-  gp.nin = varargin{1};
-  gp.nout = 1;
-  
-  % Initialize parameters
-  gp.jitterSigmas=0.1;
     
-  gp.p=[];
-  gp.p.jitterSigmas=[];
-  % Set function handle for likelihood. If regression 
-  % model is used set also gp.p.r field and if other likelihood
-  % set also field gp.latentValues
-  if strcmp(varargin{2}, 'regr')
-    gp.likelih = 'regr';
-    gp.p.r=[];
-  else
-    gp.likelih = varargin{2};
-% $$$     gp.likelih_e = [];
-% $$$     gp.likelih_g = [];
-    gp.fh_latentmc = @latent_hm;
-    gp.latentValues = [];
-  end  
-
-  % Set covariance functions into gpcf
-  gp.cf = [];
-  gpcf = varargin{3};
-  for i = 1:length(gpcf)
-    gp.cf{i} = gpcf{i};
-  end
-
-  % Set noise functions into noise
-  gp.noise = [];
-  if length(varargin) > 3
-    gpnoise = varargin{4};
-    for i = 1:length(gpnoise)
-      gp.noise{i} = gpnoise{i};
-    end
-  end
+    gp.type = varargin{1};
+    gp.nin = varargin{2};
+    gp.nout = 1;
   
-  if length(varargin) > 4
-    if mod(length(varargin),2) ~=0
-      error('Wrong number of arguments')
+    % Initialize parameters
+    gp.jitterSigmas=0.1;
+    
+    gp.p=[];
+    gp.p.jitterSigmas=[];
+    % Set function handle for likelihood. If regression 
+    % model is used set also gp.p.r field and if other likelihood
+    % set also field gp.latentValues
+    if strcmp(varargin{3}, 'regr')
+        gp.likelih = 'regr';
+        gp.p.r=[];
+    else
+        gp.likelih = varargin{3};
+        gp.fh_latentmc = @latent_hm;
+        gp.latentValues = [];
+    end  
+    
+    % Set covariance functions into gpcf
+    gp.cf = [];
+    gpcf = varargin{4};
+    for i = 1:length(gpcf)
+        gp.cf{i} = gpcf{i};
     end
-    % Loop through all the parameter values that are changed
-    for i=5:2:length(varargin)-1
-      if strcmp(varargin{i},'jitterSigmas')
-        gp.jitterSigmas = varargin{i+1};
-      elseif strcmp(varargin{i},'likelih')
-        gp.likelih = varargin{i+1};
-        if strcmp(gp.likelih_e, 'regr')
-          gp.p.r=[];
-        else
-          gp.latentValues = [];
+    
+    % Set noise functions into noise
+    gp.noise = [];
+    if length(varargin) > 4
+        gpnoise = varargin{5};
+        for i = 1:length(gpnoise)
+            gp.noise{i} = gpnoise{i};
         end
-      elseif strcmp(varargin{i},'likelih_e')
-        gp.likelih_e = varargin{i+1};
-      elseif strcmp(varargin{i},'likelih_g')
-        gp.likelih_g = varargin{i+1};
-      elseif strcmp(varargin{i},'fh_latentmc')
-        gp.fh_latentmc = varargin{i+1};
-      elseif strcmp(varargin{i},'sparse')
-        gp.sparse = varargin{i+1};
-      else
-        error('Wrong parameter name!')
-      end
     end
-  end
+  
+    if length(varargin) > 5
+        if mod(length(varargin),2) ==0
+            error('Wrong number of arguments')
+        end
+        % Loop through all the parameter values that are changed
+        for i=6:2:length(varargin)-1
+            switch varargin{i}
+              case 'jitterSigmas'
+                gp.jitterSigmas = varargin{i+1};
+              case 'likelih'
+                gp.likelih = varargin{i+1};
+                if strcmp(gp.likelih_e, 'regr')
+                    gp.p.r=[];
+                else
+                    gp.latentValues = [];
+                end
+              case 'likelih_e'
+                gp.likelih_e = varargin{i+1};
+              case 'likelih_g'
+                gp.likelih_g = varargin{i+1};
+              case 'fh_latentmc'
+                gp.fh_latentmc = varargin{i+1};
+              case 'type'
+                gp.type = varargin{i+1};
+              case 'X_u'
+                if size(varargin{i+1},2)~=nin
+                    error('The size of X_u has to be u x nin.')
+                else
+                    gp.X_u = varargin{i+1};
+                end
+              otherwise
+                error('Wrong parameter name!')
+            end
+        end
+    end
 end
-
+    
 % Set the parameter values of covariance function
 if strcmp(do, 'set')
   if mod(nargin,2) ~=0
@@ -142,26 +151,29 @@ if strcmp(do, 'set')
   gp = varargin{1};
   % Loop through all the parameter values that are changed
   for i=2:2:length(varargin)-1
-    if strcmp(varargin{i},'jitterSigmas')
-      gp.jitterSigmas = varargin{i+1};
-    elseif strcmp(varargin{i},'likelih')
-      gp.likelih = varargin{i+1};
-      if strcmp(gp.likelih, 'regr')
-        gp.p.r=[];
-      else
-        gp.latentValues = [];
-      end
-    elseif strcmp(varargin{i},'likelih_e')
-      gp.likelih_e = varargin{i+1};
-    elseif strcmp(varargin{i},'likelih_g')
-      gp.likelih_g = varargin{i+1};
-    elseif strcmp(varargin{i},'fh_latentmc')
-      gp.fh_latentmc = varargin{i+1};
-    elseif strcmp(varargin{i},'sparse')
-      gp.sparse = varargin{i+1};
-    else
-      error('Wrong parameter name!')
-    end    
+      switch varargin{i}
+        case 'jitterSigmas'
+          gp.jitterSigmas = varargin{i+1};
+        case 'likelih'
+          gp.likelih = varargin{i+1};
+          if strcmp(gp.likelih, 'regr')
+              gp.p.r=[];
+          else
+              gp.latentValues = [];
+          end
+        case 'likelih_e'
+          gp.likelih_e = varargin{i+1};
+        case 'likelih_g'
+          gp.likelih_g = varargin{i+1};
+        case 'fh_latentmc'
+          gp.fh_latentmc = varargin{i+1};
+        case 'sparse'
+          gp.sparse = varargin{i+1};
+        case 'X_u'
+          gp.X_u = varargin{i+1};
+        otherwise
+          error('Wrong parameter name!')
+      end    
   end
 end
 
