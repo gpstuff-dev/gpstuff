@@ -22,7 +22,10 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -32,14 +35,8 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
 gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1);
-U = x(1:8:end,:);
+U = x(1:4:end,:);
 gp = gp_init('set', gp, 'X_u', U);
-
-
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1);
-U = x(1:8:end,:);
-gp = gp_init('set', gp, 'X_u', U);
-
 
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
@@ -59,10 +56,6 @@ optes.tolx=1e-1;
 % sparse model
 [w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), U, gp,x(its,:),y(its,:), U);
 gp=gp_unpak(gp,w);
-% full model
-w=randn(size(gp_pak(gp2)))*0.01;
-[w,fs,vs]=scges(fe, w, optes, fg, gp2, x(itr,:),y(itr,:), gp2,x(its,:),y(its,:));
-gp2=gp_unpak(gp2,w);
 
 opt=gp_mcopt;
 opt.repeat=1;
@@ -75,7 +68,7 @@ hmc2('state', sum(100*clock));
 
 % Sample sparse model
 t = cputime;
-[r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], [], U);
+[r,g,rstate2]=gp_mc(opt, gp, x, y);
 tsparse = cputime - t;
 
 % New input

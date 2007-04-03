@@ -131,10 +131,11 @@ if strcmp(do, 'init')
               case 'type'
                 gp.type = varargin{i+1};
               case 'X_u'
-                if size(varargin{i+1},2)~=nin
+                if size(varargin{i+1},2)~=gp.nin
                     error('The size of X_u has to be u x nin.')
                 else
                     gp.X_u = varargin{i+1};
+                    gp.nind = size(varargin{i+1},1);
                 end
               otherwise
                 error('Wrong parameter name!')
@@ -170,7 +171,12 @@ if strcmp(do, 'set')
         case 'sparse'
           gp.sparse = varargin{i+1};
         case 'X_u'
-          gp.X_u = varargin{i+1};
+          if size(varargin{i+1},2)~=gp.nin
+              error('The size of X_u has to be u x nin.')
+          else
+              gp.X_u = varargin{i+1};
+              gp.nind = size(varargin{i+1},1);
+          end
         otherwise
           error('Wrong parameter name!')
       end    

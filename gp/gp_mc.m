@@ -1,4 +1,4 @@
-function [rec, gp, opt] = gp_mc(opt, gp, p, t, pp, tt, rec, varargin)
+function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 % GP2_MC   Monte Carlo sampling for model GP2R
 %
 %   REC = GP_MC(OPT, GP, X, T, XX, TT)
@@ -50,31 +50,30 @@ function [rec, gp, opt] = gp_mc(opt, gp, p, t, pp, tt, rec, varargin)
 
 % Check arguments
 if nargin < 4
-  error('Not enough arguments')
+    error('Not enough arguments')
 end
 
 % $$$ % Set empty options to default values
 % $$$ opt=gp_mcopt(opt);
 
-% $$$ % Use function handles
-% $$$ me=str2fun('gp_e');
-% $$$ mg=str2fun('gp_g');
-
+% NOTE ! Here change the initialization of energy and gradient function
 % Initialize the error and gradient functions and get 
 % the function handle to them
-me=gp_e('init', gp);
-mg=gp_g('init', gp);
+% $$$ me=gp_e('init', gp);
+% $$$ mg=gp_g('init', gp);
+me = @gp_e;
+mg = @gp_g;
 
 % Set test data
-if nargin < 6 | isempty(pp)
-  pp=[];tt=[];
+if nargin < 6 | isempty(xtest)
+  xtest=[];ytest=[];
 end
 
 % Initialize record
 if nargin < 7 | isempty(rec)
   % No old record
   ri=1;
-  rec=recappend([], ri, gp, p, t, [], [], [], varargin{:});
+  rec=recappend([], ri, gp, x, y, [], [], [], varargin{:});
 else
   ri=size(rec.etr,1);
 end
@@ -97,13 +96,13 @@ w = gp_pak(gp);
 if isfield(opt, 'latent_opt')
     z=gp.latentValues';
 else
-    z=t;
+    z=y;
 end
 
 % Print labels for sampling information
 if opt.display
   fprintf(' cycle  etr      ');
-  if ~isempty(pp)
+  if ~isempty(xtest)
     fprintf('etst     ');
   end
   fprintf('hrej     ')            % rejection rate of hyperparameter sampling
@@ -137,7 +136,7 @@ for k=1:opt.nsamples
       
       % ----------- Sample latent Values  ---------------------
       if isfield(opt,'latent_opt')
-          [z, energ, diagnl] = feval(gp.fh_latentmc, z, opt.latent_opt, gp, p, t, varargin{:});
+          [z, energ, diagnl] = feval(gp.fh_latentmc, z, opt.latent_opt, gp, x, y, varargin{:});
           gp.latentValues = z(:)';
           z = z(:);
           slrej=slrej+diagnl.rej/opt.repeat;
@@ -150,7 +149,7 @@ for k=1:opt.nsamples
     w = gp_pak(gp);
     if isfield(opt, 'hmc_opt')
       hmc2('state',hmc_rstate)
-      [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, p, z, varargin{:});
+      [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, varargin{:});
       hmc_rstate=hmc2('state');
       rejects=rejects+diagnh.rej/opt.repeat;
       if isfield(diagnh, 'opt')
@@ -160,7 +159,7 @@ for k=1:opt.nsamples
     
     % ----------- Sample some parameters with SLS --------------------- 
     if isfield(opt, 'sls_opt')
-      [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, p, z, varargin{:});
+      [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, varargin{:});
       if isfield(diagns, 'opt')
         opt.sls_opt = diagns.opt;
       end
@@ -171,7 +170,7 @@ for k=1:opt.nsamples
     % ------------ Sample the noiseSigmas2 for gpcf_noiset model -------------
     % This is not permanent has to change gp.noise{1}. to some more generic
     if isfield(opt, 'noiset_opt')
-        gp.noise{1} = feval(gp.noise{1}.fh_sampling, gp, gp.noise{1}, opt.noiset_opt, p, t);
+        gp.noise{1} = feval(gp.noise{1}.fh_sampling, gp, gp.noise{1}, opt.noiset_opt, x, y);
     end
     
     
@@ -187,16 +186,16 @@ for k=1:opt.nsamples
   if isfield(gp,'latentValues')
     rejs.hmcrejs = rejects;
     rejs.slrejs = slrej;
-    rec=recappend(rec, ri, gp, p, t, pp, tt, rejs, varargin{:});
+    rec=recappend(rec, ri, gp, x, y, xtest, ytest, rejs, varargin{:});
   else
     rejs.hmcrejs = rejects;
-    rec=recappend(rec, ri, gp, p, t, pp, tt, rejs, varargin{:});
+    rec=recappend(rec, ri, gp, x, y, xtest, ytest, rejs, varargin{:});
   end
   
   % Display some statistics  THIS COULD BE DONE NICER ALSO...
   if opt.display
     fprintf(' %4d  %.3f  ',ri, rec.etr(ri,1));
-    if ~isempty(pp)
+    if ~isempty(xtest)
       fprintf('%.3f  ',rec.etst(ri,1));
     end
     if isfield(opt, 'hmc_opt')
@@ -217,7 +216,7 @@ for k=1:opt.nsamples
 end
 
 %-----------------------------------------------------------------------------
-function rec = recappend(rec, ri, gp, p, t, pp, tt, rejs, varargin)
+function rec = recappend(rec, ri, gp, x, y, xtest, ytest, rejs, varargin)
 % RECAPPEND - Record append
 %          Description
 %          REC = RECAPPEND(REC, RI, GP, P, T, PP, TT, REJS, U) takes
@@ -234,8 +233,12 @@ if ri==1
   rec.nin = gp.nin;
   rec.nout = gp.nout;
   % If sparse model is used save the information about which
-  if isfield(gp, 'sparse')
-    rec.sparse = gp.sparse;
+  rec.type = gp.type;
+  switch gp.type
+    case 'FIC'
+      re.X_u = [];
+    otherwise
+      % Do nothing
   end
   if isfield(gp, 'fh_likelih_e')
       rec.likelih = gp.likelih_e;
@@ -243,7 +246,7 @@ if ri==1
   if isfield(gp, 'fh_likelih_g')
     rec.fh_likelih_g = gp.fh_likelih_g;
   end
-  rec.jitterSigmas = [];  
+  rec.jitterSigmas = [];
   rec.hmcrejects = 0;
   rejs.hmcrejs = 0;
   if isfield(gp,'latentValues')
@@ -253,8 +256,6 @@ if ri==1
     rejs.slrejs = 0;
   end
 
-  rec.cf = [];
-  rec.noise = [];
   % Initialize the records of covariance functions
   for i=1:ncf
     cf = gp.cf{i};
@@ -294,20 +295,31 @@ if isfield(gp, 'latentValues')
   rec.latentValues(ri,:)=gp.latentValues;
 end
 
+% Set the inducing inputs in the record structure
+switch gp.type
+  case 'FIC'
+    re.X_u(ri,:) = gp.X_u(:)';
+  otherwise
+    % Do nothing
+end
+
 % Record training error and rejects
 if isfield(gp,'latentValues')
-  [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp), gp, p, gp.latentValues', varargin{:});
-  rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
-% Set rejects 
-  rec.hmcrejects(ri,1)=rejs.hmcrejs; 
-  rec.lrejects(ri,1)=rejs.slrejs;
+    [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp), gp, p, gp.latentValues', varargin{:});
+    rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
+                                   % Set rejects 
+    rec.lrejects(ri,1)=rejs.slrejs;
 else
-  [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp), gp, p, t, varargin{:});
-  rec.etr(ri,:) = rec.e(ri,:);
-  rec.hmcrejects(ri,1)=rejs.hmcrejs; 
+    [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp), gp, p, t, varargin{:});
+    rec.etr(ri,:) = rec.e(ri,:);
 end
+
+rec.hmcrejects(ri,1)=rejs.hmcrejs; 
 
 % If inputs are sampled set the record which are on at this moment
 if isfield(gp,'inputii')
-  rec.inputii(ri,:)=gp.inputii;
+    rec.inputii(ri,:)=gp.inputii;
+end
+end
+
 end

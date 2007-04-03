@@ -82,30 +82,25 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
         for i=1:n
             iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
         end
-% $$$         Lav = Cv_ff - diag(K_fu*pdinv(K_uu)*K_fu');
-% $$$         iLaKfu= diag(1./Lav)*K_fu;
         % ... then evaluate some help matrices.
         % A = chol(K_uu+K_uf*inv(La)*K_fu))
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;               % Ensure symmetry
         b = (t'*iLaKfu)*pdinv(A);
-        %        C = 2*inv(A)-diag(diag(inv(A))) - 2*b'*b + diag(diag(b'*b));
         C = inv(A) + b'*b;
-        %C = A - b'*b;
-        %C = (C+C')/2;
+        C = (C+C')/2;
                
         % Evaluate R = mask(inv(La)*J*inv(La) , diag(n,n)), where J = H - K_fu*C*K_uf;
-        H = diag(Lav) -t*t'+2*K_fu*pdinv(A)*K_fu'*diag(1./Lav)*t*t';
-        J = H - K_fu*C*K_fu';
-        R = diag(diag(1./Lav)*J*diag(1./Lav));
-        %        R = 1./Lav - (t./Lav).^2 + 2.*(iLaKfu*b').*(t./Lav) -  diag(iLaKfu*C*iLaKfu'); %sum((iLaKfu*chol(C)'),2); %
+        %H = diag(Lav) -t*t'+2*K_fu*pdinv(A)*K_fu'*diag(1./Lav)*t*t';
+        %J = H - K_fu*C*K_fu';
+        %R = diag(diag(1./Lav)*J*diag(1./Lav));
+        R = 1./Lav - (t./Lav).^2 + 2.*(iLaKfu*b').*(t./Lav) -  sum((iLaKfu*chol(C)').^2,2); % diag(iLaKfu*C*iLaKfu'); %
         % iKuuKufR = inv(K_uu)*K_uf*R
         iKuuKuf = K_uu\K_fu';
-% $$$         for i=1:n
-% $$$             iKuuKufR(:,i) = iKuuKuf(:,i).*R(i);  % f x u 
-% $$$         end
-        iKuuKufR = iKuuKuf*diag(R);
-        
+        for i=1:n
+            iKuuKufR(:,i) = iKuuKuf(:,i).*R(i);  % f x u 
+        end
+                
         DE_Kuu = 0.5*( C - pdinv(K_uu) + iKuuKufR*iKuuKuf');      % These are here in matrix form, but
         DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(t./Lav)';              % should be used as vectors DE_Kuu(:) 
         %DE_Kuf = 2*DE_Kuf;                                         % in gpcf_*_g functions
