@@ -1,4 +1,4 @@
-function w = gp_pak(gp)
+function w = gp_pak(gp, param)
 %GP_PAK	 Combine GP hyper-parameters into one vector.
 %
 %	Description
@@ -18,24 +18,27 @@ function w = gp_pak(gp)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-w=[];
-ncf = length(gp.cf);
-
-for i=1:ncf
-  gpcf = gp.cf{i};
-  w = feval(gpcf.fh_pak, gpcf, w);
-end
-
-if isfield(gp, 'noise')
-  nn = length(gp.noise);
-  for i=1:nn
-    noise = gp.noise{i};
-    w = feval(noise.fh_pak, noise, w);
-  end
-end
-
-w = log(w);
-% $$$ 
+if nargin > 1   % Pak inducing inputs
+   % $$$ 
 % $$$ if isfield(gp, 'X_u')
 % $$$     w = [w gp.X_u(:)'];
-% $$$ end
+% $$$ end 
+    
+else
+    w=[];
+    ncf = length(gp.cf);
+    
+    for i=1:ncf
+        gpcf = gp.cf{i};
+        w = feval(gpcf.fh_pak, gpcf, w);
+    end
+    
+    if isfield(gp, 'noise')
+        nn = length(gp.noise);
+        for i=1:nn
+            noise = gp.noise{i};
+            w = feval(noise.fh_pak, noise, w);
+        end
+    end
+    w = log(w);
+end

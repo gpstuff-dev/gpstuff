@@ -24,7 +24,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
 % License.txt, included with the software, for details.
 
 
-    gp=gp_unpak(gp, w);
+    gp=gp_unpak(gp, w, varargin{:});
     ncf = length(gp.cf);
     n=length(x);
 

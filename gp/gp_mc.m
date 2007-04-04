@@ -145,28 +145,56 @@ for k=1:opt.nsamples
           end
       end
       
-    % ----------- Sample some parameters with HMC --------------------- 
-    w = gp_pak(gp);
+    % ----------- Sample hyperparameters with HMC --------------------- 
     if isfield(opt, 'hmc_opt')
-      hmc2('state',hmc_rstate)
-      [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, varargin{:});
-      hmc_rstate=hmc2('state');
-      rejects=rejects+diagnh.rej/opt.repeat;
-      if isfield(diagnh, 'opt')
-        opt.hmc_opt = diagnh.opt;
-      end
+        w = gp_pak(gp);
+        hmc2('state',hmc_rstate)
+        [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, varargin{:});
+        hmc_rstate=hmc2('state');
+        rejects=rejects+diagnh.rej/opt.repeat;
+        if isfield(diagnh, 'opt')
+            opt.hmc_opt = diagnh.opt;
+        end
+        w=w(end,:);
+        gp = gp_unpak(gp, w);
     end
     
-    % ----------- Sample some parameters with SLS --------------------- 
+    % ----------- Sample hyperparameters with SLS --------------------- 
     if isfield(opt, 'sls_opt')
-      [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, varargin{:});
-      if isfield(diagns, 'opt')
-        opt.sls_opt = diagns.opt;
-      end
+        w = gp_pak(gp);
+        [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, varargin{:});
+        if isfield(diagns, 'opt')
+            opt.sls_opt = diagns.opt;
+        end
+        w=w(end,:);
+        gp = gp_unpak(gp, w);
     end
-    w=w(end,:);
-    gp = gp_unpak(gp, w);
 
+    % ----------- Sample inducing inputs with hmc  ------------ 
+    if isfield(opt, 'inducing_opt')
+        w = gp_pak(gp);
+        hmc2('state',hmc_rstate)
+        [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'inducing', varargin{:});
+        hmc_rstate=hmc2('state');
+        rejects=rejects+diagnh.rej/opt.repeat;
+        if isfield(diagnh, 'opt')
+            opt.hmc_opt = diagnh.opt;
+        end
+        w=w(end,:);
+        gp = gp_unpak(gp, w);
+    end
+
+    % ----------- Sample inducing inputs with some other method  ------------ 
+    if isfield(opt, 'inducing_opt')
+        [z, energ, diagnl] = feval(gp.fh_inducingmc, z, opt.inducing_opt, gp, x, y, varargin{:});
+        gp.latentValues = z(:)';
+        z = z(:);
+        slrej=slrej+diagnl.rej/opt.repeat;
+        if isfield(diagnl, 'opt')
+            opt.latent_opt = diagnl.opt;
+        end
+    end
+    
     % ------------ Sample the noiseSigmas2 for gpcf_noiset model -------------
     % This is not permanent has to change gp.noise{1}. to some more generic
     if isfield(opt, 'noiset_opt')
