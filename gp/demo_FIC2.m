@@ -34,15 +34,16 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 1);
-% $$$ [u1,u2]=meshgrid(-1.8:1:1.8,-1.8:1:1.8);
-% $$$ U=[u1(:) u2(:)];
-U = randn(7,2);
+gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1);
+[u1,u2]=meshgrid(linspace(-1.8,1.8,5),linspace(-1.8,1.8,4));
+U=[u1(:) u2(:)];
+U = 3.6.*rand(14,2)-1.8;
 gp = gp_init('set', gp, 'X_u', U);
 
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
-w=randn(size(gp_pak(gp)))*0.01;
+w=gp_pak(gp, 'hyper');
+w=randn(size(gp_pak(gp, 'all')))*0.01;
 
 fe=str2fun('gp_e');
 fg=str2fun('gp_g');
@@ -55,23 +56,63 @@ optes.tolfun=1e-1;
 optes.tolx=1e-1;
 
 % do scaled conjugate gradient optimization with early stopping.
-% sparse model
-[w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), U, gp,x(its,:),y(its,:), U);
-gp=gp_unpak(gp,w);
+% First for hyperparameters
+[w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'hyper', gp,x(its,:), y(its,:), 'hyper');
+[w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'all', gp,x(its,:), y(its,:), 'all');
+lambda
+gp=gp_unpak(gp,w, 'all');
+
+figure
+hold on
+plot(gp.X_u(:,1),gp.X_u(:,2),'*')
+axis([-2.5 2.5 -2.5 2.5])
+
+
+% New input
+[p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);
+p=[p1(:) p2(:)];
+
+% The predictions for the new inputs of sparse model
+yn = gp_fwd(gp, x, y, p);
+
+pred = zeros(size(p1));
+pred(:)=yn;
+figure
+mesh(p1,p2,pred);
+qc=caxis;
+title('sparse')
+
 
 opt=gp_mcopt;
-opt.repeat=1;
+opt.repeat=10;
 opt.nsamples=100;
-opt.hmc_opt.steps=10;
-opt.hmc_opt.stepadj=0.1;
+
+opt.hmc_opt.steps=5;
+opt.hmc_opt.stepadj=0.01;
 opt.hmc_opt.nsamples=1;
 opt.hmc_opt.window=1;
-hmc2('state', sum(100*clock));
+
+opt.inducing_opt.steps=5;
+opt.inducing_opt.stepadj=0.001;
+opt.inducing_opt.nsamples=1;
+opt.inducing_opt.window=1;
+opt.inducing_opt.persistence =0;
 
 % Sample sparse model
 t = cputime;
-[r,g,rstate2]=gp_mc(opt, gp, x, y);
+[r,g,opt]=gp_mc(opt, gp, x, y);
 tsparse = cputime - t;
+
+rr = thin(r,5,2)
+hold on
+col = {'b*','g*','r*','c*','m*','y*','k*','b.','g.','r.','c.','m.','y.','k.'};
+for i=1:size(rr.X_u,1)
+    uu = reshape(rr.X_u(i,:), size(gp.X_u));
+    for j = 1:size(U,1)
+        plot(uu(j,1), uu(j,2), col{j})
+    end
+end
+axis([-2.5 2.5 -2.5 2.5])
 
 % New input
 [p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);

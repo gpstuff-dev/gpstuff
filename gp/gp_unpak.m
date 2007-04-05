@@ -19,30 +19,44 @@ function gp = gp_unpak(gp, w, param)
 
 switch param
   case 'hyper'
-    w(w<-10)=-10;
-    w(w>10)=10;
-    w=exp(w);
-    
-    w1 = w;
-    ncf = length(gp.cf);
-    
-    for i=1:ncf
-        gpcf = gp.cf{i};
-        [gpcf, w1] = feval(gpcf.fh_unpak, gpcf, w1);
-        gp.cf{i} = gpcf;
-    end
-    
-    if isfield(gp, 'noise')
-        nn = length(gp.noise);
-        for i=1:nn
-            noise = gp.noise{i};
-            [noise, w1] = feval(noise.fh_unpak, noise, w1);
-            gp.noise{i} = noise;
-        end
-    end
-    
+    gp = unpak_hyper(w, gp);
   case 'inducing'    
-    gp.X_u = reshape(w, size(gp.X_u));    
+    gp = unpak_inducing(w, gp);
+  case 'all'
+    w1 = w(1:end-length(gp.X_u(:)));
+    gp = unpak_hyper(w1, gp);
+    w2 = w(length(w1)+1:end);
+    gp = unpak_inducing(w2, gp);
   otherwise
     error('Unknown parameter to take the gradient with respect to! \n')
 end
+
+
+% Function for unpacking the hyperparameters
+function gp = unpak_hyper(w, gp)
+
+w(w<-10)=-10;
+w(w>10)=10;
+w=exp(w);
+    
+w1 = w;
+ncf = length(gp.cf);
+
+for i=1:ncf
+    gpcf = gp.cf{i};
+    [gpcf, w1] = feval(gpcf.fh_unpak, gpcf, w1);
+    gp.cf{i} = gpcf;
+end
+
+if isfield(gp, 'noise')
+    nn = length(gp.noise);
+    for i=1:nn
+        noise = gp.noise{i};
+        [noise, w1] = feval(noise.fh_unpak, noise, w1);
+        gp.noise{i} = noise;
+    end
+end
+
+% Function for unpacking the inducing inputs
+function gp = unpak_inducing(w, gp)
+gp.X_u = reshape(w, size(gp.X_u));

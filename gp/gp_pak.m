@@ -21,26 +21,36 @@ function w = gp_pak(gp, param)
 
 switch param
   case 'hyper'
-    w=[];
-    ncf = length(gp.cf);
-    
-    for i=1:ncf
-        gpcf = gp.cf{i};
-        w = feval(gpcf.fh_pak, gpcf, w);
-    end
-    
-    if isfield(gp, 'noise')
-        nn = length(gp.noise);
-        for i=1:nn
-            noise = gp.noise{i};
-            w = feval(noise.fh_pak, noise, w);
-        end
-    end
-    w = log(w);
-    
+    w = pak_hyper(gp);
   case 'inducing'    
-    w = gp.X_u(:)'
-    
+    w = pak_inducing(gp);
+  case 'all'
+    w = pak_hyper(gp);
+    w = [w pak_inducing(gp)];
   otherwise
     error('Unknown parameter to take the gradient with respect to! \n')
 end
+
+
+% Pak the hyperparameters
+function w = pak_hyper(gp)
+w=[];
+ncf = length(gp.cf);
+
+for i=1:ncf
+    gpcf = gp.cf{i};
+    w = feval(gpcf.fh_pak, gpcf, w);
+end
+
+if isfield(gp, 'noise')
+    nn = length(gp.noise);
+    for i=1:nn
+        noise = gp.noise{i};
+        w = feval(noise.fh_pak, noise, w);
+    end
+end
+w = log(w);
+
+% Pak the inducing inputs
+function w = pak_inducing(gp)
+w = gp.X_u(:)';

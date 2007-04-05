@@ -11,7 +11,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
 %	G = GP_G(W, GP, P, Y, PARAM) in case of sparse model takes also  
 %       string PARAM defining the parameters to take the gradients with 
 %       respect to. Possible parameters are 'hyper' = hyperparameters and 
-%      'inducing' = inducing inputs.
+%      'inducing' = inducing inputs, 'all' = all parameters.
 %
 %	[G, GDATA, GPRIOR] = GP_G(GP, X, Y) also returns separately  the
 %	data and prior contributions to the gradient.
@@ -28,7 +28,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
     
     ncf = length(gp.cf);
     n=length(x);
-    gp=gp_unpak(gp, w, param, varargin{:});       % unpak the parameters
+    gp=gp_unpak(gp, w, param);       % unpak the parameters
     
     g = [];
     gdata = [];
@@ -131,6 +131,11 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
             [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
             DKuu_u = DKuu_u + D1;
             DKuf_u = DKuf_u + D2;
+          case 'all'
+            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, DE_Kuu, DE_Kuf, 0.5*R);            
+            [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
+            DKuu_u = DKuu_u + D1;
+            DKuf_u = DKuf_u + D2;
           otherwise
             error('Unknown parameter to take the gradient with respect to! \n')
         end
@@ -152,6 +157,11 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
                 [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
                 DKuu_u = DKuu_u + D1;
                 DKuf_u = DKuf_u + D2;
+              case 'all'
+                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, DE_Kuu, DE_Kuf, 0.5*R);            
+                [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
+                DKuu_u = DKuu_u + D1;
+                DKuf_u = DKuf_u + D2;
             end
         end
     end
@@ -159,5 +169,8 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
       case 'inducing'
         % The prior gradient has to be implemented here, whenever the prior is defined
         g = DE_Kuu(:)'*DKuu_u + DE_Kuf(:)'*DKuf_u;
+      case 'all'
+        g2 = DE_Kuu(:)'*DKuu_u + DE_Kuf(:)'*DKuf_u;
+        g = [g g2];
     end
 end
