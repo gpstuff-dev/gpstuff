@@ -22,8 +22,10 @@ function gpcf = gpcf_noise(do, varargin)
 %                          (@gpcf_se_unpak)
 %         fh_e           = function handle to error function
 %                          (@gpcf_se_e)
-%         fh_g           = function handle to gradient function
-%                          (@gpcf_se_g)
+%         fh_ghyper      = function handle to gradient function (with respect to hyperparameters)
+%                          (@gpcf_se_ghyper)
+%         fh_gind        = function handle to gradient function (with respect to inducing inputs)
+%                          (@gpcf_se_gind)
 %         fh_cov         = function handle to covariance function
 %                          (@gpcf_se_cov)
 %         fh_trcov       = function handle to training covariance function
@@ -77,7 +79,8 @@ if strcmp(do, 'init')
   gpcf.fh_pak = @gpcf_noise_pak;
   gpcf.fh_unpak = @gpcf_noise_unpak;
   gpcf.fh_e = @gpcf_noise_e;
-  gpcf.fh_g = @gpcf_noise_g;
+  gpcf.fh_ghyper = @gpcf_noise_ghyper;
+  gpcf.fh_gind = @gpcf_noise_gind;
   gpcf.fh_cov = @gpcf_noise_cov;
   gpcf.fh_trcov  = @gpcf_noise_trcov;
   gpcf.fh_trvar  = @gpcf_noise_trvar;
@@ -213,8 +216,8 @@ eprior=eprior...
        -sum(log(gpcf.noiseSigmas2));
 
 
-function [g, gdata, gprior]  = gpcf_noise_g(gpcf, x, t, g, gdata, gprior, varargin)
-%GPCF_NOISE_G Evaluate gradient of error for NOISE covariance function.
+function [g, gdata, gprior]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
+%GPCF_NOISE_GHYPER Evaluate gradient of error for NOISE covariance function.
 %
 %	Description
 %	G = GPCF_NOISE_G(W, GPCF, X, T, invC, B) takes a gp hyper-parameter  
@@ -263,6 +266,26 @@ gprior(i1)=feval(gpp.noiseSigmas2.fg, ...
                  gpp.noiseSigmas2.a, 'x').*gpcf.noiseSigmas2-1;
 
 g = gdata + gprior;
+
+function [DKuu_u, DKuf_u]  = gpcf_noise_gind(gpcf, x, t, varargin)
+    %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
+    %                  with respect to inducing inputs.
+    %
+    %	Descriptioni
+    %	[DKuu_u, DKuf_u] = GPCF_SEXP_GIND(W, GPCF, X, T) 
+    %
+    %	See also
+    %
+
+    % Copyright (c) 1998-2001 Aki Vehtari
+    % Copyright (c) 2006      Jarno Vanhatalo
+        
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+    DKuu_u = 0;
+    DKuf_u = 0;
+
 
 function C = gpcf_noise_cov(gpcf, x1, x2)
 % GP_NOISE_COV     Evaluate covariance matrix between two input vectors. 

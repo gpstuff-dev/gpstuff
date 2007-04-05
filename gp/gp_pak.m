@@ -18,13 +18,9 @@ function w = gp_pak(gp, param)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-if nargin > 1   % Pak inducing inputs
-   % $$$ 
-% $$$ if isfield(gp, 'X_u')
-% $$$     w = [w gp.X_u(:)'];
-% $$$ end 
-    
-else
+
+switch param
+  case 'hyper'
     w=[];
     ncf = length(gp.cf);
     
@@ -41,4 +37,10 @@ else
         end
     end
     w = log(w);
+    
+  case 'inducing'    
+    w = gp.X_u(:)'
+    
+  otherwise
+    error('Unknown parameter to take the gradient with respect to! \n')
 end

@@ -149,7 +149,7 @@ for k=1:opt.nsamples
     if isfield(opt, 'hmc_opt')
         w = gp_pak(gp);
         hmc2('state',hmc_rstate)
-        [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, varargin{:});
+        [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'hyper', varargin{:});
         hmc_rstate=hmc2('state');
         rejects=rejects+diagnh.rej/opt.repeat;
         if isfield(diagnh, 'opt')
@@ -162,7 +162,7 @@ for k=1:opt.nsamples
     % ----------- Sample hyperparameters with SLS --------------------- 
     if isfield(opt, 'sls_opt')
         w = gp_pak(gp);
-        [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, varargin{:});
+        [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'hyper', varargin{:});
         if isfield(diagns, 'opt')
             opt.sls_opt = diagns.opt;
         end
@@ -172,16 +172,16 @@ for k=1:opt.nsamples
 
     % ----------- Sample inducing inputs with hmc  ------------ 
     if isfield(opt, 'inducing_opt')
-        w = gp_pak(gp);
+        w = gp.X_u(:)';
         hmc2('state',hmc_rstate)
-        [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'inducing', varargin{:});
+        [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'inducing');
         hmc_rstate=hmc2('state');
         rejects=rejects+diagnh.rej/opt.repeat;
         if isfield(diagnh, 'opt')
             opt.hmc_opt = diagnh.opt;
         end
         w=w(end,:);
-        gp = gp_unpak(gp, w);
+        gp.X_u = reshape(w, size(gp.X_u));
     end
 
     % ----------- Sample inducing inputs with some other method  ------------ 

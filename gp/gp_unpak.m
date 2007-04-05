@@ -1,4 +1,4 @@
-function gp = gp_unpak(gp, w)
+function gp = gp_unpak(gp, w, param)
 %GP_UNPAK  Separate GP hyper-parameter vector into components. 
 %
 %	Description
@@ -17,33 +17,32 @@ function gp = gp_unpak(gp, w)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-% $$$ if isfield(gp, 'X_u')
-% $$$     nu = size(gp.X_u,1);
-% $$$     lw = length(w);
-% $$$     gp.X_u = reshape(w(lw-nu*gp.nin+1:end), size(gp.X_u));
-% $$$         
-% $$$     w = w(1:lw-nu*gp.nin);
-% $$$ end
-
-
-w(w<-10)=-10;
-w(w>10)=10;
-w=exp(w);
-
-w1 = w;
-ncf = length(gp.cf);
-
-for i=1:ncf
-  gpcf = gp.cf{i};
-  [gpcf, w1] = feval(gpcf.fh_unpak, gpcf, w1);
-  gp.cf{i} = gpcf;
-end
-
-if isfield(gp, 'noise')
-  nn = length(gp.noise);
-  for i=1:nn
-    noise = gp.noise{i};
-    [noise, w1] = feval(noise.fh_unpak, noise, w1);
-    gp.noise{i} = noise;
-  end
+switch param
+  case 'hyper'
+    w(w<-10)=-10;
+    w(w>10)=10;
+    w=exp(w);
+    
+    w1 = w;
+    ncf = length(gp.cf);
+    
+    for i=1:ncf
+        gpcf = gp.cf{i};
+        [gpcf, w1] = feval(gpcf.fh_unpak, gpcf, w1);
+        gp.cf{i} = gpcf;
+    end
+    
+    if isfield(gp, 'noise')
+        nn = length(gp.noise);
+        for i=1:nn
+            noise = gp.noise{i};
+            [noise, w1] = feval(noise.fh_unpak, noise, w1);
+            gp.noise{i} = noise;
+        end
+    end
+    
+  case 'inducing'    
+    gp.X_u = reshape(w, size(gp.X_u));    
+  otherwise
+    error('Unknown parameter to take the gradient with respect to! \n')
 end

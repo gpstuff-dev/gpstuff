@@ -23,8 +23,10 @@ function gpcf = gpcf_sexp(do, varargin)
 %                          (@gpcf_sexp_unpak)
 %         fh_e           = function handle to error function
 %                          (@gpcf_sexp_e)
-%         fh_g           = function handle to gradient function
-%                          (@gpcf_sexp_g)
+%         fh_ghyper      = function handle to gradient function (with respect to hyperparameters)
+%                          (@gpcf_sexp_ghyper)
+%         fh_gind        = function handle to gradient function (with respect to inducing inputs)
+%                          (@gpcf_sexp_gind)
 %         fh_cov         = function handle to covariance function
 %                          (@gpcf_sexp_cov)
 %         fh_trcov       = function handle to training covariance function
@@ -78,7 +80,8 @@ function gpcf = gpcf_sexp(do, varargin)
         gpcf.fh_pak = @gpcf_sexp_pak;
         gpcf.fh_unpak = @gpcf_sexp_unpak;
         gpcf.fh_e = @gpcf_sexp_e;
-        gpcf.fh_g = @gpcf_sexp_g;
+        gpcf.fh_ghyper = @gpcf_sexp_ghyper;
+        gpcf.fh_gind = @gpcf_sexp_gind;
         gpcf.fh_cov = @gpcf_sexp_cov;
         gpcf.fh_trcov  = @gpcf_sexp_trcov;
         gpcf.fh_trvar  = @gpcf_sexp_trvar;
@@ -271,17 +274,18 @@ function gpcf = gpcf_sexp(do, varargin)
         e_e = eprior;
     end
     
-    function [g, gdata, gprior]  = gpcf_sexp_g(gpcf, x, t, g, gdata, gprior, varargin)
-    %GPCF_SEXP_G Evaluate gradient of error for SE covariance function.
+    function [g, gdata, gprior]  = gpcf_sexp_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
+    %GPCF_SEXP_GHYPER     Evaluate gradient of error for SE covariance function
+    %                     with respect to hyperparameters.
     %
     %	Descriptioni
-    %	G = GPCF_SEXP_G(W, GPCF, X, T, invC, B) takes a gp hyper-parameter  
+    %	G = GPCF_SEXP_GHYPER(W, GPCF, X, T, invC, B) takes a gp hyper-parameter  
     %       vector W, data structure GPCF a matrix X of input vectors a matrix T
     %       of target vectors, inverse covariance function invC and B(=invC*t), 
     %	and evaluates the error gradient G. Each row of X corresponds to one 
     %       input vector and each row of T corresponds to one target vector.
     %
-    %	[G, GDATA, GPRIOR] = GPCF_SEXP_G(GP, P, T) also returns separately  the
+    %	[G, GDATA, GPRIOR] = GPCF_SEXP_GHYPER(GP, P, T) also returns separately  the
     %	data and prior contributions to the gradient.
     %
     %	See also
@@ -451,6 +455,65 @@ function gpcf = gpcf_sexp(do, varargin)
     end
     
     
+    function [DKuu_u, DKuf_u]  = gpcf_sexp_gind(gpcf, x, t, varargin)
+    %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
+    %                  with respect to inducing inputs.
+    %
+    %	Descriptioni
+    %	[DKuu_u, DKuf_u] = GPCF_SEXP_GIND(W, GPCF, X, T) 
+    %
+    %	See also
+    %
+
+    % Copyright (c) 1998-2001 Aki Vehtari
+    % Copyright (c) 2006      Jarno Vanhatalo
+        
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+        
+        gpp=gpcf.p;
+        [n, m] =size(x);
+                
+        % First check if sparse model is used
+        switch gpcf.type
+           case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+            % Evaluate the help matrices for the gradient evaluation (see
+            % gpcf_sexp_trcov)
+
+            u = gpcf.X_u;
+            n_u = size(u,1);
+            
+            % Derivatives of K_uu and K_uf with respect to inducing inputs
+            K_uu = gpcf_sexp_trcov(gpcf, u);
+            K_uf = gpcf_sexp_cov(gpcf, u, x);
+            
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic SEXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+            for i=1:m
+                for j = 1:size(u,1)
+                    dist = zeros(size(u,1),n);
+                    dist2 = zeros(size(K_uu));
+
+                    dist(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
+                    dist2(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
+                    dist2 = dist2 - dist2';
+                    
+                    dist = dist.*K_uf;
+                    dist2 = dist2.*K_uu;
+                    
+                    DKuf_u(:,j+(i-1)*n_u) = dist(:);         % Matrix of size uf x mu
+                    DKuu_u(:,j+(i-1)*n_u) = dist2(:);        % Matrix of size uu x mu
+                end
+            end
+        end
+    end
+    
+    
     function C = gpcf_sexp_cov(gpcf, x1, x2)
     % GP_SEXP_COV     Evaluate covariance matrix between two input vectors. 
     %
@@ -499,10 +562,10 @@ function gpcf = gpcf_sexp(do, varargin)
                 dist=zeros(n1,n2);
                 for j=1:m1
                     dd = gminus(x1(:,j),x2(:,j)');
-                    dist = dist + dd.^2*s(:,j);
+                    dist = dist + dd.^2.*s(:,j);
                 end
             end
-            C = ma2*exp(-dist);
+            C = ma2.*exp(-dist);
         end
         cov_x1=x1;
         cov_x2=x2;
