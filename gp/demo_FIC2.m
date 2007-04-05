@@ -43,7 +43,7 @@ gp = gp_init('set', gp, 'X_u', U);
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
 w=gp_pak(gp, 'hyper');
-w=randn(size(gp_pak(gp, 'all')))*0.01;
+%w=randn(size(gp_pak(gp, 'all')))*0.01;
 
 fe=str2fun('gp_e');
 fg=str2fun('gp_g');
@@ -58,9 +58,9 @@ optes.tolx=1e-1;
 % do scaled conjugate gradient optimization with early stopping.
 % First for hyperparameters
 [w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'hyper', gp,x(its,:), y(its,:), 'hyper');
-[w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'all', gp,x(its,:), y(its,:), 'all');
-lambda
-gp=gp_unpak(gp,w, 'all');
+gp=gp_unpak(gp,w, 'hyper');
+%[w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'all', gp,x(its,:), y(its,:), 'all');
+%gp=gp_unpak(gp,w, 'all');
 
 figure
 hold on
@@ -92,7 +92,7 @@ opt.hmc_opt.stepadj=0.01;
 opt.hmc_opt.nsamples=1;
 opt.hmc_opt.window=1;
 
-opt.inducing_opt.steps=5;
+opt.inducing_opt.steps=4;
 opt.inducing_opt.stepadj=0.001;
 opt.inducing_opt.nsamples=1;
 opt.inducing_opt.window=1;
@@ -101,6 +101,7 @@ opt.inducing_opt.persistence =0;
 % Sample sparse model
 t = cputime;
 [r,g,opt]=gp_mc(opt, gp, x, y);
+[r,g,opt]=gp_mc(opt, gp, x, y, [], [], r);
 tsparse = cputime - t;
 
 rr = thin(r,5,2)
