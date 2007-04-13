@@ -23,7 +23,7 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -31,7 +31,12 @@ gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1)    
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1)    
+
+w=gp_pak(gp, 'hyper');
+gp_e(w, gp, x, y, 'hyper')    % answer 370.9230
+
+
 
 % Set the sampling options
 opt=gp_mcopt;

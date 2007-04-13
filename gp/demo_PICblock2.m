@@ -22,7 +22,11 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -31,12 +35,49 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'sparse', 'FIC', 'jitterSigmas', 1);
-U = x(1:4:end,:);
+gp = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1);
+
+% Set the inducing inputs
+[u1,u2]=meshgrid(linspace(-1.8,1.8,5),linspace(-1.8,1.8,4));
+U=[u1(:) u2(:)];
+%U = 3.6.*rand(14,2)-1.8;
+
+% define the blocks by cubes
+b1 = [-1.9 -0.95 0 0.95 1.9];
+mask = zeros(size(x,1),size(x,1));
+for i1=1:4
+    for i2=1:4
+        ind = 1:size(x,1);
+        ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
+        ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));        
+        index{4*(i1-1)+i2} = ind';
+        mask(ind,ind) = 1;
+    end
+end
+% plot the data points in each block with different colors and marks
+col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
+hold on
+for i=1:16
+    plot(x(index{i},1),x(index{i},2),col{i})
+end
+for i=1:size(x,1);
+    index{i} = i;
+end
+% For testing
+mask = eye(size(x,1),size(x,1));
+
+
+gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x, index});
+gp.mask = mask;
+
 
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
-w=randn(size(gp_pak(gp)))*0.01;
+w=gp_pak(gp, 'hyper');
+gp_e(w, gp, x, y, 'hyper')
+%w=randn(size(gp_pak(gp, 'all')))*0.01;
+
+
 
 fe=str2fun('gp_e');
 fg=str2fun('gp_g');

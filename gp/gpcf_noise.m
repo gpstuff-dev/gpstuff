@@ -256,9 +256,16 @@ switch gpcf.type
     C=b'*b;    
     
     gdata(i1)=0.5.*D.*(B - C); 
-  case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+  case 'FIC'       % NOTE! Here noiseSigmas2 is different from the beta used by Neill! 
+                   % This affects that the derivative is also slightly different.
     R =varargin{3};
     gdata(i1) = D.*sum(R);
+  case {'PIC_BLOCK', 'PIC_BAND'}
+    R =varargin{3};
+    gdata(i1)=0;
+    for i=1:length(R)
+        gdata(i1) = gdata(i1) + D.*trace(R{i});
+    end
 end
 
 gprior(i1)=feval(gpp.noiseSigmas2.fg, ...

@@ -43,6 +43,7 @@ gp = gp_init('set', gp, 'X_u', U);
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
 w=gp_pak(gp, 'hyper');
+gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 
 %w=randn(size(gp_pak(gp, 'all')))*0.01;
 
 fe=str2fun('gp_e');

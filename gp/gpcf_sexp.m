@@ -342,7 +342,7 @@ function gpcf = gpcf_sexp(do, varargin)
             Bdm = b'*(Cdm*b);
             Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
             
-          case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+          case 'FIC' 
             % Evaluate the help matrices for the gradient evaluation (see
             % gpcf_sexp_trcov)
             
@@ -388,6 +388,73 @@ function gpcf = gpcf_sexp(do, varargin)
                     DKuu_l(:,i) = dist2(:);        % Matrix of size uu x m
                 end
             end
+          case {'PIC_BLOCK', 'PIC_BAND'}
+            % Evaluate the help matrices for the gradient evaluation (see
+            % gpcf_sexp_trcov)
+            
+            DE_Kuu = varargin{1};             % u x u
+            DE_Kuf = varargin{2};             % u x f
+            DE_Kff = varargin{3};             % mask(R, M) (block/band) diagonal
+            
+            u = gpcf.X_u;
+            ind=gpcf.tr_index;
+            
+            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
+            % NOTE! Here we have already taken into account that the parameters are transformed 
+            % through log() and thus dK/dlog(p) = p * dK/dp
+            K_uu = gpcf_sexp_trcov(gpcf, u);
+            K_uf = gpcf_sexp_cov(gpcf, u, x);
+            for i=1:length(ind)
+                K_ff{i} = gpcf_sexp_trcov(gpcf, x(ind{i},:));
+            end
+            
+            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic SEXP
+                s = 1./gpcf.lengthScale.^2;
+                dist = 0;
+                dist2 = 0;
+                for j=1:length(ind)
+                    dist3{j} = zeros(size(ind{j}));
+                end
+                for i=1:m
+                    D = gminus(u(:,i),x(:,i)');
+                    D2= gminus(u(:,i),u(:,i)');
+                    dist = dist + D.^2;
+                    dist2 = dist2 + D2.^2;
+                    for j=1:length(ind)
+                        D3= gminus(x(ind{j},i),x(ind{j},i)');
+                        dist3{j} = dist3{j} + D3.^2;
+                    end
+                end
+                dist = 2.*s.*K_uf.*dist;
+                dist2 = 2.*s.*K_uu.*dist2;
+                DKuf_l = dist(:);
+                DKuu_l = dist2(:);
+                for j=1:length(ind)
+                    dist3{j} = 2.*s.*K_ff{j}.*dist3{j};
+                    DKff_l{j} = dist3{j}(:);
+                end
+            else
+                % In the case ARD is used
+                for i=1:m  
+                    s = 1./gpcf.lengthScale(i).^2;        % set the length
+                    dist = gminus(u(:,i),x(:,i)');
+                    dist2 = gminus(u(:,i),u(:,i)');
+                    dist = 2.*s.*K_uf.*dist.^2;
+                    dist2 = 2.*s.*K_uu.*dist2.^2;
+                    for j=1:length(ind)
+                        dist3{j} = gminus(x(ind{j},i),x(ind{j},i)');
+                        dist3{j} = 2.*s.*K_ff{j}.*dist3{j}.^2;
+                    end
+                    
+                    DKuf_l(:,i) = dist(:);         % Matrix of size uf x m
+                    DKuu_l(:,i) = dist2(:);        % Matrix of size uu x m
+                    for j=1:length(ind)
+                        DKff_l{j}(:,i) = dist3{j}(:);
+                    end
+                end
+            end
         end
 
         % Evaluate the gdata and gprior with respect to magnSigma2
@@ -398,7 +465,10 @@ function gpcf = gpcf_sexp(do, varargin)
           case 'FIC'
             gdata(i1) = DE_Kuu(:)'*K_uu(:) + DE_Kuf(:)'*K_uf(:) + gpcf.magnSigma2.*sum(DE_Kff);
           case {'PIC_BLOCK', 'PIC_BAND'}
-            
+            gdata(i1) = DE_Kuu(:)'*K_uu(:) + DE_Kuf(:)'*K_uf(:);
+            for i=1:length(DE_Kff)
+               gdata(i1) = gdata(i1) + DE_Kff{i}(:)'*K_ff{i}(:);
+            end
         end
         gprior(i1)=feval(gpp.magnSigma2.fg, ...
                          gpcf.magnSigma2, ...
@@ -431,8 +501,13 @@ function gpcf = gpcf_sexp(do, varargin)
                 switch gpcf.type
                   case 'FULL'
                     gdata(i1)=0.5.*(Cdl(i2) - Bdl(i2));
-                  case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+                  case 'FIC'
                     gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
+                  case {'PIC_BLOCK', 'PIC_BAND'}
+                    gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
+                    for j=1:length(ind)
+                        gdata(i1) =  gdata(i1) + DE_Kff{j}(:)'*DKff_l{j}(:,i2);
+                    end
                 end
                 gprior(i1)=feval(gpp.lengthScale.fg, ...
                                  gpcf.lengthScale(i2), ...
@@ -443,8 +518,13 @@ function gpcf = gpcf_sexp(do, varargin)
             switch gpcf.type
               case 'FULL'
                 gdata(i1)=0.5.*(Cdl - Bdl);
-              case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+              case 'FIC' 
                 gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
+              case {'PIC_BLOCK', 'PIC_BAND'}
+                gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
+                for j=1:length(ind)
+                    gdata(i1) =  gdata(i1) + DE_Kff{j}(:)'*DKff_l{j}(:);
+                end
             end
             gprior(i1)=feval(gpp.lengthScale.fg, ...
                              gpcf.lengthScale, ...
@@ -501,8 +581,8 @@ function gpcf = gpcf_sexp(do, varargin)
 
                     dist(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
                     dist2(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
-                    dist2 = dist2 - dist2';
-                    
+                    dist2 = dist2 + dist2';
+                                        
                     dist = dist.*K_uf;
                     dist2 = dist2.*K_uu;
                     
