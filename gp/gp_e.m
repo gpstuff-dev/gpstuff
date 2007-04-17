@@ -116,7 +116,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
                 Qbl_ff = B(:,ind{i})'*B(:,ind{i});
                 [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
                 Labl{i} = Cbl_ff - Qbl_ff;
-                iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
+                iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
                 edata = edata + 2*sum(log(diag(chol(Labl{i})))) + t(ind{i},:)'*(Labl{i}\t(ind{i},:));
             end
             % The data contribution to the error is 

@@ -124,14 +124,14 @@ if opt.display
     if isfield(opt, 'sls_opt')
         fprintf('slsrej  ');
     end
+    if isfield(opt,'inducing_opt')
+        fprintf('indrej     ')              % rejection rate of latent value sampling
+    end
     if isfield(opt,'latent_opt')
         fprintf('lrej ')              % rejection rate of latent value sampling
         if isfield(opt.latent_opt, 'sample_latent_scale') 
             fprintf('    lvScale    ')
         end
-    end
-    if isfield(opt,'inducing_opt')
-        fprintf('indrej     ')              % rejection rate of latent value sampling
     end
     fprintf('\n');
 end

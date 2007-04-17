@@ -57,6 +57,9 @@ if isfield(gp, 'noise')
     end
 end
 
+
+
 % Function for unpacking the inducing inputs
 function gp = unpak_inducing(w, gp)
 gp.X_u = reshape(w, size(gp.X_u));
+

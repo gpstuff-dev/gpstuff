@@ -48,9 +48,8 @@ function gpcf = gpcf_sexp(do, varargin)
 %
 %
 
-% Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2006-2007 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -85,8 +84,6 @@ function gpcf = gpcf_sexp(do, varargin)
         gpcf.fh_cov = @gpcf_sexp_cov;
         gpcf.fh_trcov  = @gpcf_sexp_trcov;
         gpcf.fh_trvar  = @gpcf_sexp_trvar;
-        %  gpcf.fh_sampling = @hmc2;
-        %  gpcf.sampling_opt = hmc2_opt;
         gpcf.fh_recappend = @gpcf_sexp_recappend;
         
         if length(varargin) > 1
@@ -276,14 +273,14 @@ function gpcf = gpcf_sexp(do, varargin)
     
     function [g, gdata, gprior]  = gpcf_sexp_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
     %GPCF_SEXP_GHYPER     Evaluate gradient of error for SE covariance function
-    %                     with respect to hyperparameters.
+    %                     with respect to the hyperparameters.
     %
     %	Descriptioni
-    %	G = GPCF_SEXP_GHYPER(W, GPCF, X, T, invC, B) takes a gp hyper-parameter  
-    %       vector W, data structure GPCF a matrix X of input vectors a matrix T
-    %       of target vectors, inverse covariance function invC and B(=invC*t), 
+    %	G = GPCF_SEXP_GHYPER(W, GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) takes a gp 
+    %   hyper-parameter vector W, data structure GPCF a matrix X of input vectors a 
+    %   matrix T of target vectors, inverse covariance function , 
     %	and evaluates the error gradient G. Each row of X corresponds to one 
-    %       input vector and each row of T corresponds to one target vector.
+    %   input vector and each row of T corresponds to one target vector.
     %
     %	[G, GDATA, GPRIOR] = GPCF_SEXP_GHYPER(GP, P, T) also returns separately  the
     %	data and prior contributions to the gradient.
@@ -402,10 +399,10 @@ function gpcf = gpcf_sexp(do, varargin)
             % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
             % NOTE! Here we have already taken into account that the parameters are transformed 
             % through log() and thus dK/dlog(p) = p * dK/dp
-            K_uu = gpcf_sexp_trcov(gpcf, u);
-            K_uf = gpcf_sexp_cov(gpcf, u, x);
+            K_uu = feval(gpcf.fh_trcov, gpcf, u); 
+            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
             for i=1:length(ind)
-                K_ff{i} = gpcf_sexp_trcov(gpcf, x(ind{i},:));
+                K_ff{i} = gpcf_exp_trcov(gpcf, x(ind{i},:));
             end
             
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
@@ -444,15 +441,13 @@ function gpcf = gpcf_sexp(do, varargin)
                     dist = 2.*s.*K_uf.*dist.^2;
                     dist2 = 2.*s.*K_uu.*dist2.^2;
                     for j=1:length(ind)
-                        dist3{j} = gminus(x(ind{j},i),x(ind{j},i)');
-                        dist3{j} = 2.*s.*K_ff{j}.*dist3{j}.^2;
+                        dist3 = gminus(x(ind{j},i),x(ind{j},i)');
+                        dist3 = 2.*s.*K_ff{j}.*dist3.^2;
+                        DKff_l{j}(:,i) = dist3(:);
                     end
                     
                     DKuf_l(:,i) = dist(:);         % Matrix of size uf x m
                     DKuu_l(:,i) = dist2(:);        % Matrix of size uu x m
-                    for j=1:length(ind)
-                        DKff_l{j}(:,i) = dist3{j}(:);
-                    end
                 end
             end
         end
@@ -505,8 +500,8 @@ function gpcf = gpcf_sexp(do, varargin)
                     gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
                   case {'PIC_BLOCK', 'PIC_BAND'}
                     gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
-                    for j=1:length(ind)
-                        gdata(i1) =  gdata(i1) + DE_Kff{j}(:)'*DKff_l{j}(:,i2);
+                    for i=1:length(ind)
+                        gdata(i1) =  gdata(i1) + DE_Kff{i}(:)'*DKff_l{i}(:,i2);
                     end
                 end
                 gprior(i1)=feval(gpp.lengthScale.fg, ...
@@ -522,8 +517,8 @@ function gpcf = gpcf_sexp(do, varargin)
                 gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
               case {'PIC_BLOCK', 'PIC_BAND'}
                 gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
-                for j=1:length(ind)
-                    gdata(i1) =  gdata(i1) + DE_Kff{j}(:)'*DKff_l{j}(:);
+                for i=1:length(ind)
+                    gdata(i1) =  gdata(i1) + DE_Kff{i}(:)'*DKff_l{i}(:);
                 end
             end
             gprior(i1)=feval(gpp.lengthScale.fg, ...
@@ -565,8 +560,8 @@ function gpcf = gpcf_sexp(do, varargin)
             n_u = size(u,1);
             
             % Derivatives of K_uu and K_uf with respect to inducing inputs
-            K_uu = gpcf_sexp_trcov(gpcf, u);
-            K_uf = gpcf_sexp_cov(gpcf, u, x);
+            K_uu = feval(gpcf.fh_trcov, gpcf, u);
+            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
             
             if length(gpcf.lengthScale) == 1
                 % In the case of an isotropic SEXP
@@ -578,7 +573,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 for j = 1:size(u,1)
                     dist = zeros(size(u,1),n);
                     dist2 = zeros(size(K_uu));
-
+                    
                     dist(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
                     dist2(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
                     dist2 = dist2 + dist2';

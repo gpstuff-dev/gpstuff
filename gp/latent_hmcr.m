@@ -215,7 +215,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
             end        
             [V,S2]= eig(b'*b);
             S = sqrt(S2);
-            U = b*V/S;
+            U = b*(V/S);
             U(abs(U)<eps)=0;
             %        J = diag(sqrt(diag(S2) + 0.01^2));
             J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 

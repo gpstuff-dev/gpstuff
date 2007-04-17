@@ -25,10 +25,9 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
         
-    
+    gp=gp_unpak(gp, w, param);       % unpak the parameters
     ncf = length(gp.cf);
     n=length(x);
-    gp=gp_unpak(gp, w, param);       % unpak the parameters
     
     g = [];
     gdata = [];
@@ -149,6 +148,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         % A = chol(K_uu+K_uf*inv(La)*K_fu))
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;               % Ensure symmetry
+
         b = (t'*iLaKfu)*inv(A);
         C = inv(A) + b'*b;
         C = (C+C')/2;
@@ -170,7 +170,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
             iLaKfubt = (iLaKfu(ind{i},:)*b');
             R{i} = inv(Labl{i}) - iLat*iLat' + 2.*iLaKfubt*iLat' -  iLaKfu(ind{i},:)*C*iLaKfu(ind{i},:)';
             % iKuuKufR = inv(K_uu)*K_uf*R
-            iKuuKufR(:,ind{i}) = iKuuKuf(:,ind{i})*R{i};  % f x u  
+            iKuuKufR(:,ind{i}) = iKuuKuf(:,ind{i}')*R{i};  % u x f  
             DE_Kuf(:,ind{i}) = b'*(t(ind{i},:)'/Labl{i});
         end
                 
@@ -187,9 +187,6 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
       case 'PIC_BAND'
         % Do nothing
     end
-    
-    
-    
     
     % =================================================================
     % Evaluate the gradients from covariance functions

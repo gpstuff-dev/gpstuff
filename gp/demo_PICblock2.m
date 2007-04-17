@@ -23,8 +23,8 @@ y = data(:,3);
 
 % Create covariance functions
 %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
@@ -63,6 +63,8 @@ end
 for i=1:size(x,1);
     index{i} = i;
 end
+index = {[1:122]' [123:225]'}
+index = {[1:225]}'
 % For testing
 mask = eye(size(x,1),size(x,1));
 
@@ -74,7 +76,7 @@ gp.mask = mask;
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
 w=gp_pak(gp, 'hyper');
-gp_e(w, gp, x, y, 'hyper')
+gp_e(w, gp, x, y, 'hyper')          % with all 370.9320
 %w=randn(size(gp_pak(gp, 'all')))*0.01;
 
 
