@@ -2,16 +2,13 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
 %GP2_E	Evaluate error function for Gaussian Process.
 %
 %	Description
-%	E = GP_E(W, GP, P, T) takes a gp data structure GP together
+%	E = GP_E(W, GP, P, T, PARAM) takes a gp data structure GP together
 %	with a matrix P of input vectors and a matrix T of target vectors,
 %	and evaluates the error function E.  Each row of P
 %	corresponds to one input vector and each row of T corresponds to one
 %	target vector.
 %
-%	E = GP_E(W, GP, P, T, U) in case of sparse model takes also inducing 
-%       points U
-%
-%	[E, EDATA, EPRIOR] = GP2R_E(W, GP, P, T) also returns the data and
+%	[E, EDATA, EPRIOR] = GP2R_E(W, GP, P, T, PARAM) also returns the data and
 %	prior components of the total error.
 %
 %	See also

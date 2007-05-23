@@ -326,9 +326,10 @@ function gpcf = gpcf_matern32(do, varargin)
             % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
             % Cdm and invC are symmetric matricess of same size. This is 67 times faster 
             % with n=215 
+            invC = varargin{1};           
             Cdm = gpcf_matern32_trcov(gpcf, x);
             invCv=invC(:);
-            b = varargin{1};
+            b = varargin{2};
             ma2 = gpcf.magnSigma2;
             % loop over all the lengthScales
             if length(gpcf.lengthScale) == 1
@@ -562,9 +563,9 @@ function gpcf = gpcf_matern32(do, varargin)
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
         
-        if issame(cov_x1,x1) && issame(cov_x2,x2) && issame(cov_ls,gpcf.lengthScale) && issame(cov_ms,gpcf.magnSigma2)
-            C = cov_C;
-        else
+% $$$         if issame(cov_x1,x1) && issame(cov_x2,x2) && issame(cov_ls,gpcf.lengthScale) && issame(cov_ms,gpcf.magnSigma2)
+% $$$             C = cov_C;
+% $$$         else
             
             if isempty(x2)
                 x2=x1;
@@ -605,7 +606,7 @@ function gpcf = gpcf_matern32(do, varargin)
             cov_ls=gpcf.lengthScale;
             cov_ms=gpcf.magnSigma2;
             cov_C=C;
-        end
+% $$$         end
     end
 
     function C = gpcf_matern32_trcov(gpcf, x)
@@ -628,40 +629,40 @@ function gpcf = gpcf_matern32(do, varargin)
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
         
-        if issame(trcov_x,x) && issame(trcov_ls,gpcf.lengthScale) && issame(trcov_ms,gpcf.magnSigma2)
-            C = trcov_C;
-        else
-            [n, m] =size(x);
-            
-            s = 1./(gpcf.lengthScale);
-            s2 = s.^2;
-            if size(s)==1
-                s2 = repmat(s2,1,m);
-            end
-            ma2 = gpcf.magnSigma2;
-            
-            % Here we take advantage of the 
-            % symmetry of covariance matrix
-            C=zeros(n,n);
-            for i1=2:n
-                i1n=(i1-1)*n;
-                for i2=1:i1-1
-                    ii=i1+(i2-1)*n;
-                    for i3=1:m
-                        C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-                    end
-                    C(i1n+i2)=C(ii); 
-                end
-            end
-            dist = sqrt(C);
-            C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-            C(C<eps)=0;
-            
-            trcov_x=x;
-            trcov_ls=gpcf.lengthScale;
-            trcov_ms=gpcf.magnSigma2;
-            trcov_C=C;
+    % $$$         if issame(trcov_x,x) && issame(trcov_ls,gpcf.lengthScale) && issame(trcov_ms,gpcf.magnSigma2)
+    % $$$             C = trcov_C;
+    % $$$         else
+        [n, m] =size(x);
+        
+        s = 1./(gpcf.lengthScale);
+        s2 = s.^2;
+        if size(s)==1
+            s2 = repmat(s2,1,m);
         end
+        ma2 = gpcf.magnSigma2;
+        
+        % Here we take advantage of the 
+        % symmetry of covariance matrix
+        C=zeros(n,n);
+        for i1=2:n
+            i1n=(i1-1)*n;
+            for i2=1:i1-1
+                ii=i1+(i2-1)*n;
+                for i3=1:m
+                    C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+                end
+                C(i1n+i2)=C(ii); 
+            end
+        end
+        dist = sqrt(C);
+        C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+        C(C<eps)=0;
+        
+        trcov_x=x;
+        trcov_ls=gpcf.lengthScale;
+        trcov_ms=gpcf.magnSigma2;
+        trcov_C=C;
+    % $$$         end
     end
     
     function C = gpcf_matern32_trvar(gpcf, x)

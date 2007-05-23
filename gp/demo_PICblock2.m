@@ -13,6 +13,9 @@ function demo_PICblock2
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+% gp_e(gp_pak(gp,'hyper'), gp,x,y,'hyper')
+% gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
+
 % Load the data
 S = which('demo_gpregr');
 L = strrep(S,'demo_gpregr.m','demos/dat.1');

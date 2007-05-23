@@ -325,9 +325,10 @@ function gpcf = gpcf_matern52(do, varargin)
             % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
             % Cdm and invC are symmetric matricess of same size. This is 67 times faster 
             % with n=215 
+            invC = varargin{1};
             Cdm = gpcf_matern52_trcov(gpcf, x);
             invCv=invC(:);
-            b = varargin{1};
+            b = varargin{2};
             ma2 = gpcf.magnSigma2;
             % loop over all the lengthScales
             if length(gpcf.lengthScale) == 1
@@ -571,50 +572,50 @@ function gpcf = gpcf_matern52(do, varargin)
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
         
-        if issame(cov_x1,x1) && issame(cov_x2,x2) && issame(cov_ls,gpcf.lengthScale) && issame(cov_ms,gpcf.magnSigma2)
-            C = cov_C;
-        else
-            
-            if isempty(x2)
-                x2=x1;
-            end
-            [n1,m1]=size(x1);
-            [n2,m2]=size(x2);
-            
-            if m1~=m2
-                error('the number of columns of X1 and X2 has to be same')
-            end
-            
-            C=zeros(n1,n2);
-            ma2 = gpcf.magnSigma2;
-            
-            % Evaluate the covariance
-            if ~isempty(gpcf.lengthScale)  
-                s = 1./gpcf.lengthScale;
-                s2 = s.^2;
-                if m1==1 && m2==1
-                    dist = s.*abs(gminus(x1,x2'));
-                else
-                    % If ARD is not used make s a vector of 
-                    % equal elements 
-                    if size(s)==1
-                        s2 = repmat(s2,1,m1);
-                    end
-                    dist2=zeros(n1,n2);
-                    for j=1:m1
-                        dist2 = dist2 + s2(:,j).*(gminus(x1(:,j),x2(:,j)')).^2;
-                    end
-                end
-                dist = sqrt(5.*dist2);
-                C = ma2.*(1 + dist + 5.*dist2./3).*exp(-dist);
-            end
-            C(C<eps)=0;
-            cov_x1=x1;
-            cov_x2=x2;
-            cov_ls=gpcf.lengthScale;
-            cov_ms=gpcf.magnSigma2;
-            cov_C=C;
+    % $$$         if issame(cov_x1,x1) && issame(cov_x2,x2) && issame(cov_ls,gpcf.lengthScale) && issame(cov_ms,gpcf.magnSigma2)
+    % $$$             C = cov_C;
+    % $$$         else
+        
+        if isempty(x2)
+            x2=x1;
         end
+        [n1,m1]=size(x1);
+        [n2,m2]=size(x2);
+        
+        if m1~=m2
+            error('the number of columns of X1 and X2 has to be same')
+        end
+        
+        C=zeros(n1,n2);
+        ma2 = gpcf.magnSigma2;
+        
+        % Evaluate the covariance
+        if ~isempty(gpcf.lengthScale)  
+            s = 1./gpcf.lengthScale;
+            s2 = s.^2;
+            if m1==1 && m2==1
+                dist = s.*abs(gminus(x1,x2'));
+            else
+                % If ARD is not used make s a vector of 
+                % equal elements 
+                if size(s)==1
+                    s2 = repmat(s2,1,m1);
+                end
+                dist2=zeros(n1,n2);
+                for j=1:m1
+                    dist2 = dist2 + s2(:,j).*(gminus(x1(:,j),x2(:,j)')).^2;
+                end
+            end
+            dist = sqrt(5.*dist2);
+            C = ma2.*(1 + dist + 5.*dist2./3).*exp(-dist);
+        end
+        C(C<eps)=0;
+        cov_x1=x1;
+        cov_x2=x2;
+        cov_ls=gpcf.lengthScale;
+        cov_ms=gpcf.magnSigma2;
+        cov_C=C;
+    % $$$         end
     end
 
     function C = gpcf_matern52_trcov(gpcf, x)
@@ -637,40 +638,40 @@ function gpcf = gpcf_matern52(do, varargin)
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
         
-        if issame(trcov_x,x) && issame(trcov_ls,gpcf.lengthScale) && issame(trcov_ms,gpcf.magnSigma2)
-            C = trcov_C;
-        else
-            [n, m] =size(x);
-            
-            s = 1./(gpcf.lengthScale);
-            s2 = s.^2;
-            if size(s)==1
-                s2 = repmat(s2,1,m);
-            end
-            ma2 = gpcf.magnSigma2;
-            
-            % Here we take advantage of the 
-            % symmetry of covariance matrix
-            C=zeros(n,n);
-            for i1=2:n
-                i1n=(i1-1)*n;
-                for i2=1:i1-1
-                    ii=i1+(i2-1)*n;
-                    for i3=1:m
-                        C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-                    end
-                    C(i1n+i2)=C(ii); 
-                end
-            end
-            dist = sqrt(5.*C);
-            C = ma2.*(1 + dist + 5.*C./3).*exp(-dist);
-            C(C<eps)=0;
-            
-            trcov_x=x;
-            trcov_ls=gpcf.lengthScale;
-            trcov_ms=gpcf.magnSigma2;
-            trcov_C=C;
+    % $$$         if issame(trcov_x,x) && issame(trcov_ls,gpcf.lengthScale) && issame(trcov_ms,gpcf.magnSigma2)
+    % $$$             C = trcov_C;
+    % $$$         else
+        [n, m] =size(x);
+        
+        s = 1./(gpcf.lengthScale);
+        s2 = s.^2;
+        if size(s)==1
+            s2 = repmat(s2,1,m);
         end
+        ma2 = gpcf.magnSigma2;
+        
+        % Here we take advantage of the 
+        % symmetry of covariance matrix
+        C=zeros(n,n);
+        for i1=2:n
+            i1n=(i1-1)*n;
+            for i2=1:i1-1
+                ii=i1+(i2-1)*n;
+                for i3=1:m
+                    C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+                end
+                C(i1n+i2)=C(ii); 
+            end
+        end
+        dist = sqrt(5.*C);
+        C = ma2.*(1 + dist + 5.*C./3).*exp(-dist);
+        C(C<eps)=0;
+        
+        trcov_x=x;
+        trcov_ls=gpcf.lengthScale;
+        trcov_ms=gpcf.magnSigma2;
+        trcov_C=C;
+    % $$$         end
     end
 
     function C = gpcf_matern52_trvar(gpcf, x)

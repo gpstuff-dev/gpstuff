@@ -402,7 +402,7 @@ function gpcf = gpcf_sexp(do, varargin)
             K_uu = feval(gpcf.fh_trcov, gpcf, u); 
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
             for i=1:length(ind)
-                K_ff{i} = gpcf_exp_trcov(gpcf, x(ind{i},:));
+                K_ff{i} = gpcf_sexp_trcov(gpcf, x(ind{i},:));
             end
             
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
@@ -412,7 +412,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 dist = 0;
                 dist2 = 0;
                 for j=1:length(ind)
-                    dist3{j} = zeros(size(ind{j}));
+                    dist3{j} = zeros(size(ind{j},1),size(ind{j},1));
                 end
                 for i=1:m
                     D = gminus(u(:,i),x(:,i)');
@@ -580,6 +580,7 @@ function gpcf = gpcf_sexp(do, varargin)
                                         
                     dist = dist.*K_uf;
                     dist2 = dist2.*K_uu;
+                    %                    dist2 = dist2 + dist2' - diag(diag(dist2));                    
                     
                     DKuf_u(:,j+(i-1)*n_u) = dist(:);         % Matrix of size uf x mu
                     DKuu_u(:,j+(i-1)*n_u) = dist2(:);        % Matrix of size uu x mu

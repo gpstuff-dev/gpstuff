@@ -130,19 +130,18 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         % Here we need only the diag(Q_ff), which is evaluated below        
         B=Luu\(K_fu');
         iLaKfu = zeros(size(K_fu));  % f x u
-        for i=1:length(ind)
-            Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-            [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-            Labl{i} = Cbl_ff - Qbl_ff;
-            iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
-        end
-        
-% $$$         mask = gp.mask;
-% $$$         
-% $$$         Q_ff = B'*B;
-% $$$         [Kbl_ff, Cbl_ff] = gp_trcov(gp, x);
-% $$$         Labl = mask.*(Cbl_ff - Q_ff);
-% $$$         iLaKfu = Labl\K_fu;
+% $$$         for i=1:length(ind)
+% $$$             Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+% $$$             [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+% $$$             Labl{i} = Cbl_ff - Qbl_ff;
+% $$$             iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
+% $$$         end
+
+        mask = gp.mask;        
+        Q_ff = B'*B;
+        [Kbl_ff, Cbl_ff] = gp_trcov(gp, x);
+        Labl = mask.*(Cbl_ff - Q_ff);
+        iLaKfu = Labl\K_fu;
         
         % ... then evaluate some help matrices.
         % A = chol(K_uu+K_uf*inv(La)*K_fu))
@@ -154,35 +153,38 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         C = (C+C')/2;
         
         % Evaluate R = mask(inv(La)*J*inv(La) , diag(n,n)), where J = H - K_fu*C*K_uf;
-% $$$         H = Labl - t*t' + 2*K_fu*inv(A)*K_fu'*inv(Labl)*t*t';
-% $$$         J = H - K_fu*C*K_fu';
-% $$$         R = mask.*(inv(Labl)*J*inv(Labl));
-% $$$         iKuuKuf = K_uu\K_fu';
-% $$$         iKuuKufR = iKuuKuf*R;
-% $$$         DE_Kuf = b'*(t'/Labl);
-        
+        H = Labl - t*t' + (2*K_fu*inv(A)*K_fu'*inv(Labl)*t*t')';
+        H = H + H' - diag(diag(H));
+        J = H - K_fu*C*K_fu';
+        %J= J + J' -diag(diag(J));
+        R = mask.*(inv(Labl)*J*inv(Labl));
+        %        R = R + R' - diag(diag(R));
         iKuuKuf = K_uu\K_fu';
-        DE_Kuf = zeros(size(K_fu'));
-        iKuuKufR = zeros(size(iKuuKuf));
-
-        for i=1:length(ind)
-            iLat = Labl{i}\t(ind{i},:);
-            iLaKfubt = (iLaKfu(ind{i},:)*b');
-            R{i} = inv(Labl{i}) - iLat*iLat' + 2.*iLaKfubt*iLat' -  iLaKfu(ind{i},:)*C*iLaKfu(ind{i},:)';
-            % iKuuKufR = inv(K_uu)*K_uf*R
-            iKuuKufR(:,ind{i}) = iKuuKuf(:,ind{i}')*R{i};  % u x f  
-            DE_Kuf(:,ind{i}) = b'*(t(ind{i},:)'/Labl{i});
-        end
+        iKuuKufR = iKuuKuf*R;
+        DE_Kuf = b'*(t'/Labl);
+        
+% $$$         iKuuKuf = K_uu\K_fu';
+% $$$         DE_Kuf = zeros(size(K_fu'));
+% $$$         iKuuKufR = zeros(size(iKuuKuf));
+% $$$ 
+% $$$         for i=1:length(ind)
+% $$$             iLat = Labl{i}\t(ind{i},:);
+% $$$             iLaKfubt = (iLaKfu(ind{i},:)*b');
+% $$$             R{i} = inv(Labl{i}) - iLat*iLat' + 2.*iLaKfubt*iLat' -  iLaKfu(ind{i},:)*C*iLaKfu(ind{i},:)';
+% $$$             % iKuuKufR = inv(K_uu)*K_uf*R
+% $$$             iKuuKufR(:,ind{i}) = iKuuKuf(:,ind{i}')*R{i};  % u x f  
+% $$$             DE_Kuf(:,ind{i}) = b'*(t(ind{i},:)'/Labl{i});
+% $$$         end
                 
         DE_Kuu = 0.5*( C - inv(K_uu) + iKuuKufR*iKuuKuf'); % These are here in matrix form, but
-        DE_Kuf = C*iLaKfu' - iKuuKufR - DE_Kuf;            % should be used as vectors DE_Kuu(:) in gpcf_*_g functions        
+        DE_Kuf = C*iLaKfu' - iKuuKufR - DE_Kuf;            % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
         
-% $$$         for i=1:length(ind)
-% $$$             DE_Kff{i} = R(ind{i},ind{i});
-% $$$         end
         for i=1:length(ind)
-            DE_Kff{i} = 0.5.*R{i};
+            DE_Kff{i} = 0.5.*R(ind{i},ind{i});
         end
+% $$$         for i=1:length(ind)
+% $$$             DE_Kff{i} = 0.5.*R{i};
+% $$$         end
                
       case 'PIC_BAND'
         % Do nothing

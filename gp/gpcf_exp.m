@@ -414,7 +414,7 @@ function gpcf = gpcf_exp(do, varargin)
                 dist = 0;
                 dist2 = 0;
                 for j=1:length(ind)
-                    dist3{j} = zeros(size(ind{j}));
+                    dist3{j} = zeros(size(ind{j},1),size(ind{j},1));
                 end
                 for i=1:m
                     dist = dist + (gminus(u(:,i),x(:,i)')).^2;
