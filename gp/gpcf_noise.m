@@ -261,10 +261,13 @@ switch gpcf.type
     R =varargin{3};
     gdata(i1) = D.*sum(R);
   case {'PIC_BLOCK', 'PIC_BAND'}
-    R =varargin{3};
-    gdata(i1)=0;
-    for i=1:length(R)
-        gdata(i1) = gdata(i1) + D.*trace(R{i});
+    L = varargin{1};
+    b =varargin{2};
+    Labl = varargin{4};
+    gdata(i1)= - 0.5*D.*b*b';
+    ind = gpcf.tr_index;
+    for i=1:length(ind)
+        gdata(i1)= gdata(i1) + 0.5*trace((inv(Labl{i})-L(ind{i},:)*L(ind{i},:)')).*D;
     end
 end
 
