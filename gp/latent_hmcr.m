@@ -1,11 +1,11 @@
-function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
+function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
 % LATENT_HMC2     HMC sampler for latent values.
 %
 %
 %
 %
 
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2006-2007      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -30,9 +30,13 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
         u = [];
       case 'FIC'
         u = gp.X_u;
+      case 'PIC_BLOCK'
+        u = gp.X_u;
+        ind = gp.tr_index;
     end
     n=length(y);
     Lav=[];
+    Labl=[];
     Lp = [];
     J = [];
     U = [];
@@ -62,8 +66,17 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
 % $$$     w = z + U*inv(J)*Uz - U*Uz;
         zs = z./Lp;
         w = zs + U*((J*U'-U')*zs);
+      case 'PIC_BLOCK'
+        getL(z, gp, x, y, u);
+        zs=zeros(size(z));
+        for i=1:length(ind)
+            zs(ind{i}) = Lp{i}\z(ind{i});
+        end
+        w = zs + U*((J*U'-U')*zs);
     end
 
+    %    gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
+    
     hmc2('state',latent_rstate)
     rej = 0;
     gradf = @lvpoisson_gr;
@@ -91,8 +104,13 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
       case 'FULL'
         z=L2*w;
       case 'FIC'
-% $$$     z = Lp.*(w + U*inv(JUU*w);
+% $$$     z = Lp.*(w + U*inv(JUU*w));
         z = Lp.*(w + U*(iJUU*w));
+      case  'PIC_BLOCK'
+        w2 = w + U*(iJUU*w);
+        for i=1:length(ind)
+            z(ind{i}) = Lp{i}*w2(ind{i});
+        end
     end
     opt.latent_rstate = hmc2('state');
     diagn.opt = opt;
@@ -102,8 +120,6 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
     function [g, gdata, gprior] = lvpoisson_gr(w, gp, x, y, u, varargin)
     %LVPOISSON_G	Evaluate gradient function for GP latent values with
     %               Poisson likelihood
-        
-    % Copyright (c) 2006 Aki Vehtari
         
     % Force z and E to be a column vector
         w=w(:);
@@ -129,6 +145,24 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
             g = Lp.*g;
             g = g + U*(iJUU*g);
             g = g';
+          case 'PIC_BLOCK'
+            w2= w + U*(iJUU*w);
+            for i=1:length(ind)
+                z(ind{i}) = Lp{i}*w2(ind{i});
+            end
+            z = max(z,mincut);
+            gdata = exp(z).*E - y;
+            gprior = zeros(size(gdata));
+            for i=1:length(ind)
+                gprior(ind{i}) = Labl{i}\z(ind{i});
+            end
+            gprior = gprior - iLaKfuic*(iLaKfuic'*z);
+            g = gdata' + gprior';
+            for i=1:length(ind)
+                g(ind{i}) = g(ind{i})*Lp{i};
+            end
+            g = g + g*U*(iJUU);
+            %g = g';
         end
     end
 
@@ -141,13 +175,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
     % The field gp.avgE (if given) contains the information about averige
     % expected number of cases at certain location. The target, t, is 
     % distributed as t ~ poisson(avgE*exp(z))
-        
-    % Copyright (c) 2006 Aki Vehtari
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
+                
     % force z and E to be a column vector
 
         w=w(:);
@@ -158,13 +186,24 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
             z = max(z,mincut);
             B=Linv*z;
             eprior=.5*sum(B.^2);
-          case 'FIC'
+          case 'FIC' 
             %        w(w<eps)=0;
             z = Lp.*(w + U*(iJUU*w));
             z = max(z,mincut);
             % eprior = 0.5*z'*inv(La)*z-0.5*z'*(inv(La)*K_fu*inv(K_uu+Kuf*inv(La)*K_fu)*K_fu'*inv(La))*z;
             B = z'*iLaKfuic;  % 1 x u
             eprior = 0.5*sum(z.^2./Lav)-0.5*sum(B.^2);
+          case 'PIC_BLOCK'
+            w2= w + U*(iJUU*w);
+            for i=1:length(ind)
+                z(ind{i}) = Lp{i}*w2(ind{i});
+            end
+            z = max(z,mincut);
+            B = z'*iLaKfuic;  % 1 x u
+            eprior = - 0.5*sum(B.^2);
+            for i=1:length(ind)
+               eprior = eprior + 0.5*z(ind{i})'/Labl{i}*z(ind{i});
+            end
         end
         mu = exp(z).*E;
         edata = sum(mu-t.*log(mu));
@@ -196,32 +235,71 @@ function [z, energ, diagn] = latent_hmcr(z, opt,  varargin)
                 b=Luu\(K_fu');       % u x f
                 Qv_ff=sum(b.^2)';
                 Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
+                % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                % and form iLaKfu
+                iLaKfu = zeros(size(K_fu));  % f x u,
+                for i=1:n
+                    iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
+                end
+                c = K_uu+K_fu'*iLaKfu; 
+                c = (c+c')./2;         % ensure symmetry
+                c = chol(c)';   % u x u, 
+                ic = inv(c);
+                iLaKfuic = iLaKfu*ic';
+                Lp = sqrt(1./(gp.avgE + 1./Lav));
+                b=b';
+                for i=1:n
+                    b(i,:) = iLaKfuic(i,:).*Lp(i);
+                end        
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;
+              case 'PIC_BLOCK'
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                B=Luu\(K_fu');       % u x f
+                iLaKfu = zeros(size(K_fu));  % f x u
+                for i=1:length(ind)
+                    Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+                    [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+                    Labl{i} = Cbl_ff - Qbl_ff;
+                    iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
+                end
+                % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                % and form iLaKfu
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;            % Ensure symmetry
+                
+                % L = iLaKfu*inv(chol(A));
+                iLaKfuic = iLaKfu*inv(chol(A));
+                
+                for i=1:length(ind)
+% $$$                     Lp{i} = chol(diag(gp.avgE(ind{i})) + inv(Labl{i}))';
+% $$$                     Lp{i} = inv(Lp{i});
+                    Lp{i} = chol(inv(diag(gp.avgE(ind{i})) + inv(Labl{i})));
+                end
+                b=zeros(size(B'));
+                
+                for i=1:length(ind)
+                    b(ind{i},:) = Lp{i}*iLaKfuic(ind{i},:);
+                end   
+                
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;                
             end
-            % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
-            % and form iLaKfu
-            iLaKfu = zeros(size(K_fu));  % f x u,
-            for i=1:n
-                iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
-            end
-            c = K_uu+K_fu'*iLaKfu; 
-            c = (c+c')./2;         % ensure symmetry
-            c = chol(c)';   % u x u, 
-            ic = inv(c);
-            iLaKfuic = iLaKfu*ic';
-            Lp = sqrt(1./(gp.avgE + 1./Lav));
-            b=b';
-            for i=1:n
-                b(i,:) = iLaKfuic(i,:).*Lp(i);
-            end        
-            [V,S2]= eig(b'*b);
-            S = sqrt(S2);
-            U = b*(V/S);
-            U(abs(U)<eps)=0;
-            %        J = diag(sqrt(diag(S2) + 0.01^2));
-            J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                          % J = diag(sqrt(2./(1+diag(S))));
-            iJUU = J\U'-U';
-            iJUU(abs(iJUU)<eps)=0;
         end
     end
 end

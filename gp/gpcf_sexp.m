@@ -403,7 +403,7 @@ function gpcf = gpcf_sexp(do, varargin)
             K_uu = feval(gpcf.fh_trcov, gpcf, u); 
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
             for i=1:length(ind)
-                K_ff{i} = gpcf_sexp_trcov(gpcf, x(ind{i},:));
+                K_ff{i} = feval(gpcf.fh_trcov, gpcf, x(ind{i},:));
             end
             
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
@@ -421,8 +421,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     dist = dist + D.^2;
                     dist2 = dist2 + D2.^2;
                     for j=1:length(ind)
-                        D3= gminus(x(ind{j},i),x(ind{j},i)');
-                        dist3{j} = dist3{j} + D3.^2;
+                        dist3{j} = dist3{j} + (gminus(x(ind{j},i),x(ind{j},i)')).^2;
                     end
                 end
                 DKuf_l = 2.*s.*K_uf.*dist;
@@ -532,22 +531,22 @@ function gpcf = gpcf_sexp(do, varargin)
               case 'FIC' 
                 gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
               case 'PIC_BLOCK'
-            KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
-            %            H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
-            % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
-            gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_l')*iKuuKuf))) - ...
-                               sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
-            for i=1:length(K_ff)
-                gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
-                    + 0.5.*(-b(ind{i})*DKff_l{i}*b(ind{i})' ...
-                    + 2.*b(ind{i})*DKuf_l(:,ind{i})'*iKuuKuf(:,ind{i})*b(ind{i})'- ...
-                            b(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b(ind{i})' ...       %H(ind{i},ind{i})
-                    + trace(Labl{i}\DKff_l{i})...
-                    - trace(L(ind{i},:)*(L(ind{i},:)'*DKff_l{i})) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
-                    + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*DKuf_l(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
-                      sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuDKuu_l(ind{i},:))*iKuuKuf(:,ind{i}))))); 
-                                                                %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
-            end
+                KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
+                %            H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
+                % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
+                gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_l')*iKuuKuf))) - ...
+                                   sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
+                for i=1:length(K_ff)
+                    gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                        + 0.5.*(-b(ind{i})*DKff_l{i}*b(ind{i})' ...
+                                + 2.*b(ind{i})*DKuf_l(:,ind{i})'*iKuuKuf(:,ind{i})*b(ind{i})'- ...
+                                b(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b(ind{i})' ...       %H(ind{i},ind{i})
+                                + trace(Labl{i}\DKff_l{i})...
+                                - trace(L(ind{i},:)*(L(ind{i},:)'*DKff_l{i})) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
+                                + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*DKuf_l(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
+                                sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuDKuu_l(ind{i},:))*iKuuKuf(:,ind{i}))))); 
+                    %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
+                end
 % $$$ 
 % $$$                 H = (2*DKuf_l'-iKuuKuf'*DKuu_l)*iKuuKuf;
 % $$$                 

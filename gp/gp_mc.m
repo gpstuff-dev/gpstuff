@@ -291,6 +291,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 if isfield(opt, 'inducing_opt')
                     rec.indrejects = 0;
                 end
+              case 'PIC_BLOCK'
+                rec.X_u = [];
+                if isfield(opt, 'inducing_opt')
+                    rec.indrejects = 0;
+                end
+                rec.tr_index = gp.tr_index;
               otherwise
                 % Do nothing
             end
