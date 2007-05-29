@@ -479,17 +479,25 @@ function gpcf = gpcf_matern32(do, varargin)
             % through log() and thus dK/dlog(p) = p * dK/dp
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            kv_ff = zeros(nzmax,1);
-            for i = 1:size(ind,1)
-                kv_ff(i) = feval(gpcf.fh_cov, gpcf, x(ind(i,1),:), x(ind(i,2),:));
-            end
-            K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
+% $$$             kv_ff = zeros(nzmax,1);
+% $$$             for i = 1:size(ind,1)
+% $$$                 kv_ff(i) = feval(gpcf.fh_cov, gpcf, x(ind(i,1),:), x(ind(i,2),:));
+% $$$             end
+% $$$             K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
 
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
             if length(gpcf.lengthScale) == 1
                 % In the case of an isotropic SEXP
+                di2 = 0;
                 s = 1./gpcf.lengthScale.^2;
                 ma2 = gpcf.magnSigma2;
+                for i = 1:m
+                    di2 = di2 + s.*(x(ind(:,1),i) - x(ind(:,2),i)).^2;
+                end
+                di2 = sqrt(di2);
+                kv_ff = ma2.*(1+sqrt(3).*di2).*exp(-sqrt(3).*di2);;
+                K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
+
                 dist = 0; dist2 = 0;
                 dist3 = zeros(nzmax,1);
                 for i=1:m

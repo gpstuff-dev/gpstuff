@@ -502,10 +502,6 @@ function gpcf = gpcf_matern52(do, varargin)
             end
             di = sqrt(5.*di2);
             kv_ff = gpcf.magnSigma2.*(1 + di + 5.*di2./3).*exp(-di);
-% $$$             kv_ff = zeros(nzmax,1);
-% $$$             for i = 1:size(ind,1)
-% $$$                 kv_ff(i) = feval(gpcf.fh_cov, gpcf, x(ind(i,1),:), x(ind(i,2),:));
-% $$$             end
             K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
             
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
