@@ -429,6 +429,7 @@ function gpcf = gpcf_matern52(do, varargin)
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
             for i=1:length(ind)
+                
                 K_ff{i} = feval(gpcf.fh_trcov, gpcf, x(ind{i},:));
             end
             
@@ -476,7 +477,74 @@ function gpcf = gpcf_matern52(do, varargin)
                     DKuu_l(:,i) = D2(:);      % Matrix of size uu x m
                 end     
             end
+          case 'PIC_BAND'
+            % Evaluate the help matrices for the gradient evaluation (see
+            % gpcf_sexp_trcov)
             
+            L = varargin{1};             % f x u
+            b = varargin{2};             % 1 x f
+            iKuuKuf = varargin{3};       % u x f
+            La = varargin{4};            % matrix of size
+            
+            u = gpcf.X_u;
+            ind=gpcf.tr_index;
+            nzmax = size(ind,1);
+            
+            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
+            % NOTE! Here we have already taken into account that the parameters are transformed 
+            % through log() and thus dK/dlog(p) = p * dK/dp
+            K_uu = feval(gpcf.fh_trcov, gpcf, u);
+            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+            di2 = 0;
+            s = 1./gpcf.lengthScale.^2;
+            for i = 1:m
+                di2 = di2 + s.*(x(ind(:,1),i) - x(ind(:,2),i)).^2;
+            end
+            di = sqrt(5.*di2);
+            kv_ff = gpcf.magnSigma2.*(1 + di + 5.*di2./3).*exp(-di);
+% $$$             kv_ff = zeros(nzmax,1);
+% $$$             for i = 1:size(ind,1)
+% $$$                 kv_ff(i) = feval(gpcf.fh_cov, gpcf, x(ind(i,1),:), x(ind(i,2),:));
+% $$$             end
+            K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
+            
+            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+            if length(gpcf.lengthScale) == 1
+                s = 1./gpcf.lengthScale.^2;
+                ma2 = gpcf.magnSigma2;
+                dist = 0; dist2 = 0;
+                dist3 = zeros(nzmax,1);
+                for i=1:m
+                    dist = dist + s.*(gminus(u(:,i),x(:,i)')).^2;
+                    dist2 = dist2 + s.*(gminus(u(:,i),u(:,i)')).^2;
+                    dist3 = dist3 + (x(ind(:,1),i)-x(ind(:,2),i)).^2;
+                end
+
+                D1 = ma2.*exp(-sqrt(5.*dist));
+                D2 = ma2.*exp(-sqrt(5.*dist2));
+                DKuf_l = (5./3 + 5.*sqrt(5.*dist)/3) .*D1.*dist;
+                DKuu_l = (5./3 + 5.*sqrt(5.*dist2)/3) .*D2.*dist2;
+                D3 = ma2.*exp(-sqrt(5.*dist3));
+                DKff_l = sparse(ind(:,1),ind(:,2), (5./3 + 5.*sqrt(5.*dist3)/3).*D3.*dist3 ,n,n);
+            else
+                % In the case ARD is used
+                s = 1./gpcf.lengthScale.^2;
+                ma2 = gpcf.magnSigma2;
+                dist = 0; dist2 = 0;
+                for i=1:m
+                    dist = dist + s(i).*(gminus(u(:,i),x(:,i)')).^2;
+                    dist2 = dist2 + s(i).*(gminus(u(:,i),u(:,i)')).^2;
+                end
+                for i=1:m
+                    D1 = ma2.*exp(-sqrt(5.*dist)).*s(i).^(3/2).*(gminus(u(:,i),x(:,i)')).^2;;
+                    D2 = ma2.*exp(-sqrt(5.*dist2)).*s(i).^(3/2).*(gminus(u(:,i),u(:,i)')).^2;;
+                    D1 = (5./3 + 5.*sqrt(5.*dist)/3).*D1;
+                    D2 = (5./3 + 5.*sqrt(5.*dist2)/3).*D2;
+                    
+                    DKuf_l(:,i) = D1(:);      % Matrix of size uf x m
+                    DKuu_l(:,i) = D2(:);      % Matrix of size uu x m
+                end     
+            end
         end
         
         % Evaluate the gdata and gprior with respect to magnSigma2
@@ -504,7 +572,21 @@ function gpcf = gpcf_matern52(do, varargin)
                                                                 %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
             end
           case 'PIC_BAND'
-            
+                        KfuiKuuKuu = iKuuKuf'*K_uu;
+            for i = 1:size(ind,1)
+                H(i) = (2*K_uf(:,ind(i,1))'- KfuiKuuKuu(ind(i,1),:))*iKuuKuf(:,ind(i,2));
+            end
+            H = sparse(ind(:,1), ind(:,2), H, n,n);
+            % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
+            gdata(i1) = -0.5.*((2*b*K_uf'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*K_uf'*iKuuKuf))) - ...
+                               sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))) - 2.*trace((La\K_uf')*iKuuKuf) + ...
+                                   trace((La\KfuiKuuKuu)*iKuuKuf));
+            gdata(i1) = gdata(i1) ...                             %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                + 0.5.*(-(b(ind(:,1)).*kv_ff')*b(ind(:,2))' ...
+                        + b*H*b' ...
+                        + trace(La\(K_ff-H))...
+                        - sum(sum(L'.*(L'*K_ff))) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
+                        + sum(sum(L'.*(L'*H))));
         end
         gprior(i1)=feval(gpp.magnSigma2.fg, ...
                          gpcf.magnSigma2, ...
@@ -573,8 +655,23 @@ function gpcf = gpcf_matern52(do, varargin)
                                 sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuDKuu_l(ind{i},:))*iKuuKuf(:,ind{i}))))); 
                     %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
                 end
-                
               case 'PIC_BAND'
+                KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
+                H=zeros(1,size(ind,1));
+                for i = 1:size(ind,1)
+                    H(i) = (2*DKuf_l(:,ind(i,1))'- KfuiKuuDKuu_l(ind(i,1),:))*iKuuKuf(:,ind(i,2));
+                end
+                H = sparse(ind(:,1), ind(:,2), H, n,n);
+                % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
+                gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l'*iKuuKuf))) - ...
+                                   sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))) - 2.*trace((La\DKuf_l')*iKuuKuf) + ...
+                                   trace((La\KfuiKuuDKuu_l)*iKuuKuf));
+                gdata(i1) = gdata(i1) ...                             %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                    + 0.5.*(-(b*DKff_l')*b' ...
+                            + b*H*b' ...
+                            + trace(La\(DKff_l-H))...
+                            - sum(sum(L'.*(L'*DKff_l))) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
+                            + sum(sum(L'.*(L'*H))));                
             end            
             gprior(i1)=feval(gpp.lengthScale.fg, ...
                              gpcf.lengthScale, ...

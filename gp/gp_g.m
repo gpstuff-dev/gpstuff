@@ -27,7 +27,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         
     gp=gp_unpak(gp, w, param);       % unpak the parameters
     ncf = length(gp.cf);
-    n=length(x);
+    n=size(x,1);
     
     g = [];
     gdata = [];
@@ -110,7 +110,7 @@ s                noise.type = gp.type;
         DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(t./Lav)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
         
         DE_Kff = 0.5*R;
-        L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff; Labl = 0;
+        L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff; La = Lav;
       %================================================================        
       case 'PIC_BLOCK'
         u = gp.X_u;
@@ -121,7 +121,6 @@ s                noise.type = gp.type;
         % First evaluate the needed covariance matrices
         % if they are not in the memory
         % v defines that parameter is a vector
-        [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
@@ -136,8 +135,8 @@ s                noise.type = gp.type;
             Qbl_ff = B(:,ind{i})'*B(:,ind{i});
             %            Qbl_ff2(ind{i},ind{i}) = B(:,ind{i})'*B(:,ind{i});
             [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-            Labl{i} = Cbl_ff - Qbl_ff;
-            iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
+            La{i} = Cbl_ff - Qbl_ff;
+            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    % Check if works by changing inv(La{i})!!!
         end
 
 % $$$         mask = gp.mask;
@@ -156,12 +155,12 @@ s                noise.type = gp.type;
         % A = chol(K_uu+K_uf*inv(La)*K_fu))
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;            % Ensure symmetry
-
-        L = iLaKfu*inv(chol(A));
+        
+        L = iLaKfu/chol(A);
         b = zeros(1,n);
         b_apu=(t'*L)*L';
         for i=1:length(ind)
-            b(ind{i}) = t(ind{i})'/Labl{i} - b_apu(ind{i});
+            b(ind{i}) = t(ind{i})'/La{i} - b_apu(ind{i});
         end
         
         iKuuKuf = inv(K_uu)*K_fu';
@@ -173,59 +172,39 @@ s                noise.type = gp.type;
         % Do nothing
         u = gp.X_u;
         ind = gp.tr_index;
-        DKuu_u = 0;
-        DKuf_u = 0;
+        nzmax = size(ind,1);
         
         % First evaluate the needed covariance matrices
         % if they are not in the memory
         % v defines that parameter is a vector
-        [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
         Luu = chol(K_uu)';
         % Evaluate the Lambda (La)
         % Q_ff = K_fu*inv(K_uu)*K_fu'
-        % Here we need only the diag(Q_ff), which is evaluated below        
-        %B=K_fu/Luu;
         B=Luu\K_fu';
-        iLaKfu = zeros(size(K_fu));  % f x u
-        for i=1:length(ind)
-            Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-            %            Qbl_ff2(ind{i},ind{i}) = B(:,ind{i})'*B(:,ind{i});
-            [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-            Labl{i} = Cbl_ff - Qbl_ff;
-            iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
-        end
-
-% $$$         mask = gp.mask;
-% $$$         %        Q_ff2 = B'*B;
-% $$$         Q_ff2 = B'*B;
-% $$$         [Kbl_ff2, Cbl_ff2] = gp_trcov(gp, x);
-% $$$         Labl2 = mask.*(Cbl_ff2 - Q_ff2);
-% $$$         iLaKfu2 = Labl2\K_fu;
-% $$$         A2 = K_uu+K_fu'*iLaKfu2;
-% $$$         A2 = (A2+A2')/2;
-% $$$         L2 = iLaKfu2*chol(inv(A2))';
-% $$$         b2 = t'/Labl2 - (t'*L2)*L2';
         
+        q_ff = zeros(nzmax,1);
+        c_ff = zeros(nzmax,1);
+        for i = 1:size(ind,1)
+            q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
+            c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
+        end
+        [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+        La = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
+        
+        iLaKfu = La\K_fu;
         
         % ... then evaluate some help matrices.
         % A = chol(K_uu+K_uf*inv(La)*K_fu))
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;            % Ensure symmetry
-
-        L = iLaKfu*inv(chol(A));
-        b = zeros(1,n);
-        b_apu=(t'*L)*L';
-        for i=1:length(ind)
-            b(ind{i}) = t(ind{i})'/Labl{i} - b_apu(ind{i});
-        end
+        
+        L = iLaKfu/chol(A);
+        b = t'/La - (t'*L)*L';
         
         iKuuKuf = inv(K_uu)*K_fu';
-        
-        % inv(Labl2) - inv(Q_ff2 + Labl2)
-        %inv(mask.*(Cbl_ff2-Q_ff2)) - inv(Q_ff2 + mask.*(Cbl_ff2-Q_ff2))
     end
     
     % =================================================================
@@ -241,7 +220,7 @@ s                noise.type = gp.type;
         end
         switch param
           case 'hyper'
-            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, L, b, iKuuKuf, Labl); %, L2, b2, Labl2
+            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, L, b, iKuuKuf, La); %, L2, b2, Labl2
           case 'inducing'
             [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
             DKuu_u = DKuu_u + D1;
@@ -270,7 +249,7 @@ s                noise.type = gp.type;
             end
             switch param
               case 'hyper'
-                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, L, b, iKuuKuf, Labl);
+                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, L, b, iKuuKuf, La);
               case 'inducing'
                 [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
                 DKuu_u = DKuu_u + D1;

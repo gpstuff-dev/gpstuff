@@ -297,6 +297,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                     rec.indrejects = 0;
                 end
                 rec.tr_index = gp.tr_index;
+              case 'PIC_BAND'
+                rec.X_u = [];
+                if isfield(opt, 'inducing_opt')
+                    rec.indrejects = 0;
+                end
+                rec.tr_index = gp.tr_index;
               otherwise
                 % Do nothing
             end
@@ -352,7 +358,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         if isfield(opt, 'inducing_opt')
             rec.indrejects(ri,1)=indrej; 
             switch gp.type
-              case 'FIC'
+              case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
                 rec.X_u(ri,:) = gp.X_u(:)';
               otherwise
                 % Do nothing

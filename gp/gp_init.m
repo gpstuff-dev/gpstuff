@@ -56,6 +56,12 @@ function gp = gp_init(do, varargin)
 %                            'manual', which takes in the place of param a structure of the index vectors
 %                                appointing the data points into blocks. For example, if x is a matrix of data inputs
 %                                then x(param{i},:) are the inputs belonging to the ith block.
+%         truncated      = Initializes the sparse correlation structure fo the PIC_BAND model
+%                          The value for truncated has to be a cell array of type 
+%                          {x, R}, where x is the matrix of input (size n x nin) and R is the radius for truncation.
+%                          
+%                          If value is {x, R, 1} an information about the sparsity structure is printed and plotted.
+%                          
 %
 %       
 %
@@ -150,6 +156,8 @@ function gp = gp_init(do, varargin)
                     end
                   case 'blocks'
                     init_blocks(varargin{i+1})
+                  case 'truncated'
+                    init_truncated(varargin{i+1})
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -192,6 +200,8 @@ function gp = gp_init(do, varargin)
                 end
               case 'blocks'
                 init_blocks(varargin{i+1})
+              case 'truncated'
+                init_truncated(varargin{i+1})
               otherwise
                 error('Wrong parameter name!')
             end    
@@ -211,7 +221,7 @@ function gp = gp_init(do, varargin)
     function init_blocks(var)
         
         if length(var) ~= 3
-            error('Wrong value for the clustering type! See help gp_init!')
+            error('Wrong kind of value for the clustering type! See help gp_init!')
         else
             x = var{2};
             switch var{1}
@@ -226,5 +236,46 @@ function gp = gp_init(do, varargin)
             end
         end
     end
+    
+    function init_truncated(var)
+        if length(var) < 2
+            error('Wrong kind of value for the truncated type! See help gp_init!')
+        end
 
+        x= var{1};
+        R= var{2};
+        gp.truncated_R = R;
+        n = size(x,1);
+        
+        if size(x,2)~=gp.nin
+            error('The size of x for "truncated" has to be n x nin!')
+        end
+                
+        C = sparse([],[],[],n,n,0);
+        for i1=2:n
+            i1n=(i1-1)*n;
+            for i2=1:i1-1
+                ii=i1+(i2-1)*n;
+                D = 0;
+                for i3=1:gp.nin
+                    D =D+(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+                end
+                if sqrt(D) < R
+                    C(ii)=1;
+                    C(i1n+i2)=C(ii); 
+                end
+            end
+        end
+        C= C + speye(n,n);
+        if length(var) == 3
+            if var{3} == 1
+                spy(C)
+                title('the sparsity structure of the covariance matrix')
+                fprintf('The density of the sparse correlation matrix is %f \n',nnz(C)/prod(size(C)))
+            end
+        end
+                
+        [I,J,s] = find(C);
+        gp.tr_index = [I(:) J(:)];
+    end
 end

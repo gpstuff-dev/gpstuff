@@ -25,19 +25,27 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
     gp = varargin{1};
     x = varargin{2}; 
     y = varargin{3}; 
+    [n,nin] = size(x);
     switch gp.type
       case 'FULL'
         u = [];
       case 'FIC'
         u = gp.X_u;
+        Lav=[];
       case 'PIC_BLOCK'
         u = gp.X_u;
         ind = gp.tr_index;
+        Labl=[];
+        Lp = [];
+      case 'PIC_BAND'
+        u = gp.X_u;
+        ind = gp.tr_index;
+        nzmax = size(ind,1);
+        Labl= sparse([],[],[],n,n,0);
+        Lp = sparse([],[],[],n,n,0); 
     end
     n=length(y);
-    Lav=[];
-    Labl=[];
-    Lp = [];
+
     J = [];
     U = [];
     iJUU = [];
@@ -73,8 +81,13 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             zs(ind{i}) = Lp{i}\z(ind{i});
         end
         w = zs + U*((J*U'-U')*zs);
+      case 'PIC_BAND'
+        getL(z, gp, x, y, u);
+        zs = Lp\z;
+        w = zs + U*((J*U'-U')*zs);
     end
-
+    
+    
     %    gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
     
     hmc2('state',latent_rstate)
@@ -111,6 +124,9 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
         for i=1:length(ind)
             z(ind{i}) = Lp{i}*w2(ind{i});
         end
+      case  'PIC_BAND'
+        w2 = w + U*(iJUU*w);
+        z = Lp*w2;
     end
     opt.latent_rstate = hmc2('state');
     diagn.opt = opt;
@@ -163,6 +179,17 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             end
             g = g + g*U*(iJUU);
             %g = g';
+          case 'PIC_BAND'
+            w2= w + U*(iJUU*w);
+            z = Lp*w2;
+            z = max(z,mincut);
+            gdata = exp(z).*E - y;
+            gprior = zeros(size(gdata));
+            gprior = Labl\z;
+            gprior = gprior - iLaKfuic*(iLaKfuic'*z);
+            g = gdata' + gprior';
+            g = g*Lp;
+            g = g + g*U*(iJUU);
         end
     end
 
@@ -204,6 +231,13 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             for i=1:length(ind)
                eprior = eprior + 0.5*z(ind{i})'/Labl{i}*z(ind{i});
             end
+          case 'PIC_BAND'
+            w2= w + U*(iJUU*w);
+            z = Lp*w2;
+            z = max(z,mincut);
+            B = z'*iLaKfuic;  % 1 x u
+            eprior = - 0.5*sum(B.^2);
+            eprior = eprior + 0.5*z'/Labl*z;
         end
         mu = exp(z).*E;
         edata = sum(mu-t.*log(mu));
@@ -289,6 +323,44 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
                 for i=1:length(ind)
                     b(ind{i},:) = Lp{i}*iLaKfuic(ind{i},:);
                 end   
+                
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;                
+              case 'PIC_BAND'
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                B=Luu\(K_fu');       % u x f
+
+                q_ff = zeros(nzmax,1);
+                c_ff = zeros(nzmax,1);
+                for i = 1:size(ind,1)
+                    q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
+                    c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
+                end
+                [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+                Labl = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
+                
+                iLaKfu = Labl\K_fu;
+                % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                % and form iLaKfu
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;            % Ensure symmetry
+                
+                % L = iLaKfu*inv(chol(A));
+                iLaKfuic = iLaKfu*inv(chol(A));
+                
+                Lp = chol(inv(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl)));
+
+                b=zeros(size(B'));
+                
+                b = Lp*iLaKfuic;
                 
                 [V,S2]= eig(b'*b);
                 S = sqrt(S2);

@@ -22,10 +22,10 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1] , 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1] , 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -37,14 +37,22 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1);
 [u1,u2]=meshgrid(linspace(-1.8,1.8,5),linspace(-1.8,1.8,4));
 U=[u1(:) u2(:)];
-U = 3.6.*rand(14,2)-1.8;
+%U = 3.6.*rand(14,2)-1.8;
 gp = gp_init('set', gp, 'X_u', U);
 
 % find starting point using scaled conjucate gradient algorithm
 % Intialize weights to zero and set the optimization parameters
 w=gp_pak(gp, 'hyper');
-gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 
+[e, edata, eprior] = gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 
 %w=randn(size(gp_pak(gp, 'all')))*0.01;
+
+e =
+  488.8794
+edata =
+  484.1012
+eprior =
+    4.7781
+
 
 fe=str2fun('gp_e');
 fg=str2fun('gp_g');

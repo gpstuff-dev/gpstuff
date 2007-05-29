@@ -27,9 +27,9 @@ y = data(:,3);
 % Create covariance functions
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
@@ -59,11 +59,29 @@ for i1=1:4
     end
 end
 
+nnz(mask)/prod(size(mask))
+
 gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x, index});
 
+w=gp_pak(gp, 'hyper');
+[e, edata, eprior] = gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 
+[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
 
+gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 
+e =
+  406.7074
+edata =
+  401.9293
+eprior =
+    4.7781
 
+g =
+ -274.8715  407.3560 -105.4114
+gdata =
+ -275.1214  410.3560 -105.6614
+gprior =
+    0.2500   -3.0000    0.2500
 
 
 

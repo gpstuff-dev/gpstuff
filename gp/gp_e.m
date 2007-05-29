@@ -132,7 +132,46 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
             edata = .5*(edata + n*log(2*pi));
           case  'PIC_BAND'
+            u = gp.X_u;
+            ind = gp.tr_index;
             
+            % First evaluate needed covariance matrices
+            % v defines that parameter is a vector
+            K_fu = gp_cov(gp, x, u);         % f x u
+            K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+            K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+            Luu = chol(K_uu)';
+            % Evaluate the Lambda (La) 
+            % Q_ff = K_fu*inv(K_uu)*K_fu'
+            % Here we need only the blockdiag(Q_ff), which is evaluated below
+            B=Luu\(K_fu');       % u x f  and B'*B = K_fu*K_uu*K_uf
+            for i = 1:size(ind,1)
+                q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
+                c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
+            end
+            [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+            La = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
+            %cputime - t
+        
+            iLaKfu = La\K_fu;
+
+            % The data contribution to the error is 
+            % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
+            %   = + 0.5*log(det(La)) + 0.5*trace(iLa*t*t') - 0.5*log(det(K_uu)) 
+            %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*t*t'*iLaKfu)
+            
+            % First some help matrices...
+            % A = chol(K_uu+K_uf*inv(La)*K_fu))
+            A = K_uu+K_fu'*iLaKfu;
+            A = (A+A')./2;     % Ensure symmetry
+            A = chol(A)';
+            % The actual error evaluation
+            % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
+            b = (t'*iLaKfu)*inv(A)';
+            
+            edata = 2*sum(log(diag(chol(La)))) + t'*(La\t);
+            edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
+            edata = .5*(edata + n*log(2*pi));
           otherwise
             error('Unknown type of Gaussian process!')
         end
