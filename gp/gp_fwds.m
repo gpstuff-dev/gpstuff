@@ -85,14 +85,17 @@ for i1=1:nmc
         for i=1:length(tx)
             iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
         end
-        S = inv(K_uu+K_fu'*iLaKfu);
+        Sinv = inv(K_uu+K_fu'*iLaKfu);
         
+        iKuuKufiLa = K_uu\iLaKfu';
         if size(ty,2)>1
-            y = K_nu*(S*(K_fu'*(ty(:,i1)./Lav)));
+            y = K_nu*(iKuuKufiLa*ty(:,i1) + iKuuKufiLa*(K_fu*(Sinv\(K_fu'*(ty(:,i1)./Lav)))));
+            %            y = K_nu*(S*(K_fu'*(ty(:,i1)./Lav)));
             %  y=K_nu*S*K_uf*diag(1./La)*ty(:,i1);
         else    % Here latent values are not present
-            y = K_nu*(S*(K_fu'*(ty./Lav)));
-            %  y=K_nu*S*K_uf*diag(1./La)*ty;
+            y = K_nu*(iKuuKufiLa*ty + iKuuKufiLa*(K_fu*(Sinv\(K_fu'*(ty./Lav)))));
+                %y = K_nu*(Sinv\(K_fu'*(ty./Lav)));
+                %y=K_nu*Sinv*K_uf*diag(1./La)*ty;
         end
         if nargout > 1   % see Quinonera-Candela&Rasmussen (2005)
             B=Luu\(K_nu');
@@ -102,6 +105,73 @@ for i1=1:nmc
             b = L\K_nu';
             [Kv_nn, Cv_nn] = gp_trvar(Gp,x);
             VarY(:,:,i1) = Kv_nn - Qv_nn + sum(b.^2)';
+        end
+        
+% $$$     if nargout > 1
+% $$$       Q_nn = K_nu*inv(K_uu)*K_nu';
+% $$$       CovY(:,:,i1) = C_nn-Q_nn+K_nu*S*K_nu';
+% $$$     end
+      case 'PIC_BLOCK'        % Do following if FIC sparse model is used
+        % Calculate some help matrices  
+        u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+        ind = varargin{1};           % block indeces for training points
+        tstind = varargin{2};        % block indeces for test points
+        
+        [Kv_ff, Cv_ff] = gp_trvar(Gp, tx);  % 1 x f  vector
+        K_fu = gp_cov(Gp, tx, u);         % f x u
+        K_uu = gp_trcov(Gp, u);    % u x u, noiseles covariance K_uu
+        Luu = chol(K_uu)';
+        % Evaluate the Lambda (La) for specific model
+        % Q_ff = K_fu*inv(K_uu)*K_fu'
+        % Here we need only the diag(Q_ff), which is evaluated below
+        B=Luu\K_fu';
+        iLaKfu = zeros(size(K_fu));  % f x u
+        for i=1:length(ind)
+            Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+            %            Qbl_ff2(ind{i},ind{i}) = B(:,ind{i})'*B(:,ind{i});
+            [Kbl_ff, Cbl_ff] = gp_trcov(Gp, x(ind{i},:));
+            La{i} = Cbl_ff - Qbl_ff;
+            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    % Check if works by changing inv(La{i})!!!
+        end
+        A = K_uu+K_fu'*iLaKfu;
+        A = (A+A')./2;            % Ensure symmetry
+        
+        if size(ty,2)>1
+            tyy = ty(:,i1);
+        else    % Here latent values are not present
+            tyy = ty;
+        end
+
+        %    y = K_nu*(A\(K_fu'*(ty./Lav)));   
+        p=zeros(size(ty));        
+        for i=1:length(ind)
+            iLaty = La{i}\tyy(ind{i});
+            p(ind{i}) = (iLaty + La{i}\(K_fu(ind{i},:)*(A\(K_fu(ind{i},:)'*(iLaty)))));
+        end
+        iKuuKuf = K_uu\K_fu';
+        y=zeros(length(x),1);
+        for i=1:length(tstind)
+            K_nf = gp_cov(Gp, x(tstind{i},:), tx(tstind{i},:));         % n x u
+            notinblock = [];
+            for j=1:length(tstind)
+                if j~=i
+                    notinblock = [notinblock ; tstind{j}];
+                end
+            end
+            K_nu = gp_cov(Gp, x(notinblock,:), u);         % n x u
+            y(tstind{i}) = K_nf*p(tstind{i});
+            y(notinblock) = K_nu*iKuuKuf(:,notinblock)*p(notinblock);
+        end
+        
+        if nargout > 1   
+            error('Variance is not yet implemented for PIC! \n')
+% $$$             B=Luu\(K_nu');
+% $$$             Qv_nn=sum(B.^2)';
+% $$$             % Vector of diagonal elements of covariance matrix
+% $$$             L = chol(S)';
+% $$$             b = L\K_nu';
+% $$$             [Kv_nn, Cv_nn] = gp_trvar(Gp,x);
+% $$$             VarY(:,:,i1) = Kv_nn - Qv_nn + sum(b.^2)';
         end
         
 % $$$     if nargout > 1

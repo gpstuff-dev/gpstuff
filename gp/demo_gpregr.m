@@ -23,7 +23,8 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -36,14 +37,12 @@ gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1)
 w=gp_pak(gp, 'hyper');
 gp_e(w, gp, x, y, 'hyper')    % answer 370.9230
 
-
-
 % Set the sampling options
 opt=gp_mcopt;
 opt.repeat=10;
 opt.nsamples=10;
-opt.hmc_opt.steps=10;
-opt.hmc_opt.stepadj=0.1;
+opt.hmc_opt.steps=5;
+opt.hmc_opt.stepadj=0.01;
 opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
@@ -59,6 +58,33 @@ opt.hmc_opt.persistence=0;
 opt.hmc_opt.decay=0.6;
 
 [r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
+
+% Evaluate the MSE for the predictions
+out=gp_fwds(r, x, y, x);
+mout = mean(squeeze(out)');
+pred = zeros(size(x,1),1);
+pred(:)=mout;
+
+figure
+title('The prediction');
+[xi,yi,zi]=griddata(data(:,1),data(:,2),pred,-1.8:0.01:1.8,[-1.8:0.01:1.8]');
+mesh(xi,yi,zi)
+
+(pred-y)'*(pred-y)/length(y)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 % The predictions for the new inputs
 [p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);

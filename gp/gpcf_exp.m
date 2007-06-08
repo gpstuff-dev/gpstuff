@@ -565,6 +565,7 @@ function gpcf = gpcf_exp(do, varargin)
             end
           case 'PIC_BAND'
             KfuiKuuKuu = iKuuKuf'*K_uu;
+            H=zeros(1,size(ind,1));
             for i = 1:size(ind,1)
                 H(i) = (2*K_uf(:,ind(i,1))'- KfuiKuuKuu(ind(i,1),:))*iKuuKuf(:,ind(i,2));
             end

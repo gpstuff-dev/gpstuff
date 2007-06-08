@@ -55,7 +55,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
             nn = length(gp.noise);
             for i=1:nn
                 noise = gp.noise{i};
-s                noise.type = gp.type;
+                noise.type = gp.type;
                 [g, gdata, gprior] = feval(noise.fh_ghyper, noise, x, t, g, gdata, gprior, invC, B);
             end
         end
@@ -183,17 +183,15 @@ s                noise.type = gp.type;
         Luu = chol(K_uu)';
         % Evaluate the Lambda (La)
         % Q_ff = K_fu*inv(K_uu)*K_fu'
-        B=Luu\K_fu';
-        
-        q_ff = zeros(nzmax,1);
-        c_ff = zeros(nzmax,1);
-        for i = 1:size(ind,1)
-            q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
-            c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
-        end
+        B=Luu\K_fu';        
+        [I,J]=find(tril(sparse(ind(:,1),ind(:,2),1,n,n),-1));
+        q_ff = sum(B(:,I).*B(:,J));
+        q_ff = sparse(I,J,q_ff,n,n);
+        c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+        c_ff = sparse(I,J,c_ff,n,n);
         [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-        La = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
-        
+        La = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+                
         iLaKfu = La\K_fu;
         
         % ... then evaluate some help matrices.

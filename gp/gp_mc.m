@@ -372,7 +372,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp, 'all'), gp, x, y, 'all', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end
         

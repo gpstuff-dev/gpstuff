@@ -31,6 +31,8 @@ function gpcf = gpcf_sexp(do, varargin)
 %                          (@gpcf_sexp_cov)
 %         fh_trcov       = function handle to training covariance function
 %                          (@gpcf_sexp_trcov)
+%         fh_covvec      = function handle to elementvice covariance function
+%                          (@gpcf_sexp_covvec)
 %         fh_trvar       = function handle to training variance function
 %                          (@gpcf_sexp_trvar)
 %         fh_sampling    = function handle to parameter sampling function
@@ -82,6 +84,7 @@ function gpcf = gpcf_sexp(do, varargin)
         gpcf.fh_ghyper = @gpcf_sexp_ghyper;
         gpcf.fh_gind = @gpcf_sexp_gind;
         gpcf.fh_cov = @gpcf_sexp_cov;
+        gpcf.fh_covvec = @gpcf_sexp_covvec;
         gpcf.fh_trcov  = @gpcf_sexp_trcov;
         gpcf.fh_trvar  = @gpcf_sexp_trvar;
         gpcf.fh_recappend = @gpcf_sexp_recappend;
@@ -536,20 +539,21 @@ function gpcf = gpcf_sexp(do, varargin)
             end
           case 'PIC_BAND'
             KfuiKuuKuu = iKuuKuf'*K_uu;
-            for i = 1:size(ind,1)
-                H(i) = (2*K_uf(:,ind(i,1))'- KfuiKuuKuu(ind(i,1),:))*iKuuKuf(:,ind(i,2));
-            end
-            H = sparse(ind(:,1), ind(:,2), H, n,n);
+            % Note! H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf, but here we set actually H = mask(H) and the computations 
+            % with full(H) are done with partition
+            H = (2*K_uf - KfuiKuuKuu');
+            H = sum(H(:,ind(:,1)).*iKuuKuf(:,ind(:,2)));
+            H = sparse(ind(:,1),ind(:,2),H,n,n);
             % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
-            gdata(i1) = -0.5.*((2*b*K_uf'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*K_uf'*iKuuKuf))) - ...
-                               sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))) - 2.*trace((La\K_uf')*iKuuKuf) + ...
-                                   trace((La\KfuiKuuKuu)*iKuuKuf));
-            gdata(i1) = gdata(i1) ...                             %   + trace(Labl{i}\H(ind{i},ind{i})) ...
-                + 0.5.*(-(b(ind(:,1)).*kv_ff')*b(ind(:,2))' ...
-                        + b*H*b' ...
-                        + trace(La\(K_ff-H))...
-                        - sum(sum(L'.*(L'*K_ff))) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
-                        + sum(sum(L'.*(L'*H))));
+            gdata(i1) = -0.5.*((2*b*K_uf'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
+            gdata(i1) = gdata(i1) - sum(sum(L'.*(L'*K_uf'*iKuuKuf)));
+            gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf)));
+            gdata(i1) = gdata(i1) + sum(sum((La\(K_uf'-0.5.*KfuiKuuKuu))'.*iKuuKuf));
+            gdata(i1) = gdata(i1) + 0.5.*-(b(ind(:,1)).*kv_ff')*b(ind(:,2))';
+            gdata(i1) = gdata(i1) + 0.5.*b*H*b';
+            gdata(i1) = gdata(i1) + 0.5.*trace(La\(K_ff-H));
+            gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-K_ff))));               %- trace(Labl{i}\H(ind{i},ind{i})) 
+                        
         end
         gprior(i1)=feval(gpp.magnSigma2.fg, ...
                          gpcf.magnSigma2, ...
@@ -622,21 +626,31 @@ function gpcf = gpcf_sexp(do, varargin)
                 end
               case 'PIC_BAND'
                 KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
-                H=zeros(1,size(ind,1));
-                for i = 1:size(ind,1)
-                    H(i) = (2*DKuf_l(:,ind(i,1))'- KfuiKuuDKuu_l(ind(i,1),:))*iKuuKuf(:,ind(i,2));
-                end
-                H = sparse(ind(:,1), ind(:,2), H, n,n);
+                % Note! H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf, but here we set actually H = mask(H) and the computations 
+                % with full(H) are done with partition
+                H = (2*DKuf_l - KfuiKuuDKuu_l');
+                H = sum(H(:,ind(:,1)).*iKuuKuf(:,ind(:,2)));
+                H = sparse(ind(:,1),ind(:,2),H,n,n);
                 % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
-                gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l'*iKuuKuf))) - ...
-                                   sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))) - 2.*trace((La\DKuf_l')*iKuuKuf) + ...
-                                   trace((La\KfuiKuuDKuu_l)*iKuuKuf));
-                gdata(i1) = gdata(i1) ...                             %   + trace(Labl{i}\H(ind{i},ind{i})) ...
-                    + 0.5.*(-(b*DKff_l')*b' ...
-                            + b*H*b' ...
-                            + trace(La\(DKff_l-H))...
-                            - sum(sum(L'.*(L'*DKff_l))) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
-                            + sum(sum(L'.*(L'*H))));
+                gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b'));
+                gdata(i1) = gdata(i1) - sum(sum(L'.*(L'*DKuf_l'*iKuuKuf)));
+                gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf)));
+                gdata(i1) = gdata(i1) + sum(sum((La\(DKuf_l'-0.5.*KfuiKuuDKuu_l))'.*iKuuKuf));
+                gdata(i1) = gdata(i1) + 0.5.*(b*(H-DKff_l))*b';
+                gdata(i1) = gdata(i1) + 0.5.*trace(La\(DKff_l-H));
+                gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-DKff_l))));
+
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*-(b(ind(:,1)).*kv_ff')*b(ind(:,2))';
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*b*H*b';
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*trace(La\(K_ff-H));
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-K_ff))));               %- trace(Labl{i}\H(ind{i},ind{i})) 
+% $$$ 
+% $$$                 gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l'*iKuuKuf))) - ...
+% $$$                                    sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))) - 2.*sum(sum((La\DKuf_l')'.*iKuuKuf)) + ...
+% $$$                                    sum(sum((La\KfuiKuuDKuu_l)'.*iKuuKuf)));
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*(b*(H-DKff_l))*b';
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*trace(La\(DKff_l-H));
+% $$$                 gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-DKff_l))));
             end
             gprior(i1)=feval(gpp.lengthScale.fg, ...
                              gpcf.lengthScale, ...
@@ -707,7 +721,7 @@ function gpcf = gpcf_sexp(do, varargin)
     end
     
     
-    function C = gpcf_sexp_cov(gpcf, x1, x2)
+    function C = gpcf_sexp_cov(gpcf, x1, x2, varargin)
     % GP_SEXP_COV     Evaluate covariance matrix between two input vectors. 
     %
     %         Description
@@ -736,7 +750,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if m1~=m2
             error('the number of columns of X1 and X2 has to be same')
         end
-        
+                
         C=zeros(n1,n2);
         ma2 = gpcf.magnSigma2;
         
@@ -817,7 +831,39 @@ function gpcf = gpcf_sexp(do, varargin)
         trcov_ms=gpcf.magnSigma2;
         trcov_C=C;
     end
-    
+       
+    function C = gpcf_sexp_covvec(gpcf, x1, x2, varargin)
+    % GPCF_SEXP_COVVEC     Evaluate covariance vector between two input vectors. 
+    %
+    %         Description
+    %         C = GPCF_SEXP_COVVEC(GP, TX, X) takes in Gaussian process GP and two
+    %         matrixes TX and X that contain input vectors to GP. Returns 
+    %         covariance vector C, where every element i of C contains covariance
+    %         between input i in TX and i in X.
+    %
+
+        
+        if isempty(x2)
+            x2=x1;
+        end
+        [n1,m1]=size(x1);
+        [n2,m2]=size(x2);
+        
+        if m1~=m2
+            error('the number of columns of X1 and X2 has to be same')
+        end
+        
+        ma2 = gpcf.magnSigma2;
+        
+        di2 = 0;
+        s = 1./gpcf.lengthScale.^2;
+        for i = 1:m1
+            di2 = di2 + s.*(x1(:,i) - x2(:,i)).^2;
+        end
+        C = gpcf.magnSigma2.*exp(-di2);
+    end
+        
+        
     function C = gpcf_sexp_trvar(gpcf, x)
     % GP_SEXP_TRVAR     Evaluate training variance vector of inputs. 
     %

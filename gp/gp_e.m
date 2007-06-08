@@ -145,12 +145,27 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             % Q_ff = K_fu*inv(K_uu)*K_fu'
             % Here we need only the blockdiag(Q_ff), which is evaluated below
             B=Luu\(K_fu');       % u x f  and B'*B = K_fu*K_uu*K_uf
-            for i = 1:size(ind,1)
-                q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
-                c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
-            end
+                                 %            q_ff = zeros(1,size(ind,1));
+% $$$             for i = 1:size(ind,1)
+% $$$                 q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
+% $$$                 %    c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
+% $$$             end
+% $$$             c_ff = gp_covvec(gp, x(ind(:,1),:), x(ind(:,2),:))';
+% $$$             [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+% $$$             La = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
+            
+            [I,J]=find(tril(sparse(ind(:,1),ind(:,2),1,n,n),-1));
+% $$$             for i = 1:length(J)
+% $$$                 q_ff(i) = B(:,I(i))'*B(:,J(i));
+% $$$             end
+            q_ff = sum(B(:,I).*B(:,J));
+            q_ff = sparse(I,J,q_ff,n,n);
+            c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+            c_ff = sparse(I,J,c_ff,n,n);
             [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-            La = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
+            La = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+
+            
             %cputime - t
         
             iLaKfu = La\K_fu;
@@ -164,11 +179,10 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             % A = chol(K_uu+K_uf*inv(La)*K_fu))
             A = K_uu+K_fu'*iLaKfu;
             A = (A+A')./2;     % Ensure symmetry
-            A = chol(A)';
             % The actual error evaluation
             % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-            b = (t'*iLaKfu)*inv(A)';
-            
+            b = (t'*iLaKfu)/chol(A);
+                        
             edata = 2*sum(log(diag(chol(La)))) + t'*(La\t);
             edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
             edata = .5*(edata + n*log(2*pi));

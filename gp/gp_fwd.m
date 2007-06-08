@@ -74,7 +74,9 @@ switch gp.type
     end
     Sinv = K_uu+K_fu'*iLaKfu;
     
-    y = K_nu*(Sinv\(K_fu'*(ty./Lav)));
+    %y = K_nu*(Sinv\(K_fu'*(ty./Lav)));
+    iKuuKufiLa = K_uu\iLaKfu';
+    y = K_nu*(iKuuKufiLa*ty + iKuuKufiLa*(K_fu*(Sinv\(K_fu'*(ty./Lav)))));
     if nargout > 1
         % VarY = Knn - Qnn + Knu*S*Kun
         B=Luu\(K_nu');
@@ -84,5 +86,66 @@ switch gp.type
         b = L\K_nu';
         Kv_nn = gp_trvar(gp,x);
         VarY = Kv_nn - Qv_nn + sum(b.^2)';
+    end
+  case 'PIC_BLOCK'
+    u = gp.X_u;
+    ind = gp.tr_index;
+    tstind = varargin{1};   % An array containing information 
+                            % in which block each of the test inputs belongs
+    % Turn the inducing vector on right direction
+    if size(u,2) ~= size(tx,2)
+        u=u';
+    end
+
+    % Calculate some help matrices  
+    [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % 1 x f  vector
+    K_fu = gp_cov(gp, tx, u);         % f x u
+    K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+    Luu = chol(K_uu)';
+    % Evaluate the Lambda (La) for specific model
+    % Q_ff = K_fu*inv(K_uu)*K_fu'
+    % Here we need only the diag(Q_ff), which is evaluated below
+    B=Luu\K_fu';
+    iLaKfu = zeros(size(K_fu));  % f x u
+    for i=1:length(ind)
+        Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+        %            Qbl_ff2(ind{i},ind{i}) = B(:,ind{i})'*B(:,ind{i});
+        [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+        La{i} = Cbl_ff - Qbl_ff;
+        iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    % Check if works by changing inv(La{i})!!!
+    end
+    A = K_uu+K_fu'*iLaKfu;
+    A = (A+A')./2;            % Ensure symmetry
+
+    %    y = K_nu*(A\(K_fu'*(ty./Lav)));   
+    p=zeros(size(ty));
+    for i=1:length(ind)
+        iLaty = La{i}\ty(ind{i});
+        p(ind{i}) = (iLaty + La{i}\(K_fu(ind{i},:)*(A\(K_fu(ind{i},:)'*(iLaty)))));
+    end
+    iKuuKuf = K_uu\K_fu';
+    y=zeros(size(x));
+    for i=1:length(tstind)
+        K_nf = gp_cov(gp, x(tstind{i},:), tx(tstind{i},:));         % n x u
+        notinblock = [];
+        for j=1:length(tstind)
+            if j~=i
+                notinblock = [notinblock ; tstind{j}];
+            end
+        end
+        K_nu = gp_cov(gp, x(notinblock,:), u);         % n x u
+        y(tstind{i}) = K_nf*p(tstind{i});
+        y(notinblock) = K_nu*iKuuKuf(:,notinblock)*p(notinblock);
+    end
+    if nargout > 1
+        error('The variaance is not implemented for PIC_BLOCK yet! \n')
+% $$$         % VarY = Knn - Qnn + Knu*S*Kun
+% $$$         B=Luu\(K_nu');
+% $$$         Qv_nn=sum(B.^2)';
+% $$$         % Vector of diagonal elements of covariance matrix
+% $$$         L = chol(K_uu+K_fu'*iLaKfu)';
+% $$$         b = L\K_nu';
+% $$$         Kv_nn = gp_trvar(gp,x);
+% $$$         VarY = Kv_nn - Qv_nn + sum(b.^2)';
     end
 end

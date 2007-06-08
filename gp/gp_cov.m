@@ -1,4 +1,4 @@
-function [C, Cinv] = gp_cov(gp, x1, x2)
+function [C, Cinv] = gp_cov(gp, x1, x2, varargin)
 % GPCOV     Evaluate covariance matrix between two input vectors. 
 %
 %         Description
@@ -7,7 +7,7 @@ function [C, Cinv] = gp_cov(gp, x1, x2)
 %         covariance matrix C. Every element ij of C contains covariance 
 %         between inputs i in TX and j in X.
 %
-%         [C, Cinv] = GPCOV(GP, TX, X) returns also inverse of covariance.
+%         [C, Cinv] = GPCOV(GP, TX, X, VARARGIN) returns also inverse of covariance.
 %
 %         For covariance function definition see manual or 
 %         Neal R. M. Regression and Classification Using Gaussian 
