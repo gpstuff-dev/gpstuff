@@ -1,4 +1,4 @@
-function demo_PICblock2
+function demo_regrPIC
 %DEMO_GPREGR    Regression problem demonstration for 2-input 
 %              function with Gaussian process
 %
@@ -17,19 +17,25 @@ function demo_PICblock2
 % gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 
 % Load the data
-S = which('demo_gpregr');
-L = strrep(S,'demo_gpregr.m','demos/dat.1');
+S = which('demo_regrPIC');
+L = strrep(S,'demo_regrPIC.m','demos/dat.1');
 data=load(L);
 x = [data(:,1) data(:,2)];
 y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
 %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
 %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
@@ -39,29 +45,37 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1);
+gp = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.01);
 
 % Set the inducing inputs
-[u1,u2]=meshgrid(linspace(-1.8,1.8,4),linspace(-1.8,1.8,4));
+[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 U=[u1(:) u2(:)];
 %U = 3.6.*rand(14,2)-1.8;
 
 % define the blocks by cubes
 b1 = [-1.7 -1.1 -0.5 0.1 0.7 1.3 1.9];
 mask = zeros(size(x,1),size(x,1));
-for i1=1:4
-    for i2=1:4
+tot = 0;
+for i1=1:6
+    for i2=1:6
         ind = 1:size(x,1);
         ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
         ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));        
-        index{4*(i1-1)+i2} = ind';
+        index{6*(i1-1)+i2} = ind';
         mask(ind,ind) = 1;
+        tot = tot  + length(ind);
     end
 end
 
+d=symamd(mask);
+spy(mask(d,d))
 nnz(mask)/prod(size(mask))
+pcolor(mask(d,d)), shading flat
 
 gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x, index});
+
+gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
+
 
 % $$$ w=gp_pak(gp, 'hyper');
 % $$$ [e, edata, eprior] = gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 
@@ -157,8 +171,6 @@ figure
 title('The prediction');
 [xi,yi,zi]=griddata(data(:,1),data(:,2),pred,-1.8:0.01:1.8,[-1.8:0.01:1.8]');
 mesh(xi,yi,zi)
-
-
 
 
 

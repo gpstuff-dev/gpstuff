@@ -438,16 +438,13 @@ function gpcf = gpcf_sexp(do, varargin)
                     s = 1./gpcf.lengthScale(i).^2;        % set the length
                     dist = gminus(u(:,i),x(:,i)');
                     dist2 = gminus(u(:,i),u(:,i)');
-                    dist = 2.*s.*K_uf.*dist.^2;
-                    dist2 = 2.*s.*K_uu.*dist2.^2;
+                    DKuf_l{i} = 2.*s.*K_uf.*dist.^2;
+                    DKuu_l{i} = 2.*s.*K_uu.*dist2.^2;
                     for j=1:length(ind)
                         dist3 = gminus(x(ind{j},i),x(ind{j},i)');
                         dist3 = 2.*s.*K_ff{j}.*dist3.^2;
                         DKff_l{j,i} = dist3;
                     end
-                    
-                    DKuf_l{i} = dist;         % 
-                    DKuu_l{i} = dist2;        % 
                 end
             end
           case 'PIC_BAND'
@@ -589,9 +586,21 @@ function gpcf = gpcf_sexp(do, varargin)
                   case 'FIC'
                     gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
                   case 'PIC_BLOCK'
-                    gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
-                    for i=1:length(ind)
-                        gdata(i1) =  gdata(i1) + DE_Kff{i}(:)'*DKff_l{i}(:,i2);
+                    KfuiKuuDKuu_l = iKuuKuf'*DKuu_l{i2};
+                    %            H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
+                    % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
+                    gdata(i1) = -0.5.*((2*b*DKuf_l{i2}'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_l{i2}')*iKuuKuf))) - ...
+                                       sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
+                    for i=1:length(K_ff)
+                        gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                            + 0.5.*(-b(ind{i})*DKff_l{i,i2}*b(ind{i})' ...
+                                    + 2.*b(ind{i})*DKuf_l{i2}(:,ind{i})'*iKuuKuf(:,ind{i})*b(ind{i})'- ...
+                                    b(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b(ind{i})' ...       %H(ind{i},ind{i})
+                                    + trace(Labl{i}\DKff_l{i,i2})...
+                                    - trace(L(ind{i},:)*(L(ind{i},:)'*DKff_l{i,i2})) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
+                                    + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*DKuf_l{i2}(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
+                                    sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuDKuu_l(ind{i},:))*iKuuKuf(:,ind{i}))))); 
+                        %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
                     end
                   case 'PIC_BAND'
                     

@@ -39,10 +39,10 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', 'PIC_BAND', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1);
+gp = gp_init('init', 'PIC_BAND', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.03);
 
 % Set the inducing inputs
-[u1,u2]=meshgrid(linspace(-1.8,1.8,5),linspace(-1.8,1.8,5));
+[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 U=[u1(:) u2(:)];
 %U = 3.6.*rand(14,2)-1.8;
 
@@ -102,7 +102,7 @@ gp = gp_init('set', gp, 'X_u', U, 'truncated', {x, R, 1});
 opt=gp_mcopt;
 opt.repeat=1;
 opt.nsamples=300;
-opt.hmc_opt.steps=3;
+opt.hmc_opt.steps=2;
 opt.hmc_opt.stepadj=0.01;
 opt.hmc_opt.nsamples=1;
 opt.hmc_opt.window=1;
@@ -110,12 +110,13 @@ hmc2('state', sum(100*clock));
 
 % Sample sparse model
 t = cputime;
-[r,g,rstate2]=gp_mc(opt, gp, x, y, [], []);
+[r,g,rstate]=gp_mc(opt, gp, x, y, [], []);
 tsparse = cputime - t;
 
-% New input
-[p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);
-p=[p1(:) p2(:)];
+opt.nsamples=200;
+opt.hmc_opt.steps=2;
+opt.hmc_opt.stepadj=0.009;
+[r,g,rstate]=gp_mc(opt, g, x, y, [], [], r, rstate);
 
 % Evaluate the MSE for the predictions
 out=gp_fwds(rr, x, y, x);

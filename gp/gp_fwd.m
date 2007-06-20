@@ -124,7 +124,7 @@ switch gp.type
         p(ind{i}) = (iLaty + La{i}\(K_fu(ind{i},:)*(A\(K_fu(ind{i},:)'*(iLaty)))));
     end
     iKuuKuf = K_uu\K_fu';
-    y=zeros(size(x));
+    y=zeros(length(x),1));
     for i=1:length(tstind)
         K_nf = gp_cov(gp, x(tstind{i},:), tx(tstind{i},:));         % n x u
         notinblock = [];

@@ -355,14 +355,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         end
 
         % Set the inducing inputs in the record structure
+        switch gp.type
+          case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+            rec.X_u(ri,:) = gp.X_u(:)';
+        end
         if isfield(opt, 'inducing_opt')
             rec.indrejects(ri,1)=indrej; 
-            switch gp.type
-              case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
-                rec.X_u(ri,:) = gp.X_u(:)';
-              otherwise
-                % Do nothing
-            end
         end
 
         % Record training error and rejects

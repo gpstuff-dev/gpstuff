@@ -1,4 +1,4 @@
-function demo_FIC2
+function demo_regrFIC
 %DEMO_GPREGR    Regression problem demonstration for 2-input 
 %              function with Gaussian process
 %
@@ -14,18 +14,26 @@ function demo_FIC2
 % License.txt, included with the software, for details.
 
 % Load the data
-S = which('demo_gpregr');
-L = strrep(S,'demo_gpregr.m','demos/dat.1');
+S = which('demo_regrFIC');
+L = strrep(S,'demo_regrFIC.m','demos/dat.1');
 data=load(L);
 x = [data(:,1) data(:,2)];
 y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1, 1], 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1] , 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -34,11 +42,13 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1);
-[u1,u2]=meshgrid(linspace(-1.8,1.8,5),linspace(-1.8,1.8,5));
+gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001);
+[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 U=[u1(:) u2(:)];
 %U = 3.6.*rand(14,2)-1.8;
 gp = gp_init('set', gp, 'X_u', U);
+
+gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 
 % $$$ w=gp_pak(gp, 'hyper');
 % $$$ [e, edata, eprior] = gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 

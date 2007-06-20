@@ -1,4 +1,4 @@
-function demo_gp2class
+function demo_clFull
 %DEMO_GP2CLASS    Classification problem demonstration for 2
 %                 classes. 
 %

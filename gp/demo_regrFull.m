@@ -1,4 +1,4 @@
-function demo_gpregr
+function demo_regrFull
 %DEMO_GPREGR    Regression problem demonstration for 2-input 
 %              function with Gaussian process
 %
@@ -15,16 +15,26 @@ function demo_gpregr
 % License.txt, included with the software, for details.
 
 % Load the data
-S = which('demo_gpregr');
-L = strrep(S,'demo_gpregr.m','demos/dat.1');
+S = which('demo_regrFull');
+L = strrep(S,'demo_regrFull.m','demos/dat.1');
 data=load(L);
 x = [data(:,1) data(:,2)];
 y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
@@ -32,16 +42,18 @@ gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.1)    
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
 
 w=gp_pak(gp, 'hyper');
 gp_e(w, gp, x, y, 'hyper')    % answer 370.9230
+
+gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 
 % Set the sampling options
 opt=gp_mcopt;
 opt.repeat=10;
 opt.nsamples=10;
-opt.hmc_opt.steps=5;
+opt.hmc_opt.steps=3;
 opt.hmc_opt.stepadj=0.01;
 opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
@@ -52,7 +64,7 @@ hmc2('state', sum(100*clock));
 opt.hmc_opt.stepadj=0.08;
 opt.nsamples=200;
 opt.repeat=5;
-opt.hmc_opt.steps=6;
+opt.hmc_opt.steps=3;
 opt.hmc_opt.stepadj=0.05;
 opt.hmc_opt.persistence=0;
 opt.hmc_opt.decay=0.6;
