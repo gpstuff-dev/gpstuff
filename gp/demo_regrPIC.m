@@ -45,36 +45,49 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % sparse model. Set the inducing points to the GP
-gp = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.01);
+gp = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001);
 
-% Set the inducing inputs
-[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
-U=[u1(:) u2(:)];
-%U = 3.6.*rand(14,2)-1.8;
-
-% define the blocks by cubes
-b1 = [-1.7 -1.1 -0.5 0.1 0.7 1.3 1.9];
+% Set the blocks and the inducing inputs
+b1 = [-1.7 -0.8 0.1 1 1.9];
 mask = zeros(size(x,1),size(x,1));
 tot = 0;
-for i1=1:6
-    for i2=1:6
+for i1=1:4
+    for i2=1:4
         ind = 1:size(x,1);
         ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
         ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));        
-        index{6*(i1-1)+i2} = ind';
+        index{4*(i1-1)+i2} = ind';
         mask(ind,ind) = 1;
         tot = tot  + length(ind);
     end
 end
 
+figure
 d=symamd(mask);
 spy(mask(d,d))
 nnz(mask)/prod(size(mask))
 pcolor(mask(d,d)), shading flat
+title('The correlation matrix')
 
+[u1,u2]=meshgrid(linspace(-1.7,1.9,5),linspace(-1.7,1.9,5));
+U=[u1(:) u2(:)];
+
+% plot the data points in each block with different colors and marks
+figure
+col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
+hold on
+for i=1:16
+    plot(x(index{i},1),x(index{i},2),col{i})
+end
+% plot the inducing inputs
+plot(u1(:), u2(:), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
+title('Blocks and inducing inputs')
+
+% Set the inducing inputs and blocks into the gp structure
 gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x, index});
 
-gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
+% $$$ % Check the gradients
+% $$$ gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 
 
 % $$$ w=gp_pak(gp, 'hyper');
@@ -96,8 +109,6 @@ gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 % $$$  -275.1214  410.3560 -105.6614
 % $$$ gprior =
 % $$$     0.2500   -3.0000    0.2500
-
-
 
 
 % plot the data points in each block with different colors and marks
@@ -148,8 +159,8 @@ gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 opt=gp_mcopt;
 opt.repeat=1;
 opt.nsamples=300;
-opt.hmc_opt.steps=5;
-opt.hmc_opt.stepadj=0.07;
+opt.hmc_opt.steps=4;
+opt.hmc_opt.stepadj=0.04;
 opt.hmc_opt.window=1;
 hmc2('state', sum(100*clock));
 
@@ -160,8 +171,8 @@ tsparse = cputime - t;
 
 % Evaluate the MSE for the predictions
 % Evaluate the MSE for the predictions
-r.X_u = repmat(gp.X_u(:)', length(r.etr), 1);
 r = rmfield(r, 'tr_index');
+r = thin(r,50);
 out=gp_fwds(r, x, y, x, gp.tr_index, gp.tr_index);
 mout = mean(squeeze(out)');
 pred = zeros(size(x,1),1);
@@ -172,22 +183,58 @@ title('The prediction');
 [xi,yi,zi]=griddata(data(:,1),data(:,2),pred,-1.8:0.01:1.8,[-1.8:0.01:1.8]');
 mesh(xi,yi,zi)
 
+(pred-y)'*(pred-y)/length(y)
 
 
-
+% $$$ >> mean(r.cf{1}.lengthScale)
+% $$$ ans =
+% $$$     1.1690    1.0770
+% $$$ >> 
 
 
 % New input
-[p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);
+[p1,p2]=meshgrid(-1.7:0.05:1.8,-1.7:0.05:1.8);
 p=[p1(:) p2(:)];
+tot = 0;
+for i1=1:4
+    for i2=1:4
+        ind = 1:size(p,1);
+        ind = ind(: , b1(i1)<=p(ind',1) & p(ind',1) < b1(i1+1));
+        ind = ind(: , b1(i2)<=p(ind',2) & p(ind',2) < b1(i2+1));        
+        tst_index{4*(i1-1)+i2} = ind';
+        tot = tot  + length(ind);
+    end
+end
+
+figure
+col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
+hold on
+for i=1:16
+    plot(p(tst_index{i},1),p(tst_index{i},2),col{i})
+end
+% plot the inducing inputs
+plot(u1(:), u2(:), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
+title('Blocks and inducing inputs')
+
 
 % The predictions for the new inputs of sparse model
-rr=thin(r,10,2);
-yn = gp_fwds(rr, x, y, p, U);
-Ey = mean(squeeze(yn)');
+%rr=thin(r,10,2);
+yn = gp_fwds(r, x, y, p, gp.tr_index, tst_index);
 
 pred = zeros(size(p1));
-pred(:)=Ey;
+pred(:)=mean(squeeze(yn)');
+figure
+mesh(p1,p2,pred);
+qc=caxis;
+title('The prediction into dence grid')
+
+
+
+gp.cf{1}.lengthScale = [1.0640 1.0525];
+gp.cf{1}.magnSigma2 = 2.0215;
+gp.noise{1}.noiseSigmas2 = 0.027;
+yn = gp_fwd(gp, x, y, p, gp.tr_index, tst_index);
+pred(:)=yn;
 figure
 mesh(p1,p2,pred);
 qc=caxis;

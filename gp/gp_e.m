@@ -58,6 +58,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             b=L\t;
             edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
           case 'FIC'
+            % The eguations in FIC are implemented as in Neil, 2006
             u = gp.X_u;
             
             % First evaluate needed covariance matrices
@@ -118,9 +119,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             end
             % The data contribution to the error is 
             % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
-            %   = + 0.5*log(det(La)) + 0.5*trace(iLa*t*t') - 0.5*log(det(K_uu)) 
-            %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*t*t'*iLaKfu)
-            
+                        
             % First some help matrices...
             % A = chol(K_uu+K_uf*inv(La)*K_fu))
             A = K_uu+K_fu'*iLaKfu;

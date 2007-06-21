@@ -24,7 +24,7 @@ y = data(:,3);
 
 % Create covariance functions
 %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
@@ -33,7 +33,7 @@ y = data(:,3);
 %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
@@ -62,7 +62,7 @@ hmc2('state', sum(100*clock));
 [r,g,rstate1]=gp_mc(opt, gp, x, y);
 
 opt.hmc_opt.stepadj=0.08;
-opt.nsamples=200;
+opt.nsamples= 50;
 opt.repeat=5;
 opt.hmc_opt.steps=3;
 opt.hmc_opt.stepadj=0.05;
@@ -78,24 +78,11 @@ pred = zeros(size(x,1),1);
 pred(:)=mout;
 
 figure
-title('The prediction');
 [xi,yi,zi]=griddata(data(:,1),data(:,2),pred,-1.8:0.01:1.8,[-1.8:0.01:1.8]');
 mesh(xi,yi,zi)
+title('The prediction');
 
 (pred-y)'*(pred-y)/length(y)
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 % The predictions for the new inputs
@@ -109,11 +96,11 @@ pred(:)=mout;
 
 % Plot the old data and the new data
 figure
-title({'The noisy teaching data'});
 [xi,yi,zi]=griddata(data(:,1),data(:,2),data(:,3),-1.8:0.01:1.8,[-1.8:0.01:1.8]');
 mesh(xi,yi,zi)
+title('The noisy teaching data');
 figure
-title({'The underlying function'});
 mesh(p1,p2,pred);
 axis on;
+title('The underlying function');
 

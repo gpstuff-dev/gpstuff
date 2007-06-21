@@ -1,4 +1,4 @@
-function demo_clFull
+function demo_clPIC
 %DEMO_GP2CLASS    Classification problem demonstration for 2
 %                 classes. 
 %
@@ -75,8 +75,57 @@ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 %gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
-gp = gp_init('init', 'FULL', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
+gp = gp_init('init', 'PIC_BLOCK', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.001)   %{gpcf2}
 gp = gp_init('set', gp, 'fh_latentmc', @latent_mh);
+
+% Set the blocks and the inducing inputs
+b1 = [-1.25 0.9];
+b2 = [-0.2  1.1];
+mask = zeros(size(x,1),size(x,1));
+tot = 0;
+for i1=1:4
+    for i2=1:4
+        ind = 1:size(x,1);
+        ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
+        ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));        
+        index{4*(i1-1)+i2} = ind';
+        mask(ind,ind) = 1;
+        tot = tot  + length(ind);
+    end
+end
+
+a=1;
+uu=[-3:a:4];
+au=2; % moneenko osaan reuna jaetaan
+uuu=[-3:a/au:4];
+[U1a U2a] = meshgrid(uu, uuu);
+[U1b U2b] = meshgrid(uuu, uu);
+u=union([U1a(:) U2a(:)],[U1b(:) U2b(:)],'rows');
+
+figure
+d=symamd(mask);
+spy(mask(d,d))
+nnz(mask)/prod(size(mask))
+pcolor(mask(d,d)), shading flat
+title('The correlation matrix')
+
+[u1,u2]=meshgrid(linspace(-1.7,1.9,5),linspace(-1.7,1.9,5));
+U=[u1(:) u2(:)];
+
+% plot the data points in each block with different colors and marks
+figure
+col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
+hold on
+for i=1:16
+    plot(x(index{i},1),x(index{i},2),col{i})
+end
+% plot the inducing inputs
+plot(u1(:), u2(:), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
+title('Blocks and inducing inputs')
+
+gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x, index});
+
+
 
 
 disp(' ')
@@ -131,7 +180,7 @@ hmc2('state', sum(100*clock))
 opt.nsamples=100;
 opt.repeat=3;
 opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.001;
+opt.hmc_opt.stepadj=0.1;
 opt.latent_opt.repeat = 5;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
@@ -175,7 +224,7 @@ plot(x(y==1,1),x(y==1,2),'x');
 hold off;
 
 % test how well the network works for the test data. 
-L = strrep(S,'demo_clFull.m','demos/synth.ts');
+L = strrep(S,'demo_2classgp.m','demos/synth.ts');
 tx=load(L);
 ty=tx(:,end);
 tx(:,end)=[];

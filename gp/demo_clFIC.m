@@ -1,4 +1,4 @@
-function demo_clFull
+function demo_clFIC
 %DEMO_GP2CLASS    Classification problem demonstration for 2
 %                 classes. 
 %
@@ -43,8 +43,8 @@ disp(' ')
 
   
 % Load the data
-S = which('demo_clFull');
-L = strrep(S,'demo_clFull.m','demos/synth.tr');
+S = which('demo_clFIC');
+L = strrep(S,'demo_clFIC.m','demos/synth.tr');
 x=load(L);
 y=x(:,end);
 x(:,end)=[];
@@ -75,9 +75,18 @@ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 %gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
-gp = gp_init('init', 'FULL', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
+gp = gp_init('init', 'FIC', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
 gp = gp_init('set', gp, 'fh_latentmc', @latent_mh);
 
+% Set the inducing inputs
+[u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
+U=[u1(:) u2(:)];
+U = U([3 4 7:18 20:24 26:30 33:36],:);
+plot(x(:,1), x(:,2),'*'), hold on
+plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
+
+gp = gp_init('set', gp, 'X_u', U);
+gp.latentValues = randn(size(y'));
 
 disp(' ')
 disp(' The starting values for sampling the parameters are found with early ')
@@ -90,26 +99,27 @@ disp(' ')
 % <http://www.lce.hut.fi/publications/pdf/VehtariEtAl_ijcnn2000.pdf>
 
 % Intialize weights to zero and set the optimization parameters...
-w=randn(size(gp_pak(gp,'hyper')))*0.01;
-
-fe=str2fun('gp_e');
-fg=str2fun('gp_g');
-n=length(y);
-itr=1:floor(0.5*n);     % training set of data for early stop
-its=floor(0.5*n)+1:n;   % test set of data for early stop
-optes=scges_opt;
-optes.display=1;
-optes.tolfun=1e-1;
-optes.tolx=1e-1;
-
-% do scaled conjugate gradient optimization with early stopping.
-[w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:),'hyper', gp,x(its,:),y(its,:),'hyper');
-gp=gp_unpak(gp,w,'hyper');
+% $$$ w=randn(size(gp_pak(gp,'hyper')))*0.01;
+% $$$ 
+% $$$ fe=str2fun('gp_e');
+% $$$ fg=str2fun('gp_g');
+% $$$ n=length(y);
+% $$$ itr=1:floor(0.5*n);     % training set of data for early stop
+% $$$ its=floor(0.5*n)+1:n;   % test set of data for early stop
+% $$$ optes=scges_opt;
+% $$$ optes.display=1;
+% $$$ optes.tolfun=1e-1;
+% $$$ optes.tolx=1e-1;
+% $$$ 
+% $$$ % do scaled conjugate gradient optimization with early stopping.
+% $$$ [w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:),'hyper', gp,x(its,:),y(its,:),'hyper');
+% $$$ gp=gp_unpak(gp,w,'hyper');
 
 disp(' ')
 disp(' Now that the starting values are found we set the main sampling ')
 disp(' options and define the latent values. ')
 disp(' ')
+
 
 opt=gp_mcopt;
 opt.repeat=15;
@@ -130,9 +140,9 @@ hmc2('state', sum(100*clock))
 % Set the sampling options
 opt.nsamples=100;
 opt.repeat=3;
-opt.hmc_opt.steps=3;
+opt.hmc_opt.steps=1;
 opt.hmc_opt.stepadj=0.001;
-opt.latent_opt.repeat = 5;
+opt.latent_opt.repeat = 3;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
@@ -175,7 +185,7 @@ plot(x(y==1,1),x(y==1,2),'x');
 hold off;
 
 % test how well the network works for the test data. 
-L = strrep(S,'demo_clFull.m','demos/synth.ts');
+L = strrep(S,'demo_clFIC.m','demos/synth.ts');
 tx=load(L);
 ty=tx(:,end);
 tx(:,end)=[];
