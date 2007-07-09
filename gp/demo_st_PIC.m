@@ -192,7 +192,7 @@ zlim([-2 2])
 t_test = 0:0.1:5;
 pred = cell(1,length(t_test));
 [p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);
-for i = 1:length(t_tst)
+for i = 1:length(t_test)
     p = [p1(:) p2(:) t_test(i)*ones(length(p1(:)),1)];
     mask = zeros(size(p,1),size(p,1));
     tot = 0;
@@ -210,14 +210,14 @@ for i = 1:length(t_tst)
         end
     end
 
-    gp_fwd(gp, x, y, p,gp.tr_index, tst_index);
+    out = gp_fwd(gp, x, y, p,gp.tr_index, tst_index);
     mout = mean(squeeze(out)');
     pred{i} = zeros(size(p1));
     pred{i}(:)=mout;
 end
 
 % Plot the predictions
-for i = 1:length(t_tst)
+for i = 1:length(t_test)
     surf(p1,p2,pred{i});   
     F(i) = getframe;
 end
