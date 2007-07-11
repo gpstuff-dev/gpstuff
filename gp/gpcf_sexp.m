@@ -308,7 +308,7 @@ function gpcf = gpcf_sexp(do, varargin)
         
         % First check if sparse model is used
         switch gpcf.type
-          case 'FULL'
+          case 'FULL' 
             % Evaluate help arguments for gradient evaluation
             % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
             % Cdm and invC are symmetric matricess of same size. This is 67 times faster 

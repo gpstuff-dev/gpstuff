@@ -433,9 +433,7 @@ function gpcf = gpcf_exp(do, varargin)
                 % In the case ARD is used
                 s = 1./gpcf.lengthScale.^2;        % set the length
                 dist = 0; dist2 = 0;
-% $$$                 for j=1:length(ind)
-% $$$                     dist3{j} = zeros(size(K_ff{j}));
-% $$$                 end
+
                 for j=1:length(ind)
                     dist3{j} = zeros(size(ind{j},1),size(ind{j},1));
                 end
@@ -448,6 +446,9 @@ function gpcf = gpcf_exp(do, varargin)
                     end
                 end
                 dist = sqrt(dist); dist2 = sqrt(dist2);
+                for j=1:length(ind)
+                    dist3{j} = sqrt(dist3{j});
+                end
                 for i=1:m
                     D1 = s(i).*K_uf.*(gminus(u(:,i),x(:,i)')).^2;
                     D2 = s(i).*K_uu.*(gminus(u(:,i),u(:,i)')).^2;
@@ -456,7 +457,6 @@ function gpcf = gpcf_exp(do, varargin)
                     DKuf_l{i} = D1;       
                     DKuu_l{i} = D2;       
                     for j=1:length(ind)
-                        dist3{j} = sqrt(dist3{j});
                         D3 = s(i).*K_ff{j}.*(gminus(x(ind{j},i),x(ind{j},i)')).^2;
                         D3(dist3{j}~=0) = D3(dist3{j}~=0)./dist3{j}(dist3{j}~=0);
                         DKff_l{j,i} = D3;
