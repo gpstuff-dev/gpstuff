@@ -13,7 +13,6 @@ function gp = gp_init(do, varargin)
 %        'FULL'        (full GP), 
 %        'FIC'         (fully independent conditional), 
 %        'PIC_BLOCK'   (block partially independent condional), 
-%        'PIC_BAND'    (banded partially independent condional), 
 %
 %       With VARAGIN the fields of the GP structure can be set into different values 
 %       VARARGIN = 'FIELD1', VALUE1, 'FIELD2', VALUE2, ... 
@@ -21,7 +20,8 @@ function gp = gp_init(do, varargin)
 %	GP = GPINIT('SET', GP, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of the fields FIELD1... to the values VALUE1... in GP.
 %
-%	The fields (minimum number of them) and default values in GP are:
+%	The minimum number of fields (in case of full GP regression model) and 
+%       their default values are:
 %         type           = 'FULL'
 %	  nin            = number of inputs
 %	  nout           = number of outputs: always 1
@@ -30,24 +30,16 @@ function gp = gp_init(do, varargin)
 %	  jitterSigmas   = jitter term for covariance function
 %                          (0.1)
 %         p              = prior structure for parameters
-%         likelih        = String defining the likelihood function
-%                          (Default 'regr' as regression)
 %         p.r            = Prior Structure for residual
 %                          (defined only in case likelih == 'regr')
+%         likelih        = String defining the likelihood. Possible likelihoods are
+%                          'regr', 'logistic', 'poisson', 'probit'
+%                          In case of poisson likehood there is also field
+%                             avgE  = In poisson(y|lambda) we have lambda = avgE*f,
+%                                      where f is vector of latent values
 %
-%       Additional fields when latent values are used (likelih ~='regr'):
-%         likelih_e      = String defining the minus log likelihood function
-%                          (Default [])
-%         likelih_g      = String defining the gradient of minus log likelihood 
-%                          function with respect to latent values.
-%                          (Default [])
-%         fh_latentmc    = Function handle to function which samples the latent values
-%                          (not present in regression. If latent values are sampled default @nealmh)
-%         latentValues   = Vector of latent values (not needed for regression)
-%                          (empty matrix if likelih ~= 'regr')
-%       
-%       In sparse GP models the needed fields are following:%
-%         X_u            = Inducing inputs in sparse models
+%       The additional fields needed in sparse approximations are:
+%         X_u            = Inducing inputs in FIC and PIC
 %         blocks         = Initializes the blocks for the PIC_BLOCK model
 %                          The value for blocks has to be a cell array of type 
 %                          {'method', matrix of training inputs, param}. 
@@ -56,14 +48,28 @@ function gp = gp_init(do, varargin)
 %                            'manual', which takes in the place of param a structure of the index vectors
 %                                appointing the data points into blocks. For example, if x is a matrix of data inputs
 %                                then x(param{i},:) are the inputs belonging to the ith block.
-%         truncated      = Initializes the sparse correlation structure fo the PIC_BAND model
-%                          The value for truncated has to be a cell array of type 
-%                          {x, R}, where x is the matrix of input (size n x nin) and R is the radius for truncation.
-%                          
-%                          If value is {x, R, 1} an information about the sparsity structure is printed and plotted.
-%                          
 %
-%       
+%       The additional fields when the model is not for regression (likelih ~='regr') are:
+%         latent_method  = Defines a method for marginalizing over latent values. Possible 
+%                          methods are 'MCMC' and 'EP' and the fields for them are
+%                         
+%                          In case of MCMC:
+%                            fh_latentmc    = Function handle to function which samples the latent values
+%                            latentValues   = Vector of latent values 
+%                          and they are set as following
+%                            gp_init('SET', GP, 'latent_method', {'MCMC', @fh_latentmc Z});
+%                          where Z is a (1xn) vector of latent values 
+% 
+%                          In case of EP:
+%                            fh_e       = function handle to an energy function
+%                            site_tau   = vector (size 1xn) of tau site parameters 
+%                            site_mu    = vector (size 1xn) of mu site parameters 
+%                          and they are set as following
+%                            gp_init('SET', GP, 'latent_method', {'EP', x, y, 'param'});
+%                          where x is a matrix of inputs, y vector/matrix of outputs and 'param' a 
+%                          string defining wich parameters are sampled/optimized (see gp_pak).
+%
+%         
 %
 %	See also
 %	GPINIT, GP2PAK, GP2UNPAK
@@ -82,7 +88,6 @@ function gp = gp_init(do, varargin)
         error('Not enough arguments')
     end
 
-
     % Initialize the Gaussian process
     if strcmp(do, 'init')
         
@@ -90,11 +95,38 @@ function gp = gp_init(do, varargin)
         gp.nin = varargin{2};
         gp.nout = 1;
         
+        % Set covariance functions into gpcf
+        gpcf = varargin{4};
+        for i = 1:length(gpcf)
+            gp.cf{i} = gpcf{i};
+        end
+        
+        % Set noise functions into noise
+        if length(varargin) > 4
+            gp.noise = [];
+            gpnoise = varargin{5};
+            for i = 1:length(gpnoise)
+                gp.noise{i} = gpnoise{i};
+            end
+        else
+            gp.noise = [];
+        end
+
         % Initialize parameters
         gp.jitterSigmas=0.1;
-        
         gp.p=[];
         gp.p.jitterSigmas=[];
+        
+        switch gp.type
+          case 'FIC' 
+            gp.X_u = [];
+            gp.nind = [];
+          case 'PIC_BLOCK'
+            gp.X_u = [];
+            gp.nind = [];
+            gp.blocktype = [];
+            gp.tr_index = {};
+        end
         % Set function handle for likelihood. If regression 
         % model is used set also gp.p.r field and if other likelihood
         % set also field gp.latentValues
@@ -102,27 +134,14 @@ function gp = gp_init(do, varargin)
             gp.likelih = 'regr';
             gp.p.r=[];
         else
-            gp.likelih = varargin{3};
-            gp.fh_latentmc = @latent_hm;
-            gp.latentValues = [];
-        end  
-        
-        % Set covariance functions into gpcf
-        gp.cf = [];
-        gpcf = varargin{4};
-        for i = 1:length(gpcf)
-            gp.cf{i} = gpcf{i};
-        end
-        
-        % Set noise functions into noise
-        gp.noise = [];
-        if length(varargin) > 4
-            gpnoise = varargin{5};
-            for i = 1:length(gpnoise)
-                gp.noise{i} = gpnoise{i};
+            gp.likelih = varargin{3};   % Remember to set the latent_method.
+            gp.latent_method = [];
+            switch gp.likelih
+              case 'poisson'
+                gp.avgE = [];
             end
-        end
-        
+        end  
+                
         if length(varargin) > 5
             if mod(length(varargin),2) ==0
                 error('Wrong number of arguments')
@@ -136,8 +155,6 @@ function gp = gp_init(do, varargin)
                     gp.likelih = varargin{i+1};
                     if strcmp(gp.likelih_e, 'regr')
                         gp.p.r=[];
-                    else
-                        gp.latentValues = [];
                     end
                   case 'likelih_e'
                     gp.likelih_e = varargin{i+1};
@@ -158,6 +175,24 @@ function gp = gp_init(do, varargin)
                     init_blocks(varargin{i+1})
                   case 'truncated'
                     init_truncated(varargin{i+1})
+                  case 'latent_method'
+                    gp.latent_method = varargin{i+1}{1};
+                    switch varargin{i+1}{1}
+                      case 'MCMC'
+                        gp.fh_latentmc = varargin{i+1}{2};
+                        if length(varargin{i+1}) == 3
+                            gp.latentValues = varargin{i+1}{3};
+                        else
+                            gp.latentValues = [];
+                        end
+                      case 'EP'
+                        % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
+                        gp = gpep_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        w = gp_pak(gp, varargin{i+1}{4});
+                        [e, edata, eprior, siteparams] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        gp.site_tau = siteparams(:,1)';
+                        gp.site_mu = siteparams(:,2)';
+                    end
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -180,8 +215,6 @@ function gp = gp_init(do, varargin)
                 gp.likelih = varargin{i+1};
                 if strcmp(gp.likelih, 'regr')
                     gp.p.r=[];
-                else
-                    gp.latentValues = [];
                 end
               case 'likelih_e'
                 gp.likelih_e = varargin{i+1};
@@ -202,6 +235,24 @@ function gp = gp_init(do, varargin)
                 init_blocks(varargin{i+1})
               case 'truncated'
                 init_truncated(varargin{i+1})
+              case 'latent_method'
+                gp.latent_method = varargin{i+1}{1};
+                switch varargin{i+1}{1}
+                  case 'MCMC'
+                    gp.fh_latentmc = varargin{i+1}{2};
+                    if length(varargin{i+1}) == 3
+                        gp.latentValues = varargin{i+1}{3};
+                    else
+                        gp.latentValues = [];
+                    end
+                  case 'EP'
+                    % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
+                    gp = gpep_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    w = gp_pak(gp, varargin{i+1}{4});
+                    [e, edata, eprior, siteparams] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    gp.site_tau = siteparams(:,1)';
+                    gp.site_mu = siteparams(:,2)';
+                end
               otherwise
                 error('Wrong parameter name!')
             end    
@@ -238,6 +289,12 @@ function gp = gp_init(do, varargin)
     end
     
     function init_truncated(var)
+%         truncated      = Initializes the sparse correlation structure fo the PIC_BAND model
+%                          The value for truncated has to be a cell array of type 
+%                          {x, R}, where x is the matrix of input (size n x nin) and R is the radius for truncation.
+%                          
+%                          If value is {x, R, 1} an information about the sparsity structure is printed and plotted.
+
         if length(var) < 2
             error('Wrong kind of value for the truncated type! See help gp_init!')
         end

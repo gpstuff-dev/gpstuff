@@ -76,7 +76,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 %gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
 gp = gp_init('init', 'FIC', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
-gp = gp_init('set', gp, 'fh_latentmc', @latent_mh);
+gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_mh, randn(size(y))'});
 
 % Set the inducing inputs
 [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
@@ -86,7 +86,6 @@ plot(x(:,1), x(:,2),'*'), hold on
 plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 
 gp = gp_init('set', gp, 'X_u', U);
-gp.latentValues = randn(size(y'));
 
 disp(' ')
 disp(' The starting values for sampling the parameters are found with early ')
@@ -132,7 +131,6 @@ opt.hmc_opt.nsamples=1;
 opt.latent_opt.display=0;
 opt.latent_opt.repeat = 20;
 opt.latent_opt.sample_latent_scale = 0.5;
-gp.latentValues = randn(size(y))';
 hmc2('state', sum(100*clock))
 
 [r,g,rstate1]=gp_mc(opt, gp, x, y);

@@ -76,7 +76,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 %gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
 gp = gp_init('init', 'PIC_BLOCK', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.001)   %{gpcf2}
-gp = gp_init('set', gp, 'fh_latentmc', @latent_mh);
+gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_mh, randn(size(y))'});
 
 % Set the blocks and the inducing inputs
 b1 = [-1.25 0.9];
@@ -171,7 +171,6 @@ opt.hmc_opt.nsamples=1;
 opt.latent_opt.display=0;
 opt.latent_opt.repeat = 20;
 opt.latent_opt.sample_latent_scale = 0.5;
-gp.latentValues = randn(size(y))';
 hmc2('state', sum(100*clock))
 
 [r,g,rstate1]=gp_mc(opt, gp, x, y);
