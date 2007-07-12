@@ -187,11 +187,13 @@ function gp = gp_init(do, varargin)
                         end
                       case 'EP'
                         % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
+                        gp.ep_opt.maxiter = 20;
+                        gp.ep_opt.tol = 1e-6;
                         gp = gpep_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                         w = gp_pak(gp, varargin{i+1}{4});
-                        [e, edata, eprior, siteparams] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
-                        gp.site_tau = siteparams(:,1)';
-                        gp.site_mu = siteparams(:,2)';
+                        [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        gp.site_tau = site_tau';
+                        gp.site_nu = site_nu';
                     end
                   otherwise
                     error('Wrong parameter name!')
@@ -247,11 +249,13 @@ function gp = gp_init(do, varargin)
                     end
                   case 'EP'
                     % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
+                    gp.ep_opt.maxiter = 20;
+                    gp.ep_opt.tol = 1e-6;
                     gp = gpep_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                     w = gp_pak(gp, varargin{i+1}{4});
-                    [e, edata, eprior, siteparams] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
-                    gp.site_tau = siteparams(:,1)';
-                    gp.site_mu = siteparams(:,2)';
+                    [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    gp.site_tau = site_tau';
+                    gp.site_nu = site_nu';
                 end
               otherwise
                 error('Wrong parameter name!')
