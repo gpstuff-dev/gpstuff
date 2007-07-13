@@ -132,7 +132,15 @@ xstar=[xt1(:) xt2(:)];
 
 %rr=thin(r,50,8);
 rr=thin(r,10);
+
+% Print the hyperparameter values
+fprintf(' The mean of the length-scale is: %.3f \n The magnitude mean of the sigma is: %.3f \n', ...
+        mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
+
+
 p1 = mean(rr.p1, 1)';
+
+
 
 % $$$ geyer_imse(rr.cf{1}.lengthScale)
 % $$$ geyer_imse(rr.cf{1}.magnSigma2)
@@ -149,17 +157,6 @@ plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and training cases', 'fontsize', 14)
 
-% Visualize the predictive variance
-figure, hold on;
-n_pred=size(xstar,1);
-h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(Varf,20,20))
-set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
-colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
-axis([-inf inf -inf inf]), axis off
-plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
-plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
-set(gcf, 'color', 'w'), title('marginal predictive latent variance', 'fontsize', 14)
-
 % visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
 [cs,h]=contour(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
@@ -175,40 +172,40 @@ set(gcf, 'color', 'w'), title('predictive probability contours with training cas
 
 % =================================================================================
 % test how well the network works for the test data. 
-L = strrep(S,'demo_clFull.m','demos/synth.ts');
-tx=load(L);
-ty_temp=tx(:,end);
-ty = 2*ty-1;
-tx(:,end)=[];
-
-[Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx);
-
-% calculate the percentage of misclassified points
-missed = sum(abs(round(p1test)-ty_temp))/size(ty,1)*100
-
-% ====================================================================================
-% Plot the training and test cases in the same figure
-figure, hold on;
-set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
-c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
-colormap(c1)
-plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
-plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
-plot(tx(ty==-1,1),tx(ty==-1,2),'go', 'markersize', 8, 'linewidth', 2);
-plot(tx(ty==1,1),tx(ty==1,2),'cx', 'markersize', 8, 'linewidth', 2);
-plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
-set(gcf, 'color', 'w'), title('training and test cases', 'fontsize', 14)
-
-% visualise predictive probability  p(ystar = 1) with the test cases
-figure, hold on;
-n_pred=size(xstar,1);
-h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20))
-set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
-colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
-axis([-inf inf -inf inf]), axis off
-plot(tx(ty==-1,1),tx(ty==-1,2),'o', 'markersize', 8, 'linewidth', 2);
-plot(tx(ty==1,1),tx(ty==1,2),'rx', 'markersize', 8, 'linewidth', 2);
-set(gcf, 'color', 'w'), title('predictive probability and test cases', 'fontsize', 14)
+% $$$ L = strrep(S,'demo_clFull.m','demos/synth.ts');
+% $$$ tx=load(L);
+% $$$ ty_temp=tx(:,end);
+% $$$ ty = 2*ty-1;
+% $$$ tx(:,end)=[];
+% $$$ 
+% $$$ [Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx);
+% $$$ 
+% $$$ % calculate the percentage of misclassified points
+% $$$ missed = sum(abs(round(p1test)-ty_temp))/size(ty,1)*100
+% $$$ 
+% $$$ % ====================================================================================
+% $$$ % Plot the training and test cases in the same figure
+% $$$ figure, hold on;
+% $$$ set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
+% $$$ c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
+% $$$ colormap(c1)
+% $$$ plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
+% $$$ plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
+% $$$ plot(tx(ty==-1,1),tx(ty==-1,2),'go', 'markersize', 8, 'linewidth', 2);
+% $$$ plot(tx(ty==1,1),tx(ty==1,2),'cx', 'markersize', 8, 'linewidth', 2);
+% $$$ plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
+% $$$ set(gcf, 'color', 'w'), title('training and test cases', 'fontsize', 14)
+% $$$ 
+% $$$ % visualise predictive probability  p(ystar = 1) with the test cases
+% $$$ figure, hold on;
+% $$$ n_pred=size(xstar,1);
+% $$$ h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20))
+% $$$ set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
+% $$$ colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
+% $$$ axis([-inf inf -inf inf]), axis off
+% $$$ plot(tx(ty==-1,1),tx(ty==-1,2),'o', 'markersize', 8, 'linewidth', 2);
+% $$$ plot(tx(ty==1,1),tx(ty==1,2),'rx', 'markersize', 8, 'linewidth', 2);
+% $$$ set(gcf, 'color', 'w'), title('predictive probability and test cases', 'fontsize', 14)
 
 
 
