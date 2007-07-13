@@ -15,7 +15,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
 %	
 %
 
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -28,6 +28,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
         eprior0=[];
         nutilde0 = zeros(size(y));
         tautilde0 = zeros(size(y));
+        myy0 = zeros(size(y));;
         L0 = [];
         myy=zeros(size(y));
 
@@ -50,6 +51,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             edata = edata0;
             eprior = eprior0;
             nutilde = nutilde0;
+            myy = myy0;
             tautilde = tautilde0;
             L = L0;
             %    fprintf('palauta vanhat \n')
@@ -65,9 +67,10 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             tol = gp.ep_opt.tol;
             
             % ep initialisation
-    % $$$             logZep_tmp = edata0;
-    % $$$             nutilde = nutilde0;
-    % $$$             tautilde = tautilde0;
+% $$$             logZep_tmp = edata0;
+% $$$             nutilde = nutilde0;
+% $$$             tautilde = tautilde0;
+% $$$             myy = myy0;
             nutilde = zeros(size(y));
             tautilde = zeros(size(y));
             myy = zeros(size(y));
@@ -97,15 +100,20 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                         % marginal moments
                         %[muhati, sigm2hati] = marginalMoments(gp.likelih);
                         zi=y(i1)*myy_i/sqrt(1+sigm2_i);
-                        muhati=myy_i+(y(i1)*sigm2_i*normpdf(zi))/(normcdf(zi)*sqrt(1+sigm2_i));
-                        sigm2hati=sigm2_i-(sigm2_i^2*normpdf(zi))/((1+sigm2_i)*normcdf(zi))*(zi+normpdf(zi)/normcdf(zi));
+                        normp_zi = normpdf(zi);
+                        normc_zi = normcdf(zi);
+                        muhati=myy_i+(y(i1)*sigm2_i*normp_zi)/(normc_zi*sqrt(1+sigm2_i));
+                        sigm2hati=sigm2_i-(sigm2_i^2*normp_zi)/((1+sigm2_i)*normc_zi)*(zi+normp_zi/normc_zi);
                 
                         
                         % update site parameters
                         deltatautilde=sigm2hati^-1-tau_i-tautilde(i1); tautilde(i1)=tautilde(i1)+deltatautilde;
                         nutilde(i1)=sigm2hati^-1*muhati-vee_i;
 
-                        Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                        apu = (deltatautilde^-1+Sigm(i1,i1))^-1;
+                        apu = apu*Sigm(:,i1)*Sigm(:,i1)';
+                        Sigm=Sigm - apu;
+                        %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
                         myy=Sigm*nutilde;
 
                         muvec_i(i1,1)=myy_i;
@@ -147,7 +155,10 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                     Z(iter)=logZep;
                     iter=iter+1;
                 end
-
+                
+                if isfield(gp.ep_opt, 'display') & gp.ep_opt.display == 1
+                    fprintf('   Number of iterations in EP: %d \n', iter)
+                end
                 edata = logZep;
                                 
               case 'FIC'
@@ -306,6 +317,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             eprior0 = eprior;
             nutilde0 = nutilde;
             tautilde0 = tautilde;
+            myy0 = myy;
             L0 = L;
 
         end

@@ -19,7 +19,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
 %	See also   
 %
 
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

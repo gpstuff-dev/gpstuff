@@ -60,15 +60,21 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 
     % NOTE ! Here change the initialization of energy and gradient function
     % Initialize the error and gradient functions and get 
-    % the function handle to them
-% $$$ me=gp_e('init', gp);
-% $$$ mg=gp_g('init', gp);
-    me = @gp_e;
-    mg = @gp_g;
+    % the function handle to them    
+    if isfield(opt, 'fh_e')
+        me = opt.fh_e;
+        mg = opt.fh_g;
+    else
+        me = @gp_e;
+        mg = @gp_g;
+    end
 
     % Set test data
     if nargin < 6 | isempty(xtest)
-        xtest=[];ytest=[];
+        xtest=[];ytest =[];
+        if isfield(gp, 'ep_opt')
+            xtest = x;       % Set the xtest for EP predictions.
+        end
     end
 
     % Initialize record
@@ -117,7 +123,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
     % Print labels for sampling information
     if opt.display
         fprintf(' cycle  etr      ');
-        if ~isempty(xtest)
+        if ~isempty(ytest)
             fprintf('etst     ');
         end
         if isfield(opt,'hmc_opt')
@@ -188,7 +194,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             end
             
             % ----------- Sample hyperparameters with SLS --------------------- 
-l            if isfield(opt, 'sls_opt')
+            if isfield(opt, 'sls_opt')
                 w = gp_pak(gp, 'hyper');
                 [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'hyper', varargin{:});
                 if isfield(diagns, 'opt')
@@ -244,7 +250,7 @@ l            if isfield(opt, 'sls_opt')
         % Display some statistics  THIS COULD BE DONE NICER ALSO...
         if opt.display
             fprintf(' %4d  %.3f  ',ri, rec.etr(ri,1));
-            if ~isempty(xtest)
+            if ~isempty(ytest)
                 fprintf('%.3f  ',rec.etst(ri,1));
             end
             if isfield(opt, 'hmc_opt')
@@ -266,7 +272,7 @@ l            if isfield(opt, 'sls_opt')
             fprintf('\n');
         end
     end
-
+      
     %------------------------------------------------------------------------
     function rec = recappend(rec)
     % RECAPPEND - Record append
@@ -313,6 +319,15 @@ l            if isfield(opt, 'sls_opt')
             rec.jitterSigmas = [];
             rec.hmcrejects = 0;
             
+            if isfield(gp, 'site_tau')
+                rec.site_tau = [];
+                rec.site_nu = [];
+                rec.Ef = [];
+                rec.Varf = [];
+                rec.p1 = [];
+            end
+
+            
             % Initialize the records of covariance functions
             for i=1:ncf
                 cf = gp.cf{i};
@@ -353,6 +368,17 @@ l            if isfield(opt, 'sls_opt')
         if isfield(gp, 'latentValues')
             rec.latentValues(ri,:)=gp.latentValues;
         end
+        
+        % Set the latent values to record structure
+        if isfield(gp, 'site_tau')
+            [E1, E2, E3, tau, nu] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper');
+            [Ef, Varf, p1] = ep_pred(gp, x, y, xtest);
+            rec.site_tau(ri,:)=tau;
+            rec.site_nu(ri,:)=nu;
+            rec.Ef(ri,:) = Ef';
+            rec.Varf(ri,:) = Varf';
+            rec.p1(ri,:) = p1';
+        end
 
         % Set the inducing inputs in the record structure
         switch gp.type
@@ -365,12 +391,12 @@ l            if isfield(opt, 'sls_opt')
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=gp_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=feval(me, gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end
         
@@ -383,5 +409,4 @@ l            if isfield(opt, 'sls_opt')
             rec.inputii(ri,:)=gp.inputii;
         end
     end
-
 end

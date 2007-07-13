@@ -1,6 +1,6 @@
-function demo_clFull
+function demo_ep_clFull_mcmc
 %DEMO_GP2CLASS    Classification problem demonstration for 2
-%                 classes. 
+%                 classes with EP and using MCMC for parameters.
 %
 %      Description
 %      The demonstration program is based on synthetic two 
@@ -19,7 +19,7 @@ function demo_clFull
 %      143-146).
 %
 
-% Copyright (c) 2005 Jarno Vanhatalo, Aki Vehtari 
+% Copyright (c) 2005 Jarno Vanhatalo, Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -47,6 +47,7 @@ S = which('demo_clFull');
 L = strrep(S,'demo_clFull.m','demos/synth.tr');
 x=load(L);
 y=x(:,end);
+y=y*2-1;
 x(:,end)=[];
 [n, nin] = size(x);
 
@@ -75,81 +76,68 @@ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 %gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
-gp = gp_init('init', 'FULL', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
-gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_mh, randn(size(y))'});
+gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
+
+% $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
+% $$$ 
+% $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
+% $$$ 
+% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
+% $$$ 
+% $$$ gradcheck(randn(size(gp_pak(gp,'hyper'))), @gpep_e, @gpep_g, gp, x, y, 'hyper')
 
 
 disp(' ')
-disp(' The starting values for sampling the parameters are found with early ')
-disp(' stop method. This is a quick way to get better starting point ')
-disp(' for the Markov chain.') 
+disp(' Find the point estimates for the parameters with early stop method. ')
 disp(' ')
-% See Vehtari et al (2000). On MCMC sampling in Bayesian MLP neural networks.
-% In Proc. IJCNN'2000.
-%
-% <http://www.lce.hut.fi/publications/pdf/VehtariEtAl_ijcnn2000.pdf>
 
-% Intialize weights to zero and set the optimization parameters...
+% Begin to sample. First set sampling options and then start sampling
+disp(' ')
+disp(' Now that the starting values are found we set the main sampling ')
+disp(' options ')
+disp(' ')
 
 opt=gp_mcopt;
-opt.repeat=15;
+opt.repeat=1;
 opt.nsamples=1;
-opt.hmc_opt.steps=10;
+opt.hmc_opt.steps=11;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
-
-
-opt.latent_opt.display=0;
-opt.latent_opt.repeat = 20;
-opt.latent_opt.sample_latent_scale = 0.5;
 hmc2('state', sum(100*clock))
 
-[r,g,rstate1]=gp_mc(opt, gp, x, y);
+opt.fh_e = @gpep_e;
+opt.fh_g = @gpep_g;
+%[r,g,rstate1]=gp_mc(opt, gp, x, y);
 
 % Set the sampling options
-opt.nsamples=100;
-opt.repeat=3;
-opt.hmc_opt.steps=2;
-opt.hmc_opt.stepadj=0.001;
-opt.latent_opt.repeat = 5;
+opt.nsamples=50;
+opt.repeat=1;
+opt.hmc_opt.steps=3;
+opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
-% Here we would do the main sampling. In order to save time we have
-% saved one GP record structure in the software. The record (and though 
-% the samples) are loaded and used in the demo. In order to do your own 
-% sampling uncomment the line below.
+% Sample from the posterior. 
 
-% Sample 
-[r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
-
-% $$$ % Load a saved record structure
-% $$$ L = strrep(S,'demo_2classgp.m','demos/2classgprecord');
-% $$$ load(L)
-
-%rr=thin(r,50,8);
-rr=thin(r,20,2);
-
-% Print the hyperparameter values
-fprintf(' The mean of the length-scale is: %.3f \n The magnitude mean of the sigma is: %.3f \n', ...
-        mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
-
-
-% [mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2)]
-
-disp(' ')
-disp(' For last the decision line and the training points are ')
-disp(' drawn in the same plot. ')
-disp(' ')
-
-% Draw the decision line and training points in the same plot
+% NOTE! With EP it is faster to make the predictions while sampling 
+% than afterwards. This can be done by given the test locations for
+% gp_mc, which are here 'xstar'.
 xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
-p1 = mean((logsig(gp_fwds(rr, x, rr.latentValues', xstar))),3);
+[r,g,rstate2]=gp_mc(opt, gp, x, y, xstar, []);
 
+%rr=thin(r,50,8);
+rr=thin(r,10);
+p1 = mean(rr.p1, 1)';
+
+% $$$ geyer_imse(rr.cf{1}.lengthScale)
+% $$$ geyer_imse(rr.cf{1}.magnSigma2)
+
+% ==============================================
 % visualise predictive probability  p(ystar = 1)
 figure, hold on;
 n_pred=size(xstar,1);
@@ -157,21 +145,20 @@ h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20))
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
-plot(x(y==0,1),x(y==0,2),'o', 'markersize', 8, 'linewidth', 2);
+plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and training cases', 'fontsize', 14)
 
-% $$$ % Visualize the predictive variance
-% $$$ figure, hold on;
-% $$$ n_pred=size(xstar,1);
-% $$$ h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(Varf,20,20))
-% $$$ set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
-% $$$ colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
-% $$$ axis([-inf inf -inf inf]), axis off
-% $$$ plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
-% $$$ plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
-% $$$ set(gcf, 'color', 'w'), title('marginal predictive latent variance', 'fontsize', 14)
-
+% Visualize the predictive variance
+figure, hold on;
+n_pred=size(xstar,1);
+h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(Varf,20,20))
+set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
+colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
+axis([-inf inf -inf inf]), axis off
+plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
+plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
+set(gcf, 'color', 'w'), title('marginal predictive latent variance', 'fontsize', 14)
 
 % visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
@@ -181,22 +168,25 @@ set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
 colormap(c1)
 plot(x(y==1,1), x(y==1,2), 'rx', 'markersize', 8, 'linewidth', 2),
-plot(x(y==0,1), x(y==0,2), 'bo', 'markersize', 8, 'linewidth', 2)
+plot(x(y==-1,1), x(y==-1,2), 'bo', 'markersize', 8, 'linewidth', 2)
 plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
-set(gcf, 'color', 'w'), title('predictive probability contours', 'fontsize', 14)
+set(gcf, 'color', 'w'), title('predictive probability contours with training cases', 'fontsize', 14)
 
 
+% =================================================================================
 % test how well the network works for the test data. 
 L = strrep(S,'demo_clFull.m','demos/synth.ts');
 tx=load(L);
-ty=tx(:,end);
+ty_temp=tx(:,end);
+ty = 2*ty-1;
 tx(:,end)=[];
 
-tga=mean(logsig(gp_fwds(r, x, r.latentValues', tx)),3);
+[Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx);
 
 % calculate the percentage of misclassified points
-missed = sum(abs(round(tga)-ty))/size(ty,1)*100
+missed = sum(abs(round(p1test)-ty_temp))/size(ty,1)*100
 
+% ====================================================================================
 % Plot the training and test cases in the same figure
 figure, hold on;
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
@@ -204,7 +194,7 @@ c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
 colormap(c1)
 plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
-plot(tx(ty==0,1),tx(ty==0,2),'go', 'markersize', 8, 'linewidth', 2);
+plot(tx(ty==-1,1),tx(ty==-1,2),'go', 'markersize', 8, 'linewidth', 2);
 plot(tx(ty==1,1),tx(ty==1,2),'cx', 'markersize', 8, 'linewidth', 2);
 plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
 set(gcf, 'color', 'w'), title('training and test cases', 'fontsize', 14)
@@ -216,6 +206,18 @@ h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20))
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
-plot(tx(ty==0,1),tx(ty==0,2),'o', 'markersize', 8, 'linewidth', 2);
+plot(tx(ty==-1,1),tx(ty==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(tx(ty==1,1),tx(ty==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and test cases', 'fontsize', 14)
+
+
+
+
+
+
+
+
+
+
+
+
