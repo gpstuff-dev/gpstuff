@@ -34,11 +34,12 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         
         tautilde = gp.site_tau';
         nutilde = gp.site_nu';
-        Stildesqroot=diag(sqrt(tautilde));
+        sqrttautilde = sqrt(tautilde);
+        Stildesqroot=diag(sqrttautilde);
         
         B=eye(tn)+Stildesqroot*C*Stildesqroot;
         L=chol(B);
-        z=Stildesqroot*(L\(L'\(Stildesqroot*C*nutilde)));
+        z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
         
         kstarstar=gp_trvar(gp, x);
 
@@ -46,10 +47,11 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         pistar=zeros(ntest,1);
         
         K_nf=gp_cov(gp,x,tx);
+        apu = L'\Stildesqroot;
         for i1=1:ntest
             % Compute covariance between observations
             Ef(i1,1)=K_nf(i1,:)*(nutilde-z);
-            v=L'\(Stildesqroot*K_nf(i1,:)');
+            v=apu*(K_nf(i1,:)');
             Varf(i1,1)=kstarstar(i1)-v'*v;
             p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
         end

@@ -31,20 +31,20 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
         myy0 = zeros(size(y));;
         L0 = [];
         myy=zeros(size(y));
-
+    
         ep_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
         
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-
+        
         [e, edata, eprior, site_tau, site_nu, L] = feval(gp.fh_e, w, gp, x, y, param, varargin);
         
     end
     
     function [e, edata, eprior, tautilde, nutilde, L] = ep_algorithm(w, gp, x, y, param, varargin)
-        
-        if w0 == w
+
+        if abs(w-w0) < 1e-8
             % The covariance function parameters haven't changed so just 
             % return the Energy and the site parameters that are saved
             e = e0;
@@ -54,7 +54,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             myy = myy0;
             tautilde = tautilde0;
             L = L0;
-            %    fprintf('palauta vanhat \n')
+            %                fprintf('palauta vanhat \n')
         else
             % Conduct evaluation for the energy and the site parameters
             gp=gp_unpak(gp, w, param);
@@ -82,13 +82,13 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
               case 'FULL'   % A full GP
                 [K,C] = gp_trcov(gp, x);
                 Sigm = C;
-                Stildesqroot=zeros(n);                
+                Stildesqroot=zeros(n);
                 
                 % The EP -algorithm
                 while iter<=maxiter & abs(logZep_tmp-logZep)>tol
                     
                     logZep_tmp=logZep;
-                    
+                    muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                     for i1=1:n
                         % approximate cavity parameters
                         tau_i=Sigm(i1,i1)^-1-tautilde(i1);
@@ -110,9 +110,9 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                         deltatautilde=sigm2hati^-1-tau_i-tautilde(i1); tautilde(i1)=tautilde(i1)+deltatautilde;
                         nutilde(i1)=sigm2hati^-1*muhati-vee_i;
 
-                        apu = (deltatautilde^-1+Sigm(i1,i1))^-1;
-                        apu = apu*Sigm(:,i1)*Sigm(:,i1)';
-                        Sigm=Sigm - apu;
+                        apu = deltatautilde^-1+Sigm(i1,i1);
+                        apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
+                        Sigm = Sigm - apu;
                         %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
                         myy=Sigm*nutilde;
 
@@ -120,15 +120,16 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
 
-                    Stilde=diag(tautilde);
+                    Stilde=tautilde;
+% $$$                     Stilde=diag(tautilde);
                     Stildesqroot=diag(sqrt(tautilde));
 
                     % NOTICE! upper triangle matrix! cf. to
                     % line 13 in the algorithm 3.5, p. 58.
                     B=eye(n)+Stildesqroot*C*Stildesqroot;
-                    L=chol(B);
+                    L=chol(B,'lower');
 
-                    V=L'\Stildesqroot*C;
+                    V=L\Stildesqroot*C;
                     Sigm=C-V'*V; myy=Sigm*nutilde;
 
                     % Direct formula (3.65):
@@ -141,22 +142,27 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                     term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
 
                     % 5. term (1/2 element) & 2. term
-                    T=diag(1./sigm2vec_i);
-                    term52=0.5*nutilde'*(C-C*Stildesqroot*inv(B)*Stildesqroot*K-inv(T+Stilde))*nutilde;
+% $$$                     T=diag(1./sigm2vec_i);
+% $$$                     term52=0.5*nutilde'*(C-C*Stildesqroot*inv(B)*Stildesqroot*C-inv(T+Stilde))*nutilde;
+                    T=1./sigm2vec_i;
+                    Cnutilde = C*nutilde;
+                    L2 = V*nutilde;
+                    term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                    term52 = term52.*0.5;
 
                     % 5. term (2/2 element)
-                    term5=0.5*muvec_i'*T*inv(Stilde+T)*(Stilde*muvec_i-2*nutilde);
+% $$$                     term5=0.5*muvec_i'*T*inv(Stilde+T)*(Stilde*muvec_i-2*nutilde);
+                    term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
 
                     % 3. term
                     term3=sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))));
 
                     logZep=-(term41+term52+term5+term3);
 
-                    Z(iter)=logZep;
                     iter=iter+1;
                 end
                 
-                if isfield(gp.ep_opt, 'display') & gp.ep_opt.display == 1
+                if isfield(gp.ep_opt, 'display') && gp.ep_opt.display == 1
                     fprintf('   Number of iterations in EP: %d \n', iter)
                 end
                 edata = logZep;

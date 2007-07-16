@@ -113,7 +113,7 @@ opt.fh_g = @gpep_g;
 % Set the sampling options
 opt.nsamples=50;
 opt.repeat=1;
-opt.hmc_opt.steps=3;
+opt.hmc_opt.steps=1;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
@@ -128,7 +128,9 @@ xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
+t0 = cputime;
 [r,g,rstate2]=gp_mc(opt, gp, x, y, xstar, []);
+cputime - t0
 
 %rr=thin(r,50,8);
 rr=thin(r,10);

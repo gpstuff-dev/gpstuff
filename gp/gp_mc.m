@@ -218,7 +218,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 w=w(end,:);
                 gp = gp_unpak(gp, w, 'inducing');
             end
-
+            
             % ----------- Sample inducing inputs with some other method  ------------ 
 % $$$     if isfield(opt, 'inducing_opt')
 % $$$         [z, energ, diagnl] = feval(gp.fh_inducingmc, z, opt.inducing_opt, gp, x, y, varargin{:});
@@ -371,7 +371,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         
         % Set the latent values to record structure
         if isfield(gp, 'site_tau')
-            [E1, E2, E3, tau, nu] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper');
+            %           fprintf('site_tau '); gp_pak(gp,'hyper')
+            [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
             [Ef, Varf, p1] = ep_pred(gp, x, y, xtest);
             rec.site_tau(ri,:)=tau;
             rec.site_nu(ri,:)=nu;
@@ -396,6 +397,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
+            %            fprintf('error')
             [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=feval(me, gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end

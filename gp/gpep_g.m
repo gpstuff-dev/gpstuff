@@ -44,9 +44,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         Stildesqroot=diag(sqrt(tautilde));
         
         % logZep; nutilde; tautilde;
-        b=nutilde-Stildesqroot*(L\(L'\(Stildesqroot*(C*nutilde))));
-% $$$         Z2=b*b'-Stildesqroot*(L\(L'\Stildesqroot));
-        invC = Stildesqroot*(L\(L'\Stildesqroot));
+        b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+% $$$         Z2=b*b'-Stildesqroot*(L'\(L\Stildesqroot));
+        invC = Stildesqroot*(L'\(L\Stildesqroot));
         
 % $$$         C2=2*sigmaf*exp(-0.5*l^-2.*r.^2);
 % $$$         nablaE(1)=0.5*trace(Z2*C2);

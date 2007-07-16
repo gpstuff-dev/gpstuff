@@ -72,7 +72,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 
-[e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
+%[e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 
 [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 
@@ -101,6 +101,7 @@ optes.tolx=1e-1;
 gp.ep_opt.display = 1;
 [w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:),'hyper', gp,x(its,:),y(its,:),'hyper');
 gp=gp_unpak(gp,w,'hyper');
+
 
 % Print the hyperparameter values
 fprintf(' The point estimate of length-scale is: %.3f \n The point estimate of magnitude sigma is: %.3f \n',...

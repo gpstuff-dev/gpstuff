@@ -107,8 +107,8 @@ hmc2('state', sum(100*clock))
 [r,g,rstate1]=gp_mc(opt, gp, x, y);
 
 % Set the sampling options
-opt.nsamples=100;
-opt.repeat=3;
+opt.nsamples=50;
+opt.repeat=1;
 opt.hmc_opt.steps=2;
 opt.hmc_opt.stepadj=0.001;
 opt.latent_opt.repeat = 5;
@@ -122,7 +122,11 @@ hmc2('state', sum(100*clock));
 % sampling uncomment the line below.
 
 % Sample 
+t0 = cputime;
 [r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
+rr=r;
+p1 = mean((logsig(gp_fwds(rr, x, rr.latentValues', xstar))),3);
+cputime - t0
 
 % $$$ % Load a saved record structure
 % $$$ L = strrep(S,'demo_2classgp.m','demos/2classgprecord');
