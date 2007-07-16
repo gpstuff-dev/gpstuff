@@ -25,7 +25,7 @@ n1 = n+1;
 ncf = length(gp.cf);
 
 % Evaluate the covariance without noise
-K = 0;
+K = sparse(0);
 for i=1:ncf
   gpcf = gp.cf{i};
   K = K + feval(gpcf.fh_trcov, gpcf, x1);

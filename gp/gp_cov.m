@@ -21,7 +21,7 @@ function [C, Cinv] = gp_cov(gp, x1, x2, varargin)
 
 ncf = length(gp.cf);
 
-C = 0;
+C = sparse(0);
 for i=1:ncf
   gpcf = gp.cf{i};
   C = C + feval(gpcf.fh_cov, gpcf, x1, x2);
