@@ -47,12 +47,11 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         pistar=zeros(ntest,1);
         
         K_nf=gp_cov(gp,x,tx);
-        apu = L'\Stildesqroot;
+        V = (L'\Stildesqroot)*K_nf';
         for i1=1:ntest
             % Compute covariance between observations
             Ef(i1,1)=K_nf(i1,:)*(nutilde-z);
-            v=apu*(K_nf(i1,:)');
-            Varf(i1,1)=kstarstar(i1)-v'*v;
+            Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
             p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
         end
         

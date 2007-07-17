@@ -42,9 +42,9 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
         
     end
     
-    function [e, edata, eprior, tautilde, nutilde, L] = ep_algorithm(w, gp, x, y, param, varargin)
+    function [e, edata, eprior, tautilde, nutilde, L, B] = ep_algorithm(w, gp, x, y, param, varargin)
 
-        if abs(w-w0) < 1e-8
+        if abs(w-w0) < 1e-6
             % The covariance function parameters haven't changed so just 
             % return the Energy and the site parameters that are saved
             e = e0;
