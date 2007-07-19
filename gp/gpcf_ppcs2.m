@@ -327,7 +327,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 ma2 = gpcf.magnSigma2;
                 
                 % Calculate the sparse distance (lower triangle) matrix
-                % Note: a faster way of doing this is to use a compiled C-function.
+                % Note: a faster way of doing this would be to use a compiled C-function.
                 R = sparse([],[],[],n,n,0);
                 for ii1=1:n-1
                     d = zeros(n-ii1,1);
@@ -337,7 +337,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                         d = d+s2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
                     d = sqrt(d);
-                    % Set the distances greater of one to zero
+                    % Set the distances greater than one to zero
                     d(d >= 1) = 0;
                     R(col_ind,ii1) = d;
                 end
@@ -348,7 +348,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 [I,J,rn] = find(R);
                 
                 % Create the 'compact support' matrix, that is, (1-R)_+,
-                % where ()_+ is zero for all non-positive inputs.
+                % where ()_+ truncates all non-positive inputs to zero.
                 cs = sparse(I,J,1,n,n) - R + speye(n,n);
                 r=R;
 
@@ -364,7 +364,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 ma2 = gpcf.magnSigma2;
                 
                 % Calculate the sparse distance (lower triangle) matrix for all dimensions
-                % Note: a faster way of doing this is to use a compiled C-function.
+                % Note: a faster way of doing this would be to use a compiled C-function.
                 R = sparse([],[],[],n,n,0);
                 for ii1=1:n-1
                     d = zeros(n-ii1,1);
@@ -374,9 +374,9 @@ function gpcf = gpcf_ppcs2(do, varargin)
                         d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
                     d = sqrt(d);
-                    % Set the distances greater of one to zero
+                    % Set the distances greater than one to zero
                     d(d >= 1) = 0;
-                    R(col_ind,ii1) = 1;
+                    R(col_ind,ii1) = d;
                 end
                 % Add the upper triangle as the matrix is symmetric.
                 R = R+R';
@@ -385,7 +385,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 [I,J,rn] = find(R);
                 
                 % Create the 'compact support' matrix, that is, (1-R)_+,
-                % where ()_+ is zero for all non-positive inputs.
+                % where ()_+ truncates all non-positive inputs to zero.
                 cs = sparse(I,J,1,n,n) - R + speye(n,n);
                 r=R;
 
@@ -403,7 +403,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
 
                     % Calculate the gradient matrix
                     D = -ma2.*cs.^(l+1).*s2(i).*R.*(cs.*((2*l^2+8*l+6).*r+3*l+6)-(l+2)*((l^2+4*l+3)*r.^2+(3*l+6)*r+3));
-                    % Divide by r in those cases where r is non-zero
+                    % Divide by r in cases where r is non-zero
                     D(r ~= 0) = D(r ~= 0)./r(r ~= 0);
                 
                     Bdl(i) = b'*(D*b);
@@ -413,193 +413,195 @@ function gpcf = gpcf_ppcs2(do, varargin)
             end
             Bdm = b'*(Cdm*b);
             Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
-            
-          case 'FIC' 
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_ppcs2_trcov)
-            
-            DE_Kuu = varargin{1};             % u x u
-            DE_Kuf = varargin{2};             % u x f
-            DE_Kff = varargin{3};             % mask(R, M) (block/band) diagonal
-            
-            u = gpcf.X_u;
-            
-            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
-            % NOTE! Here we have already taken into account that the parameters are transformed 
-            % through log() and thus dK/dlog(p) = p * dK/dp
-            K_uu = gpcf_ppcs2_trcov(gpcf, u);
-            K_uf = gpcf_ppcs2_cov(gpcf, u, x);
-            Cv_ff = gpcf_ppcs2_trvar(gpcf, x);
-            
-            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic PPCS2
-                s = 1./gpcf.lengthScale.^2;
-                ma2 = gpcf.magnSigma2;
-                dist = 0;
-                dist2 = 0;
-                for i=1:m
-                    D = gminus(u(:,i),x(:,i)');
-                    D2= gminus(u(:,i),u(:,i)');
-                    dist = dist + D.^2;
-                    dist2 = dist2 + D2.^2;
-                end
-                r1 = sqrt(dist.*s);
-                r2 = sqrt(dist2.*s);
-                cs1 = max(0,1-r1);
-                cs2 = max(0,1-r2);
-                dist = 2.*ma2.*cs1.*s.*dist;
-                dist2 = 2.*ma2.*cs2.*s.*dist2;
-                dist(r1 ~= 0) = dist(r1 ~= 0)./r1(r1 ~= 0);
-                dist2(r2 ~= 0) = dist2(r2 ~= 0)./r2(r2 ~= 0);
-                DKuf_l = dist(:);
-                DKuu_l = dist2(:);
-            else
-                % In the case ARD is used
-                s = 1./gpcf.lengthScale.^2;        % set the length
-                ma2 = gpcf.magnSigma2;     
-                dist = 0;
-                dist2 = 0;
-                for i=1:m
-                    D = gminus(u(:,i),x(:,i)');
-                    D2= gminus(u(:,i),u(:,i)');
-                    dist = dist + s(i).*D.^2;
-                    dist2 = dist2 + s(i).*D2.^2;
-                end
-                r1 = sqrt(dist);
-                r2 = sqrt(dist2);
-                cs1 = max(0,1-r1);
-                cs2 = max(0,1-r2);
-                for i=1:m  
-                    dist = gminus(u(:,i),x(:,i)').^2;
-                    dist2 = gminus(u(:,i),u(:,i)').^2;
-                    dist = 2.*ma2.*cs1.*s(i).*dist;
-                    dist2 = 2.*ma2.*cs2.*s(i).*dist2;  
-                    dist(r1 ~= 0) = dist(r1 ~= 0)./r1(r1 ~= 0);
-                    dist2(r2 ~= 0) = dist2(r2 ~= 0)./r2(r2 ~= 0);
-                    DKuf_l(:,i) = dist(:);         % Matrix of size uf x m
-                    DKuu_l(:,i) = dist2(:);        % Matrix of size uu x m
-                end
-            end
-          case 'PIC_BLOCK'
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_ppcs2_trcov)
-            
-            L = varargin{1};             % f x u
-            b = varargin{2};             % 1 x f
-            iKuuKuf = varargin{3};       % u x f
-            Labl = varargin{4};          % array of size
-            
-            u = gpcf.X_u;
-            ind=gpcf.tr_index;
-            
-            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
-            % NOTE! Here we have already taken into account that the parameters are transformed 
-            % through log() and thus dK/dlog(p) = p * dK/dp
-            K_uu = feval(gpcf.fh_trcov, gpcf, u); 
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            for i=1:length(ind)
-                K_ff{i} = feval(gpcf.fh_trcov, gpcf, x(ind{i},:));
-            end
-            
-            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic PPCS2
-                s = 1./gpcf.lengthScale.^2;
-                dist = 0;
-                dist2 = 0;
-                for j=1:length(ind)
-                    dist3{j} = zeros(size(ind{j},1),size(ind{j},1));
-                end
-                for i=1:m
-                    D = gminus(u(:,i),x(:,i)');
-                    D2= gminus(u(:,i),u(:,i)');
-                    dist = dist + D.^2;
-                    dist2 = dist2 + D2.^2;
-                    for j=1:length(ind)
-                        dist3{j} = dist3{j} + (gminus(x(ind{j},i),x(ind{j},i)')).^2;
-                    end
-                end
-                DKuf_l = 2.*s.*K_uf.*dist;
-                DKuu_l = 2.*s.*K_uu.*dist2;
-                for j=1:length(ind)
-                    DKff_l{j} = 2.*s.*K_ff{j}.*dist3{j};
-                end
-            else
-                % In the case ARD is used
-                for i=1:m  
-                    s = 1./gpcf.lengthScale(i).^2;        % set the length
-                    dist = gminus(u(:,i),x(:,i)');
-                    dist2 = gminus(u(:,i),u(:,i)');
-                    DKuf_l{i} = 2.*s.*K_uf.*dist.^2;
-                    DKuu_l{i} = 2.*s.*K_uu.*dist2.^2;
-                    for j=1:length(ind)
-                        dist3 = gminus(x(ind{j},i),x(ind{j},i)');
-                        dist3 = 2.*s.*K_ff{j}.*dist3.^2;
-                        DKff_l{j,i} = dist3;
-                    end
-                end
-            end
-          case 'PIC_BAND'
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_ppcs2_trcov)
-            
-            L = varargin{1};             % f x u
-            b = varargin{2};             % 1 x f
-            iKuuKuf = varargin{3};       % u x f
-            La = varargin{4};            % matrix of size
-            
-            u = gpcf.X_u;
-            ind=gpcf.tr_index;
-            nzmax = size(ind,1);
-            
-            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
-            % NOTE! Here we have already taken into account that the parameters are transformed 
-            % through log() and thus dK/dlog(p) = p * dK/dp
-            K_uu = feval(gpcf.fh_trcov, gpcf, u); 
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic PPCS2
-                di2 = 0;
-                s = 1./gpcf.lengthScale.^2;
-                for i = 1:m
-                    di2 = di2 + s.*(x(ind(:,1),i) - x(ind(:,2),i)).^2;
-                end
-                kv_ff = gpcf.magnSigma2.*exp(-di2);
-                K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
 
-                dist = 0;
-                dist2 = 0;
-                dist3 = zeros(nzmax,1);
-                for i=1:m
-                    D = gminus(u(:,i),x(:,i)');
-                    D2= gminus(u(:,i),u(:,i)');
-                    dist = dist + D.^2;
-                    dist2 = dist2 + D2.^2;
-                    dist3 = dist3 + (x(ind(:,1),i)-x(ind(:,2),i)).^2;
-                end
-                DKuf_l = 2.*s.*K_uf.*dist;
-                DKuu_l = 2.*s.*K_uu.*dist2;
-                DKff_l = sparse(ind(:,1),ind(:,2), 2.*s.*kv_ff.*dist3 ,n,n);
-            else
-                % In the case ARD is used
-                for i=1:m  
-                    s = 1./gpcf.lengthScale(i).^2;        % set the length
-                    dist = gminus(u(:,i),x(:,i)');
-                    dist2 = gminus(u(:,i),u(:,i)');
-                    dist = 2.*s.*K_uf.*dist.^2;
-                    dist2 = 2.*s.*K_uu.*dist2.^2;
-                    for j=1:length(ind)
-                        dist3 = gminus(x(ind{j},i),x(ind{j},i)');
-                        dist3 = 2.*s.*K_ff{j}.*dist3.^2;
-                        DKff_l{j,i} = dist3;
-                    end
-                    
-                    DKuf_l{i} = dist;         % 
-                    DKuu_l{i} = dist2;        % 
-                end
-            end            
+            % SPARSE MODELS NOT IMPLEMENTED YET!
+            
+% $$$           case 'FIC' 
+% $$$             % Evaluate the help matrices for the gradient evaluation (see
+% $$$             % gpcf_ppcs2_trcov)
+% $$$             
+% $$$             DE_Kuu = varargin{1};             % u x u
+% $$$             DE_Kuf = varargin{2};             % u x f
+% $$$             DE_Kff = varargin{3};             % mask(R, M) (block/band) diagonal
+% $$$             
+% $$$             u = gpcf.X_u;
+% $$$             
+% $$$             % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
+% $$$             % NOTE! Here we have already taken into account that the parameters are transformed 
+% $$$             % through log() and thus dK/dlog(p) = p * dK/dp
+% $$$             K_uu = gpcf_ppcs2_trcov(gpcf, u);
+% $$$             K_uf = gpcf_ppcs2_cov(gpcf, u, x);
+% $$$             Cv_ff = gpcf_ppcs2_trvar(gpcf, x);
+% $$$             
+% $$$             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+% $$$             if length(gpcf.lengthScale) == 1
+% $$$                 % In the case of an isotropic PPCS2
+% $$$                 s = 1./gpcf.lengthScale.^2;
+% $$$                 ma2 = gpcf.magnSigma2;
+% $$$                 dist = 0;
+% $$$                 dist2 = 0;
+% $$$                 for i=1:m
+% $$$                     D = gminus(u(:,i),x(:,i)');
+% $$$                     D2= gminus(u(:,i),u(:,i)');
+% $$$                     dist = dist + D.^2;
+% $$$                     dist2 = dist2 + D2.^2;
+% $$$                 end
+% $$$                 r1 = sqrt(dist.*s);
+% $$$                 r2 = sqrt(dist2.*s);
+% $$$                 cs1 = max(0,1-r1);
+% $$$                 cs2 = max(0,1-r2);
+% $$$                 dist = 2.*ma2.*cs1.*s.*dist;
+% $$$                 dist2 = 2.*ma2.*cs2.*s.*dist2;
+% $$$                 dist(r1 ~= 0) = dist(r1 ~= 0)./r1(r1 ~= 0);
+% $$$                 dist2(r2 ~= 0) = dist2(r2 ~= 0)./r2(r2 ~= 0);
+% $$$                 DKuf_l = dist(:);
+% $$$                 DKuu_l = dist2(:);
+% $$$             else
+% $$$                 % In the case ARD is used
+% $$$                 s = 1./gpcf.lengthScale.^2;        % set the length
+% $$$                 ma2 = gpcf.magnSigma2;     
+% $$$                 dist = 0;
+% $$$                 dist2 = 0;
+% $$$                 for i=1:m
+% $$$                     D = gminus(u(:,i),x(:,i)');
+% $$$                     D2= gminus(u(:,i),u(:,i)');
+% $$$                     dist = dist + s(i).*D.^2;
+% $$$                     dist2 = dist2 + s(i).*D2.^2;
+% $$$                 end
+% $$$                 r1 = sqrt(dist);
+% $$$                 r2 = sqrt(dist2);
+% $$$                 cs1 = max(0,1-r1);
+% $$$                 cs2 = max(0,1-r2);
+% $$$                 for i=1:m  
+% $$$                     dist = gminus(u(:,i),x(:,i)').^2;
+% $$$                     dist2 = gminus(u(:,i),u(:,i)').^2;
+% $$$                     dist = 2.*ma2.*cs1.*s(i).*dist;
+% $$$                     dist2 = 2.*ma2.*cs2.*s(i).*dist2;  
+% $$$                     dist(r1 ~= 0) = dist(r1 ~= 0)./r1(r1 ~= 0);
+% $$$                     dist2(r2 ~= 0) = dist2(r2 ~= 0)./r2(r2 ~= 0);
+% $$$                     DKuf_l(:,i) = dist(:);         % Matrix of size uf x m
+% $$$                     DKuu_l(:,i) = dist2(:);        % Matrix of size uu x m
+% $$$                 end
+% $$$             end
+% $$$           case 'PIC_BLOCK'
+% $$$             % Evaluate the help matrices for the gradient evaluation (see
+% $$$             % gpcf_ppcs2_trcov)
+% $$$             
+% $$$             L = varargin{1};             % f x u
+% $$$             b = varargin{2};             % 1 x f
+% $$$             iKuuKuf = varargin{3};       % u x f
+% $$$             Labl = varargin{4};          % array of size
+% $$$             
+% $$$             u = gpcf.X_u;
+% $$$             ind=gpcf.tr_index;
+% $$$             
+% $$$             % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
+% $$$             % NOTE! Here we have already taken into account that the parameters are transformed 
+% $$$             % through log() and thus dK/dlog(p) = p * dK/dp
+% $$$             K_uu = feval(gpcf.fh_trcov, gpcf, u); 
+% $$$             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+% $$$             for i=1:length(ind)
+% $$$                 K_ff{i} = feval(gpcf.fh_trcov, gpcf, x(ind{i},:));
+% $$$             end
+% $$$             
+% $$$             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+% $$$             if length(gpcf.lengthScale) == 1
+% $$$                 % In the case of an isotropic PPCS2
+% $$$                 s = 1./gpcf.lengthScale.^2;
+% $$$                 dist = 0;
+% $$$                 dist2 = 0;
+% $$$                 for j=1:length(ind)
+% $$$                     dist3{j} = zeros(size(ind{j},1),size(ind{j},1));
+% $$$                 end
+% $$$                 for i=1:m
+% $$$                     D = gminus(u(:,i),x(:,i)');
+% $$$                     D2= gminus(u(:,i),u(:,i)');
+% $$$                     dist = dist + D.^2;
+% $$$                     dist2 = dist2 + D2.^2;
+% $$$                     for j=1:length(ind)
+% $$$                         dist3{j} = dist3{j} + (gminus(x(ind{j},i),x(ind{j},i)')).^2;
+% $$$                     end
+% $$$                 end
+% $$$                 DKuf_l = 2.*s.*K_uf.*dist;
+% $$$                 DKuu_l = 2.*s.*K_uu.*dist2;
+% $$$                 for j=1:length(ind)
+% $$$                     DKff_l{j} = 2.*s.*K_ff{j}.*dist3{j};
+% $$$                 end
+% $$$             else
+% $$$                 % In the case ARD is used
+% $$$                 for i=1:m  
+% $$$                     s = 1./gpcf.lengthScale(i).^2;        % set the length
+% $$$                     dist = gminus(u(:,i),x(:,i)');
+% $$$                     dist2 = gminus(u(:,i),u(:,i)');
+% $$$                     DKuf_l{i} = 2.*s.*K_uf.*dist.^2;
+% $$$                     DKuu_l{i} = 2.*s.*K_uu.*dist2.^2;
+% $$$                     for j=1:length(ind)
+% $$$                         dist3 = gminus(x(ind{j},i),x(ind{j},i)');
+% $$$                         dist3 = 2.*s.*K_ff{j}.*dist3.^2;
+% $$$                         DKff_l{j,i} = dist3;
+% $$$                     end
+% $$$                 end
+% $$$             end
+% $$$           case 'PIC_BAND'
+% $$$             % Evaluate the help matrices for the gradient evaluation (see
+% $$$             % gpcf_ppcs2_trcov)
+% $$$             
+% $$$             L = varargin{1};             % f x u
+% $$$             b = varargin{2};             % 1 x f
+% $$$             iKuuKuf = varargin{3};       % u x f
+% $$$             La = varargin{4};            % matrix of size
+% $$$             
+% $$$             u = gpcf.X_u;
+% $$$             ind=gpcf.tr_index;
+% $$$             nzmax = size(ind,1);
+% $$$             
+% $$$             % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
+% $$$             % NOTE! Here we have already taken into account that the parameters are transformed 
+% $$$             % through log() and thus dK/dlog(p) = p * dK/dp
+% $$$             K_uu = feval(gpcf.fh_trcov, gpcf, u); 
+% $$$             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+% $$$             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+% $$$             if length(gpcf.lengthScale) == 1
+% $$$                 % In the case of an isotropic PPCS2
+% $$$                 di2 = 0;
+% $$$                 s = 1./gpcf.lengthScale.^2;
+% $$$                 for i = 1:m
+% $$$                     di2 = di2 + s.*(x(ind(:,1),i) - x(ind(:,2),i)).^2;
+% $$$                 end
+% $$$                 kv_ff = gpcf.magnSigma2.*exp(-di2);
+% $$$                 K_ff = sparse(ind(:,1),ind(:,2),kv_ff,n,n);
+% $$$ 
+% $$$                 dist = 0;
+% $$$                 dist2 = 0;
+% $$$                 dist3 = zeros(nzmax,1);
+% $$$                 for i=1:m
+% $$$                     D = gminus(u(:,i),x(:,i)');
+% $$$                     D2= gminus(u(:,i),u(:,i)');
+% $$$                     dist = dist + D.^2;
+% $$$                     dist2 = dist2 + D2.^2;
+% $$$                     dist3 = dist3 + (x(ind(:,1),i)-x(ind(:,2),i)).^2;
+% $$$                 end
+% $$$                 DKuf_l = 2.*s.*K_uf.*dist;
+% $$$                 DKuu_l = 2.*s.*K_uu.*dist2;
+% $$$                 DKff_l = sparse(ind(:,1),ind(:,2), 2.*s.*kv_ff.*dist3 ,n,n);
+% $$$             else
+% $$$                 % In the case ARD is used
+% $$$                 for i=1:m  
+% $$$                     s = 1./gpcf.lengthScale(i).^2;        % set the length
+% $$$                     dist = gminus(u(:,i),x(:,i)');
+% $$$                     dist2 = gminus(u(:,i),u(:,i)');
+% $$$                     dist = 2.*s.*K_uf.*dist.^2;
+% $$$                     dist2 = 2.*s.*K_uu.*dist2.^2;
+% $$$                     for j=1:length(ind)
+% $$$                         dist3 = gminus(x(ind{j},i),x(ind{j},i)');
+% $$$                         dist3 = 2.*s.*K_ff{j}.*dist3.^2;
+% $$$                         DKff_l{j,i} = dist3;
+% $$$                     end
+% $$$                     
+% $$$                     DKuf_l{i} = dist;         % 
+% $$$                     DKuu_l{i} = dist2;        % 
+% $$$                 end
+% $$$             end            
         end
 
         % Evaluate the gdata and gprior with respect to magnSigma2
@@ -930,7 +932,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
 % $$$         cs = sparse(max(0,1-r));
         
         
-        C = sparse([],[],[],n,n,0);
+        % Compute the sparse distance matrix.
+        R = sparse([],[],[],n,n,0);
         for ii1=1:n-1
             d = zeros(n-ii1,1);
             col_ind = ii1+1:n;
@@ -939,28 +942,20 @@ function gpcf = gpcf_ppcs2(do, varargin)
             end
             d = sqrt(d);
             d(d >= 1) = 0;
-            %d = max(0,1-d);
-            C(col_ind,ii1) = d;
+            R(col_ind,ii1) = d;
         end
-
-        [I,J,rn] = find(C);
-        %cs = 1-rn;
-        CS = sparse(I,J,1-rn,n,n);
         
-% $$$         C = C+C';
-% $$$         CS = CS + CS' + speye(n,n);
-% $$$         r=C;
-% $$$         cs = CS;                
-% $$$         C = ma.*cs.^(l+2).*((l^2/3+4/3*l+1).*r.^2+(l+2).*r+1);
+        % Find the non-zero elements of R.
+        [I,J,rn] = find(R);
+        
+        % Create the 'compact support' matrix.
+        cs = sparse(I,J,1-rn,n,n) + speye(n,n);
 
-        CS = CS + speye(n,n);
-        r=C;
-        cs = CS;                
-        %C = ma.*cs.^(l+2).*((l^2/3+4/3*l+1).*r.^2+(l+2).*r+1);
-        C = ma.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3);
-        %CS = CS + CS(I,J)';
+        % Calculate the covariance matrix
+        C = ma.*cs.^(l+2).*((l^2+4*l+3).*R.^2+(3*l+6).*R+3);
+        
+        % Add the upper triangle matrix.
         C = C + tril(C,n-1)';
-        %C(C<eps)=0;
         
         trcov_x=x;
         trcov_ls=gpcf.lengthScale;
