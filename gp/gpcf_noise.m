@@ -220,9 +220,9 @@ function [g, gdata, gprior]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, v
 %GPCF_NOISE_GHYPER Evaluate gradient of error for NOISE covariance function.
 %
 %	Description
-%	G = GPCF_NOISE_G(W, GPCF, X, T, invC, B) takes a gp hyper-parameter  
+%	G = GPCF_NOISE_G(W, GPCF, X, T, C_gp, B) takes a gp hyper-parameter  
 %       vector W, data structure GPCF a matrix X of input vectors a matrix T
-%       of target vectors, inverse covariance function invC and b(=invC*t), 
+%       of target vectors, covariance function C_gp and b(=invC*t), 
 %	and evaluates the error gradient G. Each row of X corresponds to one 
 %       input vector and each row of T corresponds to one target vector.
 %
@@ -250,9 +250,11 @@ i1=i1+1;
     D=gpcf.noiseSigmas2;
 switch gpcf.type
   case 'FULL'
+    %C_gp = varargin{1};
     invC = varargin{1};
     b = varargin{2};
-    B=trace(invC);
+    %B=trace(C_gp\eye(size(C_gp)));
+    B = trace(invC);
     C=b'*b;    
     
     gdata(i1)=0.5.*D.*(B - C); 
@@ -333,7 +335,9 @@ if m1~=m2
   error('the number of columns of X1 and X2 has to be same')
 end
 
-C=zeros(n1,n2);
+%C=zeros(n1,n2);
+C = sparse([],[],[],n1,n2,0);
+
 
 function C = gpcf_noise_trcov(gpcf, x)
 % GP_SE_COV     Evaluate training covariance matrix of inputs. 
@@ -357,7 +361,8 @@ function C = gpcf_noise_trcov(gpcf, x)
 [n, m] =size(x);
 n1=n+1;
 
-C=zeros(n,n);
+%C=zeros(n,n);
+C = sparse([],[],[],n,n,0);
 C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigmas2;
 
 function C = gpcf_noise_trvar(gpcf, x)

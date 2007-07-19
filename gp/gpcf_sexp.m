@@ -329,6 +329,8 @@ function gpcf = gpcf_sexp(do, varargin)
                 D = Cdm.*s.*dist;
                 Bdl = b'*(D*b);
                 Cdl = sum(invCv.*D(:)); % help arguments for lengthScale 
+                %Cdl = trace(C\D); % help arguments for lengthScale 
+
             else
                 % In the case ARD is used
                 for i=1:m  
@@ -337,10 +339,13 @@ function gpcf = gpcf_sexp(do, varargin)
                     D = Cdm.*s.*dist.^2;
                     Bdl(i) = b'*(D*b);
                     Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
+                    %Cdl(i) = trace(C\D); % help arguments for lengthScale 
                 end
             end
             Bdm = b'*(Cdm*b);
             Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
+            %Cdm = trace(C\D); % help argument for magnSigma2
+            
             
           case 'FIC' 
             % Evaluate the help matrices for the gradient evaluation (see
@@ -517,7 +522,6 @@ function gpcf = gpcf_sexp(do, varargin)
           case 'FIC'
             gdata(i1) = DE_Kuu(:)'*K_uu(:) + DE_Kuf(:)'*K_uf(:) + gpcf.magnSigma2.*sum(DE_Kff);
           case 'PIC_BLOCK'
-            
             KfuiKuuKuu = iKuuKuf'*K_uu;
             %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
             % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
@@ -550,7 +554,6 @@ function gpcf = gpcf_sexp(do, varargin)
             gdata(i1) = gdata(i1) + 0.5.*b*H*b';
             gdata(i1) = gdata(i1) + 0.5.*trace(La\(K_ff-H));
             gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-K_ff))));               %- trace(Labl{i}\H(ind{i},ind{i})) 
-                        
         end
         gprior(i1)=feval(gpp.magnSigma2.fg, ...
                          gpcf.magnSigma2, ...
@@ -821,20 +824,32 @@ function gpcf = gpcf_sexp(do, varargin)
         
         % Here we take advantage of the 
         % symmetry of covariance matrix
-        C=zeros(n,n);
-        for i1=2:n
-            i1n=(i1-1)*n;
-            for i2=1:i1-1
-                ii=i1+(i2-1)*n;
-                for i3=1:m
-                    C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-                end
-                C(i1n+i2)=C(ii); 
-            end
-        end
-        C = ma.*exp(-C);
-        C(C<eps)=0;
+% $$$         C=zeros(n,n);
+% $$$         for i1=2:n
+% $$$             i1n=(i1-1)*n;
+% $$$             for i2=1:i1-1
+% $$$                 ii=i1+(i2-1)*n;
+% $$$                 for i3=1:m
+% $$$                     C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+% $$$                 end
+% $$$                 C(i1n+i2)=C(ii); 
+% $$$             end
+% $$$         end
+% $$$         C = ma.*exp(-C);
+% $$$         C(C<eps)=0;
         
+        C = zeros(n,n);
+        for ii1=1:n-1
+            d = zeros(n-ii1,1);
+            col_ind = ii1+1:n;
+            for ii2=1:m
+                d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+            end
+            C(col_ind,ii1) = d;
+        end
+        C = C+C';
+        C = ma.*exp(-C);
+
         trcov_x=x;
         trcov_ls=gpcf.lengthScale;
         trcov_ms=gpcf.magnSigma2;
@@ -914,7 +929,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if nargin == 2
             reccf.type = 'gpcf_sexp';
             reccf.nin = ri;
-            gpcf.nout = 1;
+            reccf.nout = 1;
             
             % Initialize parameters
             reccf.lengthScale= [];
@@ -958,4 +973,4 @@ function gpcf = gpcf_sexp(do, varargin)
             reccf.magnSigma2=[];
         end
     end
-end     
+end    

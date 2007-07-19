@@ -39,7 +39,6 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
                     % Calculate covariance
 
         [K, C] = gp_trcov(gp,x);
-        
         invC = inv(C);
         B = C\t;
         
