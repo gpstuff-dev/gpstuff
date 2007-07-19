@@ -314,9 +314,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
             % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
             % Cdm and invC are symmetric matricess of same size. This is 67 times faster 
             % with n=215 
-            %invC = varargin{1};
-            %invCv=invC(:);
-            C = varargin{1};
+            invC = varargin{1};
+            invCv=invC(:);
             Cdm = gpcf_ppcs2_trcov(gpcf, x);
 
             b = varargin{2};
@@ -326,99 +325,94 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 % In the case of isotropic PPCS2
                 s2 = 1./gpcf.lengthScale.^2;
                 ma2 = gpcf.magnSigma2;
-                dist = 0;
-
+                
+                % Calculate the sparse distance (lower triangle) matrix
+                % Note: a faster way of doing this is to use a compiled C-function.
                 R = sparse([],[],[],n,n,0);
                 for ii1=1:n-1
                     d = zeros(n-ii1,1);
                     col_ind = ii1+1:n;
+                    % Loop through dimensions
                     for ii2=1:m
                         d = d+s2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
                     d = sqrt(d);
+                    % Set the distances greater of one to zero
                     d(d >= 1) = 0;
                     R(col_ind,ii1) = d;
                 end
-             
+                % Add the upper triangle as the matrix is symmetric.
                 R = R+R';
                 
+                % Find the nonzero elements of R
                 [I,J,rn] = find(R);
+                
+                % Create the 'compact support' matrix, that is, (1-R)_+,
+                % where ()_+ is zero for all non-positive inputs.
                 cs = sparse(I,J,1,n,n) - R + speye(n,n);
-                %cdm = feval(gpcf.fh_covvec, gpcf, x(I,:), x(J,:));
-                %Cdm = sparse(I,J,cdm,n,n);
                 r=R;
 
+                % Calculate the gradient matrix
                 D = -ma2.*cs.^(l+1).*r.*(cs.*((2.*l^2+8.*l+6).*r+3.*l+6)-(l+2).*((l^2+4.*l+3).*r.^2+(3.*l+6).*r+3));
-% $$$                 D = -ma2.*cs.^(l+1).*r.*(cs.*((2*l^2+8*l+6).*r+3*l+6)-(l+2)*((l^2+4*l+3)*r.^2+(3*l+6)*r+3));
-
-                % Bdl = b'*(D*b) = trace(b*b'*D)) = sum(b.*(b'*D));
+                
                 Bdl = b'*(D*b);
-                %Cdl = sum(invCv.*D(:)); % help arguments for lengthScale 
-                Cdl = trace(C\D); % help arguments for lengthScale 
-            
+                Cdl = sum(invCv.*D(:)); % help arguments for lengthScale 
+                
             else
                 % In the case ARD is used
                 s2 = 1./gpcf.lengthScale.^2;
                 ma2 = gpcf.magnSigma2;
-                dist=0;
                 
-% $$$                 for i=1:m
-% $$$                     D = gminus(x(:,i),x(:,i)');
-% $$$                     dist = dist + s(i).*D.^2;
-% $$$                 end        
-% $$$                 r = sqrt(dist);
-% $$$                 cs = max(0,1-r);
-% $$$                 for i=1:m  
-% $$$                     dist = gminus(x(:,i),x(:,i)').^2;
-% $$$                     D = 2.*ma2.*cs.*s(i).*dist;
-% $$$                     D(r ~= 0) = D(r ~= 0)./r(r ~= 0);
-% $$$                     Bdl(i) = b'*(D*b);
-% $$$                     Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
-% $$$                 end
+                % Calculate the sparse distance (lower triangle) matrix for all dimensions
+                % Note: a faster way of doing this is to use a compiled C-function.
                 R = sparse([],[],[],n,n,0);
                 for ii1=1:n-1
                     d = zeros(n-ii1,1);
                     col_ind = ii1+1:n;
+                    % Loop through dimensions
                     for ii2=1:m
                         d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
                     d = sqrt(d);
+                    % Set the distances greater of one to zero
                     d(d >= 1) = 0;
-                    R(col_ind,ii1) = d;
+                    R(col_ind,ii1) = 1;
                 end
-             
+                % Add the upper triangle as the matrix is symmetric.
                 R = R+R';
                 
+                % Find the nonzero elements of R
                 [I,J,rn] = find(R);
+                
+                % Create the 'compact support' matrix, that is, (1-R)_+,
+                % where ()_+ is zero for all non-positive inputs.
                 cs = sparse(I,J,1,n,n) - R + speye(n,n);
-                %cdm = feval(gpcf.fh_covvec, gpcf, x(I,:), x(J,:));
-                %Cdm = sparse(I,J,cdm,n,n);
                 r=R;
+
                 for i = 1:m 
+                    % Calculate the distance matrix for dimension i
                     R = sparse([],[],[],n,n,0);
                     for ii1=1:n-1
-                        %d = zeros(n-ii1,1);
                         col_ind = ii1+1:n;
                         d = (x(col_ind,i)-x(ii1,i)).^2;
                         d(sqrt(d*s2(i)) >= 1) = 0;
                         R(col_ind,ii1) = d;
                     end
+                    % Add the upper triangle as the matrix is symmetric.
                     R = R + R';
-                    
+
+                    % Calculate the gradient matrix
                     D = -ma2.*cs.^(l+1).*s2(i).*R.*(cs.*((2*l^2+8*l+6).*r+3*l+6)-(l+2)*((l^2+4*l+3)*r.^2+(3*l+6)*r+3));
+                    % Divide by r in those cases where r is non-zero
                     D(r ~= 0) = D(r ~= 0)./r(r ~= 0);
                 
-                    % Bdl = b'*(D*b) = trace(b*b'*D)) = sum(b.*(b'*D));
                     Bdl(i) = b'*(D*b);
-                    %Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
-                    Cdl(i) = trace(C\D); % help arguments for lengthScale 
-
+                    Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
                 end
                 
             end
             Bdm = b'*(Cdm*b);
-            %Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
-            Cdm = trace(C\Cdm); % help argument for magnSigma2
+            Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
             
           case 'FIC' 
             % Evaluate the help matrices for the gradient evaluation (see
