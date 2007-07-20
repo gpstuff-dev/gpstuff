@@ -78,6 +78,13 @@ function gpcf = gpcf_ppcs2(do, varargin)
         gpcf.p=[];
         gpcf.p.lengthScale=[];
         gpcf.p.magnSigma2=[];
+        trcov_I0 = [];
+        trcov_J0 = [];
+        trcov_c0 = [];
+        %        trcov_x0 = x;
+        trcov_ls0 = zeros(size(gpcf.lengthScale));
+        trcov_ms0 = zeros(size(gpcf.magnSigma2));
+
         
         % Set the function handles to the nested functions
         gpcf.fh_pak = @gpcf_ppcs2_pak;
@@ -320,40 +327,29 @@ function gpcf = gpcf_ppcs2(do, varargin)
 
             b = varargin{2};
             l = gpcf.l;
-            % loop over all the lengthScales
+            [I,J] = find(Cdm);
+             % loop over all the lengthScales
             if length(gpcf.lengthScale) == 1
                 % In the case of isotropic PPCS2
                 s2 = 1./gpcf.lengthScale.^2;
                 ma2 = gpcf.magnSigma2;
-                
-                % Calculate the sparse distance (lower triangle) matrix
-                % Note: a faster way of doing this would be to use a compiled C-function.
-                R = sparse([],[],[],n,n,0);
-                for ii1=1:n-1
-                    d = zeros(n-ii1,1);
-                    col_ind = ii1+1:n;
-                    % Loop through dimensions
-                    for ii2=1:m
-                        d = d+s2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-                    end
-                    d = sqrt(d);
-                    % Set the distances greater than one to zero
-                    d(d >= 1) = 0;
-                    R(col_ind,ii1) = d;
+
+                % Calculate the sparse distance (lower triangle) matrix                                
+                d2 = 0;
+                for i = 1:m
+                    d2 = d2 + s2.*(x(I,i) - x(J,i)).^2;
                 end
-                % Add the upper triangle as the matrix is symmetric.
-                R = R+R';
-                
-                % Find the nonzero elements of R
-                [I,J,rn] = find(R);
+                d = sqrt(d2);
                 
                 % Create the 'compact support' matrix, that is, (1-R)_+,
                 % where ()_+ truncates all non-positive inputs to zero.
-                cs = sparse(I,J,1,n,n) - R + speye(n,n);
-                r=R;
-
+                cs = 1-d;
+                
                 % Calculate the gradient matrix
-                D = -ma2.*cs.^(l+1).*r.*(cs.*((2.*l^2+8.*l+6).*r+3.*l+6)-(l+2).*((l^2+4.*l+3).*r.^2+(3.*l+6).*r+3));
+                const1 = 2.*l^2+8.*l+6;
+                const2 = l^2+4.*l+3;
+                D = -ma2.*cs.^(l+1).*d.*(cs.*(const1.*d+3.*l+6)-(l+2).*(const2.*d2+(3.*l+6).*d+3));
+                D = sparse(I,J,D,n,n);
                 
                 Bdl = b'*(D*b);
                 Cdl = sum(invCv.*D(:)); % help arguments for lengthScale 
@@ -362,54 +358,36 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 % In the case ARD is used
                 s2 = 1./gpcf.lengthScale.^2;
                 ma2 = gpcf.magnSigma2;
-                
-                % Calculate the sparse distance (lower triangle) matrix for all dimensions
-                % Note: a faster way of doing this would be to use a compiled C-function.
-                R = sparse([],[],[],n,n,0);
-                for ii1=1:n-1
-                    d = zeros(n-ii1,1);
-                    col_ind = ii1+1:n;
-                    % Loop through dimensions
-                    for ii2=1:m
-                        d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-                    end
-                    d = sqrt(d);
-                    % Set the distances greater than one to zero
-                    d(d >= 1) = 0;
-                    R(col_ind,ii1) = d;
+
+                % Calculate the sparse distance (lower triangle) matrix
+                % and the distance matrix for each component
+                d2 = 0;
+                d_l2 = [];
+                for i = 1:m
+                    d2 = d2 + s2(i).*(x(I,i) - x(J,i)).^2;
+                    d_l2(:,i) = s2(i).*(x(I,i) - x(J,i)).^2;
                 end
-                % Add the upper triangle as the matrix is symmetric.
-                R = R+R';
-                
-                % Find the nonzero elements of R
-                [I,J,rn] = find(R);
+                d = sqrt(d2);
+                d_l = d_l2;
                 
                 % Create the 'compact support' matrix, that is, (1-R)_+,
                 % where ()_+ truncates all non-positive inputs to zero.
-                cs = sparse(I,J,1,n,n) - R + speye(n,n);
-                r=R;
-
+                cs = 1-d;
+                    
+                const1 = 2.*l^2+8.*l+6;
+                const2 = l^2+4.*l+3;
+                    
                 for i = 1:m 
-                    % Calculate the distance matrix for dimension i
-                    R = sparse([],[],[],n,n,0);
-                    for ii1=1:n-1
-                        col_ind = ii1+1:n;
-                        d = (x(col_ind,i)-x(ii1,i)).^2;
-                        d(sqrt(d*s2(i)) >= 1) = 0;
-                        R(col_ind,ii1) = d;
-                    end
-                    % Add the upper triangle as the matrix is symmetric.
-                    R = R + R';
-
-                    % Calculate the gradient matrix
-                    D = -ma2.*cs.^(l+1).*s2(i).*R.*(cs.*((2*l^2+8*l+6).*r+3*l+6)-(l+2)*((l^2+4*l+3)*r.^2+(3*l+6)*r+3));
+                    % Calculate the gradient matrix                    
+                    D = -ma2.*cs.^(l+1).*d_l(:,i).*(cs.*(const1.*d+3*l+6)-(l+2)*(const2.*d2+(3*l+6)*d+3));
                     % Divide by r in cases where r is non-zero
-                    D(r ~= 0) = D(r ~= 0)./r(r ~= 0);
+                    D(d ~= 0) = D(d ~= 0)./d(d ~= 0);
+                    %D(r ~= 0) = D(r ~= 0)./r(r ~= 0);
+                    D = sparse(I,J,D,n,n);
                 
                     Bdl(i) = b'*(D*b);
                     Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
                 end
-                
             end
             Bdm = b'*(Cdm*b);
             Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
@@ -906,61 +884,78 @@ function gpcf = gpcf_ppcs2(do, varargin)
     % License.txt, included with the software, for details.
         
         [n, m] =size(x);
-        
-        s = 1./(gpcf.lengthScale);
-        s2 = s.^2;
-        if size(s)==1
-            s2 = repmat(s2,1,m);
-        end
-        ma = gpcf.magnSigma2;
-        l = gpcf.l;
-        
-        % Here we take advantage of the 
-        % symmetry of covariance matrix
-% $$$         C=zeros(n,n);
-% $$$         for i1=2:n
-% $$$             i1n=(i1-1)*n;
-% $$$             for i2=1:i1-1
-% $$$                 ii=i1+(i2-1)*n;
-% $$$                 for i3=1:m
-% $$$                     C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-% $$$                 end
-% $$$                 C(i1n+i2)=C(ii); 
-% $$$             end
-% $$$         end
-% $$$         r = sqrt(C);
-% $$$         cs = sparse(max(0,1-r));
-        
-        
-        % Compute the sparse distance matrix.
-        R = sparse([],[],[],n,n,0);
-        for ii1=1:n-1
-            d = zeros(n-ii1,1);
-            col_ind = ii1+1:n;
-            for ii2=1:m
-                d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+        if abs(trcov_ls0-gpcf.lengthScale)<1e-10 & abs(trcov_ms0-gpcf.magnSigma2)<1e-10
+            C = sparse(trcov_I0, trcov_J0, trcov_c0, n, n);
+        else
+            s = 1./(gpcf.lengthScale);
+            s2 = s.^2;
+            if size(s)==1
+                s2 = repmat(s2,1,m);
             end
-            d = sqrt(d);
-            d(d >= 1) = 0;
-            R(col_ind,ii1) = d;
-        end
-        
-        % Find the non-zero elements of R.
-        [I,J,rn] = find(R);
-        
-        % Create the 'compact support' matrix.
-        cs = sparse(I,J,1-rn,n,n) + speye(n,n);
+            ma = gpcf.magnSigma2;
+            l = gpcf.l;
+            
+            % Here we take advantage of the 
+            % symmetry of covariance matrix
+    % $$$         C=zeros(n,n);
+    % $$$         for i1=2:n
+    % $$$             i1n=(i1-1)*n;
+    % $$$             for i2=1:i1-1
+    % $$$                 ii=i1+(i2-1)*n;
+    % $$$                 for i3=1:m
+    % $$$                     C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+    % $$$                 end
+    % $$$                 C(i1n+i2)=C(ii); 
+    % $$$             end
+    % $$$         end
+    % $$$         r = sqrt(C);
+    % $$$         cs = sparse(max(0,1-r));
+            
+            
+            % Compute the sparse distance matrix.
+            R = sparse([],[],[],n,n,0);
+            for ii1=1:n-1
+                d = zeros(n-ii1,1);
+                col_ind = ii1+1:n;
+                for ii2=1:m
+                    d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+                end
+                d = sqrt(d);
+                d(d >= 1) = 0;
+                R(col_ind,ii1) = d;
+            end
+            
+            % Find the non-zero elements of R.
+            [I,J,rn] = find(R);
+            
+            % Create the 'compact support' matrix.
+            cs = sparse(I,J,1-rn,n,n) + speye(n,n);
 
-        % Calculate the covariance matrix
-        C = ma.*cs.^(l+2).*((l^2+4*l+3).*R.^2+(3*l+6).*R+3);
-        
-        % Add the upper triangle matrix.
-        C = C + tril(C,n-1)';
-        
-        trcov_x=x;
-        trcov_ls=gpcf.lengthScale;
-        trcov_ms=gpcf.magnSigma2;
-        trcov_C=C;
+            % Calculate the covariance matrix
+            const1 = l^2+4*l+3;
+            const2 = 3*l+6;
+            C = ma.*cs.^(l+2).*(const1.*R.^2+const2.*R+3);
+            
+            % Add the upper triangle matrix.
+            C = C + tril(C,n-1)';
+
+% $$$             % An other way to construct C
+% $$$             cs = 1-rn;
+% $$$             C2 = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3);
+% $$$             C2 = sparse(I,J,C2,n,n);
+% $$$             C2 = C2 + C2' + ma.*3.*speye(n,n);
+% $$$             
+% $$$             max(max(C-C2))
+% $$$             min(min(C-C2))
+            
+            [I,J,c] = find(C);
+            trcov_I0 = I;
+            trcov_J0 = J;
+            trcov_c0 = c;
+            %        trcov_x0 = x;
+            trcov_ls0 = gpcf.lengthScale;
+            trcov_ms0 = gpcf.magnSigma2;
+        end
     end
        
     function C = gpcf_ppcs2_covvec(gpcf, x1, x2, varargin)

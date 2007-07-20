@@ -46,7 +46,10 @@ if nargout > 1
       C = C + feval(noise.fh_trcov, noise, x1);
     end
   end
-  C(C<eps)=0;
+  [I,J,c] = find(C);
+  c(c<0) = 0;
+  C = sparse(I,J,c);
 end
-
-K(K<eps)=0;
+[I,J,k] = find(K);
+k(k<0) = 0;
+K = sparse(I,J,k);

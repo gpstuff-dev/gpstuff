@@ -247,7 +247,7 @@ if ~isempty(g)
 end
 
 i1=i1+1;
-    D=gpcf.noiseSigmas2;
+D=gpcf.noiseSigmas2;
 switch gpcf.type
   case 'FULL'
     %C_gp = varargin{1};
@@ -266,7 +266,7 @@ switch gpcf.type
     L = varargin{1};
     b =varargin{2};
     Labl = varargin{4};
-    gdata(i1)= - 0.5*D.*b*b';
+    gdata(i1)= -0.5*D.*b*b';
     ind = gpcf.tr_index;
     for i=1:length(ind)
         gdata(i1)= gdata(i1) + 0.5*trace((inv(Labl{i})-L(ind{i},:)*L(ind{i},:)')).*D;

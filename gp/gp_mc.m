@@ -392,13 +392,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
             %            fprintf('error')
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)]=feval(me, gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end
         

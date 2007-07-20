@@ -162,7 +162,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
             b(ind{i}) = t(ind{i})'/La{i} - b_apu(ind{i});
         end
         
-        iKuuKuf = inv(K_uu)*K_fu';
+        iKuuKuf = inv(K_uu)*K_fu';                % L, b, iKuuKuf, La
         
         % inv(Labl2) - inv(Q_ff2 + Labl2)
         %inv(mask.*(Cbl_ff2-Q_ff2)) - inv(Q_ff2 + mask.*(Cbl_ff2-Q_ff2))
