@@ -927,26 +927,23 @@ function gpcf = gpcf_ppcs2(do, varargin)
             
             % Find the non-zero elements of R.
             [I,J,rn] = find(R);
-            
-            % Create the 'compact support' matrix.
-            cs = sparse(I,J,1-rn,n,n) + speye(n,n);
-
-            % Calculate the covariance matrix
+% $$$             
+% $$$             % Create the 'compact support' matrix.
+% $$$             cs = sparse(I,J,1-rn,n,n) + speye(n,n);
+% $$$ 
+% $$$             % Calculate the covariance matrix
             const1 = l^2+4*l+3;
             const2 = 3*l+6;
-            C = ma.*cs.^(l+2).*(const1.*R.^2+const2.*R+3);
-            
-            % Add the upper triangle matrix.
-            C = C + tril(C,n-1)';
-
-% $$$             % An other way to construct C
-% $$$             cs = 1-rn;
-% $$$             C2 = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3);
-% $$$             C2 = sparse(I,J,C2,n,n);
-% $$$             C2 = C2 + C2' + ma.*3.*speye(n,n);
+% $$$             C = ma.*cs.^(l+2).*(const1.*R.^2+const2.*R+3);
 % $$$             
-% $$$             max(max(C-C2))
-% $$$             min(min(C-C2))
+% $$$             % Add the upper triangle matrix.
+% $$$             C = C + tril(C,-1)';
+% $$$ 
+            % An other way to construct C
+            cs = 1-rn;
+            C2 = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3);
+            C2 = sparse(I,J,C2,n,n);
+            C = C2 + C2' + sparse(1:n,1:n,ma.*3,n,n);
             
             [I,J,c] = find(C);
             trcov_I0 = I;

@@ -260,6 +260,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             Linv = inv(chol(C)');
             L2 = C/chol(diag(1./gp.avgE) + C);
             L2 = chol(C - L2*L2')';
+            issparse(L2)
         else
             [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
             K_fu = gp_cov(gp, x, u);         % f x u
