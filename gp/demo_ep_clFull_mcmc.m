@@ -79,11 +79,11 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 
-% $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
-% $$$ 
-% $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
-% $$$ 
-% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
+[e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
+
+[g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
+
+gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
 % $$$ 
 % $$$ gradcheck(randn(size(gp_pak(gp,'hyper'))), @gpep_e, @gpep_g, gp, x, y, 'hyper')
 

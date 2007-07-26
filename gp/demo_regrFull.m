@@ -30,10 +30,12 @@ y = data(:,3);
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+
+gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
@@ -42,7 +44,12 @@ gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
+%gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
+
+gpcf3 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf3.p.lengthScale = gamma_p({3 7});  
+gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1 gpcf3}, {gpcf2}, 'jitterSigmas', 0.001)    
 
 w=gp_pak(gp, 'hyper');
 gp_e(w, gp, x, y, 'hyper')    % answer 370.9230

@@ -32,22 +32,23 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
       case 'FULL'
         [K, C]=gp_trcov(gp,tx);
         
-        tautilde = gp.site_tau';
-        nutilde = gp.site_nu';
+        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+
+% $$$         tautilde = gp.site_tau';
+% $$$         nutilde = gp.site_nu';
         sqrttautilde = sqrt(tautilde);
-        Stildesqroot=diag(sqrttautilde);
+        Stildesqroot = diag(sqrttautilde);
         
-        B=eye(tn)+Stildesqroot*C*Stildesqroot;
-        L=chol(B);
+% $$$         B=eye(tn)+Stildesqroot*C*Stildesqroot;
+% $$$         L=chol(B, 'lower');
         z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
         
         kstarstar=gp_trvar(gp, x);
 
         ntest=size(x,1);
-        pistar=zeros(ntest,1);
         
         K_nf=gp_cov(gp,x,tx);
-        V = (L'\Stildesqroot)*K_nf';
+        V = (L\Stildesqroot)*K_nf';
         for i1=1:ntest
             % Compute covariance between observations
             Ef(i1,1)=K_nf(i1,:)*(nutilde-z);

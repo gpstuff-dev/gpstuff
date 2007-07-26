@@ -90,8 +90,8 @@ w=randn(size(gp_pak(gp,'hyper')))*0.01;
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);
-itr=1:floor(0.5*n);     % training set of data for early stop
-its=floor(0.5*n)+1:n;   % test set of data for early stop
+itr=1:2:n-1;     % training set of data for early stop
+its=2:2:n;   % test set of data for early stop
 optes=scges_opt;
 optes.display=1;
 optes.tolfun=1e-1;
@@ -99,7 +99,7 @@ optes.tolx=1e-1;
 
 % do scaled conjugate gradient optimization with early stopping.
 gp.ep_opt.display = 1;
-[w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:),'hyper', gp,x(its,:),y(its,:),'hyper');
+[w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:),'hyper', gp ,x(its,:),y(its,:),'hyper');
 gp=gp_unpak(gp,w,'hyper');
 
 
@@ -112,7 +112,7 @@ xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
-[Ef, Varf, p1] = ep_pred(gp, x, y, xstar);
+[Ef, Varf, p1] = ep_pred(gp, x(itr,:),y(itr,:), xstar);
 
 % visualise predictive probability  p(ystar = 1)
 figure, hold on;
@@ -152,10 +152,10 @@ set(gcf, 'color', 'w'), title('predictive probability contours with training cas
 L = strrep(S,'demo_clFull.m','demos/synth.ts');
 tx=load(L);
 ty_temp=tx(:,end);
-ty = 2*ty-1;
+ty = 2*ty_temp-1;
 tx(:,end)=[];
 
-[Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx);
+[Eftest, Varftest, p1test] = ep_pred(gp, x(itr,:),y(itr,:), tx);
 
 % calculate the percentage of misclassified points
 missed = sum(abs(round(p1test)-ty_temp))/size(ty,1)*100

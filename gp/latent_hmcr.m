@@ -258,9 +258,8 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             % Take advantage of the matrix inversion lemma
             %        L=chol(inv(inv(C) + diag(1./gp.avgE)))';
             Linv = inv(chol(C)');
-            L2 = C/chol(diag(1./gp.avgE) + C);
+            L2 = C/chol(diag(1./gp.avgE) + C);  %sparse(1:n, 1:n, 1./gp.avgE)
             L2 = chol(C - L2*L2')';
-            issparse(L2)
         else
             [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
             K_fu = gp_cov(gp, x, u);         % f x u
