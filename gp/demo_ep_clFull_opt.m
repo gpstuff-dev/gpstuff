@@ -77,9 +77,6 @@ gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 
 gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
-% $$$ 
-% $$$ gradcheck(randn(size(gp_pak(gp,'hyper'))), @gpep_e, @gpep_g, gp, x, y, 'hyper')
-
 
 disp(' ')
 disp(' Find the point estimates for the parameters with early stop method. ')

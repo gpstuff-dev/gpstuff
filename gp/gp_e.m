@@ -80,7 +80,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
                 iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
             end
             % The data contribution to the error is 
-            % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
+            % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)*t
             %   = + 0.5*log(det(La)) + 0.5*trace(iLa*t*t') - 0.5*log(det(K_uu)) 
             %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*t*t'*iLaKfu)
             

@@ -45,16 +45,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % logZep; nutilde; tautilde;
         b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-% $$$         Z2=b*b'-Stildesqroot*(L'\(L\Stildesqroot));
         invC = Stildesqroot*(L'\(L\Stildesqroot));
-        
-% $$$         C2=2*sigmaf*exp(-0.5*l^-2.*r.^2);
-% $$$         nablaE(1)=0.5*trace(Z2*C2);
-        
-% $$$         C1=C*l^-3.*r.^2;
-% $$$         nablaE(2)=0.5*trace(Z2*C1);
-% $$$         
-% $$$         gdata = -nablaE;
         
         % Evaluate the gradients from covariance functions
         for i=1:ncf
@@ -79,6 +70,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         u = gp.X_u;
         DKuu_u = 0;
         DKuf_u = 0;
+        [e, edata, eprior, tautilde, nutilde, iLaKfu, La] = gpep_e(w, gp, x, y, param, varargin);
+        
+        y = nutilde./tautilde;
         
         % First evaluate the needed covariance matrices
         % if they are not in the memory
@@ -87,23 +81,17 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-        Luu = chol(K_uu)';
-        % Evaluate the Lambda (La)
-        % Q_ff = K_fu*inv(K_uu)*K_fu'
-        % Here we need only the diag(Q_ff), which is evaluated below
-        B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
-        Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
-                             % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
+
+        % ... then evaluate some help matrices.
+        % A = K_uu+K_uf*inv(La)*K_fu
         iLaKfu = zeros(size(K_fu));  % f x u, 
         for i=1:n
-            iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
+            iLaKfu(i,:) = K_fu(i,:)./La(i);  % f x u 
         end
-        % ... then evaluate some help matrices.
-        % A = chol(K_uu+K_uf*inv(La)*K_fu))
         A = K_uu+K_fu'*iLaKfu;
-        A = (A+A')./2;               % Ensure symmetry
-        b = (t'*iLaKfu)*inv(A);
+        A = (A+A')./2;     % Ensure symmetry
+
+        b = (y'*iLaKfu)/A;
         C = inv(A) + b'*b;
         C = (C+C')/2;
         
@@ -111,7 +99,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         %        H = diag(Lav) - t*t'+2*K_fu*inv(A)*K_fu'*diag(1./Lav)*t*t';
         %        J = H - K_fu*C*K_fu';
         %        R = diag(diag(1./Lav)*J*diag(1./Lav));
-        R = 1./Lav - (t./Lav).^2 + 2.*(iLaKfu*b').*(t./Lav) -  sum((iLaKfu*chol(C)').^2,2);
+        R = 1./La - (y./La).^2 + 2.*(iLaKfu*b').*(y./La) -  sum((iLaKfu*chol(C)').^2,2);
         % iKuuKufR = inv(K_uu)*K_uf*R
         iKuuKuf = K_uu\K_fu';
         for i=1:n
@@ -120,10 +108,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         %        iKuuKufR = iKuuKuf*diag(R);        
         
         DE_Kuu = 0.5*( C - inv(K_uu) + iKuuKufR*iKuuKuf');  % These are here in matrix form, but
-        DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(t./Lav)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
+        DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(y./La)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
         
         DE_Kff = 0.5*R;
-        L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff; La = Lav;
+        L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff;
       %================================================================        
       case 'PIC_BLOCK'
         u = gp.X_u;
@@ -231,14 +219,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         end
         switch param
           case 'hyper'
-            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, L, b, iKuuKuf, La); %, L2, b2, Labl2
+            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior, L, b, iKuuKuf, La); %, L2, b2, Labl2
           case 'inducing'
-            [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
+            [D1, D2] = feval(gpcf.fh_gind, gpcf, x, y);
             DKuu_u = DKuu_u + D1;
             DKuf_u = DKuf_u + D2;
           case 'all'
-            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, DE_Kuu, DE_Kuf, DE_Kff);            
-            [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
+            [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior, DE_Kuu, DE_Kuf, DE_Kff);            
+            [D1, D2] = feval(gpcf.fh_gind, gpcf, x, y);
             DKuu_u = DKuu_u + D1;
             DKuf_u = DKuf_u + D2;
           otherwise
@@ -260,14 +248,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
             switch param
               case 'hyper'
-                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, L, b, iKuuKuf, La);
+                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior, L, b, iKuuKuf, La);
               case 'inducing'
-                [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
+                [D1, D2] = feval(gpcf.fh_gind, gpcf, x, y);
                 DKuu_u = DKuu_u + D1;
                 DKuf_u = DKuf_u + D2;
               case 'all'
-                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior, DE_Kuu, DE_Kuf, DE_Kff);            
-                [D1, D2] = feval(gpcf.fh_gind, gpcf, x, t);
+                [g, gdata, gprior] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior, DE_Kuu, DE_Kuf, DE_Kff);            
+                [D1, D2] = feval(gpcf.fh_gind, gpcf, x, y);
                 DKuu_u = DKuu_u + D1;
                 DKuf_u = DKuf_u + D2;
             end

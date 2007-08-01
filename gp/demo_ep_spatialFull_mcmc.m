@@ -1,6 +1,6 @@
 function demo_ep_spatialFull_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-07-26 18:24:40 EEST
+%   Last modified: 2007-08-01 09:49:57 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -84,13 +84,10 @@ function demo_ep_spatialFull_mcmc
     opt.repeat = 1;
     opt.hmc_opt.nsamples=1;
     opt.nsamples=1;
-    while length(rgp.edata)<50 %   1000
+    while length(rgp.edata)<200 %   1000
         [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
-        fprintf('  hmcrejects=%.3f       lrejects=%.3f \n',mean(rgp.hmcrejects), mean(rgp.lrejects))
+        fprintf('  hmcrejects=%.3f   \n',mean(rgp.hmcrejects))
         fprintf('length1=%.4f, magnitude1=%.4f\n',gp.cf{1}.lengthScale, sqrt(gp.cf{1}.magnSigma2)) 
-% $$$   fprintf('length2=%.4f, magnitude2=%.4f\n',gp.cf{2}.lengthScale, sqrt(gp.cf{2}.magnSigma2)) 
-%  gp.latentValues([1 500 end])'
-%subplot(1,2,1)
         subplot(2,2,1)
         plot(rgp.cf{1}.lengthScale,sqrt(rgp.cf{1}.magnSigma2) ,rgp.cf{1}.lengthScale(end),sqrt(rgp.cf{1}.magnSigma2(end)),'r*')
         subplot(2,2,[2 4])
@@ -129,22 +126,15 @@ function demo_ep_spatialFull_mcmc
 
     % Convergence testing
     mean(rgp.hmcrejects)
-    mean(rgp.lrejects)
     rt=thin(rgp, 100)
     geyer_imse(rt.cf{1}.lengthScale)
     geyer_imse(rt.cf{1}.magnSigma2)
-    q=geyer_imse(rt.latentValues);
-    prctile(q,[2.5 50 97.5])
-
-    hist(q,20)
 
     %rt=thin(rgp, 300,70);
     subplot(1,2,1)
     G=repmat(NaN,size(Y));
-    %G(ii)=exp(mean(rt.latentValues));
-    G(xxii)=median(exp(rt.latentValues));
+    G(xxii)=mean(exp(rt.Ef));
     pcolor(X1,X2,G),shading flat
-    %set(gca,'ydir','reverse')
     colormap(mapcolor(G)),colorbar
     title('median relative risk, median(\mu)')
 

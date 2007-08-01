@@ -34,13 +34,9 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         
         [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
 
-% $$$         tautilde = gp.site_tau';
-% $$$         nutilde = gp.site_nu';
         sqrttautilde = sqrt(tautilde);
         Stildesqroot = diag(sqrttautilde);
         
-% $$$         B=eye(tn)+Stildesqroot*C*Stildesqroot;
-% $$$         L=chol(B, 'lower');
         z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
         
         kstarstar=gp_trvar(gp, x);
@@ -53,11 +49,63 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             % Compute covariance between observations
             Ef(i1,1)=K_nf(i1,:)*(nutilde-z);
             Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
-            p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+            switch gp.likelih
+              case 'probit'
+                p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+              case 'poisson'
+                p1 = [];
+            end
         end
         
       case 'FIC'
-      
+        
+        u = gp.X_u;
+        K_fu = gp_cov(gp, tx, u);         % f x u
+        K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+
+        [e, edata, eprior, tautilde, nutilde, iLaKfu, La] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
+
+        myytilde = nutilde./tautilde;
+        
+        Luu = chol(K_uu)';
+        % Evaluate the Lambda (La) 
+        % Q_ff = K_fu*inv(K_uu)*K_fu'
+        % Here we need only the diag(Q_ff), which is evaluated below
+        B=Luu\(K_fu');       % u x f
+        Qv_ff=sum(B.^2)';
+        iLaKfu = zeros(size(K_fu));  % f x u, 
+        for i=1:length(La)
+            iLaKfu(i,:) = K_fu(i,:)./La(i);  % f x u 
+        end
+        A = K_uu+K_fu'*iLaKfu;
+        A = (A+A')./2;     % Ensure symmetry
+        A = chol(A)';
+        L = iLaKfu/A';
+
+% $$$         A = K_uu+K_fu'*iLaKfu;
+% $$$         A = (A+A')./2;               % Ensure symmetry
+% $$$         L = iLaKfu/chol(A);
+        p = myytilde./La - L*(L'*myytilde);
+        
+        kstarstar=gp_trvar(gp, x);
+
+        ntest=size(x,1);
+        
+        K_nu=gp_cov(gp,x,u);
+        Knf = K_nu*(K_uu\K_fu');
+        Ef = Knf*p;
+        for i1=1:ntest
+            % Compute covariance between observations
+            Varf(i1,1)=kstarstar(i1) - ((Knf(i1,:)./La')*Knf(i1,:)' - Knf(i1,:)*L*L'*Knf(i1,:)');
+            switch gp.likelih
+              case 'probit'
+                p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+              case 'poisson'
+                p1 = [];
+            end
+        end
+        
       case 'PIC_BLOCK'
         
     end

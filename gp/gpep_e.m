@@ -1,4 +1,4 @@
-function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, varargin)
+function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, param, varargin)
 %GP2_E	Evaluate error function for Gaussian Process.
 %
 %	Description
@@ -32,18 +32,18 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
         L0 = [];
         myy=zeros(size(y));
         n0 = size(x,1);
+        La20 = [];
     
         ep_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
         
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-        
-        [e, edata, eprior, site_tau, site_nu, L] = feval(gp.fh_e, w, gp, x, y, param, varargin);
+        [e, edata, eprior, site_tau, site_nu, L, La2] = feval(gp.fh_e, w, gp, x, y, param, varargin);
         
     end
     
-    function [e, edata, eprior, tautilde, nutilde, L, B] = ep_algorithm(w, gp, x, y, param, varargin)
+    function [e, edata, eprior, tautilde, nutilde, L, La2] = ep_algorithm(w, gp, x, y, param, varargin)
 
         if abs(w-w0) < 1e-6 
             % The covariance function parameters haven't changed so just 
@@ -55,6 +55,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             myy = myy0;
             tautilde = tautilde0;
             L = L0;
+            La2 = La20;
 % $$$             fprintf('palauta vanhat \n')
         else
             % Conduct evaluation for the energy and the site parameters
@@ -156,9 +157,15 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                     
                     logZep = -(term41+term52+term5+term3);
                     
+                    if isfield(gp.ep_opt, 'display') && gp.ep_opt.display == 1
+                        fprintf('The log marginal likelihood at iteration %d: %.3f \n', iter, logZep)
+                    end
+
                     iter=iter+1;
                 end
                 edata = logZep;
+                % Set something into La2
+                La2 = B; 
                                 
               case 'FIC'
                 u = gp.X_u;
@@ -177,17 +184,26 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                 Qv_ff=sum(B.^2)';
                 Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
                                      % iLaKfu = diag(iLav)*K_fu = inv(La)*K_fu
-                                
+                iLaKfu = zeros(size(K_fu));  % f x u, 
+                for i=1:n
+                    iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
+                end
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;     % Ensure symmetry
+                A = chol(A)';
+                L = iLaKfu/A';
+                
+                Lahat = 1./Lav;
+                for i = 1:n
+                    Lhat(i,:) = L(i,:)./Lahat(i);
+                end
+                LtLhat = L'*Lhat;
+                I = eye(size(K_uu));
+                
                 % Note here Sigm is a diagonal vector, which contains the 
                 % diagonal elements of the covariance matrix of the approximate posterior
                 Sigm_v = Cv_ff;
-                Stildesqroot=zeros(n,1);
-                iLa2Kfu = zeros(size(K_fu));  % f x u, 
-                La2 = Lav;
-                for i=1:n
-                    iLa2Kfu(i,:) = K_fu(i,:)./La2(i);  % f x u 
-                end
-                        
+                
                 % Begin the EP -algorithm
                 %-----------------------------------------------
                 while iter<=maxiter & abs(logZep_tmp-logZep)>tol
@@ -204,60 +220,68 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
 
                         % marginal moments
                         [muhati, sigm2hati] = marginalMoments12(gp.likelih);
-                
+                        
                         % update site parameters
                         deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
                         tautilde(i1)=tautilde(i1)+deltatautilde;
                         nutilde(i1)=sigm2hati^-1*muhati-vee_i;
 
-                        % Update the parameters of the approximate posterior (myy and Sigm)
-                        La2 = tautilde(i1) - La2(i1);
-                        iLa2Kfu(i1,:) = K_fu(i1,:)./La2(i1);  % f x u 
+                        % Evaluate the hat parameters for approximate posterior
+                        Lahat(i1) = Lahat(i1) + deltatautilde;
+                        Lhat_old = Lhat(i1,:);
+                        Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u 
+                        LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
                         
-                        % NOTE ! This can be done probably faster, since 
-                        % only one row of iLa2Kfu has changed
-                        A = K_uu+K_fu'*iLa2Kfu;
-                        A = (A+A')./2;            % Ensure symmetry
-                        L = iLa2Kfu/chol(A);
+                        % Update the parameters of the approximate posterior (myy and Sigm_v)
+                        Ltmp = Lhat/chol(I-L'*Lhat);
+                        myy = nutilde./Lahat + Ltmp*(Ltmp'*nutilde);
+                        Sigm_v = 1./Lahat + sum(Ltmp.^2,2);
                         
-                        myy = nutilde./La2 - L*(L'*nutilde);
-                        
-                        % Compute the diagonal of the covariance of the approximate posterior 
-                        Sigm_v = La2 - sum(L.^2,2);
-                        
+                        % Compute the diagonal of the covariance of the approximate posterior                    
                         muvec_i(i1,1)=myy_i;
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
-                    
+
                     % Compute the marginal likelihood, see FULL model for 
                     % details about equations
                     
-                    % 4. term & 1. term
-                    term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                    
-                    % 5. term (1/2 element) & 2. term
-                    T=1./sigm2vec_i;
-                    Cnutilde = C*nutilde;
-                    L2 = V*nutilde;
-                    term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                    term52 = term52.*0.5;
-                    
-                    % 5. term (2/2 element)
-                    term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                    % 1. and 2. term
+                    Sigmtilde = 1./tautilde;
+                    La2 = Lav + Sigmtilde;
+                    myytilde = Sigmtilde.*nutilde;
+
+                    for i=1:n
+                        iLaKfu(i,:) = K_fu(i,:)./La2(i);  % f x u 
+                    end
+                    A2 = K_uu+K_fu'*iLaKfu;
+                    A2 = (A2+A2')./2;     % Ensure symmetry
+                    A2 = chol(A2)';
+                    L = iLaKfu/A2';
+                    b = myytilde'*L;
+                                       
+                    term12 = 0.5.*(sum(log(La2)) + myytilde'./La2'*myytilde - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A2))) - b*b');
                     
                     % 3. term
-                    term3 = marginalMoment0(gp.likelih);
+                    term3 = -marginalMoment0(gp.likelih);
                     
-                    logZep = -(term41+term52+term5+term3);
+                    % 4. term & 1. term
+                    term4 = -0.5*sum(log(Sigmtilde + sigm2vec_i));
+                    
+                    % 5. term
+                    term5 = -0.5.*sum((muvec_i - myytilde).^2./(sigm2vec_i + Sigmtilde));
+                                        
+                    logZep = term12+term3+term4+term5;
+                    
+                                        
+                    if isfield(gp.ep_opt, 'display') && gp.ep_opt.display == 1
+                        fprintf('The log marginal likelihood at iteration %d: %.3f \n', iter, logZep)
+                    end
                     
                     iter=iter+1;
                 end
                 edata = logZep;
+                L = iLaKfu;
                                 
-                
-                
-                
-                
               case 'PIC_BLOCK'
                 u = gp.X_u;
                 ind = gp.tr_index;
@@ -294,61 +318,6 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                 b = (t'*iLaKfu)*inv(A)';
                 edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
                 edata = .5*(edata + n*log(2*pi));
-              case  'PIC_BAND'
-                u = gp.X_u;
-                ind = gp.tr_index;
-                
-                % First evaluate needed covariance matrices
-                % v defines that parameter is a vector
-                K_fu = gp_cov(gp, x, u);         % f x u
-                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-                Luu = chol(K_uu)';
-                % Evaluate the Lambda (La) 
-                % Q_ff = K_fu*inv(K_uu)*K_fu'
-                % Here we need only the blockdiag(Q_ff), which is evaluated below
-                B=Luu\(K_fu');       % u x f  and B'*B = K_fu*K_uu*K_uf
-                                     %            q_ff = zeros(1,size(ind,1));
-    % $$$             for i = 1:size(ind,1)
-    % $$$                 q_ff(i) = B(:,ind(i,1))'*B(:,ind(i,2));
-    % $$$                 %    c_ff(i) = gp_cov(gp, x(ind(i,1),:), x(ind(i,2),:));
-    % $$$             end
-    % $$$             c_ff = gp_covvec(gp, x(ind(:,1),:), x(ind(:,2),:))';
-    % $$$             [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-    % $$$             La = sparse(ind(:,1),ind(:,2),c_ff-q_ff,n,n) + sparse(1:n,1:n, Cv_ff-Kv_ff,n,n);
-                
-                [I,J]=find(tril(sparse(ind(:,1),ind(:,2),1,n,n),-1));
-    % $$$             for i = 1:length(J)
-    % $$$                 q_ff(i) = B(:,I(i))'*B(:,J(i));
-    % $$$             end
-                q_ff = sum(B(:,I).*B(:,J));
-                q_ff = sparse(I,J,q_ff,n,n);
-                c_ff = gp_covvec(gp, x(I,:), x(J,:))';
-                c_ff = sparse(I,J,c_ff,n,n);
-                [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-                La = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
-
-                
-                %cputime - t
-                
-                iLaKfu = La\K_fu;
-
-                % The data contribution to the error is 
-                % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
-                %   = + 0.5*log(det(La)) + 0.5*trace(iLa*t*t') - 0.5*log(det(K_uu)) 
-                %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*t*t'*iLaKfu)
-                
-                % First some help matrices...
-                % A = chol(K_uu+K_uf*inv(La)*K_fu))
-                A = K_uu+K_fu'*iLaKfu;
-                A = (A+A')./2;     % Ensure symmetry
-                                   % The actual error evaluation
-                                   % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-                b = (t'*iLaKfu)/chol(A);
-                
-                edata = 2*sum(log(diag(chol(La)))) + t'*(La\t);
-                edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
-                edata = .5*(edata + n*log(2*pi));
               otherwise
                 error('Unknown type of Gaussian process!')
             end
@@ -372,7 +341,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             
             % The last things to do
             if isfield(gp.ep_opt, 'display') && gp.ep_opt.display == 1
-                fprintf('   Number of iterations in EP: %d \n', iter)
+                fprintf('   Number of iterations in EP: %d \n', iter-1)
             end
 
             e = edata + eprior;
@@ -386,6 +355,7 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
             myy0 = myy;
             L0 = L;
             n0 = size(x,1);
+            La20 = La2;                        
         end
         
         % Begin of the nested functions
@@ -407,23 +377,13 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
        
                 % Set the limits for integration and integrate with quad
                 if y(i1) > 0
-                    
-% $$$                     lambdaconf(1) = min(myy_i - 12*sqrt(sigm2_i), log((y(i1)-12.*y(i1))./gp.avgE(i1)));
-% $$$                     lambdaconf(2) = max(myy_i + 12*sqrt(sigm2_i), log((y(i1)+12.*y(i1))./gp.avgE(i1)));
-
-% $$$                     lambdaconf(1) = log((y(i1)-12.*y(i1))./gp.avgE(i1));
-% $$$                     lambdaconf(2) = log((y(i1)+12.*y(i1))./gp.avgE(i1));
-                    
                     mean_app = log(y(i1)./gp.avgE(i1));                    
                     mean_app = (myy_i/sigm2_i + mean_app.*y(i1))/(1/sigm2_i + y(i1));
                     sigm_app = sqrt((1/sigm2_i + y(i1))^-1);
                     lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
-% $$$                     lambdaconf = [-4 4];
                 else
                     lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
                 end
-                
-% $$$                 [lambdaconf(:)']
 
                 [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6);
                 [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6);
@@ -447,8 +407,15 @@ function [e, edata, eprior, site_tau, site_nu, L] = gpep_e(w, gp, x, y, param, v
                 zm = @zeroth_moment;
 
                 % Set the limits for integration and integrate with quad
-                [lambdahat, lambdaconf] = poissfit(y(i1), .00001);
-                lambdaconf = log(lambdaconf./gp.avgE(i1));
+                if y(i1) > 0
+                    mean_app = log(y(i1)./gp.avgE(i1));                    
+                    mean_app = (myy_i/sigm2_i + mean_app.*y(i1))/(1/sigm2_i + y(i1));
+                    sigm_app = sqrt((1/sigm2_i + y(i1))^-1);
+                    lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
+                else
+                    lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
+                end
+
                 if isnan(lambdaconf(1))
                     lambdaconf(1) = -20;
                 end
