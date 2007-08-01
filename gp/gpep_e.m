@@ -28,7 +28,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
         eprior0=[];
         nutilde0 = zeros(size(y));
         tautilde0 = zeros(size(y));
-        myy0 = zeros(size(y));;
+        myy0 = zeros(size(y));
         L0 = [];
         myy=zeros(size(y));
         n0 = size(x,1);
@@ -230,10 +230,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         Lahat(i1) = Lahat(i1) + deltatautilde;
                         Lhat_old = Lhat(i1,:);
                         Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u 
-                        LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
+                        LtLhat = L'*Lhat;
                         
+                        LtLhat1 = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
+                                                
                         % Update the parameters of the approximate posterior (myy and Sigm_v)
-                        Ltmp = Lhat/chol(I-L'*Lhat);
+                        Ltmp = Lhat/chol(I-LtLhat);
                         myy = nutilde./Lahat + Ltmp*(Ltmp'*nutilde);
                         Sigm_v = 1./Lahat + sum(Ltmp.^2,2);
                         

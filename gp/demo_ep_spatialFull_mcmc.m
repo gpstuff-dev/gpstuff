@@ -1,6 +1,6 @@
 function demo_ep_spatialFull_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-01 09:49:57 EEST
+%   Last modified: 2007-08-01 15:10:31 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -49,7 +49,7 @@ function demo_ep_spatialFull_mcmc
 
     [n, nin] = size(xx);
 
-    gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
