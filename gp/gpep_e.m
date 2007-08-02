@@ -229,10 +229,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         % Evaluate the hat parameters for approximate posterior
                         Lahat(i1) = Lahat(i1) + deltatautilde;
                         Lhat_old = Lhat(i1,:);
-                        Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u 
-                        LtLhat = L'*Lhat;
-                        
-                        LtLhat1 = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
+                        Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u                        
+                        LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
                                                 
                         % Update the parameters of the approximate posterior (myy and Sigm_v)
                         Ltmp = Lhat/chol(I-LtLhat);
@@ -243,6 +241,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         muvec_i(i1,1)=myy_i;
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
+                    
+                    % Recompute LtLhat
+                    % LtLhat = L'*Lhat;
 
                     % Compute the marginal likelihood, see FULL model for 
                     % details about equations
@@ -258,8 +259,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                     A2 = K_uu+K_fu'*iLaKfu;
                     A2 = (A2+A2')./2;     % Ensure symmetry
                     A2 = chol(A2)';
-                    L = iLaKfu/A2';
-                    b = myytilde'*L;
+                    L2 = iLaKfu/A2';
+                    b = myytilde'*L2;
                                        
                     term12 = 0.5.*(sum(log(La2)) + myytilde'./La2'*myytilde - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A2))) - b*b');
                     

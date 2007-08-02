@@ -102,7 +102,7 @@ optes.tolfun=3e-1;
 optes.tolx=1e-1;
 
 % do scaled conjugate gradient optimization with early stopping.
-gp.ep_opt.display = 0;
+gp.ep_opt.display = 1;
 [w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:),'hyper', gp ,x(its,:),y(its,:),'hyper');
 gp=gp_unpak(gp,w,'hyper');
 
