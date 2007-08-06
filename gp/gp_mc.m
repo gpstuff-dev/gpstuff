@@ -372,13 +372,23 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         % Set the latent values to record structure
         if isfield(gp, 'site_tau')
             %           fprintf('site_tau '); gp_pak(gp,'hyper')
-            [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
-            [Ef, Varf, p1] = ep_pred(gp, x, y, xtest);
-            rec.site_tau(ri,:)=tau;
-            rec.site_nu(ri,:)=nu;
-            rec.Ef(ri,:) = Ef';
-            rec.Varf(ri,:) = Varf';
-            rec.p1(ri,:) = p1';
+            switch gp.likelih
+              case 'probit'
+                [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
+                [Ef, Varf, p1] = ep_pred(gp, x, y, xtest);
+                rec.site_tau(ri,:)=tau;
+                rec.site_nu(ri,:)=nu;
+                rec.Ef(ri,:) = Ef';
+                rec.Varf(ri,:) = Varf';
+                rec.p1(ri,:) = p1';
+              case 'poisson'
+                [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
+                [Ef] = ep_pred(gp, x, y, xtest);
+                rec.site_tau(ri,:)=tau;
+                rec.site_nu(ri,:)=nu;
+                rec.Ef(ri,:) = Ef';
+                %rec.Varf(ri,:) = Varf';
+            end
         end
 
         % Set the inducing inputs in the record structure

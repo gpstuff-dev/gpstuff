@@ -39,21 +39,24 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         
         z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
         
-        kstarstar=gp_trvar(gp, x);
+        [k, kstarstar]=gp_trvar(gp, x);
 
         ntest=size(x,1);
         
         K_nf=gp_cov(gp,x,tx);
-        V = (L\Stildesqroot)*K_nf';
-        for i1=1:ntest
-            % Compute covariance between observations
-            Ef(i1,1)=K_nf(i1,:)*(nutilde-z);
-            Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
-            switch gp.likelih
-              case 'probit'
-                p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-              case 'poisson'
-                p1 = [];
+        Ef=K_nf*(nutilde-z);
+        
+        if nargout > 1
+            V = (L\Stildesqroot)*K_nf';
+            for i1=1:ntest
+                % Compute covariance between observations
+                Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
+                switch gp.likelih
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
+                end
             end
         end
         
@@ -63,50 +66,116 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        [k, kstarstar]=gp_trvar(gp, x);
 
         [e, edata, eprior, tautilde, nutilde, iLaKfu, La] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
 
         myytilde = nutilde./tautilde;
         
-        Luu = chol(K_uu)';
         % Evaluate the Lambda (La) 
         % Q_ff = K_fu*inv(K_uu)*K_fu'
         % Here we need only the diag(Q_ff), which is evaluated below
-        B=Luu\(K_fu');       % u x f
-        Qv_ff=sum(B.^2)';
-        iLaKfu = zeros(size(K_fu));  % f x u, 
-        for i=1:length(La)
-            iLaKfu(i,:) = K_fu(i,:)./La(i);  % f x u 
-        end
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;     % Ensure symmetry
         A = chol(A)';
         L = iLaKfu/A';
 
-% $$$         A = K_uu+K_fu'*iLaKfu;
-% $$$         A = (A+A')./2;               % Ensure symmetry
-% $$$         L = iLaKfu/chol(A);
         p = myytilde./La - L*(L'*myytilde);
         
-        kstarstar=gp_trvar(gp, x);
-
         ntest=size(x,1);
         
         K_nu=gp_cov(gp,x,u);
         Knf = K_nu*(K_uu\K_fu');
         Ef = Knf*p;
-        for i1=1:ntest
-            % Compute covariance between observations
-            Varf(i1,1)=kstarstar(i1) - ((Knf(i1,:)./La')*Knf(i1,:)' - Knf(i1,:)*L*L'*Knf(i1,:)');
-            switch gp.likelih
-              case 'probit'
-                p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-              case 'poisson'
-                p1 = [];
+        
+        if nargout > 1
+            for i1=1:ntest
+                % Compute covariance between observations
+                Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+                switch gp.likelih
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
+                end
             end
         end
         
       case 'PIC_BLOCK'
+        % Calculate some help matrices  
+        u = gp.X_u;
+        ind = gp.tr_index;
+        tstind = varargin{1};        % block indeces for test points
         
+        K_fu = gp_cov(gp, tx, u);         % f x u
+        K_nu = gp_cov(gp, x, u);         % n x u   
+        K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+        [k, kstarstar]=gp_trvar(gp, x);
+        
+        [e, edata, eprior, tautilde, nutilde, L, La] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
+        
+        myytilde = nutilde./tautilde;
+        
+        % Evaluate the Lambda (La) for specific model
+        % Q_ff = K_fu*inv(K_uu)*K_fu'
+        % Here we need only the diag(Q_ff), which is evaluated below
+        iLaKfu = zeros(size(K_fu));  % f x u
+        for i=1:length(ind)
+            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
+        end
+        
+        % From this on evaluate the prediction
+        % See Snelson and Ghahramani (2007) for details 
+        %        p=iLaKfu*(A\(iLaKfu'*myytilde));
+        p= L*(L'*myytilde);
+        for i=1:length(ind)
+            p2(ind{i},:) = La{i}\myytilde(ind{i},:);
+        end
+        p = p2-p;
+
+        iKuuKuf = K_uu\K_fu';
+        
+        w_bu=zeros(length(x),length(u));
+        w_n=zeros(length(x),1);
+        for i=1:length(ind)
+            w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
+            K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+            w_n(tstind{i},:) = K_nf*p(ind{i},:);
+        end
+        
+        Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
+
+        if nargout > 1
+            v_bu = zeros(length(x),length(tx));
+            %v_bu = zeros(size(iKuuKuf));
+            v_n = zeros(length(x),length(tx));
+            for i=1:length(ind)
+                K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+                v_bu(tstind{i},ind{i}) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+                v_n(tstind{i},ind{i}) = K_nf;
+            end
+            K_nf = K_nu*iKuuKuf - v_bu + v_n;
+            
+            ntest=size(x,1);
+            Varf = zeros(ntest,1);
+            %Varf = zeros(ntest,ntest);
+            for i=1:length(ind)
+                Varf = Varf + sum((K_nf(:,ind{i})/chol(La{i})).^2,2);
+% $$$                 max(max(inv(La{i})))
+% $$$                 min(min(inv(La{i})))
+                %Varf = Varf + (K_nf(:,ind{i})/La{i})*K_nf(:,ind{i})' - K_nf(:,ind{i})*L(ind{i},:)*L(ind{i},:)'*K_nf(:,ind{i})';
+            end
+            %Varf = kstarstar - diag(Varf);
+            Varf = kstarstar - (Varf - sum((K_nf*L).^2,2));
+            
+            for i1=1:ntest
+                switch gp.likelih
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
+                end
+            end
+        end
     end
 end

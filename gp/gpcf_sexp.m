@@ -535,7 +535,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     + trace(Labl{i}\K_ff{i})...
                     - trace(L(ind{i},:)*(L(ind{i},:)'*K_ff{i})) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
                     + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*K_uf(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
-                      sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuKuu(ind{i},:))*iKuuKuf(:,ind{i}))))); 
+                      sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuKuu(ind{i},:))*iKuuKuf(:,ind{i})))));
                                                                 %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
             end
           case 'PIC_BAND'
