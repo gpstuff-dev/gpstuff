@@ -310,6 +310,14 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 end
                 LtLhat = L'*Lhat;              
                 I = eye(size(K_uu));
+
+                iLahatnutilde = zeros(n,1);
+                diag_iLahat = zeros(n,1);
+                for jj=1:length(ind)
+                    iLahatnutilde(ind{jj}) = Lahat{jj}\nutilde(ind{jj});
+                    diag_iLahat(ind{jj}) = diag(inv(Lahat{jj}));
+                end
+                            
                 
                 % Note here Sigm is a diagonal vector, which contains the 
                 % diagonal elements of the covariance matrix of the approximate posterior
@@ -348,12 +356,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                                                         
                             % Update the parameters of the approximate posterior (myy and Sigm_v)
                             Ltmp = (chol(I-LtLhat)'\Lhat')';
-                            for jj=1:length(ind)
-                                myy(ind{jj}) = Lahat{jj}\nutilde(ind{jj});
-                                Sigm_v(ind{jj}) = diag(inv(Lahat{jj}));
-                            end
-                            myy = myy  + Ltmp*(Ltmp'*nutilde);
-                            Sigm_v = Sigm_v + sum(Ltmp.^2,2);
+                            iLahat = inv(Lahat{bl});
+                            iLahatnutilde(bl_ind) = iLahat*nutilde(bl_ind);
+                            diag_iLahat(bl_ind) = diag(iLahat);
+
+                            myy = iLahatnutilde  + Ltmp*(Ltmp'*nutilde);
+                            Sigm_v = diag_iLahat + sum(Ltmp.^2,2);
                         
                             % Compute the diagonal of the covariance of the approximate posterior                    
                             muvec_i(i1,1)=myy_i;
