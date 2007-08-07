@@ -383,7 +383,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 rec.p1(ri,:) = p1';
               case 'poisson'
                 [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
-                [Ef] = ep_pred(gp, x, y, xtest);
+                switch gp.type
+                  case 'PIC_BLOCK'
+                    [Ef] = ep_pred(gp, x, y, xtest, gp.tr_index);
+                  otherwise
+                    [Ef] = ep_pred(gp, x, y, xtest);
+                end
                 rec.site_tau(ri,:)=tau;
                 rec.site_nu(ri,:)=nu;
                 rec.Ef(ri,:) = Ef';

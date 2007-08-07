@@ -204,20 +204,22 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 % diagonal elements of the covariance matrix of the approximate posterior
                 Sigm_v = Cv_ff;
                 
-                % Begin the EP -algorithm
-                %-----------------------------------------------
-                while iter<=maxiter & abs(logZep_tmp-logZep)>tol
+                % First evaluations for the "new" implementation
+                B = I - LtLhat;
                 
+                while iter<=maxiter & abs(logZep_tmp-logZep)>tol
+                    
+                    % The "new" implementation
                     logZep_tmp=logZep;
                     muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                     for i1=1:n
                         % approximate cavity parameters
                         tau_i=Sigm_v(i1)^-1-tautilde(i1);
                         vee_i=Sigm_v(i1)^-1*myy(i1)-nutilde(i1);
-
+                        
                         myy_i=vee_i/tau_i;
                         sigm2_i=tau_i^-1;
-
+                        
                         % marginal moments
                         [muhati, sigm2hati] = marginalMoments12(gp.likelih);
                         
@@ -231,6 +233,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         Lhat_old = Lhat(i1,:);
                         Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u                        
                         LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
+% $$$                         delta = L(i1,:)'*(Lhat(i1,:) - Lhat_old);
+% $$$                         sum(sum(B*delta - delta*B));
+% $$$                         sum(sum(abs(B*delta -(B*delta)')));
+% $$$                         max(max(abs(B*delta -delta*B)));
+% $$$                         max(max(abs(B)));
+% $$$                         max(max(delta))
                               
                         % Update the parameters of the approximate posterior (myy and Sigm_v)
                         Ltmp = (chol(I-LtLhat)'\Lhat')';
@@ -241,6 +249,41 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         muvec_i(i1,1)=myy_i;
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
+                
+% $$$                 % The "old" implementation
+% $$$                     logZep_tmp=logZep;
+% $$$                     muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+% $$$                     for i1=1:n
+% $$$                         % approximate cavity parameters
+% $$$                         tau_i=Sigm_v(i1)^-1-tautilde(i1);
+% $$$                         vee_i=Sigm_v(i1)^-1*myy(i1)-nutilde(i1);
+% $$$ 
+% $$$                         myy_i=vee_i/tau_i;
+% $$$                         sigm2_i=tau_i^-1;
+% $$$ 
+% $$$                         % marginal moments
+% $$$                         [muhati, sigm2hati] = marginalMoments12(gp.likelih);
+% $$$                         
+% $$$                         % update site parameters
+% $$$                         deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
+% $$$                         tautilde(i1)=tautilde(i1)+deltatautilde;
+% $$$                         nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+% $$$ 
+% $$$                         % Evaluate the hat parameters for approximate posterior
+% $$$                         Lahat(i1) = Lahat(i1) + deltatautilde;
+% $$$                         Lhat_old = Lhat(i1,:);
+% $$$                         Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u                        
+% $$$                         LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
+% $$$                               
+% $$$                         % Update the parameters of the approximate posterior (myy and Sigm_v)
+% $$$                         Ltmp = (chol(I-LtLhat)'\Lhat')';
+% $$$                         myy = nutilde./Lahat + Ltmp*(Ltmp'*nutilde);
+% $$$                         Sigm_v = 1./Lahat + sum(Ltmp.^2,2);
+% $$$                         
+% $$$                         % Compute the diagonal of the covariance of the approximate posterior                    
+% $$$                         muvec_i(i1,1)=myy_i;
+% $$$                         sigm2vec_i(i1,1)=sigm2_i;
+% $$$                     end
                     % 1. and 2. term
                     Sigmtilde = 1./tautilde;
                     La2 = Lav + Sigmtilde;
@@ -466,54 +509,52 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 sigm2hati1=sigm2_i-(sigm2_i^2*normp_zi)/((1+sigm2_i)*normc_zi)*(zi+normp_zi/normc_zi);
                 
               case 'poisson'
+                zm = @zeroth_moment;
                 fm = @first_moment;
                 sm = @second_moment;
-       
+                
+                yy = y(i1);
+                avgE = gp.avgE(i1);
                 % Set the limits for integration and integrate with quad
-                if y(i1) > 0
-                    mean_app = log(y(i1)./gp.avgE(i1));                    
-                    mean_app = (myy_i/sigm2_i + mean_app.*y(i1))/(1/sigm2_i + y(i1));
-                    sigm_app = sqrt((1/sigm2_i + y(i1))^-1);
+                if yy > 0
+                    mean_app = log(yy./gp.avgE(i1));                    
+                    mean_app = (myy_i/sigm2_i + mean_app.*yy)/(1/sigm2_i + yy);
+                    sigm_app = sqrt((1/sigm2_i + yy)^-1);
                     lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
                 else
                     lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
                 end
-
+                    
+                [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6);
                 [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6);
                 [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6);
-                                
+                
                 muhati1 = m_1;
                 sigm2hati1 = m_2 - muhati1.^2;
             end
+            function integrand = zeroth_moment(f)
+                lambda = avgE.*exp(f);
+                integrand = exp(-lambda + yy.*log(lambda) - gammaln(yy+1)); % 
+                integrand = integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); % 
+            end
+            
             function integrand = first_moment(f)
+                lambda = avgE.*exp(f);
+                integrand = exp(-lambda + yy.*log(lambda) - gammaln(yy+1)); % 
+                integrand = f.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); % 
+                integrand = integrand./m_0;
+
 % $$$                 yy = repmat(y(i1),1,length(f));
-% $$$                 lambda = gp.avgE(i1).*exp(f);
-% $$$                 integrand = zeros(size(yy));
-% $$$                 integrand(lambda < 0) = NaN;
-% $$$ 
-% $$$                 k = (yy >= 0 & yy == round(yy) & lambda >= 0);
-% $$$                 if (any(k))
-% $$$                     integrand(k) = exp(-lambda(k) + yy(k).*log(lambda(k) + realmin.*(lambda(k)==0))) - gammaln(yy(k)+1);
-% $$$                 end
-% $$$                 integrand = f.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
-                
-                yy = repmat(y(i1),1,length(f));
-                integrand = f.*norm_pdf(f, myy_i, sqrt(sigm2_i)).*poiss_pdf(yy, gp.avgE(i1).*exp(f));
+% $$$                 integrand = f.*norm_pdf(f, myy_i, sqrt(sigm2_i)).*poiss_pdf(yy, gp.avgE(i1).*exp(f));
             end
             function integrand = second_moment(f)
+                lambda = avgE.*exp(f);
+                integrand = exp(-lambda + yy.*log(lambda) - gammaln(yy+1)); %  
+                integrand = f.^2.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+                integrand = integrand./m_0;
+
 % $$$                 yy = repmat(y(i1),1,length(f));
-% $$$                 lambda = gp.avgE(i1).*exp(f);
-% $$$                 integrand = zeros(size(yy));
-% $$$                 integrand(lambda < 0) = NaN;
-% $$$ 
-% $$$                 k = (yy >= 0 & yy == round(yy) & lambda >= 0);
-% $$$                 if (any(k))
-% $$$                     integrand(k) = exp(-lambda(k) + yy(k).*log(lambda(k) + realmin.*(lambda(k)==0))) - gammaln(yy(k)+1);
-% $$$                 end
-% $$$                 integrand = f.^2.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 -log(2*pi)/2);
-                
-                yy = repmat(y(i1),1,length(f));
-                integrand = f.^2.*norm_pdf(f, myy_i, sqrt(sigm2_i)).*poiss_pdf(yy, gp.avgE(i1).*exp(f));
+% $$$                 integrand = f.^2.*norm_pdf(f, myy_i, sqrt(sigm2_i)).*poiss_pdf(yy, gp.avgE(i1).*exp(f));
             end
         end
         
@@ -541,19 +582,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 m_0 = quad(zm, lambdaconf(1), lambdaconf(2));        
             end
             function integrand = zeroth_moment(f)
-% $$$                 yy = repmat(y(i1),1,length(f));
-% $$$                 lambda = gp.avgE(i1).*exp(f);
-% $$$                 integrand = zeros(size(yy));
-% $$$                 integrand(lambda < 0) = NaN;
-% $$$ 
-% $$$                 k = (yy >= 0 & yy == round(yy) & lambda >= 0);
-% $$$                 if (any(k))
-% $$$                     integrand(k) = exp(-lambda(k) +yy(k).*log(lambda(k) + realmin.*(lambda(k)==0))) - gammaln(yy(k)+1);
-% $$$                 end
-% $$$                 integrand = integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 -log(2*pi)/2);
-% $$$ 
-                yy = repmat(y(i1),1,length(f));
-                integrand = norm_pdf(f, myy_i, sqrt(sigm2_i)).*poisspdf(y(i1), gp.avgE(i1).*exp(f));
+                lambda = gp.avgE(i1).*exp(f);
+
+                integrand = exp(-lambda + y(i1).*log(lambda + realmin.*(lambda==0)) - gammaln(y(i1)+1) ); %
+                integrand = integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
             end
         end
     end
