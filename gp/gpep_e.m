@@ -203,13 +203,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 % Note here Sigm is a diagonal vector, which contains the 
                 % diagonal elements of the covariance matrix of the approximate posterior
                 Sigm_v = Cv_ff;
-                
-                % First evaluations for the "new" implementation
-                B = I - LtLhat;
-                
+                                
                 while iter<=maxiter & abs(logZep_tmp-logZep)>tol
                     
-                    % The "new" implementation
                     logZep_tmp=logZep;
                     muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                     for i1=1:n
@@ -233,12 +229,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         Lhat_old = Lhat(i1,:);
                         Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u                        
                         LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
-% $$$                         delta = L(i1,:)'*(Lhat(i1,:) - Lhat_old);
-% $$$                         sum(sum(B*delta - delta*B));
-% $$$                         sum(sum(abs(B*delta -(B*delta)')));
-% $$$                         max(max(abs(B*delta -delta*B)));
-% $$$                         max(max(abs(B)));
-% $$$                         max(max(delta))
                               
                         % Update the parameters of the approximate posterior (myy and Sigm_v)
                         Ltmp = (chol(I-LtLhat)'\Lhat')';
@@ -250,40 +240,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
                 
-% $$$                 % The "old" implementation
-% $$$                     logZep_tmp=logZep;
-% $$$                     muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-% $$$                     for i1=1:n
-% $$$                         % approximate cavity parameters
-% $$$                         tau_i=Sigm_v(i1)^-1-tautilde(i1);
-% $$$                         vee_i=Sigm_v(i1)^-1*myy(i1)-nutilde(i1);
-% $$$ 
-% $$$                         myy_i=vee_i/tau_i;
-% $$$                         sigm2_i=tau_i^-1;
-% $$$ 
-% $$$                         % marginal moments
-% $$$                         [muhati, sigm2hati] = marginalMoments12(gp.likelih);
-% $$$                         
-% $$$                         % update site parameters
-% $$$                         deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
-% $$$                         tautilde(i1)=tautilde(i1)+deltatautilde;
-% $$$                         nutilde(i1)=sigm2hati^-1*muhati-vee_i;
-% $$$ 
-% $$$                         % Evaluate the hat parameters for approximate posterior
-% $$$                         Lahat(i1) = Lahat(i1) + deltatautilde;
-% $$$                         Lhat_old = Lhat(i1,:);
-% $$$                         Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u                        
-% $$$                         LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
-% $$$                               
-% $$$                         % Update the parameters of the approximate posterior (myy and Sigm_v)
-% $$$                         Ltmp = (chol(I-LtLhat)'\Lhat')';
-% $$$                         myy = nutilde./Lahat + Ltmp*(Ltmp'*nutilde);
-% $$$                         Sigm_v = 1./Lahat + sum(Ltmp.^2,2);
-% $$$                         
-% $$$                         % Compute the diagonal of the covariance of the approximate posterior                    
-% $$$                         muvec_i(i1,1)=myy_i;
-% $$$                         sigm2vec_i(i1,1)=sigm2_i;
-% $$$                     end
                     % 1. and 2. term
                     Sigmtilde = 1./tautilde;
                     La2 = Lav + Sigmtilde;
@@ -419,11 +375,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                     myytilde = Sigmtilde.*nutilde;
                     
                     term12 = 0;
-                    tempt = 0;
                     for i=1:length(ind)
                         La2{i} = Labl{i} + diag(Sigmtilde(ind{i}));
                         iLaKfu(ind{i},:) = La2{i}\K_fu(ind{i},:);
-                        tempt = tempt + 2.*sum(log(diag(chol(La2{i}))));
                         term12 = term12 + 2.*sum(log(diag(chol(La2{i})))) + myytilde(ind{i})'*(La2{i}\myytilde(ind{i}));
                     end
                     A2 = K_uu+K_fu'*iLaKfu;
@@ -517,20 +471,41 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 avgE = gp.avgE(i1);
                 % Set the limits for integration and integrate with quad
                 if yy > 0
-                    mean_app = log(yy./gp.avgE(i1));                    
+                    mean_app = log(yy./avgE);                    
                     mean_app = (myy_i/sigm2_i + mean_app.*yy)/(1/sigm2_i + yy);
                     sigm_app = sqrt((1/sigm2_i + yy)^-1);
-                    lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
+                    lambdaconf(1) = mean_app - 6*sigm_app; lambdaconf(2) = mean_app + 6*sigm_app;
                 else
-                    lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
+                    lambdaconf(1) = myy_i - 4*sqrt(sigm2_i); lambdaconf(2) = myy_i + 4*sqrt(sigm2_i);
                 end
-                    
+                
                 [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6);
                 [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6);
                 [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6);
                 
                 muhati1 = m_1;
                 sigm2hati1 = m_2 - muhati1.^2;
+
+% $$$                 if yy==0
+% $$$                     i1
+% $$$                     [m_0 m_1 m_2 fhncnt]
+% $$$                 
+% $$$                     if yy > 0
+% $$$                         mean_app = log(yy./gp.avgE(i1));                    
+% $$$                         mean_app = (myy_i/sigm2_i + mean_app.*yy)/(1/sigm2_i + yy);
+% $$$                         sigm_app = sqrt((1/sigm2_i + yy)^-1);
+% $$$                         lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
+% $$$                     else
+% $$$                         lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
+% $$$                     end
+% $$$                     
+% $$$                     [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6);
+% $$$                     [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6);
+% $$$                     [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6);
+% $$$                     
+% $$$                     [m_0 m_1 m_2 fhncnt]
+% $$$                 end
+                    
             end
             function integrand = zeroth_moment(f)
                 lambda = avgE.*exp(f);
@@ -543,18 +518,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 integrand = exp(-lambda + yy.*log(lambda) - gammaln(yy+1)); % 
                 integrand = f.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); % 
                 integrand = integrand./m_0;
-
-% $$$                 yy = repmat(y(i1),1,length(f));
-% $$$                 integrand = f.*norm_pdf(f, myy_i, sqrt(sigm2_i)).*poiss_pdf(yy, gp.avgE(i1).*exp(f));
             end
             function integrand = second_moment(f)
                 lambda = avgE.*exp(f);
                 integrand = exp(-lambda + yy.*log(lambda) - gammaln(yy+1)); %  
                 integrand = f.^2.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
                 integrand = integrand./m_0;
-
-% $$$                 yy = repmat(y(i1),1,length(f));
-% $$$                 integrand = f.^2.*norm_pdf(f, myy_i, sqrt(sigm2_i)).*poiss_pdf(yy, gp.avgE(i1).*exp(f));
             end
         end
         
@@ -570,9 +539,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                     mean_app = log(y(i1)./gp.avgE(i1));                    
                     mean_app = (myy_i/sigm2_i + mean_app.*y(i1))/(1/sigm2_i + y(i1));
                     sigm_app = sqrt((1/sigm2_i + y(i1))^-1);
-                    lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
+                    lambdaconf(1) = mean_app - 6*sigm_app; lambdaconf(2) = mean_app + 6*sigm_app;
                 else
-                    lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
+                    lambdaconf(1) = myy_i - 6*sqrt(sigm2_i); lambdaconf(2) = myy_i + 6*sqrt(sigm2_i);
                 end
 
                 if isnan(lambdaconf(1))
@@ -583,7 +552,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
             end
             function integrand = zeroth_moment(f)
                 lambda = gp.avgE(i1).*exp(f);
-
                 integrand = exp(-lambda + y(i1).*log(lambda + realmin.*(lambda==0)) - gammaln(y(i1)+1) ); %
                 integrand = integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
             end
