@@ -104,6 +104,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
             K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
             Luu = chol(K_uu)';
+            
             % Evaluate the Lambda (La) 
             % Q_ff = K_fu*inv(K_uu)*K_fu'
             % Here we need only the blockdiag(Q_ff), which is evaluated below
@@ -117,6 +118,95 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
                 iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
                 edata = edata + 2*sum(log(diag(chol(Labl{i})))) + t(ind{i},:)'*(Labl{i}\t(ind{i},:));
             end
+            % The data contribution to the error is 
+            % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
+                        
+            % First some help matrices...
+            % A = chol(K_uu+K_uf*inv(La)*K_fu))
+            A = K_uu+K_fu'*iLaKfu;
+            A = (A+A')./2;     % Ensure symmetry
+            A = chol(A)';
+            % The actual error evaluation
+            % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
+            b = (t'*iLaKfu)*inv(A)';
+            edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
+            edata = .5*(edata + n*log(2*pi));
+          case 'CS+PIC'
+            u = gp.X_u;
+            ind = gp.tr_index;
+                        
+            cf_orig = gp.cf;
+            
+            cf1 = {};
+            cf2 = {};
+            j = 1;
+            k = 1;
+            for i = 1:ncf 
+                if ~isfield(gp.cf{i},'cs')
+                    cf1{j} = gp.cf{i};
+                    j = j + 1;
+                else
+                    cf2{k} = gp.cf{i};
+                    k = k + 1;
+                end         
+            end
+            gp.cf = cf1;
+
+                        
+            % First evaluate needed covariance matrices
+            % v defines that parameter is a vector
+            K_fu = gp_cov(gp, x, u);         % f x u
+            K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+            K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+            Luu = chol(K_uu)';
+            
+            
+            %K_cs = feval(gp.cs.fh_trcov,gp,x);
+            
+            % Evaluate the Lambda (La) 
+            % Q_ff = K_fu*inv(K_uu)*K_fu'
+            % Here we need only the blockdiag(Q_ff), which is evaluated below
+            B=Luu\(K_fu');       % u x f  and B'*B = K_fu*K_uu*K_uf
+            iLaKfu = zeros(size(K_fu));  % f x u
+            edata = 0;
+% $$$             for i=1:length(ind)
+% $$$                 Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+% $$$                 [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+% $$$                 Labl{i} = Cbl_ff - Qbl_ff;
+% $$$                 iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
+% $$$                 edata = edata + 2*sum(log(diag(chol(Labl{i})))) + t(ind{i},:)'*(Labl{i}\t(ind{i},:));
+% $$$             end
+
+% $$$             Labl = sparse(1:n,1:n,0,n,n);
+% $$$             for i=1:length(ind)
+% $$$                 Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+% $$$                 [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+% $$$                 Labl(ind{i},ind{i}) = Cbl_ff - Qbl_ff;            
+% $$$             end
+            
+            [I,J]=find(tril(sparse(gp.tr_indvec(:,1),gp.tr_indvec(:,2),1,n,n),-1));
+            q_ff = sum(B(:,I).*B(:,J));
+            q_ff = sparse(I,J,q_ff,n,n);
+            c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+            c_ff = sparse(I,J,c_ff,n,n);
+            [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+            Labl = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+
+% $$$             I = gp.tr_indvec(:,1);
+% $$$             J = gp.tr_indvec(:,2);
+% $$$             q_ff = sum(B(:,I).*B(:,J));
+% $$$             q_ff = sparse(I,J,q_ff,n,n);
+% $$$             c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+% $$$             c_ff = sparse(I,J,c_ff,n,n);
+% $$$             Labl = c_ff-q_ff;
+            
+            gp.cf = cf2;
+            K_cs = gp_trcov(gp,x);
+            Labl = Labl + K_cs;
+            gp.cf = cf_orig;
+            
+            iLaKfu = Labl\K_fu;
+            edata = edata + 2*sum(log(diag(chol(Labl)))) + t'*(Labl\t);
             % The data contribution to the error is 
             % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
                         

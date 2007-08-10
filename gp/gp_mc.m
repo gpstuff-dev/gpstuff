@@ -309,6 +309,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                     rec.indrejects = 0;
                 end
                 rec.tr_index = gp.tr_index;
+              case 'CS+PIC'
+                rec.X_u = [];
+                if isfield(opt, 'inducing_opt')
+                    rec.indrejects = 0;
+                end
+                rec.tr_index = gp.tr_index;
+
               otherwise
                 % Do nothing
             end
@@ -398,7 +405,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 
         % Set the inducing inputs in the record structure
         switch gp.type
-          case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
+          case {'FIC', 'PIC_BLOCK', 'PIC_BAND', 'CS+PIC'}
             rec.X_u(ri,:) = gp.X_u(:)';
         end
         if isfield(opt, 'inducing_opt')

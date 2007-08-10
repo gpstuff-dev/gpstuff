@@ -167,6 +167,96 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         % inv(Labl2) - inv(Q_ff2 + Labl2)
         %inv(mask.*(Cbl_ff2-Q_ff2)) - inv(Q_ff2 + mask.*(Cbl_ff2-Q_ff2))
         %================================================================
+      case 'CS+PIC'
+        u = gp.X_u;
+        ind = gp.tr_index;
+        DKuu_u = 0;
+        DKuf_u = 0;
+        
+        cf_orig = gp.cf;
+        
+        cf1 = {};
+        cf2 = {};
+        j = 1;
+        k = 1;
+        for i = 1:ncf 
+            if ~isfield(gp.cf{i},'cs')
+                cf1{j} = gp.cf{i};
+                j = j + 1;
+            else
+                cf2{k} = gp.cf{i};
+                k = k + 1;
+            end         
+        end
+        gp.cf = cf1;
+        
+        % First evaluate the needed covariance matrices
+        % if they are not in the memory
+        % v defines that parameter is a vector
+        K_fu = gp_cov(gp, x, u);         % f x u
+        K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        Luu = chol(K_uu)';
+        % Evaluate the Lambda (La)
+        % Q_ff = K_fu*inv(K_uu)*K_fu'
+        % Here we need only the diag(Q_ff), which is evaluated below        
+        %B=K_fu/Luu;
+        B=Luu\K_fu';
+        %iLaKfu = zeros(size(K_fu));  % f x u
+
+% $$$         La = sparse(1:n,1:n,0,n,n);
+% $$$         for i=1:length(ind)
+% $$$             Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+% $$$             [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+% $$$             La(ind{i},ind{i}) = Cbl_ff - Qbl_ff;
+% $$$         end
+
+        [I,J]=find(tril(sparse(gp.tr_indvec(:,1),gp.tr_indvec(:,2),1,n,n),-1));
+        q_ff = sum(B(:,I).*B(:,J));
+        q_ff = sparse(I,J,q_ff,n,n);
+        c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+        c_ff = sparse(I,J,c_ff,n,n);
+        [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+        La = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+        
+% $$$         I = gp.tr_indvec(:,1);
+% $$$         J = gp.tr_indvec(:,2);
+% $$$         q_ff = sum(B(:,I).*B(:,J));
+% $$$         q_ff = sparse(I,J,q_ff,n,n);
+% $$$         c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+% $$$         c_ff = sparse(I,J,c_ff,n,n);
+% $$$         La = c_ff-q_ff;
+        
+        
+        gp.cf = cf2;        
+        K_cs = gp_trcov(gp,x);
+        La = La + K_cs;
+        gp.cf = cf_orig;
+        
+        iLaKfu = La\K_fu;
+        
+        % ... then evaluate some help matrices.
+        % A = chol(K_uu+K_uf*inv(La)*K_fu))
+        A = K_uu+K_fu'*iLaKfu;
+        A = (A+A')./2;            % Ensure symmetry
+        
+        L = iLaKfu/chol(A);
+% $$$         b = zeros(1,n);
+% $$$         b_apu=(t'*L)*L';
+% $$$         for i=1:length(ind)
+% $$$             b(ind{i}) = t(ind{i})'/La{i} - b_apu(ind{i});
+% $$$         end
+
+        %b = (t'*iLaKfu)*inv(A)';
+        
+        b = t'/La - (t'*L)*L';
+        
+        %iKuuKuf = inv(K_uu)*K_fu';                % L, b, iKuuKuf, La
+        iKuuKuf = K_uu\K_fu';
+        
+        % inv(Labl2) - inv(Q_ff2 + Labl2)
+        %inv(mask.*(Cbl_ff2-Q_ff2)) - inv(Q_ff2 + mask.*(Cbl_ff2-Q_ff2))
+        %================================================================
       case 'PIC_BAND'
         % Do nothing
         u = gp.X_u;
@@ -200,7 +290,6 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         
         L = iLaKfu/chol(A);
         b = t'/La - (t'*L)*L';
-        
         iKuuKuf = inv(K_uu)*K_fu';
     end
     
@@ -213,7 +302,10 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
             gpcf.X_u = gp.X_u;
         end
         if isfield(gp, 'tr_index')
-            gpcf.tr_index = gp.tr_index;
+            gpcf.tr_index = gp.tr_index;            
+        end
+        if isfield(gp, 'tr_indvec')
+            gpcf.tr_indvec = gp.tr_indvec;
         end
         switch param
           case 'hyper'
@@ -243,6 +335,9 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
             end
             if isfield(gp, 'tr_index')
                 gpcf.tr_index = gp.tr_index;
+            end
+            if isfield(gp, 'tr_indvec')
+                gpcf.tr_indvec = gp.tr_indvec;
             end
             switch param
               case 'hyper'

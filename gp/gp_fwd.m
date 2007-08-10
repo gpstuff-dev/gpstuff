@@ -155,4 +155,111 @@ switch gp.type
 % $$$         Kv_nn = gp_trvar(gp,x);
 % $$$         VarY = Kv_nn - Qv_nn + sum(b.^2)';
     end
+  case 'CS+PIC'
+    % Calculate some help matrices  
+    u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+    ind = varargin{1};           % block indeces for training points
+    tstind = varargin{2};        % block indeces for test points
+    
+    n = size(tx,1);
+    
+    cf_orig = Gp.cf;
+    
+    cf1 = {};
+    cf2 = {};
+    j = 1;
+    k = 1;
+    for i = 1:length(cf_orig) 
+        if ~isfield(Gp.cf{i},'cs')
+            cf1{j} = Gp.cf{i};
+            j = j + 1;
+        else
+            cf2{k} = Gp.cf{i};
+            k = k + 1;
+        end         
+    end
+    
+    Gp.cf = cf1;
+    K_nu = gp_cov(Gp, x, u);            % n x u   
+    [Kv_ff, Cv_ff] = gp_trvar(Gp, tx);  % 1 x f  vector
+    K_fu = gp_cov(Gp, tx, u);           % f x u
+    K_uu = gp_trcov(Gp, u);             % u x u, noiseles covariance K_uu
+    Luu = chol(K_uu)';
+    %K_nf = gp_cov(Gp,x,tx);
+    
+    % Evaluate the Lambda (La) for specific model
+    % Q_ff = K_fu*inv(K_uu)*K_fu'
+    B=Luu\K_fu';
+    La = sparse(1:n,1:n,0,n,n);
+    for i=1:length(ind)
+        Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+        [Kbl_ff, Cbl_ff] = gp_trcov(Gp, tx(ind{i},:));
+        La(ind{i},ind{i}) =  Cbl_ff - Qbl_ff;
+    end
+    
+    % Add the compact support cf to lambda
+    Gp.cf = cf2;
+    K_cs = gp_trcov(Gp,tx);
+    K_cs_nf = gp_cov(Gp,x,tx);
+    %K_cs_nf = gp_cov(Gp,x,tx);
+    La = La + K_cs;
+    Gp.cf = cf_orig;
+    
+    iLaKfu = La\K_fu;
+    A = K_uu+K_fu'*iLaKfu;
+    A = (A+A')./2;            % Ensure symmetry
+    
+    %L = iLaKfu/chol(A);        
+    %K_ff = gp_trcov(Gp,tx);
+    %iKff = inv(La)-L*L';
+    
+    %Q_nf = K_nf*iKff*K_ff;        
+    
+    Gp.cf = cf_orig;
+    
+    if size(ty,2)>1
+        tyy = ty(:,i1);
+    else    % Here latent values are not present
+        tyy = ty;
+    end
+    
+    
+    
+    % From this on evaluate the prediction
+    % See Snelson and Ghahramani (2007) for details 
+    p=iLaKfu*(A\(iLaKfu'*tyy));
+% $$$         for i=1:length(ind)
+% $$$             p2(ind{i},:) = La(ind{i},ind{i})\tyy(ind{i},:);
+% $$$         end
+    p2 = La\tyy;
+    p= p2-p;
+    
+    %iKuuKuf = K_uu\K_fu';
+    %w_u = K_uu\(K_fu'*p);
+    Gp.cf = cf1;
+    w_bu=zeros(length(x),length(u));
+    %w_bu=zeros(length(x),1);
+    w_n=zeros(length(x),1);
+    for i=1:length(ind)
+        w_bu(tstind{i},:) = repmat((K_uu\(K_fu(ind{i},:)'*p(ind{i},:)))', length(tstind{i}),1);
+        %w_bu(tstind{i},:) = repmat(K_uu\(K_fu(ind{i},:)'*p(ind{i},:)))', length(tstind{i}),1);
+        %w_bu = w_bu + K_nu*(K_uu\(K_fu(ind{i},:)'))*p(ind{i});
+        K_nb = gp_cov(Gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+        w_n(tstind{i},:) = K_nb*p(ind{i},:);
+    end
+    %    [max(- sum(K_nu.*w_bu,2) + w_n), mean(- sum(K_nu.*w_bu,2) + w_n), min(- sum(K_nu.*w_bu,2) + w_n)]
+    %y = K_nu*w_u - sum(K_nu.*w_bu,2) + w_n;
+    %y = (K_nu*(K_uu\K_fu')+K_cs_nf)*p - w_bu + w_n;
+    y = (K_nu*(K_uu\K_fu')+K_cs_nf)*p - sum(K_nu.*w_bu,2) + w_n;
+    Gp.cf = cf_orig;
+    if nargout > 1   
+        error('Variance is not yet implemented for PIC! \n')
+% $$$             B=Luu\(K_nu');
+% $$$             Qv_nn=sum(B.^2)';
+% $$$             % Vector of diagonal elements of covariance matrix
+% $$$             L = chol(S)';
+% $$$             b = L\K_nu';
+% $$$             [Kv_nn, Cv_nn] = gp_trvar(Gp,x);
+% $$$             VarY(:,:,i1) = Kv_nn - Qv_nn + sum(b.^2)';
+    end
 end

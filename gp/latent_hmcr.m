@@ -32,7 +32,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
       case 'FIC'
         u = gp.X_u;
         Lav=[];
-      case 'PIC_BLOCK'
+      case {'PIC_BLOCK','CS+PIC'}
         u = gp.X_u;
         ind = gp.tr_index;
         Labl=[];
@@ -81,15 +81,22 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             zs(ind{i}) = Lp{i}\z(ind{i});
         end
         w = zs + U*((J*U'-U')*zs);
+      case 'CS+PIC'
+        getL(z, gp, x, y, u);
+        %zs = Lp\z;
+        zs = Lp*z;
+        w = zs + U*((J*U'-U')*zs);        
       case 'PIC_BAND'
         getL(z, gp, x, y, u);
         %zs = Lp\z;
         zs = Lp*z;
         w = zs + U*((J*U'-U')*zs);
+      otherwise 
+        error('unknown type of GP\n')
     end
     
     
-    %    gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
+    %gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
     
     hmc2('state',latent_rstate)
     rej = 0;
@@ -125,6 +132,10 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
         for i=1:length(ind)
             z(ind{i}) = Lp{i}*w2(ind{i});
         end
+      case  'CS+PIC'
+        w2 = w + U*(iJUU*w);
+        %        z = Lp*w2;
+        z = Lp\w2;
       case  'PIC_BAND'
         w2 = w + U*(iJUU*w);
         %        z = Lp*w2;
@@ -181,7 +192,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             end
             g = g + g*U*(iJUU);
             %g = g';
-          case 'PIC_BAND'
+          case {'PIC_BAND','CS+PIC'}
             w2= w + U*(iJUU*w);
             %            z = Lp*w2;
             z = Lp\w2;
@@ -235,7 +246,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             for i=1:length(ind)
                eprior = eprior + 0.5*z(ind{i})'/Labl{i}*z(ind{i});
             end
-          case 'PIC_BAND'
+          case {'PIC_BAND','CS+PIC'}
             w2= w + U*(iJUU*w);
             %            z = Lp*w2;
             z = Lp\w2;
@@ -261,14 +272,19 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             L2 = C/chol(diag(1./gp.avgE) + C);  %sparse(1:n, 1:n, 1./gp.avgE)
             L2 = chol(C - L2*L2')';
         else
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-            K_fu = gp_cov(gp, x, u);         % f x u
-            K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-            K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
-            Luu = chol(K_uu)';
+% $$$             [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+% $$$             K_fu = gp_cov(gp, x, u);         % f x u
+% $$$             K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+% $$$             K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+% $$$             Luu = chol(K_uu)';
             % Evaluate the Lambda (La) for specific model
             switch gp.type
               case 'FIC'
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
                 % Q_ff = K_fu*inv(K_uu)*K_fu'
                 % Here we need only the diag(Q_ff), which is evaluated below
                 b=Luu\(K_fu');       % u x f
@@ -300,6 +316,12 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
                 iJUU = J\U'-U';
                 iJUU(abs(iJUU)<eps)=0;
               case 'PIC_BLOCK'
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
+
                 % Q_ff = K_fu*inv(K_uu)*K_fu'
                 % Here we need only the diag(Q_ff), which is evaluated below
                 B=Luu\(K_fu');       % u x f
@@ -337,8 +359,99 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
                 J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
                                               % J = diag(sqrt(2./(1+diag(S))));
                 iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;
+              case 'CS+PIC'
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                cf_orig = gp.cf;
+                
+                cf1 = {};
+                cf2 = {};
+                j = 1;
+                k = 1;
+                for i = 1:length(gp.cf)
+                    if ~isfield(gp.cf{i},'cs')
+                        cf1{j} = gp.cf{i};
+                        j = j + 1;
+                    else
+                        cf2{k} = gp.cf{i};
+                        k = k + 1;
+                    end         
+                end
+                gp.cf = cf1;        
+
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';                
+                B=Luu\(K_fu');       % u x f
+
+% $$$                 Labl = sparse(1:n,1:n,0,n,n);
+% $$$                 for i=1:length(ind)
+% $$$                     Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+% $$$                     [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+% $$$                     Labl(ind{i},ind{i}) = Cbl_ff - Qbl_ff;
+% $$$                 end
+
+                [I,J]=find(tril(sparse(gp.tr_indvec(:,1),gp.tr_indvec(:,2),1,n,n),-1));
+                q_ff = sum(B(:,I).*B(:,J));
+                q_ff = sparse(I,J,q_ff,n,n);
+                c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+                c_ff = sparse(I,J,c_ff,n,n);
+                [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+                Labl = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+
+% $$$                 I = gp.tr_indvec(:,1);
+% $$$                 J = gp.tr_indvec(:,2);
+% $$$                 q_ff = sum(B(:,I).*B(:,J));
+% $$$                 q_ff = sparse(I,J,q_ff,n,n);
+% $$$                 c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+% $$$                 c_ff = sparse(I,J,c_ff,n,n);
+% $$$                 Labl = c_ff-q_ff;
+                
+                
+                gp.cf = cf2;        
+                K_cs = gp_trcov(gp,x);
+                Labl = Labl + K_cs;
+                gp.cf = cf_orig;
+                iLaKfu = Labl\K_fu;
+                % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                % and form iLaKfu
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;            % Ensure symmetry
+                
+                % L = iLaKfu*inv(chol(A));
+                iLaKfuic = iLaKfu*inv(chol(A));
+                
+                %Lp = chol(inv(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl)));
+                %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
+                Lp = inv(Labl);
+                Lp = sparse(1:n,1:n,gp.avgE,n,n) + Lp;
+                Lp = chol(Lp)';
+                %                Lp = inv(Lp);
+
+
+                b=zeros(size(B'));
+                
+                %                b = Lp*iLaKfuic;
+                b = Lp\iLaKfuic;
+                
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
                 iJUU(abs(iJUU)<eps)=0;                
               case 'PIC_BAND'
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
+
                 % Q_ff = K_fu*inv(K_uu)*K_fu'
                 % Here we need only the diag(Q_ff), which is evaluated below
                 B=Luu\(K_fu');       % u x f

@@ -121,11 +121,11 @@ function gp = gp_init(do, varargin)
           case 'FIC' 
             gp.X_u = [];
             gp.nind = [];
-          case 'PIC_BLOCK'
+          case {'PIC_BLOCK', 'CS+PIC'}
             gp.X_u = [];
             gp.nind = [];
             gp.blocktype = [];
-            gp.tr_index = {};
+            gp.tr_index = {};            
         end
         % Set function handle for likelihood. If regression 
         % model is used set also gp.p.r field and if other likelihood
@@ -195,6 +195,9 @@ function gp = gp_init(do, varargin)
                         gp.site_tau = site_tau';
                         gp.site_nu = site_nu';
                     end
+                  case 'compact_support'
+                    % Note: Add the possibility for more than one compactly supported cf later.
+                    gp.cs = varargin{i+1};      
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -257,6 +260,9 @@ function gp = gp_init(do, varargin)
                     gp.site_tau = site_tau';
                     gp.site_nu = site_nu';
                 end
+              case 'compact_support'
+                % Note: Add the possibility for more than one compactly supported cf later.
+                gp.cs = varargin{i+1};                
               otherwise
                 error('Wrong parameter name!')
             end    
@@ -283,6 +289,27 @@ function gp = gp_init(do, varargin)
               case 'manual'
                 gp.blocktype = 'manual';
                 gp.tr_index = var{3};
+                if gp.type == 'CS+PIC'
+                    vsize = 0;
+                    for i = 1:length(gp.tr_index)
+                        vsize = vsize + length(gp.tr_index{i})^2;
+                    end
+                    tr_indvec = zeros(vsize,2);                 
+                    %tr_indvec = [];
+                    i2 = 1;
+                    for i = 1:length(gp.tr_index)
+                        for j = 1:length(gp.tr_index{i})
+                            for k = 1:length(gp.tr_index{i})
+                                %tr_indvec = [tr_indvec;
+                                %             gp.tr_index{i}(j) gp.tr_index{i}(k)]; 
+                                tr_indvec(i2,1) = gp.tr_index{i}(j);
+                                tr_indvec(i2,2) = gp.tr_index{i}(k);
+                                i2 = i2 + 1;
+                            end
+                        end
+                    end
+                    gp.tr_indvec = tr_indvec;
+                end
               case 'farthest_point'
                 gp.blocktype = 'farthest_point';
                 gp.blockcent = var{3};
