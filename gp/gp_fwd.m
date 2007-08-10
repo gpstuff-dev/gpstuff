@@ -190,12 +190,22 @@ switch gp.type
     % Evaluate the Lambda (La) for specific model
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     B=Luu\K_fu';
-    La = sparse(1:n,1:n,0,n,n);
-    for i=1:length(ind)
-        Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-        [Kbl_ff, Cbl_ff] = gp_trcov(Gp, tx(ind{i},:));
-        La(ind{i},ind{i}) =  Cbl_ff - Qbl_ff;
-    end
+
+% $$$     La = sparse(1:n,1:n,0,n,n);
+% $$$     for i=1:length(ind)
+% $$$         Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+% $$$         [Kbl_ff, Cbl_ff] = gp_trcov(Gp, tx(ind{i},:));
+% $$$         La(ind{i},ind{i}) =  Cbl_ff - Qbl_ff;
+% $$$     end
+    
+    [I,J]=find(tril(sparse(gp.tr_indvec(:,1),gp.tr_indvec(:,2),1,n,n),-1));
+    q_ff = sum(B(:,I).*B(:,J));
+    q_ff = sparse(I,J,q_ff,n,n);
+    c_ff = gp_covvec(gp, x(I,:), x(J,:))';
+    c_ff = sparse(I,J,c_ff,n,n);
+    [Kv_ff, Cv_ff] = gp_trvar(gp,x);
+    La = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+    
     
     % Add the compact support cf to lambda
     Gp.cf = cf2;
