@@ -479,9 +479,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                     lambdaconf(1) = myy_i - 4*sqrt(sigm2_i); lambdaconf(2) = myy_i + 4*sqrt(sigm2_i);
                 end
                 
-                [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6);
-                [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6);
-                [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6);
+                [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6, false);
+                [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6, false);
+                [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6, false);
                 
                 muhati1 = m_1;
                 sigm2hati1 = m_2 - muhati1.^2;
@@ -548,7 +548,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                     lambdaconf(1) = -20;
                 end
                 
-                m_0 = quad(zm, lambdaconf(1), lambdaconf(2));        
+                m_0 = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6, false);
             end
             function integrand = zeroth_moment(f)
                 lambda = gp.avgE(i1).*exp(f);

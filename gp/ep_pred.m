@@ -90,7 +90,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         
         if nargout > 1
             for i1=1:ntest
-                % Compute covariance between observations
+                % Compute variances of predictions
                 Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
                 switch gp.likelih
                   case 'probit'

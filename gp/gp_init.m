@@ -289,7 +289,8 @@ function gp = gp_init(do, varargin)
               case 'manual'
                 gp.blocktype = 'manual';
                 gp.tr_index = var{3};
-                if gp.type == 'CS+PIC'
+                switch gp.type
+                  case 'CS+PIC'
                     vsize = 0;
                     for i = 1:length(gp.tr_index)
                         vsize = vsize + length(gp.tr_index{i})^2;

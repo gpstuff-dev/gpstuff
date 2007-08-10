@@ -1,6 +1,6 @@
 function demo_spatialCSandPIC
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-10 11:32:27 EEST
+%   Last modified: 2007-08-10 14:32:34 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -47,7 +47,7 @@ function demo_spatialCSandPIC
     ye=EA(xxii);
     %=======================================================================
 
-    bls = 6; indtype = 'corners+1xside';
+    bls = ; indtype = 'corners+1xside';
     %[blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners', 1);
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners+1xside', 1);
     
