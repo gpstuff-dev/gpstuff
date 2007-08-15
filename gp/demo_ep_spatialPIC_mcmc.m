@@ -1,6 +1,6 @@
 function demo_ep_spatialPIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-10 15:01:45 EEST
+%   Last modified: 2007-08-15 09:36:24 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -45,9 +45,10 @@ function demo_ep_spatialPIC_mcmc
         EA(xxii(i1))=sum(ea(xxi{i1}));
     end
     ye=EA(xxii);
+    ye = max(ye,1e-4);
     %=======================================================================
 
-    [blockindex, Xu] = set_PIC(xx, dims, cellsize, 5, 'corners', 1);
+    [blockindex, Xu] = set_PIC(xx, dims, cellsize, 4, 'corners', 1);
     
     [n, nin] = size(xx);
 
@@ -61,7 +62,7 @@ function demo_ep_spatialPIC_mcmc
         gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
     toc
     
-
+    
     % Find the mode by optimization
     %===============================
     w0 = gp_pak(gp,'hyper');
@@ -70,14 +71,17 @@ function demo_ep_spatialPIC_mcmc
     %opt=optimset('LargeScale','off');
     % gradients provided
     opt=optimset('GradObj','on');
+    opt=optimset(opt,'TolX', 1e-6);
+    opt=optimset(opt,'Display', 'iter');
     % Hessian provided
-    %opt=optimset('GradObj','on','Hessian','on');
+% $$$     opt=optimset('GradObj','on','Hessian','off');
     % if gradients provided and you want to check your gradients
     % DerivativeCheck is not allowed with LargeScale
     %opt=optimset(opt,'LargeScale','off','DerivativeCheck','on');
     % optimize and get also Hessian H
 % $$$     thefunction = @(ww) {gpep_e(ww, gp, xx, yy, 'hyper') gpep_g(ww, gp, xx, yy, 'hyper')}
-    [w,fval,exitflag,output,g,H]=fminunc(@(ww) foo(ww, gp, xx, yy, 'hyper'),w0,opt); 
+    [w,fval,exitflag,output,g,H]=fminunc(@(ww) energy_grad(ww, gp, xx, yy, 'hyper'), w0, opt); 
+    save EP_PIC_20
     %% If using LargeScale without Hessian given, Hessian computed is sparse 
     H=full(H);
     S=inv(H);
@@ -274,3 +278,35 @@ function demo_ep_spatialPIC_mcmc
     colorbar
     title('Gt')
 end
+
+
+
+
+
+
+
+
+
+
+
+    
+% $$$     subplot(3,1,1); plot([lambdaconf(1):0.01:lambdaconf(2)], feval(zm,[lambdaconf(1):0.01:lambdaconf(2)]))
+% $$$     subplot(3,1,2); plot([lambdaconf1(1):0.01:lambdaconf1(2)], feval(fm,[lambdaconf1(1):0.01:lambdaconf1(2)]))
+% $$$     subplot(3,1,3); plot([lambdaconf2(1):0.01:lambdaconf2(2)], feval(sm,[lambdaconf2(1):0.01:lambdaconf2(2)]))
+% $$$ 
+% $$$     f = [-5:0.01:5];
+% $$$     figure(1)
+% $$$     subplot(2,1,1)
+% $$$     plot(f, poiss_pdf(repmat(0,1,size(f,2)), exp(f).*gp.avgE(i1)))
+% $$$     subplot(2,1,2)
+% $$$     plot(f, log(poiss_pdf(repmat(0,1,size(f,2)), exp(f).*gp.avgE(i1))))
+% $$$     figure(2)
+% $$$     subplot(2,1,1)
+% $$$     plot(f, poiss_pdf(repmat(1,1,size(f,2)), exp(f).*gp.avgE(i1)))
+% $$$     subplot(2,1,2)
+% $$$     plot(f, log(poiss_pdf(repmat(1,1,size(f,2)), exp(f).*gp.avgE(i1))))
+% $$$     figure(3)
+% $$$     subplot(2,1,1)
+% $$$     plot(f, poiss_pdf(repmat(5,1,size(f,2)), exp(f).*gp.avgE(i1)))
+% $$$     subplot(2,1,2)
+% $$$     plot(f, log(poiss_pdf(repmat(5,1,size(f,2)), exp(f).*gp.avgE(i1))))

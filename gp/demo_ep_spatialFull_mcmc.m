@@ -1,6 +1,7 @@
+
 function demo_ep_spatialFull_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-02 09:36:31 EEST
+%   Last modified: 2007-08-15 09:57:34 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -53,10 +54,78 @@ function demo_ep_spatialFull_mcmc
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'FULL', nin, 'poisson', {gpcf1}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+    gp = gp_init('init', 'FULL', nin, 'poisson', {gpcf1}, []);   %{gpcf2}
     gp.avgE = ye; 
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
 
+    
+        % Find the mode by optimization
+    %===============================
+    w0 = gp_pak(gp,'hyper');
+    % Uncomment desired lines
+    % no gradients provided (can't use LargeSacle)
+    %opt=optimset('LargeScale','off');
+    % gradients provided
+    opt=optimset('GradObj','on');
+    opt=optimset('GradObj','on');
+    opt=optimset(opt,'TolX', 1e-6);
+    opt=optimset(opt,'Display', 'iter');
+    % Hessian provided
+    %opt=optimset('GradObj','on','Hessian','on');
+    % if gradients provided and you want to check your gradients
+    % DerivativeCheck is not allowed with LargeScale
+    %opt=optimset(opt,'LargeScale','off','DerivativeCheck','on');
+    % optimize and get also Hessian H
+% $$$     thefunction = @(ww) {gpep_e(ww, gp, xx, yy, 'hyper') gpep_g(ww, gp, xx, yy, 'hyper')}
+    [w,fval,exitflag,output,g,H]=fminunc(@(ww) energy_grad(ww, gp, xx, yy, 'hyper'),w0,opt); 
+    %% If using LargeScale without Hessian given, Hessian computed is sparse 
+    H=full(H);
+    S=inv(H);
+    exp(w)
+
+    gp = gp_unpak(gp,w,'hyper');
+    [Ef, Varf] = ep_pred(gp, xx, yy, xx);
+
+    % Plot the maps and the Normal approximation of the 
+    % hyperparameter posterior
+    figure(1)
+    G=repmat(NaN,size(Y));
+    G(xxii)=exp(Ef);
+    pcolor(X1,X2,G),shading flat
+    colormap(mapcolor(G)),colorbar
+    axis equal
+    axis([0 35 0 60])
+    drawnow
+    title('EP approximated median/mean relative risk')
+    
+    figure(2)
+    Gp=repmat(NaN,size(Y));
+    Gp(xxii)=1-normcdf(0,Ef,sqrt(Varf));
+    pcolor(X1,X2,Gp),shading flat
+    colormap(mapcolor(Gp)),colorbar
+    axis equal
+    axis([0 35 0 60])
+    drawnow
+    title('EP approximated probability p(\mu>1)')
+
+    figure(3)
+    [m, l] = meshgrid(linspace(1, 2.2 ,40),linspace(-1.4, 1.4, 40));
+    loghyper = [m(:) l(:)];
+    const = - log(2*pi) -0.5*log(det(S));
+    for i=1:length(loghyper)
+        loghyp_post(i) = exp( const - 0.5*(loghyper(i,:) - w)*(S\(loghyper(i,:) - w)')).*prod(1./exp(loghyper(i,:)));
+    end
+    contour(m, l, reshape(loghyp_post,40,40))
+
+    log_l = linspace(-1.4,1.4,40);
+    lmarg_post = norm_pdf(log_l,w(2),sqrt(S(2,2)))./exp(log_l);    
+    plot(exp(log_l), lmarg_post)
+    
+    log_m = linspace(1,2.2,40);
+    lmarg_post = norm_pdf(log_m,w(1),sqrt(S(1,1)))./exp(log_m);
+    plot(exp(log_m), lmarg_post)
+
+    
     % Set the parameters 
     opt=gp_mcopt;
     opt.nsamples=1;

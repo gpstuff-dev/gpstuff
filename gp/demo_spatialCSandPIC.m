@@ -1,6 +1,6 @@
 function demo_spatialCSandPIC
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-10 14:32:34 EEST
+%   Last modified: 2007-08-10 17:23:23 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -47,9 +47,9 @@ function demo_spatialCSandPIC
     ye=EA(xxii);
     %=======================================================================
 
-    bls = ; indtype = 'corners+1xside';
+    bls = 4; indtype = 'corners';
     %[blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners', 1);
-    [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners+1xside', 1);
+    [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
     
     [n, nin] = size(xx);
 
@@ -106,9 +106,8 @@ function demo_spatialCSandPIC
     opt.repeat = 1;
     opt.hmc_opt.nsamples=1;
     opt.nsamples=1;
-    while length(rgp.edata)<200 %   1000
+    while length(rgp.edata)<2000 %   1000
         [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
-        gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, xx, yy, 'hyper')
         fprintf('  hmcrejects=%.3f   \n',mean(rgp.hmcrejects))
         fprintf('length1=%.4f, magnitude1=%.4f\n',gp.cf{1}.lengthScale, sqrt(gp.cf{1}.magnSigma2))
         fprintf('length1=%.4f, magnitude1=%.4f\n',gp.cf{2}.lengthScale, sqrt(gp.cf{2}.magnSigma2))

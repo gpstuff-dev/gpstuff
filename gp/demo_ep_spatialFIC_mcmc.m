@@ -1,6 +1,6 @@
 function demo_ep_spatialFIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-10 15:01:51 EEST
+%   Last modified: 2007-08-15 13:12:29 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -45,6 +45,7 @@ function demo_ep_spatialFIC_mcmc
         EA(xxii(i1))=sum(ea(xxi{i1}));
     end
     ye=EA(xxii);
+    ye = max(ye,1e-4);
     %=======================================================================
 
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, 4, 'corners', 1);
@@ -70,6 +71,9 @@ function demo_ep_spatialFIC_mcmc
     %opt=optimset('LargeScale','off');
     % gradients provided
     opt=optimset('GradObj','on');
+    opt=optimset('GradObj','on');
+    opt=optimset(opt,'TolX', 1e-6);
+    opt=optimset(opt,'Display', 'iter');
     % Hessian provided
     %opt=optimset('GradObj','on','Hessian','on');
     % if gradients provided and you want to check your gradients
@@ -77,7 +81,7 @@ function demo_ep_spatialFIC_mcmc
     %opt=optimset(opt,'LargeScale','off','DerivativeCheck','on');
     % optimize and get also Hessian H
 % $$$     thefunction = @(ww) {gpep_e(ww, gp, xx, yy, 'hyper') gpep_g(ww, gp, xx, yy, 'hyper')}
-    [w,fval,exitflag,output,g,H]=fminunc(@(ww) foo(ww, gp, xx, yy, 'hyper'),w0,opt); 
+    [w,fval,exitflag,output,g,H]=fminunc(@(ww) energy_grad(ww, gp, xx, yy, 'hyper'),w0,opt); 
     %% If using LargeScale without Hessian given, Hessian computed is sparse 
     H=full(H);
     S=inv(H);

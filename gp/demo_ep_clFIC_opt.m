@@ -87,7 +87,6 @@ gp = gp_init('set', gp, 'X_u', U);
 gp.ep_opt.display = 1;
 gp = gp_init('set', gp, 'latent_method', {'EP', x(itr,:), y(itr,:), 'hyper'});
 
-
 % Initialize the test GP used in the scges
 gptst = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, []);
 gptst = gp_init('set', gptst, 'X_u', U);
@@ -198,56 +197,4 @@ axis([-inf inf -inf inf]), axis off
 plot(tx(ty==-1,1),tx(ty==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(tx(ty==1,1),tx(ty==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and test cases', 'fontsize', 14)
-
-
-
-
-
-
-
-
-
-
-
-
-% Begin to sample. First set sampling options and then start sampling
-disp(' ')
-disp(' Now that the starting values are found we set the main sampling ')
-disp(' options ')
-disp(' ')
-
-opt=gp_mcopt;
-opt.repeat=1;
-opt.nsamples=1;
-opt.hmc_opt.steps=11;
-opt.hmc_opt.stepadj=0.1;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock))
-
-opt.fh_e = @gpep_e;
-opt.fh_g = @gpep_g;
-[r,g,rstate1]=gp_mc(opt, gp, x, y);
-
-% Set the sampling options
-opt.nsamples=20;
-opt.repeat=3;
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.001;
-opt.hmc_opt.stepadj=0.1;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-
-
-% Sample from the posterior. NOTE! With EP it is faster to make the 
-% predictions while sampling than afterwards. This can be done by 
-% given the test locations for gp_mc, which are here 'xstar'.
-xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
-xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
-xstar=[xt1(:) xt2(:)];
-
-[r,g,rstate2]=gp_mc(opt, gp, x, y, xstar, [], r);
-
-%rr=thin(r,50,8);
-rr=thin(r,20,2);
 

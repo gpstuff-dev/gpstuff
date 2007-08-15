@@ -721,18 +721,18 @@ function gpcf = gpcf_sexp(do, varargin)
 % $$$                     H2 = sparse(ind(:,1),ind(:,2),H2,n,n);
 % $$$                     H = H2;
                     
-                    H_diag = sum(H.*iKuuKuf,1);
-                    [I,J] = find(tril(K_ff,-1));
-                    H2 = zeros(1,size(I,1));
-                    for i = 1:size(H,1)
-                        H2 = H2 + H(i,I).*iKuuKuf(i,J);
-                    end
-                    H2 = sparse(I,J,H2,n,n);
-                    H = H2 + H2' + sparse(1:n,1:n,H_diag);
+% $$$                     H_diag = sum(H.*iKuuKuf,1);
+% $$$                     [I,J] = find(tril(K_ff,-1));
+% $$$                     H2 = zeros(1,size(I,1));
+% $$$                     for i = 1:size(H,1)
+% $$$                         H2 = H2 + H(i,I).*iKuuKuf(i,J);
+% $$$                     end
+% $$$                     H2 = sparse(I,J,H2,n,n);
+% $$$                     H = H2 + H2' + sparse(1:n,1:n,H_diag);
 
                     
-% $$$                     H = sum(H(:,ind(:,1)).*iKuuKuf(:,ind(:,2)));
-% $$$                     H = sparse(ind(:,1),ind(:,2),H,n,n);
+                    H = sum(H(:,ind(:,1)).*iKuuKuf(:,ind(:,2)));
+                    H = sparse(ind(:,1),ind(:,2),H,n,n);
                     % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
                     gdata(i1) = -0.5.*((2*b*DKuf_l{i2}'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b'));
                     gdata(i1) = gdata(i1) - sum(sum(L'.*(L'*DKuf_l{i2}'*iKuuKuf)));
@@ -803,8 +803,7 @@ function gpcf = gpcf_sexp(do, varargin)
 % $$$                 H2 = sparse(ind(:,1),ind(:,2),H2,n,n);
 % $$$                 H = H2;
                 
-% $$$                 H_diag = sum(H.*iKuuKuf,1);
-% $$$                 [I,J] = find(tril(K_ff,-1));
+% $$$                 H_diag = sum(H.*iKuuKuf);
 % $$$                 H2 = zeros(1,size(I,1));
 % $$$                 for i = 1:size(H,1)
 % $$$                     H2 = H2 + H(i,I).*iKuuKuf(i,J);

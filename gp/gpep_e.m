@@ -61,7 +61,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
             % Conduct evaluation for the energy and the site parameters
             gp=gp_unpak(gp, w, param);
             ncf = length(gp.cf);
-            n=length(x);
+            n = length(x);
 
             % ep iteration parameters
             iter=1;
@@ -169,6 +169,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                                 
               case 'FIC'
                 u = gp.X_u;
+                m = length(u);
                 
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
@@ -203,6 +204,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 % Note here Sigm is a diagonal vector, which contains the 
                 % diagonal elements of the covariance matrix of the approximate posterior
                 Sigm_v = Cv_ff;
+                H = I-L'*Lhat;
+                B = H\L';
                                 
                 while iter<=maxiter & abs(logZep_tmp-logZep)>tol
                     
@@ -227,19 +230,34 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                         % Evaluate the hat parameters for approximate posterior
                         Lahat(i1) = Lahat(i1) + deltatautilde;
                         Lhat_old = Lhat(i1,:);
-                        Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u                        
-                        LtLhat = LtLhat + L(i1,:)'*(Lhat(i1,:) - Lhat_old);
-                              
+                        Lhat(i1,:) = L(i1,:)./Lahat(i1);  % f x u
+                        deltaLhat_i = Lhat_old - Lhat(i1,:);
+                        LtLhat = LtLhat - L(i1,:)'*deltaLhat_i;
+                        
+                        b = H\L(i1,:)';
+                        bhat = deltaLhat_i*B;
+                        h = deltaLhat_i*b;
+                        B = B - 1./(1+h)*b*bhat;
+                        Bhat = B./repmat(Lahat',m,1);
+                        
                         % Update the parameters of the approximate posterior (myy and Sigm_v)
-                        Ltmp = (chol(I-LtLhat)'\Lhat')';
-                        myy = nutilde./Lahat + Ltmp*(Ltmp'*nutilde);
-                        Sigm_v = 1./Lahat + sum(Ltmp.^2,2);
+% $$$                         Ltmp = (chol(I-LtLhat)'\Lhat')';
+% $$$                         myy2 = nutilde./Lahat + Ltmp*(Ltmp'*nutilde);
+% $$$                         Sigm_v2 = 1./Lahat + sum(Ltmp.^2,2);
+
+                        myy = nutilde./Lahat + Lhat*(Bhat*nutilde);
+                        Sigm_v = 1./Lahat + sum(Lhat.*Bhat',2);
+                        H = (I-LtLhat);
                         
                         % Compute the diagonal of the covariance of the approximate posterior                    
                         muvec_i(i1,1)=myy_i;
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
                 
+                    % Re-evaluate the H and B parameters
+                    H = I-L'*Lhat;
+                    B = H\L';
+
                     % 1. and 2. term
                     Sigmtilde = 1./tautilde;
                     La2 = Lav + Sigmtilde;
@@ -321,6 +339,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 % Note here Sigm is a diagonal vector, which contains the 
                 % diagonal elements of the covariance matrix of the approximate posterior
                 [Kv_ff, Sigm_v] = gp_trvar(gp, x);  % f x 1  vector
+                H = I-L'*Lhat;
+                B = H\L';
                 
                 % Begin the EP -algorithm
                 %-----------------------------------------------
@@ -351,22 +371,41 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                             Lahat{bl}(in,in) = Lahat{bl}(in,in) + deltatautilde;
                             Lhat_old = Lhat(bl_ind,:);
                             Lhat(bl_ind,:) = Lahat{bl}\L(bl_ind,:);  % f x u
-                            LtLhat = LtLhat + L(bl_ind,:)'*(Lhat(bl_ind,:) - Lhat_old);
-                                                        
+                            deltaLhat_i = Lhat_old - Lhat(bl_ind,:);
+                            LtLhat = LtLhat - L(bl_ind,:)'*deltaLhat_i;
+% $$$                             LtLhat = LtLhat + L(bl_ind,:)'*(Lhat(bl_ind,:) - Lhat_old);
+
+                            b = H\L(bl_ind,:)';
+                            bhat = deltaLhat_i*B;
+                            h = deltaLhat_i*b;
+                            B = B - b*((eye(size(h))+h)\bhat);
+                            for ii=1:length(ind)
+                                Bhat(:,ind{ii}) = B(:,ind{ii})/Lahat{ii};
+                            end
+                            
                             % Update the parameters of the approximate posterior (myy and Sigm_v)
                             Ltmp = (chol(I-LtLhat)'\Lhat')';
+                            
                             iLahat = inv(Lahat{bl});
                             iLahatnutilde(bl_ind) = iLahat*nutilde(bl_ind);
                             diag_iLahat(bl_ind) = diag(iLahat);
 
-                            myy = iLahatnutilde  + Ltmp*(Ltmp'*nutilde);
-                            Sigm_v = diag_iLahat + sum(Ltmp.^2,2);
-                        
+                            myy2 = iLahatnutilde  + Ltmp*(Ltmp'*nutilde);
+                            Sigm_v2 = diag_iLahat + sum(Ltmp.^2,2);
+                            
+                            myy = iLahatnutilde  + Lhat*(Bhat*nutilde);
+                            Sigm_v = diag_iLahat + sum(Lhat.*Bhat',2);
+                            H = (I-LtLhat);
+                                                       
                             % Compute the diagonal of the covariance of the approximate posterior                    
                             muvec_i(i1,1)=myy_i;
                             sigm2vec_i(i1,1)=sigm2_i;
                         end
                     end
+                    % Re-evaluate the H and B parameters
+                    H = I-L'*Lhat;
+                    B = H\L';
+                    
                     % Compute the marginal likelihood, see FULL model for 
                     % details about equations
                     
@@ -467,6 +506,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                 fm = @first_moment;
                 sm = @second_moment;
                 
+                tol = 1e-6;
                 yy = y(i1);
                 avgE = gp.avgE(i1);
                 % Set the limits for integration and integrate with quad
@@ -474,38 +514,99 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
                     mean_app = log(yy./avgE);                    
                     mean_app = (myy_i/sigm2_i + mean_app.*yy)/(1/sigm2_i + yy);
                     sigm_app = sqrt((1/sigm2_i + yy)^-1);
-                    lambdaconf(1) = mean_app - 6*sigm_app; lambdaconf(2) = mean_app + 6*sigm_app;
+                    lambdaconf_fix(1) = mean_app - 6*sigm_app; lambdaconf_fix(2) = mean_app + 6*sigm_app;
                 else
-                    lambdaconf(1) = myy_i - 4*sqrt(sigm2_i); lambdaconf(2) = myy_i + 4*sqrt(sigm2_i);
+                    mean_app = myy_i;
+                    sigm_app = sqrt(sigm2_i);
+                    lambdaconf_fix(1) = myy_i - 4*sqrt(sigm2_i); lambdaconf_fix(2) = myy_i + 4*sqrt(sigm2_i);
                 end
                 
-                [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6, false);
-                [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6, false);
-                [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6, false);
+                % First the zeroth moment
+                lambdaconf(1) = mean_app - 3.*sigm_app; lambdaconf(2) = mean_app + 3.*sigm_app;
+                cont1 = true; cont2 = true;
+                old1 = 0; old2 = 0;
+                while cont1 || cont2
+                    new = feval(zm, lambdaconf(1));
+                    if  abs(new - old1) < tol
+                        cont1 = false;
+                    else
+                        lambdaconf(1) = lambdaconf(1) - sigm_app;
+                        old1 = new;
+                    end
+                    new = feval(zm, lambdaconf(2));
+                    if  abs(new - old2) < tol
+                        cont2 = false;
+                    else
+                        lambdaconf(2) = lambdaconf(2) + sigm_app;
+                        old2 = new;
+                    end                                        
+                end
+                [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), tol, false);
                 
-                muhati1 = m_1;
-                sigm2hati1 = m_2 - muhati1.^2;
+                % Then the first moment
+                lambdaconf1(1) = mean_app - 3.*sigm_app; lambdaconf1(2) = mean_app + 3.*sigm_app;
+                cont1 = true; cont2 = true;
+                old1 = 0; old2 = 0;
+                while cont1 || cont2
+                    new = feval(fm, lambdaconf1(1));
+                    if  abs(new - old1) < tol
+                        cont1 = false;
+                    else
+                        lambdaconf1(1) = lambdaconf1(1) -sigm_app;
+                        old1 = new;
+                    end
+                    new = feval(fm, lambdaconf1(2));
+                    if  abs(new - old2) < tol
+                        cont2 = false;
+                    else
+                        lambdaconf1(2) = lambdaconf1(2) + sigm_app;
+                        old2 = new;
+                    end                                        
+                end
+                [m_1, fhncnt] = quad(fm, lambdaconf1(1), lambdaconf1(2), tol, false);
 
-% $$$                 if yy==0
-% $$$                     i1
-% $$$                     [m_0 m_1 m_2 fhncnt]
-% $$$                 
-% $$$                     if yy > 0
-% $$$                         mean_app = log(yy./gp.avgE(i1));                    
-% $$$                         mean_app = (myy_i/sigm2_i + mean_app.*yy)/(1/sigm2_i + yy);
-% $$$                         sigm_app = sqrt((1/sigm2_i + yy)^-1);
-% $$$                         lambdaconf(1) = mean_app - 12*sigm_app; lambdaconf(2) = mean_app + 12*sigm_app;
-% $$$                     else
-% $$$                         lambdaconf(1) = myy_i - 12*sqrt(sigm2_i); lambdaconf(2) = myy_i + 12*sqrt(sigm2_i);
-% $$$                     end
-% $$$                     
-% $$$                     [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), 1e-6);
-% $$$                     [m_1, fhncnt] = quad(fm, lambdaconf(1), lambdaconf(2), 1e-6);
-% $$$                     [m_2, fhncnt] = quad(sm, lambdaconf(1), lambdaconf(2), 1e-6);
-% $$$                     
-% $$$                     [m_0 m_1 m_2 fhncnt]
-% $$$                 end
-                    
+                % And for the last the second moment
+                lambdaconf2(1) =  sigm_app.^2 - 3.*sigm_app; lambdaconf2(2) = sigm_app.^2 + 3.*sigm_app;
+                cont1 = true; cont2 = true;
+                old1 = 0; old2 = 0;
+                while cont1 || cont2
+                    new = feval(sm, lambdaconf2(1));
+                    if  abs(new - old1) < tol
+                        cont1 = false;
+                    else
+                        lambdaconf2(1) = lambdaconf2(1) -sigm_app;
+                        old1 = new;
+                    end
+                    new = feval(sm, lambdaconf2(2));
+                    if  abs(new - old2) < tol
+                        cont2 = false;
+                    else
+                        lambdaconf2(2) = lambdaconf2(2) + sigm_app;
+                        old2 = new;
+                    end                                        
+                end
+                [sigm2hati1, fhncnt] = quad(sm, lambdaconf2(1), lambdaconf2(2), tol, false);
+                
+                
+                % Evaluate the mean and variance
+                muhati1 = m_1;
+                
+                if sigm2hati1 > sigm2_i
+                    tol = tol.^2;
+                    [m_0, fhncnt] = quad(zm, lambdaconf(1), lambdaconf(2), tol, false);
+                    [m_1, fhncnt] = quad(fm, lambdaconf1(1), lambdaconf1(2), tol, false);
+                    [sigm2hati1, fhncnt] = quad(sm, lambdaconf2(1), lambdaconf2(2), tol, false);
+                end
+                
+                
+
+% $$$                 sigm2hati1 = m_2 - muhati1.^2;
+                
+% $$$                 i1
+% $$$                 [lambdaconf_fix;
+% $$$                  lambdaconf;
+% $$$                  lambdaconf1;
+% $$$                  lambdaconf2]
             end
             function integrand = zeroth_moment(f)
                 lambda = avgE.*exp(f);
@@ -522,7 +623,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2] = gpep_e(w, gp, x, y, par
             function integrand = second_moment(f)
                 lambda = avgE.*exp(f);
                 integrand = exp(-lambda + yy.*log(lambda) - gammaln(yy+1)); %  
-                integrand = f.^2.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+                integrand = (f-m_1).^2.*integrand.*exp(-0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
                 integrand = integrand./m_0;
             end
         end
