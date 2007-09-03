@@ -1,6 +1,6 @@
 function demo_ep_spatialFIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-15 13:12:29 EEST
+%   Last modified: 2007-08-28 16:32:58 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -45,14 +45,14 @@ function demo_ep_spatialFIC_mcmc
         EA(xxii(i1))=sum(ea(xxi{i1}));
     end
     ye=EA(xxii);
-    ye = max(ye,1e-4);
+    ye = max(ye,1e-3);
     %=======================================================================
 
-    [blockindex, Xu] = set_PIC(xx, dims, cellsize, 4, 'corners', 1);
+    [blockindex, Xu] = set_PIC(xx, dims, cellsize, 3, 'corners', 1);
     
     [n, nin] = size(xx);
 
-    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.2);
+    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -61,6 +61,12 @@ function demo_ep_spatialFIC_mcmc
     tic
         gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
     toc
+% $$$     gp.ep_opt.tol = 1e-10
+% $$$     gp.ep_opt.display = 1
+% $$$     gp.ep_opt.maxiter = 40
+% $$$     gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
+% $$$     
+% $$$     [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
 
 
     % Find the mode by optimization
@@ -72,7 +78,7 @@ function demo_ep_spatialFIC_mcmc
     % gradients provided
     opt=optimset('GradObj','on');
     opt=optimset('GradObj','on');
-    opt=optimset(opt,'TolX', 1e-6);
+    opt=optimset(opt,'TolX', 1e-3);
     opt=optimset(opt,'Display', 'iter');
     % Hessian provided
     %opt=optimset('GradObj','on','Hessian','on');
@@ -86,6 +92,7 @@ function demo_ep_spatialFIC_mcmc
     H=full(H);
     S=inv(H);
     exp(w)
+    save ep_spatial_FIC_20
 
     gp = gp_unpak(gp,w,'hyper');
     [Ef, Varf] = ep_pred(gp, xx, yy, xx, blockindex);
@@ -94,7 +101,7 @@ function demo_ep_spatialFIC_mcmc
     % hyperparameter posterior
     figure(1)
     G=repmat(NaN,size(Y));
-    G(xxii)=exp(Ef);
+    G(xxii)=exp(-Ef);
     pcolor(X1,X2,G),shading flat
     colormap(mapcolor(G)),colorbar
     axis equal

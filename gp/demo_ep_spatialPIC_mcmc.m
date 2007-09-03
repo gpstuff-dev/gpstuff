@@ -1,6 +1,6 @@
 function demo_ep_spatialPIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-15 09:36:24 EEST
+%   Last modified: 2007-08-23 09:45:01 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -45,7 +45,7 @@ function demo_ep_spatialPIC_mcmc
         EA(xxii(i1))=sum(ea(xxi{i1}));
     end
     ye=EA(xxii);
-    ye = max(ye,1e-4);
+    ye = max(ye,1e-3);
     %=======================================================================
 
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, 4, 'corners', 1);
@@ -61,6 +61,12 @@ function demo_ep_spatialPIC_mcmc
     tic
         gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
     toc
+    gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
+
+    for i=1:length(ind); 
+        %        [min(diag(La2{i})) max(diag(La2{i}))]
+        [min(diag(D{i})) max(diag(D{i}))]
+    end
     
     
     % Find the mode by optimization
@@ -71,7 +77,7 @@ function demo_ep_spatialPIC_mcmc
     %opt=optimset('LargeScale','off');
     % gradients provided
     opt=optimset('GradObj','on');
-    opt=optimset(opt,'TolX', 1e-6);
+    opt=optimset(opt,'TolX', 1e-3);
     opt=optimset(opt,'Display', 'iter');
     % Hessian provided
 % $$$     opt=optimset('GradObj','on','Hessian','off');

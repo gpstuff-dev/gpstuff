@@ -88,10 +88,10 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             % A = chol(K_uu+K_uf*inv(La)*K_fu))
             A = K_uu+K_fu'*iLaKfu;
             A = (A+A')./2;     % Ensure symmetry
-            A = chol(A)';
+            A = chol(A);
             % The actual error evaluation
             % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-            b = (t'*iLaKfu)*inv(A)';
+            b = (t'*iLaKfu)/A;
             edata = sum(log(Lav)) + t'./Lav'*t - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
             edata = .5*(edata + n*log(2*pi));
           case 'PIC_BLOCK'

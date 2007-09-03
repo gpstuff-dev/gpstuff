@@ -1,7 +1,7 @@
 
 function demo_ep_spatialFull_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-15 09:57:34 EEST
+%   Last modified: 2007-08-23 09:44:50 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -46,6 +46,7 @@ function demo_ep_spatialFull_mcmc
         EA(xxii(i1))=sum(ea(xxi{i1}));
     end
     ye=EA(xxii);
+    ye = max(ye,1e-3);
     %=======================================================================
 
     [n, nin] = size(xx);
@@ -58,6 +59,10 @@ function demo_ep_spatialFull_mcmc
     gp.avgE = ye; 
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
 
+    gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
+
+    [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+
     
         % Find the mode by optimization
     %===============================
@@ -68,7 +73,7 @@ function demo_ep_spatialFull_mcmc
     % gradients provided
     opt=optimset('GradObj','on');
     opt=optimset('GradObj','on');
-    opt=optimset(opt,'TolX', 1e-6);
+    opt=optimset(opt,'TolX', 1e-3);
     opt=optimset(opt,'Display', 'iter');
     % Hessian provided
     %opt=optimset('GradObj','on','Hessian','on');
@@ -79,6 +84,7 @@ function demo_ep_spatialFull_mcmc
 % $$$     thefunction = @(ww) {gpep_e(ww, gp, xx, yy, 'hyper') gpep_g(ww, gp, xx, yy, 'hyper')}
     [w,fval,exitflag,output,g,H]=fminunc(@(ww) energy_grad(ww, gp, xx, yy, 'hyper'),w0,opt); 
     %% If using LargeScale without Hessian given, Hessian computed is sparse 
+    save ep_spatial_full_20
     H=full(H);
     S=inv(H);
     exp(w)

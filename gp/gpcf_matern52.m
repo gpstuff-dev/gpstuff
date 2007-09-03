@@ -363,9 +363,10 @@ function gpcf = gpcf_matern52(do, varargin)
             % Evaluate the help matrices for the gradient evaluation (see
             % gpcf_sexp_trcov)
             
-            DE_Kuu = varargin{1};             % u x u
-            DE_Kuf = varargin{2};             % u x f
-            DE_Kff = varargin{3};             % mask(R, M) (block/band) diagonal
+            L = varargin{1};             % u x u
+            b = varargin{2};             % u x f
+            iKuuKuf = varargin{3};             % mask(R, M) (block/band) diagonal
+            La = varargin{4};            % matrix of size
             
             u = gpcf.X_u;
             
@@ -388,11 +389,8 @@ function gpcf = gpcf_matern52(do, varargin)
 
                 D1 = s.^2.*ma2.*exp(-sqrt(5.*dist));
                 D2 = s.^2.*ma2.*exp(-sqrt(5.*dist2));
-                D1 = (5./(3.*sqrt(s)) + 5.*sqrt(5)/3.*sqrt(dist)).*D1.*dist;
-                D2 = (5./(3.*sqrt(s)) + 5.*sqrt(5)/3.*sqrt(dist2)).*D2.*dist2;
-                
-                DKuf_l = D1(:);      % Matrix of size uf x m
-                DKuu_l = D2(:);      % Matrix of size uu x m
+                DKuf_l = (5./(3.*sqrt(s)) + 5.*sqrt(5)/3.*sqrt(dist)).*D1.*dist;
+                DKuu_l = (5./(3.*sqrt(s)) + 5.*sqrt(5)/3.*sqrt(dist2)).*D2.*dist2;
             else
                 % In the case ARD is used
                 s = 1./gpcf.lengthScale.^2;
@@ -405,11 +403,8 @@ function gpcf = gpcf_matern52(do, varargin)
                 for i=1:m
                     D1 = ma2.*exp(-sqrt(5.*dist)).*s(i).*(gminus(u(:,i),x(:,i)')).^2;;
                     D2 = ma2.*exp(-sqrt(5.*dist2)).*s(i).*(gminus(u(:,i),u(:,i)')).^2;;
-                    D1 = (5./3 + 5.*sqrt(5.*dist)/3).*D1;
-                    D2 = (5./3 + 5.*sqrt(5.*dist2)/3).*D2;
-                    
-                    DKuf_l(:,i) = D1(:);      % Matrix of size uf x m
-                    DKuu_l(:,i) = D2(:);      % Matrix of size uu x m
+                    DKuf_l{i} = (5./3 + 5.*sqrt(5.*dist)/3).*D1;
+                    DKuu_l{i} = (5./3 + 5.*sqrt(5.*dist2)/3).*D2;
                 end     
             end
           case 'PIC_BLOCK'
@@ -628,7 +623,14 @@ function gpcf = gpcf_matern52(do, varargin)
           case 'FULL'
             gdata(i1) = 0.5.*(Cdm - Bdm);
           case 'FIC'
-            gdata(i1) = DE_Kuu(:)'*K_uu(:) + DE_Kuf(:)'*K_uf(:) + gpcf.magnSigma2.*sum(DE_Kff);
+            KfuiKuuKuu = iKuuKuf'*K_uu;
+            gdata(i1) = -0.5.*((2*b*K_uf'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*K_uf'*iKuuKuf))) - ...
+                               sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+            
+            gdata(i1) = gdata(i1) - 0.5.*(b.*Cv_ff')*b';
+            gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(K_uf'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+            gdata(i1) = gdata(i1) + 0.5.*(sum(Cv_ff./La) - sum(sum(L.*L)).*gpcf.magnSigma2);
+            gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(K_uf'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
           case 'PIC_BLOCK'
             KfuiKuuKuu = iKuuKuf'*K_uu;
             %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
@@ -710,7 +712,11 @@ function gpcf = gpcf_matern52(do, varargin)
                   case 'FULL'
                     gdata(i1)=0.5.*(Cdl(i2) - Bdl(i2));
                   case 'FIC'
-                    gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
+                    KfuiKuuKuu = iKuuKuf'*DKuu_l{i2};
+                    gdata(i1) = -0.5.*((2*b*DKuf_l{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l{i2}'*iKuuKuf))) - ...
+                                       sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                   case {'PIC_BLOCK'}
 % $$$                     gdata(i1)= DE_Kuu(:)'*DKuu_l(:,i2) + DE_Kuf(:)'*DKuf_l(:,i2);
 % $$$                     for i=1:length(ind)
@@ -776,7 +782,11 @@ function gpcf = gpcf_matern52(do, varargin)
               case 'FULL'
                 gdata(i1)=0.5.*(Cdl - Bdl);
               case 'FIC'
-                gdata(i1)= DE_Kuu(:)'*DKuu_l(:) + DE_Kuf(:)'*DKuf_l(:);
+                KfuiKuuKuu = iKuuKuf'*DKuu_l;
+                gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l'*iKuuKuf))) - ...
+                                       sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
               case 'PIC_BLOCK'
                 KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
                 %            H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;

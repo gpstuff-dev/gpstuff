@@ -277,10 +277,16 @@ set(gcf, 'color', 'w'), title('predictive probability and test cases', 'fontsize
 % $$$ 
 % $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 % $$$ 
-% $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
+% $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x(itr,:), y(itr,:), 'hyper')
 % $$$ 
 % $$$ gp.ep_opt.display = 0;
-% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
+% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x(itr,:), y(itr,:), 'hyper')
 
 
 % $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x(itr,:), y(itr,:), 'hyper')
+
+
+   1.0e+02 *
+  -0.023860495207817  -0.042038094605346   0.018177599397528
+   1.125051639202053   1.125051639121466   0.000000000080587
+   0.009689170941641   0.016481840816596  -0.006792669874954

@@ -69,49 +69,57 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         u = gp.X_u;
         DKuu_u = 0;
         DKuf_u = 0;
-        [e, edata, eprior, tautilde, nutilde, iLaKfu, La] = gpep_e(w, gp, x, y, param, varargin);
-        
-        y = nutilde./tautilde;
-        
-        % First evaluate the needed covariance matrices
-        [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
+
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-
-        A = K_uu+K_fu'*iLaKfu;
-        A = (A+A')./2;     % Ensure symmetry
-
-        b = (y'*iLaKfu)/A;
-        C = inv(A) + b'*b;
-        C = (C+C')/2;
-        
-        % Evaluate R = mask(inv(La)*J*inv(La) , diag(n,n)), where J = H - K_fu*C*K_uf;
-        %        H = diag(La) - t*t' + 2*K_fu*inv(A)*K_fu'*diag(1./Lav)*t*t';
-        %        J = H - K_fu*C*K_fu';
-        %        R = diag(diag(1./Lav)*J*diag(1./Lav));
-        R = 1./La - (y./La).^2 + 2.*(iLaKfu*b').*(y./La) -  sum((iLaKfu*chol(C)').^2,2);
-        % iKuuKufR = inv(K_uu)*K_uf*R
+        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu        
         iKuuKuf = K_uu\K_fu';
-        for i=1:n
-            iKuuKufR(:,i) = iKuuKuf(:,i).*R(i);  % f x u 
-        end
-        %        iKuuKufR = iKuuKuf*diag(R);        
         
-        DE_Kuu = 0.5*( C - inv(K_uu) + iKuuKufR*iKuuKuf');  % These are here in matrix form, but
-        DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(y./La)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
-        
-        DE_Kff = 0.5*R;
-        L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff;
+% $$$         [e, edata, eprior, tautilde, nutilde, iLaKfu, La] = gpep_e(w, gp, x, y, param, varargin);
+% $$$         
+% $$$         y = nutilde./tautilde;
+% $$$         
+% $$$         % First evaluate the needed covariance matrices
+% $$$         [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+% $$$         K_fu = gp_cov(gp, x, u);         % f x u
+% $$$         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+% $$$         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+% $$$ 
+% $$$         A = K_uu+K_fu'*iLaKfu;
+% $$$         A = (A+A')./2;     % Ensure symmetry
+% $$$ 
+% $$$         b = (y'*iLaKfu)/A;
+% $$$         C = inv(A) + b'*b;
+% $$$         C = (C+C')/2;
+% $$$         
+% $$$         % Evaluate R = mask(inv(La)*J*inv(La) , diag(n,n)), where J = H - K_fu*C*K_uf;
+% $$$         %        H = diag(La) - t*t' + 2*K_fu*inv(A)*K_fu'*diag(1./Lav)*t*t';
+% $$$         %        J = H - K_fu*C*K_fu';
+% $$$         %        R = diag(diag(1./Lav)*J*diag(1./Lav));
+% $$$         R = 1./La - (y./La).^2 + 2.*(iLaKfu*b').*(y./La) -  sum((iLaKfu*chol(C)').^2,2);
+% $$$         % iKuuKufR = inv(K_uu)*K_uf*R
+% $$$         iKuuKuf = K_uu\K_fu';
+% $$$         for i=1:n
+% $$$             iKuuKufR(:,i) = iKuuKuf(:,i).*R(i);  % f x u 
+% $$$         end
+% $$$         %        iKuuKufR = iKuuKuf*diag(R);        
+% $$$         
+% $$$         DE_Kuu = 0.5*( C - inv(K_uu) + iKuuKufR*iKuuKuf');  % These are here in matrix form, but
+% $$$         DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(y./La)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
+% $$$         
+% $$$         DE_Kff = 0.5*R;
+% $$$         L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff;
       %================================================================        
       case 'PIC_BLOCK'
         u = gp.X_u;
         ind = gp.tr_index;
         DKuu_u = 0;
         DKuf_u = 0;
-        [e, edata, eprior, tautilde, nutilde, L, La] = gpep_e(w, gp, x, y, param, varargin);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
 
-        y = nutilde./tautilde;
+% $$$         y = nutilde./tautilde;
         
         % First evaluate the needed covariance matrices
         % if they are not in the memory
@@ -120,11 +128,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
 
-        b = zeros(1,n);
-        for i=1:length(ind)
-            b(ind{i}) = (La{i}\y(ind{i}))';
-        end
-        b = b - (y'*L)*L';
+% $$$         b = zeros(1,n);
+% $$$         for i=1:length(ind)
+% $$$             b(ind{i}) = (La{i}\y(ind{i}))';
+% $$$         end
+% $$$         b = b - (y'*L)*L';
         
         iKuuKuf = K_uu\K_fu';
         

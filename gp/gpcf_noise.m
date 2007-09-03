@@ -260,8 +260,11 @@ switch gpcf.type
     gdata(i1)=0.5.*D.*(B - C); 
   case 'FIC'       % NOTE! Here noiseSigmas2 is different from the beta used by Neill! 
                    % This affects that the derivative is also slightly different.
-    R =varargin{3};
-    gdata(i1) = D.*sum(R);
+    L = varargin{1};
+    b =varargin{2};
+    La = varargin{4};
+    gdata(i1)= -0.5*D.*b*b';
+    gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*D;
   case 'PIC_BLOCK'
     L = varargin{1};
     b =varargin{2};

@@ -77,27 +77,15 @@ U = U([3 4 7:18 20:24 26:30 33:36],:);
 plot(x(:,1), x(:,2),'*'), hold on
 plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 
-% Set the training and test indices for scges
-itr=1:2:n-1;     % training set of data for early stop
-its=2:2:n;   % test set of data for early stop
-
 % Initialize the GP
 gp = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, []);
 gp = gp_init('set', gp, 'X_u', U);
 gp.ep_opt.display = 1;
-gp = gp_init('set', gp, 'latent_method', {'EP', x(itr,:), y(itr,:), 'hyper'});
-
-% Initialize the test GP used in the scges
-gptst = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, []);
-gptst = gp_init('set', gptst, 'X_u', U);
-gptst = gp_init('set', gptst, 'latent_method', {'EP', x(its,:), y(its,:), 'hyper'});
-
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 
 % $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
-% $$$ 
 % $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
-% $$$ 
-% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x(itr,:), y(itr,:), 'hyper')
+% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
 
 disp(' ')
 disp(' Find the point estimates for the parameters with early stop method. ')
@@ -108,14 +96,22 @@ w=randn(size(gp_pak(gp,'hyper')))*0.01;
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);
-optes=scges_opt;
-optes.display=1;
-optes.tolfun=3e-1;
-optes.tolx=1e-1;
+% $$$ optes=scges_opt;
+% $$$ optes.display=1;
+% $$$ optes.tolfun=3e-1;
+% $$$ optes.tolx=1e-1;
+opt(1) = 1;
+opt(2) = 1e-2;
+opt(3) = 3e-1;
+opt(9) = 0;
+opt(10) = 0;
+opt(11) = 0;
+opt(14) = 0;
 
 % do scaled conjugate gradient optimization with early stopping.
 gp.ep_opt.display = 1;
-[w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:), y(itr,:), 'hyper', gptst, x(its,:), y(its,:), 'hyper');
+[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'hyper');
+% $$$ [w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:), y(itr,:), 'hyper', gptst, x(its,:), y(its,:), 'hyper');
 gp=gp_unpak(gp,w,'hyper');
 
 
@@ -128,7 +124,7 @@ xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
-[Ef, Varf, p1] = ep_pred(gp, x(itr,:),y(itr,:), xstar);
+[Ef, Varf, p1] = ep_pred(gp, x,y, xstar);
 
 % visualise predictive probability  p(ystar = 1)
 figure, hold on;
@@ -171,7 +167,7 @@ ty_temp=tx(:,end);
 ty = 2*ty_temp-1;
 tx(:,end)=[];
 
-[Eftest, Varftest, p1test] = ep_pred(gp, x(itr,:),y(itr,:), tx);
+[Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx);
 
 % calculate the percentage of misclassified points
 missed = sum(abs(round(p1test)-ty_temp))/size(ty,1)*100

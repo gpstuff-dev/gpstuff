@@ -24,9 +24,10 @@ nin_ard = 1;
 X = X(:);
 Y = Y(:);
 x_grid = [X Y];
+n = size(x_grid,1);
 x = zeros(n*(1+t_max),3);
 x(:,1:2) = repmat(x_grid,1+t_max,1);
-n = size(x_grid,1);
+ 
 
 axis tight
 set(gca,'nextplot','replacechildren')

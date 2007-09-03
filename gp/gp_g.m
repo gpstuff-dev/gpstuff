@@ -80,7 +80,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         B=Luu\(K_fu');
         Qv_ff=sum(B.^2)';
         Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
-                             % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
+        % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
         iLaKfu = zeros(size(K_fu));  % f x u, 
         for i=1:n
             iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
@@ -89,27 +89,32 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
         % A = K_uu+K_uf*inv(La)*K_fu
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;               % Ensure symmetry
-        b = (t'*iLaKfu)/A;
-        C = inv(A) + b'*b;
-        C = (C+C')/2;
-        
-        % Evaluate R = mask(inv(La)*J*inv(La) , diag(n,n)), where J = H - K_fu*C*K_uf;
-        %        H = diag(Lav) - t*t'+2*K_fu*inv(A)*K_fu'*diag(1./Lav)*t*t';
-        %        J = H - K_fu*C*K_fu';
-        %        R = diag(diag(1./Lav)*J*diag(1./Lav));
-        R = 1./Lav - (t./Lav).^2 + 2.*(iLaKfu*b').*(t./Lav) -  sum((iLaKfu*chol(C)').^2,2);
-        % iKuuKufR = inv(K_uu)*K_uf*R
+        A = chol(A);
+        L = iLaKfu/A;
+        b = t'./Lav' - (t'*L)*L';
         iKuuKuf = K_uu\K_fu';
-        for i=1:n
-            iKuuKufR(:,i) = iKuuKuf(:,i).*R(i);  % f x u 
-        end
-        %        iKuuKufR = iKuuKuf*diag(R);        
-        
-        DE_Kuu = 0.5*( C - inv(K_uu) + iKuuKufR*iKuuKuf');  % These are here in matrix form, but
-        DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(t./Lav)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
-        
-        DE_Kff = 0.5*R;
-        L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff; La = Lav;
+        La = Lav;
+
+% $$$         C = inv(A) + b'*b;
+% $$$         C = (C+C')/2;
+% $$$         
+% $$$         % Evaluate R = mask(inv(La)*J*inv(La) , diag(n,n)), where J = H - K_fu*C*K_uf;
+% $$$         %        H = diag(Lav) - t*t'+2*K_fu*inv(A)*K_fu'*diag(1./Lav)*t*t';
+% $$$         %        J = H - K_fu*C*K_fu';
+% $$$         %        R = diag(diag(1./Lav)*J*diag(1./Lav));
+% $$$         R = 1./Lav - (t./Lav).^2 + 2.*(iLaKfu*b').*(t./Lav) -  sum((iLaKfu*chol(C)').^2,2);
+% $$$         % iKuuKufR = inv(K_uu)*K_uf*R
+% $$$         iKuuKuf = K_uu\K_fu';
+% $$$         for i=1:n
+% $$$             iKuuKufR(:,i) = iKuuKuf(:,i).*R(i);  % f x u 
+% $$$         end
+% $$$         %        iKuuKufR = iKuuKuf*diag(R);        
+% $$$         
+% $$$         DE_Kuu = 0.5*( C - inv(K_uu) + iKuuKufR*iKuuKuf');  % These are here in matrix form, but
+% $$$         DE_Kuf = C*iLaKfu' - iKuuKufR - b'*(t./Lav)';       % should be used as vectors DE_Kuu(:) in gpcf_*_g functions
+% $$$         
+% $$$         DE_Kff = 0.5*R;
+% $$$         L = DE_Kuu; b = DE_Kuf; iKuuKuf = DE_Kff; La = Lav;
       %================================================================        
       case 'PIC_BLOCK'
         u = gp.X_u;

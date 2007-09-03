@@ -68,19 +68,21 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
         [k, kstarstar]=gp_trvar(gp, x);
 
-        [e, edata, eprior, tautilde, nutilde, iLaKfu, La] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
 
-        myytilde = nutilde./tautilde;
-        
-        % Evaluate the Lambda (La) 
-        % Q_ff = K_fu*inv(K_uu)*K_fu'
-        % Here we need only the diag(Q_ff), which is evaluated below
-        A = K_uu+K_fu'*iLaKfu;
-        A = (A+A')./2;     % Ensure symmetry
-        A = chol(A)';
-        L = iLaKfu/A';
+% $$$         myytilde = nutilde./tautilde;
+% $$$         
+% $$$         % Evaluate the Lambda (La) 
+% $$$         % Q_ff = K_fu*inv(K_uu)*K_fu'
+% $$$         % Here we need only the diag(Q_ff), which is evaluated below
+% $$$         A = K_uu+K_fu'*iLaKfu;
+% $$$         A = (A+A')./2;     % Ensure symmetry
+% $$$         A = chol(A)';
+% $$$         L = iLaKfu/A';
+% $$$ 
+% $$$         p = myytilde./La - L*(L'*myytilde);
 
-        p = myytilde./La - L*(L'*myytilde);
+        p = b';
         
         ntest=size(x,1);
         
@@ -112,26 +114,12 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
         [k, kstarstar]=gp_trvar(gp, x);
         
-        [e, edata, eprior, tautilde, nutilde, L, La] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
-        
-        myytilde = nutilde./tautilde;
-        
-        % Evaluate the Lambda (La) for specific model
-        % Q_ff = K_fu*inv(K_uu)*K_fu'
-        % Here we need only the diag(Q_ff), which is evaluated below
-        iLaKfu = zeros(size(K_fu));  % f x u
-        for i=1:length(ind)
-            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
-        end
-        
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
+       
         % From this on evaluate the prediction
         % See Snelson and Ghahramani (2007) for details 
         %        p=iLaKfu*(A\(iLaKfu'*myytilde));
-        p= L*(L'*myytilde);
-        for i=1:length(ind)
-            p2(ind{i},:) = La{i}\myytilde(ind{i},:);
-        end
-        p = p2-p;
+        p = b';
 
         iKuuKuf = K_uu\K_fu';
         
