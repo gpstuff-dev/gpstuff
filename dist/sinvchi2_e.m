@@ -3,7 +3,7 @@ function e = sinvchi2_e(x, a)
 %             inverse-chi-squared distribution (single parameter).
 %
 %        Description
-%        E = SINVCHI2_E(X,A) takes parameter  matrix X and 
+%        E = SINVCHI2_E(X,A) takes parameter matrix X and 
 %        hyper-parameter structure A and returns a vector
 %        containing minus log from X ~ S-Inv-Chi2(A.nu, A.s) 
 %        distribution  for given parameter X(:,1).

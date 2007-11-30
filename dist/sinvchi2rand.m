@@ -3,9 +3,10 @@ function r = sinvchi2rand(nu, s2, M, N)
 %
 %  R = SINVCHI2RAND(NU, S2)
 %  R = SINVCHI2RAND(NU, S2, M, N)
-
-%   Author: Aki Vehtari <Aki.Vehtari@hut.fi>
-%   Last modified: 2006-04-21 23:10:54 EEST
+%
+%  Returns a randon number/matrix R from scaled inverse-chi square 
+%  distribution. Nu is the degrees of freedom and S2 is the scale 
+%  squared. Parametrisation is according to Gelman et. al. (2004).
 
 % Copyright (c) 1998-2004 Aki Vehtari
 
@@ -22,4 +23,4 @@ end
 if nargin < 4
   N=1;
 end
-r=invgamrand(s2,nu,M,N);
+r=nu*s2./chi2rnd(nu,M,N);
