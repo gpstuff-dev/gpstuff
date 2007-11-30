@@ -51,12 +51,18 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
         
         % First Evaluate the data contribution to the error    
         switch gp.type
+            % ============================================================
+            % FULL
+            % ============================================================
           case 'FULL'   % A full GP
             [K, C] = gp_trcov(gp, x);
             % 0.5*log(det(C)) = sum(log(diag(L)))
             L = chol(C)';
             b=L\t;
             edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+            % ============================================================
+            % FIC
+            % ============================================================
           case 'FIC'
             % The eguations in FIC are implemented as in Neil, 2006
             u = gp.X_u;
@@ -94,6 +100,9 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             b = (t'*iLaKfu)/A;
             edata = sum(log(Lav)) + t'./Lav'*t - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
             edata = .5*(edata + n*log(2*pi));
+            % ============================================================
+            % PIC
+            % ============================================================
           case 'PIC_BLOCK'
             u = gp.X_u;
             ind = gp.tr_index;
@@ -131,6 +140,9 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             b = (t'*iLaKfu)*inv(A)';
             edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
             edata = .5*(edata + n*log(2*pi));
+            % ============================================================
+            % CS+PIC
+            % ============================================================
           case 'CS+PIC'
             u = gp.X_u;
             ind = gp.tr_index;
@@ -220,6 +232,9 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             b = (t'*iLaKfu)*inv(A)';
             edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
             edata = .5*(edata + n*log(2*pi));
+            % ============================================================
+            % PIC_BAND
+            % ============================================================
           case  'PIC_BAND'
             u = gp.X_u;
             ind = gp.tr_index;
@@ -279,7 +294,9 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
             error('Unknown type of Gaussian process!')
         end
         
+        % ============================================================
         % Evaluate the prior contribution to the error from covariance functions
+        % ============================================================
         eprior = 0;
         for i=1:ncf
             gpcf = gp.cf{i};

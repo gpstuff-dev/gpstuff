@@ -1,5 +1,5 @@
 function gpcf = gpcf_noiset(do, varargin)
-%GPCF_NOISET	Create a Student-t noiset covariance function for Gaussian Process.
+%GPCF_NOISET	Create a Student-t noise covariance function for Gaussian Process.
 %
 %	Description
 %
@@ -22,14 +22,15 @@ function gpcf = gpcf_noiset(do, varargin)
 %                          (@gpcf_se_unpak)
 %         fh_e           = function handle to error function
 %                          (@gpcf_se_e)
-%         fh_g           = function handle to gradient function
+%         fh_ghyper      = function handle to gradient function
 %                          (@gpcf_se_g)
 %         fh_cov         = function handle to covariance function
 %                          (@gpcf_se_cov)
 %         fh_trcov       = function handle to training covariance function
 %                          (@gpcf_se_trcov)
-%         fh_sampling    = function handle to parameter sampling function
-%                          (@hmc2)
+%         fh_trvar       = function handle to training variance function
+%                          (@gpcf_se_trvar)
+%         fh_sample      = function handle to parameter sampling function
 %         sampling_opt   = options structure for fh_sampling
 %                          (hmc2_opt)
 %         fh_recappend   = function handle to record append function
@@ -38,7 +39,15 @@ function gpcf = gpcf_noiset(do, varargin)
 %	GPCF = GPCF_NOISET('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
 %
+%       NOTE!
+%       The Student-t noise covariance is greated as in Gelman et. al. (2004) page 304-305:
+%    
+%          C = alfa^2 * U, where U = diag(u_1, u_2, ..., u_n)
+%          u_i ~ Inv-Chi^2(nu, tau^2)
 %       
+%          The degrees of freedom nu are given a 1/nu prior and they are sampled via 
+%          slice sampling.
+%
 %	See also
 %	
 %
@@ -62,14 +71,18 @@ if strcmp(do, 'init')
         error('Not enough arguments. NDATA is missing')
     end
     nin = varargin{1};
-  
+    
     gpcf.type = 'gpcf_noiset';
     gpcf.nin = nin;
     gpcf.ndata = varargin{2};
     gpcf.nout = 1;
     
     % Initialize parameters
-    gpcf.noiseSigmas2 = 0.1^2.*ones(1,varargin{2});
+    gpcf.noiseSigmas2 = 0.1^2.*ones(varargin{2},1);
+    gpcf.U = ones(varargin{2},1);
+    gpcf.tau2 = 0.1;
+    gpcf.alpha = 0.5;
+    gpcf.nu = 4;
     
     % Initialize prior structure
     gpcf.p=[];
@@ -79,10 +92,11 @@ if strcmp(do, 'init')
     gpcf.fh_pak = @gpcf_noiset_pak;
     gpcf.fh_unpak = @gpcf_noiset_unpak;
     gpcf.fh_e = @gpcf_noiset_e;
-    gpcf.fh_g = @gpcf_noiset_g;
+    gpcf.fh_ghyper = @gpcf_noiset_ghyper;
     gpcf.fh_cov = @gpcf_noiset_cov;
     gpcf.fh_trcov  = @gpcf_noiset_trcov;
-    gpcf.fh_sampling = @gpcf_fh_sampling;
+    gpcf.fh_trvar  = @gpcf_noiset_trvar;
+    gpcf.fh_sample = @gpcf_fh_sample;
     %    gpcf.sampling_opt = 'noiset_opt';
     gpcf.fh_recappend = @gpcf_noiset_recappend;
     
@@ -93,13 +107,25 @@ if strcmp(do, 'init')
         % Loop through all the parameter values that are changed
         for i=3:2:length(varargin)-1
             if strcmp(varargin{i},'noiseSigmas2')
-                if size(varargin{i+1},2) == gpcf.ndata
+                if size(varargin{i+1},1) == gpcf.ndata
                     gpcf.noiseSigmas2 = varargin{i+1};
                 else
-                    error('the size of noiseSigmas2 is wrong, has to be 1xNDATA')
+                    error('the size of noiseSigmas2 is wrong, it has to be NDATAx1')
                 end
             elseif strcmp(varargin{i},'fh_sampling')
                 gpcf.fh_sampling = varargin{i+1};
+            elseif strcmp(varargin{i},'U')
+                if size(varargin{i+1},1) == gpcf.ndata
+                    gpcf.U = varargin{i+1};;
+                else
+                    error('the size of U is wrong, it has to be NDATAx1')
+                end
+            elseif strcmp(varargin{i},'tau2')
+                gpcf.tau2 = varargin{i+1};;
+            elseif strcmp(varargin{i},'alpha')
+                gpcf.alpha = varargin{i+1};;
+            elseif strcmp(varargin{i},'nu')
+                gpcf.nu = varargin{i+1};;
             else
                 error('Wrong parameter name!')
             end
@@ -131,328 +157,280 @@ end
 
 
 
-function w = gpcf_noiset_pak(gpcf, w)
-%GPcf_NOISET_PAK	 Combine GP covariance function hyper-parameters into one vector.
-%
-%	Description
-%	W = GP_NOISET_PAK(GPCF, W) takes a Gaussian Process covariance function
-%	GPCF and combines the hyper-parameters into a single row vector W.
-%
-%	The ordering of the parameters in HP is defined by
-%	  hp = [hyper-params of gp.cf{1}, hyper-params of gp.cf{2}, ...];
-%
-%	See also
-%	GPCF_NOISET_UNPAK
-%
+    function w = gpcf_noiset_pak(gpcf, w)
+    %GPcf_NOISET_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %
+    %	Description
+    %	W = GP_NOISET_PAK(GPCF, W) takes a Gaussian Process covariance function
+    %	GPCF and combines the hyper-parameters into a single row vector W.
+    %
+    %	The ordering of the parameters in HP is defined by
+    %	  hp = [hyper-params of gp.cf{1}, hyper-params of gp.cf{2}, ...];
+    %
+    %	See also
+    %	GPCF_NOISET_UNPAK
+    %
 
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+    % Copyright (c) 2000-2001 Aki Vehtari
+    % Copyright (c) 2006      Jarno Vanhatalo
 
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
-w=w;
-
-% $$$ gpp=gpcf.p;
-% $$$ 
-% $$$ i1=0;i2=1;
-% $$$ if ~isempty(w)
-% $$$   i1 = length(w);
-% $$$ end
-% $$$ 
-% $$$ if ~isempty(gpcf.noiseSigmas2) & ~isempty(gpp.noiseSigmas2)
-% $$$   if ~isempty(gpp.noiseSigmas2.p)
-% $$$     if ~isempty(gpp.noiseSigmas2.p.s.p)
-% $$$       i1=i1+1;
-% $$$       w(i1)=gpp.noiseSigmas2.p.s.a.s;
-% $$$     end
-% $$$     i2=i1+length(gpp.noiseSigmas2.a.s);
-% $$$     i1=i1+1;
-% $$$     w(i1:i2)=gpp.noiseSigmas2.a.s;
-% $$$     i1=i2;
-% $$$     if any(strcmp(fieldnames(gpp.noiseSigmas2.p),'nu'))
-% $$$       if ~isempty(gpp.noiseSigmas2.p.nu.p)
-% $$$ 	i1=i1+1;
-% $$$ 	w(i1)=gpp.noiseSigmas2.p.nu.a.s;
-% $$$       end
-% $$$       i2=i1+length(gpp.noiseSigmas2.a.nu);
-% $$$       i1=i1+1;
-% $$$       w(i1:i2)=gpp.noiseSigmas2.a.nu;
-% $$$       i1=i2;
-% $$$     end
-% $$$   end
-% $$$ end
-
-
-function [gpcf, w] = gpcf_noiset_unpak(gpcf, w)
-%GPCF_SE_UNPAK  Separate GP covariance function hyper-parameter vector into components. 
-%
-%	Description
-%	GP = GPCF_NOISET_UNPAK(GP, W) takes a Gaussian Process covariance function
-%	GPCF and  a hyper-parameter vector W, and returns a covariance function data 
-%	structure  identical to the input model, except that the covariance
-%	hyper-parameters has been set to the of W.
-%
-%	See also
-%	GP_NOISET_PAK, GP_PAK
-
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
-
-% $$$ gpp=gpcf.p;
-% $$$ i1=0;i2=1;
-% $$$ 
-% $$$ if ~isempty(gpcf.noiseSigmas2) & ~isempty(gpp.noiseSigmas2)
-% $$$   if ~isempty(gpp.noiseSigmas2.p)
-% $$$     if ~isempty(gpp.noiseSigmas2.p.s.p)
-% $$$       i1=i1+1;
-% $$$       gpcf.p.noiseSigmas2.p.s.a.s=w(i1);
-% $$$     end
-% $$$     i2=i1+length(gpp.noiseSigmas2.a.s);
-% $$$     i1=i1+1;
-% $$$     gpcf.p.noiseSigmas2.a.s=w(i1:i2);
-% $$$     i1=i2;
-% $$$     if any(strcmp(fieldnames(gpp.noiseSigmas2.p),'nu'))
-% $$$       if ~isempty(gpp.noiseSigmas2.p.nu.p)
-% $$$ 	i1=i1+1;
-% $$$ 	gpcf.p.noiseSigmas2.p.nu.a.s=w(i1);
-% $$$       end
-% $$$       i2=i1+length(gpp.noiseSigmas2.a.nu);
-% $$$       i1=i1+1;
-% $$$       gpcf.p.noiseSigmas2.a.nu=w(i1:i2);
-% $$$       i1=i2;
-% $$$     end
-% $$$   end
-% $$$ end
-% $$$ w = w(i1+1:end);
-
-function eprior =gpcf_noiset_e(gpcf, p, t)
-%GPCF_NOISET_E	Evaluate prior contribution of error of covariance function noiset.
-%
-%	Description
-%	E = GPCF_NOISET_E(W, GP, P, T) takes a gp data structure GPCF together
-%	with a matrix P of input vectors and a matrix T of target vectors,
-%	and evaluates the error function E. Each row of P corresponds
-%	to one input vector and each row of T corresponds to one
-%	target vector.
-%
-%	See also
-%	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
-%
-
-% Copyright (c) 1998-2006 Aki Vehtari
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
-[n, m] =size(p);
-
-% Evaluate the prior contribution to the error.
-eprior = 0;
-gpp=gpcf.p;
-
-if ~isempty(gpcf.noiseSigmas2) & ~isempty(gpp.noiseSigmas2)
-  if ~isempty(gpp.noiseSigmas2.p)
-    if ~isempty(gpp.noiseSigmas2.p.s.p)
-      eprior=eprior...
-	     +feval(gpp.noiseSigmas2.p.s.p.s.fe, ...
-		    gpp.noiseSigmas2.p.s.a.s, gpp.noiseSigmas2.p.s.p.s.a)...
-	     -log(gpp.noiseSigmas2.p.s.a.s);
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+        
     end
-    eprior=eprior...
-	   +feval(gpp.noiseSigmas2.p.s.fe, ...
-		  gpp.noiseSigmas2.a.s, gpp.noiseSigmas2.p.s.a)...
-	   -sum(log(gpp.noiseSigmas2.a.s));
-    if any(strcmp(fieldnames(gpp.noiseSigmas2.p),'nu'))
-      if ~isempty(gpp.noiseSigmas2.p.nu.p)
-	eprior=eprior...
-	       +feval(gpp.noiseSigmas2.p.nu.p.s.fe, ...
-		      gpp.noiseSigmas2.p.nu.a.s, gpp.noiseSigmas2.p.nu.p.s.a)...
-	       -log(gpp.noiseSigmas2.p.nu.a.s);
-      end
-      eprior=eprior...
-	     +feval(gpp.noiseSigmas2.p.nu.fe, ...
-		    gpp.noiseSigmas2.a.nu, gpp.noiseSigmas2.p.nu.a)...
-	     -sum(log(gpp.noiseSigmas2.a.nu));
+
+
+    function [gpcf, w] = gpcf_noiset_unpak(gpcf, w)
+    %GPCF_SE_UNPAK  Separate GP covariance function hyper-parameter vector into components. 
+    %
+    %	Description
+    %	GP = GPCF_NOISET_UNPAK(GP, W) takes a Gaussian Process covariance function
+    %	GPCF and  a hyper-parameter vector W, and returns a covariance function data 
+    %	structure  identical to the input model, except that the covariance
+    %	hyper-parameters has been set to the of W.
+    %
+    %	See also
+    %	GP_NOISET_PAK, GP_PAK
+
+    % Copyright (c) 2000-2001 Aki Vehtari
+    % Copyright (c) 2006      Jarno Vanhatalo
+
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+        
     end
-  end
-  eprior=eprior...
-	 +feval(gpp.noiseSigmas2.fe, ...
-		gpcf.noiseSigmas2, gpp.noiseSigmas2.a)...
-	 -sum(log(gpcf.noiseSigmas2));
-end
+
+    function eprior =gpcf_noiset_e(gpcf, p, t)
+    %GPCF_NOISET_E	Evaluate prior contribution of error of covariance function noiset.
+    %
+    %	Description
+    %	E = GPCF_NOISET_E(W, GP, P, T) takes a gp data structure GPCF together
+    %	with a matrix P of input vectors and a matrix T of target vectors,
+    %	and evaluates the error function E. Each row of P corresponds
+    %	to one input vector and each row of T corresponds to one
+    %	target vector.
+    %
+    %	See also
+    %	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
+    %
+
+    % Copyright (c) 1998-2006 Aki Vehtari
+
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+        eprior = 0;
+    end
+
+    function [g, gdata, gprior]  = gpcf_noiset_ghyper(gpcf, p, t, g, gdata, gprior, invC, varargin)
+    %GPCF_NOISE_G Evaluate gradient of error for SE covariance function.
+    %
+    %	Description
+    %	G = GPCF_NOISET_G(W, GPCF, X, T) takes a gp hyper-parameter vector W, 
+    %       data structure GPCF a matrix X of input vectors and a matrix T 
+    %       of target vectors, and evaluates the error gradient G. Each row of X
+    %	corresponds to one input vector and each row of T corresponds
+    %       to one target vector.
+    %
+    %	[G, GDATA, GPRIOR] = GPCF_NOISET_G(GP, P, T) also returns separately  the
+    %	data and prior contributions to the gradient.
+    %
+    %	See also
+    %
+
+    % Copyright (c) 1998-2001 Aki Vehtari
+    % Copyright (c) 2006      Jarno Vanhatalo
+
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+        
+    end
+
+    function C = gpcf_noiset_cov(gpcf, x1, x2)
+    % GP_NOISET_COV     Evaluate covariance matrix between two input vectors. 
+    %
+    %         Description
+    %         C = GP_NOISET_COV(GP, TX, X) takes in covariance function of a Gaussian
+    %         process GP and two matrixes TX and X that contain input vectors to 
+    %         GP. Returns covariance matrix C. Every element ij of C contains  
+    %         covariance between inputs i in TX and j in X.
+    %
+    %         For covariance function definition see manual or 
+    %         Neal R. M. Regression and Classification Using Gaussian 
+    %         Process Priors, Bayesian Statistics 6.
+
+    % Copyright (c) 2006  Jarno Vanhatalo
+
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+
+    if isempty(x2)
+        x2=x1;
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
+
+    if m1~=m2
+        error('the number of columns of X1 and X2 has to be same')
+    end
+
+    C = sparse([],[],[],n1,n2,0);
+    end
 
 
-function [g, gdata, gprior]  = gpcf_noiset_g(gpcf, p, t, g, gdata, gprior, invC, varargin)
-%GPCF_NOISE_G Evaluate gradient of error for SE covariance function.
-%
-%	Description
-%	G = GPCF_NOISET_G(W, GPCF, X, T) takes a gp hyper-parameter vector W, 
-%       data structure GPCF a matrix X of input vectors and a matrix T 
-%       of target vectors, and evaluates the error gradient G. Each row of X
-%	corresponds to one input vector and each row of T corresponds
-%       to one target vector.
-%
-%	[G, GDATA, GPRIOR] = GPCF_NOISET_G(GP, P, T) also returns separately  the
-%	data and prior contributions to the gradient.
-%
-%	See also
-%
+    function C = gpcf_noiset_trcov(gpcf, x)
+    % GP_SE_COV     Evaluate training covariance matrix of inputs. 
+    %
+    %         Description
+    %         C = GP_SE_COV(GP, TX) takes in covariance function of a Gaussian
+    %         process GP and matrix TX that contains training input vectors to 
+    %         GP. Returns covariance matrix C. Every element ij of C contains  
+    %         covariance between inputs i and j in TX 
+    %
+    %         For covariance function definition see manual or 
+    %         Neal R. M. Regression and Classification Using Gaussian 
+    %         Process Priors, Bayesian Statistics 6.
 
-% Copyright (c) 1998-2001 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+    % Copyright (c) 1998-2004 Aki Vehtari
 
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
 
-function C = gpcf_noiset_cov(gpcf, x1, x2)
-% GP_NOISET_COV     Evaluate covariance matrix between two input vectors. 
-%
-%         Description
-%         C = GP_NOISET_COV(GP, TX, X) takes in covariance function of a Gaussian
-%         process GP and two matrixes TX and X that contain input vectors to 
-%         GP. Returns covariance matrix C. Every element ij of C contains  
-%         covariance between inputs i in TX and j in X.
-%
-%         For covariance function definition see manual or 
-%         Neal R. M. Regression and Classification Using Gaussian 
-%         Process Priors, Bayesian Statistics 6.
+    [n, m] =size(x);
+    n1=n+1;
 
-% Copyright (c) 2006  Jarno Vanhatalo
+    C = spdiags(gpcf.noiseSigmas2, 0, n, n);
+    end
 
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
+    function C = gpcf_noiset_trvar(gpcf, x)
+    % GP_NOISE_TRVAR     Evaluate training variance vector of inputs. 
+    %
+    %         Description
+    %         C = GP_NOISE_TRVAR(GP, TX) takes in covariance function of a Gaussian
+    %         process GP and matrix TX that contains training input vectors to 
+    %         GP. Returns variance vector C. Every element i of C contains  
+    %         variance of input i in TX 
 
-if isempty(x2)
-  x2=x1;
-end
-[n1,m1]=size(x1);
-[n2,m2]=size(x2);
-
-if m1~=m2
-  error('the number of columns of X1 and X2 has to be same')
-end
-
-C=zeros(n1,n2);
-
-function C = gpcf_noiset_trcov(gpcf, x)
-% GP_SE_COV     Evaluate training covariance matrix of inputs. 
-%
-%         Description
-%         C = GP_SE_COV(GP, TX) takes in covariance function of a Gaussian
-%         process GP and matrix TX that contains training input vectors to 
-%         GP. Returns covariance matrix C. Every element ij of C contains  
-%         covariance between inputs i and j in TX 
-%
-%         For covariance function definition see manual or 
-%         Neal R. M. Regression and Classification Using Gaussian 
-%         Process Priors, Bayesian Statistics 6.
-
-% Copyright (c) 1998-2004 Aki Vehtari
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
-[n, m] =size(x);
-n1=n+1;
-
-C=zeros(n,n);
-
-% If noise variances are given add them to diagonal elements
-if ~isempty(gpcf.noiseSigmas2)
-  C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigmas2;
-end
-
-function gpcf = gpcf_fh_sampling(gp, gpcf, opt, x, y)
-
-% Function for sampling the noiseSigmas2:s
-
-p = x;
-t = y;
-
-% First sample the latent values
-% First covariance matrices
-[K,C] = gp_trcov(gp,p);
-L=inv(chol(C));
-invC=L*L'; 
-% Evaluate the expected value and variance of latent values
-r=K'*invC;
-y=r*t;
-
-lcov=K-r*K;
-% Then the latent values
-lcov=(lcov+lcov')/2;  % ensure the matrix is symmetric
-ly=y+chol(lcov)'*randn(size(t));
-
-% The residual is now
-r = ly-t;
-
-% from this below sample 
-gpcf.noiseSigmas2 = ones(size(gpcf.noiseSigmas2)); %Change this line
-
-
-
-function reccf = gpcf_noiset_recappend(reccf, ri, gpcf)
-% RECAPPEND - Record append
-%          Description
-%          RECCF = GPCF_NOISET_RECAPPEND(RECCF, RI, GPCF) takes old covariance 
-%          function record RECCF, record index RI, RECAPPEND returns a 
-%          structure REC containing following record fields:
-
-
-% Initialize record
-if nargin == 2
-  reccf.type = 'gpcf_noiset';
-  reccf.nin = ri;
-  gpcf.nout = 1;
-  
-  % Initialize parameters
-  reccf.noiseSigmas2 = []; 
+        
+    % Copyright (c) 1998-2004 Aki Vehtari
+    % Copyright (c) 2006      Aki Vehtari, Jarno Vanhatalo
+        
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+        
+        [n, m] =size(x);
+        C = gpcf.noiseSigmas2;
+        
+    end
     
-  % Set the function handles
-  reccf.fh_pak = @gpcf_noiset_pak;
-  reccf.fh_unpak = @gpcf_noiset_unpak;
-  reccf.fh_e = @gpcf_noiset_e;
-  reccf.fh_g = @gpcf_noiset_g;
-  reccf.fh_cov = @gpcf_noiset_cov;
-  reccf.fh_trcov  = @gpcf_noiset_trcov;
-  reccf.fh_trvar  = @gpcf_noiset_trvar;
-  gpcf.fh_sampling = @gpcf_fh_sampling;
-  %  reccf.sampling_opt = noiset_opt;
-  reccf.fh_recappend = @gpcf_noiset_recappend;  
-  return
+    function gpcf = gpcf_fh_sample(gp, gpcf, opt, x, y)
+    % GPCF_FH_SAMPLE     Function for sampling the noiseSigmas2:s
+    %
+    %         Description
+    %         
+
+    % Copyright (c) 1998-2004 Aki Vehtari
+    % Copyright (c) 2007 Jarno Vanhatalo
+
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
+            
+        [n,m] = size(x);
+        
+        % Draw a sample of the mean of y. Its distribution is
+        % y ~ N(K*inv(C)*y, K - K*inv(C)*K')
+        switch gp.type
+          case 'FULL'
+            [meanY, varY, sampy] = gp_fwd(gp, x, y, x);
+          case 'FIC'
+            [meanY, varY, sampy] = gp_fwd(gp, x, y, x);
+          case 'PIC_BLOCK'
+            
+        end
+        % Calculate the residual
+        r = y-sampy;
+        
+        U = gpcf.U;
+        t2 = gpcf.tau2;
+        alpha = gpcf.alpha;
+        nu = gpcf.nu;
+        rss2=alpha.^2.*U;
+
+        % Perform the gibbs sampling (Gelman et.al. (2004) page 304-305)
+        % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al.
+        % but 'gamrand' is parameterized as in Neal (1996).
+        U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));
+        shape = n*nu./2;                         % These are parameters...
+        invscale = nu.*sum(1./U)./2;             % used in Gelman
+        t2=gamrand(shape/invscale, 2.*shape);    % This is written as in Neal (1996)
+        alpha2=sinvchi2rand(n,mean(r.^2./U));
+        rss2=alpha2.*U;
+        % Sample nu
+        nu_energy = @(nu) (log(nu) - sinvchi2_lpdf(U,nu,t2));
+        nu=sls1mm(nu_energy, nu, opt);
+    
+        gpcf.noiseSigmas2 = rss2;
+        gpcf.U = U;
+        gpcf.tau2 = t2;
+        gpcf.alpha = sqrt(alpha2);
+        gpcf.nu = nu;
+    end
+
+    function reccf = gpcf_noiset_recappend(reccf, ri, gpcf)
+    % RECAPPEND - Record append
+    %          Description
+    %          RECCF = GPCF_NOISET_RECAPPEND(RECCF, RI, GPCF) takes old covariance 
+    %          function record RECCF, record index RI, RECAPPEND returns a 
+    %          structure REC containing following record fields:
+        
+    % Initialize record
+    if nargin == 2
+        reccf.type = 'gpcf_noiset';
+        reccf.nin = ri;
+        gpcf.nout = 1;
+        
+        % Initialize parameters
+        reccf.noiseSigmas2 = []; 
+        
+        % Set the function handles
+        reccf.fh_pak = @gpcf_noiset_pak;
+        reccf.fh_unpak = @gpcf_noiset_unpak;
+        reccf.fh_e = @gpcf_noiset_e;
+        reccf.fh_g = @gpcf_noiset_g;
+        reccf.fh_cov = @gpcf_noiset_cov;
+        reccf.fh_trcov  = @gpcf_noiset_trcov;
+        reccf.fh_trvar  = @gpcf_noiset_trvar;
+        reccf.fh_sampling = @gpcf_fh_sample;
+        reccf.fh_sampling = @gpcf_fh_sampling;
+        %  reccf.sampling_opt = noiset_opt;
+        reccf.fh_recappend = @gpcf_noiset_recappend;  
+        return
+    end
+
+
+    gpp = gpcf.p;
+
+    % record noiseSigma
+    if ~isempty(gpcf.noiseSigmas2)
+        reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
+    elseif ri==1
+        reccf.noiseSigmas2=[];
+    end
+    if ~isempty(gpcf.nu)
+        reccf.nu(ri,:)=gpcf.nu;
+        reccf.U = gpcf.U;
+        reccf.tau2 = gpcf.tau2;
+        reccf.alpha = gpcf.alpha;
+    elseif ri==1
+        reccf.noiseSigmas2=[];
+    end
+end
 end
 
-
-gpp = gpcf.p;
-
-% record noiseSigma
-if ~isempty(gpcf.noiseSigmas2)
-  if ~isempty(gpp.noiseSigmas2)
-    reccf.noiseHyper(ri,:)=gpp.noiseSigmas2.a.s;
-    if ~isempty(gpp.noiseSigmas2.p) & ~isempty(gpp.noiseSigmas2.p.s.p)
-      reccf.noiseHyperHyper(ri,:)=gpp.noiseSigmas2.p.s.a.s;
-    end
-    if ~isempty(gpp.noiseSigmas2.p) & any(strcmp(fieldnames(gpp.noiseSigmas2.p),'nu'))
-      reccf.noiseHyperNus(ri,:)=gpp.noiseSigmas2.a.nu;
-      if ~isempty(gpp.noiseSigmas2.p.nu.p)
-	reccf.noiseHyperNusHyper(ri,:)=gpp.noiseSigmas2.p.nu.a.s;
-      end
-    end
-  elseif ri==1
-    reccf.noiseHyper=[];
-  end
-  reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
-elseif ri==1
-  reccf.noiseSigmas2=[];
-end

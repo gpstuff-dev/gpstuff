@@ -842,7 +842,7 @@ function gpcf = gpcf_exp(do, varargin)
         g = gdata + gprior;
     end
 
-    function [DKuu_u, DKuf_u]  = gpcf_exp_gind(gpcf, x, t, varargin)
+    function [g_ind, gdata_ind, gprior_ind]  = gpcf_exp_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
     %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
     %                  with respect to inducing inputs.
     %
@@ -860,16 +860,18 @@ function gpcf = gpcf_exp(do, varargin)
         
         gpp=gpcf.p;
         [n, m] =size(x);
-                
+        
+        L = varargin{1};             % u x u
+        b = varargin{2};             % u x f
+        iKuuKuf = varargin{3};       % mask(R, M) (block/band) diagonal
+        La = varargin{4};            % array of size
+        
+        u = gpcf.X_u;
+        n_u = size(u,1);
+            
         % First check if sparse model is used
         switch gpcf.type
-           case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_sexp_trcov)
-
-            u = gpcf.X_u;
-            n_u = size(u,1);
-            
+          case 'FIC'
             % Derivatives of K_uu and K_uf with respect to inducing inputs
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
@@ -880,6 +882,9 @@ function gpcf = gpcf_exp(do, varargin)
             else
                 s = 1./gpcf.lengthScale.^2;
             end
+            
+            gradient = zeros(1,n_u*m);
+            ind = 1; %j+(i-1)*n_u
             dist=0; dist2=0;
             for i2=1:nin
                 dist = dist + s(i2).*(gminus(u(:,i2),x(:,i2)')).^2;
@@ -897,16 +902,75 @@ function gpcf = gpcf_exp(do, varargin)
                     D1(dist~=0) = D1(dist~=0)./dist(dist~=0);
                     D2(dist2~=0) = D2(dist2~=0)./dist2(dist2~=0);
                     
-                    D1 = D1.*K_uf;
-                    D2 = D2.*K_uu;
-                    
-                    DKuf_u(:,j+(i-1)*n_u) = D1(:);         % Matrix of size uf x mu
-                    DKuu_u(:,j+(i-1)*n_u) = D2(:);         % Matrix of size uu x mu
+                    DKuf_u = D1.*K_uf;
+                    DKuu_u = D2.*K_uu;
+
+                    KfuiKuuKuu = iKuuKuf'*DKuu_u;
+                                        
+                    gradient(ind) = -0.5.*((2*b*DKuf_u'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ... 
+                                                   2.*sum(sum(L'.*(L'*DKuf_u'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                    gradient(ind) = gradient(ind) + 0.5.*(2.*b.*sum(DKuf_u'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                    gradient(ind) = gradient(ind) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_u'.*iKuuKuf',2)) - ...
+                                                                      sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                    ind = ind +1;
                 end
             end
+          case 'PIC_BLOCK'
+            trindex=gpcf.tr_index;
+            
+            % Derivatives of K_uu and K_uf with respect to inducing inputs
+            K_uu = feval(gpcf.fh_trcov, gpcf, u);
+            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+            
+            if length(gpcf.lengthScale) == 1       % In the case of an isotropic SEXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+            
+            gradient = zeros(1,n_u*m);
+            ind = 1; 
+            dist=0; dist2=0;
+            for i2=1:nin
+                dist = dist + s(i2).*(gminus(u(:,i2),x(:,i2)')).^2;
+                dist2 = dist2 + s(i2).*(gminus(u(:,i2),u(:,i2)')).^2;
+            end
+            dist = sqrt(dist); dist2 = sqrt(dist2);
+            for i=1:m
+                for j = 1:size(u,1)               
+                    D1 = zeros(size(u,1),n);
+                    D2 = zeros(size(K_uu));
+                    D1(j,:) = -s(i).*gminus(u(j,i),x(:,i)');
+                    D2(j,:) = -s(i).* gminus(u(j,i),u(:,i)');
+                    D2 = D2 + D2';
+                    
+                    D1(dist~=0) = D1(dist~=0)./dist(dist~=0);
+                    D2(dist2~=0) = D2(dist2~=0)./dist2(dist2~=0);
+                    
+                    DKuf_u = D1.*K_uf;
+                    DKuu_u = D2.*K_uu;
+                                        
+                    KfuiKuuDKuu_u = iKuuKuf'*DKuu_u;
+                   
+                    gradient(ind) = -0.5.*((2*b*DKuf_u'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_u')*iKuuKuf))) - ...
+                                       sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
+                    
+                    for i1=1:length(trindex)
+                        gradient(ind) = gradient(ind) + 0.5.*(2.*b(trindex{i1})*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})*b(trindex{i1})'- ...
+                                    b(trindex{i1})*KfuiKuuDKuu_u(trindex{i1},:)*iKuuKuf(:,trindex{i1})*b(trindex{i1})' ... 
+                                    + 2.*sum(sum(L(trindex{i1},:)'.*(L(trindex{i1},:)'*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})))) - ...
+                                    sum(sum(L(trindex{i1},:)'.*((L(trindex{i1},:)'*KfuiKuuDKuu_u(trindex{i1},:))*iKuuKuf(:,trindex{i1}))))); 
+                    end
+                    ind = ind +1;
+                end
+            end
+          case 'CS+PIC'            
+                       
         end
+        gdata_ind = gdata_ind + gradient;
+        g_ind = gdata_ind;
     end
-    
+        
     
     function C = gpcf_exp_cov(gpcf, x1, x2)
     % GP_EXP_COV     Evaluate covariance matrix between two input vectors. 

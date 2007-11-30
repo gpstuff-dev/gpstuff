@@ -141,6 +141,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 fprintf('    lvScale    ')
             end
         end
+        if isfield(opt,'noise_opt')
+            fprintf('  nu');
+        end      
         fprintf('\n');
     end
 
@@ -230,10 +233,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 % $$$         end
 % $$$     end
             
-            % ------------ Sample the noiseSigmas2 for gpcf_noiset model -------------
-            % This is not permanent has to change gp.noise{1}. to some more generic
-            if isfield(opt, 'noiset_opt')
-                gp.noise{1} = feval(gp.noise{1}.fh_sampling, gp, gp.noise{1}, opt.noiset_opt, x, y);
+            % ------------ Perform sampling for parameters that are not included -------------
+            % ------------ in the vector w. Such are, for example, noiseSigmas2  -------------
+            % ------------ for gpcf_noiset model
+            if isfield(opt, 'noise_opt')
+                for nni = 1:length(gp.noise)
+                    gp.noise{nni} = feval(gp.noise{nni}.fh_sample, gp, gp.noise{nni}, opt.noise_opt, x, y);
+                end
             end
             
             % ----------- Sample inputs  ---------------------
@@ -268,6 +274,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 if isfield(diagnl, 'lvs')
                     fprintf('%.6f', diagnl.lvs);
                 end
+            end
+            if isfield(opt,'noise_opt')
+                fprintf('%.2f', rec.noise{1}.nu(ri));
             end      
             fprintf('\n');
         end

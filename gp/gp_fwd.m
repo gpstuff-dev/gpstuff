@@ -1,4 +1,4 @@
-function [y, VarY] = gp_fwd(gp, tx, ty, x, varargin)
+function [y, VarY, noisyY] = gp_fwd(gp, tx, ty, x, varargin)
 %GP2FWD	Forward propagation through Gaussian Process
 %
 %	Description
@@ -15,7 +15,8 @@ function [y, VarY] = gp_fwd(gp, tx, ty, x, varargin)
 %	[Y, VarY] = GP_FWD(GP, TX, TY, X) returns also the variances of Y 
 %       (1xn vector).
 %
-%       BUGS: - only 1 output allowed
+%	[Y, VarY, NoisyY] = GP_FWD(GP, TX, TY, X) returns also the noisy prediction 
+%       for Y (1xn vector). These are needed for example in the Student-t noise model.
 %
 %	See also
 %	GP, GP_PAK, GP_UNPAK
@@ -49,7 +50,11 @@ switch gp.type
         % VarY = V - sum(b.^2)';
         VarY = V - diag(v'*v);
     end
-    %    VarY = C\ty;
+    if nargout > 2 
+        K2 = gp_trcov(gp,x);
+        predcov = chol(K2-v'*v)';
+        noisyY = y + predcov*randn(size(y));
+    end
   case 'FIC'
     u = gp.X_u;
     % Turn the inducing vector on right direction
@@ -74,21 +79,37 @@ switch gp.type
         iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
     end
     A = K_uu+K_fu'*iLaKfu;
+    A = (A+A')./2;
 
-    p = ty./Lav - iLaKfu*(A\(iLaKfu'*ty)); 
+    L = iLaKfu/chol(A);
+    p = ty./Lav - L*(L'*ty);
+    
+    %p2 = ty./Lav - iLaKfu*(A\(iLaKfu'*ty)); 
+    %    Knf = K_nu*(K_uu\K_fu');
     y = K_nu*(K_uu\(K_fu'*p));
-    %    VarY = K_uu\(K_fu'*p);
-    %    VarY =p;
+    
     if nargout > 1
-        error('The variance is not implemented for FIC yet! \n')
-% $$$         % VarY = Knn - Qnn + Knu*S*Kun
-% $$$         B=Luu\(K_nu');
-% $$$         Qv_nn=sum(B.^2)';
-% $$$         % Vector of diagonal elements of covariance matrix
-% $$$         L = chol(K_uu+K_fu'*iLaKfu)';
-% $$$         b = L\K_nu';
-% $$$         Kv_nn = gp_trvar(gp,x);
-% $$$         VarY = Kv_nn - Qv_nn + sum(b.^2)';
+        KnfiLa = zeros(size(Knf));
+        for i = 1:length(tx)
+            KnfiLa(:,i) = Knf(:,i)./sqrt(Lav(i));
+        end
+        Knn_v = gp_trvar(gp,x);
+        VarY = Knn_v - sum(KnfiLa.*KnfiLa, 2) + sum((Knf*L).^2, 2);
+    end
+    if nargout > 2
+        randn('state', 100);
+        random_vector = randn(size(y));
+        K_nn = K_nu*inv(K_uu)*K_nu' + diag(Knn_v - diag(K_nu*inv(K_uu)*K_nu'));
+        noisyY2 = y + chol(K_nn - KnfiLa*KnfiLa' + Knf*L*L'*Knf')' * random_vector;
+
+        
+        B=Luu\(K_nu');
+        Qv_ff=sum(B.^2)';
+        Lav = Cv_ff-Qv_ff;
+
+        randn('state', 100);
+        random_vector = randn(size(y));
+        noisyY = y + B'*random_vector + random_vector.*sqrt(Lav) - KnfiLa'*random_vector + L'*(Knf'*random_vector);
     end
   case 'PIC_BLOCK'
     u = gp.X_u;

@@ -44,9 +44,6 @@ function gpcf = gpcf_noise(do, varargin)
 %
 %       
 %	See also
-%	
-%
-%
 
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 1998,1999 Aki Vehtari
@@ -57,70 +54,70 @@ function gpcf = gpcf_noise(do, varargin)
 % License.txt, included with the software, for details.
 
 if nargin < 2
-  error('Not enough arguments')
+    error('Not enough arguments')
 end
 
 % Initialize the covariance function
 if strcmp(do, 'init')
-  nin = varargin{1};
-  
-  gpcf.type = 'gpcf_noise';
-  gpcf.nin = nin;
-  gpcf.nout = 1;
-  
-  % Initialize parameters
-  gpcf.noiseSigmas2 = 0.1^2; 
-  
-  % Initialize prior structure
-  gpcf.p=[];
-  gpcf.p.noiseSigmas2=[];
-  
-  % Set the function handles
-  gpcf.fh_pak = @gpcf_noise_pak;
-  gpcf.fh_unpak = @gpcf_noise_unpak;
-  gpcf.fh_e = @gpcf_noise_e;
-  gpcf.fh_ghyper = @gpcf_noise_ghyper;
-  gpcf.fh_gind = @gpcf_noise_gind;
-  gpcf.fh_cov = @gpcf_noise_cov;
-  gpcf.fh_trcov  = @gpcf_noise_trcov;
-  gpcf.fh_trvar  = @gpcf_noise_trvar;
-  gpcf.fh_sampling = @hmc2;
-  gpcf.sampling_opt = hmc2_opt;
-  gpcf.fh_recappend = @gpcf_noise_recappend;
-  
-  if length(varargin) > 1
-    if mod(nargin,2) ~=0
-      error('Wrong number of arguments')
+    nin = varargin{1};
+    
+    gpcf.type = 'gpcf_noise';
+    gpcf.nin = nin;
+    gpcf.nout = 1;
+    
+    % Initialize parameters
+    gpcf.noiseSigmas2 = 0.1^2; 
+    
+    % Initialize prior structure
+    gpcf.p=[];
+    gpcf.p.noiseSigmas2=[];
+    
+    % Set the function handles
+    gpcf.fh_pak = @gpcf_noise_pak;
+    gpcf.fh_unpak = @gpcf_noise_unpak;
+    gpcf.fh_e = @gpcf_noise_e;
+    gpcf.fh_ghyper = @gpcf_noise_ghyper;
+    gpcf.fh_gind = @gpcf_noise_gind;
+    gpcf.fh_cov = @gpcf_noise_cov;
+    gpcf.fh_trcov  = @gpcf_noise_trcov;
+    gpcf.fh_trvar  = @gpcf_noise_trvar;
+    gpcf.fh_sampling = @hmc2;
+    gpcf.sampling_opt = hmc2_opt;
+    gpcf.fh_recappend = @gpcf_noise_recappend;
+    
+    if length(varargin) > 1
+        if mod(nargin,2) ~=0
+            error('Wrong number of arguments')
+        end
+        % Loop through all the parameter values that are changed
+        for i=2:2:length(varargin)-1
+            if strcmp(varargin{i},'noiseSigmas2')
+                gpcf.noiseSigmas2 = varargin{i+1};
+            elseif strcmp(varargin{i},'fh_sampling')
+                gpcf.fh_sampling = varargin{i+1};
+            else
+                error('Wrong parameter name!')
+            end
+        end
     end
-    % Loop through all the parameter values that are changed
-    for i=2:2:length(varargin)-1
-      if strcmp(varargin{i},'noiseSigmas2')
-	gpcf.noiseSigmas2 = varargin{i+1};
-      elseif strcmp(varargin{i},'fh_sampling')
-	gpcf.fh_sampling = varargin{i+1};
-      else
-	error('Wrong parameter name!')
-      end
-    end
-  end
 end
 
 % Set the parameter values of covariance function
 if strcmp(do, 'set')
-  if mod(nargin,2) ~=0
-    error('Wrong number of arguments')
-  end
-  gpcf = varargin{1};
-  % Loop through all the parameter values that are changed
-  for i=2:2:length(varargin)-1
-    if strcmp(varargin{i},'noiseSigmas2')
-      gpcf.noiseSigmas2 = varargin{i+1};
-    elseif strcmp(varargin{i},'fh_sampling')
-      gpcf.fh_sampling = varargin{i+1};
-    else
-      error('Wrong parameter name!')
-    end    
-  end
+    if mod(nargin,2) ~=0
+        error('Wrong number of arguments')
+    end
+    gpcf = varargin{1};
+    % Loop through all the parameter values that are changed
+    for i=2:2:length(varargin)-1
+        if strcmp(varargin{i},'noiseSigmas2')
+            gpcf.noiseSigmas2 = varargin{i+1};
+        elseif strcmp(varargin{i},'fh_sampling')
+            gpcf.fh_sampling = varargin{i+1};
+        else
+            error('Wrong parameter name!')
+        end    
+    end
 end
 
 
@@ -150,7 +147,7 @@ gpp=gpcf.p;
 
 i1=0;i2=1;
 if ~isempty(w)
-  i1 = length(w);
+    i1 = length(w);
 end
 
 i2=i1+length(gpcf.noiseSigmas2);
@@ -243,7 +240,7 @@ gpp=gpcf.p;
 
 i1=0;i2=1;
 if ~isempty(g)
-  i1 = length(g);
+    i1 = length(g);
 end
 
 i1=i1+1;
@@ -290,24 +287,22 @@ gprior(i1)=feval(gpp.noiseSigmas2.fg, ...
 
 g = gdata + gprior;
 
-function [DKuu_u, DKuf_u]  = gpcf_noise_gind(gpcf, x, t, varargin)
-    %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
-    %                  with respect to inducing inputs.
-    %
-    %	Descriptioni
-    %	[DKuu_u, DKuf_u] = GPCF_SEXP_GIND(W, GPCF, X, T) 
-    %
-    %	See also
-    %
+function [g_ind, gdata_ind, gprior_ind]  = gpcf_noise_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
+%GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
+%                  with respect to inducing inputs.
+%
+%	Descriptioni
+%	[DKuu_u, DKuf_u] = GPCF_SEXP_GIND(W, GPCF, X, T) 
+%
+%	See also
+%
 
-    % Copyright (c) 1998-2001 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-    DKuu_u = 0;
-    DKuf_u = 0;
+% Copyright (c) 1998-2001 Aki Vehtari
+% Copyright (c) 2006      Jarno Vanhatalo
+
+% This software is distributed under the GNU General Public 
+% License (version 2 or later); please refer to the file 
+% License.txt, included with the software, for details.
 
 
 function C = gpcf_noise_cov(gpcf, x1, x2)
@@ -330,13 +325,13 @@ function C = gpcf_noise_cov(gpcf, x1, x2)
 % License.txt, included with the software, for details.
 
 if isempty(x2)
-  x2=x1;
+    x2=x1;
 end
 [n1,m1]=size(x1);
 [n2,m2]=size(x2);
 
 if m1~=m2
-  error('the number of columns of X1 and X2 has to be same')
+    error('the number of columns of X1 and X2 has to be same')
 end
 
 %C=zeros(n1,n2);
@@ -401,37 +396,37 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
 
 % Initialize record
 if nargin == 2
-  reccf.type = 'gpcf_noise';
-  reccf.nin = ri;
-  gpcf.nout = 1;
-  
-  % Initialize parameters
-  reccf.noiseSigmas2 = []; 
+    reccf.type = 'gpcf_noise';
+    reccf.nin = ri;
+    gpcf.nout = 1;
     
-  % Set the function handles
-  reccf.fh_pak = @gpcf_noise_pak;
-  reccf.fh_unpak = @gpcf_noise_unpak;
-  reccf.fh_e = @gpcf_noise_e;
-  reccf.fh_g = @gpcf_noise_g;
-  reccf.fh_cov = @gpcf_noise_cov;
-  reccf.fh_trcov  = @gpcf_noise_trcov;
-  reccf.fh_trvar  = @gpcf_noise_trvar;
-%  gpcf.fh_sampling = @hmc2;
-  reccf.sampling_opt = hmc2_opt;
-  reccf.fh_recappend = @gpcf_noise_recappend;  
-  return
+    % Initialize parameters
+    reccf.noiseSigmas2 = []; 
+    
+    % Set the function handles
+    reccf.fh_pak = @gpcf_noise_pak;
+    reccf.fh_unpak = @gpcf_noise_unpak;
+    reccf.fh_e = @gpcf_noise_e;
+    reccf.fh_g = @gpcf_noise_g;
+    reccf.fh_cov = @gpcf_noise_cov;
+    reccf.fh_trcov  = @gpcf_noise_trcov;
+    reccf.fh_trvar  = @gpcf_noise_trvar;
+    %  gpcf.fh_sampling = @hmc2;
+    reccf.sampling_opt = hmc2_opt;
+    reccf.fh_recappend = @gpcf_noise_recappend;  
+    return
 end
 
 gpp = gpcf.p;
 
 % record noiseSigma
 if ~isempty(gpcf.noiseSigmas2)
-  if ~isempty(gpp.noiseSigmas2)
-    reccf.noiseHyper(ri,:)=gpp.noiseSigmas2.a.s;
-  elseif ri==1
-    reccf.noiseHyper=[];
-  end
-  reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
+    if ~isempty(gpp.noiseSigmas2)
+        reccf.noiseHyper(ri,:)=gpp.noiseSigmas2.a.s;
+    elseif ri==1
+        reccf.noiseHyper=[];
+    end
+    reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
 elseif ri==1
-  reccf.noiseSigmas2=[];
+    reccf.noiseSigmas2=[];
 end

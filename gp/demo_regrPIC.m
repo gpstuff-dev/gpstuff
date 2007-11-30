@@ -87,7 +87,7 @@ title('Blocks and inducing inputs')
 gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x, index});
 
 % Check the gradients
-gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
+gradcheck(gp_pak(gp,'all'), @gp_e, @gp_g, gp, x, y, 'all')
 
 
 % $$$ w=gp_pak(gp, 'hyper');

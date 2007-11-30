@@ -22,10 +22,10 @@ y = data(:,3);
 [n, nin] = size(x);
 
 % Create covariance functions
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
-%gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
@@ -50,6 +50,8 @@ plot(u1(:), u2(:), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 gp = gp_init('set', gp, 'X_u', U);
 
 gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
+gradcheck(gp_pak(gp,'inducing'), @gp_e, @gp_g, gp, x, y, 'inducing')
+gradcheck(gp_pak(gp,'all'), @gp_e, @gp_g, gp, x, y, 'all')
 
 % $$$ w=gp_pak(gp, 'hyper');
 % $$$ [e, edata, eprior] = gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 
@@ -79,13 +81,15 @@ optes.tolx=1e-1;
 % First for hyperparameters
 [w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'hyper', gp,x(its,:), y(its,:), 'hyper');
 gp=gp_unpak(gp,w, 'hyper');
-%[w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'all', gp,x(its,:), y(its,:), 'all');
-%gp=gp_unpak(gp,w, 'all');
 
-% $$$ figure
-% $$$ hold on
-% $$$ plot(gp.X_u(:,1),gp.X_u(:,2),'*')
-% $$$ axis([-2.5 2.5 -2.5 2.5])
+w=gp_pak(gp, 'inducing');
+[w,fs,vs,lambda]=scges(fe, w, optes, fg, gp, x(itr,:),y(itr,:), 'inducing', gp,x(its,:), y(its,:), 'inducing');
+gp=gp_unpak(gp,w, 'inducing');
+
+figure
+hold on
+plot(gp.X_u(:,1),gp.X_u(:,2),'*')
+axis([-2.5 2.5 -2.5 2.5])
 
 opt=gp_mcopt;
 opt.repeat=10;

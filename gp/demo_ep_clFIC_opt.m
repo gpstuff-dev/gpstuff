@@ -71,9 +71,15 @@ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 
-[u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
+% $$$ [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
+% $$$ U=[u1(:) u2(:)];
+% $$$ U = U([3 4 7:18 20:24 26:30 33:36],:);
+% $$$ U = U(1:2:end,:);
+
+[u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(0.2, 0.8,2));
 U=[u1(:) u2(:)];
-U = U([3 4 7:18 20:24 26:30 33:36],:);
+
+figure(1)
 plot(x(:,1), x(:,2),'*'), hold on
 plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 
@@ -81,17 +87,17 @@ plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 gp = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, []);
 gp = gp_init('set', gp, 'X_u', U);
 gp.ep_opt.display = 1;
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'all'});
 
 % $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 % $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
-% $$$ gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
+% $$$ gradcheck(gp_pak(gp,'all'), @gpep_e, @gpep_g, gp, x, y, 'all')
 
 disp(' ')
 disp(' Find the point estimates for the parameters with early stop method. ')
 disp(' ')
 
-w=randn(size(gp_pak(gp,'hyper')))*0.01;
+w=gp_pak(gp,'all');
 
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
@@ -110,9 +116,8 @@ opt(14) = 0;
 
 % do scaled conjugate gradient optimization with early stopping.
 gp.ep_opt.display = 1;
-[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'hyper');
-% $$$ [w,fs,vs]=scges(fe, w, optes, fg, gp, x(itr,:), y(itr,:), 'hyper', gptst, x(its,:), y(its,:), 'hyper');
-gp=gp_unpak(gp,w,'hyper');
+[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'all');
+gp=gp_unpak(gp,w,'all');
 
 
 % Print the hyperparameter values
@@ -124,7 +129,7 @@ xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
-[Ef, Varf, p1] = ep_pred(gp, x,y, xstar);
+[Ef, Varf, p1] = ep_pred(gp, x, y, xstar, 'all');
 
 % visualise predictive probability  p(ystar = 1)
 figure, hold on;
@@ -135,6 +140,7 @@ colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
 plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
+plot(gp.X_u(:,1), gp.X_u(:,2), 'gx', 'MarkerSize', 12, 'LineWidth', 2)
 set(gcf, 'color', 'w'), title('predictive probability and training cases', 'fontsize', 14)
 
 % Visualize the predictive variance
@@ -146,6 +152,7 @@ colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
 plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
+plot(gp.X_u(:,1), gp.X_u(:,2), 'gx', 'MarkerSize', 12, 'LineWidth', 2)
 set(gcf, 'color', 'w'), title('marginal predictive latent variance', 'fontsize', 14)
 
 % visualise predictive probability  p(ystar = 1) with contours
@@ -167,7 +174,7 @@ ty_temp=tx(:,end);
 ty = 2*ty_temp-1;
 tx(:,end)=[];
 
-[Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx);
+[Eftest, Varftest, p1test] = ep_pred(gp, x, y, tx, 'all');
 
 % calculate the percentage of misclassified points
 missed = sum(abs(round(p1test)-ty_temp))/size(ty,1)*100

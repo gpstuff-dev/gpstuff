@@ -28,7 +28,7 @@ function gp = gp_init(do, varargin)
 %         cf             = struct of covariance functions
 %         noise          = struct of noise functions
 %	  jitterSigmas   = jitter term for covariance function
-%                          (0.1)
+%                          (1e-4)
 %         p              = prior structure for parameters
 %         p.r            = Prior Structure for residual
 %                          (defined only in case likelih == 'regr')
@@ -113,7 +113,7 @@ function gp = gp_init(do, varargin)
         end
 
         % Initialize parameters
-        gp.jitterSigmas=0.1;
+        gp.jitterSigmas=1e-4;
         gp.p=[];
         gp.p.jitterSigmas=[];
         

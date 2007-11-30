@@ -18,7 +18,6 @@ function w = gp_pak(gp, param)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-
 switch param
   case 'hyper'
     w = pak_hyper(gp);

@@ -9,10 +9,6 @@ function [K, C] = gp_trvar(gp, x1)
 %
 %         [K, C] = GP_TRVAR(GP, TX) returns also the noisy
 %         variance vector C.
-%
-%         For covariance function definition see manual or 
-%         Neal R. M. Regression and Classification Using Gaussian 
-%         Process Priors, Bayesian Statistics 6.
 
 % Copyright (c) 2006 Jarno Vanhatalo
 

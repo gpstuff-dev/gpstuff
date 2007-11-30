@@ -39,7 +39,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         
         z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
         
-        [k, kstarstar]=gp_trvar(gp, x);
+        kstarstar = gp_trvar(gp, x);
 
         ntest=size(x,1);
         
@@ -61,33 +61,24 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         end
         
       case 'FIC'
-        
         u = gp.X_u;
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-        [k, kstarstar]=gp_trvar(gp, x);
+        kstarstar=gp_trvar(gp, x);
+        
+        if length(varargin) < 1
+            error('The argument telling the optimzed/sampled parameters has to be provided.') 
+        end
 
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
-
-% $$$         myytilde = nutilde./tautilde;
-% $$$         
-% $$$         % Evaluate the Lambda (La) 
-% $$$         % Q_ff = K_fu*inv(K_uu)*K_fu'
-% $$$         % Here we need only the diag(Q_ff), which is evaluated below
-% $$$         A = K_uu+K_fu'*iLaKfu;
-% $$$         A = (A+A')./2;     % Ensure symmetry
-% $$$         A = chol(A)';
-% $$$         L = iLaKfu/A';
-% $$$ 
-% $$$         p = myytilde./La - L*(L'*myytilde);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
 
         p = b';
         
         ntest=size(x,1);
         
         K_nu=gp_cov(gp,x,u);
-        Knf = K_nu*(K_uu\K_fu');
+        Knf = K_nu*(K_uu\K_fu'); 
         Ef = Knf*p;
         
         if nargout > 1
@@ -112,9 +103,13 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_nu = gp_cov(gp, x, u);         % n x u   
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-        [k, kstarstar]=gp_trvar(gp, x);
+        kstarstar = gp_trvar(gp, x);
         
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin);
+        if length(varargin) < 1
+            error('The argument telling the optimzed/sampled parameters has to be provided.') 
+        end
+        
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, varargin), gp, tx, ty, varargin);
        
         % From this on evaluate the prediction
         % See Snelson and Ghahramani (2007) for details 

@@ -1,4 +1,4 @@
-function demo_gpt
+function demo_noiset
 %    DEMO_TGP      A regression problem demo for Gaussian process. Uses Students 
 %                  t-distribution  for residual model.
 %
@@ -47,8 +47,8 @@ disp(' ')
 
 % load the data. First 100 variables are for training
 % and last 100 for test
-S = which('demo_gpt');
-L = strrep(S,'demo_gpt.m','demos/odata');
+S = which('demo_noiset');
+L = strrep(S,'demo_noiset.m','demos/odata');
 x = load(L);
 xt = x(101:end,1);
 yt = x(101:end,2);
@@ -74,16 +74,15 @@ disp(' ')
 % create the Gaussian process
 [n, nin] = size(x);
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noiset('init', nin, n, 'noiseSigmas2', repmat(1^2,1,n));   % Here set own Sigma2 for every data point
+gpcf2 = gpcf_noiset('init', nin, n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.2^2 4 0.05^2 1});    % MUUTA tässä invgam_p saman näköiseksi kuin gpcf_sexp('set'...)
 
-gp = gp_init('init', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 100)
-w = gp_pak(gp)
-gp2 = gp_unpak(gp,w)
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}) %, 'jitterSigmas', 1e-4
+w = gp_pak(gp, 'hyper')
+gp2 = gp_unpak(gp,w, 'hyper')
 
 opt=gp_mcopt;
 opt.repeat=10;
@@ -93,8 +92,8 @@ opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
-opt.noiset_opt.sample = 1;
-
+opt.noise_opt = sls1mm_opt;
+opt.noise_opt.mmlimits = [2.1 40];
 
 % Sample 
 [r,g,rstate1]=gp_mc(opt, gp, x, y);
