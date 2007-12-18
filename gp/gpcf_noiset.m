@@ -352,7 +352,7 @@ end
           case 'FIC'
             [meanY, varY, sampy] = gp_fwd(gp, x, y, x);
           case 'PIC_BLOCK'
-            
+            [meanY, varY, sampy] = gp_fwd(gp, x, y, x, gp.tr_index);
         end
         % Calculate the residual
         r = y-sampy;

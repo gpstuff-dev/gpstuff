@@ -194,6 +194,16 @@ function gp = gp_init(do, varargin)
                         [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                         gp.site_tau = site_tau';
                         gp.site_nu = site_nu';
+                      case 'Laplace'
+                        gp.laplace_opt.maxiter = 20;
+                        gp.laplace_opt.tol = 1e-6;
+                        gp.laplace_opt.optim_method = 'fminunc_large';
+                        gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        w = gp_pak(gp, varargin{i+1}{4});
+                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        gp.f = f;
+                      otherwise
+                        error('Unknown type of latent_method!')
                     end
                   case 'compact_support'
                     % Note: Add the possibility for more than one compactly supported cf later.
@@ -259,6 +269,16 @@ function gp = gp_init(do, varargin)
                     [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                     gp.site_tau = site_tau';
                     gp.site_nu = site_nu';
+                  case 'Laplace'
+                    gp.laplace_opt.maxiter = 20;
+                    gp.laplace_opt.tol = 1e-6;
+                    gp.laplace_opt.optim_method = 'fminunc_large';
+                    gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    w = gp_pak(gp, varargin{i+1}{4});
+                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    gp.f = f;
+                  otherwise
+                    error('Unknown type of latent_method!')
                 end
               case 'compact_support'
                 % Note: Add the possibility for more than one compactly supported cf later.

@@ -106,9 +106,6 @@ opt.hmc_opt.decay=0.6;
 
 [r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
 
-
-
-
 % set the sampling options for first two rounds of sampling
 opt=gp2_mcopt;
 opt.repeat=20;

@@ -79,12 +79,12 @@ gp = gp_init('init', 'PIC_BLOCK', nin, 'logistic', {gpcf1}, [], 'jitterSigmas', 
 gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_mh, randn(size(y))'});
 
 % Set the blocks and the inducing inputs
-b1 = [-1.25 0.9];
-b2 = [-0.2  1.1];
+b1 = [-1.25 -0.1 0.9];
+b2 = [-0.2 0.45 1.1];
 mask = zeros(size(x,1),size(x,1));
 tot = 0;
-for i1=1:4
-    for i2=1:4
+for i1=1:2
+    for i2=1:2
         ind = 1:size(x,1);
         ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
         ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));        
@@ -94,13 +94,13 @@ for i1=1:4
     end
 end
 
-a=1;
-uu=[-3:a:4];
-au=2; % moneenko osaan reuna jaetaan
-uuu=[-3:a/au:4];
-[U1a U2a] = meshgrid(uu, uuu);
-[U1b U2b] = meshgrid(uuu, uu);
-u=union([U1a(:) U2a(:)],[U1b(:) U2b(:)],'rows');
+% $$$ a=1;
+% $$$ uu=[-3:a:4];
+% $$$ au=2; % moneenko osaan reuna jaetaan
+% $$$ uuu=[-3:a/au:4];
+% $$$ [U1a U2a] = meshgrid(uu, uuu);
+% $$$ [U1b U2b] = meshgrid(uuu, uu);
+% $$$ u=union([U1a(:) U2a(:)],[U1b(:) U2b(:)],'rows');
 
 figure
 d=symamd(mask);

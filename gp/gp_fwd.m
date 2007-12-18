@@ -15,8 +15,9 @@ function [y, VarY, noisyY] = gp_fwd(gp, tx, ty, x, varargin)
 %	[Y, VarY] = GP_FWD(GP, TX, TY, X) returns also the variances of Y 
 %       (1xn vector).
 %
-%	[Y, VarY, NoisyY] = GP_FWD(GP, TX, TY, X) returns also the noisy prediction 
-%       for Y (1xn vector). These are needed for example in the Student-t noise model.
+%	[Y, VarY, NoisyY] = GP_FWD(GP, TX, TY, X) returns the noisy prediction for 
+%       Y (1xn vector). These are needed for example in the Student-t noise model. 
+%       NOTE! in FIC/PIC the prediction NoisyY is made at the training points!
 %
 %	See also
 %	GP, GP_PAK, GP_UNPAK
@@ -89,27 +90,17 @@ switch gp.type
     y = K_nu*(K_uu\(K_fu'*p));
     
     if nargout > 1
-        KnfiLa = zeros(size(Knf));
-        for i = 1:length(tx)
-            KnfiLa(:,i) = Knf(:,i)./sqrt(Lav(i));
-        end
         Knn_v = gp_trvar(gp,x);
-        VarY = Knn_v - sum(KnfiLa.*KnfiLa, 2) + sum((Knf*L).^2, 2);
+        B2=Luu\(K_nu');        
+        VarY = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
     end
     if nargout > 2
-        randn('state', 100);
-        random_vector = randn(size(y));
-        K_nn = K_nu*inv(K_uu)*K_nu' + diag(Knn_v - diag(K_nu*inv(K_uu)*K_nu'));
-        noisyY2 = y + chol(K_nn - KnfiLa*KnfiLa' + Knf*L*L'*Knf')' * random_vector;
-
-        
-        B=Luu\(K_nu');
-        Qv_ff=sum(B.^2)';
-        Lav = Cv_ff-Qv_ff;
-
-        randn('state', 100);
-        random_vector = randn(size(y));
-        noisyY = y + B'*random_vector + random_vector.*sqrt(Lav) - KnfiLa'*random_vector + L'*(Knf'*random_vector);
+        % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
+        %            = B'*(I-B*La_f^(-1)*B' + B*L*L'*B')*B + La_n
+        Lav_n = Kv_ff-Qv_ff;
+        BL = B*L;
+        Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
+        noisyY = y + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(y)).*sqrt(Lav_n);
     end
   case 'PIC_BLOCK'
     u = gp.X_u;
@@ -141,6 +132,7 @@ switch gp.type
     end
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
+    L = iLaKfu/chol(A);
 
     tyy = ty;
     % From this on evaluate the prediction
@@ -166,15 +158,48 @@ switch gp.type
     %    VarY = p;
     
     if nargout > 1
-        error('The variaance is not implemented for PIC yet! \n')
-% $$$         % VarY = Knn - Qnn + Knu*S*Kun
-% $$$         B=Luu\(K_nu');
-% $$$         Qv_nn=sum(B.^2)';
-% $$$         % Vector of diagonal elements of covariance matrix
-% $$$         L = chol(K_uu+K_fu'*iLaKfu)';
-% $$$         b = L\K_nu';
-% $$$         Kv_nn = gp_trvar(gp,x);
-% $$$         VarY = Kv_nn - Qv_nn + sum(b.^2)';
+        Knn_v = gp_trvar(gp,x);
+        iKuuKuf = K_uu\K_fu';
+        v_bu = zeros(length(x),length(tx));
+        v_n = zeros(length(x),length(tx));
+        for i=1:length(ind)
+            K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+            v_bu(tstind{i},ind{i}) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+            v_n(tstind{i},ind{i}) = K_nf;
+        end
+        K_nf = K_nu*iKuuKuf - v_bu + v_n;
+        
+        ntest=size(x,1);
+        VarY = zeros(ntest,1);
+        %Varf = zeros(ntest,ntest);
+        for i=1:length(ind)
+            VarY = VarY + sum((K_nf(:,ind{i})/chol(La{i})).^2,2);
+            %Varf = Varf + (K_nf(:,ind{i})/La{i})*K_nf(:,ind{i})' - K_nf(:,ind{i})*L(ind{i},:)*L(ind{i},:)'*K_nf(:,ind{i})';
+        end
+        %Varf = kstarstar - diag(Varf);
+        
+        VarY = Knn_v - (VarY - sum((K_nf*L).^2,2));
+% $$$         
+% $$$         
+% $$$         % -----------
+% $$$         ntest=size(x,1);
+% $$$         Varf = zeros(ntest,1);
+% $$$         for i=1:length(ind)
+% $$$             v_bu = zeros(length(x),length(ind{i}));
+% $$$             v_n = zeros(length(x),length(ind{i}));
+% $$$             
+% $$$             K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));
+% $$$             v_bu(tstind{i},:) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+% $$$             v_n(tstind{i},:) = K_nf;
+% $$$             K_nf = K_nu*iKuuKuf(:,ind{i}) - v_bu + v_n;
+% $$$             Varf = Varf + sum((K_nf/chol(La{i})).^2,2);
+% $$$             ws{i} = v_n - v_bu;
+% $$$         end
+% $$$         
+% $$$         Varf = Knn_v - (Varf - sum((K_nf*L).^2,2));
+    end
+    if nargout > 2
+       noisyY = y; 
     end
   case 'CS+PIC'
     % Calculate some help matrices  

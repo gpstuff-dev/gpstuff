@@ -1,7 +1,7 @@
 
-function demo_ep_spatialFull_mcmc
+function demo_la_spatialFull
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-12-13 09:30:49 EET
+%   Last modified: 2007-12-14 13:27:22 EET
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -53,21 +53,20 @@ function demo_ep_spatialFull_mcmc
     xx = xx(1:floor(end/2),:);
     yy = yy(1:floor(end/2),:);
     ye = ye(1:floor(end/2),:);
-
     
     [n, nin] = size(xx);
-
-    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+        
+    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
     gp = gp_init('init', 'FULL', nin, 'poisson', {gpcf1}, []);   %{gpcf2}
     gp.avgE = ye; 
-    gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
 
-    gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
-
-    [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+% $$$     gradcheck(gp_pak(gp,'hyper'), @gpla_e, @gpla_g, gp, xx, yy, 'hyper')
+% $$$ 
+% $$$     [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
 
     
         % Find the mode by optimization
@@ -87,16 +86,17 @@ function demo_ep_spatialFull_mcmc
     % DerivativeCheck is not allowed with LargeScale
     %opt=optimset(opt,'LargeScale','off','DerivativeCheck','on');
     % optimize and get also Hessian H
-% $$$     thefunction = @(ww) {gpep_e(ww, gp, xx, yy, 'hyper') gpep_g(ww, gp, xx, yy, 'hyper')}
-    [w,fval,exitflag,output,g,H]=fminunc(@(ww) energy_grad(ww, gp, xx, yy, 'hyper'),w0,opt); 
+    mydeal = @(varargin)varargin{1:nargout};
+    [w,fval,exitflag,output,g,H] = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, 'hyper'), gpla_g(ww, gp, xx, yy, 'hyper')), w0, opt);
+
     %% If using LargeScale without Hessian given, Hessian computed is sparse 
-    save ep_spatial_full_20
+% $$$     save la_spatial_full_20
     H=full(H);
     S=inv(H);
     exp(w)
 
     gp = gp_unpak(gp,w,'hyper');
-    [Ef, Varf] = ep_pred(gp, xx, yy, xx);
+    [Ef, Varf] = la_pred(gp, xx, yy, xx);
 
     % Plot the maps and the Normal approximation of the 
     % hyperparameter posterior
@@ -108,7 +108,7 @@ function demo_ep_spatialFull_mcmc
     axis equal
     axis([0 35 0 60])
     drawnow
-    title('EP approximated median/mean relative risk')
+    title('Laplace approximated median/mean relative risk')
     
     figure(2)
     Gp=repmat(NaN,size(Y));

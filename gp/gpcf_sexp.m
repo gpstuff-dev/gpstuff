@@ -315,6 +315,10 @@ function gpcf = gpcf_sexp(do, varargin)
             Cdm = gpcf_sexp_trcov(gpcf, x);
             invCv=invC(:);
             b = varargin{2};
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
             % loop over all the lengthScales
             if length(gpcf.lengthScale) == 1
                 % In the case of isotropic SEXP
@@ -353,6 +357,10 @@ function gpcf = gpcf_sexp(do, varargin)
             b = varargin{2};             % u x f
             iKuuKuf = varargin{3};             % mask(R, M) (block/band) diagonal
             La = varargin{4};                 % array of size
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
             
             u = gpcf.X_u;
             
@@ -395,7 +403,11 @@ function gpcf = gpcf_sexp(do, varargin)
             b = varargin{2};             % 1 x f
             iKuuKuf = varargin{3};       % u x f
             Labl = varargin{4};          % array of size
-            
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
+
             u = gpcf.X_u;
             ind=gpcf.tr_index;
             
@@ -454,7 +466,11 @@ function gpcf = gpcf_sexp(do, varargin)
             b = varargin{2};             % 1 x f
             iKuuKuf = varargin{3};       % u x f
             La = varargin{4};            % matrix of size
-            
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
+          
             u = gpcf.X_u;
             ind=gpcf.tr_index;
             nzmax = size(ind,1);
@@ -514,6 +530,11 @@ function gpcf = gpcf_sexp(do, varargin)
             b = varargin{2};             % 1 x f
             iKuuKuf = varargin{3};       % u x f
             La = varargin{4};            % matrix of size
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
+
             u = gpcf.X_u;
             %ind=gpcf.tr_index;
             ind = gpcf.tr_indvec;
@@ -582,12 +603,20 @@ function gpcf = gpcf_sexp(do, varargin)
                 gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(K_uf'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                 gdata(i1) = gdata(i1) + 0.5.*(sum(Cv_ff./La) - sum(sum(L.*L)).*gpcf.magnSigma2);
                 gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(K_uf'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                if length(varargin) > 4
+                    gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                    gdata(i1) = gdata(i1) - 0.5.*(b2.*Cv_ff')*b3;
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                end
           case 'PIC_BLOCK'
             KfuiKuuKuu = iKuuKuf'*K_uu;
             %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
             % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
             gdata(i1) = -0.5.*((2*b*K_uf'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*K_uf'*iKuuKuf))) - ...
                                sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+            if length(varargin) > 4
+                gdata(i1) = gdata(i1) -0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+            end
             for i=1:length(K_ff)
                 gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
                     + 0.5.*(-b(ind{i})*K_ff{i}*b(ind{i})' ...
@@ -596,8 +625,14 @@ function gpcf = gpcf_sexp(do, varargin)
                     + trace(Labl{i}\K_ff{i})...
                     - trace(L(ind{i},:)*(L(ind{i},:)'*K_ff{i})) ...               %- trace(Labl{i}\H(ind{i},ind{i})) 
                     + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*K_uf(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
-                      sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuKuu(ind{i},:))*iKuuKuf(:,ind{i})))));
-                                                                %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
+                      sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuKuu(ind{i},:))*iKuuKuf(:,ind{i}))))); 
+                %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
+                if length(varargin) > 4
+                    gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                    + 0.5.*(-b2(ind{i})*K_ff{i}*b3(ind{i}) ...
+                    + 2.*b2(ind{i})*K_uf(:,ind{i})'*iKuuKuf(:,ind{i})*b3(ind{i})- ...
+                            b2(ind{i})*KfuiKuuKuu(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i})); 
+                end
             end
           case {'PIC_BAND','CS+PIC'}
             KfuiKuuKuu = K_uf';
@@ -628,6 +663,11 @@ function gpcf = gpcf_sexp(do, varargin)
             gdata(i1) = gdata(i1) + 0.5.*b*H*b';
             gdata(i1) = gdata(i1) + 0.5.*trace(La\(K_ff-H));
             gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-K_ff))));               %- trace(Labl{i}\H(ind{i},ind{i})) 
+            if length(varargin) > 4
+                gdata(i1) = gdata(i1) -0.5.*((2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3));
+                gdata(i1) = gdata(i1) + 0.5.*-(b2(ind(:,1)).*kv_ff')*b3(ind(:,2));
+                gdata(i1) = gdata(i1) + 0.5.*b2*H*b3;
+            end
           case 'CS+PIC'
             KfuiKuuKuu = iKuuKuf'*K_uu;
             %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
@@ -697,12 +737,19 @@ function gpcf = gpcf_sexp(do, varargin)
                                        sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
                     gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                    if length(varargin) > 4
+                        gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf_l{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf_l{i2}'.*iKuuKuf',2)'*b3 - b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    end
                   case 'PIC_BLOCK'
                     KfuiKuuDKuu_l = iKuuKuf'*DKuu_l{i2};
                     % H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
                     % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
                     gdata(i1) = -0.5.*((2*b*DKuf_l{i2}'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_l{i2}')*iKuuKuf))) - ...
                                        sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
+                    if length(varargin) > 4
+                        gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf_l{i2}'-(b2*KfuiKuuDKuu_l))*(iKuuKuf*b3);
+                    end
                     for i=1:length(K_ff)
                         gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
                             + 0.5.*(-b(ind{i})*DKff_l{i,i2}*b(ind{i})' ...
@@ -713,6 +760,12 @@ function gpcf = gpcf_sexp(do, varargin)
                                     + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*DKuf_l{i2}(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
                                     sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuDKuu_l(ind{i},:))*iKuuKuf(:,ind{i}))))); 
                         %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
+                        if length(varargin) > 4
+                            gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                                + 0.5.*(-b2(ind{i})*DKff_l{i,i2}*b3(ind{i}) ...
+                                    + 2.*b2(ind{i})*DKuf_l{i2}(:,ind{i})'*iKuuKuf(:,ind{i})*b3(ind{i})'- ...
+                                    b2(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i}));
+                        end
                     end
                   case {'PIC_BAND','CS+PIC'}
                     KfuiKuuDKuu_l = iKuuKuf'*DKuu_l{i2};
@@ -747,6 +800,10 @@ function gpcf = gpcf_sexp(do, varargin)
                     gdata(i1) = gdata(i1) + 0.5.*(b*(H-DKff_l{:,i2}))*b';
                     gdata(i1) = gdata(i1) + 0.5.*trace(La\(DKff_l{:,i2}-H));
                     gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-DKff_l{:,i2}))));         
+                    if length(varargin) > 4
+                        gdata(i1) = -0.5.*((2*b2*DKuf_l{i2}'-(b2*KfuiKuuDKuu_l))*(iKuuKuf*b3));
+                        gdata(i1) = gdata(i1) + 0.5.*(b2*(H-DKff_l{:,i2}))*b3;
+                    end
                   case 'CS+PIC'
                     KfuiKuuDKuu_l = iKuuKuf'*DKuu_l{i2};
                     %            H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
@@ -783,12 +840,20 @@ function gpcf = gpcf_sexp(do, varargin)
                                        sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
                     gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                    
+                    if length(varargin) > 4
+                        gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf_l'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf_l'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    end
               case 'PIC_BLOCK'
                 KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
                 % H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
                 % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
                 gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_l')*iKuuKuf))) - ...
                                    sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
+                if length(varargin) > 4
+                    gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf_l'-(b2*KfuiKuuDKuu_l))*(iKuuKuf*b3');
+                end
                 for i=1:length(K_ff)
                     gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
                         + 0.5.*(-b(ind{i})*DKff_l{i}*b(ind{i})' ...
@@ -799,6 +864,12 @@ function gpcf = gpcf_sexp(do, varargin)
                                 + 2.*sum(sum(L(ind{i},:)'.*(L(ind{i},:)'*DKuf_l(:,ind{i})'*iKuuKuf(:,ind{i})))) - ...
                                 sum(sum(L(ind{i},:)'.*((L(ind{i},:)'*KfuiKuuDKuu_l(ind{i},:))*iKuuKuf(:,ind{i}))))); 
                     %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
+                    if length(varargin) > 4
+                        gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
+                            + 0.5.*(-b2(ind{i})*DKff_l{i}*b3(ind{i}) ...
+                                    + 2.*b2(ind{i})*DKuf_l(:,ind{i})'*iKuuKuf(:,ind{i})*b3(ind{i})- ...
+                                    b2(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i})); 
+                    end
                 end
               case {'PIC_BAND','CS+PIC'}
                 KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
@@ -831,6 +902,11 @@ function gpcf = gpcf_sexp(do, varargin)
                 gdata(i1) = gdata(i1) + 0.5.*(b*(H-DKff_l))*b';
                 gdata(i1) = gdata(i1) + 0.5.*trace(La\(DKff_l-H));
                 gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-DKff_l))));
+                
+                if length(varargin) > 4
+                    gdata(i1) = -0.5.*((2*b2*DKuf_l'-(b2*KfuiKuuDKuu_l))*(iKuuKuf*b3));
+                    gdata(i1) = gdata(i1) + 0.5.*(b2*(H-DKff_l))*b3;
+                end
 
 % $$$                 gdata(i1) = gdata(i1) + 0.5.*-(b(ind(:,1)).*kv_ff')*b(ind(:,2))';
 % $$$                 gdata(i1) = gdata(i1) + 0.5.*b*H*b';
@@ -899,6 +975,10 @@ function gpcf = gpcf_sexp(do, varargin)
         b = varargin{2};             % u x f
         iKuuKuf = varargin{3};       % mask(R, M) (block/band) diagonal
         La = varargin{4};            % array of size
+        if length(varargin) > 4
+            b2 = varargin{5};
+            b3 = varargin{6};
+        end
         
         u = gpcf.X_u;
         n_u = size(u,1);
@@ -938,6 +1018,11 @@ function gpcf = gpcf_sexp(do, varargin)
                     gradient(ind) = gradient(ind) + 0.5.*(2.*b.*sum(DKuf_u'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gradient(ind) = gradient(ind) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_u'.*iKuuKuf',2)) - ...
                                                                       sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                    
+                    if length(varargin) > 4
+                        gradient(ind) = gradient(ind) -0.5.*(2*b2*DKuf_u'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                        gradient(ind) = gradient(ind) + 0.5.*(2.*b2.*sum(DKuf_u'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    end
                     ind = ind +1;
                 end
             end                             
@@ -971,12 +1056,18 @@ function gpcf = gpcf_sexp(do, varargin)
                    
                     gradient(ind) = -0.5.*((2*b*DKuf_u'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_u')*iKuuKuf))) - ...
                                        sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
-                    
+                    if length(varargin) > 4
+                        gradient(ind) = gradient(ind) -0.5.*(2*b2*DKuf_u'-(b2*KfuiKuuDKuu_u))*(iKuuKuf*b3);
+                    end
                     for i1=1:length(trindex)
                         gradient(ind) = gradient(ind) + 0.5.*(2.*b(trindex{i1})*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})*b(trindex{i1})'- ...
                                     b(trindex{i1})*KfuiKuuDKuu_u(trindex{i1},:)*iKuuKuf(:,trindex{i1})*b(trindex{i1})' ... 
                                     + 2.*sum(sum(L(trindex{i1},:)'.*(L(trindex{i1},:)'*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})))) - ...
                                     sum(sum(L(trindex{i1},:)'.*((L(trindex{i1},:)'*KfuiKuuDKuu_u(trindex{i1},:))*iKuuKuf(:,trindex{i1}))))); 
+                        if length(varargin) > 4
+                            gradient(ind) = gradient(ind) + 0.5.*(2.*b2(trindex{i1})*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})*b3(trindex{i1})- ...
+                                    b2(trindex{i1})*KfuiKuuDKuu_u(trindex{i1},:)*iKuuKuf(:,trindex{i1})*b3(trindex{i1})'); 
+                        end
                     end
                     ind = ind +1;
                 end

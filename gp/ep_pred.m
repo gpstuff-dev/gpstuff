@@ -78,13 +78,18 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         ntest=size(x,1);
         
         K_nu=gp_cov(gp,x,u);
-        Knf = K_nu*(K_uu\K_fu'); 
-        Ef = Knf*p;
+        %Knf = K_nu*(K_uu\K_fu'); 
+        %Ef = Knf*p;
+        Ef = K_nu*(K_uu\(K_fu'*p));
         
         if nargout > 1
+            % Compute variances of predictions
+            %Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');   
+            B2=Luu\(K_nu');   
+            Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
             for i1=1:ntest
-                % Compute variances of predictions
-                Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
                 switch gp.likelih
                   case 'probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
