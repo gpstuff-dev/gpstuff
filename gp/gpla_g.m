@@ -133,6 +133,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         L2LaLa = L2'.*repmat(LaLa',m,1);
         L2BKuuC = L2'*B*KuuC;
         
+        
         s2 = (LaLa./Lahat...
               - sum((repmat(LaLa,1,m).*L3a).*L3b',2) ...
               + sum(LaB.*(KuuC./repmat(Lahat',m,1))',2) ...
@@ -161,30 +162,86 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         gprior_ind = zeros(1,numel(gp.X_u));
         
         u = gp.X_u;
+        m = size(u,1);
         ind = gp.tr_index;
-        DKuu_u = 0;
-        DKuf_u = 0;
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
+
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-
+        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu        
         iKuuKuf = K_uu\K_fu';
-
-% $$$         K = diag(La2)+K_fu*(K_uu\K_fu');
-% $$$         I = eye(size(K));
-% $$$         sqrtW = diag(sqrt(W));
-% $$$         C = sqrtW*K;
-% $$$         B = eye(size(K)) + sqrtW*K*sqrtW;
-% $$$         L = chol(B)';
-% $$$         Z = (L\sqrtW);
-% $$$         Z = Z'*Z;          %Z = sqrtW*((I + C*sqrtW)\sqrtW);
-% $$$         CC = C*diag(thirdgrad(f, gp.likelih)./diag(sqrtW));
-% $$$         s2 = -0.5*diag(L'\(L\(CC + CC')))';       %s2 = -0.5*diag((I + C*sqrtW)\(CC + CC'));
-% $$$         sqrtW = diag(sqrtW);
-
         
+        W = hessian(f, gp.likelih);
+        sqrtW = sqrt(W);
+        fiLa = zeros(size(f'));
+        for i=1:length(ind)
+            fiLa(ind{i}) = f(ind{i})'/La2{i};
+            La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
+            Lahat{i} = eye(size(La{i})) + La{i};
+        end
+        b = fiLa - (f'*L)*L';
+        B = (repmat(sqrtW,1,m).*K_fu);
+        
+        % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+        for i=1:length(ind)
+            B2(ind{i},:) = Lahat{i}\B(ind{i},:);
+        end
+        A2 = K_uu + B'*B2; A2=(A2+A2)/2;
+        L2 = B2/chol(A2);
+        
+        % components for (I+(Qff+La2)*W))^(-1) = Lahat^(-1) - L3a*L3b
+        L3b = K_fu'.*repmat(W',m,1);
+        for i=1:length(ind)
+            B3(ind{i},:) = Lahat{i}\K_fu(ind{i},:);
+            L3b(:,ind{i}) = L3b(:,ind{i})/Lahat{i};
+        end
+        A3 = K_uu + L3b*K_fu; A3=(A3+A3)/2;
+        A3 = chol(A3);
+        L3a = B3/A3;
+        L3b = A3'\L3b;
+        
+        % Components for  W^(1/2)*(Qff + La2)*W^(1/2)*dW/dth
+        %              =  La + B*K_uu^(-1)*B'*thirdg_f 
+        %              =  La + B*K_uu^(-1)*C 
+        % aim is to evaluate 
+        % s2 = 0.5*diag((Lahat^(-1) - L2*L2' )*(La + B*K_uu\C + (La + B*K_uu\C)' )*(Lahat^(-1) - L3a*L3b))';
+        C = B'.*repmat(thirdgrad(f, gp.likelih)',m,1);
+
+% $$$         s2 = - 0.5*diag((Lahat^(-1) - L2*L2' )*(La + B*(K_uu\C) + (La + B*(K_uu\C))' )*(Lahat^(-1) - L3a*L3b))';
+
+        KuuC = K_uu\C;
+        L2BKuuC = L2'*B*KuuC;
+        LaLaLahat = zeros(n,1);
+        for i=1:length(ind)
+            LaLa{i} = Lahat{i}\La{i};
+            LaLaLahat(ind{i}) = diag(LaLa{i}/Lahat{i});
+            LaB(ind{i},:) = Lahat{i}\B(ind{i},:);
+            L2LaLa(:,ind{i}) = L2(ind{i},:)'*LaLa{i}';
+            LaLaL3a(ind{i},:) = LaLa{i}*L3a(ind{i},:);
+            L2La(:,ind{i}) = L2(ind{i},:)'*La{i};
+            KuuCiLahat(:,ind{i}) = KuuC(:,ind{i})/Lahat{i};
+            L2BKuuCiLahat(:,ind{i}) = L2BKuuC(:,ind{i})/Lahat{i};
+        end
+
+        s2 = (LaLaLahat...
+              - sum(LaLaL3a.*L3b',2) ...
+              + sum(LaB.*KuuCiLahat',2) ...
+              - sum(LaB.*((KuuC*L3a)*L3b)',2)) ...
+             - (...
+                 sum(L2.*L2LaLa',2)...
+                 - sum(L2.*((L2La*L3a)*L3b)', 2) ...
+                 + sum(L2.*L2BKuuCiLahat',2)...
+                 - sum(L2.*((L2BKuuC*L3a)*L3b)',2));
+        s2 = s2';
+      
+        % Set the parameters for the actual gradient evaluation
+        b2 = s2; 
+        b3 = derivative(f, gp.likelih);
+        L = repmat(sqrtW,1,m).*L2;
+        for i=1:length(ind)
+            La{i} = La2{i} + diag(1./W(ind{i}));
+        end
     end
     % =================================================================
     % Evaluate the gradients from covariance functions

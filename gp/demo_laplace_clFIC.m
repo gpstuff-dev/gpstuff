@@ -108,7 +108,6 @@ gradcheck(gp_pak(gp,'all'), @gpla_e, @gpla_g, gp, x, y, 'all')
 
 w=gp_pak(gp, 'hyper');
 
-
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
 n=length(y);

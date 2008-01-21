@@ -34,7 +34,7 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
         n0 = size(x,1);
         La20 = [];
         b0 = 0;
-
+        
         % Create a table of constants that are needed in 
         % the function evaluations
         switch gp.likelih
@@ -56,7 +56,7 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
     
     function [e, edata, eprior, f, L, La2, b] = laplace_algorithm(w, gp, x, y, param, varargin)
 
-        if abs(w-w0) < 1e-12 % 1e-8
+        if abs(w-w0) < 1e-8 % 1e-8
             % The covariance function parameters haven't changed so just 
             % return the Energy and the site parameters that are saved
             e = e0;
@@ -97,8 +97,8 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
                         opt=optimset(opt,'Hessian','on');
                         fhm = @(W, f, varargin) (K\f + repmat(W,1,size(f,2)).*f);  % W*f; %
                         opt=optimset(opt,'HessMult', fhm);
-                        opt=optimset(opt,'TolX', 1e-14);
-                        opt=optimset(opt,'TolFun', 1e-12);
+                        opt=optimset(opt,'TolX', 1e-8);
+                        opt=optimset(opt,'TolFun', 1e-8);
                         opt=optimset(opt,'LargeScale', 'on');
                         opt=optimset(opt,'Display', 'off'); % 'iter'
                     else
@@ -210,8 +210,8 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
                         opt=optimset(opt,'Hessian','on');
                         fhm = @(W, f, varargin) (f./repmat(Lav,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; %
                         opt=optimset(opt,'HessMult', fhm);
-                        opt=optimset(opt,'TolX', 1e-14);
-                        opt=optimset(opt,'TolFun', 1e-14);
+                        opt=optimset(opt,'TolX', 1e-8);
+                        opt=optimset(opt,'TolFun', 1e-8);
                         opt=optimset(opt,'LargeScale', 'on');
                         opt=optimset(opt,'Display', 'off');   % 'iter'
                     else
@@ -253,6 +253,131 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
                 % PIC
                 % ============================================================
               case 'PIC_BLOCK'
+                ind = gp.tr_index;
+                u = gp.X_u;
+                m = length(u);
+                
+                % First evaluate needed covariance matrices
+                % v defines that parameter is a vector
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
+                % Evaluate the Lambda (La) 
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                B=Luu\(K_fu');       % u x f
+                
+                % First some helper parameters
+                iLaKfu = zeros(size(K_fu));  % f x u
+                for i=1:length(ind)
+                    Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+                    [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+                    Labl{i} = Cbl_ff - Qbl_ff;
+                    iLabl{i} = inv(Labl{i});
+                    iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
+                end
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;     % Ensure symmetry
+                A = chol(A);
+                L = iLaKfu/A;                
+                % Begin optimization
+                switch gp.laplace_opt.optim_method
+                    % find the mode by fminunc large scale method
+                  case 'fminunc_large'
+                    if ~isfield(gp.laplace_opt, 'fminunc_opt')
+                        opt=optimset('GradObj','on');
+                        opt=optimset(opt,'Hessian','on');
+                        fhm = @(W, f, varargin) (iKf(f)  + repmat(W,1,size(f,2)).*f);
+                        opt=optimset(opt,'HessMult', fhm);
+                        opt=optimset(opt,'TolX', 1e-8);
+                        opt=optimset(opt,'TolFun', 1e-8);
+                        opt=optimset(opt,'LargeScale', 'on');
+                        opt=optimset(opt,'Display', 'off');   % 'iter'
+                    else
+                        opt = gp.laplace_opt.fminunc_opt;
+                    end
+
+                    [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
+                    f = f';
+                    
+                    W = hessian(f, gp.likelih);
+                    sqrtW = sqrt(W);
+                    
+                    ikf = iKf(f);
+                    logZ = 0.5*f'*ikf - loglikelihood(f, gp.likelih);
+                    
+                    % find the mode by Scaled conjugate gradient method
+                  case 'SCG'
+                    if ~isfield(gp.laplace_opt, 'scg_opt')
+                        opt(1) = 0;
+                        opt(2) = 1e-6;
+                        opt(3) = 3e-6;
+                        opt(9) = 0;
+                        opt(10) = 0;
+                        opt(11) = 0;
+                        opt(14) = 500;
+                    else
+                        opt = gp.laplace_opt.scg_opt;
+                    end
+                    
+                    fe = @(f, varargin) (0.5*f*iKf(f') - loglikelihood(f', gp.likelih));
+                    fg = @(f, varargin) (iKf(f') - derivative(f', gp.likelih))';
+                    [f, opt, flog]=scg(fe, f', opt, fg);
+                    f = f';
+                    
+                    W = hessian(f, gp.likelih);
+                    sqrtW = sqrt(W);
+                    
+                    ikf = iKf(f);
+                    logZ = 0.5*f'*ikf - loglikelihood(f, gp.likelih);
+                    % find the mode by Quasi-Newton iteration
+                  case 'quasiNewton'
+                    if ~isfield(gp.laplace_opt, 'scg_opt')
+                        opt(1) = 0;
+                        opt(2) = 1e-5;
+                        opt(3) = 3e-5;
+                        opt(9) = 0;
+                        opt(10) = 0;
+                        opt(11) = 0;
+                        opt(14) = 500;
+                        opt(15) = 1e-4;
+                        opt(18)=0;
+                    else
+                        opt = gp.laplace_opt.scg_opt;
+                    end
+                    
+                    fe = @(f, varargin) (0.5*f*iKf(f') - loglikelihood(f', gp.likelih));
+                    fg = @(f, varargin) (iKf(f') - derivative(f', gp.likelih))';
+                    [f, opt, flog]=quasinew(fe, f', opt, fg);
+                    f = f';
+                    
+                    W = hessian(f, gp.likelih);
+                    sqrtW = sqrt(W);
+                    
+                    ikf = iKf(f);
+                    logZ = 0.5*f'*ikf - loglikelihood(f, gp.likelih);
+
+                    % find the mode by Newton iteration
+                  case 'Newton'
+                   error('The Newton algorithm is not implemented for PIC!\n') 
+                end
+                WKfu = repmat(sqrtW,1,m).*K_fu;
+                edata = 0;
+                for i=1:length(ind)
+                    Lahat = eye(size(Labl{i})) + diag(sqrtW(ind{i}))*Labl{i}*diag(sqrtW(ind{i}));
+                    iLahatWKfu(ind{i},:) = Lahat\WKfu(ind{i},:);
+                    edata = edata + 2.*sum(log(diag(chol(Lahat)')));
+                end
+                A = K_uu + WKfu'*iLahatWKfu;   A = (A+A')./2;
+                A = chol(A);
+                edata =  edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
+                edata = logZ + 0.5*edata;
+                
+                La2 = Labl;
+                b = derivative(f, gp.likelih);
+                
               otherwise
                 error('Unknown type of Gaussian process!')
             end
@@ -324,5 +449,18 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
                 Hessian = gp.avgE.*exp(f);
             end
         end
+        function [e, g, h] = egh(f, varargin)
+            ikf = iKf(f');
+            e = 0.5*f*ikf - loglikelihood(f', gp.likelih);
+            g = (ikf - derivative(f', gp.likelih))';
+            h = hessian(f', gp.likelih);
+        end        
+        function ikf = iKf(f, varargin)
+            iLaf = zeros(size(f));
+            for i=1:length(ind)
+                iLaf(ind{i},:) = iLabl{i}*f(ind{i},:);
+            end
+            ikf = iLaf - L*(L'*f);
+        end        
     end
 end

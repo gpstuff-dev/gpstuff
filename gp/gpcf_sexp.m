@@ -763,7 +763,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         if length(varargin) > 4
                             gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
                                 + 0.5.*(-b2(ind{i})*DKff_l{i,i2}*b3(ind{i}) ...
-                                    + 2.*b2(ind{i})*DKuf_l{i2}(:,ind{i})'*iKuuKuf(:,ind{i})*b3(ind{i})'- ...
+                                    + 2.*b2(ind{i})*DKuf_l{i2}(:,ind{i})'*iKuuKuf(:,ind{i})*b3(ind{i})- ...
                                     b2(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i}));
                         end
                     end
@@ -852,7 +852,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf_l')*iKuuKuf))) - ...
                                    sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
                 if length(varargin) > 4
-                    gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf_l'-(b2*KfuiKuuDKuu_l))*(iKuuKuf*b3');
+                    gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf_l'-(b2*KfuiKuuDKuu_l))*(iKuuKuf*b3);
                 end
                 for i=1:length(K_ff)
                     gdata(i1) = gdata(i1) ...                   %   + trace(Labl{i}\H(ind{i},ind{i})) ...
@@ -1066,7 +1066,7 @@ function gpcf = gpcf_sexp(do, varargin)
                                     sum(sum(L(trindex{i1},:)'.*((L(trindex{i1},:)'*KfuiKuuDKuu_u(trindex{i1},:))*iKuuKuf(:,trindex{i1}))))); 
                         if length(varargin) > 4
                             gradient(ind) = gradient(ind) + 0.5.*(2.*b2(trindex{i1})*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})*b3(trindex{i1})- ...
-                                    b2(trindex{i1})*KfuiKuuDKuu_u(trindex{i1},:)*iKuuKuf(:,trindex{i1})*b3(trindex{i1})'); 
+                                    b2(trindex{i1})*KfuiKuuDKuu_u(trindex{i1},:)*iKuuKuf(:,trindex{i1})*b3(trindex{i1})); 
                         end
                     end
                     ind = ind +1;

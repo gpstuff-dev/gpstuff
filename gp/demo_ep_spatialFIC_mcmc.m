@@ -1,6 +1,6 @@
 function demo_ep_spatialFIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-28 16:32:58 EEST
+%   Last modified: 2008-01-09 14:26:12 EET
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -8,7 +8,9 @@ function demo_ep_spatialFIC_mcmc
     
 % First load the data
 %=======================================================================
-    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+    S = which('demo_ep_spatialFIC_mcmc');
+    L = strrep(S,'demo_ep_spatialFIC_mcmc.m','demos/aivoverisuonitaudit911_9600.mat');
+    load(L);
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -52,7 +54,7 @@ function demo_ep_spatialFIC_mcmc
     
     [n, nin] = size(xx);
 
-    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1.5, 'magnSigma2', 0.01);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -92,16 +94,15 @@ function demo_ep_spatialFIC_mcmc
     H=full(H);
     S=inv(H);
     exp(w)
-    save ep_spatial_FIC_20
 
     gp = gp_unpak(gp,w,'hyper');
-    [Ef, Varf] = ep_pred(gp, xx, yy, xx, blockindex);
+    [Ef, Varf] = ep_pred(gp, xx, yy, xx, 'hyper');
 
     % Plot the maps and the Normal approximation of the 
     % hyperparameter posterior
     figure(1)
     G=repmat(NaN,size(Y));
-    G(xxii)=exp(-Ef);
+    G(xxii)=exp(Ef);
     pcolor(X1,X2,G),shading flat
     colormap(mapcolor(G)),colorbar
     axis equal
