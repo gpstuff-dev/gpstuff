@@ -1,8 +1,5 @@
 function  [blocks, Xu] = set_PIC(x, dims, cellsize, blocksize, indtype, visualize)
  
-
-% define the blocks by cubes! Total 9 cubes
-
 ly = dims(2)/blocksize;
 lx = dims(4)/blocksize;
 
@@ -43,7 +40,8 @@ switch indtype
     xii2=[xii2(:) yii2(:)];
     xii = [xii;xii2];
     qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
-    qii=qm<=blocksize/2;sum(qii);
+    %qii=qm<=blocksize/4;sum(qii);
+    qii=qm<=2;sum(qii);
     Xu = unique(xii(qii,:), 'rows');
 end
 
@@ -57,6 +55,7 @@ numu = length(Xu);
 % Include the blocks with too few data points into larger ones
 go = 1; i1=1;
 while go == 1
+    % If the block is too small include it in an other block
     if length(index{i1}) < maxblock/2
         meandist=[];
         if i1>1
@@ -74,8 +73,29 @@ while go == 1
             end
             meandist(i2) = mean(mean(sqrt(D)));
         end
+        sortedmeandist = sort(meandist);
         minmean = others(find(meandist == min(meandist)));
+        if max(size(minmean)) > 1 
+            minmean = minmean(1);
+        end
         index{i1} =  sort([index{i1};index{minmean}]);
+% $$$         % Set the block into the nearest (in averige) if the total block size is 
+% $$$         % less than 1.5 x max blocksize
+% $$$         if length(index{i1})+length(index{minmean}) < 1.25*maxblock
+% $$$             index{i1} =  sort([index{i1};index{minmean}]);
+% $$$             % Else take the second nearest and so on until found reasonable block
+% $$$         elseif length(index{i1})+length(index{others(find(meandist == sortedmeandist(2)))}) < 1.25*maxblock 
+% $$$             minmean = others(find(meandist == sortedmeandist(2)));
+% $$$             index{i1} =  sort([index{i1};index{minmean}]);
+% $$$             % Else take the third nearest and so on until found reasonable block
+% $$$         elseif length(index{i1})+length(index{others(find(meandist == sortedmeandist(3)))}) < 1.25*maxblock 
+% $$$             minmean = others(find(meandist == sortedmeandist(3)));
+% $$$             index{i1} =  sort([index{i1};index{minmean}]);
+% $$$             % Else take the fourth nearest and so on until found reasonable block
+% $$$         else length(index{i1})+length(index{others(find(meandist == sortedmeandist(4)))}) < 1.25*maxblock 
+% $$$             minmean = others(find(meandist == sortedmeandist(4)));
+% $$$             index{i1} =  sort([index{i1};index{minmean}]);
+% $$$         end
         if minmean==1
             index = {index{2:end}};
         elseif minmean==length(index)
