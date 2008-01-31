@@ -15,7 +15,7 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
 %	
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
+% Copyright (c) 2007      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -23,7 +23,7 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
     
     if strcmp(w, 'init')
         w0 = rand(size(gp_pak(gp, param)));
-        e0=[]; 
+        e0=[]; , Jaakko Riihimï¿½ki
         edata0= inf; 
         eprior0=[];
 

@@ -19,7 +19,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
 %	See also   
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
+% Copyright (c) 2007      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

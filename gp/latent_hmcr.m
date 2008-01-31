@@ -32,6 +32,10 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
       case 'FIC'
         u = gp.X_u;
         Lav=[];
+      case 'CS+FIC'
+        u = gp.X_u;
+        Labl=[];
+        Lp = [];            
       case {'PIC_BLOCK','CS+PIC'}
         u = gp.X_u;
         ind = gp.tr_index;
@@ -81,7 +85,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             zs(ind{i}) = Lp{i}\z(ind{i});
         end
         w = zs + U*((J*U'-U')*zs);
-      case 'CS+PIC'
+      case {'CS+PIC' 'CS+FIC'}
         getL(z, gp, x, y, u);
         %zs = Lp\z;
         zs = Lp*z;
@@ -132,7 +136,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
         for i=1:length(ind)
             z(ind{i}) = Lp{i}*w2(ind{i});
         end
-      case  'CS+PIC'
+      case  {'CS+PIC' 'CS+FIC'}
         w2 = w + U*(iJUU*w);
         %        z = Lp*w2;
         z = Lp\w2;
@@ -192,7 +196,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             end
             g = g + g*U*(iJUU);
             %g = g';
-          case {'PIC_BAND','CS+PIC'}
+          case {'PIC_BAND','CS+PIC','CS+FIC'}
             w2= w + U*(iJUU*w);
             %            z = Lp*w2;
             z = Lp\w2;
@@ -246,7 +250,7 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
             for i=1:length(ind)
                eprior = eprior + 0.5*z(ind{i})'/Labl{i}*z(ind{i});
             end
-          case {'PIC_BAND','CS+PIC'}
+          case {'PIC_BAND','CS+PIC','CS+FIC'}
             w2= w + U*(iJUU*w);
             %            z = Lp*w2;
             z = Lp\w2;
@@ -360,6 +364,71 @@ function [z, energ, diagn] = latent_hmcr(z, opt, varargin)
                                               % J = diag(sqrt(2./(1+diag(S))));
                 iJUU = J\U'-U';
                 iJUU(abs(iJUU)<eps)=0;
+             case 'CS+FIC'
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                cf_orig = gp.cf;
+                
+                cf1 = {};
+                cf2 = {};
+                j = 1;
+                k = 1;
+                for i = 1:length(gp.cf)
+                    if ~isfield(gp.cf{i},'cs')
+                        cf1{j} = gp.cf{i};
+                        j = j + 1;
+                    else
+                        cf2{k} = gp.cf{i};
+                        k = k + 1;
+                    end         
+                end
+                gp.cf = cf1;        
+
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';                
+                B=Luu\(K_fu');       % u x f
+
+                Qv_ff=sum(B.^2)';
+                Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
+                
+                gp.cf = cf2;        
+                K_cs = gp_trcov(gp,x);
+                Labl = sparse(1:n,1:n,Lav,n,n) + K_cs;
+                gp.cf = cf_orig;
+                iLaKfu = Labl\K_fu;
+                % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                % and form iLaKfu
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;            % Ensure symmetry
+                
+                % L = iLaKfu*inv(chol(A));
+                iLaKfuic = iLaKfu*inv(chol(A));
+                
+                %Lp = chol(inv(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl)));
+                %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
+                Lp = inv(Labl);
+                Lp = sparse(1:n,1:n,gp.avgE,n,n) + Lp;
+                Lp = chol(Lp)';
+                %                Lp = inv(Lp);
+
+
+                b=zeros(size(B'));
+                
+                %                b = Lp*iLaKfuic;
+                b = Lp\iLaKfuic;
+                
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;                      
               case 'CS+PIC'
                 % Q_ff = K_fu*inv(K_uu)*K_fu'
                 % Here we need only the diag(Q_ff), which is evaluated below

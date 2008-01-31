@@ -48,13 +48,13 @@ function demo_spatialCSandPIC
     ye=EA(xxii);
     %=======================================================================
 
-    bls = 4; indtype = 'corners';
+    bls = 5; indtype = 'corners';
     %[blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners', 1);
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
     
     [n, nin] = size(xx);
 
-    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 3, 'magnSigma2', 0.01);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -62,11 +62,16 @@ function demo_spatialCSandPIC
     gpcf2.p.lengthScale = t_p({1 4});
     gpcf2.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'CS+PIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+    gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
     gp.avgE = ye; 
-    gp = gp_init('set', gp, 'blocks', {'manual', xx, blockindex}, 'X_u', Xu);
     gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr, zeros(size(yy))'});
 
+    [e, edata, eprior] = gp_e(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+    [g, gdata, gprior] = gp_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+    gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, xx, yy, 'hyper')
+
+    
+    
     % Set the parameters 
     opt=gp_mcopt;
     opt.nsamples=1;

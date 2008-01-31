@@ -8,7 +8,8 @@ function demo_ep_spatialPIC_mcmc
     
 % First load the data
 %=======================================================================
-    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+%    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+    load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -47,7 +48,6 @@ function demo_ep_spatialPIC_mcmc
     ye=EA(xxii);
     ye = max(ye,1e-3);
     %=======================================================================
-
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, 4, 'corners', 1);
     
     [n, nin] = size(xx);
@@ -236,7 +236,7 @@ function demo_ep_spatialPIC_mcmc
     title('probability p(\mu>1)')
 
 
-    % Tästä alaspäin kuvat suuremmalla resoluutiolla. 
+    % Tï¿½stï¿½ alaspï¿½in kuvat suuremmalla resoluutiolla. 
     % Aja joko alla oleva for-silmukka tai lataa apu_spatial1r2, jonne on
     % tallennettu for-silmukan tulokset.
     [X1t,X2t]=meshgrid(.5:.5:35,.5:.5:60);
