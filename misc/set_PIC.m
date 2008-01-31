@@ -25,7 +25,7 @@ switch indtype
     [xii,yii]=meshgrid(b1,b2);
     xii=[xii(:) yii(:)];
     qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
-    qii=qm<=blocksize/2;sum(qii);
+    qii=qm<=blocksize/2;
     Xu = unique(xii(qii,:), 'rows');
   case 'corners+1xside'
     b12 = linspace((b1(2)-b1(1))/2,dims(4)+(b1(2)-b1(1))/2,lx);
@@ -41,7 +41,23 @@ switch indtype
     xii = [xii;xii2];
     qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
     %qii=qm<=blocksize/4;sum(qii);
-    qii=qm<=2;sum(qii);
+    qii=qm<=blocksize/4;
+    Xu = unique(xii(qii,:), 'rows');
+  case 'corners+2xside'
+    b12 = linspace((b1(2)-b1(1))/3,dims(4)+(b1(2)-b1(1))/3,lx);
+    b22 = linspace((b2(2)-b2(1))/3,dims(2)+(b2(2)-b2(1))/3,ly);
+    b13 = linspace(2*(b1(2)-b1(1))/3,dims(4)+2*(b1(2)-b1(1))/3,lx);
+    b23 = linspace(2*(b2(2)-b2(1))/3,dims(2)+2*(b2(2)-b2(1))/3,ly);
+        
+    [xii,yii]=meshgrid(b1,b2);
+    [xii2a,yii2a]=meshgrid(b12,b2);
+    [xii2b,yii2b]=meshgrid(b1,b22);
+    [xii3a,yii3a]=meshgrid(b13,b2);
+    [xii3b,yii3b]=meshgrid(b1,b23);
+    xii = [xii(:) yii(:) ; xii2a(:) yii2a(:) ; xii2b(:) yii2b(:) ; xii3a(:) yii3a(:) ; xii3b(:) yii3b(:)];
+    qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
+    %qii=qm<=blocksize/4;sum(qii);
+    qii=qm<=blocksize/6;
     Xu = unique(xii(qii,:), 'rows');
 end
 
@@ -56,7 +72,7 @@ numu = length(Xu);
 go = 1; i1=1;
 while go == 1
     % If the block is too small include it in an other block
-    if length(index{i1}) < maxblock/2
+    if length(index{i1}) < (blocksize^2/4)
         meandist=[];
         if i1>1
             others = 1:i1-1;
@@ -151,7 +167,7 @@ if visualize == 1
     
     S = sprintf('%d blocks, with %.f data points in averige and %d/%d at most/least \n %d inducing inputs.', ...
                 length(index), avgblock, maxblock, minblock, numu);
-    H = text(-5, -10, S);
+    H = text(-5, -15, S);
     set(H, 'FontSize', 14);
 end
 
