@@ -173,7 +173,7 @@
        
        xx_grid = [];
        
-       load 'kunta_polygonit.mat'
+       load '/proj/finnwell/spatial/data/cancer2007/matlab/kunta_polygonit.mat'
        for i1 = 1:length(municipals)
            polygons = municipals{i1};
            for i2 = 1:length(polygons)
