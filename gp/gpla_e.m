@@ -23,7 +23,7 @@ function [e, edata, eprior, f, L, La2, b] = gpla_e(w, gp, x, y, param, varargin)
     
     if strcmp(w, 'init')
         w0 = rand(size(gp_pak(gp, param)));
-        e0=[]; , Jaakko Riihim�ki
+        e0=[];
         edata0= inf; 
         eprior0=[];
 

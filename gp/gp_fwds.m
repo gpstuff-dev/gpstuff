@@ -38,7 +38,12 @@ nin  = gp.nin;
 nout = gp.nout;
 
 nmc=size(gp.hmcrejects,1);
-Y = zeros(size(x,1),nout,nmc);
+Y = zeros(size(x,1),nmc);
+
+if strcmp(gp.type, 'PIC_BLOCK')
+    ind = gp.tr_index;           % block indeces for training points
+    gp = rmfield(gp,'tr_index');
+end
 
 % loop over all samples
 for i1=1:nmc
@@ -66,7 +71,7 @@ for i1=1:nmc
 % $$$       [c,CC] = gp_trcov(Gp,x);
 % $$$       VarY(:,:,i1) = CC - K'*(C\K);
         end
-        Y(:,:,i1) = y;
+        Y(:,i1) = y;
       case 'FIC'        % Do following if FIC sparse model is used
         % Calculate some help matrices  
         u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
@@ -87,36 +92,32 @@ for i1=1:nmc
             iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
         end
         A = K_uu+K_fu'*iLaKfu;
+        A = (A+A')./2;
+        L = iLaKfu/chol(A);
         
         if size(ty,2)>1
-            p = ty(:,i1)./Lav - iLaKfu*(A\(iLaKfu'*ty(:,i1))); 
+            p = ty(:,i1)./Lav - L*(L'*ty(:,i1)); 
             y = K_nu*(K_uu\(K_fu'*p));
             %            y = K_nu*(S*(K_fu'*(ty(:,i1)./Lav)));
             %  y=K_nu*S*K_uf*diag(1./La)*ty(:,i1);
         else    % Here latent values are not present
-            p = ty./Lav - iLaKfu*(A\(iLaKfu'*ty)); 
+            p = ty./Lav - L*(L'*ty); 
             y = K_nu *(K_uu\(K_fu'*p));
             %y = K_nu*(iKuuKufiLa*ty + iKuuKufiLa*(K_fu*(Sinv\(K_fu'*(ty./Lav)))));
                 %y = K_nu*(Sinv\(K_fu'*(ty./Lav)));
                 %y=K_nu*Sinv*K_uf*diag(1./La)*ty;
         end
         if nargout > 1   % see Quinonera-Candela&Rasmussen (2005)
-            error('Variance is not yet implemented for FIC! \n')
-% $$$             B=Luu\(K_nu');
-% $$$             Qv_nn=sum(B.^2)';
-% $$$             % Vector of diagonal elements of covariance matrix
-% $$$             L = chol(S)';
-% $$$             b = L\K_nu';
-% $$$             [Kv_nn, Cv_nn] = gp_trvar(Gp,x);
-% $$$             VarY(:,:,i1) = Kv_nn - Qv_nn + sum(b.^2)';
+            Knn_v = gp_trvar(Gp,x);
+            B2=Luu\(K_nu');        
+            VarY(:,i1) = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
         end
         Y(:,i1) = y;
-        
+               
       case 'PIC_BLOCK'        % Do following if FIC sparse model is used
         % Calculate some help matrices  
         u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
-        ind = varargin{1};           % block indeces for training points
-        tstind = varargin{2};        % block indeces for test points
+        tstind = varargin{1};        % block indeces for test points
         
         [Kv_ff, Cv_ff] = gp_trvar(Gp, tx);  % 1 x f  vector
         K_fu = gp_cov(Gp, tx, u);         % f x u
@@ -137,6 +138,7 @@ for i1=1:nmc
         end
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;            % Ensure symmetry
+        L = iLaKfu/chol(A);
         
         if size(ty,2)>1
             tyy = ty(:,i1);
@@ -165,18 +167,47 @@ for i1=1:nmc
         %    [max(- sum(K_nu.*w_bu,2) + w_n), mean(- sum(K_nu.*w_bu,2) + w_n), min(- sum(K_nu.*w_bu,2) + w_n)]
         y = K_nu*w_u - sum(K_nu.*w_bu,2) + w_n;
         
-        if nargout > 1   
-            error('Variance is not yet implemented for PIC! \n')
-% $$$             B=Luu\(K_nu');
-% $$$             Qv_nn=sum(B.^2)';
-% $$$             % Vector of diagonal elements of covariance matrix
-% $$$             L = chol(S)';
-% $$$             b = L\K_nu';
-% $$$             [Kv_nn, Cv_nn] = gp_trvar(Gp,x);
-% $$$             VarY(:,:,i1) = Kv_nn - Qv_nn + sum(b.^2)';
+        if nargout > 1
+            kstarstar = gp_trvar(Gp, x);
+            iKuuKuf = K_uu\K_fu';
+            KnfL = K_nu*(iKuuKuf*L);
+            Varf = zeros(length(x),1);
+            for i=1:length(ind)
+                v_n = gp_cov(Gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+                v_bu = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+                KnfLa = K_nu*(iKuuKuf(:,ind{i})/chol(La{i}));
+                KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(La{i});
+                Varf = Varf + sum((KnfLa).^2,2);
+                KnfL(tstind{i},:) = KnfL(tstind{i},:) - v_bu*L(ind{i},:) + v_n*L(ind{i},:);
+            end
+            Varf = kstarstar - (Varf - sum((KnfL).^2,2));  
+            
+            VarY(:,i1) = Varf;
+%             Knn_v = gp_trvar(Gp,x);
+%             iKuuKuf = K_uu\K_fu';
+%             v_bu = zeros(length(x),length(tx));
+%             v_n = zeros(length(x),length(tx));
+%             for i=1:length(ind)
+%                 K_nf = gp_cov(Gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+%                 v_bu(tstind{i},ind{i}) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+%                 v_n(tstind{i},ind{i}) = K_nf;
+%             end
+%             K_nf = K_nu*iKuuKuf - v_bu + v_n;
+%     
+%             ntest=size(x,1);
+%             Vary = zeros(ntest,1);
+%             %Varf = zeros(ntest,ntest);
+%             for i=1:length(ind)
+%                 Vary = Vary + sum((K_nf(:,ind{i})/chol(La{i})).^2,2);
+%                 %Varf = Varf + (K_nf(:,ind{i})/La{i})*K_nf(:,ind{i})' - K_nf(:,ind{i})*L(ind{i},:)*L(ind{i},:)'*K_nf(:,ind{i})';
+%             end
+%             %Varf = kstarstar - diag(Varf);
+%         
+%             VarY(:,i1) = Knn_v - (Vary - sum((K_nf*L).^2,2));
         end
         
-        Y(:,:,i1) = y;
+        Y(:,i1) = y;
+        
       case 'CS+PIC'
         % Calculate some help matrices  
         u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
@@ -308,7 +339,7 @@ function x = take_nth(x,nth)
 %   See also
 %     THIN, JOIN
 
-% Copyright (c) 1999 Simo Särkkä
+% Copyright (c) 1999 Simo Sï¿½rkkï¿½
 % Copyright (c) 2000 Aki Vehtari
 % Copyright (c) 2006 Jarno Vanhatalo
 

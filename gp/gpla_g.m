@@ -110,7 +110,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         L2 = B2/chol(A2);                
         
         % components for (I+(Qff+La2)*W))^(-1) = Lahat^(-1) - L3a*L3b
-        
         B3 = repmat(Lahat,1,m).\K_fu;
         L3b = (K_fu'.*repmat(W',m,1))./repmat(Lahat',m,1);
         A3 = K_uu + L3b*K_fu; A3=(A3+A3)/2;
@@ -179,6 +178,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             fiLa(ind{i}) = f(ind{i})'/La2{i};
             La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
             Lahat{i} = eye(size(La{i})) + La{i};
+            Lahat2{i} = eye(size(La{i})) + La2{i}*diag(W(ind{i}));
         end
         b = fiLa - (f'*L)*L';
         B = (repmat(sqrtW,1,m).*K_fu);
@@ -194,13 +194,13 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         L3b = K_fu'.*repmat(W',m,1);
         for i=1:length(ind)
             B3(ind{i},:) = Lahat{i}\K_fu(ind{i},:);
-            L3b(:,ind{i}) = L3b(:,ind{i})/Lahat{i};
+            L3b(:,ind{i}) = L3b(:,ind{i})/Lahat2{i};
         end
         A3 = K_uu + L3b*K_fu; A3=(A3+A3)/2;
         A3 = chol(A3);
         L3a = B3/A3;
         L3b = A3'\L3b;
-        
+                                
         % Components for  W^(1/2)*(Qff + La2)*W^(1/2)*dW/dth
         %              =  La + B*K_uu^(-1)*B'*thirdg_f 
         %              =  La + B*K_uu^(-1)*C 

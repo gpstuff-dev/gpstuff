@@ -1,5 +1,5 @@
 
-function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, param, varargin)
+function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, param, varargin)
 %GP2_E	Evaluate error function for Gaussian Process.
 %
 %	Description
@@ -35,7 +35,10 @@ if strcmp(w, 'init')
     n0 = size(x,1);
     La20 = [];
     b0 = 0;
-
+    RR0 = [];
+    DD0 = [];
+    PP0=[];
+    
     % Create a table of constants that are needed in
     % the function evaluations
     switch gp.likelih
@@ -51,13 +54,13 @@ if strcmp(w, 'init')
     gp.fh_e = @ep_algorithm;
     e = gp;
 else
-    [e, edata, eprior, site_tau, site_nu, L, La2, b] = feval(gp.fh_e, w, gp, x, y, param, varargin);
+    [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = feval(gp.fh_e, w, gp, x, y, param, varargin);
 
 end
 
-    function [e, edata, eprior, tautilde, nutilde, L, La2, b] = ep_algorithm(w, gp, x, y, param, varargin)
+    function [e, edata, eprior, tautilde, nutilde, L, La2, b, D, R, P] = ep_algorithm(w, gp, x, y, param, varargin)
 
-        if abs(w-w0) < 1e-8
+        if 1==0  %abs(w-w0) < 1e-8
             % The covariance function parameters haven't changed so just
             % return the Energy and the site parameters that are saved
             e = e0;
@@ -69,6 +72,9 @@ end
             L = L0;
             La2 = La20;
             b = b0;
+            R = RR0;
+            D = DD0;
+            P = PP0;
         else
             % Conduct evaluation for the energy and the site parameters
             gp=gp_unpak(gp, w, param);
@@ -315,7 +321,8 @@ end
                     end
                     edata = logZep;
                     %L = iLaKfu;
-
+                    
+                    D = D_vec;
                     b = nutilde'.*(1 - Stildesqroot./Lahat.*Stildesqroot)' - (nutilde'*Lhat)*Bhat.*tautilde';
                     L = ((repmat(Stildesqroot,1,m).*SsqrtKfu)./repmat(D',m,1)')/AA';
                     La2 = 1./(Stildesqroot./D.*Stildesqroot);
@@ -469,7 +476,7 @@ end
                     end
                     edata = logZep;
                     %L = L2;
-
+                    
                     b = zeros(1,n);
                     for i=1:length(ind)
                         b(ind{i}) = nutilde(ind{i})'/Lahat{i};
@@ -699,6 +706,9 @@ end
             n0 = size(x,1);
             La20 = La2;
             b0 = b;
+            RR0 = R;
+            DD0 = D;
+            PP0 = P;
         end
         %
         % ==============================================================
