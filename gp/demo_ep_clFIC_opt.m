@@ -12,7 +12,7 @@ function demo_ep_clFIC_opt
 %      matrices. A Bayesian aprouch is used to find the decision
 %      line and predict the classes of new data points.
 
-% Copyright (c) 2007 Jarno Vanhatalo, Jaakko Riihimäki
+% Copyright (c) 2007 Jarno Vanhatalo, Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -87,11 +87,13 @@ plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 gp = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, []);
 gp = gp_init('set', gp, 'X_u', U);
 gp.ep_opt.display = 1;
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'all'});
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
+%gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'all'});
 
 % $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 % $$$ [g, gdata, gprior] = gpep_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 % $$$ gradcheck(gp_pak(gp,'all'), @gpep_e, @gpep_g, gp, x, y, 'all')
+gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, x, y, 'hyper')
 
 disp(' ')
 disp(' Find the point estimates for the parameters with early stop method. ')

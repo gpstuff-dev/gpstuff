@@ -64,7 +64,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         m = size(u,1);
         
         if length(varargin) < 1
-            error('The argument telling the optimzed/sampled parameters has to be provided.') 
+            error('The argument telling the optimized/sampled parameters has to be provided.') 
         end
 
         [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
@@ -108,7 +108,78 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         end
         
       case 'PIC_BLOCK'
+        u = gp.X_u;
+        K_fu = gp_cov(gp, tx, u);         % f x u
+        K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        K_nu=gp_cov(gp,x,u);
         
+        ind = gp.tr_index;
+        param = varargin{1};
+        tstind = varargin{2};
+        ntest = size(x,1);
+        m = size(u,1);
+        
+        if length(varargin) < 1
+            error('The argument telling the optimized/sampled parameters has to be provided.') 
+        end
+
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+        
+        deriv = b;
+        
+        iKuuKuf = K_uu\K_fu';
+        w_bu=zeros(length(x),length(u));
+        w_n=zeros(length(x),1);
+        for i=1:length(ind)
+            w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
+            K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+            w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
+        end
+        
+        Ef = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
+                    
+        % Evaluate the variance
+        if nargout > 1
+            W = hessian(f, gp.likelih);
+            kstarstar = gp_trvar(gp,x);
+            Luu = chol(K_uu)';
+            sqrtW = sqrt(W);
+            % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+            for i=1:length(ind)
+                La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
+                Lahat{i} = eye(size(La{i})) + La{i};
+            end
+            B = (repmat(sqrt(W),1,m).*K_fu);
+            for i=1:length(ind)
+                B2(ind{i},:) = Lahat{i}\B(ind{i},:);
+            end
+            A2 = K_uu + B'*B2; A2=(A2+A2)/2;
+            L2 = B2/chol(A2);
+          
+            iKuuB = K_uu\B';
+            KnfL = K_nu*(iKuuB*L2);
+            Varf = zeros(length(x),1);
+            for i=1:length(ind)
+                v_n = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+                v_bu = K_nu(tstind{i},:)*iKuuB(:,ind{i});
+                KnfLa = K_nu*(iKuuB(:,ind{i})/chol(La{i}));
+                KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(La{i});
+                Varf = Varf + sum((KnfLa).^2,2);
+                KnfL(tstind{i},:) = KnfL(tstind{i},:) - v_bu*L2(ind{i},:) + v_n*L2(ind{i},:);
+            end
+            Varf = kstarstar - (Varf - sum((KnfL).^2,2));  
+                        
+            for i1=1:ntest
+                switch gp.likelih
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
+                end
+            end
+        end
+
     end
 %
 % ==============================================================

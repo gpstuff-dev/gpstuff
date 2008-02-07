@@ -19,7 +19,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
 %	See also   
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
+% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -68,9 +68,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % Do not go further
         return;
         % ============================================================
-        % FIC
+        % SPARSE MODELS
         % ============================================================
-      case 'FIC'
+      case {'FIC' 'PIC_BLOCK'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
         gprior_ind = zeros(1,numel(gp.X_u));
@@ -85,27 +85,43 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu        
         iKuuKuf = K_uu\K_fu';
-        
-        % ============================================================
-        % PIC
-        % ============================================================
-      case 'PIC_BLOCK'
+     case {'CS+FIC'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
         gprior_ind = zeros(1,numel(gp.X_u));
-        
+
         u = gp.X_u;
-        ind = gp.tr_index;
         DKuu_u = 0;
         DKuf_u = 0;
+
         [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
 
-        K_fu = gp_cov(gp, x, u);         % f x u
-        K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        m = length(u);
+        cf_orig = gp.cf;
 
+        cf1 = {};
+        cf2 = {};
+        j = 1;
+        k = 1;
+        for i = 1:ncf
+            if ~isfield(gp.cf{i},'cs')
+                cf1{j} = gp.cf{i};
+                j = j + 1;
+            else
+                cf2{k} = gp.cf{i};
+                k = k + 1;
+            end
+        end
+        gp.cf = cf1;
+
+        % First evaluate needed covariance matrices
+        % v defines that parameter is a vector
+        [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+        K_fu = gp_cov(gp, x, u);         % f x u
+        K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         iKuuKuf = K_uu\K_fu';
-        
+        gp.cf = cf_orig;
     end
     % =================================================================
     % Evaluate the gradients from covariance functions

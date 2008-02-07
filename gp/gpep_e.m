@@ -263,7 +263,7 @@ end
                                 RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
                                 R = cholupdate(R, RtRpnU, '+');
                             end
-                            eta(i1) = eta(i1) + (deltanutilde - deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
+                            eta(i1) = eta(i1) + (deltanutilde + deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
                             gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
                             myy = eta + P*gamma;
 
@@ -321,12 +321,13 @@ end
                     end
                     edata = logZep;
                     %L = iLaKfu;
+                                        
                     
-                    D = D_vec;
                     b = nutilde'.*(1 - Stildesqroot./Lahat.*Stildesqroot)' - (nutilde'*Lhat)*Bhat.*tautilde';
                     L = ((repmat(Stildesqroot,1,m).*SsqrtKfu)./repmat(D',m,1)')/AA';
                     La2 = 1./(Stildesqroot./D.*Stildesqroot);
-
+                    D = D_vec;
+   
                     % ============================================================
                     % PIC
                     % ============================================================
@@ -408,7 +409,7 @@ end
                                     RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
                                     R = cholupdate(R, RtRpnU, '+');
                                 end
-                                eta(bl_ind) = eta(bl_ind) + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dbl(:,in);
+                                eta(bl_ind) = eta(bl_ind) + (deltanutilde + deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dbl(:,in);
                                 gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
                                 myy = eta + P*gamma;
 
@@ -485,64 +486,56 @@ end
                     b = nutilde' - ((b + (nutilde'*Lhat)*Bhat).*tautilde');
 
                     L = (repmat(Stildesqroot,1,m).*iDSsqrtKfu)/AA';
-                case 'CS+PIC'
+                case 'CS+FIC'
                     u = gp.X_u;
-                    ind = gp.tr_index;
                     m = length(u);
-                        
                     cf_orig = gp.cf;
-            
+
                     cf1 = {};
                     cf2 = {};
                     j = 1;
                     k = 1;
-                    for i = 1:ncf 
+                    for i = 1:ncf
                         if ~isfield(gp.cf{i},'cs')
                             cf1{j} = gp.cf{i};
                             j = j + 1;
                         else
                             cf2{k} = gp.cf{i};
                             k = k + 1;
-                        end         
+                        end
                     end
                     gp.cf = cf1;
 
                     % First evaluate needed covariance matrices
                     % v defines that parameter is a vector
+                    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
                     K_fu = gp_cov(gp, x, u);         % f x u
                     K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
                     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
                     Luu = chol(K_uu)';
 
-
-                    %K_cs = feval(gp.cs.fh_trcov,gp,x);
-
                     % Evaluate the Lambda (La)
                     % Q_ff = K_fu*inv(K_uu)*K_fu'
-                    % Here we need only the blockdiag(Q_ff), which is evaluated below
-                    B=Luu\(K_fu');       % u x f  and B'*B = K_fu*K_uu*K_uf
-                    iLaKfu = zeros(size(K_fu));  % f x u
+                    B=Luu\(K_fu');       % u x f
+                    Qv_ff=sum(B.^2)';
+                    Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
 
-                    [I,J]=find(tril(sparse(gp.tr_indvec(:,1),gp.tr_indvec(:,2),1,n,n),-1));
-                    q_ff = sum(B(:,I).*B(:,J));
-                    q_ff = sparse(I,J,q_ff,n,n);
-                    c_ff = gp_covvec(gp, x(I,:), x(J,:))';
-                    c_ff = sparse(I,J,c_ff,n,n);
-                    [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-                    Labl = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
+                    iLaKfu = zeros(size(K_fu));  % f x u
 
                     gp.cf = cf2;
                     K_cs = gp_trcov(gp,x);
-                    Labl = Labl + K_cs;
-                    Lahat = inv(Labl);     % <--- note this is full matrix, has to be worked around
+                    La = sparse(1:n,1:n,Lav,n,n) + K_cs;
                     gp.cf = cf_orig;
 
-                    iLaKfu = Labl\K_fu;
+                    iLaKfu = La\K_fu;
 
                     A = K_uu+K_fu'*iLaKfu;
                     A = (A+A')./2;     % Ensure symmetry
                     A = chol(A);
                     L = iLaKfu/A;
+                    
+            
+                    Lahat = inv(La);     % <--- note this is full matrix, has to be worked around
                     I = eye(size(K_uu));
 
                     R0 = chol(inv(K_uu));
@@ -552,7 +545,7 @@ end
                     myy = zeros(size(y));
                     eta = zeros(size(y));
                     gamma = zeros(size(K_uu,1),1);
-                    D = Labl;
+                    D = La;
                     Ann=0;
 
                     while iter<=maxiter && abs(logZep_tmp-logZep)>tol
@@ -561,7 +554,7 @@ end
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         for i1=1:n
                             % approximate cavity parameters
-                            dn = Dbl(in,in); pn = P(i1,:)';
+                            dn = D(i1,i1); pn = P(i1,:)';
                             Ann = dn + sum((R*pn).^2);
                             tau_i = Ann^-1-tautilde(i1);
                             vee_i = Ann^-1*myy(i1)-nutilde(i1);
@@ -579,8 +572,8 @@ end
                             nutilde(i1) = sigm2hati^-1*muhati-vee_i;
 
                             % Update the parameters
-                            D = D - deltatautilde ./ (1+deltatautilde.*dn) * D(:,in)*D(:,in)';
-                            P(bl_ind,:) = P(bl_ind,:) - ((deltatautilde ./ (1+deltatautilde.*dn)).* Dbl(:,in))*pn';
+                            D = D - deltatautilde ./ (1+deltatautilde.*dn) * D(:,i1)*D(:,i1)';
+                            P = P - ((deltatautilde ./ (1+deltatautilde.*dn)).* D(:,i1))*pn';
                             updfact = deltatautilde./(1 + deltatautilde.*Ann);
                             if updfact > 0
                                 RtRpnU = R'*(R*pn).*sqrt(updfact);
@@ -589,59 +582,47 @@ end
                                 RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
                                 R = cholupdate(R, RtRpnU, '+');
                             end
-                            eta(bl_ind) = eta(bl_ind) + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dbl(:,in);
+                            eta = eta + (deltanutilde + deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*D(:,i1);
                             gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
                             myy = eta + P*gamma;
 
-                            D{bl} = Dbl;
                             % Store cavity parameters
                             muvec_i(i1,1)=myy_i;
                             sigm2vec_i(i1,1)=sigm2_i;
 
                         end
                         % Re-evaluate the parameters
-                        temp2 = zeros(size(R0P0t));
-                        for i=1:length(ind)
-                            temp1 = inv(eye(size(Labl{i})) + gtimes(Labl{i},tautilde(ind{i})'));
-                            D{i} = temp1*Labl{i};
-                            P(ind{i},:) = temp1*K_fu(ind{i},:);
-                            temp2(:,ind{i}) = R0P0t(:,ind{i})*gtimes(temp1,tautilde(ind{i}));
-                            eta(ind{i}) = D{i}*nutilde(ind{i});
-                        end
+                        tau = sparse(1:n,1:n,tautilde,n,n);
+                        temp1 = sparse(1:n,1:n,1,n,n)+La*tau;
+                        D = temp1\La;
+                        R0P0t = R0*K_fu';
+                        P = temp1\K_fu;
+                        temp2 = R0P0t*tau/temp1;
                         R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
+                        eta = D*nutilde;
                         gamma = R'*(R*(P'*nutilde));
                         myy = eta + P*gamma;
 
                         % Compute the marginal likelihood, see FULL model for
                         % details about equations
-                        %
-                        % First some helper parameters
-                        for i = 1:length(ind)
-                            Lahat{i} = inv(Labl{i}) + diag(tautilde(ind{i}));
-                            Lhat(ind{i},:) = Lahat{i}\L(ind{i},:);
-                        end
+                        Lahat = inv(La) + tau;
+                        Lhat = Lahat\L;
                         H = I-L'*Lhat;
                         B = H\L';
+                        Bhat = B/Lahat;
 
-                        % Compute the marginal likelihood, see FULL model for
-                        % details about equations
-                        Stildesqroot=sqrt(tautilde);
-                        term41 = 0; term52 = 0;
-                        for i=1:length(ind)
-                            Bhat(:,ind{i}) = B(:,ind{i})/Lahat{i};
-                            D2{i} = diag(Stildesqroot(ind{i}))*Labl{i}*diag(Stildesqroot(ind{i})) + eye(size(Labl{i}));
-                            SsqrtKfu(ind{i},:) = gtimes(K_fu(ind{i},:),Stildesqroot(ind{i}));
-                            iDSsqrtKfu(ind{i},:) = D2{i}\SsqrtKfu(ind{i},:);
-                            term41 = term41 + sum(log(diag(chol(D2{i},'lower'))));
-                            term52 = term52 + nutilde(ind{i})'*(Lahat{i}\nutilde(ind{i}));
-                        end
+                        % 4. term & 1. term
+                        Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
+                        D2 = Stildesqroot*La*Stildesqroot + sparse(1:n,1:n,1,n,n);
+                        SsqrtKfu = Stildesqroot*K_fu;
+                        iDSsqrtKfu = D2\SsqrtKfu;
                         AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
                         AA = chol(AA,'lower');
-                        term41 = term41 - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA)));
+                        term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA))) + sum(log(diag(chol(D2,'lower'))));
 
                         % 5. term (1/2 element) & 2. term
                         T=1./sigm2vec_i;
-                        term52 = -0.5*( term52 + (nutilde'*Lhat)*(Bhat*nutilde) - (nutilde./(T+tautilde))'*nutilde);
+                        term52 = -0.5*( nutilde'*(Lahat\nutilde) + (nutilde'*Lhat)*(Bhat*nutilde) - (nutilde./(T+tautilde))'*nutilde);
 
                         % 5. term (2/2 element)
                         term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
@@ -650,21 +631,21 @@ end
                         term3 = -marginalMoment0(gp.likelih);
 
                         logZep = term41+term52+term5+term3;
-                        iter=iter+1;
 
                         iter=iter+1;
                     end
                     edata = logZep;
-                    %L = L2;
+                    %L = iLaKfu;
+                    
+%                     b = nutilde'.*(1 - Stildesqroot./Lahat.*Stildesqroot)' - (nutilde'*Lhat)*Bhat.*tautilde';
+%                     L = ((repmat(Stildesqroot,1,m).*SsqrtKfu)./repmat(D',m,1)')/AA';
+%                     La2 = 1./(Stildesqroot./D.*Stildesqroot);
+                    
+                    b = nutilde' - ((nutilde'/Lahat + (nutilde'*Lhat)*Bhat).*tautilde');
+                    L = (Stildesqroot*iDSsqrtKfu)/AA';                    
+                    La2 = inv(Stildesqroot*(D2\Stildesqroot));
 
-                    b = zeros(1,n);
-                    for i=1:length(ind)
-                        b(ind{i}) = nutilde(ind{i})'/Lahat{i};
-                        La2{i} = inv(diag(Stildesqroot(ind{i}))*(D2{i}\diag(Stildesqroot(ind{i}))));
-                    end
-                    b = nutilde' - ((b + (nutilde'*Lhat)*Bhat).*tautilde');
 
-                    L = (repmat(Stildesqroot,1,m).*iDSsqrtKfu)/AA';                    
                     
                 otherwise
                     error('Unknown type of Gaussian process!')

@@ -9,6 +9,7 @@ function demo_spatialCSandPIC
 % First load the data
 %=======================================================================
   %  load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+  %  load D:\jpvanhat_tyo\finwell\data\tilastok2007\testdata\aivoverisuonitaudit911_9600.mat
     load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
@@ -54,24 +55,36 @@ function demo_spatialCSandPIC
     
     [n, nin] = size(xx);
 
-    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 3, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 4, 'magnSigma2', 0.01);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 1, 'magnSigma2', 0.01);
+    gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.01);
     gpcf2.p.lengthScale = t_p({1 4});
     gpcf2.p.magnSigma2 = t_p({0.3 4});
 
     gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
     gp.avgE = ye; 
-    gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr, zeros(size(yy))'});
 
-    [e, edata, eprior] = gp_e(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
-    [g, gdata, gprior] = gp_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
-    gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, xx, yy, 'hyper')
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
+    gradcheck(gp_pak(gp,'hyper'), @gpla_e, @gpla_g, gp, xx, yy, 'hyper') 
+     
+    xx= xx(1:400,:);
+    yy= yy(1:400,:);
+
+    [n, nin] = size(xx);
+    gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
+    gp.avgE = ye(1:400,:);
+    gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+    gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper') 
+    
+%    gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr, zeros(size(yy))'});
+%    [e, edata, eprior] = gp_e(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+%    [g, gdata, gprior] = gp_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+%    gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, xx, yy, 'hyper')
 
     
-    
+      
     % Set the parameters 
     opt=gp_mcopt;
     opt.nsamples=1;

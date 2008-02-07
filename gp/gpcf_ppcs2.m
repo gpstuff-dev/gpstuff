@@ -329,6 +329,10 @@ function gpcf = gpcf_ppcs2(do, varargin)
             Cdm = gpcf_ppcs2_trcov(gpcf, x);
 
             b = varargin{2};
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
             l = gpcf.l;
             [I,J] = find(Cdm);
              % loop over all the lengthScales
@@ -408,6 +412,10 @@ function gpcf = gpcf_ppcs2(do, varargin)
             iKuuKuf = varargin{3};       % u x f
             La = varargin{4};          % array of siz
                                          %iLamLL = inv(Labl)-L*L';
+            if length(varargin) > 4
+                b2 = varargin{5};
+                b3 = varargin{6};
+            end
             
             Cdm = gpcf_ppcs2_trcov(gpcf, x);
             l = gpcf.l;
@@ -523,6 +531,9 @@ function gpcf = gpcf_ppcs2(do, varargin)
             %gdata(i1) = 0.5*(trace(iLamLL*D_ma) - b*D_ma*b');
             %gdata(i1) = 0.5*(trace(La\D_ma) - trace(L*L'*D_ma) - b*D_ma*b');
             gdata(i1) = 0.5*(trace(La\D_ma) - sum(sum(L.*(L'*D_ma')')) - b*D_ma*b');
+            if length(varargin) > 4
+                        gdata(i1) = gdata(i1) + 0.5.*b2*D_ma*b3;
+            end
         end
         gprior(i1)=feval(gpp.magnSigma2.fg, ...
                          gpcf.magnSigma2, ...
@@ -578,7 +589,9 @@ function gpcf = gpcf_ppcs2(do, varargin)
                     %gdata(i1) = 0.5*(trace(iLamLL*D{i2}) - b*D{i2}*b');
                     %gdata(i1) = 0.5*(trace(La\D{i2}) - trace(L*L'*D{i2}) - b*D{i2}*b');
                     gdata(i1) = 0.5*(trace(La\D{i2}) - sum(sum(L.*(L'*D{i2})')) - b*D{i2}*b');
-
+                   if length(varargin) > 4
+                        gdata(i1) = gdata(i1) + 0.5.*b2*D{i2}*b3;
+                   end
                 end
                 gprior(i1)=feval(gpp.lengthScale.fg, ...
                                  gpcf.lengthScale(i2), ...
@@ -639,8 +652,9 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 %gdata(i1) = 0.5*(trace(iLamLL*D) - b*D*b');
                 %gdata(i1) = 0.5*(trace(La\D) - sum(sum((L*L').*D')) - b*D*b');
                 gdata(i1) = 0.5*(trace(La\D) - sum(sum(L.*(L'*D)')) - b*D*b');
-
-
+                if length(varargin) > 4
+                     gdata(i1) = gdata(i1) + 0.5.*b2*D*b3;
+                end
             end
             gprior(i1)=feval(gpp.lengthScale.fg, ...
                              gpcf.lengthScale, ...

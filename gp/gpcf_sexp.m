@@ -644,8 +644,9 @@ end
                 gdata(i1) = gdata(i1) + 0.5.*(trace(La\sparse(1:n,1:n,Cv_ff,n,n)) - sum(sum(L.*L)).*gpcf.magnSigma2);
                 gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(K_uf'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 
-                gdata(i1) = gdata(i1) + 0.5.*( trace(La\(2.*K_uf' - KfuiKuuKuu)*iKuuKuf) - trace(La\sparse(1:n,1:n,diag((2.*K_uf'-KfuiKuuKuu)*iKuuKuf),n,n)));
-                
+                gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*K_uf').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
+                gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*K_uf'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))) );
+                     
                 if length(varargin) > 4
                     gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
                     gdata(i1) = gdata(i1) - 0.5.*(b2.*Cv_ff')*b3;
@@ -792,11 +793,11 @@ end
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                         gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                                         
-                        gdata(i1) = gdata(i1) + 0.5.*( trace(La\(2.*DKuf_l{i2}' - KfuiKuuKuu)*iKuuKuf) );
-                
+                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l{2}').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
+                        gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*DKuf_l{2}'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))) );
+                     
                         if length(varargin) > 4
                             gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                            gdata(i1) = gdata(i1) - 0.5.*(b2.*Cv_ff')*b3;
                             gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
                         end                        
                     case {'PIC_BAND','CS+PIC'}
@@ -911,13 +912,14 @@ end
                     gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                                         
-                    gdata(i1) = gdata(i1) + 0.5.*( trace(La\(2.*DKuf_l' - KfuiKuuKuu)*iKuuKuf) );
+                    gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
+                    gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*DKuf_l'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))) );
                 
                     if length(varargin) > 4
                         gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                        gdata(i1) = gdata(i1) - 0.5.*(b2.*Cv_ff')*b3;
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
-                    end                        
+                    end        
+                    
                 case {'PIC_BAND','CS+PIC'}
                     KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
                     % Note! H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf, but here we set actually H = mask(H) and the computations

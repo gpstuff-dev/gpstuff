@@ -73,6 +73,9 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
 
         [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
 
+        % From this on evaluate the prediction
+        % See Snelson and Ghahramani (2007) for details 
+        %        p=iLaKfu*(A\(iLaKfu'*myytilde));
         p = b';
         
         ntest=size(x,1);
@@ -146,28 +149,6 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
                 KnfL(tstind{i},:) = KnfL(tstind{i},:) - v_bu*L(ind{i},:) + v_n*L(ind{i},:);
             end
             Varf = kstarstar - (Varf - sum((KnfL).^2,2));  
-            
-%             v_bu = zeros(length(x),length(tx));
-%             %v_bu = zeros(size(iKuuKuf));
-%             v_n = zeros(length(x),length(tx));
-%             for i=1:length(ind)
-%                 K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
-%                 v_bu(tstind{i},ind{i}) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
-%                 v_n(tstind{i},ind{i}) = K_nf;
-%             end
-%             K_nf = K_nu*iKuuKuf - v_bu + v_n;
-%             
-%             ntest=size(x,1);
-%             Varf = zeros(ntest,1);
-%             %Varf = zeros(ntest,ntest);
-%             for i=1:length(ind)
-%                 Varf = Varf + sum((K_nf(:,ind{i})/chol(La{i})).^2,2);
-% % $$$                 max(max(inv(La{i})))
-% % $$$                 min(min(inv(La{i})))
-%                 %Varf = Varf + (K_nf(:,ind{i})/La{i})*K_nf(:,ind{i})' - K_nf(:,ind{i})*L(ind{i},:)*L(ind{i},:)'*K_nf(:,ind{i})';
-%             end
-%             %Varf = kstarstar - diag(Varf);
-%             Varf = kstarstar - (Varf - sum((K_nf*L).^2,2));
 
             ntest=size(x,1);
             for i1=1:ntest
