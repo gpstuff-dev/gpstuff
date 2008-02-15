@@ -33,11 +33,14 @@ function gp = gp_init(do, varargin)
 %         p.r            = Prior Structure for residual
 %                          (defined only in case likelih == 'regr')
 %         likelih        = String defining the likelihood. Possible likelihoods are
-%                          'regr', 'logistic', 'poisson', 'probit'
+%                          'regr', 'logistic', 'poisson', 'probit', 'negbin'
 %                          In case of poisson likehood there is also field
 %                             avgE  = In poisson(y|lambda) we have lambda = avgE*f,
 %                                      where f is vector of latent values
+%                          In case of negative-binomial likehood there is also field
+%                             r     = dispersion parameter
 %
+    
 %       The additional fields needed in sparse approximations are:
 %         X_u            = Inducing inputs in FIC and PIC
 %         blocks         = Initializes the blocks for the PIC_BLOCK model
@@ -137,7 +140,7 @@ function gp = gp_init(do, varargin)
             gp.likelih = varargin{3};   % Remember to set the latent_method.
             gp.latent_method = [];
             switch gp.likelih
-              case 'poisson'
+              case {'poisson','negbin'}
                 gp.avgE = [];
             end
         end  
@@ -182,6 +185,9 @@ function gp = gp_init(do, varargin)
                         gp.fh_latentmc = varargin{i+1}{2};
                         if length(varargin{i+1}) == 3
                             gp.latentValues = varargin{i+1}{3};
+                        elseif length(varargin{i+1}) == 4 & strcmp(gp.likelih,'negbin')
+                            gp.latentValues = varargin{i+1}{3};
+                            gp.nb_r = varargin{i+1}{4}; 
                         else
                             gp.latentValues = [];
                         end
@@ -257,6 +263,9 @@ function gp = gp_init(do, varargin)
                     gp.fh_latentmc = varargin{i+1}{2};
                     if length(varargin{i+1}) == 3
                         gp.latentValues = varargin{i+1}{3};
+                    elseif length(varargin{i+1}) == 4 & strcmp(gp.likelih,'negbin')
+                        gp.latentValues = varargin{i+1}{3};
+                        gp.nb_r = varargin{i+1}{4};                         
                     else
                         gp.latentValues = [];
                     end

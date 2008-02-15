@@ -120,6 +120,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         z=y;
     end
 
+    % Set handle to gradient and energy functions of negbin-likelihood.
+    % Used for sampling the dispersion parameter with slice sampling
+    if strcmp(gp.likelih,'negbin')
+        nb_me = @nb_e;
+    end
+    
     % Print labels for sampling information
     if opt.display
         fprintf(' cycle  etr      ');
@@ -131,6 +137,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         end
         if isfield(opt, 'sls_opt')
             fprintf('slsrej  ');
+        end
+        if isfield(opt, 'nb_sls_opt')         % Rejection rate of dispersion parameter sampling
+            fprintf('rrej  ');
         end
         if isfield(opt,'inducing_opt')
             fprintf('indrej     ')              % rejection rate of latent value sampling
@@ -194,6 +203,16 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 opt.hmc_opt.rstate = hmc_rstate;
                 w=w(end,:);
                 gp = gp_unpak(gp, w, 'hyper');
+            end
+            
+            if isfield(opt, 'nb_sls_opt')
+                w = gp.nb_r;
+                [w, energies, diagns] = sls(nb_me, w, opt.nb_sls_opt, [], gp, x, z, y, varargin{:});
+                if isfield(diagns, 'opt')
+                    opt.nb_sls_opt = diagns.opt;
+                end
+                w=w(end,:);
+                gp.nb_r = w;
             end
             
             % ----------- Sample hyperparameters with SLS --------------------- 
@@ -440,6 +459,11 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         % If inputs are sampled set the record which are on at this moment
         if isfield(gp,'inputii')
             rec.inputii(ri,:)=gp.inputii;
+        end
+        
+        % Append the dispersion parameter of NB-likelihood to record
+        if strcmp(gp.likelih, 'negbin')
+            rec.nb_r(ri) = gp.nb_r;
         end
     end
 end
