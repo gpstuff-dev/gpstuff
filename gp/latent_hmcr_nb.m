@@ -284,7 +284,7 @@ function [z, energ, diagn] = latent_hmcr_nb(z, opt, varargin)
             %L2 = C/chol(diag(1./gp.avgE) + C);  %sparse(1:n, 1:n, 1./gp.avgE)
             r = gp.nb_r;
             
-            L2 = C/chol(diag((r.^2+r.*gp.avgE+gp.avgE.^2)./(gp.avgE.*(r^2+r.*t))) + C);  %sparse(1:n, 1:n, 1./gp.avgE)
+            L2 = C/chol(diag((r.^2+2*r.*gp.avgE+gp.avgE.^2)./(gp.avgE.*(r^2+r.*t))) + C);  %sparse(1:n, 1:n, 1./gp.avgE)
             
             L2 = chol(C - L2*L2')';
         else
@@ -319,7 +319,7 @@ function [z, energ, diagn] = latent_hmcr_nb(z, opt, varargin)
                 iLaKfuic = iLaKfu*ic';
                 %Lp = sqrt(1./(gp.avgE + 1./Lav));
                 r = gp.nb_r;
-                Lp = sqrt(1./((r.^2+r.*gp.avgE+gp.avgE.^2)./(gp.avgE.*(r^2+r.*t)) + 1./Lav));
+                Lp = sqrt(1./((gp.avgE.*(r^2+r.*t)./(r.^2+2*r.*gp.avgE+gp.avgE.^2)) + 1./Lav));
                 b=b';
                 for i=1:n
                     b(i,:) = iLaKfuic(i,:).*Lp(i);
@@ -362,7 +362,7 @@ function [z, energ, diagn] = latent_hmcr_nb(z, opt, varargin)
                 for i=1:length(ind)
 % $$$                     Lp{i} = chol(diag(gp.avgE(ind{i})) + inv(Labl{i}))';
 % $$$                     Lp{i} = inv(Lp{i});
-                    Lp{i} = chol(inv(diag((r.^2+r.*gp.avgE(ind{i})+gp.avgE(ind{i}).^2)./(gp.avgE(ind{i}).*(r^2+r.*t(ind{i})))) + inv(Labl{i})));
+                    Lp{i} = chol(inv(diag((gp.avgE(ind{i}).*(r^2+r.*t(ind{i})))./(r.^2+2*r.*gp.avgE(ind{i})+gp.avgE(ind{i}).^2)) + inv(Labl{i})));
                 end
                 b=zeros(size(B'));
                 
@@ -426,7 +426,7 @@ function [z, energ, diagn] = latent_hmcr_nb(z, opt, varargin)
                 %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
                 Lp = inv(Labl);
                 r = gp.nb_r;                               
-                Lp = sparse(1:n,1:n,(r.^2+r.*gp.avgE+gp.avgE.^2)./(gp.avgE.*(r^2+r.*t)),n,n) + Lp;
+                Lp = sparse(1:n,1:n,(gp.avgE.*(r^2+r.*t))./(r.^2+2*r.*gp.avgE+gp.avgE.^2),n,n) + Lp;
                 Lp = chol(Lp)';
                 %                Lp = inv(Lp);
 
@@ -512,7 +512,7 @@ function [z, energ, diagn] = latent_hmcr_nb(z, opt, varargin)
                 %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
                 Lp = inv(Labl);
                 r = gp.nb_r;                               
-                Lp = sparse(1:n,1:n,(r.^2+r.*gp.avgE+gp.avgE.^2)./(gp.avgE.*(r^2+r.*t)),n,n) + Lp;
+                Lp = sparse(1:n,1:n,(gp.avgE.*(r^2+r.*t))./(r.^2+2*r.*gp.avgE+gp.avgE.^2),n,n) + Lp;
                 Lp = chol(Lp)';
                 %                Lp = inv(Lp);
 
@@ -566,7 +566,7 @@ function [z, energ, diagn] = latent_hmcr_nb(z, opt, varargin)
                 %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
                 Lp = inv(Labl);
                 r = gp.nb_r;
-                Lp = sparse(1:n,1:n,(r.^2+r.*gp.avgE+gp.avgE.^2)./(gp.avgE.*(r^2+r.*t)),n,n) + Lp;
+                Lp = sparse(1:n,1:n,(gp.avgE.*(r^2+r.*t))./(r.^2+2*r.*gp.avgE+gp.avgE.^2),n,n) + Lp;
                 Lp = chol(Lp)';
                 %                Lp = inv(Lp);
 

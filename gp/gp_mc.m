@@ -205,6 +205,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 gp = gp_unpak(gp, w, 'hyper');
             end
             
+            % ----------- Sample dispersionparamater with SLS --------------------- 
             if isfield(opt, 'nb_sls_opt')
                 w = gp.nb_r;
                 [w, energies, diagns] = sls(nb_me, w, opt.nb_sls_opt, [], gp, x, z, y, varargin{:});
@@ -463,7 +464,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         
         % Append the dispersion parameter of NB-likelihood to record
         if strcmp(gp.likelih, 'negbin')
-            rec.nb_r(ri) = gp.nb_r;
+            rec.nb_r(ri,:) = gp.nb_r;
         end
     end
 end
