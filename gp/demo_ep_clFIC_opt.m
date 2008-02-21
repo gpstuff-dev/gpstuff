@@ -118,7 +118,7 @@ opt(14) = 0;
 
 % do scaled conjugate gradient optimization with early stopping.
 gp.ep_opt.display = 1;
-[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'all');
+[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'all');
 gp=gp_unpak(gp,w,'all');
 
 

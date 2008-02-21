@@ -234,9 +234,11 @@ end
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         for i1=1:n
                             % approximate cavity parameters
-                            Ann = D_vec(i1) + sum((R*P(i1,:)').^2);
+                            pn = P(i1,:)';
+                            Ann = D_vec(i1) + sum((R*pn).^2);
                             tau_i = Ann^-1-tautilde(i1);
-                            vee_i = Ann^-1*myy(i1)-nutilde(i1);
+                            myy_i1 = eta(i1) + pn'*gamma;
+                            vee_i = Ann^-1*myy_i1-nutilde(i1);
 
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
@@ -253,7 +255,6 @@ end
                             % Update the parameters
                             dn = D_vec(i1);
                             D_vec(i1) = D_vec(i1) - deltatautilde.*D_vec(i1).^2 ./ (1+deltatautilde.*D_vec(i1));
-                            pn = P(i1,:)';
                             P(i1,:) = pn' - (deltatautilde.*dn ./ (1+deltatautilde.*dn)).*pn';
                             updfact = deltatautilde./(1 + deltatautilde.*Ann);
                             if updfact > 0
@@ -264,8 +265,8 @@ end
                                 R = cholupdate(R, RtRpnU, '+');
                             end
                             eta(i1) = eta(i1) + (deltanutilde + deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
-                            gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
-                            myy = eta + P*gamma;
+                            gamma = gamma + (deltanutilde - deltatautilde.*myy_i1)./(1+deltatautilde.*dn) * R'*(R*pn);
+%                            myy = eta + P*gamma;
 
                             % Store cavity parameters
                             muvec_i(i1,1)=myy_i;

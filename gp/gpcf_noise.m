@@ -271,6 +271,12 @@ switch gpcf.type
     for i=1:length(ind)
         gdata(i1)= gdata(i1) + 0.5*trace((inv(Labl{i})-L(ind{i},:)*L(ind{i},:)')).*D;
     end
+  case 'CS+FIC' 
+    L = varargin{1};
+    b =varargin{2};
+    La = varargin{4};
+    gdata(i1)= -0.5*D.*b*b';
+    gdata(i1)= gdata(i1) + 0.5*sum(idiag(La)-sum(L.*L,2)).*D;
   case {'PIC_BAND','CS+PIC'}
     L = varargin{1};
     b =varargin{2};

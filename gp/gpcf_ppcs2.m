@@ -481,8 +481,9 @@ function gpcf = gpcf_ppcs2(do, varargin)
                     %Bdl(i) = b*(D*b');
                     %Cdl(i) = sum(invCv.*D(:)); % help arguments for lengthScale 
                 end
-            end
+            end            
             D_ma = Cdm;
+            Z = sinv(La,Cdm);
             %Bdm = b'*(Cdm*b);
             %Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2
         end
@@ -528,9 +529,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
             gdata(i1) = gdata(i1) + 0.5.*trace(La\(K_ff-H));
             gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-K_ff))));               %- trace(Labl{i}\H(ind{i},ind{i})) 
           case {'CS+FIC' 'CS+PIC'}
-            %gdata(i1) = 0.5*(trace(iLamLL*D_ma) - b*D_ma*b');
-            %gdata(i1) = 0.5*(trace(La\D_ma) - trace(L*L'*D_ma) - b*D_ma*b');
-            gdata(i1) = 0.5*(trace(La\D_ma) - sum(sum(L.*(L'*D_ma')')) - b*D_ma*b');
+            %gdata(i1) = 0.5*(sum(idiag(La,D_ma)) - sum(sum(L.*(L'*D_ma')')) - b*D_ma*b');
+            gdata(i1) = 0.5*(sum(sum(Z.*D_ma',2)) - sum(sum(L.*(L'*D_ma')')) - b*D_ma*b');
             if length(varargin) > 4
                         gdata(i1) = gdata(i1) + 0.5.*b2*D_ma*b3;
             end
@@ -586,9 +586,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
                         %trace(L(ind{i},:)*(L(ind{i},:)'*H(ind{i},ind{i}))));
                     end
                   case {'CS+PIC' 'CS+FIC'}
-                    %gdata(i1) = 0.5*(trace(iLamLL*D{i2}) - b*D{i2}*b');
-                    %gdata(i1) = 0.5*(trace(La\D{i2}) - trace(L*L'*D{i2}) - b*D{i2}*b');
-                    gdata(i1) = 0.5*(trace(La\D{i2}) - sum(sum(L.*(L'*D{i2})')) - b*D{i2}*b');
+                    %gdata(i1) = 0.5*(sum(idiag(La,D{i2})) - sum(sum(L.*(L'*D{i2})')) - b*D{i2}*b');
+                    gdata(i1) = 0.5*(sum(sum(Z.*D{i2}',2)) - sum(sum(L.*(L'*D{i2}')')) - b*D{i2}*b');
                    if length(varargin) > 4
                         gdata(i1) = gdata(i1) + 0.5.*b2*D{i2}*b3;
                    end
@@ -649,9 +648,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
 % $$$                 gdata(i1) = gdata(i1) + 0.5.*trace(La\(DKff_l-H));
 % $$$                 gdata(i1) = gdata(i1) + 0.5.*sum(sum(L'.*(L'*(H-DKff_l))));
               case {'CS+PIC' 'CS+FIC'}
-                %gdata(i1) = 0.5*(trace(iLamLL*D) - b*D*b');
-                %gdata(i1) = 0.5*(trace(La\D) - sum(sum((L*L').*D')) - b*D*b');
-                gdata(i1) = 0.5*(trace(La\D) - sum(sum(L.*(L'*D)')) - b*D*b');
+                %gdata(i1) = 0.5*(sum(idiag(La,D)) - sum(sum(L.*(L'*D)')) - b*D*b');
+                gdata(i1) = 0.5*(sum(sum(Z.*D',2)) - sum(sum(L.*(L'*D')')) - b*D*b');
                 if length(varargin) > 4
                      gdata(i1) = gdata(i1) + 0.5.*b2*D*b3;
                 end
@@ -665,7 +663,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
     end
         
     
-    function [DKuu_u, DKuf_u]  = gpcf_ppcs2_gind(gpcf, x, t, varargin)
+    function [g_ind, gdata_ind, gprior_ind]  = gpcf_ppcs2_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
     %GPCF_PPCS2_GIND    Evaluate gradient of error for SE covariance function 
     %                  with respect to inducing inputs.
     %
@@ -681,47 +679,9 @@ function gpcf = gpcf_ppcs2(do, varargin)
     % This software is distributed under the GNU General Public 
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
-        
-        gpp=gpcf.p;
-        [n, m] =size(x);
-                
-        % First check if sparse model is used
-        switch gpcf.type
-           case {'FIC', 'PIC_BLOCK', 'PIC_BAND'}
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_ppcs2_trcov)
-
-            u = gpcf.X_u;
-            n_u = size(u,1);
-            
-            % Derivatives of K_uu and K_uf with respect to inducing inputs
-            K_uu = feval(gpcf.fh_trcov, gpcf, u);
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic PPCS2
-                s = repmat(1./gpcf.lengthScale.^2, 1, m);
-            else
-                s = 1./gpcf.lengthScale.^2;
-            end
-            for i=1:m
-                for j = 1:size(u,1)
-                    dist = zeros(size(u,1),n);
-                    dist2 = zeros(size(K_uu));
-                    
-                    dist(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
-                    dist2(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
-                    dist2 = dist2 + dist2';
-                                        
-                    dist = dist.*K_uf;
-                    dist2 = dist2.*K_uu;
-                    %                    dist2 = dist2 + dist2' - diag(diag(dist2));                    
-                    
-                    DKuf_u(:,j+(i-1)*n_u) = dist(:);         % Matrix of size uf x mu
-                    DKuu_u(:,j+(i-1)*n_u) = dist2(:);        % Matrix of size uu x mu
-                end
-            end
-        end
+      g_ind = g_ind;
+      gdata_ind = gdata_ind; 
+      gprior_ind = gprior_ind;
     end
     
     
@@ -744,7 +704,6 @@ function gpcf = gpcf_ppcs2(do, varargin)
     % This software is distributed under the GNU General Public 
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
-        
         if isempty(x2)
             x2=x1;
         end
@@ -781,11 +740,49 @@ function gpcf = gpcf_ppcs2(do, varargin)
             C = ma2.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3)/3;
             %C = ma2.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3);
         end
-        cov_x1=x1;
-        cov_x2=x2;
-        cov_ls=gpcf.lengthScale;
-        cov_ms=gpcf.magnSigma2;
-        cov_C=C;
+
+% 
+%             [n1,m1]=size(x1);
+%             [n2,m2]=size(x2);
+%     
+%             s = 1./(gpcf.lengthScale);
+%             s2 = s.^2;
+%             if size(s)==1
+%                 s2 = repmat(s2,1,m1);
+%             end
+%             ma = gpcf.magnSigma2;
+%             l = gpcf.l;
+%             
+%             % Compute the sparse distance matrix.
+%             ntriplets = max(1,floor(0.03*n1*n2));
+%             I = zeros(ntriplets,1);
+%             J = zeros(ntriplets,1);
+%             R = zeros(ntriplets,1);
+%             ntriplets = 0;
+%             RR=zeros(n1,n2);
+%             for ii1=1:n2
+%                 d = zeros(n1,1);
+%                 for j=1:m1
+%                     d = d + s2(j).*(x1(:,j)-x2(ii1,j)).^2;
+%                 end
+%                 d = sqrt(d);
+%                 %d(d >= 1) = 0;
+%                 [I2,J2,R2] = find(d);
+%                 len = length(R);
+%                 ntrip_prev = ntriplets;
+%                 ntriplets = ntriplets + length(R2);
+%                 if (ntriplets > len)
+%                     I(2*len) = 0;
+%                     J(2*len) = 0;
+%                     R(2*len) = 0;
+%                 end
+%                 I(ntrip_prev+1:ntriplets) = I2;
+%                 J(ntrip_prev+1:ntriplets) = ii1;
+%                 R(ntrip_prev+1:ntriplets) = R2;
+%             end
+%             r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
+%             cs = sparse(max(0, 1-r));
+%             C = ma.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3)/3;
     end
     
     function C = gpcf_ppcs2_trcov(gpcf, x)
@@ -809,36 +806,6 @@ function gpcf = gpcf_ppcs2(do, varargin)
     % License.txt, included with the software, for details.
         
         [n, m] =size(x);
-
-% $$$         s2 = 1./(gpcf.lengthScale.^2);
-% $$$          
-% $$$         ma = gpcf.magnSigma2;
-% $$$         l = gpcf.l;
-% $$$ 
-% $$$         const1 = l^2+4*l+3;
-% $$$         const2 = 3*l+6;
-% $$$         
-% $$$         C = zeros(n,n);
-% $$$         for i = 1:n
-% $$$             for j = 1:n
-% $$$                 d2 = 0;
-% $$$                 for k = 1:m
-% $$$                     d2 = d2 + s2(k).*(x(i,k)-x(j,k)).^2;
-% $$$                 end
-% $$$                 d = sqrt(d2);
-% $$$                 if d > 1
-% $$$                     C(i,j) = 0;
-% $$$                 else
-% $$$                     C(i,j) = ma.*(1-d).^(l+2).*(const1.*d.^2+const2.*d+3)/3;
-% $$$                 end
-% $$$                 
-% $$$                 
-% $$$                  
-% $$$             end
-% $$$         end
-% $$$         
-% $$$         return
-       
         
         if abs(trcov_ls0-gpcf.lengthScale)<1e-10 & abs(trcov_ms0-gpcf.magnSigma2)<1e-10
             C = sparse(trcov_I0, trcov_J0, trcov_c0, n, n);
@@ -852,7 +819,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
             l = gpcf.l;
             
             % Compute the sparse distance matrix.
-            ntriplets = floor(0.03*n*n);
+            ntriplets = max(1,floor(0.03*n*n));
             I = zeros(ntriplets,1);
             J = zeros(ntriplets,1);
             R = zeros(ntriplets,1);
@@ -863,7 +830,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 for ii2=1:m
                     d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                 end
-                d = sqrt(d);
+                %d = sqrt(d);
                 d(d >= 1) = 0;
                 [I2,J2,R2] = find(d);
                 len = length(R);
@@ -874,52 +841,23 @@ function gpcf = gpcf_ppcs2(do, varargin)
                     J(2*len) = 0;
                     R(2*len) = 0;
                 end
-                I(ntrip_prev+1:ntriplets) = ii1+I2;
-                J(ntrip_prev+1:ntriplets) = ii1;
-                R(ntrip_prev+1:ntriplets) = R2;
+                ind_tr = ntrip_prev+1:ntriplets;
+                I(ind_tr) = ii1+I2;
+                J(ind_tr) = ii1;
+                R(ind_tr) = sqrt(R2);
             end
             R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
 
-% $$$             % Compute the sparse distance matrix.
-% $$$             R = sparse([],[],[],n,n,0);
-% $$$             for ii1=1:n-1
-% $$$                 d = zeros(n-ii1,1);
-% $$$                 col_ind = ii1+1:n;
-% $$$                 for ii2=1:m
-% $$$                     d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-% $$$                 end
-% $$$                 d = sqrt(d);
-% $$$                 d(d >= 1) = 0;
-% $$$                 R(col_ind,ii1) = d;
-% $$$             end
-            
             % Find the non-zero elements of R.
             [I,J,rn] = find(R);
-% $$$             
-% $$$             % Create the 'compact support' matrix.
-% $$$             cs = sparse(I,J,1-rn,n,n) + speye(n,n);
-% $$$ 
-% $$$             % Calculate the covariance matrix
             const1 = l^2+4*l+3;
             const2 = 3*l+6;
-% $$$             C = ma.*cs.^(l+2).*(const1.*R.^2+const2.*R+3);
-% $$$             
-% $$$             % Add the upper triangle matrix.
-% $$$             C = C + tril(C,-1)';
-% $$$ 
-            % An other way to construct C
-            cs = 1-rn;
-            C2 = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
-            %C2 = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3);
-            C2 = sparse(I,J,C2,n,n);
-            C = C2 + C2' + sparse(1:n,1:n,ma,n,n);
-            %C = C2 + C2' + sparse(1:n,1:n,ma.*3,n,n);
+            cs = max(0,1-rn);
+            C = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
+            C = sparse(I,J,C,n,n);
+            C = C + C' + sparse(1:n,1:n,ma,n,n);
             
-            [I,J,c] = find(C);
-            trcov_I0 = I;
-            trcov_J0 = J;
-            trcov_c0 = c;
-            %        trcov_x0 = x;
+            [trcov_I0,trcov_J0,trcov_c0] = find(C);
             trcov_ls0 = gpcf.lengthScale;
             trcov_ms0 = gpcf.magnSigma2;
         end
@@ -989,7 +927,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
 
     function reccf = gpcf_ppcs2_recappend(reccf, ri, gpcf)
     % RECAPPEND - Record append
-    %          Description
+    %          DescriptionK_cs = gp_trcov(gp,x);
     %          RECCF = GPCF_PPCS2_RECAPPEND(RECCF, RI, GPCF) takes old covariance 
     %          function record RECCF, record index RI, RECAPPEND returns a 
     %          structure RECCF containing following record fields:

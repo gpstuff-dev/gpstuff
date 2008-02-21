@@ -9,8 +9,8 @@ function demo_spatialCSandPIC
 % First load the data
 %=======================================================================
   %  load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
-  %  load D:\jpvanhat_tyo\finwell\data\tilastok2007\testdata\aivoverisuonitaudit911_9600.mat
-    load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+     load D:\jpvanhat_tyo\finwell\data\tilastok2007\testdata\aivoverisuonitaudit911_9600.mat
+  % load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -49,34 +49,35 @@ function demo_spatialCSandPIC
     ye=EA(xxii);
     %=======================================================================
 
-    bls = 5; indtype = 'corners';
+    bls = 3; indtype = 'corners';
     %[blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners', 1);
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
     
     [n, nin] = size(xx);
 
-    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 4, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 20, 'magnSigma2', 0.1);
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.01);
+    gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.05);
     gpcf2.p.lengthScale = t_p({1 4});
     gpcf2.p.magnSigma2 = t_p({0.3 4});
 
     gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
-    gp.avgE = ye; 
+    gp.avgE = ye;  % CS+FIC , gpcf1
 
     gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
+    %[g, gdata, gprior] = gpla_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
     gradcheck(gp_pak(gp,'hyper'), @gpla_e, @gpla_g, gp, xx, yy, 'hyper') 
      
-    xx= xx(1:400,:);
-    yy= yy(1:400,:);
-
-    [n, nin] = size(xx);
-    gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
-    gp.avgE = ye(1:400,:);
-    gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
-    gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper') 
+%     xx= xx(1:400,:);
+%     yy= yy(1:400,:);
+% 
+%     [n, nin] = size(xx);
+%     gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
+%     gp.avgE = ye(1:400,:);
+%     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+%     gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper') 
     
 %    gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr, zeros(size(yy))'});
 %    [e, edata, eprior] = gp_e(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
@@ -84,7 +85,29 @@ function demo_spatialCSandPIC
 %    gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, xx, yy, 'hyper')
 
     
-      
+    opt=optimset('GradObj','on');
+    opt=optimset(opt,'TolX', 1e-3);
+    opt=optimset(opt,'LargeScale', 'off');
+    opt=optimset(opt,'Display', 'iter');
+
+    tic
+    w0 = gp_pak(gp, param);
+    mydeal = @(varargin)varargin{1:nargout};
+    [w,fval,exitflag,output,grad,hessian] = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, param), gpla_g(ww, gp, xx, yy, param)), w0, opt);
+    gp = gp_unpak(gp,w,param);
+    toc
+
+    [Ef, Varf] = la_pred(gp, xx, yy, xx, param);
+
+    
+
+
+
+
+
+
+
+
     % Set the parameters 
     opt=gp_mcopt;
     opt.nsamples=1;
@@ -243,3 +266,106 @@ function demo_spatialCSandPIC
     title('Gt')
 end
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[n, nin] = size(xx);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 15, 'magnSigma2', 0.1);
+gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 4, 'magnSigma2', 0.07);
+gp = gp_init('init', 'FULL', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01);
+K = gp_trcov(gp,xx);
+L = chol(K)';
+ff = L*randn(length(xx),1);
+
+% Plot the 
+figure(1)
+set(gcf,'units','centimeters');
+set(gcf,'DefaultAxesPosition',[0.02  0.05   0.8   0.87]);
+set(gcf,'DefaultAxesFontSize',8)   %6 8
+set(gcf,'DefaultTextFontSize',8)   %6 8
+G=repmat(NaN,size(Y));
+G(xxii)=exp(ff+diag(K)./2);
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G, [1 1])),colorbar
+axis equal
+axis([0 35 0 60])
+
+set(gca,'YTick',[])
+set(gca,'XTick',[])
+set(gca,'XTicklabel',[])
+set(gca,'YTickLabel',[])
+
+set(gcf,'pos',[13.6    10   6  7])
+set(gcf,'paperunits',get(gcf,'units'))
+set(gcf,'paperpos',get(gcf,'pos'))
+title('Relative risk surface')
+%print -depsc2 relative_risk_15_2.eps
+
+
+% Draw deaths from Poisson process
+yy = poissrnd(exp(ff).*ye);
+sum(yy)
+
+figure(2)
+hist(yy,100)
+
+figure(3)
+set(gcf,'units','centimeters');
+set(gcf,'DefaultAxesPosition',[0.02  0.05   0.8   0.87]);
+set(gcf,'DefaultAxesFontSize',8)   %6 8
+set(gcf,'DefaultTextFontSize',8)   %6 8
+G=repmat(NaN,size(Y));
+G(xxii)=yy;
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G, [1 1])),colorbar
+axis equal
+axis([0 70 0 120])
+
+set(gca,'YTick',[])
+set(gca,'XTick',[])
+set(gca,'XTicklabel',[])
+set(gca,'YTickLabel',[])
+
+set(gcf,'pos',[13.6    10   6  7])
+set(gcf,'paperunits',get(gcf,'units'))
+set(gcf,'paperpos',get(gcf,'pos'))
+title('The numbers of deaths')
+print -depsc2 numbers_of_deaths_2.eps
+
+figure(4)
+set(gcf,'units','centimeters');
+set(gcf,'DefaultAxesPosition',[0.02  0.05   0.8   0.87]);
+set(gcf,'DefaultAxesFontSize',8)   %6 8
+set(gcf,'DefaultTextFontSize',8)   %6 8
+Gp=repmat(NaN,size(Y));
+Gp(xxii)=1-normcdf(0,ff,sqrt(diag(K)));
+pcolor(X1,X2,Gp),shading flat
+colormap(mapcolor(Gp, [0.5 0.5])),colorbar
+axis equal
+axis([0 70 0 120])
+
+set(gca,'YTick',[])
+set(gca,'XTick',[])
+set(gca,'XTicklabel',[])
+set(gca,'YTickLabel',[])
+
+set(gcf,'pos',[13.6    10   6  7])
+set(gcf,'paperunits',get(gcf,'units'))
+set(gcf,'paperpos',get(gcf,'pos'))
+title('p(\mu>1)')
+print -depsc2 propability_mu_2.eps
+
+% Save the data
+save('simuldata_2', 'xx', 'yn', 'yy', 'X1', 'X2', 'ye', 'ff', 'xxii')

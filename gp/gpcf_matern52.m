@@ -341,8 +341,7 @@ function gpcf = gpcf_matern52(do, varargin)
                 s = 1./gpcf.lengthScale;
                 dist = 0;
                 for i=1:m
-                    D = gminus(x(:,i),x(:,i)');
-                    dist = dist + D.^2;
+                    dist = dist + gminus(x(:,i),x(:,i)').^2;
                 end
                 D = ma2./3.*(5.*dist.*s^2 + 5.*sqrt(5.*dist).*dist.*s.^3).*exp(-sqrt(5.*dist).*s);
                 Bdl = b'*(D*b);
@@ -363,7 +362,7 @@ function gpcf = gpcf_matern52(do, varargin)
             end
             Bdm = b'*(Cdm*b);
             Cdm = sum(invCv.*Cdm(:)); % help argument for magnSigma2        
-          case 'FIC'
+          case {'FIC' 'CS+FIC'}
             % Evaluate the help matrices for the gradient evaluation (see
             % gpcf_sexp_trcov)
             
@@ -376,6 +375,9 @@ function gpcf = gpcf_matern52(do, varargin)
                 b3 = varargin{6};
             end
             u = gpcf.X_u;
+            if strcmp(gpcf.type, 'CS+FIC')
+                idiagLa = idiag(La);
+            end
             
             % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
             % NOTE! Here we have already taken into account that the parameters are transformed 
@@ -386,18 +388,16 @@ function gpcf = gpcf_matern52(do, varargin)
             
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
             if length(gpcf.lengthScale) == 1
-                s = 1./gpcf.lengthScale.^2;
+                 % In the case of isotropic MATERN52
+                s = 1./gpcf.lengthScale;
                 ma2 = gpcf.magnSigma2;
                 dist = 0; dist2 = 0;
                 for i=1:m
-                    dist = dist + s.*(gminus(u(:,i),x(:,i)')).^2;
-                    dist2 = dist2 + s.*(gminus(u(:,i),u(:,i)')).^2;
+                    dist = dist + gminus(u(:,i),x(:,i)').^2;
+                    dist2 = dist2 + gminus(u(:,i),u(:,i)').^2;
                 end
-
-                D1 = s.^2.*ma2.*exp(-sqrt(5.*dist));
-                D2 = s.^2.*ma2.*exp(-sqrt(5.*dist2));
-                DKuf_l = (5./(3.*sqrt(s)) + 5.*sqrt(5)/3.*sqrt(dist)).*D1.*dist;
-                DKuu_l = (5./(3.*sqrt(s)) + 5.*sqrt(5)/3.*sqrt(dist2)).*D2.*dist2;
+                DKuf_l = ma2./3.*(5.*dist.*s^2 + 5.*sqrt(5.*dist).*dist.*s.^3).*exp(-sqrt(5.*dist).*s);
+                DKuu_l = ma2./3.*(5.*dist2.*s^2 + 5.*sqrt(5.*dist2).*dist2.*s.^3).*exp(-sqrt(5.*dist2).*s);
             else
                 % In the case ARD is used
                 s = 1./gpcf.lengthScale.^2;
@@ -681,6 +681,24 @@ function gpcf = gpcf_matern52(do, varargin)
                             b2(ind{i})*KfuiKuuKuu(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i})); 
                 end
             end
+         case 'CS+FIC'
+            KfuiKuuKuu = iKuuKuf'*K_uu;
+                gdata(i1) = -0.5.*((2*b*K_uf'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*K_uf'*iKuuKuf))) - ...
+                    sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+
+                gdata(i1) = gdata(i1) - 0.5.*(b.*Cv_ff')*b';
+                gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(K_uf'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                gdata(i1) = gdata(i1) + 0.5.*(idiagLa'*Cv_ff - sum(sum(L.*L)).*gpcf.magnSigma2);   % corrected
+                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(K_uf'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                
+                gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
+                gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*K_uf' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+                     
+                if length(varargin) > 4
+                    gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                    gdata(i1) = gdata(i1) - 0.5.*(b2.*Cv_ff')*b3;
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                end
           case {'PIC_BAND','CS+PIC'}
             %KfuiKuuKuu = K_uf';
             KfuiKuuKuu = iKuuKuf'*K_uu;
@@ -788,6 +806,21 @@ function gpcf = gpcf_matern52(do, varargin)
                                         b2(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i}));
                         end
                     end
+                   case 'CS+FIC'
+                        KfuiKuuKuu = iKuuKuf'*DKuu_l{i2};
+                        gdata(i1) = -0.5.*((2*b*DKuf_l{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l{i2}'*iKuuKuf))) - ...
+                            sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                                        
+                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l{i2}').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
+                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum(2.*DKuf_l{i2}'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2)) );
+                     
+                        if length(varargin) > 4
+                            gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                            gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                        end                    
                   case {'PIC_BAND','CS+PIC'}
                     KfuiKuuDKuu_l = iKuuKuf'*DKuu_l{i2};
                     % Note! H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf, but here we set actually H = mask(H) and the computations 
@@ -871,6 +904,22 @@ function gpcf = gpcf_matern52(do, varargin)
                                     b2(ind{i})*KfuiKuuDKuu_l(ind{i},:)*iKuuKuf(:,ind{i})*b3(ind{i})); 
                     end
                 end
+                case 'CS+FIC'
+                    KfuiKuuKuu = iKuuKuf'*DKuu_l;
+                    gdata(i1) = -0.5.*((2*b*DKuf_l'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf_l'*iKuuKuf))) - ...
+                             sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                                        
+                    gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*DKuf_l') - KfuiKuuKuu).*iKuuKuf',2));
+                    %gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*DKuf_l'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))   ) ); % expensive line
+                    gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf_l' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+                   
+                    if length(varargin) > 4
+                        gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    end        
               case {'PIC_BAND','CS+PIC'}
                 KfuiKuuDKuu_l = iKuuKuf'*DKuu_l;
                 % Note! H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf, but here we set actually H = mask(H) and the computations 
@@ -946,6 +995,9 @@ function gpcf = gpcf_matern52(do, varargin)
         u = gpcf.X_u;
         n_u = size(u,1);
         ma2 = gpcf.magnSigma2;
+        if strcmp(gpcf.type, 'CS+FIC')
+           idiagLa = idiag(La);
+        end
         
         % First check if sparse model is used
         switch gpcf.type
@@ -1040,6 +1092,60 @@ function gpcf = gpcf_matern52(do, varargin)
                     ind = ind +1;
                 end
             end
+         case 'CS+FIC'
+             
+        
+           
+             
+             
+             
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic EXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+            dist=0; dist2=0;
+            for i2=1:nin
+                dist = dist + s(i2).*(gminus(u(:,i2),x(:,i2)')).^2;
+                dist2 = dist2 + s(i2).*(gminus(u(:,i2),u(:,i2)')).^2; 
+            end
+            gradient = zeros(1,n_u*m);
+            ind = 1; %j+(i-1)*n_u
+            dist=sqrt(dist);  dist2=sqrt(dist2);
+            for i=1:m
+                for j = 1:size(u,1)
+                    D1 = zeros(size(u,1),n);
+                    D2 = zeros(size(u,1),size(u,1));
+                    D1(j,:) = sqrt(s(i)).*gminus(u(j,i),x(:,i)');
+                    D2(j,:) = sqrt(s(i)).*gminus(u(j,i),u(:,i)');
+                    D2 = D2 + D2';
+                    
+                    %DKuf_u = ma2./3.*(5.*dist.*s^2 + 5.*sqrt(5.*dist).*dist.*s.^3).*exp(-sqrt(5.*dist).*s);
+                    %DKuu_u = ma2./3.*(5.*dist2.*s^2 + 5.*sqrt(5.*dist2).*dist2.*s.^3).*exp(-sqrt(5.*dist2).*s);
+                    DKuf_u = ma2.*(10/3 - 5 - 5.*sqrt(5).*dist./3).*exp(-sqrt(5).*dist).*D1;
+                    DKuu_u = ma2.*(10/3 - 5 - 5.*sqrt(5).*dist2./3).*exp(-sqrt(5).*dist2).*D2;
+                    
+                    KfuiKuuKuu = iKuuKuf'*DKuu_u;
+                                        
+                    gradient(ind) = -0.5.*((2*b*DKuf_u'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ... 
+                                                   2.*sum(sum(L'.*(L'*DKuf_u'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                    gradient(ind) = gradient(ind) + 0.5.*(2.*b.*sum(DKuf_u'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                    gradient(ind) = gradient(ind) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_u'.*iKuuKuf',2)) - ...
+                                                                      sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                                                                  
+                    gradient(ind) = gradient(ind) + 0.5.*sum(sum(La\((2.*DKuf_u') - KfuiKuuKuu).*iKuuKuf',2));
+                    gradient(ind) = gradient(ind) - 0.5.*( idiagLa'*(sum((2.*DKuf_u' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+
+                                                                  
+                    if length(varargin) > 4
+                        gradient(ind) = gradient(ind) -0.5.*(2*b2*DKuf_u'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                        gradient(ind) = gradient(ind) + 0.5.*(2.*b2.*sum(DKuf_u'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    end
+                    ind = ind +1;
+                end
+            end
+            
           case 'CS+PIC'            
             
         end

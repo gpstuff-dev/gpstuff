@@ -361,27 +361,27 @@ end
                     b2 = varargin{5};
                     b3 = varargin{6};
                 end
+                if strcmp(gpcf.type, 'CS+FIC')
+                    idiagLa = idiag(La);
+                end
 
                 u = gpcf.X_u;
 
                 % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
                 % NOTE! Here we have already taken into account that the parameters are transformed
                 % through log() and thus dK/dlog(p) = p * dK/dp
-                K_uu = gpcf_sexp_trcov(gpcf, u);
-                K_uf = gpcf_sexp_cov(gpcf, u, x);
-                Cv_ff = gpcf_sexp_trvar(gpcf, x);
+                K_uu = feval(gpcf.fh_trcov, gpcf, u);
+                K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+                Cv_ff = feval(gpcf.fh_trvar, gpcf, x);
 
                 % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
                 if length(gpcf.lengthScale) == 1
                     % In the case of an isotropic SEXP
                     s = 1./gpcf.lengthScale.^2;
-                    dist = 0;
-                    dist2 = 0;
+                    dist = 0; dist2 = 0;
                     for i=1:m
-                        D = gminus(u(:,i),x(:,i)');
-                        D2= gminus(u(:,i),u(:,i)');
-                        dist = dist + D.^2;
-                        dist2 = dist2 + D2.^2;
+                        dist = dist + (gminus(u(:,i),x(:,i)')).^2;
+                        dist2 = dist2 + (gminus(u(:,i),u(:,i)')).^2;
                     end
                     DKuf_l = 2.*s.*K_uf.*dist;
                     DKuu_l = 2.*s.*K_uu.*dist2;
@@ -641,11 +641,11 @@ end
 
                 gdata(i1) = gdata(i1) - 0.5.*(b.*Cv_ff')*b';
                 gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(K_uf'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                gdata(i1) = gdata(i1) + 0.5.*(trace(La\sparse(1:n,1:n,Cv_ff,n,n)) - sum(sum(L.*L)).*gpcf.magnSigma2);
+                gdata(i1) = gdata(i1) + 0.5.*(idiagLa'*Cv_ff - sum(sum(L.*L)).*gpcf.magnSigma2);   % corrected
                 gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(K_uf'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 
-                gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*K_uf').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
-                gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*K_uf'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))) );
+                gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
+                gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*K_uf' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
                      
                 if length(varargin) > 4
                     gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
@@ -793,8 +793,8 @@ end
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                         gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                                         
-                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l{2}').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
-                        gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*DKuf_l{2}'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))) );
+                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l{i2}').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
+                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum(2.*DKuf_l{i2}'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2)) );
                      
                         if length(varargin) > 4
                             gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
@@ -912,9 +912,10 @@ end
                     gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf_l'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_l'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                                         
-                    gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
-                    gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*DKuf_l'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))) );
-                
+                    gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*DKuf_l') - KfuiKuuKuu).*iKuuKuf',2));
+                    %gdata(i1) = gdata(i1) - 0.5.*( trace(La\diag(sum(2.*DKuf_l'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2))   ) ); % expensive line
+                    gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf_l' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+                   
                     if length(varargin) > 4
                         gdata(i1) = gdata(i1) - 0.5.*(2*b2*K_uf'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(K_uf'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
@@ -1028,6 +1029,9 @@ end
             b2 = varargin{5};
             b3 = varargin{6};
         end
+        if strcmp(gpcf.type, 'CS+FIC')
+           idiagLa = idiag(La);
+        end
 
         u = gpcf.X_u;
         n_u = size(u,1);
@@ -1117,6 +1121,50 @@ end
                                 gradient(ind) = gradient(ind) + 0.5.*(2.*b2(trindex{i1})*DKuf_u(:,trindex{i1})'*iKuuKuf(:,trindex{i1})*b3(trindex{i1})- ...
                                     b2(trindex{i1})*KfuiKuuDKuu_u(trindex{i1},:)*iKuuKuf(:,trindex{i1})*b3(trindex{i1}));
                             end
+                        end
+                        ind = ind +1;
+                    end
+                end
+            case  'CS+FIC'
+                % Derivatives of K_uu and K_uf with respect to inducing inputs
+                K_uu = feval(gpcf.fh_trcov, gpcf, u);
+                K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+                
+                if length(gpcf.lengthScale) == 1
+                    % In the case of an isotropic SEXP
+                    s = repmat(1./gpcf.lengthScale.^2, 1, m);
+                else
+                    s = 1./gpcf.lengthScale.^2;
+                end
+
+                gradient = zeros(1,n_u*m);
+                ind = 1; %j+(i-1)*n_u
+                for i=1:m
+                    for j = 1:size(u,1)
+                        DKuf_u = zeros(size(K_uf));
+                        DKuu_u = zeros(size(K_uu));
+                        DKuf_u(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
+                        DKuu_u(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
+                        DKuu_u = DKuu_u + DKuu_u';
+
+                        DKuf_u = DKuf_u.*K_uf;
+                        DKuu_u = DKuu_u.*K_uu;      % dist2 = dist2 + dist2' - diag(diag(dist2));
+
+
+                        KfuiKuuKuu = iKuuKuf'*DKuu_u;
+
+                        gradient(ind) = -0.5.*((2*b*DKuf_u'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                            2.*sum(sum(L'.*(L'*DKuf_u'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                        gradient(ind) = gradient(ind) + 0.5.*(2.*b.*sum(DKuf_u'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                        gradient(ind) = gradient(ind) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_u'.*iKuuKuf',2)) - ...
+                            sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                        
+                        gradient(ind) = gradient(ind) + 0.5.*sum(sum(La\((2.*DKuf_u') - KfuiKuuKuu).*iKuuKuf',2));
+                        gradient(ind) = gradient(ind) - 0.5.*( idiagLa'*(sum((2.*DKuf_u' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+
+                        if length(varargin) > 4
+                            gradient(ind) = gradient(ind) -0.5.*(2*b2*DKuf_u'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
+                            gradient(ind) = gradient(ind) + 0.5.*(2.*b2.*sum(DKuf_u'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
                         end
                         ind = ind +1;
                     end

@@ -19,7 +19,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
 %	See also
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo
+% Copyright (c) 2007-      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -248,7 +248,7 @@ switch gp.type
         Lahat = sparse(1:n,1:n,1,n,n) + La;
         La2 = sparse(1:n,1:n,1,n,n) + La1*W;
         %La3 = inv(La1) + W;
-        La3 = (sqrtW\Lahat)*sqrtW;
+        %La3 = (sqrtW\Lahat)*sqrtW;
         B2 = sqrtW*K_fu;
 
         % Components for
@@ -256,12 +256,8 @@ switch gp.type
         A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
         L2 = B3/chol(A2);
 
-        % Evaluate diag(La3 - L3'*L3)
-        %B4 = La3\L;
-        B4 = La1*(La3\L);
-        A3 = eye(size(K_uu)) - L'*B4; A3 = (A3+A3')./2;
-        L3 = B4/chol(A3);
-        dA3L3tL3 = diag(La1/La3)' + sum(L3.*L3,2)';
+        % Evaluate diag(La3 - L3'*L3). Note that L3 is actually the same as L2                
+        dA3L3tL3 = (idiag(W*La2,La1).*diag(W))' + sum(L2.*L2,2)';
         dA3L3tL3 = dA3L3tL3.*thirdgrad(f, gp.likelih)';
 
         KufW = K_fu'*W;
