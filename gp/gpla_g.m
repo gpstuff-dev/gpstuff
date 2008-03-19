@@ -256,7 +256,7 @@ switch gp.type
         A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
         L2 = B3/chol(A2);
 
-        % Evaluate diag(La3 - L3'*L3). Note that L3 is actually the same as L2                
+        % Evaluate diag(La3 - L3'*L3).
         dA3L3tL3 = (idiag(W*La2,La1).*diag(W))' + sum(L2.*L2,2)';
         dA3L3tL3 = dA3L3tL3.*thirdgrad(f, gp.likelih)';
 

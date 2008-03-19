@@ -1,4 +1,4 @@
-function [Ef, Varf] = ep_post(gp, x, y, ns)
+function [Ef, Varf, S] = ep_post(gp, x, y, ns)
 %EP_POST	Posterior distribution from Gaussian Process EP
 %
 %	Description
@@ -40,13 +40,13 @@ switch gp.type
             gamma = R'*(R*(P'*site_nu));
             Ef = eta + P*gamma;
             if nargout == 2
-                Varf = D + sum((P*R').^2,1);
+                Varf = D + sum((P*R').^2,2);
             end
         elseif nargin > 3
             eta = D.*site_nu;
             gamma = R'*(R*(P'*site_nu));
             Ef = eta + P*gamma;
-            Ef = (repmat(Ef,1,ns) + chol((diag(D)+P*R'*R*P'))'*randn(length(y),ns))';
+            S = (repmat(Ef,1,ns) + chol((diag(D)+P*R'*R*P'))'*randn(length(y),ns))';
         end
     case 'PIC_BLOCK'
         ind = gp.tr_index;
@@ -54,6 +54,8 @@ switch gp.type
         [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper');
 
         if nargin == 3
+            eta = zeros(size(site_nu));
+            Varf = zeros(size(site_nu));
             for i=1:length(ind)
                 eta(ind{i}) = D{i}*site_nu(ind{i});
                 Varf(ind{i}) = diag(D{i});
@@ -61,7 +63,7 @@ switch gp.type
             gamma = R'*(R*(P'*site_nu));
             Ef = eta + P*gamma;
             if nargout == 2
-                Varf = Varf + sum((P*R').^2,1);
+                Varf = Varf + sum((P*R').^2,2);
             end
         elseif nargin > 3
             for i=1:length(ind)

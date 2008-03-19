@@ -185,6 +185,7 @@ switch gp.type
         gp.cf = cf_orig;
 
         iLaKfu = La\K_fu;
+%        nnz(La)/prod(size(La))
         edata = 2*sum(log(diag(chol(La)))) + t'*(La\t);
         % The data contribution to the error is
         % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t

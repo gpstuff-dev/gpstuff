@@ -112,8 +112,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_nu = gp_cov(gp, x, u);         % n x u   
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-        kstarstar = gp_trvar(gp, x);
-        
+                
         if length(varargin) < 1
             error('The argument telling the optimzed/sampled parameters has to be provided.') 
         end
@@ -138,6 +137,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
 
         if nargout > 1
+            kstarstar = gp_trvar(gp, x);
             KnfL = K_nu*(iKuuKuf*L);
             Varf = zeros(length(x),1);
             for i=1:length(ind)
@@ -160,5 +160,65 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
                 end
             end
         end
+      case 'CS+FIC'
+        u = gp.X_u;
+        m = length(u);
+        cf_orig = gp.cf;
+        ncf = length(gp.cf);
+        
+        cf1 = {};
+        cf2 = {};
+        j = 1;
+        k = 1;
+        for i = 1:ncf
+            if ~isfield(gp.cf{i},'cs')
+                cf1{j} = gp.cf{i};
+                j = j + 1;
+            else
+                cf2{k} = gp.cf{i};
+                k = k + 1;
+            end
+        end
+        gp.cf = cf1;
+
+        [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % f x 1  vector
+        K_fu = gp_cov(gp, tx, u);         % f x u
+        K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+        gp.cf = cf2;
+        Kcs_nf = gp_cov(gp, x, tx);
+        gp.cf = cf_orig;
+
+        if length(varargin) < 1
+            error('The argument telling the optimized/sampled parameters has to be provided.')
+        end
+
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+
+        p = b';
+        ntest=size(x,1);
+        K_nu=gp_cov(gp,x,u);
+        % Knf = K_nu*(K_uu\K_fu');
+        % Ef = Knf*p;
+        Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
+        
+        % Evaluate the variance
+        if nargout > 1
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');   
+            Knn_v = gp_trvar(gp,x);
+            B2=Luu\(K_nu');
+            Varf = Knn_v - sum(B2'.*(B*(La\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2) - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2);
+            Varf = Varf - 2.*sum((Kcs_nf*(La\K_fu)).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
+            for i1=1:ntest
+                switch gp.likelih
+                    case 'probit'
+                        p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                    case 'poisson'
+                        p1 = NaN;
+                end
+            end
+        end
     end
 end
+

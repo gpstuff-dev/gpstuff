@@ -1071,7 +1071,9 @@ end
                         gradient(ind) = gradient(ind) + 0.5.*(2.*b.*sum(DKuf_u'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                         gradient(ind) = gradient(ind) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf_u'.*iKuuKuf',2)) - ...
                             sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
-
+                            
+                        %gradient(ind) = gradient(ind) +1;
+                        
                         if length(varargin) > 4
                             gradient(ind) = gradient(ind) -0.5.*(2*b2*DKuf_u'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
                             gradient(ind) = gradient(ind) + 0.5.*(2.*b2.*sum(DKuf_u'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);

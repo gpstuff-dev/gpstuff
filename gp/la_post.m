@@ -35,7 +35,7 @@ switch gp.type
 
     case 'FIC'
         m = gp.nind;
-        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, xx, yy, 'hyper');
+        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, tx, ty, 'hyper');
 
 
         if nargin == 3
@@ -52,26 +52,27 @@ switch gp.type
             A = eye(m,m) - (L'.*repmat(Lahat',m,1))*L; A = (A+A')./2;
             L2 = repmat(Lahat,1,m).*L/chol(A);
 
-            S = (repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(legth(ty),ns);
+            S = repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(legth(ty),ns);
         end
     case 'PIC_BLOCK'
         ind = gp.tr_index;
         m = gp.nind;
 
-        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, xx, yy, 'hyper');
+        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, tx, ty, 'hyper');
 
         if nargin == 3
             Ef = f;
             if nargout == 2
-                B = zeros(size(L'));
+                B = zeros(size(L));
+                Varf = zeros(size(ty));
                 for i = 1:length(ind)
                     Lahat = inv(inv(La2{i}) + diag(W(ind{i})));
-                    B = L'*Lahat;
+                    B(ind{i},:) = Lahat*L(ind{i},:);
                     Varf(ind{i}) = diag(Lahat);
                 end
-                A = eye(m,m) - B*L; A = (A+A')./2;
-                L2 = L/A;
-                Varf = Varf + sum(L.*B',2);
+                A = eye(m,m) - L'*B; A = (A+A')./2;
+                L2 = B/chol(A);
+                Varf = Varf + sum(B.^2,2);
             end
         elseif nargin > 3
             Ef = f;
@@ -84,11 +85,11 @@ switch gp.type
             A = eye(m,m) - B*L; A = (A+A')./2;
             L2 = L/A;
 
-            S = (repmat(Ef,1,ns) + chol((Sigma+L2*B))'*randn(legth(ty),ns);
+            S = repmat(Ef,1,ns) + chol((Sigma+L2*B))'*randn(legth(ty),ns);
         end
     case 'CS+FIC'
         m = gp.nind;
-        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, xx, yy, 'hyper');
+        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, tx, ty, 'hyper');
 
         if nargin == 3
             Ef = f;
@@ -107,7 +108,7 @@ switch gp.type
             A = eye(m,m) - (L'.*repmat(Lahat',1,m))*L; A = (A+A')./2;
             L2 = iLaKfu/chol(A);
 
-            S = (repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(legth(ty),ns);
+            S = repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(legth(ty),ns);
         end
 end
 end

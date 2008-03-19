@@ -43,6 +43,7 @@ if strcmp(w, 'init')
         case 'poisson'
             const_table = gammaln(y+1);
             const_table(:,2) = y./gp.avgE;
+            const_table(:,3) = gp.avgE;
             %            const_table(:,2) =
     end
 
@@ -412,14 +413,23 @@ end
                     B=Luu\(K_fu');       % u x f
                     Qv_ff=sum(B.^2)';
                     Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-
-                    iLaKfu = zeros(size(K_fu));  % f x u
-
+                    
                     gp.cf = cf2;
                     K_cs = gp_trcov(gp,x);
                     La = sparse(1:n,1:n,Lav,n,n) + K_cs;
                     gp.cf = cf_orig;
-
+                    
+                    % Find fill reducing permutation and permute all the
+                    % matrices
+                    p = analyze(La);
+                    r(p) = 1:n;
+                    const_table = const_table(p,:);
+                    f = f(p);
+                    y = y(p);
+                    La = La(p,p);
+                    K_fu = K_fu(p,:);
+                    VD = ldlchol(La);
+		  
                     iLaKfu = La\K_fu;
 
                     A = K_uu+K_fu'*iLaKfu;
@@ -433,7 +443,7 @@ end
                             if ~isfield(gp.laplace_opt, 'fminunc_opt')
                                 opt=optimset('GradObj','on');
                                 opt=optimset(opt,'Hessian','on');
-                                fhm = @(W, f, varargin) (La\f - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; %
+                                fhm = @(W, f, varargin) (ldlsolve(VD,f) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; % La\f
                                 opt=optimset(opt,'HessMult', fhm);
                                 opt=optimset(opt,'TolX', 1e-8);
                                 opt=optimset(opt,'TolFun', 1e-8);
@@ -443,8 +453,8 @@ end
                                 opt = gp.laplace_opt.fminunc_opt;
                             end
 
-                            fe = @(f, varargin) (0.5*f*(La\f' - L*(L'*f')) - loglikelihood(f', gp.likelih));
-                            fg = @(f, varargin) (La\f' - L*(L'*f') - derivative(f', gp.likelih))';
+                            fe = @(f, varargin) (0.5*f*(ldlsolve(VD,f') - L*(L'*f')) - loglikelihood(f', gp.likelih));
+                            fg = @(f, varargin) (ldlsolve(VD,f') - L*(L'*f') - derivative(f', gp.likelih))';
                             fh = @(f, varargin) (hessian(f', gp.likelih));
                             mydeal = @(varargin)varargin{1:nargout};
                             [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
@@ -454,7 +464,7 @@ end
                             sqrtW = sqrt(W);
 
                             b = L'*f;
-                            logZ = 0.5*(f'*(La\f) - b'*b) - loglikelihood(f, gp.likelih);
+                            logZ = 0.5*(f'*(ldlsolve(VD,f)) - b'*b) - loglikelihood(f, gp.likelih);
                             
                             % find the mode by Scaled conjugate gradient method
                         case 'SCG'
@@ -509,9 +519,17 @@ end
                     A = chol(A);
                     edata = 2.*sum(log(diag(chol(Lahat)'))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                     edata = logZ + 0.5*edata;
-
                     La2 = La;
                     b = derivative(f, gp.likelih);
+                    
+                    % Reorder all the returned and stored values
+                    b = b(r);
+                    L = L(r,:);
+                    La2 = La2(r,r);
+                    y = y(r);
+                    f = f(r);
+                    W = W(r);
+                    const_table = const_table(r,:);
 
                 otherwise
                     error('Unknown type of Gaussian process!')
@@ -563,7 +581,7 @@ end
                 case 'probit'
                     loglikelih = sum(log(normcdf(y.*f)));
                 case 'poisson'
-                    lambda = gp.avgE.*exp(f);
+                    lambda = const_table(:,3).*exp(f);
                     gamlny = const_table(:,1);
                     loglikelih =  sum(-lambda + y.*log(lambda) - gamlny);
             end
@@ -573,7 +591,7 @@ end
                 case 'probit'
                     deriv = y.*normpdf(f)./normcdf(y.*f);
                 case 'poisson'
-                    deriv = y - gp.avgE.*exp(f);
+                    deriv = y - const_table(:,3).*exp(f);
             end
         end
         function Hessian = hessian(f, likelihood)
@@ -582,7 +600,7 @@ end
                     z = y.*f;
                     Hessian = (normpdf(f)./normcdf(z)).^2 + z.*normpdf(f)./normcdf(z);
                 case 'poisson'
-                    Hessian = gp.avgE.*exp(f);
+                    Hessian = const_table(:,3).*exp(f);
             end
         end
         function [e, g, h] = egh(f, varargin)

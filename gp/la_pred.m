@@ -199,8 +199,8 @@ switch gp.type
         end
         gp.cf = cf1;
 
-        [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-        K_fu = gp_cov(gp, x, u);         % f x u
+        [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % f x 1  vector
+        K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         gp.cf = cf2;
@@ -238,12 +238,20 @@ switch gp.type
             L2 = B2/chol(A2);
 
             % Set params for K_nf
-            BB=Luu\(B');
+            BB=Luu\(B)';    % sqrtW*K_fu
             BB2=Luu\(K_nu');
-            KcssW = Kcs_nf*sqrtW
-            Varf = kstarstar - sum(BB2'.*(BB*(Lahat\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2) - sum((KcssW/chol(Lahat)).^2,2) + sum((KcssW*L2).^2, 2);
+            KcssW = Kcs_nf*sqrtW;
+            Varf = kstarstar - sum(BB2'.*(BB*(Lahat\BB')*BB2)',2);
+            Varf = Varf + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            %Varf = Varf - sum((KcssW/chol(Lahat)).^2,2);
+            m = amd(Lahat);
+            tmp = sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2);
+            Varf = Varf - tmp;
+            
+            Varf = Varf + sum((KcssW*L2).^2, 2);
             %VarY = VarY - 2.*diag((Kcs_nf*iLaKfu)*(K_uu\K_nu')) + 2.*diag((Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu')));
-            VarY = VarY - 2.*sum((KcssW*(Lahat\BB')).*(BB2')',2) + 2.*sum((KcssW*L).*(L'*B*(K_uu\K_nu'))' ,2);
+            Varf = Varf - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2);
+            Varf = Varf + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
             for i1=1:ntest
                 switch gp.likelih
                     case 'probit'

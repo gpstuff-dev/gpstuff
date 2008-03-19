@@ -1,17 +1,6 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
 %   Last modified: 2007-05-29 14:28:48 EEST
 
-- CS+FIC ei toimii vasta sexp kovarianssifunktiolle.
-  * lisaa muihin
-  * Muuta full-malli Laplacelle ja EP:lle siten, etta pystyy
-  kasittelemaan pelkan CS funktion
-
-- Lis‰‰ kaikkiin gpcf:iin functiot fh_veccov ja tee functio gp_veccov,
-  joka laskee kovarianssin pisteitt‰in kahden vektorin alkioille. T‰m‰
-  nopeuttaa TRUNCATED mallin laskentaa, kun ei tarvitse kutsua niin
-  usein gp_cov funktiota
-
-
 
 PERUS GP RAKENNE:
 ------------------

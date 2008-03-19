@@ -74,7 +74,9 @@ switch gp.type
         % Q_ff = K_fu*inv(K_uu)*K_fu'
         % Here we need only the diag(Q_ff), which is evaluated below
         B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
+        Qv_ff=sum(B.^2)';                            C = sqrt(deltatautilde ./ (1+deltatautilde.*dn)) * D(:,i1);
+                            LD = ldlupdate(LD,C,'-');
+                            nnz(LD)/prod(size(LD))
         Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
         % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
         iLaKfu = zeros(size(K_fu));  % f x u,
@@ -127,10 +129,9 @@ switch gp.type
         iLaKfu = zeros(size(K_fu));  % f x u
         for i=1:length(ind)
             Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-            %            Qbl_ff2(ind{i},ind{i}) = B(:,ind{i})'*B(:,ind{i});
             [Kbl_ff, Cbl_ff] = gp_trcov(gp, tx(ind{i},:));
             La{i} = Cbl_ff - Qbl_ff;
-            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    % Check if works by changing inv(La{i})!!!
+            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
         end
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;            % Ensure symmetry
@@ -145,60 +146,84 @@ switch gp.type
         end
         p= p2-p;
 
-        %iKuuKuf = K_uu\K_fu';
-        w_u = K_uu\(K_fu'*p);
-
+        iKuuKuf = K_uu\K_fu';
+        
         w_bu=zeros(length(x),length(u));
         w_n=zeros(length(x),1);
         for i=1:length(ind)
-            w_bu(tstind{i},:) = repmat((K_uu\(K_fu(ind{i},:)'*p(ind{i},:)))', length(tstind{i}),1);
+            w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
             K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
             w_n(tstind{i},:) = K_nf*p(ind{i},:);
         end
-        A = chol(A)';
-        y = K_nu*w_u - sum(K_nu.*w_bu,2) + w_n;
-        %    VarY = p;
+        
+        y = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
+        
 
         if nargout > 1
-            Knn_v = gp_trvar(gp,x);
-            iKuuKuf = K_uu\K_fu';
-            v_bu = zeros(length(x),length(tx));
-            v_n = zeros(length(x),length(tx));
+            
+            kstarstar = gp_trvar(gp, x);
+            KnuiKuu = K_nu/K_uu;
+            KufiLaKfu = K_fu'*iLaKfu;
+            QnfL = KnuiKuu*(K_fu'*L);
+            Varf1 = zeros(size(x,1),1);
+            Varf2 = zeros(size(x,1),1);
+            Varf3 = zeros(size(x,1),1);
             for i=1:length(ind)
-                K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
-                v_bu(tstind{i},ind{i}) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
-                v_n(tstind{i},ind{i}) = K_nf;
-            end
-            K_nf = K_nu*iKuuKuf - v_bu + v_n;
+                KubiLaKbu = K_fu(ind{i},:)'/La{i}*K_fu(ind{i},:);
+                nonblock = KufiLaKfu - KubiLaKbu;
+                Varf1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
 
-            ntest=size(x,1);
-            VarY = zeros(ntest,1);
-            %Varf = zeros(ntest,ntest);
-            for i=1:length(ind)
-                VarY = VarY + sum((K_nf(:,ind{i})/chol(La{i})).^2,2);
-                %Varf = Varf + (K_nf(:,ind{i})/La{i})*K_nf(:,ind{i})' - K_nf(:,ind{i})*L(ind{i},:)*L(ind{i},:)'*K_nf(:,ind{i})';
+                Knb = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));
+                Varf2(tstind{i}) = diag(Knb/La{i}*Knb');
+                
+                KnbL = Knb*L(ind{i},:);
+                QnbL = KnuiKuu(tstind{i},:)*(K_fu(ind{i},:)'*L(ind{i},:));
+                %Varf3(tstind{i}) = sum(QnfL(tstind{i},:) - QnbL + KnbL,2);
+                Varf3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
             end
-            %Varf = kstarstar - diag(Varf);
+            
+            VarY = kstarstar - (Varf1 + Varf2 - Varf3);
+            
+%             QnfL = KnuiKuu*(K_fu'*L);
+%             dQnfiLaQfn = sum(KnuiKuu.*(K_fu'*iLaKfu*KnuiKuu')',2);
+%             
+%             VarY = kstarstar - (dQnfiLaQfn - Varf2 +Varf1 - sum(QnfL-QnbL + KnbL,2) );
+            
+%             kstarstar = gp_trvar(gp, x); 
+%             KnfL = K_nu*(iKuuKuf*L);
+%             Varf = zeros(length(x),1);
+%             for i=1:length(ind)
+%                 v_n = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+%                 v_bu = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+%                 KnfLa = K_nu*(iKuuKuf(:,ind{i})/chol(La{i}));
+%                 KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(La{i});
+%                 Varf = Varf + sum((KnfLa).^2,2);
+%                 KnfL(tstind{i},:) = KnfL(tstind{i},:) - v_bu*L(ind{i},:) + v_n*L(ind{i},:);
+%             end
+%             VarY = kstarstar - (Varf - sum((KnfL).^2,2));  
+            
 
-            VarY = Knn_v - (VarY - sum((K_nf*L).^2,2));
-            % $$$
-            % $$$
-            % $$$         % -----------
-            % $$$         ntest=size(x,1);
-            % $$$         Varf = zeros(ntest,1);
-            % $$$         for i=1:length(ind)
-            % $$$             v_bu = zeros(length(x),length(ind{i}));
-            % $$$             v_n = zeros(length(x),length(ind{i}));
-            % $$$
-            % $$$             K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));
-            % $$$             v_bu(tstind{i},:) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
-            % $$$             v_n(tstind{i},:) = K_nf;
-            % $$$             K_nf = K_nu*iKuuKuf(:,ind{i}) - v_bu + v_n;
-            % $$$             Varf = Varf + sum((K_nf/chol(La{i})).^2,2);
-            % $$$             ws{i} = v_n - v_bu;
-            % $$$         end
-            % $$$
-            % $$$         Varf = Knn_v - (Varf - sum((K_nf*L).^2,2));
+%             Knn_v = gp_trvar(gp,x);
+%             iKuuKuf = K_uu\K_fu';
+%             v_bu = zeros(length(x),length(tx));
+%             v_n = zeros(length(x),length(tx));
+%             for i=1:length(ind)
+%                 K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+%                 v_bu(tstind{i},ind{i}) = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
+%                 v_n(tstind{i},ind{i}) = K_nf;
+%             end
+%             K_nf = K_nu*iKuuKuf - v_bu + v_n;
+% 
+%             ntest=size(x,1);
+%             VarY = zeros(ntest,1);
+%             %Varf = zeros(ntest,ntest);
+%             for i=1:length(ind)
+%                 VarY = VarY + sum((K_nf(:,ind{i})/chol(La{i})).^2,2);
+%                 %Varf = Varf + (K_nf(:,ind{i})/La{i})*K_nf(:,ind{i})' - K_nf(:,ind{i})*L(ind{i},:)*L(ind{i},:)'*K_nf(:,ind{i})';
+%             end
+%             %Varf = kstarstar - diag(Varf);
+% 
+%             VarY = Knn_v - (VarY - sum((K_nf*L).^2,2));
         end
         if nargout > 2
             noisyY = y;
