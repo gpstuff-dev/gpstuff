@@ -241,8 +241,8 @@ end
                             pn = P(i1,:)';
                             Ann = D_vec(i1) + sum((R*pn).^2);
                             tau_i = Ann^-1-tautilde(i1);
-                            myy_i1 = eta(i1) + pn'*gamma;
-                            vee_i = Ann^-1*myy_i1-nutilde(i1);
+                            myy(i1) = eta(i1) + pn'*gamma;
+                            vee_i = Ann^-1*myy(i1)-nutilde(i1);
 
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
@@ -269,7 +269,7 @@ end
                                 R = cholupdate(R, RtRpnU, '+');
                             end
                             eta(i1) = eta(i1) + (deltanutilde - deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
-                            gamma = gamma + (deltanutilde - deltatautilde.*myy_i1)./(1+deltatautilde.*dn) * R'*(R*pn);
+                            gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
 %                            myy = eta + P*gamma;
 
                             % Store cavity parameters
@@ -389,12 +389,12 @@ end
                                 Dbl = D{bl}; dn = Dbl(in,in); pn = P(i1,:)';
                                 Ann = dn + sum((R*pn).^2);
                                 tau_i = Ann^-1-tautilde(i1);
-                                myy_i1 = eta(i1) + pn'*gamma;
-                                vee_i = Ann^-1*myy_i1-nutilde(i1);
+                                myy(i1) = eta(i1) + pn'*gamma;
+                                vee_i = Ann^-1*myy(i1)-nutilde(i1);
 
                                 myy_i=vee_i/tau_i;
                                 sigm2_i=tau_i^-1;
-
+                               
                                 % marginal moments
                                 [muhati, sigm2hati] = marginalMoments12(gp.likelih);
 
@@ -406,7 +406,8 @@ end
 
                                 % Update the parameters
                                 Dblin = Dbl(:,in);
-                                Dbl = Dbl - deltatautilde ./ (1+deltatautilde.*dn) * Dbl(:,in)*Dbl(:,in)';
+                                Dbl = Dbl - deltatautilde ./ (1+deltatautilde.*dn) * Dblin*Dblin';
+                                %Dbl = inv(inv(Dbl) + diag(tautilde(bl_ind)));
                                 P(bl_ind,:) = P(bl_ind,:) - ((deltatautilde ./ (1+deltatautilde.*dn)).* Dblin)*pn';
                                 updfact = deltatautilde./(1 + deltatautilde.*Ann);
                                 if updfact > 0
@@ -423,17 +424,19 @@ end
                                 D{bl} = Dbl;
                                 % Store cavity parameters
                                 muvec_i(i1,1)=myy_i;
-                                sigm2vec_i(i1,1)=sigm2_i;
-
+                                sigm2vec_i(i1,1)=sigm2_i;                                
                             end
                         end
                         % Re-evaluate the parameters
                         temp2 = zeros(size(R0P0t));
                         for i=1:length(ind)
-                            temp1 = inv(eye(size(Labl{i})) + gtimes(Labl{i},tautilde(ind{i})'));
-                            D{i} = temp1*Labl{i};
-                            P(ind{i},:) = temp1*K_fu(ind{i},:);
-                            temp2(:,ind{i}) = R0P0t(:,ind{i})*gtimes(temp1,tautilde(ind{i}));
+                            dtautilde = diag(tautilde(ind{i}));
+                            temp1 = dtautilde + inv(Labl{i});
+                            sdtautilde = sqrt(dtautilde);
+                            Dhat = sdtautilde*Labl{i}*sdtautilde + eye(size(Labl{i}));
+                            D{i} = inv(temp1);
+                            P(ind{i},:) = temp1\(Labl{i}\K_fu(ind{i},:));
+                            temp2(:,ind{i}) = R0P0t(:,ind{i})*sdtautilde/Dhat*sdtautilde;
                             eta(ind{i}) = D{i}*nutilde(ind{i});
                         end
                         R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
@@ -478,7 +481,6 @@ end
                         term3 = -marginalMoment0(gp.likelih);
 
                         logZep = term41+term52+term5+term3;
-                        iter=iter+1;
 
                         iter=iter+1;
                     end
@@ -610,17 +612,15 @@ end
                             VD = ldlrowupdate(i1,VD,D2,'+');
                         end
                         % Re-evaluate the parameters
-                        tau = sparse(1:n,1:n,tautilde,n,n);
-                        temp1 = Inn+La*tau;
-                        P = temp1\K_fu;
-                        temp2 = R0P0t*tau/temp1;
-                        R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
-                        eta = temp1\(La*nutilde);
-                        gamma = R'*(R*(P'*nutilde));
-                        myy = eta + P*gamma;
-                        sqrtS = sqrt(tau);
+                        sqrtS = sparse(1:n,1:n,sqrt(tautilde),n,n);
                         sqrtSLa = sqrtS*La;
                         D2 = sqrtSLa*sqrtS + Inn;
+                        P = K_fu - sqrtSLa'*(D2\(sqrtS*K_fu));
+                        R = chol(inv( eye(size(R0)) + R0P0t*sqrtS/D2*sqrtS*R0P0t' )) * R0;
+                        eta = La*nutilde - sqrtSLa'*(D2\(sqrtSLa*nutilde));
+                        gamma = R'*(R*(P'*nutilde));
+                        myy = eta + P*gamma;
+                       
                         V = chol(D2,'lower');
                         VD = ldlchol(D2);
 
@@ -745,28 +745,84 @@ end
                     fm = @first_moment;
                     sm = @second_moment;
 
-                    tol = 1e-8;
+                    atol = 1e-10;
+                    reltol = 1e-6;
                     yy = y(i1);
                     gamlny = const_table(i1,1);
                     avgE = const_table(i1,2);
+                    const=0;
+                    
                     % Set the limits for integration and integrate with quad
+                    % -----------------------------------------------------
                     if yy > 0
-                        mean_app = log(yy./avgE);
-                        mean_app = (myy_i/sigm2_i + mean_app.*yy)/(1/sigm2_i + yy);
-                        sigm_app = sqrt((1/sigm2_i + yy)^-1);
-                        %lambdaconf_fix(1) = mean_app - 6*sigm_app; lambdaconf_fix(2) = mean_app + 6*sigm_app;
+                        mean_app = (myy_i/sigm2_i + log(yy/avgE).*yy)/(1/sigm2_i + yy);
+                        sigm_app = sqrt((1/sigm2_i + avgE)^-1);
                     else
                         mean_app = myy_i;
-                        sigm_app = sqrt(sigm2_i);
-                        %lambdaconf_fix(1) = myy_i - 4*sqrt(sigm2_i); lambdaconf_fix(2) = myy_i + 4*sqrt(sigm2_i);
+                        sigm_app = sqrt(sigm2_i);                    
                     end
 
                     lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-
-                    [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
+                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+                    testiter = 1;
+                    if test1 == 0 
+                        lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
+                        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+                        if test1 == 0
+                            go=true;
+                            while testiter<10 & go
+                                lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
+                                lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
+                                test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+                                test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+                                if test1==1&test2==1
+                                    go=false;
+                                end
+                                testiter=testiter+1;
+                            end
+                        end
+                        mean_app = (lambdaconf(2)+lambdaconf(1))/2;
+                    elseif test2 == 0
+                        lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
+                        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+                        if test2 == 0
+                            go=true;
+                            while testiter<10 & go
+                                lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
+                                lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
+                                test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+                                test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+                                if test1==1&test2==1
+                                    go=false;
+                                end
+                                testiter=testiter+1;
+                            end
+                        end
+                        mean_app = (lambdaconf(2)+lambdaconf(1))/2;
+                    end
+                    % end finding the limits
+                    % -----------------------------------------------------
+%                     input = lambdaconf(1):0.0001:lambdaconf(2);
+%                     clf
+%                     plot(input,zm(input))
+%                     hold on
+%                     plot([lambdaconf(1) (lambdaconf(2)+lambdaconf(1))/2 lambdaconf(2)], [0 zm((lambdaconf(2)+lambdaconf(1))/2) 0], 'r*')
+                    
+                    [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2)); %,'AbsTol',atol,'RelTol',reltol
                     [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
                     [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
-
+                    if sigm2hati1 >= sigm2_i
+                        tol = atol.^2;
+                        reltol = reltol.^2;
+                        [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
+                        [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
+                        [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
+                        %                    [M, fhncnt] = quadl_4moms(moms, lambdaconf(1), lambdaconf(2), tol, false);
+                    end
+                    muhati1 = m_1;
+                    M_0(i1) = m_0;
+                    
                     % Evaluate the moments with quadl_4moms
                     %                 moms = @moments;
                     %                 [M, fhncnt] = quadl_4moms(moms, lambdaconf(1), lambdaconf(2), tol, false);
@@ -775,18 +831,8 @@ end
 
                     % If the second central moment is less than cavity variance integrate more
                     % precisely. Theoretically should be sigm2hati1 < sigm2_i
-                    if sigm2hati1 >= sigm2_i
-                        tol = tol.^2;
-                        [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-                        [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
-                        [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
 
-                        %                    [M, fhncnt] = quadl_4moms(moms, lambdaconf(1), lambdaconf(2), tol, false);
-                    end
                     % Set the mean
-                    muhati1 = m_1;
-                    M_0(i1) = m_0;
-
                     %                 muhati1 = M(2)./M(3);
                     %                 sigm2hati1 = M(1)./M(3) - muhati1.^2;
                     %                 M_0(i1) = M(3);
@@ -798,13 +844,13 @@ end
 
             function integrand = first_moment(f)
                 lambda = avgE.*exp(f);
-                integrand = exp(-lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-                integrand = f.*integrand./m_0; %
+                integrand = exp(-lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2 - log(m_0)); %
+                integrand = f.*integrand; %
             end
             function integrand = second_moment(f)
                 lambda = avgE.*exp(f);
-                integrand = exp(-lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
-                integrand = (f-m_1).^2.*integrand./m_0; %
+                integrand = exp(log((f-m_1).^2) -lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2 - log(m_0));
+                %integrand = (f-m_1).^2.*integrand; %
             end
             function integrand = moments(f)
                 lambda = avgE.*exp(f);

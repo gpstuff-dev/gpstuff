@@ -236,38 +236,47 @@ switch gp.type
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         gp.cf = cf_orig;
 
+        % Help matrices
         iKuuKuf = K_uu\K_fu';
-
+        Inn = sparse(1:n,1:n,1,n,n);
         W = hessian(f, gp.likelih);
         sqrtW = sqrt(W);
         W = sparse(1:n,1:n,W,n,n);
         sqrtW = sparse(1:n,1:n,sqrtW,n,n);
+        
+        % b=f'*(Qff+La1)^{-1}*f
         b = f'/La1 - (f'*L)*L';
 
-        La = sqrtW*La1*sqrtW;
-        Lahat = sparse(1:n,1:n,1,n,n) + La;
-        La2 = sparse(1:n,1:n,1,n,n) + La1*W;
-        %La3 = inv(La1) + W;
-        %La3 = (sqrtW\Lahat)*sqrtW;
+        % Help matrices for trace component
+        sqrtWLa1 = sqrtW*La1;
+        Lahat = Inn + sqrtWLa1*sqrtW;
         B2 = sqrtW*K_fu;
-
-        % Components for
         B3 = Lahat\B2;
         A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
         L2 = B3/chol(A2);
-
-        % Evaluate diag(La3 - L3'*L3).
-        dA3L3tL3 = (idiag(W*La2,La1).*diag(W))' + sum(L2.*L2,2)';
-        dA3L3tL3 = dA3L3tL3.*thirdgrad(f, gp.likelih)';
-
+        
+        % Help matrices for b2 set 1
+        L3 = La1*L-sqrtWLa1'*(Lahat\(sqrtWLa1*L));
+        L3 = L3/chol(eye(size(K_uu)) - L'*L3);
+                
+        % Evaluate diag(La3^{-1} + L3'*L3).*thirdgrad
+        b2 = diag(La1) - sum((sqrtWLa1'/chol(Lahat)).^2,2) + sum(L3.*L3,2);
+        %b2 = diag(La1) - diag(La1).*idiag(sqrtW\Lahat/sqrtW,La1)  + sum(L3.*L3,2);
+        %b2 = diag(La1) - sum((La1*sinv(sqrtW\Lahat/sqrtW)).*La1,2)  + sum(L3.*L3,2);
+        b2 = b2.*thirdgrad(f, gp.likelih);
+            
+        % Help matrices for b2 set 2 
+        La2 = W + W*La1*W;
         KufW = K_fu'*W;
-        iLa2Kfu = La2\K_fu;
-        A4 = K_uu + KufW*iLa2Kfu; A4 = (A4+A4')./2;
-        L4 = iLa2Kfu/chol(A4);
-        L5 = chol(A4)'\(KufW/La2);
+        iLa2WKfu = La2\(W*K_fu);
+        A4 = K_uu + KufW*iLa2WKfu; A4 = (A4+A4')./2;
+        L4 = iLa2WKfu/chol(A4);
+        
+        % Evaluate rest of b2
+        b2 = b2'/La2 - b2'*L4*L4';
 
         % Set the parameters for the actual gradient evaluation
-        b2 = (dA3L3tL3/La2 - dA3L3tL3*L4*L5);
+        b2 = -b2*W;
         b3 = derivative(f, gp.likelih);
         L = sqrtW*L2;
         La = (sqrtW\Lahat)/sqrtW;

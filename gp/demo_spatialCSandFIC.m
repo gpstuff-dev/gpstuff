@@ -6,7 +6,7 @@ function demo_spatialCSandFIC
 %=======================================================================
     load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
   %   load D:\jpvanhat_tyo\finwell\data\tilastok2007\testdata\aivoverisuonitaudit911_9600.mat
-% load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+    load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -56,7 +56,7 @@ function demo_spatialCSandFIC
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.05);
+    gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.1);
     gpcf2.p.lengthScale = t_p({1 4});
     gpcf2.p.magnSigma2 = t_p({0.3 4});
 
