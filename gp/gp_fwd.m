@@ -74,9 +74,7 @@ switch gp.type
         % Q_ff = K_fu*inv(K_uu)*K_fu'
         % Here we need only the diag(Q_ff), which is evaluated below
         B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';                            C = sqrt(deltatautilde ./ (1+deltatautilde.*dn)) * D(:,i1);
-                            LD = ldlupdate(LD,C,'-');
-                            nnz(LD)/prod(size(LD))
+        Qv_ff=sum(B.^2)';
         Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
         % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
         iLaKfu = zeros(size(K_fu));  % f x u,
