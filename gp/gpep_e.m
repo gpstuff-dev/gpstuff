@@ -1,4 +1,3 @@
-
 function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, param, varargin)
 %GP2_E	Evaluate error function for Gaussian Process.
 %
@@ -39,17 +38,6 @@ if strcmp(w, 'init')
     DD0 = [];
     PP0=[];
     
-    % Create a table of constants that are needed in
-    % the function evaluations
-    switch gp.likelih
-        case 'probit'
-            const_table = [];
-        case 'poisson'
-            const_table(:,1) = gammaln(y+1);
-            const_table(:,2) = gp.avgE(:);
-            %            const_table(:,2) =
-    end
-
     ep_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
 
     gp.fh_e = @ep_algorithm;
@@ -91,11 +79,9 @@ end
             myy = zeros(size(y));
             logZep_tmp=0; logZep=Inf;
 
-            switch gp.likelih
-                case 'poisson'
-                    M_0=[];
-            end
-
+            M0 = [];
+            M_0 = [];
+            
             % =================================================
             % First Evaluate the data contribution to the error
             switch gp.type
@@ -121,7 +107,7 @@ end
                             sigm2_i=tau_i^-1;
 
                             % marginal moments
-                            [muhati, sigm2hati] = marginalMoments12(gp.likelih);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
 
                             % update site parameters
                             deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
@@ -174,7 +160,7 @@ end
                         term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
 
                         % 3. term
-                        term3 = marginalMoment0(gp.likelih);
+                        term3 = sum(log(M0));
 
                         logZep = -(term41+term52+term5+term3);
 
@@ -248,8 +234,8 @@ end
                             sigm2_i=tau_i^-1;
 
                             % marginal moments
-                            [muhati, sigm2hati] = marginalMoments12(gp.likelih);
-
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                            
                             % update site parameters
                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                             tautilde(i1) = tautilde(i1)+deltatautilde;
@@ -294,9 +280,6 @@ end
                         % Compute the marginal likelihood, see FULL model for
                         % details about equations
                         Lahat = 1./Lav + tautilde;
-                        %                     for i = 1:n
-                        %                         Lhat(i,:) = L(i,:)./Lahat(i);
-                        %                     end
                         Lhat = grdivide(L,Lahat);
                         H = I-L'*Lhat;
                         B = H\L';
@@ -318,8 +301,8 @@ end
                         term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
 
                         % 3. term
-                        term3 = -marginalMoment0(gp.likelih);
-
+                        term3 = -sum(log(M0));
+                        
                         logZep = term41+term52+term5+term3;
 
                         iter=iter+1;
@@ -396,7 +379,7 @@ end
                                 sigm2_i=tau_i^-1;
                                
                                 % marginal moments
-                                [muhati, sigm2hati] = marginalMoments12(gp.likelih);
+                                [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
 
                                 % update site parameters
                                 deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -478,8 +461,8 @@ end
                         term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
 
                         % 3. term
-                        term3 = -marginalMoment0(gp.likelih);
-
+                        term3 = -sum(log(M0));
+                        
                         logZep = term41+term52+term5+term3;
 
                         iter=iter+1;
@@ -534,11 +517,14 @@ end
                     La = sparse(1:n,1:n,Lav,n,n) + K_cs;
                     gp.cf = cf_orig;
                     
+                    % clear unnecessary variables
+                    clear K_cs; clear Qv_ff; clear Kv_ff; clear Cv_ff; clear Lav;
+                    
                     % Find fill reducing permutation and permute all the
                     % matrices
                     p = analyze(La);
                     r(p) = 1:n;
-                    const_table = const_table(p,:);
+                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
                     y = y(p);
                     La = La(p,p);
                     K_fu = K_fu(p,:);
@@ -580,7 +566,7 @@ end
                             sigm2_i=tau_i^-1;
 
                             % marginal moments
-                            [muhati, sigm2hati] = marginalMoments12(gp.likelih);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
 
                             % update site parameters
                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -646,7 +632,7 @@ end
                         term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
 
                         % 3. term
-                        term3 = -marginalMoment0(gp.likelih);
+                        term3 = -sum(log(M0));
 
                         logZep = term41+term52+term5+term3;
 
@@ -660,8 +646,7 @@ end
                     %La2 = sparse(1:n,1:n,1./tautilde,n,n) + La;
                     b = nutilde' - ((nutilde'*La - nutilde'*sqrtSLa'/V'/V*sqrtSLa + (nutilde'*Lhat)*Bhat).*tautilde');
                     L = (sqrtS*iDSsqrtKfu)/AA';                    
-                    La2 = sqrtS\(Inn + sqrtSLa*sqrtS)/sqrtS;
-                    D = La;
+                    La2 = sqrtS\D2/sqrtS;
                     
                     % Reorder all the returned and stored values
                     b = b(r);
@@ -673,7 +658,7 @@ end
                     myy = myy(r);
                     P = P(r,:);
                     y = y(r);
-                    const_table = const_table(r,:);
+                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, r);
                 otherwise
                     error('Unknown type of Gaussian process!')
             end
@@ -859,7 +844,6 @@ end
                 integrand(2,:) = f.*temp; %
                 integrand(1,:) = f.^2.*temp; %
             end
-
         end
 
         function m_0 = marginalMoment0(likelihood)
@@ -872,188 +856,3 @@ end
         end
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% 
-% 
-% 
-% case 'CS+FIC2'
-%                     u = gp.X_u;
-%                     m = length(u);
-%                     cf_orig = gp.cf;
-% 
-%                     cf1 = {};
-%                     cf2 = {};
-%                     j = 1;
-%                     k = 1;
-%                     for i = 1:ncf
-%                         if ~isfield(gp.cf{i},'cs')
-%                             cf1{j} = gp.cf{i};
-%                             j = j + 1;
-%                         else
-%                             cf2{k} = gp.cf{i};
-%                             k = k + 1;
-%                         end
-%                     end
-%                     gp.cf = cf1;
-% 
-%                     % First evaluate needed covariance matrices
-%                     % v defines that parameter is a vector
-%                     [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-%                     K_fu = gp_cov(gp, x, u);         % f x u
-%                     K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-%                     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-%                     Luu = chol(K_uu)';
-% 
-%                     % Evaluate the Lambda (La)
-%                     % Q_ff = K_fu*inv(K_uu)*K_fu'
-%                     B=Luu\(K_fu');       % u x f
-%                     Qv_ff=sum(B.^2)';
-%                     Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-% 
-%                     iLaKfu = zeros(size(K_fu));  % f x u
-% 
-%                     gp.cf = cf2;
-%                     K_cs = gp_trcov(gp,x);
-%                     La = sparse(1:n,1:n,Lav,n,n) + K_cs;
-%                     gp.cf = cf_orig;
-% 
-%                     iLaKfu = La\K_fu;
-% 
-%                     A = K_uu+K_fu'*iLaKfu;
-%                     A = (A+A')./2;     % Ensure symmetry
-%                     A = chol(A);
-%                     L = iLaKfu/A;
-%                     
-%             
-%                     Lahat = inv(La);     % <--- note this is full matrix, has to be worked around
-%                     I = eye(size(K_uu));
-% 
-%                     Inn = eye(n,n);
-%                     sqrtS = sparse(1:n,1:n,0,n,n);
-%                     R0 = chol(inv(K_uu));
-%                     R = R0;
-%                     P = K_fu;
-%                     R0P0t = R0*K_fu';
-%                     myy = zeros(size(y));
-%                     eta = zeros(size(y));
-%                     gamma = zeros(size(K_uu,1),1);
-%                     D = La;
-%                     Ann=0;
-% 
-%                     while iter<=maxiter && abs(logZep_tmp-logZep)>tol
-% 
-%                         logZep_tmp=logZep;
-%                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-%                         for i1=1:n
-%                             % approximate cavity parameters
-%                             dn1 = D(i1,i1); 
-%                             sqrtSLa = sqrtS*La;
-%                             V = chol(sqrtSLa*sqrtS + Inn);
-%                             dn = La(i1,i1) - sum((V'\sqrtSLa(:,i1)).^2); %sum(((La(:,i1).*sqrt(tautilde))'/V).^2);
-%                             pn = P(i1,:)';
-%                             Ann = dn + sum((R*pn).^2);
-%                             tau_i = Ann^-1-tautilde(i1);
-%                             myy(i1) = eta(i1) + pn'*gamma;
-%                             vee_i = Ann^-1*myy(i1)-nutilde(i1);
-% 
-%                             myy_i=vee_i/tau_i;
-%                             sigm2_i=tau_i^-1;
-% 
-%                             % marginal moments
-%                             [muhati, sigm2hati] = marginalMoments12(gp.likelih);
-% 
-%                             % update site parameters
-%                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-%                             tautilde(i1) = tautilde(i1)+deltatautilde;
-%                             deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
-%                             nutilde(i1) = sigm2hati^-1*muhati-vee_i;
-%                             
-%                             % Update the parameters
-%                             Di1 = D(:,i1);
-%                             D = D - deltatautilde ./ (1+deltatautilde.*dn) * Di1*Di1';
-%                             Di1 = La(:,i1) - sqrtSLa'*(V\(V'\(sqrtSLa(:,i1))));
-%                             P = P - ((deltatautilde ./ (1+deltatautilde.*dn)).* Di1)*pn';
-%                             updfact = deltatautilde./(1 + deltatautilde.*Ann);
-%                             if updfact > 0
-%                                 RtRpnU = R'*(R*pn).*sqrt(updfact);
-%                                 R = cholupdate(R, RtRpnU, '-');
-%                             elseif updfact < 0
-%                                 RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
-%                                 R = cholupdate(R, RtRpnU, '+');
-%                             end
-%                             eta = eta + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Di1;
-%                             gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
-%                             %myy = eta + P*gamma;
-% 
-%                             % Store cavity parameters
-%                             muvec_i(i1,1)=myy_i;
-%                             sigm2vec_i(i1,1)=sigm2_i;
-%                             sqrtS(i1,i1) = sqrt(tautilde(i1));
-% 
-%                         end
-%                         % Re-evaluate the parameters
-%                         tau = sparse(1:n,1:n,tautilde,n,n);
-%                         temp1 = sparse(1:n,1:n,1,n,n)+La*tau;
-%                         D = temp1\La;
-%                         R0P0t = R0*K_fu';
-%                         P = temp1\K_fu;
-%                         temp2 = R0P0t*tau/temp1;
-%                         R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
-%                         eta = D*nutilde;
-%                         gamma = R'*(R*(P'*nutilde));
-%                         myy = eta + P*gamma;
-% 
-%                         % Compute the marginal likelihood, see FULL model for
-%                         % details about equations
-%                         Lahat = inv(La) + tau;
-%                         Lhat = Lahat\L;
-%                         H = I-L'*Lhat;
-%                         B = H\L';
-%                         Bhat = B/Lahat;
-% 
-%                         % 4. term & 1. term
-%                         Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
-%                         D2 = Stildesqroot*La*Stildesqroot + sparse(1:n,1:n,1,n,n);
-%                         SsqrtKfu = Stildesqroot*K_fu;
-%                         iDSsqrtKfu = D2\SsqrtKfu;
-%                         AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
-%                         AA = chol(AA,'lower');
-%                         term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA))) + sum(log(diag(chol(D2,'lower'))));
-% 
-%                         % 5. term (1/2 element) & 2. term
-%                         T=1./sigm2vec_i;
-%                         term52 = -0.5*( nutilde'*(Lahat\nutilde) + (nutilde'*Lhat)*(Bhat*nutilde) - (nutilde./(T+tautilde))'*nutilde);
-% 
-%                         % 5. term (2/2 element)
-%                         term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
-% 
-%                         % 3. term
-%                         term3 = -marginalMoment0(gp.likelih);
-% 
-%                         logZep = term41+term52+term5+term3;
-% 
-%                         iter=iter+1;
-%                     end
-%                     edata = logZep;
-%                     %L = iLaKfu;
-%                     
-% %                     b = nutilde'.*(1 - Stildesqroot./Lahat.*Stildesqroot)' - (nutilde'*Lhat)*Bhat.*tautilde';
-% %                     L = ((repmat(Stildesqroot,1,m).*SsqrtKfu)./repmat(D',m,1)')/AA';
-% %                     La2 = 1./(Stildesqroot./D.*Stildesqroot);
-%                     
-%                     b = nutilde' - ((nutilde'/Lahat + (nutilde'*Lhat)*Bhat).*tautilde');
-%                     L = (Stildesqroot*iDSsqrtKfu)/AA';                    
-%                     La2 = inv(Stildesqroot*(D2\Stildesqroot));

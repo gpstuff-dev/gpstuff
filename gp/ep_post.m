@@ -35,14 +35,12 @@ switch gp.type
         [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper');
 
 
-        if nargin == 3
-            eta = D.*site_nu;
-            gamma = R'*(R*(P'*site_nu));
-            Ef = eta + P*gamma;
-            if nargout == 2
-                Varf = D + sum((P*R').^2,2);
-            end
-        elseif nargin > 3
+        eta = D.*site_nu;
+        gamma = R'*(R*(P'*site_nu));
+        Ef = eta + P*gamma;
+        Ef = b';
+        Varf = D + sum((P*R').^2,2);
+        if nargin > 3
             eta = D.*site_nu;
             gamma = R'*(R*(P'*site_nu));
             Ef = eta + P*gamma;

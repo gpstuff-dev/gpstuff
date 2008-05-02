@@ -33,4 +33,4 @@ if ~isempty(gp.jitterSigmas) & size(x1,1)==size(x2,1) & x1==x2
   C(1:n1:end)=C(1:n1:end)+gp.jitterSigmas.^2;
 end
 
-C(C<eps)=0;
+%C(C<eps)=0;

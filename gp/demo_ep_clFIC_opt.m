@@ -83,8 +83,11 @@ figure(1)
 plot(x(:,1), x(:,2),'*'), hold on
 plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 
+% Initiliaze the likelihood
+likelih = likelih_probit('init', y);
+
 % Initialize the GP
-gp = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, []);
+gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, []);
 gp = gp_init('set', gp, 'X_u', U);
 gp.ep_opt.display = 1;
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});

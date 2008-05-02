@@ -1,4 +1,4 @@
-function [Ef, Varf] = la_post(gp, tx, ty, ns)
+function [Ef, Varf, S] = la_post(gp, tx, ty, ns)
 %LA_POST	Posterior distribution from Gaussian Process Laplace
 %           approximation
 %
@@ -38,21 +38,17 @@ switch gp.type
         [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, tx, ty, 'hyper');
 
 
-        if nargin == 3
-            Ef = f;
-            if nargout == 2
-                Lahat = 1./(1./La2 + W);
-                A = eye(m,m) - (L'.*repmat(Lahat',m,1))*L; A = (A+A')./2;
-                L2 = repmat(Lahat,1,m).*L/chol(A);
-                Varf = Lahat + sum(L2.^2,2);
-            end
-        elseif nargin > 3
-            Ef = f;
+        Ef = f;
+        Lahat = 1./(1./La2 + W);
+        A = eye(m,m) - (L'.*repmat(Lahat',m,1))*L; A = (A+A')./2;
+        L2 = repmat(Lahat,1,m).*L/chol(A);
+        Varf = Lahat + sum(L2.^2,2);
+        if nargin > 3
             Lahat = 1./(1./La2 + W);
             A = eye(m,m) - (L'.*repmat(Lahat',m,1))*L; A = (A+A')./2;
             L2 = repmat(Lahat,1,m).*L/chol(A);
 
-            S = repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(legth(ty),ns);
+            S = (repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(length(ty),ns))';
         end
     case 'PIC_BLOCK'
         ind = gp.tr_index;

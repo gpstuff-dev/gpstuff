@@ -98,6 +98,9 @@ function gp = gp_init(do, varargin)
         gp.nin = varargin{2};
         gp.nout = 1;
         
+        % Set likelihood. 
+        gp.likelih = varargin{3};   % Remember to set the latent_method.
+
         % Set covariance functions into gpcf
         gpcf = varargin{4};
         for i = 1:length(gpcf)
@@ -130,20 +133,6 @@ function gp = gp_init(do, varargin)
             gp.blocktype = [];
             gp.tr_index = {};            
         end
-        % Set function handle for likelihood. If regression 
-        % model is used set also gp.p.r field and if other likelihood
-        % set also field gp.latentValues
-        if strcmp(varargin{3}, 'regr')
-            gp.likelih = 'regr';
-            gp.p.r=[];
-        else
-            gp.likelih = varargin{3};   % Remember to set the latent_method.
-            gp.latent_method = [];
-            switch gp.likelih
-              case {'poisson','negbin'}
-                gp.avgE = [];
-            end
-        end  
                 
         if length(varargin) > 5
             if mod(length(varargin),2) ==0

@@ -184,9 +184,11 @@ switch gp.type
         La = sparse(1:n,1:n,Lav,n,n) + K_cs;
         gp.cf = cf_orig;
 
-        iLaKfu = La\K_fu;
-%        nnz(La)/prod(size(La))
-        edata = 2*sum(log(diag(chol(La)))) + t'*(La\t);
+        LD = ldlchol(La);
+        
+        %        iLaKfu = La\K_fu;
+        iLaKfu = ldlsolve(LD,K_fu);
+        edata = sum(log(diag(LD))) + t'*ldlsolve(LD,t);
         % The data contribution to the error is
         % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
 
@@ -194,10 +196,11 @@ switch gp.type
         % A = chol(K_uu+K_uf*inv(La)*K_fu))
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;     % Ensure symmetry
-        A = chol(A)';
+        A = chol(A);
         % The actual error evaluation
         % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-        b = (t'*iLaKfu)*inv(A)';
+        %b = (t'*iLaKfu)*inv(A)';
+        b = (t'*iLaKfu)/A;
         edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
         edata = .5*(edata + n*log(2*pi));
         % ============================================================

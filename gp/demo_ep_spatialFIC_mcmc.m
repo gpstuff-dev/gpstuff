@@ -1,6 +1,6 @@
 function demo_ep_spatialFIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2008-01-09 14:26:12 EET
+%   Last modified: 2008-05-02 10:53:01 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -58,7 +58,8 @@ function demo_ep_spatialFIC_mcmc
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'FIC', nin, 'poisson', {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
+    likelih = likelih_poisson('init', yy, ye);
+    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
     gp.avgE = ye; 
     tic
         gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});

@@ -136,8 +136,11 @@ end
 plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 title('Blocks and inducing inputs')
 
+% Initiliaze the likelihood
+likelih = likelih_probit('init', y);
+
 % Initialize the GP
-gp = gp_init('init', 'PIC_BLOCK', nin, 'probit', {gpcf1}, [])
+gp = gp_init('init', 'PIC_BLOCK', nin, likelih, {gpcf1}, [])
 gp = gp_init('set', gp, 'X_u', U, 'blocks', {'manual', x(itr,:), index});
 gp.ep_opt.display = 1;
 gp = gp_init('set', gp, 'latent_method', {'EP', x(itr,:), y(itr,:), 'hyper'});

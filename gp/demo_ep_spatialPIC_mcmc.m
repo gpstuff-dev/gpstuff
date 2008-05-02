@@ -1,6 +1,6 @@
 function demo_ep_spatialPIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-08-23 09:45:01 EEST
+%   Last modified: 2008-04-29 15:15:38 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -8,8 +8,7 @@ function demo_ep_spatialPIC_mcmc
     
 % First load the data
 %=======================================================================
-%    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
-    load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
+    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -58,9 +57,10 @@ function demo_ep_spatialPIC_mcmc
 
     gp = gp_init('init', 'PIC_BLOCK', nin, 'poisson', {gpcf1}, [], 'X_u', Xu, 'blocks', {'manual', xx, blockindex});   %{gpcf2} , 'jitterSigmas', 0.01
     gp.avgE = ye; 
-    tic
-        gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
-    toc
+    gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+    
+    
+    
     gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
 
     for i=1:length(ind); 

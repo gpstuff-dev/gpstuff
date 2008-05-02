@@ -86,9 +86,13 @@ plot(x(:,1), x(:,2),'*'), hold on
 plot(U(:,1), U(:,2), 'kX', 'MarkerSize', 12, 'LineWidth', 2)
 
 
-gp = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', U);   %{gpcf2}
+likelih = likelih_probit('init', y);
+gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', U);   %{gpcf2}
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
 
+
+gp = gp_init('init', 'FIC', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', U);   %{gpcf2}
+gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
 
 
 [e, edata, eprior] = gpla_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')

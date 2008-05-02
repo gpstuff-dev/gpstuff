@@ -75,13 +75,16 @@ n=length(y);
 itr=1:2:n-1;     % training set of data for early stop
 its=2:2:n;   % test set of data for early stop
 
+% Initiliaze the likelihood
+likelih = likelih_probit('init', y);
+
 % Initialize the GP
-gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, [])
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [])
 gp = gp_init('set', gp, 'latent_method', {'EP', x(itr,:), y(itr,:), 'hyper'});
 
 % Initialize the test GP used in the scges
-gptst = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, []);
-gptst = gp_init('set', gptst, 'latent_method', {'EP', x(its,:), y(its,:), 'hyper'});
+gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, []);
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 
 % $$$ 
 % $$$ [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')

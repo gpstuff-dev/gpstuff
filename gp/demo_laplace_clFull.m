@@ -75,8 +75,8 @@ gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-%gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
-gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+likelih = likelih_probit('init', y);
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01);   %{gpcf2}
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
 
 

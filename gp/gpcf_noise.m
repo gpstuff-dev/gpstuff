@@ -213,7 +213,7 @@ eprior=eprior...
        -sum(log(gpcf.noiseSigmas2));
 
 
-function [g, gdata, gprior]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
+function [gprior, D]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, varargin) %g, gdata, gprior
 %GPCF_NOISE_GHYPER Evaluate gradient of error for NOISE covariance function.
 %
 %	Description
@@ -239,59 +239,17 @@ function [g, gdata, gprior]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, v
 gpp=gpcf.p;
 
 i1=0;i2=1;
-if ~isempty(g)
-    i1 = length(g);
+if ~isempty(gprior)
+    i1 = length(gprior);
 end
 
 i1=i1+1;
 D=gpcf.noiseSigmas2;
-switch gpcf.type
-  case 'FULL'
-    %C_gp = varargin{1};
-    invC = varargin{1};
-    b = varargin{2};
-    %B=trace(C_gp\eye(size(C_gp)));
-    B = trace(invC);
-    C=b'*b;    
-    
-    gdata(i1)=0.5.*D.*(B - C); 
-  case 'FIC'       % NOTE! Here noiseSigmas2 is different from the beta used by Neill! 
-                   % This affects that the derivative is also slightly different.
-    L = varargin{1};
-    b =varargin{2};
-    La = varargin{4};
-    gdata(i1)= -0.5*D.*b*b';
-    gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*D;
-  case 'PIC_BLOCK'
-    L = varargin{1};
-    b =varargin{2};
-    Labl = varargin{4};
-    gdata(i1)= -0.5*D.*b*b';
-    ind = gpcf.tr_index;
-    for i=1:length(ind)
-        gdata(i1)= gdata(i1) + 0.5*trace((inv(Labl{i})-L(ind{i},:)*L(ind{i},:)')).*D;
-    end
-  case 'CS+FIC' 
-    L = varargin{1};
-    b =varargin{2};
-    La = varargin{4};
-    gdata(i1)= -0.5*D.*b*b';
-    gdata(i1)= gdata(i1) + 0.5*sum(idiag(La)-sum(L.*L,2)).*D;
-  case {'PIC_BAND','CS+PIC'}
-    L = varargin{1};
-    b =varargin{2};
-    La = varargin{4};
-    gdata(i1)= - 0.5*D.*b*b';
-    ind = gpcf.tr_index;
-    %gdata(i1)= gdata(i1) + 0.5*trace((inv(La)-L*L')).*D;
-    gdata(i1)= gdata(i1) + 0.5*trace((inv(La)-L*L')).*D;
-end
 
 gprior(i1)=feval(gpp.noiseSigmas2.fg, ...
                  gpcf.noiseSigmas2, ...
                  gpp.noiseSigmas2.a, 'x').*gpcf.noiseSigmas2-1;
 
-g = gdata + gprior;
 
 function [g_ind, gdata_ind, gprior_ind]  = gpcf_noise_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
 %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 

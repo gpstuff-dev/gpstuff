@@ -203,6 +203,7 @@ switch gp.type
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+        K_nu=gp_cov(gp,x,u);
         gp.cf = cf2;
         Kcs_nf = gp_cov(gp, x, tx);
         gp.cf = cf_orig;
@@ -217,8 +218,6 @@ switch gp.type
         ntest=size(x,1);
 
         ntest=size(x,1);
-
-        K_nu=gp_cov(gp,x,u);
         % Knf = K_nu*(K_uu\K_fu');
         % Ef = Knf*p;
         Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;

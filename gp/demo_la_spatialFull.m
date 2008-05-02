@@ -1,7 +1,7 @@
 
 function demo_la_spatialFull
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-12-14 13:27:22 EET
+%   Last modified: 2008-05-02 11:43:10 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -60,6 +60,12 @@ function demo_la_spatialFull
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
+    % Initialize the likelihood
+    likelih = likelih_poisson('init', yy, ye);b
+    gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, []);   %{gpcf2}
+    gp.avgE = ye; 
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
+    
     gp = gp_init('init', 'FULL', nin, 'poisson', {gpcf1}, []);   %{gpcf2}
     gp.avgE = ye; 
     gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});

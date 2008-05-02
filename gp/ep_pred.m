@@ -185,6 +185,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+        K_nu=gp_cov(gp,x,u);
         gp.cf = cf2;
         Kcs_nf = gp_cov(gp, x, tx);
         gp.cf = cf_orig;
@@ -197,7 +198,6 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
 
         p = b';
         ntest=size(x,1);
-        K_nu=gp_cov(gp,x,u);
         % Knf = K_nu*(K_uu\K_fu');
         % Ef = Knf*p;
         Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
@@ -208,7 +208,10 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             B=Luu\(K_fu');   
             Knn_v = gp_trvar(gp,x);
             B2=Luu\(K_nu');
-            Varf = Knn_v - sum(B2'.*(B*(La\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2) - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2);
+            Varf = Knn_v - sum(B2'.*(B*(La\B')*B2)',2)  + sum((B2'*(B*L)).^2, 2);
+            p = amd(La);
+            Varf = Varf - sum((Kcs_nf(:,p)/chol(La(p,p))).^2,2);
+            Varf = Varf + sum((Kcs_nf*L).^2, 2);
             Varf = Varf - 2.*sum((Kcs_nf*(La\K_fu)).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
             for i1=1:ntest
                 switch gp.likelih

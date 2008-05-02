@@ -35,18 +35,6 @@ if strcmp(w, 'init')
     La20 = [];
     b0 = 0;
 
-    % Create a table of constants that are needed in
-    % the function evaluations
-    switch gp.likelih
-        case 'probit'
-            const_table = [];
-        case 'poisson'
-            const_table = gammaln(y+1);
-            const_table(:,2) = y./gp.avgE;
-            const_table(:,3) = gp.avgE;
-            %            const_table(:,2) =
-    end
-
     laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
 
     gp.fh_e = @laplace_algorithm;
@@ -57,7 +45,7 @@ end
 
     function [e, edata, eprior, f, L, La2, b, W] = laplace_algorithm(w, gp, x, y, param, varargin)
 
-        if abs(w-w0) < 1e-8 % 1e-8
+        if 1==2% abs(w-w0) < 1e-8 % 1e-8
             % The covariance function parameters haven't changed so just
             % return the Energy and the site parameters that are saved
             e = e0;
@@ -107,19 +95,19 @@ end
                                 opt = gp.laplace_opt.fminunc_opt;
                             end
 
-                            fe = @(f, varargin) (0.5*f*(K\f') - loglikelihood(f', gp.likelih));
-                            fg = @(f, varargin) (K\f' - derivative(f', gp.likelih))';
-                            fh = @(f, varargin) (hessian(f', gp.likelih)); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+                            fe = @(f, varargin) (0.5*f*(K\f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                            fg = @(f, varargin) (K\f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                            fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
                             mydeal = @(varargin)varargin{1:nargout};
                             [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                             f = f';
 
-                            W = diag(hessian(f, gp.likelih));
+                            W = diag(-feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'));
                             sqrtW = sqrt(W);
                             B = eye(size(K)) + sqrtW*K*sqrtW;
                             L = chol(B)';
                             a = K\f;
-                            logZ = 0.5 * f'*a - loglikelihood(f, gp.likelih);
+                            logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
 
                             % find the mode by Scaled conjugate gradient method
                         case 'SCG'
@@ -135,17 +123,18 @@ end
                                 opt = gp.laplace_opt.scg_opt;
                             end
 
-                            fe = @(f, varargin) (0.5*f*(K\f') - loglikelihood(f', gp.likelih));
-                            fg = @(f, varargin) (K\f' - derivative(f', gp.likelih))';
+                            fe = @(f, varargin) (0.5*f*(K\f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                            fg = @(f, varargin) (K\f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+
                             [f, opt, flog]=scg(fe, f', opt, fg);
                             f = f';
 
-                            W = diag(hessian(f, gp.likelih));
+                            W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent')
                             sqrtW = sqrt(W);
                             B = eye(size(K)) + sqrtW*K*sqrtW;
                             L = chol(B)';
                             a = K\f;
-                            logZ = 0.5 * f'*a - loglikelihood(f, gp.likelih);
+                            logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
 
                             % find the mode by Newton iteration
                         case 'Newton'
@@ -153,19 +142,19 @@ end
                                 logZ_tmp=logZ;
 
                                 % Evaluate the minus Hessian
-                                W = diag(hessian(f, gp.likelih));
+                                W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
                                 sqrtW = sqrt(W);
                                 B = eye(size(K)) + sqrtW*K*sqrtW;
                                 L = chol(B)';
 
                                 % Evaluate the derivative with respect to f
-                                der_f = derivative(f, gp.likelih);
+                                der_f = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
                                 b = W*f + der_f;
                                 a = b - sqrtW*L'\(L\(sqrtW*(K*b)));
                                 ft = K*a;
 
                                 % Evaluate the error criteria (=minus log marginal likelihood)
-                                logZ = 0.5 * a'*ft - loglikelihood(ft, gp.likelih);
+                                logZ = 0.5 * a'*ft - feval(gp.likelih.fh_e, gp.likelih, y, f);
                                 f = ft;
                                 iter=iter+1;
                                 fprintf('%.8f, iter: %d \n', logZ, iter-1)
@@ -174,7 +163,7 @@ end
                     edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                     % Set something into La2
                     La2 = W;
-                    b = derivative(f, gp.likelih);
+                    b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
                     % ============================================================
                     % FIC
@@ -220,20 +209,18 @@ end
                                 opt = gp.laplace_opt.fminunc_opt;
                             end
 
-                            fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - loglikelihood(f', gp.likelih));
-                            fg = @(f, varargin) (f'./repmat(Lav,1,size(f',2)) - L*(L'*f') - derivative(f', gp.likelih))';
-                            fh = @(f, varargin) (hessian(f', gp.likelih));
+                            fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                            fg = @(f, varargin) (f'./repmat(Lav,1,size(f',2)) - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                            fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
                             mydeal = @(varargin)varargin{1:nargout};
                             [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                             f = f';
 
-                            W = hessian(f, gp.likelih);
+                            W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
                             sqrtW = sqrt(W);
-                            % $$$                     B = eye(size(K)) + sqrtW*K*sqrtW;
-                            % $$$                     L = chol(B)';
 
                             b = L'*f;
-                            logZ = 0.5*(f'*(f./Lav) - b'*b) - loglikelihood(f, gp.likelih);
+                            logZ = 0.5*(f'*(f./Lav) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
 
                             % find the mode by Scaled conjugate gradient method
                         case 'SCG'
@@ -249,7 +236,7 @@ end
                     edata = logZ + 0.5*edata;
 
                     La2 = Lav;
-                    b = derivative(f, gp.likelih);
+                    b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
                     % ============================================================
                     % PIC
@@ -304,11 +291,11 @@ end
                             [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                             f = f';
 
-                            W = hessian(f, gp.likelih);
+                            W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
                             sqrtW = sqrt(W);
 
                             ikf = iKf(f);
-                            logZ = 0.5*f'*ikf - loglikelihood(f, gp.likelih);
+                            logZ = 0.5*f'*ikf - feval(gp.likelih.fh_e, gp.likelih, y, f);
 
                             % find the mode by Scaled conjugate gradient method
                         case 'SCG'
@@ -378,7 +365,7 @@ end
                     edata = logZ + 0.5*edata;
 
                     La2 = Labl;
-                    b = derivative(f, gp.likelih);
+                    b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');                    
 
                 case 'CS+FIC'
                     u = gp.X_u;
@@ -423,7 +410,7 @@ end
                     % matrices
                     p = analyze(La);
                     r(p) = 1:n;
-                    const_table = const_table(p,:);
+                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
                     f = f(p);
                     y = y(p);
                     La = La(p,p);
@@ -453,18 +440,18 @@ end
                                 opt = gp.laplace_opt.fminunc_opt;
                             end
 
-                            fe = @(f, varargin) (0.5*f*(ldlsolve(VD,f') - L*(L'*f')) - loglikelihood(f', gp.likelih));
-                            fg = @(f, varargin) (ldlsolve(VD,f') - L*(L'*f') - derivative(f', gp.likelih))';
-                            fh = @(f, varargin) (hessian(f', gp.likelih));
+                            fe = @(f, varargin) (0.5*f*(ldlsolve(VD,f') - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                            fg = @(f, varargin) (ldlsolve(VD,f') - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                            fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
                             mydeal = @(varargin)varargin{1:nargout};
                             [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                             f = f';
 
-                            W = hessian(f, gp.likelih);
+                            W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
                             sqrtW = sqrt(W);
 
                             b = L'*f;
-                            logZ = 0.5*(f'*(ldlsolve(VD,f)) - b'*b) - loglikelihood(f, gp.likelih);
+                            logZ = 0.5*(f'*(ldlsolve(VD,f)) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
                             
                             % find the mode by Scaled conjugate gradient method
                         case 'SCG'
@@ -520,7 +507,7 @@ end
                     edata = 2.*sum(log(diag(chol(Lahat)'))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                     edata = logZ + 0.5*edata;
                     La2 = La;
-                    b = derivative(f, gp.likelih);
+                    b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
                     
                     % Reorder all the returned and stored values
                     b = b(r);
@@ -529,7 +516,7 @@ end
                     y = y(r);
                     f = f(r);
                     W = W(r);
-                    const_table = const_table(r,:);
+                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, r);
 
                 otherwise
                     error('Unknown type of Gaussian process!')
@@ -605,9 +592,9 @@ end
         end
         function [e, g, h] = egh(f, varargin)
             ikf = iKf(f');
-            e = 0.5*f*ikf - loglikelihood(f', gp.likelih);
-            g = (ikf - derivative(f', gp.likelih))';
-            h = hessian(f', gp.likelih);
+            e = 0.5*f*ikf - feval(gp.likelih.fh_e, gp.likelih, y, f');
+            g = (ikf - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+            h = -feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent');
         end
         function ikf = iKf(f, varargin)
             iLaf = zeros(size(f));

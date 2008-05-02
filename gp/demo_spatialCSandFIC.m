@@ -1,12 +1,10 @@
 function demo_spatialCSandFIC
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2008-03-19 16:00:12 EET
+%   Last modified: 2008-05-02 11:19:08 EEST
     
 % First load the data
 %=======================================================================
     load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
-  %   load D:\jpvanhat_tyo\finwell\data\tilastok2007\testdata\aivoverisuonitaudit911_9600.mat
-    load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -44,9 +42,16 @@ function demo_spatialCSandFIC
     end
     ye=EA(xxii);
     %=======================================================================
+
+    xx = xx(1:100,:);
+    yy = yy(1:100,:);
+    ye = ye(1:100,:);
+
+        
     
+
     % Set the inducing inputs
-    bls = 3; indtype = 'corners';
+    bls = 4; indtype = 'corners';
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
 
     % Create the model
@@ -60,10 +65,21 @@ function demo_spatialCSandFIC
     gpcf2.p.lengthScale = t_p({1 4});
     gpcf2.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'CS+FIC', nin, 'poisson', {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
+    likelih = likelih_poisson('init', yy, ye);
+    gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
     gp.avgE = ye; 
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
 
+    e = gpep_e(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+    g = gpep_g(gp_pak(gp,'hyper'), gp, xx, yy, 'hyper')
+
+    
+    likelih = likelih_poisson('init', yy, ye);
+    gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
+    gp.avgE = ye; 
+    gp = gp_init('set', gp, 'blocks', {'manual', xx, blockindex},'latent_method', {'EP', xx, yy, 'hyper'});
+    
+    
     %gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper') 
     
     % Find the posterior mode of hyperparameters

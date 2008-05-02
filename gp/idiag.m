@@ -1,4 +1,4 @@
-function iD = idiag(A,B)
+function iD = idiag2(A,B)
 % IDIAG    Evaluate the diagonal of inverse matrix
 %
 % iD = idiag(A)  returns diag(inv(A)). In case of sparse matrix
@@ -16,7 +16,7 @@ function iD = idiag(A,B)
 % License.txt, included with the software, for details.
 n = size(A,1);
 
-if n<1000
+if n<100
     % The implementation with full matrix
     % Handling the sparse matrix storage system gives overhead
     % in computation time which can be prevented using full matrix storage
@@ -25,7 +25,7 @@ if n<1000
     if nargin==1
         m = amd(A);
         A = A(m,m);
-        L = chol(A, 'lower');
+        L = lchol(A);
         D = diag(L);
         L2 = L-sparse(1:n,1:n,D);
         Z = zeros(n,n);
@@ -45,7 +45,7 @@ if n<1000
         A = A(m,m);
         B = B(m,m);
         Lb =tril(B,-1);
-        L = chol(A, 'lower');
+        L = lchol(A);
         D = diag(L);
         L2 = L-sparse(1:n,1:n,D);
         Z = zeros(n,n);
@@ -65,146 +65,77 @@ if n<1000
 
 else
 
-    if nargin==1
-
-        m = symamd(A);
-        A = A(m,m);
-        L = chol(A, 'lower');
-        [I,J] = find(L+L');
-
-
-        % Evaluate the sparse inverse
-        a1=zeros(n,1);
-        a2 = cumsum(histc(J,1:n));
-        a1(1) = 1; a1(2:end) = a2(1:end-1) + 1;
-
-        for j=1:n
-            inda{j} = a1(j):a2(j);
-            ind{j} = I(inda{j})';
-        end
-
-        D = diag(L);
-        L2 = L-sparse(1:n,1:n,D);
-        Z = zeros(size(I));
-        Z((I==n & J==n)) = 1./D(n).^2;
-        Di = 1./D;
-        % pre-allocate memory
-        cindt=zeros(floor(n*n/2),1);
-        cindit=zeros(n,1);
-        for i=n-1:-1:1
-            fil = full(L2(:,i)~=0);
-            fi = find(fil);
-            l = L2(fi,i)';
-            lfi=length(fi);
-
-            %[cind, cindi] = ismember2c(fi, fil, inda, ind, cindt, cindit, i);
+    
+    [LD, p, q] = ldlchol(A);
+    [I,J,ld] = find(LD);
+    temp = [I(:) J(:) ; J(:) I(:)];
+    temp = sortrows(unique(temp,'rows'),2);
+    Iz = temp(:,1); Jz = temp(:,2); 
+    
+    % Find the column starting points
+    a1=zeros(n,1);
+    a2 = cumsum(histc(J,1:n));
+    a1(1) = 1; a1(2:end) = a2(1:end-1) + 1;
+    az1=zeros(n,1);
+    az2 = cumsum(histc(Jz,1:n));
+    az1(1) = 1; az1(2:end) = az2(1:end-1) + 1;
+    
+    for j=1:n
+        indaz{j} = az1(j):az2(j);
+        indIz{j} = Iz(indaz{j})';
+    end
+    
+    % Evaluate the sparse inverse
+    z = zeros(size(Iz));
+    z(end) = 1./ld(end);
+    % Allocate memory
+    cindit=zeros(n,1);
+    for jj = n-1:-1:1
+        fil = ld(a1(jj)+1:a1(jj+1)-1);
+        fi = I(a1(jj)+1:a1(jj+1)-1);
+        lfi = length(fi);
+        Zt = zeros(lfi,lfi);
+        indz = cumsum(histc(indIz{jj},[0 ; fi]));
+        indz = az1(jj) + indz(1:end-1);
+        i4=0;            
+        for i1 = 1:lfi
+            cind1=indaz{fi(i1)};
+            Icind1=indIz{fi(i1)};
+            indfi = 1;
             i3=0;
-            i4=0;
-            for i1=1:lfi
-                cind1=inda{fi(i1)};
-                Icind1=ind{fi(i1)};
-                for i2=1:numel(Icind1)
-                    if fil(Icind1(i2))
-                        i3=i3+1;
-                        cindt(i3)=cind1(i2);
-                    end
-                    if Icind1(i2)==i
-                        i4=i4+1;
-                        cindit(i4)=cind1(i2);
-                    end
+            for i2=1:length(Icind1)
+                if Icind1(i2)==jj  % Find the indeces for the jj'th rows in fi columns
+                    i4=i4+1;
+                    cindit(i4)=cind1(i2);
+                end
+                if indfi <= lfi && fi(indfi) == Icind1(i2) % Find the indeces for the fi'th rows in i2'nd columns
+                    i3 = i3 + 1;
+                    Zt(i3,i1) = z(cind1(i2));
+                    indfi = indfi+1;
                 end
             end
-            % remove extras
-            cind=cindt(1:i3);
-            cindi=cindit(1:i4);
-
-
-            Zt = Z(cind);
-            Zt=reshape(Zt,lfi,lfi);
-            zij = -l*Zt.*Di(i);
-            Z(cindi) = zij;
-            indz = cumsum(histc(ind{i},[0 ; fi]));
-            indz = a1(i) + indz(1:end-1);
-            Z(indz) = zij;
-
-            zij = Di(i).^2-l*Z(indz).*Di(i);
-            Z(a1(i)-1+find(ind{i}==i,1)) = zij;
         end
-        Z = sparse(I,J,Z);
-        %        nnz(Z)/(n*n)
-        r(m) = 1:n;
-        iD = diag(Z(r,r));
-
-    elseif nargin == 2
-        m = symamd(A);
-        A = A(m,m);
-        B = B(m,m);
-        Lb =tril(B,-1);
-        L = chol(A, 'lower');
-        [I,J] = find(L+L'+B);
-
-
-        % Evaluate the sparse inverse
-        a1=zeros(n,1);
-        a2 = cumsum(histc(J,1:n));
-        a1(1) = 1; a1(2:end) = a2(1:end-1) + 1;
-
-        for j=1:n
-            inda{j} = a1(j):a2(j);
-            ind{j} = I(inda{j});
-        end
-
-        D = diag(L);
-        L2 = L-sparse(1:n,1:n,D);
-        Z = zeros(size(I));
-        Z((I==n & J==n)) = 1./D(n).^2;
-        Di = 1./D;
-        % pre-allocate memory
-        cindt=zeros(floor(n*n/2),1);
-        cindit=zeros(n,1);
-        for i=n-1:-1:1
-            fil = full(L2(:,i)~=0 | Lb(:,i)~=0);
-            fi = find(fil);
-            l = L2(fi,i)';
-            lfi=length(fi);
-
-            %[cind, cindi] = ismember2c(fi, fil, inda, ind, cindt, cindit, i);
-            i3=0;
-            i4=0;
-            for i1=1:lfi
-                cind1=inda{fi(i1)};
-                Icind1=ind{fi(i1)};
-                for i2=1:numel(Icind1)
-                    if fil(Icind1(i2))
-                        i3=i3+1;
-                        cindt(i3)=cind1(i2);
-                    end
-                    if Icind1(i2)==i
-                        i4=i4+1;
-                        cindit(i4)=cind1(i2);
-                    end
-                end
-            end
-            % remove extras
-            cind=cindt(1:i3);
-            cindi=cindit(1:i4);
-
-
-            Zt = Z(cind);
-            Zt=reshape(Zt,lfi,lfi);
-            zij = -l*Zt.*Di(i);
-            Z(cindi) = zij;
-            indz = cumsum(histc(ind{i},[0 ; fi]));
-            indz = a1(i) + indz(1:end-1);
-            Z(indz) = zij;
-
-            zij = Di(i).^2-l*Z(indz).*Di(i);
-            Z(a1(i)-1+find(ind{i}==i,1)) = zij;
-        end
-        Z = sparse(I,J,Z);
-        r(m) = 1:n;
-        iD = sum(Z.*B',2);
+        % remove extras
+        cindi=cindit(1:i4);
+        
+        zij = -fil'*Zt;
+        z(cindi) = zij;
+        z(indz) = zij;
+        zij = 1./ld(a1(jj)) - fil'*z(indz);
+        z(az1(jj)-1+find(indIz{jj}==jj,1)) = zij;
+    end
+    
+    if nargin == 1
+        Z = sparse(Iz,Jz,z);
+        r(q) = 1:n;
+        iD = diag(Z);
         iD = iD(r);
+        
+    elseif nargin == 2
+        Z = sparse(Iz,Jz,z);
+        r(q) = 1:n;
+        Z = Z(r,r);
+        iD = sum(Z.*B',2);
 
     else
         error('Wrong number of arguments in! \n')
