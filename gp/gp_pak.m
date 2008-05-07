@@ -23,9 +23,18 @@ switch param
     w = pak_hyper(gp);
   case 'inducing'    
     w = pak_inducing(gp);
+  case 'likelih'
+    w = feval(gp.likelih.fh_pak, gp.likelih);
+  case 'hyper+inducing'
+    w = pak_hyper(gp);
+    w = [w pak_inducing(gp)];
+  case 'hyper+likelih'
+    w = pak_hyper(gp);
+    w = [w feval(gp.likelih.fh_pak, gp.likelih)];
   case 'all'
     w = pak_hyper(gp);
     w = [w pak_inducing(gp)];
+    w = [w feval(gp.likelih.fh_pak, gp.likelih)];
   otherwise
     error('Unknown parameter to take the gradient with respect to! \n')
 end

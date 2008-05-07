@@ -22,11 +22,28 @@ switch param
     gp = unpak_hyper(w, gp);
   case 'inducing'    
     gp = unpak_inducing(w, gp);
-  case 'all'
+  case 'likelih'    
+    lik = feval(gp.likelih.fh_unpak, w, gp.likelih);
+    gp.likelih = lik;
+  case 'hyper+inducing'
     w1 = w(1:end-length(gp.X_u(:)));
     gp = unpak_hyper(w1, gp);
     w2 = w(length(w1)+1:end);
     gp = unpak_inducing(w2, gp);
+  case 'hyper+likelih'
+    w1 = w(1:length(gp_pak(gp,'hyper')));
+    gp = unpak_hyper(w1, gp);
+    w2 = w(length(w1)+1:end);
+    lik = feval(gp.likelih.fh_unpak, w2, gp.likelih);
+    gp.likelih = lik;
+  case 'all'
+    w1 = w(1:length(gp_pak(gp,'hyper')));
+    gp = unpak_hyper(w1, gp);
+    w2 = w(length(w1)+1:length(w1)+length(gp.X_u(:)));
+    gp = unpak_inducing(w2, gp);
+    w3 = w(length(w1)+length(w2)+1:end);
+    lik = feval(gp.likelih.fh_unpak, w3, gp);
+    gp.likelih = lik;
   otherwise
     error('Unknown parameter to take the gradient with respect to! \n')
 end

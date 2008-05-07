@@ -55,14 +55,14 @@ if nargout > 1
 
   if is_sparse
       [I,J,c] = find(C);
-      c(c<0) = 0;      
+      c(c<eps) = 0;      
       C = sparse(I,J,c);
   end
 end
 
 if is_sparse
     [I,J,k] = find(K);
-    k(k<0) = 0;
+    k(k<eps) = 0;
     K = sparse(I,J,k);
 end
 

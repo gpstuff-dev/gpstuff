@@ -51,7 +51,7 @@ gp = gp_init('set', gp, 'X_u', U);
 
 gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, x, y, 'hyper')
 gradcheck(gp_pak(gp,'inducing'), @gp_e, @gp_g, gp, x, y, 'inducing')
-gradcheck(gp_pak(gp,'all'), @gp_e, @gp_g, gp, x, y, 'all')
+gradcheck(gp_pak(gp,'hyper+inducing'), @gp_e, @gp_g, gp, x, y, 'hyper+inducing')
 
 % $$$ w=gp_pak(gp, 'hyper');
 % $$$ [e, edata, eprior] = gp_e(w, gp, x, y, 'hyper')     % answer  488.9708 

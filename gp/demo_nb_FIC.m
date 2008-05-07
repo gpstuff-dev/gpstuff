@@ -2,49 +2,7 @@ function demo_nb_FIC
 
     
 % First load the data
-%=======================================================================
-% $$$    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
-% $$$ %load ~/finnwell/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
-% $$$     xxa=data(:,1:2);
-% $$$     yna=data(:,6);
-% $$$     xx=unique(xxa,'rows');
-% $$$     for i1=1:size(xx,1)
-% $$$         xxi{i1,1}=find(xxa(:,1)==xx(i1,1)&xxa(:,2)==xx(i1,2));
-% $$$         yn(i1,1)=sum(data(xxi{i1},6));
-% $$$         yy(i1,1)=sum(data(xxi{i1},7));
-% $$$     end
-% $$$     xxii=sub2ind([60 35],xx(:,2),xx(:,1));
-% $$$     [X1,X2]=meshgrid(1:35,1:60);
-% $$$     N=zeros(60,35);
-% $$$     Y=zeros(60,35);
-% $$$     N(xxii)=yn;
-% $$$     Y(xxii)=yy;
-% $$$ 
-% $$$     gxa=data(:,3:5);
-% $$$     gxx=unique(gxa,'rows');
-% $$$     gxx=gxx(gxx(:,1)>=4,:);
-% $$$     for i1=1:size(gxx,1)
-% $$$         gxxi{i1}=find(gxa(:,1)==gxx(i1,1)&gxa(:,2)==gxx(i1,2)&gxa(:,3)==gxx(i1,3));
-% $$$         gyn(i1,1)=sum(data(gxxi{i1},6));
-% $$$         gyy(i1,1)=sum(data(gxxi{i1},7));
-% $$$     end
-% $$$     ra=sum(yy)./sum(yn); % average risk
-% $$$     gye=ra.*gyn;
-% $$$     gra=gyy./gyn; % average risk for each group
-% $$$ 
-% $$$     ea=zeros(size(xxa,1),1);
-% $$$     for i1=1:numel(gxxi)
-% $$$         ea(gxxi{i1})=gra(i1).*yna(gxxi{i1});
-% $$$     end
-% $$$     EA=zeros(60,35)+NaN;
-% $$$     for i1=1:numel(xxi)
-% $$$         EA(xxii(i1))=sum(ea(xxi{i1}));
-% $$$     end
-% $$$     ye=EA(xxii);
-
-    
-    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonisairaudet3206_105.mat
-       
+    load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonitaudit911_9600.mat
     xxa=data(:,1:2);
     yna=data(:,6);
     xx=unique(xxa,'rows');
@@ -53,10 +11,10 @@ function demo_nb_FIC
         yn(i1,1)=sum(data(xxi{i1},6));
         yy(i1,1)=sum(data(xxi{i1},7));
     end
-    xxii=sub2ind([120 70],xx(:,2),xx(:,1));
-    [X1,X2]=meshgrid(1:70,1:120);
-    N=zeros(120,70);
-    Y=zeros(120,70);
+    xxii=sub2ind([60 35],xx(:,2),xx(:,1));
+    [X1,X2]=meshgrid(1:35,1:60);
+    N=zeros(60,35);
+    Y=zeros(60,35);
     N(xxii)=yn;
     Y(xxii)=yy;
 
@@ -76,77 +34,43 @@ function demo_nb_FIC
     for i1=1:numel(gxxi)
         ea(gxxi{i1})=gra(i1).*yna(gxxi{i1});
     end
-    EA=zeros(120,70)+NaN;
+    EA=zeros(60,35)+NaN;
     for i1=1:numel(xxi)
         EA(xxii(i1))=sum(ea(xxi{i1}));
     end
     ye=EA(xxii);
+    ye = max(ye,1e-3);
 
-% $$$     load /proj/finnwell/spatial/data/tilastok2007/testdata/aivoverisuonisairaudet10608_105.mat
-% $$$ 
-% $$$     xxa=data(:,1:2);
-% $$$     yna=data(:,6);
-% $$$     xx=unique(xxa,'rows');
-% $$$     for i1=1:size(xx,1)
-% $$$         xxi{i1,1}=find(xxa(:,1)==xx(i1,1)&xxa(:,2)==xx(i1,2));
-% $$$         yn(i1,1)=sum(data(xxi{i1},6));
-% $$$         yy(i1,1)=sum(data(xxi{i1},7));
-% $$$     end
-% $$$     xxii=sub2ind([240 140],xx(:,2),xx(:,1));
-% $$$     [X1,X2]=meshgrid(1:140,1:240);
-% $$$     N=zeros(240,140);
-% $$$     Y=zeros(240,140);
-% $$$     N(xxii)=yn;
-% $$$     Y(xxii)=yy;
-% $$$ 
-% $$$     gxa=data(:,3:5);
-% $$$     gxx=unique(gxa,'rows');
-% $$$     gxx=gxx(gxx(:,1)>=4,:);
-% $$$     for i1=1:size(gxx,1)
-% $$$         gxxi{i1}=find(gxa(:,1)==gxx(i1,1)&gxa(:,2)==gxx(i1,2)&gxa(:,3)==gxx(i1,3));
-% $$$         gyn(i1,1)=sum(data(gxxi{i1},6));
-% $$$         gyy(i1,1)=sum(data(gxxi{i1},7));
-% $$$     end
-% $$$     ra=sum(yy)./sum(yn); % average risk
-% $$$     gye=ra.*gyn;
-% $$$     gra=gyy./gyn; % average risk for each group
-% $$$ 
-% $$$     ea=zeros(size(xxa,1),1);
-% $$$     for i1=1:numel(gxxi)
-% $$$         ea(gxxi{i1})=gra(i1).*yna(gxxi{i1});
-% $$$     end
-% $$$     EA=zeros(240,140)+NaN;
-% $$$     for i1=1:numel(xxi)
-% $$$         EA(xxii(i1))=sum(ea(xxi{i1}));
-% $$$     end
-% $$$     ye=EA(xxii);
-
-    
     %=======================================================================
+    xx = xx(1:200,:);
+    yy = yy(1:200,:);
+    ye = ye(1:200,:);
 
-    bls = 6; indtype = 'corners';
-% $$$     %[blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, 'corners', 1);
+    bls = 3; indtype = 'corners';
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
     
     [n, nin] = size(xx);
 
     %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
     %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
 
     
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'FIC', nin, 'negbin', {gpcf1}, []);   %{gpcf2}
-
-    gp.avgE = ye; 
-    gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr_nb, zeros(size(yy))', 10});
-
+    likelih = likelih_negbin('init', yy, ye, 10);
+    %    likelih.p.disper = gamma_p({1.5, 0.005});
+    
+    
+    %==========================
+    % MCMC 
+    %==========================
+    
+    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, []);   %{gpcf2}
     gp = gp_init('set', gp, 'X_u', Xu);
-    %gp = gp_init('set', gp, 'X_u', Xu, 'blocks', {'manual', xx, blockindex});
-
+    gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
     
     gradcheck(gp_pak(gp,'hyper'), @gp_e, @gp_g, gp, xx, yy, 'hyper')
     
@@ -175,10 +99,13 @@ function demo_nb_FIC
     opt.latent_opt.window=5;
     
     opt.nb_sls_opt = sls_opt;
-    opt.nb_sls_opt.maxiter = 200;
+    opt.nb_sls_opt.maxiter = 400;
     opt.nb_sls_opt.mmlimits = [0;1000];
+    opt.nb_sls_opt.nsamples = 20;
+    opt.nb_sls_opt.method = 'minmax';
+    opt.nb_sls_opt.display = 0;
     
-    [rgp,gp, opt]=gp_mc(opt, gp, xx, yy);
+    [rgp, gp, opt]=gp_mc(opt, gp, xx, yy);
 
     opt.latent_opt.repeat=1;
     opt.latent_opt.steps=3;
@@ -197,20 +124,71 @@ function demo_nb_FIC
     while length(rgp.edata)<2000 %   1000
         [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
         fprintf('  hmcrejects=%.3f   \n',mean(rgp.hmcrejects))
-        fprintf('dispersion=%.4f\n',gp.nb_r)
+        fprintf('dispersion=%.4f\n',gp.likelih.disper)
         fprintf('length1=%.4f, magnitude1=%.4f\n',gp.cf{1}.lengthScale, sqrt(gp.cf{1}.magnSigma2))
         subplot(2,2,1)
         plot(rgp.cf{1}.lengthScale,sqrt(rgp.cf{1}.magnSigma2) ,rgp.cf{1}.lengthScale(end),sqrt(rgp.cf{1}.magnSigma2(end)),'r*')
         subplot(2,2,3)
-        plot(1:length(rgp.edata),rgp.nb_r, length(rgp.edata),rgp.nb_r(end),'r*')
-
+        plot(1:length(rgp.edata),rgp.likelih.disper, length(rgp.edata),rgp.likelih.disper(end),'r*')
+        
         subplot(2,2,[2 4])
         G=repmat(NaN,size(Y));
         G(xxii)=exp(rgp.latentValues(end,:));
         pcolor(X1,X2,G),shading flat
         colormap(mapcolor(G)),colorbar
+        %colorbar
         drawnow
     end
+
+
+
+
+    %==========================================
+    % EP optimization
+    %==========================================
+    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
+    gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+
+    gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
+
+    
+    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
+    gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper+likelih'});
+        
+    
+    gpep_g(gp_pak(gp,'hyper+likelih'), gp, xx, yy, 'hyper+likelih')
+    
+    gradcheck(gp_pak(gp,'hyper+likelih'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper+likelih')
+    
+
+    y = yy;
+    z = randn(size(y));
+    w = 10;
+    fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
+    fg = @(w, likelih) (- feval(likelih.fh_g, feval(likelih.fh_unpak, w, likelih), y, z, 'hyper'));
+
+    gradcheck(w, fe, fg, gp.likelih)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 % $$$ opt.repeat = 10;
 % $$$ opt.hmc_opt.nsamples=1;

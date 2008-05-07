@@ -181,7 +181,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             
             % ----------- Sample latent Values  ---------------------
             if isfield(opt,'latent_opt')
-                [z, energ, diagnl] = feval(gp.fh_latentmc, z, opt.latent_opt, gp, x, y, varargin{:});
+                [z, energ, diagnl] = feval(gp.likelih.fh_mcmc, z, opt.latent_opt, gp, x, y, varargin{:});
                 gp.latentValues = z(:)';
                 z = z(:);
                 lrej=lrej+diagnl.rej/opt.repeat;
@@ -206,14 +206,17 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             end
             
             if isfield(opt, 'nb_sls_opt')
-                w = gp.nb_r;
-                [w, energies, diagns] = sls(nb_me, w, opt.nb_sls_opt, [], gp, x, z, y, varargin{:});
+                w = gp_pak(gp, 'likelih');
+   %-(sum(-w.*(log(w)-log(w+exp(z).*gp.likelih.avgE(:))) - gammaln(w+y) + gammaln(w) + gammaln(y+1) - y.*(log(exp(z).*gp.likelih.avgE(:))-log(w+exp(z).*gp.likelih.avgE(:)))))
+                fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
+                [w, energies, diagns] = sls(fe, w, opt.nb_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.nb_sls_opt = diagns.opt;
                 end
                 w=w(end,:);
-                gp.nb_r = w;
+                gp = gp_unpak(gp, w, 'likelih');
             end
+            
             
             % ----------- Sample hyperparameters with SLS --------------------- 
             if isfield(opt, 'sls_opt')
@@ -372,6 +375,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 noise = gp.noise{i};
                 rec.noise{i} = feval(noise.fh_recappend, [], gp.nin);
             end
+            
+            % Initialize the record for likelihood
+            if isstruct(gp.likelih)
+                likelih = gp.likelih;
+                rec.likelih = feval(likelih.fh_recappend, [], []);
+            end
+            
             rec.e = [];
             rec.edata = [];
             rec.eprior = [];
@@ -394,6 +404,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             rec.noise{i} = feval(noise.fh_recappend, rec.noise{i}, ri, noise);
         end
 
+        % Set the record for likelihood
+        if isstruct(gp.likelih)
+            likelih = gp.likelih;
+            rec.likelih = feval(likelih.fh_recappend, rec.likelih, ri, likelih);
+        end
+
         % Set jitterSigmas to record
         if ~isempty(gp.jitterSigmas)
             rec.jitterSigmas(ri,:) = gp.jitterSigmas;
@@ -403,32 +419,21 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         if isfield(gp, 'latentValues')
             rec.latentValues(ri,:)=gp.latentValues;
         end
-        
-        % Set the latent values to record structure
+
+        % Set the site parameters to record structure
         if isfield(gp, 'site_tau')
-            %           fprintf('site_tau '); gp_pak(gp,'hyper')
-            switch gp.likelih
-              case 'probit'
-                [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
-                [Ef, Varf, p1] = ep_pred(gp, x, y, xtest);
-                rec.site_tau(ri,:)=tau;
-                rec.site_nu(ri,:)=nu;
-                rec.Ef(ri,:) = Ef';
-                rec.Varf(ri,:) = Varf';
-                rec.p1(ri,:) = p1';
-              case 'poisson'
-                [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
-                switch gp.type
-                  case 'PIC_BLOCK'
-                    [Ef] = ep_pred(gp, x, y, xtest, gp.tr_index);
-                  otherwise
-                    [Ef] = ep_pred(gp, x, y, xtest);
-                end
-                rec.site_tau(ri,:)=tau;
-                rec.site_nu(ri,:)=nu;
-                rec.Ef(ri,:) = Ef';
-                %rec.Varf(ri,:) = Varf';
+            [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
+            switch gp.type
+              case 'PIC_BLOCK'
+                [Ef, Varf] = ep_pred(gp, x, y, xtest, gp.tr_index);
+              otherwise
+                [Ef, Varf] = ep_pred(gp, x, y, xtest);
             end
+            rec.site_tau(ri,:)=tau;
+            rec.site_nu(ri,:)=nu;
+            rec.Ef(ri,:) = Ef';
+            rec.Varf(ri,:) = Varf';
+            rec.Zep(ri,:) = E1;
         end
 
         % Set the inducing inputs in the record structure
@@ -459,11 +464,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         % If inputs are sampled set the record which are on at this moment
         if isfield(gp,'inputii')
             rec.inputii(ri,:)=gp.inputii;
-        end
-        
-        % Append the dispersion parameter of NB-likelihood to record
-        if strcmp(gp.likelih, 'negbin')
-            rec.nb_r(ri) = gp.nb_r;
         end
     end
 end

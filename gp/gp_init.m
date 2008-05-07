@@ -152,8 +152,8 @@ function gp = gp_init(do, varargin)
                     gp.likelih_e = varargin{i+1};
                   case 'likelih_g'
                     gp.likelih_g = varargin{i+1};
-                  case 'fh_latentmc'
-                    gp.fh_latentmc = varargin{i+1};
+% $$$                   case 'fh_latentmc'
+% $$$                     gp.fh_latentmc = varargin{i+1};
                   case 'type'
                     gp.type = varargin{i+1};
                   case 'X_u'
@@ -171,15 +171,7 @@ function gp = gp_init(do, varargin)
                     gp.latent_method = varargin{i+1}{1};
                     switch varargin{i+1}{1}
                       case 'MCMC'
-                        gp.fh_latentmc = varargin{i+1}{2};
-                        if length(varargin{i+1}) == 3
-                            gp.latentValues = varargin{i+1}{3};
-                        elseif length(varargin{i+1}) == 4 & strcmp(gp.likelih,'negbin')
-                            gp.latentValues = varargin{i+1}{3};
-                            gp.nb_r = varargin{i+1}{4}; 
-                        else
-                            gp.latentValues = [];
-                        end
+                        gp.latentValues = varargin{i+1}{2};
                       case 'EP'
                         % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
                         gp.ep_opt.maxiter = 20;
@@ -230,8 +222,6 @@ function gp = gp_init(do, varargin)
                 gp.likelih_e = varargin{i+1};
               case 'likelih_g'
                 gp.likelih_g = varargin{i+1};
-              case 'fh_latentmc'
-                gp.fh_latentmc = varargin{i+1};
               case 'type'
                 gp.type = varargin{i+1};
               case 'X_u'
@@ -249,15 +239,7 @@ function gp = gp_init(do, varargin)
                 gp.latent_method = varargin{i+1}{1};
                 switch varargin{i+1}{1}
                   case 'MCMC'
-                    gp.fh_latentmc = varargin{i+1}{2};
-                    if length(varargin{i+1}) == 3
-                        gp.latentValues = varargin{i+1}{3};
-                    elseif length(varargin{i+1}) == 4 & strcmp(gp.likelih,'negbin')
-                        gp.latentValues = varargin{i+1}{3};
-                        gp.nb_r = varargin{i+1}{4};                         
-                    else
-                        gp.latentValues = [];
-                    end
+                    gp.latentValues = varargin{i+1}{2};
                   case 'EP'
                     % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
                     gp.ep_opt.maxiter = 20;

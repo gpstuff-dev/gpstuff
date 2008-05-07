@@ -11,7 +11,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
 %	G = GPEP_G(W, GP, P, Y, PARAM) in case of sparse model takes also  
 %       string PARAM defining the parameters to take the gradients with 
 %       respect to. Possible parameters are 'hyper' = hyperparameters and 
-%      'inducing' = inducing inputs, 'all' = all parameters.
+%      'inducing' = inducing inputs, 'hyper+inducing' = hyper+inducing parameters.
 %
 %	[G, GDATA, GPRIOR] = GP_G(GP, X, Y) also returns separately  the
 %	data and prior contributions to the gradient.
@@ -131,7 +131,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             gpcf = gp.cf{i};
             gpcf.type = gp.type;
             gpcf.X_u = gp.X_u;
-            if strcmp(param,'hyper') || strcmp(param,'all')
+            % Covariance function hyperparameters
+            %--------------------------------------
+            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
                 [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
                 i1 = i1+1;
                 i2 = 1;
@@ -163,7 +165,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 end
             end
-            if strcmp(param,'inducing') || strcmp(param,'all')                
+            % Inducing inputs
+            %--------------------------------------
+            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')                
                 [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
                 
                 for i2 = 1:length(DKuu)
@@ -174,6 +178,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
                                                             sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));                    
+                end
+            end
+            % likelihood parameters
+            %--------------------------------------
+            if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+                [Ef, Varf] = ep_post(gp, x, y, [], param);
+                gdata_likelih = 0;
+                likelih = gp.likelih;
+                for k1 = 1:length(y)
+                    tau_i = Varf(k1)^-1-tautilde(i1);
+                    vee_i = Varf(k1)^-1*Ef(i1)-nutilde(i1);                    
+                    myy_i=vee_i/tau_i;
+                    sigm2_i=tau_i^-1;
+                    
+% $$$                     sigm2_i = Varf(i1) ;
+% $$$                     myy_i = Ef(i1);
+                    gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
                 end
             end
         end
@@ -188,7 +209,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 gpcf.type = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
-                if strcmp(param,'hyper') || strcmp(param,'all')
+                if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
                     gdata(i1)= -0.5*DCff.*b*b';
                     gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
@@ -226,7 +247,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             gpcf.type = gp.type;
             gpcf.X_u = gp.X_u;
             gpcf.tr_index = gp.tr_index;
-            if strcmp(param,'hyper') || strcmp(param,'all')
+            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
                 [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
                 i1 = i1+1;
                 i2 = 1;                
@@ -279,7 +300,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     end
                 end
             end
-            if strcmp(param,'inducing') || strcmp(param,'all')
+            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
                 [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
                 
                 for i2 = 1:length(DKuu)
@@ -308,7 +329,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 gpcf.type = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
-                if strcmp(param,'hyper') || strcmp(param,'all')
+                if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
                     gdata(i1)= -0.5*DCff.*b*b';
                     ind = gpcf.tr_index;
@@ -374,7 +395,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             gpcf = gp.cf{i};
             gpcf.type = gp.type;
             gpcf.X_u = gp.X_u;
-            if strcmp(param,'hyper') || strcmp(param,'all')
+            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
                 % Evaluate the gradient for full support covariance functions
                 if ~isfield(gpcf,'cs')
                     [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
@@ -434,7 +455,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     end
                 end
             end
-            if strcmp(param,'inducing') || strcmp(param,'all')
+            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
                 [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
                 
                 for i2 = 1:length(DKuu)
@@ -462,7 +483,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 gpcf = gp.noise{i};
                 gpcf.type = gp.type;
                 gpcf.X_u = gp.X_u;
-                if strcmp(param,'inducing') || strcmp(param,'all')
+                if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
                     gdata(i1)= -0.5*DCff.*b*b';
                     gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-sum(L.*L,2)).*DCff;                    
@@ -475,7 +496,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
     switch param
       case 'inducing'
         g = gdata_ind;
-      case 'all'
+      case 'hyper+inducing'
         g = [g gdata_ind];
+      case 'hyper+likelih'
+        g = [g gdata_likelih];
     end
 end

@@ -46,10 +46,10 @@ function Z = sinv(A,B)
 
         [LD, p, q] = ldlchol(A);
         [I,J,ld] = find(LD);
-        [Iz,Jz] = find(LD+LD');
-% $$$         temp = [I(:) J(:) ; J(:) I(:)];
-% $$$         temp = sortrows(unique(temp,'rows'),2);
-% $$$         Iz = temp(:,1); Jz = temp(:,2); 
+% $$$         [Iz,Jz] = find(LD+LD');
+        temp = [I(:) J(:) ; J(:) I(:)];
+        temp = sortrows(unique(temp,'rows'),2);
+        Iz = temp(:,1); Jz = temp(:,2); 
         
         % Find the column starting points
         a1=zeros(n,1);

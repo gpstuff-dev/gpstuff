@@ -170,9 +170,10 @@ switch gp.type
                 KubiLaKbu = K_fu(ind{i},:)'/La{i}*K_fu(ind{i},:);
                 nonblock = KufiLaKfu - KubiLaKbu;
                 Varf1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
-
+                
                 Knb = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));
                 Varf2(tstind{i}) = diag(Knb/La{i}*Knb');
+                
                 
                 KnbL = Knb*L(ind{i},:);
                 QnbL = KnuiKuu(tstind{i},:)*(K_fu(ind{i},:)'*L(ind{i},:));

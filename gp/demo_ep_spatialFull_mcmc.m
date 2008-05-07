@@ -1,7 +1,6 @@
-
 function demo_ep_spatialFull_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2007-12-13 09:30:49 EET
+%   Last modified: 2008-05-02 13:06:28 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp

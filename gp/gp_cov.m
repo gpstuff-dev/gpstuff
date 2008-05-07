@@ -33,4 +33,10 @@ if ~isempty(gp.jitterSigmas) & size(x1,1)==size(x2,1) & x1==x2
   C(1:n1:end)=C(1:n1:end)+gp.jitterSigmas.^2;
 end
 
-%C(C<eps)=0;
+% $$$ if issparse(C)
+% $$$     [I,J,c] = find(C);
+% $$$     c(c<eps) = 0;      
+% $$$     C = sparse(I,J,c);
+% $$$ else
+% $$$     C(C<eps)=0;
+% $$$ end

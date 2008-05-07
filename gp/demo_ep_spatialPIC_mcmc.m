@@ -1,6 +1,6 @@
 function demo_ep_spatialPIC_mcmc
 %   Author: Jarno Vanhatalo <jarno.vanhatalo@tkk.fi>
-%   Last modified: 2008-04-29 15:15:38 EEST
+%   Last modified: 2008-05-02 13:08:11 EEST
 
 % $$$ addpath /proj/finnwell/spatial/testdata
 % $$$ addpath /proj/finnwell/spatial/jpvanhat/model_comp
@@ -55,7 +55,7 @@ function demo_ep_spatialPIC_mcmc
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'PIC_BLOCK', nin, 'poisson', {gpcf1}, [], 'X_u', Xu, 'blocks', {'manual', xx, blockindex});   %{gpcf2} , 'jitterSigmas', 0.01
+    gp = gp_init('init', 'PIC_BLOCK', nin, 'poisson', {gpcf1}, [], 'X_u', Xu, 'blocks', {'manual', xx, blockindex});
     gp.avgE = ye; 
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
     

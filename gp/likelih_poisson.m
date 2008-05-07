@@ -49,6 +49,7 @@ function likelih = likelih_poisson(do, varargin)
         likelih.fh_g3 = @likelih_poisson_g3;
         likelih.fh_tiltedMoments = @likelih_poisson_tiltedMoments;
         likelih.fh_mcmc = @likelih_poisson_mcmc;
+        likelih.fh_recappend = @likelih_poisson_recappend;
 
         if length(varargin) > 2
             if mod(nargin,2) ~=1
@@ -70,7 +71,7 @@ function likelih = likelih_poisson(do, varargin)
 
     % Set the parameter values of covariance function
     if strcmp(do, 'set')
-        if mod(nargin,2) ~=1
+        if mod(nargin,2) ~=0
             error('Wrong number of arguments')
         end
         gpcf = varargin{1};
@@ -219,13 +220,15 @@ function likelih = likelih_poisson(do, varargin)
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2)); %,'AbsTol',atol,'RelTol',reltol
         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
         [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
+        
+        % If the second central moment is less than cavity variance integrate more
+        % precisely. Theoretically should be sigm2hati1 < sigm2_i
         if sigm2hati1 >= sigm2_i
             tol = atol.^2;
             reltol = reltol.^2;
             [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
             [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
             [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
-            %                    [M, fhncnt] = quadl_4moms(moms, lambdaconf(1), lambdaconf(2), tol, false);
         end
         m_2 = sigm2hati1;
         
@@ -304,7 +307,7 @@ function likelih = likelih_poisson(do, varargin)
         iLaKfuic=[];
         mincut = -300;
         if isfield(gp,'avgE');
-            E=gp.avgE(:);
+            E=gp.likelih.avgE(:);
         else
             E=1;
         end     
@@ -508,9 +511,9 @@ function likelih = likelih_poisson(do, varargin)
                 C=gp_trcov(gp, x);
                 % Evaluate a approximation for posterior variance
                 % Take advantage of the matrix inversion lemma
-                %        L=chol(inv(inv(C) + diag(1./gp.avgE)))';
+                %        L=chol(inv(inv(C) + diag(1./gp.likelih.avgE)))';
                 Linv = inv(chol(C)');
-                L2 = C/chol(diag(1./gp.avgE) + C);  %sparse(1:n, 1:n, 1./gp.avgE)
+                L2 = C/chol(diag(1./gp.likelih.avgE) + C);  %sparse(1:n, 1:n, 1./gp.likelih.avgE)
                 L2 = chol(C - L2*L2')';
             else        
                 % Evaluate the Lambda (La) for specific model
@@ -537,7 +540,7 @@ function likelih = likelih_poisson(do, varargin)
                     c = chol(c)';   % u x u, 
                     ic = inv(c);
                     iLaKfuic = iLaKfu*ic';
-                    Lp = sqrt(1./(gp.avgE + 1./Lav));
+                    Lp = sqrt(1./(gp.likelih.avgE + 1./Lav));
                     b=b';
                     for i=1:n
                         b(i,:) = iLaKfuic(i,:).*Lp(i);
@@ -577,7 +580,7 @@ function likelih = likelih_poisson(do, varargin)
                     iLaKfuic = iLaKfu*inv(chol(A));
                     
                     for i=1:length(ind)
-                        Lp{i} = chol(inv(diag(gp.avgE(ind{i})) + inv(Labl{i})));
+                        Lp{i} = chol(inv(diag(gp.likelih.avgE(ind{i})) + inv(Labl{i})));
                     end
                     b=zeros(size(B'));
                     
@@ -640,7 +643,7 @@ function likelih = likelih_poisson(do, varargin)
                     %Lp = chol(inv(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl)));
                     %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
                     Lp = inv(Labl);
-                    Lp = sparse(1:n,1:n,gp.avgE,n,n) + Lp;
+                    Lp = sparse(1:n,1:n,gp.likelih.avgE,n,n) + Lp;
                     Lp = chol(Lp)';
                     %                Lp = inv(Lp);
 
@@ -663,6 +666,20 @@ function likelih = likelih_poisson(do, varargin)
             end
         end
     end 
+    
+    function reclikelih = likelih_poisson_recappend(reclikelih, ri, likelih)
+    % RECAPPEND - Record append
+    %          Description
+    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
+    %          function record RECCF, record index RI, RECAPPEND returns a
+    %          structure RECCF containing following record fields:
+    %          lengthHyper    =
+    %          lengthHyperNu  =
+    %          lengthScale    =
+    %          magnSigma2     =
+
+
+    end
 end
 
 

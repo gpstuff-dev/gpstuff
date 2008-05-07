@@ -1,4 +1,4 @@
-function [Ef, Varf, S] = ep_post(gp, x, y, ns)
+function [Ef, Varf, S] = ep_post(gp, x, y, ns, param)
 %EP_POST	Posterior distribution from Gaussian Process EP
 %
 %	Description
@@ -32,7 +32,7 @@ switch gp.type
 
     case 'FIC'
 
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper');
+        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, param), gp, x, y, param);
 
 
         eta = D.*site_nu;
@@ -40,7 +40,7 @@ switch gp.type
         Ef = eta + P*gamma;
         Ef = b';
         Varf = D + sum((P*R').^2,2);
-        if nargin > 3
+        if ~isempty(ns)
             eta = D.*site_nu;
             gamma = R'*(R*(P'*site_nu));
             Ef = eta + P*gamma;
