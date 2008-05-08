@@ -51,7 +51,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             for i1=1:ntest
                 % Compute covariance between observations
                 Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
-                switch gp.likelih
+                switch gp.likelih.type
                   case 'probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                   case 'poisson'
@@ -93,7 +93,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             B2=Luu\(K_nu');   
             Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
             for i1=1:ntest
-                switch gp.likelih
+                switch gp.likelih.type
                   case 'probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                   case 'poisson'
@@ -152,7 +152,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
 
             ntest=size(x,1);
             for i1=1:ntest
-                switch gp.likelih
+                switch gp.likelih.type
                   case 'probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                   case 'poisson'
@@ -214,7 +214,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             Varf = Varf + sum((Kcs_nf*L).^2, 2);
             Varf = Varf - 2.*sum((Kcs_nf*(La\K_fu)).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
             for i1=1:ntest
-                switch gp.likelih
+                switch gp.likelih.type
                     case 'probit'
                         p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                     case 'poisson'

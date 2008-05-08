@@ -42,9 +42,9 @@ function demo_nb_FIC
     ye = max(ye,1e-3);
 
     %=======================================================================
-    xx = xx(1:200,:);
-    yy = yy(1:200,:);
-    ye = ye(1:200,:);
+% $$$     xx = xx(1:400,:);
+% $$$     yy = yy(1:400,:);
+% $$$     ye = ye(1:400,:);
 
     bls = 3; indtype = 'corners';
     [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
@@ -155,12 +155,23 @@ function demo_nb_FIC
     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper+likelih'});
         
-    
-    gpep_g(gp_pak(gp,'hyper+likelih'), gp, xx, yy, 'hyper+likelih')
-    
+    opt=optimset('GradObj','on');
+    opt=optimset(opt,'TolX', 1e-3);
+    opt=optimset(opt,'LargeScale', 'off');
+    opt=optimset(opt,'Display', 'iter');
+    param = 'hyper+likelih';
+
+    gpep_g(gp_pak(gp,'hyper+likelih'), gp, xx, yy, 'hyper+likelih')    
     gradcheck(gp_pak(gp,'hyper+likelih'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper+likelih')
+
+    w0 = gp_pak(gp, param);
+    mydeal = @(varargin)varargin{1:nargout};
+    w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, param), gpep_g(ww, gp, xx, yy, param)), w0, opt);
+    gp = gp_unpak(gp,w,param);
     
 
+    
+    
     y = yy;
     z = randn(size(y));
     w = 10;

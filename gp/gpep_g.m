@@ -183,17 +183,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             % likelihood parameters
             %--------------------------------------
             if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-                [Ef, Varf] = ep_post(gp, x, y, [], param);
+                [Ef, Varf] = ep_pred(gp, x, y, x, param);                
                 gdata_likelih = 0;
                 likelih = gp.likelih;
                 for k1 = 1:length(y)
-                    tau_i = Varf(k1)^-1-tautilde(i1);
-                    vee_i = Varf(k1)^-1*Ef(i1)-nutilde(i1);                    
-                    myy_i=vee_i/tau_i;
-                    sigm2_i=tau_i^-1;
-                    
-% $$$                     sigm2_i = Varf(i1) ;
-% $$$                     myy_i = Ef(i1);
+                    sigm2_i = Varf(k1) ;
+                    myy_i = Ef(k1);
                     gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
                 end
             end
