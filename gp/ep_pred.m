@@ -32,7 +32,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
       case 'FULL'
         [K, C]=gp_trcov(gp,tx);
         
-        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
 
         sqrttautilde = sqrt(tautilde);
         Stildesqroot = diag(sqrttautilde);

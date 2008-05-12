@@ -99,6 +99,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 gdata(i1)=0.5.*DCff.*(B - C); 
             end
         end
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            for k1 = 1:length(y)
+                sigm2_i = Varf(k1) ;
+                myy_i = Ef(k1);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+            end
+        end
+
         g = gdata + gprior;
         
         % ============================================================
@@ -180,18 +193,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                                                             sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));                    
                 end
             end
-            % likelihood parameters
-            %--------------------------------------
-            if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-                [Ef, Varf] = ep_pred(gp, x, y, x, param);                
-                gdata_likelih = 0;
-                likelih = gp.likelih;
-                for k1 = 1:length(y)
-                    sigm2_i = Varf(k1) ;
-                    myy_i = Ef(k1);
-                    gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
-                end
-            end
         end
 
         % Evaluate the gradient from noise functions
@@ -209,6 +210,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     gdata(i1)= -0.5*DCff.*b*b';
                     gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
                 end
+            end
+        end
+        
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            for k1 = 1:length(y)
+                sigm2_i = Varf(k1) ;
+                myy_i = Ef(k1);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
         end
         g = gdata + gprior;
@@ -334,6 +348,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 end
             end
         end
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            for k1 = 1:length(y)
+                sigm2_i = Varf(k1) ;
+                myy_i = Ef(k1);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+            end
+        end
+        
         g = gdata + gprior;
         
      case {'CS+FIC'}
@@ -485,6 +512,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 end
             end
         end
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            for k1 = 1:length(y)
+                sigm2_i = Varf(k1) ;
+                myy_i = Ef(k1);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+            end
+        end
+
         g = gdata + gprior;
     end
 
