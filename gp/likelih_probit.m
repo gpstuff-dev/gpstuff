@@ -41,7 +41,8 @@ function likelih = likelih_probit(do, varargin)
         likelih.fh_g3 = @likelih_probit_g3;
         likelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
         likelih.fh_mcmc = @likelih_probit_mcmc;
-
+        likelih.fh_recappend = @likelih_probit_recappend;
+        
         if length(varargin) > 1
             if mod(nargin,2) ~=0
                 error('Wrong number of arguments')
@@ -154,7 +155,23 @@ function likelih = likelih_probit(do, varargin)
     %
     %
         
-    end 
+    end
+
+
+    function reclikelih = likelih_probit_recappend(reclikelih, ri, likelih)
+    % RECAPPEND - Record append
+    %          Description
+    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
+    %          function record RECCF, record index RI, RECAPPEND returns a
+    %          structure RECCF containing following record fields:
+    %          lengthHyper    =
+    %          lengthHyperNu  =
+    %          lengthScale    =
+    %          magnSigma2     =
+
+
+    end
+
 end
 
 

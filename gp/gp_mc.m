@@ -425,9 +425,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
             switch gp.type
               case 'PIC_BLOCK'
-                [Ef, Varf] = ep_pred(gp, x, y, xtest, gp.tr_index);
+                [Ef, Varf] = ep_pred(gp, x, y, xtest, gp.tr_index, 'hyper');
               otherwise
-                [Ef, Varf] = ep_pred(gp, x, y, xtest);
+                [Ef, Varf] = ep_pred(gp, x, y, xtest, 'hyper');
             end
             rec.site_tau(ri,:)=tau;
             rec.site_nu(ri,:)=nu;
