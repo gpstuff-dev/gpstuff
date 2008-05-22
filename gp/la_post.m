@@ -1,4 +1,4 @@
-function [Ef, Varf, S] = la_post(gp, tx, ty, ns)
+function [Ef, Varf, S] = la_post(gp, tx, ty, ns, param)
 %LA_POST	Posterior distribution from Gaussian Process Laplace
 %           approximation
 %
@@ -35,7 +35,7 @@ switch gp.type
 
     case 'FIC'
         m = gp.nind;
-        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, tx, ty, 'hyper');
+        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
 
         Ef = f;
@@ -54,7 +54,7 @@ switch gp.type
         ind = gp.tr_index;
         m = gp.nind;
 
-        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, 'hyper'), gp, tx, ty, 'hyper');
+        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
         if nargin == 3
             Ef = f;

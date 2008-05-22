@@ -46,7 +46,7 @@ switch gp.type
             V = L\(sqrt(W)*K_nf');
             for i1=1:ntest
                 Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
-                switch gp.likelih
+                switch gp.likelih.type
                     case 'probit'
                         p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                     case 'poisson'
@@ -67,7 +67,7 @@ switch gp.type
             error('The argument telling the optimized/sampled parameters has to be provided.')
         end
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
 
         deriv = b;
         ntest=size(x,1);
@@ -81,7 +81,7 @@ switch gp.type
 
         % Evaluate the variance
         if nargout > 1
-            W = hessian(f, gp.likelih);
+            W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
             kstarstar = gp_trvar(gp,x);
             Luu = chol(K_uu)';
             La = W.*La2;
@@ -98,7 +98,7 @@ switch gp.type
             BB2=Luu\(K_nu');
             Varf = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,size(K_uu,1)).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
             for i1=1:ntest
-                switch gp.likelih
+                switch gp.likelih.type
                     case 'probit'
                         p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                     case 'poisson'
@@ -141,7 +141,7 @@ switch gp.type
 
         % Evaluate the variance
         if nargout > 1
-            W = hessian(f, gp.likelih);
+            W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
             kstarstar = gp_trvar(gp,x);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -170,7 +170,7 @@ switch gp.type
             Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
 
             for i1=1:ntest
-                switch gp.likelih
+                switch gp.likelih.type
                     case 'probit'
                         p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                     case 'poisson'
@@ -224,7 +224,7 @@ switch gp.type
 
         % Evaluate the variance
         if nargout > 1
-            W = hessian(f, gp.likelih);
+            W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
             kstarstar = gp_trvar(gp,x);
             Luu = chol(K_uu)';
@@ -252,7 +252,7 @@ switch gp.type
             Varf = Varf - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2);
             Varf = Varf + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
             for i1=1:ntest
-                switch gp.likelih
+                switch gp.likelih.type
                     case 'probit'
                         p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
                     case 'poisson'
