@@ -1,5 +1,5 @@
 function demo_ep_clFIC_opt
-%DEMO_GP2CLASS    Classification problem demonstration for 2
+%DEMO_CLAASIFIC1    Classification problem demonstration for 2
 %                 classes with EP and using optmization for parameters.
 %
 %      Description

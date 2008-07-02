@@ -1,23 +1,36 @@
 function likelih = likelih_probit(do, varargin)
-%likelih_probit	   Create a probit likelihood structure for Gaussian Process
+%likelih_probit	Create a Probit likelihood structure for Gaussian Process
 %
 %	Description
 %
-%	likelih = LIKELIH_PROBIT('INIT', NIN) Create and initialize squared exponential
-%       covariance function fo Gaussian process
+%	LIKELIH = LIKELIH_PROBIT('INIT', Y, YE) Create and initialize Probit likelihood. 
+%       The input argument Y contains incedence counts and YE the expected number of
+%       incidences
 %
-%	The fields and (default values) in LIKELIH_PROBIT are:
-%	  type           = 'likelih_probit'
+%	The fields in LIKELIH are:
+%	  type                     = 'likelih_probit'
+%         likelih.avgE             = YE;
+%         likelih.gamlny           = gammaln(Y+1);
+%         likelih.fh_pak           = function handle to pak
+%         likelih.fh_unpak         = function handle to unpak
+%         likelih.fh_permute       = function handle to permutation
+%         likelih.fh_e             = function handle to energy of likelihood
+%         likelih.fh_g             = function handle to gradient of energy
+%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
+%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
+%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
+%         likelih.fh_recappend     = function handle to record append
 %
-%	likelih = LIKELIH_PROBIT('SET', LIKELH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	LIKELIH = LIKELIH_PROBIT('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
 %
 %	See also
-%
+%       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %
 %
 
-% Copyright (c) 2006-2007 Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -75,36 +88,76 @@ function likelih = likelih_probit(do, varargin)
 
 
     function w = likelih_probit_pak(likelih, w)
+    %LIKELIH_PROBIT_PAK      Combine likelihood parameters into one vector.
     %
+    %   NOT IMPLEMENTED!
     %
-    %   
+    %	Description
+    %	W = LIKELIH_PROBIT_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
+    %	combines the parameters into a single row vector W.
+    %	  
+    %
+    %	See also
+    %	LIKELIH_PROBIT_UNPAK
     end
 
 
     function w = likelih_probit_unpak(likelih, w)
+    %LIKELIH_PROBIT_UNPAK      Combine likelihood parameters into one vector.
     %
+    %   NOT IMPLEMENTED!
     %
-    %    
+    %	Description
+    %	W = LIKELIH_PROBIT_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
+    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %	  
+    %
+    %	See also
+    %	LIKELIH_PROBIT_PAK
+
     end
 
 
 
     function likelih = likelih_probit_permute(likelih, p)
+    %LIKELIH_PROBIT_PERMUTE    A function to permute the ordering of parameters 
+    %                           in likelihood structure
+    %   Description
+    %	LIKELIH = LIKELIH_PROBIT_UNPAK(LIKELIH, P) takes a likelihood data structure
+    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
+    %   according to P.
     %
-    %
-    %
+    %   See also 
+    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
+
     end
 
 
     function logLikelih = likelih_probit_e(likelih, y, f)
+    %LIKELIH_PROBIT_E    (Likelihood) Energy function
     %
+    %   Description
+    %   E = LIKELIH_PROBIT_E(LIKELIH, Y, F) takes a likelihood data structure
+    %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
-    %
+    %   See also
+    %   LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, LIKELIH_PROBIT_HESSIAN, GPLA_E
+
         logLikelih = sum(log(normcdf(y.*f)));
     end
 
 
     function deriv = likelih_probit_g(likelih, y, f, param)
+    %LIKELIH_PROBIT_G    Hessian of (likelihood) energy function
+    %
+    %   Description
+    %   G = LIKELIH_PROBIT_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
+    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
+    %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
+    %
+    %   See also
+    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_HESSIAN, LIKELIH_PROBIT_G3, GPLA_E
+
         switch param
           case 'latent'
             deriv = y.*normpdf(f)./normcdf(y.*f);
@@ -113,9 +166,17 @@ function likelih = likelih_probit(do, varargin)
 
 
     function hessian = likelih_probit_hessian(likelih, y, f, param)
+    %LIKELIH_PROBIT_HESSIAN    Third gradients of (likelihood) energy function
     %
+    %   Description
+    %   HESSIAN = LIKELIH_PROBIT_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
+    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
+    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   matrix (off diagonals are zero).
     %
-    %
+    %   See also
+    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, GPLA_E
         switch param
           case 'latent'
             z = y.*f;
@@ -124,9 +185,17 @@ function likelih = likelih_probit(do, varargin)
     end
     
     function thir_grad = likelih_probit_g3(likelih, y, f, param)
+    %LIKELIH_PROBIT_G3    Gradient of (likelihood) Energy function
     %
+    %   Description
+    %   G3 = LIKELIH_PROBIT_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
+    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
+    %   be only 'latent'. G3 is a vector with third gradients.
     %
-    %
+    %   See also
+    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_HESSIAN, GPLA_E, GPLA_G
+
         switch param
           case 'latent'
             z2 = normpdf(f)./normcdf(y.*f);
@@ -136,9 +205,17 @@ function likelih = likelih_probit(do, varargin)
     
 
     function [m_0, m_1, m_2] = likelih_probit_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    %LIKELIH_PROBIT_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
+    %   Description
+    %   [M_0, M_1, M2] = LIKELIH_PROBIT_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
+    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   M_2 of the tilted distribution
     %
-    %
+    %   See also
+    %   GPEP_E
+
         m_0 = normcdf(y(i1).*myy_i./sqrt(1+sigm2_i));
         zi=y(i1)*myy_i/sqrt(1+sigm2_i);
         normp_zi = normpdf(zi);
@@ -151,9 +228,19 @@ function likelih = likelih_probit(do, varargin)
 
 
     function [z, energ, diagn] = likelih_probit_mcmc(z, opt, varargin)
+    %LIKELIH_PROBIT_MCMC        Conducts the MCMC sampling of latent values
     %
     %
+    %   NOT IMPLEMENTED!
     %
+    %   Description
+    %   [F, ENERG, DIAG] = LIKELIH_PROBIT_MCMC(F, OPT, GP, X, Y) takes the current latent 
+    %   values F, options structure OPT, Gaussian process data structure GP, inputs X and
+    %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
+    %   diagnostics DIAG.
+    %
+    %   See also
+    %   GP_MC
         
     end
 

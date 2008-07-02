@@ -5,14 +5,23 @@ function gp = gp_init(do, varargin)
 %
 %	GP = GP_INIT('INIT', 'TYPE', NIN, 'LIKELIH', GPCF, NOISE, VARARGIN) 
 %       Creates a Gaussian Process model with a single output. Takes the number 
-%	of inputs  NIN together with string 'LIKELIH' which spesifies likelihood 
-%       function used, GPCF array which specify the covariance functions and NOISE 
-%       array which specify the noise functions used for Gaussian process. At minimum 
-%       one covariance function has to be given. TYPE defines the type of GP, possible 
-%       types are  
+%	of inputs  NIN together with string/structure 'LIKELIH', which spesifies 
+%       likelihood function used, GPCF array specifying the covariance functions 
+%       and NOISE array, which specify the noise covariance functions used for
+%       Gaussian process. At minimum one covariance function has to be given. 
+%       
+%       The GPCF and NOISE arrays consist of covariance function structures 
+%       (see, for example, gpcf_sexp).
+%   
+%       The LIKELIH is a string  'regr' for a regression model with additive Gaussian 
+%       noise. Other likelihood models require a likelihood structure for LIKELIH 
+%       parameter (see, for example, likelih_logit).
+%
+%       TYPE defines the type of GP, possible types are:
 %        'FULL'        (full GP), 
 %        'FIC'         (fully independent conditional), 
-%        'PIC_BLOCK'   (block partially independent condional), 
+%        'PIC_BLOCK'   (partially independent condional), 
+%        'CS+FIC'      (Compact support + FIC model)
 %
 %       With VARAGIN the fields of the GP structure can be set into different values 
 %       VARARGIN = 'FIELD1', VALUE1, 'FIELD2', VALUE2, ... 
@@ -29,20 +38,12 @@ function gp = gp_init(do, varargin)
 %         noise          = struct of noise functions
 %	  jitterSigmas   = jitter term for covariance function
 %                          (1e-4)
-%         p              = prior structure for parameters
-%         p.r            = Prior Structure for residual
+%         p.r            = Prior Structure for residual parameters
 %                          (defined only in case likelih == 'regr')
-%         likelih        = String defining the likelihood. Possible likelihoods are
-%                          'regr', 'logistic', 'poisson', 'probit', 'negbin'
-%                          In case of poisson likehood there is also field
-%                             avgE  = In poisson(y|lambda) we have lambda = avgE*f,
-%                                      where f is vector of latent values
-%                          In case of negative-binomial likehood there is also field
-%                             r     = dispersion parameter
-%
-    
+%         likelih        = a string or structure defining the likelihood
+%    
 %       The additional fields needed in sparse approximations are:
-%         X_u            = Inducing inputs in FIC and PIC
+%         X_u            = Inducing inputs in FIC, PIC and CS+FIC models
 %         blocks         = Initializes the blocks for the PIC_BLOCK model
 %                          The value for blocks has to be a cell array of type 
 %                          {'method', matrix of training inputs, param}. 
@@ -54,7 +55,7 @@ function gp = gp_init(do, varargin)
 %
 %       The additional fields when the model is not for regression (likelih ~='regr') are:
 %         latent_method  = Defines a method for marginalizing over latent values. Possible 
-%                          methods are 'MCMC' and 'EP' and the fields for them are
+%                          methods are 'MCMC', 'Laplace' and 'EP' and the fields for them are
 %                         
 %                          In case of MCMC:
 %                            fh_latentmc    = Function handle to function which samples the latent values
@@ -62,6 +63,13 @@ function gp = gp_init(do, varargin)
 %                          and they are set as following
 %                            gp_init('SET', GP, 'latent_method', {'MCMC', @fh_latentmc Z});
 %                          where Z is a (1xn) vector of latent values 
+%
+%                          In case of EP:
+%                            fh_e       = function handle to an energy function
+%                          and they are set as following
+%                            gp_init('SET', GP, 'latent_method', {'Laplace', x, y, 'param'});
+%                          where x is a matrix of inputs, y vector/matrix of outputs and 'param' a 
+%                          string defining wich parameters are sampled/optimized (see gp_pak).
 % 
 %                          In case of EP:
 %                            fh_e       = function handle to an energy function
@@ -79,10 +87,9 @@ function gp = gp_init(do, varargin)
 %
 %
 
-% Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
-% Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
-
+% Copyright (c) 2006      Helsinki University of Technology (author Jarno Vanhatalo)
+% Copyright (c) 2007-2008 Jarno Vanhatalo
+    
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
@@ -152,8 +159,6 @@ function gp = gp_init(do, varargin)
                     gp.likelih_e = varargin{i+1};
                   case 'likelih_g'
                     gp.likelih_g = varargin{i+1};
-% $$$                   case 'fh_latentmc'
-% $$$                     gp.fh_latentmc = varargin{i+1};
                   case 'type'
                     gp.type = varargin{i+1};
                   case 'X_u'
@@ -321,12 +326,6 @@ function gp = gp_init(do, varargin)
     end
     
     function init_truncated(var)
-%         truncated      = Initializes the sparse correlation structure fo the PIC_BAND model
-%                          The value for truncated has to be a cell array of type 
-%                          {x, R}, where x is the matrix of input (size n x nin) and R is the radius for truncation.
-%                          
-%                          If value is {x, R, 1} an information about the sparsity structure is printed and plotted.
-
         if length(var) < 2
             error('Wrong kind of value for the truncated type! See help gp_init!')
         end

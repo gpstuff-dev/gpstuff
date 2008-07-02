@@ -2,17 +2,27 @@ function w = gp_pak(gp, param)
 %GP_PAK	 Combine GP hyper-parameters into one vector.
 %
 %	Description
-%	W = GP_PAK(GP) takes a Gaussian Process data structure GP and
-%	combines the hyper-parameters into a single row vector W.
+%	W = GP_PAK(GP, PARAM) takes a Gaussian Process data structure GP and
+%	string PARAM defining, which parameters are packed and combines the 
+%       parameters into a single row vector W.
 %
-%	The ordering of the parameters in HP is defined by
-%	  hp = [hyper-params of gp.cf{1}, hyper-params of gp.cf{2}, ...];
+%       The possiple values for PARAM are
+%       'hyper'          = pack only hyperparameters
+%                          W = log([hyper-params of gp.cf, hyper-params of gp.noise])
+%       'indicing'       = pack only iducing inputs
+%                          W = gp.X_u(:)
+%       'likelih'        = pack only parameters of likelihood
+%       'hyper+inducing' = pack hyperparameters and induging inputs
+%                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), gp.X_u(:)];
+%       'hyper+likelih'  = pack hyperparameters and parameters of likelihood
+%                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), parameters of likelihood];
+%       'all'            = pack all parameters in one vector
 %
 %	See also
 %	GP_UNPAK
 %
 
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

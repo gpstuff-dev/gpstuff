@@ -1,23 +1,37 @@
 function likelih = likelih_negbin(do, varargin)
-%likelih_negbin	Create a Negative Binomial likelihood structure for Gaussian Process
+%likelih_negbin	Create a Negbin likelihood structure for Gaussian Process
 %
 %	Description
 %
-%	likelih = LIKELIH_NEGBIN('INIT', NIN) Create and initialize squared exponential
-%       covariance function fo Gaussian process
+%	LIKELIH = LIKELIH_NEGBIN('INIT', Y, YE) Create and initialize Negbin likelihood. 
+%       The input argument Y contains incedence counts and YE the expected number of
+%       incidences
 %
-%	The fields and (default values) in are:
-%	  type           = 'negbin'
+%	The fields in LIKELIH are:
+%	  type                     = 'likelih_negbin'
+%         likelih.avgE             = YE;
+%         likelih.gamlny           = gammaln(Y+1);
+%         likelih.fh_pak           = function handle to pak
+%         likelih.fh_unpak         = function handle to unpak
+%         likelih.fh_permute       = function handle to permutation
+%         likelih.fh_e             = function handle to energy of likelihood
+%         likelih.fh_g             = function handle to gradient of energy
+%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
+%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
+%         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
+%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
+%         likelih.fh_recappend     = function handle to record append
 %
-%	likelih = LIKELIH_NEGBIN('SET', LIKELH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	LIKELIH = LIKELIH_NEGBIN('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
 %
 %	See also
-%
+%       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %
 %
 
-% Copyright (c) 2006-2007 Jarno Vanhatalo & Jouni Hartikainen
+% Copyright (c) 2007-2008 Jarno Vanhatalo & Jouni Hartikainen
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -98,17 +112,31 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function w = likelih_negbin_pak(likelih)
+    %LIKELIH_NEGBIN_PAK      Combine likelihood parameters into one vector.
     %
+    %	Description
+    %	W = LIKELIH_NEGBIN_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
+    %	combines the parameters into a single row vector W.
+    %	  
     %
-    %   
+    %	See also
+    %	LIKELIH_NEGBIN_UNPAK
+   
         w = likelih.disper;
     end
 
 
     function [likelih] = likelih_negbin_unpak(w, likelih)
+    %LIKELIH_NEGBIN_UNPAK      Combine likelihood parameters into one vector.
     %
+    %	Description
+    %	W = LIKELIH_NEGBIN_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
+    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %	  
     %
-    %    
+    %	See also
+    %	LIKELIH_NEGBIN_PAK    
+
         i1=1;
         likelih.disper = w(i1);
         w = w(i1+1:end);
@@ -116,18 +144,31 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function likelih = likelih_negbin_permute(likelih, p, varargin)
+    %LIKELIH_NEGBIN_PERMUTE    A function to permute the ordering of parameters 
+    %                           in likelihood structure
+    %   Description
+    %	LIKELIH = LIKELIH_NEGBIN_UNPAK(LIKELIH, P) takes a likelihood data structure
+    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
+    %   according to P.
     %
-    %
-    %
+    %   See also 
+    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
+
         likelih.avgE = likelih.avgE(p,:);
         likelih.gamlny = likelih.gamlny(p,:);        
     end
 
 
     function logLikelih = likelih_negbin_e(likelih, y, f, varargin)
+    %LIKELIH_NEGBIN_E    (Likelihood) Energy function
     %
+    %   Description
+    %   E = LIKELIH_NEGBIN_E(LIKELIH, Y, F) takes a likelihood data structure
+    %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
-    %
+    %   See also
+    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_HESSIAN, GPLA_E
+
         r = likelih.disper;
         E = likelih.avgE(:);
         mu = exp(f).*E;
@@ -136,6 +177,16 @@ function likelih = likelih_negbin(do, varargin)
     end
 
     function deriv = likelih_negbin_g(likelih, y, f, param)
+    %LIKELIH_NEGBIN_G    Hessian of (likelihood) energy function
+    %
+    %   Description
+    %   G = LIKELIH_NEGBIN_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
+    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
+    %   log likelihood with respect to PARAM. At the moment PARAM can be 'hyper' or 'latent'.
+    %
+    %   See also
+    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_HESSIAN, LIKELIH_NEGBIN_G3, GPLA_E
+        
         switch param
           case 'hyper'
             E = likelih.avgE(:);
@@ -156,9 +207,22 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function hessian = likelih_negbin_hessian(likelih, y, f, param)
+    %LIKELIH_NEGBIN_HESSIAN    Third gradients of (likelihood) energy function
     %
     %
+    %   NOT IMPLEMENTED!
     %
+    %   Description
+    %   HESSIAN = LIKELIH_NEGBIN_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
+    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
+    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   matrix (off diagonals are zero).
+    %
+    %   See also
+    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, GPLA_E
+
+
         switch param
           case 'hyper'
             
@@ -168,9 +232,18 @@ function likelih = likelih_negbin(do, varargin)
     end    
     
     function third_grad = likelih_negbin_g3(likelih, y, f, param)
+    %LIKELIH_NEGBIN_G3    Gradient of (likelihood) Energy function
     %
+    %   Description
+    %   G3 = LIKELIH_NEGBIN_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
+    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
+    %   be only 'latent'. G3 is a vector with third gradients.
     %
-    %
+    %   See also
+    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_HESSIAN, GPLA_E, GPLA_G
+
+        
         switch param
           case 'hyper'
             
@@ -181,9 +254,17 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function [m_0, m_1, m_2] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    %LIKELIH_NEGBIN_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
+    %   Description
+    %   [M_0, M_1, M2] = LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
+    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   M_2 of the tilted distribution
     %
-    %
+    %   See also
+    %   GPEP_E
+
         zm = @zeroth_moment;
         fm = @first_moment;
         sm = @second_moment;
@@ -281,7 +362,7 @@ function likelih = likelih_negbin(do, varargin)
     
     
     function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i)
-    %
+    %LIKELIH_NEGBIN_SITEDERIV    Evaluate the derivative with respect to cite parameters
     %
     %
         zm = @zeroth_moment;
@@ -373,9 +454,17 @@ function likelih = likelih_negbin(do, varargin)
     end
 
     function [z, energ, diagn] = likelih_negbin_mcmc(z, opt, varargin)
+    %LIKELIH_NEGBIN_MCMC        Conducts the MCMC sampling of latent values
     %
+    %   Description
+    %   [F, ENERG, DIAG] = LIKELIH_NEGBIN_MCMC(F, OPT, GP, X, Y) takes the current latent 
+    %   values F, options structure OPT, Gaussian process data structure GP, inputs X and
+    %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
+    %   diagnostics DIAG.
     %
-    %
+    %   See also
+    %   GP_MC
+        
     % Set the state of HMC samler
         if isfield(opt, 'rstate')
             if ~isempty(opt.rstate)
@@ -511,7 +600,7 @@ function likelih = likelih_negbin(do, varargin)
         diagn.lvs = opt.stepadj;
 
         function [g, gdata, gprior] = lvnegbin_gr(w, gp, x, y, u, varargin)
-        %LVPOISSON_G	Evaluate gradient function for GP latent values with
+        %LVNEGBIN_G	Evaluate gradient function for GP latent values with
         %               Negative-Binomial likelihood
             
         % Force z and E to be a column vector
@@ -580,13 +669,13 @@ function likelih = likelih_negbin(do, varargin)
 
         function [e, edata, eprior] = lvnegbin_er(w, gp, x, t, u, varargin)
         %function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
-        % LVPOISSON_E     Minus log likelihood function for spatial modelling.
+        % LVNEGBIN_E     Minus log likelihood function for spatial modelling.
         %
-        %       E = LVPOISSON_E(X, GP, T, Z) takes.... and returns minus log from 
+        %       E = LVNEGBIN_E(X, GP, T, Z) takes.... and returns minus log from 
             
         % The field gp.likelihavgE (if given) contains the information about averige
         % expected number of cases at certain location. The target, t, is 
-        % distributed as t ~ poisson(avgE*exp(z))
+        % distributed as t ~ negbin(avgE*exp(z))
             
         % force z and E to be a column vector
 

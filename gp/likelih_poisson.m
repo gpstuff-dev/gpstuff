@@ -3,21 +3,35 @@ function likelih = likelih_poisson(do, varargin)
 %
 %	Description
 %
-%	likelih = LIKELIH_POISSON('INIT', NIN) Create and initialize squared exponential
-%       covariance function fo Gaussian process
+%	LIKELIH = LIKELIH_POISSON('INIT', Y, YE) Create and initialize Poisson likelihood. 
+%       The input argument Y contains incedence counts and YE the expected number of
+%       incidences
 %
-%	The fields and (default values) in GPCF_SEXP are:
-%	  type           = 'likelih_poisson'
+%	The fields in LIKELIH are:
+%	  type                     = 'likelih_poisson'
+%         likelih.avgE             = YE;
+%         likelih.gamlny           = gammaln(Y+1);
+%         likelih.fh_pak           = function handle to pak
+%         likelih.fh_unpak         = function handle to unpak
+%         likelih.fh_permute       = function handle to permutation
+%         likelih.fh_e             = function handle to energy of likelihood
+%         likelih.fh_g             = function handle to gradient of energy
+%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
+%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
+%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
+%         likelih.fh_recappend     = function handle to record append
 %
-%	likelih = LIKELIH_POISSON('SET', LIKELH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	LIKELIH = LIKELIH_POISSON('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
 %
 %	See also
-%
+%       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %
 %
 
-% Copyright (c) 2006-2007 Jarno Vanhatalo
+% Copyright (c) 2006      Helsinki University of Technology (author) Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -27,7 +41,7 @@ function likelih = likelih_poisson(do, varargin)
         error('Not enough arguments')
     end
 
-    % Initialize the covariance function
+    % Initialize the likelihood structure
     if strcmp(do, 'init')
         y = varargin{1};
         avgE = varargin{2};
@@ -69,7 +83,7 @@ function likelih = likelih_poisson(do, varargin)
         end
     end
 
-    % Set the parameter values of covariance function
+    % Set the parameter values of likelihood
     if strcmp(do, 'set')
         if mod(nargin,2) ~=0
             error('Wrong number of arguments')
@@ -91,33 +105,62 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function w = likelih_poisson_pak(likelih, w)
+    %LIKELIH_POISSON_PAK      Combine likelihood parameters into one vector.
     %
+    %   NOT IMPLEMENTED!
     %
-    %   
+    %	Description
+    %	W = LIKELIH_POISSON_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
+    %	combines the parameters into a single row vector W.
+    %	  
+    %
+    %	See also
+    %	LIKELIH_POISSON_UNPAK
     end
 
 
     function w = likelih_poisson_unpak(likelih, w)
+    %LIKELIH_POISSON_UNPAK      Combine likelihood parameters into one vector.
     %
+    %   NOT IMPLEMENTED!
     %
-    %    
+    %	Description
+    %	W = LIKELIH_POISSON_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
+    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %	  
+    %
+    %	See also
+    %	LIKELIH_POISSON_PAK
     end
 
 
 
     function likelih = likelih_poisson_permute(likelih, p)
+    %LIKELIH_POISSON_PERMUTE    A function to permute the ordering of parameters 
+    %                           in likelihood structure
+    %   Description
+    %	LIKELIH = LIKELIH_POISSON_UNPAK(LIKELIH, P) takes a likelihood data structure
+    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
+    %   according to P.
     %
-    %
-    %
+    %   See also 
+    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
+        
         likelih.avgE = likelih.avgE(p,:);
         likelih.gamlny = likelih.gamlny(p,:);
     end
 
 
     function logLikelih = likelih_poisson_e(likelih, y, f)
+    %LIKELIH_POISSON_E    (Likelihood) Energy function
     %
+    %   Description
+    %   E = LIKELIH_POISSON_E(LIKELIH, Y, F) takes a likelihood data structure
+    %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
-    %
+    %   See also
+    %   LIKELIH_POISSON_G, LIKELIH_POISSON_G3, LIKELIH_POISSON_HESSIAN, GPLA_E
+        
         lambda = likelih.avgE.*exp(f);
         gamlny = likelih.gamlny;
         logLikelih =  sum(-lambda + y.*log(lambda) - gamlny);
@@ -125,6 +168,16 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function deriv = likelih_poisson_g(likelih, y, f, param)
+    %LIKELIH_POISSON_G    Hessian of (likelihood) energy function
+    %
+    %   Description
+    %   G = LIKELIH_POISSON_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
+    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
+    %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
+    %
+    %   See also
+    %   LIKELIH_POISSON_E, LIKELIH_POISSON_HESSIAN, LIKELIH_POISSON_G3, GPLA_E
+        
         switch param
           case 'latent'
             deriv = y - likelih.avgE.*exp(f);
@@ -133,9 +186,18 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function hessian = likelih_poisson_hessian(likelih, y, f, param)
+    %LIKELIH_POISSON_HESSIAN    Third gradients of (likelihood) energy function
     %
+    %   Description
+    %   HESSIAN = LIKELIH_POISSON_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
+    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
+    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   matrix (off diagonals are zero).
     %
-    %
+    %   See also
+    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G3, GPLA_E
+
         switch param
           case 'latent'
             hessian = -likelih.avgE.*exp(f);
@@ -143,9 +205,17 @@ function likelih = likelih_poisson(do, varargin)
     end    
     
     function third_grad = likelih_poisson_g3(likelih, y, f, param)
+    %LIKELIH_POISSON_G3    Gradient of (likelihood) Energy function
     %
+    %   Description
+    %   G3 = LIKELIH_POISSON_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
+    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
+    %   be only 'latent'. G3 is a vector with third gradients.
     %
-    %
+    %   See also
+    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_HESSIAN, GPLA_E, GPLA_G
+    
         switch param
           case 'latent'
             third_grad = - likelih.avgE.*exp(f);
@@ -154,9 +224,17 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function [m_0, m_1, m_2] = likelih_poisson_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    %LIKELIH_POISSON_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
+    %   Description
+    %   [M_0, M_1, M2] = LIKELIH_POISSON_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
+    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   M_2 of the tilted distribution
     %
-    %
+    %   See also
+    %   GPEP_E
+
         zm = @zeroth_moment;
         fm = @first_moment;
         sm = @second_moment;
@@ -259,9 +337,17 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function [z, energ, diagn] = likelih_poisson_mcmc(z, opt, varargin)
+    %LIKELIH_POISSON_MCMC        Conducts the MCMC sampling of latent values
     %
+    %   Description
+    %   [F, ENERG, DIAG] = LIKELIH_POISSON_MCMC(F, OPT, GP, X, Y) takes the current latent 
+    %   values F, options structure OPT, Gaussian process data structure GP, inputs X and
+    %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
+    %   diagnostics DIAG.
     %
-    %
+    %   See also
+    %   GP_MC
+
         if isfield(opt, 'rstate')
             if ~isempty(opt.rstate)
                 latent_rstate = opt.latent_opt.rstate;
@@ -285,17 +371,11 @@ function likelih = likelih_poisson(do, varargin)
             u = gp.X_u;
             Labl=[];
             Lp = [];            
-          case {'PIC_BLOCK','CS+PIC'}
+          case {'PIC_BLOCK'}
             u = gp.X_u;
             ind = gp.tr_index;
             Labl=[];
             Lp = [];
-          case 'PIC_BAND'
-            u = gp.X_u;
-            ind = gp.tr_index;
-            nzmax = size(ind,1);
-            Labl= sparse([],[],[],n,n,0);
-            Lp = sparse([],[],[],n,n,0); 
         end
         n=length(y);
 
@@ -306,7 +386,7 @@ function likelih = likelih_poisson(do, varargin)
         L2=[];
         iLaKfuic=[];
         mincut = -300;
-        if isfield(gp,'avgE');
+        if isfield(gp.likelih,'avgE');
             E=gp.likelih.avgE(:);
         else
             E=1;
@@ -323,8 +403,6 @@ function likelih = likelih_poisson(do, varargin)
             % Rotate z towards prior as w = (L\z)';
             % Here we take an advantage of the fact that L = chol(diag(Lav)+b'b)
             % See cholrankup.m for general case of solving a Ax=b system
-    % $$$     Uz = U'*z;
-    % $$$     w = z + U*inv(J)*Uz - U*Uz;
             zs = z./Lp;
             w = zs + U*((J*U'-U')*zs);
           case 'PIC_BLOCK'
@@ -344,7 +422,7 @@ function likelih = likelih_poisson(do, varargin)
         end
         
         
-        %gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
+        %        gradcheck(w, @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
         
         hmc2('state',latent_rstate)
         rej = 0;
@@ -373,7 +451,6 @@ function likelih = likelih_poisson(do, varargin)
           case 'FULL'
             z=L2*w;
           case 'FIC'
-    % $$$     z = Lp.*(w + U*inv(JUU*w));
             z = Lp.*(w + U*(iJUU*w));
           case  'PIC_BLOCK'
             w2 = w + U*(iJUU*w);
@@ -513,7 +590,7 @@ function likelih = likelih_poisson(do, varargin)
                 % Take advantage of the matrix inversion lemma
                 %        L=chol(inv(inv(C) + diag(1./gp.likelih.avgE)))';
                 Linv = inv(chol(C)');
-                L2 = C/chol(diag(1./gp.likelih.avgE) + C);  %sparse(1:n, 1:n, 1./gp.likelih.avgE)
+                L2 = C/chol(diag(1./E) + C);  %sparse(1:n, 1:n, 1./gp.likelih.avgE)
                 L2 = chol(C - L2*L2')';
             else        
                 % Evaluate the Lambda (La) for specific model
@@ -540,7 +617,7 @@ function likelih = likelih_poisson(do, varargin)
                     c = chol(c)';   % u x u, 
                     ic = inv(c);
                     iLaKfuic = iLaKfu*ic';
-                    Lp = sqrt(1./(gp.likelih.avgE + 1./Lav));
+                    Lp = sqrt(1./(E + 1./Lav));
                     b=b';
                     for i=1:n
                         b(i,:) = iLaKfuic(i,:).*Lp(i);
@@ -580,7 +657,7 @@ function likelih = likelih_poisson(do, varargin)
                     iLaKfuic = iLaKfu*inv(chol(A));
                     
                     for i=1:length(ind)
-                        Lp{i} = chol(inv(diag(gp.likelih.avgE(ind{i})) + inv(Labl{i})));
+                        Lp{i} = chol(inv(diag(E(ind{i})) + inv(Labl{i})));
                     end
                     b=zeros(size(B'));
                     

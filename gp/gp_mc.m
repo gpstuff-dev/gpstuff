@@ -1,28 +1,23 @@
 function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
-% GP2_MC   Monte Carlo sampling for model GP2R
+% GP_MC   Monte Carlo sampling for Gaussian process models
 %
-%   REC = GP_MC(OPT, GP, X, T, XX, TT)
+%   REC = GP_MC(OPT, GP, TX, TY, X, Y, [], VARARGIN)
 %
-%   REC = GP_MC(OPT, GP, X, T, XX, TT, REC)
+%   REC = GP_MC(OPT, GP, TX, TY, X, Y, REC, VARARGIN)
 %
-%   REC = GP_MC(OPT, GP, X, T, XX, TT, REC, U)
+%   REC = GP_MC(OPT, GP, TX, TY, X, Y, REC, VARARGIN)
 %
-%   [REC, GP, OPT] = GP_MC(OPT, GP, X, T, XX, TT, REC, U)
+%   [REC, GP, OPT] = GP_MC(OPT, GP, TX, TY, X, T, REC, VARARGIN)
 %
-%   VARARGIN:n käyttö
-%   varargin{:} = u, Linv, ...
-
-
-%     rec     - record to continue (optional)
 %   Returns:
 %     rec     - record including hyper-parameters and errors
 %     gp      - gp
 %     opt     - options structure
 %
-%   Set default options for GPRMC
-%    opt=gp2r_mc;
+%   Set default options for GP_MC
+%    opt=gp_mcopt;
 %      return default options
-%    opt=gp2r_mc(opt);
+%    opt=gp_mcopt(opt);
 %      fill empty options with default values
 %
 %   The options and defaults are
@@ -42,7 +37,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 %
 
 % Copyright (c) 1998-2000 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -54,9 +49,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
     if nargin < 4
         error('Not enough arguments')
     end
-
-% $$$ % Set empty options to default values
-% $$$ opt=gp_mcopt(opt);
 
     % NOTE ! Here change the initialization of energy and gradient function
     % Initialize the error and gradient functions and get 
@@ -86,6 +78,19 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
     end
 
     % Set the states of samplers if not given in opt structure
+    if isfield(opt, 'latent_opt')
+        if isfield(opt.latent_opt, 'rstate')
+            if ~isempty(opt.latent_opt.rstate)
+                latent_rstate = opt.latent_opt.rstate;
+            else
+                hmc2('state', sum(100*clock))
+                latent_rstate=hmc2('state');
+            end
+        else
+            hmc2('state', sum(100*clock))
+            latent_rstate=hmc2('state');
+        end
+    end
     if isfield(opt, 'hmc_opt')
         if isfield(opt.hmc_opt, 'rstate')
             if ~isempty(opt.hmc_opt.rstate)
@@ -98,7 +103,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             hmc2('state', sum(100*clock))
             hmc_rstate=hmc2('state');
         end
-    end
+    end    
     if isfield(opt, 'inducing_opt')
         if isfield(opt.inducing_opt, 'rstate')
             if ~isempty(opt.inducing_opt.rstate)
@@ -205,9 +210,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 gp = gp_unpak(gp, w, 'hyper');
             end
             
+            % ----------- Sample parameters of the negative binomial likelihood --------------------- 
             if isfield(opt, 'nb_sls_opt')
                 w = gp_pak(gp, 'likelih');
-   %-(sum(-w.*(log(w)-log(w+exp(z).*gp.likelih.avgE(:))) - gammaln(w+y) + gammaln(w) + gammaln(y+1) - y.*(log(exp(z).*gp.likelih.avgE(:))-log(w+exp(z).*gp.likelih.avgE(:)))))
                 fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
                 [w, energies, diagns] = sls(fe, w, opt.nb_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
@@ -244,17 +249,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 gp = gp_unpak(gp, w, 'inducing');
             end
             
-            % ----------- Sample inducing inputs with some other method  ------------ 
-% $$$     if isfield(opt, 'inducing_opt')
-% $$$         [z, energ, diagnl] = feval(gp.fh_inducingmc, z, opt.inducing_opt, gp, x, y, varargin{:});
-% $$$         gp.latentValues = z(:)';
-% $$$         z = z(:);
-% $$$         slrej=slrej+diagnl.rej/opt.repeat;
-% $$$         if isfield(diagnl, 'opt')
-% $$$             opt.latent_opt = diagnl.opt;
-% $$$         end
-% $$$     end
-            
             % ------------ Perform sampling for parameters that are not included -------------
             % ------------ in the vector w. Such are, for example, noiseSigmas2  -------------
             % ------------ for gpcf_noiset model
@@ -271,8 +265,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         
         % ----------- Set record -----------------------    
         ri=ri+1;
-
-        %    rec=recappend(rec, ri, gp, x, y, xtest, ytest, rejs, varargin{:});
         rec=recappend(rec);
         
         % Display some statistics  THIS COULD BE DONE NICER ALSO...
@@ -447,6 +439,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
+            
             [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
                                            % Set rejects 

@@ -1,21 +1,35 @@
 function gp = gp_unpak(gp, w, param)
-%GP_UNPAK  Separate GP hyper-parameter vector into components. 
+%GP_UNPAK	 Combine GP hyper-parameters into one vector.
 %
 %	Description
-%	GP = GP_UNPAK(GP, W) takes an Gaussian Process data structure GP
-%	and  a hyper-parameter vector W, and returns a Gaussian Process data
-%	structure  identical to the input model, except that the covariance
-%	hyper-parameters has been set to the of W.
+%	GP = GP_UNPAK(GP, W, PARAM) takes an Gaussian Process data structure GP
+%	and  a parameter vector W, and returns a Gaussian Process data
+%	structure identical to the input, except that the parameters has been 
+%       set to the ones in W. PARAM defines which parameters are present in the
+%       W vector.
+%
+%       The possiple values for PARAM are
+%       'hyper'          = pack only hyperparameters
+%                          W = log([hyper-params of gp.cf, hyper-params of gp.noise])
+%       'indicing'       = pack only iducing inputs
+%                          W = gp.X_u(:)
+%       'likelih'        = pack only parameters of likelihood
+%       'hyper+inducing' = pack hyperparameters and induging inputs
+%                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), gp.X_u(:)];
+%       'hyper+likelih'  = pack hyperparameters and parameters of likelihood
+%                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), parameters of likelihood];
+%       'all'            = pack all parameters in one vector
 %
 %	See also
 %	GP_PAK
 %
 
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
+
 
 switch param
   case 'hyper'

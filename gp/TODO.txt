@@ -1,5 +1,12 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2007-05-29 14:28:48 EEST
+%   Last modified: 2008-07-02 14:58:27 EEST
+
+
+- Lisättävä likelih_logit:n 
+  * FIC, PIC ja CS+FIC toteutus
+  * Laplace aproksimaation toteutus
+
+- Toteutettava GPLA_E:hen Newtonin optimointi SCG jne.
 
 
 PERUS GP RAKENNE:

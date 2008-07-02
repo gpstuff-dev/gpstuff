@@ -1,21 +1,25 @@
 function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, param, varargin)
-%GP2_E	Evaluate error function for Gaussian Process.
+%GPEP_E Conduct Expectation propagation for GP model
 %
 %	Description
-%	E = GPEP_E(W, GP, P, T, PARAM) takes a gp data structure GP together
-%	with a matrix P of input vectors and a matrix T of target vectors,
-%	and evaluates the error function E.  Each row of P
-%	corresponds to one input vector and each row of T corresponds to one
+%	E = GPEP_E(W, GP, X, Y, PARAM) takes a gp data structure GP together
+%	with a matrix X of input vectors and a matrix Y of target vectors,
+%	and finds the EP approximation for the marginal likelihood E.  Each row of C
+%	corresponds to one input vector and each row of Y corresponds to one
 %	target vector.
 %
 %	[E, EDATA, EPRIOR] = GPEP_E(W, GP, P, T, PARAM) also returns the data and
 %	prior components of the total error.
+%    
+%	[E, EDATA, EPRIOR, SITE_TAU, SITE_NU] = GPEP_E(W, GP, P, T, PARAM) also returns
+%       the site parameters
 %
 %	See also
-%
+%       GPEP_G, EP_PRED, GP_E
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimï¿½ki
+% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
+% Copyright (c) 2008      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file

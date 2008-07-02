@@ -1,59 +1,55 @@
 function gpcf = gpcf_matern52(do, varargin)
-%GPCF_SEXP	Create a squared exponential covariance function for Gaussian Process
+%GPCF_MATERN52	Create a Matern nu=5/2 covariance function for Gaussian Process
 %
 %	Description
 %
-%	GPCF = GPCF_MATERN52('INIT', NIN) Create and initialize squared exponential 
-%       covariance function fo Gaussian process 
+%	GPCF = GPCF_MATERN52('INIT', NIN) Create and initialize Matern nu=3/2
+%       covariance function for Gaussian process
 %
-%	The fields and (default values) in GPCF_MATERN52 are:
+%	The fields and (default values) in GPCF_MATERN32 are:
 %	  type           = 'gpcf_matern52'
-%	  nin            = number of inputs (NIN)
-%	  nout           = number of outputs: always 1
-%	  magnSigma2     = general magnitude (squared) for exponential part  (sampled with HMC)
+%	  nin            = Number of inputs. (NIN)
+%	  nout           = Number of outputs. (always 1)
+%	  magnSigma2     = Magnitude (squared) for exponential part. 
 %                          (0.1)
-%	  lengthScale    = length scale for each input. This can be either   (sampled with HMC)
-%                          scalar (corresponding isotropic) or vector (corresponding ARD).
+%	  lengthScale    = Length scale for each input. This can be either scalar corresponding 
+%                          isotropic or vector corresponding ARD. 
 %                          (repmat(10, 1, nin))
-%         p              = prior structure for covariance function   (p.lengthScale.a.s is sampled with HMC)
-%                          parameters. 
-%         fh_pak         = function handle to packing function
-%                          (@gpcf_matern52_pak)
-%         fh_unpak       = function handle to unpackin function
-%                          (@gpcf_matern52_unpak)
-%         fh_e           = function handle to error function
-%                          (@gpcf_matern52_e)
-%         fh_ghyper      = function handle to gradient function (with respect to hyperparameters)
+%         p              = Prior structure for covariance function parameters. 
+%                          (e.g. p.lengthScale.)
+%         fh_pak         = function handle to pack function
+%                          (@gpcf_sexp_pak)
+%         fh_unpak       = function handle to unpack function
+%                          (@gpcf_sexp_unpak)
+%         fh_e           = function handle to energy function
+%                          (@gpcf_sexp_e)
+%         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
 %                          (@gpcf_sexp_ghyper)
-%         fh_gind        = function handle to gradient function (with respect to inducing inputs)
+%         fh_gind        = function handle to gradient of function with respect to inducing inputs
 %                          (@gpcf_sexp_gind)
 %         fh_cov         = function handle to covariance function
-%                          (@gpcf_matern52_cov)
+%                          (@gpcf_sexp_cov)
 %         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_matern52_trcov)
+%                          (@gpcf_sexp_trcov)
 %         fh_trvar       = function handle to training variance function
-%                          (@gpcf_matern52_trvar)
-%         fh_sampling    = function handle to parameter sampling function
-%                          (@hmc2)
-%         sampling_opt   = options structure for fh_sampling
-%                          (hmc2_opt)
-%         fh_recappend   = function handle to record append function
-%                          (gpcf_matern52_recappend)
+%                          (@gpcf_sexp_trvar)
+%         fh_recappend   = function handle to append the record function 
+%                          (gpcf_sexp_recappend)
 %
 %	GPCF = GPCF_MATERN52('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
 %
 %	See also
-%	
-%
-%
+%       gpcf_sexp, gpcf_exp, gpcf_matern32, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
+%       gp_cov, gp_unpak, gp_pak
+    
 
-% Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
-% Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2000-2001 Aki Vehtari
+% Copyright (c) 2006      Helsinkin University of Technology (author Jarno Vanhatalo)
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% This software is distributed under the GNU General Public
+% License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
     if nargin < 2
@@ -76,17 +72,6 @@ function gpcf = gpcf_matern52(do, varargin)
         gpcf.p.lengthScale=[];
         gpcf.p.magnSigma2=[];
         
-        % initialise the return values of nested functions
-        % and the variables that are used to check the similarity
-        % Similarity chechkers
-        % function [g, gdata, gprior]  = gpcf_matern52_g(gpcf, x, t, g, gdata, gprior, invC, varargin)
-        % function reccf = gpcf_matern52_recappend(reccf, ri, gpcf)
-        
-        cov_x1=[]; cov_x2=[]; cov_ls=[]; cov_ms=[]; cov_C=[];
-        trcov_x=[]; trcov_ls=[]; trcov_ms=[]; trcov_C=[];
-        trvar_x=[]; trvar_ls=[]; trvar_ms=[]; trvar_C=[];
-        e_x=[]; e_t=[]; e_ls=[]; e_ms=[]; e_e=[];
-        
         % Set the function handles to the nested functions
         gpcf.fh_pak = @gpcf_matern52_pak;
         gpcf.fh_unpak = @gpcf_matern52_unpak;
@@ -97,8 +82,6 @@ function gpcf = gpcf_matern52(do, varargin)
         gpcf.fh_covvec = @gpcf_matern52_covvec;
         gpcf.fh_trcov  = @gpcf_matern52_trcov;
         gpcf.fh_trvar  = @gpcf_matern52_trvar;
-        %  gpcf.fh_sampling = @hmc2;
-        %  gpcf.sampling_opt = hmc2_opt;
         gpcf.fh_recappend = @gpcf_matern52_recappend;
         
         if length(varargin) > 1
@@ -141,25 +124,18 @@ function gpcf = gpcf_matern52(do, varargin)
     end
 
     function w = gpcf_matern52_pak(gpcf, w)
-    %GPcf_MATERN52_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_MATERN52_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
-    %	W = GP_MATERN52_PAK(GPCF, W) takes a Gaussian Process data structure GP and
+    %	W = GPCF_MATERN52_PAK(GPCF, W) takes a covariance function data structure GPCF and
     %	combines the hyper-parameters into a single row vector W.
     %
-    %	The ordering of the parameters in HP is defined by
-    %	  hp = [hyper-params of gp.cf{1}, hyper-params of gp.cf{2}, ...];
+    %	The ordering of the parameters in W is:
+    %       w = [gpcf.magnSigma2 (hyperparameters of gpcf.lengthScale) gpcf.lengthScale]
+    %	  
     %
     %	See also
     %	GPCF_MATERN52_UNPAK
-    %
-        
-    % Copyright (c) 2000-2001 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
         
         gpp=gpcf.p;
         
@@ -187,25 +163,17 @@ function gpcf = gpcf_matern52(do, varargin)
 
     
     function [gpcf, w] = gpcf_matern52_unpak(gpcf, w)
-    %GPCF_MATERN52_UNPAK  Separate GP covariance function hyper-parameter vector into components. 
+    %GPCF_MATERN52_UNPAK  Separate covariance function hyper-parameter vector into components.
     %
     %	Description
-    %	GP = GPCF_MATERN52_UNPAK(GP, W) takes an Gaussian Process data structure GP
-    %	and  a hyper-parameter vector W, and returns a Gaussian Process data
-    %	structure  identical to the input model, except that the covariance
-    %	hyper-parameters has been set to the of W.
+    %	[GPCF, W] = GPCF_MATERN52_UNPAK(GPCF, W) takes a covariance function data structure GPCF
+    %	and  a hyper-parameter vector W, and returns a covariance function data
+    %	structure  identical to the input, except that the covariance hyper-parameters 
+    %   has been set to the values in W. Deletes the values set to GPCF from W and returns 
+    %   the modeified W. 
     %
     %	See also
-    %	GP_PAK
-    %
-        
-    % Copyright (c) 2000-2001 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
+    %	GPCF_MATERN52_PAK        
         
         gpp=gpcf.p;
         i1=0;i2=1;
@@ -227,28 +195,18 @@ function gpcf = gpcf_matern52(do, varargin)
     end
 
     function eprior =gpcf_matern52_e(gpcf, x, t)
-    %GPCF_MATERN52_E	Evaluate prior contribution of error of covariance function SE.
+    %GPCF_MATERN52_E     Evaluate the energy of prior of MATERN52 parameters
     %
     %	Description
-    %	E = GPCF_MATERN52_E(W, GP, X, T) takes a gp data structure GPCF together
-    %	with a matrix X of input vectors and a matrix T of target vectors,
-    %	and evaluates the error function E. Each row of X corresponds
-    %	to one input vector and each row of T corresponds to one
-    %	target vector.
+    %	E = GPCF_MATERN52_E(GPCF, X, T) takes a covariance function data structure 
+    %   GPCF together with a matrix X of input vectors and a matrix T of target 
+    %   vectors and evaluates log p(th) x J, where th is a vector of SEXP parameters 
+    %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
+    %   are log transformed, when packed.)
     %
     %	See also
-    %	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
-    %
-        
-    % Copyright (c) 1998-2006 Aki Vehtari
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
-    % $$$     if issame(e_x,x) && issame(e_t,t) && issame(e_ls,gpcf.lengthScale) && issame(e_ms,gpcf.magnSigma2)
-    % $$$         eprior = e_e;
-    % $$$     else
+    %	GPCF_MATERN52_PAK, GPCF_MATERN52_UNPAK, GPCF_MATERN52_G, GP_E
+
         [n, m] =size(x);
         
         % Evaluate the prior contribution to the error. The parameters that
@@ -288,27 +246,23 @@ function gpcf = gpcf_matern52(do, varargin)
     end
     
     function [gprior, DKff, DKuu, DKuf]  = gpcf_matern52_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
-    %GPCF_MATERN52_G Evaluate gradient of error for MATERN52 covariance function.
-    %                   with respect to the hyperparameters
+    %GPCF_MATERN52_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
+    %                     respect to the hyperparameters.
     %
     %	Descriptioni
-    %	G = GPCF_MATERN52_G(W, GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) takes a gp 
-    %   hyper-parameter vector W, data structure GPCF a matrix X of input vectors a 
-    %   matrix T of target vectors, inverse covariance function , 
-    %	and evaluates the error gradient G. Each row of X corresponds to one 
-    %   input vector and each row of T corresponds to one target vector.
+    %	[GPRIOR, DKff, DKuu, DKuf] = GPCF_MATERN52_GHYPER(GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) 
+    %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
+    %   matrix T of target vectors and vectors GDATA and GPRIOR. Returns:
+    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
+    %      DKff    = gradients of covariance matrix Kff with respect to th (cell array with matrix elements)
+    %      DKuu    = gradients of covariance matrix Kuu with respect to th (cell array with matrix elements)
+    %      DKuf    = gradients of covariance matrix Kuf with respect to th (cell array with matrix elements)
     %
-    %	[G, GDATA, GPRIOR] = GPCF_MATERN52_G(GP, P, T) also returns separately  the
-    %	data and prior contributions to the gradient.
+    %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
+    %   between u and f). See Vanhatalo and Vehtari (2007) for details.
     %
     %	See also
-    %
-
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
+    %   GPCF_MATERN52_PAK, GPCF_MATERN52_UNPAK, GPCF_MATERN52_E, GP_G
         
         gpp=gpcf.p;
         [n, m] =size(x);
@@ -322,10 +276,9 @@ function gpcf = gpcf_matern52(do, varargin)
         % First check if sparse model is used
         switch gpcf.type
           case 'FULL'
-            % Evaluate help arguments for gradient evaluation
-            % instead of calculating trace(invC*Cdm) calculate sum(invCv.*Cdm(:)), when 
-            % Cdm and invC are symmetric matricess of same size. This is 67 times faster 
-            % with n=215             
+            % Evaluate: DKff{1} = d Kff / d magnSigma2
+            %           DKff{2} = d Kff / d lengthScale
+
             Cdm = gpcf_matern52_trcov(gpcf, x);
             
             ii1=1;
@@ -359,17 +312,24 @@ function gpcf = gpcf_matern52(do, varargin)
                 end
             end
           case {'FIC' 'CS+FIC'}
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_sexp_trcov)
-            u = gpcf.X_u;
-
-            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
-            % NOTE! Here we have already taken into account that the parameters are transformed 
+            % Evaluate: DKff{1} = d mask(Kff,I) / d magnSigma2
+            %           DKff{2} = d mask(Kff,I) / d lengthScale
+            %           
+            %           DKuu{1} = d Kuu / d magnSigma2
+            %           DKuu{2} = d Kuu / d lengthScale
+            %
+            %           DKuf{1} = d Kuf / d magnSigma2
+            %           DKuf{2} = d Kuf / d lengthScale
+            %
+            % NOTE! Here we have already taken into account that the parameters are transformed
             % through log() and thus dK/dlog(p) = p * dK/dp
+            
+            u = gpcf.X_u;
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            DKff = feval(gpcf.fh_trvar, gpcf, x);
+            DKff = feval(gpcf.fh_trvar, gpcf, x);     % = d mask(Kff,I) / d magnSigma2
             
+            % Set d Kuu / d magnSigma2 and d Kuf / d magnSigma2
             ii1=1;
             DKuu{ii1} = K_uu;
             DKuf{ii1} = K_uf;
@@ -409,20 +369,27 @@ function gpcf = gpcf_matern52(do, varargin)
                 end     
             end
           case 'PIC_BLOCK'
-            % Evaluate the help matrices for the gradient evaluation (see
-            % gpcf_sexp_trcov)                        
+            % Evaluate: DKff{1} = d mask(Kff,I) / d magnSigma2
+            %           DKff{2} = d mask(Kff,I) / d lengthScale
+            %           
+            %           DKuu{1} = d Kuu / d magnSigma2
+            %           DKuu{2} = d Kuu / d lengthScale
+            %
+            %           DKuf{1} = d Kuf / d magnSigma2
+            %           DKuf{2} = d Kuf / d lengthScale
+            %
+            % NOTE! Here we have already taken into account that the parameters are transformed
+            % through log() and thus dK/dlog(p) = p * dK/dp
+            
             u = gpcf.X_u;
             ind=gpcf.tr_index;
-            
-            % Derivatives of K_uu and K_uf with respect to magnitude sigma and lengthscale
-            % NOTE! Here we have already taken into account that the parameters are transformed 
-            % through log() and thus dK/dlog(p) = p * dK/dp
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
             K_uf = feval(gpcf.fh_cov, gpcf, u, x);
             for i=1:length(ind)
                 K_ff{i} = feval(gpcf.fh_trcov, gpcf, x(ind{i},:));
             end
             
+            % Set d mask(Kff,I) / d magnSigma2, d Kuu / d magnSigma2 and d Kuf / d magnSigma2
             ii1=1;
             DKuu{ii1} = K_uu;
             DKuf{ii1} = K_uf;
@@ -538,20 +505,22 @@ function gpcf = gpcf_matern52(do, varargin)
     end
     
     function [gprior_ind, DKuu, DKuf]  = gpcf_matern52_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
-    %GPCF_MATERN52_GIND    Evaluate gradient of error for SE covariance function 
-    %                      with respect to inducing inputs.
+    %GPCF_MATERN52_GIND     Evaluate gradient of covariance function with 
+    %                       respect to the inducing inputs.
     %
     %	Descriptioni
-    %	[DKuu_u, DKuf_u] = GPCF_SEXP_GIND(W, GPCF, X, T) 
+    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_MATERN52_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
+    %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
+    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
+    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
+    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %
+    %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
+    %   between u and f). See Vanhatalo and Vehtari (2007) for details.
     %
     %	See also
-    %
-
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
+    %   GPCF_MATERN52_PAK, GPCF_MATERN52_UNPAK, GPCF_MATERN52_E, GP_G
         
         gpp=gpcf.p;
         [n, m] =size(x);
@@ -663,28 +632,17 @@ function gpcf = gpcf_matern52(do, varargin)
 
 
     function C = gpcf_matern52_cov(gpcf, x1, x2)
-    % GP_MATERN52_COV     Evaluate covariance matrix between two input vectors. 
+    % GP_MATERN52_COV     Evaluate covariance matrix between two input vectors.
     %
     %         Description
     %         C = GP_MATERN52_COV(GP, TX, X) takes in covariance function of a Gaussian
-    %         process GP and two matrixes TX and X that contain input vectors to 
-    %         GP. Returns covariance matrix C. Every element ij of C contains  
+    %         process GP and two matrixes TX and X that contain input vectors to
+    %         GP. Returns covariance matrix C. Every element ij of C contains
     %         covariance between inputs i in TX and j in X.
     %
-    %         For covariance function definition see manual or 
-    %         Neal R. M. Regression and Classification Using Gaussian 
-    %         Process Priors, Bayesian Statistics 6.
-        
-    % Copyright (c) 1998-2004 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
-    % $$$         if issame(cov_x1,x1) && issame(cov_x2,x2) && issame(cov_ls,gpcf.lengthScale) && issame(cov_ms,gpcf.magnSigma2)
-    % $$$             C = cov_C;
-    % $$$         else
+    %
+    %         See also
+    %         GPCF_MATERN52_TRCOV, GPCF_MATERN52_TRVAR, GP_COV, GP_TRCOV        
         
         if isempty(x2)
             x2=x1;
@@ -715,37 +673,20 @@ function gpcf = gpcf_matern52(do, varargin)
             C = ma2.*(1 + dist + 5.*dist2./3).*exp(-dist);
         end
         C(C<eps)=0;
-        cov_x1=x1;
-        cov_x2=x2;
-        cov_ls=gpcf.lengthScale;
-        cov_ms=gpcf.magnSigma2;
-        cov_C=C;
-    % $$$         end
     end
 
     function C = gpcf_matern52_trcov(gpcf, x)
-    % GP_MATERN52_TRCOV     Evaluate training covariance matrix of inputs. 
+    % GP_MATERN52_TRCOV     Evaluate training covariance matrix of inputs.
     %
     %         Description
     %         C = GP_MATERN52_TRCOV(GP, TX) takes in covariance function of a Gaussian
-    %         process GP and matrix TX that contains training input vectors to 
-    %         GP. Returns covariance matrix C. Every element ij of C contains  
-    %         covariance between inputs i and j in TX 
+    %         process GP and matrix TX that contains training input vectors. 
+    %         Returns covariance matrix C. Every element ij of C contains covariance 
+    %         between inputs i and j in TX
     %
-    %         For covariance function definition see manual or 
-    %         Neal R. M. Regression and Classification Using Gaussian 
-    %         Process Priors, Bayesian Statistics 6.
-        
-    % Copyright (c) 1998-2004 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
-    % $$$         if issame(trcov_x,x) && issame(trcov_ls,gpcf.lengthScale) && issame(trcov_ms,gpcf.magnSigma2)
-    % $$$             C = trcov_C;
-    % $$$         else
+    %
+    %         See also
+    %         GPCF_MATERN52_COV, GPCF_MATERN52_TRVAR, GP_COV, GP_TRCOV
         [n, m] =size(x);
         
         s2 = 1./(gpcf.lengthScale).^2;
@@ -770,24 +711,20 @@ function gpcf = gpcf_matern52(do, varargin)
         dist = sqrt(5.*C);
         C = ma2.*(1 + dist + 5.*C./3).*exp(-dist);
         C(C<eps)=0;
-        
-        trcov_x=x;
-        trcov_ls=gpcf.lengthScale;
-        trcov_ms=gpcf.magnSigma2;
-        trcov_C=C;
-    % $$$         end
     end
 
     function C = gpcf_matern52_covvec(gpcf, x1, x2, varargin)
-    % GPCF_MATERN52_COVVEC     Evaluate covariance vector between two input vectors. 
+    % GPCF_MATERN52_COVVEC     Evaluate covariance vector between two input vectors.
     %
     %         Description
     %         C = GPCF_MATERN52_COVVEC(GP, TX, X) takes in Gaussian process GP and two
-    %         matrixes TX and X that contain input vectors to GP. Returns 
+    %         matrixes TX and X that contain input vectors to GP. Returns
     %         covariance vector C, where every element i of C contains covariance
     %         between input i in TX and i in X.
     %
-
+    %
+    %         See also
+    %         GPCF_MATERN52_COV, GPCF_MATERN52_TRVAR, GP_COV, GP_TRCOV
         
         if isempty(x2)
             x2=x1;
@@ -815,24 +752,16 @@ function gpcf = gpcf_matern52(do, varargin)
         
     
     function C = gpcf_matern52_trvar(gpcf, x)
-    % GP_MATERN52_TRVAR     Evaluate training variance vector of inputs. 
+    % GP_MATERN52_TRVAR     Evaluate training variance vector
     %
     %         Description
-    %         C = GP_MATERN52_TRVAR(GP, TX) takes in covariance function of a Gaussian
-    %         process GP and matrix TX that contains training input vectors to 
-    %         GP. Returns variance vector C. Every element i of C contains  
-    %         variance of input i in TX 
+    %         C = GP_MATERN52_TRVAR(GPCF, TX) takes in covariance function of a Gaussian
+    %         process GPCF and matrix TX that contains training inputs. Returns variance 
+    %         vector C. Every element i of C contains variance of input i in TX
     %
-    %         For covariance function definition see manual or 
-    %         Neal R. M. Regression and Classification Using Gaussian 
-    %         Process Priors, Bayesian Statistics 6.
-        
-    % Copyright (c) 1998-2004 Aki Vehtari
-    % Copyright (c) 2006      Aki Vehtari, Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
+    %
+    %         See also
+    %         GPCF_MATERN52_COV, GPCF_MATERN52_COVVEC, GP_COV, GP_TRCOV
         
         [n, m] =size(x);
         
@@ -843,13 +772,18 @@ function gpcf = gpcf_matern52(do, varargin)
     function reccf = gpcf_matern52_recappend(reccf, ri, gpcf)
     % RECAPPEND - Record append
     %          Description
-    %          RECCF = GPCF_MATERN52_RECAPPEND(RECCF, RI, GPCF) takes old covariance 
-    %          function record RECCF, record index RI, RECAPPEND returns a 
-    %          structure RECCF containing following record fields:
-    %          lengthHyper    = 
-    %          lengthHyperNu  = 
-    %          lengthScale    = 
-    %          magnSigma2     = 
+    %          RECCF = GPCF_MATERN52_RECAPPEND(RECCF, RI, GPCF) takes old covariance
+    %          function record RECCF, record index RI and covariance function structure. 
+    %          Appends the parameters of GPCF to the RECCF in the ri'th place.
+    %
+    %          RECAPPEND returns a structure RECCF containing following record fields:
+    %          lengthHyper    
+    %          lengthHyperNu  
+    %          lengthScale    
+    %          magnSigma2     
+    %
+    %          See also
+    %          GP_MC  and GP_MC -> RECAPPEND
         
     % Initialize record
         if nargin == 2

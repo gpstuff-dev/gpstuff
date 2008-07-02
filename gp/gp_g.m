@@ -4,22 +4,26 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
 %	Description
 %	G = GP_G(W, GP, X, Y) takes a full GP hyper-parameter vector W,
 %       data structure GP a matrix X of input vectors and a matrix Y
-%       of target vectors, and evaluates the error gradient G. Each row of X
-%	corresponds to one input vector and each row of Y corresponds
-%       to one target vector. Works only for full GP.
+%       of target vectors, and evaluates the gradient G of the energy function. 
+%	Each row of X corresponds to one input vector and each row of Y 
+%       corresponds to one target vector. NOTE! This parametrization works 
+%       only for full GP!
 %
 %	G = GP_G(W, GP, P, Y, PARAM) in case of sparse model takes also
 %       string PARAM defining the parameters to take the gradients with
-%       respect to. Possible parameters are 'hyper' = hyperparameters and
-%      'inducing' = inducing inputs, 'all' = all parameters.
+%       respect to. Possible parameters are 
+%       'hyper'          = hyperparameters
+%       'inducing'       = inducing inputs 
+%       'hyper+inducing' = hyperparameters and inducing inputs
 %
-%	[G, GDATA, GPRIOR] = GP_G(GP, X, Y) also returns separately  the
-%	data and prior contributions to the gradient.
+%	[G, GDATA, GPRIOR] = GP_G(GP, X, Y, VARARGIN) also returns separately
+%	the data and prior contributions to the gradient.
 %
 %	See also
-%
+%       GP_E, GP_PAK, GP_UNPAK, GPCF_*
 
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2006      Helsinki University of Technology (author) Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -38,14 +42,14 @@ gprior = [];
 % ============================================================
 switch gp.type
     case 'FULL'   % A full GP
-        % Calculate covariance
-
+        % Evaluate covariance
         [K, C] = gp_trcov(gp,x);
         invC = inv(C);
         invCv=invC(:);
         b = C\t;
 
-        % Evaluate the gradients from covariance functions
+        % Get the gradients of the covariance matrices 
+        % and gprior from gpcf_* structures
         for i=1:ncf
             i1=0;
             if ~isempty(gprior)
@@ -76,9 +80,7 @@ switch gp.type
                 Bdl = b'*(DKff{i2}*b);
                 Cdl = sum(invCv.*DKff{i2}(:)); % help arguments for lengthScale
                 gdata(i1)=0.5.*(Cdl - Bdl);
-            end
-            
-            
+            end    
         end
 
         % Evaluate the gradient from noise functions
@@ -111,7 +113,6 @@ switch gp.type
         DKuf_u = 0;
 
         % First evaluate the needed covariance matrices
-        % if they are not in the memory
         % v defines that parameter is a vector
         [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
         K_fu = gp_cov(gp, x, u);         % f x u
@@ -141,7 +142,7 @@ switch gp.type
         
         
         % =================================================================
-        % Evaluate the gradients from covariance functions
+        % Loop over the covariance functions
         for i=1:ncf            
             i1=0;
             if ~isempty(gprior)
@@ -152,6 +153,8 @@ switch gp.type
             gpcf.type = gp.type;
             gpcf.X_u = gp.X_u;
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
+                % Get the gradients of the covariance matrices 
+                % and gprior from gpcf_* structures
                 [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior); 
                 i1 = i1+1;
                 i2 = 1;
@@ -198,7 +201,7 @@ switch gp.type
             end
         end
 
-        % Evaluate the gradient from noise functions
+        % Loop over the noise functions
         if isfield(gp, 'noise')
             nn = length(gp.noise);
             for i=1:nn
@@ -208,6 +211,8 @@ switch gp.type
                 gpcf.type = gp.type;
                 gpcf.X_u = gp.X_u;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
                     gdata(i1)= -0.5*DCff.*b*b';
                     gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
@@ -264,7 +269,7 @@ switch gp.type
         iKuuKuf = K_uu\K_fu';                % L, b, iKuuKuf, La
         
         % =================================================================
-        % Evaluate the gradients from covariance functions
+        % Loop over the  covariance functions
         for i=1:ncf            
             i1=0;
             if ~isempty(gprior)
@@ -276,6 +281,8 @@ switch gp.type
             gpcf.X_u = gp.X_u;
             gpcf.tr_index = gp.tr_index;
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
+                % Get the gradients of the covariance matrices 
+                % and gprior from gpcf_* structures
                 [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior); 
                 i1 = i1+1;
                 i2 = 1;                
@@ -450,6 +457,8 @@ switch gp.type
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
                 % Evaluate the gradient for FIC covariance functions
                 if ~isfield(gpcf,'cs')
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
                     [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior); 
                     i1 = i1+1;
                     i2 = 1;
@@ -499,6 +508,8 @@ switch gp.type
                     end
                 % Evaluate the gradient for compact support covariance functions
                 else
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
                     [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
                     i1 = i1+1;
                     i2 = 1;
@@ -514,6 +525,8 @@ switch gp.type
                 end
             end
             if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
+                % Get the gradients of the covariance matrices 
+                % and gprior from gpcf_* structures
                 [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, t, g_ind, gdata_ind, gprior_ind);
                 
                 for i2 = 1:length(DKuu)
@@ -542,6 +555,8 @@ switch gp.type
                 gpcf.type = gp.type;
                 gpcf.X_u = gp.X_u;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
                     gdata(i1)= -0.5*DCff.*b*b';
                     gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-sum(LL,2)).*DCff;
