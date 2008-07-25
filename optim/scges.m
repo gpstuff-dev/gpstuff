@@ -1,4 +1,4 @@
-function [x, fs, vs] = scges(f, x, opt, gradf, varargin)
+function [x, fs, vs, lambda] = scges(f, x, opt, gradf, varargin)
 %SCGES	Scaled conjugate gradient optimization with early stopping.
 %
 %   Description
@@ -181,7 +181,6 @@ end
 
 % If we get here, then we haven't terminated in the given number of 
 % iterations.
-
 if (display >= 0)
   disp('Warning: Maximum number of iterations has been exceeded');
 end
