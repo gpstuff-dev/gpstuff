@@ -1,5 +1,30 @@
-function  [blocks, Xu] = set_PIC(x, dims, cellsize, blocksize, indtype, visualize)
- 
+function  [blocks, Xu] = set_PIC(x, dims, blocksize, indtype, visualize)
+% SET_PIC     Set the inducing inputs and blocks for two dimensional input data
+%
+%  [blocks, Xu] = set_PIC(x, dims, cellsize, blocksize, indtype, visualize)
+%     x = input matrix, where each row is length two co-ordinate vector, 
+%     dims = dimensions of the area that needs to be covered with inducing inputs 
+%           and block. The format is, e.g., dims = [1    60     1    35];
+%     blocksize = length of the block edge (blocks are square)
+%     indtype = 'corners' (inducing inputs on the corners of the blocks)
+%               'corners+1xside' (inducing inputs on the corners of the blocks and 
+%                                 one on each block boundary)
+%               'corners+2xside' (inducing inputs on the corners of the blocks and 
+%                                 two on each block boundary)
+%     visualize = 1 for plottin the data, blocks and inducing inputs
+%                 0 for no plot
+%
+%     Returns:  
+%     blocks = cell array with vectors appointing the block indeces
+%     Xu = matrix of inducing inputs
+
+% Copyright (c) 2007    Jarno Vanhatalo
+
+% This software is distributed under the GNU General Public
+% License (version 2 or later); please refer to the file
+% License.txt, included with the software, for details.
+
+
 ly = dims(2)/blocksize;
 lx = dims(4)/blocksize;
 
@@ -167,33 +192,8 @@ if visualize == 1
     
     S = sprintf('%d blocks, with %.f data points in averige and %d/%d at most/least \n %d inducing inputs.', ...
                 length(index), avgblock, maxblock, minblock, numu);
-    H = text(-5, -15, S);
+    H = text(-5, -5, S);
     set(H, 'FontSize', 14);
 end
 
 blocks = index;
-
-% $$$ switch cellsize
-% $$$   case 20000
-% $$$     index2{1} = index{1};
-% $$$     index2{2} = index{2};
-% $$$     index2{3} = sort([index{3};index{7};index{11}]);
-% $$$     index2 = {index2{:} index{4:6} index{8:10}};
-% $$$ 
-% $$$     col = {'b*','g*','c*','m*','y*','k*','b*','g*','m*'};
-% $$$     figure, hold on
-% $$$     for i1=1:9
-% $$$         plot(x(index2{i1},1),x(index2{i1},2),col{i1})
-% $$$     end
-% $$$     plot(U(:,1),U(:,2),'r*')
-% $$$ 
-% $$$ 
-% $$$ % Set the inducing inputs 
-% $$$ num = 4; num2=4;
-% $$$ [xii,yii]=meshgrid(0:num:36,0:num2:60);
-% $$$ xii=[xii(:) yii(:)];
-% $$$ qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
-% $$$ qii=qm<=1;sum(qii);
-% $$$ U = xii(qii,:);
-% $$$ 
-% $$$ [n,nin] = size(x);
