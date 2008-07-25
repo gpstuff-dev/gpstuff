@@ -10,27 +10,48 @@
 %    GAM_CDF       - Cumulative of Gamma probability density function (cdf).
 %    GAM_LPDF      - Log of Gamma probability density function (lpdf).
 %    GAM_PDF       - Gamma probability density function (pdf).
+%    GAMMA_P       - Create Gamma prior
+%    GEO_LPDF      - Geometric log probability density function (lpdf).
 %    INVGAM_LPDF   - Inverse-Gamma log probability density function.
 %    INVGAM_PDF    - Inverse-Gamma probability density function.
+%    INVGAM_P      - Create inverse-Gamma prior
+%    KERNELP       - Kernel density estimator for one dimensional distribution.
 %    LAPLACE_LPDF  - Laplace log-probability density function (lpdf).
 %    LAPLACE_PDF   - Laplace probability density function (pdf).
+%    LAPLACE_P     - Create Laplace (double exponential) prior
 %    LOGN_LPDF     - Log normal log-probability density function (lpdf)
 %    LOGT_LPDF     - Log probability density function (lpdf) for log Student's T
 %    MNORM_LPDF    - Multivariate-Normal log-probability density function (lpdf).
 %    MNORM_PDF     - Multivariate-Normal log-probability density function (lpdf).
-%    KERNELP       - Kernel density estimator for one dimensional distribution.
 %    NORM_LPDF     - Normal log-probability density function (lpdf).
 %    NORM_PDF      - Normal probability density function (pdf).
+%    NORM_P        - create Gaussian (multivariate) (hierarchical) prior
 %    POISS_LPDF    - Poisson log-probability density function.
 %    POISS_PDF     - Poisson probability density function.
 %    SINVCHI2_LPDF - Scaled inverse-chi log-probability density function.
 %    SINVCHI2_PDF  - Scaled inverse-chi probability density function.
 %    T_LPDF        - Student's T log-probability density function (lpdf)
 %    T_PDF         - Student's T probability density function (pdf)
-%    NORM_P      - create Gaussian (multivariate) (hierarchical) prior
-%    INVGAM_P            - Create inverse-Gamma prior
+%    T_P           - Create Student's-t prior
 %
 %  Error and gradient functions:
+%    DIR_E       - compute an error term for a parameter with Dirichlet
+%                  distribution (single parameter). 
+%    GAMMA_E     - compute an error term for a parameter with gamma
+%                  distribution (single parameter).
+%    GAMMA_G     - Compute a gradient term with respect to a parameter of
+%                  gamma distribution (single parameter).
+%    GNORM_E     - Compute an error term for a parameter with normal
+%                  distribution (single parameter). 
+%    GNORM_G     - Compute a gradient for a parameter with normal 
+%                  distribution (single parameter).
+%    GNORM_S     - Maximum log likelihood second derivatives.
+%    GT_E        - Compute an error term for a parameter with Student's
+%                  t-distribution (single parameter). 
+%    GT_G        - Compute a gradient for a parameter with Student's 
+%                  t-distribution (single parameter).
+%    GT_S        - Maximum log likelihood second derivatives for 
+%                  t-distribution.
 %    INVGAM_E    - compute an error term for a parameter with inverse
 %                  gamma distribution (single parameter).
 %    INVGAM_G    - compute a gradient term for a parameter with inverse
@@ -49,31 +70,16 @@
 %    NORM_G      - compute a gradient for a parameter with normal 
 %                  distribution (single parameter).
 %    NORM_S      - Maximum log likelihood second derivatives (single variable)
+%    SINVCHI2_E  - compute an error term for a parameter with scaled 
+%                  inverse-chi-squared distribution (single parameter).
+%    SINVCHI2_G  - compute a gradient term with respect to a parameter of scaled 
+%                  Inverse-Chi-Squared distribution (single parameter).
+%    SINVCHI2_P  - Create a scaled inversi-chi-square prior
 %    T_E         - compute an error term for a parameter with Student's 
 %                  t-distribution (single parameter). 
 %    T_G         - compute a gradient for a parameter with Student's 
 %                  t-distribution (single parameter).
-%    DIR_E       - compute an error term for a parameter with Dirichlet
-%                  distribution (single parameter). 
-%    GINVGAM_E   - Compute an error term for a parameter with inverse
-%                  gamma distribution (single parameter).
-%    GINVGAM_G   - Compute a gradient term for a parameter with inverse
-%                  gamma distribution (single parameter).
-%    GP2R_E	 - Evaluate error function for Gaussian Process.
-%    GP2R_G      - Evaluate gradient of error for Gaussian Process.
-%    GNORM_E     - Compute an error term for a parameter with normal
-%                  distribution (single parameter). 
-%    GNORM_G     - Compute a gradient for a parameter with normal 
-%                  distribution (single parameter).
-%    GNORM_S     - Maximum log likelihood second derivatives.
-%    GT_E        - Compute an error term for a parameter with Student's
-%                  t-distribution (single parameter). 
-%    GT_G        - Compute a gradient for a parameter with Student's 
-%                  t-distribution (single parameter).
-%    GT_S        - Maximum log likelihood second derivatives for 
-%                  t-distribution.
 %    T_S         - Maximum log likelihood second derivatives for t-distribution
-%    T_P         - Create student t prior
 %
 %  Functions to sample from full conditional distribution
 %    COND_GINVGAM_CAT    - Sample conditional distribution from 
@@ -122,7 +128,7 @@
 %                    distribution, with mean = mu, variance = sigma2
 %    NORMTRAND     - Random draws from a normal truncated to interval
 %    NORMTZRAND    - Random draws from a normal distribution truncated by zero
-%    WISHRND       - Random matrices from Wishart distribution.
 %    SINVCHI2RAND  - Random matrices from scaled inverse-chi distribution
 %    TRAND         - Random numbers from Student's t-distribution
 %    UNIFRAND      - Generate unifrom random numberm from interval [A,B]
+%    WISHRND       - Random matrices from Wishart distribution.
