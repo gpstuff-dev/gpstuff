@@ -47,6 +47,14 @@ function likelih = likelih_poisson(do, varargin)
         avgE = varargin{2};
         likelih.type = 'poisson';
         
+        % check the arguments
+        if ~isempty(find(y<0))
+            error('The incidence counts have to be greater or equal to zero y >= 0.')
+        end     
+        if ~isempty(find(avgE<=0))
+            error('The expected counts have to be greater than zero avgE > 0.')
+        end
+        
         % Set parameters
         likelih.avgE = avgE;
         likelih.gamlny = gammaln(y+1);
@@ -345,6 +353,8 @@ function likelih = likelih_poisson(do, varargin)
     %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
     %   diagnostics DIAG.
     %
+    %   See Vanhatalo and Vehtari (2007) for details on implementation.
+    %
     %   See also
     %   GP_MC
 
@@ -356,7 +366,7 @@ function likelih = likelih_poisson(do, varargin)
             latent_rstate = sum(100*clock);
         end
 
-        % Set the variables 
+        % Initialize variables 
         gp = varargin{1};
         x = varargin{2}; 
         y = varargin{3}; 
@@ -392,38 +402,34 @@ function likelih = likelih_poisson(do, varargin)
             E=1;
         end     
 
-        % Evaluate the help matrices for covariance matrix
+        % Transform the latent values
         switch gp.type
           case 'FULL'
-            getL(z, gp, x, y);
-            % Rotate z towards prior
-            w = (L2\z)';    
+            getL(z, gp, x, y);             % Evaluate the help matrix for transformation
+            w = (L2\z)';                   % Rotate z towards prior
           case 'FIC'
-            getL(z, gp, x, y, u);
-            % Rotate z towards prior as w = (L\z)';
-            % Here we take an advantage of the fact that L = chol(diag(Lav)+b'b)
-            % See cholrankup.m for general case of solving a Ax=b system
-            zs = z./Lp;
-            w = zs + U*((J*U'-U')*zs);
+            getL(z, gp, x, y, u);          % Evaluate the help matrix for transformation
+            zs = z./Lp;                    % Rotate z towards prior
+            w = zs + U*((J*U'-U')*zs);     
           case 'PIC_BLOCK'
-            getL(z, gp, x, y, u);
-            zs=zeros(size(z));
+            getL(z, gp, x, y, u);          % Evaluate the help matrix for transformation
+            zs=zeros(size(z));             % Rotate z towards prior
             for i=1:length(ind)
                 zs(ind{i}) = Lp{i}\z(ind{i});
             end
             w = zs + U*((J*U'-U')*zs);
           case {'CS+FIC'}
-            getL(z, gp, x, y, u);
-            %zs = Lp\z;
-            zs = Lp*z;
-            w = zs + U*((J*U'-U')*zs);        
+            getL(z, gp, x, y, u);          % Evaluate the help matrix for transformation
+            zs = Lp\z;                     % Rotate z towards prior
+            w = zs + U*((J*U'-U')*zs);
           otherwise 
             error('unknown type of GP\n')
         end
         
         
-        %        gradcheck(w, @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
+        %        gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
         
+        % Conduct the HMC sampling for the transformed latent values
         hmc2('state',latent_rstate)
         rej = 0;
         gradf = @lvpoisson_gr;
@@ -443,9 +449,9 @@ function likelih = likelih_poisson(do, varargin)
                 opt=diagn.opt;
             end
         end
-
         w = w(end,:);
-        % Rotate w to z
+        
+        % Rotate w pack to the latent value space
         w=w(:);
         switch gp.type
           case 'FULL'
@@ -459,8 +465,7 @@ function likelih = likelih_poisson(do, varargin)
             end
           case  {'CS+FIC'}
             w2 = w + U*(iJUU*w);
-            %        z = Lp*w2;
-            z = Lp\w2;
+            z = Lp*w2;            
         end
         opt.latent_rstate = hmc2('state');
         diagn.opt = opt;
@@ -468,8 +473,9 @@ function likelih = likelih_poisson(do, varargin)
         diagn.lvs = opt.stepadj;
 
         function [g, gdata, gprior] = lvpoisson_gr(w, gp, x, y, u, varargin)
-        %LVPOISSON_G	Evaluate gradient function for GP latent values with
-        %               Poisson likelihood
+        %LVPOISSON_G	Evaluate gradient function for transformed GP latent 
+        %               values 
+        %               
             
         % Force z and E to be a column vector
             w=w(:);
@@ -515,34 +521,24 @@ function likelih = likelih_poisson(do, varargin)
                 %g = g';
               case {'CS+FIC'}
                 w2= w + U*(iJUU*w);
-                %            z = Lp*w2;
-                z = Lp\w2;
+                z = Lp*w2;
                 z = max(z,mincut);
                 gdata = exp(z).*E - y;
                 gprior = zeros(size(gdata));
                 gprior = Labl\z;
                 gprior = gprior - iLaKfuic*(iLaKfuic'*z);
                 g = gdata' + gprior';
-                %            g = g*Lp;
-                g = g/Lp;
+                g = g*Lp;
                 g = g + g*U*(iJUU);
             end
         end
 
         function [e, edata, eprior] = lvpoisson_er(w, gp, x, t, u, varargin)
-        %function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
-        % LVPOISSON_E     Minus log likelihood function for spatial modelling.
-        %
-        %       E = LVPOISSON_E(X, GP, T, Z) takes.... and returns minus log from 
-            
-        % The field gp.avgE (if given) contains the information about averige
-        % expected number of cases at certain location. The target, t, is 
-        % distributed as t ~ poisson(avgE*exp(z))
+        % LVPOISSON_E     Evaluate energy function for transformed GP latent 
+        %                 values 
             
         % force z and E to be a column vector
-
             w=w(:);
-
             switch gp.type
               case 'FULL'
                 z = L2*w;        
@@ -550,10 +546,8 @@ function likelih = likelih_poisson(do, varargin)
                 B=Linv*z;
                 eprior=.5*sum(B.^2);
               case 'FIC' 
-                %        w(w<eps)=0;
                 z = Lp.*(w + U*(iJUU*w));
-                z = max(z,mincut);
-                % eprior = 0.5*z'*inv(La)*z-0.5*z'*(inv(La)*K_fu*inv(K_uu+Kuf*inv(La)*K_fu)*K_fu'*inv(La))*z;
+                z = max(z,mincut);                
                 B = z'*iLaKfuic;  % 1 x u
                 eprior = 0.5*sum(z.^2./Lav)-0.5*sum(B.^2);
               case 'PIC_BLOCK'
@@ -569,8 +563,7 @@ function likelih = likelih_poisson(do, varargin)
                 end
               case {'CS+FIC'}
                 w2= w + U*(iJUU*w);
-                %            z = Lp*w2;
-                z = Lp\w2;
+                z = Lp*w2;
                 z = max(z,mincut);
                 B = z'*iLaKfuic;  % 1 x u
                 eprior = - 0.5*sum(B.^2);
@@ -578,168 +571,159 @@ function likelih = likelih_poisson(do, varargin)
             end
             mu = exp(z).*E;
             edata = sum(mu-t.*log(mu));
-            %        eprior = .5*sum(w.^2);
             e=edata + eprior;
         end
 
         function getL(w, gp, x, t, u)
-        % Evaluate the cholesky decomposition if needed
-            if nargin < 5
+        % GETL        Evaluate the transformation matrix (or matrices)
+            
+        % Evaluate the Lambda (La) for specific model
+            switch gp.type
+              case 'FULL'
                 C=gp_trcov(gp, x);
                 % Evaluate a approximation for posterior variance
                 % Take advantage of the matrix inversion lemma
                 %        L=chol(inv(inv(C) + diag(1./gp.likelih.avgE)))';
                 Linv = inv(chol(C)');
                 L2 = C/chol(diag(1./E) + C);  %sparse(1:n, 1:n, 1./gp.likelih.avgE)
-                L2 = chol(C - L2*L2')';
-            else        
-                % Evaluate the Lambda (La) for specific model
-                switch gp.type
-                  case 'FIC'
-                    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                    K_fu = gp_cov(gp, x, u);         % f x u
-                    K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                    K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
-                    Luu = chol(K_uu)';
-                    % Q_ff = K_fu*inv(K_uu)*K_fu'
-                    % Here we need only the diag(Q_ff), which is evaluated below
-                    b=Luu\(K_fu');       % u x f
-                    Qv_ff=sum(b.^2)';
-                    Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-                                         % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
-                                         % and form iLaKfu
-                    iLaKfu = zeros(size(K_fu));  % f x u,
-                    for i=1:n
-                        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
-                    end
-                    c = K_uu+K_fu'*iLaKfu; 
-                    c = (c+c')./2;         % ensure symmetry
-                    c = chol(c)';   % u x u, 
-                    ic = inv(c);
-                    iLaKfuic = iLaKfu*ic';
-                    Lp = sqrt(1./(E + 1./Lav));
-                    b=b';
-                    for i=1:n
-                        b(i,:) = iLaKfuic(i,:).*Lp(i);
-                    end        
-                    [V,S2]= eig(b'*b);
-                    S = sqrt(S2);
-                    U = b*(V/S);
-                    U(abs(U)<eps)=0;
-                    %        J = diag(sqrt(diag(S2) + 0.01^2));
-                    J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                                  % J = diag(sqrt(2./(1+diag(S))));
-                    iJUU = J\U'-U';
-                    iJUU(abs(iJUU)<eps)=0;
-                  case 'PIC_BLOCK'
-                    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                    K_fu = gp_cov(gp, x, u);         % f x u
-                    K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                    K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
-                    Luu = chol(K_uu)';
-
-                    % Q_ff = K_fu*inv(K_uu)*K_fu'
-                    % Here we need only the diag(Q_ff), which is evaluated below
-                    B=Luu\(K_fu');       % u x f
-                    iLaKfu = zeros(size(K_fu));  % f x u
-                    for i=1:length(ind)
-                        Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-                        [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-                        Labl{i} = Cbl_ff - Qbl_ff;
-                        iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
-                    end
-                    % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
-                    % and form iLaKfu
-                    A = K_uu+K_fu'*iLaKfu;
-                    A = (A+A')./2;            % Ensure symmetry
-                    
-                    % L = iLaKfu*inv(chol(A));
-                    iLaKfuic = iLaKfu*inv(chol(A));
-                    
-                    for i=1:length(ind)
-                        Lp{i} = chol(inv(diag(E(ind{i})) + inv(Labl{i})));
-                    end
-                    b=zeros(size(B'));
-                    
-                    for i=1:length(ind)
-                        b(ind{i},:) = Lp{i}*iLaKfuic(ind{i},:);
-                    end   
-                    
-                    [V,S2]= eig(b'*b);
-                    S = sqrt(S2);
-                    U = b*(V/S);
-                    U(abs(U)<eps)=0;
-                    %        J = diag(sqrt(diag(S2) + 0.01^2));
-                    J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                                  % J = diag(sqrt(2./(1+diag(S))));
-                    iJUU = J\U'-U';
-                    iJUU(abs(iJUU)<eps)=0;
-                  case 'CS+FIC'
-                    % Q_ff = K_fu*inv(K_uu)*K_fu'
-                    % Here we need only the diag(Q_ff), which is evaluated below
-                    cf_orig = gp.cf;
-                    
-                    cf1 = {};
-                    cf2 = {};
-                    j = 1;
-                    k = 1;
-                    for i = 1:length(gp.cf)
-                        if ~isfield(gp.cf{i},'cs')
-                            cf1{j} = gp.cf{i};
-                            j = j + 1;
-                        else
-                            cf2{k} = gp.cf{i};
-                            k = k + 1;
-                        end         
-                    end
-                    gp.cf = cf1;        
-
-                    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                    K_fu = gp_cov(gp, x, u);         % f x u
-                    K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                    K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
-                    Luu = chol(K_uu)';                
-                    B=Luu\(K_fu');       % u x f
-
-                    Qv_ff=sum(B.^2)';
-                    Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-                    
-                    gp.cf = cf2;        
-                    K_cs = gp_trcov(gp,x);
-                    Labl = sparse(1:n,1:n,Lav,n,n) + K_cs;
-                    gp.cf = cf_orig;
-                    iLaKfu = Labl\K_fu;
-                    % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
-                    % and form iLaKfu
-                    A = K_uu+K_fu'*iLaKfu;
-                    A = (A+A')./2;            % Ensure symmetry
-                    
-                    % L = iLaKfu*inv(chol(A));
-                    iLaKfuic = iLaKfu*inv(chol(A));
-                    
-                    %Lp = chol(inv(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl)));
-                    %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
-                    Lp = inv(Labl);
-                    Lp = sparse(1:n,1:n,gp.likelih.avgE,n,n) + Lp;
-                    Lp = chol(Lp)';
-                    %                Lp = inv(Lp);
-
-
-                    b=zeros(size(B'));
-                    
-                    %                b = Lp*iLaKfuic;
-                    b = Lp\iLaKfuic;
-                    
-                    [V,S2]= eig(b'*b);
-                    S = sqrt(S2);
-                    U = b*(V/S);
-                    U(abs(U)<eps)=0;
-                    %        J = diag(sqrt(diag(S2) + 0.01^2));
-                    J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                                  % J = diag(sqrt(2./(1+diag(S))));
-                    iJUU = J\U'-U';
-                    iJUU(abs(iJUU)<eps)=0;
+                L2 = chol(C - L2*L2')';                    
+              case 'FIC'
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                b=Luu\(K_fu');       % u x f
+                Qv_ff=sum(b.^2)';
+                Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
+                                     % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                                     % and form iLaKfu
+                iLaKfu = zeros(size(K_fu));  % f x u,
+                for i=1:n
+                    iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u 
                 end
+                c = K_uu+K_fu'*iLaKfu; 
+                c = (c+c')./2;         % ensure symmetry
+                c = chol(c)';   % u x u, 
+                ic = inv(c);
+                iLaKfuic = iLaKfu*ic';
+                Lp = sqrt(1./(E + 1./Lav));
+                b=b';
+                for i=1:n
+                    b(i,:) = iLaKfuic(i,:).*Lp(i);
+                end        
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;
+              case 'PIC_BLOCK'
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);         % f x u
+                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
+                
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                B=Luu\(K_fu');       % u x f
+                iLaKfu = zeros(size(K_fu));  % f x u
+                for i=1:length(ind)
+                    Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+                    [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+                    Labl{i} = Cbl_ff - Qbl_ff;
+                    iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);    % Check if works by changing inv(Labl{i})!!!
+                end
+                % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                % and form iLaKfu
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;            % Ensure symmetry
+                
+                % L = iLaKfu*inv(chol(A));
+                iLaKfuic = iLaKfu*inv(chol(A));
+                
+                for i=1:length(ind)
+                    Lp{i} = chol(inv(diag(E(ind{i})) + inv(Labl{i})));
+                end
+                b=zeros(size(B'));
+                
+                for i=1:length(ind)
+                    b(ind{i},:) = Lp{i}*iLaKfuic(ind{i},:);
+                end   
+                
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                %        J = diag(sqrt(diag(S2) + 0.01^2));
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                              % J = diag(sqrt(2./(1+diag(S))));
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;
+              case 'CS+FIC'
+
+                % Evaluate the FIC part of the prior covariance
+                cf_orig = gp.cf;
+                
+                cf1 = {};
+                cf2 = {};
+                j = 1;
+                k = 1;
+                for i = 1:length(gp.cf)
+                    if ~isfield(gp.cf{i},'cs')
+                        cf1{j} = gp.cf{i};
+                        j = j + 1;
+                    else
+                        cf2{k} = gp.cf{i};
+                        k = k + 1;
+                    end         
+                end
+                gp.cf = cf1;        
+                
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % n x 1  vector
+                K_fu = gp_cov(gp, x, u);           % n x m
+                K_uu = gp_trcov(gp, u);            % m x m, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')/2;             % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';                
+                B=Luu\(K_fu');                     % m x n
+                
+                Qv_ff=sum(B.^2)';
+                Lav = Cv_ff-Qv_ff;                 % n x 1, Vector of diagonal elements
+                
+                % Evaluate the CS part of the prior covariance
+                gp.cf = cf2;        
+                K_cs = gp_trcov(gp,x);
+                Labl = sparse(1:n,1:n,Lav,n,n) + K_cs;
+                gp.cf = cf_orig;
+                iLaKfu = Labl\K_fu;
+
+                % scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
+                A = K_uu+K_fu'*iLaKfu;
+                A = (A+A')./2;                     % Ensure symmetry
+                
+                % L = iLaKfu*inv(chol(A));
+                iLaKfuic = iLaKfu/chol(A);
+                
+                Lp = chol(inv(sparse(1:n,1:n,E,n,n) + inv(Labl)));
+
+                b=zeros(size(B'));
+                
+                b = Lp*iLaKfuic;                
+                
+                [V,S2]= eig(b'*b);
+                S = sqrt(S2);
+                U = b*(V/S);
+                U(abs(U)<eps)=0;
+                J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
+                                
+                iJUU = J\U'-U';
+                iJUU(abs(iJUU)<eps)=0;
             end
         end
     end 

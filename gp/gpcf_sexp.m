@@ -272,7 +272,7 @@ function gpcf = gpcf_sexp(do, varargin)
         end
 
         % First check if sparse model is used
-        switch gpcf.type
+        switch gpcf.GPtype
           case 'FULL'
             % Evaluate: DKff{1} = d Kff / d magnSigma2
             %           DKff{2} = d Kff / d lengthScale
@@ -501,7 +501,7 @@ function gpcf = gpcf_sexp(do, varargin)
         n_u = size(u,1);
         
         % First check if sparse model is used
-        switch gpcf.type
+        switch gpcf.GPtype
           case 'FIC'
             % Derivatives of K_uu and K_uf with respect to inducing inputs
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
@@ -660,26 +660,28 @@ function gpcf = gpcf_sexp(do, varargin)
     %         See also
     %         GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
 
-        [n, m] =size(x);
-
-        s = 1./(gpcf.lengthScale);
-        s2 = s.^2;
-        if size(s)==1
-            s2 = repmat(s2,1,m);
-        end
-        ma = gpcf.magnSigma2;
-
-        C = zeros(n,n);
-        for ii1=1:n-1
-            d = zeros(n-ii1,1);
-            col_ind = ii1+1:n;
-            for ii2=1:m
-                d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-            end
-            C(col_ind,ii1) = d;
-        end
-        C = C+C';
-        C = ma.*exp(-C);
+        C = trcov(gpcf, x);
+        
+% $$$         [n, m] =size(x);
+% $$$ 
+% $$$         s = 1./(gpcf.lengthScale);
+% $$$         s2 = s.^2;
+% $$$         if size(s)==1
+% $$$             s2 = repmat(s2,1,m);
+% $$$         end
+% $$$         ma = gpcf.magnSigma2;
+% $$$ 
+% $$$         C = zeros(n,n);
+% $$$         for ii1=1:n-1
+% $$$             d = zeros(n-ii1,1);
+% $$$             col_ind = ii1+1:n;
+% $$$             for ii2=1:m
+% $$$                 d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+% $$$             end
+% $$$             C(col_ind,ii1) = d;
+% $$$         end
+% $$$         C = C+C';
+% $$$         C = ma.*exp(-C);
     end
 
     function C = gpcf_sexp_covvec(gpcf, x1, x2, varargin)

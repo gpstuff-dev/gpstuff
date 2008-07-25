@@ -85,7 +85,7 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
 
 [g, gdata, gprior] = gpla_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper')
 
-gradcheck(gp_pak(gp,'hyper'), @gpla_e, @gpla_g, gp, x, y, 'hyper')
+gradcheck(gp_pak(gp_fic,'hyper'), @gpla_e, @gpla_g, gp_fic, x, y, 'hyper')
 
 % $$$ 
 % $$$ gradcheck(randn(size(gp_pak(gp,'hyper'))), @gpep_e, @gpep_g, gp, x, y, 'hyper')

@@ -26,19 +26,16 @@ ncf = length(gp.cf);
 
 % Evaluate the covariance without noise
 K = sparse(0);
-is_sparse = 0;
 for i=1:ncf
   gpcf = gp.cf{i};
   K = K + feval(gpcf.fh_trcov, gpcf, x1);
-  if issparse(K) & is_sparse == 0
-      is_sp = 1;
-  end
 end
 
 if ~isempty(gp.jitterSigmas)
-  K(1:n1:end)=K(1:n1:end) + gp.jitterSigmas.^2;
-  if issparse(K) & is_sparse == 0
-      is_sp = 1;
+  if issparse(K)
+      K = K + sparse(1:n,1:n,gp.jitterSigmas.^2,n,n);
+  else
+      K(1:n1:end)=K(1:n1:end) + gp.jitterSigmas.^2;
   end
 end
 
@@ -53,16 +50,20 @@ if nargout > 1
     end
   end
 
-  if is_sparse
-      [I,J,c] = find(C);
-      c(c<eps) = 0;      
-      C = sparse(I,J,c);
-  end
+% $$$   if issparse(C)
+% $$$       [I,J,c] = find(C);
+% $$$       c(c<eps) = 0;      
+% $$$       C = sparse(I,J,c,n,n);
+% $$$   else
+% $$$       C(C<eps)=0;
+% $$$   end
 end
 
-if is_sparse
-    [I,J,k] = find(K);
-    k(k<eps) = 0;
-    K = sparse(I,J,k);
-end
+% $$$ if issparse(K)
+% $$$     [I,J,k] = find(K);
+% $$$     k(k<eps) = 0;
+% $$$     K = sparse(I,J,k,n,n);
+% $$$ else
+% $$$     K(K<eps)=0;
+% $$$ end
 

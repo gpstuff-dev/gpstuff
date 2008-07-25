@@ -1,5 +1,5 @@
 function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
-%GP_E	Evaluate energy function for Gaussian Process.
+%GP_E	Evaluate energy function for Gaussian Process 
 %
 %	Description
 %	E = GP_E(W, GP, X, Y, PARAM) takes a Gaussian process data structure GP 
@@ -13,7 +13,9 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
 %       The energy is minus log posterior cost function:
 %            E = EDATA + EPRIOR 
 %              = - log p(Y|X, th) - log p(th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...).
+%       where th represents the hyperparameters (lengthScale, magnSigma2...), X is
+%       inputs and Y is observations (regression) or latent values (non-Gaussian
+%       likelihood).
 %
 %	See also
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
@@ -34,14 +36,20 @@ n=length(x);
 % First Evaluate the data contribution to the error
 switch gp.type
     % ============================================================
-    % FULL
+    % FULL GP (and compact support GP)
     % ============================================================
   case 'FULL'   % A full GP
     [K, C] = gp_trcov(gp, x);
-    % 0.5*log(det(C)) = sum(log(diag(L)))
-    L = chol(C)';
-    b=L\t;
-    edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+
+    if issparse(C)
+        LD = ldlchol(C);
+        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + t'*ldlsolve(LD,t));
+    else
+        L = chol(C)';
+        b=L\t;
+        edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+    end
+   
     % ============================================================
     % FIC
     % ============================================================

@@ -1,17 +1,28 @@
 function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, varargin)
-%GP2_E	Evaluate error function for Gaussian Process.
+%GPLA_E Conduct LAplace approximation and return marginal log posterior estimate
 %
 %	Description
-%	E = GPEP_E(W, GP, P, T, PARAM) takes a gp data structure GP together
-%	with a matrix P of input vectors and a matrix T of target vectors,
-%	and evaluates the error function E.  Each row of P
-%	corresponds to one input vector and each row of T corresponds to one
-%	target vector.
+%	E = GPLA_E(W, GP, X, Y, PARAM) takes a gp data structure GP together
+%	with a matrix X of input vectors and a matrix Y of target vectors,
+%	and finds the Laplace approximation for the conditional posterior p(Y|X, th), 
+%       where th is the hyperparameters. Returns the energy E at th. Each row 
+%       of X corresponds to one input vector and each row of Y corresponds to 
+%       one target vector.
 %
-%	[E, EDATA, EPRIOR] = GPEP_E(W, GP, P, T, PARAM) also returns the data and
+%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, P, T, PARAM) also returns the data and
 %	prior components of the total error.
 %
+%       The energy is minus log posterior cost function:
+%            E = EDATA + EPRIOR 
+%              = - log p(Y|X, th) - log p(th),
+%       where th represents the hyperparameters (lengthScale, magnSigma2...), X is
+%       inputs and Y is observations (regression) or latent values (non-Gaussian
+%       likelihood).
+%
+%       NOTE! The CS+FIC model is not supported 
+%
 %	See also
+%       GPLA_G, LA_PRED, GP_E
 %
 %
 

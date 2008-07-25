@@ -56,8 +56,9 @@
 
 % This file is organised in three parts:
 %  1) data analysis with full GP model
-%  2) data analysis with FIC approximation
-%  3) data analysis with PIC approximation
+%  2) data analysis with compact support (CS) GP model
+%  3) data analysis with FIC approximation
+%  4) data analysis with PIC approximation
 
 %========================================================
 % PART 1 data analysis with full GP model
@@ -205,7 +206,6 @@ title(['The predicted underlying function  ';
        'and the data points (MCMC solution)']);
 set(gcf,'pos',[93 511 1098 420])
 
-
 % We can compare the posterior samples of the hyperparameters to the 
 % MAP estimate that we got from optimization
 figure(2)
@@ -244,7 +244,157 @@ set(gcf,'pos',[93 511 1098 420])
 
 
 %========================================================
-% PART 2 data analysis with FIC approximation
+% PART 2 data analysis with compact support (CS) GP 
+%========================================================
+
+% Here we conduct the same analysis as in part 1, but this time we 
+% use compact support covariance function
+
+% Create the piece wise polynomial covariance function
+gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf3.p.lengthScale = gamma_p({3 7});  
+gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+
+% Create the GP data structure
+gp_cs = gp_init('init', 'FULL', nin, 'regr', {gpcf3}, {gpcf2}, 'jitterSigmas', 0.001)
+
+% -----------------------------
+% --- Conduct the inference ---
+
+% --- MAP estimate using scaled conjugate gradient algorithm ---
+%     (see scg for more details)
+
+param = 'hyper';
+
+% set the options
+opt=[];
+opt(1) = 1;
+opt(2) = 1e-2;
+opt(3) = 3e-1;
+opt(9) = 0;
+opt(10) = 0;
+opt(11) = 0;
+opt(14) = 0;
+
+w = gp_pak(gp_cs, param);          % pack the hyperparameters into one vector
+[w, opt, flog]=scg(fe, w, opt, fg, gp_cs, x, y, param);       % do the optimization
+gp_cs = gp_unpak(gp_cs,w, param);     % Set the optimized hyperparameter values back to the gp structure
+
+% Make the prediction
+[Ef_cs, Varf_cs] = gp_pred(gp_cs, x, y, p);
+
+% Plot the solution of full GP and CS
+figure(1)
+clf, subplot(1,2,1)
+mesh(p1, p2, reshape(Ef_full,73,73));
+hold on
+plot3(x(:,1), x(:,2), y, '*')
+axis on;
+title(['The predicted underlying function and data points (full GP)']);
+xlim([-2 2]), ylim([-2 2])
+subplot(1,2,2)
+mesh(p1, p2, reshape(Ef_cs,73,73));
+hold on
+plot3(x(:,1), x(:,2), y, '*')
+axis on;
+title(['The predicted underlying function and data points (CS)']);
+xlim([-2 2]), ylim([-2 2])
+set(gcf,'pos',[93 511 1098 420])
+
+
+% --- MCMC approach ---
+%  (see gp_mc for details
+% The hyperparameters are sampled with hybrid Monte Carlo 
+% the Inducing inputs are kept fixed at the optimized locations
+
+% The sampling options are set to 'opt' structure, which is given to
+% 'gp_mc' sampler
+opt=gp_mcopt;
+opt.nsamples= 300;
+opt.repeat=5;
+opt.hmc_opt.steps=3;
+opt.hmc_opt.stepadj=0.02;
+opt.hmc_opt.persistence=0;
+opt.hmc_opt.decay=0.6;
+opt.hmc_opt.nsamples=1;
+hmc2('state', sum(100*clock));
+
+% Do the sampling (this takes approximately 3-5 minutes)
+[rcs,g2,rstate2] = gp_mc(opt, gp_cs, x, y);
+
+% After sampling we delete the burn-in and thin the sample chain
+rcs = thin(rcs, 10, 2);
+
+% Make the predictions. 
+Ef_scs = gp_preds(rcs, x, y, p);
+meanEf_cs = mean(squeeze(Ef_scs)');
+
+% Plot the results
+figure(1)
+clf, subplot(1,2,1)
+mesh(p1, p2, reshape(Ef_cs,73,73));
+hold on
+plot3(x(:,1), x(:,2), y, '*')
+axis on;
+title(['The predicted underlying function and';
+       'the data points (MAP solutionm, CS) ']);
+subplot(1,2,2)
+mesh(p1, p2, reshape(meanEf_cs,73,73));
+hold on
+plot3(x(:,1), x(:,2), y, '*')
+axis on;
+title(['The predicted underlying function and';
+       'the data points (MCMC solution, CS) ']);
+set(gcf,'pos',[93 511 1098 420])
+
+
+% Here we copare the hyperparameter posteriors of CS and full GP
+figure(3)
+clf, subplot(2,4,1)
+hist(rcs.cf{1}.lengthScale(:,1),20)
+hold on
+plot(gp_cs.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('Length-scale 1 (CS)')
+subplot(2,4,2)
+hist(rcs.cf{1}.lengthScale(:,2),20)
+hold on
+plot(gp_cs.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('Length-scale 2 (CS)')
+subplot(2,4,3)
+hist(rcs.cf{1}.magnSigma2,20)
+hold on
+plot(gp_cs.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('magnitude (CS)')
+subplot(2,4,4)
+hist(rcs.noise{1}.noiseSigmas2,20)
+hold on
+plot(gp_cs.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('Noise variance (CS)')
+subplot(2,4,5)
+hist(rfull.cf{1}.lengthScale(:,1),20)
+hold on
+plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('Length-scale 1 (full GP)')
+subplot(2,4,6)
+hist(rfull.cf{1}.lengthScale(:,2),20)
+hold on
+plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('Length-scale 2 (full GP)')
+subplot(2,4,7)
+hist(rfull.cf{1}.magnSigma2,20)
+hold on
+plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('magnitude (full GP)')
+subplot(2,4,8)
+hist(rfull.noise{1}.noiseSigmas2,20)
+hold on
+plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+title('Noise variance (full GP)')
+set(gcf,'pos',[93 511 1098 420])
+
+
+%========================================================
+% PART 3 data analysis with FIC approximation
 %========================================================
 
 % Here we conduct the same analysis as in part 1, but this time we 
@@ -401,7 +551,7 @@ set(gcf,'pos',[93 511 1098 420])
 
 
 %========================================================
-% PART 3 data analysis with PIC approximation
+% PART 4 data analysis with PIC approximation
 %========================================================
 
 % set the data points into clusters

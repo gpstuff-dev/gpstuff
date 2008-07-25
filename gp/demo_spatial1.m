@@ -34,7 +34,7 @@
 %
 %    See Vanhatalo and Vehtari (2007) for more detailed discussion.
 %
-%    See also  DEMO_REGRESSION1
+%    See also  DEMO_REGRESSION1, DEMO_CLASSIFIC1
 
 % Copyright (c) 2008 Jarno Vanhatalo
 
@@ -157,6 +157,14 @@ while length(rgp.edata)<300 %   1000
     drawnow
 end
 
+figure(2)
+G=repmat(NaN,size(X1));
+G(xxii)=median(exp(rgp.latentValues));
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+axis equal
+axis([0 35 0 60])
+title('Posterior median of relative risk, full GP')
 
 
 % =====================================
@@ -246,7 +254,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 while length(rgp.edata)<200 %   1000
     [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-    figure(2)
+    figure(3)
     clf
     subplot(1,2,1)
     plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
@@ -267,6 +275,14 @@ while length(rgp.edata)<200 %   1000
     drawnow
 end
 
+figure(4)
+G=repmat(NaN,size(X1));
+G(xxii)=median(exp(rgp.latentValues));
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+axis equal
+axis([0 35 0 60])
+title('Posterior median of relative risk, FIC')
 
 % =====================================
 % 3) PIC model
@@ -356,7 +372,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 while length(rgp.edata)<200 %   1000
     [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-    figure(2)
+    figure(5)
     clf
     subplot(1,2,1)
     plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
@@ -377,3 +393,144 @@ while length(rgp.edata)<200 %   1000
     drawnow
 end
 
+figure(6)
+G=repmat(NaN,size(X1));
+G(xxii)=median(exp(rgp.latentValues));
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+axis equal
+axis([0 35 0 60])
+title('Posterior median of relative risk, PIC')
+
+
+% =====================================
+% 4) CS+FIC model
+% =====================================
+
+% NOTE! The CS+FIC model forms a full nxn matrix. The latent 
+% value transformation is not yet implemented efficiently.
+
+% load the data
+S = which('demo_spatial1');
+L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
+load(L)
+
+% Now we have loaded the following parameters
+% xx = co-ordinates 
+% yy = number of deaths
+% ye = the expexted number of deaths
+
+% Set the inducing inputs in a regular grid.
+% Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
+% data points, inducing inputs and blocks.
+dims = [1    60     1    35];
+[trindex, Xu] = set_PIC(xx, dims, 20000, 3, 'corners', 1);
+
+[n,nin] = size(xx);
+
+% Create the covariance functions
+gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 4, 'magnSigma2', 0.05);
+gpcf1.p.lengthScale = t_p({1 4});
+gpcf1.p.magnSigma2 = t_p({0.3 4});
+
+gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.03);
+gpcf2.p.lengthScale = t_p({1 4});
+gpcf2.p.magnSigma2 = t_p({0.3 4});
+
+% Create the likelihood structure
+likelih = likelih_poisson('init', yy, ye);
+
+% Create the FIC GP data structure
+gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+
+% Set the approximate inference method to MCMC
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
+
+% Set the sampling options
+opt=gp_mcopt;
+opt.nsamples=1;
+opt.repeat=1;
+
+% HMC-hyper
+opt.hmc_opt.steps=3;
+opt.hmc_opt.stepadj=0.01;
+opt.hmc_opt.nsamples=1;
+opt.hmc_opt.persistence=0;
+opt.hmc_opt.decay=0.8;
+    
+% HMC-latent
+opt.latent_opt.nsamples=1;
+opt.latent_opt.nomit=0;
+opt.latent_opt.persistence=0;
+opt.latent_opt.repeat=20;
+opt.latent_opt.steps=20;
+opt.latent_opt.stepadj=0.15;
+opt.latent_opt.window=5;
+
+% Here we make an initialization with 
+% slow sampling parameters
+opt.display = 0;
+[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
+
+% Now we reset the sampling parameters to 
+% achieve faster sampling
+opt.latent_opt.repeat=1;
+opt.latent_opt.steps=7;
+opt.latent_opt.window=1;
+opt.latent_opt.stepadj=0.15;
+opt.hmc_opt.persistence=0;
+opt.hmc_opt.stepadj=0.01;
+opt.hmc_opt.steps=2;
+
+opt.display = 1;
+opt.hmc_opt.display = 0;
+opt.latent_opt.display=0;
+
+% Define help parameters for plotting
+xxii=sub2ind([60 35],xx(:,2),xx(:,1));
+[X1,X2]=meshgrid(1:35,1:60);
+
+% Conduct the actual sampling.
+% Inside the loop we sample one sample from the latent values and 
+% hyper-parameters at each iteration. After that we plot the samples 
+% so that we can visually inspect the progress of sampling
+while length(rgp.edata)<200 %   1000
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
+    fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
+    figure(7)
+    clf
+    subplot(2,2,1)
+    plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
+    xlabel('lenght-scale')
+    ylabel('magnitude')
+    hold on
+    plot(rgp.cf{1}.lengthScale(end), rgp.cf{1}.magnSigma2(end),'r*')
+    title('sexp')
+    drawnow
+    subplot(2,2,3)
+    plot(rgp.cf{1}.lengthScale, rgp.cf{2}.magnSigma2)
+    xlabel('lenght-scale')
+    ylabel('magnitude')
+    hold on
+    plot(rgp.cf{1}.lengthScale(end), rgp.cf{2}.magnSigma2(end),'r*')
+    title('ppcs2')
+    drawnow
+    subplot(2,2,[2 4])
+    G=repmat(NaN,size(X1));
+    G(xxii)=exp(gp.latentValues);
+    pcolor(X1,X2,G),shading flat
+    colormap(mapcolor(G)),colorbar
+    axis equal
+    axis([0 35 0 60])
+    title('relative risk')
+    drawnow
+end
+
+figure(8)
+G=repmat(NaN,size(X1));
+G(xxii)=median(exp(rgp.latentValues));
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+axis equal
+axis([0 35 0 60])
+title('Posterior median of relative risk, FIC')

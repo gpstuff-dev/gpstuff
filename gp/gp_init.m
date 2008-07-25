@@ -15,7 +15,7 @@ function gp = gp_init(do, varargin)
 %   
 %       The LIKELIH is a string  'regr' for a regression model with additive Gaussian 
 %       noise. Other likelihood models require a likelihood structure for LIKELIH 
-%       parameter (see, for example, likelih_logit).
+%       parameter (see, for example, likelih_probit).
 %
 %       TYPE defines the type of GP, possible types are:
 %        'FULL'        (full GP), 
@@ -53,9 +53,9 @@ function gp = gp_init(do, varargin)
 %                                appointing the data points into blocks. For example, if x is a matrix of data inputs
 %                                then x(param{i},:) are the inputs belonging to the ith block.
 %
-%       The additional fields when the model is not for regression (likelih ~='regr') are:
+%       The additional fields when the model is not for regression (likelih ~='regr') is:
 %         latent_method  = Defines a method for marginalizing over latent values. Possible 
-%                          methods are 'MCMC', 'Laplace' and 'EP' and the fields for them are
+%                          methods are 'MCMC', 'Laplace' and 'EP'. The fields for them are
 %                         
 %                          In case of MCMC:
 %                            fh_latentmc    = Function handle to function which samples the latent values

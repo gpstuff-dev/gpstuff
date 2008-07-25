@@ -22,7 +22,6 @@ function [y, VarY, noisyY] = gp_pred(gp, tx, ty, x, varargin)
 %	GP_PREDS, GP_PAK, GP_UNPAK
 %
 
-% Copyright (c) 2000      Aki Vehtari
 % Copyright (c) 2006      Helsinki University of Technology (author Jarno Vanhatalo)
 % Copyright (c) 2007-2008 Jarno Vanhatalo
 
@@ -40,18 +39,29 @@ switch gp.type
         y=K'*(invC*ty);
     else
         [c, C]=gp_trcov(gp,tx);
-        L = chol(C)';
-        %    y=K'*(C\ty);
-        a = L'\(L\ty);
-        y = K'*a;
+        if issparse(C)
+            LD = ldlchol(C);
+            y = K'*ldlsolve(LD,ty);
+        else
+            L = chol(C)';
+            %    y=K'*(C\ty);
+            a = L'\(L\ty);
+            y = K'*a;
+        end
     end
     if nargout > 1
-        v = L\K;
-        V = gp_trvar(gp,x);
-        % Vector of diagonal elements of covariance matrix
-        % b = L\K;
-        % VarY = V - sum(b.^2)';
-        VarY = V - diag(v'*v);
+        
+        if issparse(C)
+            V = gp_trvar(gp,x);
+            VarY = V - diag(K'*ldlsolve(LD,K));
+        else
+            v = L\K;
+            V = gp_trvar(gp,x);
+            % Vector of diagonal elements of covariance matrix
+            % b = L\K;
+            % VarY = V - sum(b.^2)';
+            VarY = V - diag(v'*v);
+        end
     end
     if nargout > 2
         K2 = gp_trcov(gp,x);

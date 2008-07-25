@@ -1,29 +1,27 @@
 function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
-%EP_PRED	Predictions with Gaussian Process EP
+%LA_PRED	Predictions with Gaussian Process Laplace approximation
 %
 %	Description
-%	Y = EP_PRED(GP, TX, TY, X) takes a gp data structure GP together with a
-%	matrix X of input vectors, Matrix TX of training inputs and vector TY of
-%       training targets, and forward propagates the inputs through the gp to generate
-%       a matrix Y of (noiseless) output vectors (mean(Y|X)). Each row of X
-%       corresponds to one input vector and each row of Y corresponds to one output
-%       vector.
+%	Y = LA_PRED(GP, TX, TY, X) takes a gp data structure GP together with a
+%	matrix X of input vectors, Matrix TX of training inputs and vector TY of 
+%       training targets, and evaluates the predictive distribution at inputs. 
+%       Returns a matrix Y of (noiseless) output vectors (mean(Y|X, TX, TY)). Each 
+%       row of X corresponds to one input vector and each row of Y corresponds to 
+%       one output vector.
 %
-%	Y = EP_PRED(GP, TX, TY, X, U) in case of sparse model takes also inducing
-%       points U.
+%	Y = LA_PRED(GP, TX, TY, X, 'PARAM') in case of sparse model takes also 
+%       string defining, which parameters have been optimized.
 %
-%	[Y, VarY] = EP_PRED(GP, TX, TY, X) returns also the variances of Y
+%	[Y, VarY] = LA_PRED(GP, TX, TY, X, VARARGIN) returns also the variances of Y 
 %       (1xn vector).
 %
-%       BUGS: - only 1 output allowed
-%
 %	See also
-%	GP, GP_PAK, GP_UNPAK
+%	GPLA_E, GPLA_G, GP_PRED
 %
-% Copyright (c) 2006 Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
-% This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% This software is distributed under the GNU General Public 
+% License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 [tn, tnin] = size(tx);

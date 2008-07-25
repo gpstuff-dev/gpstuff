@@ -326,18 +326,11 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                     rec.indrejects = 0;
                 end
                 rec.tr_index = gp.tr_index;
-              case 'PIC_BAND'
+              case 'CS+FIC'
                 rec.X_u = [];
                 if isfield(opt, 'inducing_opt')
                     rec.indrejects = 0;
                 end
-                rec.tr_index = gp.tr_index;
-              case 'CS+PIC'
-                rec.X_u = [];
-                if isfield(opt, 'inducing_opt')
-                    rec.indrejects = 0;
-                end
-                rec.tr_index = gp.tr_index;
 
               otherwise
                 % Do nothing
@@ -356,7 +349,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 rec.Varf = [];
                 rec.p1 = [];
             end
-
             
             % Initialize the records of covariance functions
             for i=1:ncf
@@ -430,7 +422,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 
         % Set the inducing inputs in the record structure
         switch gp.type
-          case {'FIC', 'PIC_BLOCK', 'PIC_BAND', 'CS+PIC'}
+          case {'FIC', 'PIC_BLOCK', 'CS+FIC'}
             rec.X_u(ri,:) = gp.X_u(:)';
         end
         if isfield(opt, 'inducing_opt')

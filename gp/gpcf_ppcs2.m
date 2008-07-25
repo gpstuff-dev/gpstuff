@@ -60,7 +60,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
     % Initialize the covariance function
     if strcmp(do, 'init')
         nin = varargin{1};
-        gpcf.type = sprintf('gpcf_ppcs2');
+        gpcf.type = 'gpcf_ppcs2';
         gpcf.nin = nin;
         gpcf.nout = 1;
         gpcf.l = floor(nin/2) + 3;
@@ -280,7 +280,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
         end
         
         % First check if sparse model is used
-        switch gpcf.type
+        switch gpcf.GPtype
           case 'FULL'
             % Evaluate: DKff{1} = d Kff / d magnSigma2
             %           DKff{2} = d Kff / d lengthScale
@@ -337,14 +337,16 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 cs = 1-d;
 
                 const1 = 2.*l^2+8.*l+6;
-                const2 = l^2+4.*l+3;
-
+                const2 = (l+2)*0.5*const1;
+                const3 = -ma2/3.*cs.^(l+1);
+                Dd = const3.*(cs.*(const1.*d+3*l+6)-(const2.*d2+(l+2)*(3*l+6).*d+(l+2)*3));
+                int = d ~= 0;
+                
                 for i = 1:m
                     % Calculate the gradient matrix
-                    D = -ma2.*cs.^(l+1).*d_l(:,i).*(cs.*(const1.*d+3*l+6)-(l+2)*(const2.*d2+(3*l+6)*d+3))/3;
+                    D = d_l(:,i).*Dd;
                     % Divide by r in cases where r is non-zero
-                    D(d ~= 0) = D(d ~= 0)./d(d ~= 0);
-                    %D(r ~= 0) = D(r ~= 0)./r(r ~= 0);
+                    D(int) = D(int)./d(int);
                     D = sparse(I,J,D,n,n);
                     
                     ii1 = ii1+1;
@@ -826,54 +828,56 @@ function gpcf = gpcf_ppcs2(do, varargin)
     %         See also
     %         GPCF_PPCS2_TRCOV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
         
-        [n, m] =size(x);
+        C = trcov(gpcf,x);
         
-        s = 1./(gpcf.lengthScale);
-        s2 = s.^2;
-        if size(s)==1
-            s2 = repmat(s2,1,m);
-        end
-        ma = gpcf.magnSigma2;
-        l = gpcf.l;
-        
-        % Compute the sparse distance matrix.
-        ntriplets = max(1,floor(0.03*n*n));
-        I = zeros(ntriplets,1);
-        J = zeros(ntriplets,1);
-        R = zeros(ntriplets,1);
-        ntriplets = 0;
-        for ii1=1:n-1
-            d = zeros(n-ii1,1);
-            col_ind = ii1+1:n;
-            for ii2=1:m
-                d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-            end
-            %d = sqrt(d);
-            d(d >= 1) = 0;
-            [I2,J2,R2] = find(d);
-            len = length(R);
-            ntrip_prev = ntriplets;
-            ntriplets = ntriplets + length(R2);
-            if (ntriplets > len)
-                I(2*len) = 0;
-                J(2*len) = 0;
-                R(2*len) = 0;
-            end
-            ind_tr = ntrip_prev+1:ntriplets;
-            I(ind_tr) = ii1+I2;
-            J(ind_tr) = ii1;
-            R(ind_tr) = sqrt(R2);
-        end
-        R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
-        
-        % Find the non-zero elements of R.
-        [I,J,rn] = find(R);
-        const1 = l^2+4*l+3;
-        const2 = 3*l+6;
-        cs = max(0,1-rn);
-        C = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
-        C = sparse(I,J,C,n,n);
-        C = C + C' + sparse(1:n,1:n,ma,n,n);
+% $$$         [n, m] =size(x);
+% $$$         
+% $$$         s = 1./(gpcf.lengthScale);
+% $$$         s2 = s.^2;
+% $$$         if size(s)==1
+% $$$             s2 = repmat(s2,1,m);
+% $$$         end
+% $$$         ma = gpcf.magnSigma2;
+% $$$         l = gpcf.l;
+% $$$         
+% $$$         % Compute the sparse distance matrix.
+% $$$         ntriplets = max(1,floor(0.03*n*n));
+% $$$         I = zeros(ntriplets,1);
+% $$$         J = zeros(ntriplets,1);
+% $$$         R = zeros(ntriplets,1);
+% $$$         ntriplets = 0;
+% $$$         for ii1=1:n-1
+% $$$             d = zeros(n-ii1,1);
+% $$$             col_ind = ii1+1:n;
+% $$$             for ii2=1:m
+% $$$                 d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+% $$$             end
+% $$$             %d = sqrt(d);
+% $$$             d(d >= 1) = 0;
+% $$$             [I2,J2,R2] = find(d);
+% $$$             len = length(R);
+% $$$             ntrip_prev = ntriplets;
+% $$$             ntriplets = ntriplets + length(R2);
+% $$$             if (ntriplets > len)
+% $$$                 I(2*len) = 0;
+% $$$                 J(2*len) = 0;
+% $$$                 R(2*len) = 0;
+% $$$             end
+% $$$             ind_tr = ntrip_prev+1:ntriplets;
+% $$$             I(ind_tr) = ii1+I2;
+% $$$             J(ind_tr) = ii1;
+% $$$             R(ind_tr) = sqrt(R2);
+% $$$         end
+% $$$         R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
+% $$$         
+% $$$         % Find the non-zero elements of R.
+% $$$         [I,J,rn] = find(R);
+% $$$         const1 = l^2+4*l+3;
+% $$$         const2 = 3*l+6;
+% $$$         cs = max(0,1-rn);
+% $$$         C = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
+% $$$         C = sparse(I,J,C,n,n);
+% $$$         C = C + C' + sparse(1:n,1:n,ma,n,n);
     end
     
     function C = gpcf_ppcs2_covvec(gpcf, x1, x2, varargin)

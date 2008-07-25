@@ -1,8 +1,8 @@
 function opt = gp_mcopt(opt);
-%GP2R_MCOPT   Default options for GP2R_MC and GP2B_MC
+%GP_MCOPT     Default options for GP_MC and GP_MC
 %
 %             Description
-%             OPT = GP2R_MCOPT(OPT) sets default Markov Chain Monte Carlo 
+%             OPT = GP_MCOPT(OPT) sets default Markov Chain Monte Carlo 
 %             sampling options for options structure OPT. 
 %
 %             The default options are:

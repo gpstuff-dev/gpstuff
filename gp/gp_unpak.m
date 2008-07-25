@@ -1,5 +1,5 @@
 function gp = gp_unpak(gp, w, param)
-%GP_UNPAK	 Combine GP hyper-parameters into one vector.
+%GP_UNPAK	 Set GP hyper-parameters from vector to structure
 %
 %	Description
 %	GP = GP_UNPAK(GP, W, PARAM) takes an Gaussian Process data structure GP
@@ -9,16 +9,16 @@ function gp = gp_unpak(gp, w, param)
 %       W vector.
 %
 %       The possiple values for PARAM are
-%       'hyper'          = pack only hyperparameters
+%       'hyper'          = unpack only hyperparameters
 %                          W = log([hyper-params of gp.cf, hyper-params of gp.noise])
-%       'indicing'       = pack only iducing inputs
+%       'indicing'       = unpack only iducing inputs
 %                          W = gp.X_u(:)
-%       'likelih'        = pack only parameters of likelihood
+%       'likelih'        = unpack only parameters of likelihood
 %       'hyper+inducing' = pack hyperparameters and induging inputs
 %                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), gp.X_u(:)];
-%       'hyper+likelih'  = pack hyperparameters and parameters of likelihood
+%       'hyper+likelih'  = unpack hyperparameters and parameters of likelihood
 %                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), parameters of likelihood];
-%       'all'            = pack all parameters in one vector
+%       'all'            = unpack all parameters in one vector
 %
 %	See also
 %	GP_PAK

@@ -30,7 +30,7 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-
+    tn = size(tx,1);
     if nargin < 4
         error('Requires at least 4 arguments');
     end
@@ -50,7 +50,10 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
     for i1=1:nmc
         Gp = take_nth(gp,i1);
         
-        switch gp.type
+        switch gp.type            
+            % --------------------------------------------
+            %  FULL GP                                   
+            % --------------------------------------------
           case 'FULL'         % Do following if full model is used    
             [c,C]=gp_trcov(Gp, tx);
             K=gp_cov(Gp, tx, x);
@@ -58,22 +61,40 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
             
             % This is used only in the case of latent values. 
             if size(ty,2)>1
-                a = L'\(L\ty(:,i1));
-                y = K'*a;
+                if issparse(C)
+                    LD = ldlchol(C);
+                    y = K'*ldlsolve(LD,ty(:,i1));
+                else
+                    a = L'\(L\ty(:,i1));
+                    y = K'*a;
+                end
             else    % Here latent values are not present
-                a = L'\(L\ty);
-                y = K'*a;
+                if issparse(C)
+                    LD = ldlchol(C);
+                    y = K'*ldlsolve(LD,ty);
+                else
+                    a = L'\(L\ty);
+                    y = K'*a;
+                end
             end
             
             if nargout>1
-                v = L\K;
-                V = gp_trvar(gp,x);
-                % Vector of diagonal elements of covariance matrix
-                % b = L\K;
-                % VarY = V - sum(b.^2)';
-                VarY(:,i1) = V - diag(v'*v);
+                if issparse(C)
+                    V = gp_trvar(gp,x);
+                    VarY(:,i1) = V - diag(K'*ldlsolve(LD,K));
+                else
+                    v = L\K;
+                    V = gp_trvar(gp,x);
+                    % Vector of diagonal elements of covariance matrix
+                    % b = L\K;
+                    % VarY = V - sum(b.^2)';
+                    VarY(:,i1) = V - diag(v'*v);
+                end
             end
             Y(:,i1) = y;
+            % --------------------------------------------
+            %  FIC GP                                   
+            % --------------------------------------------
           case 'FIC'        % Do following if FIC sparse model is used
                             % Calculate some help matrices  
             u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
@@ -115,7 +136,9 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
                 VarY(:,i1) = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
             end
             Y(:,i1) = y;
-            
+            % --------------------------------------------
+            %  PIC                                   
+            % --------------------------------------------            
           case 'PIC_BLOCK'        % Do following if FIC sparse model is used
                                   % Calculate some help matrices  
             u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
@@ -187,6 +210,75 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
                 VarY(:,i1) = Varf;
             end
             
+            Y(:,i1) = y;
+            % --------------------------------------------
+            %  CS+FIC                                   
+            % --------------------------------------------
+          case 'CS+FIC'            
+            u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+            ncf = length(Gp.cf);
+            cf_orig = Gp.cf;
+            
+            cf1 = {};
+            cf2 = {};
+            j = 1;
+            k = 1;
+            for i = 1:ncf
+                if ~isfield(Gp.cf{i},'cs')
+                    cf1{j} = Gp.cf{i};
+                    j = j + 1;
+                else
+                    cf2{k} = Gp.cf{i};
+                    k = k + 1;
+                end
+            end
+            Gp.cf = cf1;
+
+            % First evaluate needed covariance matrices
+            % v defines that parameter is a vector
+            [Kv_ff, Cv_ff] = gp_trvar(Gp, tx);  % f x 1  vector
+            K_fu = gp_cov(Gp, tx, u);         % f x u
+            K_uu = gp_trcov(Gp, u);    % u x u, noiseles covariance K_uu
+            K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+            Luu = chol(K_uu)';
+            K_nu = gp_cov(Gp, x, u);         % n x u
+
+            % Evaluate the Lambda (La)
+            % Q_ff = K_fu*inv(K_uu)*K_fu'
+            B=Luu\(K_fu');       % u x f
+            Qv_ff=sum(B.^2)';
+            Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
+
+            Gp.cf = cf2;
+            K_cs = gp_trcov(Gp,tx);
+            Kcs_nf = gp_cov(Gp, x, tx);
+            La = sparse(1:tn,1:tn,Lav,tn,tn) + K_cs;
+            Gp.cf = cf_orig;
+
+            iLaKfu = La\K_fu;
+            A = K_uu+K_fu'*iLaKfu;
+            A = (A+A')./2;     % Ensure symmetry
+            L = iLaKfu/chol(A);
+            
+            if size(ty,2)>1
+                p = La\ty(:,i1) - L*(L'*ty(:,i1));
+            else
+                p = La\ty - L*(L'*ty);
+            end
+
+            %p2 = ty./Lav - iLaKfu*(A\(iLaKfu'*ty));
+            %    Knf = K_nu*(K_uu\K_fu');
+            y = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
+            
+            if nargout > 1
+                Knn_v = gp_trvar(Gp,x);
+                B2=Luu\(K_nu');
+                VarY = Knn_v - sum(B2'.*(B*(La\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2) - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2);
+                %VarY = VarY - 2.*diag((Kcs_nf*iLaKfu)*(K_uu\K_nu')) + 2.*diag((Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu')));
+                VarY = VarY - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
+                
+                VarY(:,i1) = Varf;
+            end
             Y(:,i1) = y;
         end
     end

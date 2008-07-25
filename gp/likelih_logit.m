@@ -3,7 +3,8 @@ function likelih = likelih_logit(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_LOGIT('INIT') Create and initialize Logit likelihood. 
+%	LIKELIH = LIKELIH_LOGIT('INIT', Y) Create and initialize Logit likelihood. 
+%       The input argument Y contains class labels {0,1}.
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'likelih_logit'
@@ -32,13 +33,18 @@ function likelih = likelih_logit(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
+    if nargin < 2
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
         likelih.type = 'logit';
+        y = varargin{1};
+        if ~isempty(find(y~=1 & y~=0))
+            error('The class labels have to be {0,1}')
+        end
+
         
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_logit_pak;
@@ -224,7 +230,9 @@ function likelih = likelih_logit(do, varargin)
     %   [F, ENERG, DIAG] = LIKELIH_LOGIT_MCMC(F, OPT, GP, X, Y) takes the current latent 
     %   values F, options structure OPT, Gaussian process data structure GP, inputs X and
     %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
-    %   diagnostics DIAG.
+    %   diagnostics DIAG. 
+    % 
+    %   See Neal (1996) for the technical discussion of the sampler.
     %
     %   See also
     %   GP_MC

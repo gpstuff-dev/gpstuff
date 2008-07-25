@@ -268,7 +268,7 @@ function gpcf = gpcf_exp(do, varargin)
         end
 
         % First check if sparse model is used
-        switch gpcf.type
+        switch gpcf.GPtype
           case 'FULL'
             % Evaluate: DKff{1} = d Kff / d magnSigma2
             %           DKff{2} = d Kff / d lengthScale
@@ -521,7 +521,7 @@ function gpcf = gpcf_exp(do, varargin)
         n_u = size(u,1);
         
         % First check if sparse model is used
-        switch gpcf.type
+        switch gpcf.GPtype
           case 'FIC'
             % Derivatives of K_uu and K_uf with respect to inducing inputs
             K_uu = feval(gpcf.fh_trcov, gpcf, u);
@@ -697,30 +697,31 @@ function gpcf = gpcf_exp(do, varargin)
     %         See also
     %         GPCF_EXP_COV, GPCF_EXP_TRVAR, GP_COV, GP_TRCOV
 
-        [n, m] =size(x);
-
-        s = 1./(gpcf.lengthScale);
-        s2 = s.^2;
-        if size(s)==1
-            s2 = repmat(s2,1,m);
-        end
-        ma = gpcf.magnSigma2;
-
-        % Here we take advantage of the 
-        % symmetry of covariance matrix
-        C=zeros(n,n);
-        for i1=2:n
-            i1n=(i1-1)*n;
-            for i2=1:i1-1
-                ii=i1+(i2-1)*n;
-                for i3=1:m
-                    C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-                end
-                C(i1n+i2)=C(ii); 
-            end
-        end
-        C = ma.*exp(-sqrt(C));
-        C(C<eps)=0;
+    C = trcov(gpcf, x);
+% $$$         [n, m] =size(x);
+% $$$ 
+% $$$         s = 1./(gpcf.lengthScale);
+% $$$         s2 = s.^2;
+% $$$         if size(s)==1
+% $$$             s2 = repmat(s2,1,m);
+% $$$         end
+% $$$         ma = gpcf.magnSigma2;
+% $$$ 
+% $$$         % Here we take advantage of the 
+% $$$         % symmetry of covariance matrix
+% $$$         C=zeros(n,n);
+% $$$         for i1=2:n
+% $$$             i1n=(i1-1)*n;
+% $$$             for i2=1:i1-1
+% $$$                 ii=i1+(i2-1)*n;
+% $$$                 for i3=1:m
+% $$$                     C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+% $$$                 end
+% $$$                 C(i1n+i2)=C(ii); 
+% $$$             end
+% $$$         end
+% $$$         C = ma.*exp(-sqrt(C));
+% $$$         C(C<eps)=0;
     end
 
     function C = gpcf_exp_covvec(gpcf, x1, x2, varargin)

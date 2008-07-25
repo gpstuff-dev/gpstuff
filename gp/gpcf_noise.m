@@ -44,8 +44,8 @@ function gpcf = gpcf_noise(do, varargin)
 %
 %       
 %	See also
+%       GP_INIT, GPCF_SEXP, GPCF_MATERN32, GPCF_MATERN52, GPCF_EXP, GPCF_PPCS2
 
-% Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 1998,1999 Aki Vehtari
 % Copyright (c) 2006      Jarno Vanhatalo
 

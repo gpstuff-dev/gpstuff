@@ -1,5 +1,5 @@
 function [g, gdata, gprior] = gp_g(w, gp, x, t, param, varargin)
-%GP_G   Evaluate gradient of error for Gaussian Process.
+%GP_G   Evaluate gradient of energy for Gaussian Process
 %
 %	Description
 %	G = GP_G(W, GP, X, Y) takes a full GP hyper-parameter vector W,
@@ -44,12 +44,18 @@ switch gp.type
     case 'FULL'   % A full GP
         % Evaluate covariance
         [K, C] = gp_trcov(gp,x);
-        invC = inv(C);
-        invCv=invC(:);
-        b = C\t;
+        
+        if issparse(C)
+            invC = sinv(C);       % evaluate the sparse inverse
+            LD = ldlchol(C);
+            b = ldlsolve(LD,t);
+        else
+            invC = inv(C);        % evaluate the full inverse
+            b = C\t;
+        end
 
-        % Get the gradients of the covariance matrices 
-        % and gprior from gpcf_* structures
+        % Get the gradients of the covariance matrices and gprior
+        % from gpcf_* structures and evaluate the gradients
         for i=1:ncf
             i1=0;
             if ~isempty(gprior)
@@ -57,14 +63,14 @@ switch gp.type
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
             i1 = i1+1;
             i2 = 1;
             
             % Evaluate the gradient with respect to magnSigma
             Bdm = b'*(DKff{i2}*b);
-            Cdm = sum(invCv.*DKff{i2}(:)); % help argument for magnSigma2
+            Cdm = sum(sum(invC.*DKff{i2})); % help argument for magnSigma2
             gdata(i1) = 0.5.*(Cdm - Bdm);
             
             if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
@@ -78,7 +84,7 @@ switch gp.type
             for i2 = 2:length(DKff)
                 i1 = i1+1;                
                 Bdl = b'*(DKff{i2}*b);
-                Cdl = sum(invCv.*DKff{i2}(:)); % help arguments for lengthScale
+                Cdl = sum(sum(invC.*DKff{i2})); % help arguments for lengthScale
                 gdata(i1)=0.5.*(Cdl - Bdl);
             end    
         end
@@ -150,7 +156,7 @@ switch gp.type
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             gpcf.X_u = gp.X_u;
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
                 % Get the gradients of the covariance matrices 
@@ -208,7 +214,7 @@ switch gp.type
                 i1 = i1+1;
                 
                 gpcf = gp.noise{i};
-                gpcf.type = gp.type;
+                gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
                     % Get the gradients of the covariance matrices 
@@ -277,7 +283,7 @@ switch gp.type
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             gpcf.X_u = gp.X_u;
             gpcf.tr_index = gp.tr_index;
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
@@ -362,7 +368,7 @@ switch gp.type
                 i1 = i1+1;
                 
                 gpcf = gp.noise{i};
-                gpcf.type = gp.type;
+                gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
@@ -452,7 +458,7 @@ switch gp.type
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             gpcf.X_u = gp.X_u;            
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
                 % Evaluate the gradient for FIC covariance functions
@@ -516,6 +522,13 @@ switch gp.type
                     
                     % Evaluate the gradient with respect to magnSigma
                     gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
+                    
+                    if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
+                        i1 = i1+1;
+                        if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
+                            i1 = i1+1;
+                        end
+                    end
 
                     % Evaluate the gradient with respect to lengthScale
                     for i2 = 2:length(DKff)
@@ -552,7 +565,7 @@ switch gp.type
                 i1 = i1+1;
                 
                 gpcf = gp.noise{i};
-                gpcf.type = gp.type;
+                gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
                     % Get the gradients of the covariance matrices 
@@ -563,6 +576,7 @@ switch gp.type
                 end
             end
         end
+        
         g = gdata + gprior;
 end
 

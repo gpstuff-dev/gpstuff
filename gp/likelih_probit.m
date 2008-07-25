@@ -1,11 +1,10 @@
 function likelih = likelih_probit(do, varargin)
-%likelih_probit	Create a Probit likelihood structure for Gaussian Process
+%LIKELIHOOD_PROBIT	Create a Probit likelihood structure for Gaussian Process
 %
 %	Description
 %
 %	LIKELIH = LIKELIH_PROBIT('INIT', Y, YE) Create and initialize Probit likelihood. 
-%       The input argument Y contains incedence counts and YE the expected number of
-%       incidences
+%       The input argument Y contains class labels {-1,1}.
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'likelih_probit'
@@ -30,6 +29,7 @@ function likelih = likelih_probit(do, varargin)
 %
 %
 
+% Copyright (c) 2007      Jaakko Riihimäki
 % Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
@@ -43,6 +43,10 @@ function likelih = likelih_probit(do, varargin)
     % Initialize the covariance function
     if strcmp(do, 'init')
         likelih.type = 'probit';
+        y = varargin{1};
+        if ~isempty(find(y~=1 & y~= -1))
+            error('The class labels have to be {-1,1}')
+        end
         
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_probit_pak;
@@ -70,7 +74,7 @@ function likelih = likelih_probit(do, varargin)
         end
     end
 
-    % Set the parameter values of covariance function
+    % Set the parameter values of likelihood function
     if strcmp(do, 'set')
         if mod(nargin,2) ~=0
             error('Wrong number of arguments')

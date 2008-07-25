@@ -1,25 +1,27 @@
 function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
-%GP_G   Evaluate gradient of error for Gaussian Process.
+%GPEP_G   Evaluate gradient of EP's marginal log posterior estimate 
 %
 %	Description
 %	G = GPEP_G(W, GP, X, Y) takes a full GP hyper-parameter vector W, 
 %       data structure GP a matrix X of input vectors and a matrix Y
-%       of target vectors, and evaluates the error gradient G. Each row of X
-%	corresponds to one input vector and each row of Y corresponds
-%       to one target vector. Works only for full GP.
+%       of target vectors, and evaluates the gradient G of EP's marginal 
+%       log posterior estimate . Each row of X corresponds to one input
+%       vector and each row of Y corresponds to one target vector. 
 %
 %	G = GPEP_G(W, GP, P, Y, PARAM) in case of sparse model takes also  
 %       string PARAM defining the parameters to take the gradients with 
 %       respect to. Possible parameters are 'hyper' = hyperparameters and 
 %      'inducing' = inducing inputs, 'hyper+inducing' = hyper+inducing parameters.
 %
-%	[G, GDATA, GPRIOR] = GP_G(GP, X, Y) also returns separately  the
+%	[G, GDATA, GPRIOR] = GPEP_G(GP, X, Y) also returns separately  the
 %	data and prior contributions to the gradient.
 %
-%	See also   
+%       NOTE! The CS+FIC model is not supported 
 %
+%	See also   
+%       GPEP_E, EP_PRED
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihim�ki
+% Copyright (c) 2007-2008  Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -57,7 +59,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 i1 = length(gprior);
             end
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
                         
             i1 = i1+1;
@@ -142,7 +144,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             gpcf.X_u = gp.X_u;
             % Covariance function hyperparameters
             %--------------------------------------
@@ -202,7 +204,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 i1 = i1+1;
                 
                 gpcf = gp.noise{i};
-                gpcf.type = gp.type;
+                gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
@@ -253,7 +255,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             gpcf.X_u = gp.X_u;
             gpcf.tr_index = gp.tr_index;
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
@@ -335,7 +337,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 i1 = i1+1;
                 
                 gpcf = gp.noise{i};
-                gpcf.type = gp.type;
+                gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
@@ -415,7 +417,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
             
             gpcf = gp.cf{i};
-            gpcf.type = gp.type;
+            gpcf.GPtype = gp.type;
             gpcf.X_u = gp.X_u;
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
                 % Evaluate the gradient for full support covariance functions
@@ -503,7 +505,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 i1 = i1+1;
                 
                 gpcf = gp.noise{i};
-                gpcf.type = gp.type;
+                gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
