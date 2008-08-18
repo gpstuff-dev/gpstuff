@@ -153,7 +153,7 @@ void mexFunction
       for (i=0;i<lfi;i++) fil[i] = C[J[j]+i+1];                /* take the j'th lower triangular column of the Cholesky */
       zt = mxRealloc(zt,(size_t)(lfi*sizeof(double)));         /* memory for the sparse inverse elements to be evaluated */
       Zt = mxRealloc(Zt,(size_t)(lfi*lfi*sizeof(double)));     /* memory for the needed sparse inverse elements */
-
+      
       /* Set the lower triangular for Zt */
       k2 = 0;
       for (k=J[j]+1;k<J[j+1];k++){
@@ -167,19 +167,29 @@ void mexFunction
 	}
 	k2++;
       }
-     
-      /* evaluate zt = fil*Zt */
-      dsymv_(uplo, &lfi, &done, Zt, &lfi, fil, &one, &dzero, zt, &one);
 
-      /* Set the evaluated sparse inverse elements, zt, into C */
-      k=lfi-1;
-      for (i = J[j+1]-1; i>J[j] ; i--){
-	C[i] = -zt[k];	
-	k--;
-      }
-      /* evaluate the j'th diagonal of sparse inverse */
-      dgemv_(trans, &one, &lfi, &done, fil, &one, zt, &one, &dzero, zz, &one); 
-      C[J[j]] = 1/C[J[j]] + zz[0];
+      if (lfi > 0)
+	{
+	   /* evaluate zt = fil*Zt */
+	  dsymv_(uplo, &lfi, &done, Zt, &lfi, fil, &one, &dzero, zt, &one);
+	  
+	  /* Set the evaluated sparse inverse elements, zt, into C */
+	  k=lfi-1;
+	  for (i = J[j+1]-1; i>J[j] ; i--){
+	    C[i] = -zt[k];	
+	    k--;
+	  }
+	  /* evaluate the j'th diagonal of sparse inverse */
+	  dgemv_(trans, &one, &lfi, &done, fil, &one, zt, &one, &dzero, zz, &one); 
+	  C[J[j]] = 1/C[J[j]] + zz[0];
+	  	}
+      else
+	{
+	  /* evaluate the j'th diagonal of sparse inverse */
+	  C[J[j]] = 1/C[J[j]];
+
+	} 
+
     }
     
     /* Free the temporary variables */

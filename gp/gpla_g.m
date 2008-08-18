@@ -499,39 +499,45 @@ switch gp.type
         % Help matrices for trace component
         sqrtWLa1 = sqrtW*La1;
         Lahat = Inn + sqrtWLa1*sqrtW;
+        LDh = ldlchol(Lahat);
         B2 = sqrtW*K_fu;
-        B3 = Lahat\B2;
+        %        B3 = Lahat\B2;
+        B3 = ldlsolve(LDh,B2);
         A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
         L2 = B3/chol(A2);
         
         % Help matrices for b2 set 1
-        L3 = La1*L-sqrtWLa1'*(Lahat\(sqrtWLa1*L));
+        %        L3 = La1*L-sqrtWLa1'*(Lahat\(sqrtWLa1*L));
+        L3 = La1*L-sqrtWLa1'*ldlsolve(LDh,(sqrtWLa1*L));
         L3 = L3/chol(eye(size(K_uu)) - L'*L3);
                 
         % Evaluate diag(La3^{-1} + L3'*L3).*thirdgrad
         %b2 = diag(La1) - sum((sqrtWLa1'/chol(Lahat)).^2,2) + sum(L3.*L3,2);
-        b2 = sum(La1.*sinv(sqrtW\Lahat/sqrtW),2)./Wd  + sum(L3.*L3,2);
+        La = (sqrtW\Lahat)/sqrtW;
+        LD = ldlchol(La);
+        siLa = sinv(La);
+        b2 = sum(La1.*siLa,2)./Wd  + sum(L3.*L3,2);
+        %        b2 = sum(La1.*sinv(sqrtW\Lahat/sqrtW),2)./Wd  + sum(L3.*L3,2); 
         b2 = b2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
         
             
         % Help matrices for b2 set 2 
         La2 = W + W*La1*W;
         KufW = K_fu'*W;
-        iLa2WKfu = La2\(W*K_fu);
+        LD2 = ldlchol(La2);
+        %iLa2WKfu = La2\(W*K_fu);
+        iLa2WKfu = ldlsolve(LD2,(W*K_fu));
         A4 = K_uu + KufW*iLa2WKfu; A4 = (A4+A4')./2;
         L4 = iLa2WKfu/chol(A4);
         
         % Evaluate rest of b2
-        b2 = b2'/La2 - b2'*L4*L4';
+        %b2 = b2'/La2 - b2'*L4*L4';
+        b2 = ldlsolve(LD2,b2)' - b2'*L4*L4';
 
         % Set the parameters for the actual gradient evaluation
         b2 = -b2*W;
         b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
         L = sqrtW*L2;
-        La = (sqrtW\Lahat)/sqrtW;
-        
-        LD = ldlchol(La);
-        siLa = sinv(La);
         idiagLa = diag(siLa);
         
         % =================================================================

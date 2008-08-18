@@ -559,6 +559,7 @@ end
                     LLa = lchol(La);
                     Ann=0;
                     sqrtSLa = sqrtS*La;
+                    sqrtSLat = sqrtSLa';
                     VD = ldlchol(ssmult(sqrtS,LLa),1);
                     while iter<=maxiter && abs(logZep_tmp-logZep)>tol
 
@@ -566,7 +567,9 @@ end
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         for i1=1:n
                             % approximate cavity parameters
-                            Di1 =  La(:,i1) - ssmult(sqrtSLa',ldlsolve(VD,sqrtSLa(:,i1)));                                                        
+                            sqrtSLa_ci1 = sqrtSLat(i1,:)';
+                            tttt = ldlsolve(VD,sqrtSLa_ci1);
+                            Di1 =  full(La(:,i1)) - full(ssmult(sqrtSLat,tttt));
                             dn = Di1(i1);
                             pn = P(i1,:)';
                             Ann = dn + sum((R*pn).^2);
@@ -603,10 +606,17 @@ end
                             % Store cavity parameters
                             muvec_i(i1,1)=myy_i;
                             sigm2vec_i(i1,1)=sigm2_i;
+                                                       
+% $$$                             sqrtS(i1,i1) = sqrt(tautilde(i1));
+% $$$                             sqrtSLa = ssmult(sqrtS,La);
+% $$$                             VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
+% $$$                             D2 = sqrtSLa(:,i1).*sqrtS(i1,i1) + Inn(:,i1);
+% $$$                             VD = ldlrowupdate(i1,VD,D2,'+');
                             sqrtS(i1,i1) = sqrt(tautilde(i1));
-                            sqrtSLa = ssmult(sqrtS,La);
+                            sqrtSLat(:,i1) = La(:,i1).*sqrt(tautilde(i1));
+                            sqrtSLa_ci1(i1) = sqrtSLat(i1,i1);                            
                             VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
-                            D2 = sqrtSLa(:,i1).*sqrtS(i1,i1) + Inn(:,i1);
+                            D2 = sqrtSLa_ci1.*sqrtS(i1,i1) + Inn(:,i1);
                             VD = ldlrowupdate(i1,VD,D2,'+');
                         end
                         % Re-evaluate the parameters

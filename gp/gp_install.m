@@ -260,6 +260,13 @@ s = [s ' '];
 s = [s lapack];
 kk = do_cmd (s, kk, details) ;
 
+mex_src = 'linuxCsource/ldlrowupdate';
+kk=0;
+s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+s = [s obj];
+s = [s ' '];
+s = [s lapack];
+kk = do_cmd (s, kk, details) ;
 
 %-------------------------------------------------------------------------------
 function kk = do_cmd (s, kk, details)

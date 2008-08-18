@@ -428,7 +428,8 @@ end
                     K_fu = K_fu(p,:);
                     VD = ldlchol(La);
 		  
-                    iLaKfu = La\K_fu;
+                    iLaKfu = ldlsolve(VD,K_fu);
+                    %iLaKfu = La\K_fu;
 
                     A = K_uu+K_fu'*iLaKfu;
                     A = (A+A')./2;     % Ensure symmetry
@@ -513,9 +514,12 @@ end
                     WKfu = repmat(sqrtW,1,m).*K_fu;
                     sqrtW = sparse(1:n,1:n,sqrtW,n,n);
                     Lahat = sparse(1:n,1:n,1,n,n) + sqrtW*La*sqrtW;
-                    A = K_uu + WKfu'*(Lahat\WKfu);   A = (A+A')./2;
+                    LDh = ldlchol(Lahat);
+                    %A = K_uu + WKfu'*(Lahat\WKfu);   A = (A+A')./2;
+                    A = K_uu + WKfu'*ldlsolve(LDh,WKfu);   A = (A+A')./2;
                     A = chol(A);
-                    edata = 2.*sum(log(diag(chol(Lahat)'))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
+                    edata = sum(log(diag(LDh))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
+                    %edata = 2.*sum(log(diag(chol(Lahat)'))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                     edata = logZ + 0.5*edata;
                     La2 = La;
                     b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
