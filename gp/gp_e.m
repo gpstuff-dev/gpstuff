@@ -192,6 +192,20 @@ switch gp.type
     b = (t'*iLaKfu)/A;
     edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
     edata = .5*(edata + n*log(2*pi));
+    % ============================================================
+    % SSGP
+    % ============================================================    
+  case 'SSGP'
+    [Phi, S] = gp_trcov(gp, x);
+    m = size(Phi,2);
+    
+    A = eye(m,m) + Phi'*(S\Phi);
+    A = chol(A)';
+    
+    b = (t'/S*Phi)/A';
+    edata = 0.5*n.*log(2*pi) + 0.5*sum(log(diag(S))) + sum(log(diag(A))) + 0.5*t'*(S\t) - 0.5*b*b';
+    
+    
   otherwise
     error('Unknown type of Gaussian process!')
 end

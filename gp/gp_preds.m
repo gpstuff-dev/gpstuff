@@ -280,7 +280,11 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
                 VarY(:,i1) = Varf;
             end
             Y(:,i1) = y;
-        end
+          case 'SSGP'
+            error('gp_pred: SSGP is not implemented yet!')
+            
+        end %switch gp.type
+        
     end
 
 function x = take_nth(x,nth)

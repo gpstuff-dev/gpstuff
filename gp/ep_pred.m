@@ -220,6 +220,35 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
                 end
             end
         end
+                
+      case 'SSGP'
+        if length(varargin) < 1
+            error('The argument telling the optimzed/sampled parameters has to be provided.') 
+        end
+
+        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+        
+        Phi_f = gp_trcov(gp, tx);
+        Phi_a = gp_trcov(gp, x);
+
+        m = size(Phi_f,2);
+        ntest=size(x,1);
+        
+        Ef = Phi_a*(Phi_f'*b');
+        
+        if nargout > 1
+            % Compute variances of predictions
+            %Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+            Varf = sum(Phi_a.^2,2) - sum(Phi_a.*((Phi_f'*(repmat(S,1,m).*Phi_f))*Phi_a')',2) + sum((Phi_a*(Phi_f'*L)).^2,2);
+            for i1=1:ntest
+                switch gp.likelih.type
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
+                end
+            end
+        end
     end
 end
 

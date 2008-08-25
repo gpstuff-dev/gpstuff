@@ -72,7 +72,7 @@ ye = ye(ind,:);
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.05);
+gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -185,7 +185,7 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 20000, 3, 'corners', 1);
+[trindex, Xu] = set_PIC(xx, dims, 3, 'corners', 0);
 
 [n,nin] = size(xx);
 

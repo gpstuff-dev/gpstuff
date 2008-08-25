@@ -20,36 +20,38 @@ function [K, C] = gp_trcov(gp, x1)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-[n,m]=size(x1);
-n1 = n+1;
-ncf = length(gp.cf);
-
-% Evaluate the covariance without noise
-K = sparse(0);
-for i=1:ncf
-  gpcf = gp.cf{i};
-  K = K + feval(gpcf.fh_trcov, gpcf, x1);
-end
-
-if ~isempty(gp.jitterSigmas)
-  if issparse(K)
-      K = K + sparse(1:n,1:n,gp.jitterSigmas.^2,n,n);
-  else
-      K(1:n1:end)=K(1:n1:end) + gp.jitterSigmas.^2;
-  end
-end
-
-if nargout > 1 
-  C=K;
-  % Add noise to the covariance
-  if isfield(gp, 'noise')
-    nn = length(gp.noise);
-    for i=1:nn
-      noise = gp.noise{i};
-      C = C + feval(noise.fh_trcov, noise, x1);
+switch gp.type
+  case {'FULL' 'FIC' 'PIC_BLOCK' 'CS+FIC'}
+    [n,m]=size(x1);
+    n1 = n+1;
+    ncf = length(gp.cf);
+    
+    % Evaluate the covariance without noise
+    K = sparse(0);
+    for i=1:ncf
+        gpcf = gp.cf{i};
+        K = K + feval(gpcf.fh_trcov, gpcf, x1);
     end
-  end
-
+    
+    if ~isempty(gp.jitterSigmas)
+        if issparse(K)
+            K = K + sparse(1:n,1:n,gp.jitterSigmas.^2,n,n);
+        else
+            K(1:n1:end)=K(1:n1:end) + gp.jitterSigmas.^2;
+        end
+    end
+    
+    if nargout > 1 
+        C=K;
+        % Add noise to the covariance
+        if isfield(gp, 'noise')
+            nn = length(gp.noise);
+            for i=1:nn
+                noise = gp.noise{i};
+                C = C + feval(noise.fh_trcov, noise, x1);
+            end
+        end
+        
 % $$$   if issparse(C)
 % $$$       [I,J,c] = find(C);
 % $$$       c(c<eps) = 0;      
@@ -57,7 +59,7 @@ if nargout > 1
 % $$$   else
 % $$$       C(C<eps)=0;
 % $$$   end
-end
+    end
 
 % $$$ if issparse(K)
 % $$$     [I,J,k] = find(K);
@@ -66,4 +68,24 @@ end
 % $$$ else
 % $$$     K(K<eps)=0;
 % $$$ end
+  case 'SSGP'
+    [n,m]=size(x1);
+    n1 = n+1;
+    ncf = length(gp.cf);
+    
+    % Evaluate the covariance without noise
+    gpcf = gp.cf{1};
+    K = feval(gpcf.fh_trcov, gpcf, x1);
 
+    if nargout > 1 
+        C=sparse(0);
+        % Add noise to the covariance
+        if isfield(gp, 'noise')
+            nn = length(gp.noise);
+            for i=1:nn
+                noise = gp.noise{i};
+                C = C + feval(noise.fh_trcov, noise, x1);
+            end
+        end
+    end
+end
