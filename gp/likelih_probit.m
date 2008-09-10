@@ -246,6 +246,72 @@ function likelih = likelih_probit(do, varargin)
     %   See also
     %   GP_MC
         
+        gp = varargin{1};
+        p = varargin{2};
+        t = varargin{3};
+        
+        maxcut = -log(eps);
+        mincut = -log(1/realmin - 1);
+        lvs=opt.sample_latent_scale;
+        a = max(min(z, maxcut),mincut);
+        [K,C]=gp_trcov(gp, p);
+        L=chol(C)';
+        n=length(t);
+        likelih_e = @probit;
+        e = feval(likelih_e, gp, z, t);
+
+        % Adaptive control algorithm to find such a value for lvs 
+        % that the rejection rate of Metropolis is optimal. 
+        slrej = 0;
+        for li=1:100
+            zt=sqrt(1-lvs.^2).*z+lvs.*L*randn(n,1);
+            at = max(min(zt, maxcut),mincut);
+            ed = feval(likelih_e, gp, zt, t);
+            a=e-ed;
+            if exp(a) > rand(1)
+                z=zt;
+                e=ed;
+                lvs=min(1,lvs*1.1);
+            else
+                lvs=max(1e-8,lvs/1.05);
+            end
+        end
+        opt.sample_latent_scale=lvs;
+        % Do the actual sampling 
+        for li=1:(opt.repeat)
+            zt=sqrt(1-lvs.^2).*z+lvs.*L*randn(n,1);
+            at = max(min(zt, maxcut),mincut);
+            ed = feval(likelih_e, gp, zt, t);
+            a=e-ed;
+            if exp(a) > rand(1)
+                z=zt;
+                e=ed;
+            else
+                slrej=slrej+1;
+            end
+        end
+        diagn.rej = slrej/opt.repeat;
+        diagn.lvs = lvs;
+        diagn.opt=opt;
+        energ=[];
+        z = z';
+
+
+        function e = probit(gp, z, t)
+        % LH_2CLASS     Minus log likelihood function for 2 class classification.
+        %               A logistic likelihod
+        %
+        %       E = H_LOGIT(GP, P, T, Z) takes.... and returns minus log from 
+            
+        % If class prior is defined use it
+            if isfield(gp,'classprior');
+                cp=gp.classprior;     % THIS IS NOT YET IMPLEMENTED
+            else
+                cp=1;
+            end
+            e = -sum(log(normcdf(y.*z)));
+        end
+        
     end
 
 
@@ -259,6 +325,7 @@ function likelih = likelih_probit(do, varargin)
     %          lengthHyperNu  =
     %          lengthScale    =
     %          magnSigma2     =
+
 
 
     end

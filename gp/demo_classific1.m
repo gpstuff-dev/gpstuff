@@ -62,7 +62,9 @@ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % Create the likelihood structure
-likelih = likelih_logit('init', y);
+% likelih = likelih_logit('init', y);
+y=y*2-1;
+likelih = likelih_probit('init', y);
 
 % Create the GP data structure
 gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [],'jitterSigmas', 0.1);   %{gpcf2}
@@ -117,13 +119,16 @@ xstar=[xt1(:) xt2(:)];
 % Make predictions
 p1 = mean(squeeze(logsig(gp_preds(rr, x, rr.latentValues', xstar))),2);
 
+p1 = mean(squeeze(normcdf(gp_preds(rr, x, rr.latentValues', xstar))),2);
+
 figure, hold on;
 n_pred=size(xstar,1);
 h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20))
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
-plot(x(y==0,1),x(y==0,2),'o', 'markersize', 8, 'linewidth', 2);
+%plot(x(y==0,1),x(y==0,2),'o', 'markersize', 8, 'linewidth', 2);
+plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and training cases, full GP', 'fontsize', 14)
 
@@ -135,7 +140,8 @@ set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
 colormap(c1)
 plot(x(y==1,1), x(y==1,2), 'rx', 'markersize', 8, 'linewidth', 2),
-plot(x(y==0,1), x(y==0,2), 'bo', 'markersize', 8, 'linewidth', 2)
+%plot(x(y==0,1), x(y==0,2), 'bo', 'markersize', 8, 'linewidth', 2)
+plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
 set(gcf, 'color', 'w'), title('predictive probability contours, full GP', 'fontsize', 14)
 

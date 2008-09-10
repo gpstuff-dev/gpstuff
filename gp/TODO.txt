@@ -1,32 +1,43 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2008-07-02 14:58:27 EEST
+%   Last modified: 2008-09-03 14:54:56 EEST
 
+LIKELIH_LOGIT:
+---------------
+- Puuttuu: Laplace aproksimaation toteutus
+- Puuttuu: EP toteutus
 
-- Lisättävä likelih_logit:n 
-  * FIC, PIC ja CS+FIC toteutus
-  * Laplace aproksimaation toteutus
+LIKELIH_PROBIT:
+---------------
+- Puuttuu: Laplace aproksimaation toteutus
+- Puuttuu: MCMC toteutus
 
-- Toteutettava GPLA_E:hen Newtonin optimointi SCG jne.
+GPLA_E:
+-------
+- Puuttuu: Newton algoritmin toteutus
 
+GPCF_SSSEXP:
+------------
+- puuttuu: gradientit spektral pisteiden suhteen.
+
+GPCF_ST_*:
+----------
+- lopullisen toteutuksen pohdinta vielä kesken. 
+- Puuttuu: C-implementointi kovarianssifunktioiden laskentaan.
+
+COV.C:
+------
+- Puuttuu: kokonaan
 
 PERUS GP RAKENNE:
 ------------------
 - SPARSE malleista
   * FITC 
-    + perustoteutus (tehty)
     + t-malli
     + katkaistu kovarianssi
   * PITC
-    + perustoteutus (tehty)
     + t-malli
     + t-malli + lohkomalli kohinalle
     + katkaistu kovarianssi
-- FULL malli
-  * perustoteutus (tehty)
-  * katkaistu kovarianssi
-
-- latenttien muuttujien sämläys. LISÄTTY opt.latent_opt -> vanhoja
-  demoja yms. rikki 
 
 - Luokitteluun tarvitaan vielä classprior toteutus (latent_mh funktioon)
 
@@ -86,3 +97,5 @@ GP_MC:
 - Indusoivien pisteiden sämpläys
 Tämä täytyy huomioida recordin käsittelyssä. Nyt tällä hetkellä U
 annetaan erillisenä parametrina -> vaatii jonkin verran muokkausta 
+
+
