@@ -1,7 +1,7 @@
 function y = t_pdf(x, v, mu, sigma)
 %T_PDF     Student's t probability density function (pdf).
 %
-%   Y = NORMPDF(X,V,MU,SIGMA) Returns the Student's t pdf with
+%   Y = T_PDF(X,V,MU,SIGMA) Returns the Student's t pdf with
 %   V degrees of freedom, MU mean and SIGMA standard deviation at X.
 %
 %   The size of Y is the common size of the input arguments. A scalar input  
@@ -9,7 +9,7 @@ function y = t_pdf(x, v, mu, sigma)
 %
 %   Default values for MU and SIGMA are 0 and 1 respectively.
 
-% Copyright (c) 1998-2004 Aki Vehtari
+% Copyright (c) 1998-2008 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % Licence (version 2 or later); please refer to the file 
@@ -27,6 +27,6 @@ if nargin < 2,
     error('Requires at least two input arguments.'); 
 end
 
-y = gammaln((v + 1) ./ 2) - gammaln(v./2) -log(v.*pi)./2 ...
-    - log(sigma .* (1 + (((x-mu)./sigma) .^ 2) ./ v)).*((v+1)./2);
+term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi)/2;
+y = term - log(sigma) + log(1 + ((((x-mu)./sigma).^2)./v)) .* (-(v+1)/2);
 y = exp(y);
