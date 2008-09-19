@@ -17,10 +17,14 @@ function r = sinvchi2rand(nu, s2, M, N)
 if nargin < 2
   error('Too few arguments');
 end
-if nargin < 3
-  M=1;
+if nargin==2
+    [M,N]=size(s2);
+else
+    if numel(s2)>1 || numel(nu)>1
+        error('Arguments M and N can only be used if nu and s2 are scalars');
+    end
+    if nargin < 4
+        N=1;
+    end
 end
-if nargin < 4
-  N=1;
-end
-r=nu*s2./chi2rnd(nu,M,N);
+r=nu.*s2./chi2rnd(nu,M,N);
