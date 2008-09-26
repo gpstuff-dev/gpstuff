@@ -80,11 +80,11 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, varargin)
             
             if nargout>1
                 if issparse(C)
-                    V = gp_trvar(gp,x);
+                    V = gp_trvar(Gp,x);
                     VarY(:,i1) = V - diag(K'*ldlsolve(LD,K));
                 else
                     v = L\K;
-                    V = gp_trvar(gp,x);
+                    V = gp_trvar(Gp,x);
                     % Vector of diagonal elements of covariance matrix
                     % b = L\K;
                     % VarY = V - sum(b.^2)';

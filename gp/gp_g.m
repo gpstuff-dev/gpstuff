@@ -93,17 +93,18 @@ switch gp.type
         if isfield(gp, 'noise')
             nn = length(gp.noise);
             for i=1:nn
-                i1 = i1+1;
-                
                 noise = gp.noise{i};
-                noise.type = gp.type;
+                noise.GPtype = gp.type;
                 [gprior, DCff] = feval(noise.fh_ghyper, noise, x, t, g, gdata, gprior);
                 
-                B = trace(invC);
-                C=b'*b;    
-                gdata(i1)=0.5.*DCff.*(B - C); 
+                for i2 = 1:length(DCff)
+                    i1 = i1+1;
+                    B = trace(invC);
+                    C=b'*b;    
+                    gdata(i1)=0.5.*DCff.*(B - C); 
+                end
             end
-        end
+        end        
         g = gdata + gprior;
 
         % ============================================================
@@ -210,9 +211,7 @@ switch gp.type
         % Loop over the noise functions
         if isfield(gp, 'noise')
             nn = length(gp.noise);
-            for i=1:nn
-                i1 = i1+1;
-                
+            for i=1:nn                
                 gpcf = gp.noise{i};
                 gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
@@ -220,8 +219,11 @@ switch gp.type
                     % Get the gradients of the covariance matrices 
                     % and gprior from gpcf_* structures
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
-                    gdata(i1)= -0.5*DCff.*b*b';
-                    gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
+                    for i2 = 1:length(DCff)
+                        i1 = i1+1;
+                        gdata(i1)= -0.5*DCff.*b*b';
+                        gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
+                    end
                 end
             end
         end
@@ -365,19 +367,20 @@ switch gp.type
         if isfield(gp, 'noise')
             nn = length(gp.noise);
             for i=1:nn
-                i1 = i1+1;
-                
                 gpcf = gp.noise{i};
                 gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
                 if strcmp(param,'hyper') || strcmp(param,'hyper+inducing')
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
-                    gdata(i1)= -0.5*DCff.*b*b';
-                    ind = gpcf.tr_index;
-                    for kk=1:length(ind)
-                        gdata(i1)= gdata(i1) + 0.5*trace((inv(La{kk})-L(ind{kk},:)*L(ind{kk},:)')).*DCff;
-                    end                    
+                    for i2 = 1:length(DCff)
+                        i1 = i1+1;
+                        gdata(i1)= -0.5*DCff.*b*b';
+                        ind = gpcf.tr_index;
+                        for kk=1:length(ind)
+                            gdata(i1)= gdata(i1) + 0.5*trace((inv(La{kk})-L(ind{kk},:)*L(ind{kk},:)')).*DCff;
+                        end                    
+                    end
                 end
             end
         end
@@ -562,8 +565,6 @@ switch gp.type
         if isfield(gp, 'noise')
             nn = length(gp.noise);
             for i=1:nn
-                i1 = i1+1;
-                
                 gpcf = gp.noise{i};
                 gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
@@ -571,8 +572,11 @@ switch gp.type
                     % Get the gradients of the covariance matrices 
                     % and gprior from gpcf_* structures
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
-                    gdata(i1)= -0.5*DCff.*b*b';
-                    gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-sum(LL,2)).*DCff;
+                    for i2 = 1:length(DCff)                    
+                        i1 = i1+1;
+                        gdata(i1)= -0.5*DCff.*b*b';
+                        gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-sum(LL,2)).*DCff;
+                    end
                 end
             end
         end

@@ -30,7 +30,7 @@ function gpcf = gpcf_noiset(do, varargin)
 %                          (@gpcf_se_trcov)
 %         fh_trvar       = function handle to training variance function
 %                          (@gpcf_se_trvar)
-%         fh_sample      = function handle to parameter sampling function
+%         fh_gibbs       = function handle to parameter sampling function (Gibbs sampling)
 %         sampling_opt   = options structure for fh_sampling
 %                          (hmc2_opt)
 %         fh_recappend   = function handle to record append function
@@ -40,10 +40,10 @@ function gpcf = gpcf_noiset(do, varargin)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
 %
 %       NOTE!
-%       The Student-t noise covariance is greated as in Gelman et. al. (2004) page 304-305:
+%       The Student-t residual model is greated as in Gelman et. al. (2004) page 304-305:
 %    
-%          C = alfa^2 * U, where U = diag(u_1, u_2, ..., u_n)
-%          u_i ~ Inv-Chi^2(nu, tau^2)
+%          y-E[y] ~ N(0, alphaa^2 * U), where U = diag(u_1, u_2, ..., u_n)
+%             u_i ~ Inv-Chi^2(nu, tau^2)
 %       
 %          The degrees of freedom nu are given a 1/nu prior and they are sampled via 
 %          slice sampling.
@@ -55,7 +55,7 @@ function gpcf = gpcf_noiset(do, varargin)
 
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2006-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -83,6 +83,7 @@ if strcmp(do, 'init')
     gpcf.tau2 = 0.1;
     gpcf.alpha = 0.5;
     gpcf.nu = 4;
+    gpcf.r = zeros(varargin{2},1);
     
     % Initialize prior structure
     gpcf.p=[];
@@ -96,7 +97,7 @@ if strcmp(do, 'init')
     gpcf.fh_cov = @gpcf_noiset_cov;
     gpcf.fh_trcov  = @gpcf_noiset_trcov;
     gpcf.fh_trvar  = @gpcf_noiset_trvar;
-    gpcf.fh_sample = @gpcf_fh_sample;
+    gpcf.fh_gibbs = @gpcf_noiset_gibbs;
     %    gpcf.sampling_opt = 'noiset_opt';
     gpcf.fh_recappend = @gpcf_noiset_recappend;
     
@@ -107,10 +108,10 @@ if strcmp(do, 'init')
         % Loop through all the parameter values that are changed
         for i=3:2:length(varargin)-1
             if strcmp(varargin{i},'noiseSigmas2')
-                if size(varargin{i+1},1) == gpcf.ndata
+                if size(varargin{i+1},1) == gpcf.ndata & size(varargin{i+1},2) == 1
                     gpcf.noiseSigmas2 = varargin{i+1};
                 else
-                    error('the size of noiseSigmas2 is wrong, it has to be NDATAx1')
+                    error('the size of has to be NDATAx1')
                 end
             elseif strcmp(varargin{i},'fh_sampling')
                 gpcf.fh_sampling = varargin{i+1};
@@ -142,7 +143,7 @@ if strcmp(do, 'set')
     % Loop through all the parameter values that are changed
     for i=2:2:length(varargin)-1
         if strcmp(varargin{i},'noiseSigmas2')
-            if size(varargin{i+1},2) == gpcf.ndata
+            if size(varargin{i+1},2) == gpcf.ndata  & size(varargin{i+1},2) == 1
                 gpcf.noiseSigmas2 = varargin{i+1};
             else
                 error('the size of noiseSigmas2 is wrong, has to be 1xNDATA')
@@ -224,7 +225,7 @@ end
         eprior = 0;
     end
 
-    function [g, gdata, gprior]  = gpcf_noiset_ghyper(gpcf, p, t, g, gdata, gprior, invC, varargin)
+    function [gprior, DCff]  = gpcf_noiset_ghyper(gpcf, p, t, g, gdata, gprior, invC, varargin)
     %GPCF_NOISE_G Evaluate gradient of error for SE covariance function.
     %
     %	Description
@@ -247,6 +248,7 @@ end
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
         
+        DCff = [];
     end
 
     function C = gpcf_noiset_cov(gpcf, x1, x2)
@@ -268,17 +270,7 @@ end
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
 
-    if isempty(x2)
-        x2=x1;
-    end
-    [n1,m1]=size(x1);
-    [n2,m2]=size(x2);
-
-    if m1~=m2
-        error('the number of columns of X1 and X2 has to be same')
-    end
-
-    C = sparse([],[],[],n1,n2,0);
+        C = 0;
     end
 
 
@@ -301,10 +293,11 @@ end
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
 
-    [n, m] =size(x);
-    n1=n+1;
-
-    C = spdiags(gpcf.noiseSigmas2, 0, n, n);
+        [n, m] =size(x);
+        n1=n+1;
+        
+        %        C = spdiags(gpcf.noiseSigmas2, 0, n, n);
+        C = sparse(1:n, 1:n, gpcf.noiseSigmas2, n, n);
     end
 
     function C = gpcf_noiset_trvar(gpcf, x)
@@ -329,8 +322,8 @@ end
         
     end
     
-    function gpcf = gpcf_fh_sample(gp, gpcf, opt, x, y)
-    % GPCF_FH_SAMPLE     Function for sampling the noiseSigmas2:s
+    function gpcf = gpcf_noiset_gibbs(gp, gpcf, opt, x, y)
+    % GPCF_NOISET_GIBBS     Function for sampling the noiseSigmas2:s
     %
     %         Description
     %         
@@ -347,12 +340,10 @@ end
         % Draw a sample of the mean of y. Its distribution is
         % y ~ N(K*inv(C)*y, K - K*inv(C)*K')
         switch gp.type
-          case 'FULL'
-            [meanY, varY, sampy] = gp_fwd(gp, x, y, x);
-          case 'FIC'
-            [meanY, varY, sampy] = gp_fwd(gp, x, y, x);
+          case {'FULL', 'FIC'}
+            [meanY, varY, sampy] = gp_pred(gp, x, y, x);
           case 'PIC_BLOCK'
-            [meanY, varY, sampy] = gp_fwd(gp, x, y, x, gp.tr_index);
+            [meanY, varY, sampy] = gp_pred(gp, x, y, x, gp.tr_index);
         end
         % Calculate the residual
         r = y-sampy;
@@ -363,24 +354,37 @@ end
         nu = gpcf.nu;
         rss2=alpha.^2.*U;
 
+        
+        
         % Perform the gibbs sampling (Gelman et.al. (2004) page 304-305)
         % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al.
-        % but 'gamrand' is parameterized as in Neal (1996).
+% $$$         U=invgamrand((nu.*t2+(r./alpha).^2)./(nu+1),nu+1);
+% $$$         t2=gamrand(hmean(U),n*nu);
+% $$$         alpha2=invgamrand(mean(r.^2./U),n);
+% $$$         rss2=alpha2.*U;
+% $$$         %nu=sls1mm(@invgam_nu_e,nu,soptnu,[],t2,U);
+% $$$         nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
+        
+        
         U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));
-        shape = n*nu./2;                         % These are parameters...
-        invscale = nu.*sum(1./U)./2;             % used in Gelman
-        t2=gamrand(shape/invscale, 2.*shape);    % This is written as in Neal (1996)
+        
+% $$$         U2=invgamrand((nu.*t2+(r./alpha).^2)./(nu+1),nu+1);
+        shape = n*nu./2;                               % These are parameters...
+        invscale = nu.*sum(1./U)./2;                   % used in Gelman        
+        t2=gamrnd(shape, 1./invscale);                 % Notice! The matlab parameterization is different from Gelmans
+% $$$         t2=gamrand(hmean(U),n*nu);
         alpha2=sinvchi2rand(n,mean(r.^2./U));
+% $$$         alpha2=invgamrand(mean(r.^2./U),n);
         rss2=alpha2.*U;
         % Sample nu
-        nu_energy = @(nu) (log(nu) - sinvchi2_lpdf(U,nu,t2));
-        nu=sls1mm(nu_energy, nu, opt);
-    
+        nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
+                
         gpcf.noiseSigmas2 = rss2;
         gpcf.U = U;
         gpcf.tau2 = t2;
         gpcf.alpha = sqrt(alpha2);
         gpcf.nu = nu;
+        gpcf.r = r;
     end
 
     function reccf = gpcf_noiset_recappend(reccf, ri, gpcf)
@@ -407,9 +411,7 @@ end
         reccf.fh_cov = @gpcf_noiset_cov;
         reccf.fh_trcov  = @gpcf_noiset_trcov;
         reccf.fh_trvar  = @gpcf_noiset_trvar;
-        reccf.fh_sampling = @gpcf_fh_sample;
-        reccf.fh_sampling = @gpcf_fh_sampling;
-        %  reccf.sampling_opt = noiset_opt;
+        reccf.fh_gibbs = @gpcf_noiset_gibbs;
         reccf.fh_recappend = @gpcf_noiset_recappend;  
         return
     end
@@ -425,9 +427,10 @@ end
     end
     if ~isempty(gpcf.nu)
         reccf.nu(ri,:)=gpcf.nu;
-        reccf.U = gpcf.U;
-        reccf.tau2 = gpcf.tau2;
-        reccf.alpha = gpcf.alpha;
+        reccf.U(ri,:) = gpcf.U;
+        reccf.tau2(ri,:) = gpcf.tau2;
+        reccf.alpha(ri,:) = gpcf.alpha;
+        reccf.r(ri,:) = gpcf.r;
     elseif ri==1
         reccf.noiseSigmas2=[];
     end

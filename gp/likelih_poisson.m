@@ -458,7 +458,7 @@ function likelih = likelih_poisson(do, varargin)
 
         end % moments
         
-        % $$$         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2)); %,'AbsTol',atol,'RelTol',reltol
+% $$$         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2)); %,'AbsTol',atol,'RelTol',reltol
 % $$$         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
 % $$$         [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
 % $$$         
@@ -576,7 +576,7 @@ function likelih = likelih_poisson(do, varargin)
         end
         
         
-        %        gradcheck(w', @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
+        %        gradcheck(w, @lvpoisson_er, @lvpoisson_gr, gp, x, y, u, z)
         
         % Conduct the HMC sampling for the transformed latent values
         hmc2('state',latent_rstate)
@@ -639,7 +639,7 @@ function likelih = likelih_poisson(do, varargin)
                 b=Linv*z;
                 gprior=Linv'*b;  %dsymvr takes advantage of the symmetry of Cinv
         % $$$         gprior = (dsymvr(Cinv,z))';   % make the gradient a row vector
-                g = (L2'*(gdata +gprior))';        
+                g = (L2'*(gdata + gprior))';        
               case 'FIC'
                 %        w(w<eps)=0;
                 z = Lp.*(w + U*(iJUU*w));

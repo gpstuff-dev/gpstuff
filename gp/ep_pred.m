@@ -1,4 +1,4 @@
-function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
+function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf)
 %EP_PRED	Predictions with Gaussian Process EP
 %
 %	Description
@@ -25,12 +25,17 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
 % License.txt, included with the software, for details.
 
     [tn, tnin] = size(tx);
+
+    if nargin < 5
+        error('The argument telling the optimzed/sampled parameters has to be provided.') 
+    end
+
     
     switch gp.type
       case 'FULL'
         [K, C]=gp_trcov(gp,tx);
         
-        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
 
         sqrttautilde = sqrt(tautilde);
         Stildesqroot = diag(sqrttautilde);
@@ -59,17 +64,20 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         end
         
       case 'FIC'
+
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+
+        % Check if prediction is done only with one covariance function
+        if nargin >= 6
+            cf_orig = gp.cf;
+            gp.cf = { cf_orig{predcf} };
+        end
+        
         u = gp.X_u;
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-        kstarstar=gp_trvar(gp, x);
-        
-        if length(varargin) < 1
-            error('The argument telling the optimzed/sampled parameters has to be provided.') 
-        end
-
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+        kstarstar=gp_trvar(gp, x);        
 
         % From this on evaluate the prediction
         % See Snelson and Ghahramani (2007) for details 
@@ -87,8 +95,8 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             % Compute variances of predictions
             %Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
             Luu = chol(K_uu)';
-            B=Luu\(K_fu');   
-            B2=Luu\(K_nu');   
+            B=Luu\(K_fu');
+            B2=Luu\(K_nu');
             Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
             for i1=1:ntest
                 switch gp.likelih.type
@@ -192,7 +200,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             error('The argument telling the optimized/sampled parameters has to be provided.')
         end
 
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
 
         p = b';
         ntest=size(x,1);
@@ -226,7 +234,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             error('The argument telling the optimzed/sampled parameters has to be provided.') 
         end
 
-        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
         
         Phi_f = gp_trcov(gp, tx);
         Phi_a = gp_trcov(gp, x);

@@ -124,12 +124,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
     else
         z=y;
     end
-
-    % Set handle to gradient and energy functions of negbin-likelihood.
-    % Used for sampling the dispersion parameter with slice sampling
-    if strcmp(gp.likelih,'negbin')
-        nb_me = @nb_e;
-    end
     
     % Print labels for sampling information
     if opt.display
@@ -143,9 +137,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         if isfield(opt, 'sls_opt')
             fprintf('slsrej  ');
         end
-        if isfield(opt, 'nb_sls_opt')         % Rejection rate of dispersion parameter sampling
-            fprintf('rrej  ');
-        end
+% $$$         if isfield(opt, 'nb_sls_opt')         % Rejection rate of dispersion parameter sampling
+% $$$             fprintf('rrej  ');
+% $$$         end
         if isfield(opt,'inducing_opt')
             fprintf('indrej     ')              % rejection rate of latent value sampling
         end
@@ -155,9 +149,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 fprintf('    lvScale    ')
             end
         end
-        if isfield(opt,'noise_opt')
-            fprintf('  nu');
-        end      
         fprintf('\n');
     end
 
@@ -210,19 +201,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 gp = gp_unpak(gp, w, 'hyper');
             end
             
-            % ----------- Sample parameters of the negative binomial likelihood --------------------- 
-            if isfield(opt, 'nb_sls_opt')
-                w = gp_pak(gp, 'likelih');
-                fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
-                [w, energies, diagns] = sls(fe, w, opt.nb_sls_opt, [], gp.likelih);
-                if isfield(diagns, 'opt')
-                    opt.nb_sls_opt = diagns.opt;
-                end
-                w=w(end,:);
-                gp = gp_unpak(gp, w, 'likelih');
-            end
-            
-            
             % ----------- Sample hyperparameters with SLS --------------------- 
             if isfield(opt, 'sls_opt')
                 w = gp_pak(gp, 'hyper');
@@ -234,6 +212,41 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 gp = gp_unpak(gp, w, 'hyper');
             end
 
+            % ----------- Sample hyperparameters with Gibbs sampling --------------------- 
+            if isfield(opt, 'gibbs_opt')
+                % loop over the covariance functions
+                ncf = length(gp.cf);
+                for i1 = 1:ncf
+                    gpcf = gp.cf{i1};
+                    if isfield(gpcf, 'fh_gibbs')
+                        gpcf = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, y);
+                        gp.cf{i1} = gpcf;
+                    end
+                end
+                
+                % loop over the noise functions                
+                nnf = length(gp.noise);
+                for i1 = 1:nnf
+                    gpcf = gp.noise{i1};
+                    if isfield(gpcf, 'fh_gibbs')
+                        gpcf = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, y);
+                        gp.noise{i1} = gpcf;
+                    end                    
+                end
+            end
+            
+            % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
+            if isfield(opt, 'nb_sls_opt')
+                w = gp_pak(gp, 'likelih');
+                fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z) - feval(likelih.fh_priore, feval(likelih.fh_unpak, w, likelih)) );
+                [w, energies, diagns] = sls(fe, w, opt.nb_sls_opt, [], gp.likelih);
+                if isfield(diagns, 'opt')
+                    opt.nb_sls_opt = diagns.opt;
+                end
+                w=w(end,:);
+                gp = gp_unpak(gp, w, 'likelih');
+            end
+            
             % ----------- Sample inducing inputs with hmc  ------------ 
             if isfield(opt, 'inducing_opt')
                 w = gp_pak(gp, 'inducing');
@@ -249,14 +262,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 gp = gp_unpak(gp, w, 'inducing');
             end
             
-            % ------------ Perform sampling for parameters that are not included -------------
-            % ------------ in the vector w. Such are, for example, noiseSigmas2  -------------
-            % ------------ for gpcf_noiset model
-            if isfield(opt, 'noise_opt')
-                for nni = 1:length(gp.noise)
-                    gp.noise{nni} = feval(gp.noise{nni}.fh_sample, gp, gp.noise{nni}, opt.noise_opt, x, y);
-                end
-            end
             
             % ----------- Sample inputs  ---------------------
             

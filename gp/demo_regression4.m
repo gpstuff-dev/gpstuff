@@ -211,6 +211,8 @@ plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title('The predicted underlying function and the data points (LOO-CV solution)');
 
+w0 = randn(size(w_cv));
+gradcheck(w0, @gp_cve, @gp_cvg, gp, x, y, 'hyper')
 
 %=================================================================
 % PART 3 data analysis with full GP and 10-fold-CV energy function

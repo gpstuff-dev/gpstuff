@@ -32,7 +32,15 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
-
+    
+% Check the inputs
+    if size(x,2) ~= gp.nin
+        error('The size of x has to be n x nin');
+    end
+    if size(y,2) ~= 1 || length(y) ~= size(x,1)
+        error('The size of y has to be n x 1');
+    end
+    
     if strcmp(w, 'init')
         w0 = rand(size(gp_pak(gp, param)));
         e0=[];
@@ -104,7 +112,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 [K,C] = gp_trcov(gp, x);
                 Sigm = C;
                 Stildesqroot=zeros(n);
-
+                
+                gp.likelih.sigma
+                gp.likelih.nu
+                
                 % The EP -algorithm
                 while iter<=maxiter && abs(logZep_tmp-logZep)>tol
 
@@ -125,6 +136,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
                         tautilde(i1)=tautilde(i1)+deltatautilde;
                         nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+                        
 
                         apu = deltatautilde^-1+Sigm(i1,i1);
                         apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
@@ -135,16 +147,16 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         muvec_i(i1,1)=myy_i;
                         sigm2vec_i(i1,1)=sigm2_i;
                     end
-
                     % Recompute the approximate posterior parameters
                     Stilde=tautilde;
                     Stildesqroot=diag(sqrt(tautilde));
 
-                    % NOTICE! upper triangle matrix! cf. to
+                    % NOTICE! upper triangle matrix! cf. to                    
                     % line 13 in the algorithm 3.5, p. 58.
+                    
                     B=eye(n)+Stildesqroot*C*Stildesqroot;
                     L=chol(B,'lower');
-
+                    
                     V=(L\Stildesqroot)*C;
                     Sigm=C-V'*V; myy=Sigm*nutilde;
 
@@ -199,8 +211,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                K_fu = gp_cov(gp, x, u);         % f x u
-                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+                K_fu = gp_cov(gp, x, u);           % f x u
+                K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
                 K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
                 Luu = chol(K_uu)';
                 % Evaluate the Lambda (La)
@@ -790,9 +802,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 error('Unknown type of Gaussian process!')
             end
 
-            % ======================================================================
-            % Evaluate the prior contribution to the error from covariance functions
-            % ======================================================================
+            % =====================================================================================
+            % Evaluate the prior contribution to the error from covariance functions and likelihood
+            % =====================================================================================
             eprior = 0;
             for i=1:ncf
                 gpcf = gp.cf{i};
@@ -806,6 +818,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     noise = gp.noise{i};
                     eprior = eprior + feval(noise.fh_e, noise, x, y);
                 end
+            end
+            if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
+                likelih = gp.likelih;
+                eprior = eprior - feval(likelih.fh_priore, likelih);
             end
 
             % The last things to do

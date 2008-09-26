@@ -112,8 +112,15 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 myy_i = Ef(k1);
                 gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
+            g_logPrior = feval(likelih.fh_priorg, likelih);
+            for kk = 1:length(gdata_likelih)
+                i1 = i1+1;
+                gdata(i1) = gdata_likelih(kk);            
+                gprior(i1) = - g_logPrior(kk);
+            end
         end
-
+        
+        
         g = gdata + gprior;
         
         % ============================================================
@@ -640,7 +647,5 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         g = gdata_ind;
       case 'hyper+inducing'
         g = [g gdata_ind];
-      case 'hyper+likelih'
-        g = [g gdata_likelih];
     end
 end
