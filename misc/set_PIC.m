@@ -228,12 +228,14 @@ if visualize == 1
     set(H, 'FontSize', 14);
 end
 
-for i=1:length(indextest)
-    if min(size(indextest{i})) == 0
-        indextest{i} = [];
+
+if also_test == 1
+    for i=1:length(indextest)
+        if min(size(indextest{i})) == 0
+            indextest{i} = [];
+        end        
     end
-        
+    tstblocks = indextest;
 end
 
 blocks = index;
-tstblocks = indextest;
