@@ -1,4 +1,4 @@
-function  [blocks, Xu] = set_PIC(x, dims, blocksize, indtype, visualize)
+function  [blocks, Xu, tstblocks] = set_PIC(x, dims, blocksize, indtype, visualize, xtest)
 % SET_PIC     Set the inducing inputs and blocks for two dimensional input data
 %
 %  [blocks, Xu] = set_PIC(x, dims, cellsize, blocksize, indtype, visualize)
@@ -17,20 +17,34 @@ function  [blocks, Xu] = set_PIC(x, dims, blocksize, indtype, visualize)
 %     Returns:  
 %     blocks = cell array with vectors appointing the block indeces
 %     Xu = matrix of inducing inputs
+%
+%   [blocks, Xu, tstblocks] = set_PIC(x, dims, blocksize, indtype, visualize, xtest)
+%     takes also test inputs 'xtest' and returns:
+%     tstblocks = cell array with vectors appointing the block indeces for xtest
+%
+%     NOTE! The function works for test data only if the data is inside a square
+%      area limeted by min(x) and max(x).
 
-% Copyright (c) 2007    Jarno Vanhatalo
+% Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+% Find the indeces also for test data
+if nargin >= 6
+    also_test = 1;
+    indextest={};
+else
+    also_test = 0;
+end
 
 ly = dims(2)/blocksize;
 lx = dims(4)/blocksize;
 
 b1 = linspace(0,dims(4),lx);
 b2 = linspace(0,dims(2),ly);
-index={}; indexsize = [];
+index={}; indexsize = []; 
 for i1=1:length(b1)-1
     for i2=1:length(b2)-1
         ind = 1:size(x,1);
@@ -41,7 +55,13 @@ for i1=1:length(b1)-1
             indexsize(end+1) = length(ind);
         end
         %            plot(x(ind,1),x(ind,2),col{i1,i2})        
-    end
+        if also_test == 1 
+            indtest = 1:size(xtest,1);
+            indtest = indtest(: , b1(i1)<=xtest(indtest',1) & xtest(indtest',1) < b1(i1+1));
+            indtest = indtest(: , b2(i2)<=xtest(indtest',2) & xtest(indtest',2) < b2(i2+1));
+            indextest{length(index)} = indtest';
+        end 
+    end       
 end
 minblock = min(indexsize); maxblock = max(indexsize); avgblock = mean(indexsize);
 
@@ -144,6 +164,18 @@ while go == 1
         else
             index = {index{1:minmean-1} index{minmean+1:end}};
         end
+        
+        % Set also the test indeces
+        if also_test == 1
+            indextest{i1} =  sort([indextest{i1};indextest{minmean}]);
+            if minmean==1
+                indextest = {indextest{2:end}};
+            elseif minmean==length(indextest)
+                indextest = {indextest{1:end-1}};
+            else
+                indextest = {indextest{1:minmean-1} indextest{minmean+1:end}};
+            end          
+        end        
     else
         i1 = i1+1;
     end
@@ -196,4 +228,12 @@ if visualize == 1
     set(H, 'FontSize', 14);
 end
 
+for i=1:length(indextest)
+    if min(size(indextest{i})) == 0
+        indextest{i} = [];
+    end
+        
+end
+
 blocks = index;
+tstblocks = indextest;
