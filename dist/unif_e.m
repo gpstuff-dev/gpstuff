@@ -1,4 +1,4 @@
-function e = unif_e(x, a)
+function e = unif_e(x, a, a2)
 %UNIF_E  compute the prior energy term for a parameter with 
 %           uniform prior. 
 %

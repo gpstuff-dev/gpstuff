@@ -1,4 +1,4 @@
-function e = loglogunif_e(x, a)
+function e = loglogunif_e(x, a, a2)
 %LOGLOGUNIF_E  compute the prior energy term for a parameter with 
 %              uniform prior in log log scale. 
 %
