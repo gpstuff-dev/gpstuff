@@ -5,7 +5,8 @@ function S = hammersley(D,N)
 %   Hammersley quasirandom sequence using successive primes
 %   as bases except for the last dimension which has the form
 %   [1:N]'/N-1/2/N (where the last term modifies usual Hammersley
-%   sequence to produce sequence in open interval (0,1))
+%   sequence to produce sequence in open interval (0,1)). The 
+%   matrix S is of size DxN.
   
 % Copyright (c) 2008 Aki Vehtari
 
@@ -43,3 +44,5 @@ for k=1:D-1 % dimensions
     S(j,k)=sum(fliplr(b)./pk.^[1:numel(b)]);
   end
 end
+
+S = S';
