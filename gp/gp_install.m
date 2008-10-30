@@ -1,4 +1,32 @@
 function gp_install(suiteSparse)
+%  Matlab function to compile all the c-files to mex in the GPstuff/gp folder.
+%  The function is called from GPstuff/matlab_install.m but can be run separately also.
+%
+%  Some of the sparse GP functionalities in the toolbox require 
+%  SuiteSparse toolbox by Tim Davis. First install SuiteSparse from: 
+%    http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
+%
+%  Note! Install also Metis 4.0.1 as mentioned under header "Other
+%        packages required:".           
+%
+%  After this, compile the c-files in GPstuff/gp as follows:
+%
+%   Run gp_install( suitesparse_path ) in the present directory. 
+%   Here suitesparse_path is a string telling the path to SuiteSparse 
+%   package (for example, '/matlab/toolbox/SuiteSparse/'). Note! It is
+%   important that suitesparse_path is in right format. Include also
+%   the last '/' sign in it.
+    
+% The installation code is modified from the cholmod_install.m in SuiteSparse 
+% package by Timothy A. Davis.
+
+%   Copyright (c) 2006-2007, Timothy A. Davis
+%   Copyright (c) 2008 Jarno Vanhatalo
+    
+% This software is distributed under the GNU General Public 
+% License (version 2 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 
 % Compile the 'trcov' mex-function
     if ispc   % A windows version of Matlab

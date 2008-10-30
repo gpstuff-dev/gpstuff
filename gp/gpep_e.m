@@ -113,9 +113,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 Sigm = C;
                 Stildesqroot=zeros(n);
                 
-                gp.likelih.sigma
-                gp.likelih.nu
-                
                 % The EP -algorithm
                 while iter<=maxiter && abs(logZep_tmp-logZep)>tol
 
@@ -334,10 +331,17 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 edata = logZep;
                 %L = iLaKfu;
                 
-                
-                b = nutilde'.*(1 - Stildesqroot./Lahat.*Stildesqroot)' - (nutilde'*Lhat)*Bhat.*tautilde';
-                L = ((repmat(Stildesqroot,1,m).*SsqrtKfu)./repmat(D',m,1)')/AA';
-                La2 = 1./(Stildesqroot./D.*Stildesqroot);
+                % b'  = (La + Kfu*iKuu*Kuf + 1./S)*1./S * nutilde
+                %     = (S - S * (iLa - L*L' + S)^(-1) * S) * 1./S
+                %     = I - S * (Lahat - L*L')^(-1)
+                % L   = S*Kfu * (Lav + 1./S)^(-1) / chol(K_uu + SsqrtKfu'*(Lav + 1./S)^(-1)*SsqrtKfu) 
+                % La2 = D./S = Lav + 1./S, 
+                %
+                % The way evaluations are done is numerically more stable
+                % See equations (3.71) and (3.72) in Rasmussen and Williams (2006)
+                b = nutilde'.*(1 - Stildesqroot./Lahat.*Stildesqroot)' - (nutilde'*Lhat)*Bhat.*tautilde';    % part of eq. (3.71)
+                L = ((repmat(Stildesqroot,1,m).*SsqrtKfu)./repmat(D',m,1)')/AA';                             % part of eq. (3.72)
+                La2 = 1./(Stildesqroot./D.*Stildesqroot);                                                    % part of eq. (3.72)
                 D = D_vec;
                 
                 % ============================================================
@@ -492,7 +496,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     iter=iter+1;
                 end
                 edata = logZep;
-                %L = L2;
                 
                 b = zeros(1,n);
                 for i=1:length(ind)
@@ -528,9 +531,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                K_fu = gp_cov(gp, x, u);         % f x u
-                K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+                K_fu = gp_cov(gp, x, u);           % f x u
+                K_uu = gp_trcov(gp, u);            % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')./2;            % ensure the symmetry of K_uu
                 Luu = chol(K_uu)';
 
                 % Evaluate the Lambda (La)
@@ -571,20 +574,18 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 myy = zeros(size(y));
                 eta = zeros(size(y));
                 gamma = zeros(size(K_uu,1),1);
-                LLa = lchol(La);
                 Ann=0;
                 sqrtSLa = sqrtS*La;
-                sqrtSLat = sqrtSLa';
-                VD = ldlchol(ssmult(sqrtS,LLa),1);
+                VD = ldlchol(Inn);
                 while iter<=maxiter && abs(logZep_tmp-logZep)>tol
 
                     logZep_tmp=logZep;
                     muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                     for i1=1:n
                         % approximate cavity parameters
-                        sqrtSLa_ci1 = sqrtSLat(i1,:)';
+                        sqrtSLa_ci1 = sqrtSLa(:,i1);
                         tttt = ldlsolve(VD,sqrtSLa_ci1);
-                        Di1 =  full(La(:,i1)) - full(ssmult(sqrtSLat,tttt));
+                        Di1 =  full(La(:,i1)) - full(ssmult(sqrtSLa',tttt));
                         dn = Di1(i1);
                         pn = P(i1,:)';
                         Ann = dn + sum((R*pn).^2);
@@ -616,22 +617,15 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         end
                         eta = eta + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Di1;
                         gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
-                        %myy = eta + P*gamma;
 
                         % Store cavity parameters
                         muvec_i(i1,1)=myy_i;
                         sigm2vec_i(i1,1)=sigm2_i;
                         
-    % $$$                             sqrtS(i1,i1) = sqrt(tautilde(i1));
-    % $$$                             sqrtSLa = ssmult(sqrtS,La);
-    % $$$                             VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
-    % $$$                             D2 = sqrtSLa(:,i1).*sqrtS(i1,i1) + Inn(:,i1);
-    % $$$                             VD = ldlrowupdate(i1,VD,D2,'+');
                         sqrtS(i1,i1) = sqrt(tautilde(i1));
-                        sqrtSLat(:,i1) = La(:,i1).*sqrt(tautilde(i1));
-                        sqrtSLa_ci1(i1) = sqrtSLat(i1,i1);                            
+                        sqrtSLa = ssmult(sqrtS,La);
                         VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
-                        D2 = sqrtSLa_ci1.*sqrtS(i1,i1) + Inn(:,i1);
+                        D2 = sqrtSLa(:,i1).*sqrtS(i1,i1) + Inn(:,i1);
                         VD = ldlrowupdate(i1,VD,D2,'+');
                     end
                     % Re-evaluate the parameters
@@ -645,10 +639,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     myy = eta + P*gamma;
                     
                     V = chol(D2,'lower');
-                    VD = ldlchol(D2);
 
-                    % Compute the marginal likelihood, see FULL model for
-                    % details about equations
+                    % Compute the marginal likelihood, 
                     Lhat = La*L - sqrtSLa'*(V'\(V\(sqrtSLa*L)));
                     H = I-L'*Lhat;
                     B = H\L';
@@ -676,13 +668,15 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     iter=iter+1;
                 end
                 edata = logZep;
-                %L = iLaKfu;
                 
-                %b = nutilde' - ((nutilde'*La - nutilde'*sqrtSLa'/V'/V*sqrtSLa + (nutilde'*Lhat)*Bhat).*tautilde');
-                %L = (sqrtS*iDSsqrtKfu)/AA';                    
-                %La2 = sparse(1:n,1:n,1./tautilde,n,n) + La;
+                % b'  = (K_fu/K_uu*K_fu' + La + diag(1./tautilde)) \ (tautilde.\nutilde)
+                % L   = S*Kfu * (Lav + 1./S)^(-1) / chol(K_uu + SsqrtKfu'*(Lav + 1./S)^(-1)*SsqrtKfu) 
+                % La2 = D./S = Lav + 1./S, 
+                %
+                % The way evaluations are done is numerically more stable than with inversion of S (tautilde)
+                % See equations (3.71) and (3.72) in Rasmussen and Williams (2006)
                 b = nutilde' - ((nutilde'*La - nutilde'*sqrtSLa'/V'/V*sqrtSLa + (nutilde'*Lhat)*Bhat).*tautilde');
-                L = (sqrtS*iDSsqrtKfu)/AA';                    
+                L = (sqrtS*iDSsqrtKfu)/AA';
                 La2 = sqrtS\D2/sqrtS;
                 
                 % Reorder all the returned and stored values

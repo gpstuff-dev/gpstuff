@@ -8,10 +8,6 @@ function [C, Cinv] = gp_cov(gp, x1, x2, varargin)
 %         between inputs i in TX and j in X.
 %
 %         [C, Cinv] = GPCOV(GP, TX, X, VARARGIN) returns also inverse of covariance.
-%
-%         For covariance function definition see manual or 
-%         Neal R. M. Regression and Classification Using Gaussian 
-%         Process Priors, Bayesian Statistics 6.
 
 % Copyright (c) 2006 Jarno Vanhatalo
 

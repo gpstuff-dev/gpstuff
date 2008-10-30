@@ -1,5 +1,5 @@
 function demo_classific2
-%DEMO_CLAASIFIC1    Classification problem demonstration for 2 classes via Laplace 
+%DEMO_CLAASIFIC2    Classification problem demonstration for 2 classes via Laplace 
 %                   approximation and EP
 %
 %      Description
@@ -78,17 +78,14 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
 n=length(y);
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp, 'hyper');
-[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'hyper');
+[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
 gp=gp_unpak(gp,w, 'hyper');
 
 % Print some figures that show results
@@ -141,17 +138,14 @@ gp_fic = gp_init('set', gp_fic, 'latent_method', {'Laplace', x, y, 'hyper'});
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
 n=length(y);
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp_fic, 'hyper');
-[w, opt, flog]=scg(fe, w, opt, fg, gp_fic, x, y, 'hyper');
+[w, opt, flog]=scg2(fe, w, opt, fg, gp_fic, x, y, 'hyper');
 gp_fic=gp_unpak(gp_fic,w, 'hyper');
 
 % Print some figures that show results
@@ -218,18 +212,15 @@ gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 % do scaled conjugate gradient optimization 
 gp.ep_opt.display = 1;
 w=gp_pak(gp, 'hyper');
-[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'hyper');
+[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
 gp=gp_unpak(gp,w, 'hyper');
 
 % Print some figures that show results
@@ -282,18 +273,15 @@ gp_fic = gp_init('set', gp_fic, 'latent_method', {'EP', x, y, 'hyper'});
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 % do scaled conjugate gradient optimization 
 gp_fic.ep_opt.display = 1;
 w=gp_pak(gp_fic, 'hyper');
-[w, opt, flog]=scg(fe, w, opt, fg, gp_fic, x, y, 'hyper');
+[w, opt, flog]=scg2(fe, w, opt, fg, gp_fic, x, y, 'hyper');
 gp_fic=gp_unpak(gp_fic,w, 'hyper');
 
 % Print some figures that show results

@@ -56,6 +56,7 @@ function likelih = likelih_poisson(do, varargin)
         end
         
         % Set parameters
+        avgE = max(avgE,1e-3);
         likelih.avgE = avgE;
         likelih.gamlny = gammaln(y+1);
 
@@ -82,6 +83,7 @@ function likelih = likelih_poisson(do, varargin)
                 switch varargin{i}
                   case 'avgE'
                     likelih.avgE = varargin{i+1};
+                    likelih.avgE = max(likelih.avgE,1e-3);
                   case 'gamlny'
                     likelih.gamlny = varargin{i+1};
                   otherwise
@@ -102,6 +104,7 @@ function likelih = likelih_poisson(do, varargin)
             switch varargin{i}
               case 'avgE'
                 likelih.avgE = varargin{i+1};
+                likelih.avgE = max(likelih.avgE,1e-3);
               case 'gamlny'
                 likelih.gamlny = varargin{i+1};
               otherwise
@@ -244,8 +247,6 @@ function likelih = likelih_poisson(do, varargin)
     %   GPEP_E
 
         zm = @zeroth_moment;
-        fm = @first_moment;
-        sm = @second_moment;
 
         atol = 1e-10;
         reltol = 1e-6;
@@ -256,8 +257,8 @@ function likelih = likelih_poisson(do, varargin)
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
         if yy > 0
-            mean_app = (myy_i/sigm2_i + log(yy/avgE).*yy)/(1/sigm2_i + yy);
-            sigm_app = sqrt((1/sigm2_i + avgE)^-1);
+            mean_app = (myy_i/sigm2_i + log(yy/avgE.^2)*avgE/yy)/(1/sigm2_i + avgE/yy);
+            sigm_app = sqrt((1/sigm2_i + avgE/yy)^-1);
         else
             mean_app = myy_i;
             sigm_app = sqrt(sigm2_i);                    
@@ -302,6 +303,29 @@ function likelih = likelih_poisson(do, varargin)
             end
             mean_app = (lambdaconf(2)+lambdaconf(1))/2;
         end
+
+        % ------------------------------------------------
+% $$$         % Plot the integrands to check that integration limits are ok. Uncomment if you want to use this.
+% $$$         fm = @first_moment; sm = @second_moment;
+% $$$         function integrand = first_moment(f)
+% $$$             lambda = avgE.*exp(f);
+% $$$             integrand = exp(-lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2 - log(m_0)); %
+% $$$             integrand = f.*integrand; %
+% $$$         end
+% $$$         function integrand = second_moment(f)
+% $$$             lambda = avgE.*exp(f);
+% $$$             integrand = exp(log((f-m_1).^2) -lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2 - log(m_0));
+% $$$             %integrand = (f-m_1).^2.*integrand; %
+% $$$         end
+% $$$         clf; ff = [lambdaconf(1):0.01:lambdaconf(2)];
+% $$$         subplot(3,1,1); plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r'); hold on; plot(ff, feval(zm, ff))
+% $$$         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
+% $$$         subplot(3,1,2); plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r'); hold on; plot(ff, feval(fm, ff));
+% $$$         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
+% $$$         subplot(3,1,3); plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r'); hold on; plot(ff, feval(sm, ff));
+% $$$         drawnow; S = sprintf('iter %d, y=%d, avgE=%.1f, sigm_a=%.2f, sigm2_i=%.2f', i1, yy, avgE, sigm_app, sigm2_i); title(S)
+% $$$         pause
+        % ------------------------------------------------
                 
         % Fixed integration parameters.
         RTOL = 1.e-6;
@@ -458,6 +482,8 @@ function likelih = likelih_poisson(do, varargin)
 
         end % moments
         
+% $$$         % Old version of integration. Below the integration is done separately for each moment. 
+% $$$         % The present implementation is 3 times faster
 % $$$         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2)); %,'AbsTol',atol,'RelTol',reltol
 % $$$         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
 % $$$         [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));

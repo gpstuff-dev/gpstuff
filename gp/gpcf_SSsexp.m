@@ -70,7 +70,8 @@ if strcmp(do, 'init')
     % Initialize parameters
     gpcf.lengthScale= repmat(10, 1, nin);
     gpcf.magnSigma2 = 0.1;
-    gpcf.frequency = randn(nin,100);
+    %    gpcf.frequency = randn(nin,100);
+    gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(nin,100) - 1);
     gpcf.nfreq = size(gpcf.frequency,2);
 
     % Initialize prior structure
@@ -112,7 +113,8 @@ if strcmp(do, 'init')
                 end
               case 'nfreq'
                 gpcf.nfreq = varargin{i+1};
-                gpcf.frequency = randn(gpcf.nin,gpcf.nfreq);
+                %gpcf.frequency = randn(gpcf.nin,gpcf.nfreq);
+                gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(gpcf.nin,gpcf.nfreq) - 1);
               otherwise
                 error('Wrong parameter name!')
             end
@@ -144,7 +146,8 @@ if strcmp(do, 'set')
             end
           case 'nfreq'
             gpcf.nfreq = varargin{i+1};
-            gpcf.frequency = randn(gpcf.nin,gpcf.nfreq);
+            %gpcf.frequency = randn(gpcf.nin,gpcf.nfreq);
+            gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(gpcf.nin,gpcf.nfreq) - 1);
           otherwise
             error('Wrong parameter name!')
         end

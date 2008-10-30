@@ -237,11 +237,7 @@ function gpcf = gpcf_sexp(do, varargin)
                +feval(gpp.lengthScale.fe, ...
                       gpcf.lengthScale, gpp.lengthScale.a)...
                -sum(log(gpcf.lengthScale));
-        e_x=x;
-        e_t=t;
-        e_ls=gpcf.lengthScale;
-        e_ms=gpcf.magnSigma2;
-        e_e = eprior;
+
     end
 
     function [gprior, DKff, DKuu, DKuf]  = gpcf_sexp_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
@@ -306,14 +302,14 @@ function gpcf = gpcf_sexp(do, varargin)
                 end
             end
           case {'FIC' 'CS+FIC'}
-            % Evaluate: DKff{1} = d mask(Kff,I) / d magnSigma2
-            %           DKff{2} = d mask(Kff,I) / d lengthScale
+            % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
+            %           DKff{2...} = d mask(Kff,I) / d lengthScale
             %           
-            %           DKuu{1} = d Kuu / d magnSigma2
-            %           DKuu{2} = d Kuu / d lengthScale
+            %           DKuu{1}    = d Kuu / d magnSigma2
+            %           DKuu{2...} = d Kuu / d lengthScale
             %
-            %           DKuf{1} = d Kuf / d magnSigma2
-            %           DKuf{2} = d Kuf / d lengthScale
+            %           DKuf{1}    = d Kuf / d magnSigma2
+            %           DKuf{2...} = d Kuf / d lengthScale
             %
             % NOTE! Here we have already taken into account that the parameters are transformed
             % through log() and thus dK/dlog(p) = p * dK/dp
@@ -640,11 +636,6 @@ function gpcf = gpcf_sexp(do, varargin)
             end
             C = ma2.*exp(-dist);
         end
-        cov_x1=x1;
-        cov_x2=x2;
-        cov_ls=gpcf.lengthScale;
-        cov_ms=gpcf.magnSigma2;
-        cov_C=C;
     end
 
     function C = gpcf_sexp_trcov(gpcf, x)

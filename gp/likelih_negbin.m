@@ -278,8 +278,10 @@ function likelih = likelih_negbin(do, varargin)
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
         if yy > 0
-            mean_app = (myy_i/sigm2_i + log(yy/avgE).*yy)/(1/sigm2_i + yy);
-            sigm_app = sqrt((1/sigm2_i + avgE)^-1);
+            m = log(r./(yy+r)./avgE);
+            s2 = r.*(yy+r)./yy;
+            mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
+            sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
         else
             mean_app = myy_i;
             sigm_app = sqrt(sigm2_i);                    
@@ -324,6 +326,18 @@ function likelih = likelih_negbin(do, varargin)
             end
             mean_app = (lambdaconf(2)+lambdaconf(1))/2;
         end
+        
+        % ------------------------------------------------
+% $$$         % Plot the integrands to check that integration limits are ok
+% $$$         clf; ff = [lambdaconf(1):0.01:lambdaconf(2)];
+% $$$         subplot(3,1,1);plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(zm, ff));
+% $$$         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
+% $$$         subplot(3,1,2);plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(fm, ff));
+% $$$         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
+% $$$         subplot(3,1,3);plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(sm, ff));
+% $$$         drawnow;S = sprintf('iter %d, y=%d, avgE=%.1f, sigm_a=%.2f, sigm2_i=%.2f', i1, yy, avgE, sigm_app, sigm2_i);title(S);
+% $$$         pause
+        % ------------------------------------------------
         
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
@@ -377,16 +391,15 @@ function likelih = likelih_negbin(do, varargin)
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
         if yy > 0
-            mean_app = (myy_i/sigm2_i + log(yy/avgE).*yy)/(1/sigm2_i + yy);
-            sigm_app = sqrt((1/sigm2_i + avgE)^-1);
+            m = log(r./(yy+r)./avgE);
+            s2 = r.*(yy+r)./yy;
+            mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
+            sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
         else
             mean_app = myy_i;
             sigm_app = sqrt(sigm2_i);                    
         end
         lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-        
-% $$$         sigm_app = sigm2_i;
-% $$$         lambdaconf(1) = myy_i - 12.*sigm2_i; lambdaconf(2) = myy_i + 12.*sigm2_i;
         
         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
         test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
@@ -431,12 +444,14 @@ function likelih = likelih_negbin(do, varargin)
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         [g_i, fhncnt] = quadgk(zd, lambdaconf(1), lambdaconf(2));
         
-        
-% $$$         ff = [lambdaconf(1):0.01:lambdaconf(2)];
-% $$$         plot(ff, feval(zm, ff), 'r')
-% $$$         hold on
-% $$$         plot(ff, feval(zd, ff))
-% $$$         drawnow
+
+        % ------------------------------------------------
+        % Plot the integrand to check that integration limits are ok
+% $$$         clf;ff = [lambdaconf(1):0.01:lambdaconf(2)];
+% $$$         plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(zd, ff))
+% $$$         drawnow;S = sprintf('iter %d, y=%d, avgE=%.1f, sigm_a=%.2f, sigm2_i=%.2f', i1, yy, avgE, sigm_app, sigm2_i);title(S);
+% $$$         pause
+        % ------------------------------------------------
 
         function integrand = zeroth_moment(f); %
             integrand = exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %

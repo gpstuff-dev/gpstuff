@@ -47,7 +47,7 @@ function demo_nb_FIC
 % $$$     ye = ye(1:400,:);
 
     bls = 3; indtype = 'corners';
-    [blockindex, Xu] = set_PIC(xx, dims, cellsize, bls, indtype, 1);
+    [blockindex, Xu] = set_PIC(xx, dims, bls, indtype, 1);
     
     [n, nin] = size(xx);
 

@@ -41,8 +41,9 @@
 %       m = 
 %       S =
 %   
-%   For more detailed discussion of Gaussian process regression see for example
-%   Vanhatalo and Vehtari (2008) or 
+%   For more detailed discussion of Gaussian process regression see,
+%   for example, Rasmussen and Williams (2006 or Vanhatalo and Vehtari
+%   (2008)
 %
 %
 %   See also  DEMO_REGRESSION2
@@ -121,16 +122,13 @@ fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
 % set the options
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 % do the optimization
-[w, opt, flog]=scg(fe, w, opt, fg, gp, x, y, 'hyper');
+[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
 
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w, 'hyper');
@@ -142,13 +140,13 @@ gp=gp_unpak(gp,w, 'hyper');
 % for the last make prections of the underlying function on a dense grid 
 % and plot it. Below Ef_full is the predictive mean and Varf_full the predictive 
 % variance.
-[p1,p2]=meshgrid(-1.8:0.05:1.8,-1.8:0.05:1.8);
+[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
 p=[p1(:) p2(:)];
 [Ef_full, Varf_full] = gp_pred(gp, x, y, p);
 
 % Plot the prediction and data
 figure(1)
-mesh(p1, p2, reshape(Ef_full,73,73));
+mesh(p1, p2, reshape(Ef_full,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -181,7 +179,7 @@ hmc2('state', sum(100*clock));
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
-% Now we make the predictions. 'gp_fwds' is a function that returns 
+% Now we make the predictions. 'gp_preds' is a function that returns 
 % the predictive mean of the latent function with every sampled 
 % hyperparameter value. Thus, the returned Ef_sfull is a matrix of 
 % size n x (number of samples). By taking the mean over the samples
@@ -191,14 +189,14 @@ meanEf_full = mean(squeeze(Ef_sfull)');
 
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,73,73));
+mesh(p1, p2, reshape(Ef_full,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function ';
        'and the data points (MAP solution)']);
 subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_full,73,73));
+mesh(p1, p2, reshape(meanEf_full,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -267,17 +265,13 @@ gp_cs = gp_init('init', 'FULL', nin, 'regr', {gpcf3}, {gpcf2}, 'jitterSigmas', 0
 param = 'hyper';
 
 % set the options
-opt=[];
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 w = gp_pak(gp_cs, param);          % pack the hyperparameters into one vector
-[w, opt, flog]=scg(fe, w, opt, fg, gp_cs, x, y, param);       % do the optimization
+[w, opt, flog]=scg2(fe, w, opt, fg, gp_cs, x, y, param);       % do the optimization
 gp_cs = gp_unpak(gp_cs,w, param);     % Set the optimized hyperparameter values back to the gp structure
 
 % Make the prediction
@@ -286,14 +280,14 @@ gp_cs = gp_unpak(gp_cs,w, param);     % Set the optimized hyperparameter values 
 % Plot the solution of full GP and CS
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,73,73));
+mesh(p1, p2, reshape(Ef_full,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function and data points (full GP)']);
 xlim([-2 2]), ylim([-2 2])
 subplot(1,2,2)
-mesh(p1, p2, reshape(Ef_cs,73,73));
+mesh(p1, p2, reshape(Ef_cs,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -332,14 +326,14 @@ meanEf_cs = mean(squeeze(Ef_scs)');
 % Plot the results
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_cs,73,73));
+mesh(p1, p2, reshape(Ef_cs,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function and';
        'the data points (MAP solutionm, CS) ']);
 subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_cs,73,73));
+mesh(p1, p2, reshape(meanEf_cs,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -421,17 +415,13 @@ gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0
 param = 'hyper';          % optimize only hyperparameters
 
 % set the options
-opt=[];
-opt(1) = 1;
-opt(2) = 1e-2;
-opt(3) = 3e-1;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
-[w, opt, flog]=scg(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
+[w, opt, flog]=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
 gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
 
 % Make the prediction
@@ -440,7 +430,7 @@ gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter value
 % Plot the solution of full GP and FIC
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,73,73));
+mesh(p1, p2, reshape(Ef_full,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -448,7 +438,7 @@ title(['The predicted underlying function ';
        'and data points (full GP)         ']);
 xlim([-2 2]), ylim([-2 2])
 subplot(1,2,2)
-mesh(p1, p2, reshape(Ef_fic,73,73));
+mesh(p1, p2, reshape(Ef_fic,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 plot3(gp_fic.X_u(:,1), gp_fic.X_u(:,2), -3*ones(length(u1(:))), 'rx')
@@ -489,14 +479,14 @@ meanEf_fic = mean(squeeze(Ef_sfic)');
 % Plot the results
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_fic,73,73));
+mesh(p1, p2, reshape(Ef_fic,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function and';
        'the data points (MAP solutionm, FIC) ']);
 subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_fic,73,73));
+mesh(p1, p2, reshape(meanEf_fic,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -589,17 +579,13 @@ gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 param = 'hyper';          % optimize only hyperparameters
 
 % set the options
-opt=[];
-opt(1) = 1;
-opt(2) = 1e-3;
-opt(3) = 3e-3;
-opt(9) = 0;
-opt(10) = 0;
-opt(11) = 0;
-opt(14) = 0;
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
 w = gp_pak(gp_pic, param);          % pack the hyperparameters into one vector
-[w, opt, flog]=scg(fe, w, opt, fg, gp_pic, x, y, param);       % do the optimization
+[w, opt, flog]=scg2(fe, w, opt, fg, gp_pic, x, y, param);       % do the optimization
 gp_pic = gp_unpak(gp_pic,w, param);     % Set the optimized hyperparameter values back to the gp structure
 
 % Make the prediction
@@ -608,7 +594,7 @@ gp_pic = gp_unpak(gp_pic,w, param);     % Set the optimized hyperparameter value
 % Plot the solution of full GP and FIC
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,73,73));
+mesh(p1, p2, reshape(Ef_full,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -616,7 +602,7 @@ title(['The predicted underlying function ';
        'and data points (full GP)         ']);
 xlim([-2 2]), ylim([-2 2])
 subplot(1,2,2)
-mesh(p1, p2, reshape(Ef_pic,73,73));
+mesh(p1, p2, reshape(Ef_pic,37,37));
 hold on
 % plot the data points in each block with different colors and marks
 col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
@@ -664,7 +650,7 @@ meanEf_pic = mean(squeeze(Ef_spic)');
 % Plot the results
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_pic,73,73));
+mesh(p1, p2, reshape(Ef_pic,37,37));
 hold on
 % plot the data points in each block with different colors and marks
 col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
@@ -676,7 +662,7 @@ axis on;
 title(['The predicted underlying function and';
        'the data points (MAP solutionm, PIC) ']);
 subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_pic,73,73));
+mesh(p1, p2, reshape(meanEf_pic,37,37));
 hold on
 % plot the data points in each block with different colors and marks
 col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};

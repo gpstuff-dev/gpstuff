@@ -131,7 +131,7 @@ gp = gp_unpak(gp,w,param);
 % Make predictions. Below Ef_full is the predictive mean and Varf_full the 
 % predictive variance.
 [Ef_full, Varf_full] = gp_pred(gp, x, y, x);
-Varf_full = Varf_full + gp_fic.noise{1}.noiseSigmas2;
+Varf_full = Varf_full + gp.noise{1}.noiseSigmas2;
 
 % Plot the prediction and data
 figure(1)
@@ -163,7 +163,6 @@ gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigm
 % --- Conduct the inference ---
 
 % --- MAP estimate using modified Newton algorithm ---
-%     (see scg for more details)
 
 % Now you can choose, if you want to optimize only hyperparameters or 
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
@@ -273,7 +272,6 @@ gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitte
 % --- Conduct the inference ---
 
 % --- MAP estimate using modified Newton algorithm ---
-%     (see scg for more details)
 
 % Now you can choose, if you want to optimize only hyperparameters or 
 % optimize simultaneously hyperparameters and inducing inputs. Note that 

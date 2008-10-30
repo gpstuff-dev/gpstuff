@@ -112,19 +112,20 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 myy_i = Ef(k1);
                 gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
-            g_logPrior = feval(likelih.fh_priorg, likelih);
-            for kk = 1:length(gdata_likelih)
-                i1 = i1+1;
-                gdata(i1) = gdata_likelih(kk);            
-                gprior(i1) = - g_logPrior(kk);
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
             end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
         end
-        
-        
-        g = gdata + gprior;
-        
+                
         % ============================================================
-        % SPARSE MODELS
+        % FIC
         % ============================================================
       case {'FIC'}
         g_ind = zeros(1,numel(gp.X_u));
@@ -222,6 +223,13 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
         end
         
+        % set the gradients with respect to inducing inputs into vectors that will be returned
+        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+            gdata = [gdata gdata_ind];
+            gprior = [gprior zeros(size(gdata_ind))];
+            i1 = length(gdata);
+        end
+        
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
@@ -233,9 +241,20 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 myy_i = Ef(k1);
                 gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
         end
-        g = gdata + gprior;
-        
+        % ============================================================
+        % PIC
+        % ============================================================
       case {'PIC_BLOCK'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
@@ -357,10 +376,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 end
             end
         end
+        
+        % set the gradients with respect to inducing inputs into vectors that will be returned
+        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+            gdata = [gdata gdata_ind];
+            gprior = [gprior zeros(size(gdata_ind))];
+            i1 = length(gdata);
+        end
+        
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, gp.tr_index);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -368,10 +395,22 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 myy_i = Ef(k1);
                 gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
         end
         
-        g = gdata + gprior;
-        
+
+        % ============================================================
+        % CS+FIC
+        % ============================================================
      case {'CS+FIC'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
@@ -501,7 +540,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     gdata_ind(i2) = gdata_ind(i2) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
                     gdata_ind(i2) = gdata_ind(i2) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
                     
-                end
+                end                
             end           
         end
 
@@ -521,21 +560,40 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 end
             end
         end
+        
+        % set the gradients with respect to inducing inputs into vectors that will be returned
+        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+            gdata = [gdata gdata_ind];
+            gprior = [gprior zeros(size(gdata_ind))];
+            i1 = length(gdata);
+        end
+        
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, 1);    
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
-                sigm2_i = Varf(k1) ;
+                sigm2_i = Varf(k1);
                 myy_i = Ef(k1);
                 gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
         end
 
-        g = gdata + gprior;
-        
+        % ============================================================
+        % SSGP
+        % ============================================================        
       case 'SSGP'        
 % $$$         g_ind = zeros(1,numel(gp.X_u));
 % $$$         gdata_ind = zeros(1,numel(gp.X_u));
@@ -592,21 +650,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     gdata(i1) = gdata(i1) - 0.5*(b*DKff{i2}*Phi' + b*Phi*DKff{i2}')*b';
                 end
             end
-            % Inducing inputs
-            %--------------------------------------
-            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')                
-                [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
-                
-                for i2 = 1:length(DKuu)
-                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                    
-                    gdata_ind(i2) = gdata_ind(i2) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                            2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                            sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));                    
-                end
-            end
         end
 
         % Evaluate the gradient from noise functions
@@ -638,14 +681,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 myy_i = Ef(k1);
                 gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
             end
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
         end
-        g = gdata + gprior;
     end
-
-    switch param
-      case 'inducing'
-        g = gdata_ind;
-      case 'hyper+inducing'
-        g = [g gdata_ind];
-    end
+    
+    g = gdata + gprior;
 end

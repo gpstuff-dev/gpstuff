@@ -6,7 +6,8 @@
 %    cases, Y, and background population, N, appointed to co-ordinates, X.
 %    The goal is to find a relative risk surface, which describes if the 
 %    number of death cases in certain areas is lower or higher than expected.
-%    The code was used by Vanhatalo and Vehtari (2007).
+%    The data consists of the heart attacks in Finland from 1996-2000 aggregated 
+%    into 20kmx20km lattice cells.
 %
 %    The model constructed is as follows:
 %
@@ -71,8 +72,10 @@ ye = ye(ind,:);
 
 [n,nin] = size(xx);
 
-% Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
+% Create the covariance function
+% The hyper-parameters are initialized very close to posterior mode in order to 
+% speed up convergence
+gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -133,7 +136,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % Inside the loop we sample one sample from the latent values and 
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
-while length(rgp.edata)<300 %   1000
+while length(rgp.edata)<1000 %   1000
     [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(1)
@@ -157,15 +160,26 @@ while length(rgp.edata)<300 %   1000
     drawnow
 end
 
-figure(2)
+figure(1)
+clf
 G=repmat(NaN,size(X1));
 G(xxii)=median(exp(rgp.latentValues));
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
 title('Posterior median of relative risk, full GP')
 
+figure(2)
+G=repmat(NaN,size(X1));
+G(xxii)=std(exp(rgp.latentValues), [], 1).^2;
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.005    0.03])
+axis equal
+axis([0 35 0 60])
+title('Posterior variance of relative risk, full GP')
 
 % =====================================
 % 2) FIC model
@@ -190,7 +204,9 @@ dims = [1    60     1    35];
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.05);
+% The hyper-parameters are initialized very close to posterior mode in order to 
+% speed up convergence
+gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -251,7 +267,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % Inside the loop we sample one sample from the latent values and 
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
-while length(rgp.edata)<200 %   1000
+while length(rgp.edata)<1000 %   1000
     [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(3)
@@ -275,14 +291,27 @@ while length(rgp.edata)<200 %   1000
     drawnow
 end
 
-figure(4)
+figure(3)
+clf
 G=repmat(NaN,size(X1));
 G(xxii)=median(exp(rgp.latentValues));
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
-title('Posterior median of relative risk, FIC')
+title('Posterior median of relative risk, FIC GP')
+
+figure(4)
+G=repmat(NaN,size(X1));
+G(xxii)=std(exp(rgp.latentValues), [], 1).^2;
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.005    0.03])
+axis equal
+axis([0 35 0 60])
+title('Posterior variance of relative risk, FIC GP')
+
 
 % =====================================
 % 3) PIC model
@@ -302,12 +331,12 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 20000, 3, 'corners', 1);
+[trindex, Xu] = set_PIC(xx, dims, 5, 'corners+1xside', 1);
 
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.05);
+gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -369,10 +398,10 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % Inside the loop we sample one sample from the latent values and 
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
-while length(rgp.edata)<200 %   1000
+while length(rgp.edata)<1000 %   1000
     [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-    figure(5)
+    figure(6)
     clf
     subplot(1,2,1)
     plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
@@ -394,13 +423,25 @@ while length(rgp.edata)<200 %   1000
 end
 
 figure(6)
+clf
 G=repmat(NaN,size(X1));
 G(xxii)=median(exp(rgp.latentValues));
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
-title('Posterior median of relative risk, PIC')
+title('Posterior median of relative risk, PIC GP')
+
+figure(7)
+G=repmat(NaN,size(X1));
+G(xxii)=std(exp(rgp.latentValues), [], 1).^2;
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.005    0.03])
+axis equal
+axis([0 35 0 60])
+title('Posterior variance of relative risk, PIC GP')
 
 
 % =====================================
@@ -424,7 +465,7 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 20000, 3, 'corners', 1);
+[trindex, Xu] = set_PIC(xx, dims, 3, 'corners', 1);
 
 [n,nin] = size(xx);
 

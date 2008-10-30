@@ -38,7 +38,6 @@ switch gp.type
         eta = D.*site_nu;
         gamma = R'*(R*(P'*site_nu));
         Ef = eta + P*gamma;
-        Ef = b';
         Varf = D + sum((P*R').^2,2);
         if ~isempty(ns)
             eta = D.*site_nu;

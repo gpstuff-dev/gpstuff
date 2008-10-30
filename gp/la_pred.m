@@ -70,8 +70,6 @@ switch gp.type
         deriv = b;
         ntest=size(x,1);
 
-        ntest=size(x,1);
-
         K_nu=gp_cov(gp,x,u);
         % Knf = K_nu*(K_uu\K_fu');
         % Ef = Knf*p;
@@ -215,7 +213,6 @@ switch gp.type
         deriv = b;
         ntest=size(x,1);
 
-        ntest=size(x,1);
         % Knf = K_nu*(K_uu\K_fu');
         % Ef = Knf*p;
         Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;
