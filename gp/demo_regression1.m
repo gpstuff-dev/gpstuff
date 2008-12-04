@@ -82,7 +82,8 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -245,13 +246,24 @@ set(gcf,'pos',[93 511 1098 420])
 % PART 2 data analysis with compact support (CS) GP 
 %========================================================
 
+% Load the data
+S = which('demo_regression1');
+L = strrep(S,'demo_regression1.m','demos/dat.1');
+data=load(L);
+x = [data(:,1) data(:,2)];
+y = data(:,3);
+[n, nin] = size(x);
+
 % Here we conduct the same analysis as in part 1, but this time we 
 % use compact support covariance function
 
 % Create the piece wise polynomial covariance function
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+
 gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf3.p.lengthScale = gamma_p({3 7});  
 gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
 % Create the GP data structure
 gp_cs = gp_init('init', 'FULL', nin, 'regr', {gpcf3}, {gpcf2}, 'jitterSigmas', 0.001)
@@ -390,6 +402,31 @@ set(gcf,'pos',[93 511 1098 420])
 %========================================================
 % PART 3 data analysis with FIC approximation
 %========================================================
+
+% Load the data
+S = which('demo_regression1');
+L = strrep(S,'demo_regression1.m','demos/dat.1');
+data=load(L);
+x = [data(:,1) data(:,2)];
+y = data(:,3);
+[n, nin] = size(x);
+
+% Now 'x' consist of the inputs and 'y' of the output. 
+% 'n' and 'nin' are the number of data points and the 
+% dimensionality of 'x' (the number of inputs).
+
+% ---------------------------
+% --- Construct the model ---
+% 
+% First create squared exponential covariance function with ARD and 
+% Gaussian noise data structures...
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+
+% ... Then set the prior for the parameters of covariance functions...
+gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+gpcf1.p.lengthScale = gamma_p({3 7});  
+gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % Here we conduct the same analysis as in part 1, but this time we 
 % use FIC approximation
@@ -543,6 +580,41 @@ set(gcf,'pos',[93 511 1098 420])
 %========================================================
 % PART 4 data analysis with PIC approximation
 %========================================================
+
+% Load the data
+S = which('demo_regression1');
+L = strrep(S,'demo_regression1.m','demos/dat.1');
+data=load(L);
+x = [data(:,1) data(:,2)];
+y = data(:,3);
+[n, nin] = size(x);
+
+% Now 'x' consist of the inputs and 'y' of the output. 
+% 'n' and 'nin' are the number of data points and the 
+% dimensionality of 'x' (the number of inputs).
+
+% ---------------------------
+% --- Construct the model ---
+% 
+% First create squared exponential covariance function with ARD and 
+% Gaussian noise data structures...
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+
+% ... Then set the prior for the parameters of covariance functions...
+gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+gpcf1.p.lengthScale = gamma_p({3 7});  
+gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+
+% Here we conduct the same analysis as in part 1, but this time we 
+% use FIC approximation
+
+% Initialize the inducing inputs in a regular grid over the input space
+[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
+X_u = [u1(:) u2(:)];
+
+[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
+p=[p1(:) p2(:)];
 
 % set the data points into clusters
 b1 = [-1.7 -0.8 0.1 1 1.9];

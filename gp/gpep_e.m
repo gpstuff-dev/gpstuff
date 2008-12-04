@@ -355,6 +355,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 K_fu = gp_cov(gp, x, u);         % f x u
+                
                 K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
                 K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
                 Luu = chol(K_uu)';
@@ -369,8 +370,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     Qbl_ff = B(:,ind{i})'*B(:,ind{i});
                     [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
                     Labl{i} = Cbl_ff - Qbl_ff;
-                    Lahat{i} = inv(Labl{i});
-                    iLaKfu(ind{i},:) = Lahat{i}*K_fu(ind{i},:);
+                    Llabl = chol(Labl{i});
+                    iLaKfu(ind{i},:) = Llabl\(Llabl'\K_fu(ind{i},:));
                 end
                 A = K_uu+K_fu'*iLaKfu;
                 A = (A+A')./2;     % Ensure symmetry
@@ -440,17 +441,21 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     end
                     % Re-evaluate the parameters
                     temp2 = zeros(size(R0P0t));
+                    
+                    Stildesqroot=sqrt(tautilde);
                     for i=1:length(ind)
-                        dtautilde = diag(tautilde(ind{i}));
-                        temp1 = dtautilde + inv(Labl{i});
-                        sdtautilde = sqrt(dtautilde);
+                        sdtautilde = diag(Stildesqroot(ind{i}));
                         Dhat = sdtautilde*Labl{i}*sdtautilde + eye(size(Labl{i}));
-                        D{i} = inv(temp1);
-                        P(ind{i},:) = temp1\(Labl{i}\K_fu(ind{i},:));
+                        Ldhat{i} = chol(Dhat);
+                        D{i} = Labl{i} - Labl{i}*sdtautilde*(Ldhat{i}\(Ldhat{i}'\sdtautilde*Labl{i}));
+                        P(ind{i},:) = D{i}*(Labl{i}\K_fu(ind{i},:));
+                        
                         temp2(:,ind{i}) = R0P0t(:,ind{i})*sdtautilde/Dhat*sdtautilde;
+% $$$                         temp2(:,ind{i}) = (R0P0t(:,ind{i})*sdtautilde)/Ldhat{i};
                         eta(ind{i}) = D{i}*nutilde(ind{i});
                     end
                     R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
+% $$$                     R = chol(inv(eye(size(R0)) + temp2*temp2')) * R0;
                     gamma = R'*(R*(P'*nutilde));
                     myy = eta + P*gamma;
 
@@ -459,23 +464,21 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     %
                     % First some helper parameters
                     for i = 1:length(ind)
-                        Lahat{i} = inv(Labl{i}) + diag(tautilde(ind{i}));
-                        Lhat(ind{i},:) = Lahat{i}\L(ind{i},:);
+                        Lhat(ind{i},:) = D{i}*L(ind{i},:);
                     end
                     H = I-L'*Lhat;
                     B = H\L';
 
                     % Compute the marginal likelihood, see FULL model for
                     % details about equations
-                    Stildesqroot=sqrt(tautilde);
                     term41 = 0; term52 = 0;
                     for i=1:length(ind)
-                        Bhat(:,ind{i}) = B(:,ind{i})/Lahat{i};
-                        D2{i} = diag(Stildesqroot(ind{i}))*Labl{i}*diag(Stildesqroot(ind{i})) + eye(size(Labl{i}));
+                        Bhat(:,ind{i}) = B(:,ind{i})*D{i};
                         SsqrtKfu(ind{i},:) = gtimes(K_fu(ind{i},:),Stildesqroot(ind{i}));
-                        iDSsqrtKfu(ind{i},:) = D2{i}\SsqrtKfu(ind{i},:);
-                        term41 = term41 + sum(log(diag(chol(D2{i},'lower'))));
-                        term52 = term52 + nutilde(ind{i})'*(Lahat{i}\nutilde(ind{i}));
+                        iDSsqrtKfu(ind{i},:) = Ldhat{i}\(Ldhat{i}'\SsqrtKfu(ind{i},:));
+                        term41 = term41 + sum(log(diag(Ldhat{i})));
+                        term52 = term52 + nutilde(ind{i})'*(D{i}*nutilde(ind{i}));
+                        
                     end
                     AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
                     AA = chol(AA,'lower');
@@ -499,8 +502,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 
                 b = zeros(1,n);
                 for i=1:length(ind)
-                    b(ind{i}) = nutilde(ind{i})'/Lahat{i};
-                    La2{i} = inv(diag(Stildesqroot(ind{i}))*(D2{i}\diag(Stildesqroot(ind{i}))));
+                    b(ind{i}) = nutilde(ind{i})'*D{i};
+                    La2{i} = inv(diag(Stildesqroot(ind{i}))*(Ldhat{i}\(Ldhat{i}'\diag(Stildesqroot(ind{i})))));
                 end
                 b = nutilde' - ((b + (nutilde'*Lhat)*Bhat).*tautilde');
 
@@ -585,7 +588,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         % approximate cavity parameters
                         sqrtSLa_ci1 = sqrtSLa(:,i1);
                         tttt = ldlsolve(VD,sqrtSLa_ci1);
-                        Di1 =  full(La(:,i1)) - full(ssmult(sqrtSLa',tttt));
+                        Di1 =  full(La(:,i1)) - full(ssmult(tttt',sqrtSLa)');
                         dn = Di1(i1);
                         pn = P(i1,:)';
                         Ann = dn + sum((R*pn).^2);

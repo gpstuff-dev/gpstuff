@@ -56,7 +56,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
     function [e, edata, eprior, f, L, La2, b, W] = laplace_algorithm(w, gp, x, y, param, varargin)
 
-        if 1==2% abs(w-w0) < 1e-8 % 1e-8
+        if abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;

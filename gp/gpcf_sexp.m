@@ -25,8 +25,8 @@ function gpcf = gpcf_sexp(do, varargin)
 %                          (@gpcf_sexp_e)
 %         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
 %                          (@gpcf_sexp_ghyper)
-%         fh_gind        = function handle to gradient of function with respect to inducing inputs
-%                          (@gpcf_sexp_gind)
+%         fh_ginput      = function handle to gradient of function with respect to inducing inputs
+%                          (@gpcf_sexp_ginput)
 %         fh_cov         = function handle to covariance function
 %                          (@gpcf_sexp_cov)
 %         fh_trcov       = function handle to training covariance function
@@ -44,7 +44,6 @@ function gpcf = gpcf_sexp(do, varargin)
 %       gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2006      Helsinkin University of Technology (author) Jarno Vanhatalo
 % Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
@@ -76,7 +75,7 @@ function gpcf = gpcf_sexp(do, varargin)
         gpcf.fh_unpak = @gpcf_sexp_unpak;
         gpcf.fh_e = @gpcf_sexp_e;
         gpcf.fh_ghyper = @gpcf_sexp_ghyper;
-        gpcf.fh_gind = @gpcf_sexp_gind;
+        gpcf.fh_ginput = @gpcf_sexp_ginput;
         gpcf.fh_cov = @gpcf_sexp_cov;
         gpcf.fh_covvec = @gpcf_sexp_covvec;
         gpcf.fh_trcov  = @gpcf_sexp_trcov;
@@ -145,6 +144,12 @@ function gpcf = gpcf_sexp(do, varargin)
         end
         i1 = i1+1;
         w(i1) = gpcf.magnSigma2;
+        i2=i1+length(gpcf.lengthScale);
+        i1=i1+1;
+        w(i1:i2)=gpcf.lengthScale;
+        i1=i2;
+        
+        % Hyperparameters of lengthScale
         if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
             i1=i1+1;
             w(i1)=gpp.lengthScale.a.s;
@@ -153,10 +158,6 @@ function gpcf = gpcf_sexp(do, varargin)
                 w(i1)=gpp.lengthScale.a.nu;
             end
         end
-        i2=i1+length(gpcf.lengthScale);
-        i1=i1+1;
-        w(i1:i2)=gpcf.lengthScale;
-        i1=i2;
     end
 
 
@@ -179,6 +180,11 @@ function gpcf = gpcf_sexp(do, varargin)
         i1=0;i2=1;
         i1=i1+1;
         gpcf.magnSigma2=w(i1);
+        i2=i1+length(gpcf.lengthScale);
+        i1=i1+1;
+        gpcf.lengthScale=w(i1:i2);
+        i1=i2;
+        % Hyperparameters of lengthScale
         if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
             i1=i1+1;
             gpcf.p.lengthScale.a.s=w(i1);
@@ -186,11 +192,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 i1=i1+1;
                 gpcf.p.lengthScale.a.nu=w(i1);
             end
-        end
-        i2=i1+length(gpcf.lengthScale);
-        i1=i1+1;
-        gpcf.lengthScale=w(i1:i2);
-        i1=i2;
+        end        
         w = w(i1+1:end);
     end
 
@@ -240,7 +242,7 @@ function gpcf = gpcf_sexp(do, varargin)
 
     end
 
-    function [gprior, DKff, DKuu, DKuf]  = gpcf_sexp_ghyper(gpcf, x, t, g, gdata, gprior, varargin)
+    function [DKff, gprior]  = gpcf_sexp_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
     %GPCF_SEXP_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
@@ -263,15 +265,14 @@ function gpcf = gpcf_sexp(do, varargin)
         [n, m] =size(x);
 
         i1=0;i2=1;
-        if ~isempty(gprior)
-            i1 = length(gprior);
-        end
+        
+        % Evaluate: DKff{1} = d Kff / d magnSigma2
+        %           DKff{2} = d Kff / d lengthScale
+        % NOTE! Here we have already taken into account that the parameters are transformed
+        % through log() and thus dK/dlog(p) = p * dK/dp
 
-        % First check if sparse model is used
-        switch gpcf.GPtype
-          case 'FULL'
-            % Evaluate: DKff{1} = d Kff / d magnSigma2
-            %           DKff{2} = d Kff / d lengthScale
+        % evaluate the gradient for training covariance
+        if nargin == 2
             Cdm = gpcf_sexp_trcov(gpcf, x);
             
             ii1=1;
@@ -301,28 +302,15 @@ function gpcf = gpcf_sexp(do, varargin)
                     DKff{ii1} = D;
                 end
             end
-          case {'FIC' 'CS+FIC'}
-            % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
-            %           DKff{2...} = d mask(Kff,I) / d lengthScale
-            %           
-            %           DKuu{1}    = d Kuu / d magnSigma2
-            %           DKuu{2...} = d Kuu / d lengthScale
-            %
-            %           DKuf{1}    = d Kuf / d magnSigma2
-            %           DKuf{2...} = d Kuf / d lengthScale
-            %
-            % NOTE! Here we have already taken into account that the parameters are transformed
-            % through log() and thus dK/dlog(p) = p * dK/dp
+            % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
+        elseif nargin == 3
+            if size(x,2) ~= size(x2,2)
+                error('gpcf_sexp -> _ghyper: The number of columns in x and x2 has to be the same. ')
+            end
             
-            u = gpcf.X_u;            
-            K_uu = feval(gpcf.fh_trcov, gpcf, u);
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            DKff = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
-
-            % Set d Kuu / d magnSigma2 and d Kuf / d magnSigma2
             ii1=1;
-            DKuu{ii1} = K_uu;
-            DKuf{ii1} = K_uf;
+            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            DKff{ii1} = K;
             
             % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
             if length(gpcf.lengthScale) == 1
@@ -330,152 +318,81 @@ function gpcf = gpcf_sexp(do, varargin)
                 s = 1./gpcf.lengthScale.^2;
                 dist = 0; dist2 = 0;
                 for i=1:m
-                    dist = dist + (gminus(u(:,i),x(:,i)')).^2;
-                    dist2 = dist2 + (gminus(u(:,i),u(:,i)')).^2;
+                    dist = dist + (gminus(x(:,i),x2(:,i)')).^2;                        
                 end
-                DKuf_l = 2.*s.*K_uf.*dist;
-                DKuu_l = 2.*s.*K_uu.*dist2;
+                DK_l = 2.*s.*K.*dist;
                 
                 ii1=ii1+1;
-                DKuu{ii1} = DKuu_l;
-                DKuf{ii1} = DKuf_l;
+                DKff{ii1} = DK_l;
             else
                 % In the case ARD is used
                 for i=1:m
                     s = 1./gpcf.lengthScale(i).^2;        % set the length
-                    dist = gminus(u(:,i),x(:,i)');
-                    dist2 = gminus(u(:,i),u(:,i)');
-                    DKuf_l = 2.*s.*K_uf.*dist.^2;
-                    DKuu_l = 2.*s.*K_uu.*dist2.^2;
+                    dist = gminus(x(:,i),x2(:,i)');
+                    DK_l = 2.*s.*K.*dist.^2;
                     
                     ii1=ii1+1;
-                    DKuu{ii1} = DKuu_l;
-                    DKuf{ii1} = DKuf_l;
+                    DKff{ii1} = DK_l;
                 end
-            end               
-          case 'PIC_BLOCK'
-            % Evaluate: DKff{1} = d mask(Kff,I) / d magnSigma2
-            %           DKff{2} = d mask(Kff,I) / d lengthScale
-            %           
-            %           DKuu{1} = d Kuu / d magnSigma2
-            %           DKuu{2} = d Kuu / d lengthScale
-            %
-            %           DKuf{1} = d Kuf / d magnSigma2
-            %           DKuf{2} = d Kuf / d lengthScale
-            %
-            % NOTE! Here we have already taken into account that the parameters are transformed
-            % through log() and thus dK/dlog(p) = p * dK/dp
-            
-            u = gpcf.X_u;
-            ind=gpcf.tr_index;
-            K_uu = feval(gpcf.fh_trcov, gpcf, u);
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-            for i=1:length(ind)
-                K_ff{i} = feval(gpcf.fh_trcov, gpcf, x(ind{i},:));
             end
-            
-            % Set d mask(Kff,I) / d magnSigma2, d Kuu / d magnSigma2 and d Kuf / d magnSigma2
+            % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
+            %           DKff{2...} = d mask(Kff,I) / d lengthScale
+        elseif nargin == 4
             ii1=1;
-            DKuu{ii1} = K_uu;
-            DKuf{ii1} = K_uf;
-            DKff{ii1} = K_ff;
-
-            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic SEXP
-                s = 1./gpcf.lengthScale.^2;
-                dist = 0;
-                dist2 = 0;
-                for j=1:length(ind)
-                    dist3{j} = zeros(size(ind{j},1),size(ind{j},1));
+            DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+            for i2=1:length(gpcf.lengthScale)
+                ii1 = ii1+1;
+                DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
+            end
+        end
+        if nargout > 1
+            % Evaluate the gprior with respect to magnSigma2
+            i1 = i1+1;
+            gprior(i1)=feval(gpp.magnSigma2.fg, ...
+                             gpcf.magnSigma2, ...
+                             gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
+            % Evaluate the data contribution of gradient with respect to lengthScale
+            if length(gpcf.lengthScale)>1
+                for i2=1:gpcf.nin
+                    i1=i1+1;
+                    gprior(i1)=feval(gpp.lengthScale.fg, ...
+                                     gpcf.lengthScale(i2), ...
+                                     gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
                 end
-                for i=1:m
-                    D = gminus(u(:,i),x(:,i)');
-                    D2= gminus(u(:,i),u(:,i)');
-                    dist = dist + D.^2;
-                    dist2 = dist2 + D2.^2;
-                    for j=1:length(ind)
-                        dist3{j} = dist3{j} + (gminus(x(ind{j},i),x(ind{j},i)')).^2;
-                    end
-                end
-                DKuf_l = 2.*s.*K_uf.*dist;
-                DKuu_l = 2.*s.*K_uu.*dist2;
-                for j=1:length(ind)
-                    DKff_l{j} = 2.*s.*K_ff{j}.*dist3{j};
-                end
-                ii1=ii1+1;
-                DKuu{ii1} = DKuu_l;
-                DKuf{ii1} = DKuf_l;
-                DKff{ii1} = DKff_l;
             else
-                % In the case ARD is used
-                for i=1:m
-                    s = 1./gpcf.lengthScale(i).^2;        % set the length
-                    dist = gminus(u(:,i),x(:,i)');
-                    dist2 = gminus(u(:,i),u(:,i)');
-                    DKuf_l = 2.*s.*K_uf.*dist.^2;
-                    DKuu_l = 2.*s.*K_uu.*dist2.^2;
-                    for j=1:length(ind)
-                        dist3 = gminus(x(ind{j},i),x(ind{j},i)');
-                        dist3 = 2.*s.*K_ff{j}.*dist3.^2;
-                        DKff_l{j} = dist3;
-                    end
-                    ii1=ii1+1;
-                    DKuu{ii1} = DKuu_l;
-                    DKuf{ii1} = DKuf_l;
-                    DKff{ii1} = DKff_l;
-                end
-            end
-
-        end
-
-        % Evaluate the gprior with respect to magnSigma2
-        i1 = i1+1;
-        gprior(i1)=feval(gpp.magnSigma2.fg, ...
-                         gpcf.magnSigma2, ...
-                         gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
-        % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
-        if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-            i1=i1+1;
-            gprior(i1)=...
-                feval(gpp.lengthScale.p.s.fg, ...
-                      gpp.lengthScale.a.s,...
-                      gpp.lengthScale.p.s.a, 'x').*gpp.lengthScale.a.s - 1 ...
-                +feval(gpp.lengthScale.fg, ...
-                       gpcf.lengthScale, ...
-                       gpp.lengthScale.a, 's').*gpp.lengthScale.a.s;
-            if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
-                i1=i1+1;
-                gprior(i1)=...
-                    feval(gpp.lengthScale.p.nu.fg, ...
-                          gpp.lengthScale.a.nu,...
-                          gpp.lengthScale.p.nu.a, 'x').*gpp.lengthScale.a.nu -1 ...
-                    +feval(gpp.lengthScale.fg, ...
-                           gpcf.lengthScale, ...
-                           gpp.lengthScale.a, 'nu').*gpp.lengthScale.a.nu;
-            end
-        end
-        % Evaluate the data contribution of gradient with respect to lengthScale
-        if length(gpcf.lengthScale)>1
-            for i2=1:gpcf.nin
                 i1=i1+1;
                 gprior(i1)=feval(gpp.lengthScale.fg, ...
-                                 gpcf.lengthScale(i2), ...
-                                 gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
+                                 gpcf.lengthScale, ...
+                                 gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
             end
-        else
-            i1=i1+1;
-            gprior(i1)=feval(gpp.lengthScale.fg, ...
-                             gpcf.lengthScale, ...
-                             gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
-
+            % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
+            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
+                i1=i1+1;
+                gprior(i1)=...
+                    feval(gpp.lengthScale.p.s.fg, ...
+                          gpp.lengthScale.a.s,...
+                          gpp.lengthScale.p.s.a, 'x').*gpp.lengthScale.a.s - 1 ...
+                    +feval(gpp.lengthScale.fg, ...
+                           gpcf.lengthScale, ...
+                           gpp.lengthScale.a, 's').*gpp.lengthScale.a.s;
+                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                    i1=i1+1;
+                    gprior(i1)=...
+                        feval(gpp.lengthScale.p.nu.fg, ...
+                              gpp.lengthScale.a.nu,...
+                              gpp.lengthScale.p.nu.a, 'x').*gpp.lengthScale.a.nu -1 ...
+                        +feval(gpp.lengthScale.fg, ...
+                               gpcf.lengthScale, ...
+                               gpp.lengthScale.a, 'nu').*gpp.lengthScale.a.nu;
+                end
+            end
         end
     end
 
 
-    function [gprior_ind, DKuu, DKuf]  = gpcf_sexp_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
+    function [DKff, gprior]  = gpcf_sexp_ginput(gpcf, x, x2)
     %GPCF_SEXP_GIND     Evaluate gradient of covariance function with 
-    %                   respect to the inducing inputs.
+    %                   respect to x.
     %
     %	Descriptioni
     %	[GPRIOR_IND, DKuu, DKuf] = GPCF_SEXP_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
@@ -490,77 +407,11 @@ function gpcf = gpcf_sexp(do, varargin)
     %
     %	See also
     %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_E, GP_G
-
-        gpp=gpcf.p;
-        [n, m] =size(x);
-        u = gpcf.X_u;
-        n_u = size(u,1);
         
-        % First check if sparse model is used
-        switch gpcf.GPtype
-          case 'FIC'
-            % Derivatives of K_uu and K_uf with respect to inducing inputs
-            K_uu = feval(gpcf.fh_trcov, gpcf, u);
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic SEXP
-                s = repmat(1./gpcf.lengthScale.^2, 1, m);
-            else
-                s = 1./gpcf.lengthScale.^2;
-            end
-
-            ii1 = 0;
-            for i=1:m
-                for j = 1:size(u,1)
-                    DKuf_u = zeros(size(K_uf));
-                    DKuu_u = zeros(size(K_uu));
-                    DKuf_u(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
-                    DKuu_u(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
-                    DKuu_u = DKuu_u + DKuu_u';
-
-                    DKuf_u = DKuf_u.*K_uf;
-                    DKuu_u = DKuu_u.*K_uu;      % dist2 = dist2 + dist2' - diag(diag(dist2));
-                    
-                    ii1 = ii1 + 1;
-                    DKuf{ii1} = DKuf_u;
-                    DKuu{ii1} = DKuu_u;
-                end
-            end
-          case 'PIC_BLOCK'
-            trindex=gpcf.tr_index;
-
-            % Derivatives of K_uu and K_uf with respect to inducing inputs
-            K_uu = feval(gpcf.fh_trcov, gpcf, u);
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
-
-            if length(gpcf.lengthScale) == 1       % In the case of an isotropic SEXP
-                s = repmat(1./gpcf.lengthScale.^2, 1, m);
-            else
-                s = 1./gpcf.lengthScale.^2;
-            end
-
-            ii1 = 0;
-            for i=1:m
-                for j = 1:size(u,1)
-                    DKuf_u = zeros(size(K_uf));
-                    DKuu_u = zeros(size(K_uu));
-                    DKuf_u(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
-                    DKuu_u(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
-                    DKuu_u = DKuu_u + DKuu_u';
-
-                    DKuf_u = DKuf_u.*K_uf;
-                    DKuu_u = DKuu_u.*K_uu;      % dist2 = dist2 + dist2' - diag(diag(dist2));
-
-                    ii1 = ii1 + 1;
-                    DKuf{ii1} = DKuf_u;
-                    DKuu{ii1} = DKuu_u;                        
-                end
-            end
-          case  'CS+FIC'
-            % Derivatives of K_uu and K_uf with respect to inducing inputs
-            K_uu = feval(gpcf.fh_trcov, gpcf, u);
-            K_uf = feval(gpcf.fh_cov, gpcf, u, x);
+        [n, m] =size(x);
+        
+        if nargin == 2
+            K = feval(gpcf.fh_trcov, gpcf, x);
             
             if length(gpcf.lengthScale) == 1
                 % In the case of an isotropic SEXP
@@ -568,22 +419,43 @@ function gpcf = gpcf_sexp(do, varargin)
             else
                 s = 1./gpcf.lengthScale.^2;
             end
-
+            
             ii1 = 0;
             for i=1:m
-                for j = 1:size(u,1)
-                    DKuf_u = zeros(size(K_uf));
-                    DKuu_u = zeros(size(K_uu));
-                    DKuf_u(j,:) = -2.*s(i).*gminus(u(j,i),x(:,i)');
-                    DKuu_u(j,:) = -2.*s(i).* gminus(u(j,i),u(:,i)');
-                    DKuu_u = DKuu_u + DKuu_u';
+                for j = 1:n
+                    DK = zeros(size(K));
+                    DK(j,:) = -2.*s(i).*gminus(x(j,i),x(:,i)');
+                    DK = DK + DK';
 
-                    DKuf_u = DKuf_u.*K_uf;
-                    DKuu_u = DKuu_u.*K_uu;      % dist2 = dist2 + dist2' - diag(diag(dist2));
+                    DK = DK.*K;      % dist2 = dist2 + dist2' - diag(diag(dist2));
                     
                     ii1 = ii1 + 1;
-                    DKuf{ii1} = DKuf_u;
-                    DKuu{ii1} = DKuu_u;
+                    DKff{ii1} = DK;
+                    gprior(ii1) = 0; 
+                end
+            end
+            
+        elseif nargin == 3
+            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic SEXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+            
+            ii1 = 0;
+            for i=1:m
+                for j = 1:n
+                    DK= zeros(size(K));
+                    DK(j,:) = -2.*s(i).*gminus(x(j,i),x2(:,i)');
+
+                    DK = DK.*K;
+                    
+                    ii1 = ii1 + 1;
+                    DKff{ii1} = DK;
+                    gprior(ii1) = 0; 
                 end
             end
         end
@@ -634,6 +506,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     dist = dist + dd.^2.*s(:,j);
                 end
             end
+            dist(dist<eps) = 0;
             C = ma2.*exp(-dist);
         end
     end
@@ -652,7 +525,7 @@ function gpcf = gpcf_sexp(do, varargin)
     %         GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
 
         C = trcov(gpcf, x);
-        
+
 % $$$         [n, m] =size(x);
 % $$$ 
 % $$$         s = 1./(gpcf.lengthScale);
@@ -671,6 +544,7 @@ function gpcf = gpcf_sexp(do, varargin)
 % $$$             end
 % $$$             C(col_ind,ii1) = d;
 % $$$         end
+% $$$         C(C<eps) = 0;
 % $$$         C = C+C';
 % $$$         C = ma.*exp(-C);
     end

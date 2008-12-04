@@ -96,7 +96,7 @@ gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 1);
 % ... Then set the prior for the parameters of covariance functions...
 gpcf1.p.lengthScale = t_p({3 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
-gpcf2.p.lengthScale = gamma_p({1 0.2});
+gpcf2.p.lengthScale = t_p({0.3 4}); %gamma_p({1 0.2});
 gpcf2.p.magnSigma2 = t_p({0.3 4});
 gpcfn.p.noiseSigmas2 = t_p({0.3 4});
 
@@ -113,7 +113,8 @@ gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas
 %     (see fminunc for more details)
 
 opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-3);
+opt=optimset(opt,'TolX', 1e-4);
+opt=optimset(opt,'TolFun', 1e-4);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
 param = 'hyper'
@@ -172,7 +173,8 @@ gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigm
 param = 'hyper';          % optimize only hyperparameters
 
 opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-3);
+opt=optimset(opt,'TolX', 1e-4);
+opt=optimset(opt,'TolFun', 1e-4);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
 param = 'hyper'
@@ -229,7 +231,8 @@ gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 param = 'hyper';          % optimize only hyperparameters
 
 opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-3);
+opt=optimset(opt,'TolX', 1e-4);
+opt=optimset(opt,'TolFun', 1e-4);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
 param = 'hyper'
@@ -266,7 +269,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
+gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -281,7 +284,8 @@ gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitte
 param = 'hyper';          % optimize only hyperparameters
 
 opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-3);
+opt=optimset(opt,'TolX', 1e-4);
+opt=optimset(opt,'TolFun', 1e-4);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
 param = 'hyper'

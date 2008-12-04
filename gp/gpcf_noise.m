@@ -213,7 +213,7 @@ eprior=eprior...
        -sum(log(gpcf.noiseSigmas2));
 
 
-function [gprior, D]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, varargin) %g, gdata, gprior
+function [D,gprior]  = gpcf_noise_ghyper(gpcf, x, x2) %g, gdata, gprior
 %GPCF_NOISE_GHYPER Evaluate gradient of error for NOISE covariance function.
 %
 %	Description
@@ -238,13 +238,8 @@ function [gprior, D]  = gpcf_noise_ghyper(gpcf, x, t, g, gdata, gprior, varargin
 
 gpp=gpcf.p;
 
-i1=0;i2=1;
-if ~isempty(gprior)
-    i1 = length(gprior);
-end
-
-i1=i1+1;
-D=gpcf.noiseSigmas2;
+i1=1;
+D{i1}=gpcf.noiseSigmas2;
 
 gprior(i1)=feval(gpp.noiseSigmas2.fg, ...
                  gpcf.noiseSigmas2, ...

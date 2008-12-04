@@ -61,11 +61,17 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
       case 'FIC'
         param = varargin{1};
         % Here tstind = 1 if the prediction is made for the training set 
-        if nargin > 1
+        if nargin > 5
             tstind = varargin{2};
+            if length(tstind) ~= size(tx,1)
+                error('tstind (if provided) has to be of same lenght as tx.')
+            end
+        else
+             tstind = [];
         end
         
         u = gp.X_u;
+        m = size(u,1);
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
@@ -87,13 +93,14 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_nu=gp_cov(gp,x,u);
         Ef = K_nu*(K_uu\(K_fu'*p));
         
-        % 
-        if tstind == 1
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x);
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
-            Lav = Cv_ff-Qv_ff;
+            Lav = zeros(size(La));
+            Lav(tstind) = Cv_ff-Qv_ff;
             Ef = Ef + Lav.*p;
         end
         
@@ -103,13 +110,13 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
             Luu = chol(K_uu)';
             B=Luu\(K_fu');   
             B2=Luu\(K_nu');   
-            Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+            Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
 
-            if tstind == 1
-                La = diag(La);
-                Lav = diag(Lav);
-                Qff = B2'*B;
-                Varf = Varf - diag( Qff/La*Lav - Qff*L*L'*Lav + Lav/La*Qff + Lav/La*Lav - Lav*L*L'*Qff - Lav*L*L'*Lav);
+            % if the prediction is made for training set, evaluate Lav also for prediction points
+            if ~isempty(tstind)
+                Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((La.\Lav(tstind)),1,m).*B'),2) ...
+                    + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav(tstind),1,m).*L), 2)  ...
+                    - Lav(tstind)./La.*Lav(tstind) + sum((repmat(Lav(tstind),1,m).*L).^2,2);                
             end
             
             for i1=1:ntest
@@ -186,13 +193,19 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
       case 'CS+FIC'
         param = varargin{1};
         % Here tstind = 1 if the prediction is made for the training set 
-        if nargin > 1
+        if nargin > 5
             tstind = varargin{2};
+            if length(tstind) ~= size(tx,1)
+                error('tstind (if provided) has to be of same lenght as tx.')
+            end
+        else
+             tstind = [];
         end
 
         u = gp.X_u;
         m = length(u);
         n = size(tx,1);
+        n2 = size(x,1);
         cf_orig = gp.cf;
         ncf = length(gp.cf);
         
@@ -215,20 +228,21 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         K_nu=gp_cov(gp,x,u);
+        
         % evaluate also Lav if the prediction is made for training set
-        if tstind == 1
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x);
+        if ~isempty(tstind)
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
-            Lav = Cv_ff-Qv_ff;            
+            Lav = Cv_ff-Qv_ff;
         end
         gp.cf = cf2;         
         Kcs_nf = gp_cov(gp, x, tx);
         gp.cf = cf_orig;
         
-        if tstind == 1
-            Kcs_nf = Kcs_nf + sparse(1:n,1:n,Lav,n,n);
+        if ~isempty(tstind)
+            Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav,n2,n);
         end
 
         if length(varargin) < 1
@@ -240,6 +254,8 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, varargin)
         p = b';
         ntest=size(x,1);
         Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
+        
+% $$$         Ef(tstind) = Ef(tstind) + Lav.*p;
         
         % Evaluate the variance
         if nargout > 1

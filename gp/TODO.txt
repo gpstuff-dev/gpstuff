@@ -1,5 +1,7 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2008-09-03 14:54:56 EEST
+%   Last modified: 2008-11-25 13:55:42 EET
+
+
 
 LIKELIH_LOGIT:
 ---------------
@@ -18,6 +20,10 @@ GPLA_E:
 GPCF_SSSEXP:
 ------------
 - puuttuu: gradientit spektral pisteiden suhteen.
+
+GPCF_*:
+-------
+- Vaihtoehtoisten metriikoiden toteutus. Katso alle.
 
 GPCF_ST_*:
 ----------
@@ -40,38 +46,6 @@ PERUS GP RAKENNE:
     + katkaistu kovarianssi
 
 - Luokitteluun tarvitaan vielä classprior toteutus (latent_mh funktioon)
-
-%-------------------------------------------------
-- muuta kaikkiin gpcf_*:n : 
-            if strcmp(varargin{i},'noiseSigmas2')
-                if size(varargin{i},2) ~= gpcf.ndata
-                    gpcf.noiseSigmas2 = varargin{i+1};
-                else
-                    error('the size of noiseSigmas2 is wrong, has to be
-1xNDATA')
-                end
-            elseif strcmp(varargin{i},'fh_sampling')
-                gpcf.fh_sampling = varargin{i+1};
-            else
-                error('Wrong parameter name!')
-            end
-
-Olisi paljon selkeämpi näin
-
-      for i=3:2:length(varargin)-1
-        switch varargin{i}
-          case 'noiseSigmas2'
-            if size(varargin{i},2) ~= gpcf.ndata
-              gpcf.noiseSigmas2 = varargin{i+1};
-            else
-              error('the size of noiseSigmas2 is wrong, has to be 1xNDATA')
-            end
-          case 'fh_sampling'
-            gpcf.fh_sampling = varargin{i+1};
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
 
 %-------------------------------------------------
 
@@ -99,3 +73,108 @@ Tämä täytyy huomioida recordin käsittelyssä. Nyt tällä hetkellä U
 annetaan erillisenä parametrina -> vaatii jonkin verran muokkausta 
 
 
+
+
+===============================================
+LISÄINFOA
+===============================================
+
+
+------
+Vaihtoehtoisten metriikoiden toteutus
+------
+Date: Tue, 25 Nov 2008 13:53:31 +0200 (EET)
+From: Jarno Vanhatalo <jpvanhat@zeus.lce.hut.fi>
+To: Aki Vehtari <Aki.Vehtari@hut.fi>
+Cc: Jaakko Riihimäki <jtriihim@lce.hut.fi> Subject: Re: mallinnuksen vaiheet alustavasti
+
+On Fri, 21 Nov 2008, Aki Vehtari wrote:
+
+>
+> Kategorisen muuttujan voisi muuten koodata myös yhdellä syötteellä
+> niin, että etäisyys r
+>  r(x_i,x_j)=0, jos x_i=x_j
+>  r(x_i,x_j)=r_c, muuten
+> missä r_c valitaan siten, että length-scale:n tulkinta a priori
+> vastaava kuin binaarisilla muuttujilla. Näin esim.
+> sairaanhoitopiiriefektillä olisi vain yksi relevanssia kuvaava
+> hyperparametri ja ko. efekti saadaan mukavasti mukaan tavanomaisiin
+> kovarianssifunktioihin. Lisääpä todo-listalle tuollainen.
+> Muistakseeni Neal oli toteuttanut tämän fbm:ssä, mutta ei demonnut
+> sitä, joten sen hyöty ei aikoinaan auennut.
+> > Jarno voisi kommentoida, mitä vaikutusta sillä on, että osalle
+> kovariaateista etäisyys lasketaan muuten kuin euklidisesti?
+
+Mitähän yllä oleva nyt tarkoitti? Koitanpa vastata kuitenkin kysymykseen.
+ Tällä hetkellä kovarianssifunktiot on aika selkeästi kovakoodattu
+euklidiselle etäisyydelle. Kaikki funktiot perustuu siihe, että on kaksi
+vaihtoehtoa: 1) kaikilla syötteillä sama length-scale 2) jokaisella
+syötteellä oma length-scale. Varsin paljon työtä tulee aiheuttamaan jo
+se, että GP-paketti muutettaisiin toimimaan siten, että voidaan määritellä
+osalle syötteitä samat ja osalle omat length-scalet.
+
+Jos halutaan, että käyttäjä voi määrittää etäisyysfunktion vapaasti,
+täytyy kaikki kovarianssifunktiot koodata osittain uudestaan. Käytännössä
+vapaavalintaisen etäisyyden voisi toteuttaa siten, että kovarianssifunktio
+struktuurille annettaisiin kenttä (esim.) 'metrics'. Tällöin gpcf_*_trcov,
+*_cov, _ghyper jne. funktioihin voisi lisätä tarkistuksen, onko
+struktuurissa kyseistä kenttää. Jos kenttää ei ole, lasketaan kaikki kuten
+tälläkin hetkellä. Jos kenttä on, lasketaan kaikki muuten samoin kuin nyt,
+mutta etäisyys lasketaan uudella tavalla.
+
+Esimerkiksi:
+
+----------- clip -----------------
+function C = gpcf_sexp_trcov(gpcf, x)
+% GP_SEXP_TRCOV     Evaluate training covariance matrix of inputs. 
+% 
+%
+% Description 
+%         C = GP_SEXP_TRCOV(GP, TX) takes in covariance
+% function of a Gaussian 
+%         process GP and matrix TX that contains training input vectors.
+%         Returns covariance matrix C. Every element ij of C contains
+%         covariance between inputs i and j in TX
+%
+%
+%         See also
+%         GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
+
+if ~isfield(gpcf, 'metrics')
+   % Lasketaan vanhalla tavalla
+
+    [n, m] =size(x);
+
+    s = 1./(gpcf.lengthScale);
+    s2 = s.^2;
+    if size(s)==1
+        s2 = repmat(s2,1,m);
+    end
+    ma = gpcf.magnSigma2;
+
+    C = zeros(n,n);
+    for ii1=1:n-1
+        d = zeros(n-ii1,1);
+        col_ind = ii1+1:n;
+        for ii2=1:m
+            d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+        end
+        C(col_ind,ii1) = d;
+    end
+    C = C+C';
+    C = ma.*exp(-C);
+
+else
+    % Lasketaan uudella tavalla
+    feval(gpcf.metrics, gpcf, x)
+end
+----------- clip -----------------
+
+Yllä laitoin gpcf.metrics:n funktio handleksi, koska tällöin samaa
+metriikkaa voisi käyttää kätevästi muissakin kovarianssifunktioissa.
+
+Koodien pitäisi olla sen verran modulaarisia jo nyt, että yllä olevan
+tarkistuksen lisääminen taitaa onnistua kohtuu helposti. Lisään
+modifioinnin TODO listaan.
+
+-Jarno

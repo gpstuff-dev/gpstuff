@@ -127,6 +127,7 @@ function likelih = likelih_poisson(do, varargin)
     %
     %	See also
     %	LIKELIH_POISSON_UNPAK
+        w = [];
     end
 
 
@@ -142,6 +143,7 @@ function likelih = likelih_poisson(do, varargin)
     %
     %	See also
     %	LIKELIH_POISSON_PAK
+        w = w;
     end
 
 

@@ -158,7 +158,10 @@ function gpcf = gpcf_st_exp(do, varargin)
 
         i1 = i1+1;
         w(i1) = gpcf.magnSigma2;
-
+        i2=i1+length(gpcf.lengthScale);
+        i1=i1+1;
+        w(i1:i2)=gpcf.lengthScale;
+        i1=i2;
         if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
             i1=i1+1;
             w(i1)=gpp.lengthScale.a.s;
@@ -166,11 +169,7 @@ function gpcf = gpcf_st_exp(do, varargin)
                 i1=i1+1;
                 w(i1)=gpp.lengthScale.a.nu;
             end
-        end
-        i2=i1+length(gpcf.lengthScale);
-        i1=i1+1;
-        w(i1:i2)=gpcf.lengthScale;
-        i1=i2;
+        end        
     end
 
 
@@ -199,6 +198,10 @@ function gpcf = gpcf_st_exp(do, varargin)
         i1=0;i2=1;
         i1=i1+1;
         gpcf.magnSigma2=w(i1);
+        i2=i1+length(gpcf.lengthScale);
+        i1=i1+1;
+        gpcf.lengthScale=w(i1:i2);
+        i1=i2;
         if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
             i1=i1+1;
             gpcf.p.lengthScale.a.s=w(i1);
@@ -207,10 +210,6 @@ function gpcf = gpcf_st_exp(do, varargin)
                 gpcf.p.lengthScale.a.nu=w(i1);
             end
         end
-        i2=i1+length(gpcf.lengthScale);
-        i1=i1+1;
-        gpcf.lengthScale=w(i1:i2);
-        i1=i2;
         w = w(i1+1:end);
     end
 

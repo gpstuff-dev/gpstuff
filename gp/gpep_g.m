@@ -59,30 +59,24 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 i1 = length(gprior);
             end
             gpcf = gp.cf{i};
-            gpcf.GPtype = gp.type;
-            [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
+            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                         
-            i1 = i1+1;
-            i2 = 1;
             
-            % Evaluate the gradient with respect to magnSigma
-            Bdm = b'*(DKff{i2}*b);
-            Cdm = sum(invCv.*DKff{i2}(:)); % help argument for magnSigma2
-            gdata(i1) = 0.5.*(Cdm - Bdm);
-
-            if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
-                i1 = i1+1;
-                if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
-                    i1 = i1+1;
-                end
-            end
-            
-            % Evaluate the gradient with respect to lengthScale
-            for i2 = 2:length(DKff)
+            for i2 = 1:length(DKff)
                 i1 = i1+1;                
                 Bdl = b'*(DKff{i2}*b);
                 Cdl = sum(invCv.*DKff{i2}(:)); % help arguments for lengthScale
                 gdata(i1)=0.5.*(Cdl - Bdl);
+                gprior(i1) = gprior_cf(i2);
+            end
+            
+            % Set the gradients of hyper-hyperparameter
+            if length(gprior_cf) > length(DKff)
+                for i2=length(DKff)+1:length(gprior_cf)
+                    i1 = i1+1;
+                    gdata(i1) = 0;
+                    gprior(i1) = gprior_cf(i2);
+                end
             end
         end
         
@@ -93,14 +87,28 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 i1 = i1+1;
                 
                 noise = gp.noise{i};
-                noise.type = gp.type;
-                [gprior, DCff] = feval(noise.fh_ghyper, noise, x, t, g, gdata, gprior);
+                [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
                 
-                B = trace(invC);
-                C=b'*b;    
-                gdata(i1)=0.5.*DCff.*(B - C); 
+                for i2 = 1:length(DCff)
+                    i1 = i1+1;
+                
+                    B = trace(invC);
+                    C=b'*b;    
+                    gdata(i1)=0.5.*DCff.*(B - C); 
+                    gprior(i1) = gprior_cf(i2);
+                end
+                
+                % Set the gradients of hyper-hyperparameter
+                if length(gprior_cf) > length(DCff)
+                    for i2=length(DCff)+1:length(gprior_cf)
+                        i1 = i1+1;
+                        gdata(i1) = 0;
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                end
             end
         end
+        
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
@@ -143,97 +151,99 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu        
         iKuuKuf = K_uu\K_fu';
         
+        LL = sum(L.*L,2);
+        
         % =================================================================
+        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
         % Evaluate the gradients from covariance functions
-        for i=1:ncf            
-            i1=0;
-            if ~isempty(gprior)
-                i1 = length(gprior);
-            end
-            
-            gpcf = gp.cf{i};
-            gpcf.GPtype = gp.type;
-            gpcf.X_u = gp.X_u;
-            % Covariance function hyperparameters
-            %--------------------------------------
-            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-                [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
-                i1 = i1+1;
-                i2 = 1;
-                
-                % Evaluate the gradient with respect to magnSigma
-                KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                    sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-
-                gdata(i1) = gdata(i1) - 0.5.*(b.*DKff')*b';
-                gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                gdata(i1) = gdata(i1) + 0.5.*(sum(DKff./La) - sum(sum(L.*L)).*gpcf.magnSigma2);
-                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
-
-                if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
-                    i1 = i1+1;
-                    if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
-                        i1 = i1+1;
-                    end
+            for i=1:ncf            
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
                 end
-
-                % Evaluate the gradient with respect to lengthScale
-                for i2 = 2:length(DKuu)
+                
+                gpcf = gp.cf{i};
+                % Get the gradients of the covariance matrices 
+                % and gprior from gpcf_* structures
+                gpcf = gp.cf{i};
+                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
+                DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
+                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+                
+                for i2 = 1:length(DKuu)
                     i1 = i1+1;
+                    
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                     gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
                                        sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
-                end
-            end
-            % Inducing inputs
-            %--------------------------------------
-            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')                
-                [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
-                
-                for i2 = 1:length(DKuu)
-                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                    
-                    gdata_ind(i2) = gdata_ind(i2) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                            2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                            sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));                    
-                end
-            end
-        end
 
-        % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
-            for i=1:nn
-                i1 = i1+1;
-                
-                gpcf = gp.noise{i};
-                gpcf.GPtype = gp.type;
-                gpcf.X_u = gp.X_u;
-                gpcf.tr_index = gp.tr_index;
-                if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-                    [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
-                    gdata(i1)= -0.5*DCff.*b*b';
-                    gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
+                    gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                    gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}./La) - sum(LL.*DKff{i2}));
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+
+                    gprior(i1) = gprior_cf(i2);
+                end
+                    
+                % Set the gradients of hyper-hyperparameter
+                if length(gprior_cf) > length(DKff)
+                    for i2=length(DKff)+1:length(gprior_cf)
+                        i1 = i1+1;
+                        gdata(i1) = 0;
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                end
+            end
+            
+            % Evaluate the gradient from noise functions
+            if isfield(gp, 'noise')
+                nn = length(gp.noise);
+                for i=1:nn
+                    gpcf = gp.noise{i};
+                    
+                    [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    for i2 = 1:length(DCff)
+                        i1 = i1+1;
+                        gdata(i1)= -0.5*DCff{i2}.*b*b';
+                        gdata(i1)= gdata(i1) + 0.5*sum(1./La-LL).*DCff{i2};
+                        gprior(i1) = gprior_cf(i2);
+                    end
                 end
             end
         end
         
-        % set the gradients with respect to inducing inputs into vectors that will be returned
-        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
-            gdata = [gdata gdata_ind];
-            gprior = [gprior zeros(size(gdata_ind))];
-            i1 = length(gdata);
+        % Inducing inputs
+        %--------------------------------------
+        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')                
+            for i=1:ncf
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
+                end
+                
+                gpcf = gp.cf{i};
+                [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
+                [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
+                
+                for i2 = 1:length(DKuu)
+                    i1 = i1+1;
+
+                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                    
+                    gdata(i1) =  - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                                                          2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                                                          sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                    gprior(i1) = gprior_ind(i2);
+                end
+            end
         end
         
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -273,115 +283,101 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         iKuuKuf = K_uu\K_fu';
         
         % =================================================================
-        % Evaluate the gradients from covariance functions
-        for i=1:ncf            
-            i1=0;
-            if ~isempty(gprior)
-                i1 = length(gprior);
-            end
+        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
+            % Evaluate the gradients from covariance functions
+            for i=1:ncf            
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
+                end
             
-            gpcf = gp.cf{i};
-            gpcf.GPtype = gp.type;
-            gpcf.X_u = gp.X_u;
-            gpcf.tr_index = gp.tr_index;
-            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-                [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
-                i1 = i1+1;
-                i2 = 1;                
-           
-                % Evaluate the gradient with respect to magnSigma
-                K_ff = DKff{i2};
-                KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
-                % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
-                gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                    sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                
-                for kk=1:length(K_ff)
-                    gdata(i1) = gdata(i1) ...
-                        + 0.5.*(-b(ind{kk})*K_ff{kk}*b(ind{kk})' ...
-                        + 2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
-                        b(ind{kk})*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
-                        + trace(La{kk}\K_ff{kk})...
-                        - trace(L(ind{kk},:)*(L(ind{kk},:)'*K_ff{kk})) ...
-                        + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
-                        sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));                
+                % Get the gradients of the covariance matrices 
+                % and gprior from gpcf_* structures
+                gpcf = gp.cf{i};
+                [DKuu, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, u); 
+                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+                for kk = 1:length(ind)
+                    DKff{kk} = feval(gpcf.fh_ghyper, gpcf, x(ind{kk},:));                 
                 end
-                
-                if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
-                    i1 = i1+1;
-                    if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
-                        i1 = i1+1;
-                    end
-                end
-                
-                % Evaluate the gradient with respect to lengthScale
-                for i2 = 2:length(DKuu)                 
-                    i1 = i1+1;
-
-                    DKff_l = DKff{i2};
-                    KfuiKuuDKuu_l = iKuuKuf'*DKuu{i2};
-                    % H = (2*DKuf_l'- KfuiKuuDKuu_l)*iKuuKuf;
-                    % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
-                    gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_l))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
-                                       sum(sum(L'.*((L'*KfuiKuuDKuu_l)*iKuuKuf))));
-                    for kk=1:length(K_ff)
-                        gdata(i1) = gdata(i1) ...
-                            + 0.5.*(-b(ind{kk})*DKff_l{kk}*b(ind{kk})' ...
-                                    + 2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
-                                    b(ind{kk})*KfuiKuuDKuu_l(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
-                                    + trace(La{kk}\DKff_l{kk})...
-                                    - trace(L(ind{kk},:)*(L(ind{kk},:)'*DKff_l{kk})) ...
-                                    + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
-                                    sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuDKuu_l(ind{kk},:))*iKuuKuf(:,ind{kk})))));
-                    end
-                end
-            end
-            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
-                [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
                 
                 for i2 = 1:length(DKuu)
+                    i1 = i1+1;
+                    
+                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                    %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
+                    % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
+                    gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
+                                       sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                    
+                    for kk=1:length(ind)
+                        gdata(i1) = gdata(i1) ...
+                            + 0.5.*(-b(ind{kk})*DKff{kk}{i2}*b(ind{kk})' ...
+                                    + 2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
+                                    b(ind{kk})*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
+                                    + trace(La{kk}\DKff{kk}{i2})...
+                                    - trace(L(ind{kk},:)*(L(ind{kk},:)'*DKff{kk}{i2})) ...
+                                    + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
+                                    sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));                
+                    end
+                    gprior(i1) = gprior_cf(i2);
+                end
+                
+                % Set the gradients of hyper-hyperparameter
+                if length(gprior_cf) > length(DKuu)
+                    for i2=length(DKuu)+1:length(gprior_cf)
+                        i1 = i1+1;
+                        gdata(i1) = 0;
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                end
+            end
+
+            % Evaluate the gradient from noise functions
+            if isfield(gp, 'noise')
+                nn = length(gp.noise);
+                for i=1:nn
+                    gpcf = gp.noise{i};
+                    [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    for i2 = 1:length(DCff)
+                        i1 = i1+1;
+                        gdata(i1)= -0.5*DCff{i2}.*b*b';
+                        for kk=1:length(ind)
+                            gdata(i1)= gdata(i1) + 0.5*trace((inv(La{kk})-L(ind{kk},:)*L(ind{kk},:)')).*DCff{i2};
+                        end
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                end
+            end
+        end
+            
+            
+        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+            % Loop over the  covariance functions
+            for i=1:ncf            
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
+                end
+                gpcf = gp.cf{i};
+                [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
+                [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
+                
+                for i2 = 1:length(DKuu)
+                    i1 = i1+1;
                     KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
                     
-                    gdata_ind(i2) = gdata_ind(i2) -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
-                                           sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
+                    gdata(i1) =  -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
+                                                 sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
 
                     for kk=1:length(ind)
-                        gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
                                                               b(ind{kk})*KfuiKuuDKuu_u(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
                                                               + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                                                               sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuDKuu_u(ind{kk},:))*iKuuKuf(:,ind{kk})))));
                     end
+                    gprior(i1) = gprior_ind(i2);
                 end
             end
-        end
-
-        % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
-            for i=1:nn
-                i1 = i1+1;
-                
-                gpcf = gp.noise{i};
-                gpcf.GPtype = gp.type;
-                gpcf.X_u = gp.X_u;
-                gpcf.tr_index = gp.tr_index;
-                if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-                    [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
-                    gdata(i1)= -0.5*DCff.*b*b';
-                    ind = gpcf.tr_index;
-                    for kk=1:length(ind)
-                        gdata(i1)= gdata(i1) + 0.5*trace((inv(La{kk})-L(ind{kk},:)*L(ind{kk},:)')).*DCff;
-                    end                    
-                end
-            end
-        end
-        
-        % set the gradients with respect to inducing inputs into vectors that will be returned
-        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
-            gdata = [gdata gdata_ind];
-            gprior = [gprior zeros(size(gdata_ind))];
-            i1 = length(gdata);
         end
         
         % likelihood parameters
@@ -452,126 +448,129 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         LD = ldlchol(La);
         siLa = sinv(La);
         idiagLa = diag(siLa);
+        LL = sum(L.*L,2);
         
         % =================================================================
-        % Evaluate the gradients from covariance functions
-        % =================================================================
-        for i=1:ncf            
-            i1=0;
-            if ~isempty(gprior)
-                i1 = length(gprior);
-            end
-            
-            gpcf = gp.cf{i};
-            gpcf.GPtype = gp.type;
-            gpcf.X_u = gp.X_u;
-            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-                % Evaluate the gradient for full support covariance functions
+        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
+            % Evaluate the gradients from covariance functions
+            for i=1:ncf            
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
+                end
+                
+                gpcf = gp.cf{i};
+                
+                % Evaluate the gradient for FIC covariance functions
                 if ~isfield(gpcf,'cs')
-                    [gprior, DKff, DKuu, DKuf] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
-                    i1 = i1+1;
-                    i2 = 1;
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
+                    [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
+                    DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
+                    DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
 
-                    % Evaluate the gradient with respect to magnSigma
-                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                    gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                                       sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    
-                    gdata(i1) = gdata(i1) - 0.5.*(b.*DKff')*b';
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata(i1) = gdata(i1) + 0.5.*(idiagLa'*DKff - sum(sum(L.*L)).*gpcf.magnSigma2);   % corrected
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
-                    
-                    %gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
-                    gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2));
-                    gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected                
-
-                    if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
+                    for i2 = 1:length(DKuu)
                         i1 = i1+1;
-                        if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
-                            i1 = i1+1;
-                        end
-                    end
 
-                    
-                    % Evaluate the gradient with respect to lengthScale
-                    for i2 = 2:length(DKuu)
-                        i1 = i1+1;
-                        
                         KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                         gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
                                            sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
                         
+                        gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                        gdata(i1) = gdata(i1) + 0.5.*sum(idiagLa.*DKff{i2} - LL.*DKff{i2});   % corrected
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                         
-                        %gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\(2.*DKuf_l{i2}').*iKuuKuf',2) - sum(La\KfuiKuuKuu.*iKuuKuf',2));
+                        %gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
                         gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2));
-                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum(2.*DKuf{i2}'.*iKuuKuf',2) - sum(KfuiKuuKuu.*iKuuKuf',2)) );
-                    end
+                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected                
+                        gprior(i1) = gprior_cf(i2);                    
+                    end                        
+
                 % Evaluate the gradient for compact support covariance functions
                 else
-                    [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
-                    i1 = i1+1;
-                    i2 = 1;
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
+                    [DKff,gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                     
-                    % Evaluate the gradient with respect to magnSigma
-                    gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
-
-                    % Evaluate the gradient with respect to lengthScale
-                    for i2 = 2:length(DKff)
+                    for i2 = 1:length(DKff)
                         i1 = i1+1;
                         gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                end
+                
+                % Set the gradients of hyper-hyperparameter
+                if length(gprior_cf) > length(DKuu)
+                    for i2=length(DKuu)+1:length(gprior_cf)
+                        i1 = i1+1;
+                        gdata(i1) = 0;
+                        gprior(i1) = gprior_cf(i2);
                     end
                 end
             end
-            if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
-                [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
-                
-                for i2 = 1:length(DKuu)
-                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                    
-                    gdata_ind(i2) = gdata_ind(i2) -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                           2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*(2.*sum(sum(L.*L,2).*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                          sum(sum(L.*L,2).*sum(KfuiKuuKuu.*iKuuKuf',2)));
-                    
-                    gdata_ind(i2) = gdata_ind(i2) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
-                    gdata_ind(i2) = gdata_ind(i2) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
-                    
-                end                
-            end           
-        end
 
-        % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
-            for i=1:nn
-                i1 = i1+1;
-                
-                gpcf = gp.noise{i};
-                gpcf.GPtype = gp.type;
-                gpcf.X_u = gp.X_u;
-                if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
-                    [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
-                    gdata(i1)= -0.5*DCff.*b*b';
-                    gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-sum(L.*L,2)).*DCff;                    
+            % Evaluate the gradient from noise functions
+            if isfield(gp, 'noise')
+                nn = length(gp.noise);
+                for i=1:nn
+                    gpcf = gp.noise{i};       
+                    % Get the gradients of the covariance matrices 
+                    % and gprior from gpcf_* structures
+                    [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    for i2 = 1:length(DCff) 
+                        i1 = i1+1;            
+                        gdata(i1)= -0.5*DCff{i2}.*b*b';
+                        gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-LL.*DCff{i2});
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                    
+                    % Set the gradients of hyper-hyperparameter
+                    if length(gprior_cf) > length(DCff)
+                        for i2=length(DCff)+1:length(gprior_cf)
+                            i1 = i1+1;
+                            gdata(i1) = 0;
+                            gprior(i1) = gprior_cf(i2);
+                        end
+                    end
                 end
             end
-        end
-        
-        % set the gradients with respect to inducing inputs into vectors that will be returned
+        end             
+            
         if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
-            gdata = [gdata gdata_ind];
-            gprior = [gprior zeros(size(gdata_ind))];
-            i1 = length(gdata);
+            for i=1:ncf
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
+                end
+                
+                gpcf = gp.cf{i};            
+                if ~isfield(gpcf,'cs')
+                    [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
+                    [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
+                    
+                    for i2 = 1:length(DKuu)
+                        i1 = i1 + 1;
+                        KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                        
+                        gdata(i1) =  -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                                                             2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                                                              sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                        
+                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
+                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+                        gprior(i1) = gprior_ind(i2);
+                    end
+                end                
+            end           
         end
         
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, 1);    
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, 1:n);    
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -595,9 +594,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % SSGP
         % ============================================================        
       case 'SSGP'        
-% $$$         g_ind = zeros(1,numel(gp.X_u));
-% $$$         gdata_ind = zeros(1,numel(gp.X_u));
-% $$$         gprior_ind = zeros(1,numel(gp.X_u));
         
         [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(w, gp, x, y, param, varargin);
 
@@ -615,7 +611,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             
             gpcf = gp.cf{i};
             gpcf.GPtype = gp.type;
-% $$$             gpcf.frequency = gp.frequency;
             % Covariance function hyperparameters
             %--------------------------------------
             if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')

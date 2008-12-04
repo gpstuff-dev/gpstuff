@@ -23,11 +23,11 @@ for i=1:ncf
   C = C + feval(gpcf.fh_cov, gpcf, x1, x2);
 end
 
-if ~isempty(gp.jitterSigmas) & size(x1,1)==size(x2,1) & x1==x2
-  [n,m]=size(x1);
-  n1 = n+1;
-  C(1:n1:end)=C(1:n1:end)+gp.jitterSigmas.^2;
-end
+% $$$ if ~isempty(gp.jitterSigmas) & size(x1,1)==size(x2,1) & x1==x2
+% $$$   [n,m]=size(x1);
+% $$$   n1 = n+1;
+% $$$   C(1:n1:end)=C(1:n1:end)+gp.jitterSigmas.^2;
+% $$$ end
 
 % $$$ if issparse(C)
 % $$$     [I,J,c] = find(C);

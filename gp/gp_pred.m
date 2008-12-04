@@ -1,4 +1,4 @@
-function [y, VarY, noisyY] = gp_pred(gp, tx, ty, x, varargin)
+function [Ef, Varf, noisyY] = gp_pred(gp, tx, ty, x, varargin)
 %GP_PRED    Make predictions for Gaussian process
 %
 %	Description
@@ -22,7 +22,6 @@ function [y, VarY, noisyY] = gp_pred(gp, tx, ty, x, varargin)
 %	GP_PREDS, GP_PAK, GP_UNPAK
 %
 
-% Copyright (c) 2006      Helsinki University of Technology (author Jarno Vanhatalo)
 % Copyright (c) 2007-2008 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
@@ -41,34 +40,44 @@ switch gp.type
         [c, C]=gp_trcov(gp,tx);
         if issparse(C)
             LD = ldlchol(C);
-            y = K'*ldlsolve(LD,ty);
+            Ef = K'*ldlsolve(LD,ty);
         else
             L = chol(C)';
             %    y=K'*(C\ty);
             a = L'\(L\ty);
-            y = K'*a;
+            Ef = K'*a;
         end
     end
     if nargout > 1
         
         if issparse(C)
             V = gp_trvar(gp,x);
-            VarY = V - diag(K'*ldlsolve(LD,K));
+            Varf = V - diag(K'*ldlsolve(LD,K));
         else
             v = L\K;
             V = gp_trvar(gp,x);
             % Vector of diagonal elements of covariance matrix
             % b = L\K;
-            % VarY = V - sum(b.^2)';
-            VarY = V - diag(v'*v);
+            % Varf = V - sum(b.^2)';
+            Varf = V - diag(v'*v);
         end
     end
     if nargout > 2
         K2 = gp_trcov(gp,x);
         predcov = chol(K2-v'*v)';
-        noisyY = y + predcov*randn(size(y));
+        noisyY = Ef + predcov*randn(size(y));
     end
   case 'FIC'
+    % Here tstind = 1 if the prediction is made for the training set 
+    if nargin > 4
+        tstind = varargin{1};
+        if length(tstind) ~= size(tx,1)
+            error('tstind (if provided) has to be of same lenght as tx.')
+        end
+    else
+        tstind = [];
+    end
+    
     u = gp.X_u;
     % Turn the inducing vector on right direction
     if size(u,2) ~= size(tx,2)
@@ -99,12 +108,31 @@ switch gp.type
 
     %p2 = ty./Lav - iLaKfu*(A\(iLaKfu'*ty));
     %    Knf = K_nu*(K_uu\K_fu');
-    y = K_nu*(K_uu\(K_fu'*p));
+    Ef = K_nu*(K_uu\(K_fu'*p));
+    
+    % if the prediction is made for training set, evaluate Lav also for prediction points
+    if ~isempty(tstind)
+        [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
+        Luu = chol(K_uu)';
+        B=Luu\(K_fu');
+        Qv_ff=sum(B.^2)';
+        Lav2 = zeros(size(Lav));
+        Lav2(tstind) = Cv_ff-Qv_ff;
+        Ef = Ef + Lav2.*p;
+    end
 
     if nargout > 1
         Knn_v = gp_trvar(gp,x);
         B2=Luu\(K_nu');
-        VarY = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        Varf = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+            Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
+                + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav(tstind),1,m).*L), 2)  ...
+                - Lav(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);                
+        end
+
     end
     if nargout > 2
         % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
@@ -112,7 +140,7 @@ switch gp.type
         Lav_n = Kv_ff-Qv_ff;
         BL = B*L;
         Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
-        noisyY = y + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(y)).*sqrt(Lav_n);
+        noisyY = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(y)).*sqrt(Lav_n);
     end
   case 'PIC_BLOCK'
     u = gp.X_u;
@@ -164,7 +192,7 @@ switch gp.type
         w_n(tstind{i},:) = K_nf*p(ind{i},:);
     end
     
-    y = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
+    Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
     
 
     if nargout > 1
@@ -191,12 +219,24 @@ switch gp.type
             Varf3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
         end
         
-        VarY = kstarstar - (Varf1 + Varf2 - Varf3);
+        Varf = kstarstar - (Varf1 + Varf2 - Varf3);
     end
     if nargout > 2
-        noisyY = y;
+        noisyY = Ef;
     end
   case 'CS+FIC'
+    % Here tstind = 1 if the prediction is made for the training set 
+    if nargin > 5
+        tstind = varargin{2};
+        if length(tstind) ~= size(tx,1)
+            error('tstind (if provided) has to be of same lenght as tx.')
+        end
+    else
+        tstind = [];
+    end
+    
+    n = size(tx,1);
+    n2 = size(x,1);
     u = gp.X_u;
     ncf = length(gp.cf);
     cf_orig = gp.cf;
@@ -223,19 +263,27 @@ switch gp.type
     K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
     Luu = chol(K_uu)';
-    K_nu = gp_cov(gp, x, u);         % n x u
-
+    K_nu = gp_cov(gp, x, u);         % n x u   
+    
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     B=Luu\(K_fu');       % u x f
     Qv_ff=sum(B.^2)';
     Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
 
+    % evaluate also Lav2 if the prediction is made for training set
+    if ~isempty(tstind)
+        Lav2 = Cv_ff(tstind)-Qv_ff(tstind);
+    end
     gp.cf = cf2;
     K_cs = gp_trcov(gp,tx);
     Kcs_nf = gp_cov(gp, x, tx);
     La = sparse(1:tn,1:tn,Lav,tn,tn) + K_cs;
     gp.cf = cf_orig;
+    
+    if ~isempty(tstind)
+        Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2,n2,n);
+    end
 
     iLaKfu = La\K_fu;
     A = K_uu+K_fu'*iLaKfu;
@@ -246,13 +294,13 @@ switch gp.type
 
     %p2 = ty./Lav - iLaKfu*(A\(iLaKfu'*ty));
     %    Knf = K_nu*(K_uu\K_fu');
-    y = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
+    Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
     
     if nargout > 1
         Knn_v = gp_trvar(gp,x);
         B2=Luu\(K_nu');
-        VarY = Knn_v - sum(B2'.*(B*(La\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2) - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2);
-        VarY = VarY - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
+        Varf = Knn_v - sum(B2'.*(B*(La\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2) - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2);
+        Varf = Varf - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
     end
     if nargout > 2
         error('gp_fwd with three output arguments is not implemented for CS+FIC!')
@@ -264,11 +312,11 @@ switch gp.type
     ns = eye(m,m)*S(1,1);
     
     L = chol(Phi_f'*Phi_f + ns)';
-    y = Phi_a*(L'\(L\(Phi_f'*ty)));
+    Ef = Phi_a*(L'\(L\(Phi_f'*ty)));
 
     
     if nargout > 1
-        VarY = sum(Phi_a/L',2)*S(1,1);
+        Varf = sum(Phi_a/L',2)*S(1,1);
     end
     if nargout > 2
         error('gp_pred with three output arguments is not implemented for SSGP!')

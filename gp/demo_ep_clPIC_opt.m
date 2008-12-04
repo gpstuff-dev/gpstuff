@@ -43,8 +43,8 @@ disp(' ')
 
   
 % Load the data
-S = which('demo_clFull');
-L = strrep(S,'demo_clFull.m','demos/synth.tr');
+S = which('demo_classific2');
+L = strrep(S,'demo_classific2.m','demos/synth.tr');
 x=load(L);
 y=x(:,end);
 
@@ -61,7 +61,7 @@ disp(' ')
 
 % Create covariance functions
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 2^2);
 %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 %gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);

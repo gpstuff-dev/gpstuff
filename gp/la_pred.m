@@ -24,10 +24,10 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-[tn, tnin] = size(tx);
+    [tn, tnin] = size(tx);
 
-switch gp.type
-    case 'FULL'
+    switch gp.type
+      case 'FULL'
         [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
 
         W = La2;
@@ -45,15 +45,26 @@ switch gp.type
             for i1=1:ntest
                 Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
                 switch gp.likelih.type
-                    case 'probit'
-                        p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                    case 'poisson'
-                        p1 = NaN;
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
                 end
             end
         end
 
-    case 'FIC'
+      case 'FIC'
+        param = varargin{1};
+        % Here tstind = 1 if the prediction is made for the training set 
+        if nargin > 5
+            tstind = varargin{2};
+            if length(tstind) ~= size(tx,1)
+                error('tstind (if provided) has to be of same lenght as tx.')
+            end
+        else
+             tstind = [];
+        end
+
         u = gp.X_u;
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -65,16 +76,26 @@ switch gp.type
             error('The argument telling the optimized/sampled parameters has to be provided.')
         end
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, varargin{:}), gp, tx, ty, varargin{:});
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
         deriv = b;
         ntest=size(x,1);
 
         K_nu=gp_cov(gp,x,u);
-        % Knf = K_nu*(K_uu\K_fu');
-        % Ef = Knf*p;
         Ef = K_nu*(K_uu\(K_fu'*deriv));
 
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');
+            Qv_ff=sum(B.^2)';
+            Lav = zeros(size(La));
+            Lav(tstind) = Cv_ff-Qv_ff;
+            Ef = Ef + Lav.*p;
+        end
+
+        
         % Evaluate the variance
         if nargout > 1
             W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
@@ -93,17 +114,24 @@ switch gp.type
             BB=Luu\(B');
             BB2=Luu\(K_nu');
             Varf = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,size(K_uu,1)).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            
+            % if the prediction is made for training set, evaluate Lav also for prediction points
+            if ~isempty(tstind)
+                Varf(tstind) = Varf(tstind) - 2.*sum( BB2(:,tstind)'.*(repmat((La.\Lav(tstind)),1,m).*BB'),2) ...
+                    + 2.*sum( BB2(:,tstind)'*(BB*L).*(repmat(Lav(tstind),1,m).*L), 2)  ...
+                    - Lav(tstind)./La.*Lav(tstind) + sum((repmat(Lav(tstind),1,m).*L).^2,2);                
+            end
             for i1=1:ntest
                 switch gp.likelih.type
-                    case 'probit'
-                        p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                    case 'poisson'
-                        p1 = NaN;
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
                 end
             end
         end
 
-    case 'PIC_BLOCK'
+      case 'PIC_BLOCK'
         u = gp.X_u;
         K_fu = gp_cov(gp, tx, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -120,7 +148,7 @@ switch gp.type
             error('The argument telling the optimized/sampled parameters has to be provided.')
         end
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
         deriv = b;
 
@@ -167,14 +195,27 @@ switch gp.type
 
             for i1=1:ntest
                 switch gp.likelih.type
-                    case 'probit'
-                        p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                    case 'poisson'
-                        p1 = NaN;
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
                 end
             end
         end
-    case 'CS+FIC'
+      case 'CS+FIC'
+        param = varargin{1};
+        % Here tstind = 1 if the prediction is made for the training set 
+        if nargin > 5
+            tstind = varargin{2};
+            if length(tstind) ~= size(tx,1)
+                error('tstind (if provided) has to be of same lenght as tx.')
+            end
+        else
+             tstind = [];
+        end
+
+        n = size(tx,1);
+        n2 = size(x,1);
         u = gp.X_u;
         m = length(u);
         cf_orig = gp.cf;
@@ -200,15 +241,28 @@ switch gp.type
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         K_nu=gp_cov(gp,x,u);
+        % evaluate also Lav if the prediction is made for training set
+        if ~isempty(tstind)
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');
+            Qv_ff=sum(B.^2)';
+            Lav = Cv_ff-Qv_ff;
+        end
+        
         gp.cf = cf2;
         Kcs_nf = gp_cov(gp, x, tx);
         gp.cf = cf_orig;
+
+        if ~isempty(tstind)
+            Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav,n2,n);
+        end
 
         if length(varargin) < 1
             error('The argument telling the optimized/sampled parameters has to be provided.')
         end
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
         deriv = b;
         ntest=size(x,1);
@@ -248,27 +302,13 @@ switch gp.type
             Varf = Varf + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
             for i1=1:ntest
                 switch gp.likelih.type
-                    case 'probit'
-                        p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                    case 'poisson'
-                        p1 = NaN;
+                  case 'probit'
+                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
+                  case 'poisson'
+                    p1 = NaN;
                 end
             end
         end
 
-end
-%
-% ==============================================================
-% Begin of the nested functions
-% ==============================================================
-%
-    function Hessian = hessian(f, likelihood)
-        switch likelihood
-            case 'probit'
-                z = ty.*f;
-                Hessian = (normpdf(f)./normcdf(z)).^2 + z.*normpdf(f)./normcdf(z);
-            case 'poisson'
-                Hessian = gp.avgE.*exp(f);
-        end
     end
 end
