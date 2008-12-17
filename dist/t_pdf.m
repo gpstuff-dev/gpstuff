@@ -15,16 +15,16 @@ function y = t_pdf(x, v, mu, sigma)
 % Licence (version 2 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
-if nargin < 4, 
-    sigma = 1;
+if nargin < 4,
+  sigma = 1;
 end
 
 if nargin < 3;
-    mu = 0;
+  mu = 0;
 end
 
-if nargin < 2, 
-    error('Requires at least two input arguments.'); 
+if nargin < 2,
+  error('Requires at least two input arguments.');
 end
 
 term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi)/2;
