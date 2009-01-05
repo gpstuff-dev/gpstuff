@@ -214,12 +214,15 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % Inducing inputs
         %--------------------------------------
-        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')                
+        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
+            st=0;
+            if ~isempty(gprior)
+                st = length(gprior);
+            end
+            gdata(st+1:st+length(gp.X_u(:))) = 0;
+            
             for i=1:ncf
-                i1=0;
-                if ~isempty(gprior)
-                    i1 = length(gprior);
-                end
+                i1=st;
                 
                 gpcf = gp.cf{i};
                 [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
@@ -230,7 +233,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
 
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                     
-                    gdata(i1) =  - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                    gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
                                                           2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
                     gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
@@ -352,12 +355,15 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             
             
         if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+            st=0;
+            if ~isempty(gprior)
+                st = length(gprior);
+            end
+            gdata(st+1:st+length(gp.X_u(:))) = 0;
+
             % Loop over the  covariance functions
             for i=1:ncf            
-                i1=0;
-                if ~isempty(gprior)
-                    i1 = length(gprior);
-                end
+                i1=st;
                 gpcf = gp.cf{i};
                 [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
                 [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
@@ -366,7 +372,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                     i1 = i1+1;
                     KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
                     
-                    gdata(i1) =  -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
+                    gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
                                                  sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
 
                     for kk=1:length(ind)
@@ -538,11 +544,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         end             
             
         if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+            st=0;
+            if ~isempty(gprior)
+                st = length(gprior);
+            end
+            gdata(st+1:st+length(gp.X_u(:))) = 0;
+
             for i=1:ncf
-                i1=0;
-                if ~isempty(gprior)
-                    i1 = length(gprior);
-                end
+                i1=st;
                 
                 gpcf = gp.cf{i};            
                 if ~isfield(gpcf,'cs')
@@ -553,7 +562,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                         i1 = i1 + 1;
                         KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                         
-                        gdata(i1) =  -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                        gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
                                                              2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
                         gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...

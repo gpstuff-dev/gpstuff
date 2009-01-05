@@ -1,5 +1,5 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2008-11-25 13:55:42 EET
+%   Last modified: 2008-12-12 12:00:56 EET
 
 
 
@@ -12,6 +12,11 @@ LIKELIH_PROBIT:
 ---------------
 - Puuttuu: Laplace aproksimaation toteutus
 - Puuttuu: MCMC toteutus
+
+LIKELIH_NEGBIN:
+---------------
+- momenttien integroinnin tehostaminen (katso Poisson)
+- Laplace approksimaatio ?
 
 GPLA_E:
 -------

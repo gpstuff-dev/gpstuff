@@ -88,6 +88,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 % ============================================================
               case 'FULL'
                 K = gp_trcov(gp, x);
+                iK = inv(K);
 
                 switch gp.laplace_opt.optim_method
                     % find the mode by fminunc large scale method
@@ -96,7 +97,8 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
                         opt=optimset(opt,'Hessian','on');
-                        fhm = @(W, f, varargin) (K\f + repmat(W,1,size(f,2)).*f);  % W*f; %
+% $$$                         fhm = @(W, f, varargin) (K\f + repmat(W,1,size(f,2)).*f);  % W*f; %
+                        fhm = @(W, f, varargin) (iK*f + repmat(W,1,size(f,2)).*f);  % W*f; %
                         opt=optimset(opt,'HessMult', fhm);
                         opt=optimset(opt,'TolX', 1e-8);
                         opt=optimset(opt,'TolFun', 1e-8);
@@ -106,9 +108,12 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                         opt = gp.laplace_opt.fminunc_opt;
                     end
 
-                    fe = @(f, varargin) (0.5*f*(K\f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-                    fg = @(f, varargin) (K\f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                    fe = @(f, varargin) (0.5*f*(iK*f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                    fg = @(f, varargin) (iK*f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
                     fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+% $$$                     fe = @(f, varargin) (0.5*f*(K\f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+% $$$                     fg = @(f, varargin) (K\f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+% $$$                     fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
@@ -117,7 +122,8 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     sqrtW = sqrt(W);
                     B = eye(size(K)) + sqrtW*K*sqrtW;
                     L = chol(B)';
-                    a = K\f;
+                    a = iK*f;
+% $$$                     a = K\f;
                     logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
 
                     % find the mode by Scaled conjugate gradient method

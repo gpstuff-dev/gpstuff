@@ -254,7 +254,7 @@ gp = gp_init('init', 'PIC_BLOCK', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.0
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to EP
-gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper+inducing'});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
 
 % Set the optimization parameters
 param = 'hyper';
@@ -311,9 +311,6 @@ S3 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 % =====================================
 % 4) CS+FIC model
 % =====================================
-
-% NOTE! The CS+FIC model forms a full nxn matrix. The latent 
-% value transformation is not yet implemented efficiently.
 
 % load the data
 S = which('demo_spatial3');
