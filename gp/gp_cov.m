@@ -1,13 +1,15 @@
-function [C, Cinv] = gp_cov(gp, x1, x2, varargin)
+function [C, Cinv] = gp_cov(gp, x1, x2, predcf)
 % GPCOV     Evaluate covariance matrix between two input vectors. 
 %
 %         Description
-%         C = GPCOV(GP, TX, X) takes in Gaussian process GP and two
+%         C = GPCOV(GP, TX, X, PREDCF) takes in Gaussian process GP and two
 %         matrixes TX and X that contain input vectors to GP. Returns 
 %         covariance matrix C. Every element ij of C contains covariance 
-%         between inputs i in TX and j in X.
+%         between inputs i in TX and j in X. PREDCF is an array specifying
+%         the indexes of covariance functions, which are used for forming the
+%         matrix. If empty or not given, the matrix is formed with all functions.
 %
-%         [C, Cinv] = GPCOV(GP, TX, X, VARARGIN) returns also inverse of covariance.
+%         [C, Cinv] = GPCOV(GP, TX, X, PREDCF) returns also inverse of covariance.
 
 % Copyright (c) 2006 Jarno Vanhatalo
 
@@ -18,8 +20,11 @@ function [C, Cinv] = gp_cov(gp, x1, x2, varargin)
 ncf = length(gp.cf);
 
 C = sparse(0);
-for i=1:ncf
-  gpcf = gp.cf{i};
+if nargin < 4 || isempty(predcf)
+    predcf = 1:ncf;
+end      
+for i=1:length(predcf)
+  gpcf = gp.cf{predcf(i)};
   C = C + feval(gpcf.fh_cov, gpcf, x1, x2);
 end
 

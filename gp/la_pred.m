@@ -1,4 +1,4 @@
-function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
+function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
 %LA_PRED	Predictions with Gaussian Process Laplace approximation
 %
 %	Description
@@ -25,22 +25,32 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
 % License.txt, included with the software, for details.
 
     [tn, tnin] = size(tx);
+    
+    if nargin < 5
+        error('The argument telling the optimized/sampled parameters has to be provided.')
+    end
+
+    if nargin < 6
+        predcf = [];
+    end
+
+    
 
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', varargin{:});
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', param);
 
         W = La2;
         deriv = b;
         ntest=size(x,1);
 
         % Evaluate the expectation
-        K_nf = gp_cov(gp,x,tx);
+        K_nf = gp_cov(gp,x,tx,predcf);
         Ef = K_nf*deriv;
 
         % Evaluate the variance
         if nargout > 1
-            kstarstar = gp_trvar(gp,x);
+            kstarstar = gp_trvar(gp,x,predcf);
             V = L\(sqrt(W)*K_nf');
             for i1=1:ntest
                 Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
@@ -54,10 +64,8 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         end
 
       case 'FIC'
-        param = varargin{1};
         % Here tstind = 1 if the prediction is made for the training set 
-        if nargin > 5
-            tstind = varargin{2};
+        if nargin > 6
             if length(tstind) ~= size(tx,1)
                 error('tstind (if provided) has to be of same lenght as tx.')
             end
@@ -66,40 +74,37 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         end
 
         u = gp.X_u;
-        K_fu = gp_cov(gp, tx, u);         % f x u
-        K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+        K_fu = gp_cov(gp, tx, u, predcf);         % f x u
+        K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
 
         m = size(u,1);
-
-        if length(varargin) < 1
-            error('The argument telling the optimized/sampled parameters has to be provided.')
-        end
 
         [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
         deriv = b;
         ntest=size(x,1);
 
-        K_nu=gp_cov(gp,x,u);
+        K_nu=gp_cov(gp,x,u,predcf);
         Ef = K_nu*(K_uu\(K_fu'*deriv));
 
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:), predcf);
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
-            Lav = zeros(size(La));
-            Lav(tstind) = Cv_ff-Qv_ff;
-            Ef = Ef + Lav.*p;
+            %Lav = zeros(size(La));
+            %Lav(tstind) = Kv_ff-Qv_ff;
+            Lav = Kv_ff-Qv_ff;            
+            Ef(tstind) = Ef(tstind) + Lav.*deriv;
         end
 
         
         % Evaluate the variance
         if nargout > 1
             W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
-            kstarstar = gp_trvar(gp,x);
+            kstarstar = gp_trvar(gp,x,predcf);
             Luu = chol(K_uu)';
             La = W.*La2;
             Lahat = 1 + La;
@@ -117,9 +122,9 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
             
             % if the prediction is made for training set, evaluate Lav also for prediction points
             if ~isempty(tstind)
-                Varf(tstind) = Varf(tstind) - 2.*sum( BB2(:,tstind)'.*(repmat((La.\Lav(tstind)),1,m).*BB'),2) ...
-                    + 2.*sum( BB2(:,tstind)'*(BB*L).*(repmat(Lav(tstind),1,m).*L), 2)  ...
-                    - Lav(tstind)./La.*Lav(tstind) + sum((repmat(Lav(tstind),1,m).*L).^2,2);                
+                Varf(tstind) = Varf(tstind) - 2.*sum( BB2(:,tstind)'.*(repmat((La.\Lav),1,m).*BB'),2) ...
+                    + 2.*sum( BB2(:,tstind)'*(BB*L).*(repmat(Lav,1,m).*L), 2)  ...
+                    - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);                
             end
             for i1=1:ntest
                 switch gp.likelih.type
@@ -133,20 +138,14 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
 
       case 'PIC_BLOCK'
         u = gp.X_u;
-        K_fu = gp_cov(gp, tx, u);         % f x u
-        K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+        K_fu = gp_cov(gp, tx, u, predcf);         % f x u
+        K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-        K_nu=gp_cov(gp,x,u);
+        K_nu=gp_cov(gp,x,u,predcf);
 
         ind = gp.tr_index;
-        param = varargin{1};
-        tstind = varargin{2};
         ntest = size(x,1);
         m = size(u,1);
-
-        if length(varargin) < 1
-            error('The argument telling the optimized/sampled parameters has to be provided.')
-        end
 
         [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
@@ -157,7 +156,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         w_n=zeros(length(x),1);
         for i=1:length(ind)
             w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
-            K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:));              % n x u
+            K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:), predcf);              % n x u
             w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
         end
 
@@ -166,7 +165,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         % Evaluate the variance
         if nargout > 1
             W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
-            kstarstar = gp_trvar(gp,x);
+            kstarstar = gp_trvar(gp,x,predcf);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
             for i=1:length(ind)
@@ -184,7 +183,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
             KnfL2 = K_nu*(iKuuB*L2);
             Varf = zeros(length(x),1);
             for i=1:length(ind)
-                v_n = gp_cov(gp, x(tstind{i},:), tx(ind{i},:)).*repmat(sqrtW(ind{i},:)',length(tstind{i}),1);              % n x u
+                v_n = gp_cov(gp, x(tstind{i},:), tx(ind{i},:),predcf).*repmat(sqrtW(ind{i},:)',length(tstind{i}),1);              % n x u
                 v_bu = K_nu(tstind{i},:)*iKuuB(:,ind{i});
                 KnfLa = K_nu*(iKuuB(:,ind{i})/chol(Lahat{i}));
                 KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(Lahat{i});
@@ -203,10 +202,8 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
             end
         end
       case 'CS+FIC'
-        param = varargin{1};
         % Here tstind = 1 if the prediction is made for the training set 
-        if nargin > 5
-            tstind = varargin{2};
+        if nargin > 6
             if length(tstind) ~= size(tx,1)
                 error('tstind (if provided) has to be of same lenght as tx.')
             end
@@ -218,64 +215,95 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
         n2 = size(x,1);
         u = gp.X_u;
         m = length(u);
-        cf_orig = gp.cf;
-        ncf = length(gp.cf);
-        
-        cf1 = {};
-        cf2 = {};
-        j = 1;
-        k = 1;
-        for i = 1:ncf
-            if ~isfield(gp.cf{i},'cs')
-                cf1{j} = gp.cf{i};
-                j = j + 1;
-            else
-                cf2{k} = gp.cf{i};
-                k = k + 1;
-            end
-        end
-        gp.cf = cf1;
-
-        [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % f x 1  vector
-        K_fu = gp_cov(gp, tx, u);         % f x u
-        K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-        K_nu=gp_cov(gp,x,u);
-        % evaluate also Lav if the prediction is made for training set
-        if ~isempty(tstind)
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:));
-            Luu = chol(K_uu)';
-            B=Luu\(K_fu');
-            Qv_ff=sum(B.^2)';
-            Lav = Cv_ff-Qv_ff;
-        end
-        
-        gp.cf = cf2;
-        Kcs_nf = gp_cov(gp, x, tx);
-        gp.cf = cf_orig;
-
-        if ~isempty(tstind)
-            Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav,n2,n);
-        end
-
-        if length(varargin) < 1
-            error('The argument telling the optimized/sampled parameters has to be provided.')
-        end
 
         [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        
+        % Indexes to all non-compact support and compact support covariances.
+        cf1 = [];
+        cf2 = [];
+        % Indexes to non-CS and CS covariances, which are used for predictions
+        predcf1 = [];
+        predcf2 = [];    
+        
+        ncf = length(gp.cf);
+        % Loop through all covariance functions
+        for i = 1:ncf        
+            % Non-CS covariances
+            if ~isfield(gp.cf{i},'cs') 
+                cf1 = [cf1 i];
+                % If used for prediction
+                if ~isempty(find(predcf==i))
+                    predcf1 = [predcf1 i]; 
+                end
+                % CS-covariances
+        else
+            cf2 = [cf2 i];           
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+                predcf2 = [predcf2 i]; 
+            end
+            end
+        end
+        if isempty(predcf1) && isempty(predcf2)
+            predcf1 = cf1;
+            predcf2 = cf2;
+        end
+        
+        % Determine the types of the covariance functions used
+        % in making the prediction.
+        if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
+            ptype = 1;
+            predcf2 = cf2;
+        elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
+            ptype = 2;
+            predcf1 = cf1;
+        else                                           % Both non-CS and CS covariances
+            ptype = 3;
+        end
+        
+        K_fu = gp_cov(gp,tx,u,predcf1);         % f x u
+        K_uu = gp_trcov(gp,u,predcf1);    % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+        K_nu=gp_cov(gp,x,u,predcf1);
+
+        Kcs_nf = gp_cov(gp, x, tx, predcf2);
 
         deriv = b;
         ntest=size(x,1);
 
-        % Knf = K_nu*(K_uu\K_fu');
-        % Ef = Knf*p;
-        Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;
+        % Calculate the predictive mean according to the type of
+        % covariance functions used for making the prediction
+        if ptype == 1
+            Ef = K_nu*(K_uu\(K_fu'*deriv));
+        elseif ptype == 2
+            Ef = Kcs_nf*deriv;
+        else 
+            Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;        
+        end
 
+        % evaluate also Lav if the prediction is made for training set
+        if ~isempty(tstind)
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:), predcf1);
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');
+            Qv_ff=sum(B.^2)';
+            %Lav = zeros(size(Ef));
+            %Lav(tstind) = Kv_ff-Qv_ff;
+            Lav = Kv_ff-Qv_ff;
+        end
+
+        % Add also Lav if the prediction is made for training set
+        % and non-CS covariance function is used for prediction
+        if ~isempty(tstind) && (ptype == 1 || ptype == 3)
+            Ef(tstind) = Ef(tstind) + Lav.*deriv;
+        end
+
+        
         % Evaluate the variance
         if nargout > 1
             W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
-            kstarstar = gp_trvar(gp,x);
+            kstarstar = gp_trvar(gp,x,predcf);
             Luu = chol(K_uu)';
             Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
             B = sqrtW*K_fu;
@@ -288,18 +316,39 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, varargin)
             % Set params for K_nf
             BB=Luu\(B)';    % sqrtW*K_fu
             BB2=Luu\(K_nu');
-            KcssW = Kcs_nf*sqrtW;
-            Varf = kstarstar - sum(BB2'.*(BB*(Lahat\BB')*BB2)',2);
-            Varf = Varf + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
-            %Varf = Varf - sum((KcssW/chol(Lahat)).^2,2);
-            m = amd(Lahat);
-            tmp = sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2);
-            Varf = Varf - tmp;
             
-            Varf = Varf + sum((KcssW*L2).^2, 2);
-            %VarY = VarY - 2.*diag((Kcs_nf*iLaKfu)*(K_uu\K_nu')) + 2.*diag((Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu')));
-            Varf = Varf - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2);
-            Varf = Varf + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
+            m = amd(Lahat);
+            % Calculate the predictive variance according to the type
+            % covariance functions used for making the prediction
+            if ptype == 1 || ptype == 3                            
+                % FIC part of the covariance
+                Varf = kstarstar - sum(BB2'.*(BB*(Lahat\BB')*BB2)',2) + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+                % Add Lav to Kcs_nf if the prediction is made for the training set
+                if  ~isempty(tstind)
+                    % Non-CS covariance
+                    if ptype == 1         
+                        Kcs_nf = sparse(tstind,1:n,Lav,n2,n);                    
+                    % Non-CS and CS covariances
+                    else                  
+                        Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav,n2,n);
+                    end
+                    KcssW = Kcs_nf*sqrtW;                    
+                    Varf = Varf - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2) ...
+                           - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2) + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
+                % In case of both non-CS and CS prediction covariances add 
+                % only Kcs_nf if the prediction is not done for the training set 
+                elseif ptype == 3
+                    KcssW = Kcs_nf*sqrtW;
+                    Varf = Varf - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2) ...
+                           - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2) + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
+                end
+            % Prediction with only CS covariance
+            elseif ptype == 2
+                KcssW = Kcs_nf*sqrtW;
+                Varf = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
+            end        
+
+            
             for i1=1:ntest
                 switch gp.likelih.type
                   case 'probit'
