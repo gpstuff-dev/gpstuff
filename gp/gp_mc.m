@@ -238,7 +238,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if isfield(opt, 'nb_sls_opt')
                 w = gp_pak(gp, 'likelih');
-                fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z) - feval(likelih.fh_priore, feval(likelih.fh_unpak, w, likelih)) );
+                %fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z) - feval(likelih.fh_priore, feval(likelih.fh_unpak, w, likelih)));
+                fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
                 [w, energies, diagns] = sls(fe, w, opt.nb_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.nb_sls_opt = diagns.opt;
@@ -359,6 +360,10 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             for i=1:ncf
                 cf = gp.cf{i};
                 rec.cf{i} = feval(cf.fh_recappend, [], gp.nin);
+                % Initialize metric structure
+                if isfield(cf,'metric')
+                    rec.cf{i}.metric = feval(cf.metric.recappend, cf.metric, gp.nin);
+                end
             end
             for i=1:nn
                 noise = gp.noise{i};
@@ -385,6 +390,10 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         for i=1:ncf
             gpcf = gp.cf{i};
             rec.cf{i} = feval(gpcf.fh_recappend, rec.cf{i}, ri, gpcf);
+            % Record metric structure
+            if isfield(gpcf,'metric')
+                rec.cf{i}.metric = feval(rec.cf{i}.metric.recappend, rec.cf{i}.metric, ri, gpcf.metric);
+            end
         end
 
         % Set the record for every noise function

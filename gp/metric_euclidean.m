@@ -61,12 +61,13 @@ function metric = metric_euclidean(do, varargin)
         metric.p.params=[];
         
         % Set the function handles to the nested functions
-        metric.pak    = @metric_euclidean_pak;
-        metric.unpak  = @metric_euclidean_unpak;
-        metric.e      = @metric_euclidean_e;
-        metric.ghyper = @metric_euclidean_ghyper;
-        metric.ginput = @metric_euclidean_ginput;
+        metric.pak        = @metric_euclidean_pak;
+        metric.unpak      = @metric_euclidean_unpak;
+        metric.e          = @metric_euclidean_e;
+        metric.ghyper     = @metric_euclidean_ghyper;
+        metric.ginput     = @metric_euclidean_ginput;
         metric.distance   = @metric_euclidean_distance;
+        metric.recappend  = @metric_euclidean_recappend;
         
         if length(varargin) > 2
             if mod(nargin,2) ~=1
@@ -398,4 +399,59 @@ end
         %size(ginput)
         %ginput
         
+    end
+    
+    
+    function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
+    % RECAPPEND - Record append
+    %          Description
+    %          RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC) takes old covariance
+    %          function record RECMETRIC, record index RI and covariance function structure. 
+    %          Appends the parameters of METRIC to the RECMETRIC in the ri'th place.
+    %
+    %          RECAPPEND returns a structure RECMETRIC containing following record fields:
+    %          lengthHyper    
+    %          lengthHyperNu  
+    %          lengthScale    
+    %
+    %          See also
+    %          GP_MC and GP_MC -> RECAPPEND
+
+    % Initialize record
+        if nargin == 2
+            recmetric.type = 'metric_euclidean';
+            recmetric.nin = ri;
+            metric.components = recmetric.components;
+            
+            % Initialize parameters
+            recmetric.params = [];
+
+            % Set the function handles
+            recmetric.pak       = @metric_euclidean_pak;
+            recmetric.unpak     = @metric_euclidean_unpak;
+            recmetric.e         = @metric_euclidean_e;
+            recmetric.ghyper    = @metric_euclidean_ghyper;
+            recmetric.ginput    = @metric_euclidean_ginput;            
+            recmetric.distance  = @metric_euclidean_distance;
+            recmetric.recappend = @metric_euclidean_recappend;
+            return
+        end
+        mp = metric.p;
+
+        % record parameters
+        if ~isempty(metric.params)
+            if ~isempty(mp.params)
+                recmetric.lengthHyper(ri,:)=mp.params.a.s;
+                if isfield(mp.params,'p')
+                    if isfield(mp.params.p,'nu')
+                        recmetric.lengthHyperNu(ri,:)=mp.params.a.nu;
+                    end
+                end
+            elseif ri==1
+                recmetric.lengthHyper=[];
+            end
+            recmetric.params(ri,:)=metric.params;
+        elseif ri==1
+            recmetric.params=[];
+        end
     end

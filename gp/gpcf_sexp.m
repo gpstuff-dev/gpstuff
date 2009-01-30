@@ -252,7 +252,7 @@ function gpcf = gpcf_sexp(do, varargin)
             % Evaluate the prior contribution to the error. The parameters that
             % are sampled are from space W = log(w) where w is all the "real" samples.
             % On the other hand errors are evaluated in the W-space so we need take
-            % into account also the  Jakobian of transformation W -> w = exp(W).
+            % into account also the  Jacobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
                     
             eprior=eprior...
@@ -766,21 +766,24 @@ function gpcf = gpcf_sexp(do, varargin)
         end
 
         gpp = gpcf.p;
-        % record lengthScale
-        if ~isempty(gpcf.lengthScale)
-            if ~isempty(gpp.lengthScale)
-                reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
-                if isfield(gpp.lengthScale,'p')
-                    if isfield(gpp.lengthScale.p,'nu')
-                        reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
+
+        if ~isfield(gpcf,'metric')
+            % record lengthScale
+            if ~isempty(gpcf.lengthScale)
+                if ~isempty(gpp.lengthScale)
+                    reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
+                    if isfield(gpp.lengthScale,'p')
+                        if isfield(gpp.lengthScale.p,'nu')
+                            reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
+                        end
                     end
+                elseif ri==1
+                    reccf.lengthHyper=[];
                 end
+                reccf.lengthScale(ri,:)=gpcf.lengthScale;
             elseif ri==1
-                reccf.lengthHyper=[];
+                reccf.lengthScale=[];
             end
-            reccf.lengthScale(ri,:)=gpcf.lengthScale;
-        elseif ri==1
-            reccf.lengthScale=[];
         end
         % record magnSigma2
         if ~isempty(gpcf.magnSigma2)
