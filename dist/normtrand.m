@@ -1,7 +1,7 @@
-function result = normt_rnd(mu,sigma2,left,right)
-%NORMT_RND  random draws from a normal truncated to (left,right) interval
+function result = normtrand(mu,sigma2,left,right)
+%NORMTRAND  random draws from a normal truncated to (left,right) interval
 % ------------------------------------------------------
-% USAGE: y = normt_rnd(mu,sigma2,left,right)
+% USAGE: y = normtrand(mu,sigma2,left,right)
 % where:   mu = mean (nobs x 1)
 %      sigma2 = variance (nobs x 1)
 %        left = left truncation points (nobs x 1)
@@ -9,12 +9,12 @@ function result = normt_rnd(mu,sigma2,left,right)
 % ------------------------------------------------------
 % RETURNS: y = (nobs x 1) vector
 % ------------------------------------------------------
-% NOTES: use y = normt_rnd(mu,sigma2,left,mu+5*sigma2)
+% NOTES: use y = normtrand(mu,sigma2,left,mu+5*sigma2)
 %        to produce a left-truncated draw
-%        use y = normt_rnd(mu,sigma2,mu-5*sigma2,right)
+%        use y = normtrand(mu,sigma2,mu-5*sigma2,right)
 %        to produce a right-truncated draw
 % ------------------------------------------------------
-% SEE ALSO: normlt_rnd (left truncated draws), normrt_rnd (right truncated)
+% SEE ALSO: normltrand (left truncated draws), normrtrand (right truncated)
 %
 
 % adopted from Bayes Toolbox by
@@ -31,8 +31,10 @@ function result = normt_rnd(mu,sigma2,left,right)
 % Ordinal Data Modeling by Valen Johnson and James Albert
 % Springer-Verlag, New York, 1999.
 
+% 2009-01-08 Aki Vehtari - Fixed Naming
+
 if nargin ~= 4
-  error('normt_rnd: wrong # of input arguments');
+  error('normtrand: wrong # of input arguments');
 end;
 
 std = sqrt(sigma2);

@@ -1,8 +1,8 @@
-function result = normrt_rnd(mu,sigma2,right)
-%NORMRT_RND   compute random draws from a right-truncated normal
+function result = normrtrand(mu,sigma2,right)
+%NORMRTRAND   compute random draws from a right-truncated normal
 %             distribution, with mean = mu, variance = sigma2
 % ------------------------------------------------------
-% USAGE: y = normrt_rnd(mu,sigma2,right)
+% USAGE: y = normrtrand(mu,sigma2,right)
 % where: nobs = # of draws
 %          mu = mean     (scalar or vector)
 %      sigma2 = variance (scalar or vector)
@@ -11,7 +11,7 @@ function result = normrt_rnd(mu,sigma2,right)
 % RETURNS: y = (scalar or vector) the size of mu, sigma2
 % ------------------------------------------------------
 % NOTES: This is merely a convenience function that
-%        calls normt_rnd with the appropriate arguments
+%        calls normtrand with the appropriate arguments
 % ------------------------------------------------------
 
 % written by:
@@ -24,11 +24,13 @@ function result = normrt_rnd(mu,sigma2,right)
 % Anyone is free to use these routines, no attribution (or blame)
 % need be placed on the author/authors.
 
+% 2009-01-08 Aki Vehtari - Fixed Naming
+
 if nargin ~= 3
-error('normrt_rnd: Wrong # of input arguments');
+error('normrtrand: Wrong # of input arguments');
 end;
 
 left = mu - 5*sqrt(sigma2);
 
-result = normt_rnd(mu,sigma2,left,right);
+result = normtrand(mu,sigma2,left,right);
 
