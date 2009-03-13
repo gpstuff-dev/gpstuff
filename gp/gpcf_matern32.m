@@ -93,8 +93,11 @@ function gpcf = gpcf_matern32(do, varargin)
                     gpcf.magnSigma2 = varargin{i+1};
                 elseif strcmp(varargin{i},'lengthScale')
                     gpcf.lengthScale = varargin{i+1};
-                elseif strcmp(varargin{i},'fh_sampling')
+                elseif strcmp(varargin{i},'fh_sampling')                    
                     gpcf.fh_sampling = varargin{i+1};
+                elseif strcmp(varargin{i},'metric')
+                    gpcf.metric = varargin{i+1};
+                    gpcf = rmfield(gpcf, 'lengthScale');                    
                 else
                     error('Wrong parameter name!')
                 end
@@ -116,6 +119,9 @@ function gpcf = gpcf_matern32(do, varargin)
                 gpcf.lengthScale = varargin{i+1};
             elseif strcmp(varargin{i},'fh_sampling')
                 gpcf.fh_sampling = varargin{i+1};
+            elseif strcmp(varargin{i},'metric')
+                gpcf.metric = varargin{i+1};
+                gpcf = rmfield(gpcf, 'lengthScale');
             else
                 error('Wrong parameter name!')
             end
@@ -135,31 +141,42 @@ function gpcf = gpcf_matern32(do, varargin)
     %
     %	See also
     %	GPCF_MATERN32_UNPAK
-
-        gpp=gpcf.p;
-
-        i1=0;i2=1;
-        if ~isempty(w)
-            i1 = length(w);
-        end
-
-        i1 = i1+1;
-        w(i1) = gpcf.magnSigma2;
-        i2=i1+length(gpcf.lengthScale);
-        i1=i1+1;
-        w(i1:i2)=gpcf.lengthScale;
-        i1=i2;
-        % Hyperparameters of lengthScale
-        if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
+        if isfield(gpcf,'metric')
+            i1=0;i2=1;
+            if ~isempty(w)
+                i1 = length(w);
+            end
+            i1 = i1+1;
+            w(i1) = gpcf.magnSigma2;
+            
+            w = feval(gpcf.metric.pak, gpcf.metric, w);
+            
+        else
+                
+            gpp=gpcf.p;
+            
+            i1=0;i2=1;
+            if ~isempty(w)
+                i1 = length(w);
+            end
+            
+            i1 = i1+1;
+            w(i1) = gpcf.magnSigma2;
+            i2=i1+length(gpcf.lengthScale);
             i1=i1+1;
-            w(i1)=gpp.lengthScale.a.s;
-            if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+            w(i1:i2)=gpcf.lengthScale;
+            i1=i2;
+            % Hyperparameters of lengthScale
+            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                 i1=i1+1;
-                w(i1)=gpp.lengthScale.a.nu;
+                w(i1)=gpp.lengthScale.a.s;
+                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                    i1=i1+1;
+                    w(i1)=gpp.lengthScale.a.nu;
+                end
             end
         end
     end
-
 
     function [gpcf, w] = gpcf_matern32_unpak(gpcf, w)
     %GPCF_MATERN32_UNPAK  Separate covariance function hyper-parameter vector into components.
@@ -173,28 +190,36 @@ function gpcf = gpcf_matern32(do, varargin)
     %
     %	See also
     %	GPCF_MATERN32_PAK
-
-        gpp=gpcf.p;
-        i1=0;i2=1;
-        i1=i1+1;
-        gpcf.magnSigma2=w(i1);
-        i2=i1+length(gpcf.lengthScale);
-        i1=i1+1;
-        gpcf.lengthScale=w(i1:i2);
-        i1=i2;
         
-        % Hyperparameters of lengthScale
-        if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
+        if isfield(gpcf,'metric')
+            i1=1;
+            gpcf.magnSigma2=w(i1);
+            w = w(i1+1:end);
+            [metric, w] = feval(gpcf.metric.unpak, gpcf.metric, w);
+            gpcf.metric = metric;
+        else
+            gpp=gpcf.p;
+            i1=0;i2=1;
             i1=i1+1;
-            gpcf.p.lengthScale.a.s=w(i1);
-            if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+            gpcf.magnSigma2=w(i1);
+            i2=i1+length(gpcf.lengthScale);
+            i1=i1+1;
+            gpcf.lengthScale=w(i1:i2);
+            i1=i2;
+            
+            % Hyperparameters of lengthScale
+            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                 i1=i1+1;
-                gpcf.p.lengthScale.a.nu=w(i1);
+                gpcf.p.lengthScale.a.s=w(i1);
+                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                    i1=i1+1;
+                    gpcf.p.lengthScale.a.nu=w(i1);
+                end
             end
+            w = w(i1+1:end);
         end
-        w = w(i1+1:end);
     end
-
+    
     function eprior =gpcf_matern32_e(gpcf, x, t)
     %GPCF_MATERN32_E     Evaluate the energy of prior of MATERN32 parameters
     %
@@ -207,40 +232,48 @@ function gpcf = gpcf_matern32(do, varargin)
     %
     %	See also
     %	GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_G, GP_E
-
-        [n, m] =size(x);
-
-        % Evaluate the prior contribution to the error. The parameters that
-        % are sampled are from space W = log(w) where w is all the "real" samples.
-        % On the other hand errors are evaluated in the W-space so we need take
-        % into account also the  Jakobian of transformation W -> w = exp(W).
-        % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         eprior = 0;
         gpp=gpcf.p;
-
-        eprior=eprior...
-               +feval(gpp.magnSigma2.fe, ...
-                      gpcf.magnSigma2, gpp.magnSigma2.a)...
-               -log(gpcf.magnSigma2);
-        if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
+        
+        [n, m] =size(x);
+        
+        if isfield(gpcf,'metric')
             eprior=eprior...
-                   +feval(gpp.lengthScale.p.s.fe, ...
-                          gpp.lengthScale.a.s, gpp.lengthScale.p.s.a)...
-                   -log(gpp.lengthScale.a.s);
-            if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                   +feval(gpp.magnSigma2.fe, ...
+                          gpcf.magnSigma2, gpp.magnSigma2.a)...
+                   -log(gpcf.magnSigma2);
+            eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
+            
+        else        
+            % Evaluate the prior contribution to the error. The parameters that
+            % are sampled are from space W = log(w) where w is all the "real" samples.
+            % On the other hand errors are evaluated in the W-space so we need take
+            % into account also the  Jakobian of transformation W -> w = exp(W).
+            % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
+            eprior=eprior...
+                   +feval(gpp.magnSigma2.fe, ...
+                          gpcf.magnSigma2, gpp.magnSigma2.a)...
+                   -log(gpcf.magnSigma2);
+            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                 eprior=eprior...
-                       +feval(gpp.p.lengthScale.nu.fe, ...
-                              gpp.lengthScale.a.nu, gpp.lengthScale.p.nu.a)...
-                       -log(gpp.lengthScale.a.nu);
+                       +feval(gpp.lengthScale.p.s.fe, ...
+                              gpp.lengthScale.a.s, gpp.lengthScale.p.s.a)...
+                       -log(gpp.lengthScale.a.s);
+                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                    eprior=eprior...
+                           +feval(gpp.p.lengthScale.nu.fe, ...
+                                  gpp.lengthScale.a.nu, gpp.lengthScale.p.nu.a)...
+                           -log(gpp.lengthScale.a.nu);
+                end
             end
-        end
-        eprior=eprior...
-               +feval(gpp.lengthScale.fe, ...
-                      gpcf.lengthScale, gpp.lengthScale.a)...
-               -sum(log(gpcf.lengthScale));
+            eprior=eprior...
+                   +feval(gpp.lengthScale.fe, ...
+                          gpcf.lengthScale, gpp.lengthScale.a)...
+                   -sum(log(gpcf.lengthScale));
     % $$$     end
+        end
     end
-
+    
     function [DKff, gprior]  = gpcf_matern32_ghyper(gpcf, x, x2, mask)
     %GPCF_MATERN32_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
@@ -276,127 +309,175 @@ function gpcf = gpcf_matern32(do, varargin)
 
             ii1=1;
             DKff{ii1} = Cdm;
-
-            ma2 = gpcf.magnSigma2;
-            % loop over all the lengthScales
-            if length(gpcf.lengthScale) == 1
-                % In the case of isotropic MATERN32
-                s = 1./gpcf.lengthScale;
-                dist = 0;
-                for i=1:m
+            
+            if isfield(gpcf,'metric')
+                dist = feval(gpcf.metric.distance, gpcf.metric, x);
+                [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x);
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+                    %DKff{ii1} = -2.*Cdm.*dist.*gdist{i};
+                    %DKff{ii1} = -Cdm./(1+sqrt(3)*dist).*3.*dist.*gdist{i};
+                    DKff{ii1} = -gpcf.magnSigma2.*3.*dist.*gdist{i}.*exp(-sqrt(3).*dist);
+                end
+            else
+                ma2 = gpcf.magnSigma2;
+                % loop over all the lengthScales
+                if length(gpcf.lengthScale) == 1
+                    % In the case of isotropic MATERN32
+                    s = 1./gpcf.lengthScale;
+                    dist = 0;
+                    for i=1:m
                     D = gminus(x(:,i),x(:,i)');
                     dist = dist + D.^2;
-                end
-                D = ma2.*3.*dist.*s.^2.*exp(-sqrt(3.*dist).*s);
-
-                ii1 = ii1+1;
-                DKff{ii1} = D;                    
-            else
-                % In the case ARD is used
-                s = 1./gpcf.lengthScale.^2;
-                dist = 0;
-                for i=1:m
-                    dist = dist + s(i).*(gminus(x(:,i),x(:,i)')).^2;
-                end
-                dist=sqrt(dist);
-                for i=1:m
-                    D = 3.*ma2.*s(i).*(gminus(x(:,i),x(:,i)')).^2.*exp(-sqrt(3).*dist);
-
+                    end
+                    D = ma2.*3.*dist.*s.^2.*exp(-sqrt(3.*dist).*s);
+                    
                     ii1 = ii1+1;
-                    DKff{ii1} = D;
+                    DKff{ii1} = D;                    
+                else
+                    % In the case ARD is used
+                    s = 1./gpcf.lengthScale.^2;
+                    dist = 0;
+                    for i=1:m
+                        dist = dist + s(i).*(gminus(x(:,i),x(:,i)')).^2;
+                    end
+                    dist=sqrt(dist);
+                    for i=1:m
+                        D = 3.*ma2.*s(i).*(gminus(x(:,i),x(:,i)')).^2.*exp(-sqrt(3).*dist);
+                        
+                        ii1 = ii1+1;
+                        DKff{ii1} = D;
+                    end
                 end
             end
             % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
         elseif nargin == 3
-            if size(x,2) ~= size(x2,2)
-                error('gpcf_matern32 -> _ghyper: The number of columns in x and x2 has to be the same. ')
-            end
-
-            ii1=1;
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
-            DKff{ii1} = K;
-            
-            % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-            if length(gpcf.lengthScale) == 1
-                % In the case of an isotropic matern32
-                s = 1./gpcf.lengthScale;
-                ma2 = gpcf.magnSigma2;
-                dist = 0; 
-                for i=1:m
-                    dist = dist + (gminus(x(:,i),x2(:,i)')).^2;
+                if size(x,2) ~= size(x2,2)
+                    error('gpcf_matern32 -> _ghyper: The number of columns in x and x2 has to be the same. ')
                 end
-                DK_l = 3.*ma2.*s.^2.*dist.*exp(-s.*sqrt(3.*dist));
-                ii1=ii1+1;
-                DKff{ii1} = DK_l;
-            else
-                % In the case ARD is used
-                s = 1./gpcf.lengthScale.^2;        % set the length
-                ma2 = gpcf.magnSigma2;
-                dist = 0;
-                for i=1:m
-                    dist = dist + s(i).*(gminus(x(:,i),x2(:,i)')).^2;
+                
+                ii1=1;
+                K = feval(gpcf.fh_cov, gpcf, x, x2);
+                DKff{ii1} = K;
+                
+                if isfield(gpcf,'metric')                
+                    dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
+                    [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, x2);
+                    for i=1:length(gdist)
+                        ii1 = ii1+1;                    
+                        %DKff{ii1} = -2.*K.*dist.*gdist{i};                    
+                        %DKff{ii1} = -K./(1+sqrt(3)*dist).*3.*dist.*gdist{i};             
+                        DKff{ii1} = -gpcf.magnSigma2.*3.*dist.*gdist{i}.*exp(-sqrt(3).*dist);
+                    end
+                else                    
+                    % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
+                    if length(gpcf.lengthScale) == 1
+                        % In the case of an isotropic matern32
+                        s = 1./gpcf.lengthScale;
+                        ma2 = gpcf.magnSigma2;
+                        dist = 0; 
+                        for i=1:m
+                            dist = dist + (gminus(x(:,i),x2(:,i)')).^2;
+                        end
+                        DK_l = 3.*ma2.*s.^2.*dist.*exp(-s.*sqrt(3.*dist));
+                        ii1=ii1+1;
+                        DKff{ii1} = DK_l;
+                    else
+                        % In the case ARD is used
+                        s = 1./gpcf.lengthScale.^2;        % set the length
+                        ma2 = gpcf.magnSigma2;
+                        dist = 0;
+                        for i=1:m
+                            dist = dist + s(i).*(gminus(x(:,i),x2(:,i)')).^2;
+                        end
+                        for i=1:m
+                            DK_l = 3.*ma2.*s(i).*(gminus(x(:,i),x2(:,i)')).^2.*exp(-sqrt(3.*dist));
+                            ii1=ii1+1;
+                            DKff{ii1} = DK_l;
+                        end
+                    end                
                 end
-                for i=1:m
-                    DK_l = 3.*ma2.*s(i).*(gminus(x(:,i),x2(:,i)')).^2.*exp(-sqrt(3.*dist));
-                    ii1=ii1+1;
-                    DKff{ii1} = DK_l;
-                end
-            end
-            % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
-            %           DKff{2...} = d mask(Kff,I) / d lengthScale
+                % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
+                %           DKff{2...} = d mask(Kff,I) / d lengthScale
         elseif nargin == 4
-            ii1=1;
-            DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
-            for i2=1:length(gpcf.lengthScale)
-                ii1 = ii1+1;
-                DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
+            if isfield(gpcf,'metric')
+                ii1=1;
+                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                
+                dist = 0;
+                [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, [], 1);
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+    % $$$                     DKff{ii1} = -2.*DKff{1}.*dist.*gdist{i};
+                    DKff{ii1} = 0;
+                end
+            else
+                
+                ii1=1;
+                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                for i2=1:length(gpcf.lengthScale)
+                    ii1 = ii1+1;
+                    DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
+                end
             end
         end
         if nargout > 1
-            % Evaluate the gprior with respect to magnSigma2
-            i1 = i1+1;
-            gprior(i1)=feval(gpp.magnSigma2.fg, ...
-                             gpcf.magnSigma2, ...
-                             gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
-            % Evaluate the prior contribution of gradient with respect to lengthScale
-            if length(gpcf.lengthScale)>1
-                for i2=1:gpcf.nin
+            if isfield(gpcf,'metric')
+                % Evaluate the gprior with respect to magnSigma2
+                i1 = i1+1;
+                gprior(i1)=feval(gpp.magnSigma2.fg, ...
+                                 gpcf.magnSigma2, ...
+                                 gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
+                % Evaluate the data contribution of gradient with respect to lengthScale
+                for i2=1:length(gprior_dist)
+                    i1 = i1+1;                    
+                    gprior(i1)=gprior_dist(i2);
+                end
+            else                
+                % Evaluate the gprior with respect to magnSigma2
+                i1 = i1+1;
+                gprior(i1)=feval(gpp.magnSigma2.fg, ...
+                                 gpcf.magnSigma2, ...
+                                 gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
+                % Evaluate the prior contribution of gradient with respect to lengthScale
+                if length(gpcf.lengthScale)>1
+                    for i2=1:gpcf.nin
+                        i1=i1+1;
+                        gprior(i1)=feval(gpp.lengthScale.fg, ...
+                                         gpcf.lengthScale(i2), ...
+                                         gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
+                    end
+                else
                     i1=i1+1;
                     gprior(i1)=feval(gpp.lengthScale.fg, ...
-                                     gpcf.lengthScale(i2), ...
-                                     gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
+                                     gpcf.lengthScale, ...
+                                     gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
                 end
-            else
-                i1=i1+1;
-                gprior(i1)=feval(gpp.lengthScale.fg, ...
-                                 gpcf.lengthScale, ...
-                                 gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
-            end
-            % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
-            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                i1=i1+1;
-                gprior(i1)=...
-                    feval(gpp.lengthScale.p.s.fg, ...
-                          gpp.lengthScale.a.s,...
-                          gpp.lengthScale.p.s.a, 'x').*gpp.lengthScale.a.s - 1 ...
-                    +feval(gpp.lengthScale.fg, ...
-                           gpcf.lengthScale, ...
-                           gpp.lengthScale.a, 's').*gpp.lengthScale.a.s;
-                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
+                if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                     i1=i1+1;
                     gprior(i1)=...
-                        feval(gpp.lengthScale.p.nu.fg, ...
-                              gpp.lengthScale.a.nu,...
-                              gpp.lengthScale.p.nu.a, 'x').*gpp.lengthScale.a.nu -1 ...
+                        feval(gpp.lengthScale.p.s.fg, ...
+                              gpp.lengthScale.a.s,...
+                              gpp.lengthScale.p.s.a, 'x').*gpp.lengthScale.a.s - 1 ...
                         +feval(gpp.lengthScale.fg, ...
                                gpcf.lengthScale, ...
-                               gpp.lengthScale.a, 'nu').*gpp.lengthScale.a.nu;
+                               gpp.lengthScale.a, 's').*gpp.lengthScale.a.s;
+                    if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
+                        i1=i1+1;
+                        gprior(i1)=...
+                            feval(gpp.lengthScale.p.nu.fg, ...
+                                  gpp.lengthScale.a.nu,...
+                                  gpp.lengthScale.p.nu.a, 'x').*gpp.lengthScale.a.nu -1 ...
+                            +feval(gpp.lengthScale.fg, ...
+                                   gpcf.lengthScale, ...
+                                   gpp.lengthScale.a, 'nu').*gpp.lengthScale.a.nu;
+                    end
                 end
             end
-
         end
     end
-
+    
     function [DKff, gprior]  = gpcf_matern32_ginput(gpcf, x, x2)
     %GPCF_MATERN32_GINPUT   Evaluate gradient of covariance function with 
     %                       respect to the inducing inputs.
@@ -419,53 +500,80 @@ function gpcf = gpcf_matern32(do, varargin)
         ma2 = gpcf.magnSigma2;
         
         if nargin == 2
-            if length(gpcf.lengthScale) == 1  % In the case of an isotropic EXP
-                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            if isfield(gpcf,'metric')
+                K = feval(gpcf.fh_trcov, gpcf, x);
+                dist = feval(gpcf.metric.distance, gpcf.metric, x);
+                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x);
+                ii1 = 0;
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+                    %DKff{ii1} = -2.*K.*dist.*gdist{ii1};
+                    DKff{ii1} = -K./(1+sqrt(3)*dist).*3.*dist.*gdist{ii1};
+                    gprior(ii1) = gprior_dist(ii1);
+                end
             else
-                s = 1./gpcf.lengthScale.^2;
-            end
-            dist=0; 
-            for i2=1:nin
-                dist = dist + s(i2).*(gminus(x(:,i2),x(:,i2)')).^2;
-            end
-            ii1 = 0;
-            for i=1:m
-                for j = 1:n
-                    D1 = zeros(n,n);
-                    D1(j,:) = sqrt(s(i)).*gminus(x(j,i),x(:,i)');
-                    D1 = D1 + D1';
-                    DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
-
-                    ii1 = ii1 + 1;
-                    DKff{ii1} = DK;
-                    gprior(ii1) = 0; 
+            
+                if length(gpcf.lengthScale) == 1  % In the case of an isotropic EXP
+                    s = repmat(1./gpcf.lengthScale.^2, 1, m);
+                else
+                    s = 1./gpcf.lengthScale.^2;
+                end
+                dist=0; 
+                for i2=1:nin
+                    dist = dist + s(i2).*(gminus(x(:,i2),x(:,i2)')).^2;
+                end
+                ii1 = 0;
+                for i=1:m
+                    for j = 1:n
+                        D1 = zeros(n,n);
+                        D1(j,:) = sqrt(s(i)).*gminus(x(j,i),x(:,i)');
+                        D1 = D1 + D1';
+                        DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
+                        
+                        ii1 = ii1 + 1;
+                        DKff{ii1} = DK;
+                        gprior(ii1) = 0; 
+                    end
                 end
             end
         elseif nargin == 3
-            [n2, m2] =size(x2);
-            if length(gpcf.lengthScale) == 1
-                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            if isfield(gpcf,'metric')
+                K = feval(gpcf.fh_cov, gpcf, x, x2);
+                dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
+                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
+                ii1 = 0;
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+                    %DKff{ii1}   = -2.*K.*dist.*gdist{ii1};
+                    DKff{ii1} = -K./(1+sqrt(3)*dist).*3.*dist.*gdist{ii1};
+                    gprior(ii1) = gprior_dist(ii1);
+                end
             else
-                s = 1./gpcf.lengthScale.^2;
-            end
-            dist=0; 
-            for i2=1:nin
-                dist = dist + s(i2).*(gminus(x(:,i2),x2(:,i2)')).^2;
-            end
-            ii1 = 0;
-            for i=1:m
-                for j = 1:n
-                    D1 = zeros(n,n2);
-                    D1(j,:) = sqrt(s(i)).*gminus(x(j,i),x2(:,i)');
-                    DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
-                    ii1 = ii1 + 1;
-                    DKff{ii1} = DK;
-                    gprior(ii1) = 0; 
+
+                [n2, m2] =size(x2);
+                if length(gpcf.lengthScale) == 1
+                    s = repmat(1./gpcf.lengthScale.^2, 1, m);
+                else
+                    s = 1./gpcf.lengthScale.^2;
+                end
+                dist=0; 
+                for i2=1:nin
+                    dist = dist + s(i2).*(gminus(x(:,i2),x2(:,i2)')).^2;
+                end
+                ii1 = 0;
+                for i=1:m
+                    for j = 1:n
+                        D1 = zeros(n,n2);
+                        D1(j,:) = sqrt(s(i)).*gminus(x(j,i),x2(:,i)');
+                        DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
+                        ii1 = ii1 + 1;
+                        DKff{ii1} = DK;
+                        gprior(ii1) = 0; 
+                    end
                 end
             end
         end
     end
-
 
     function C = gpcf_matern32_cov(gpcf, x1, x2)
     % GP_MATERN32_COV     Evaluate covariance matrix between two input vectors.
@@ -490,26 +598,32 @@ function gpcf = gpcf_matern32(do, varargin)
             error('the number of columns of X1 and X2 has to be same')
         end
 
-        C=zeros(n1,n2);
-        ma2 = gpcf.magnSigma2;
-
-        % Evaluate the covariance
-        if ~isempty(gpcf.lengthScale)
-            s2 = 1./gpcf.lengthScale.^2;
-            % If ARD is not used make s a vector of
-            % equal elements
-            if size(s2)==1
-                s2 = repmat(s2,1,m1);
+        if isfield(gpcf,'metric')
+            dist = feval(gpcf.metric.distance, gpcf.metric, x1, x2).^2;
+            dist(dist<eps) = 0;
+            C = gpcf.magnSigma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);            
+        else
+            C=zeros(n1,n2);
+            ma2 = gpcf.magnSigma2;
+            
+            % Evaluate the covariance
+            if ~isempty(gpcf.lengthScale)
+                s2 = 1./gpcf.lengthScale.^2;
+                % If ARD is not used make s a vector of
+                % equal elements
+                if size(s2)==1
+                    s2 = repmat(s2,1,m1);
+                end
+                dist=zeros(n1,n2);
+                for j=1:m1
+                    dist = dist + s2(:,j).*(gminus(x1(:,j),x2(:,j)')).^2;
+                end
+                dist = sqrt(dist);
+                C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
             end
-            dist=zeros(n1,n2);
-            for j=1:m1
-                dist = dist + s2(:,j).*(gminus(x1(:,j),x2(:,j)')).^2;
-            end
-            dist = sqrt(dist);
-            C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+            C(C<eps)=0;
         end
-        C(C<eps)=0;
-      end
+    end
 
     function C = gpcf_matern32_trcov(gpcf, x)
     % GP_MATERN32_TRCOV     Evaluate training covariance matrix of inputs.
@@ -523,8 +637,29 @@ function gpcf = gpcf_matern32(do, varargin)
     %
     %         See also
     %         GPCF_MATERN32_COV, GPCF_MATERN32_TRVAR, GP_COV, GP_TRCOV
-
-        C = trcov(gpcf,x);
+        
+        if isfield(gpcf,'metric')
+            ma = gpcf.magnSigma2;
+            dist = feval(gpcf.metric.distance, gpcf.metric, x);
+% $$$             C = gpcf.magnSigma2.*exp(-feval(gpcf.metric.distance, gpcf.metric, x).^2);
+% $$$             
+% $$$             [n, m] =size(x);            
+            
+% $$$             
+% $$$             C = zeros(n,n);
+% $$$             for ii1=1:n-1
+% $$$                 d = zeros(n-ii1,1);
+% $$$                 col_ind = ii1+1:n;
+% $$$                 dist = 
+% $$$                 d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
+% $$$                 C(col_ind,ii1) = d;
+% $$$             end
+% $$$             C(C<eps) = 0;
+% $$$             C = C+C';
+% $$$             C = ma.*exp(-C);            
+            C = ma.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+        else
+            C = trcov(gpcf,x);
 % $$$         [n, m] =size(x);
 % $$$ 
 % $$$         s2 = 1./gpcf.lengthScale.^2;
@@ -548,9 +683,10 @@ function gpcf = gpcf_matern32(do, varargin)
 % $$$         end
 % $$$         dist = sqrt(C);
 % $$$         C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-% $$$         C(C<eps)=0;
+    % $$$         C(C<eps)=0;
+        end
     end
-
+    
     function C = gpcf_matern32_covvec(gpcf, x1, x2, varargin)
     % GPCF_MATERN32_COVVEC     Evaluate covariance vector between two input vectors.
     %
@@ -647,21 +783,23 @@ function gpcf = gpcf_matern32(do, varargin)
         end
 
         gpp = gpcf.p;
-        % record lengthScale
-        if ~isempty(gpcf.lengthScale)
-            if ~isempty(gpp.lengthScale)
-                reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
-                if isfield(gpp.lengthScale,'p')
-                    if isfield(gpp.lengthScale.p,'nu')
-                        reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
+        if ~isfield(gpcf,'metric')
+            % record lengthScale    
+            if ~isempty(gpcf.lengthScale)
+                if ~isempty(gpp.lengthScale)
+                    reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
+                    if isfield(gpp.lengthScale,'p')
+                        if isfield(gpp.lengthScale.p,'nu')
+                            reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
+                        end
                     end
+                elseif ri==1
+                    reccf.lengthHyper=[];
                 end
+                reccf.lengthScale(ri,:)=gpcf.lengthScale;
             elseif ri==1
-                reccf.lengthHyper=[];
+                reccf.lengthScale=[];
             end
-            reccf.lengthScale(ri,:)=gpcf.lengthScale;
-        elseif ri==1
-            reccf.lengthScale=[];
         end
         % record magnSigma2
         if ~isempty(gpcf.magnSigma2)
