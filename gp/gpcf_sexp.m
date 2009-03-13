@@ -276,7 +276,6 @@ function gpcf = gpcf_sexp(do, varargin)
                           gpcf.lengthScale, gpp.lengthScale.a)...
                    -sum(log(gpcf.lengthScale));
         end
-
     end
 
     function [DKff, gprior]  = gpcf_sexp_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
@@ -401,7 +400,6 @@ function gpcf = gpcf_sexp(do, varargin)
                 [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, [], 1);
                 for i=1:length(gdist)
                     ii1 = ii1+1;
-% $$$                     DKff{ii1} = -2.*DKff{1}.*dist.*gdist{i};
                     DKff{ii1} = 0;
                 end
             else
@@ -630,8 +628,8 @@ function gpcf = gpcf_sexp(do, varargin)
     %         See also
     %         GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
 
-        
         if isfield(gpcf,'metric')
+            % If other than scaled euclidean metric
             C = gpcf.magnSigma2.*exp(-feval(gpcf.metric.distance, gpcf.metric, x).^2);
             
             [n, m] =size(x);            
@@ -648,29 +646,34 @@ function gpcf = gpcf_sexp(do, varargin)
             C = C+C';
             C = ma.*exp(-C);            
         else
+            % If scaled euclidean metric
+            % Try to use the C-implementation
             C = trcov(gpcf, x);
-
-% $$$         [n, m] =size(x);
-% $$$ 
-% $$$         s = 1./(gpcf.lengthScale);
-% $$$         s2 = s.^2;
-% $$$         if size(s)==1
-% $$$             s2 = repmat(s2,1,m);
-% $$$         end
-% $$$         ma = gpcf.magnSigma2;
-% $$$ 
-% $$$         C = zeros(n,n);
-% $$$         for ii1=1:n-1
-% $$$             d = zeros(n-ii1,1);
-% $$$             col_ind = ii1+1:n;
-% $$$             for ii2=1:m
-% $$$                 d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-% $$$             end
-% $$$             C(col_ind,ii1) = d;
-% $$$         end
-% $$$         C(C<eps) = 0;
-% $$$         C = C+C';
-% $$$         C = ma.*exp(-C);
+            
+            if isnan(C)
+                % If there wasn't C-implementation do here                
+                [n, m] =size(x)
+                
+                s = 1./(gpcf.lengthScale);
+                s2 = s.^2;
+                if size(s)==1
+                    s2 = repmat(s2,1,m);
+                end
+                ma = gpcf.magnSigma2;
+                
+                C = zeros(n,n);
+                for ii1=1:n-1
+                    d = zeros(n-ii1,1);
+                    col_ind = ii1+1:n;
+                    for ii2=1:m
+                        d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+                    end
+                    C(col_ind,ii1) = d;
+                end
+                C(C<eps) = 0;
+                C = C+C';
+                C = ma.*exp(-C);
+            end
         end
     end
 

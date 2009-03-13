@@ -89,16 +89,17 @@ function gpcf = gpcf_matern32(do, varargin)
             end
             % Loop through all the parameter values that are changed
             for i=2:2:length(varargin)-1
-                if strcmp(varargin{i},'magnSigma2')
+                switch varargin{i}
+                  case 'magnSigma2'
                     gpcf.magnSigma2 = varargin{i+1};
-                elseif strcmp(varargin{i},'lengthScale')
+                  case 'lengthScale'
                     gpcf.lengthScale = varargin{i+1};
-                elseif strcmp(varargin{i},'fh_sampling')                    
+                  case 'fh_sampling'
                     gpcf.fh_sampling = varargin{i+1};
-                elseif strcmp(varargin{i},'metric')
+                  case 'metric'
                     gpcf.metric = varargin{i+1};
-                    gpcf = rmfield(gpcf, 'lengthScale');                    
-                else
+                    gpcf = rmfield(gpcf, 'lengthScale');
+                  otherwise
                     error('Wrong parameter name!')
                 end
             end
@@ -113,16 +114,17 @@ function gpcf = gpcf_matern32(do, varargin)
         gpcf = varargin{1};
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
-            if strcmp(varargin{i},'magnSigma2')
+            switch varargin{i}
+              case 'magnSigma2'
                 gpcf.magnSigma2 = varargin{i+1};
-            elseif strcmp(varargin{i},'lengthScale')
+              case 'lengthScale'
                 gpcf.lengthScale = varargin{i+1};
-            elseif strcmp(varargin{i},'fh_sampling')
+              case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
-            elseif strcmp(varargin{i},'metric')
+              case 'metric'
                 gpcf.metric = varargin{i+1};
                 gpcf = rmfield(gpcf, 'lengthScale');
-            else
+              otherwise
                 error('Wrong parameter name!')
             end
         end
@@ -270,7 +272,6 @@ function gpcf = gpcf_matern32(do, varargin)
                    +feval(gpp.lengthScale.fe, ...
                           gpcf.lengthScale, gpp.lengthScale.a)...
                    -sum(log(gpcf.lengthScale));
-    % $$$     end
         end
     end
     
@@ -599,9 +600,9 @@ function gpcf = gpcf_matern32(do, varargin)
         end
 
         if isfield(gpcf,'metric')
-            dist = feval(gpcf.metric.distance, gpcf.metric, x1, x2).^2;
+            dist = feval(gpcf.metric.distance, gpcf.metric, x1, x2);
             dist(dist<eps) = 0;
-            C = gpcf.magnSigma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);            
+            C = gpcf.magnSigma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
         else
             C=zeros(n1,n2);
             ma2 = gpcf.magnSigma2;
@@ -641,49 +642,36 @@ function gpcf = gpcf_matern32(do, varargin)
         if isfield(gpcf,'metric')
             ma = gpcf.magnSigma2;
             dist = feval(gpcf.metric.distance, gpcf.metric, x);
-% $$$             C = gpcf.magnSigma2.*exp(-feval(gpcf.metric.distance, gpcf.metric, x).^2);
-% $$$             
-% $$$             [n, m] =size(x);            
-            
-% $$$             
-% $$$             C = zeros(n,n);
-% $$$             for ii1=1:n-1
-% $$$                 d = zeros(n-ii1,1);
-% $$$                 col_ind = ii1+1:n;
-% $$$                 dist = 
-% $$$                 d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
-% $$$                 C(col_ind,ii1) = d;
-% $$$             end
-% $$$             C(C<eps) = 0;
-% $$$             C = C+C';
-% $$$             C = ma.*exp(-C);            
             C = ma.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
         else
             C = trcov(gpcf,x);
-% $$$         [n, m] =size(x);
-% $$$ 
-% $$$         s2 = 1./gpcf.lengthScale.^2;
-% $$$         if size(s2)==1
-% $$$             s2 = repmat(s2,1,m);
-% $$$         end
-% $$$         ma2 = gpcf.magnSigma2;
-% $$$ 
-% $$$         % Here we take advantage of the
-% $$$         % symmetry of covariance matrix
-% $$$         C=zeros(n,n);
-% $$$         for i1=2:n
-% $$$             i1n=(i1-1)*n;
-% $$$             for i2=1:i1-1
-% $$$                 ii=i1+(i2-1)*n;
-% $$$                 for i3=1:m
-% $$$                     C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-% $$$                 end
-% $$$                 C(i1n+i2)=C(ii);
-% $$$             end
-% $$$         end
-% $$$         dist = sqrt(C);
-% $$$         C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
-    % $$$         C(C<eps)=0;
+            
+            if isnan(C)
+                [n, m] =size(x);
+                
+                s2 = 1./gpcf.lengthScale.^2;
+                if size(s2)==1
+                    s2 = repmat(s2,1,m);
+                end
+                ma2 = gpcf.magnSigma2;
+                
+                % Here we take advantage of the
+                % symmetry of covariance matrix
+                C=zeros(n,n);
+                for i1=2:n
+                    i1n=(i1-1)*n;
+                    for i2=1:i1-1
+                        ii=i1+(i2-1)*n;
+                        for i3=1:m
+                            C(ii)=C(ii)+s2(i3).*(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
+                        end
+                        C(i1n+i2)=C(ii);
+                    end
+                end
+                dist = sqrt(C);
+                C = ma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
+                C(C<eps)=0;
+            end
         end
     end
     

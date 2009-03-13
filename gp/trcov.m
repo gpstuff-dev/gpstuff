@@ -1,4 +1,4 @@
-function trcov(gpcf, x)
+function C = trcov(gpcf, x)
 % TRCOV     Evaluate training covariance matrix for covariance function
 %           This is a mex-function that is called from gpcf_*_trcov functions.
 %
@@ -21,4 +21,5 @@ function trcov(gpcf, x)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-    error('No mex-file for this architecture. See Matlab help and gp_compile.m for help.')
+    C = NaN;
+%error('No mex-file for this architecture. See Matlab help and gp_compile.m for help.')
