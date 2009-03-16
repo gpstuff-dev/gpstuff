@@ -1,43 +1,47 @@
 function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 % GP_MC   Monte Carlo sampling for Gaussian process models
 %
+%   Description
+%   [REC, GP, OPT] = GP_MC(OPT, GP, TX, TY) Takes the options structure OPT, 
+%   Gaussian process structure GP, training inputs TX and training outputs TY.
+%   Returns:
+%     REC     - Record structure
+%     GP      - The Gaussian process at current state of the sampler
+%     OPT     - Options structure containing iformation of the current state 
+%               of the sampler (e.g. the random number seed)
+%
+%   The GP_MC function makes opt.nsamples iterations and stores every opt.repeat'th
+%   sample. At each iteration it searches from the options structure strings 
+%   specifying the samplers for different parameters. For example, 'hmc_opt' string 
+%   in the OPT structure tells that GP_MC should run the hybrid Monte Carlo 
+%   sampler. Possiple samplers are:
+%      hmc_opt         = hybrid Monte Carlo sampler for covariance/noise function 
+%                        parameters (see hmc2)
+%      sls_opt         = slice sampler for covariance/noise function parameters 
+%                        (see sls2)
+%      latent_opt      = sample latent values according to sampler in gp.likelih 
+%                        structure (see, for example, likelih_logit)
+%      gibbs_opt       = Gibbs sampler for covariance/noise function parameters 
+%                        not packed with gp_pak (see gpcf_noiset)
+%      likelih_sls_opt = Slice sampling for the parameters of the likelihood function
+%                        (see, for example, likelih_negbin)
+%
+%   The default OPT values for GP_MC are set by GP_MCOPT. The default sampler 
+%   options for the actual sampling algorithms are set by their specific fucntions. 
+%   See, for example, hmc2_opt.
+%
+%
 %   REC = GP_MC(OPT, GP, TX, TY, X, Y, [], VARARGIN)
 %
 %   REC = GP_MC(OPT, GP, TX, TY, X, Y, REC, VARARGIN)
 %
 %   REC = GP_MC(OPT, GP, TX, TY, X, Y, REC, VARARGIN)
 %
-%   [REC, GP, OPT] = GP_MC(OPT, GP, TX, TY, X, T, REC, VARARGIN)
 %
-%   Returns:
-%     rec     - record including hyper-parameters and errors
-%     gp      - gp
-%     opt     - options structure
-%
-%   Set default options for GP_MC
-%    opt=gp_mcopt;
-%      return default options
-%    opt=gp_mcopt(opt);
-%      fill empty options with default values
-%
-%   The options and defaults are
-%   nsamples (100)
-%     the number of samples retained from the Markov chain
-%   repeat (1)
-%     the number of iterations of basic updates
-%   gibbs (0)
-%     1 to sample sigmas with gibbs sampling
-%   persistence_reset (0)
-%     1 to reset persistence after every repeat iterations
-%   display (1)
-%     1 to display miscallenous data
-%     2 to display more miscallenous data
-%   plot (1)
-%     1 to plot miscallenous data
 %
 
 % Copyright (c) 1998-2000 Aki Vehtari
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -236,13 +240,12 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             end
             
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
-            if isfield(opt, 'nb_sls_opt')
+            if isfield(opt, 'likelih_sls_opt')
                 w = gp_pak(gp, 'likelih');
-                %fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z) - feval(likelih.fh_priore, feval(likelih.fh_unpak, w, likelih)));
                 fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
-                [w, energies, diagns] = sls(fe, w, opt.nb_sls_opt, [], gp.likelih);
+                [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
-                    opt.nb_sls_opt = diagns.opt;
+                    opt.likelih_sls_opt = diagns.opt;
                 end
                 w=w(end,:);
                 gp = gp_unpak(gp, w, 'likelih');
@@ -326,7 +329,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 if isfield(opt, 'inducing_opt')
                     rec.indrejects = 0;
                 end
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 rec.X_u = [];
                 if isfield(opt, 'inducing_opt')
                     rec.indrejects = 0;
@@ -422,8 +425,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         if isfield(gp, 'site_tau')
             [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
             switch gp.type
-              case 'PIC_BLOCK'
-                [Ef, Varf] = ep_pred(gp, x, y, xtest, gp.tr_index, 'hyper');
+              case {'PIC' 'PIC_BLOCK'}
+                [Ef, Varf] = ep_pred(gp, x, y, xtest, 'hyper', [], gp.tr_index);
               otherwise
                 [Ef, Varf] = ep_pred(gp, x, y, xtest, 'hyper');
             end
@@ -436,7 +439,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
 
         % Set the inducing inputs in the record structure
         switch gp.type
-          case {'FIC', 'PIC_BLOCK', 'CS+FIC'}
+          case {'FIC', 'PIC', 'PIC_BLOCK', 'CS+FIC'}
             rec.X_u(ri,:) = gp.X_u(:)';
         end
         if isfield(opt, 'inducing_opt')

@@ -9,15 +9,9 @@ function opt = gp_mcopt(opt);
 %             nsamples          = 1
 %             repeat            = 1
 %             display           = 1
-%             plot              = 1
-%             gibbs             = 0
-%             hmc_opt           = hmc2_opt
-%               hmc_opt.stepsf  = gp2r_steps
-%             persistence_reset = 0
-%             sample_variances  = 0 
-%             sample_latent     = 0
 
 % Copyright (c) 1999 Aki Vehtari
+% Copyright (c) 2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -36,21 +30,6 @@ end
 if ~isfield(opt,'display')
   opt.display=1;
 end
-if ~isfield(opt,'plot')
-  opt.plot=1;
-end
-if ~isfield(opt,'gibbs')
-  opt.gibbs=0;
-end
-if ~isfield(opt,'hmc_opt')
-  opt.hmc_opt=hmc2_opt;
-end
-if ~isfield(opt,'persistence_reset')
-  opt.persistence_reset=0;
-end
-if ~isfield(opt,'sample_variances')
-  opt.sample_variances=0;
-end
-if ~isfield(opt,'sample_latent')
-  opt.sample_latent=0;
+if ~isfield(opt,'persistence_reset') 
+    opt.persistence_reset = 1;
 end

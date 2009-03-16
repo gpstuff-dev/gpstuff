@@ -29,15 +29,10 @@ function gp_install(suiteSparse)
 
 
 % Compile the 'trcov' mex-function
-    if ispc   % A windows version of Matlab
-        mex -O -output trcov winCsource\trcov.c 
-    else
-        mex -O -output trcov linuxCsource/trcov.c 
-    end
-
-
+mex -O -output trcov linuxCsource/trcov.c 
+mex -O -output ldlrowmodify linuxCsource/ldlrowmodify.c 
     
-% Compile the 'sinv', 'ldlrowupdate' mex-functions
+% Compile the 'spinv', 'ldlrowupdate' and 'ldlrowmodify' mex-functions
 % This is awfully long since the functions need all the functionalities of SuiteSparse
 
 details = 0 ;	    % 1 if details of each command are to be printed
@@ -325,7 +320,7 @@ for f = source
 end
 
 % compile mexFunctions
-mex_src =  'linuxCsource/sinv';
+mex_src =  'linuxCsource/spinv';
 s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
 s = [s obj];
 s = [s ' '];

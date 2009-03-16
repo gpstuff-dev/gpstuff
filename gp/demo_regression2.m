@@ -215,7 +215,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
+gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
 gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 
 % -----------------------------

@@ -43,14 +43,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
       case 'FULL'   % A full GP
         % Calculate covariance matrix and the site parameters
         [K, C] = gp_trcov(gp,x);
-        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, param, varargin);
-
-        Stildesqroot=diag(sqrt(tautilde));
         
-        % logZep; nutilde; tautilde;
-        b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-        invC = Stildesqroot*(L'\(L\Stildesqroot));
-        invCv = invC(:);
+        if issparse(C)
+            [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, param, varargin);
+            Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
+            
+            b = nutilde - Stildesqroot*ldlsolve(LD,Stildesqroot*(C*nutilde));
+            invC = spinv(LD,1);       % evaluate the sparse inverse
+            invC = Stildesqroot*invC*Stildesqroot;
+        else
+            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, param, varargin);
+            Stildesqroot=diag(sqrt(tautilde));
+            
+            % logZep; nutilde; tautilde;
+            b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+            invC = Stildesqroot*(L'\(L\Stildesqroot));
+        end
+
         
         % Evaluate the gradients from covariance functions
         for i=1:ncf
@@ -65,7 +74,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             for i2 = 1:length(DKff)
                 i1 = i1+1;                
                 Bdl = b'*(DKff{i2}*b);
-                Cdl = sum(invCv.*DKff{i2}(:)); % help arguments for lengthScale
+                Cdl = sum(sum(invC.*DKff{i2})); % help arguments for lengthScale
                 gdata(i1)=0.5.*(Cdl - Bdl);
                 gprior(i1) = gprior_cf(i2);
             end
@@ -84,7 +93,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         if isfield(gp, 'noise')
             nn = length(gp.noise);
             for i=1:nn
-                i1 = i1+1;
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
+                end
                 
                 noise = gp.noise{i};
                 [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
@@ -94,7 +106,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 
                     B = trace(invC);
                     C=b'*b;    
-                    gdata(i1)=0.5.*DCff.*(B - C); 
+                    gdata(i1)=0.5.*DCff{i2}.*(B - C); 
                     gprior(i1) = gprior_cf(i2);
                 end
                 
@@ -268,7 +280,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % ============================================================
         % PIC
         % ============================================================
-      case {'PIC_BLOCK'}
+      case {'PIC' 'PIC_BLOCK'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
         gprior_ind = zeros(1,numel(gp.X_u));
@@ -452,7 +464,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         gp.cf = cf_orig;
         
         LD = ldlchol(La);
-        siLa = sinv(La);
+        siLa = spinv(La);
         idiagLa = diag(siLa);
         LL = sum(L.*L,2);
         

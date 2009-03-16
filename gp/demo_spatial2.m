@@ -250,7 +250,7 @@ gpcf1.p.magnSigma2 = t_p({0.3 4});
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the PIC GP data structure
-gp = gp_init('init', 'PIC_BLOCK', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to EP
@@ -346,10 +346,13 @@ gpcf2.p.magnSigma2 = t_p({0.3 4});
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the FIC GP data structure
+ti = cputime;
 gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
 
 % Set the approximate inference method to EP
+tic
 gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+toc
 
 % Set the optimization parameters
 param = 'hyper';
@@ -363,6 +366,7 @@ w0 = gp_pak(gp, param);
 mydeal = @(varargin)varargin{1:nargout};
 w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, param), gpep_g(ww, gp, xx, yy, param)), w0, opt);
 gp = gp_unpak(gp,w,param);
+ti = cputime- ti;
 
 % make prediction to the data points
 [Ef, Varf] = ep_pred(gp, xx, yy, xx, param);

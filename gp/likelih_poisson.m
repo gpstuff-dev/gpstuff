@@ -181,7 +181,7 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function deriv = likelih_poisson_g(likelih, y, f, param)
-    %LIKELIH_POISSON_G    Hessian of (likelihood) energy function
+    %LIKELIH_POISSON_G    Gradient of (likelihood) energy function
     %
     %   Description
     %   G = LIKELIH_POISSON_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
@@ -558,7 +558,7 @@ function likelih = likelih_poisson(do, varargin)
             u = gp.X_u;
             Labl=[];
             Lp = [];            
-          case {'PIC_BLOCK'}
+          case {'PIC' 'PIC_BLOCK'}
             u = gp.X_u;
             ind = gp.tr_index;
             Labl=[];
@@ -588,7 +588,7 @@ function likelih = likelih_poisson(do, varargin)
             getL(z, gp, x, y, u);          % Evaluate the help matrix for transformation
             zs = z./Lp;                    % Rotate z towards prior
             w = zs + U*((J*U'-U')*zs);     
-          case 'PIC_BLOCK'
+          case {'PIC' 'PIC_BLOCK'}
             getL(z, gp, x, y, u);          % Evaluate the help matrix for transformation
             zs=zeros(size(z));             % Rotate z towards prior
             for i=1:length(ind)
@@ -635,7 +635,7 @@ function likelih = likelih_poisson(do, varargin)
             z=L2*w;
           case 'FIC'
             z = Lp.*(w + U*(iJUU*w));
-          case  'PIC_BLOCK'
+          case  {'PIC' 'PIC_BLOCK'}
             w2 = w + U*(iJUU*w);
             for i=1:length(ind)
                 z(ind{i}) = Lp{i}*w2(ind{i});
@@ -678,7 +678,7 @@ function likelih = likelih_poisson(do, varargin)
                 g = Lp.*g;
                 g = g + U*(iJUU*g);
                 g = g';
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 w2= w + U*(iJUU*w);
                 for i=1:length(ind)
                     z(ind{i}) = Lp{i}*w2(ind{i});
@@ -727,7 +727,7 @@ function likelih = likelih_poisson(do, varargin)
                 z = max(z,mincut);                
                 B = z'*iLaKfuic;  % 1 x u
                 eprior = 0.5*sum(z.^2./Lav)-0.5*sum(B.^2);
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 w2= w + U*(iJUU*w);
                 for i=1:length(ind)
                     z(ind{i}) = Lp{i}*w2(ind{i});
@@ -800,7 +800,7 @@ function likelih = likelih_poisson(do, varargin)
                                               % J = diag(sqrt(2./(1+diag(S))));
                 iJUU = J\U'-U';
                 iJUU(abs(iJUU)<eps)=0;
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
                 K_fu = gp_cov(gp, x, u);         % f x u
                 K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu

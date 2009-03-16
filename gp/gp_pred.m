@@ -156,7 +156,7 @@ switch gp.type
         Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
         noisyY = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(y)).*sqrt(Lav_n);
     end
-  case 'PIC_BLOCK'
+  case {'PIC' 'PIC_BLOCK'}
     u = gp.X_u;
     ind = gp.tr_index;
     if size(u,2) ~= size(tx,2)

@@ -45,23 +45,27 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K = gp_trcov(gp,x);
         [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
 
-        W = La2;
-        der_f = b;
-        ntest=size(x,1);
-
-        I = eye(size(K));
-        sqrtW = sqrt(W);
-        C = sqrtW*K;
-        Z = (L\sqrtW);
-        Z = Z'*Z;          %Z = sqrtW*((I + C*sqrtW)\sqrtW);
-
-        CC = C*diag(feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent')./diag(sqrtW));
-        s2 = -0.5*diag(L'\(L\(CC + CC')));       %s2 = -0.5*diag((I + C*sqrtW)\(CC + CC'));
-
-        b = K\f;
-        B = eye(size(K)) + K*W;
-        invC = Z + der_f*(s2'/B);
-        invCv = invC(:);
+        if issparse(K)
+            W = La2;
+            I = sparse(1:n,1:n,1,n,n);
+            w1 = K\f;
+            sqrtW = sqrt(W);
+            sinvB = spinv(L,1);
+            isqrtWsinBsqrtW = sqrtW\sinvB*sqrtW;
+            w2 = sum( isqrtWsinBsqrtW .* K,2) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+            w2 = - (sqrtW*ldlsolve(L, sqrtW \ w2))'; 
+            w3 = b;
+            invB = sqrtW*sinvB*sqrtW;
+        else
+            W = La2;
+            I = eye(size(K));
+            w1 = K\f;
+            sqrtW = sqrt(W);
+            w2 = diag(K*sqrtW/L'/L/sqrtW) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+            w2 = - w2' / (I + K*W); 
+            w3 = b;
+            invB = sqrtW/L'/L*sqrtW;
+        end
 
         % Evaluate the gradients from covariance functions
         for i=1:ncf
@@ -76,8 +80,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             for i2 = 1:length(DKff)
                 i1 = i1+1;
                 
-                Bdm = b'*(DKff{i2}*b);
-                Cdm = sum(invCv.*DKff{i2}(:)); 
+                Bdm = w1'*(DKff{i2}*w1);
+                Bdm = Bdm + w2*(DKff{i2}*w3);
+                Cdm = sum(sum(invB.*DKff{i2}));
                 gdata(i1) = 0.5.*(Cdm - Bdm);
                 gprior(i1) = gprior_cf(i2);
             end
@@ -105,7 +110,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     i1 = i1+1;
                     
                     Bdm = b'*(DKff{i2}*b);
-                    Cdm = sum(invCv.*DCff{i2}(:)); 
+                    Cdm = sum(sum(invC.*DCff{i2})); 
                     gdata(i1) = 0.5.*(Cdm - Bdm);
                     gprior(i1) = gprior_cf(i2);
                 end
@@ -153,7 +158,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
 
         % Components for
         B3 = repmat(Lahat,1,m).\B2;
-        A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
+        A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
         L2 = B3/chol(A2);
 
         % Evaluate diag(La3 - L3'*L3)
@@ -192,7 +197,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 gpcf = gp.cf{i};
                 [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
                 DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
-                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x);
                 
                 for i2 = 1:length(DKuu)
                     i1 = i1+1;
@@ -280,7 +285,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         % ============================================================
         % PIC
         % ============================================================
-      case 'PIC_BLOCK'
+      case {'PIC' 'PIC_BLOCK'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
         gprior_ind = zeros(1,numel(gp.X_u));
@@ -318,7 +323,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             B4(ind{i},:) = La3{i}\L(ind{i},:);
             diLa3(ind{i}) = diag(inv(La3{i}));
         end
-        A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
+        A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
         L2 = B3/chol(A2);
 
         % Evaluate diag(La3 - L3'*L3)
@@ -496,6 +501,18 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         gp.cf = cf_orig;
+        
+        % Find fill reducing permutation and permute all the
+        % matrices
+        p = analyze(La1);
+        r(p) = 1:n;
+        gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+        f = f(p);
+        y = y(p);
+        La1 = La1(p,p);
+        K_fu = K_fu(p,:);
+        L = L(p,:);
+        x = x(p,:);
 
         % Help matrices
         iKuuKuf = K_uu\K_fu';
@@ -505,7 +522,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         W = sparse(1:n,1:n,Wd,n,n);
         sqrtW = sparse(1:n,1:n,sqrtW,n,n);
         
-        % b=f'*(Qff+La1)^{-1}*f
+        % b=f'*(Qff+La1)^{-1}
         b = f'/La1 - (f'*L)*L';
 
         % Help matrices for trace component
@@ -515,43 +532,43 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         B2 = sqrtW*K_fu;
         %        B3 = Lahat\B2;
         B3 = ldlsolve(LDh,B2);
-        A2 = K_uu + B2'*B3; A2=(A2+A2)/2;
+        A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
         L2 = B3/chol(A2);
         
         % Help matrices for b2 set 1
         %        L3 = La1*L-sqrtWLa1'*(Lahat\(sqrtWLa1*L));
-        L3 = La1*L-sqrtWLa1'*ldlsolve(LDh,(sqrtWLa1*L));
-        L3 = L3/chol(eye(size(K_uu)) - L'*L3);
+        L3 = La1*L - sqrtWLa1'*ldlsolve(LDh,(sqrtWLa1*L));
+        AA2 = eye(size(K_uu)) - L'*L3; AA2 = (AA2 + AA2')./2;
+        L3 = L3/chol(AA2);
         
         % Evaluate diag(La3^{-1} + L3'*L3).*thirdgrad
         %b2 = diag(La1) - sum((sqrtWLa1'/chol(Lahat)).^2,2) + sum(L3.*L3,2);
         La = (sqrtW\Lahat)/sqrtW;
         LD = ldlchol(La);
-        siLa = sinv(La);
-        b2 = sum(La1.*siLa,2)./Wd  + sum(L3.*L3,2);
-        %        b2 = sum(La1.*sinv(sqrtW\Lahat/sqrtW),2)./Wd  + sum(L3.*L3,2); 
-        b2 = b2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+        siLa = spinv(LD,1);
         
+        b2 = (sum(La1.*siLa,2)./Wd  + sum(L3.*L3,2)).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+        
+        %b2 = (b2'*W)';
         
         % Help matrices for b2 set 2 
         La2 = W + W*La1*W;
         KufW = K_fu'*W;
         LD2 = ldlchol(La2);
         %iLa2WKfu = La2\(W*K_fu);
-        iLa2WKfu = ldlsolve(LD2,(W*K_fu));
+        iLa2WKfu = ldlsolve(LD2,KufW');
         A4 = K_uu + KufW*iLa2WKfu; A4 = (A4+A4')./2;
         L4 = iLa2WKfu/chol(A4);
         
         % Evaluate rest of b2
         %b2 = b2'/La2 - b2'*L4*L4';
         b2 = ldlsolve(LD2,b2)' - b2'*L4*L4';
+        b2 = -b2*W;
 
         % Set the parameters for the actual gradient evaluation
-        b2 = -b2*W;
         b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
         L = sqrtW*L2;
-        idiagLa = diag(siLa);
-        
+        idiagLa = diag(siLa);        
         LL = sum(L.*L,2);
         
         % =================================================================
@@ -593,7 +610,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                         
                         gdata(i1) = gdata(i1) - 0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
                         gdata(i1) = gdata(i1) - 0.5.*(b2.*DKff{i2}')*b3;
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3 - b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
                         gprior(i1) = gprior_cf(i2);                    
                     end
 
@@ -608,7 +625,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                         
                         % Evaluate the gradient with respect to magnSigma
                         gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
-                        gdata(i1) = gdata(i1) + 0.5.*b2*DKff{i2}*b3;
+                        gdata(i1) = gdata(i1) - 0.5.*b2*DKff{i2}*b3;
                         gprior(i1) = gprior_cf(i2);
                     end
                 end

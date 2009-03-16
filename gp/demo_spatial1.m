@@ -344,7 +344,7 @@ gpcf1.p.magnSigma2 = t_p({0.3 4});
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the PIC GP data structure
-gp = gp_init('init', 'PIC_BLOCK', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to MCMC

@@ -136,7 +136,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
             end
         end
 
-      case 'PIC_BLOCK'
+      case {'PIC' 'PIC_BLOCK'}
         u = gp.X_u;
         K_fu = gp_cov(gp, tx, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu

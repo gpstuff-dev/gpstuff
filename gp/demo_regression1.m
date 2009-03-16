@@ -35,14 +35,18 @@
 %   we can sample them using Markov chain Monte Carlo (MCMC) methods.
 %
 %   After finding MAP estimate or posterior samples of hyperparameters, we can 
-%   use them to make predictions for f:
+%   use them to make predictions for f_new:
 %
-%       p(f | y, th) = N(m, S),
-%       m = 
-%       S =
+%       p(f_new | y, th) = N(m, S),
+%
+%          m = K_no*(K + I*s^2)^(-1)*y
+%          S = K_new - K_no*(K + I*s^2)^(-1)*K_on
 %   
+%      where K_new is the covariance matrix of new f, and K_no between new f 
+%      and training f.
+%
 %   For more detailed discussion of Gaussian process regression see,
-%   for example, Rasmussen and Williams (2006 or Vanhatalo and Vehtari
+%   for example, Rasmussen and Williams (2006) or Vanhatalo and Vehtari
 %   (2008)
 %
 %
@@ -82,8 +86,7 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -92,7 +95,11 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+
+example_x = [-1 -1 ; 0 0 ; 1 1];
+[K, C] = gp_trcov(gp, example_x)
+
 
 % What has happend this far is following
 % - we created data structures 'gpcf1' and 'gpcf2', which describe 
@@ -122,14 +129,14 @@ w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
-% set the options
+% set the options for scg2
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
 
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w, 'hyper');
@@ -162,8 +169,9 @@ title('The predicted underlying function and the data points (MAP solution)');
 % The sampling options are set to 'opt' structure, which is given to
 % 'gp_mc' sampler
 opt=gp_mcopt;
-opt.nsamples= 300;
+opt.nsamples= 3000;
 opt.repeat=5;
+opt.hmc_opt = hmc2_opt;
 opt.hmc_opt.steps=4;
 opt.hmc_opt.stepadj=0.05;
 opt.hmc_opt.persistence=0;
@@ -178,7 +186,7 @@ hmc2('state', sum(100*clock));
 [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
 
 % After sampling we delete the burn-in and thin the sample chain
-rfull = thin(rfull, 10, 2);
+rfull = thin(rfull, 10, 3);
 
 % Now we make the predictions. 'gp_preds' is a function that returns 
 % the predictive mean of the latent function with every sampled 
@@ -283,10 +291,12 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 w = gp_pak(gp_cs, param);          % pack the hyperparameters into one vector
-[w, opt, flog]=scg2(fe, w, opt, fg, gp_cs, x, y, param);       % do the optimization
+w=scg2(fe, w, opt, fg, gp_cs, x, y, param);       % do the optimization
 gp_cs = gp_unpak(gp_cs,w, param);     % Set the optimized hyperparameter values back to the gp structure
 
 % Make the prediction
+[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
+p=[p1(:) p2(:)];
 [Ef_cs, Varf_cs] = gp_pred(gp_cs, x, y, p);
 
 % Plot the solution of full GP and CS
@@ -448,7 +458,7 @@ gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
+%param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
 param = 'hyper';          % optimize only hyperparameters
 
 % set the options
@@ -456,12 +466,37 @@ opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
+opt.maxiter = 200;
 
 w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
-[w, opt, flog]=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
+w=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
 gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
 
+% To optimize the hyperparameters and inducing inputs sequentially uncomment the below lines
+% $$$ iter = 1
+% $$$ e = gp_e(w,gp_fic,x,y,param)
+% $$$ while iter < 100 & abs(e_old-e) > 1e-3
+% $$$     e_old = e;
+% $$$     
+% $$$     param = 'hyper';          % optimize only hyperparameters
+% $$$     w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
+% $$$     w=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
+% $$$     gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
+% $$$     
+% $$$     
+% $$$     param = 'inducing';          % optimize only inducing inputs
+% $$$     w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
+% $$$     w=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
+% $$$     gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
+% $$$     e = gp_e(w,gp_fic,x,y,param);
+% $$$     iter = iter +1;
+% $$$     [iter e]
+% $$$ end
+
+
 % Make the prediction
+[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
+p=[p1(:) p2(:)];
 [Ef_fic, Varf_fic] = gp_pred(gp_fic, x, y, p);
 
 % Plot the solution of full GP and FIC
@@ -634,7 +669,7 @@ for i1=1:4
 end
 
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC_BLOCK', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
+gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
 gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 
 % -----------------------------

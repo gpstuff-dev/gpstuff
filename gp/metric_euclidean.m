@@ -277,7 +277,7 @@ end
             gdist = cell(1,length(metric.params));
         end
         
-        % Evaluate the data contribution of gradient with respect to lengthScale
+        % Evaluate the prior contribution of gradient with respect to lengthScale
         for i2=1:m
             i1=i1+1;
             gprior_dist(i1)=feval(mp.params.fg, ...
@@ -306,7 +306,6 @@ end
                            mp.params.a, 'nu').*mp.params.a.nu;
             end
         end
-        
     end
     
     

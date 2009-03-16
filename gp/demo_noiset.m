@@ -45,6 +45,10 @@ disp(' cases from which the first 100 are used for training and the last 100 ')
 disp(' for testing. ')
 disp(' ')
 
+% ========================================
+% Optimization approach with Normal noise
+% ========================================
+
 % load the data. First 100 variables are for training
 % and last 100 for test
 S = which('demo_noiset');
@@ -310,6 +314,10 @@ title('The latent values and the data points (MAP solution and Student-t noise)'
 
 % =====================================================
 % EP approach Student-t (nu=4, sigma = 1) likelihood
+% =====================================================
+
+% =====================================================
+% DOES NOT WORK (YET)!
 % =====================================================
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
 

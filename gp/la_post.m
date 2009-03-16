@@ -50,7 +50,7 @@ switch gp.type
 
             S = (repmat(Ef,1,ns) + chol(diag(Lahat)+L2*L2')'*randn(length(ty),ns))';
         end
-    case 'PIC_BLOCK'
+    case {'PIC' 'PIC_BLOCK'}
         ind = gp.tr_index;
         m = gp.nind;
 

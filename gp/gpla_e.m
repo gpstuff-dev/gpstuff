@@ -88,7 +88,12 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 % ============================================================
               case 'FULL'
                 K = gp_trcov(gp, x);
-                iK = inv(K);
+                
+                if issparse(K)
+                    LD = ldlchol(K);
+                else
+                    iK = inv(K);
+                end
 
                 switch gp.laplace_opt.optim_method
                     % find the mode by fminunc large scale method
@@ -97,8 +102,11 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
                         opt=optimset(opt,'Hessian','on');
-% $$$                         fhm = @(W, f, varargin) (K\f + repmat(W,1,size(f,2)).*f);  % W*f; %
-                        fhm = @(W, f, varargin) (iK*f + repmat(W,1,size(f,2)).*f);  % W*f; %
+                        if issparse(K)
+                            fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
+                        else
+                            fhm = @(W, f, varargin) (iK*f + repmat(W,1,size(f,2)).*f);  % W*f; %
+                        end                            
                         opt=optimset(opt,'HessMult', fhm);
                         opt=optimset(opt,'TolX', 1e-8);
                         opt=optimset(opt,'TolFun', 1e-8);
@@ -108,22 +116,33 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                         opt = gp.laplace_opt.fminunc_opt;
                     end
 
-                    fe = @(f, varargin) (0.5*f*(iK*f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-                    fg = @(f, varargin) (iK*f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-                    fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
-% $$$                     fe = @(f, varargin) (0.5*f*(K\f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-% $$$                     fg = @(f, varargin) (K\f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-% $$$                     fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+                    if issparse(K)
+                        fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                        fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                        fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+                    else
+                        fe = @(f, varargin) (0.5*f*(iK*f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                        fg = @(f, varargin) (iK*f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                        fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+                    end
+                    
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
-
-                    W = diag(-feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'));
-                    sqrtW = sqrt(W);
-                    B = eye(size(K)) + sqrtW*K*sqrtW;
-                    L = chol(B)';
-                    a = iK*f;
-% $$$                     a = K\f;
+                    
+                    if issparse(K)
+                        W = sparse(1:n,1:n, -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'), n,n);
+                        sqrtW = sqrt(W);
+                        B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
+                        L = ldlchol(B);
+                        a = ldlsolve(LD,f);
+                    else
+                        W = diag(-feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'));
+                        sqrtW = sqrt(W);
+                        B = eye(size(K)) + sqrtW*K*sqrtW;
+                        L = chol(B)';
+                        a = iK*f;
+                    end
                     logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
 
                     % find the mode by Scaled conjugate gradient method
@@ -177,8 +196,11 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                         fprintf('%.8f, iter: %d \n', logZ, iter-1)
                     end
                 end
-                edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
-                                                  % Set something into La2
+                if issparse(K)
+                    edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                else
+                    edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                end
                 La2 = W;
                 b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
@@ -258,7 +280,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 % ============================================================
                 % PIC
                 % ============================================================
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 ind = gp.tr_index;
                 u = gp.X_u;
                 m = length(u);
@@ -449,6 +471,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                         opt=optimset('GradObj','on');
                         opt=optimset(opt,'Hessian','on');
                         fhm = @(W, f, varargin) (ldlsolve(VD,f) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; % La\f
+                        %fhm = @(W, f, ikf) (W{1}  + repmat(W{2},1,size(f,2)).*f);  % Hessian*f; % La\f
                         opt=optimset(opt,'HessMult', fhm);
                         opt=optimset(opt,'TolX', 1e-8);
                         opt=optimset(opt,'TolFun', 1e-8);
@@ -458,13 +481,15 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                         opt = gp.laplace_opt.fminunc_opt;
                     end
 
-                    fe = @(f, varargin) (0.5*f*(ldlsolve(VD,f') - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-                    fg = @(f, varargin) (ldlsolve(VD,f') - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-                    fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
-                    mydeal = @(varargin)varargin{1:nargout};
-                    [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
+% $$$                     fe = @(f, varargin) (0.5*f*(ldlsolve(VD,f') - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+% $$$                     fg = @(f, varargin) (ldlsolve(VD,f') - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+% $$$                     fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
+% $$$                     mydeal = @(varargin)varargin{1:nargout};
+% $$$                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
+% $$$                     f = f';
+                    [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                     f = f';
-
+                    
                     W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
                     sqrtW = sqrt(W);
 
@@ -644,34 +669,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
         % ==============================================================
         % Begin of the nested functions
         % ==============================================================
-        %
-        function loglikelih = loglikelihood(f, likelihood)
-            switch likelihood
-              case 'probit'
-                loglikelih = sum(log(normcdf(y.*f)));
-              case 'poisson'
-                lambda = const_table(:,3).*exp(f);
-                gamlny = const_table(:,1);
-                loglikelih =  sum(-lambda + y.*log(lambda) - gamlny);
-            end
-        end
-        function deriv = derivative(f, likelihood)
-            switch likelihood
-              case 'probit'
-                deriv = y.*normpdf(f)./normcdf(y.*f);
-              case 'poisson'
-                deriv = y - const_table(:,3).*exp(f);
-            end
-        end
-        function Hessian = hessian(f, likelihood)
-            switch likelihood
-              case 'probit'
-                z = y.*f;
-                Hessian = (normpdf(f)./normcdf(z)).^2 + z.*normpdf(f)./normcdf(z);
-              case 'poisson'
-                Hessian = const_table(:,3).*exp(f);
-            end
-        end
+        %        
         function [e, g, h] = egh(f, varargin)
             ikf = iKf(f');
             e = 0.5*f*ikf - feval(gp.likelih.fh_e, gp.likelih, y, f');
@@ -679,11 +677,17 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
             h = -feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent');
         end
         function ikf = iKf(f, varargin)
-            iLaf = zeros(size(f));
-            for i=1:length(ind)
-                iLaf(ind{i},:) = iLabl{i}*f(ind{i},:);
+            
+            switch gp.type
+              case {'PIC' 'PIC_BLOCK'}
+                iLaf = zeros(size(f));
+                for i=1:length(ind)
+                    iLaf(ind{i},:) = iLabl{i}*f(ind{i},:);
+                end
+                ikf = iLaf - L*(L'*f);
+              case 'CS+FIC'
+                ikf = ldlsolve(VD,f) - L*(L'*f);
             end
-            ikf = iLaf - L*(L'*f);
         end
     end
 end

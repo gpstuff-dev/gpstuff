@@ -94,7 +94,7 @@ switch gp.type
     % ============================================================
     % PIC
     % ============================================================
-  case 'PIC_BLOCK'
+  case {'PIC''PIC_BLOCK'}
     % First evaluate needed covariance matrices
     % v defines that parameter is a vector
     u = gp.X_u;

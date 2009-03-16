@@ -342,7 +342,7 @@ end
         switch gp.type
           case {'FULL', 'FIC'}
             [meanY, varY, sampy] = gp_pred(gp, x, y, x);
-          case 'PIC_BLOCK'
+          case {'PIC' 'PIC_BLOCK'}
             [meanY, varY, sampy] = gp_pred(gp, x, y, x, gp.tr_index);
         end
         % Calculate the residual

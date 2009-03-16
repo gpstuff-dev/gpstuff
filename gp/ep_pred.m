@@ -104,8 +104,6 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
-% $$$             Lav = zeros(size(La));
-% $$$             Lav(tstind) = Kv_ff-Qv_ff;
             Lav = Kv_ff-Qv_ff;
             Ef(tstind) = Ef(tstind) + Lav.*p;
         end
@@ -135,7 +133,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
             end
         end
         
-      case 'PIC_BLOCK'
+      case {'PIC' 'PIC_BLOCK'}
         % Calculate some help matrices  
         u = gp.X_u;
         ind = gp.tr_index;
@@ -275,8 +273,6 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
-% $$$             Lav = zeros(size(Ef));
-% $$$             Lav(tstind) = Kv_ff-Qv_ff;
             Lav = Kv_ff-Qv_ff;
         end
         

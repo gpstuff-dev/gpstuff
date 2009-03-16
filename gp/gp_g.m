@@ -45,7 +45,7 @@ switch gp.type
     [K, C] = gp_trcov(gp,x);
     
     if issparse(C)
-        invC = sinv(C);       % evaluate the sparse inverse
+        invC = spinv(C);       % evaluate the sparse inverse
         LD = ldlchol(C);
         b = ldlsolve(LD,t);
     else
@@ -224,6 +224,7 @@ switch gp.type
         if ~isempty(gprior)
             st = length(gprior);
         end
+        
         gdata(st+1:st+length(gp.X_u(:))) = 0;
 
         % Loop over the covariance functions
@@ -252,7 +253,7 @@ switch gp.type
     % ============================================================
     % PIC
     % ============================================================
-  case 'PIC_BLOCK'
+  case {'PIC' 'PIC_BLOCK'}
     g_ind = zeros(1,numel(gp.X_u));
     gdata_ind = zeros(1,numel(gp.X_u));
     gprior_ind = zeros(1,numel(gp.X_u));
@@ -464,7 +465,7 @@ switch gp.type
     %b = t'/La - (t'*L)*L';
     b = ldlsolve(LD,t)' - (t'*L)*L';
     
-    siLa = sinv(La);
+    siLa = spinv(La);
     idiagLa = diag(siLa);
     iKuuKuf = K_uu\K_fu';
     LL = sum(L.*L,2);

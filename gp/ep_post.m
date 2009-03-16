@@ -26,51 +26,51 @@ function [Ef, Varf, S] = ep_post(gp, x, y, ns, param)
 % License.txt, included with the software, for details.
 
 switch gp.type
-    case 'FULL'
+  case 'FULL'
 
-        error('The function is not implemented for FULL GP yet! \n')
+    error('The function is not implemented for FULL GP yet! \n')
 
-    case 'FIC'
+  case 'FIC'
 
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, param), gp, x, y, param);
+    [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, param), gp, x, y, param);
 
 
+    eta = D.*site_nu;
+    gamma = R'*(R*(P'*site_nu));
+    Ef = eta + P*gamma;
+    Varf = D + sum((P*R').^2,2);
+    if ~isempty(ns)
         eta = D.*site_nu;
         gamma = R'*(R*(P'*site_nu));
         Ef = eta + P*gamma;
-        Varf = D + sum((P*R').^2,2);
-        if ~isempty(ns)
-            eta = D.*site_nu;
-            gamma = R'*(R*(P'*site_nu));
-            Ef = eta + P*gamma;
-            S = (repmat(Ef,1,ns) + chol((diag(D)+P*R'*R*P'))'*randn(length(y),ns))';
-        end
-    case 'PIC_BLOCK'
-        ind = gp.tr_index;
+        S = (repmat(Ef,1,ns) + chol((diag(D)+P*R'*R*P'))'*randn(length(y),ns))';
+    end
+  case {'PIC' 'PIC_BLOCK'}
+    ind = gp.tr_index;
 
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper');
+    [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(gp_pak(gp, 'hyper'), gp, x, y, 'hyper');
 
-        if nargin == 3
-            eta = zeros(size(site_nu));
-            Varf = zeros(size(site_nu));
-            for i=1:length(ind)
-                eta(ind{i}) = D{i}*site_nu(ind{i});
-                Varf(ind{i}) = diag(D{i});
-            end
-            gamma = R'*(R*(P'*site_nu));
-            Ef = eta + P*gamma;
-            if nargout == 2
-                Varf = Varf + sum((P*R').^2,2);
-            end
-        elseif nargin > 3
-            for i=1:length(ind)
-                eta(ind{i}) = D{i}*site_nu(ind{i});
-                Sigma(ind{i}, ind{i}) = D{i};
-            end
-            gamma = R'*(R*(P'*site_nu));
-            Ef = eta + P*gamma;
-            S = (repmat(Ef,1,ns) + chol((Sigma+P*R'*R*P'))'*randn(length(y),ns))';
+    if nargin == 3
+        eta = zeros(size(site_nu));
+        Varf = zeros(size(site_nu));
+        for i=1:length(ind)
+            eta(ind{i}) = D{i}*site_nu(ind{i});
+            Varf(ind{i}) = diag(D{i});
         end
+        gamma = R'*(R*(P'*site_nu));
+        Ef = eta + P*gamma;
+        if nargout == 2
+            Varf = Varf + sum((P*R').^2,2);
+        end
+    elseif nargin > 3
+        for i=1:length(ind)
+            eta(ind{i}) = D{i}*site_nu(ind{i});
+            Sigma(ind{i}, ind{i}) = D{i};
+        end
+        gamma = R'*(R*(P'*site_nu));
+        Ef = eta + P*gamma;
+        S = (repmat(Ef,1,ns) + chol((Sigma+P*R'*R*P'))'*randn(length(y),ns))';
+    end
 
 end
 end

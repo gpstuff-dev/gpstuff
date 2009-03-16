@@ -1,4 +1,4 @@
-%DEMO_SPATIAL2    Demonstration for a disease mapping problem
+%DEMO_SPATIAL3    Demonstration for a disease mapping problem
 %                 with Gaussian process prior and inference via Laplace approximation
 %
 %    Description
@@ -250,7 +250,7 @@ gpcf1.p.magnSigma2 = t_p({0.3 4});
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the PIC GP data structure
-gp = gp_init('init', 'PIC_BLOCK', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to EP

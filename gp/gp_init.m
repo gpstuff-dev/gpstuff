@@ -20,7 +20,7 @@ function gp = gp_init(do, varargin)
 %       TYPE defines the type of GP, possible types are:
 %        'FULL'        (full GP), 
 %        'FIC'         (fully independent conditional), 
-%        'PIC_BLOCK'   (partially independent condional), 
+%        'PIC'         (partially independent condional), 
 %        'CS+FIC'      (Compact support + FIC model)
 %
 %       With VARAGIN the fields of the GP structure can be set into different values 
@@ -44,7 +44,7 @@ function gp = gp_init(do, varargin)
 %    
 %       The additional fields needed in sparse approximations are:
 %         X_u            = Inducing inputs in FIC, PIC and CS+FIC models
-%         blocks         = Initializes the blocks for the PIC_BLOCK model
+%         blocks         = Initializes the blocks for the PIC model
 %                          The value for blocks has to be a cell array of type 
 %                          {'method', matrix of training inputs, param}. 
 %
@@ -134,7 +134,7 @@ function gp = gp_init(do, varargin)
           case 'FIC' 
             gp.X_u = [];
             gp.nind = [];
-          case {'PIC_BLOCK', 'CS+PIC'}
+          case {'PIC' 'PIC_BLOCK'}
             gp.X_u = [];
             gp.nind = [];
             gp.blocktype = [];
@@ -294,28 +294,6 @@ function gp = gp_init(do, varargin)
               case 'manual'
                 gp.blocktype = 'manual';
                 gp.tr_index = var{3};
-                switch gp.type
-                  case 'CS+PIC'
-                    vsize = 0;
-                    for i = 1:length(gp.tr_index)
-                        vsize = vsize + length(gp.tr_index{i})^2;
-                    end
-                    tr_indvec = zeros(vsize,2);                 
-                    %tr_indvec = [];
-                    i2 = 1;
-                    for i = 1:length(gp.tr_index)
-                        for j = 1:length(gp.tr_index{i})
-                            for k = 1:length(gp.tr_index{i})
-                                %tr_indvec = [tr_indvec;
-                                %             gp.tr_index{i}(j) gp.tr_index{i}(k)]; 
-                                tr_indvec(i2,1) = gp.tr_index{i}(j);
-                                tr_indvec(i2,2) = gp.tr_index{i}(k);
-                                i2 = i2 + 1;
-                            end
-                        end
-                    end
-                    gp.tr_indvec = tr_indvec;
-                end
               case 'farthest_point'
                 gp.blocktype = 'farthest_point';
                 gp.blockcent = var{3};

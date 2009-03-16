@@ -651,7 +651,7 @@ function gpcf = gpcf_sexp(do, varargin)
             C = trcov(gpcf, x);
             
             if isnan(C)
-                % If there wasn't C-implementation do here                
+                % If there wasn't C-implementation do here
                 [n, m] =size(x)
                 
                 s = 1./(gpcf.lengthScale);

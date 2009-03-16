@@ -504,17 +504,11 @@ function likelih = likelih_negbin(do, varargin)
             u = gp.X_u;
             Labl=[];
             Lp = [];            
-          case {'PIC_BLOCK','CS+PIC'}
+          case {'PIC' 'PIC_BLOCK'}
             u = gp.X_u;
             ind = gp.tr_index;
             Labl=[];
             Lp = [];
-          case 'PIC_BAND'
-            u = gp.X_u;
-            ind = gp.tr_index;
-            nzmax = size(ind,1);
-            Labl= sparse([],[],[],n,n,0);
-            Lp = sparse([],[],[],n,n,0); 
         end
         n=length(y);
 
@@ -544,19 +538,14 @@ function likelih = likelih_negbin(do, varargin)
             % See cholrankup.m for general case of solving a Ax=b system
             zs = z./Lp;
             w = zs + U*((J*U'-U')*zs);
-          case 'PIC_BLOCK'
+          case {'PIC' 'PIC_BLOCK'}
             getL(z, gp, x, y, u);
             zs=zeros(size(z));
             for i=1:length(ind)
                 zs(ind{i}) = Lp{i}\z(ind{i});
             end
             w = zs + U*((J*U'-U')*zs);
-          case {'CS+PIC' 'CS+FIC'}
-            getL(z, gp, x, y, u);
-            %zs = Lp\z;
-            zs = Lp*z;
-            w = zs + U*((J*U'-U')*zs);        
-          case 'PIC_BAND'
+          case {'CS+FIC'}
             getL(z, gp, x, y, u);
             %zs = Lp\z;
             zs = Lp*z;
@@ -595,16 +584,12 @@ function likelih = likelih_negbin(do, varargin)
             z=L2*w;
           case 'FIC'
             z = Lp.*(w + U*(iJUU*w));
-          case  'PIC_BLOCK'
+          case  {'PIC' 'PIC_BLOCK'}
             w2 = w + U*(iJUU*w);
             for i=1:length(ind)
                 z(ind{i}) = Lp{i}*w2(ind{i});
             end
-          case  {'CS+PIC' 'CS+FIC'}
-            w2 = w + U*(iJUU*w);
-            %        z = Lp*w2;
-            z = Lp\w2;
-          case  'PIC_BAND'
+          case  {'CS+FIC'}
             w2 = w + U*(iJUU*w);
             %        z = Lp*w2;
             z = Lp\w2;
@@ -645,7 +630,7 @@ function likelih = likelih_negbin(do, varargin)
                 g = Lp.*g;
                 g = g + U*(iJUU*g);
                 g = g';
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 w2= w + U*(iJUU*w);
                 for i=1:length(ind)
                     z(ind{i}) = Lp{i}*w2(ind{i});
@@ -665,7 +650,7 @@ function likelih = likelih_negbin(do, varargin)
                 end
                 g = g + g*U*(iJUU);
                 %g = g';
-              case {'PIC_BAND','CS+PIC','CS+FIC'}
+              case 'CS+FIC'
                 w2= w + U*(iJUU*w);
                 %            z = Lp*w2;
                 z = Lp\w2;
@@ -709,7 +694,7 @@ function likelih = likelih_negbin(do, varargin)
                 % eprior = 0.5*z'*inv(La)*z-0.5*z'*(inv(La)*K_fu*inv(K_uu+Kuf*inv(La)*K_fu)*K_fu'*inv(La))*z;
                 B = z'*iLaKfuic;  % 1 x u
                 eprior = 0.5*sum(z.^2./Lav)-0.5*sum(B.^2);
-              case 'PIC_BLOCK'
+              case {'PIC' 'PIC_BLOCK'}
                 w2= w + U*(iJUU*w);
                 for i=1:length(ind)
                     z(ind{i}) = Lp{i}*w2(ind{i});
@@ -720,7 +705,7 @@ function likelih = likelih_negbin(do, varargin)
                 for i=1:length(ind)
                     eprior = eprior + 0.5*z(ind{i})'/Labl{i}*z(ind{i});
                 end
-              case {'PIC_BAND','CS+PIC','CS+FIC'}
+              case 'CS+FIC'
                 w2= w + U*(iJUU*w);
                 %            z = Lp*w2;
                 z = Lp\w2;
@@ -793,7 +778,7 @@ function likelih = likelih_negbin(do, varargin)
                                                   % J = diag(sqrt(2./(1+diag(S))));
                     iJUU = J\U'-U';
                     iJUU(abs(iJUU)<eps)=0;
-                  case 'PIC_BLOCK'
+                  case {'PIC' 'PIC_BLOCK'}
                     [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
                     K_fu = gp_cov(gp, x, u);         % f x u
                     K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
@@ -903,127 +888,6 @@ function likelih = likelih_negbin(do, varargin)
                                                   % J = diag(sqrt(2./(1+diag(S))));
                     iJUU = J\U'-U';
                     iJUU(abs(iJUU)<eps)=0;                      
-                  case 'CS+PIC'
-                    % Q_ff = K_fu*inv(K_uu)*K_fu'
-                    % Here we need only the diag(Q_ff), which is evaluated below
-                    cf_orig = gp.cf;
-                    
-                    cf1 = {};
-                    cf2 = {};
-                    j = 1;
-                    k = 1;
-                    for i = 1:length(gp.cf)
-                        if ~isfield(gp.cf{i},'cs')
-                            cf1{j} = gp.cf{i};
-                            j = j + 1;
-                        else
-                            cf2{k} = gp.cf{i};
-                            k = k + 1;
-                        end         
-                    end
-                    gp.cf = cf1;        
-
-                    K_fu = gp_cov(gp, x, u);         % f x u
-                    K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                    K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
-                    Luu = chol(K_uu)';                
-                    B=Luu\(K_fu');       % u x f
-
-                    [I,J]=find(tril(sparse(gp.tr_indvec(:,1),gp.tr_indvec(:,2),1,n,n),-1));
-                    q_ff = sum(B(:,I).*B(:,J));
-                    q_ff = sparse(I,J,q_ff,n,n);
-                    c_ff = gp_covvec(gp, x(I,:), x(J,:))';
-                    c_ff = sparse(I,J,c_ff,n,n);
-                    [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-                    Labl = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);                    
-                    
-                    gp.cf = cf2;        
-                    K_cs = gp_trcov(gp,x);
-                    Labl = Labl + K_cs;
-                    gp.cf = cf_orig;
-                    iLaKfu = Labl\K_fu;
-                    % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
-                    % and form iLaKfu
-                    A = K_uu+K_fu'*iLaKfu;
-                    A = (A+A')./2;            % Ensure symmetry
-                    
-                    % L = iLaKfu*inv(chol(A));
-                    iLaKfuic = iLaKfu*inv(chol(A));
-                    
-                    %Lp = chol(inv(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl)));
-                    %Lp = inv(chol(sparse(1:n,1:n,gp.avgE,n,n) + inv(Labl))');
-                    Lp = inv(Labl);
-                    r = gp.likelih.disper;                               
-                    Lp = sparse(1:n,1:n,(r.^2+r.*gp.likelih.avgE+gp.likelih.avgE.^2)./(gp.likelih.avgE.*(r^2+r.*t)),n,n) + Lp;
-                    Lp = chol(Lp)';
-                    %                Lp = inv(Lp);
-
-
-                    b=zeros(size(B'));
-                    
-                    %                b = Lp*iLaKfuic;
-                    b = Lp\iLaKfuic;
-                    
-                    [V,S2]= eig(b'*b);
-                    S = sqrt(S2);
-                    U = b*(V/S);
-                    U(abs(U)<eps)=0;
-                    %        J = diag(sqrt(diag(S2) + 0.01^2));
-                    J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                                  % J = diag(sqrt(2./(1+diag(S))));
-                    iJUU = J\U'-U';
-                    iJUU(abs(iJUU)<eps)=0;                
-                  case 'PIC_BAND'
-                    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                    K_fu = gp_cov(gp, x, u);         % f x u
-                    K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                    K_uu = (K_uu+K_uu')/2;     % ensure the symmetry of K_uu
-                    Luu = chol(K_uu)';
-
-                    % Q_ff = K_fu*inv(K_uu)*K_fu'
-                    % Here we need only the diag(Q_ff), which is evaluated below
-                    B=Luu\(K_fu');       % u x f
-
-                    [I,J]=find(tril(sparse(ind(:,1),ind(:,2),1,n,n),-1));
-                    q_ff = sum(B(:,I).*B(:,J));
-                    q_ff = sparse(I,J,q_ff,n,n);
-                    c_ff = gp_covvec(gp, x(I,:), x(J,:))';
-                    c_ff = sparse(I,J,c_ff,n,n);
-                    [Kv_ff, Cv_ff] = gp_trvar(gp,x);
-                    Labl = c_ff + c_ff' - q_ff - q_ff' + sparse(1:n,1:n, Cv_ff-sum(B.^2,1)',n,n);
-
-                    iLaKfu = Labl\K_fu;
-                    % Lets scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
-                    % and form iLaKfu
-                    A = K_uu+K_fu'*iLaKfu;
-                    A = (A+A')./2;            % Ensure symmetry
-                    
-                    % L = iLaKfu*inv(chol(A));
-                    iLaKfuic = iLaKfu*inv(chol(A));
-                    
-                    %Lp = chol(inv(sparse(1:n,1:n,gp.likelih.avgE,n,n) + inv(Labl)));
-                    %Lp = inv(chol(sparse(1:n,1:n,gp.likelih.avgE,n,n) + inv(Labl))');
-                    Lp = inv(Labl);
-                    r = gp.likelih.disper;
-                    Lp = sparse(1:n,1:n,(r.^2+r.*gp.likelih.avgE+gp.likelih.avgE.^2)./(gp.likelih.avgE.*(r^2+r.*t)),n,n) + Lp;
-                    Lp = chol(Lp)';
-                    %                Lp = inv(Lp);
-
-
-                    b=zeros(size(B'));
-                    
-                    %                b = Lp*iLaKfuic;
-                    b = Lp\iLaKfuic;
-                    
-                    [V,S2]= eig(b'*b);
-                    S = sqrt(S2);
-                    U = b*(V/S);
-                    U(abs(U)<eps)=0;
-                    %        J = diag(sqrt(diag(S2) + 0.01^2));
-                    J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                                  % J = diag(sqrt(2./(1+diag(S))));
-                    iJUU = J\U'-U';
-                    iJUU(abs(iJUU)<eps)=0;                
                 end
             end
         end

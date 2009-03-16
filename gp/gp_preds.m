@@ -44,7 +44,7 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, predcf, tstind)
     nmc=size(gp.hmcrejects,1);
     Y = zeros(size(x,1),nmc);
 
-    if strcmp(gp.type, 'PIC_BLOCK')
+    if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
         ind = gp.tr_index;           % block indeces for training points
         gp = rmfield(gp,'tr_index');
     end
@@ -201,8 +201,8 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, predcf, tstind)
             % --------------------------------------------
             %  PIC                                   
             % --------------------------------------------            
-          case 'PIC_BLOCK'        % Do following if FIC sparse model is used
-                                  % Calculate some help matrices  
+          case {'PIC' 'PIC_BLOCK'}  % Do following if FIC sparse model is used
+                                    % Calculate some help matrices  
             u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
             
             [Kv_ff, Cv_ff] = gp_trvar(Gp, tx);  % 1 x f  vector

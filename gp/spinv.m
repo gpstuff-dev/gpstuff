@@ -1,10 +1,14 @@
-function Z = sinv(A)
+function Z = spinv(A, B)
 % SINV    Evaluate the sparse inverse matrix
 %
 % z = sinv(A)  returns the elements of inv(A)_ij, for which A_ij
 %      is different from zero. 
 %
-%      See Vanhatalo and Vehtari (2008) for details. 
+% z = sinv(LD, 1)  returns the elements of inv(A)_ij, for which A_ij
+%     is different from zero, and where LD is the LDL cholesky
+%     decomposition of A. LD has to be in the form returned by ldlchol.
+%
+%     See Vanhatalo and Vehtari (2008) for details. 
 %
 %
 %   Note! The function works only for symmetric matrices!
@@ -17,7 +21,12 @@ function Z = sinv(A)
     
     n = size(A,1);
 
-    [LD, p, q] = ldlchol(A);
+    if nargin == 1
+        [LD, p, q] = ldlchol(A);
+    else 
+        LD = A;
+    end
+    
     [I,J,ld] = find(LD);
     temp = [I(:) J(:) ; J(:) I(:)];
     temp = sortrows(unique(temp,'rows'),2);
@@ -80,7 +89,9 @@ function Z = sinv(A)
     end
     
     Z = sparse(Iz,Jz,z);
-    r(q) = 1:n;
-    Z = Z(r,r);
     
+    if nargin == 1
+        r(q) = 1:n;
+        Z = Z(r,r);
+    end
 end

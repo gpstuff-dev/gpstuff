@@ -42,7 +42,7 @@ switch gp.type
         [K, C] = gp_trcov(gp,x);
         
         if issparse(C)
-            invC = sinv(C);       % evaluate the sparse inverse
+            invC = spinv(C);       % evaluate the sparse inverse
             LD = ldlchol(C);
             b = ldlsolve(LD,t);
         else
@@ -109,7 +109,7 @@ switch gp.type
         % ============================================================
         % PIC
         % ============================================================
-    case 'PIC_BLOCK'
+    case {'PIC' 'PIC_BLOCK'}
                       
         % ============================================================
         % CS+FIC
