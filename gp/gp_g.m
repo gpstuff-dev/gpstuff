@@ -522,8 +522,8 @@ switch gp.type
                 end
             end
             % Set the gradients of hyper-hyperparameter
-            if length(gprior_cf) > length(DKuu)
-                for i2=length(DKuu)+1:length(gprior_cf)
+            if length(gprior_cf) > length(DKff)
+                for i2=length(DKff)+1:length(gprior_cf)
                     i1 = i1+1;
                     gdata(i1) = 0;
                     gprior(i1) = gprior_cf(i2);

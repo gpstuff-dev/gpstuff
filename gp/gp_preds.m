@@ -41,7 +41,7 @@ function [Y, VarY] = gp_preds(gp, tx, ty, x, predcf, tstind)
     nin  = gp.nin;
     nout = gp.nout;
 
-    nmc=size(gp.hmcrejects,1);
+    nmc=size(gp.etr,1);
     Y = zeros(size(x,1),nmc);
 
     if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')

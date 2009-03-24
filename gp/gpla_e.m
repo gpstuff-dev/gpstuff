@@ -56,7 +56,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
     function [e, edata, eprior, f, L, La2, b, W] = laplace_algorithm(w, gp, x, y, param, varargin)
 
-        if abs(w-w0) < 1e-8 % 1e-8
+        if  1==0 %abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -79,6 +79,8 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
             tol = gp.laplace_opt.tol;
             logZ_tmp=0; logZ=Inf;
             f = f0;
+            %f = zeros(size(f0));
+            %f = 2.*randn(size(f0));
 
             % =================================================
             % First Evaluate the data contribution to the error
@@ -90,6 +92,9 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 K = gp_trcov(gp, x);
                 
                 if issparse(K)
+                    % TODO !!!
+                    % Find fill reducing permutation and permute all the
+                    % matrices
                     LD = ldlchol(K);
                 else
                     iK = inv(K);
@@ -128,22 +133,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
-                    f = f';
-                    
-                    if issparse(K)
-                        W = sparse(1:n,1:n, -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'), n,n);
-                        sqrtW = sqrt(W);
-                        B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
-                        L = ldlchol(B);
-                        a = ldlsolve(LD,f);
-                    else
-                        W = diag(-feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'));
-                        sqrtW = sqrt(W);
-                        B = eye(size(K)) + sqrtW*K*sqrtW;
-                        L = chol(B)';
-                        a = iK*f;
-                    end
-                    logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    f = f';                    
 
                     % find the mode by Scaled conjugate gradient method
                   case 'SCG'
@@ -197,10 +187,30 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     end
                 end
                 if issparse(K)
-                    edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                    W = sparse(1:n,1:n, -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'), n,n);
+                    sqrtW = sqrt(W);
+                    B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
+                    L = ldlchol(B);
+                    a = ldlsolve(LD,f);
+                    logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);                 
+                    % Note that here we use LDL cholesky
+                    edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; % 
                 else
-                    edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                    W = diag(-feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'));
+                    a = iK*f; 
+                    logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    if W >= 0
+                        sqrtW = sqrt(W);
+                        B = eye(size(K)) + sqrtW*K*sqrtW;
+                        L = chol(B)';
+                        edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                    else
+                        %edata = logZ + 0.5.*log(det(eye(size(K)) + K*W));
+                        L = 0;
+                        edata = logZ + sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W))))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                    end
                 end
+                                
                 La2 = W;
                 b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
@@ -405,7 +415,9 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
                 La2 = Labl;
                 b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');                    
-
+                % ============================================================
+                % CS+FIC
+                % ============================================================
               case 'CS+FIC'
                 u = gp.X_u;
                 m = length(u);
@@ -644,6 +656,11 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     noise = gp.noise{i};
                     eprior = eprior + feval(noise.fh_e, noise, x, y);
                 end
+            end
+            % Evaluate the prior contribution to the error from likelihood function
+            if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
+                likelih = gp.likelih;
+                eprior = eprior - feval(likelih.fh_priore, likelih);
             end
 
             % The last things to do

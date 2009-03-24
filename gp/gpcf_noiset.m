@@ -13,7 +13,13 @@ function gpcf = gpcf_noiset(do, varargin)
 %         ndata          = number of data points
 %	  nout           = number of outputs: always 1
 %	  noiseSigmas2   = scale of residual distribution
-%                          Variation for normal distribution
+%                          Variation for normal distribution (0.01)
+%         U              = (1)
+%         tau2           = (0.1)
+%         alpha          = (0.5)
+%         nu             = degrees of freedom (4)
+%         r              = the residuals
+%         freeze_nu      = 0 for sampling also nu 1 for not sampling nu (0)
 %         p              = prior structure for covariance function
 %                          parameters. 
 %         fh_pak         = function handle to packing function
@@ -84,6 +90,7 @@ if strcmp(do, 'init')
     gpcf.alpha = 0.5;
     gpcf.nu = 4;
     gpcf.r = zeros(varargin{2},1);
+    gpcf.freeze_nu = 0;
     
     % Initialize prior structure
     gpcf.p=[];
@@ -107,27 +114,30 @@ if strcmp(do, 'init')
         end
         % Loop through all the parameter values that are changed
         for i=3:2:length(varargin)-1
-            if strcmp(varargin{i},'noiseSigmas2')
+            switch varargin{i}
+              case 'noiseSigmas2'
                 if size(varargin{i+1},1) == gpcf.ndata & size(varargin{i+1},2) == 1
                     gpcf.noiseSigmas2 = varargin{i+1};
                 else
                     error('the size of has to be NDATAx1')
                 end
-            elseif strcmp(varargin{i},'fh_sampling')
+              case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
-            elseif strcmp(varargin{i},'U')
+              case 'U'
                 if size(varargin{i+1},1) == gpcf.ndata
-                    gpcf.U = varargin{i+1};;
+                    gpcf.U = varargin{i+1};
                 else
                     error('the size of U is wrong, it has to be NDATAx1')
                 end
-            elseif strcmp(varargin{i},'tau2')
-                gpcf.tau2 = varargin{i+1};;
-            elseif strcmp(varargin{i},'alpha')
-                gpcf.alpha = varargin{i+1};;
-            elseif strcmp(varargin{i},'nu')
-                gpcf.nu = varargin{i+1};;
-            else
+              case 'tau2'
+                gpcf.tau2 = varargin{i+1};
+              case 'alpha'
+                gpcf.alpha = varargin{i+1};
+              case 'nu'
+                gpcf.nu = varargin{i+1};
+              case 'freeze_nu'
+                gpcf.freeze_nu = varargin{i+1};
+              otherwise
                 error('Wrong parameter name!')
             end
         end
@@ -142,15 +152,30 @@ if strcmp(do, 'set')
     gpcf = varargin{1};
     % Loop through all the parameter values that are changed
     for i=2:2:length(varargin)-1
-        if strcmp(varargin{i},'noiseSigmas2')
-            if size(varargin{i+1},2) == gpcf.ndata  & size(varargin{i+1},2) == 1
+        switch varargin{i}
+          case 'noiseSigmas2'
+            if size(varargin{i+1},1) == gpcf.ndata & size(varargin{i+1},2) == 1
                 gpcf.noiseSigmas2 = varargin{i+1};
             else
-                error('the size of noiseSigmas2 is wrong, has to be 1xNDATA')
+                error('the size of has to be NDATAx1')
             end
-        elseif strcmp(varargin{i},'fh_sampling')
+          case 'fh_sampling'
             gpcf.fh_sampling = varargin{i+1};
-        else
+          case 'U'
+            if size(varargin{i+1},1) == gpcf.ndata
+                gpcf.U = varargin{i+1};
+            else
+                error('the size of U is wrong, it has to be NDATAx1')
+            end
+          case 'tau2'
+            gpcf.tau2 = varargin{i+1};
+          case 'alpha'
+            gpcf.alpha = varargin{i+1};
+          case 'nu'
+            gpcf.nu = varargin{i+1};
+          case 'freeze_nu'
+            gpcf.freeze_nu = varargin{i+1};
+          otherwise
             error('Wrong parameter name!')
         end    
     end
@@ -225,7 +250,7 @@ end
         eprior = 0;
     end
 
-    function [gprior, DCff]  = gpcf_noiset_ghyper(gpcf, p, t, g, gdata, gprior, invC, varargin)
+    function [DCff, gprior]  = gpcf_noiset_ghyper(gpcf, p, t, g, gdata, gprior, invC, varargin)
     %GPCF_NOISE_G Evaluate gradient of error for SE covariance function.
     %
     %	Description
@@ -247,8 +272,10 @@ end
     % This software is distributed under the GNU General Public 
     % License (version 2 or later); please refer to the file 
     % License.txt, included with the software, for details.
+
         
         DCff = [];
+        gprior = [];
     end
 
     function C = gpcf_noiset_cov(gpcf, x1, x2)
@@ -377,8 +404,9 @@ end
 % $$$         alpha2=invgamrand(mean(r.^2./U),n);
         rss2=alpha2.*U;
         % Sample nu
-        nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
-                
+        if gpcf.freeze_nu == 0
+            nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
+        end
         gpcf.noiseSigmas2 = rss2;
         gpcf.U = U;
         gpcf.tau2 = t2;

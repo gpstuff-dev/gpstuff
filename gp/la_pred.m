@@ -51,9 +51,18 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         % Evaluate the variance
         if nargout > 1
             kstarstar = gp_trvar(gp,x,predcf);
-            V = L\(sqrt(W)*K_nf');
+            if W >= 0
+                V = L\(sqrt(W)*K_nf');
+                Varf = kstarstar - sum(V'.*V',2);
+            else
+                K = gp_trcov(gp,tx);
+                %plot(diag(inv(W)))
+                %L = chol(K + inv(W))';
+                %V = L\(sqrt(W)*K_nf');
+                %Varf = kstarstar - sum(V'.*V',2);
+                Varf = kstarstar - sum(K_nf.*((K + inv(W))\K_nf')',2);
+            end
             for i1=1:ntest
-                Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
                 switch gp.likelih.type
                   case 'probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)

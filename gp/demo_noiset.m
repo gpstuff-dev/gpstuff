@@ -60,15 +60,10 @@ y = x(1:100,2);
 x = x(1:100,1);
 [n, nin] = size(x); 
 
-% plot the training data with dots and the underlying 
-% mean of it as a line
+% Test data
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
-figure
-plot(x,y,'.')
-hold on
-plot(xx,yy, 'k')
-title('training data')
+
 
 disp(' ')
 disp(' We create a Gaussian process and priors for GP parameters. Prior for GP')
@@ -107,20 +102,25 @@ opt(14) = 0;
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w, 'hyper');
 
+% Prediction
 [Ef, Varf] = gp_pred(gp, x, y, xx');
 std_f = sqrt(Varf + gp.noise{1}.noiseSigmas2);
 
 % Plot the prediction and data
-figure(1)
-plot(xx, Ef)
+% plot the training data with dots and the underlying 
+% mean of it as a line
+figure
 hold on
+plot(xx,yy, 'k')
+plot(xx, Ef)
 plot(xx, Ef-2*std_f, 'r--')
-plot(xx, Ef+2*std_f, 'r--')
-plot(xt,yt,'r.')
 plot(x,y,'b.')
+%plot(xt,yt,'r.')
+legend('real f', 'Ef', 'Ef+std(f)','y')
+plot(xx, Ef+2*std_f, 'r--')
 axis on;
 title('The predictions and the data points (MAP solution and normal noise)');
-S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f,  noiseSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.noise{1}.noiseSigmas2)
 
 
 % ========================================
@@ -155,12 +155,12 @@ opt.gibbs_opt.method = 'minmax';
 [r,g,rstate1]=gp_mc(opt, gp, x, y);
 
 opt.hmc_opt.stepadj=0.08;
-opt.nsamples=500;
+opt.nsamples=1500;
 opt.hmc_opt.steps=10;
 opt.hmc_opt.persistence=1;
 opt.hmc_opt.decay=0.6;
 
-[r,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
+[r,g,rstate2]=gp_mc(opt, g, x, y, [], [], r);
 rr = r;
 
 % thin the record
@@ -180,6 +180,19 @@ hist(rr.cf{1}.magnSigma2,20)
 title('Mixture model, magnSigma2')
 
 
+% $$$ >> mean(rr.noise{1}.nu)
+% $$$ ans =
+% $$$     1.5096
+% $$$ >> mean(sqrt(rr.noise{1}.tau2).*rr.noise{1}.alpha)
+% $$$ ans =
+% $$$     0.0683
+% $$$ >> mean(rr.cf{1}.lengthScale)
+% $$$ ans =
+% $$$     1.0197
+% $$$ >> mean(rr.cf{1}.magnSigma2)
+% $$$ ans =
+% $$$     1.2903
+
 % make predictions for test set
 [Ef, Varf] = gp_preds(rr,x,y,xx');
 Ef = mean(squeeze(Ef),2);
@@ -189,14 +202,166 @@ std = sqrt(mean(squeeze(Varf),2) );
 figure
 plot(xx,yy,'k')
 hold on
-plot(x,y,'.')
 plot(xx,Ef)
 plot(xx, Ef-2*std_f, 'r--')
+plot(x,y,'.')
+legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
-legend('real f', 'mean', '2xstd(f)')
 title('The predictions and the data points (MAP solution and hierarchical noise)')
-
 S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
+
+save('noiset_samples', 'rr', 'r')
+
+% ========================================
+% Laplace approximation Student-t likelihood
+% ========================================
+% load the data. First 100 variables are for training
+% and last 100 for test
+S = which('demo_noiset');
+L = strrep(S,'demo_noiset.m','demos/odata');
+x = load(L);
+xt = x(101:end,1);
+yt = x(101:end,2);
+y = x(1:100,2);
+x = x(1:100,1);
+[n, nin] = size(x); 
+
+% Test data
+xx = [-2.7:0.01:2.7];
+yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 0.5, 'magnSigma2', 2^2);
+
+% ... Then set the prior for the parameters of covariance functions...
+gpcf1.p.lengthScale = gamma_p({3 7});  
+gpcf1.p.magnSigma2 = sinvchi2_p({0.5^2 0.5});
+
+% Create the likelihood structure
+likelih = likelih_t('init', 4, 0.2);
+likelih.p.nu = loglogunif_p;
+likelih.p.sigma = logunif_p;
+
+% ... Finally create the GP data structure
+param = 'hyper+likelih'
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.01);
+gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
+
+% $$$ w = randn(size(y'));
+% $$$ gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, y', 'latent')
+% $$$ 
+% $$$ w = randn(size(y'));
+% $$$ gradcheck(w, likelih.fh_g, likelih.fh_hessian, likelih, y', 'latent')
+% $$$ 
+% $$$ w = randn(size(y'));
+% $$$ gradcheck(w, likelih.fh_hessian, likelih.fh_g3, likelih, y', 'latent')
+
+% $$$ w = randn(size(gp_pak(gp,'likelih')));
+% $$$ gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, y, Ef, 'hyper')
+% $$$ 
+% $$$ w = randn(size(gp_pak(gp,'likelih')));
+% $$$ gradcheck(w, likelih.fh_g, likelih.fh_hessian, likelih, y, Ef, 'latent+hyper')
+% $$$ 
+% $$$ w = randn(size(gp_pak(gp,'likelih')));
+% $$$ gradcheck(w, likelih.fh_hessian, likelih.fh_g3, likelih, y, Ef, 'latent2+hyper')
+
+w = randn(size(gp_pak(gp,param)));
+gradcheck(w, @gpla_e, @gpla_g, gp, x, y, param)
+exp(w) 
+
+opt=optimset('GradObj','on');
+opt=optimset(opt,'TolX', 1e-3);
+opt=optimset(opt,'LargeScale', 'off');
+opt=optimset(opt,'Display', 'iter');
+w0 = gp_pak(gp, param);
+mydeal = @(varargin)varargin{1:nargout};
+w = fminunc(@(ww) mydeal(gpla_e(ww, gp, x, y, param), gpla_g(ww, gp, x, y, param)), w0, opt);
+gp = gp_unpak(gp,w,param);
+
+
+% Set the optimized hyperparameter values back to the gp structure
+gp=gp_unpak(gp,w, param);
+
+[Ef, Varf] = la_pred(gp, x, y, xx', 'hyper');
+std_f = sqrt(Varf);
+
+% Plot the prediction and data
+figure
+plot(xx,yy,'k')
+hold on
+plot(xx,Ef)
+plot(xx, Ef-2*std_f, 'r--')
+plot(x,y,'.')
+legend('real f', 'Ef', 'Ef+std(f)','y')
+plot(xx, Ef+2*std_f, 'r--')
+title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, gp.likelih.sigma));
+S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+
+
+[Ef_samp, Varf_samp] = gp_preds(rr,x,y,x);
+[Ef, Varf] = la_pred(gp, x, y, x, 'hyper');
+for j=0:4
+    figure
+    k=1;
+    for i = j*20+1:j*20+20
+        ff = [Ef(i)-3*sqrt(Varf(i)):0.01:Ef(i)+3*sqrt(Varf(i))];
+        pdff = normpdf(ff, Ef(i), sqrt(Varf(i)));
+        subplot(5,4,k)
+        hist(Ef_samp(i,:),30);
+        h = hist(Ef_samp(i,:),30);    
+        hold on 
+        plot(ff, max(h).*pdff./max(pdff))
+        plot(y(i),1,'rx', 'Markersize',10, 'Linewidth',3)
+        k=k+1;
+    end
+end
+
+
+ff = la_pred(gp, x, y, x, 'hyper');
+K = gp_trcov(gp, x);
+
+f = [-1.8:0.01:2.5];
+dat = 4;
+for i=1:length(f)
+    ff(dat) = f(i);
+    
+    eprior(i) = -0.5*log(2*pi) - sum(log(diag(chol(K)))) - 0.5*ff'*(K\ff);
+    temp = K\ff;
+    gprior(i) = - temp(dat);
+    temp = inv(K);
+    hprior(i) = - temp(dat,dat);
+    
+    ee(i) = feval(likelih.fh_e, likelih, y(dat), f(i), 'latent');
+    gg(i) = feval(likelih.fh_g, likelih, y(dat), f(i), 'latent');
+    hh(i) = feval(likelih.fh_hessian, likelih, y(dat), f(i), 'latent');
+end
+
+figure
+subplot(3,1,1)
+plot(f,ee)
+subplot(3,1,2)
+plot(f,gg)
+subplot(3,1,3)
+plot(f,hh)
+
+figure
+subplot(3,1,1)
+plot(f,ee+eprior)
+subplot(3,1,2)
+plot(f,gg+gprior)
+subplot(3,1,3)
+plot(f,hh+hprior)
+
+
+
+w = randn(size(y'));
+gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, y', 'latent')
+
+w = randn(size(y'));
+gradcheck(w, likelih.fh_g, likelih.fh_hessian, likelih, y', 'latent')
+
+w = randn(size(y'));
+gradcheck(w, likelih.fh_hessian, likelih.fh_g3, likelih, y', 'latent')
+
 
 % ========================================
 % MCMC approach Student-t likelihood
@@ -310,6 +475,8 @@ end
 plot(x(I),mean(rr.latentValues(:,I))', 'r', 'LineWidth', 2)
 plot(x,y,'r.')
 title('The latent values and the data points (MAP solution and Student-t noise)')
+
+
 
 
 % =====================================================

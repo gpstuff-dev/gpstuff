@@ -60,72 +60,106 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             W = La2;
             I = eye(size(K));
             w1 = K\f;
-            sqrtW = sqrt(W);
-            w2 = diag(K*sqrtW/L'/L/sqrtW) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-            w2 = - w2' / (I + K*W); 
+            if W >= 0
+                sqrtW = sqrt(W);
+                w2 = diag(K*sqrtW/L'/L/sqrtW) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+                invB = sqrtW/L'/L*sqrtW;
+            else
+                w2 = diag(inv(inv(K) + W)) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+                invB = inv( inv(W) + K );
+            end
+            w2 = - w2' / (I + K*W);
             w3 = b;
-            invB = sqrtW/L'/L*sqrtW;
         end
 
-        % Evaluate the gradients from covariance functions
-        for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-                i1 = length(gprior);
-            end
-            
-            gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-            
-            for i2 = 1:length(DKff)
-                i1 = i1+1;
-                
-                Bdm = w1'*(DKff{i2}*w1);
-                Bdm = Bdm + w2*(DKff{i2}*w3);
-                Cdm = sum(sum(invB.*DKff{i2}));
-                gdata(i1) = 0.5.*(Cdm - Bdm);
-                gprior(i1) = gprior_cf(i2);
-            end
-
-            % Set the gradients of hyper-hyperparameter
-            if length(gprior_cf) > length(DKff)
-                for i2=length(DKff)+1:length(gprior_cf)
-                    i1 = i1+1;
-                    gdata(i1) = 0;
-                    gprior(i1) = gprior_cf(i2);
+        % Hyperparameters
+        % --------------------
+        if strcmp(param,'hyper') || strcmp(param,'hyper+likelih')
+            % Evaluate the gradients from covariance functions
+            for i=1:ncf
+                i1=0;
+                if ~isempty(gprior)
+                    i1 = length(gprior);
                 end
-            end
-        end
-
-        % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
-            for i=1:nn
-                i1 = i1+1;
+            
+                gpcf = gp.cf{i};
+                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                 
-                noise = gp.noise{i};
-                [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
-
-                for i2 = 1:length(DCff)
+                for i2 = 1:length(DKff)
                     i1 = i1+1;
                     
-                    Bdm = b'*(DKff{i2}*b);
-                    Cdm = sum(sum(invC.*DCff{i2})); 
+                    Bdm = w1'*(DKff{i2}*w1);
+                    Bdm = Bdm + w2*(DKff{i2}*w3);
+                    Cdm = sum(sum(invB.*DKff{i2}));
                     gdata(i1) = 0.5.*(Cdm - Bdm);
                     gprior(i1) = gprior_cf(i2);
                 end
                 
                 % Set the gradients of hyper-hyperparameter
-                if length(gprior_cf) > length(DCff)
-                    for i2=length(DCff)+1:length(gprior_cf)
+                if length(gprior_cf) > length(DKff)
+                    for i2=length(DKff)+1:length(gprior_cf)
                         i1 = i1+1;
                         gdata(i1) = 0;
                         gprior(i1) = gprior_cf(i2);
                     end
                 end
-                
+            end
+            
+            % Evaluate the gradient from noise functions
+            if isfield(gp, 'noise')
+                nn = length(gp.noise);
+                for i=1:nn
+                    i1 = i1+1;
+                    
+                    noise = gp.noise{i};
+                    [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
+                    
+                    for i2 = 1:length(DCff)
+                        i1 = i1+1;
+                        
+                        Bdm = b'*(DKff{i2}*b);
+                        Cdm = sum(sum(invC.*DCff{i2})); 
+                        gdata(i1) = 0.5.*(Cdm - Bdm);
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                    
+                    % Set the gradients of hyper-hyperparameter
+                    if length(gprior_cf) > length(DCff)
+                        for i2=length(DCff)+1:length(gprior_cf)
+                            i1 = i1+1;
+                            gdata(i1) = 0;
+                            gprior(i1) = gprior_cf(i2);
+                        end
+                    end
+                    
+                end
             end
         end
+        
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
+            w3 = K * feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            
+            gdata_likelih = - DL_sigma - 0.5.*sum(diag(inv(inv(K) + W)).*DW_sigma) - 0.5.*w2*w3;
+           
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
+        end
+        
         g = gdata + gprior;
 
         % ============================================================
@@ -150,14 +184,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         sqrtW = sqrt(W);
         b = f'./La1' - (f'*L)*L';
 
-        La = W.*La1;
-        Lahat = 1 + La;
-        La2 = Lahat;
+        La2 = 1 + W.*La1;
         La3 = 1./La1 + W;
         B2 = (repmat(sqrtW,1,m).*K_fu);
 
         % Components for
-        B3 = repmat(Lahat,1,m).\B2;
+        B3 = repmat(La2,1,m).\B2;
         A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
         L2 = B3/chol(A2);
 
@@ -165,7 +197,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         B4 = repmat(La3,1,m).\L;
         A3 = eye(size(K_uu)) - L'*B4; A3 = (A3+A3')./2;
         L3 = B4/chol(A3);
-        dA3L3tL3 = 1./La3' + sum(L3.*L3,2)';
+        dA3L3tL3 = -1./La3' - sum(L3.*L3,2)';
         dA3L3tL3 = dA3L3tL3.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent')';
 
         KufW = K_fu'.*repmat(W',m,1);
@@ -178,14 +210,14 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         b2 = (dA3L3tL3./La2' - dA3L3tL3*L4*L5);
         b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
         L = repmat(sqrtW,1,m).*L2;
-        La = Lahat./W;
+        La = La2./W;
         
         LL = sum(L.*L,2);
         
         % =================================================================
         % Evaluate the gradients from covariance functions
         % =================================================================
-        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih') || strcmp(param,'all')
             for i=1:ncf            
                 i1=0;
                 if ~isempty(gprior)
@@ -279,6 +311,33 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 end
             end
         end
+        
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
+            DL_f_sigma = feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            b3 = K_fu*(iKuuKuf*DL_f_sigma) + La1.*DL_f_sigma;
+            
+            gdata_likelih = - DL_sigma - 0.5.*sum((1./La3 + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3;
+           
+            
+            
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
+        end
 
         g = gdata + gprior;
 
@@ -330,7 +389,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         A3 = eye(size(K_uu)) - L'*B4; A3 = (A3+A3')./2;
         L3 = B4/chol(A3);
         dA3L3tL3 = diLa3 + sum(L3.*L3,2)';
-        dA3L3tL3 = dA3L3tL3.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent')';
+        dA3L3tL3 = -dA3L3tL3.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent')';
 
         KufW = K_fu'.*repmat(W',m,1);
         iLa2Kfu = zeros(size(K_fu));
@@ -355,7 +414,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         
         % =================================================================
         % Evaluate the gradients from covariance functions
-        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
+        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih') || strcmp(param,'all')
             for i=1:ncf
                 i1=0;
                 if ~isempty(gprior)
@@ -465,8 +524,41 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 end
             end
         end
+        
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih') || strcmp(param,'all')
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
+            DL_f_sigma = feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            b3 = K_fu*(iKuuKuf*DL_f_sigma);
+            for i=1:length(ind)
+                b3(ind{i}) = b3(ind{i}) + La1{i}*DL_f_sigma(ind{i});
+            end
+                        
+            gdata_likelih = - DL_sigma - 0.5.*sum((diLa3' + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3; 
+            
+            
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
+        end
+
         g = gdata + gprior;        
-                
+
+        % ============================================================
+        % CS+FIC
+        % ============================================================        
       case 'CS+FIC'
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
@@ -613,7 +705,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                         gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3 - b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
                         gprior(i1) = gprior_cf(i2);                    
                     end
-
+                    
                     % Evaluate the gradient for compact support covariance functions
                 else
                     % Get the gradients of the covariance matrices 
@@ -631,8 +723,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 end
                 
                 % Set the gradients of hyper-hyperparameter
-                if length(gprior_cf) > length(DKuu)
-                    for i2=length(DKuu)+1:length(gprior_cf)
+                if length(gprior_cf) > length(DKff)
+                    for i2=length(DKff)+1:length(gprior_cf)
                         i1 = i1+1;
                         gdata(i1) = 0;
                         gprior(i1) = gprior_cf(i2);
@@ -701,6 +793,32 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     end
                 end
             end
+        end
+        
+        % likelihood parameters
+        %--------------------------------------
+        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih') || strcmp(param,'all')
+            gdata_likelih = 0;
+            likelih = gp.likelih;
+            
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
+            DL_f_sigma = feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            b3 = K_fu*(iKuuKuf*DL_f_sigma) + La1*DL_f_sigma;
+                        
+            gdata_likelih = - DL_sigma - 0.5.*sum((sum(La1.*siLa,2)./Wd + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3;
+            
+            
+            % evaluate prior contribution for the gradient
+            if isfield(gp.likelih, 'p')
+                g_logPrior = -feval(likelih.fh_priorg, likelih);
+            else
+                g_logPrior = zeros(size(gdata_likelih));
+            end
+            % set the gradients into vectors that will be returned
+            gdata = [gdata gdata_likelih];
+            gprior = [gprior g_logPrior];
+            i1 = length(gdata);
         end
         
         g = gdata + gprior;

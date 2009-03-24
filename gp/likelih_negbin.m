@@ -155,11 +155,13 @@ function likelih = likelih_negbin(do, varargin)
     %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
 
         likelih.avgE = likelih.avgE(p,:);
-        likelih.gamlny = likelih.gamlny(p,:);        
+        likelih.gamlny = likelih.gamlny(p,:);
     end
 
 
     function logLikelih = likelih_negbin_e(likelih, y, f, varargin)
+    %function logLikelih = likelih_negbin_e(f, likelih, y, varargin)
+    %function logLikelih = likelih_negbin_e(w, likelih, y, f, varargin)
     %LIKELIH_NEGBIN_E    (Likelihood) Energy function
     %
     %   Description
@@ -169,14 +171,18 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_HESSIAN, GPLA_E
 
+        %E = likelih.avgE(:)';
+    %likelih.disper = w;
+            
         r = likelih.disper;
         E = likelih.avgE(:);
         mu = exp(f).*E;
-        logLikelih = -(sum(-r.*(log(r)-log(r+mu)) - gammaln(r+y) + gammaln(r) + gammaln(y+1) - y.*(log(mu)-log(r+mu))));
-        %logLikelih = sum(-r.*(log(r)-log(r+mu)) - gammaln(r+y) + gammaln(r) + gammaln(y+1) - y.*(log(mu)-log(r+mu)));
+        logLikelih = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));
     end
 
-    function deriv = likelih_negbin_g(likelih, y, f, param)
+    function g = likelih_negbin_g(likelih, y, f, param)
+%function g = likelih_negbin_g(f, likelih, y, param)
+%    function g = likelih_negbin_g(w, likelih, y, f, param)
     %LIKELIH_NEGBIN_G    Hessian of (likelihood) energy function
     %
     %   Description
@@ -187,26 +193,35 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_HESSIAN, LIKELIH_NEGBIN_G3, GPLA_E
         
+    %E = likelih.avgE(:)';
+    %likelih.disper = w;
+    %   param = 'latent';
+                    
+        E = likelih.avgE(:);
+        mu = exp(f).*E;
+        r = likelih.disper;
         switch param
           case 'hyper'
-            E = likelih.avgE(:);
-            mu = exp(f).*E;
-            g = 0;
-            r = likelih.disper;
-            for i1 = 1:length(y)
-                g = g + log(r/(r+mu(i1))) + 1 - (r+y(i1))/(r+mu(i1));
-                for i2 = 0:y(i1)-1
-                    g = g + 1 / (i2 + r);
-                end
-            end
-            deriv = g;
+            % Derivative using the psi function
+            g = sum(1 + log(r./(r+mu)) - (r+y)./(r+mu) + psi(r + y) - psi(r));
+                        
+            % Derivative using sum formulation
+% $$$             g = 0;
+% $$$             for i1 = 1:length(y)
+% $$$                 g = g + log(r/(r+mu(i1))) + 1 - (r+y(i1))/(r+mu(i1));
+% $$$                 for i2 = 0:y(i1)-1
+% $$$                     g = g + 1 / (i2 + r);
+% $$$                 end
+% $$$             end
           case 'latent'
-            
+            g = y - (r+y).*mu./(r+mu);
         end
     end
 
 
-    function hessian = likelih_negbin_hessian(likelih, y, f, param)
+    function g2 = likelih_negbin_hessian(likelih, y, f, param)
+    %function g2 = likelih_negbin_hessian(f, likelih, y, param)
+    %function g2 = likelih_negbin_hessian(w, likelih, y, f, param)
     %LIKELIH_NEGBIN_HESSIAN    Third gradients of (likelihood) energy function
     %
     %
@@ -222,16 +237,26 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, GPLA_E
 
-
+    %E = likelih.avgE(:)';
+    %likelih.disper = w;
+    %        param = 'latent';
+        
+        E = likelih.avgE(:);
+        mu = exp(f).*E;
+        r = likelih.disper;
         switch param
           case 'hyper'
             
           case 'latent'
-            
+            g2 = - mu.*(r.^2 + y.*r)./(r+mu).^2;
+          case 'latent+hyper'
+            g2 = (y.*mu - mu.^2)./(r+mu).^2;
         end
     end    
     
-    function third_grad = likelih_negbin_g3(likelih, y, f, param)
+    function g3 = likelih_negbin_g3(likelih, y, f, param)
+    %    function g3 = likelih_negbin_g3(f, likelih, y, param)
+    %function g3 = likelih_negbin_g3(w, likelih, y, f, param)
     %LIKELIH_NEGBIN_G3    Gradient of (likelihood) Energy function
     %
     %   Description
@@ -243,12 +268,19 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_HESSIAN, GPLA_E, GPLA_G
 
-        
+        %E = likelih.avgE(:)';
+%likelih.disper = w;
+            
+        E = likelih.avgE(:);
+        mu = exp(f).*E;
+        r = likelih.disper;
         switch param
           case 'hyper'
             
           case 'latent'
-            
+            g3 = - mu.*(r.^2 + y.*r)./(r + mu).^2 + 2.*mu.^2.*(r.^2 + y.*r)./(r + mu).^3;
+          case 'latent2+hyper'
+            g3 = mu.*(y.*r - 2.*r.*mu - mu.*y)./(r+mu).^3;
         end
     end
 

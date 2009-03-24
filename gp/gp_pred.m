@@ -72,7 +72,7 @@ switch gp.type
     if nargout > 2
         K2 = gp_trcov(gp,x,predcf);
         predcov = chol(K2-v'*v)';
-        noisyY = Ef + predcov*randn(size(y));
+        noisyY = Ef + predcov*randn(size(Ef));
     end
   case 'FIC'
     % Here tstind = 1 if the prediction is made for the training set 
@@ -154,7 +154,7 @@ switch gp.type
         Lav_n = Kv_ff-Qv_ff;
         BL = B*L;
         Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
-        noisyY = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(y)).*sqrt(Lav_n);
+        noisyY = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(Ef)).*sqrt(Lav_n);
     end
   case {'PIC' 'PIC_BLOCK'}
     u = gp.X_u;

@@ -46,7 +46,7 @@ switch param
     w = [w pak_inducing(gp)];
     w = [w feval(gp.likelih.fh_pak, gp.likelih)];
   otherwise
-    error('Unknown parameter to take the gradient with respect to! \n')
+    error('Unknown parameter to take the gradient with respect to!')
 end
 
 

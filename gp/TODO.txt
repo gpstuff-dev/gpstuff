@@ -1,5 +1,9 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2009-03-05 15:12:33 EET
+%   Last modified: 2009-03-23 16:27:32 EET
+
+LIKELIH_*
+----------
+- muuta hessian -> g2
 
 LA_PRED:
 -----------
@@ -17,6 +21,7 @@ LIKELIH_LOGIT:
 ---------------
 - Puuttuu: Laplace aproksimaation toteutus
 - Puuttuu: EP toteutus
+- Puuttuu: MCMC toteutus harvoille malleille
 
 LIKELIH_PROBIT:
 ---------------

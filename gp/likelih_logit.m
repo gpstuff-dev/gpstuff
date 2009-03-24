@@ -41,8 +41,8 @@ function likelih = likelih_logit(do, varargin)
     if strcmp(do, 'init')
         likelih.type = 'logit';
         y = varargin{1};
-        if ~isempty(find(y~=1 & y~=0))
-            error('The class labels have to be {0,1}')
+        if ~isempty(find(y~=1 & y~=-1))
+            error('The class labels have to be {-1,1}')
         end
 
         
@@ -237,12 +237,12 @@ function likelih = likelih_logit(do, varargin)
     %   See also
     %   GP_MC
 
+        gp = varargin{1};
+        p = varargin{2};
+        t = varargin{3};
+        
         switch gp.type
-          case 'FULL'
-            gp = varargin{1};
-            p = varargin{2};
-            t = varargin{3};
-            
+          case 'FULL'            
             maxcut = -log(eps);
             mincut = -log(1/realmin - 1);
             lvs=opt.sample_latent_scale;
@@ -306,8 +306,9 @@ function likelih = likelih_logit(do, varargin)
                 cp=1;
             end
             
-            y = 1./(1 + exp(-z));
-            e = -sum(sum(cp.*t.*log(y) + (1 - t).*log(1 - y)));
+% $$$             y = 1./(1 + exp(-z));
+% $$$             e = -sum(sum(cp.*t.*log(y) + (1 - t).*log(1 - y)));
+            e = sum(1 + exp(-y.*z));
         end
 
     end 

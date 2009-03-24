@@ -91,7 +91,7 @@ gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = gamma_p({3 7});  
+gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure

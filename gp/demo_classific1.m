@@ -51,6 +51,7 @@ S = which('demo_classific1');
 L = strrep(S,'demo_classific1.m','demos/synth.tr');
 x=load(L);
 y=x(:,end);
+y = 2.*y-1;
 x(:,end)=[];
 [n, nin] = size(x);
 
@@ -84,7 +85,7 @@ hmc2('state', sum(100*clock))
 [r,g,rstate1]=gp_mc(opt, gp, x, y);
 
 % Set the sampling options
-opt.nsamples=1000;
+opt.nsamples=100;
 opt.repeat=1;
 opt.hmc_opt.steps=4;
 opt.hmc_opt.stepadj=0.02;
@@ -123,7 +124,7 @@ h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1,20,20))
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
-plot(x(y==0,1),x(y==0,2),'o', 'markersize', 8, 'linewidth', 2);
+plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and training cases, full GP', 'fontsize', 14)
 
@@ -135,7 +136,7 @@ set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
 colormap(c1)
 plot(x(y==1,1), x(y==1,2), 'rx', 'markersize', 8, 'linewidth', 2),
-plot(x(y==0,1), x(y==0,2), 'bo', 'markersize', 8, 'linewidth', 2)
+plot(x(y==-1,1), x(y==-1,2), 'bo', 'markersize', 8, 'linewidth', 2)
 plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
 set(gcf, 'color', 'w'), title('predictive probability contours, full GP', 'fontsize', 14)
 
