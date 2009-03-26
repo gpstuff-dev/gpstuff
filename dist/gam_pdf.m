@@ -1,8 +1,8 @@
-function y = gam_pdf(x,a,b)
+function y = gam_pdf(x,s2,nu)
 %GAM_PDF Gamma probability density function (pdf).
 %
-%   Y = GAM_PDF(X,A,B) Returns the gamma pdf with
-%   shape A and inverse scale B, at the values in X.
+%   Y = GAM_PDF(X,S2,NU) Returns the gamma pdf with
+%   X ~ Gamma(s2, nu), where s2 is the variance 
 %
 %   The size of X is the common size of the input arguments. A
 %   scalar input functions as a constant matrix of the same size as
@@ -19,4 +19,4 @@ if nargin < 3,
 end
 
 %y = b.^a/gamma(a)*x^(a-1)*exp(-b*x);
-y = exp(a.*log(b)-gammaln(a)+(a-1).*log(x)-b.*x);
+y = exp(s2.*log(nu)-gammaln(s2)+(s2-1).*log(x)-nu.*x);
