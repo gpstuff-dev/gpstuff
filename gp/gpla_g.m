@@ -144,9 +144,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            w3 = K * feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            w3 = K * feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+            nl= size(DW_sigma,2);
             
-            gdata_likelih = - DL_sigma - 0.5.*sum(diag(inv(inv(K) + W)).*DW_sigma) - 0.5.*w2*w3;
+            gdata_likelih = - DL_sigma - 0.5.*sum(repmat(diag(inv(inv(K) + W)),1,nl).*DW_sigma) - 0.5.*w2*w3;
            
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -180,7 +181,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
         iKuuKuf = K_uu\K_fu';
 
-        W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         sqrtW = sqrt(W);
         b = f'./La1' - (f'*L)*L';
 
@@ -320,7 +321,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            DL_f_sigma = feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
             b3 = K_fu*(iKuuKuf*DL_f_sigma) + La1.*DL_f_sigma;
             
             gdata_likelih = - DL_sigma - 0.5.*sum((1./La3 + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3;
@@ -360,7 +361,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
         iKuuKuf = K_uu\K_fu';
 
-        W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         sqrtW = sqrt(W);
         fiLa = zeros(size(f'));
         for i=1:length(ind)
@@ -533,7 +534,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            DL_f_sigma = feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
             b3 = K_fu*(iKuuKuf*DL_f_sigma);
             for i=1:length(ind)
                 b3(ind{i}) = b3(ind{i}) + La1{i}*DL_f_sigma(ind{i});
@@ -609,7 +610,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         % Help matrices
         iKuuKuf = K_uu\K_fu';
         Inn = sparse(1:n,1:n,1,n,n);
-        Wd = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+        Wd = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         sqrtW = sqrt(Wd);
         W = sparse(1:n,1:n,Wd,n,n);
         sqrtW = sparse(1:n,1:n,sqrtW,n,n);
@@ -803,7 +804,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            DL_f_sigma = feval(likelih.fh_hessian, likelih, y, f, 'latent+hyper');
+            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
             b3 = K_fu*(iKuuKuf*DL_f_sigma) + La1*DL_f_sigma;
                         
             gdata_likelih = - DL_sigma - 0.5.*sum((sum(La1.*siLa,2)./Wd + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3;

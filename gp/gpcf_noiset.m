@@ -19,7 +19,7 @@ function gpcf = gpcf_noiset(do, varargin)
 %         alpha          = (0.5)
 %         nu             = degrees of freedom (4)
 %         r              = the residuals
-%         freeze_nu      = 0 for sampling also nu 1 for not sampling nu (0)
+%         freeze_nu      = 0 for sampling also nu, 1 for not sampling nu (1)
 %         p              = prior structure for covariance function
 %                          parameters. 
 %         fh_pak         = function handle to packing function
@@ -90,7 +90,7 @@ if strcmp(do, 'init')
     gpcf.alpha = 0.5;
     gpcf.nu = 4;
     gpcf.r = zeros(varargin{2},1);
-    gpcf.freeze_nu = 0;
+    gpcf.freeze_nu = 1;
     
     % Initialize prior structure
     gpcf.p=[];

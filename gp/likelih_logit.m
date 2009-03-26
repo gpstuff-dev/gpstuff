@@ -13,7 +13,7 @@ function likelih = likelih_logit(do, varargin)
 %         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g2            = function handle to second derivatives of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
@@ -52,7 +52,7 @@ function likelih = likelih_logit(do, varargin)
         likelih.fh_permute = @likelih_logit_permute;
         likelih.fh_e = @likelih_logit_e;
         likelih.fh_g = @likelih_logit_g;    
-        likelih.fh_hessian = @likelih_logit_hessian;
+        likelih.fh_g2 = @likelih_logit_g2;
         likelih.fh_g3 = @likelih_logit_g3;
         likelih.fh_tiltedMoments = @likelih_logit_tiltedMoments;
         likelih.fh_mcmc = @likelih_logit_mcmc;
@@ -147,13 +147,13 @@ function likelih = likelih_logit(do, varargin)
     %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
     %   See also
-    %   LIKELIH_LOGIT_G, LIKELIH_LOGIT_G3, LIKELIH_LOGIT_HESSIAN, GPLA_E
+    %   LIKELIH_LOGIT_G, LIKELIH_LOGIT_G3, LIKELIH_LOGIT_G2, GPLA_E
 
     end
 
 
     function deriv = likelih_logit_g(likelih, y, f, param)
-    %LIKELIH_LOGIT_G    Hessian of (likelihood) energy function
+    %LIKELIH_LOGIT_G    Gradient of (likelihood) energy function
     %
     %   
     %   NOT IMPLEMENTED!
@@ -164,19 +164,19 @@ function likelih = likelih_logit(do, varargin)
     %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
     %
     %   See also
-    %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_HESSIAN, LIKELIH_LOGIT_G3, GPLA_E
+    %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G2, LIKELIH_LOGIT_G3, GPLA_E
 
     end
 
 
-    function hessian = likelih_logit_hessian(likelih, y, f, param)
-    %LIKELIH_LOGIT_HESSIAN    Third gradients of (likelihood) energy function
+    function g2 = likelih_logit_g2(likelih, y, f, param)
+    %LIKELIH_LOGIT_G2    Third gradients of (likelihood) energy function
     %
     %   
     %   NOT IMPLEMENTED!
     %
     %   Description
-    %   HESSIAN = LIKELIH_LOGIT_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   G2 = LIKELIH_LOGIT_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 
     %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
     %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
@@ -200,7 +200,7 @@ function likelih = likelih_logit(do, varargin)
     %   be only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G, LIKELIH_LOGIT_HESSIAN, GPLA_E, GPLA_G
+    %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G, LIKELIH_LOGIT_G2, GPLA_E, GPLA_G
 
     end
 

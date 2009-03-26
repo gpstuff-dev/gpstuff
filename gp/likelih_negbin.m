@@ -16,7 +16,7 @@ function likelih = likelih_negbin(do, varargin)
 %         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g2            = function handle to second derivatives of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
@@ -61,7 +61,7 @@ function likelih = likelih_negbin(do, varargin)
         likelih.fh_permute = @likelih_negbin_permute;
         likelih.fh_e = @likelih_negbin_e;
         likelih.fh_g = @likelih_negbin_g;    
-        likelih.fh_hessian = @likelih_negbin_hessian;
+        likelih.fh_g2 = @likelih_negbin_g2;
         likelih.fh_g3 = @likelih_negbin_g3;
         likelih.fh_tiltedMoments = @likelih_negbin_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_negbin_siteDeriv;
@@ -160,8 +160,6 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function logLikelih = likelih_negbin_e(likelih, y, f, varargin)
-    %function logLikelih = likelih_negbin_e(f, likelih, y, varargin)
-    %function logLikelih = likelih_negbin_e(w, likelih, y, f, varargin)
     %LIKELIH_NEGBIN_E    (Likelihood) Energy function
     %
     %   Description
@@ -169,10 +167,7 @@ function likelih = likelih_negbin(do, varargin)
     %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
     %   See also
-    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_HESSIAN, GPLA_E
-
-        %E = likelih.avgE(:)';
-    %likelih.disper = w;
+    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
             
         r = likelih.disper;
         E = likelih.avgE(:);
@@ -181,9 +176,7 @@ function likelih = likelih_negbin(do, varargin)
     end
 
     function g = likelih_negbin_g(likelih, y, f, param)
-%function g = likelih_negbin_g(f, likelih, y, param)
-%    function g = likelih_negbin_g(w, likelih, y, f, param)
-    %LIKELIH_NEGBIN_G    Hessian of (likelihood) energy function
+    %LIKELIH_NEGBIN_G    Gradient of (likelihood) energy function
     %
     %   Description
     %   G = LIKELIH_NEGBIN_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
@@ -191,12 +184,8 @@ function likelih = likelih_negbin(do, varargin)
     %   log likelihood with respect to PARAM. At the moment PARAM can be 'hyper' or 'latent'.
     %
     %   See also
-    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_HESSIAN, LIKELIH_NEGBIN_G3, GPLA_E
-        
-    %E = likelih.avgE(:)';
-    %likelih.disper = w;
-    %   param = 'latent';
-                    
+    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G2, LIKELIH_NEGBIN_G3, GPLA_E
+                            
         E = likelih.avgE(:);
         mu = exp(f).*E;
         r = likelih.disper;
@@ -219,28 +208,22 @@ function likelih = likelih_negbin(do, varargin)
     end
 
 
-    function g2 = likelih_negbin_hessian(likelih, y, f, param)
-    %function g2 = likelih_negbin_hessian(f, likelih, y, param)
-    %function g2 = likelih_negbin_hessian(w, likelih, y, f, param)
-    %LIKELIH_NEGBIN_HESSIAN    Third gradients of (likelihood) energy function
+    function g2 = likelih_negbin_g2(likelih, y, f, param)
+    %LIKELIH_NEGBIN_G2    Third gradients of (likelihood) energy function
     %
     %
     %   NOT IMPLEMENTED!
     %
     %   Description
-    %   HESSIAN = LIKELIH_NEGBIN_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   G2 = LIKELIH_NEGBIN_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 
     %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
     %   matrix (off diagonals are zero).
     %
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, GPLA_E
 
-    %E = likelih.avgE(:)';
-    %likelih.disper = w;
-    %        param = 'latent';
-        
         E = likelih.avgE(:);
         mu = exp(f).*E;
         r = likelih.disper;
@@ -255,8 +238,6 @@ function likelih = likelih_negbin(do, varargin)
     end    
     
     function g3 = likelih_negbin_g3(likelih, y, f, param)
-    %    function g3 = likelih_negbin_g3(f, likelih, y, param)
-    %function g3 = likelih_negbin_g3(w, likelih, y, f, param)
     %LIKELIH_NEGBIN_G3    Gradient of (likelihood) Energy function
     %
     %   Description
@@ -266,11 +247,8 @@ function likelih = likelih_negbin(do, varargin)
     %   be only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_HESSIAN, GPLA_E, GPLA_G
+    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G2, GPLA_E, GPLA_G
 
-        %E = likelih.avgE(:)';
-%likelih.disper = w;
-            
         E = likelih.avgE(:);
         mu = exp(f).*E;
         r = likelih.disper;
@@ -950,7 +928,7 @@ function likelih = likelih_negbin(do, varargin)
             reclikelih.fh_permute = @likelih_negbin_permute;
             reclikelih.fh_e = @likelih_negbin_e;
             reclikelih.fh_g = @likelih_negbin_g;    
-            reclikelih.fh_hessian = @likelih_negbin_hessian;
+            reclikelih.fh_g2 = @likelih_negbin_g2;
             reclikelih.fh_g3 = @likelih_negbin_g3;
             reclikelih.fh_tiltedMoments = @likelih_negbin_tiltedMoments;
             reclikelih.fh_mcmc = @likelih_negbin_mcmc;

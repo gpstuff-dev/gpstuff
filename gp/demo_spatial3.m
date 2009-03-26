@@ -138,19 +138,19 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, param});
 % $$$ gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, yy', 'latent')
 % $$$ 
 % $$$ w = randn(size(yy'));
-% $$$ gradcheck(w, likelih.fh_g, likelih.fh_hessian, likelih, yy', 'latent')
+% $$$ gradcheck(w, likelih.fh_g, likelih.fh_g2, likelih, yy', 'latent')
 % $$$ 
 % $$$ w = randn(size(yy'));
-% $$$ gradcheck(w, likelih.fh_hessian, likelih.fh_g3, likelih, yy', 'latent')
+% $$$ gradcheck(w, likelih.fh_g2, likelih.fh_g3, likelih, yy', 'latent')
 % $$$ 
 % $$$ w = 100*rand(size(gp_pak(gp,'likelih')));
 % $$$ gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, yy, Ef, 'hyper')
 % $$$ 
 % $$$ w = 100*rand(size(gp_pak(gp,'likelih')));
-% $$$ gradcheck(w, likelih.fh_g, likelih.fh_hessian, likelih, yy, Ef, 'latent+hyper')
+% $$$ gradcheck(w, likelih.fh_g, likelih.fh_g2, likelih, yy, Ef, 'latent+hyper')
 % $$$ 
 % $$$ w = 100*rand(size(gp_pak(gp,'likelih')));
-% $$$ gradcheck(w, likelih.fh_hessian, likelih.fh_g3, likelih, yy, Ef, 'latent2+hyper')
+% $$$ gradcheck(w, likelih.fh_g2, likelih.fh_g3, likelih, yy, Ef, 'latent2+hyper')
 
 
 opt=optimset('GradObj','on');
@@ -387,9 +387,6 @@ S3 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 % =====================================
 % 4) CS+FIC model
 % =====================================
-
-% NOTE! The CS+FIC model forms a full nxn matrix. The latent 
-% value transformation is not yet implemented efficiently.
 
 % load the data
 S = which('demo_spatial2');
@@ -775,9 +772,6 @@ S3 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 % =====================================
 % 4) CS+FIC model
 % =====================================
-
-% NOTE! The CS+FIC model forms a full nxn matrix. The latent 
-% value transformation is not yet implemented efficiently.
 
 % load the data
 S = which('demo_spatial2');

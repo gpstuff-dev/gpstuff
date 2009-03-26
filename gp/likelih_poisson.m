@@ -16,7 +16,7 @@ function likelih = likelih_poisson(do, varargin)
 %         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g2            = function handle to second derivatives of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
@@ -68,7 +68,7 @@ function likelih = likelih_poisson(do, varargin)
         likelih.fh_permute = @likelih_poisson_permute;
         likelih.fh_e = @likelih_poisson_e;
         likelih.fh_g = @likelih_poisson_g;    
-        likelih.fh_hessian = @likelih_poisson_hessian;
+        likelih.fh_g2 = @likelih_poisson_g2;
         likelih.fh_g3 = @likelih_poisson_g3;
         likelih.fh_tiltedMoments = @likelih_poisson_tiltedMoments;
         likelih.fh_mcmc = @likelih_poisson_mcmc;
@@ -172,7 +172,7 @@ function likelih = likelih_poisson(do, varargin)
     %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
     %   See also
-    %   LIKELIH_POISSON_G, LIKELIH_POISSON_G3, LIKELIH_POISSON_HESSIAN, GPLA_E
+    %   LIKELIH_POISSON_G, LIKELIH_POISSON_G3, LIKELIH_POISSON_G2, GPLA_E
         
         lambda = likelih.avgE.*exp(f);
         gamlny = likelih.gamlny;
@@ -189,7 +189,7 @@ function likelih = likelih_poisson(do, varargin)
     %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
     %
     %   See also
-    %   LIKELIH_POISSON_E, LIKELIH_POISSON_HESSIAN, LIKELIH_POISSON_G3, GPLA_E
+    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G2, LIKELIH_POISSON_G3, GPLA_E
         
         switch param
           case 'latent'
@@ -198,14 +198,14 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-    function hessian = likelih_poisson_hessian(likelih, y, f, param)
-    %LIKELIH_POISSON_HESSIAN    Third gradients of (likelihood) energy function
+    function g2 = likelih_poisson_g2(likelih, y, f, param)
+    %LIKELIH_POISSON_G2    Third gradients of (likelihood) energy function
     %
     %   Description
-    %   HESSIAN = LIKELIH_POISSON_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   G2 = LIKELIH_POISSON_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 
     %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
     %   matrix (off diagonals are zero).
     %
     %   See also
@@ -213,7 +213,7 @@ function likelih = likelih_poisson(do, varargin)
 
         switch param
           case 'latent'
-            hessian = -likelih.avgE.*exp(f);
+            g2 = -likelih.avgE.*exp(f);
         end
     end    
     
@@ -227,7 +227,7 @@ function likelih = likelih_poisson(do, varargin)
     %   be only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_HESSIAN, GPLA_E, GPLA_G
+    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G2, GPLA_E, GPLA_G
     
         switch param
           case 'latent'

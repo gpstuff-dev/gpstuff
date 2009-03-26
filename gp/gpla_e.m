@@ -56,7 +56,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
     function [e, edata, eprior, f, L, La2, b, W] = laplace_algorithm(w, gp, x, y, param, varargin)
 
-        if  1==0 %abs(w-w0) < 1e-8 % 1e-8
+        if  abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -124,11 +124,11 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     if issparse(K)
                         fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
                         fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-                        fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+                        fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent')); %inv(K) + diag(g2(f', gp.likelih)) ; %
                     else
                         fe = @(f, varargin) (0.5*f*(iK*f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
                         fg = @(f, varargin) (iK*f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-                        fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent')); %inv(K) + diag(hessian(f', gp.likelih)) ; %
+                        fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent')); %inv(K) + diag(g2(f', gp.likelih)) ; %
                     end
                     
                     mydeal = @(varargin)varargin{1:nargout};
@@ -155,7 +155,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     [f, opt, flog]=scg(fe, f', opt, fg);
                     f = f';
 
-                    W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent')
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent')
                     sqrtW = sqrt(W);
                     B = eye(size(K)) + sqrtW*K*sqrtW;
                     L = chol(B)';
@@ -167,8 +167,8 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     while iter<=maxiter & abs(logZ_tmp-logZ)>tol % logZ_tmp-logZ > tol   %
                         logZ_tmp=logZ;
 
-                        % Evaluate the minus Hessian
-                        W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+                        % Evaluate the minus hessian
+                        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                         sqrtW = sqrt(W);
                         B = eye(size(K)) + sqrtW*K*sqrtW;
                         L = chol(B)';
@@ -187,7 +187,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     end
                 end
                 if issparse(K)
-                    W = sparse(1:n,1:n, -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'), n,n);
+                    W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'), n,n);
                     sqrtW = sqrt(W);
                     B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
                     L = ldlchol(B);
@@ -196,7 +196,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     % Note that here we use LDL cholesky
                     edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; % 
                 else
-                    W = diag(-feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent'));
+                    W = diag(-feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'));
                     a = iK*f; 
                     logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
                     if W >= 0
@@ -248,7 +248,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
                         opt=optimset(opt,'Hessian','on');
-                        fhm = @(W, f, varargin) (f./repmat(Lav,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; %
+                        fhm = @(W, f, varargin) (f./repmat(Lav,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % hessian*f; %
                         opt=optimset(opt,'HessMult', fhm);
                         opt=optimset(opt,'TolX', 1e-8);
                         opt=optimset(opt,'TolFun', 1e-8);
@@ -260,12 +260,12 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
                     fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
                     fg = @(f, varargin) (f'./repmat(Lav,1,size(f',2)) - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-                    fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
+                    fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent'));
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
 
-                    W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                     sqrtW = sqrt(W);
 
                     b = L'*f;
@@ -340,7 +340,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                     f = f';
 
-                    W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                     sqrtW = sqrt(W);
 
                     ikf = iKf(f);
@@ -502,7 +502,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                     f = f';
                     
-                    W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                     sqrtW = sqrt(W);
 
                     b = L'*f;
@@ -609,12 +609,12 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
                     fe = @(f, varargin) (0.5*f*(f'./repmat(Sv,1,size(f',2)) - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
                     fg = @(f, varargin) (f'./repmat(Sv,1,size(f',2)) - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-                    fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
+                    fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent'));
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
 
-                    W = -feval(gp.likelih.fh_hessian, gp.likelih, y, f, 'latent');
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                     sqrtW = sqrt(W);
 
                     b = L'*f;
@@ -691,7 +691,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
             ikf = iKf(f');
             e = 0.5*f*ikf - feval(gp.likelih.fh_e, gp.likelih, y, f');
             g = (ikf - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-            h = -feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent');
+            h = -feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent');
         end
         function ikf = iKf(f, varargin)
             

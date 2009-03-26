@@ -38,7 +38,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
 
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,'hyper'), gp, tx, ty, 'hyper', param);
+        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,param), gp, tx, ty, param);
 
         W = La2;
         deriv = b;
@@ -112,7 +112,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
+            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
             kstarstar = gp_trvar(gp,x,predcf);
             Luu = chol(K_uu)';
             La = W.*La2;
@@ -173,7 +173,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
 
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
+            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
             kstarstar = gp_trvar(gp,x,predcf);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -310,7 +310,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_hessian, gp.likelih, ty, f, 'latent');
+            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
             kstarstar = gp_trvar(gp,x,predcf);
             Luu = chol(K_uu)';

@@ -15,7 +15,7 @@ function likelih = likelih_probit(do, varargin)
 %         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g2            = function handle to second derivative of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
@@ -54,7 +54,7 @@ function likelih = likelih_probit(do, varargin)
         likelih.fh_permute = @likelih_probit_permute;
         likelih.fh_e = @likelih_probit_e;
         likelih.fh_g = @likelih_probit_g;    
-        likelih.fh_hessian = @likelih_probit_hessian;
+        likelih.fh_g2 = @likelih_probit_g2;
         likelih.fh_g3 = @likelih_probit_g3;
         likelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
         likelih.fh_mcmc = @likelih_probit_mcmc;
@@ -145,14 +145,14 @@ function likelih = likelih_probit(do, varargin)
     %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
     %
     %   See also
-    %   LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, LIKELIH_PROBIT_HESSIAN, GPLA_E
+    %   LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, LIKELIH_PROBIT_G2, GPLA_E
 
         logLikelih = sum(log(normcdf(y.*f)));
     end
 
 
     function deriv = likelih_probit_g(likelih, y, f, param)
-    %LIKELIH_PROBIT_G    Hessian of (likelihood) energy function
+    %LIKELIH_PROBIT_G    G2 of (likelihood) energy function
     %
     %   Description
     %   G = LIKELIH_PROBIT_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
@@ -160,7 +160,7 @@ function likelih = likelih_probit(do, varargin)
     %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
     %
     %   See also
-    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_HESSIAN, LIKELIH_PROBIT_G3, GPLA_E
+    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G2, LIKELIH_PROBIT_G3, GPLA_E
 
         switch param
           case 'latent'
@@ -169,14 +169,14 @@ function likelih = likelih_probit(do, varargin)
     end
 
 
-    function hessian = likelih_probit_hessian(likelih, y, f, param)
-    %LIKELIH_PROBIT_HESSIAN    Third gradients of (likelihood) energy function
+    function g2 = likelih_probit_g2(likelih, y, f, param)
+    %LIKELIH_PROBIT_G2    Third gradients of (likelihood) energy function
     %
     %   Description
-    %   HESSIAN = LIKELIH_PROBIT_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   G2 = LIKELIH_PROBIT_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 
     %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
     %   matrix (off diagonals are zero).
     %
     %   See also
@@ -184,7 +184,7 @@ function likelih = likelih_probit(do, varargin)
         switch param
           case 'latent'
             z = y.*f;
-            hessian = -(normpdf(f)./normcdf(z)).^2 - z.*normpdf(f)./normcdf(z);
+            g2 = -(normpdf(f)./normcdf(z)).^2 - z.*normpdf(f)./normcdf(z);
         end
     end
     
@@ -198,7 +198,7 @@ function likelih = likelih_probit(do, varargin)
     %   be only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_HESSIAN, GPLA_E, GPLA_G
+    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_G2, GPLA_E, GPLA_G
 
         switch param
           case 'latent'

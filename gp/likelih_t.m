@@ -17,7 +17,7 @@ function likelih = likelih_t(do, varargin)
 %         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_hessian       = function handle to hessian of energy
+%         likelih.fh_g2            = function handle to second derivatives of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
@@ -63,7 +63,7 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_priorg = @likelih_t_priorg;
         likelih.fh_e = @likelih_t_e;
         likelih.fh_g = @likelih_t_g;    
-        likelih.fh_hessian = @likelih_t_hessian;
+        likelih.fh_g2 = @likelih_t_g2;
         likelih.fh_g3 = @likelih_t_g3;
         likelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_t_siteDeriv;
@@ -71,7 +71,7 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_recappend = @likelih_t_recappend;
 
         if length(varargin) > 3
-            if mod(nargin,2) ~=0
+            if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
@@ -95,7 +95,7 @@ function likelih = likelih_t(do, varargin)
         if mod(nargin,2) ~=0
             error('Wrong number of arguments')
         end
-        gpcf = varargin{1};
+        likelih = varargin{1};
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
@@ -178,18 +178,21 @@ function likelih = likelih_t(do, varargin)
     %   LIKELIH
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_HESSIAN, GPLA_E
+    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
         
-    % Evaluate the log(prior)
+        v = likelih.nu;
+        sigma = likelih.sigma;
+
+        % Evaluate the log(prior)
         if isfield(likelih, 'p')
             % notice that nu is handled in log(log(nu)) space and sigma is handled in log(sigma) space
             gpl = likelih.p;
             
             if likelih.freeze_nu == 1
-                logPrior =  - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a);
+                logPrior =  - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
             else
-                logPprior = - feval(gpl.nu.fe, likelih.nu, gpl.nu.a) + log(nu) + log(log(nu));
-                logPrior =  logPprior - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a);
+                logPprior = - feval(gpl.nu.fe, likelih.nu, gpl.nu.a) + log(v) + log(log(v));
+                logPrior =  logPprior - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
             end
         else
             error('likelih_t -> likelih_t_priore: Priors for the likelihood parameters are not defined!')
@@ -204,16 +207,19 @@ function likelih = likelih_t(do, varargin)
     %   LIKELIH, 
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_HESSIAN, GPLA_E
+    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
         
     % Evaluate the log(prior)
+        v = likelih.nu;
+        sigma = likelih.sigma;
+        
         if isfield(likelih, 'p')
             gpl = likelih.p;
             if likelih.freeze_nu == 1
-                glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*likelih.sigma;
+                glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma  + 1;
             else
-                glogPrior(1) = - feval(gpl.nu.fg, likelih.nu, gpl.nu.a).*likelih.nu.*log(likelih.nu) + log(likelih.nu) + 1;
-                glogPrior(2) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*likelih.sigma +1;
+                glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma + 1;
+                glogPrior(2) = - feval(gpl.nu.fg, likelih.nu, gpl.nu.a).*v.*log(v) + log(v) + 1;
             end
         else
             error('likelih_t -> likelih_t_priorg: Priors for the likelihood parameters are not defined!')
@@ -221,8 +227,6 @@ function likelih = likelih_t(do, varargin)
     end
     
     function logLikelih = likelih_t_e(likelih, y, f, varargin)
-%function logLikelih = likelih_t_e(f, likelih, y, varargin)
-%    function logLikelih = likelih_t_e(w, likelih, y, f, varargin)
     %LIKELIH_T_E    (Likelihood) Energy function
     %
     %   Description
@@ -230,27 +234,19 @@ function likelih = likelih_t(do, varargin)
     %   LIKELIH, outputs Y and latent values F and returns the log likelihood.
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_HESSIAN, GPLA_E
+    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
 
         r = y-f;
         v = likelih.nu;
         sigma = likelih.sigma;
 
-        %sigma = exp(w);
-        
-        if likelih.freeze_nu == 1
-            term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi)/2 - log(sigma);
-            logLikelih = term + log(1 + ((r./sigma).^2)./v) .* (-(v+1)/2);
-            logLikelih = sum(logLikelih) + log(sigma);
-        else
-            
-        end
+        term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi)/2 - log(sigma);
+        logLikelih = term + log(1 + ((r./sigma).^2)./v) .* (-(v+1)/2);
+        logLikelih = sum(logLikelih);
     end
 
     
     function deriv = likelih_t_g(likelih, y, f, param)
-%    function deriv = likelih_t_g(f, likelih, y, param)
-%    function deriv = likelih_t_g(w, likelih, y, f, param)
     %LIKELIH_T_G    Gradient of (likelihood) energy function
     %
     %   Description
@@ -259,14 +255,11 @@ function likelih = likelih_t(do, varargin)
     %   log likelihood with respect to PARAM. At the moment PARAM can be 'hyper' or 'latent'.
     %
     %   See also
-    %   LIKELIH_T_E, LIKELIH_T_HESSIAN, LIKELIH_T_G3, GPLA_E
+    %   LIKELIH_T_E, LIKELIH_T_G2, LIKELIH_T_G3, GPLA_E
         
         r = y-f;
         v = likelih.nu;
         sigma = likelih.sigma;
-        
-        %sigma = exp(w)
-        %param = 'latent';
         
         switch param
           case 'hyper'
@@ -281,31 +274,30 @@ function likelih = likelih_t(do, varargin)
             else
                 % Derivative with respect to sigma
                 deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 +sigma.*r.^2));
+                deriv(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma.^2)) + (v+1).*r.^2./((v.*sigma).^2 + v.*r.^2));
                 
                 % correction for the log transformation
-                deriv(1) = deriv(1).*sigma + 1;
+                deriv(1) = deriv(1).*sigma;
+                deriv(2) = deriv(2).*v.*log(v);
             end
           case 'latent'
             deriv  = (v+1).*r ./ (v.*sigma.^2 + r.^2);            
-            %deriv = sum(deriv);
         end
         
     end
 
 
-    function g2 = likelih_t_hessian(likelih, y, f, param)
-%    function g2 = likelih_t_hessian(f, likelih, y, param)
-%function g2 = likelih_t_hessian(w, likelih, y, f, param)
-    %LIKELIH_T_HESSIAN    Second gradients of (likelihood) energy function
+    function g2 = likelih_t_g2(likelih, y, f, param)
+    %LIKELIH_T_G2    Second gradients of (likelihood) energy function
     %
     %
     %   NOT IMPLEMENTED!
     %
     %   Description
-    %   HESSIAN = LIKELIH_T_HESSIAN(LIKELIH, Y, F, PARAM) takes a likelihood data 
+    %   G2 = LIKELIH_T_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 
     %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
+    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
     %   matrix (off diagonals are zero).
     %
     %   See also
@@ -315,16 +307,12 @@ function likelih = likelih_t(do, varargin)
         v = likelih.nu;
         sigma = likelih.sigma;
 
-        %sigma = exp(w);
-        %param = 'latent';
-        
         switch param
           case 'hyper'
             
           case 'latent'
             % The hessian d^2 /(dfdf)
             g2 =  (v+1).*(r.^2 - v.*sigma.^2) ./ (v.*sigma.^2 + r.^2).^2;
-            %g2 = sum(g2);
           case 'latent+hyper'
             if likelih.freeze_nu == 1
                 % gradient d^2 / (dfds), where s is either sigma or nu            
@@ -332,16 +320,20 @@ function likelih = likelih_t(do, varargin)
                 
                 % Correction for the log transformation
                 g2 = g2.*sigma;
-                %g2 = sum(g2);
             else
+                % gradient d^2 / (dfds), where s is either sigma or nu
                 
+                g2(:,1) = -2.*sigma.*v.*(v+1).*r ./ (v.*sigma.^2 + r.^2).^2;
+                g2(:,2) = r./(v.*sigma.^2 + r.^2) - sigma.^2.*(v+1).*r./(v.*sigma.^2 + r.^2).^2;
+
+                % Correction for the log transformation
+                g2(:,1) = g2(:,1).*sigma;
+                g2(:,2) = g2(:,2).*v.*log(v);
             end
         end
     end    
     
     function third_grad = likelih_t_g3(likelih, y, f, param)
-%        function third_grad = likelih_t_g3(f, likelih, y, param)
-%        function third_grad = likelih_t_g3(w, likelih, y, f, param)
     %LIKELIH_T_G3    Third gradient of (likelihood) Energy function
     %
     %   Description
@@ -351,13 +343,11 @@ function likelih = likelih_t(do, varargin)
     %   be only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_T_E, LIKELIH_T_G, LIKELIH_T_HESSIAN, GPLA_E, GPLA_G
+    %   LIKELIH_T_E, LIKELIH_T_G, LIKELIH_T_G2, GPLA_E, GPLA_G
 
         r = y-f;
         v = likelih.nu;
         sigma = likelih.sigma;
-                
-        %sigma = exp(w);
         
         switch param
           case 'hyper'
@@ -370,9 +360,12 @@ function likelih = likelih_t(do, varargin)
                 % Return the diagonal of W differentiated with respect to likelihood parameters
                 third_grad = 2.*(v+1).*sigma.*v.*( v.*sigma.^2 - 3.*r.^2) ./ (v.*sigma.^2 + r.^2).^3;
                 third_grad = third_grad.*sigma;
-                %third_grad = sum(third_grad);
             else
+                third_grad(:,1) = 2.*(v+1).*sigma.*v.*( v.*sigma.^2 - 3.*r.^2) ./ (v.*sigma.^2 + r.^2).^3;
+                third_grad(:,1) = third_grad(:,1).*sigma;
                 
+                third_grad(:,2) = (r.^2-2.*v.*sigma.^2-sigma.^2)./(v.*sigma.^2 + r.^2).^2 - 2.*sigma.^2.*(r.^2-v.*sigma.^2).*(v+1)./(v.*sigma.^2 + r.^2).^3;
+                third_grad(:,2) = third_grad(:,2).*v.*log(v);
             end
         end
     end
@@ -804,7 +797,7 @@ function likelih = likelih_t(do, varargin)
             reclikelih.fh_permute = @likelih_t_permute;
             reclikelih.fh_e = @likelih_t_e;
             reclikelih.fh_g = @likelih_t_g;    
-            reclikelih.fh_hessian = @likelih_t_hessian;
+            reclikelih.fh_g2 = @likelih_t_g2;
             reclikelih.fh_g3 = @likelih_t_g3;
             reclikelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
             reclikelih.fh_mcmc = @likelih_t_mcmc;

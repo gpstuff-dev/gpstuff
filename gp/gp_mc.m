@@ -242,7 +242,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if isfield(opt, 'likelih_sls_opt')
                 w = gp_pak(gp, 'likelih');
-                fe = @(w, likelih) (- feval(likelih.fh_e, feval(likelih.fh_unpak, w, likelih), y, z));
+                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
                 [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.likelih_sls_opt = diagns.opt;
