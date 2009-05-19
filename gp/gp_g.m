@@ -66,7 +66,7 @@ switch gp.type
         
         % Evaluate the gradient with respect to covariance function parameters
         for i2 = 1:length(DKff)
-            i1 = i1+1;                
+            i1 = i1+1;  
             Bdl = b'*(DKff{i2}*b);
             Cdl = sum(sum(invC.*DKff{i2})); % help arguments
             gdata(i1)=0.5.*(Cdl - Bdl);

@@ -56,7 +56,7 @@ switch param
     w2 = w(length(w1)+1:length(w1)+length(gp.X_u(:)));
     gp = unpak_inducing(w2, gp);
     w3 = w(length(w1)+length(w2)+1:end);
-    lik = feval(gp.likelih.fh_unpak, w3, gp);
+    lik = feval(gp.likelih.fh_unpak, w3, gp.likelih);
     gp.likelih = lik;
   otherwise
     error('Unknown parameter to take the gradient with respect to! \n')

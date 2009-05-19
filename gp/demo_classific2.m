@@ -60,23 +60,30 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 1);
-gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [0.5 0.5], 'magnSigma2', 1);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.6 0.9], 'magnSigma2', 0.5);
 
 % Set the prior for the parameters of covariance functions 
-gpcf1.p.lengthScale = gamma_p({3 7 3 7});
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+% $$$ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
+% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+gpcf1.p.lengthScale = unif_p;
+gpcf1.p.magnSigma2 = unif_p;
+
 
 % Create the likelihood structure
 likelih = likelih_probit('init', y);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.001);   %{gpcf2}
 
 % Set the approximate inference method
 tt = cputime;
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
 cputime - tt
+
+gp.laplace_opt.optim_method = 'newton';
+
+w = gp_pak(gp, 'hyper');
+gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'hyper')
 
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
@@ -98,7 +105,7 @@ xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
 % make the prediction
-[Ef, Varf, p1] = la_pred(gp, x, y, xstar);
+[Ef, Varf, p1] = la_pred(gp, x, y, xstar, 'hyper');
 
 figure, hold on;
 n_pred=size(xstar,1);
@@ -126,6 +133,27 @@ set(gcf, 'color', 'w'), title('predictive probability contours, full GP with Lap
 %========================================================
 % PART 2 data analysis with FIC GP model and Laplace approximation
 %========================================================
+S = which('demo_classific1');
+L = strrep(S,'demo_classific1.m','demos/synth.tr');
+x=load(L);
+y=x(:,end);
+y=y*2-1;
+x(:,end)=[];
+[n, nin] = size(x);
+
+% Create covariance functions
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.6 0.9], 'magnSigma2', 0.5);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.6 0.8], 'magnSigma2', 0.2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 1);
+
+% Set the prior for the parameters of covariance functions 
+% $$$ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
+% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+gpcf1.p.lengthScale = unif_p;
+gpcf1.p.magnSigma2 = unif_p;
+
+% Create the likelihood structure
+likelih = likelih_probit('init', y);
 
 % Set the inducing inputs
 [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
@@ -133,10 +161,16 @@ Xu=[u1(:) u2(:)];
 Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 
 % Create the GP data structure
-gp_fic = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
+gp_fic = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0, 'X_u', Xu);   %{gpcf2}
 
 % Set the approximate inference method
 gp_fic = gp_init('set', gp_fic, 'latent_method', {'Laplace', x, y, 'hyper'});
+
+gp_fic.laplace_opt.optim_method = 'newton';
+%gp_fic.laplace_opt.optim_method = 'fminunc_large';
+
+w = gp_pak(gp_fic, 'hyper');
+gradcheck(w, @gpla_e, @gpla_g, gp_fic, x, y, 'hyper')
 
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');

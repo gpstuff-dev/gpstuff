@@ -27,7 +27,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
     
-    gp=gp_unpak(gp, w, param);       % unpak the parameters
+    gp = gp_unpak(gp, w, param);       % unpak the parameters
     ncf = length(gp.cf);
     n=size(x,1);
 
@@ -43,33 +43,48 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
       case 'FULL'   % A full GP
                     % Calculate covariance matrix and the site parameters
         K = gp_trcov(gp,x);
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
-
-        if issparse(K)
-            W = La2;
+        [e, edata, eprior, f, L, a] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+        if issparse(K)                               % use sparse matrix routines
+            W = sparse(1:n,1:n, W, n,n);
+            LD = ldlchol(K);
             I = sparse(1:n,1:n,1,n,n);
-            w1 = K\f;
+            w1 = ldlsolve(LD,f);
             sqrtW = sqrt(W);
             sinvB = spinv(L,1);
             isqrtWsinBsqrtW = sqrtW\sinvB*sqrtW;
             w2 = sum( isqrtWsinBsqrtW .* K,2) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
             w2 = - (sqrtW*ldlsolve(L, sqrtW \ w2))'; 
-            w3 = b;
+            w3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
             invB = sqrtW*sinvB*sqrtW;
-        else
-            W = La2;
-            I = eye(size(K));
-            w1 = K\f;
+        else                                         % evaluate with full matrices
             if W >= 0
+                W = diag(W);
                 sqrtW = sqrt(W);
-                w2 = diag(K*sqrtW/L'/L/sqrtW) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-                invB = sqrtW/L'/L*sqrtW;
+                R = sqrtW*(L'\(L\sqrtW));
+                C = L\(sqrtW*K);
+                s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
             else
-                w2 = diag(inv(inv(K) + W)) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-                invB = inv( inv(W) + K );
+
+% $$$                 C = chol(inv(K) + diag(W))'\eye(n);
+% $$$                 R = inv(diag(1./W) + K);
+                % permute the variables
+                [W,I] = sort(W, 1, 'descend');
+                r(I) = 1:n;
+                C = L;
+                V = L*diag(W);
+                R = diag(W) - V'*V;
+% $$$                 R = diag(W) - diag(W)*L'*L*diag(W);
+                
+                R = R(r,r);
+                C2 = sum(C.^2,1)';
+                C2 = C2(r);
+                                
+                s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+% $$$                 C = diag(inv(inv(K) + diag(W)));
+% $$$                 s2 = 0.5*C.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
             end
-            w2 = - w2' / (I + K*W);
-            w3 = b;
         end
 
         % Hyperparameters
@@ -88,10 +103,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 for i2 = 1:length(DKff)
                     i1 = i1+1;
                     
-                    Bdm = w1'*(DKff{i2}*w1);
-                    Bdm = Bdm + w2*(DKff{i2}*w3);
-                    Cdm = sum(sum(invB.*DKff{i2}));
-                    gdata(i1) = 0.5.*(Cdm - Bdm);
+                    s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
+                    b = DKff{i2} * feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    s3 = b - K*(R*b);
+                    gdata(i1) = -(s1 + s2'*s3);
                     gprior(i1) = gprior_cf(i2);
                 end
                 
@@ -143,12 +158,18 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             likelih = gp.likelih;
             
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
-            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            w3 = K * feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');
+            b = K * feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+            s3 = b - K*(R*b);
             nl= size(DW_sigma,2);
-            
-            gdata_likelih = - DL_sigma - 0.5.*sum(repmat(diag(inv(inv(K) + W)),1,nl).*DW_sigma) - 0.5.*w2*w3;
-           
+
+            if W >= 0
+                gdata_likelih = - DL_sigma - 0.5.*sum(repmat(diag(K)-sum(C.^2,1)',1,nl).*DW_sigma) - s2'*s3; % 
+            else
+                gdata_likelih = - DL_sigma - 0.5.*sum(repmat(C2,1,nl).*DW_sigma) - s2'*s3; % 
+% $$$                 gdata_likelih = - DL_sigma - 0.5.*sum(repmat(C,1,nl).*DW_sigma) - s2'*s3; % 
+            end
+                
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
                 g_logPrior = -feval(likelih.fh_priorg, likelih);
@@ -161,6 +182,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             i1 = length(gdata);
         end
         
+        %temp
         g = gdata + gprior;
 
         % ============================================================
@@ -174,46 +196,38 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         u = gp.X_u;
         m = size(u,1);
 
-        [e, edata, eprior, f, L, La1, b] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-        iKuuKuf = K_uu\K_fu';
-
+        Luu = chol(K_uu);
+        iKuuKuf = Luu\(Luu'\K_fu');
+        B=Luu'\(K_fu');       % u x f
+        
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         sqrtW = sqrt(W);
-        b = f'./La1' - (f'*L)*L';
-
-        La2 = 1 + W.*La1;
-        La3 = 1./La1 + W;
+        
+        % Components for trace( inv(inv(W) + K) * dK) )
+        La2 = 1 + sqrtW.*La1.*sqrtW;
         B2 = (repmat(sqrtW,1,m).*K_fu);
-
-        % Components for
         B3 = repmat(La2,1,m).\B2;
         A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
-        L2 = B3/chol(A2);
-
-        % Evaluate diag(La3 - L3'*L3)
-        B4 = repmat(La3,1,m).\L;
-        A3 = eye(size(K_uu)) - L'*B4; A3 = (A3+A3')./2;
-        L3 = B4/chol(A3);
-        dA3L3tL3 = -1./La3' - sum(L3.*L3,2)';
-        dA3L3tL3 = dA3L3tL3.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent')';
-
-        KufW = K_fu'.*repmat(W',m,1);
-        iLa2Kfu = repmat(La2,1,m).\K_fu;
-        A4 = K_uu + KufW*iLa2Kfu; A4 = (A4+A4')./2;
-        L4 = iLa2Kfu/chol(A4);
-        L5 = chol(A4)'\(KufW./repmat(La2',m,1));
-
-        % Set the parameters for the actual gradient evaluation
-        b2 = (dA3L3tL3./La2' - dA3L3tL3*L4*L5);
-        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-        L = repmat(sqrtW,1,m).*L2;
-        La = La2./W;
+        L2 = repmat(sqrtW,1,m).*B3/chol(A2);
+        iLa2W = sqrtW./La2.*sqrtW;
         
-        LL = sum(L.*L,2);
+        LL = sum(L2.*L2,2);
+        BB = sum(B.^2)';
+                
+        % Evaluate s2
+        C1 = L2'*B'*B;
+        C2 = L2'.*repmat(La1',m,1);
+        
+        s2t = La1 + BB;        
+        s2t = s2t - (La1.*iLa2W.*La1 - sum(C2.^2)' + sum(B'.*((B*(repmat(iLa2W,1,m).*B'))*B)',2)...
+                    - sum(C1.^2)' + 2*La1.*iLa2W.*BB - 2*La1.*sum(L2.*C1',2));
+
+        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
         
         % =================================================================
         % Evaluate the gradients from covariance functions
@@ -235,18 +249,22 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 for i2 = 1:length(DKuu)
                     i1 = i1+1;
                     
+                    % 0.5* a'*dK*a, where a = K\f
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                    gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                                       sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                    gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + (a'.*DKff{i2}')*a...
+                                      - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
                     
-                    gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}./La - LL.*DKff{i2}));
+                    % trace( inv(inv(W) + K) * dQ) )
+                    gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                    gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}.*iLa2W - LL.*DKff{i2}));
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                     
-                    gdata(i1) = gdata(i1) - 0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                    gdata(i1) = gdata(i1) - 0.5.*(b2.*DKff{i2}')*b3;
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    
+                    % b2*dK*b3
+                    b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3) + DKff{i2}.*b3 - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+                    bb = (iLa2W.*b - L2*(L2'*b));
+                    s3 = b - (La1.*bb + B'*(B*bb));
+                    gdata(i1) = gdata(i1) - s2'*s3;
                     
                     gprior(i1) = gprior_cf(i2);
                 end
@@ -273,7 +291,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     
                     [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
-                        gdata(i1)= -0.5*DCff.*b*b';
+                        gdata(i1)= -0.5*DCff.*a'*a;
                         gdata(i1)= gdata(i1) + 0.5*sum((1./La-LL).*DCff{i2});
                         gprior(i1) = gprior_cf(i2);
                     end
@@ -297,16 +315,22 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 
                 for i2 = 1:length(DKuu)
                     i1 = i1+1;
+                    
+                    % 0.5* a'*dK*a, where a = K\f
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                    gdata(i1) = gdata(i1) -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + ...
+                                      - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
                     
-                    gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                         2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                  sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));                    
+                    % trace( inv(inv(W) + K) * dQ) )
+                    gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                     
-                    gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                    
+                    % b2*dK*b3
+                    b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3)  - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+                    bb = (iLa2W.*b - L2*(L2'*b));
+                    s3 = b - (La1.*bb + B'*(B*bb));
+                    gdata(i1) = gdata(i1) - s2'*s3;
                     
                     gprior(i1) = gprior_ind(i2);
                 end
@@ -318,15 +342,16 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
             gdata_likelih = 0;
             likelih = gp.likelih;
+
             
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
             DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
-            b3 = K_fu*(iKuuKuf*DL_f_sigma) + La1.*DL_f_sigma;
-            
-            gdata_likelih = - DL_sigma - 0.5.*sum((1./La3 + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3;
-           
-            
+            b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
+            bb = (iLa2W.*b - L2*(L2'*b));
+            s3 = b - (La1.*bb + B'*(B*bb));            
+
+            gdata_likelih = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
             
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -354,65 +379,52 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         m = size(u,1);
         ind = gp.tr_index;
 
-        [e, edata, eprior, f, L, La1, b] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-        iKuuKuf = K_uu\K_fu';
+        Luu = chol(K_uu);
+        iKuuKuf = Luu\(Luu'\K_fu');
+        B=Luu'\(K_fu');       % u x f
 
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         sqrtW = sqrt(W);
-        fiLa = zeros(size(f'));
-        for i=1:length(ind)
-            fiLa(ind{i}) = f(ind{i})'/La1{i};
-            La{i} = diag(sqrtW(ind{i}))*La1{i}*diag(sqrtW(ind{i}));
-            Lahat{i} = eye(size(La{i})) + La{i};
-            La2{i} = eye(size(La1{i})) + La1{i}*diag(W(ind{i}));
-            La3{i} = inv(La1{i}) + diag(W(ind{i}));
-        end
-        b = fiLa - (f'*L)*L';
+        
+        % Components for trace( inv(inv(W) + K) * dK) )
         B2 = (repmat(sqrtW,1,m).*K_fu);
-
-        % Components for
-        B3 = zeros(size(K_fu));
-        B4 = zeros(size(L));
-        diLa3 = zeros(1,n);
         for i=1:length(ind)
-            B3(ind{i},:) = Lahat{i}\B2(ind{i},:);
-            B4(ind{i},:) = La3{i}\L(ind{i},:);
-            diLa3(ind{i}) = diag(inv(La3{i}));
+            La2{i} = eye(size(La1{i})) + diag(sqrtW(ind{i}))*La1{i}*diag(sqrtW(ind{i}));
+            LLa2{i} = chol(La2{i});
+            B3(ind{i},:) = LLa2{i}\(LLa2{i}'\B2(ind{i},:));
         end
         A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
-        L2 = B3/chol(A2);
-
-        % Evaluate diag(La3 - L3'*L3)
-        A3 = eye(size(K_uu)) - L'*B4; A3 = (A3+A3')./2;
-        L3 = B4/chol(A3);
-        dA3L3tL3 = diLa3 + sum(L3.*L3,2)';
-        dA3L3tL3 = -dA3L3tL3.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent')';
-
-        KufW = K_fu'.*repmat(W',m,1);
-        iLa2Kfu = zeros(size(K_fu));
-        KufWiLa2 = zeros(size(K_fu'));
+        L2 = repmat(sqrtW,1,m).*B3/chol(A2);
         for i=1:length(ind)
-            iLa2Kfu(ind{i},:) = La2{i}\K_fu(ind{i},:);
-            KufWiLa2(:,ind{i}) = KufW(:,ind{i})/La2{i};
+            iLa2W{i} = diag(sqrtW(ind{i}))*(LLa2{i}\(LLa2{i}'\diag(sqrtW(ind{i}))));
         end
-        A4 = K_uu + KufW*iLa2Kfu; A4 = (A4+A4')./2;
-        L4 = iLa2Kfu/chol(A4);
-        L5 = chol(A4)'\KufWiLa2;
-
-        % Set the parameters for the actual gradient evaluation
-        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-        L = repmat(sqrtW,1,m).*L2;
-        b2 = zeros(1,n);
-        for i=1:length(ind)
-            La{i} = diag(sqrtW(ind{i}))\Lahat{i}/diag(sqrtW(ind{i}));
-            b2(ind{i}) = dA3L3tL3(ind{i})/La2{i};
-        end
-        b2 = (b2 - dA3L3tL3*L4*L5);
         
+        LL = sum(L2.*L2,2);
+        BB = sum(B.^2)';
+                
+        % Evaluate s2
+        C1 = L2'*B'*B;
+        s2t = BB;
+        for i=1:length(ind)
+            C2(:,ind{i}) = L2(ind{i},:)'*La1{i};
+            s2t1(ind{i},:) = diag(La1{i}*iLa2W{i}*La1{i});
+            s2t2(ind{i},:) = La1{i}*iLa2W{i}*B(:,ind{i})';
+            s2t3(ind{i},:) = La1{i}*L2(ind{i},:);
+            Bt(ind{i},:) = iLa2W{i}*B(:,ind{i})';
+            s2t(ind{i}) = s2t(ind{i}) + diag(La1{i});
+        end
+        
+        s2t = s2t - (s2t1 - sum(C2.^2)' + sum(B'.*((B*Bt)*B)',2)...
+                    - sum(C1.^2)' + 2*sum(s2t2.*B',2) - 2*sum(s2t3.*C1',2));
+
+        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+
         % =================================================================
         % Evaluate the gradients from covariance functions
         if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih') || strcmp(param,'all')
@@ -435,27 +447,33 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     i1 = i1+1;
                     
                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                    %            H = (2*K_uf'- KfuiKuuKuu)*iKuuKuf;
-                    % Here we evaluate  gdata = -0.5.* (b*H*b' + trace(L*L'H)
-                    gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                                       sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                    
+                    gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) );
+                    gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+
+                    b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3);
                     for kk=1:length(ind)
-                        gdata(i1) = gdata(i1) ...
-                            + 0.5.*(-b(ind{kk})*DKff{kk}{i2}*b(ind{kk})' ...
-                                    + 2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
-                                    b(ind{kk})*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
-                                    + trace(La{kk}\DKff{kk}{i2})...
-                                    - trace(L(ind{kk},:)*(L(ind{kk},:)'*DKff{kk}{i2})) ...               
-                                    + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
-                                    sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));                
+                        gdata(i1) = gdata(i1) -0.5.*(a(ind{kk})'*DKff{kk}{i2}*a(ind{kk})...
+                                                     - (2.*a(ind{kk})'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*a(ind{kk})...
+                                                        -a(ind{kk})'*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*a(ind{kk})) );
                         
-                        gdata(i1) = gdata(i1) ...
-                            + 0.5.*(-b2(ind{kk})*DKff{kk}{i2}*b3(ind{kk}) ...
-                                    + 2.*b2(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b3(ind{kk})- ...
-                                    b2(ind{kk})*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*b3(ind{kk}));
+                        % trace( inv(inv(W) + K) * dQ) )                        
+                        gdata(i1) = gdata(i1) + 0.5.*(sum(sum(iLa2W{kk}.*DKff{kk}{i2})) - sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKff{kk}{i2}))));
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
+                                                      sum(sum(L2(ind{kk},:)'.*((L2(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
+                        
+                        b(ind{kk}) = b(ind{kk}) + DKff{kk}{i2}*b3(ind{kk})...
+                            - (2.*DKuf{i2}(:,ind{kk})'- KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})*b3(ind{kk});
+                        bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
                     end
+                    
+                    % b2*dK*b3
+                    bb = (bbt - L2*(L2'*b));
+                    for kk=1:length(ind)
+                        s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
+                    end
+                    s3 = b - (s3t + B'*(B*bb));
+                    gdata(i1) = gdata(i1) - s2'*s3;
+                    
                     gprior(i1) = gprior_cf(i2);
                 end
                 
@@ -490,7 +508,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             end
             
         end
-
+        
+        % Gradient with respect to inducing inputs
         if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
             st=0;
             if ~isempty(gprior)
@@ -508,19 +527,33 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 for i2 = 1:length(DKuu)
                     i1 = i1+1;
                     
-                    KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
-                    gdata(i1) = gdata(i1) -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
-                                        sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
-                    gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuDKuu_u))*(iKuuKuf*b3);
-                    
+                                        
+                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                    gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) );
+                    gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+
+                    b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3);
                     for kk=1:length(ind)
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
-                                                      b(ind{kk})*KfuiKuuDKuu_u(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
-                                                      + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
-                                                      sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuDKuu_u(ind{kk},:))*iKuuKuf(:,ind{kk})))));
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b3(ind{kk})- ...
-                                                      b2(ind{kk})*KfuiKuuDKuu_u(ind{kk},:)*iKuuKuf(:,ind{kk})*b3(ind{kk}));
+                        gdata(i1) = gdata(i1) -0.5.*(- (2.*a(ind{kk})'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*a(ind{kk})...
+                                                        -a(ind{kk})'*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*a(ind{kk})) );
+                        
+                        % trace( inv(inv(W) + K) * dQ) )                        
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
+                                                      sum(sum(L2(ind{kk},:)'.*((L2(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
+                        
+                        b(ind{kk}) = b(ind{kk}) + ...
+                            - (2.*DKuf{i2}(:,ind{kk})'- KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})*b3(ind{kk});
+                        bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
                     end
+                    
+                    % b2*dK*b3
+                    bb = (bbt - L2*(L2'*b));
+                    for kk=1:length(ind)
+                        s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
+                    end
+                    s3 = b - (s3t + B'*(B*bb));
+                    gdata(i1) = gdata(i1) - s2'*s3;
+
                     gprior(i1) = gprior_ind(i2);
                 end
             end
@@ -535,14 +568,19 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
             DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
-            b3 = K_fu*(iKuuKuf*DL_f_sigma);
-            for i=1:length(ind)
-                b3(ind{i}) = b3(ind{i}) + La1{i}*DL_f_sigma(ind{i});
+            b = B'*(B*DL_f_sigma);
+            for kk=1:length(ind)
+                b(ind{kk}) = b(ind{kk}) + La1{kk}*DL_f_sigma(ind{kk});
+                bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
             end
-                        
-            gdata_likelih = - DL_sigma - 0.5.*sum((diLa3' + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3; 
-            
-            
+            bb = (bbt - L2*(L2'*b));
+            for kk=1:length(ind)
+                s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
+            end
+            s3 = b - (s3t + B'*(B*bb));
+
+            gdata_likelih = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
                 g_logPrior = -feval(likelih.fh_priorg, likelih);
@@ -561,14 +599,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         % CS+FIC
         % ============================================================        
       case 'CS+FIC'
-        g_ind = zeros(1,numel(gp.X_u));
-        gdata_ind = zeros(1,numel(gp.X_u));
-        gprior_ind = zeros(1,numel(gp.X_u));
-
         u = gp.X_u;
         m = size(u,1);
 
-        [e, edata, eprior, f, L, La1, b] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
 
         cf_orig = gp.cf;
 
@@ -595,10 +629,11 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         gp.cf = cf_orig;
         
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+        
         % Find fill reducing permutation and permute all the
         % matrices
         p = analyze(La1);
-        r(p) = 1:n;
         gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
         f = f(p);
         y = y(p);
@@ -606,66 +641,47 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K_fu = K_fu(p,:);
         L = L(p,:);
         x = x(p,:);
-
-        % Help matrices
-        iKuuKuf = K_uu\K_fu';
+        W = W(p);
+        a = a(p);
+        
+        Luu = chol(K_uu)';
+        B=Luu\(K_fu');       % u x f
+        iKuuKuf = Luu'\B;
+        sW = sqrt(W);
+        sqrtW = sparse(1:n,1:n,sW,n,n);
         Inn = sparse(1:n,1:n,1,n,n);
-        Wd = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-        sqrtW = sqrt(Wd);
-        W = sparse(1:n,1:n,Wd,n,n);
-        sqrtW = sparse(1:n,1:n,sqrtW,n,n);
         
-        % b=f'*(Qff+La1)^{-1}
-        b = f'/La1 - (f'*L)*L';
-
-        % Help matrices for trace component
-        sqrtWLa1 = sqrtW*La1;
-        Lahat = Inn + sqrtWLa1*sqrtW;
-        LDh = ldlchol(Lahat);
-        B2 = sqrtW*K_fu;
-        %        B3 = Lahat\B2;
-        B3 = ldlsolve(LDh,B2);
-        A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
-        L2 = B3/chol(A2);
-        
-        % Help matrices for b2 set 1
-        %        L3 = La1*L-sqrtWLa1'*(Lahat\(sqrtWLa1*L));
-        L3 = La1*L - sqrtWLa1'*ldlsolve(LDh,(sqrtWLa1*L));
-        AA2 = eye(size(K_uu)) - L'*L3; AA2 = (AA2 + AA2')./2;
-        L3 = L3/chol(AA2);
-        
-        % Evaluate diag(La3^{-1} + L3'*L3).*thirdgrad
-        %b2 = diag(La1) - sum((sqrtWLa1'/chol(Lahat)).^2,2) + sum(L3.*L3,2);
-        La = (sqrtW\Lahat)/sqrtW;
-        LD = ldlchol(La);
-        siLa = spinv(LD,1);
-        
-        b2 = (sum(La1.*siLa,2)./Wd  + sum(L3.*L3,2)).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-        
-        %b2 = (b2'*W)';
-        
-        % Help matrices for b2 set 2 
-        La2 = W + W*La1*W;
-        KufW = K_fu'*W;
+        % Components for trace( inv(inv(W) + K) * dK) )
+        La2 = Inn + sqrtW*La1*sqrtW;
         LD2 = ldlchol(La2);
-        %iLa2WKfu = La2\(W*K_fu);
-        iLa2WKfu = ldlsolve(LD2,KufW');
-        A4 = K_uu + KufW*iLa2WKfu; A4 = (A4+A4')./2;
-        L4 = iLa2WKfu/chol(A4);
-        
-        % Evaluate rest of b2
-        %b2 = b2'/La2 - b2'*L4*L4';
-        b2 = ldlsolve(LD2,b2)' - b2'*L4*L4';
-        b2 = -b2*W;
+        B2 = (repmat(sW,1,m).*K_fu);
+        %B3 = La2\B2;
+        B3 = ldlsolve(LD2,B2);
+        A2 = K_uu + B2'*B3; A2=(A2+A2')/2;
+        L2 = repmat(sW,1,m).*B3/chol(A2);
 
-        % Set the parameters for the actual gradient evaluation
+        siLa2 = spinv(LD2,1);
+        dsiLa2 = diag(siLa2);
+        
+        LL = sum(L2.*L2,2);
+        BB = sum(B.^2)';
+                
+        % Evaluate s2
+        C1 = L2'*B'*B;
+        C2 = L2'*La1;
+        C3 = repmat(sW,1,m).*ldlsolve(LD2,repmat(sW,1,m).*B');
+        
+        s2t = diag(La1) + BB;        
+        %diag(La1*sqrtW*ldlsolve(LD2,sqrtW*La1))
+        s2t = s2t - (diag(La1) - sum(La1*sqrtW.*siLa2',2)./sW - sum(C2.^2)' + sum(B'.*(B*C3*B)',2)...
+                    - sum(C1.^2)' + 2*sum((La1*C3).*B',2) - 2*sum(C2'.*C1',2));
+        
+        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');        
+        
         b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-        L = sqrtW*L2;
-        idiagLa = diag(siLa);        
-        LL = sum(L.*L,2);
         
         % =================================================================
-        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
+        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih') || strcmp(param,'all')
             % Evaluate the gradients from covariance functions
             
             for i=1:ncf
@@ -686,25 +702,27 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     
                     for i2 = 1:length(DKuu)
                         i1 = i1+1;
-                        
-                        % Evaluate the gradient with respect to magnSigma
+ 
+                        % 0.5* a'*dK*a, where a = K\f
                         KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                        gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                                           sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                        
-                        gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                        gdata(i1) = gdata(i1) + 0.5.*sum(idiagLa.*DKff{i2} - LL.*DKff{i2});
+                        gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + (a'.*DKff{i2}')*a...
+                                           - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
+                    
+                        % trace( inv(inv(W) + K) * dQ) )
+                        gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                        gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}.*dsiLa2.*W - LL.*DKff{i2}));
                         gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                         
-                        %gdata(i1) = gdata(i1) + 0.5.*sum(sum(La\((2.*K_uf') - KfuiKuuKuu).*iKuuKuf',2));
-                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2));
-                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); 
+                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(sqrtW*ldlsolve(LD2,repmat(sW,1,m).*(2.*DKuf{i2}' - KfuiKuuKuu)).*iKuuKuf',2));
+                        gdata(i1) = gdata(i1) - 0.5.*( sum(sW.*dsiLa2.*sW.*sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); 
                         
-                        gdata(i1) = gdata(i1) - 0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                        gdata(i1) = gdata(i1) - 0.5.*(b2.*DKff{i2}')*b3;
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3 - b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
-                        gprior(i1) = gprior_cf(i2);                    
+                        % b2*dK*b3
+                        b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3) + DKff{i2}.*b3 - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+                        bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
+                        s3 = b - (La1*bb + B'*(B*bb));
+                        gdata(i1) = gdata(i1) - s2'*s3;
+                    
+                        gprior(i1) = gprior_cf(i2);
                     end
                     
                     % Evaluate the gradient for compact support covariance functions
@@ -717,9 +735,13 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                         i1 = i1+1;
                         
                         % Evaluate the gradient with respect to magnSigma
-                        gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
-                        gdata(i1) = gdata(i1) - 0.5.*b2*DKff{i2}*b3;
+                        gdata(i1) = 0.5*(sum(sW.*sum(siLa2.*(sqrtW*DKff{i2})',2)) - sum(sum(L2.*(L2'*DKff{i2}')')) - a'*DKff{i2}*a);
+                        b = DKff{i2}*b3;
+                        bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
+                        s3 = b - (La1*bb + B'*(B*bb));
+                        gdata(i1) = gdata(i1) - s2'*s3;
                         gprior(i1) = gprior_cf(i2);
+
                     end
                 end
                 
@@ -777,19 +799,24 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     for i2 = 1:length(DKuu)
                         i1=i1+1;
                         
+                        % 0.5* a'*dK*a, where a = K\f
                         KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                        gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) ...
+                                           - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
+                    
+                        % trace( inv(inv(W) + K) * dQ) )
+                        gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                         
-                        gdata(i1) = gdata(i1) -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                                             2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                              sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(sqrtW*ldlsolve(LD2,repmat(sW,1,m).*(2.*DKuf{i2}' - KfuiKuuKuu)).*iKuuKuf',2));
+                        gdata(i1) = gdata(i1) - 0.5.*( sum(sW.*dsiLa2.*sW.*sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); 
                         
-                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
-                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
-                        
-                        gdata(i1) = gdata(i1) -0.5.*(2*b2*DKuf{i2}'-(b2*KfuiKuuKuu))*(iKuuKuf*b3);
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b2.*sum(DKuf{i2}'.*iKuuKuf',2)'*b3- b2.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b3);
+                        % b2*dK*b3
+                        b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3) - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+                        bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
+                        s3 = b - (La1*bb + B'*(B*bb));
+                        gdata(i1) = gdata(i1) - s2'*s3;
+
                         gprior(i1) = gprior_ind(i2);
                     end
                 end
@@ -805,10 +832,11 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
             DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
             DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
-            b3 = K_fu*(iKuuKuf*DL_f_sigma) + La1*DL_f_sigma;
-                        
-            gdata_likelih = - DL_sigma - 0.5.*sum((sum(La1.*siLa,2)./Wd + sum(L3.*L3,2)).*DW_sigma) - 0.5.*b2*b3;
+            b = La1*DL_f_sigma + B'*(B*DL_f_sigma);            
+            bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
+            s3 = b - (La1*bb + B'*(B*bb));            
             
+            gdata_likelih = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
             
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -821,7 +849,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
-        
+
         g = gdata + gprior;
         
     end

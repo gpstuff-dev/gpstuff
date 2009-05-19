@@ -78,7 +78,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         gpcf.fh_ghyper = @gpcf_neuralnetwork_ghyper;
         gpcf.fh_ginput = @gpcf_neuralnetwork_ginput;
         gpcf.fh_cov = @gpcf_neuralnetwork_cov;
-        gpcf.fh_covvec = @gpcf_neuralnetwork_covvec;
         gpcf.fh_trcov  = @gpcf_neuralnetwork_trcov;
         gpcf.fh_trvar  = @gpcf_neuralnetwork_trvar;
         gpcf.fh_recappend = @gpcf_neuralnetwork_recappend;
@@ -647,24 +646,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         C = (C+C')./2;
         
     end
-
-    function C = gpcf_neuralnetwork_covvec(gpcf, x1, x2, varargin)
-    % GPCF_NEURALNETWORK_COVVEC     Evaluate covariance vector between two input vectors.
-    %
-    %         Description
-    %         C = GPCF_NEURALNETWORK_COVVEC(GP, TX, X) takes in Gaussian process GP and two
-    %         matrixes TX and X that contain input vectors to GP. Returns
-    %         covariance vector C, where every element i of C contains covariance
-    %         between input i in TX and i in X.
-    %
-    %
-    %         See also
-    %         GPCF_NEURALNETWORK_COV, GPCF_NEURALNETWORK_TRVAR, GP_COV, GP_TRCOV
-
-        error('Should not end up here! Not implemented...')
-
-    end
-
 
     function C = gpcf_neuralnetwork_trvar(gpcf, x)
     % GP_NEURALNETWORK_TRVAR     Evaluate training variance vector

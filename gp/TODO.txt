@@ -1,13 +1,15 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2009-03-23 16:27:32 EET
+%   Last modified: 2009-05-13 15:29:22 EEST
 
-LIKELIH_*
-----------
-- muuta hessian -> g2
+Modifications:
+- jitterSigmas is initialized to zero (used to be 1e-4)
+- gpla_e uses Newton method as a default optimization for latent
+  values (used to be fminunc large scale)
 
-LA_PRED:
------------
-- FIC:ss‰ h‰ikk‰‰
+
+sinvchi2_*
+---------
+- gradientti pieless‰
 
 Vaihtuvat metriikat:
 --------------------
@@ -31,24 +33,11 @@ LIKELIH_PROBIT:
 LIKELIH_NEGBIN:
 ---------------
 - momenttien integroinnin tehostaminen (katso Poisson)
-- Laplace approksimaatio ?
-
-GPLA_E:
--------
-- Puuttuu: Newton algoritmin toteutus
 
 GPCF_SSSEXP:
 ------------
 - puuttuu: gradientit spektral pisteiden suhteen.
 
-GPCF_*:
--------
-- Vaihtoehtoisten metriikoiden toteutus. Katso alle.
-
-GPCF_ST_*:
-----------
-- lopullisen toteutuksen pohdinta viel‰ kesken. 
-- Puuttuu: C-implementointi kovarianssifunktioiden laskentaan.
 
 COV.C:
 ------

@@ -79,7 +79,6 @@ function gpcf = gpcf_matern52(do, varargin)
         gpcf.fh_ghyper = @gpcf_matern52_ghyper;
         gpcf.fh_ginput = @gpcf_matern52_ginput;
         gpcf.fh_cov = @gpcf_matern52_cov;
-        gpcf.fh_covvec = @gpcf_matern52_covvec;
         gpcf.fh_trcov  = @gpcf_matern52_trcov;
         gpcf.fh_trvar  = @gpcf_matern52_trvar;
         gpcf.fh_recappend = @gpcf_matern52_recappend;
@@ -680,44 +679,6 @@ function gpcf = gpcf_matern52(do, varargin)
             end
         end
     end
-
-    function C = gpcf_matern52_covvec(gpcf, x1, x2, varargin)
-    % GPCF_MATERN52_COVVEC     Evaluate covariance vector between two input vectors.
-    %
-    %         Description
-    %         C = GPCF_MATERN52_COVVEC(GP, TX, X) takes in Gaussian process GP and two
-    %         matrixes TX and X that contain input vectors to GP. Returns
-    %         covariance vector C, where every element i of C contains covariance
-    %         between input i in TX and i in X.
-    %
-    %
-    %         See also
-    %         GPCF_MATERN52_COV, GPCF_MATERN52_TRVAR, GP_COV, GP_TRCOV
-        
-        if isempty(x2)
-            x2=x1;
-        end
-        [n1,m1]=size(x1);
-        [n2,m2]=size(x2);
-        
-        if m1~=m2
-            error('the number of columns of X1 and X2 has to be same')
-        end
-        
-        ma2 = gpcf.magnSigma2;
-        
-        di2 = 0;
-        s = 1./gpcf.lengthScale.^2;
-        for i = 1:m1
-            di2 = di2 + s.*(x1(:,i) - x2(:,i)).^2;
-        end
-     
-        dist = sqrt(5.*di2);
-        C = ma2.*(1 + dist + 5.*di2./3).*exp(-dist);
-        C(C<eps)=0;
-        
-    end
-        
     
     function C = gpcf_matern52_trvar(gpcf, x)
     % GP_MATERN52_TRVAR     Evaluate training variance vector
@@ -729,7 +690,7 @@ function gpcf = gpcf_matern52(do, varargin)
     %
     %
     %         See also
-    %         GPCF_MATERN52_COV, GPCF_MATERN52_COVVEC, GP_COV, GP_TRCOV
+    %         GPCF_MATERN52_COV, GP_COV, GP_TRCOV
         
         [n, m] =size(x);
         

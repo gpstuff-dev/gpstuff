@@ -273,7 +273,7 @@ function likelih = likelih_t(do, varargin)
                 deriv(1) = deriv(1).*sigma;
             else
                 % Derivative with respect to sigma
-                deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 +sigma.*r.^2));
+                deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 + sigma.*r.^2));
                 deriv(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma.^2)) + (v+1).*r.^2./((v.*sigma).^2 + v.*r.^2));
                 
                 % correction for the log transformation

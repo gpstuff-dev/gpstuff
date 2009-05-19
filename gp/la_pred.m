@@ -38,10 +38,10 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
 
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp,param), gp, tx, ty, param);
+        [e, edata, eprior, f, L] = gpla_e(gp_pak(gp,param), gp, tx, ty, param);
 
-        W = La2;
-        deriv = b;
+        W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
         ntest=size(x,1);
 
         % Evaluate the expectation
@@ -52,15 +52,16 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         if nargout > 1
             kstarstar = gp_trvar(gp,x,predcf);
             if W >= 0
+                W = diag(W);
                 V = L\(sqrt(W)*K_nf');
                 Varf = kstarstar - sum(V'.*V',2);
             else
-                K = gp_trcov(gp,tx);
-                %plot(diag(inv(W)))
-                %L = chol(K + inv(W))';
-                %V = L\(sqrt(W)*K_nf');
-                %Varf = kstarstar - sum(V'.*V',2);
-                Varf = kstarstar - sum(K_nf.*((K + inv(W))\K_nf')',2);
+                [W,I] = sort(W, 1, 'descend');
+                r(I) = 1:tn;
+                V = L*diag(W);
+                R = diag(W) - V'*V;
+                R = R(r,r);                
+                Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
             end
             for i1=1:ntest
                 switch gp.likelih.type
@@ -86,21 +87,21 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         K_fu = gp_cov(gp, tx, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        Luu = chol(K_uu)';
 
         m = size(u,1);
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
-        deriv = b;
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
         ntest=size(x,1);
 
         K_nu=gp_cov(gp,x,u,predcf);
-        Ef = K_nu*(K_uu\(K_fu'*deriv));
+        Ef = K_nu*(Luu'\(Luu\(K_fu'*deriv)));
 
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
             [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:), predcf);
-            Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
             %Lav = zeros(size(La));
@@ -114,7 +115,6 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         if nargout > 1
             W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
             kstarstar = gp_trvar(gp,x,predcf);
-            Luu = chol(K_uu)';
             La = W.*La2;
             Lahat = 1 + La;
             B = (repmat(sqrt(W),1,m).*K_fu);
@@ -127,13 +127,14 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
             % Set params for K_nf
             BB=Luu\(B');
             BB2=Luu\(K_nu');
-            Varf = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,size(K_uu,1)).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            Varf = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
             
             % if the prediction is made for training set, evaluate Lav also for prediction points
             if ~isempty(tstind)
-                Varf(tstind) = Varf(tstind) - 2.*sum( BB2(:,tstind)'.*(repmat((La.\Lav),1,m).*BB'),2) ...
-                    + 2.*sum( BB2(:,tstind)'*(BB*L).*(repmat(Lav,1,m).*L), 2)  ...
-                    - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);                
+                LavsW = Lav.*sqrt(W);
+                    Varf = Varf - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
+                           - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu')',2)...
+                           + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
             end
             for i1=1:ntest
                 switch gp.likelih.type
@@ -156,9 +157,9 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         ntest = size(x,1);
         m = size(u,1);
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
-        deriv = b;
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
 
         iKuuKuf = K_uu\K_fu';
         w_bu=zeros(length(x),length(u));
@@ -225,7 +226,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         u = gp.X_u;
         m = length(u);
 
-        [e, edata, eprior, f, L, La2, b] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
         
         % Indexes to all non-compact support and compact support covariances.
         cf1 = [];
@@ -277,7 +278,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
 
         Kcs_nf = gp_cov(gp, x, tx, predcf2);
 
-        deriv = b;
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
         ntest=size(x,1);
 
         % Calculate the predictive mean according to the type of

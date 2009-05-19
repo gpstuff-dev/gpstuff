@@ -77,7 +77,6 @@ function gpcf = gpcf_sexp(do, varargin)
         gpcf.fh_ghyper = @gpcf_sexp_ghyper;
         gpcf.fh_ginput = @gpcf_sexp_ginput;
         gpcf.fh_cov = @gpcf_sexp_cov;
-        gpcf.fh_covvec = @gpcf_sexp_covvec;
         gpcf.fh_trcov  = @gpcf_sexp_trcov;
         gpcf.fh_trvar  = @gpcf_sexp_trvar;
         gpcf.fh_recappend = @gpcf_sexp_recappend;
@@ -630,7 +629,6 @@ function gpcf = gpcf_sexp(do, varargin)
 
         if isfield(gpcf,'metric')
             % If other than scaled euclidean metric
-            C = gpcf.magnSigma2.*exp(-feval(gpcf.metric.distance, gpcf.metric, x).^2);
             
             [n, m] =size(x);            
             ma = gpcf.magnSigma2;
@@ -677,40 +675,6 @@ function gpcf = gpcf_sexp(do, varargin)
         end
     end
 
-    function C = gpcf_sexp_covvec(gpcf, x1, x2, varargin)
-    % GPCF_SEXP_COVVEC     Evaluate covariance vector between two input vectors.
-    %
-    %         Description
-    %         C = GPCF_SEXP_COVVEC(GP, TX, X) takes in Gaussian process GP and two
-    %         matrixes TX and X that contain input vectors to GP. Returns
-    %         covariance vector C, where every element i of C contains covariance
-    %         between input i in TX and i in X.
-    %
-    %
-    %         See also
-    %         GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
-
-        if isempty(x2)
-            x2=x1;
-        end
-        [n1,m1]=size(x1);
-        [n2,m2]=size(x2);
-
-        if m1~=m2
-            error('the number of columns of X1 and X2 has to be same')
-        end
-
-        ma2 = gpcf.magnSigma2;
-
-        di2 = 0;
-        s = 1./gpcf.lengthScale.^2;
-        for i = 1:m1
-            di2 = di2 + s.*(x1(:,i) - x2(:,i)).^2;
-        end
-        C = gpcf.magnSigma2.*exp(-di2);
-    end
-
-
     function C = gpcf_sexp_trvar(gpcf, x)
     % GP_SEXP_TRVAR     Evaluate training variance vector
     %
@@ -721,7 +685,7 @@ function gpcf = gpcf_sexp(do, varargin)
     %
     %
     %         See also
-    %         GPCF_SEXP_COV, GPCF_SEXP_COVVEC, GP_COV, GP_TRCOV
+    %         GPCF_SEXP_COV, GP_COV, GP_TRCOV
 
 
         [n, m] =size(x);

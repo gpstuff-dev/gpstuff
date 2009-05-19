@@ -134,32 +134,12 @@ gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, []);   %{gpcf2}
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, param});
 
-% $$$ w = randn(size(yy'));
-% $$$ gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, yy', 'latent')
-% $$$ 
-% $$$ w = randn(size(yy'));
-% $$$ gradcheck(w, likelih.fh_g, likelih.fh_g2, likelih, yy', 'latent')
-% $$$ 
-% $$$ w = randn(size(yy'));
-% $$$ gradcheck(w, likelih.fh_g2, likelih.fh_g3, likelih, yy', 'latent')
-% $$$ 
-% $$$ w = 100*rand(size(gp_pak(gp,'likelih')));
-% $$$ gradcheck(w, likelih.fh_e, likelih.fh_g, likelih, yy, Ef, 'hyper')
-% $$$ 
-% $$$ w = 100*rand(size(gp_pak(gp,'likelih')));
-% $$$ gradcheck(w, likelih.fh_g, likelih.fh_g2, likelih, yy, Ef, 'latent+hyper')
-% $$$ 
-% $$$ w = 100*rand(size(gp_pak(gp,'likelih')));
-% $$$ gradcheck(w, likelih.fh_g2, likelih.fh_g3, likelih, yy, Ef, 'latent2+hyper')
-
-
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-3);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
 
 w0 = gp_pak(gp, param);
-w0(3) = 100*rand
 gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param)
 
 mydeal = @(varargin)varargin{1:nargout};
@@ -231,7 +211,7 @@ likelih = likelih_negbin('init', yy, ye, 10);
 param = 'hyper+likelih'
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu); % , 'jitterSigmas', 0.01,
+gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigmas', 0); % ,
 
 % Set the approximate inference method to EP
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, param});
@@ -244,8 +224,6 @@ opt=optimset(opt,'Display', 'iter');
 
 % conduct the hyper-parameter optimization
 w0 = gp_pak(gp, param);
-% $$$ w0(1)= randn; w0(2)= randn; 
-w0(3) = 100*rand
 gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param)
 
 mydeal = @(varargin)varargin{1:nargout};
@@ -282,7 +260,7 @@ G=repmat(NaN,size(X1));
 G(xxii)=(exp(Varf2) - 1).*exp(2*Ef2+Varf2);
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.005    0.03])
+set(gca, 'Clim', [0.01    0.025])
 axis equal
 axis([0 35 0 60])
 title('Posterior variance of the relative risk, FIC')
@@ -324,7 +302,7 @@ likelih = likelih_negbin('init', yy, ye, 10);
 param = 'hyper+likelih' %
 
 % Create the PIC GP data structure
-gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'X_u', Xu); % , 'jitterSigmas', 0.01
+gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'X_u', Xu); % 
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to EP
@@ -338,15 +316,14 @@ opt=optimset(opt,'Display', 'iter');
 
 % conduct the hyper-parameter optimization
 w0 = gp_pak(gp, param);
-w0(3) = 100*rand
 gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param)
 
 mydeal = @(varargin)varargin{1:nargout};
-w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, param), gpep_g(ww, gp, xx, yy, param)), w0, opt);
+w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, param), gpla_g(ww, gp, xx, yy, param)), w0, opt);
 gp = gp_unpak(gp,w,param);
 
 % make prediction to the data points
-[Ef, Varf] = ep_pred(gp, xx, yy, xx, param, trindex);
+[Ef, Varf] = la_pred(gp, xx, yy, xx, param, [], trindex);
 
 % Define help parameters for plotting
 xxii=sub2ind([60 35],xx(:,2),xx(:,1));
@@ -425,16 +402,16 @@ gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1,gpcf2}, [], 'X_u', Xu); % , 
 % Set the approximate inference method to EP
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, param});
 
+% conduct the hyper-parameter optimization
+w0 = gp_pak(gp, param);
+gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param)
+
+
 % Set the optimization parameters
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-3);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
-
-% $$$ % conduct the hyper-parameter optimization
-w0 = gp_pak(gp, param);
-% $$$ w0(5) = 100*rand
-% $$$ gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param)
 
 mydeal = @(varargin)varargin{1:nargout};
 w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, param), gpla_g(ww, gp, xx, yy, param)), w0, opt);

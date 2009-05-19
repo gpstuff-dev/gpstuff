@@ -79,7 +79,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
         gpcf.fh_ghyper = @gpcf_dotproduct_ghyper;
         gpcf.fh_ginput = @gpcf_dotproduct_ginput;
         gpcf.fh_cov = @gpcf_dotproduct_cov;
-        gpcf.fh_covvec = @gpcf_dotproduct_covvec;
         gpcf.fh_trcov  = @gpcf_dotproduct_trcov;
         gpcf.fh_trvar  = @gpcf_dotproduct_trvar;
         gpcf.fh_recappend = @gpcf_dotproduct_recappend;
@@ -486,22 +485,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
 
     end
 
-    function C = gpcf_dotproduct_covvec(gpcf, x1, x2, varargin)
-    % GPCF_DOTPRODUCT_COVVEC     Evaluate covariance vector between two input vectors.
-    %
-    %         Description
-    %         C = GPCF_DOTPRODUCT_COVVEC(GP, TX, X) takes in Gaussian process GP and two
-    %         matrixes TX and X that contain input vectors to GP. Returns
-    %         covariance vector C, where every element i of C contains covariance
-    %         between input i in TX and i in X.
-    %
-    %
-    %         See also
-    %         GPCF_DOTPRODUCT_COV, GPCF_DOTPRODUCT_TRVAR, GP_COV, GP_TRCOV
-
-    error('Should not end up here! Not implemented...')
-        
-    end
 
     function C = gpcf_dotproduct_trvar(gpcf, x)
     % GP_DOTPRODUCT_TRVAR     Evaluate training variance vector

@@ -235,7 +235,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                     if isfield(gpcf, 'fh_gibbs')
                         gpcf = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, y);
                         gp.noise{i1} = gpcf;
-                    end                    
+                    end
                 end
             end
             

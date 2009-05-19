@@ -143,7 +143,7 @@ S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 % =====================================
 
 % load the data
-S = which('demo_spatial3');
+S = which('demo_spatial2');
 L = strrep(S,'demo_spatial3.m','demos/spatial.mat');
 load(L)
 

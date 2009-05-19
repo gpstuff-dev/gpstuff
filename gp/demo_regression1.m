@@ -86,12 +86,12 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = gamma_p({3 7});
+gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
@@ -285,6 +285,8 @@ gp_cs = gp_init('init', 'FULL', nin, 'regr', {gpcf3}, {gpcf2}, 'jitterSigmas', 0
 param = 'hyper';
 
 % set the options
+fe=str2fun('gp_e');     % create a function handle to negative log posterior
+fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
@@ -446,7 +448,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 X_u = [u1(:) u2(:)];
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
+gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -462,6 +464,8 @@ gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0
 param = 'hyper';          % optimize only hyperparameters
 
 % set the options
+fe=str2fun('gp_e');     % create a function handle to negative log posterior
+fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;

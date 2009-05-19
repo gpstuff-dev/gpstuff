@@ -1,4 +1,4 @@
-function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, varargin)
+function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 %GPLA_E Conduct LAplace approximation and return marginal log posterior estimate
 %
 %	Description
@@ -26,7 +26,10 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 %
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo
+% Copyright (c) 2007-2009      Jarno Vanhatalo
+% 
+% The Newtons iteration is implemented as described in 
+% Rasmussen and Williams (2006).
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -44,19 +47,19 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
         f = zeros(size(y));
         n0 = size(x,1);
         La20 = [];
-        b0 = 0;
+        a0 = 0;
 
         laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
     else
-        [e, edata, eprior, f, L, La2, b, W] = feval(gp.fh_e, w, gp, x, y, param, varargin);
+        [e, edata, eprior, f, L, a, La2] = feval(gp.fh_e, w, gp, x, y, param, varargin);
     end
 
-    function [e, edata, eprior, f, L, La2, b, W] = laplace_algorithm(w, gp, x, y, param, varargin)
-
-        if  abs(w-w0) < 1e-8 % 1e-8
+    function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
+        
+        if  1==0 %abs(w-w0) < 1e-6 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -65,22 +68,19 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
             f = f0;
             L = L0;
             La2 = La20;
-            b = b0;
             W = W0;
+            a = a0;
         else
 
             gp=gp_unpak(gp, w, param);
             ncf = length(gp.cf);
             n = length(x);
 
-            % laplace iteration parameters
-            iter=1;
-            maxiter = gp.laplace_opt.maxiter;
-            tol = gp.laplace_opt.tol;
-            logZ_tmp=0; logZ=Inf;
-            f = f0;
-            %f = zeros(size(f0));
-            %f = 2.*randn(size(f0));
+            % Begin optimization from the old f if it is better than the new
+            %if edata0 < 
+            %f = f0;
+            f = zeros(size(f0));
+            
 
             % =================================================
             % First Evaluate the data contribution to the error
@@ -91,18 +91,18 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
               case 'FULL'
                 K = gp_trcov(gp, x);
                 
-                if issparse(K)
-                    % TODO !!!
-                    % Find fill reducing permutation and permute all the
-                    % matrices
-                    LD = ldlchol(K);
-                else
-                    iK = inv(K);
-                end
-
                 switch gp.laplace_opt.optim_method
                     % find the mode by fminunc large scale method
                   case 'fminunc_large'
+                    if issparse(K)
+                        % TODO !!!
+                        % Find fill reducing permutation and permute all the
+                        % matrices
+                        LD = ldlchol(K);
+                    else
+                        LD = chol(K);
+                        iK = inv(K);
+                    end
 
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
@@ -110,82 +110,105 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                         if issparse(K)
                             fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
                         else
-                            fhm = @(W, f, varargin) (iK*f + repmat(W,1,size(f,2)).*f);  % W*f; %
+                            fhm = @(W, f, varargin) (LD\(LD'\f) + repmat(W,1,size(f,2)).*f);  % W*f; %
                         end                            
                         opt=optimset(opt,'HessMult', fhm);
-                        opt=optimset(opt,'TolX', 1e-8);
-                        opt=optimset(opt,'TolFun', 1e-8);
+                        opt=optimset(opt,'TolX', 1e-12);
+                        opt=optimset(opt,'TolFun', 1e-12);
                         opt=optimset(opt,'LargeScale', 'on');
                         opt=optimset(opt,'Display', 'off'); % 'iter'
                     else
                         opt = gp.laplace_opt.fminunc_opt;
                     end
-
+               
                     if issparse(K)
                         fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
                         fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
                         fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent')); %inv(K) + diag(g2(f', gp.likelih)) ; %
                     else
-                        fe = @(f, varargin) (0.5*f*(iK*f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-                        fg = @(f, varargin) (iK*f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
+                        fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
+                        fg = @(f, varargin) (LD\(LD'\f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
                         fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent')); %inv(K) + diag(g2(f', gp.likelih)) ; %
                     end
                     
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
-                    f = f';                    
-
-                    % find the mode by Scaled conjugate gradient method
-                  case 'SCG'
-                    if ~isfield(gp.laplace_opt, 'scg_opt')
-                        opt(1) = 0;
-                        opt(2) = 1e-8;
-                        opt(3) = 3e-8;
-                        opt(9) = 0;
-                        opt(10) = 0;
-                        opt(11) = 0;
-                        opt(14) = 500;
-                    else
-                        opt = gp.laplace_opt.scg_opt;
-                    end
-
-                    fe = @(f, varargin) (0.5*f*(K\f') - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-                    fg = @(f, varargin) (K\f' - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-
-                    [f, opt, flog]=scg(fe, f', opt, fg);
                     f = f';
 
-                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent')
-                    sqrtW = sqrt(W);
-                    B = eye(size(K)) + sqrtW*K*sqrtW;
-                    L = chol(B)';
-                    a = K\f;
-                    logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    %a = iK*f; 
+                    a = LD\(LD'\f);
+                    %a = iK*f; 
 
-                    % find the mode by Newton iteration
-                  case 'Newton'
-                    while iter<=maxiter & abs(logZ_tmp-logZ)>tol % logZ_tmp-logZ > tol   %
-                        logZ_tmp=logZ;
-
-                        % Evaluate the minus hessian
+                  case 'newton'
+                    tol = 1e-12;
+                    a = f;
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                    dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    lp_old = -Inf;
+                    
+                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                        lp_old = lp_new; a_old = a; 
+                        sW = sqrt(W);                        
+                        L = chol(eye(n)+sW*sW'.*K);                            % L'*L=B=eye(n)+sW*K*sW
+                        b = W.*f+dlp;
+                        a = b - sW.*(L\(L'\(sW.*(K*b))));
+                        f = K*a;
                         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-                        sqrtW = sqrt(W);
-                        B = eye(size(K)) + sqrtW*K*sqrtW;
+                        dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                        lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                        lp_new = -a'*f/2 + lp;
+                        i = 0;
+                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
+                            a = (a_old+a)/2;                      % reduce step size by half
+                            f = K*a;
+                            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                            lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                            lp_new = -a'*f/2 + lp;
+                            i = i+1;
+                        end 
+                    end                                                    % end Newton's iterations
+                                        
+                  case 'likelih_specific'
+                    iter = 1;
+                    sigma = gp.likelih.sigma;
+                    nu = gp.likelih.nu;
+
+% $$$                     iV = diag( ones(1,n)./sigma.^2);
+% $$$                     f1 = (iK+iV)\iV*y;
+                    
+                    iV = ones(n,1)./sigma.^2;
+                    siV = sqrt(iV);
+                    B = eye(n) + siV*siV'.*K;
+                    L = chol(B)';
+                    b = iV.*y;
+                    a = b - siV.*(L'\(L\(siV.*(K*b))));
+                    f = K*a;
+                    while iter < 200
+                        fold = f;
+% $$$                         iV = diag((nu+1) ./ (nu.*sigma^2 + (y-f1).^2));
+% $$$                         f1 = (iK+iV)\iV*y;
+
+                        iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
+                        siV = sqrt(iV);
+                        B = eye(n) + siV*siV'.*K;
                         L = chol(B)';
-
-                        % Evaluate the derivative with respect to f
-                        der_f = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-                        b = W*f + der_f;
-                        a = b - sqrtW*L'\(L\(sqrtW*(K*b)));
-                        ft = K*a;
-
-                        % Evaluate the error criteria (=minus log marginal likelihood)
-                        logZ = 0.5 * a'*ft - feval(gp.likelih.fh_e, gp.likelih, y, f);
-                        f = ft;
-                        iter=iter+1;
-                        fprintf('%.8f, iter: %d \n', logZ, iter-1)
+                        b = iV.*y;
+                        a = b - siV.*(L'\(L\(siV.*(K*b))));
+                        f = K*a;
+                        
+                        if max(abs(f-fold)) < 1e-8
+                            break
+                        end
+                        iter = iter + 1;
                     end
+% $$$                     if iter == 200
+% $$$                         warning('likelih_t: optimize_f: Maximum number of iterations reached!')
+% $$$                     end
+                    
                 end
+                
+                % evaluate the approximate log marginal likelihood
                 if issparse(K)
                     W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'), n,n);
                     sqrtW = sqrt(W);
@@ -196,23 +219,46 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     % Note that here we use LDL cholesky
                     edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; % 
                 else
-                    W = diag(-feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'));
-                    a = iK*f; 
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                    
                     logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                                       
                     if W >= 0
-                        sqrtW = sqrt(W);
-                        B = eye(size(K)) + sqrtW*K*sqrtW;
+                        sW = sqrt(W);
+                        B = eye(size(K)) + sW*sW'.*K;
                         L = chol(B)';
                         edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                     else
-                        %edata = logZ + 0.5.*log(det(eye(size(K)) + K*W));
-                        L = 0;
-                        edata = logZ + sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W))))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                        [W,I] = sort(W, 1, 'descend');
+                        K = K(I,I);
+                                                
+                        L = chol(K);
+                        L1 = L;
+                        for i=1:size(K,1)
+                            ll = sum(L(:,i).^2);
+                            l = L'*L(:,i);
+                            upfact = W(i)./(1 + W(i).*ll);
+                            
+                            if 1 + W(i).*ll < 0
+                                warning('gpla_e: 1 + W(i).*ll < 0')
+                                W2 = -1./(ll+1e-3);
+                                upfact = W2./(1 + W2.*ll);
+                            end
+                            if upfact > 0
+                                L = cholupdate(L, l.*sqrt(upfact), '-');
+                            else
+                                L = cholupdate(L, l.*sqrt(-upfact));
+                            end
+                        end
+                        edata = logZ + sum(log(diag(L1))) - sum(log(diag(L)));  % sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W)))));
+
+% $$$                         edata = logZ + 0.5*log(det(eye(size(K)) + K*diag(W)));  % sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W)))));
+% $$$                         L = 0;
                     end
                 end
-                                
+                %[edata-edata2   minW]
+                
                 La2 = W;
-                b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
                 % ============================================================
                 % FIC
@@ -226,7 +272,6 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
                 K_fu = gp_cov(gp, x, u);         % f x u
                 K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-                K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
                 Luu = chol(K_uu)';
                 % Evaluate the Lambda (La)
                 % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -234,10 +279,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 B=Luu\(K_fu');       % u x f
                 Qv_ff=sum(B.^2)';
                 Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-                iLaKfu = zeros(size(K_fu));  % f x u,
-                for i=1:n
-                    iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
-                end
+                iLaKfu = K_fu./repmat(Lav,1,m);  % f x u
                 A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
                 A = chol(A);
                 L = iLaKfu/A;
@@ -265,27 +307,62 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
 
+                    a = f./Lav - L*L'*f;
+                    
+                    % find the mode by newton method
+                  case 'newton'
+                    tol = 1e-12;
+                    a = f;
                     W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-                    sqrtW = sqrt(W);
+                    dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    lp_old = -Inf;
+                    
+                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                        lp_old = lp_new; a_old = a; 
+                        sW = sqrt(W);
+                        
+                        Lah = 1 + W.*Lav;
+                        V = repmat(sW,1,m).*K_fu;
+                        A = K_uu + V'./repmat(Lah',m,1)*V;   A = (A+A')./2;
+                        Lb = (V./repmat(Lah,1,m))/chol(A);
+                        b = W.*f+dlp;
+                        b2 = sW.*(Lav.*b + B'*(B*b));
+                        a = b - sW.*(b2./Lah - Lb*(Lb'*b2));
+                        
+                        f = Lav.*a + B'*(B*a);
+                        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                        dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                        lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                        lp_new = -a'*f/2 + lp;
+                        i = 0;
+                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
+                            a = (a_old+a)/2;                                  % reduce step size by half
+                            f = Lav.*a + B'*(B*a);
+                            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                            lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                            lp_new = -a'*f/2 + lp;
+                            i = i+1;
+                        end 
+                    end                                                    % end Newton's iterations 
+                  case 'likelih_specific'
 
-                    b = L'*f;
-                    logZ = 0.5*(f'*(f./Lav) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
-
-                    % find the mode by Scaled conjugate gradient method
-                  case 'SCG'
-                    error('The SCG algorithm is not implemented for FIC!\n')
-                    % find the mode by Newton iteration
-                  case 'Newton'
-                    error('The Newton algorithm is not implemented for FIC!\n')
+                  otherwise 
+                    error('gpla_e: Unknown optimization method !')
                 end
+                
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                sqrtW = sqrt(W);
+                
+                logZ = 0.5*f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                
                 WKfu = repmat(sqrtW,1,m).*K_fu;
-                A = K_uu + WKfu'./repmat((1+Lav.*W)',m,1)*WKfu;   A = (A+A')./2;
+                A = K_uu + WKfu'./repmat((1+sqrtW.*Lav.*sqrtW)',m,1)*WKfu;   A = (A+A')./2;
                 A = chol(A);
-                edata = sum(log(1+Lav.*W)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
+                edata = sum(log(1+sqrtW.*Lav.*sqrtW)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                 edata = logZ + 0.5*edata;
 
                 La2 = Lav;
-                b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
                 % ============================================================
                 % PIC
@@ -297,7 +374,6 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
-                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
                 K_fu = gp_cov(gp, x, u);         % f x u
                 K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
                 K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
@@ -313,8 +389,8 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     Qbl_ff = B(:,ind{i})'*B(:,ind{i});
                     [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
                     Labl{i} = Cbl_ff - Qbl_ff;
-                    iLabl{i} = inv(Labl{i});
-                    iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
+                    LLabl{i} = chol(Labl{i});
+                    iLaKfu(ind{i},:) = LLabl{i}\(LLabl{i}'\K_fu(ind{i},:));
                 end
                 A = K_uu+K_fu'*iLaKfu;
                 A = (A+A')./2;     % Ensure symmetry
@@ -339,82 +415,84 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
                     [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                     f = f';
-
-                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-                    sqrtW = sqrt(W);
-
-                    ikf = iKf(f);
-                    logZ = 0.5*f'*ikf - feval(gp.likelih.fh_e, gp.likelih, y, f);
-
+                    
+                    a = iKf(f);
+                                        
                     % find the mode by Scaled conjugate gradient method
-                  case 'SCG'
-                    if ~isfield(gp.laplace_opt, 'scg_opt')
-                        opt(1) = 0;
-                        opt(2) = 1e-6;
-                        opt(3) = 3e-6;
-                        opt(9) = 0;
-                        opt(10) = 0;
-                        opt(11) = 0;
-                        opt(14) = 500;
-                    else
-                        opt = gp.laplace_opt.scg_opt;
-                    end
+                  case 'newton'
+                    tol = 1e-12;
+                    a = f;
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                    dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    lp_old = -Inf;
+                    
+                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                        lp_old = lp_new; a_old = a;
+                        sW = sqrt(W);
 
-                    fe = @(f, varargin) (0.5*f*iKf(f') - loglikelihood(f', gp.likelih));
-                    fg = @(f, varargin) (iKf(f') - derivative(f', gp.likelih))';
-                    [f, opt, flog]=scg(fe, f', opt, fg);
-                    f = f';
+                        V = repmat(sW,1,m).*K_fu;
+                        for i=1:length(ind)
+                            Lah{i} = eye(size(Labl{i})) + diag(sW(ind{i}))*Labl{i}*diag(sW(ind{i}));
+                            LLah{i} = chol(Lah{i});
+                            V2(ind{i},:) = LLah{i}\(LLah{i}'\V(ind{i},:));
+                        end                        
+                        
+                        A = K_uu + V'*V2;   A = (A+A')./2;
+                        Lb = V2/chol(A);
+                        b = W.*f+dlp;
+                        b2 = B'*(B*b);
+                        bt = zeros(size(b2));
+                        for i=1:length(ind)
+                            b2(ind{i}) = sW(ind{i}).*(Labl{i}*b(ind{i}) + b2(ind{i})); 
+                            bt(ind{i}) = LLah{i}\(LLah{i}'\b2(ind{i}));
+                        end
+                        a = b - sW.*(bt - Lb*(Lb'*b2));
 
-                    W = hessian(f, gp.likelih);
-                    sqrtW = sqrt(W);
-
-                    ikf = iKf(f);
-                    logZ = 0.5*f'*ikf - loglikelihood(f, gp.likelih);
-                    % find the mode by Quasi-Newton iteration
-                  case 'quasiNewton'
-                    if ~isfield(gp.laplace_opt, 'scg_opt')
-                        opt(1) = 0;
-                        opt(2) = 1e-5;
-                        opt(3) = 3e-5;
-                        opt(9) = 0;
-                        opt(10) = 0;
-                        opt(11) = 0;
-                        opt(14) = 500;
-                        opt(15) = 1e-4;
-                        opt(18)=0;
-                    else
-                        opt = gp.laplace_opt.scg_opt;
-                    end
-
-                    fe = @(f, varargin) (0.5*f*iKf(f') - loglikelihood(f', gp.likelih));
-                    fg = @(f, varargin) (iKf(f') - derivative(f', gp.likelih))';
-                    [f, opt, flog]=quasinew(fe, f', opt, fg);
-                    f = f';
-
-                    W = hessian(f, gp.likelih);
-                    sqrtW = sqrt(W);
-
-                    ikf = iKf(f);
-                    logZ = 0.5*f'*ikf - loglikelihood(f, gp.likelih);
-
-                    % find the mode by Newton iteration
-                  case 'Newton'
-                    error('The Newton algorithm is not implemented for PIC!\n')
+                        f = B'*(B*a);
+                        for i=1:length(ind)
+                            f(ind{i}) = Labl{i}*a(ind{i}) + f(ind{i}) ;
+                        end
+                        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                        dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                        lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                        lp_new = -a'*f/2 + lp;
+                        i = 0;
+                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
+                            a = (a_old+a)/2;                                  % reduce step size by half                            
+                            f = B'*(B*a);
+                            for i=1:length(ind)
+                                f(ind{i}) = Labl{i}*a(ind{i}) + f(ind{i}) ;
+                            end
+                            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                            lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                            lp_new = -a'*f/2 + lp;
+                            i = i+1;
+                        end 
+                    end                                                    % end Newton's iterations 
+                    
                 end
+                
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                sqrtW = sqrt(W);
+               
+                logZ = 0.5*f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                
                 WKfu = repmat(sqrtW,1,m).*K_fu;
                 edata = 0;
                 for i=1:length(ind)
                     Lahat = eye(size(Labl{i})) + diag(sqrtW(ind{i}))*Labl{i}*diag(sqrtW(ind{i}));
-                    iLahatWKfu(ind{i},:) = Lahat\WKfu(ind{i},:);
-                    edata = edata + 2.*sum(log(diag(chol(Lahat)')));
+                    LLahat = chol(Lahat);
+                    iLahatWKfu(ind{i},:) = LLahat\(LLahat'\WKfu(ind{i},:));
+                    edata = edata + 2.*sum(log(diag(LLahat)));
                 end
                 A = K_uu + WKfu'*iLahatWKfu;   A = (A+A')./2;
                 A = chol(A);
                 edata =  edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                 edata = logZ + 0.5*edata;
 
-                La2 = Labl;
-                b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');                    
+                La2 = Labl;              
+                
                 % ============================================================
                 % CS+FIC
                 % ============================================================
@@ -458,14 +536,15 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 gp.cf = cf_orig;
                 
                 % Find fill reducing permutation and permute all the
-                % matrices
+                % matrices                
                 p = analyze(La);
                 r(p) = 1:n;
-                gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+                gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);                
                 f = f(p);
                 y = y(p);
                 La = La(p,p);
                 K_fu = K_fu(p,:);
+                B = B(:,p);
                 VD = ldlchol(La);
                 
                 iLaKfu = ldlsolve(VD,K_fu);
@@ -502,58 +581,54 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                     [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                     f = f';
                     
+                    a = ldlsolve(VD,f) - L*L'*f;
+                  case 'newton'
+                    tol = 1e-8;
+                    a = f;
                     W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-                    sqrtW = sqrt(W);
-
-                    b = L'*f;
-                    logZ = 0.5*(f'*(ldlsolve(VD,f)) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    lp_old = -Inf;
+                    I = sparse(1:n,1:n,1,n,n);
                     
-                    % find the mode by Scaled conjugate gradient method
-                  case 'SCG'
-                    if ~isfield(gp.laplace_opt, 'scg_opt')
-                        opt(1) = 0;
-                        opt(2) = 1e-6;
-                        opt(3) = 3e-6;
-                        opt(9) = 0;
-                        opt(10) = 0;
-                        opt(11) = 0;
-                        opt(14) = 500;
-                    else
-                        opt = gp.laplace_opt.scg_opt;
-                    end
+                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                        lp_old = lp_new; a_old = a; 
+                        sW = sqrt(W);
+                        sqrtW = sparse(1:n,1:n,sW,n,n);
+                        
+                        Lah = I + sqrtW*La*sqrtW; 
+                        VDh = ldlchol(Lah);
+                        V = repmat(sW,1,m).*K_fu;
+                        Vt = ldlsolve(VDh,V);
+                        A = K_uu + V'*Vt;   A = (A+A')./2;
+                        Lb = Vt/chol(A);
+                        b = W.*f+dlp;
+                        b2 = sW.*(La*b + B'*(B*b));
+                        a = b - sW.*(ldlsolve(VDh,b2) - Lb*(Lb'*b2) );
 
-                    fe = @(f, varargin) (0.5*f*(La\f' - L*(L'*f')) - loglikelihood(f', gp.likelih));
-                    fg = @(f, varargin) (La\f' - L*(L'*f') - derivative(f', gp.likelih))';
-                    [f, opt, flog]=scg(fe, f', opt, fg);
-                    f = f';
-
-                    W = hessian(f, gp.likelih);
-                    sqrtW = sqrt(W);
-
-                    b = L'*f;
-                    logZ = 0.5*(f'*(La\f) - b'*b) - loglikelihood(f, gp.likelih);
-                    % find the mode by Quasi-Newton iteration
-                  case 'quasiNewton'
-                    if ~isfield(gp.laplace_opt, 'scg_opt')
-                        opt(1) = 0;
-                        opt(2) = 1e-5;
-                        opt(3) = 3e-5;
-                        opt(9) = 0;
-                        opt(10) = 0;
-                        opt(11) = 0;
-                        opt(14) = 500;
-                        opt(15) = 1e-4;
-                        opt(18)=0;
-                    else
-                        opt = gp.laplace_opt.scg_opt;
-                    end
-
-                    error('The quasi Newton algorithm is not implemented for CS+FIC!\n')
-
-                    % find the mode by Newton iteration
-                  case 'Newton'
-                    error('The Newton algorithm is not implemented for CS+FIC!\n')
+                        f = La*a + B'*(B*a);
+                        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                        dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                        lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                        lp_new = -a'*f/2 + lp;
+                        i = 0;
+                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
+                            a = (a_old+a)/2;                                  % reduce step size by half
+                            f = La*a + B'*(B*a);
+                            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                            lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
+                            lp_new = -a'*f/2 + lp;
+                            i = i+1;
+                        end
+                    end                                                    % end Newton's iterations 
                 end
+                
+                
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                sqrtW = sqrt(W);
+                
+                logZ = 0.5*f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    
                 WKfu = repmat(sqrtW,1,m).*K_fu;
                 sqrtW = sparse(1:n,1:n,sqrtW,n,n);
                 Lahat = sparse(1:n,1:n,1,n,n) + sqrtW*La*sqrtW;
@@ -562,13 +637,12 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 A = K_uu + WKfu'*ldlsolve(LDh,WKfu);   A = (A+A')./2;
                 A = chol(A);
                 edata = sum(log(diag(LDh))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
-                %edata = 2.*sum(log(diag(chol(Lahat)'))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                 edata = logZ + 0.5*edata;
+                
                 La2 = La;
-                b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
                 
                 % Reorder all the returned and stored values
-                b = b(r);
+                a = a(r);
                 L = L(r,:);
                 La2 = La2(r,r);
                 y = y(r);
@@ -619,11 +693,6 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
 
                     b = L'*f;
                     logZ = 0.5*(f'*(f./Sv) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
-
-                    % find the mode by Scaled conjugate gradient method
-                  case 'SCG'
-                    error('The SCG algorithm is not implemented for FIC!\n')
-                    % find the mode by Newton iteration
                   case 'Newton'
                     error('The Newton algorithm is not implemented for FIC!\n')
                 end
@@ -634,7 +703,6 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 edata = logZ + 0.5*edata;
 
                 La2 = Sv;
-                b = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
 
               otherwise
                 error('Unknown type of Gaussian process!')
@@ -663,13 +731,8 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
                 eprior = eprior - feval(likelih.fh_priore, likelih);
             end
 
-            % The last things to do
-            if isfield(gp.laplace_opt, 'display') && gp.laplace_opt.display == 1
-                fprintf('   Number of Newton iterations in Laplace: %d \n', iter-1)
-            end
-
             e = edata + eprior;
-
+            
             w0 = w;
             e0 = e;
             edata0 = edata;
@@ -679,7 +742,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
             W0 = W;
             n0 = size(x,1);
             La20 = La2;
-            b0 = b;
+            a0 = a;
         end
         
         %
@@ -699,7 +762,7 @@ function [e, edata, eprior, f, L, La2, b, W] = gpla_e(w, gp, x, y, param, vararg
               case {'PIC' 'PIC_BLOCK'}
                 iLaf = zeros(size(f));
                 for i=1:length(ind)
-                    iLaf(ind{i},:) = iLabl{i}*f(ind{i},:);
+                    iLaf(ind{i},:) = LLabl{i}\(LLabl{i}'\f(ind{i},:));
                 end
                 ikf = iLaf - L*(L'*f);
               case 'CS+FIC'

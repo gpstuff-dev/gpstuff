@@ -251,26 +251,29 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 0.5, 'magnSigma2', 2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 3, 'magnSigma2', 1);
 
 % ... Then set the prior for the parameters of covariance functions...
-gpcf1.p.lengthScale = gamma_p({3 7});  
-gpcf1.p.magnSigma2 = sinvchi2_p({0.5^2 0.5});
+gpcf1.p.lengthScale = logunif_p;  
+gpcf1.p.magnSigma2 = logunif_p;
 
 % Create the likelihood structure
-likelih = likelih_t('init', 4, 0.2);
-likelih.p.nu = loglogunif_p;
+likelih = likelih_t('init', 4, 0.5);
+likelih.p.nu = logunif_p;
 likelih.p.sigma = logunif_p;
 % Set freeze_nu = 0 so that nu is also optimized
 likelih = likelih_t('set', likelih, 'freeze_nu', 0)
 
 % ... Finally create the GP data structure
 param = 'hyper+likelih'
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.01);
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.001); % 
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
 
-w = randn(size(gp_pak(gp,param)));
-%w = gp_pak(gp,param);
+gp.laplace_opt.optim_method = 'likelih_specific';
+%gp.laplace_opt.optim_method = 'fminunc_large';
+
+%w = randn(size(gp_pak(gp,param)));
+w = gp_pak(gp,param);
 gradcheck(w, @gpla_e, @gpla_g, gp, x, y, param)
 exp(w) 
 
@@ -282,6 +285,26 @@ w0 = gp_pak(gp, param);
 mydeal = @(varargin)varargin{1:nargout};
 w = fminunc(@(ww) mydeal(gpla_e(ww, gp, x, y, param), gpla_g(ww, gp, x, y, param)), w0, opt);
 gp = gp_unpak(gp,w,param);
+
+
+
+% $$$ w=gp_pak(gp, param);  % pack the hyperparameters into one vector
+% $$$ fe=str2fun('gpla_e');     % create a function handle to negative log posterior
+% $$$ fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
+% $$$ 
+% $$$ fe=str2fun('gpla_e');
+% $$$ fg=str2fun('gpla_g');
+% $$$ n=length(y);
+% $$$ opt = scg2_opt;
+% $$$ opt.tolfun = 1e-4;
+% $$$ opt.tolx = 1e-4;
+% $$$ opt.display = 1;
+% $$$ 
+% $$$ % do scaled conjugate gradient optimization 
+% $$$ w=gp_pak(gp, param);
+% $$$ [w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, param);
+% $$$ gp =gp_unpak(gp,w, param);
+
 
 % Predictions to test points
 [Ef, Varf] = la_pred(gp, x, y, xx', param);
@@ -458,7 +481,7 @@ S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 
 
 % ========================================
-% Comparing theconditional posterior distributions of the latent 
+% Comparing the conditional posterior distributions of the latent 
 % variables from MCMC and Laplace approach
 %
 % Here, we compare the Laplace approximation of p(f|theta,y)

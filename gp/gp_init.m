@@ -37,7 +37,7 @@ function gp = gp_init(do, varargin)
 %         cf             = struct of covariance functions
 %         noise          = struct of noise functions
 %	  jitterSigmas   = jitter term for covariance function
-%                          (1e-4)
+%                          (initialized to 0)
 %         p.r            = Prior Structure for residual parameters
 %                          (defined only in case likelih == 'regr')
 %         likelih        = a string or structure defining the likelihood
@@ -126,7 +126,7 @@ function gp = gp_init(do, varargin)
         end
 
         % Initialize parameters
-        gp.jitterSigmas=1e-4;
+        gp.jitterSigmas=0;
         gp.p=[];
         gp.p.jitterSigmas=[];
         
@@ -188,8 +188,8 @@ function gp = gp_init(do, varargin)
                         gp.site_nu = site_nu';
                       case 'Laplace'
                         gp.laplace_opt.maxiter = 20;
-                        gp.laplace_opt.tol = 1e-6;
-                        gp.laplace_opt.optim_method = 'fminunc_large';
+                        gp.laplace_opt.tol = 1e-12;
+                        gp.laplace_opt.optim_method = 'newton';
                         gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                         w = gp_pak(gp, varargin{i+1}{4});
                         [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
@@ -257,7 +257,7 @@ function gp = gp_init(do, varargin)
                   case 'Laplace'
                     gp.laplace_opt.maxiter = 20;
                     gp.laplace_opt.tol = 1e-6;
-                    gp.laplace_opt.optim_method = 'fminunc_large';
+                    gp.laplace_opt.optim_method = 'newton';
                     gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                     w = gp_pak(gp, varargin{i+1}{4});
                     [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
