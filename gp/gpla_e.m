@@ -49,7 +49,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
         La20 = [];
         a0 = 0;
 
-        laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
+% $$$         laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
@@ -59,7 +59,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
     function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
         
-        if  1==0 %abs(w-w0) < 1e-6 % 1e-8
+        if  abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -239,10 +239,24 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                             l = L'*L(:,i);
                             upfact = W(i)./(1 + W(i).*ll);
                             
-                            if 1 + W(i).*ll < 0
+                            if 1 + W(i).*ll <= 0 | upfact > 1./ll
                                 warning('gpla_e: 1 + W(i).*ll < 0')
-                                W2 = -1./(ll+1e-3);
-                                upfact = W2./(1 + W2.*ll);
+                                
+                                ind = 1:i-1;
+                                mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');
+                                fh_e = @(f) t_pdf(f, nu, y(I(i)), sigma).*norm_pdf(f, mu, ll);
+                                EE = quadgk(fh_e, -40, 40);
+                                
+                                
+                                fm = @(f) f.*t_pdf(f, nu, y(I(i)), sigma).*norm_pdf(f, mu, ll)./EE;
+                                mm  = quadgk(fm, -40, 40);
+                                
+                                fV = @(f) (f - mm).^2.*t_pdf(f, nu, y(i), sigma).*norm_pdf(f, mu, ll)./EE;
+                                Varp = quadgk(fV, -40, 40);
+                                
+                                upfact = -(Varp - ll)./ll^2;
+% $$$                                 W2 = -1./(ll+1e-3);
+% $$$                                 upfact = W2./(1 + W2.*ll);
                             end
                             if upfact > 0
                                 L = cholupdate(L, l.*sqrt(upfact), '-');

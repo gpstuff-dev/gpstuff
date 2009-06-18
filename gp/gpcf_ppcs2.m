@@ -141,6 +141,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
             end    
         end
     end
+
     
     function w = gpcf_ppcs2_pak(gpcf, w)
     %GPCF_PPCS2_PAK	 Combine GP covariance function hyper-parameters into one vector.

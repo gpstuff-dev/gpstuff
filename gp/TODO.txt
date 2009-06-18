@@ -1,11 +1,13 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2009-05-13 15:29:22 EEST
+%   Last modified: 2009-06-16 14:19:29 EEST
 
 Modifications:
 - jitterSigmas is initialized to zero (used to be 1e-4)
 - gpla_e uses Newton method as a default optimization for latent
   values (used to be fminunc large scale)
 
+- Luokittelu: logit - korjaa {0,1}->{-1,1} helppiin
+              demoon sama
 
 sinvchi2_*
 ---------

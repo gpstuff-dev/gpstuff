@@ -90,20 +90,52 @@ for dim = 1 : nParam
     delta_neg(dim) = iter;
 end
 
+for j = 1 : nParam
+    delta{j} = -delta_neg(j):1:delta_pos(j);
+    temp(j) = numel(delta{j});
+end
+comb = prod(temp);
+
 steps = max(delta_pos+delta_neg+1);
-p_th = zeros(steps^nParam,1);
-Ef_grid = zeros(steps^nParam, numel(yy));
-Varf_grid = zeros(steps^nParam, numel(yy));
-th = zeros(steps^nParam,nParam);
+p_th = zeros(comb,1);
+Ef_grid = zeros(comb, numel(yy));
+Varf_grid = zeros(comb, numel(yy));
+th = zeros(comb,nParam);
+pot_dirs = zeros(comb, nParam);
+pot = zeros(comb, nParam);
 
 % =========================================================
 % Check potential hyperparameter combinations (to be explained)
 % =========================================================
+idx = ones(1,nParam);
+stepss = delta_pos+delta_neg+1;
+ind = 1;
+while any(idx~=stepss)
+    for j = 1 : nParam
+        pot_dirs(ind,j)=delta{j}(idx(j)); 
+    end
+    
+    ind=ind+1;
+    idx(end)=idx(end)+1;
+    while any(idx>stepss)
+        t = find(idx>stepss);
+        idx(t)=1;
+        idx(t-1)=idx(t-1)+1;
+    end
+end
 
+for j = 1 : nParam
+    pot_dirs(ind,j)=delta{j}(idx(j)); 
+end
+
+    
+    
+    
+    
 % Possible steps from the mode
-pot_dirs = (unique(nchoosek(repmat(1:steps,1,nParam), nParam),'rows')-floor(steps/2)-1);
+% pot_dirs = (unique(nchoosek(repmat(1:steps,1,nParam), nParam),'rows')-floor(steps/2)-1);
 % Corresponding possible hyperparameters
-pot = (unique(nchoosek(repmat(1:steps,1,nParam),nParam),'rows')-floor(steps/2)-1)*z+repmat(w,size(pot_dirs,1),1);
+pot = pot_dirs*z+repmat(w,size(pot_dirs,1),1);
 
 candidates = w;
 idx = 1;

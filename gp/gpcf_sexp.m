@@ -128,6 +128,7 @@ function gpcf = gpcf_sexp(do, varargin)
         end
     end
 
+    
     function w = gpcf_sexp_pak(gpcf, w)
     %GPCF_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
@@ -650,7 +651,7 @@ function gpcf = gpcf_sexp(do, varargin)
             
             if isnan(C)
                 % If there wasn't C-implementation do here
-                [n, m] =size(x)
+                [n, m] =size(x);
                 
                 s = 1./(gpcf.lengthScale);
                 s2 = s.^2;

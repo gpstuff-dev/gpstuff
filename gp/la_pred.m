@@ -62,6 +62,10 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
                 R = diag(W) - V'*V;
                 R = R(r,r);                
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
+                
+% $$$                 K = gp_trcov(gp,x);
+% $$$                 R = K + diag(1./W(r));
+% $$$                 Varf = kstarstar - sum(K_nf.*(R\K_nf')',2);
             end
             for i1=1:ntest
                 switch gp.likelih.type

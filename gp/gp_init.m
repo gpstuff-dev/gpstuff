@@ -193,7 +193,7 @@ function gp = gp_init(do, varargin)
                         gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                         w = gp_pak(gp, varargin{i+1}{4});
                         [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
-                        gp.f = f;
+% $$$                         gp.f = f;
                       otherwise
                         error('Unknown type of latent_method!')
                     end
@@ -261,7 +261,7 @@ function gp = gp_init(do, varargin)
                     gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                     w = gp_pak(gp, varargin{i+1}{4});
                     [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
-                    gp.f = f;
+% $$$                     gp.f = f;
                   otherwise
                     error('Unknown type of latent_method!')
                 end
