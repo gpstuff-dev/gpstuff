@@ -68,6 +68,7 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_t_siteDeriv;
         likelih.fh_mcmc = @likelih_t_mcmc;
+        likelih.fh_upfact = @likelih_t_upfact;
         likelih.fh_recappend = @likelih_t_recappend;
 
         if length(varargin) > 3

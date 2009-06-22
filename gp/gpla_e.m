@@ -247,7 +247,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                                 
                                 ind = 1:i-1;
                                 mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');
-                                upfact = feval(gp.likelih.fh, gp, y(I(i)), mu, ll);
+                                upfact = feval(gp.likelih.fh_upfact, gp, y(I(i)), mu, ll);
                                 
 % $$$                                 W2 = -1./(ll+1e-3);
 % $$$                                 upfact = W2./(1 + W2.*ll);
