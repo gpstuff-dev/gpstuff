@@ -67,19 +67,17 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
             else
 
-% $$$                 C = chol(inv(K) + diag(W))'\eye(n);
-% $$$                 R = inv(diag(1./W) + K);
                 % permute the variables
-                [W,I] = sort(W, 1, 'descend');
-                r(I) = 1:n;
+% $$$                 [W,I] = sort(W, 1, 'descend');
+% $$$                 r(I) = 1:n;
                 C = L;
                 V = L*diag(W);
                 R = diag(W) - V'*V;
 % $$$                 R = diag(W) - diag(W)*L'*L*diag(W);
                 
-                R = R(r,r);
+% $$$                 R = R(r,r);
                 C2 = sum(C.^2,1)';
-                C2 = C2(r);
+% $$$                 C2 = C2(r);
                                 
                 s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
 % $$$                 C = diag(inv(inv(K) + diag(W)));
@@ -201,8 +199,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
         Luu = chol(K_uu);
-        iKuuKuf = Luu\(Luu'\K_fu');
         B=Luu'\(K_fu');       % u x f
+        iKuuKuf = Luu\B;
         
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         sqrtW = sqrt(W);

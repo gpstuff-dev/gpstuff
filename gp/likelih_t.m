@@ -771,6 +771,22 @@ function likelih = likelih_t(do, varargin)
         end
     end
     
+    function upfact = likelih_t_upfact(gp, y, mu, ll)
+        nu = gp.likelih.nu;
+        sigma = gp.likelih.sigma;
+
+        fh_e = @(f) t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll);
+        EE = quadgk(fh_e, -40, 40);
+        
+        
+        fm = @(f) f.*t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll)./EE;
+        mm  = quadgk(fm, -40, 40);
+                                
+        fV = @(f) (f - mm).^2.*t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll)./EE;
+        Varp = quadgk(fV, -40, 40);
+        
+        upfact = -(Varp - ll)./ll^2;
+    end
 
     function reclikelih = likelih_t_recappend(reclikelih, ri, likelih)
     % RECAPPEND - Record append

@@ -229,32 +229,26 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         L = chol(B)';
                         edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                     else
-                        [W,I] = sort(W, 1, 'descend');
-                        K = K(I,I);
-                                                
+% $$$                         [W,I] = sort(W, 1, 'descend');
+% $$$                         K = K(I,I);
+                        [W2,I] = sort(W, 1, 'descend');
+                        
                         L = chol(K);
                         L1 = L;
-                        for i=1:size(K,1)
+                        for jj=1:size(K,1)
+                            i = I(jj);
                             ll = sum(L(:,i).^2);
                             l = L'*L(:,i);
                             upfact = W(i)./(1 + W(i).*ll);
                             
+                            % Check that Cholesky factorization will remain positive definite
                             if 1 + W(i).*ll <= 0 | upfact > 1./ll
                                 warning('gpla_e: 1 + W(i).*ll < 0')
                                 
                                 ind = 1:i-1;
                                 mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');
-                                fh_e = @(f) t_pdf(f, nu, y(I(i)), sigma).*norm_pdf(f, mu, ll);
-                                EE = quadgk(fh_e, -40, 40);
+                                upfact = feval(gp.likelih.fh, gp, y(I(i)), mu, ll);
                                 
-                                
-                                fm = @(f) f.*t_pdf(f, nu, y(I(i)), sigma).*norm_pdf(f, mu, ll)./EE;
-                                mm  = quadgk(fm, -40, 40);
-                                
-                                fV = @(f) (f - mm).^2.*t_pdf(f, nu, y(i), sigma).*norm_pdf(f, mu, ll)./EE;
-                                Varp = quadgk(fV, -40, 40);
-                                
-                                upfact = -(Varp - ll)./ll^2;
 % $$$                                 W2 = -1./(ll+1e-3);
 % $$$                                 upfact = W2./(1 + W2.*ll);
                             end
@@ -369,11 +363,12 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 sqrtW = sqrt(W);
                 
                 logZ = 0.5*f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
-                
+
+                Lah = 1 + W.*Lav;
                 WKfu = repmat(sqrtW,1,m).*K_fu;
-                A = K_uu + WKfu'./repmat((1+sqrtW.*Lav.*sqrtW)',m,1)*WKfu;   A = (A+A')./2;
+                A = K_uu + WKfu'./repmat(Lah',m,1)*WKfu;   A = (A+A')./2;
                 A = chol(A);
-                edata = sum(log(1+sqrtW.*Lav.*sqrtW)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
+                edata = sum(log(Lah)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                 edata = logZ + 0.5*edata;
 
                 La2 = Lav;

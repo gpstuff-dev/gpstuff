@@ -56,11 +56,11 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
                 V = L\(sqrt(W)*K_nf');
                 Varf = kstarstar - sum(V'.*V',2);
             else
-                [W,I] = sort(W, 1, 'descend');
-                r(I) = 1:tn;
+% $$$                 [W,I] = sort(W, 1, 'descend');
+% $$$                 r(I) = 1:tn;
                 V = L*diag(W);
                 R = diag(W) - V'*V;
-                R = R(r,r);                
+% $$$                 R = R(r,r);
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
                 
 % $$$                 K = gp_trcov(gp,x);
