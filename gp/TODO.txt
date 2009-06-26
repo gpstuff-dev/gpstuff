@@ -1,5 +1,5 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2009-06-16 14:19:29 EEST
+%   Last modified: 2009-06-23 17:20:32 EEST
 
 Modifications:
 - jitterSigmas is initialized to zero (used to be 1e-4)
@@ -8,6 +8,9 @@ Modifications:
 
 - Luokittelu: logit - korjaa {0,1}->{-1,1} helppiin
               demoon sama
+
+- ep_pred.m
+  -> full malli katkaistulla kovarianssilla rikki
 
 sinvchi2_*
 ---------

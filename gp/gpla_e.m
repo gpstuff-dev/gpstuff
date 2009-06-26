@@ -59,7 +59,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
     function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
         
-        if  abs(w-w0) < 1e-8 % 1e-8
+        if  1==0 % abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -170,42 +170,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     end                                                    % end Newton's iterations
                                         
                   case 'likelih_specific'
-                    iter = 1;
-                    sigma = gp.likelih.sigma;
-                    nu = gp.likelih.nu;
-
-% $$$                     iV = diag( ones(1,n)./sigma.^2);
-% $$$                     f1 = (iK+iV)\iV*y;
-                    
-                    iV = ones(n,1)./sigma.^2;
-                    siV = sqrt(iV);
-                    B = eye(n) + siV*siV'.*K;
-                    L = chol(B)';
-                    b = iV.*y;
-                    a = b - siV.*(L'\(L\(siV.*(K*b))));
-                    f = K*a;
-                    while iter < 200
-                        fold = f;
-% $$$                         iV = diag((nu+1) ./ (nu.*sigma^2 + (y-f1).^2));
-% $$$                         f1 = (iK+iV)\iV*y;
-
-                        iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
-                        siV = sqrt(iV);
-                        B = eye(n) + siV*siV'.*K;
-                        L = chol(B)';
-                        b = iV.*y;
-                        a = b - siV.*(L'\(L\(siV.*(K*b))));
-                        f = K*a;
-                        
-                        if max(abs(f-fold)) < 1e-8
-                            break
-                        end
-                        iter = iter + 1;
-                    end
-% $$$                     if iter == 200
-% $$$                         warning('likelih_t: optimize_f: Maximum number of iterations reached!')
-% $$$                     end
-                    
+                    [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
                 end
                 
                 % evaluate the approximate log marginal likelihood
@@ -287,7 +252,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 B=Luu\(K_fu');       % u x f
                 Qv_ff=sum(B.^2)';
                 Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-                iLaKfu = K_fu./repmat(Lav,1,m);  % f x u
+                iLaKfu = repmat(Lav,1,m).\K_fu;  % f x u
                 A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
                 A = chol(A);
                 L = iLaKfu/A;
@@ -330,10 +295,10 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         lp_old = lp_new; a_old = a; 
                         sW = sqrt(W);
                         
-                        Lah = 1 + W.*Lav;
-                        V = repmat(sW,1,m).*K_fu;
-                        A = K_uu + V'./repmat(Lah',m,1)*V;   A = (A+A')./2;
-                        Lb = (V./repmat(Lah,1,m))/chol(A);
+                        Lah = 1 + sW.*Lav.*sW;
+                        sWKfu = repmat(sW,1,m).*K_fu;
+                        A = K_uu + sWKfu'*(repmat(Lah,1,m).\sWKfu);   A = (A+A')./2;
+                        Lb = (repmat(Lah,1,m).\sWKfu)/chol(A);
                         b = W.*f+dlp;
                         b2 = sW.*(Lav.*b + B'*(B*b));
                         a = b - sW.*(b2./Lah - Lb*(Lb'*b2));
@@ -354,23 +319,59 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         end 
                     end                                                    % end Newton's iterations 
                   case 'likelih_specific'
-
+                    [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K_uu, Lav, K_fu);
                   otherwise 
                     error('gpla_e: Unknown optimization method !')
                 end
-                
+                               
                 W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-                sqrtW = sqrt(W);
-                
                 logZ = 0.5*f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
-
-                Lah = 1 + W.*Lav;
-                WKfu = repmat(sqrtW,1,m).*K_fu;
-                A = K_uu + WKfu'./repmat(Lah',m,1)*WKfu;   A = (A+A')./2;
-                A = chol(A);
-                edata = sum(log(Lah)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
-                edata = logZ + 0.5*edata;
-
+                
+                if W >= 0
+                    sqrtW = sqrt(W);
+                    
+                    Lah = 1 + sqrtW.*Lav.*sqrtW;
+                    sWKfu = repmat(sqrtW,1,m).*K_fu;
+                    A = K_uu + sWKfu'*(repmat(Lah,1,m).\sWKfu);   A = (A+A')./2;
+                    A = chol(A);
+                    edata = sum(log(Lah)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
+                    edata = logZ + 0.5*edata;
+                else
+                    1
+                    K = diag(Lav) + B'*B;
+% $$$                         [W,I] = sort(W, 1, 'descend');
+% $$$                         K = K(I,I);
+                    [W2,I] = sort(W, 1, 'descend');
+                        
+                    L = chol(K);
+                    L1 = L;
+                    for jj=1:size(K,1)
+                        i = I(jj);
+                        ll = sum(L(:,i).^2);
+                        l = L'*L(:,i);
+                        upfact = W(i)./(1 + W(i).*ll);
+                        
+                        % Check that Cholesky factorization will remain positive definite
+                        if 1 + W(i).*ll <= 0 | upfact > 1./ll
+                            warning('gpla_e: 1 + W(i).*ll < 0')
+                            
+                            ind = 1:i-1;
+                            mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');
+                            upfact = feval(gp.likelih.fh_upfact, gp, y(I(i)), mu, ll);
+                            
+    % $$$                                 W2 = -1./(ll+1e-3);
+    % $$$                                 upfact = W2./(1 + W2.*ll);
+                        end
+                        if upfact > 0
+                            L = cholupdate(L, l.*sqrt(upfact), '-');
+                        else
+                            L = cholupdate(L, l.*sqrt(-upfact));
+                        end
+                    end
+                    edata = logZ + sum(log(diag(L1))) - sum(log(diag(L)));  % sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W)))));
+                end
+                    
+                    
                 La2 = Lav;
 
                 % ============================================================
@@ -545,7 +546,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 gp.cf = cf_orig;
                 
                 % Find fill reducing permutation and permute all the
-                % matrices                
+                % matrices
                 p = analyze(La);
                 r(p) = 1:n;
                 gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);                
@@ -559,8 +560,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 iLaKfu = ldlsolve(VD,K_fu);
                 %iLaKfu = La\K_fu;
 
-                A = K_uu+K_fu'*iLaKfu;
-                A = (A+A')./2;     % Ensure symmetry
+                A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
                 A = chol(A);
                 L = iLaKfu/A;
                 % Begin optimization
@@ -642,7 +642,6 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 sqrtW = sparse(1:n,1:n,sqrtW,n,n);
                 Lahat = sparse(1:n,1:n,1,n,n) + sqrtW*La*sqrtW;
                 LDh = ldlchol(Lahat);
-                %A = K_uu + WKfu'*(Lahat\WKfu);   A = (A+A')./2;
                 A = K_uu + WKfu'*ldlsolve(LDh,WKfu);   A = (A+A')./2;
                 A = chol(A);
                 edata = sum(log(diag(LDh))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));

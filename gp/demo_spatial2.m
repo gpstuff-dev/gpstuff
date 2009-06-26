@@ -162,14 +162,14 @@ dims = [1    60     1    35];
 
 % Create the covariance functions
 gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+gpcf1.p.lengthScale = unif_p; %t_p({1 4});
+gpcf1.p.magnSigma2 = unif_p; %t_p({0.3 4});
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu); %, 'jitterSigmas', 0.01
 
 % Set the approximate inference method to EP
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
@@ -351,7 +351,7 @@ gpcf2.p.magnSigma2 = t_p({0.3 4});
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'X_u', Xu); %, 'jitterSigmas', 0.01 
 
 % Set the approximate inference method to EP
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
@@ -362,6 +362,8 @@ opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-3);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
+
+gradcheck(gp_pak(gp, param), @gpla_e, @gpla_g, gp, xx, yy, param)
 
 % conduct the hyper-parameter optimization
 w0 = gp_pak(gp, param);
