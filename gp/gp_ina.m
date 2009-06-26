@@ -12,7 +12,7 @@ function [gp_array, P_TH, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, 
 %
 %       OPT.FMINUNC consists of the options for fminunc
 %       OPT.INT_METHOD is the method used for integration
-%                      'ina' for grid search
+%                      'grid_based' for grid search
 %                      'normal' for sampling from gaussian appr
 %                      'quasi_mc' for quasi monte carlo samples
 
@@ -50,7 +50,6 @@ end
 
 if ~isfield(opt, 'fminunc')
     opt.fminunc=optimset(opt.fminunc,'GradObj','on');
-    % opt=optimset(opt,'TolX', 1e-3);
     opt.fminunc=optimset(opt.fminunc,'LargeScale', 'off');
     opt.fminunc=optimset(opt.fminunc,'Display', 'iter');
 end
@@ -63,13 +62,17 @@ if ~isfield(opt,'threshold')
     opt.threshold = 2.5;
 end
 
+if ~isfield(opt,'step_size')
+    opt.stepsize = 1;
+end
+
 
 % ====================================
 % Find the mode of the hyperparameters
 % ====================================
 
 w0 = gp_pak(gp, param);
-gradcheck(w0, fh_e, fh_g, gp, xx, yy, param)
+% $$$ gradcheck(w0, fh_e, fh_g, gp, xx, yy, param)
 mydeal = @(varargin)varargin{1:nargout};
 
 % The mode and hessian at it 
@@ -81,7 +84,7 @@ nParam = size(H,1);
 
 
 switch opt.int_method
-  case 'ina'
+  case 'grid_based'
     
     % ===============================
     % New variable z for exploration
@@ -260,7 +263,11 @@ switch opt.int_method
     end
     
     % Number of samples
-    N = 20;
+    if ~isfield(opt, 'nsamples')
+        N = 20;
+    else
+        N = opt.nsamples;
+    end
     
     gp_array=cell(N,1);
     

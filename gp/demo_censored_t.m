@@ -54,6 +54,7 @@ gpcf1 = gpcf_sexp('init', nin, 'lengthScale',ones(1,nin),'magnSigma2',1);
 gpcf1.p.lengthScale = logunif_p;
 gpcf1.p.magnSigma2 = logunif_p;
 
+
 % gpcf1 = gpcf_neuralnetwork('init',nin,'biasSigma2',0.1,'weightSigma2',ones(1,nin));
 % gpcf1.p.weightSigma2 = logunif_p;
 % gpcf1.p.biasSigma2 = logunif_p;
