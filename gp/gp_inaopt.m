@@ -13,6 +13,18 @@ function opt = gp_inaopt(opt, method);
 %             Possibilities and their parameters are:
 %   
 %             'grid_based'  = a grid based integration
+%                  opt.int_method = 'grid_based';
+%                  opt.stepsize   = 1;
+%                  opt.threshold  = 2.5;
+%
+%              'normal' = an importance sampling with normal proposal distribution
+%                  opt.int_method = 'normal';
+%                  opt.nsamples   = 40;
+%             
+%              'quasi_mc' = an importance sampling with normal proposal distribution
+%                           with quasi Monte Carlo sampling
+%                  opt.int_method = 'quasi_mc';
+%                  opt.nsamples   = 40;
 %
 %             For reference on the method see ...
 
