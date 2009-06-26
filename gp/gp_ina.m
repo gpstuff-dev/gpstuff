@@ -8,7 +8,13 @@ function [gp_array, P_TH, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, 
 %       GPs GP_ARRAY and corresponding weights P_TH. Iff test
 %       covariates TX is included, GP_INA also returns corresponding
 %       mean EF and variance VARF (FX is PDF evaluated at X). TSTINDEX
-%       is for FIC. 
+%       is for FIC. (will be explained better ...)
+%
+%       OPT.FMINUNC consists of the options for fminunc
+%       OPT.INT_METHOD is the method used for integration
+%                      'ina' for grid search
+%                      'normal' for sampling from gaussian appr
+%                      'quasi_mc' for quasi monte carlo samples
 
 % Copyright (c) 2009 Ville Pietiläinen
 
@@ -16,10 +22,6 @@ function [gp_array, P_TH, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, 
 % Licence (version 2 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
-threshold = 2.5;
-
-% $$$     %    gpcf.frequency = randn(nin,100);
-% $$$     gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(nin,100) - 1);
 
 % ===========================
 % Which latent method is used
@@ -46,13 +48,21 @@ if nargin < 6
     param = 'hyper';
 end
 
+if ~isfield(opt, 'fminunc')
+    opt.fminunc=optimset(opt.fminunc,'GradObj','on');
+    % opt=optimset(opt,'TolX', 1e-3);
+    opt.fminunc=optimset(opt.fminunc,'LargeScale', 'off');
+    opt.fminunc=optimset(opt.fminunc,'Display', 'iter');
+end
 
-opt=optimset(opt,'GradObj','on');
-% opt=optimset(opt,'TolX', 1e-3);
-opt=optimset(opt,'LargeScale', 'off');
-opt=optimset(opt,'Display', 'iter');
+if ~isfield(opt,'int_method')
+    opt.int_method = 'quasi_mc';
+end
 
-opt.int_method = 'quasi_mc';
+if ~isfield(opt,'threshold')
+    opt.threshold = 2.5;
+end
+
 
 % ====================================
 % Find the mode of the hyperparameters
@@ -63,7 +73,7 @@ gradcheck(w0, fh_e, fh_g, gp, xx, yy, param)
 mydeal = @(varargin)varargin{1:nargout};
 
 % The mode and hessian at it 
-[w,fval,exitflag,output,grad,H] = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt);
+[w,fval,exitflag,output,grad,H] = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt.fminunc);
 gp = gp_unpak(gp,w,param);
 
 % Number of parameters
@@ -145,9 +155,10 @@ switch opt.int_method
                 % If the density is large enough, put the location in to the
                 % candidates list. The neighbours of that location
                 % will be studied lated
-                if (p_th(1)-p_th(end))<threshold
+                if (p_th(1)-p_th(end))<opt.threshold
                     candidates(end+1,:) = candidates(1,:)+pos;
                 end
+
                 % Put the recently studied point to the checked list
                 checked(end+1,:) = candidates(1,:)+pos;    
             end
@@ -173,7 +184,7 @@ switch opt.int_method
                     p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
                 end
                 
-                if (p_th(1)-p_th(end))<threshold
+                if (p_th(1)-p_th(end))<opt.threshold
                     candidates(end+1,:) = candidates(1,:)+neg;
                 end
                 checked(end+1,:) = candidates(1,:)+neg;
@@ -296,7 +307,9 @@ end
 
 if exist('tx')
     
+    % ====================================================================
     % Grid of 501 points around 10 stds to both directions around the mode
+    % ====================================================================
     x = zeros(size(Ef_grid,2),501);
     for j = 1 : size(Ef_grid,2);
         x(j,:) = Ef_grid(1,j)-10*sqrt(Varf_grid(1,j)) : 20*sqrt(Varf_grid(1,j))/500 : Ef_grid(1,j)+10*sqrt(Varf_grid(1,j));  
