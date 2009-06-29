@@ -91,6 +91,17 @@ switch opt.int_method
     % ===============================
 
     Sigma = inv(H);
+    
+    % Some jitter may be needed to get positive semi-definite covariance
+    if any(eig(Sigma)<0)
+        jitter = 0;
+        while any(eig(Sigma)<0)
+            jitter = jitter + eye(size(H,1))*0.0001;
+            Sigma = Sigma + jitter;
+        end
+        warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
+    end
+    
     [V,D] = eig(full(Sigma));
     z = (V*sqrt(D))';
 
@@ -208,10 +219,14 @@ switch opt.int_method
     Sigma = inv(H);
     
     % Some jitter may be needed to get positive semi-definite covariance
-    while any(eig(Sigma)<0)
-        Sigma = Sigma + eye(size(H,1))*0.0001;
+    if any(eig(Sigma)<0)
+        jitter = 0;
+        while any(eig(Sigma)<0)
+            jitter = jitter + eye(size(H,1))*0.0001;
+            Sigma = Sigma + jitter;
+        end
+        warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
     end
-
     % Number of samples 
     N = 20;
     
@@ -258,8 +273,13 @@ switch opt.int_method
     Sigma = inv(H);
 
     % Some jitter may be needed to get positive semi-definite covariance
-    while any(eig(Sigma)<0)
-        Sigma = Sigma + eye(size(H,1))*0.0001;
+    if any(eig(Sigma)<0)
+        jitter = 0;
+        while any(eig(Sigma)<0)
+            jitter = jitter + eye(size(H,1))*0.0001;
+            Sigma = Sigma + jitter;
+        end
+        warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
     end
     
     % Number of samples
