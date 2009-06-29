@@ -223,7 +223,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 for i1 = 1:ncf
                     gpcf = gp.cf{i1};
                     if isfield(gpcf, 'fh_gibbs')
-                        gpcf = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, y);
+                        [gpcf, z] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, z);
                         gp.cf{i1} = gpcf;
                     end
                 end
@@ -233,7 +233,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
                 for i1 = 1:nnf
                     gpcf = gp.noise{i1};
                     if isfield(gpcf, 'fh_gibbs')
-                        gpcf = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, y);
+                        [gpcf, z] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, z);
                         gp.noise{i1} = gpcf;
                     end
                 end

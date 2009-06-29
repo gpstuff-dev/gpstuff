@@ -118,3 +118,109 @@ plot(repmat(x(io,1)',2,1),[y(io)'-Hzero; y(io)'+Hzero],'g.-')
 hold off
 legend(h1,'True','Laplace','Data')
 
+
+
+
+% ======================
+% Full MCMC solution
+% ======================
+[n, nin] = size(x);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noiset('init', nin, n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
+
+% Un-freeze nu
+%gpcf2 = gpcf_noiset('set', gpcf2, 'freeze_nu', 0);
+gpcf2 = gpcf_noiset('set', gpcf2, 'censored', {[-0.4 0.9], y});
+
+
+% Set the prior for the parameters of covariance functions 
+gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
+gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas2', 1e-4) %
+w = gp_pak(gp, 'hyper')
+gp2 = gp_unpak(gp,w, 'hyper')
+
+opt=gp_mcopt;
+opt.repeat=10;
+opt.nsamples=10;
+opt.hmc_opt.steps=10;
+opt.hmc_opt.stepadj=0.1;
+opt.hmc_opt.nsamples=1;
+hmc2('state', sum(100*clock));
+
+opt.gibbs_opt = sls1mm_opt;
+opt.gibbs_opt.maxiter = 50;
+opt.gibbs_opt.mmlimits = [0 40];
+opt.gibbs_opt.method = 'minmax';
+
+% Sample 
+[r,g,rstate1]=gp_mc(opt, gp, x, y);
+
+opt.hmc_opt.stepadj=0.08;
+opt.nsamples=300;
+opt.hmc_opt.steps=10;
+opt.hmc_opt.persistence=1;
+opt.hmc_opt.decay=0.6;
+
+[r,g,rstate2]=gp_mc(opt, g, x, y, [], [], r);
+rr = r;
+
+% thin the record
+rr = thin(r,100,2);
+
+figure 
+hist(rr.noise{1}.nu,20)
+title('Mixture model, \nu')
+figure 
+hist(sqrt(rr.noise{1}.tau2).*rr.noise{1}.alpha,20)
+title('Mixture model, \sigma')
+figure 
+hist(rr.cf{1}.lengthScale(:,1),20)
+title('Mixture model, length-scale')
+figure 
+hist(rr.cf{1}.magnSigma2,20)
+title('Mixture model, magnSigma2')
+
+
+% $$$ >> mean(rr.noise{1}.nu)
+% $$$ ans =
+% $$$     1.5096
+% $$$ >> mean(sqrt(rr.noise{1}.tau2).*rr.noise{1}.alpha)
+% $$$ ans =
+% $$$     0.0683
+% $$$ >> mean(rr.cf{1}.lengthScale)
+% $$$ ans =
+% $$$     1.0197
+% $$$ >> mean(rr.cf{1}.magnSigma2)
+% $$$ ans =
+% $$$     1.2903
+
+% make predictions for test set
+ypred = repmat(y,1,size(rr.edata,1));
+ypred(gp.noise{1}.imis,:) = rr.noise{1}.cy';
+[Efs, Varfs] = gp_preds(rr,x,ypred,xx);
+
+Ef = mean(squeeze(Efs),2);
+std_f = sqrt(var(Efs,[],2));
+
+% Plot the network outputs as '.', and underlying mean with '--'
+figure
+h1=plot(xx(:,1),yy,'k',xx(:,1),Ef,'b');
+%h1=plot(xx(:,1),yy,'k',xx(:,1),Ef,'b',xx(:,1),Ef-2*std_f, 'b--',xx(:,1), Ef+2*std_f, 'b--');
+hold on
+h1=[h1(1:2); plot(x(:,1),y,'k.')];
+plot(repmat(x(io,1)',2,1),[y(io)'-Hmax; y(io)'+Hmax],'r.-')
+plot(repmat(x(io,1)',2,1),[y(io)'-Hzero; y(io)'+Hzero],'g.-')
+hold off
+legend(h1,'True','Laplace','Data')
+
+
+figure
+for i=1:12
+    subplot(6,2,i)
+    hist(rr.noise{1}.cy(:,i))
+    hold on
+    plot(yt(gp.noise{1}.imis(i)), 0, 'rx', 'MarkerSize', 20, 'lineWidth', 5)
+end
+

@@ -137,6 +137,23 @@ if strcmp(do, 'init')
                 gpcf.nu = varargin{i+1};
               case 'freeze_nu'
                 gpcf.freeze_nu = varargin{i+1};
+              case 'censored'
+                gpcf.censored = varargin{i+1}{1};
+                yy = varargin{i+1}{2};
+                if gpcf.censored(1) >= gpcf.censored(2)
+                    error('gpcf_noiset -> if censored model is used the limits have to be given in increasing order.')
+                end
+                
+                imis1 = [];
+                imis2 = [];
+                if gpcf.censored(1) > -inf
+                    imis1 = find(yy<=gpcf.censored(1));
+                end            
+                if gpcf.censored(1) < inf
+                    imis2 = find(yy>=gpcf.censored(2));
+                end                                
+                gpcf.cy = yy([imis1 ; imis2])';
+                gpcf.imis = [imis1 ; imis2];
               otherwise
                 error('Wrong parameter name!')
             end
@@ -175,6 +192,23 @@ if strcmp(do, 'set')
             gpcf.nu = varargin{i+1};
           case 'freeze_nu'
             gpcf.freeze_nu = varargin{i+1};
+          case 'censored'
+            gpcf.censored = varargin{i+1}{1};
+            yy = varargin{i+1}{2};
+            if gpcf.censored(1) >= gpcf.censored(2)
+                error('gpcf_noiset -> if censored model is used the limits have to be given in increasing order.')
+            end
+            
+            imis1 = [];
+            imis2 = [];
+            if gpcf.censored(1) > -inf
+                imis1 = find(yy<=gpcf.censored(1));
+            end            
+            if gpcf.censored(1) < inf
+                imis2 = find(yy>=gpcf.censored(2));
+            end            
+            gpcf.cy = yy([imis1 ; imis2])';
+            gpcf.imis = [imis1 ; imis2];
           otherwise
             error('Wrong parameter name!')
         end    
@@ -349,14 +383,14 @@ end
         
     end
     
-    function gpcf = gpcf_noiset_gibbs(gp, gpcf, opt, x, y)
+    function [gpcf, y] = gpcf_noiset_gibbs(gp, gpcf, opt, x, y)
     % GPCF_NOISET_GIBBS     Function for sampling the noiseSigmas2:s
     %
     %         Description
     %         
 
     % Copyright (c) 1998-2004 Aki Vehtari
-    % Copyright (c) 2007 Jarno Vanhatalo
+    % Copyright (c) 2007-2009 Jarno Vanhatalo
 
     % This software is distributed under the GNU General Public 
     % License (version 2 or later); please refer to the file 
@@ -370,7 +404,7 @@ end
           case {'FULL', 'FIC'}
             [meanY, varY, sampy] = gp_pred(gp, x, y, x);
           case {'PIC' 'PIC_BLOCK'}
-            [meanY, varY, sampy] = gp_pred(gp, x, y, x, gp.tr_index);
+            [meanY, varY, sampy] = gp_pred(gp, x, y, x, [], gp.tr_index);
         end
         % Calculate the residual
         r = y-sampy;
@@ -380,8 +414,6 @@ end
         alpha = gpcf.alpha;
         nu = gpcf.nu;
         rss2=alpha.^2.*U;
-
-        
         
         % Perform the gibbs sampling (Gelman et.al. (2004) page 304-305)
         % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al.
@@ -391,7 +423,6 @@ end
 % $$$         rss2=alpha2.*U;
 % $$$         %nu=sls1mm(@invgam_nu_e,nu,soptnu,[],t2,U);
 % $$$         nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
-        
         
         U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));
         
@@ -413,6 +444,20 @@ end
         gpcf.alpha = sqrt(alpha2);
         gpcf.nu = nu;
         gpcf.r = r;
+        if isfield(gpcf, 'censored')   
+            imis1 = [];
+            imis2 = [];
+            if gpcf.censored(1) > -inf
+                imis1 = find(y<=gpcf.censored(1));
+                y(imis1)=normrtrand(sampy(imis1),alpha2*U(imis1),gpcf.censored(1));
+            end
+            
+            if gpcf.censored(1) < inf
+                imis2 = find(y>=gpcf.censored(2));
+                y(imis2)=normltrand(sampy(imis2),alpha2*U(imis2),gpcf.censored(2));
+            end
+            gpcf.cy = y([imis1 ; imis2]);
+        end
     end
 
     function reccf = gpcf_noiset_recappend(reccf, ri, gpcf)
@@ -440,7 +485,7 @@ end
         reccf.fh_trcov  = @gpcf_noiset_trcov;
         reccf.fh_trvar  = @gpcf_noiset_trvar;
         reccf.fh_gibbs = @gpcf_noiset_gibbs;
-        reccf.fh_recappend = @gpcf_noiset_recappend;  
+        reccf.fh_recappend = @gpcf_noiset_recappend;
         return
     end
 
@@ -462,6 +507,10 @@ end
     elseif ri==1
         reccf.noiseSigmas2=[];
     end
+    if isfield(gpcf, 'censored')
+        reccf.cy(ri,:) = gpcf.cy';
+    end
+
 end
 end
 
