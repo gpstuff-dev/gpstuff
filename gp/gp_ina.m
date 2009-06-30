@@ -80,7 +80,7 @@ w = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, 
 gp = gp_unpak(gp,w,param);
 
 % Number of parameters
-nParam = size(H,1);
+nParam = length(w);
 
 
 switch opt.int_method
