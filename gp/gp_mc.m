@@ -421,22 +421,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
             rec.latentValues(ri,:)=gp.latentValues;
         end
 
-        % Set the site parameters to record structure
-        if isfield(gp, 'site_tau')
-            [E1, E2, E3, tau, nu] = feval(me, gp_pak(gp,'hyper'), gp, x, y, 'hyper', varargin{:});
-            switch gp.type
-              case {'PIC' 'PIC_BLOCK'}
-                [Ef, Varf] = ep_pred(gp, x, y, xtest, 'hyper', [], gp.tr_index);
-              otherwise
-                [Ef, Varf] = ep_pred(gp, x, y, xtest, 'hyper');
-            end
-            rec.site_tau(ri,:)=tau;
-            rec.site_nu(ri,:)=nu;
-            rec.Ef(ri,:) = Ef';
-            rec.Varf(ri,:) = Varf';
-            rec.Zep(ri,:) = E1;
-        end
-
         % Set the inducing inputs in the record structure
         switch gp.type
           case {'FIC', 'PIC', 'PIC_BLOCK', 'CS+FIC'}

@@ -1,4 +1,4 @@
-function [gp_array, P_TH, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, tstindex)
+function [gp_array, P_TH, th, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, tstindex)
 % GP_INA explores the hypeparameters around the mode and returns a
 % list of GPs with different hyperparameters and corresponding weights
 %
@@ -13,8 +13,8 @@ function [gp_array, P_TH, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, 
 %       OPT.FMINUNC consists of the options for fminunc
 %       OPT.INT_METHOD is the method used for integration
 %                      'grid_based' for grid search
-%                      'normal' for sampling from gaussian appr
-%                      'quasi_mc' for quasi monte carlo samples
+%                      'is_normal' for sampling from gaussian appr
+%                      'is_normal_qmc' for quasi monte carlo samples
 
 % Copyright (c) 2009 Ville Pietiläinen
 
@@ -76,7 +76,7 @@ w0 = gp_pak(gp, param);
 mydeal = @(varargin)varargin{1:nargout};
 
 % The mode and hessian at it 
-[w,fval,exitflag,output,grad,H] = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt.fminunc);
+w = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt.fminunc);
 gp = gp_unpak(gp,w,param);
 
 % Number of parameters
@@ -90,6 +90,7 @@ switch opt.int_method
     % New variable z for exploration
     % ===============================
 
+    H = hessian(w);    
     Sigma = inv(H);
     
     % Some jitter may be needed to get positive semi-definite covariance
@@ -103,7 +104,7 @@ switch opt.int_method
     end
     
     [V,D] = eig(full(Sigma));
-    z = (V*sqrt(D))';
+    z = (V*sqrt(D))'.*opt.stepsize;
 
     % =======================================
     % Exploration of possible hyperparameters
@@ -130,7 +131,7 @@ switch opt.int_method
     else 
         p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
     end
-            
+    
     % Put the mode to th-array and gp-model in the mode to gp_array
     th(1,:) = w;
     gp = gp_unpak(gp,w,param);
@@ -143,11 +144,11 @@ switch opt.int_method
         for i1 = 1 : nParam % Loop through the dimensions
             pos = zeros(1,nParam); pos(i1)=1; % One step to the positive direction
                                               % of dimension i1
-                                              
+            
             % Check if the neighbour in the direction of pos is already checked
             if ~any(sum(abs(repmat(candidates(1,:)+pos,size(checked,1),1)-checked),2)==0) 
                 w_p = w + candidates(1,:)*z + z(i1,:); % The parameters in the neighbour
-                %p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                                                       %p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
                 th(end+1,:) = w_p; 
                 
                 gp = gp_unpak(gp,w_p,param);
@@ -212,10 +213,10 @@ switch opt.int_method
     P_TH = exp(p_th)/sum(exp(p_th));
     
 
-  case 'normal'
+  case 'is_normal'
     
     % Covariance of the gaussian approximation
-    H = full(H);
+    H = full(hessian(w));
     Sigma = inv(H);
     
     % Some jitter may be needed to get positive semi-definite covariance
@@ -266,10 +267,11 @@ switch opt.int_method
     P_TH = iw;
     
 
-  case 'quasi_mc'
+  case 'is_normal_qmc'
 
+    
     % Covariance of the gaussian approximation
-    H = full(H);
+    H = full(hessian(w));
     Sigma = inv(H);
 
     % Some jitter may be needed to get positive semi-definite covariance
@@ -281,6 +283,7 @@ switch opt.int_method
         end
         warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
     end
+    
     
     % Number of samples
     if ~isfield(opt, 'nsamples')
@@ -325,14 +328,103 @@ switch opt.int_method
     % Return importance weights 
     P_TH = iw;
 
+  case {'mcmc_hmc' 'mcmc_sls'}
+    
+    if isfield(opt, 'hmc_opt')
+        if isfield(opt.hmc_opt, 'rstate')
+            if ~isempty(opt.hmc_opt.rstate)
+                hmc_rstate = opt.hmc_opt.rstate;
+            else
+                hmc2('state', sum(100*clock))
+                hmc_rstate=hmc2('state');
+            end
+        else
+            hmc2('state', sum(100*clock))
+            hmc_rstate=hmc2('state');
+        end
+    end    
+    
+    ri = 0;
+    % -------------- Start sampling ----------------------------
+    for j=1:opt.nsamples
+        
+        if isfield(opt, 'hmc_opt')                        
+            if opt.hmc_opt.persistence_reset
+                hmc_rstate.mom = [];
+            end
+        end
+        
+        hmcrej = 0;
+        for l=1:opt.repeat
+            
+            % ----------- Sample hyperparameters with HMC --------------------- 
+            if isfield(opt, 'hmc_opt')
+                ww = gp_pak(gp, param);
+                hmc2('state',hmc_rstate)              % Set the state
+                [ww, energies, diagnh] = hmc2(fh_e, ww, opt.hmc_opt, fh_g, gp, xx, yy, param);
+                hmc_rstate=hmc2('state');             % Save the current state
+                hmcrej=hmcrej+diagnh.rej/opt.repeat;
+                if isfield(diagnh, 'opt')
+                    opt.hmc_opt = diagnh.opt;
+                end
+                opt.hmc_opt.rstate = hmc_rstate;
+                ww=ww(end,:);
+                gp = gp_unpak(gp, ww, param);
 
+                etr = feval(fh_e,ww,gp,xx,yy,param);
+            end
+            
+% $$$             % ----------- Sample hyperparameters with SLS --------------------- 
+% $$$             if isfield(opt, 'sls_opt')
+% $$$                 ww = gp_pak(gp, 'hyper');
+% $$$                 [ww, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, xx, yy, 'hyper', varargin{:});
+% $$$                 if isfield(diagns, 'opt')
+% $$$                     opt.sls_opt = diagns.opt;
+% $$$                 end
+% $$$                 w=w(end,:);
+% $$$                 gp = gp_unpak(gp, w, 'hyper');
+% $$$             end
+            
+        end % ------------- for l=1:opt.repeat -------------------------  
+
+        th(j,:) = ww;
+        gp_array{j} = gp_unpak(gp, ww, param);
+        
+        if exist('tx')
+            if exist('tstindex')
+                p_th(j) = 1;
+                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,param,[],tstindex);
+            else
+                p_th(j) = 1;                        
+                [Ef_grid(j,:),Varf_grid(j,:)] = feval(fh_p,gp_array{j},xx,yy,tx,param);
+            end
+        else
+            p_th(j) = 1;
+        end
+        
+        % ----------- Set record -----------------------    
+        ri=ri+1;
+        
+        % Display some statistics  THIS COULD BE DONE NICER ALSO...
+        if opt.display
+            fprintf(' %4d  %.3f  ',ri, etr);
+            if isfield(opt, 'hmc_opt')                
+                fprintf(' %.1e  ',hmcrej);
+            end
+            if isfield(opt, 'sls_opt')
+                fprintf('sls  ');
+            end
+            fprintf('\n');
+        end
+    end
+    P_TH = p_th(:);
 end    
 
 % =================================================================
-% If targets are given as imputs, make predictions to those targets
+% If targets are given as inputs, make predictions to those targets
 % =================================================================
 
-if exist('tx')
+if exist('tx') && nargout > 2
     
     % ====================================================================
     % Grid of 501 points around 10 stds to both directions around the mode
@@ -361,6 +453,74 @@ if exist('tx')
     Varf = sum(fx.*(repmat(Ef,1,size(x,2))-x).^2,2)./sum(fx,2);
 
 end
+
+    function H = hessian(w0)
+    
+    m = length(w);
+    e0 = feval(fh_e,w0,gp,xx,yy,param);
+    delta = 1e-4;
+    H = -1*ones(m,m);
+
+    % Compute first using gradients
+    % If Hessian is singular try computing with 
+    % larger step-size
+    while any(eig(H)<0) && delta < 1e-1
+        for i = 1:m
+            for j = i:m
+                w1 = w0; w2 = w0;
+                w1(j) = w1(j) + delta;
+                w2(j) = w2(j) - delta;
+                
+                g1 = feval(fh_g,w1,gp,xx,yy,param);
+                g2 = feval(fh_g,w2,gp,xx,yy,param);
+                
+                H(i,j) = (g1(i)-g2(i))./(2.*delta);
+                H(j,i) = H(i,j);
+            end
+        end
+        delta = delta + 2e-4;
+    end
+        
+    % If the hessian is still singular or the delta is too large 
+    % try to compute with finite differences for energies.
+    if any(eig(H)<0) || delta > 1e-1
+        delta = 1e-4;
+        for i=1:m
+            w1 = w0; w4 = w0;
+            w1(i) = [w1(i)+2*delta];
+            w4(i) = [w4(i)-2*delta];
+            
+            e1 = feval(fh_e,w1,gp,xx,yy,param);
+            e4 = feval(fh_e,w4,gp,xx,yy,param);
+            
+            H(i,i) = (e1 - 2*e0 + e4)./(4.*delta.^2);
+            for j = i+1:m
+                w1 = w0; w2 = w0; w3 = w0; w4 = w0;
+                w1([i j]) = [w1(i)+delta w1(j)+delta];
+                w2([i j]) = [w2(i)-delta w2(j)+delta];
+                w3([i j]) = [w3(i)+delta w3(j)-delta];
+                w4([i j]) = [w4(i)-delta w4(j)-delta];
+                
+                e1 = feval(fh_e,w1,gp,xx,yy,param);
+                e2 = feval(fh_e,w2,gp,xx,yy,param);
+                e3 = feval(fh_e,w3,gp,xx,yy,param);
+                e4 = feval(fh_e,w4,gp,xx,yy,param);
+                
+                H(i,j) = (e1 - e2 - e3 + e4)./(4.*delta.^2);
+                H(j,i) = H(i,j);
+            end
+        end    
+    end
+    
+    % even this does not work so print error
+    if any(eig(H)<0)
+        error('gp_ina -> hessian: the Hessian matrix is singular. Check the optimization.')
+    end
+    
+    end
+
+end
+
 
 % $$$ if ~exist('idx'), idx=size(th,1)+1; end;
 % $$$     

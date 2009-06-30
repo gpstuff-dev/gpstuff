@@ -17,14 +17,26 @@ function opt = gp_inaopt(opt, method);
 %                  opt.stepsize   = 1;
 %                  opt.threshold  = 2.5;
 %
-%              'normal' = an importance sampling with normal proposal distribution
+%              'is_normal' = an importance sampling with normal proposal distribution
 %                  opt.int_method = 'normal';
 %                  opt.nsamples   = 40;
 %             
-%              'quasi_mc' = an importance sampling with normal proposal distribution
-%                           with quasi Monte Carlo sampling
+%              'is_normal_qmc' = an importance sampling with normal proposal distribution
+%                              with quasi Monte Carlo sampling
 %                  opt.int_method = 'quasi_mc';
 %                  opt.nsamples   = 40;
+%              'mcmc_hmc'      = Markov chain Monte Carlo sampling using Hybrid Monte Carlo
+%                  opt.int_method = 'mcmc_hmc';
+%                  opt.nsamples = 40;
+%                  opt.repeat = 1;
+%                  opt.display = 1;
+%
+%                  opt.hmc_opt.steps = 3;
+%                  opt.hmc_opt.stepadj = 0.01;
+%                  opt.hmc_opt.nsamples = 1;
+%                  opt.hmc_opt.persistence = 0;
+%                  opt.hmc_opt.persistence_reset = 0;
+%                  opt.hmc_opt.decay = 0.8;
 %
 %             For reference on the method see ...
 
@@ -35,27 +47,47 @@ function opt = gp_inaopt(opt, method);
 % License.txt, included with the software, for details.
 
 if nargin < 1
-  opt=[];
+    opt=[];
 end
 
 opt.fminunc=optimset('GradObj','on');
-opt.fminunc=optimset(opt,'LargeScale', 'on');
-opt.fminunc=optimset(opt,'Display', 'iter');
+opt.fminunc=optimset(opt.fminunc,'LargeScale', 'on');
+opt.fminunc=optimset(opt.fminunc,'Display', 'iter');
 
 if nargin < 2
-    opt.int_method = 'quasi_mc';
-    opt.nsamples = 40;
-else
-    switch method
-      case 'grid_based'
-        opt.int_method = 'grid_based';
-        opt.stepsize = 1;
-        opt.threshold = 2.5;
-      case 'normal'
-        opt.int_method = 'normal';
-        opt.nsamples = 40;
-      case 'quasi_mc'
-        opt.int_method = 'quasi_mc';
-        opt.nsamples = 40;        
-    end    
+    method = 'is_normal_qmc';
 end
+
+switch method
+  case 'grid_based'
+    opt.int_method = 'grid_based';
+    opt.stepsize = 1;
+    opt.threshold = 2.5;
+  case 'is_normal'
+    opt.int_method = 'is_normal';
+    opt.nsamples = 40;
+  case 'is_normal_qmc'
+    opt.int_method = 'is_normal_qmc';
+    opt.nsamples = 40;
+  case 'mcmc_hmc'
+    opt.int_method = 'mcmc_hmc';
+    opt.nsamples = 40;
+    opt.repeat = 1;
+    opt.display = 1;
+    
+    % Set the hmc sampling options
+    opt.hmc_opt.steps = 3;
+    opt.hmc_opt.stepadj = 0.01;
+    opt.hmc_opt.nsamples = 1;
+    opt.hmc_opt.persistence = 0;
+    opt.hmc_opt.persistence_reset = 0;
+    opt.hmc_opt.decay = 0.8;
+  case 'mcmc_sls'
+    opt.int_method = 'mcmc_sls';
+    opt.nsamples = 40;
+    opt.repeat = 1;
+    opt.display = 1;
+    
+    % Set the sls sampling options
+
+end    
