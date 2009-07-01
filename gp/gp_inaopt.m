@@ -25,6 +25,10 @@ function opt = gp_inaopt(opt, method);
 %                              with quasi Monte Carlo sampling
 %                  opt.int_method = 'quasi_mc';
 %                  opt.nsamples   = 40;
+%              'is_student-t'     = an importance sampling with Student-t proposal distribution
+%                  opt.int_method = 'is_student-t';
+%                  opt.nsamples   = 40;
+%                  opt.nu         = 4; the degrees of freedom
 %              'mcmc_hmc'      = Markov chain Monte Carlo sampling using Hybrid Monte Carlo
 %                  opt.int_method = 'mcmc_hmc';
 %                  opt.nsamples = 40;
@@ -69,6 +73,10 @@ switch method
   case 'is_normal_qmc'
     opt.int_method = 'is_normal_qmc';
     opt.nsamples = 40;
+  case 'is_student-t'
+    opt.int_method = 'is_student-t';
+    opt.nsamples = 40;
+    opt.nu = 4;    
   case 'mcmc_hmc'
     opt.int_method = 'mcmc_hmc';
     opt.nsamples = 40;

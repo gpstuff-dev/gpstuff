@@ -16,7 +16,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, par
 %                      'is_normal' for sampling from gaussian appr
 %                      'is_normal_qmc' for quasi monte carlo samples
 
-% Copyright (c) 2009 Ville Pietiläinen
+% Copyright (c) 2009 Ville Pietiläinen, Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % Licence (version 2 or later); please refer to the file 
@@ -213,7 +213,7 @@ switch opt.int_method
     P_TH = exp(p_th)/sum(exp(p_th));
     
 
-  case 'is_normal'
+  case {'is_normal' 'is_normal_qmc' 'is_student-t'}
     
     % Covariance of the gaussian approximation
     H = full(hessian(w));
@@ -228,17 +228,39 @@ switch opt.int_method
         end
         warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
     end
-    % Number of samples 
-    N = 20;
     
+    % Number of samples
+    if ~isfield(opt, 'nsamples')
+        N = 20;
+    else
+        N = opt.nsamples;
+    end
     
+    switch opt.int_method
+      case 'is_normal' 
+        % Normal samples
+        th = mvnrnd(w,Sigma,N);
+        p_th_appr = mvnpdf(th, w, Sigma);        
+      case 'is_normal_qmc' 
+        % Quasi MC samples
+        th  = repmat(w,N,1)+(chol(Sigma)'*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
+        p_th_appr = mvnpdf(th, w, Sigma);        
+      case 'is_student-t'
+        % Student-t Samples
+        if isfield(opt, 'nu')
+            nu = opt.nu;
+        else
+            nu = 4;
+        end
+        chi2 = repmat(chi2rnd(nu, [1 N]), nParam, 1);
+        th  = repmat(w,N,1) + ( chol(Sigma)' * randn(nParam, N).*sqrt(nu./chi2))';
+        p_th_appr = mvtpdf(th - repmat(w,N,1), Sigma, nu);
+    end
+        
     gp_array=cell(N,1);
-    th = mvnrnd(w,Sigma,N);
     
-    % Densities of the samples in the approximation of the target distribution
-    p_th_appr = mvnpdf(th, w, Sigma);
+    % (Scaled) Densities of the samples in the approximation of the target distribution
     p_th_appr = p_th_appr/sum(p_th_appr);
-
     
     % Densities of the samples in target distribution and predictions, if needed.
     for j = 1 : N
@@ -266,68 +288,6 @@ switch opt.int_method
     % Return the importance weights
     P_TH = iw;
     
-
-  case 'is_normal_qmc'
-
-    
-    % Covariance of the gaussian approximation
-    H = full(hessian(w));
-    Sigma = inv(H);
-
-    % Some jitter may be needed to get positive semi-definite covariance
-    if any(eig(Sigma)<0)
-        jitter = 0;
-        while any(eig(Sigma)<0)
-            jitter = jitter + eye(size(H,1))*0.0001;
-            Sigma = Sigma + jitter;
-        end
-        warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
-    end
-    
-    
-    % Number of samples
-    if ~isfield(opt, 'nsamples')
-        N = 20;
-    else
-        N = opt.nsamples;
-    end
-    
-    gp_array=cell(N,1);
-    
-    % Quasi MC samples
-    th  = repmat(w,N,1)+(chol(Sigma)*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
-
-    % Density of the samples in the approximation
-    p_th_appr = mvnpdf(th, w, Sigma);
-    p_th_appr = p_th_appr/sum(p_th_appr);
-    
-    % Densities of the samples in target distribution and corresponding predictions, if needed.
-    for j = 1 : N
-        gp_array{j}=gp_unpak(gp,th(j,:),param);
-        if exist('tx')
-            if exist('tstindex')
-                p_th(j) = -feval(fh_e,th(j,:),gp_array{j},xx,yy,param);
-                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,param,[],tstindex);
-            else
-                p_th(j) = -feval(fh_e,th(j,:),gp_array{j},xx,yy,param);
-                [Ef_grid(j,:),Varf_grid(j,:)] = feval(fh_p,gp_array{j},xx,yy,tx,param);
-            end
-        else
-            p_th(j) = -feval(fh_e,th(j,:),gp_array{j},xx,yy,param);
-        end
-    end
-
-    p_th = exp(p_th-min(p_th));
-    p_th = p_th/sum(p_th);
-
-    
-    % Importance weights for samples
-    iw = p_th(:)./p_th_appr(:);
-    iw = iw/sum(iw);
-    
-    % Return importance weights 
-    P_TH = iw;
-
   case {'mcmc_hmc' 'mcmc_sls'}
     
     if isfield(opt, 'hmc_opt')

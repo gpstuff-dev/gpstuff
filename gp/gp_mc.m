@@ -1,4 +1,4 @@
-function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
+function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
 % GP_MC   Monte Carlo sampling for Gaussian process models
 %
 %   Description
@@ -65,16 +65,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, xtest, ytest, rec, varargin)
         mg = @gp_g;
     end
 
-    % Set test data
-    if nargin < 6 | isempty(xtest)
-        xtest=[];ytest =[];
-        if isfield(gp, 'ep_opt')
-            xtest = x;       % Set the xtest for EP predictions.
-        end
-    end
-
     % Initialize record
-    if nargin < 7 | isempty(rec)
+    if nargin < 5 | isempty(rec)
         % No old record
         rec=recappend;
     else
