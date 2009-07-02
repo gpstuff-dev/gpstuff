@@ -124,9 +124,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
     % Print labels for sampling information
     if opt.display
         fprintf(' cycle  etr      ');
-        if ~isempty(ytest)
-            fprintf('etst     ');
-        end
         if isfield(opt,'hmc_opt')
             fprintf('hrej     ')              % rejection rate of latent value sampling
         end
@@ -271,9 +268,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         % Display some statistics  THIS COULD BE DONE NICER ALSO...
         if opt.display
             fprintf(' %4d  %.3f  ',ri, rec.etr(ri,1));
-            if ~isempty(ytest)
-                fprintf('%.3f  ',rec.etst(ri,1));
-            end
             if isfield(opt, 'hmc_opt')
                 fprintf(' %.1e  ',rec.hmcrejects(ri));
             end

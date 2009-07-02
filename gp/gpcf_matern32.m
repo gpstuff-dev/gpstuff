@@ -129,7 +129,6 @@ function gpcf = gpcf_matern32(do, varargin)
         end
     end
 
-    
     function w = gpcf_matern32_pak(gpcf, w)
     %GPCF_MATERN32_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %

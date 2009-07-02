@@ -222,7 +222,7 @@ function gpcf = gpcf_sexp(do, varargin)
             w = w(i1+1:end);
         end
     end
-
+    
     function eprior =gpcf_sexp_e(gpcf, x, t)
     %GPCF_SEXP_E     Evaluate the energy of prior of SEXP parameters
     %

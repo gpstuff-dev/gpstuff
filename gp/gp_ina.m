@@ -253,7 +253,8 @@ switch opt.int_method
             nu = 4;
         end
         chi2 = repmat(chi2rnd(nu, [1 N]), nParam, 1);
-        th  = repmat(w,N,1) + ( chol(Sigma)' * randn(nParam, N).*sqrt(nu./chi2))';
+        Scale = (nu-2)./nu.*Sigma;
+        th  = repmat(w,N,1) + ( chol(Scale)' * randn(nParam, N).*sqrt(nu./chi2) )';
         p_th_appr = mvtpdf(th - repmat(w,N,1), Sigma, nu);
     end
         
