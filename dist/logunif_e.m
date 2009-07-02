@@ -13,6 +13,6 @@ function e = logunif_e(x, a, a2)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-e = log(x);   % = - log(1./x)
-              % where the log comes from the definition of energy 
-              % as log( p(x) )
+e = sum(log(x));   % = - log(1./x)
+                   % where the log comes from the definition of energy 
+                   % as log( p(x) )
