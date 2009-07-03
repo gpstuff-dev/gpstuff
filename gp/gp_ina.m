@@ -1,4 +1,4 @@
-function [gp_array, P_TH, th, Ef, Varf, x, fx] = gp_ina(opt, gp, xx, yy, tx, param, tstindex)
+function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ina(opt, gp, xx, yy, tx, param, tstindex)
 % GP_INA explores the hypeparameters around the mode and returns a
 % list of GPs with different hyperparameters and corresponding weights
 %

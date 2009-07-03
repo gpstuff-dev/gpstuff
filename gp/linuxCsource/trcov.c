@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2008-07-23 15:56:50 EEST
+ * Last modified: 2009-07-03 09:22:31 EEST
  *
  */
 
@@ -24,7 +24,7 @@
 #include <math.h>
 #include "mex.h"
 #define max(a,b) (((a) > (b)) ? (a) : (b))
-void cumsum2 (mwIndex *p, mwIndex *c, int n);
+void cumsum2 (mwIndex *p, mwIndex *c, mwIndex n);
 
 void mexFunction(const int nlhs, mxArray *plhs[],
 		 const int nrhs, const mxArray *prhs[])
@@ -300,9 +300,9 @@ void mexFunction(const int nlhs, mxArray *plhs[],
   return;
 }     
 
-void cumsum2 (mwIndex *p, mwIndex *c, int n)
+void cumsum2 (mwIndex *p, mwIndex *c, mwIndex n)
 {
-  int i;
+  mwIndex i;
   mwIndex nz = 0;
   if(!p || !c) return;
   for (i=0;i<n;i++){

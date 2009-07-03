@@ -29,8 +29,16 @@ function gp_install(suiteSparse)
 
 
 % Compile the 'trcov' mex-function
-mex -O -output trcov linuxCsource/trcov.c 
-mex -O -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+d = '' ;
+if (~isempty (strfind (computer, '64')))
+    % 64-bit MATLAB
+    d = '-largeArrayDims' ;
+    mex -O -output -largeArrayDims trcov linuxCsource/trcov.c 
+    mex -O -output -largeArrayDims ldlrowmodify linuxCsource/ldlrowmodify.c 
+else
+    mex -O -output trcov linuxCsource/trcov.c 
+    mex -O -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+end
     
 % Compile the 'spinv', 'ldlrowupdate' and 'ldlrowmodify' mex-functions
 % This is awfully long since the functions need all the functionalities of SuiteSparse
@@ -44,12 +52,6 @@ try
 catch
     % if ispc fails, assume we are on a Windows PC if it's not unix
     pc = ~isunix ;
-end
-
-d = '' ;
-if (~isempty (strfind (computer, '64')))
-    % 64-bit MATLAB
-    d = '-largeArrayDims' ;
 end
 
 include = '-I../../CHOLMOD/MATLAB -I../../AMD/Include -I../../COLAMD/Include -I../../CCOLAMD/Include -I../../CAMD/Include -I../Include -I../../UFconfig' ;

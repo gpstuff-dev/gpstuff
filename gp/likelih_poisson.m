@@ -663,11 +663,9 @@ function likelih = likelih_poisson(do, varargin)
                 z = max(z,mincut);
                 gdata = exp(z).*E - y;
                 %gdata = ((I+U*J*U'-U*U')*(mu-y)))'; % (  (mu-y) )';
-        % $$$         gprior = w';                   % make the gradient a row vector
                 b=Linv*z;
-                gprior=Linv'*b;  %dsymvr takes advantage of the symmetry of Cinv
-        % $$$         gprior = (dsymvr(Cinv,z))';   % make the gradient a row vector
-                g = (L2'*(gdata + gprior))';        
+                gprior=Linv'*b;
+                g = (L2'*(gdata + gprior))';
               case 'FIC'
                 %        w(w<eps)=0;
                 z = Lp.*(w + U*(iJUU*w));

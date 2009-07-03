@@ -738,7 +738,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if ~isfield(gpcf,'metric')
             % record lengthScale
             if ~isempty(gpcf.lengthScale)
-                if ~isempty(gpp.lengthScale)
+                if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                     reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
                     if isfield(gpp.lengthScale,'p')
                         if isfield(gpp.lengthScale.p,'nu')
