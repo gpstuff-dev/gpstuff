@@ -63,9 +63,12 @@ if ~isfield(opt,'threshold')
 end
 
 if ~isfield(opt,'step_size')
-    opt.stepsize = 1;
+    opt.step_size = 1;
 end
 
+if ~isfield(opt,'rotation')
+    opt.rotation = true;
+end
 
 % ====================================
 % Find the mode of the hyperparameters
@@ -81,7 +84,6 @@ gp = gp_unpak(gp,w,param);
 
 % Number of parameters
 nParam = length(w);
-
 
 switch opt.int_method
   case 'grid_based'
@@ -102,9 +104,13 @@ switch opt.int_method
         end
         warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
     end
+
+    if ~opt.rotation
+        Sigma=diag(diag(Sigma));
+    end
     
     [V,D] = eig(full(Sigma));
-    z = (V*sqrt(D))'.*opt.stepsize;
+    z = (V*sqrt(D))'.*opt.step_size;
 
     % =======================================
     % Exploration of possible hyperparameters
