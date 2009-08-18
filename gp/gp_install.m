@@ -27,25 +27,10 @@ function gp_install(suiteSparse)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-
-% Compile the 'trcov' mex-function
-d = '' ;
-if (~isempty (strfind (computer, '64')))
-    % 64-bit MATLAB
-    d = '-largeArrayDims' ;
-    mex -O -output -largeArrayDims trcov linuxCsource/trcov.c 
-    mex -O -output -largeArrayDims ldlrowmodify linuxCsource/ldlrowmodify.c 
-else
-    mex -O -output trcov linuxCsource/trcov.c 
-    mex -O -output ldlrowmodify linuxCsource/ldlrowmodify.c 
-end
-    
-% Compile the 'spinv', 'ldlrowupdate' and 'ldlrowmodify' mex-functions
-% This is awfully long since the functions need all the functionalities of SuiteSparse
+v = getversion ;
 
 details = 0 ;	    % 1 if details of each command are to be printed
 
-v = getversion ;
 try
     % ispc does not appear in MATLAB 5.3
     pc = ispc ;
@@ -53,6 +38,26 @@ catch
     % if ispc fails, assume we are on a Windows PC if it's not unix
     pc = ~isunix ;
 end
+
+d = '' ;
+if (~isempty (strfind (computer, '64')))
+    % 64-bit MATLAB
+    d = '-largeArrayDims' ;
+    
+    % Compile the 'trcov' mex-function
+    mex -O -largeArrayDims -output trcov linuxCsource/trcov.c 
+    mex -O -largeArrayDims -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+    
+    if v >= 7.8 
+        d = [d ' -DLONGBLAS=long']; 
+    end
+else
+    mex -O -output trcov linuxCsource/trcov.c 
+    mex -O -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+end
+
+% Compile the 'spinv', 'ldlrowupdate' and 'ldlrowmodify' mex-functions
+% This is awfully long since the functions need all the functionalities of SuiteSparse
 
 include = '-I../../CHOLMOD/MATLAB -I../../AMD/Include -I../../COLAMD/Include -I../../CCOLAMD/Include -I../../CAMD/Include -I../Include -I../../UFconfig' ;
 
@@ -329,7 +334,8 @@ s = [s ' '];
 s = [s lapack];
 kk = do_cmd (s, kk, details) ;
 
-mex_src = 'linuxCsource/ldlrowupdate';
+%mex_src = 'linuxCsource/ldlrowupdate';
+mex_src = [suiteSparse 'CHOLMOD/MATLAB/ldlrowupdate'];
 s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
 s = [s obj];
 s = [s ' '];

@@ -504,7 +504,8 @@ ye = ye(ind,:);
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
+gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -801,7 +802,7 @@ w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, param), gpep_g(ww, gp, xx, yy, p
 gp = gp_unpak(gp,w,param);
 
 % make prediction to the data points
-[Ef, Varf] = ep_pred(gp, xx, yy, [xx; 0 0; 34 58], param, 1:n);
+[Ef, Varf] = ep_pred(gp, xx, yy, [xx; 0 0; 34 58], param, [], 1:n);
 
 % Define help parameters for plotting
 xxii=sub2ind([60 35],xx(:,2),xx(:,1));

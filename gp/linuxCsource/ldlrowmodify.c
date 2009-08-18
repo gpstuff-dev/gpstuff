@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mex.h"
+#include "matrix.h"
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
@@ -65,6 +66,8 @@ void mexFunction
   
   n = mxGetN (pargin [0]) ;
 
+
+
   if (!mxIsSparse (pargin [0]) || !mxIsSparse (pargin [1])
       || !mxIsSparse (pargin [2]) || n != mxGetM (pargin [0])
       || n != mxGetM (pargin [1]) || n != mxGetM (pargin [2])
@@ -81,7 +84,7 @@ void mexFunction
   /* ---------------------------------------------------------------------- */
   k = (mwIndex) *mxGetPr(pargin[3]);
   k = k-1;
-  
+
   /* ---------------------------------------------------------------------- */
   /* Get L: the sparse LDL factorization */
   /* ---------------------------------------------------------------------- */
@@ -89,7 +92,6 @@ void mexFunction
   Li2 = mxGetIr(pargin[0]);
   Lx2 = mxGetPr(pargin[0]);
 
-  
   /* ---------------------------------------------------------------------- */
   /* get c and c2: sparse matrices of incoming/outgoing columns */
   /* ---------------------------------------------------------------------- */
@@ -131,7 +133,8 @@ void mexFunction
     }
   }
   Lp[n] = Lp2[n];
-      
+
+
   /* ---------------------------------------------------------------------- */
   /* Solve the l_12 vector and the D22 element */
   /* ---------------------------------------------------------------------- */
@@ -191,7 +194,7 @@ void mexFunction
     if (k>0) {
       /* Evaluate w = L31*D11*deltal12 */
       /* Note that deltal12 is actually D11*deltal12 (see above) */
-      w = mxCalloc(n, sizeof(double));   /* full vector of length n */
+      w = mxCalloc((mwSize)n, sizeof(double));   /* full vector of length n */
       for (j = 0 ; j < k ; j++){
 	for (p = Lp[j] ; p < Lp[j+1] ; p++) {
 	  if (Li[p] > k)  w[Li[p]] += Lx2[p] * deltal12[j];
@@ -224,8 +227,8 @@ void mexFunction
     /* Update L_33 part */
     alpha = 1;
     alpha2 = 1;
-    wu = mxCalloc(n, sizeof(double));   /* full vector of length n */
-    wd = mxCalloc(n, sizeof(double));   /* full vector of length n */
+    wu = mxCalloc((mwSize)n, sizeof(double));   /* full vector of length n */
+    wd = mxCalloc((mwSize)n, sizeof(double));   /* full vector of length n */
     for (p = Lp[k]+1 ; p < Lp[k+1] ; p++){
       wu[Li[p]] = Lx2[p] * sqrt(d);
       wd[Li[p]] = Lx[p] * sqrt(db);
@@ -261,7 +264,8 @@ void mexFunction
     mxFree(krowind);
     mxFree(deltal12);
   }
-  mxFree(wu);
-  mxFree(wd); 
-
+  if (k < n-1){
+    mxFree(wu);
+    mxFree(wd);
+  }
 }

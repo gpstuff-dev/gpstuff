@@ -144,7 +144,7 @@ S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 
 % load the data
 S = which('demo_spatial2');
-L = strrep(S,'demo_spatial3.m','demos/spatial.mat');
+L = strrep(S,'demo_spatial2.m','demos/spatial.mat');
 load(L)
 
 % Now we have loaded the following parameters
@@ -156,7 +156,7 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 2, 'corners', 0);
+[trindex, Xu] = set_PIC(xx, dims, 5, 'corners+1xside', 1);
 
 [n,nin] = size(xx);
 

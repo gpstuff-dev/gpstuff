@@ -700,7 +700,7 @@ function likelih = likelih_poisson(do, varargin)
                 z = max(z,mincut);
                 gdata = exp(z).*E - y;
                 gprior = zeros(size(gdata));
-                gprior = Labl\z;
+                gprior = ldlsolve(Labl,z);
                 gprior = gprior - iLaKfuic*(iLaKfuic'*z);
                 g = gdata' + gprior';
                 g = g*Lp;
@@ -742,7 +742,7 @@ function likelih = likelih_poisson(do, varargin)
                 z = max(z,mincut);
                 B = z'*iLaKfuic;  % 1 x u
                 eprior = - 0.5*sum(B.^2);
-                eprior = eprior + 0.5*z'/Labl*z;
+                eprior = eprior + 0.5*z'*ldlsolve(Labl,z);
             end
             mu = exp(z).*E;
             edata = sum(mu-t.*log(mu));
@@ -795,7 +795,7 @@ function likelih = likelih_poisson(do, varargin)
                 U(abs(U)<eps)=0;
                 %        J = diag(sqrt(diag(S2) + 0.01^2));
                 J = diag(sqrt(1-diag(S2)));   % this could be done without forming the diag matrix 
-                                              % J = diag(sqrt(2./(1+diag(S))));
+                                              % J = diag(sqrt(2/(1+diag(S))));
                 iJUU = J\U'-U';
                 iJUU(abs(iJUU)<eps)=0;
               case {'PIC' 'PIC_BLOCK'}
@@ -874,9 +874,12 @@ function likelih = likelih_poisson(do, varargin)
                 % Evaluate the CS part of the prior covariance
                 gp.cf = cf2;        
                 K_cs = gp_trcov(gp,x);
-                Labl = sparse(1:n,1:n,Lav,n,n) + K_cs;
+                La = sparse(1:n,1:n,Lav,n,n) + K_cs;
+                
+                Labl = ldlchol(La);
+                
                 gp.cf = cf_orig;
-                iLaKfu = Labl\K_fu;
+                iLaKfu = ldlsolve(Labl,K_fu);
 
                 % scale Lav to ones(f,1) so that Qff+La -> sqrt(La)*Qff*sqrt(La)+I
                 A = K_uu+K_fu'*iLaKfu;
@@ -885,11 +888,12 @@ function likelih = likelih_poisson(do, varargin)
                 % L = iLaKfu*inv(chol(A));
                 iLaKfuic = iLaKfu/chol(A);
                 
-                Lp = chol(inv(sparse(1:n,1:n,E,n,n) + inv(Labl)));
+% $$$                 Lp = chol(inv(sparse(1:n,1:n,E,n,n) + inv(La)));
+                Lp = sparse(1:n,1:n,sqrt(1./(E + 1./diag(La))), n, n);
 
                 b=zeros(size(B'));
                 
-                b = Lp*iLaKfuic;                
+                b = Lp*iLaKfuic;
                 
                 [V,S2]= eig(b'*b);
                 S = sqrt(S2);

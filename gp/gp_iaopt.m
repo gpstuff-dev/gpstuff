@@ -97,5 +97,6 @@ switch method
     opt.display = 1;
     
     % Set the sls sampling options
-
+  case 'CCD'
+    opt.improved = 'off';
 end    

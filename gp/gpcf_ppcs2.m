@@ -826,7 +826,6 @@ function gpcf = gpcf_ppcs2(do, varargin)
             % If a scaled euclidean metric try first mex-implementation 
             % and if there is not such... 
             C = trcov(gpcf,x);
-            
             % ... evaluate the covariance here.
             if isnan(C)
                 [n, m] =size(x);

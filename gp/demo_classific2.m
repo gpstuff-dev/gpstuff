@@ -331,8 +331,8 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 1);
-gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [0.3 0.3], 'magnSigma2', 1);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 1);
+%gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [0.3 0.3], 'magnSigma2', 1);
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});
@@ -347,6 +347,8 @@ gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.0001);
 % Set the approximate inference method
 tt = cputime;
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
+
+gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'hyper')
 
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');

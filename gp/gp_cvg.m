@@ -60,7 +60,7 @@ switch gp.type
             
             gpcf = gp.cf{i};
             gpcf.GPtype = gp.type;
-            [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, t, g, gdata, gprior);
+            [DKff,gprior] = feval(gpcf.fh_ghyper, gpcf, x, t);
             i1 = i1+1;
             i2 = 1;
             
@@ -93,7 +93,7 @@ switch gp.type
                 
                 noise = gp.noise{i};
                 noise.type = gp.type;
-                [gprior, DCff] = feval(noise.fh_ghyper, noise, x, t, g, gdata, gprior);
+                [DCff,gprior] = feval(noise.fh_ghyper, noise, x, t);
                 
                 Z = invC*eye(n,n).*DCff;
                 Zb = Z*b;            

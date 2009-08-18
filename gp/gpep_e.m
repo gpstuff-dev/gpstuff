@@ -26,7 +26,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 %       GPEP_G, EP_PRED, GP_E
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimäki
+% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihimï¿½ki
 % Copyright (c) 2008      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
@@ -100,7 +100,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             logZep_tmp=0; logZep=Inf;
 
             M0 = [];
-            M_0 = [];
             
             % =================================================
             % First Evaluate the data contribution to the error
@@ -114,6 +113,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % The EP algorithm for full support covariance function
                 if ~issparse(C)
                     Sigm = C;
+                    Ls = chol(Sigm);
                     Stildesqroot=zeros(n);
                     
                     % The EP -algorithm
@@ -121,72 +121,153 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         
                         logZep_tmp=logZep;
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                        for i1=1:n
+                        
+                        % If any of the site precisions is negative sort 
+                        % the update order so that the problematic updates are left for last
+                        if any(tautilde < 0)
+                            [tt,I] = sort(tautilde, 1, 'descend'); % 
+                            %I = randperm(n);
+                        else 
+                            I = 1:n;
+                        end
+                        for ii=1:n
+                            i1 = I(ii);
+                            % Algorithm utilizing Cholesky updates
                             % approximate cavity parameters
-                            tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                            vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                            S11 = sum(Ls(:,i1).^2);
+                            S1 = Ls'*Ls(:,i1);
+                            tau_i=S11^-1-tautilde(i1);
+                            vee_i=S11^-1*myy(i1)-nutilde(i1);
                             
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
+                            
+                            if sigm2_i < 0
+                                [ii i1]
+                            end
                             
                             % marginal moments
                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
                             
                             % update site parameters
-                            deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
-                            tautilde(i1)=tautilde(i1)+deltatautilde;
-                            nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+                            deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
+                            tautilde(i1) = tautilde(i1)+deltatautilde;
+                            nutilde(i1) = sigm2hati^-1*muhati-vee_i;
                             
-                            apu = deltatautilde^-1+Sigm(i1,i1);
-                            apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
-                            Sigm = Sigm - apu;
-                            %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                            upfact = 1./(deltatautilde^-1+S11);
+                            if upfact > 0
+                                Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
+                            else
+                                Ls = cholupdate(Ls, S1.*sqrt(-upfact));
+                            end
+                            Sigm = Ls'*Ls;
                             myy=Sigm*nutilde;
                             
                             muvec_i(i1,1)=myy_i;
                             sigm2vec_i(i1,1)=sigm2_i;
+
+                            % Algorithm as in Rasmussen and Williams 2006
+% $$$                             % approximate cavity parameters
+% $$$                             tau_i=Sigm(i1,i1)^-1-tautilde(i1);
+% $$$                             vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+% $$$                             
+% $$$                             myy_i=vee_i/tau_i;
+% $$$                             sigm2_i=tau_i^-1;
+% $$$                             
+% $$$                             % marginal moments
+% $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+% $$$                             
+% $$$                             % update site parameters
+% $$$                             deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
+% $$$                             tautilde(i1)=tautilde(i1)+deltatautilde;
+% $$$                             nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+% $$$                             
+% $$$                             apu = deltatautilde^-1+Sigm(i1,i1);
+% $$$                             apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
+% $$$                             Sigm = Sigm - apu;
+% $$$                             %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+% $$$                             myy=Sigm*nutilde;
+% $$$                             
+% $$$                             muvec_i(i1,1)=myy_i;
+% $$$                             sigm2vec_i(i1,1)=sigm2_i;
                         end
                         % Recompute the approximate posterior parameters
-                        Stilde=tautilde;
-                        Stildesqroot=diag(sqrt(tautilde));
-                        
-                        % NOTICE! upper triangle matrix! cf. to                    
-                        % line 13 in the algorithm 3.5, p. 58.
-                        
-                        B=eye(n)+Stildesqroot*C*Stildesqroot;
-                        L=chol(B,'lower');
-                        
-                        V=(L\Stildesqroot)*C;
-                        Sigm=C-V'*V; myy=Sigm*nutilde;
-                        
-                        % Compute the marginal likelihood
-                        % Direct formula (3.65):
-                        % Sigmtilde=diag(1./tautilde);
-                        % mutilde=inv(Stilde)*nutilde;
-                        %
-                        % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
-                        %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
-                        %         0.5*sum(log(sigm2vec_i+1./tautilde))+
-                        %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
-                        
-                        % 4. term & 1. term
-                        term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                        
-                        % 5. term (1/2 element) & 2. term
-                        T=1./sigm2vec_i;
-                        Cnutilde = C*nutilde;
-                        L2 = V*nutilde;
-                        term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                        term52 = term52.*0.5;
-                        
-                        % 5. term (2/2 element)
-                        term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                        
-                        % 3. term
-                        term3 = sum(log(M0));
-                        
-                        logZep = -(term41+term52+term5+term3);
-                        iter=iter+1;
+                        if tautilde > 0
+                            Stilde=tautilde;
+                            Stildesqroot=diag(sqrt(tautilde));
+                            
+                            % NOTICE! upper triangle matrix! cf. to                    
+                            % line 13 in the algorithm 3.5, p. 58.
+                            
+                            B=eye(n)+Stildesqroot*C*Stildesqroot;
+                            L=chol(B,'lower');
+                            
+                            V=(L\Stildesqroot)*C;
+                            Sigm=C-V'*V; myy=Sigm*nutilde;
+                            Ls = chol(Sigm);
+                            
+                            % Compute the marginal likelihood
+                            % Direct formula (3.65):
+                            % Sigmtilde=diag(1./tautilde);
+                            % mutilde=inv(Stilde)*nutilde;
+                            %
+                            % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
+                            %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
+                            %         0.5*sum(log(sigm2vec_i+1./tautilde))+
+                            %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+                            
+                            % 4. term & 1. term
+                            term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+                            
+                            % 5. term (1/2 element) & 2. term
+                            T=1./sigm2vec_i;
+                            Cnutilde = C*nutilde;
+                            L2 = V*nutilde;
+                            term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                            term52 = term52.*0.5;
+                            
+                            % 5. term (2/2 element)
+                            term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                            
+                            % 3. term
+                            term3 = sum(log(M0));
+                            
+                            logZep = -(term41+term52+term5+term3);
+                            iter=iter+1;
+                        else
+                            Stilde=tautilde;
+                            
+                            Sigm=Ls'*Ls; myy=Sigm*nutilde;
+                            
+                            % Compute the marginal likelihood
+                            % Direct formula (3.65):
+                            % Sigmtilde=diag(1./tautilde);
+                            % mutilde=inv(Stilde)*nutilde;
+                            %
+                            % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
+                            %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
+                            %         0.5*sum(log(sigm2vec_i+1./tautilde))+
+                            %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+                            
+                            % 4. term & 1. term
+                            term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
+                            
+                            % 5. term (1/2 element) & 2. term
+                            T=1./sigm2vec_i;
+                            term52 = nutilde'*(Ls'*(Ls*nutilde)) - (nutilde'./(T+Stilde)')*nutilde;
+                            term52 = term52.*0.5;
+                            
+                            % 5. term (2/2 element)
+                            term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                            
+                            % 3. term
+                            term3 = sum(log(M0));
+                            
+                            logZep = -(term41+term52+term5+term3);
+                            iter=iter+1;
+                            B=Ls;
+                            L=Ls;
+                        end
                     end
                     
                 % EP algorithm for compact support covariance function (that is C is sparse)

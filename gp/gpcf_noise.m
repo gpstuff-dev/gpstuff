@@ -380,7 +380,7 @@ gpp = gpcf.p;
 
 % record noiseSigma
 if ~isempty(gpcf.noiseSigmas2)
-    if ~isempty(gpp.noiseSigmas2)
+    if isfield(gpp.noiseSigmas2, 'p') && ~isempty(gpp.noiseSigmas2.p)
         reccf.noiseHyper(ri,:)=gpp.noiseSigmas2.a.s;
     elseif ri==1
         reccf.noiseHyper=[];

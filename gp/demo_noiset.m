@@ -433,21 +433,23 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 0.5, 'magnSigma2', 2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 1);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.5^2 0.5});
 
 % Create the likelihood structure
-likelih = likelih_t('init', 4, 0.2);
+likelih = likelih_t('init', 4, 1);
 likelih.p.nu = loglogunif_p;
 likelih.p.sigma = logunif_p;
 
 % ... Finally create the GP data structure
 param = 'hyper+likelih'
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.01);
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.001);
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
+
+gp.laplace_opt.optim_method = 'likelih_specific';
 
 % gradient checking
 w = randn(size(gp_pak(gp,param)));
@@ -613,3 +615,123 @@ for j=0:4
         title(sprintf('# %d', i))
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% ========================================
+% EP approximation Student-t likelihood
+%  Here we analyse the model with fixed degrees of freedom
+%   n = 4 
+%   Notice that the default value for freeze_nu = 1, 
+%   which means that degrees of freedom is not sampled/optimized
+% ========================================
+
+
+% load the data. First 100 variables are for training
+% and last 100 for test
+S = which('demo_noiset');
+L = strrep(S,'demo_noiset.m','demos/odata');
+x = load(L);
+xt = x(101:end,1);
+yt = x(101:end,2);
+y = x(1:100,2);
+x = x(1:100,1);
+[n, nin] = size(x); 
+
+% Test data
+xx = [-2.7:0.01:2.7];
+yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.5);
+
+% ... Then set the prior for the parameters of covariance functions...
+gpcf1.p.lengthScale = gamma_p({3 7});  
+gpcf1.p.magnSigma2 = sinvchi2_p({0.5^2 0.5});
+
+% Create the likelihood structure
+likelih = likelih_t('init', 4, 2);
+likelih.p.nu = loglogunif_p;
+likelih.p.sigma = logunif_p;
+
+% ... Finally create the GP data structure
+param = 'hyper+likelih'
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.0001);
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y, param});
+
+
+% $$$ w = [0.4724    0.2428   -2.3118];  % 1.6038    1.2748    0.0991
+% $$$ gp = gp_unpak(gp,w, param);
+
+% gradient checking
+w = randn(size(gp_pak(gp,param)));
+gradcheck(w, @gpep_e, @gpep_g, gp, x, y, param)
+exp(w) 
+
+opt=optimset('GradObj','on');
+opt=optimset(opt,'TolX', 1e-3);
+opt=optimset(opt,'LargeScale', 'off');
+opt=optimset(opt,'Display', 'iter');
+w0 = gp_pak(gp, param);
+mydeal = @(varargin)varargin{1:nargout};
+w = fminunc(@(ww) mydeal(gpep_e(ww, gp, x, y, param), gpep_g(ww, gp, x, y, param)), w0, opt);
+gp = gp_unpak(gp,w,param);
+
+% Predictions to test points
+[Ef, Varf] = ep_pred(gp, x, y, xx', param);
+std_f = sqrt(Varf);
+
+% Plot the prediction and data
+figure
+plot(xx,yy,'k')
+hold on
+plot(xx,Ef)
+plot(xx, Ef-2*std_f, 'r--')
+plot(x,y,'.')
+legend('real f', 'Ef', 'Ef+std(f)','y')
+plot(xx, Ef+2*std_f, 'r--')
+title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, gp.likelih.sigma));
+S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)

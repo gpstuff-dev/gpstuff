@@ -55,7 +55,7 @@ if ~isfield(opt, 'fminunc')
 end
 
 if ~isfield(opt,'int_method')
-    opt.int_method = 'quasi_mc';
+    opt.int_method = 'is_normal_qmc';
 end
 
 if ~isfield(opt,'threshold')
@@ -69,6 +69,15 @@ end
 if ~isfield(opt,'rotation')
     opt.rotation = true;
 end
+
+if strcmp(opt.int_method, 'CCD')
+    opt.step_size = 1;
+end
+
+if ~isfield(opt,'improved')
+    opt.improved = 'off';
+end
+
 
 % ====================================
 % Find the mode of the hyperparameters
@@ -86,7 +95,7 @@ gp = gp_unpak(gp,w,param);
 nParam = length(w);
 
 switch opt.int_method
-  case 'grid_based'
+  case {'grid_based', 'CCD'}
     
     % ===============================
     % New variable z for exploration
@@ -124,101 +133,199 @@ switch opt.int_method
     p_th=[]; % List of the weights of different hyperparameters (un-normalized)
     th=[]; % List of hyperparameters
     
-    
-    % Make the predictions in the mode if needed and estimate the density of the mode
-    if exist('tx')
-        if exist('tstindex')
-            p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
-            [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-        else   
-            p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
-            [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+    switch opt.int_method
+        case 'grid_based'
+          % Make the predictions in the mode if needed and estimate the density of the mode
+          if exist('tx')
+              if exist('tstindex')
+                  p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+              else   
+                  p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+                  [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+              end
+          else 
+              p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+          end
+          
+          % Put the mode to th-array and gp-model in the mode to gp_array
+          th(1,:) = w;
+          gp = gp_unpak(gp,w,param);
+          gp_array{end+1} = gp;
+
+          
+          while ~isempty(candidates) % Repeat until there are no hyperparameters
+                                     % with enough density that are not
+                                     % checked yet
+              for i1 = 1 : nParam % Loop through the dimensions
+                  pos = zeros(1,nParam); pos(i1)=1; % One step to the positive direction
+                                                    % of dimension i1
+                  
+                  % Check if the neighbour in the direction of pos is already checked
+                  if ~any(sum(abs(repmat(candidates(1,:)+pos,size(checked,1),1)-checked),2)==0) 
+                      w_p = w + candidates(1,:)*z + z(i1,:); % The parameters in the neighbour
+                                                             %p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                      th(end+1,:) = w_p; 
+                      
+                      gp = gp_unpak(gp,w_p,param);
+                      gp_array{end+1} = gp;
+                      
+                      % Make the predictions (if needed) and save the density of the hyperparameters
+                      if exist('tx')
+                          if exist('tstindex')
+                              p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                              [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                          else   
+                              p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                              [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                          end
+                      else
+                          p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                      end
+                      
+                      % If the density is enough, put the location in to the
+                      % candidates list. The neighbours of that location
+                      % will be studied lated
+                      if (p_th(1)-p_th(end))<opt.threshold
+                          candidates(end+1,:) = candidates(1,:)+pos;
+                      end
+
+                      % Put the recently studied point to the checked list
+                      checked(end+1,:) = candidates(1,:)+pos;    
+                  end
+                  
+                  neg = zeros(1,nParam); neg(i1)=-1;
+                  if ~any(sum(abs(repmat(candidates(1,:)+neg,size(checked,1),1)-checked),2)==0)
+                      w_n = w + candidates(1,:)*z - z(i1,:);
+                      %p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                      th(end+1,:) = w_n;
+                      
+                      gp = gp_unpak(gp,w_n,param);
+                      gp_array{end+1} = gp;
+                      
+                      if exist('tx')
+                          if exist('tstindex')
+                              p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                              [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                          else   
+                              p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                              [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                          end
+                      else
+                          p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                      end
+                      
+                      if (p_th(1)-p_th(end))<opt.threshold
+                          candidates(end+1,:) = candidates(1,:)+neg;
+                      end
+                      checked(end+1,:) = candidates(1,:)+neg;
+                  end
+              end
+              candidates(1,:)=[];
+          end    
+          
+          % Convert densities from the log-space and normalize them
+          p_th = p_th(:)-min(p_th);
+          P_TH = exp(p_th)/sum(exp(p_th));
+
+      case 'CCD'
+        % Walsh indeces (see Sanchez and Sanchez (2005))
+        walsh = [1 2 4 8 15 16 32 51 64 85 106 128 150 171 219 237 ...
+                 247 256 279 297 455 512 537 557 597 643 803 863 898 ...
+                 1024 1051 1070 1112 1169 1333 1345 1620 1866 2048 ...
+                 2076 2085 2158 2372 2456 2618 2800 2873 3127 3284 ...
+                 3483 3557 3763 4096 4125 4135 4176 4435 4459 4469 ...
+                 4497 4752 5255 5732 5801 5915 6100 6369 6907 7069 ...
+                 8192 8263 8351 8422 8458 8571 8750 8858 9124 9314 ...
+                 9500 10026 10455 10556 11778 11885 11984 13548 14007 ...
+                 14514 14965 15125 15554 16384 16457 16517 16609 ...
+                 16771 16853 17022 17453 17891 18073 18562 18980 ...
+                 19030 19932 20075 20745 21544 22633 23200 24167 ...
+                 25700 26360 26591 26776 28443 28905 29577 32705];
+       
+        % ERROR CHECK
+        
+        % How many design points
+        ii = sum(nParam >= [1 2 3 4 6 7 9 12 18 22 30 39 53 70 93]);
+        H0 = 1;
+        
+        % Design matrix
+        for i1 = 1 : ii
+            H0 = [H0 H0 ; H0 -H0];
         end
-    else 
-        p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+        
+        % Radius of the sphere (greater than 1)
+        f0=1.3;
+        
+        % Design points
+        points = H0(:,1+walsh(1:nParam));
+        % Center point
+        points = [zeros(1,nParam); points];
+        % Points on the main axis
+        for i1 = 1 : nParam
+           points(end+1,:)=zeros(1,nParam);
+           points(end,i1)=sqrt(nParam);
+           points(end+1,:)=zeros(1,nParam);
+           points(end,i1)=-sqrt(nParam);
+        end
+        design = points;
+                
+        switch opt.improved 
+          case 'off'
+            points = f0*points;
+          case 'on'
+            optim = optimset('Display','off');
+            
+% $$$             sigma = zeros(size(points));
+            for j = 1 : nParam*2
+                % Here temp is one of the points on the main axis in either
+                % positive or negative direction.
+                temp = zeros(1,nParam);
+                if mod(j,2) == 1
+                    dir = 1;
+                else dir = -1;
+                end
+                ind = ceil(j/2);
+                temp(ind)=dir;
+
+                % Find the scaling parameter so that when we move 2 stds from the
+                % mode, the log desity drops by 2
+                t = fminunc(@(x) abs(-feval(fh_e,x*temp*z+w,gp,xx,yy,param)+feval(fh_e,w,gp,xx,yy,param)+2), 1.3,optim);
+                sd(points(:,ind)*dir>0, ind) = 0.5*t/sqrt(nParam);
+            end
+            % Each points is scaled with corresponding scaling parameter and
+            % desired radius
+            points = f0*sd.*design;
+        end
+
+        % Put the points into hyperparameter-space
+        th = points*z+repmat(w,size(points,1),1);
+
+        p_th=[]; gp_array={};
+        for i1 = 1 : size(th,1)
+            gp = gp_unpak(gp,th(i1,:),param);
+            gp_array{end+1} = gp;
+            p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+        end
+        
+        p_th=p_th-min(p_th);
+        p_th=exp(p_th);
+        p_th=p_th/sum(p_th);
+        
+        
+        % Calculate the area weights for the integration and scale densities
+        % of the design points with these weights
+        delta_k = 1/((2*pi)^(-nParam/2)*exp(-.5*nParam*f0^2)*(size(points,1)-1)*f0^2);
+        delta_0 = (2*pi)^(nParam/2)*(1-1/f0^2);
+        
+        delta_k=delta_k/delta_0;
+        delta_0=1;
+        
+        p_th=p_th.*[delta_0,repmat(delta_k,1,size(th,1)-1)];
+        P_TH=p_th/sum(p_th);
+        P_TH=P_TH(:);
     end
     
-    % Put the mode to th-array and gp-model in the mode to gp_array
-    th(1,:) = w;
-    gp = gp_unpak(gp,w,param);
-    gp_array{end+1} = gp;
-
-    
-    while ~isempty(candidates) % Repeat until there are no hyperparameters
-                               % with enough density that are not
-                               % checked yet
-        for i1 = 1 : nParam % Loop through the dimensions
-            pos = zeros(1,nParam); pos(i1)=1; % One step to the positive direction
-                                              % of dimension i1
-            
-            % Check if the neighbour in the direction of pos is already checked
-            if ~any(sum(abs(repmat(candidates(1,:)+pos,size(checked,1),1)-checked),2)==0) 
-                w_p = w + candidates(1,:)*z + z(i1,:); % The parameters in the neighbour
-                                                       %p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
-                th(end+1,:) = w_p; 
-                
-                gp = gp_unpak(gp,w_p,param);
-                gp_array{end+1} = gp;
-                
-                % Make the predictions (if needed) and save the density of the hyperparameters
-                if exist('tx')
-                    if exist('tstindex')
-                        p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
-                        [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-                    else   
-                        p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
-                        [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
-                    end
-                else
-                    p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
-                end
-                
-                % If the density is large enough, put the location in to the
-                % candidates list. The neighbours of that location
-                % will be studied lated
-                if (p_th(1)-p_th(end))<opt.threshold
-                    candidates(end+1,:) = candidates(1,:)+pos;
-                end
-
-                % Put the recently studied point to the checked list
-                checked(end+1,:) = candidates(1,:)+pos;    
-            end
-            
-            neg = zeros(1,nParam); neg(i1)=-1;
-            if ~any(sum(abs(repmat(candidates(1,:)+neg,size(checked,1),1)-checked),2)==0)
-                w_n = w + candidates(1,:)*z - z(i1,:);
-                %p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
-                th(end+1,:) = w_n;
-                
-                gp = gp_unpak(gp,w_n,param);
-                gp_array{end+1} = gp;
-                
-                if exist('tx')
-                    if exist('tstindex')
-                        p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
-                        [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-                    else   
-                        p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
-                        [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
-                    end
-                else
-                    p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
-                end
-                
-                if (p_th(1)-p_th(end))<opt.threshold
-                    candidates(end+1,:) = candidates(1,:)+neg;
-                end
-                checked(end+1,:) = candidates(1,:)+neg;
-            end
-        end
-        candidates(1,:)=[];
-    end    
-    
-    % Convert densities from the log-space and normalize them
-    p_th = p_th(:)-min(p_th);
-    P_TH = exp(p_th)/sum(exp(p_th));
-    
-
   case {'is_normal' 'is_normal_qmc' 'is_student-t'}
     
     % Covariance of the gaussian approximation

@@ -194,7 +194,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 gp = gp_unpak(gp, w, 'hyper');
             end
             
-            % ----------- Sample hyperparameters with SLS --------------------- 
+            % ----------- Sample hyperparameters wieth SLS --------------------- 
             if isfield(opt, 'sls_opt')
                 w = gp_pak(gp, 'hyper');
                 [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'hyper', varargin{:});

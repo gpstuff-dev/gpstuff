@@ -59,7 +59,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
     function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
         
-        if  1==0 % abs(w-w0) < 1e-8 % 1e-8
+        if  abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -80,7 +80,6 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
             %if edata0 < 
             %f = f0;
             f = zeros(size(f0));
-            
 
             % =================================================
             % First Evaluate the data contribution to the error
@@ -243,7 +242,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
-                K_fu = gp_cov(gp, x, u);         % f x u
+                K_fu = gp_cov(gp, x, u);         % f x u                
                 K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
                 Luu = chol(K_uu)';
                 % Evaluate the Lambda (La)
@@ -256,7 +255,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
                 A = chol(A);
                 L = iLaKfu/A;
-
+            
                 switch gp.laplace_opt.optim_method
                     % find the mode by fminunc large scale method
                   case 'fminunc_large'
@@ -337,7 +336,6 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     edata = sum(log(Lah)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
                     edata = logZ + 0.5*edata;
                 else
-                    1
                     K = diag(Lav) + B'*B;
 % $$$                         [W,I] = sort(W, 1, 'descend');
 % $$$                         K = K(I,I);

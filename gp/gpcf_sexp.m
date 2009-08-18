@@ -648,7 +648,6 @@ function gpcf = gpcf_sexp(do, varargin)
             % If scaled euclidean metric
             % Try to use the C-implementation
             C = trcov(gpcf, x);
-            
             if isnan(C)
                 % If there wasn't C-implementation do here
                 [n, m] =size(x);

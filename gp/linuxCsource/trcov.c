@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2009-07-03 09:22:31 EEST
+ * Last modified: 2009-08-13 13:08:59 EEST
  *
  */
 
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "mex.h"
+#include "matrix.h"
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 void cumsum2 (mwIndex *p, mwIndex *c, mwIndex n);
 
@@ -37,11 +38,12 @@ void mexFunction(const int nlhs, mxArray *plhs[],
     mexErrMsgTxt( "Wrong number of input arguments." );
   
   {
-    double *x, lms, ms, *l, rr, *rr2, *C, d, eps, c, *Ct, c1, c2;
-    const int *dims;
+    double *x, lms, ms, *l, rr, *rr2, *C, d, eps, c, *Ct, c1, c2, D, D2;
+    double percent_sparse;
+    const mwSize *dims;
     char *type;
-    int i, j, k, m, n, lr, nnz, ind, D, D2, *p, *w, *w2;
-    mwIndex *I, *J, *It, *Jt, *Jc;
+    mwIndex i, j, k, ind, *I, *J, *It, *Jt, *Jc, *w2, *w;
+    mwSize m, n, nnz, lr;
     mxArray *field;
     
     dims = mxGetDimensions(prhs[1]);
@@ -147,7 +149,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       }
       for (j=0;j<m;j++) {
 	for (k=0;k<j;k++) {
-	  c = sqrt(3*C[j*m+k]);
+	  c = sqrt(3.0*C[j*m+k]);
 	  d=(1+c)*exp(lms-c);
 	  d=(d>eps) ? d : 0;
 	  C[j*m+k]=d;
@@ -175,8 +177,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       }
       for (j=0;j<m;j++) {
 	for (k=0;k<j;k++) {
-	  c = sqrt(5*C[j*m+k]);
-	  d=(1+c+5*C[j*m+k]/3)*exp(lms-c);
+	  c = sqrt(5.0*C[j*m+k]);
+	  d=(1+c+5.0*C[j*m+k]/3.0)*exp(lms-c);
 	  d=(d>eps) ? d : 0;
 	  C[j*m+k]=d;
 	  C[j+k*m]=d;
@@ -195,11 +197,11 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	mexErrMsgTxt( "gpcf.l must be a scalar." );
       D = mxGetScalar(field);
 
-      nnz = (int) max(1,floor(0.05*m*m));
-      It = mxCalloc(nnz,sizeof(int));
-      Jt = mxCalloc(nnz,sizeof(int));
+      percent_sparse = 0.05;
+      nnz = (mwSize) max(1,floor(percent_sparse*(double)m*(double)m));
+      It = mxCalloc(nnz,sizeof(mwIndex));
+      Jt = mxCalloc(nnz,sizeof(mwIndex));
       Ct = mxCalloc(nnz,sizeof(double));
-      eps=mxGetEps();
       ind = 0;
 
       /* Set the length-scales in vector of length of number of inputs */
@@ -208,68 +210,61 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
       }	
       
-      /* Evaluate the distances that are less than onem, */
+      /* Evaluate the distances that are less than one, */
       /* and evaluate the covariance at them. /*
       /* This is strictly upper triangular matrix */
-      c1=pow(D,2)+4*D+3;
-      c2=3*D+6;
-      D2=D+2;
+      c1 = D*D + 4.0*D + 3.0;
+      c2 = 3.0*D + 6.0;
+      D2 = D+2.0;
       for (j=0;j<m;j++) {
-	for (k=0;k<j;k++) {
-	  c = 0;
+	for (k=0;k!=j;k++) {
+	  c = 0.0;
 	  for (i=0;i<n;i++) {
 	    d=x[j+i*m]-x[k+i*m];
 	    c+=d*d/rr2[i];
 	  }
-	  if (c<1 && nnz>ind){   /* store the covariance */
-	    d = c1*c + c2*sqrt(c) + 3;
-	    d = ms*pow(1-sqrt(c),D2)*d/3;
-	    d=(d>eps) ? d : 0;
+	  if (c<1.0){   /* store the covariance */
+	    if (ind==nnz){ /* allocate more memory */
+	      nnz=(mwSize)2*nnz;
+	      It = mxRealloc(It, nnz*sizeof(mwIndex));
+	      Jt = mxRealloc(Jt, nnz*sizeof(mwIndex));
+	      Ct = mxRealloc(Ct, nnz*sizeof(double));
+	    } 
+	    d = c1*c + c2*sqrt(c) + 3.0;
+	    d = ms*pow(1.0-sqrt(c),D2)*d/3.0;
 	    It[ind] = k;
 	    Jt[ind] = j;
 	    Ct[ind] = d;
-	    ind+=1;
-	  } else if (c<1){       /* allocate more memory and store the covariance  */
-	    nnz=2*nnz;
-	    It = mxRealloc(It, (size_t)(nnz*sizeof(int)));
-	    Jt = mxRealloc(Jt, (size_t)(nnz*sizeof(int)));
-	    Ct = mxRealloc(Ct, (size_t)(nnz*sizeof(double)));
-	    d = c1*c + c2*sqrt(c) + 3;
-	    d = ms*pow(1-sqrt(c),D2)*d/3;
-	    d=(d>eps) ? d : 0;
-	    It[ind] = k;
-	    Jt[ind] = j;
-	    Ct[ind] = d;
-	    ind+=1;
+	    ind++;
 	  }
 	}
       }
       
       /* resize the vectors */
-      It = mxRealloc(It, (size_t)(ind*sizeof(int)));      
-      Jt = mxRealloc(Jt, (size_t)(ind*sizeof(int)));
-      Ct = mxRealloc(Ct, (size_t)(ind*sizeof(double)));
+      It = mxRealloc(It, (mwSize)ind*sizeof(mwIndex));
+      Jt = mxRealloc(Jt, (mwSize)ind*sizeof(mwIndex));
+      Ct = mxRealloc(Ct, (mwSize)ind*sizeof(double));
       
       /* evaluate the row and column counts */
-      w = mxCalloc(m,sizeof(int));           /* workspace */
-      w2 = mxCalloc(m,sizeof(int));          /* workspace */
-      for (k=0;k<ind;k++) w[It[k]]++;        /* row counts of the upper triangular */
-      for (k=0;k<ind;k++) w2[Jt[k]]++;       /* column counts of the upper triangular */
-      for (k=0;k<m;k++) w[k] += w2[k] + 1;   /* column counts of the sparse inverse */
-      Jc = mxCalloc((m+1),sizeof(int));
-      cumsum2(Jc, w2, m);                    /* column starting points of the upper triangle */
+      w = mxCalloc(m,sizeof(mwIndex));              /* workspace */
+      w2 = mxCalloc(m,sizeof(mwIndex));             /* workspace */
+      for (k=0;k<ind;k++) w[It[k]]++;               /* row counts of the upper triangular */
+      for (k=0;k<ind;k++) w2[Jt[k]]++;              /* column counts of the upper triangular */
+      for (k=0;k<m;k++) w[k] += w2[k] + (mwIndex)1; /* column counts of the covariance matrix */
+      Jc = mxCalloc(m+(mwSize)1,sizeof(mwIndex));
+      cumsum2(Jc, w2, m);                           /* column starting points of the upper triangle */
       
       /* Create sparse matrix. Note! The matrix can contain only real numbers  */
-      nnz = 2*ind+m;
-      plhs[0] = mxCreateSparse(m,m,(mwSize)nnz,mxREAL);
+      nnz = (mwSize)2*(mwSize)ind+m;
+      plhs[0] = mxCreateSparse(m,m,nnz,mxREAL);
       I = mxGetIr(plhs[0]);
       J = mxGetJc(plhs[0]);
       C = mxGetPr(plhs[0]);
 
       /* Set the elements in the sparse matrix */
-      cumsum2(J, w, m);                   /* column starting points */
+      cumsum2(J, w, m);                      /* column starting points */
       for (j = 0 ; j < m ; j++){             /* fill the upper triangular */
-	for (k = Jc[j] ; k < Jc[j+1] ; k++){
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
 	  I[i = w[j]++] = It[k] ;
 	  if (C) C[i] = Ct[k] ;
 	}
@@ -279,7 +274,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	if (C) C[i] = ms;
       } 
       for (j = 0 ; j < m ; j++){             /* fill the lower triangular */
-	for (k = Jc[j] ; k < Jc[j+1] ; k++){
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
 	  I[i = w[ It[k]]++] = j ;	    
 	  if (C) C[i] = Ct[k] ;
 	}

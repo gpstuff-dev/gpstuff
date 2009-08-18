@@ -16,7 +16,7 @@
 
 /* -----------------------------------------------------------------------------
  * Copyright (C) 2005-2006 Timothy A. Davis
- * Copyright (c) 2008      Jarno Vanhatalo
+ * Copyright (c) 2008-2009 Jarno Vanhatalo
  *
  * This software is distributed under the GNU General Public
  * License (version 2 or later); please refer to the file
@@ -35,10 +35,12 @@
 
 #include <stdio.h>
 #include "cholmod_matlab.h"
+#include "mex.h"
+#include "matrix.h"
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-void cumsum2 (mwIndex *p, mwIndex *c, int n);
+void cumsum2 (mwIndex *p, mwIndex *c, mwSize n);
 
 void mexFunction
 (
@@ -52,11 +54,11 @@ void mexFunction
   cholmod_sparse Amatrix, *A, *Lsparse ;
   cholmod_factor *L ;
   cholmod_common Common, *cm ;
-  Int n, minor ;
-  mwIndex *I, *J, *Jt, *It, *I2, *J2;
-  mwSize nnz, nnzlow;
-  int i, j, k, l, k2, ik, h, *w, *w2, m, nz = 0, lfi, *r, *q;
-  const int one=1;
+  Int minor ;
+  mwIndex l, k2, h, k, i, j, ik, *I, *J, *Jt, *It, *I2, *J2, lfi, *w, *w2, *r;
+  mwSize nnz, nnzlow, m, n;
+  int nz = 0;
+  mwSignedIndex one=1, lfi_si;
   mxArray *Am, *Bm;
   char *uplo="L", *trans="N";
   
@@ -144,11 +146,34 @@ void mexFunction
     /* ---------------------------------------------------------------------- */
     /* Set the sparse Cholesky factorization in Matlab format */
     /* ---------------------------------------------------------------------- */
-    Am = sputil_put_sparse (&Lsparse, cm) ;
+    /*Am = sputil_put_sparse (&Lsparse, cm) ;
+      I = mxGetIr(Am);
+      J = mxGetJc(Am);
+      C = mxGetPr(Am);
+      nnz = mxGetNzmax(Am); */
+
+    It = Lsparse->i;
+    Jt = Lsparse->p;
+    Ct = Lsparse->x;
+    nnz = Lsparse->nzmax;
+
+    Am = mxCreateSparse(m, m, nnz, mxREAL) ;
     I = mxGetIr(Am);
     J = mxGetJc(Am);
     C = mxGetPr(Am);
-    nnz = mxGetNzmax(Am);
+    for (j = 0 ;  j < n+1 ; j++)  J[j] = Jt[j];
+    for ( i = 0 ; i < nnz ; i++) {
+	I[i] = It[i];
+	C[i] = Ct[i];
+    }
+    
+    cholmod_l_free_sparse (&Lsparse, cm) ;
+
+    /*FILE *out1 = fopen( "output1.txt", "w" );
+    if( out1 != NULL )
+      fprintf( out1, "Hello %d\n", nnz );
+      fclose (out1);*/
+    
   } else {
     /* The cholesky factorization is given as an input.      */
     /* We have to copy it into workspace                     */
@@ -165,21 +190,30 @@ void mexFunction
     for ( i = 0 ; i < nnz ; i++) {
 	I[i] = It[i];
 	C[i] = Ct[i];
-    }
+    }    
   }
-  
+
   /* Evaluate the sparse inverse */
-  C[nnz-1] = 1/C[J[m-1]];               /* set the last element of sparse inverse */
-  fil = mxCalloc(1,sizeof(double));
-  zt = mxCalloc(1,sizeof(double));
-  Zt = mxCalloc(1,sizeof(double));
-  zz = mxCalloc(1,sizeof(double));
-  for (j=m-2;j>=0;j--){
+  C[nnz-1] = 1.0/C[J[m-1]];               /* set the last element of sparse inverse */
+  fil = mxCalloc((mwSize)1,sizeof(double));
+  zt = mxCalloc((mwSize)1,sizeof(double));
+  Zt = mxCalloc((mwSize)1,sizeof(double));
+  zz = mxCalloc((mwSize)1,sizeof(double));
+  for (j=m-2;j!=-1;j--){
     lfi = J[j+1]-(J[j]+1);
-    fil = mxRealloc(fil,(size_t)(lfi*sizeof(double)));
-    for (i=0;i<lfi;i++) fil[i] = C[J[j]+i+1];                /* take the j'th lower triangular column of the Cholesky */
-    zt = mxRealloc(zt,(size_t)(lfi*sizeof(double)));         /* memory for the sparse inverse elements to be evaluated */
-    Zt = mxRealloc(Zt,(size_t)(lfi*lfi*sizeof(double)));     /* memory for the needed sparse inverse elements */
+    fil = mxRealloc(fil,(mwSize)lfi*sizeof(double));
+    for (i=0;i<lfi;i++) fil[i] = C[J[j]+i+1];                   /* take the j'th lower triangular column of the Cholesky */
+
+    /* debugging test */  
+    /*    if (nargin == 1) {
+      FILE *out3 = fopen( "output3.txt", "w" );
+      if( out3 != NULL )
+	fprintf( out3, "Hello %d\n", j );
+      fclose (out3);
+      }*/
+    
+    zt = mxRealloc(zt,(mwSize)lfi*sizeof(double));              /* memory for the sparse inverse elements to be evaluated */
+    Zt = mxRealloc(Zt,(mwSize)lfi*(mwSize)lfi*sizeof(double));  /* memory for the needed sparse inverse elements */
     
     /* Set the lower triangular for Zt */
     k2 = 0;
@@ -194,50 +228,59 @@ void mexFunction
       }
       k2++;
     }
-    
-    if (lfi > 0)
+   
+    /* if (lfi > 0) */
+    if ( J[j+1] > (J[j]+1) )
       {
 	/* evaluate zt = fil*Zt */
-	dsymv_(uplo, &lfi, &done, Zt, &lfi, fil, &one, &dzero, zt, &one);
+	lfi_si = (mwSignedIndex) lfi;
+	dsymv_(uplo, &lfi_si, &done, Zt, &lfi_si, fil, &one, &dzero, zt, &one);
 	
 	/* Set the evaluated sparse inverse elements, zt, into C */
 	k=lfi-1;
-	for (i = J[j+1]-1; i>J[j] ; i--){
-	  C[i] = -zt[k];	
+	for (i = J[j+1]-1; i!=J[j] ; i--){
+	  C[i] = -zt[k];
 	  k--;
 	}
 	/* evaluate the j'th diagonal of sparse inverse */
-	dgemv_(trans, &one, &lfi, &done, fil, &one, zt, &one, &dzero, zz, &one); 
-	C[J[j]] = 1/C[J[j]] + zz[0];
+	dgemv_(trans, &one, &lfi_si, &done, fil, &one, zt, &one, &dzero, zz, &one); 
+	C[J[j]] = 1.0/C[J[j]] + zz[0];
       }
     else
       {
 	/* evaluate the j'th diagonal of sparse inverse */
-	C[J[j]] = 1/C[J[j]];
+	C[J[j]] = 1.0/C[J[j]];
 	
-      } 
-    
+      }
+    /* debugging test */  
+    /*    if (nargin == 1) {
+      FILE *out4 = fopen( "output4.txt", "w" );
+      if( out4 != NULL )
+	fprintf( out4, "Hello %d\n", j );
+      fclose (out4);
+      }*/
   }
-    
+
+  
   /* Free the temporary variables */
   mxFree(fil);
   mxFree(zt);
   mxFree(Zt);
   mxFree(zz);
-  
-  
+
   /* ---------------------------------------------------------------------- */
   /* Permute the elements according to r(q) = 1:n                           */
   /* Done only if the Cholesky was evaluated here                           */
   /* ---------------------------------------------------------------------- */
   if (nargin == 1) {
+   
     Bm = mxCreateSparse(m, m, nnz, mxREAL) ;     
     It = mxGetIr(Bm);
     Jt = mxGetJc(Bm);
-    Ct = mxGetPr(Bm);                            /* Ct = C(r,r)*/ 
+    Ct = mxGetPr(Bm);                            /* Ct = C(r,r) */ 
     
-    r = L->Perm;                                 /* fill reducing ordering */
-    w = mxCalloc(m,sizeof(int));                 /* column counts of Am */
+    r = (mwIndex *) L->Perm;                         /* fill reducing ordering */
+    w = mxCalloc(m,sizeof(mwIndex));                 /* column counts of Am */
     
     /* count entries in each column of Bm */
     for (j=0; j<m; j++){
@@ -264,7 +307,7 @@ void mexFunction
     /* Transpose the permuted (upper triangular) matrix Bm into Am */
     /* (this way we get sorted columns)                            */
     /* ---------------------------------------------------------------------- */
-    w = mxCalloc(m,sizeof(int));                 
+    w = mxCalloc(m,sizeof(mwIndex));                 
     for (i=0 ; i<Jt[m] ; i++) w[It[i]]++;        /* row counts of Bm */
     cumsum2(J, w, m);                            /* row pointers */
     for (j=0 ; j<m ; j++){
@@ -281,13 +324,13 @@ void mexFunction
   /* Fill the upper triangle of the sparse inverse */
   /* ---------------------------------------------------------------------- */
   
-  w = mxCalloc(m,sizeof(int));        /* workspace */
-  w2 = mxCalloc(m,sizeof(int));       /* workspace */
+  w = mxCalloc(m,sizeof(mwIndex));        /* workspace */
+  w2 = mxCalloc(m,sizeof(mwIndex));       /* workspace */
   for (k=0;k<J[m];k++) w[I[k]]++;     /* row counts of the lower triangular */
   for (k=0;k<m;k++) w2[k] = w[k] + J[k+1] - J[k] - 1;   /* column counts of the sparse inverse */
   
-  nnz = (mwSize)(2*nnz - m);                    /* The number of nonzeros in Z */
-  pargout[0] = mxCreateSparse(m,m,(mwSize)nnz,mxREAL);   /* The sparse matrix */
+  nnz = (mwSize)2*nnz - m;                       /* The number of nonzeros in Z */
+  pargout[0] = mxCreateSparse(m,m,nnz,mxREAL);   /* The sparse matrix */
   It = mxGetIr(pargout[0]);
   Jt = mxGetJc(pargout[0]);
   Ct = mxGetPr(pargout[0]);
@@ -316,18 +359,18 @@ void mexFunction
   /* ---------------------------------------------------------------------- */
   /* free workspace and the CHOLMOD L, except for what is copied to MATLAB */
   /* ---------------------------------------------------------------------- */
-  mxDestroyArray(Am);
   if (nargin == 1) {
     cholmod_l_free_factor (&L, cm) ;
     cholmod_l_finish (cm) ;
     cholmod_l_print_common (" ", cm) ;
   }
+  mxDestroyArray(Am);
   
 }
 
-void cumsum2 (mwIndex *p, mwIndex *c, int n)
+void cumsum2 (mwIndex *p, mwIndex *c, mwSize n)
 {
-  int i;
+  mwIndex i;
   mwIndex nz = 0;
   if(!p || !c) return;
   for (i=0;i<n;i++){

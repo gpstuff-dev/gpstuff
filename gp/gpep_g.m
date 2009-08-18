@@ -53,11 +53,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             invC = Stildesqroot*invC*Stildesqroot;
         else
             [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, param, varargin);
-            Stildesqroot=diag(sqrt(tautilde));
-            
-            % logZep; nutilde; tautilde;
-            b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-            invC = Stildesqroot*(L'\(L\Stildesqroot));
+
+            if tautilde > 0
+                Stildesqroot=diag(sqrt(tautilde));
+                
+                % logZep; nutilde; tautilde;
+                b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+                invC = Stildesqroot*(L'\(L\Stildesqroot));
+            else
+                S = diag(tautilde);
+                b = nutilde - tautilde.*(L'*L*(nutilde));
+                invC = S*L';
+                invC = S - invC*invC';
+            end
         end
 
         
@@ -124,7 +132,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            [Ef, Varf] = ep_pred(gp, x, y, x, param);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -258,7 +266,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, 1:n);
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, [], 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -401,7 +409,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, gp.tr_index);
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, [], gp.tr_index);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -464,6 +472,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         gp.cf = cf_orig;
         
         LD = ldlchol(La);
+% $$$         siLa = spinv(LD,1);
         siLa = spinv(La);
         idiagLa = diag(siLa);
         LL = sum(L.*L,2);
@@ -591,7 +600,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % likelihood parameters
         %--------------------------------------
         if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, 1:n);    
+            [Ef, Varf] = ep_pred(gp, x, y, x, param, [], 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)

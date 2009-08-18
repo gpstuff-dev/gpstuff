@@ -398,17 +398,17 @@ function likelih = likelih_t(do, varargin)
                 
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
-        if nu > 2
-            mean_app = (myy_i/sigm2_i + yy.*(nu+1)/(sigma.^2.*nu))/(1/sigm2_i + sigma.^2.*nu/(nu+1));
-            sigm_app = sqrt( (1/sigm2_i + sigma.^2.*nu/(nu+1))^-1);
-        else
+% $$$         if nu > 2
+% $$$             mean_app = (myy_i/sigm2_i + yy.*(nu+1)/(sigma.^2.*nu))/(1/sigm2_i + sigma.^2.*nu/(nu+1));
+% $$$             sigm_app = sqrt( (1/sigm2_i + sigma.^2.*nu/(nu+1))^-1);
+% $$$         else
             mean_app = myy_i;
-            sigm_app = sqrt(sigm2_i);                    
-        end
+            sigm_app = sqrt(sigm2_i);
+% $$$         end
 
         lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+        test1 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(1));
+        test2 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(2));
         testiter = 1;
         if test1 == 0 
             lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
@@ -451,19 +451,14 @@ function likelih = likelih_t(do, varargin)
         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
         [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
 
-        % If the second central moment is less than cavity variance integrate more
-        % precisely. Theoretically should be sigm2hati1 < sigm2_i
-        if sigm2hati1 >= sigm2_i
-            tol = tol.^2;
-            [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-            [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
-            
-            [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
-            if sigm2hati1 >= sigm2_i
-                error('likelih_t -> tiltedMoments:  sigm2hati1 >= sigm2_i ')
-            end
-        end
         m_2 = sigm2hati1;
+        
+% $$$         if ~isreal(m_2)
+% $$$             ff = [lambdaconf(1):0.01:lambdaconf(2)];
+% $$$             plot(ff, feval(zm, ff), 'r')
+% $$$             drawnow
+% $$$             pause
+% $$$         end
         
         function integrand = zeroth_moment(f)
             r = yy-f;
@@ -505,13 +500,13 @@ function likelih = likelih_t(do, varargin)
 
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
-        if nu > 2
-            mean_app = (myy_i/sigm2_i + yy.*(nu+1)/(sigma.^2.*nu))/(1/sigm2_i + sigma.^2.*nu/(nu+1));
-            sigm_app = sqrt( (1/sigm2_i + sigma.^2.*nu/(nu+1))^-1);
-        else
+% $$$         if nu > 2
+% $$$             mean_app = (myy_i/sigm2_i + yy.*(nu+1)/(sigma.^2.*nu))/(1/sigm2_i + sigma.^2.*nu/(nu+1));
+% $$$             sigm_app = sqrt( (1/sigm2_i + sigma.^2.*nu/(nu+1))^-1);
+% $$$         else
             mean_app = myy_i;
             sigm_app = sqrt(sigm2_i);                    
-        end
+% $$$         end
 
         lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
@@ -565,10 +560,7 @@ function likelih = likelih_t(do, varargin)
             [g_i(2), fhncnt] = quadgk(znu, lambdaconf(1), lambdaconf(2));
             g_i(2) = g_i(2).*likelih.nu.*log(likelih.nu);
         end
-        
-        g_i(1) = g_i(1).*likelih.nu.*log(likelih.nu);
-        g_i(2) = g_i(2).*likelih.sigma;
-        
+                
     % $$$         ff = [lambdaconf(1):0.01:lambdaconf(2)];
     % $$$         plot(ff, feval(zm, ff), 'r')
     % $$$         hold on

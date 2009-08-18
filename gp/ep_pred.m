@@ -37,26 +37,38 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
       case 'FULL'
         [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
         
-        [K, C]=gp_trcov(gp,tx,predcf);
         [K, C]=gp_trcov(gp,tx);
- 
-        sqrttautilde = sqrt(tautilde);
-        Stildesqroot = diag(sqrttautilde);
-        
-        z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-        
         kstarstar = gp_trvar(gp, x, predcf);
-
         ntest=size(x,1);
-        
         K_nf=gp_cov(gp,x,tx,predcf);
-        Ef=K_nf*(nutilde-z);
-        
-        if nargout > 1
-            V = (L\Stildesqroot)*K_nf';
-            for i1=1:ntest
-                % Compute covariance between observations
-                Varf(i1,1)=kstarstar(i1)-V(:,i1)'*V(:,i1);
+ 
+        if tautilde > 0
+            sqrttautilde = sqrt(tautilde);
+            Stildesqroot = diag(sqrttautilde);
+            
+            z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+            
+            Ef=K_nf*(nutilde-z);
+
+            % Compute variance
+            if nargout > 1
+                V = (L\Stildesqroot)*K_nf';
+                Varf = kstarstar - sum(V.^2)';
+            end
+        else
+            z=tautilde.*(L'*(L*nutilde));
+            Ef=K_nf*(nutilde-z);
+            
+            if nargout > 1
+                S = diag(tautilde);
+                V = K_nf*S*L';
+                Varf = kstarstar - sum((K_nf*S).*K_nf,2) + sum(V.^2,2);
+            end
+        end
+
+        % Evaluate predictive class probability 
+        if nargout > 2
+            for i1=1:ntest            
                 switch gp.likelih.type
                   case 'probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
