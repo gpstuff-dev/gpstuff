@@ -120,7 +120,8 @@ ye = ye(ind,:);
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
+%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
+gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 

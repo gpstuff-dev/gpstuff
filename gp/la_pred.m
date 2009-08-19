@@ -52,9 +52,18 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
         if nargout > 1
             kstarstar = gp_trvar(gp,x,predcf);
             if W >= 0
-                W = diag(W);
-                V = L\(sqrt(W)*K_nf');
-                Varf = kstarstar - sum(V'.*V',2);
+                if issparse(K_nf)
+                    K = gp_trcov(gp, x);
+                    p = analyze(K);
+                    sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);
+                    sqrtWKfn = sqrtW*K_nf(:,p)';
+                    V = ldlsolve(L,sqrtWKfn);
+                    Varf = kstarstar - sum(sqrtWKfn.*V,1)';
+                else
+                    W = diag(W);
+                    V = L\(sqrt(W)*K_nf');
+                    Varf = kstarstar - sum(V'.*V',2);
+                end
             else
 % $$$                 [W,I] = sort(W, 1, 'descend');
 % $$$                 r(I) = 1:tn;

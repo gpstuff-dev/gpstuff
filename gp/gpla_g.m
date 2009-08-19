@@ -43,25 +43,29 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
       case 'FULL'   % A full GP
                     % Calculate covariance matrix and the site parameters
         K = gp_trcov(gp,x);
-        [e, edata, eprior, f, L, a] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
         
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         if issparse(K)                               % use sparse matrix routines
-            W = sparse(1:n,1:n, W, n,n);
-            LD = ldlchol(K);
-            I = sparse(1:n,1:n,1,n,n);
-            w1 = ldlsolve(LD,f);
-            sqrtW = sqrt(W);
-            sinvB = spinv(L,1);
-            isqrtWsinBsqrtW = sqrtW\sinvB*sqrtW;
-            w2 = sum( isqrtWsinBsqrtW .* K,2) .* feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-            w2 = - (sqrtW*ldlsolve(L, sqrtW \ w2))'; 
-            w3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-            invB = sqrtW*sinvB*sqrtW;
+            p = analyze(K);
+            gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+            y = y(p);
+            x = x(p,:);
+            K = K(p,p);
+            W = W(p);
+            f = f(p);
+            
+            sqrtW = sparse(1:n,1:n, sqrt(W), n,n);
+% $$$             B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
+% $$$             L = ldlchol(B);
+            
+            R = sqrtW*spinv(L,1)*sqrtW;
+            sqrtWK = sqrtW*K;
+            C = ldlsolve(L,(sqrtWK)); 
+            s2 = 0.5*( diag(K) - sum(sqrtWK.*C,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
         else                                         % evaluate with full matrices
             if W >= 0
-                W = diag(W);
-                sqrtW = sqrt(W);
+                sqrtW = diag(sqrt(W));
                 R = sqrtW*(L'\(L\sqrtW));
                 C = L\(sqrtW*K);
                 s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
@@ -103,7 +107,11 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                     
                     s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
                     b = DKff{i2} * feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-                    s3 = b - K*(R*b);
+                    if issparse(K)
+                        s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
+                    else
+                        s3 = b - K*(R*b);
+                    end
                     gdata(i1) = -(s1 + s2'*s3);
                     gprior(i1) = gprior_cf(i2);
                 end

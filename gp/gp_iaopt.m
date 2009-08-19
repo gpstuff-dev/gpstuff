@@ -98,5 +98,6 @@ switch method
     
     % Set the sls sampling options
   case 'CCD'
+    opt.int_method = 'CCD';
     opt.improved = 'off';
 end    

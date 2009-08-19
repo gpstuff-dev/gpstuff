@@ -41,19 +41,28 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
         kstarstar = gp_trvar(gp, x, predcf);
         ntest=size(x,1);
         K_nf=gp_cov(gp,x,tx,predcf);
+        [n,nin] = size(tx);
  
         if tautilde > 0
             sqrttautilde = sqrt(tautilde);
-            Stildesqroot = diag(sqrttautilde);
-            
-            z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-            
+            Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+                            
+            if issparse(L)
+                z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+            else
+                z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+            end
             Ef=K_nf*(nutilde-z);
 
             % Compute variance
             if nargout > 1
-                V = (L\Stildesqroot)*K_nf';
-                Varf = kstarstar - sum(V.^2)';
+                if issparse(L)
+                    V = ldlsolve(L, Stildesqroot*K_nf');
+                    Varf = kstarstar - sum(K_nf.*V',2);
+                else
+                    V = (L\Stildesqroot)*K_nf';
+                    Varf = kstarstar - sum(V.^2)';
+                end
             end
         else
             z=tautilde.*(L'*(L*nutilde));

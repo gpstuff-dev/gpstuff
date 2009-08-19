@@ -89,6 +89,15 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 % ============================================================
               case 'FULL'
                 K = gp_trcov(gp, x);
+
+                % If K is sparse, permute all the inputs so that evaluations are more efficient
+                if issparse(K)
+                    p = analyze(K);
+                    r(p) = 1:n;
+                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+                    y = y(p);
+                    K = K(p,p);
+                end
                 
                 switch gp.laplace_opt.optim_method
                     % find the mode by fminunc large scale method
@@ -134,11 +143,21 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
 
-                    %a = iK*f; 
-                    a = LD\(LD'\f);
-                    %a = iK*f; 
+                    if issparse(K)
+                        a = ldlsolve(LD,f);
+                    else
+                        a = LD\(LD'\f);
+                    end
 
                   case 'newton'
+                    
+                    if issparse(K)
+                        % TODO !!!
+                        % Find fill reducing permutation and permute all the
+                        % matrices
+                        LD = ldlchol(K);
+                    end
+
                     tol = 1e-12;
                     a = f;
                     W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
@@ -148,10 +167,19 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     
                     while lp_new - lp_old > tol                        % begin Newton's iterations
                         lp_old = lp_new; a_old = a; 
-                        sW = sqrt(W);                        
-                        L = chol(eye(n)+sW*sW'.*K);                            % L'*L=B=eye(n)+sW*K*sW
+                        sW = sqrt(W);    
+                        if issparse(K)
+                            sW = sparse(1:n, 1:n, sW, n, n);
+                            L = ldlchol( speye(n)+sW*K*sW );
+                        else
+                            L = chol(eye(n)+sW*sW'.*K);                            % L'*L=B=eye(n)+sW*K*sW
+                        end
                         b = W.*f+dlp;
-                        a = b - sW.*(L\(L'\(sW.*(K*b))));
+                        if issparse(K)
+                            a = b - sW*ldlsolve(L,sW*(K*b));
+                        else
+                            a = b - sW.*(L\(L'\(sW.*(K*b))));
+                        end
                         f = K*a;
                         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                         dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
@@ -178,10 +206,13 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     sqrtW = sqrt(W);
                     B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
                     L = ldlchol(B);
-                    a = ldlsolve(LD,f);
                     logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);                 
                     % Note that here we use LDL cholesky
                     edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; % 
+                    
+                    % Reorder some of the returned and stored values
+                    f = f(r);
+                    
                 else
                     W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                     
@@ -228,8 +259,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 % $$$                         L = 0;
                     end
                 end
-                %[edata-edata2   minW]
-                
+                                                
                 La2 = W;
 
                 % ============================================================
