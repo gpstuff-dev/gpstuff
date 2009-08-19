@@ -1,4 +1,4 @@
-function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ina(opt, gp, xx, yy, tx, param, tstindex)
+function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, param, tstindex)
 % GP_INA explores the hypeparameters around the mode and returns a
 % list of GPs with different hyperparameters and corresponding weights
 %
@@ -305,7 +305,18 @@ switch opt.int_method
         for i1 = 1 : size(th,1)
             gp = gp_unpak(gp,th(i1,:),param);
             gp_array{end+1} = gp;
-            p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+            % Make predictions if needed
+            if exist('tx')
+                if exist('tstindex')
+                    p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                    [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                else   
+                    p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                    [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                end
+            else
+                p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+            end
         end
         
         p_th=p_th-min(p_th);
