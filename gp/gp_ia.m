@@ -138,15 +138,37 @@ switch opt.int_method
           % Make the predictions in the mode if needed and estimate the density of the mode
           if exist('tx')
               if exist('tstindex')
-                  p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
-                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-              else   
-                  p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
-                  [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                  if isfield(gp,'latent_method')
+                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                      [Ef_grid(1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                  else
+                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy);
+                      [Ef_grid(1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
+                  end
+              else
+                  if isfield(gp,'latent_method')
+                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                      [Ef_grid(1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                  else
+                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy);
+                      [Ef_grid(1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx);
+                  end
               end
-          else 
-              p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+          else
+              p_th(1) = -feval(fh_e,w_n,gp,xx,yy,param);
           end
+
+% $$$           if exist('tx')
+% $$$               if exist('tstindex')
+% $$$                   p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+% $$$                   [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+% $$$               else   
+% $$$                   p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+% $$$                   [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+% $$$               end
+% $$$           else 
+% $$$               p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
+% $$$           end
           
           % Put the mode to th-array and gp-model in the mode to gp_array
           th(1,:) = w;
@@ -171,16 +193,37 @@ switch opt.int_method
                       gp_array{end+1} = gp;
                       
                       % Make the predictions (if needed) and save the density of the hyperparameters
+% $$$                       if exist('tx')
+% $$$                           if exist('tstindex')
+% $$$                               p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+% $$$                               [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+% $$$                           else   
+% $$$                               p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+% $$$                               [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+% $$$                           end
+% $$$                       else
+% $$$                           p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+% $$$                       end
                       if exist('tx')
                           if exist('tstindex')
-                              p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
-                              [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-                          else   
-                              p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
-                              [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                              if isfield(gp,'latent_method')
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                              else
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy);
+                                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
+                              end
+                          else
+                              if isfield(gp,'latent_method')
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                                  [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                              else
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy);
+                                  [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx);
+                              end
                           end
                       else
-                          p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                          p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
                       end
                       
                       % If the density is enough, put the location in to the
@@ -205,11 +248,21 @@ switch opt.int_method
                       
                       if exist('tx')
                           if exist('tstindex')
-                              p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
-                              [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-                          else   
-                              p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
-                              [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                              if isfield(gp,'latent_method')
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                              else
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy);
+                                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
+                              end
+                          else
+                              if isfield(gp,'latent_method')
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                                  [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                              else
+                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy);
+                                  [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx);
+                              end
                           end
                       else
                           p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
@@ -306,13 +359,34 @@ switch opt.int_method
             gp = gp_unpak(gp,th(i1,:),param);
             gp_array{end+1} = gp;
             % Make predictions if needed
+
+            
+% $$$             if exist('tx')
+% $$$                 if exist('tstindex')
+% $$$                     p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+% $$$                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+% $$$                 else   
+% $$$                     p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+% $$$                     [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+% $$$                 end
+% $$$             else
             if exist('tx')
                 if exist('tstindex')
-                    p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
-                    [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
-                else   
-                    p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
-                    [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                    if isfield(gp,'latent_method')
+                        p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+                        [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                    else
+                        p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+                        [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
+                    end
+                else
+                    if isfield(gp,'latent_method')
+                        p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+                        [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
+                    else
+                        p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
+                        [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx);
+                    end
                 end
             else
                 p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
