@@ -308,10 +308,10 @@ switch opt.int_method
             % Make predictions if needed
             if exist('tx')
                 if exist('tstindex')
-                    p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                    p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
                 else   
-                    p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
+                    p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
                     [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
                 end
             else
