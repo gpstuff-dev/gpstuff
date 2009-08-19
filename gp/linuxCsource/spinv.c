@@ -201,37 +201,31 @@ void mexFunction
   zz = mxCalloc((mwSize)1,sizeof(double));
   for (j=m-2;j!=-1;j--){
     lfi = J[j+1]-(J[j]+1);
-    fil = mxRealloc(fil,(mwSize)lfi*sizeof(double));
-    for (i=0;i<lfi;i++) fil[i] = C[J[j]+i+1];                   /* take the j'th lower triangular column of the Cholesky */
-
-    /* debugging test */  
-    /*    if (nargin == 1) {
-      FILE *out3 = fopen( "output3.txt", "w" );
-      if( out3 != NULL )
-	fprintf( out3, "Hello %d\n", j );
-      fclose (out3);
-      }*/
     
-    zt = mxRealloc(zt,(mwSize)lfi*sizeof(double));              /* memory for the sparse inverse elements to be evaluated */
-    Zt = mxRealloc(Zt,(mwSize)lfi*(mwSize)lfi*sizeof(double));  /* memory for the needed sparse inverse elements */
-    
-    /* Set the lower triangular for Zt */
-    k2 = 0;
-    for (k=J[j]+1;k<J[j+1];k++){
-      ik = I[k];
-      h = k2;
-      for (l=J[ik];l<=J[ik+1];l++){
-	if (I[l] == I[ J[j]+h+1 ]){
-	  Zt[h+lfi*k2] = C[l];
-	  h++;
-	}
-      }
-      k2++;
-    }
-   
     /* if (lfi > 0) */
     if ( J[j+1] > (J[j]+1) )
       {
+	fil = mxRealloc(fil,(mwSize)lfi*sizeof(double));
+	for (i=0;i<lfi;i++) fil[i] = C[J[j]+i+1];                   /* take the j'th lower triangular column of the Cholesky */
+	
+	zt = mxRealloc(zt,(mwSize)lfi*sizeof(double));              /* memory for the sparse inverse elements to be evaluated */
+	Zt = mxRealloc(Zt,(mwSize)lfi*(mwSize)lfi*sizeof(double));  /* memory for the needed sparse inverse elements */
+	
+	/* Set the lower triangular for Zt */
+	k2 = 0;
+	for (k=J[j]+1;k<J[j+1];k++){
+	  ik = I[k];
+	  h = k2;
+	  for (l=J[ik];l<=J[ik+1];l++){
+	    if (I[l] == I[ J[j]+h+1 ]){
+	      Zt[h+lfi*k2] = C[l];
+	      h++;
+	    }
+	  }
+	  k2++;
+	}
+	
+	
 	/* evaluate zt = fil*Zt */
 	lfi_si = (mwSignedIndex) lfi;
 	dsymv_(uplo, &lfi_si, &done, Zt, &lfi_si, fil, &one, &dzero, zt, &one);
@@ -249,19 +243,10 @@ void mexFunction
     else
       {
 	/* evaluate the j'th diagonal of sparse inverse */
-	C[J[j]] = 1.0/C[J[j]];
-	
+	C[J[j]] = 1.0/C[J[j]];	
       }
-    /* debugging test */  
-    /*    if (nargin == 1) {
-      FILE *out4 = fopen( "output4.txt", "w" );
-      if( out4 != NULL )
-	fprintf( out4, "Hello %d\n", j );
-      fclose (out4);
-      }*/
   }
-
-  
+    
   /* Free the temporary variables */
   mxFree(fil);
   mxFree(zt);
