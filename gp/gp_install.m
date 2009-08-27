@@ -42,14 +42,14 @@ end
 d = '' ;
 if (~isempty (strfind (computer, '64')))
     % 64-bit MATLAB
-    d = '-largeArrayDims' ;
+    d = '-g -largeArrayDims' ;
     
     % Compile the 'trcov' mex-function
-    mex -O -largeArrayDims -output trcov linuxCsource/trcov.c 
-    mex -O -largeArrayDims -output ldlrowmodify linuxCsource/ldlrowmodify.c 
+    mex -O -g -largeArrayDims -output trcov linuxCsource/trcov.c 
+    mex -O -g -largeArrayDims -output ldlrowmodify linuxCsource/ldlrowmodify.c 
     
-    if v >= 7.8 
-        d = [d ' -DLONGBLAS=long']; 
+    if v >= 7.8
+        d = [d ' -DLONG -D''LONGBLAS=UF_long'''];
     end
 else
     mex -O -output trcov linuxCsource/trcov.c 

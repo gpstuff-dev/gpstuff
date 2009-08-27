@@ -1,4 +1,4 @@
-function opt = gp_inaopt(opt, method);
+function opt = gp_iaopt(opt, method);
 %GP_MCOPT     Default options for GP_INA
 %
 %             Description
@@ -100,4 +100,6 @@ switch method
   case 'CCD'
     opt.int_method = 'CCD';
     opt.improved = 'off';
+    opt.stepsize = 1;
+    opt.f0 = 1.1;
 end    

@@ -54,7 +54,7 @@ void mexFunction
   cholmod_sparse Amatrix, *A, *Lsparse ;
   cholmod_factor *L ;
   cholmod_common Common, *cm ;
-  Int minor ;
+  Int minor, *It2, *Jt2 ;
   mwIndex l, k2, h, k, i, j, ik, *I, *J, *Jt, *It, *I2, *J2, lfi, *w, *w2, *r;
   mwSize nnz, nnzlow, m, n;
   int nz = 0;
@@ -152,18 +152,18 @@ void mexFunction
       C = mxGetPr(Am);
       nnz = mxGetNzmax(Am); */
 
-    It = Lsparse->i;
-    Jt = Lsparse->p;
+    It2 = Lsparse->i;
+    Jt2 = Lsparse->p;
     Ct = Lsparse->x;
-    nnz = Lsparse->nzmax;
+    nnz = (mwSize) Lsparse->nzmax;
 
     Am = mxCreateSparse(m, m, nnz, mxREAL) ;
     I = mxGetIr(Am);
     J = mxGetJc(Am);
     C = mxGetPr(Am);
-    for (j = 0 ;  j < n+1 ; j++)  J[j] = Jt[j];
+    for (j = 0 ;  j < n+1 ; j++)  J[j] = (mwIndex) Jt2[j];
     for ( i = 0 ; i < nnz ; i++) {
-	I[i] = It[i];
+	I[i] = (mwIndex) It2[i];
 	C[i] = Ct[i];
     }
     
@@ -205,6 +205,12 @@ void mexFunction
     /* if (lfi > 0) */
     if ( J[j+1] > (J[j]+1) )
       {
+	/*	printf("lfi = %u \n ", lfi);
+	printf("lfi*double = %u \n", (mwSize)lfi*sizeof(double));
+	printf("lfi*lfi*double = %u \n", (mwSize)lfi*(mwSize)lfi*sizeof(double));
+	printf("\n \n");
+	*/
+	
 	fil = mxRealloc(fil,(mwSize)lfi*sizeof(double));
 	for (i=0;i<lfi;i++) fil[i] = C[J[j]+i+1];                   /* take the j'th lower triangular column of the Cholesky */
 	

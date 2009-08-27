@@ -1,12 +1,12 @@
 function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, param, tstindex)
-% GP_INA explores the hypeparameters around the mode and returns a
+% GP_IA explores the hypeparameters around the mode and returns a
 % list of GPs with different hyperparameters and corresponding weights
 %
-%       Description [GP_ARRAY, P_TH, EF, VARF, X, FX] = GP_INA(OPT,
+%       Description [GP_ARRAY, P_TH, EF, VARF, X, FX] = GP_IA(OPT,
 %       GP, XX, YY, TX, PARAM, TSTINDEX) takes a gp data structure GP
 %       with covariates XX and observations YY and returns an array of
 %       GPs GP_ARRAY and corresponding weights P_TH. Iff test
-%       covariates TX is included, GP_INA also returns corresponding
+%       covariates TX is included, GP_IA also returns corresponding
 %       mean EF and variance VARF (FX is PDF evaluated at X). TSTINDEX
 %       is for FIC. (will be explained better ...)
 %
@@ -70,10 +70,6 @@ if ~isfield(opt,'rotation')
     opt.rotation = true;
 end
 
-if strcmp(opt.int_method, 'CCD')
-    opt.step_size = 1;
-end
-
 if ~isfield(opt,'improved')
     opt.improved = 'off';
 end
@@ -108,10 +104,10 @@ switch opt.int_method
     if any(eig(Sigma)<0)
         jitter = 0;
         while any(eig(Sigma)<0)
-            jitter = jitter + eye(size(H,1))*0.0001;
+            jitter = jitter + eye(size(H,1))*0.01;
             Sigma = Sigma + jitter;
         end
-        warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
+        warning('gp_ia -> singular Hessian. Jitter of %.4f added.', jitter)
     end
 
     if ~opt.rotation
@@ -139,23 +135,23 @@ switch opt.int_method
           if exist('tx')
               if exist('tstindex')
                   if isfield(gp,'latent_method')
-                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                      p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
                       [Ef_grid(1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
                   else
-                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy);
+                      p_th(1) = -feval(fh_e,w,gp,xx,yy);
                       [Ef_grid(1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
                   end
               else
                   if isfield(gp,'latent_method')
-                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                      p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
                       [Ef_grid(1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
                   else
-                      p_th(1) = -feval(fh_e,w_n,gp,xx,yy);
+                      p_th(1) = -feval(fh_e,w,gp,xx,yy);
                       [Ef_grid(1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx);
                   end
               end
           else
-              p_th(1) = -feval(fh_e,w_n,gp,xx,yy,param);
+              p_th(1) = -feval(fh_e,w,gp,xx,yy,param);
           end
 
 % $$$           if exist('tx')
@@ -207,23 +203,23 @@ switch opt.int_method
                       if exist('tx')
                           if exist('tstindex')
                               if isfield(gp,'latent_method')
-                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                                  p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
                                   [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
                               else
-                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy);
+                                  p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy);
                                   [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
                               end
                           else
                               if isfield(gp,'latent_method')
-                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                                  p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
                                   [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx,param);
                               else
-                                  p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy);
+                                  p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy);
                                   [Ef_grid(end+1,:),Varf_grid(end+1,:)] = feval(fh_p,gp,xx,yy,tx);
                               end
                           end
                       else
-                          p_th(end+1) = -feval(fh_e,w_n,gp,xx,yy,param);
+                          p_th(end+1) = -feval(fh_e,w_p,gp,xx,yy,param);
                       end
                       
                       % If the density is enough, put the location in to the
@@ -308,7 +304,11 @@ switch opt.int_method
         end
         
         % Radius of the sphere (greater than 1)
-        f0=1.3;
+        if ~(isfield(opt, 'f0'))
+            f0=1.3;
+        else
+            f0 = opt.f0;
+        end
         
         % Design points
         points = H0(:,1+walsh(1:nParam));
@@ -421,10 +421,10 @@ switch opt.int_method
     if any(eig(Sigma)<0)
         jitter = 0;
         while any(eig(Sigma)<0)
-            jitter = jitter + eye(size(H,1))*0.0001;
+            jitter = jitter + eye(size(H,1))*0.01;
             Sigma = Sigma + jitter;
         end
-        warning('gp_ina -> singular Hessian. Jitter of %.4f added.', jitter)
+        warning('gp_ia -> singular Hessian. Jitter of %.4f added.', jitter)
     end
     
     % Number of samples
@@ -623,7 +623,7 @@ end
     % Compute first using gradients
     % If Hessian is singular try computing with 
     % larger step-size
-    while any(eig(H)<0) && delta < 1e-1
+    while any(eig(H)<0) && delta < 1e-2
         for i = 1:m
             for j = i:m
                 w1 = w0; w2 = w0;
@@ -637,12 +637,12 @@ end
                 H(j,i) = H(i,j);
             end
         end
-        delta = delta + 2e-4;
+        delta = delta + 1e-3;
     end
         
     % If the hessian is still singular or the delta is too large 
     % try to compute with finite differences for energies.
-    if any(eig(H)<0) || delta > 1e-1
+    if any(eig(H)<0) || delta > 1e-2
         delta = 1e-4;
         for i=1:m
             w1 = w0; w4 = w0;
@@ -673,7 +673,7 @@ end
     
     % even this does not work so print error
     if any(eig(H)<0)
-        error('gp_ina -> hessian: the Hessian matrix is singular. Check the optimization.')
+        warning('gp_ia -> hessian: the Hessian matrix is singular. Check the optimization.')
     end
     
     end
