@@ -308,6 +308,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             rec.nin = gp.nin;
             rec.nout = gp.nout;
             rec.type = gp.type;
+            rec.likelih = gp.likelih;
             % If sparse model is used save the information about which
             switch gp.type
               case 'FIC'
@@ -348,7 +349,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % Initialize the records of covariance functions
             for i=1:ncf
                 cf = gp.cf{i};
-                rec.cf{i} = feval(cf.fh_recappend, [], gp.nin);
+                rec.cf{i} = feval(cf.fh_recappend, [], gp.cf{i});
                 % Initialize metric structure
                 if isfield(cf,'metric')
                     rec.cf{i}.metric = feval(cf.metric.recappend, cf.metric, gp.nin);
@@ -356,7 +357,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             end
             for i=1:nn
                 noise = gp.noise{i};
-                rec.noise{i} = feval(noise.fh_recappend, [], gp.nin);
+                rec.noise{i} = feval(noise.fh_recappend, [], gp.noise{i});
             end
             
             % Initialize the record for likelihood

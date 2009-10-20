@@ -1,15 +1,18 @@
-function gpcf = gpcf_sexp(do, varargin)
-%GPCF_SEXP	Create a squared exponential covariance function for Gaussian Process
+function gpcf = gpcf_ppcs0(do, varargin)
+%GPCF_ppcs0	Create a piece wise polynomial (q=3) covariance function for Gaussian Process
 %
 %	Description
 %
-%	GPCF = GPCF_SEXP('INIT', NIN) Create and initialize squared exponential
+%	GPCF = GPCF_ppcs0('INIT', NIN) Create and initialize piece wise polynomial 
 %       covariance function for Gaussian process
 %
-%	The fields and (default values) in GPCF_SEXP are:
-%	  type           = 'gpcf_sexp'
+%	The fields and (default values) in GPCF_ppcs0 are:
+%	  type           = 'gpcf_ppcs0'
 %	  nin            = Number of inputs. (NIN)
 %	  nout           = Number of outputs. (always 1)
+%         cs             = 1. Tells that gpcf_ppcs0 is compact support function.
+%         l              = floor(nin/2) + 1. This parameter defines the order of the polynomial.
+%                          You can change the order by settin field 'l_nin' to a value greater than nin.
 %	  magnSigma2     = Magnitude (squared) for exponential part. 
 %                          (0.1)
 %	  lengthScale    = Length scale for each input. This can be either scalar corresponding 
@@ -36,15 +39,25 @@ function gpcf = gpcf_sexp(do, varargin)
 %         fh_recappend   = function handle to append the record function 
 %                          (gpcf_sexp_recappend)
 %
-%	GPCF = GPCF_SEXP('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	GPCF = GPCF_ppcs0('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
 %
+%       The piecewise polynomial function is the following:
+%
+%           k(x_i, x_j) = cs^(l)
+%
+%       where r = sum( (x_i,d - x_j,d).^2./l^2_d )
+%             l = floor(l_nin/2) + 2 
+%             cs = max(0,1-r);
+%       and l_nin must be greater or equal to gpcf.nin
+%       
+%
 %	See also
-%       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
+%       gpcf_sexp, gpcf_exp, gpcf_matern32, gpcf_matern52, gp_init, gp_e, gp_g, gp_trcov
 %       gp_cov, gp_unpak, gp_pak
     
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2006-2007 Jouni Hartikainen
+% Copyright (c) 2006-2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -53,34 +66,39 @@ function gpcf = gpcf_sexp(do, varargin)
     if nargin < 2
         error('Not enough arguments')
     end
-
+    
     % Initialize the covariance function
     if strcmp(do, 'init')
         nin = varargin{1};
-        gpcf.type = 'gpcf_sexp';
+        gpcf.type = 'gpcf_ppcs0';
         gpcf.nin = nin;
         gpcf.nout = 1;
-
+        gpcf.l = floor(nin/2) + 1;
+        
+        % cf is compactly supported
+        gpcf.cs = 1;
+        
         % Initialize parameters
-        gpcf.lengthScale= repmat(10, 1, nin);
+        gpcf.lengthScale= repmat(1, 1, nin); 
         gpcf.magnSigma2 = 0.1;
-
+        
         % Initialize prior structure
         gpcf.p=[];
         gpcf.p.lengthScale=[];
         gpcf.p.magnSigma2=[];
 
+        
         % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_sexp_pak;
-        gpcf.fh_unpak = @gpcf_sexp_unpak;
-        gpcf.fh_e = @gpcf_sexp_e;
-        gpcf.fh_ghyper = @gpcf_sexp_ghyper;
-        gpcf.fh_ginput = @gpcf_sexp_ginput;
-        gpcf.fh_cov = @gpcf_sexp_cov;
-        gpcf.fh_trcov  = @gpcf_sexp_trcov;
-        gpcf.fh_trvar  = @gpcf_sexp_trvar;
-        gpcf.fh_recappend = @gpcf_sexp_recappend;
-
+        gpcf.fh_pak = @gpcf_ppcs0_pak;
+        gpcf.fh_unpak = @gpcf_ppcs0_unpak;
+        gpcf.fh_e = @gpcf_ppcs0_e;
+        gpcf.fh_ghyper = @gpcf_ppcs0_ghyper;
+        gpcf.fh_ginput = @gpcf_ppcs0_ginput;
+        gpcf.fh_cov = @gpcf_ppcs0_cov;
+        gpcf.fh_trcov  = @gpcf_ppcs0_trcov;
+        gpcf.fh_trvar  = @gpcf_ppcs0_trvar;
+        gpcf.fh_recappend = @gpcf_ppcs0_recappend;
+        
         if length(varargin) > 1
             if mod(nargin,2) ~=0
                 error('Wrong number of arguments')
@@ -97,13 +115,18 @@ function gpcf = gpcf_sexp(do, varargin)
                   case 'metric'
                     gpcf.metric = varargin{i+1};
                     gpcf = rmfield(gpcf, 'lengthScale');
+                  case 'l_nin'
+                    if varargin{i+1} < gpcf.nin
+                        error('The l_nin has to be greater than egual to the number of inputs!')
+                    end
+                    gpcf.l = floor(varargin{i+1}/2) + 1;
                   otherwise
                     error('Wrong parameter name!')
-                end
+                end    
             end
         end
     end
-
+    
     % Set the parameter values of covariance function
     if strcmp(do, 'set')
         if mod(nargin,2) ~=0
@@ -122,18 +145,22 @@ function gpcf = gpcf_sexp(do, varargin)
               case 'metric'
                 gpcf.metric = varargin{i+1};
                 gpcf = rmfield(gpcf, 'lengthScale');
+              case 'l_nin'
+                if varargin{i+1} < gpcf.nin
+                    error('The l_nin has to be greater than egual to the number of inputs!')
+                end
+                gpcf.l = floor(varargin{i+1}/2) + 1; 
               otherwise
                 error('Wrong parameter name!')
-            end
+            end    
         end
     end
-
     
-    function w = gpcf_sexp_pak(gpcf, w)
-    %GPCF_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    function w = gpcf_ppcs0_pak(gpcf, w)
+    %GPCF_ppcs0_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
-    %	W = GPCF_SEXP_PAK(GPCF, W) takes a covariance function data structure GPCF and
+    %	W = GPCF_ppcs0_PAK(GPCF, W) takes a covariance function data structure GPCF and
     %	combines the hyper-parameters into a single row vector W.
     %
     %	The ordering of the parameters in W is:
@@ -141,7 +168,7 @@ function gpcf = gpcf_sexp(do, varargin)
     %	  
     %
     %	See also
-    %	GPCF_SEXP_UNPAK
+    %	GPCF_ppcs0_UNPAK        
         
         if isfield(gpcf,'metric')
             i1=0;i2=1;
@@ -160,14 +187,13 @@ function gpcf = gpcf_sexp(do, varargin)
             if ~isempty(w)
                 i1 = length(w);
             end
+            
             i1 = i1+1;
             w(i1) = gpcf.magnSigma2;
             i2=i1+length(gpcf.lengthScale);
             i1=i1+1;
             w(i1:i2)=gpcf.lengthScale;
             i1=i2;
-            
-            % Hyperparameters of lengthScale
             if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                 i1=i1+1;
                 w(i1)=gpp.lengthScale.a.s;
@@ -182,19 +208,19 @@ function gpcf = gpcf_sexp(do, varargin)
 
 
 
-    function [gpcf, w] = gpcf_sexp_unpak(gpcf, w)
-    %GPCF_SEXP_UNPAK  Separate covariance function hyper-parameter vector into components.
+    function [gpcf, w] = gpcf_ppcs0_unpak(gpcf, w)
+    %GPCF_ppcs0_UNPAK  Separate covariance function hyper-parameter vector into components.
     %
     %	Description
-    %	[GPCF, W] = GPCF_SEXP_UNPAK(GPCF, W) takes a covariance function data structure GPCF
+    %	[GPCF, W] = GPCF_ppcs0_UNPAK(GPCF, W) takes a covariance function data structure GPCF
     %	and  a hyper-parameter vector W, and returns a covariance function data
     %	structure  identical to the input, except that the covariance hyper-parameters 
     %   has been set to the values in W. Deletes the values set to GPCF from W and returns 
     %   the modeified W. 
     %
     %	See also
-    %	GPCF_SEXP_PAK
-    %
+    %	GPCF_ppcs0_PAK
+        
         if isfield(gpcf,'metric')
             i1=1;
             gpcf.magnSigma2=w(i1);
@@ -202,6 +228,7 @@ function gpcf = gpcf_sexp(do, varargin)
             [metric, w] = feval(gpcf.metric.unpak, gpcf.metric, w);
             gpcf.metric = metric;
         else
+            
             gpp=gpcf.p;
             i1=0;i2=1;
             i1=i1+1;
@@ -210,7 +237,6 @@ function gpcf = gpcf_sexp(do, varargin)
             i1=i1+1;
             gpcf.lengthScale=w(i1:i2);
             i1=i2;
-            % Hyperparameters of lengthScale
             if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
                 i1=i1+1;
                 gpcf.p.lengthScale.a.s=w(i1);
@@ -223,19 +249,19 @@ function gpcf = gpcf_sexp(do, varargin)
         end
     end
     
-    function eprior =gpcf_sexp_e(gpcf, x, t)
-    %GPCF_SEXP_E     Evaluate the energy of prior of SEXP parameters
+    function eprior =gpcf_ppcs0_e(gpcf, x, t)
+    %GPCF_ppcs0_E     Evaluate the energy of prior of ppcs0 parameters
     %
     %	Description
-    %	E = GPCF_SEXP_E(GPCF, X, T) takes a covariance function data structure 
+    %	E = GPCF_ppcs0_E(GPCF, X, T) takes a covariance function data structure 
     %   GPCF together with a matrix X of input vectors and a matrix T of target 
     %   vectors and evaluates log p(th) x J, where th is a vector of SEXP parameters 
     %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
     %   are log transformed, when packed.)
     %
     %	See also
-    %	GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_G, GP_E
-    %
+    %	GPCF_ppcs0_PAK, GPCF_ppcs0_UNPAK, GPCF_ppcs0_G, GP_E
+        
         eprior = 0;
         gpp=gpcf.p;
         
@@ -249,12 +275,13 @@ function gpcf = gpcf_sexp(do, varargin)
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
             
         else
+
             % Evaluate the prior contribution to the error. The parameters that
-            % are sampled are from space W = log(w) where w is all the "real" samples.
-            % On the other hand errors are evaluated in the W-space so we need take
-            % into account also the  Jacobian of transformation W -> w = exp(W).
+            % are sampled are from space W = log(w) where w is all the "real" samples.  
+            % On the other hand errors are evaluated in the W-space so we need take 
+            % into account also the  Jakobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-                    
+        
             eprior=eprior...
                    +feval(gpp.magnSigma2.fe, ...
                           gpcf.magnSigma2, gpp.magnSigma2.a)...
@@ -277,13 +304,13 @@ function gpcf = gpcf_sexp(do, varargin)
                    -sum(log(gpcf.lengthScale));
         end
     end
-
-    function [DKff, gprior]  = gpcf_sexp_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
-    %GPCF_SEXP_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
+    
+    function [DKff, gprior]  = gpcf_ppcs0_ghyper(gpcf, x, x2, mask)
+    %GPCF_ppcs0_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[GPRIOR, DKff, DKuu, DKuf] = GPCF_SEXP_GHYPER(GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) 
+    %	Descriptioni
+    %	[GPRIOR, DKff, DKuu, DKuf] = GPCF_ppcs0_GHYPER(GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA and GPRIOR. Returns:
     %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
@@ -295,8 +322,8 @@ function gpcf = gpcf_sexp(do, varargin)
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
     %
     %	See also
-    %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_E, GP_G
-
+    %   GPCF_ppcs0_PAK, GPCF_ppcs0_UNPAK, GPCF_ppcs0_E, GP_G
+        
         gpp=gpcf.p;
         [n, m] =size(x);
 
@@ -309,38 +336,113 @@ function gpcf = gpcf_sexp(do, varargin)
 
         % evaluate the gradient for training covariance
         if nargin == 2
-            Cdm = gpcf_sexp_trcov(gpcf, x);
-            
+            Cdm = gpcf_ppcs0_trcov(gpcf, x);
+
             ii1=1;
             DKff{ii1} = Cdm;
-
+            
+            l = gpcf.l;
+            [I,J] = find(Cdm);
+            
             if isfield(gpcf,'metric')
-                dist = feval(gpcf.metric.distance, gpcf.metric, x);
-                [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x);
+                % Compute the sparse distance matrix and its gradient.
+                ntriplets = (nnz(Cdm)-n)./2;
+                I = zeros(ntriplets,1);
+                J = zeros(ntriplets,1);
+                dist = zeros(ntriplets,1);
+                for jj = 1:length(gpcf.metric.params)
+                    gdist{jj} = zeros(ntriplets,1);
+                end
+                ntriplets = 0;                
+                for ii=1:n-1
+                    col_ind = ii + find(Cdm(ii+1:n,ii));
+                    d = zeros(length(col_ind),1);
+                    d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii,:));
+                    
+                    [gd, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x(col_ind,:), x(ii,:));
+
+                    ntrip_prev = ntriplets;
+                    ntriplets = ntriplets + length(d);
+                    
+                    ind_tr = ntrip_prev+1:ntriplets;
+                    I(ind_tr) = col_ind;
+                    J(ind_tr) = ii;
+                    dist(ind_tr) = d;
+                    for jj = 1:length(gd)
+                        gdist{jj}(ind_tr) = gd{jj};
+                    end
+                end
+                
+                ma2 = gpcf.magnSigma2;
+                    
+                cs = 1-dist;
+                
+                Dd = -l.*cs.^(l-1);
+                Dd = ma2.*Dd;
+                
                 for i=1:length(gdist)
                     ii1 = ii1+1;
-                    DKff{ii1} = -2.*Cdm.*dist.*gdist{i};
+                    D = Dd.*gdist{i};
+                    D = sparse(I,J,D,n,n);
+                    DKff{ii1} = D + D';
                 end
+                
             else
                 % loop over all the lengthScales
                 if length(gpcf.lengthScale) == 1
-                    % In the case of isotropic SEXP
-                    s = 2./gpcf.lengthScale.^2;
-                    dist = 0;
-                    for i=1:m
-                        D = gminus(x(:,i),x(:,i)');
-                        dist = dist + D.^2;
-                    end
-                    D = Cdm.*s.*dist;
+                    % In the case of isotropic ppcs0
+                    s2 = 1./gpcf.lengthScale.^2;
+                    ma2 = gpcf.magnSigma2;
                     
+                    % Calculate the sparse distance (lower triangle) matrix
+                    d2 = 0;
+                    for i = 1:m
+                        d2 = d2 + s2.*(x(I,i) - x(J,i)).^2;
+                    end
+                    d = sqrt(d2);
+                    
+                    % Create the 'compact support' matrix, that is, (1-R)_+,
+                    % where ()_+ truncates all non-positive inputs to zero.
+                    cs = 1-d;
+                    
+                    % Calculate the gradient matrix                                        
+                    D = -l.*cs.^(l-1);
+                    D = -d.*ma2.*D;
+                    D = sparse(I,J,D,n,n);
+                                        
                     ii1 = ii1+1;
                     DKff{ii1} = D;
                 else
                     % In the case ARD is used
-                    for i=1:m
-                        s = 2./gpcf.lengthScale(i).^2;
-                        dist = gminus(x(:,i),x(:,i)');
-                        D = Cdm.*s.*dist.^2;
+                    s2 = 1./gpcf.lengthScale.^2;
+                    ma2 = gpcf.magnSigma2;
+                    
+                    % Calculate the sparse distance (lower triangle) matrix
+                    % and the distance matrix for each component
+                    d2 = 0;
+                    d_l2 = [];
+                    for i = 1:m
+                        d_l2(:,i) = s2(i).*(x(I,i) - x(J,i)).^2;
+                        d2 = d2 + d_l2(:,i);
+                    end
+                    d = sqrt(d2);
+                    d_l = d_l2;
+                    
+                    % Create the 'compact support' matrix, that is, (1-R)_+,
+                    % where ()_+ truncates all non-positive inputs to zero.
+                    cs = 1-d;
+                    
+                    Dd = -l.*cs.^(l-1);
+                    Dd = -ma2.*Dd;                    
+                    int = d ~= 0;
+
+                    
+                    for i = 1:m
+                        % Calculate the gradient matrix
+                        D = d_l(:,i).*Dd;
+                        % Divide by r in cases where r is non-zero
+                        D(int) = D(int)./d(int);
+                        D = sparse(I,J,D,n,n);
                         
                         ii1 = ii1+1;
                         DKff{ii1} = D;
@@ -350,47 +452,118 @@ function gpcf = gpcf_sexp(do, varargin)
             % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
         elseif nargin == 3
             if size(x,2) ~= size(x2,2)
-                error('gpcf_sexp -> _ghyper: The number of columns in x and x2 has to be the same. ')
+                error('gpcf_ppcs -> _ghyper: The number of columns in x and x2 has to be the same. ')
             end
             
             ii1=1;
             K = feval(gpcf.fh_cov, gpcf, x, x2);
             DKff{ii1} = K;
+
+            l = gpcf.l;
             
-            if isfield(gpcf,'metric')                
-                dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
-                [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, x2);
-                for i=1:length(gdist)
-                    ii1 = ii1+1;                    
-                    DKff{ii1} = -2.*K.*dist.*gdist{i};                    
+            if isfield(gpcf,'metric')
+                % If other than scaled euclidean metric
+                [n1,m1]=size(x);
+                [n2,m2]=size(x2);
+                
+                ma = gpcf.magnSigma2;
+                
+                % Compute the sparse distance matrix.
+                ntriplets = nnz(K);
+                I = zeros(ntriplets,1);
+                J = zeros(ntriplets,1);
+                R = zeros(ntriplets,1);
+                dist = zeros(ntriplets,1);
+                for jj = 1:length(gpcf.metric.params)
+                    gdist{jj} = zeros(ntriplets,1);
                 end
-            else
-                % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-                if length(gpcf.lengthScale) == 1
-                    % In the case of an isotropic SEXP
-                    s = 1./gpcf.lengthScale.^2;
-                    dist = 0; dist2 = 0;
-                    for i=1:m
-                        dist = dist + (gminus(x(:,i),x2(:,i)')).^2;                        
+                ntriplets = 0;
+                for ii=1:n2
+                    d = zeros(n1,1);
+                    d = feval(gpcf.metric.distance, gpcf.metric, x, x2(ii,:));
+                    [gd, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, x2(ii,:));
+                    
+                    I0t = find(d==0);
+                    d(d >= 1) = 0;
+                    [I2,J2,R2] = find(d);
+                    len = length(R);
+                    ntrip_prev = ntriplets;
+                    ntriplets = ntriplets + length(R2);
+
+                    ind_tr = ntrip_prev+1:ntriplets;
+                    I(ind_tr) = I2;
+                    J(ind_tr) = ii;
+                    dist(ind_tr) = R2;
+                    for jj = 1:length(gd)
+                        gdist{jj}(ind_tr) = gd{jj}(I2);
                     end
-                    DK_l = 2.*s.*K.*dist;
+                end
+
+                
+                ma2 = gpcf.magnSigma2;
+                    
+                cs = 1-dist;
+                
+                Dd = -l.*cs.^(l-1);
+                Dd = ma2.*Dd;
+                
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+                    D = Dd.*gdist{i};
+                    D = sparse(I,J,D,n1,n2);
+                    DKff{ii1} = D;
+                end
+
+            else
+            
+                % loop over all the lengthScales
+                if length(gpcf.lengthScale) == 1
+                    % In the case of isotropic ppcs0
+                    s2 = 1./gpcf.lengthScale.^2;
+                    ma2 = gpcf.magnSigma2;
+                    
+                    % Calculate the sparse distance (lower triangle) matrix
+                    dist1 = 0;
+                    for i=1:m
+                        dist1 = dist1 + s2.*(gminus(x(:,i),x2(:,i)')).^2;
+                    end
+                    d1 = sqrt(dist1); 
+                    cs1 = max(1-d1,0);
+                    
+                    DK_l = -l.*cs1.^(l-1);
+                    DK_l = -d1.*ma2.*DK_l;
                     
                     ii1=ii1+1;
                     DKff{ii1} = DK_l;
                 else
                     % In the case ARD is used
-                    for i=1:m
-                        s = 1./gpcf.lengthScale(i).^2;        % set the length
-                        dist = gminus(x(:,i),x2(:,i)');
-                        DK_l = 2.*s.*K.*dist.^2;
-                        
+                    s2 = 1./gpcf.lengthScale.^2;
+                    ma2 = gpcf.magnSigma2;
+                    
+                    % Calculate the sparse distance (lower triangle) matrix
+                    % and the distance matrix for each component
+                    dist1 = 0; 
+                    d_l1 = [];
+                    for i = 1:m
+                        dist1 = dist1 + s2(i).*gminus(x(:,i),x2(:,i)').^2;
+                        d_l1{i} = s2(i).*(gminus(x(:,i),x2(:,i)')).^2;
+                    end
+                    d1 = sqrt(dist1); 
+                    cs1 = max(1-d1,0);
+                    
+                    for i = 1:m
+                        % Calculate the gradient matrix
+                        DK_l = -l.*cs1.^(l-1);                
+                        DK_l = -ma2.*DK_l.*d_l1{i};
+                        % Divide by r in cases where r is non-zero
+                        DK_l(d1 ~= 0) = DK_l(d1 ~= 0)./d1(d1 ~= 0);
                         ii1=ii1+1;
                         DKff{ii1} = DK_l;
                     end
                 end
             end
-            % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
-            %           DKff{2...} = d mask(Kff,I) / d lengthScale
+          % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
+          %           DKff{2...} = d mask(Kff,I) / d lengthScale
         elseif nargin == 4
             if isfield(gpcf,'metric')
                 ii1=1;
@@ -411,7 +584,6 @@ function gpcf = gpcf_sexp(do, varargin)
                 end
             end
         end
-        
         if nargout > 1
             if isfield(gpcf,'metric')
                 % Evaluate the gprior with respect to magnSigma2
@@ -425,7 +597,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     gprior(i1)=gprior_dist(i2);
                 end
             else
-                % Evaluate the gprior with respect to magnSigma2
+                % Evaluate the gdata and gprior with respect to magnSigma2
                 i1 = i1+1;
                 gprior(i1)=feval(gpp.magnSigma2.fg, ...
                                  gpcf.magnSigma2, ...
@@ -443,6 +615,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     gprior(i1)=feval(gpp.lengthScale.fg, ...
                                      gpcf.lengthScale, ...
                                      gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
+                    
                 end
                 % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
                 if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
@@ -468,11 +641,10 @@ function gpcf = gpcf_sexp(do, varargin)
             end
         end
     end
-
-
-    function [DKff, gprior]  = gpcf_sexp_ginput(gpcf, x, x2)
+    
+    function [gprior,DKff]  = gpcf_ppcs0_ginput(gpcf, x, x2)
     %GPCF_SEXP_GIND     Evaluate gradient of covariance function with 
-    %                   respect to x.
+    %                   respect to the inducing inputs.
     %
     %	Descriptioni
     %	[GPRIOR_IND, DKuu, DKuf] = GPCF_SEXP_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
@@ -488,134 +660,116 @@ function gpcf = gpcf_sexp(do, varargin)
     %	See also
     %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_E, GP_G
         
-        [n, m] =size(x);
-        ii1 = 0;
-        if nargin == 2
-            K = feval(gpcf.fh_trcov, gpcf, x);
-            if isfield(gpcf,'metric')
-                dist = feval(gpcf.metric.distance, gpcf.metric, x);
-                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x);
-                for i=1:length(gdist)
-                    ii1 = ii1+1;
-                    DKff{ii1} = -2.*K.*dist.*gdist{ii1};
-                    gprior(ii1) = gprior_dist(ii1);
-                end
-            else
-                if length(gpcf.lengthScale) == 1
-                    % In the case of an isotropic SEXP
-                    s = repmat(1./gpcf.lengthScale.^2, 1, m);
-                else
-                    s = 1./gpcf.lengthScale.^2;
-                end
-                for i=1:m
-                    for j = 1:n
-                        DK = zeros(size(K));
-                        DK(j,:) = -2.*s(i).*gminus(x(j,i),x(:,i)');
-                        DK = DK + DK';
-                        
-                        DK = DK.*K;      % dist2 = dist2 + dist2' - diag(diag(dist2));
-                        
-                        ii1 = ii1 + 1;
-                        DKff{ii1} = DK;
-                        gprior(ii1) = 0; 
-                    end
-                end
-            end
-            
-        elseif nargin == 3
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
-            
-            if isfield(gpcf,'metric')
-                dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
-                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
-                for i=1:length(gdist)
-                    ii1 = ii1+1;
-                    DKff{ii1}   = -2.*K.*dist.*gdist{ii1};
-                    gprior(ii1) = gprior_dist(ii1);
-                end
-            else
-            
-                if length(gpcf.lengthScale) == 1
-                    % In the case of an isotropic SEXP
-                    s = repmat(1./gpcf.lengthScale.^2, 1, m);
-                else
-                    s = 1./gpcf.lengthScale.^2;
-                end
-                
-                ii1 = 0;
-                for i=1:m
-                    for j = 1:n
-                        DK= zeros(size(K));
-                        DK(j,:) = -2.*s(i).*gminus(x(j,i),x2(:,i)');
-                        
-                        DK = DK.*K;
-                        
-                        ii1 = ii1 + 1;
-                        DKff{ii1} = DK;
-                        gprior(ii1) = 0; 
-                    end
-                end
-            end
-        end
+        DKuu={};
+        DKff={};
     end
-
-
-    function C = gpcf_sexp_cov(gpcf, x1, x2)
-    % GP_SEXP_COV     Evaluate covariance matrix between two input vectors.
+    
+    
+    function C = gpcf_ppcs0_cov(gpcf, x1, x2, varargin)
+    % GP_ppcs0_COV     Evaluate covariance matrix between two input vectors.
     %
     %         Description
-    %         C = GP_SEXP_COV(GP, TX, X) takes in covariance function of a Gaussian
+    %         C = GP_ppcs0_COV(GP, TX, X) takes in covariance function of a Gaussian
     %         process GP and two matrixes TX and X that contain input vectors to
     %         GP. Returns covariance matrix C. Every element ij of C contains
     %         covariance between inputs i in TX and j in X.
     %
     %
     %         See also
-    %         GPCF_SEXP_TRCOV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
-        
-        if isempty(x2)
-            x2=x1;
-        end
-        [n1,m1]=size(x1);
-        [n2,m2]=size(x2);
-
-        if m1~=m2
-            error('the number of columns of X1 and X2 has to be same')
-        end
+    %         GPCF_ppcs0_TRCOV, GPCF_ppcs0_TRVAR, GP_COV, GP_TRCOV
 
         if isfield(gpcf,'metric')
-            dist = feval(gpcf.metric.distance, gpcf.metric, x1, x2).^2;
-            dist(dist<eps) = 0;
-            C = gpcf.magnSigma2.*exp(-dist);            
-        else
-            C=zeros(n1,n2);
-            ma2 = gpcf.magnSigma2;
+            % If other than scaled euclidean metric
+            [n1,m1]=size(x1);
+            [n2,m2]=size(x2);
             
-            % Evaluate the covariance
-            if ~isempty(gpcf.lengthScale)
-                s = 1./gpcf.lengthScale.^2;
-                if m1==1 && m2==1
-                    dd = gminus(x1,x2');
-                    dist=dd.^2*s;
-                else
-                    % If ARD is not used make s a vector of
-                    % equal elements
-                    if size(s)==1
-                        s = repmat(s,1,m1);
-                    end
-                    dist=zeros(n1,n2);
-                    for j=1:m1
-                        dd = gminus(x1(:,j),x2(:,j)');
-                        dist = dist + dd.^2.*s(:,j);
-                    end
-                end
-                dist(dist<eps) = 0;
-                C = ma2.*exp(-dist);
+            ma = gpcf.magnSigma2;
+            l = gpcf.l;
+            
+            % Compute the sparse distance matrix.
+            ntriplets = max(1,floor(0.03*n1*n2));
+            I = zeros(ntriplets,1);
+            J = zeros(ntriplets,1);
+            R = zeros(ntriplets,1);
+            ntriplets = 0;
+            I0=zeros(ntriplets,1);
+            J0=zeros(ntriplets,1);
+            nn0=0;
+            for ii1=1:n2
+                d = zeros(n1,1);
+                d = feval(gpcf.metric.distance, gpcf.metric, x1, x2(ii1,:));
+                I0t = find(d==0);
+                d(d >= 1) = 0;
+                [I2,J2,R2] = find(d);
+                len = length(R);
+                ntrip_prev = ntriplets;
+                ntriplets = ntriplets + length(R2);
+
+                I(ntrip_prev+1:ntriplets) = I2;
+                J(ntrip_prev+1:ntriplets) = ii1;
+                R(ntrip_prev+1:ntriplets) = R2;
+                I0(nn0+1:nn0+length(I0t)) = I0t;
+                J0(nn0+1:nn0+length(I0t)) = ii1;
+                nn0 = nn0+length(I0t);
             end
+            r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
+            [I,J,r] = find(r);
+            cs = full(sparse(max(0, 1-r)));
+            C = ma.*cs.^l;
+            C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma,n1,n2);
+        else
+            % If scaled euclidean metric
+            
+            [n1,m1]=size(x1);
+            [n2,m2]=size(x2);
+            
+            s = 1./(gpcf.lengthScale);
+            s2 = s.^2;
+            if size(s)==1
+                s2 = repmat(s2,1,m1);
+            end
+            ma = gpcf.magnSigma2;
+            l = gpcf.l;
+            
+            % Compute the sparse distance matrix.
+            ntriplets = max(1,floor(0.03*n1*n2));
+            I = zeros(ntriplets,1);
+            J = zeros(ntriplets,1);
+            R = zeros(ntriplets,1);
+            ntriplets = 0;
+            I0=zeros(ntriplets,1);
+            J0=zeros(ntriplets,1);
+            nn0=0;
+            for ii1=1:n2
+                d = zeros(n1,1);
+                for j=1:m1
+                    d = d + s2(j).*(x1(:,j)-x2(ii1,j)).^2;
+                end
+                d = sqrt(d);
+                I0t = find(d==0);
+                d(d >= 1) = 0;
+                [I2,J2,R2] = find(d);
+                len = length(R);
+                ntrip_prev = ntriplets;
+                ntriplets = ntriplets + length(R2);
+
+                I(ntrip_prev+1:ntriplets) = I2;
+                J(ntrip_prev+1:ntriplets) = ii1;
+                R(ntrip_prev+1:ntriplets) = R2;
+                I0(nn0+1:nn0+length(I0t)) = I0t;
+                J0(nn0+1:nn0+length(I0t)) = ii1;
+                nn0 = nn0+length(I0t);
+            end
+            r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
+            [I,J,r] = find(r);
+            cs = full(sparse(max(0, 1-r)));
+            
+            C = ma.*cs.^l;
+            C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma,n1,n2);
         end
     end
-
-    function C = gpcf_sexp_trcov(gpcf, x)
+    
+    function C = gpcf_ppcs0_trcov(gpcf, x)
     % GP_SEXP_TRCOV     Evaluate training covariance matrix of inputs.
     %
     %         Description
@@ -626,30 +780,55 @@ function gpcf = gpcf_sexp(do, varargin)
     %
     %
     %         See also
-    %         GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
-
+    %         GPCF_ppcs0_TRCOV, GPCF_ppcs0_TRVAR, GP_COV, GP_TRCOV
+        
         if isfield(gpcf,'metric')
             % If other than scaled euclidean metric
             
             [n, m] =size(x);            
             ma = gpcf.magnSigma2;
+            l = gpcf.l;
             
-            C = zeros(n,n);
+            % Compute the sparse distance matrix.
+            ntriplets = max(1,floor(0.03*n*n));
+            I = zeros(ntriplets,1);
+            J = zeros(ntriplets,1);
+            R = zeros(ntriplets,1);
+            ntriplets = 0;
             for ii1=1:n-1
                 d = zeros(n-ii1,1);
                 col_ind = ii1+1:n;
-                d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
-                C(col_ind,ii1) = d;
+                d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii1,:));
+                d(d >= 1) = 0;
+                [I2,J2,R2] = find(d);
+                len = length(R);
+                ntrip_prev = ntriplets;
+                ntriplets = ntriplets + length(R2);
+                if (ntriplets > len)
+                    I(2*len) = 0;
+                    J(2*len) = 0;
+                    R(2*len) = 0;
+                end
+                ind_tr = ntrip_prev+1:ntriplets;
+                I(ind_tr) = ii1+I2;
+                J(ind_tr) = ii1;
+                R(ind_tr) = R2;
             end
-            C(C<eps) = 0;
-            C = C+C';
-            C = ma.*exp(-C);            
+            R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
+            
+            % Find the non-zero elements of R.
+            [I,J,rn] = find(R);
+            cs = max(0,1-rn);
+            C = ma.*cs.^l;
+            C = sparse(I,J,C,n,n);
+            C = C + C' + sparse(1:n,1:n,ma,n,n);
+            
         else
-            % If scaled euclidean metric
-            % Try to use the C-implementation
-            C = trcov(gpcf, x);
+            % If a scaled euclidean metric try first mex-implementation 
+            % and if there is not such... 
+            C = trcov(gpcf,x);
+            % ... evaluate the covariance here.
             if isnan(C)
-                % If there wasn't C-implementation do here
                 [n, m] =size(x);
                 
                 s = 1./(gpcf.lengthScale);
@@ -658,46 +837,70 @@ function gpcf = gpcf_sexp(do, varargin)
                     s2 = repmat(s2,1,m);
                 end
                 ma = gpcf.magnSigma2;
+                l = gpcf.l;
                 
-                C = zeros(n,n);
+                % Compute the sparse distance matrix.
+                ntriplets = max(1,floor(0.03*n*n));
+                I = zeros(ntriplets,1);
+                J = zeros(ntriplets,1);
+                R = zeros(ntriplets,1);
+                ntriplets = 0;
                 for ii1=1:n-1
                     d = zeros(n-ii1,1);
                     col_ind = ii1+1:n;
                     for ii2=1:m
                         d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
-                    C(col_ind,ii1) = d;
+                    %d = sqrt(d);
+                    d(d >= 1) = 0;
+                    [I2,J2,R2] = find(d);
+                    len = length(R);
+                    ntrip_prev = ntriplets;
+                    ntriplets = ntriplets + length(R2);
+                    if (ntriplets > len)
+                        I(2*len) = 0;
+                        J(2*len) = 0;
+                        R(2*len) = 0;
+                    end
+                    ind_tr = ntrip_prev+1:ntriplets;
+                    I(ind_tr) = ii1+I2;
+                    J(ind_tr) = ii1;
+                    R(ind_tr) = sqrt(R2);
                 end
-                C(C<eps) = 0;
-                C = C+C';
-                C = ma.*exp(-C);
+                R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
+                
+                % Find the non-zero elements of R.
+                [I,J,rn] = find(R);
+                cs = max(0,1-rn);
+                C = ma.*cs.^l;
+                C = sparse(I,J,C,n,n);
+                C = C + C' + sparse(1:n,1:n,ma,n,n);
             end
         end
-    end
-
-    function C = gpcf_sexp_trvar(gpcf, x)
-    % GP_SEXP_TRVAR     Evaluate training variance vector
+    end    
+    
+    function C = gpcf_ppcs0_trvar(gpcf, x)
+    % GP_ppcs0_TRVAR     Evaluate training variance vector
     %
     %         Description
-    %         C = GP_SEXP_TRVAR(GPCF, TX) takes in covariance function of a Gaussian
+    %         C = GP_ppcs0_TRVAR(GPCF, TX) takes in covariance function of a Gaussian
     %         process GPCF and matrix TX that contains training inputs. Returns variance 
     %         vector C. Every element i of C contains variance of input i in TX
     %
     %
     %         See also
-    %         GPCF_SEXP_COV, GP_COV, GP_TRCOV
-
-
+    %         GPCF_ppcs0_COV, GP_COV, GP_TRCOV
+        
         [n, m] =size(x);
-
+        
         C = ones(n,1)*gpcf.magnSigma2;
         C(C<eps)=0;
     end
 
-    function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
+    function reccf = gpcf_ppcs0_recappend(reccf, ri, gpcf)
     % RECAPPEND - Record append
     %          Description
-    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
+    %          RECCF = GPCF_ppcs0_RECAPPEND(RECCF, RI, GPCF) takes old covariance
     %          function record RECCF, record index RI and covariance function structure. 
     %          Appends the parameters of GPCF to the RECCF in the ri'th place.
     %
@@ -709,26 +912,32 @@ function gpcf = gpcf_sexp(do, varargin)
     %
     %          See also
     %          GP_MC and GP_MC -> RECAPPEND
-
+        
     % Initialize record
         if nargin == 2
-            reccf.type = 'gpcf_sexp';
-            reccf.nin = ri.nin;
+            reccf.type = 'gpcf_ppcs0';
+            reccf.nin = ri;
             reccf.nout = 1;
+            reccf.l = floor(reccf.nin/2)+4;
 
+            % cf is compactly supported
+            reccf.cs = 1;
+            
             % Initialize parameters
             reccf.lengthScale= [];
             reccf.magnSigma2 = [];
-
+            
             % Set the function handles
-            reccf.fh_pak = @gpcf_sexp_pak;
-            reccf.fh_unpak = @gpcf_sexp_unpak;
-            reccf.fh_e = @gpcf_sexp_e;
-            reccf.fh_g = @gpcf_sexp_g;
-            reccf.fh_cov = @gpcf_sexp_cov;
-            reccf.fh_trcov  = @gpcf_sexp_trcov;
-            reccf.fh_trvar  = @gpcf_sexp_trvar;
-            reccf.fh_recappend = @gpcf_sexp_recappend;
+            reccf.fh_pak = @gpcf_ppcs0_pak;
+            reccf.fh_unpak = @gpcf_ppcs0_unpak;
+            reccf.fh_e = @gpcf_ppcs0_e;
+            reccf.fh_g = @gpcf_ppcs0_g;
+            reccf.fh_cov = @gpcf_ppcs0_cov;
+            reccf.fh_trcov  = @gpcf_ppcs0_trcov;
+            reccf.fh_trvar  = @gpcf_ppcs0_trvar;
+            %  gpcf.fh_sampling = @hmc2;
+            %  reccf.sampling_opt = hmc2_opt;
+            reccf.fh_recappend = @gpcf_ppcs0_recappend;  
             reccf.p=[];
             reccf.p.lengthScale=[];
             reccf.p.magnSigma2=[];
@@ -740,24 +949,22 @@ function gpcf = gpcf_sexp(do, varargin)
             end
             return
         end
-
-        gpp = gpcf.p;
         
-        if ~isfield(gpcf,'metric')
-            % record lengthScale
-            if ~isempty(gpcf.lengthScale)
-                if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                    reccf.p.lengthScale.a.s(ri,:)=gpp.lengthScale.a.s;
-                    if isfield(gpp.lengthScale,'p')
-                        if isfield(gpp.lengthScale.p,'nu')
-                            reccf.p.lengthScale.a.nu(ri,:)=gpp.lengthScale.a.nu;
-                        end
+        gpp = gpcf.p;
+
+        % record lengthScale
+        if ~isempty(gpcf.lengthScale)
+            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
+                reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
+                if isfield(gpp.lengthScale,'p')
+                    if isfield(gpp.lengthScale.p,'nu')
+                        reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
                     end
                 end
-                reccf.lengthScale(ri,:)=gpcf.lengthScale;
-            elseif ri==1
-                reccf.lengthScale=[];
             end
+            reccf.lengthScale(ri,:)=gpcf.lengthScale;
+        elseif ri==1
+            reccf.lengthScale=[];
         end
         % record magnSigma2
         if ~isempty(gpcf.magnSigma2)
@@ -766,4 +973,4 @@ function gpcf = gpcf_sexp(do, varargin)
             reccf.magnSigma2=[];
         end
     end
-end
+end    

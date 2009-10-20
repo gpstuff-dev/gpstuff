@@ -134,6 +134,9 @@ end
 
 %-------------------------------------------------------------------------------
 
+cholmod_path = [suiteSparse 'CHOLMOD/'];
+include = strrep(include, '../../', suiteSparse);
+include = strrep(include, '../', cholmod_path);
 include = strrep (include, '/', filesep) ;
 
 amd_src = { ...
@@ -288,8 +291,8 @@ if (pc)
     % Windows does not have drand48 and srand48, required by METIS.  Use
     % drand48 and srand48 in CHOLMOD/MATLAB/Windows/rand48.c instead.
     obj_extension = '.obj' ;
-    cholmod_matlab = [cholmod_matlab {'Windows/rand48'}] ;
-    include = [include ' -IWindows'] ;
+    cholmod_matlab = [cholmod_matlab {[cholmod_path 'MATLAB\Windows\rand48']}] ;
+    include = [include ' -I' cholmod_path '\MATLAB\Windows'] ;
 else
     obj_extension = '.o' ;
 end
@@ -302,13 +305,8 @@ if (have_metis)
     source = [metis_src source] ;
 end
 
-cholmod_path = [suiteSparse 'CHOLMOD/'];
-include = strrep(include, '../../', suiteSparse);
-include = strrep(include, '../', cholmod_path);
-
 source = strrep(source, '../../', suiteSparse);
 source = strrep(source, '../', cholmod_path);
-
 
 kk = 0 ;
 
@@ -326,21 +324,39 @@ for f = source
     kk = do_cmd (s, kk, details) ;
 end
 
-% compile mexFunctions
-mex_src =  'linuxCsource/spinv';
-s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
-s = [s obj];
-s = [s ' '];
-s = [s lapack];
-kk = do_cmd (s, kk, details) ;
-
-%mex_src = 'linuxCsource/ldlrowupdate';
-mex_src = [suiteSparse 'CHOLMOD/MATLAB/ldlrowupdate'];
-s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
-s = [s obj];
-s = [s ' '];
-s = [s lapack];
-kk = do_cmd (s, kk, details) ;
+if pc
+    % compile mexFunctions
+    mex_src =  'winCsource\spinv';
+    s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+    s = [s obj];
+    s = [s ' '];
+    s = [s lapack];
+    kk = do_cmd (s, kk, details) ;
+    
+    %mex_src = 'linuxCsource/ldlrowupdate';
+    mex_src = 'winCsource\ldlrowupdate';
+    s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+    s = [s obj];
+    s = [s ' '];
+    s = [s lapack];
+    kk = do_cmd (s, kk, details) ;
+else
+    % compile mexFunctions
+    mex_src =  'linuxCsource/spinv';
+    s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+    s = [s obj];
+    s = [s ' '];
+    s = [s lapack];
+    kk = do_cmd (s, kk, details) ;
+    
+    %mex_src = 'linuxCsource/ldlrowupdate';
+    mex_src = 'linuxCsource/ldlrowupdate';
+    s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+    s = [s obj];
+    s = [s ' '];
+    s = [s lapack];
+    kk = do_cmd (s, kk, details) ;
+end
 
 % clean up
 s = ['delete ' obj] ;

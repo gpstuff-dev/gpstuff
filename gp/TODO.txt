@@ -1,5 +1,5 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2009-06-23 17:20:32 EEST
+%   Last modified: 2009-09-17 17:02:13 EEST
 
 Modifications:
 - jitterSigmas is initialized to zero (used to be 1e-4)
@@ -12,13 +12,21 @@ Modifications:
 - ep_pred.m
   -> full malli katkaistulla kovarianssilla rikki
 
+la_pred
+ep_pred
+gp_int
+-------------
+- p(y|D):n laskenta. Nyt lasketaan vain Ef ja Varf, mutta voitaisiin
+  laskea myös E(y|D), Var(y|D) ja p(y|D)
+
 sinvchi2_*
 ---------
 - gradientti pielessä
 
-Vaihtuvat metriikat:
---------------------
-- Toteutus kesken
+GPCF_*
+-----------
+- Kovarianssifunktioiden record on pielessä hyperparametrien osalta. 
+  Muuta lengthHyper yms. reccf.p.lenghtScale.a.s jne. muotoon.
 
 GP_CVE:
 --------------------

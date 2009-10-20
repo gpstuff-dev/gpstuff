@@ -97,11 +97,15 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
 
+% Demostrate how to evaluate covariance matrices. 
+% K contains the covariance matrix without noise variance 
+%  at the diagonal (the prior covariance)
+% C contains the covariance matrix with noise variance at 
+% the diagonal (the posterior covariance)
 example_x = [-1 -1 ; 0 0 ; 1 1];
 [K, C] = gp_trcov(gp, example_x)
 
-
-% What has happend this far is following
+% What has happend this far is the following
 % - we created data structures 'gpcf1' and 'gpcf2', which describe 
 %   the properties of the covariance function and Gaussian noise
 %   (see gpcf_sexp and gpcf_noise for more details)
@@ -169,7 +173,7 @@ title('The predicted underlying function and the data points (MAP solution)');
 % The sampling options are set to 'opt' structure, which is given to
 % 'gp_mc' sampler
 opt=gp_mcopt;
-opt.nsamples= 3000;
+opt.nsamples= 300;
 opt.repeat=5;
 opt.hmc_opt = hmc2_opt;
 opt.hmc_opt.steps=4;
@@ -186,7 +190,7 @@ hmc2('state', sum(100*clock));
 [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
 
 % After sampling we delete the burn-in and thin the sample chain
-rfull = thin(rfull, 10, 3);
+rfull = thin(rfull, 10, 2);
 
 % Now we make the predictions. 'gp_preds' is a function that returns 
 % the predictive mean of the latent function with every sampled 
@@ -226,22 +230,22 @@ set(gcf,'pos',[93 511 1098 420])
 
 figure(3)
 clf, subplot(1,4,1)
-hist(rfull.cf{1}.lengthScale(:,1),20)
+hist(rfull.cf{1}.lengthScale(:,1))
 hold on
 plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Length-scale 1')
 subplot(1,4,2)
-hist(rfull.cf{1}.lengthScale(:,2),20)
+hist(rfull.cf{1}.lengthScale(:,2))
 hold on
 plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Length-scale 2')
 subplot(1,4,3)
-hist(rfull.cf{1}.magnSigma2,20)
+hist(rfull.cf{1}.magnSigma2)
 hold on
 plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('magnitude')
 subplot(1,4,4)
-hist(rfull.noise{1}.noiseSigmas2,20)
+hist(rfull.noise{1}.noiseSigmas2)
 hold on
 plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Noise variance')
@@ -355,14 +359,14 @@ hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function and';
-       'the data points (MAP solutionm, CS) ']);
+       'the data points (MAP solutionm, CS)  ']);
 subplot(1,2,2)
 mesh(p1, p2, reshape(meanEf_cs,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function and';
-       'the data points (MCMC solution, CS) ']);
+       'the data points (MCMC solution, CS)  ']);
 set(gcf,'pos',[93 511 1098 420])
 
 
@@ -829,5 +833,118 @@ hist(rfull.noise{1}.noiseSigmas2,20)
 hold on
 plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Noise variance (full GP)')
+set(gcf,'pos',[93 511 1098 420])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%========================================================
+% PART 2 data analysis with compact support (CS) GP 
+%========================================================
+
+% Load the data
+S = which('demo_regression1');
+L = strrep(S,'demo_regression1.m','demos/dat.1');
+data=load(L);
+x = [data(:,1) data(:,2)];
+y = data(:,3);
+[n, nin] = size(x);
+
+% Here we conduct the same analysis as in part 1, but this time we 
+% use compact support covariance function
+gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+
+% ... Then set the prior for the parameters of covariance functions...
+gpcf1.p.lengthScale = t_p({2 4});
+gpcf1.p.magnSigma2 =  t_p({0.6 4});
+% $$$ gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
+% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+
+gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf3.p.lengthScale = t_p({5 4});
+gpcf3.p.magnSigma2 =  t_p({0.6 4});
+% $$$ gpcf3.p.lengthScale = gamma_p({3 7});  
+% $$$ gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+
+gpcfp = gpcf_prod('init', nin, 'functions', {gpcf1, gpcf3});
+
+% Create the GP data structure
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcfp}, {gpcf2}, 'jitterSigmas', 0.001)
+
+K = gp_trcov(gp,x);
+K2 = gp_cov(gp,x,x);
+
+% -----------------------------
+% --- Conduct the inference ---
+
+% --- MAP estimate using scaled conjugate gradient algorithm ---
+%     (see scg for more details)
+
+param = 'hyper';
+
+% set the options
+fe=str2fun('gp_e');     % create a function handle to negative log posterior
+fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+w = gp_pak(gp, param);          % pack the hyperparameters into one vector
+gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')
+
+w=scg2(fe, w, opt, fg, gp, x, y, param);       % do the optimization
+gp = gp_unpak(gp,w, param);     % Set the optimized hyperparameter values back to the gp structure
+
+K = gp_trcov(gp,x);
+nnz(K)./prod(size(K))
+exp(w)
+
+% Make the prediction
+[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
+p=[p1(:) p2(:)];
+[Ef, Varf] = gp_pred(gp, x, y, p);
+
+% Plot the solution of full GP and CS
+figure(1)
+clf, subplot(1,2,1)
+mesh(p1, p2, reshape(Ef,37,37));
+hold on
+plot3(x(:,1), x(:,2), y, '*')
+axis on;
+title(['The predicted underlying function and data points (full GP)']);
+xlim([-2 2]), ylim([-2 2])
+subplot(1,2,2)
+mesh(p1, p2, reshape(Ef,37,37));
+hold on
+plot3(x(:,1), x(:,2), y, '*')
+axis on;
+title(['The predicted underlying function and data points (CS)']);
+xlim([-2 2]), ylim([-2 2])
 set(gcf,'pos',[93 511 1098 420])
 

@@ -729,23 +729,30 @@ function gpcf = gpcf_exp(do, varargin)
             %  gpcf.fh_sampling = @hmc2;
             %  reccf.sampling_opt = hmc2_opt;
             reccf.fh_recappend = @gpcf_exp_recappend;  
+            reccf.p=[];
+            reccf.p.lengthScale=[];
+            reccf.p.magnSigma2=[];
+            if ~isempty(ri.p.lengthScale)
+                reccf.p.lengthScale = ri.p.lengthScale;
+            end
+            if ~isempty(ri.p.magnSigma2)
+                reccf.p.magnSigma2 = ri.p.magnSigma2;
+            end
             return
         end
 
         gpp = gpcf.p;
-        
+
         if ~isfield(gpcf,'metric')
             % record lengthScale
             if ~isempty(gpcf.lengthScale)
                 if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                    reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
+                    reccf.p.lengthScale.a.s(ri,:)=gpp.lengthScale.a.s;
                     if isfield(gpp.lengthScale,'p')
                         if isfield(gpp.lengthScale.p,'nu')
-                            reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
+                            reccf.p.lengthScale.a.nu(ri,:)=gpp.lengthScale.a.nu;
                         end
                     end
-                elseif ri==1
-                    reccf.lengthHyper=[];
                 end
                 reccf.lengthScale(ri,:)=gpcf.lengthScale;
             elseif ri==1

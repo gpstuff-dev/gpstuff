@@ -38,7 +38,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
     mexErrMsgTxt( "Wrong number of input arguments." );
   
   {
-    double *x, lms, ms, *l, rr, *rr2, *C, d, eps, c, *Ct, c1, c2, D, D2;
+    double *x, lms, ms, *l, rr, *rr2, *C, d, eps, c, *Ct, c1, c2, c3, D, D2;
     double percent_sparse;
     const mwSize *dims;
     char *type;
@@ -186,6 +186,208 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	C[j*(m+1)]=ms;
       }
     }
+     /*
+     * piece wise polynomial 0 covariance
+     */
+    else if(strcmp( type, "gpcf_ppcs0" ) == 0 ){
+      if((field=mxGetField(*prhs, 0, "l"))==NULL)
+	mexErrMsgTxt("Could not get gpcf.l");
+      dims = mxGetDimensions(field);
+      if (dims[0]!=1 || dims[1]!=1)
+	mexErrMsgTxt( "gpcf.l must be a scalar." );
+      D = mxGetScalar(field);
+
+      percent_sparse = 0.05;
+      nnz = (mwSize) max(1,floor(percent_sparse*(double)m*(double)m));
+      It = mxCalloc(nnz,sizeof(mwIndex));
+      Jt = mxCalloc(nnz,sizeof(mwIndex));
+      Ct = mxCalloc(nnz,sizeof(double));
+      ind = 0;
+
+      /* Set the length-scales in vector of length of number of inputs */
+      rr2 = mxCalloc(n,sizeof(double));
+      for (i=0;i<n;i++) {
+	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
+      }	
+      
+      /* Evaluate the distances that are less than one, */
+      /* and evaluate the covariance at them. /*
+      /* This is strictly upper triangular matrix */
+      D2 = D;
+      for (j=0;j<m;j++) {
+	for (k=0;k!=j;k++) {
+	  c = 0.0;
+	  for (i=0;i<n;i++) {
+	    d=x[j+i*m]-x[k+i*m];
+	    c+=d*d/rr2[i];
+	  }
+	  if (c<1.0){   /* store the covariance */
+	    if (ind==nnz){ /* allocate more memory */
+	      nnz=(mwSize)2*nnz;
+	      It = mxRealloc(It, nnz*sizeof(mwIndex));
+	      Jt = mxRealloc(Jt, nnz*sizeof(mwIndex));
+	      Ct = mxRealloc(Ct, nnz*sizeof(double));
+	    } 
+	    d = ms*pow(1.0-sqrt(c),D2);
+	    It[ind] = k;
+	    Jt[ind] = j;
+	    Ct[ind] = d;
+	    ind++;
+	  }
+	}
+      }
+      
+      /* resize the vectors */
+      It = mxRealloc(It, (mwSize)ind*sizeof(mwIndex));
+      Jt = mxRealloc(Jt, (mwSize)ind*sizeof(mwIndex));
+      Ct = mxRealloc(Ct, (mwSize)ind*sizeof(double));
+      
+      /* evaluate the row and column counts */
+      w = mxCalloc(m,sizeof(mwIndex));              /* workspace */
+      w2 = mxCalloc(m,sizeof(mwIndex));             /* workspace */
+      for (k=0;k<ind;k++) w[It[k]]++;               /* row counts of the upper triangular */
+      for (k=0;k<ind;k++) w2[Jt[k]]++;              /* column counts of the upper triangular */
+      for (k=0;k<m;k++) w[k] += w2[k] + (mwIndex)1; /* column counts of the covariance matrix */
+      Jc = mxCalloc(m+(mwSize)1,sizeof(mwIndex));
+      cumsum2(Jc, w2, m);                           /* column starting points of the upper triangle */
+      
+      /* Create sparse matrix. Note! The matrix can contain only real numbers  */
+      nnz = (mwSize)2*(mwSize)ind+m;
+      plhs[0] = mxCreateSparse(m,m,nnz,mxREAL);
+      I = mxGetIr(plhs[0]);
+      J = mxGetJc(plhs[0]);
+      C = mxGetPr(plhs[0]);
+
+      /* Set the elements in the sparse matrix */
+      cumsum2(J, w, m);                      /* column starting points */
+      for (j = 0 ; j < m ; j++){             /* fill the upper triangular */
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
+	  I[i = w[j]++] = It[k] ;
+	  if (C) C[i] = Ct[k] ;
+	}
+      }
+      for (j = 0 ; j < m ; j++){             /* fill the diagonal */
+	I[i = w[j]++] = j ;
+	if (C) C[i] = ms;
+      } 
+      for (j = 0 ; j < m ; j++){             /* fill the lower triangular */
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
+	  I[i = w[ It[k]]++] = j ;	    
+	  if (C) C[i] = Ct[k] ;
+	}
+      }
+
+      mxFree(It);
+      mxFree(Jt);
+      mxFree(Jc);
+      mxFree(Ct);
+      mxFree(rr2);
+      mxFree(w);
+      mxFree(w2);
+      
+    }
+     /*
+     * piece wise polynomial 1 covariance
+     */
+    else if(strcmp( type, "gpcf_ppcs1" ) == 0 ){
+      if((field=mxGetField(*prhs, 0, "l"))==NULL)
+	mexErrMsgTxt("Could not get gpcf.l");
+      dims = mxGetDimensions(field);
+      if (dims[0]!=1 || dims[1]!=1)
+	mexErrMsgTxt( "gpcf.l must be a scalar." );
+      D = mxGetScalar(field);
+
+      percent_sparse = 0.05;
+      nnz = (mwSize) max(1,floor(percent_sparse*(double)m*(double)m));
+      It = mxCalloc(nnz,sizeof(mwIndex));
+      Jt = mxCalloc(nnz,sizeof(mwIndex));
+      Ct = mxCalloc(nnz,sizeof(double));
+      ind = 0;
+
+      /* Set the length-scales in vector of length of number of inputs */
+      rr2 = mxCalloc(n,sizeof(double));
+      for (i=0;i<n;i++) {
+	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
+      }	
+      
+      /* Evaluate the distances that are less than one, */
+      /* and evaluate the covariance at them. /*
+      /* This is strictly upper triangular matrix */
+      c1 = D + 1;
+      D2 = D+1.0;
+      for (j=0;j<m;j++) {
+	for (k=0;k!=j;k++) {
+	  c = 0.0;
+	  for (i=0;i<n;i++) {
+	    d=x[j+i*m]-x[k+i*m];
+	    c+=d*d/rr2[i];
+	  }
+	  if (c<1.0){   /* store the covariance */
+	    if (ind==nnz){ /* allocate more memory */
+	      nnz=(mwSize)2*nnz;
+	      It = mxRealloc(It, nnz*sizeof(mwIndex));
+	      Jt = mxRealloc(Jt, nnz*sizeof(mwIndex));
+	      Ct = mxRealloc(Ct, nnz*sizeof(double));
+	    } 
+	    d = c1*sqrt(c) + 1.0;
+	    d = ms*pow(1.0-sqrt(c),D2)*d;
+	    It[ind] = k;
+	    Jt[ind] = j;
+	    Ct[ind] = d;
+	    ind++;
+	  }
+	}
+      }
+      
+      /* resize the vectors */
+      It = mxRealloc(It, (mwSize)ind*sizeof(mwIndex));
+      Jt = mxRealloc(Jt, (mwSize)ind*sizeof(mwIndex));
+      Ct = mxRealloc(Ct, (mwSize)ind*sizeof(double));
+      
+      /* evaluate the row and column counts */
+      w = mxCalloc(m,sizeof(mwIndex));              /* workspace */
+      w2 = mxCalloc(m,sizeof(mwIndex));             /* workspace */
+      for (k=0;k<ind;k++) w[It[k]]++;               /* row counts of the upper triangular */
+      for (k=0;k<ind;k++) w2[Jt[k]]++;              /* column counts of the upper triangular */
+      for (k=0;k<m;k++) w[k] += w2[k] + (mwIndex)1; /* column counts of the covariance matrix */
+      Jc = mxCalloc(m+(mwSize)1,sizeof(mwIndex));
+      cumsum2(Jc, w2, m);                           /* column starting points of the upper triangle */
+      
+      /* Create sparse matrix. Note! The matrix can contain only real numbers  */
+      nnz = (mwSize)2*(mwSize)ind+m;
+      plhs[0] = mxCreateSparse(m,m,nnz,mxREAL);
+      I = mxGetIr(plhs[0]);
+      J = mxGetJc(plhs[0]);
+      C = mxGetPr(plhs[0]);
+
+      /* Set the elements in the sparse matrix */
+      cumsum2(J, w, m);                      /* column starting points */
+      for (j = 0 ; j < m ; j++){             /* fill the upper triangular */
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
+	  I[i = w[j]++] = It[k] ;
+	  if (C) C[i] = Ct[k] ;
+	}
+      }
+      for (j = 0 ; j < m ; j++){             /* fill the diagonal */
+	I[i = w[j]++] = j ;
+	if (C) C[i] = ms;
+      } 
+      for (j = 0 ; j < m ; j++){             /* fill the lower triangular */
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
+	  I[i = w[ It[k]]++] = j ;	    
+	  if (C) C[i] = Ct[k] ;
+	}
+      }
+
+      mxFree(It);
+      mxFree(Jt);
+      mxFree(Jc);
+      mxFree(Ct);
+      mxFree(rr2);
+      mxFree(w);
+      mxFree(w2);
+      
+    }
     /*
      * piece wise polynomial 2 covariance
      */
@@ -288,7 +490,112 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       mxFree(w);
       mxFree(w2);
       
-    } else{
+    } 
+     /*
+     * piece wise polynomial 3 covariance
+     */
+    else if(strcmp( type, "gpcf_ppcs3" ) == 0 ){
+      if((field=mxGetField(*prhs, 0, "l"))==NULL)
+	mexErrMsgTxt("Could not get gpcf.l");
+      dims = mxGetDimensions(field);
+      if (dims[0]!=1 || dims[1]!=1)
+	mexErrMsgTxt( "gpcf.l must be a scalar." );
+      D = mxGetScalar(field);
+
+      percent_sparse = 0.05;
+      nnz = (mwSize) max(1,floor(percent_sparse*(double)m*(double)m));
+      It = mxCalloc(nnz,sizeof(mwIndex));
+      Jt = mxCalloc(nnz,sizeof(mwIndex));
+      Ct = mxCalloc(nnz,sizeof(double));
+      ind = 0;
+
+      /* Set the length-scales in vector of length of number of inputs */
+      rr2 = mxCalloc(n,sizeof(double));
+      for (i=0;i<n;i++) {
+	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
+      }	
+      
+      /* Evaluate the distances that are less than one, */
+      /* and evaluate the covariance at them. /*
+      /* This is strictly upper triangular matrix */
+      c1 = D*D*D + 9.0*D*D + 23.0*D + 15.0;
+      c2 = 6.0*D*D + 36.0*D + 45.0;
+      c3 = 15.0*D + 45.0;
+      D2 = D+3.0;      
+      for (j=0;j<m;j++) {
+	for (k=0;k!=j;k++) {
+	  c = 0.0;
+	  for (i=0;i<n;i++) {
+	    d=x[j+i*m]-x[k+i*m];
+	    c+=d*d/rr2[i];
+	  }
+	  if (c<1.0){   /* store the covariance */
+	    if (ind==nnz){ /* allocate more memory */
+	      nnz=(mwSize)2*nnz;
+	      It = mxRealloc(It, nnz*sizeof(mwIndex));
+	      Jt = mxRealloc(Jt, nnz*sizeof(mwIndex));
+	      Ct = mxRealloc(Ct, nnz*sizeof(double));
+	    } 
+	    d = c1*c*sqrt(c) + c2*c + c3*sqrt(c) + 15.0;
+	    d = ms*pow(1.0-sqrt(c),D2)*d/15.0;
+	    It[ind] = k;
+	    Jt[ind] = j;
+	    Ct[ind] = d;
+	    ind++;
+	  }
+	}
+      }
+      
+      /* resize the vectors */
+      It = mxRealloc(It, (mwSize)ind*sizeof(mwIndex));
+      Jt = mxRealloc(Jt, (mwSize)ind*sizeof(mwIndex));
+      Ct = mxRealloc(Ct, (mwSize)ind*sizeof(double));
+      
+      /* evaluate the row and column counts */
+      w = mxCalloc(m,sizeof(mwIndex));              /* workspace */
+      w2 = mxCalloc(m,sizeof(mwIndex));             /* workspace */
+      for (k=0;k<ind;k++) w[It[k]]++;               /* row counts of the upper triangular */
+      for (k=0;k<ind;k++) w2[Jt[k]]++;              /* column counts of the upper triangular */
+      for (k=0;k<m;k++) w[k] += w2[k] + (mwIndex)1; /* column counts of the covariance matrix */
+      Jc = mxCalloc(m+(mwSize)1,sizeof(mwIndex));
+      cumsum2(Jc, w2, m);                           /* column starting points of the upper triangle */
+      
+      /* Create sparse matrix. Note! The matrix can contain only real numbers  */
+      nnz = (mwSize)2*(mwSize)ind+m;
+      plhs[0] = mxCreateSparse(m,m,nnz,mxREAL);
+      I = mxGetIr(plhs[0]);
+      J = mxGetJc(plhs[0]);
+      C = mxGetPr(plhs[0]);
+
+      /* Set the elements in the sparse matrix */
+      cumsum2(J, w, m);                      /* column starting points */
+      for (j = 0 ; j < m ; j++){             /* fill the upper triangular */
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
+	  I[i = w[j]++] = It[k] ;
+	  if (C) C[i] = Ct[k] ;
+	}
+      }
+      for (j = 0 ; j < m ; j++){             /* fill the diagonal */
+	I[i = w[j]++] = j ;
+	if (C) C[i] = ms;
+      } 
+      for (j = 0 ; j < m ; j++){             /* fill the lower triangular */
+	for (k = Jc[j] ; k != Jc[j+1] ; k++){
+	  I[i = w[ It[k]]++] = j ;	    
+	  if (C) C[i] = Ct[k] ;
+	}
+      }
+
+      mxFree(It);
+      mxFree(Jt);
+      mxFree(Jc);
+      mxFree(Ct);
+      mxFree(rr2);
+      mxFree(w);
+      mxFree(w2);
+      
+    }
+    else{
       mexErrMsgTxt( "Undefined type of covariance function." );
     }
   }

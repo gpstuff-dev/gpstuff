@@ -711,6 +711,16 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
             reccf.fh_trcov  = @gpcf_neuralnetwork_trcov;
             reccf.fh_trvar  = @gpcf_neuralnetwork_trvar;
             reccf.fh_recappend = @gpcf_neuralnetwork_recappend;
+            reccf.p=[];
+            reccf.p.weightSigma2=[];
+            reccf.p.biasSigma2=[];
+            if ~isempty(ri.p.weightSigma2)
+                reccf.p.weightSigma2 = ri.p.weightSigma2;
+            end
+            if ~isempty(ri.p.biasSigma2)
+                reccf.p.biasSigma2 = ri.p.biasSigma2;
+            end
+            
             return
         end
 
@@ -724,8 +734,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                         reccf.lengthHyperNu(ri,:)=gpp.weightSigma2.a.nu;
                     end
                 end
-            elseif ri==1
-                reccf.lengthHyper=[];
             end
             reccf.weightSigma2(ri,:)=gpcf.weightSigma2;
         elseif ri==1

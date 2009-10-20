@@ -20,6 +20,7 @@ function likelih = likelih_poisson(do, varargin)
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
+%         likelih.fh_predy         = function handle to evaluate predictive density of y
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_POISSON('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
@@ -72,6 +73,7 @@ function likelih = likelih_poisson(do, varargin)
         likelih.fh_g3 = @likelih_poisson_g3;
         likelih.fh_tiltedMoments = @likelih_poisson_tiltedMoments;
         likelih.fh_mcmc = @likelih_poisson_mcmc;
+        likelih.fh_predy = @likelih_poisson_predy;
         likelih.fh_recappend = @likelih_poisson_recappend;
 
         if length(varargin) > 2
@@ -906,6 +908,37 @@ function likelih = likelih_poisson(do, varargin)
             end
         end
     end 
+    
+    function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, y)
+
+        atol = 1e-10;
+        reltol = 1e-6;
+        gamlny = likelih.gamlny;
+        avgE = likelih.avgE;
+
+        for i2=1:length(ty)
+            myy_i = Ef(i2);
+            sigm2_i = Varf(i2);
+            if ty(i2) > 0
+                mean_app = (myy_i/sigm2_i + log(ty(i2)/avgE(i2)).*ty(i2))/(1/sigm2_i + ty(i2));
+                sigm_app = sqrt((1/sigm2_i + avgE(i2))^-1);
+            else
+                mean_app = myy_i;
+                sigm_app = sqrt((1/sigm2_i + avgE(i2))^-1);
+            end
+            
+            zm = @(f) norm_pdf(f,myy_i,sqrt(sigm2_i));            
+            [m_0] = quadgk(zm, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
+            z1 = @(f) norm_pdf(f,myy_i,sqrt(sigm2_i));
+            
+            
+            if nargin == 5
+                pd = @(f) poisspdf(yyy(i2),avgE(i2).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
+                Py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app)./m_0;
+            end
+        end
+    end
+    
     
     function reclikelih = likelih_poisson_recappend(reclikelih, ri, likelih)
     % RECAPPEND - Record append

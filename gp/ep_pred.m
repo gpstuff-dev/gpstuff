@@ -1,4 +1,4 @@
-function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
+function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind, y)
 %EP_PRED	Predictions with Gaussian Process EP
 %
 %	Description
@@ -58,7 +58,7 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
             if nargout > 1
                 if issparse(L)
                     V = ldlsolve(L, Stildesqroot*K_nf');
-                    Varf = kstarstar - sum(K_nf.*V',2);
+                    Varf = kstarstar - sum(K_nf.*(Stildesqroot*V)',2);
                 else
                     V = (L\Stildesqroot)*K_nf';
                     Varf = kstarstar - sum(V.^2)';
@@ -75,16 +75,10 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
             end
         end
 
-        % Evaluate predictive class probability 
-        if nargout > 2
-            for i1=1:ntest            
-                switch gp.likelih.type
-                  case 'probit'
-                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
-                    p1 = NaN;
-                end
-            end
+        if nargout > 2 && nargin < 8
+            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+        elseif nargout > 2 
+            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);            
         end
         
       case 'FIC'
@@ -144,13 +138,10 @@ function [Ef, Varf, p1] = ep_pred(gp, tx, ty, x, param, predcf, tstind)
                     - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
             end
             
-            for i1=1:ntest
-                switch gp.likelih.type
-                  case 'probit'
-                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
-                    p1 = NaN;
-                end
+            if nargout > 2 && nargin < 8
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+            elseif nargout > 2 
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);            
             end
         end
         

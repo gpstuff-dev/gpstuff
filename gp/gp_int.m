@@ -1,24 +1,23 @@
-function [Ef, Varf, x, fx] = gp_int(gp_array, P_TH, xx, yy, tx,param, tstindex)
+function [Ef, Varf, x, fx] = gp_int(gp_array, xx, yy, tx,param, tstindex)
 % GP_INT        Predictions by integrating over GP models
 %
 %       Description 
-%       [EF, VARF, X, FX] = GP_INT(GP_ARRAY, P_TH, XX, YY,TX) takes 
-%       an array of gp data structures GP_ARRAY together
-%       with a matrix TX of input vectors, matrix XX of training
-%       inputs and vector YY of training targets, and evaluates the
-%       predictive distribution at inputs by integrating over models
-%       in GP_ARRAY with the weights in P_TH. Returns a matrix EF of
-%       (noiseless) output vectors. Each row of TX corresponds to one
-%       input vector and each row of EF corresponds to one output
-%       vector. VARF is the variance of the predictions. FX is the
+%       [EF, VARF, X, FX] = GP_INT(GP_ARRAY, XX, YY,TX) takes an array
+%       of gp data structures GP_ARRAY together with a matrix TX of
+%       input vectors, matrix XX of training inputs and vector YY of 
+%       training targets, and evaluates the predictive distribution at 
+%       inputs by integrating over models in GP_ARRAY. Returns a matrix 
+%       EF of (noiseless) output vectors. Each row of TX corresponds to
+%       one input vector and each row of EF corresponds to one output 
+%       vector. VARF is the variance of the predictions. FX is the 
 %       probability density of output evaluated in points in X. Each
 %       row of X and FX correspond to one output vector.
 %    
-%       [EF, VARF, X, FX] = GP_INT(GP_ARRAY, P_TH, XX, YY,TX,'PARAM')
+%       [EF, VARF, X, FX] = GP_INT(GP_ARRAY, XX, YY,TX,'PARAM')
 %       in the case of sparse model, takes also string PARAM defining,  
 %       which parameters have been optimized 
 %       
-%       [EF, VARF, X, FX] = GP_INT(GP_ARRAY, P_TH, XX, YY,TX,'PARAM', TSTINDEX)
+%       [EF, VARF, X, FX] = GP_INT(GP_ARRAY, XX, YY,TX,'PARAM', TSTINDEX)
 %       TSTINDEX is needed with FIC model when inputs are same as training inputs     
         
 % Copyright (c) 2009 Ville Pietiläinen
@@ -33,6 +32,10 @@ function [Ef, Varf, x, fx] = gp_int(gp_array, P_TH, xx, yy, tx,param, tstindex)
     end
     
     nGP = numel(gp_array);
+    
+    for i=1:nGP
+        P_TH(i) = gp_array{i}.ia_weight;
+    end
     
     % =======================================================
     % Select the functions corresponding to the latent_method

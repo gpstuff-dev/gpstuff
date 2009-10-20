@@ -373,6 +373,11 @@ if nargin == 2
     %  gpcf.fh_sampling = @hmc2;
     reccf.sampling_opt = hmc2_opt;
     reccf.fh_recappend = @gpcf_noise_recappend;  
+    reccf.p=[];
+    reccf.p.noiseSigmas2=[];
+    if ~isempty(ri.p.noiseSigmas2)
+        reccf.p.noiseSigmas2 = ri.p.noiseSigmas2;
+    end
     return
 end
 
@@ -381,9 +386,7 @@ gpp = gpcf.p;
 % record noiseSigma
 if ~isempty(gpcf.noiseSigmas2)
     if isfield(gpp.noiseSigmas2, 'p') && ~isempty(gpp.noiseSigmas2.p)
-        reccf.noiseHyper(ri,:)=gpp.noiseSigmas2.a.s;
-    elseif ri==1
-        reccf.noiseHyper=[];
+        reccf.p.noiseSigmas2.a.s(ri,:)=gpp.noiseSigmas2.a.s;
     end
     reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
 elseif ri==1

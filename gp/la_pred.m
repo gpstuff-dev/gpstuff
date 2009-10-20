@@ -1,24 +1,30 @@
-function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
+function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind, y)
 %LA_PRED	Predictions with Gaussian Process Laplace approximation
 %
 %	Description
-%	Y = LA_PRED(GP, TX, TY, X) takes a gp data structure GP together with a
-%	matrix X of input vectors, Matrix TX of training inputs and vector TY of 
-%       training targets, and evaluates the predictive distribution at inputs. 
-%       Returns a matrix Y of (noiseless) output vectors (mean(Y|X, TX, TY)). Each 
-%       row of X corresponds to one input vector and each row of Y corresponds to 
-%       one output vector.
+%	[EF, VARF, EY, VARY] = LA_PRED(GP, TX, TY, X, PARAM) takes a gp data 
+%	structure GP together with a matrix X of input vectors, Matrix TX of training 
+%       inputs and vector TY of training targets, and evaluates the predictive  
+%       distribution at inputs X. Returns a posterior mean EF and variance VARF of 
+%       latent variables and the posterior predictive mean EY and variance VARY of 
+%       obervations at input locations X. PARAM is a string defining, which 
+%       parameters have been optimized.
 %
-%	Y = LA_PRED(GP, TX, TY, X, 'PARAM') in case of sparse model takes also 
-%       string defining, which parameters have been optimized.
+%	[EF, VARF, EY, VARY] = LA_PRED(GP, TX, TY, X, PARAM, PREDCF) takes also vector
+%       PREDCF that tells which covariance functions are used for prediction.
 %
-%	[Y, VarY] = LA_PRED(GP, TX, TY, X, VARARGIN) returns also the variances of Y 
-%       (1xn vector).
+%	[EF, VARF, EY, VARY] = LA_PRED(GP, TX, TY, X, PARAM, PREDCF, TSTIND) in case 
+%       of sparse models takes also vector defining, which rows of X belong to which 
+%       training block.
+%
+%	[EF, VARF, EY, VARY, PY] = LA_PRED(GP, TX, TY, X, PARAM, PREDCF, TSTIND, Y) 
+%       returns also the predictive density PY of the observations Y at input locations 
+%       X. This can be used for example in the cross-validation.
 %
 %	See also
-%	GPLA_E, GPLA_G, GP_PRED
+%	GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
 %
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -53,7 +59,7 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
             kstarstar = gp_trvar(gp,x,predcf);
             if W >= 0
                 if issparse(K_nf)
-                    K = gp_trcov(gp, x);
+                    K = gp_trcov(gp, tx);
                     p = analyze(K);
                     sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);
                     sqrtWKfn = sqrtW*K_nf(:,p)';
@@ -76,16 +82,13 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
 % $$$                 R = K + diag(1./W(r));
 % $$$                 Varf = kstarstar - sum(K_nf.*(R\K_nf')',2);
             end
-            for i1=1:ntest
-                switch gp.likelih.type
-                  case 'probit'
-                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
-                    p1 = NaN;
-                end
+            if nargout > 2 && nargin < 8
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+            elseif nargout > 2 
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
             end
         end
-
+        
       case 'FIC'
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
@@ -145,17 +148,14 @@ function [Ef, Varf, p1] = la_pred(gp, tx, ty, x, param, predcf, tstind)
             % if the prediction is made for training set, evaluate Lav also for prediction points
             if ~isempty(tstind)
                 LavsW = Lav.*sqrt(W);
-                    Varf = Varf - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
-                           - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu')',2)...
-                           + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
+                    Varf(tstind) = Varf(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
+                           - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu(tstind,:)')',2)...
+                           + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
-            for i1=1:ntest
-                switch gp.likelih.type
-                  case 'probit'
-                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
-                    p1 = NaN;
-                end
+            if nargout > 2 && nargin < 8
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+            elseif nargout > 2 
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
             end
         end
 

@@ -16,24 +16,31 @@ function opt = gp_iaopt(opt, method);
 %                  opt.int_method = 'grid_based';
 %                  opt.stepsize   = 1;
 %                  opt.threshold  = 2.5;
+%                  opt.validate   = 1;    (check that the integration results are valid)
 %
 %              'is_normal' = an importance sampling with normal proposal distribution
 %                  opt.int_method = 'normal';
 %                  opt.nsamples   = 40;
+%                  opt.validate   = 1;    (check that the integration results are valid)
 %             
 %              'is_normal_qmc' = an importance sampling with normal proposal distribution
 %                              with quasi Monte Carlo sampling
 %                  opt.int_method = 'quasi_mc';
 %                  opt.nsamples   = 40;
+%                  opt.validate   = 1;    (check that the integration results are valid)
+%
 %              'is_student-t'     = an importance sampling with Student-t proposal distribution
 %                  opt.int_method = 'is_student-t';
 %                  opt.nsamples   = 40;
 %                  opt.nu         = 4; the degrees of freedom
+%                  opt.validate   = 1;    (check that the integration results are valid)
+%
 %              'mcmc_hmc'      = Markov chain Monte Carlo sampling using Hybrid Monte Carlo
 %                  opt.int_method = 'mcmc_hmc';
 %                  opt.nsamples = 40;
 %                  opt.repeat = 1;
 %                  opt.display = 1;
+%                  opt.validate   = 1;    (check that the integration results are valid)
 %
 %                  opt.hmc_opt.steps = 3;
 %                  opt.hmc_opt.stepadj = 0.01;
@@ -67,21 +74,26 @@ switch method
     opt.int_method = 'grid_based';
     opt.stepsize = 1;
     opt.threshold = 2.5;
+    opt.validate = 1;
   case 'is_normal'
     opt.int_method = 'is_normal';
     opt.nsamples = 40;
+    opt.validate = 1;
   case 'is_normal_qmc'
     opt.int_method = 'is_normal_qmc';
     opt.nsamples = 40;
+    opt.validate = 1;
   case 'is_student-t'
     opt.int_method = 'is_student-t';
     opt.nsamples = 40;
-    opt.nu = 4;    
+    opt.nu = 4;
+    opt.validate = 1;
   case 'mcmc_hmc'
     opt.int_method = 'mcmc_hmc';
     opt.nsamples = 40;
     opt.repeat = 1;
     opt.display = 1;
+    opt.validate = 1;
     
     % Set the hmc sampling options
     opt.hmc_opt.steps = 3;

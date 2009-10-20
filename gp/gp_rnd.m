@@ -1,33 +1,22 @@
-function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
-%GP_PRED    Make predictions for Gaussian process
+function [sampf, sampy] = gp_rnd(gp, tx, ty, x, predcf, tstind, nsamp)
+%GP_RND    Random draws from the Gaussian process
 %
 %	Description
-%	F = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) takes a gp data structure GP
-%       together with a matrix X of input vectors, Matrix TX of training inputs and
-%       vector TY of training targets, and returns a vector F of predictions
-%       (mean(Y|X, TX, TY)). Each row of X corresponds to one input vector and each row
-%       of Y corresponds to one output vector. PREDCF is an array specifying the indexes
-%       of covariance functions, which are used for making the prediction. TSTIND is a
-%       cell array containing index vectors specifying the blocking structure for
-%       test data in PIC approximation. NOTE: When making predictions with a subset of
-%       covariance functions with FIC approximation the predictive variance in some
-%       cases can be ill-behaved i.e. negative or unrealistically small. 
-%
-%	[F, VarF] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) returns also the predictive
-%       (noiseless) variances of F (1xn vector). NOTE! VarF contains the variance of the
-%       latent function, that is  diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf. If you want
-%       predictive variance of observations add gp.noise{1}.noiseSigmas2 to VarF.
-%
-%	[F, VarF, sampF] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) returns also a sample
-%       from posterior distribution of the latent varible sampF. This is needed for example
-%       in the Student-t noise model. NOTE! in FIC/PIC the prediction sampF is made at
-%       the training points!
+%	[SAMPF, SAMPY] = GP_RND(GP, TX, TY, X, PREDCF, TSTIND, NSAMP) takes a gp data 
+%       structure GP together with a matrix X of input vectors, Matrix TX of training 
+%       inputs and vector TY of training targets, and returns a random sample SAMPF and 
+%       SAMPY from the posterior distribution p(f|y) and the predictive distribution 
+%       p(y_new|y) at locations X. Each row of X corresponds to one input vector and 
+%       each row of Y corresponds to one output vector. PREDCF is an array specifying 
+%       the indexes of covariance functions, which are used for making the prediction. 
+%       TSTIND is a cell array containing index vectors specifying the blocking structure for
+%       test data in PIC approximation. NSAMP determines the number of samples (default = 1).
 %
 %	See also
 %	GP_PREDS, GP_PAK, GP_UNPAK
 %
 
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2008      Jouni Hartikainen
 
 % This software is distributed under the GNU General Public
@@ -36,8 +25,16 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
 
 tn = size(tx,1);
 
+if nargin < 4
+    x = tx;
+end
+
 if nargin < 5
     predcf = [];
+end
+
+if nargin < 7
+    nsamp = 1;
 end
 
 % Evaluate this if sparse model is used
@@ -45,38 +42,33 @@ switch gp.type
   case 'FULL'
     [c, C]=gp_trcov(gp,tx);
     K=gp_cov(gp,tx,x,predcf);
-
+    [K2, C2] = gp_trcov(gp,x,predcf);
+        
     if issparse(C)
         LD = ldlchol(C);
-        Ef = K'*ldlsolve(LD,ty);
+        Ef = repmat( K'*ldlsolve(LD,ty), 1, nsamp) ;
+        predcov = chol(K2 - K'*ldlsolve(LD,K)) ;
+        sampf = Ef + predcov*randn(size(Ef));
+        if nargout > 1
+            predcov = chol(C2 - K'*ldlsolve(LD,K));            
+            sampy = Ef + predcov*randn(size(Ef));
+        end        
     else
         L = chol(C)';
         %    y=K'*(C\ty);
         a = L'\(L\ty);
-        Ef = K'*a;
-    end
+        Ef = repmat( K'*a, 1, nsamp);
+        v = L\K;
 
-    if nargout > 1
-        if issparse(C)
-            V = gp_trvar(gp,x,predcf);
-            Varf = V - diag(K'*ldlsolve(LD,K));
-        else
-            v = L\K;
-            [V, Cv] = gp_trvar(gp,x,predcf);
-            % Vector of diagonal elements of covariance matrix
-            % b = L\K;
-            % Varf = V - sum(b.^2)';
-            Varf = V - diag(v'*v);
+        predcov = chol(K2-v'*v)';
+        sampf = Ef + predcov*randn(size(Ef));
+        if nargout > 1
+            predcov = chol(C2-v'*v)';
+            sampy = Ef + predcov*randn(size(Ef));
         end
-    end
-    if nargout > 2
-        Ey = Ef;
-        Vary = Cv - diag(v'*v);
-    end
-    if nargout > 4
-        
-    end
-  case 'FIC'
+    end   
+    
+  case 'FIC'    
     % Here tstind = 1 if the prediction is made for the training set 
     if nargin > 5
         if length(tstind) ~= size(tx,1)
@@ -117,12 +109,12 @@ switch gp.type
     p = ty./Lav - L*(L'*ty);
 
     % Prediction matrices formed with only subset of cf's.
-    if ~isempty(predcf)
+    if ~isempty(predcf)            
         K_fu = gp_cov(gp, tx, u, predcf);   % f x u
         K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
         K_nu = gp_cov(gp,x,u,predcf);       % n x u
     end
-    Ef = K_nu*(K_uu\(K_fu'*p));
+    Ef = K_nu*(K_uu\(K_fu'*p)) ;
 
     % if the prediction is made for training set, evaluate Lav also for prediction points
     if ~isempty(tstind)
@@ -135,32 +127,21 @@ switch gp.type
         Ef(tstind) = Ef(tstind) + Lav2(tstind).*p;
     end
 
+    Ef = repmat(Ef , 1, nsamp);
+    
+    % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
+    %            = B'*(I-B*La_f^(-1)*B' + B*L*L'*B')*B + La_n
+    B2 = Luu\(K_nu');
+    Lav_n = Lav2;
+    BL = B*L;
+    Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
+    sampf = Ef + B2'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + randn(size(Ef)).*sqrt(repmat(Lav_n,1,nsamp));
+    
     if nargout > 1
-        [Knn_v, Cnn_v] = gp_trvar(gp,x,predcf);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        B2=Luu\(K_nu');
-        
-        Varf = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
-
-        % if the prediction is made for training set, evaluate Lav also for prediction points
-        if ~isempty(tstind)
-            Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
-                + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
-                - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);                
-        end
+        Lav_n = Cv_ff-Qv_ff;
+        sampy = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + randn(size(Ef)).*sqrt(repmat(Lav_n,1,nsamp));
     end
-    if nargout > 2
-        Ey = Ef;
-        Vary = Varf + Cnn_v - Knn_v;
-        
-% $$$         % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
-% $$$         %            = B'*(I-B*La_f^(-1)*B' + B*L*L'*B')*B + La_n
-% $$$         Lav_n = Kv_ff-Qv_ff;
-% $$$         BL = B*L;
-% $$$         Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
-% $$$         noisyY = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(Ef)).*sqrt(Lav_n);
-    end
+    
   case {'PIC' 'PIC_BLOCK'}
     u = gp.X_u;
     ind = gp.tr_index;
@@ -209,52 +190,40 @@ switch gp.type
     iKuuKuf = K_uu\K_fu';    
     w_bu=zeros(length(x),length(u));
     w_n=zeros(length(x),1);
+    B2 = Luu\(K_nu');
     for i=1:length(ind)
         w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
         K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:),predcf);              % n x u
         w_n(tstind{i},:) = K_nf*p(ind{i},:);
-    end
-    
-    Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
-    
-
-    if nargout > 1        
-        % Form iLaKfu again if a subset of cf's is used for making predictions
-        if ~isempty(predcf)
-            iLaKfu = zeros(size(K_fu));  % f x u
-            for i=1:length(ind)
-                iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
-            end
-        end
         
-        kstarstar = gp_trvar(gp, x, predcf);
-        KnuiKuu = K_nu/K_uu;
-        KufiLaKfu = K_fu'*iLaKfu;
-        QnfL = KnuiKuu*(K_fu'*L);
-        Varf1 = zeros(size(x,1),1);
-        Varf2 = zeros(size(x,1),1);
-        Varf3 = zeros(size(x,1),1);
-        for i=1:length(ind)
-            KubiLaKbu = K_fu(ind{i},:)'/La{i}*K_fu(ind{i},:);
-            nonblock = KufiLaKfu - KubiLaKbu;
-            Varf1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
-            
-            Knb = gp_cov(gp, x(tstind{i},:), tx(ind{i},:), predcf);
-            Varf2(tstind{i}) = diag(Knb/La{i}*Knb');
-            
-            KnbL = Knb*L(ind{i},:);
-            QnbL = KnuiKuu(tstind{i},:)*(K_fu(ind{i},:)'*L(ind{i},:));
-            %Varf3(tstind{i}) = sum(QnfL(tstind{i},:) - QnbL + KnbL,2);
-            Varf3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
-        end        
-        Varf = kstarstar - (Varf1 + Varf2 - Varf3);
+        Qbl_ff = B2(:,tstind{i})'*B2(:,tstind{i});
+        [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(tstind{i},:));
+        La2{i} = Kbl_ff - Qbl_ff;
+        La22{i} = Cbl_ff - Qbl_ff;
     end
-    if nargout > 2
-        Ey = Ef;
-        [Knn_v, Cnn_v] = gp_trvar(gp,x,predcf);
-        Vary = Varf + Cnn_v - Knn_v;
+    
+    Ef = repmat(K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n, 1, nsamp);
+    
+    % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
+    %            = B'*(I-B*La_f^(-1)*B' + B*L*L'*B')*B + La_n
+    BL = B*L;
+    sampf = randn(size(Ef));
+    sampy = randn(size(Ef));
+    for i=1:length(ind)
+        iLaB(ind{i},:) = La{i}\B(:,ind{i})';
+        sampf(ind{i},:) = chol(La2{i})'*sampf(ind{i},:);
+        sampy(ind{i},:) = chol(La22{i})'*sampy(ind{i},:);
     end
+    Sigm_mm = eye(size(K_uu)) - B*iLaB + BL*BL';
+        
+    sampf = Ef + B2'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + sampf;
+    sampy = Ef + B2'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + sampy;
+    
   case 'CS+FIC'
+    
+    
+    error('gp_rnd is not yet implemented for CS+FIC')
+    
     % Here tstind = 1 if the prediction is made for the training set 
     if nargin > 5
         if length(tstind) ~= size(tx,1)

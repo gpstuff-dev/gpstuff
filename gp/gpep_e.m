@@ -283,7 +283,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     myy = zeros(size(y));
                     gamma = zeros(size(y));
                     KsqrtS = K*sqrtS;                
-                    VD = ldlchol(Inn);                    
+                    VD = ldlchol(Inn);
                     
                     
                     % The EP -algorithm
@@ -384,7 +384,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
               % ============================================================
               case 'FIC'
                 u = gp.X_u;
-                m = length(u);
+                m = size(u,1);
 
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector

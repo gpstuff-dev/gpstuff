@@ -45,7 +45,7 @@ function gpcf = gpcf_dotproduct(do, varargin)
 %       gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2008      Jaakko Riihimaki
 
 % This software is distributed under the GNU General Public
@@ -543,6 +543,16 @@ function gpcf = gpcf_dotproduct(do, varargin)
             reccf.fh_trcov  = @gpcf_dotproduct_trcov;
             reccf.fh_trvar  = @gpcf_dotproduct_trvar;
             reccf.fh_recappend = @gpcf_dotproduct_recappend;
+            gpcf.p=[];
+            gpcf.p.coeffSigma2=[];
+            gpcf.p.constSigma2=[];
+            if ~isempty(ri.p.coeffSigma2)
+                reccf.p.coeffSigma2 = ri.p.coeffSigma2;
+            end
+            if ~isempty(ri.p.constSigma2)
+                reccf.p.constSigma2 = ri.p.constSigma2;
+            end
+
             return
         end
 
@@ -556,8 +566,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
                         reccf.lengthHyperNu(ri,:)=gpp.coeffSigma2.a.nu;
                     end
                 end
-            elseif ri==1
-                reccf.lengthHyper=[];
             end
             reccf.coeffSigma2(ri,:)=gpcf.coeffSigma2;
         elseif ri==1

@@ -58,7 +58,6 @@
 %  1) data analysis with MAP estimate
 %  2) data analysis with LOO-CV estimate
 %  3) data analysis with 10-fold-CV estimate
-%  4) data analysis with 
 
 %========================================================
 % PART 1 data analysis with MAP estimate

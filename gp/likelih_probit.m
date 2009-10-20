@@ -58,6 +58,7 @@ function likelih = likelih_probit(do, varargin)
         likelih.fh_g3 = @likelih_probit_g3;
         likelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
         likelih.fh_mcmc = @likelih_probit_mcmc;
+        likelih.fh_predy = @likelih_probit_predy;
         likelih.fh_recappend = @likelih_probit_recappend;
         
         if length(varargin) > 1
@@ -314,6 +315,18 @@ function likelih = likelih_probit(do, varargin)
         
     end
 
+    function [Ey, Vary, py] = likelih_probit_predy(likelih, Ef, Varf, y)
+    % Return the predictive probability of ty given the posterior mean Ef 
+    % and variance Varf
+        
+        Ey = 2*normcdf(Ef./sqrt(1+Varf)) - 1;
+        Vary = Ey.*(1-Ey.^2);
+        if nargin > 3
+            py = normcdf(Ef.*y./sqrt(1+Varf));    % Probability p(y_new)
+        end
+    end
+        
+    
 
     function reclikelih = likelih_probit_recappend(reclikelih, ri, likelih)
     % RECAPPEND - Record append

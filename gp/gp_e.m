@@ -1,4 +1,4 @@
-function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
+function [e, edata, eprior] = gp_e(w, gp, x, t, param)
 %GP_E	Evaluate energy function for Gaussian Process 
 %
 %	Description
@@ -21,12 +21,15 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param, varargin)
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
 %
 
-% Copyright (c) 2006-2008 Jarno Vanhatalo
+% Copyright (c) 2006-2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+if nargin < 5
+    param = 'hyper';
+end
 
 gp=gp_unpak(gp, w, param);
 ncf = length(gp.cf);
@@ -227,4 +230,5 @@ if isfield(gp, 'noise')
     end
 end
 e = edata + eprior;
+
 end

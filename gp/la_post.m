@@ -35,9 +35,10 @@ switch gp.type
 
     case 'FIC'
         m = gp.nind;
-        [e, edata, eprior, f, L, La2, b, W] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
 
-
+        W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+        
         Ef = f;
         Lahat = 1./(1./La2 + W);
         A = eye(m,m) - (L'.*repmat(Lahat',m,1))*L; A = (A+A')./2;

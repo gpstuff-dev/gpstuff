@@ -73,7 +73,7 @@ end
 
 % Initialize the covariance function
 if strcmp(do, 'init')
-    if isempty(varargin{2})
+   if isempty(varargin{2})
         error('Not enough arguments. NDATA is missing')
     end
     nin = varargin{1};
@@ -399,12 +399,12 @@ end
         [n,m] = size(x);
         
         % Draw a sample of the mean of y. Its distribution is
-        % y ~ N(K*inv(C)*y, K - K*inv(C)*K')
+        % f ~ N(K*inv(C)*y, K - K*inv(C)*K')
         switch gp.type
           case {'FULL', 'FIC'}
-            [meanY, varY, sampy] = gp_pred(gp, x, y, x);
+            sampy = gp_rnd(gp, x, y, x, [], 1:n);
           case {'PIC' 'PIC_BLOCK'}
-            [meanY, varY, sampy] = gp_pred(gp, x, y, x, [], gp.tr_index);
+            sampy = gp_rnd(gp, x, y, x, [], gp.tr_index);
         end
         % Calculate the residual
         r = y-sampy;
