@@ -500,8 +500,8 @@ function gpcf = gpcf_prod(do, varargin)
             % Initialize parameters
             ncf = length(ri.functions);
             for i=1:ncf
-                cf = ri.cf{i};
-                reccf.functions{i} = feval(cf.fh_recappend, [], ri.cf{i});                
+                cf = ri.functions{i};
+                reccf.functions{i} = feval(cf.fh_recappend, [], ri.functions{i});
             end
             
             % Set the function handles
@@ -519,8 +519,8 @@ function gpcf = gpcf_prod(do, varargin)
         %loop over all of the covariance functions
         ncf = length(gpcf.functions);
         for i=1:ncf
-            cf = gpcf.cf{i};
-            reccf.functions{i} = feval(cf.fh_recappend, rec.cf{i}, ri, cf);
+            cf = gpcf.functions{i};
+            reccf.functions{i} = feval(cf.fh_recappend, reccf.functions{i}, ri, cf);
         end
     end
 end

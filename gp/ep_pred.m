@@ -76,9 +76,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
         end
 
         if nargout > 2 && nargin < 8
-            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+            [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
         elseif nargout > 2 
-            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);            
+            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);            
         end
         
       case 'FIC'
@@ -139,9 +139,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             end
             
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);            
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);            
             end
         end
         

@@ -22,6 +22,7 @@ function likelih = likelih_t(do, varargin)
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
 %         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
+%         likelih.fh_predy         = function handle to evaluate predictive density of y
 %         likelih.fh_optimizef     = function handle to optimization of latent values
 %         likelih.fh_recappend     = function handle to record append
 %
@@ -71,6 +72,7 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_mcmc = @likelih_t_mcmc;
         likelih.fh_optimizef = @likelih_t_optimizef;
         likelih.fh_upfact = @likelih_t_upfact;
+        likelih.fh_predy = @likelih_t_predy;
         likelih.fh_recappend = @likelih_t_recappend;
 
         if length(varargin) > 3
@@ -865,6 +867,33 @@ function likelih = likelih_t(do, varargin)
         upfact = -(Varp - ll)./ll^2;
     end
 
+    function [Ey, Vary, Py] = likelih_t_predy(gp, Ef, Varf, y)
+
+        nu = gp.likelih.nu;
+        sigma = gp.likelih.sigma;
+
+% $$$         sampf = gp_rnd(gp, tx, ty, x, [], [], 400);
+% $$$         r = trand(nu,size(sampf));
+% $$$         r = sampf + sqrt(sigma).*r;
+% $$$         
+% $$$         Ey = mean(r);
+% $$$         Vary = var(r, 0, 2);
+        
+        if nargin > 3
+            for i2 = 1:length(Ef)
+                mean_app = Ef(i2);
+                sigm_app = sqrt(Varf(i2));
+                zm = @(f) norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
+                [m_0] = quadgk(zm, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
+                                
+                pd = @(f) t_pdf(y(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
+                Py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app)./m_0;
+            end
+        end
+        
+    end
+
+    
     function reclikelih = likelih_t_recappend(reclikelih, ri, likelih)
     % RECAPPEND - Record append
     %          Description

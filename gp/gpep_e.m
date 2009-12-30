@@ -109,7 +109,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % ============================================================
               case 'FULL'   % A full GP
                 [K,C] = gp_trcov(gp, x);
-                
+
                 % The EP algorithm for full support covariance function
                 if ~issparse(C)
                     Sigm = C;
@@ -133,63 +133,63 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         for ii=1:n
                             i1 = I(ii);
                             % Algorithm utilizing Cholesky updates
-                            % approximate cavity parameters
-                            S11 = sum(Ls(:,i1).^2);
-                            S1 = Ls'*Ls(:,i1);
-                            tau_i=S11^-1-tautilde(i1);
-                            vee_i=S11^-1*myy(i1)-nutilde(i1);
-                            
-                            myy_i=vee_i/tau_i;
-                            sigm2_i=tau_i^-1;
-                            
-                            if sigm2_i < 0
-                                [ii i1]
-                            end
-                            
-                            % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
-                            
-                            % update site parameters
-                            deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                            tautilde(i1) = tautilde(i1)+deltatautilde;
-                            nutilde(i1) = sigm2hati^-1*muhati-vee_i;
-                            
-                            upfact = 1./(deltatautilde^-1+S11);
-                            if upfact > 0
-                                Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
-                            else
-                                Ls = cholupdate(Ls, S1.*sqrt(-upfact));
-                            end
-                            Sigm = Ls'*Ls;
-                            myy=Sigm*nutilde;
-                            
-                            muvec_i(i1,1)=myy_i;
-                            sigm2vec_i(i1,1)=sigm2_i;
-
-                            % Algorithm as in Rasmussen and Williams 2006
 % $$$                             % approximate cavity parameters
-% $$$                             tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-% $$$                             vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+% $$$                             S11 = sum(Ls(:,i1).^2);
+% $$$                             S1 = Ls'*Ls(:,i1);
+% $$$                             tau_i=S11^-1-tautilde(i1);
+% $$$                             vee_i=S11^-1*myy(i1)-nutilde(i1);
 % $$$                             
 % $$$                             myy_i=vee_i/tau_i;
 % $$$                             sigm2_i=tau_i^-1;
+% $$$                             
+% $$$                             if sigm2_i < 0
+% $$$                                 [ii i1]
+% $$$                             end
 % $$$                             
 % $$$                             % marginal moments
 % $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
 % $$$                             
 % $$$                             % update site parameters
-% $$$                             deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
-% $$$                             tautilde(i1)=tautilde(i1)+deltatautilde;
-% $$$                             nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+% $$$                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
+% $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
+% $$$                             nutilde(i1) = sigm2hati^-1*muhati-vee_i;
 % $$$                             
-% $$$                             apu = deltatautilde^-1+Sigm(i1,i1);
-% $$$                             apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
-% $$$                             Sigm = Sigm - apu;
-% $$$                             %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+% $$$                             upfact = 1./(deltatautilde^-1+S11);
+% $$$                             if upfact > 0
+% $$$                                 Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
+% $$$                             else
+% $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
+% $$$                             end
+% $$$                             Sigm = Ls'*Ls;
 % $$$                             myy=Sigm*nutilde;
 % $$$                             
 % $$$                             muvec_i(i1,1)=myy_i;
 % $$$                             sigm2vec_i(i1,1)=sigm2_i;
+
+                            % Algorithm as in Rasmussen and Williams 2006
+                            % approximate cavity parameters
+                            tau_i=Sigm(i1,i1)^-1-tautilde(i1);
+                            vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                            
+                            myy_i=vee_i/tau_i;
+                            sigm2_i=tau_i^-1;
+                            
+                            % marginal moments
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                            
+                            % update site parameters
+                            deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
+                            tautilde(i1)=tautilde(i1)+deltatautilde;
+                            nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+                            
+                            apu = deltatautilde^-1+Sigm(i1,i1);
+                            apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
+                            Sigm = Sigm - apu;
+                            %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                            myy=Sigm*nutilde;
+                            
+                            muvec_i(i1,1)=myy_i;
+                            sigm2vec_i(i1,1)=sigm2_i;
                         end
                         % Recompute the approximate posterior parameters
                         if tautilde > 0
@@ -282,7 +282,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     sqrtS = sparse(1:n,1:n,0,n,n);
                     myy = zeros(size(y));
                     gamma = zeros(size(y));
-                    KsqrtS = K*sqrtS;                
+                    %KsqrtS = K*sqrtS;                
                     VD = ldlchol(Inn);
                     
                     
@@ -296,8 +296,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             Ki1 = K(:,i1);
                             sqrtSKi1 = ssmult(sqrtS, Ki1);
                             tttt = ldlsolve(VD,sqrtSKi1);
-                            sigm2 = Ki1(i1) - sqrtSKi1'*tttt;                            
-                            myy(i1) = gamma(i1) - tttt'*sqrtS*gamma;                            
+                            sigm2 = Ki1(i1) - sqrtSKi1'*tttt;
+                            myy(i1) = gamma(i1) - tttt'*sqrtS*gamma;
                             
                             tau_i=sigm2^-1-tautilde(i1);
                             vee_i=sigm2^-1*myy(i1)-nutilde(i1);
@@ -316,16 +316,19 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             deltanutilde = nutilde(i1) - nutilde_old;
                             
                             % Update the LDL decomposition
-                            D2_o = ssmult(sqrtS,KsqrtS(:,i1)) + Inn(:,i1);
+                            %D2_o = ssmult(sqrtS,KsqrtS(:,i1)) + Inn(:,i1);
+                            %D2_o =  sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
                             sqrtS(i1,i1) = sqrt(tautilde(i1));
-                            KsqrtS(:,i1) = Ki1.*sqrtS(i1,i1);
-                            D2_n = ssmult(sqrtS,KsqrtS(:,i1)) + Inn(:,i1);
+                            %KsqrtS(:,i1) = Ki1.*sqrtS(i1,i1);
+                            %D2_n = ssmult(sqrtS,KsqrtS(:,i1)) + Inn(:,i1);
+                            sqrtSKi1(i1) = sqrt(tautilde(i1)).*Ki1(i1);
+                            D2_n = sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
                             
                             if tautilde(i1) - deltatautilde == 0
                                 VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
                                 VD = ldlrowupdate(i1,VD,D2_n,'+');
                             else
-                                VD = ldlrowmodify(VD, D2_o, D2_n, i1);
+                                VD = ldlrowmodify(VD, D2_n, i1);
                             end
                             
                             gamma = gamma + Ki1.*deltanutilde;

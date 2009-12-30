@@ -183,7 +183,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             if isfield(opt, 'hmc_opt')
                 w = gp_pak(gp, 'hyper');
                 hmc2('state',hmc_rstate)              % Set the state
-                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'hyper', varargin{:});
+                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'hyper');
                 hmc_rstate=hmc2('state');             % Save the current state
                 hmcrej=hmcrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')
@@ -194,10 +194,10 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 gp = gp_unpak(gp, w, 'hyper');
             end
             
-            % ----------- Sample hyperparameters wieth SLS --------------------- 
+            % ----------- Sample hyperparameters with SLS --------------------- 
             if isfield(opt, 'sls_opt')
                 w = gp_pak(gp, 'hyper');
-                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'hyper', varargin{:});
+                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'hyper');
                 if isfield(diagns, 'opt')
                     opt.sls_opt = diagns.opt;
                 end
@@ -420,12 +420,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         % Record training error and rejects
         if isfield(gp,'latentValues')
             
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper');
             rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
             %            fprintf('error')
+            
             [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end

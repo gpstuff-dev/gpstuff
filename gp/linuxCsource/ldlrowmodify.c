@@ -53,15 +53,15 @@ void mexFunction
 {
   double *Lx, *Lx2, *cx, *cx2, d, db, alpha, alpha2, beta, beta2, gamma, gamma2, *w, *wu, *wd, *deltal12;
   mwSize nnz, n;
-  mwIndex p, i, j, k, cind, *Li, *Lp, *Li2, *Lp2, *ci, *ci2, *cp, *krowind, *krowcol, lrowk;
+  mwIndex p, i, j, k, cind, *Li, *Lp, *Li2, *Lp2, *ci, *cp, *krowind, *krowcol, lrowk;
  
   /* ---------------------------------------------------------------------- */
   /* check inputs */
   /* ---------------------------------------------------------------------- */
 
-  if (nargout > 1 || nargin < 3 || nargin > 4)
+  if (nargout > 1 || nargin < 3 || nargin > 3)
     {
-      mexErrMsgTxt ("Usage: L = ldlrowmodify (L, c, c2, k)") ; 
+      mexErrMsgTxt ("Usage: L = ldlrowmodify (L, c2, k)") ; 
     }
   
   n = mxGetN (pargin [0]) ;
@@ -69,8 +69,7 @@ void mexFunction
 
 
   if (!mxIsSparse (pargin [0]) || !mxIsSparse (pargin [1])
-      || !mxIsSparse (pargin [2]) || n != mxGetM (pargin [0])
-      || n != mxGetM (pargin [1]) || n != mxGetM (pargin [2])
+      || n != mxGetM (pargin [0]) || n != mxGetM (pargin [1]) 
       || mxIsComplex (pargin [0]) || mxIsComplex (pargin [1])
       || mxIsComplex (pargin [2]))
     {
@@ -82,7 +81,7 @@ void mexFunction
   /* ---------------------------------------------------------------------- */
   /* get ki: column integer of update */
   /* ---------------------------------------------------------------------- */
-  k = (mwIndex) *mxGetPr(pargin[3]);
+  k = (mwIndex) *mxGetPr(pargin[2]);
   k = k-1;
 
   /* ---------------------------------------------------------------------- */
@@ -97,9 +96,7 @@ void mexFunction
   /* ---------------------------------------------------------------------- */
   cp = mxGetJc(pargin[1]);
   ci = mxGetIr(pargin[1]);
-  cx = mxGetPr(pargin[1]);
-  ci2 = mxGetIr(pargin[2]);
-  cx2 = mxGetPr(pargin[2]);
+  cx2 = mxGetPr(pargin[1]);
 
   /* ---------------------------------------------------------------------- */
   /* Create the output: the modified sparse LDL factorization */
@@ -142,7 +139,7 @@ void mexFunction
     deltal12 = mxCalloc((mwSize)k, sizeof(double));
     for (p = cp[0] ; p < cp[1] ; p++){
       if (ci[p] >=k ) break;
-      deltal12[ci[p]] = cx2[p] - cx[p];   /* deltal12 is a full vector */
+      deltal12[ci[p]] = cx2[p];   /* deltal12 is a full vector */
     }
 
     /* Solve L11*D11*deltal12 = deltac12 */
@@ -156,7 +153,7 @@ void mexFunction
 
     /* Set the new l12' elements into L */
     for (j = 0 ; j < lrowk ; j++) {
-      Lx[krowind[j]] = Lx[krowind[j]] + deltal12[krowcol[j]];
+      Lx[krowind[j]] = deltal12[krowcol[j]];
     }
 
     /* Evaluate the D22 element*/
@@ -168,11 +165,11 @@ void mexFunction
       }
     }
     if (i >= cp[1]) mexErrMsgTxt ("The vector c must contain k'th element!");
-    db = d + cx2[cind] - cx[cind];
+    db = cx2[cind];
 
     for (j = 0; j < lrowk ; j++)  {
-      deltal12[krowcol[j]] =  deltal12[krowcol[j]] * Lx2[Lp2[krowcol[j]]];
-      db = db - deltal12[krowcol[j]] * (Lx2[krowind[j]] + Lx[krowind[j]]);
+      deltal12[krowcol[j]] = deltal12[krowcol[j]] * Lx2[Lp2[krowcol[j]]];
+      db = db - deltal12[krowcol[j]] * Lx[krowind[j]];
     }
     Lx[Lp[k]] = db;
   }
@@ -180,7 +177,7 @@ void mexFunction
     /* Since k==0 we have to evaluate only the D22 element*/
     d = Lx[Lp[k]];
     cind = 0;
-    db = d + cx2[cind] - cx[cind];
+    db = cx2[cind];
     Lx[Lp[k]] = db;
   }
 
@@ -204,10 +201,10 @@ void mexFunction
       cind += 1;
       for ( p = Lp[k]+1 ; p < Lp[k+1] ; p++) {	
 	if (Li[p] == ci[cind]) {
-	  Lx[p] = (cx2[cind] - cx[cind] + Lx[p] * d - w[Li[p]] ) / db;
+	  Lx[p] = (cx2[cind] - w[Li[p]] ) / db;
 	  cind++;
 	} else {
-	  Lx[p] = (Lx[p] * d - w[Li[p]] ) / db;
+	  Lx[p] = ( - w[Li[p]] ) / db;
 	}
       }
       /* Free memory */
@@ -216,10 +213,11 @@ void mexFunction
       cind = cp[k]+1;
       for ( p = Lp[k]+1 ; p < Lp[k+1] ; p++) {	
 	if (Li[p] == ci[cind]) {
-	  Lx[p] = (cx2[cind] - cx[cind] + Lx[p] * d ) / db;
+	  Lx[p] = (cx2[cind]) / db;
 	  cind++;
 	} else {
-	  Lx[p] = Lx[p] * d / db;
+	  Lx[p] = 0;
+	  printf("täällä\n");
 	}
       }
     }

@@ -1,4 +1,4 @@
-function demo_noiset
+function demo_robustRegression
 %    DEMO_TGP      A regression problem demo for Gaussian process. Uses Students 
 %                  t-distribution  for residual model.
 %
@@ -238,8 +238,8 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 
 % load the data. First 100 variables are for training
 % and last 100 for test
-S = which('demo_noiset');
-L = strrep(S,'demo_noiset.m','demos/odata');
+S = which('demo_robustRegression');
+L = strrep(S,'demo_robustRegression.m','demos/odata');
 x = load(L);
 xt = x(101:end,1);
 yt = x(101:end,2);

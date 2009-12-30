@@ -1,3 +1,4 @@
+
 function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 %GPLA_E Conduct LAplace approximation and return marginal log posterior estimate
 %
@@ -197,6 +198,41 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     end                                                    % end Newton's iterations
                                         
                   case 'likelih_specific'
+% $$$                             iter = 1;
+% $$$                             sigma = gp.likelih.sigma;
+% $$$                             nu = gp.likelih.nu;
+% $$$                             n = length(y);
+% $$$                             
+% $$$                             
+% $$$                             
+% $$$     % $$$                     iV = diag( ones(1,n)./sigma.^2);
+% $$$     % $$$                     f1 = (iK+iV)\iV*y;            
+% $$$                             iV = ones(n,1)./sigma.^2;
+% $$$                             siV = sqrt(iV);
+% $$$                             B = eye(n) + siV*siV'.*K;
+% $$$                             L = chol(B)';
+% $$$                             b = iV.*y;
+% $$$                             a = b - siV.*(L'\(L\(siV.*(K*b))));
+% $$$                             f = K*a;
+% $$$                             while iter < 200
+% $$$                                 fold = f;
+% $$$     % $$$                         iV = diag((nu+1) ./ (nu.*sigma^2 + (y-f1).^2));
+% $$$     % $$$                         f1 = (iK+iV)\iV*y;
+% $$$                                 
+% $$$                                 iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
+% $$$                                 siV = sqrt(iV);
+% $$$                                 B = eye(n) + siV*siV'.*K;
+% $$$                                 L = chol(B)';
+% $$$                                 b = iV.*y;
+% $$$                                 a = b - siV.*(L'\(L\(siV.*(K*b))));
+% $$$                                 f = K*a;
+% $$$                                 
+% $$$                                 if max(abs(f-fold)) < 1e-8
+% $$$                                     break
+% $$$                                 end
+% $$$                                 iter = iter + 1;
+% $$$                             end
+                            
                     [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
                 end
                 
@@ -237,8 +273,8 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                             upfact = W(i)./(1 + W(i).*ll);
                             
                             % Check that Cholesky factorization will remain positive definite
-                            if 1 + W(i).*ll <= 0 | upfact > 1./ll
-                                warning('gpla_e: 1 + W(i).*ll < 0')
+                            if 1./ll + W(i) < 0 %1 + W(i).*ll <= 0 | abs(upfact) > abs(1./ll) %upfact > 1./ll
+                                warning('gpla_e: 1./Sigma(i,i) + W(i) < 0')
                                 
                                 ind = 1:i-1;
                                 mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');

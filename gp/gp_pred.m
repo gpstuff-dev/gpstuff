@@ -2,32 +2,50 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
 %GP_PRED    Make predictions for Gaussian process
 %
 %	Description
-%	F = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) takes a gp data structure GP
+%	[Ef, Varf] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) takes a GP data structure 
 %       together with a matrix X of input vectors, Matrix TX of training inputs and
-%       vector TY of training targets, and returns a vector F of predictions
-%       (mean(Y|X, TX, TY)). Each row of X corresponds to one input vector and each row
-%       of Y corresponds to one output vector. PREDCF is an array specifying the indexes
-%       of covariance functions, which are used for making the prediction. TSTIND is a
-%       cell array containing index vectors specifying the blocking structure for
-%       test data in PIC approximation. NOTE: When making predictions with a subset of
-%       covariance functions with FIC approximation the predictive variance in some
-%       cases can be ill-behaved i.e. negative or unrealistically small. 
+%       vector TY of training targets, and returns a vector Ef of predictive expectations 
+%       and variances of the latent function
 %
-%	[F, VarF] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) returns also the predictive
-%       (noiseless) variances of F (1xn vector). NOTE! VarF contains the variance of the
-%       latent function, that is  diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf. If you want
-%       predictive variance of observations add gp.noise{1}.noiseSigmas2 to VarF.
+%            Ef =  E[f | x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
+%          Varf = Var[f | x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
 %
-%	[F, VarF, sampF] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) returns also a sample
-%       from posterior distribution of the latent varible sampF. This is needed for example
-%       in the Student-t noise model. NOTE! in FIC/PIC the prediction sampF is made at
-%       the training points!
+%       Each row of X corresponds to one input vector and each row of Y corresponds to one 
+%       output vector. PREDCF is an array specifying the indexes of covariance functions, 
+%       which are used for making the prediction (others are considered noise). TSTIND is, 
+%       in case of PIC, a cell array containing index vectors specifying the blocking 
+%       structure for test data, or in FIC and CS+FI a vector of length n that points out 
+%       the test inputs that are also in the training set (if none, set TSTIND = []).        
+%
+%	[Ef, Varf, Ey, Vary] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) returns also the 
+%       predictive mean and variance for observations at input locations X.
+%
+%	[Ef, Varf, Ey, Vary, PY] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND, Y) returns also the 
+%       predictive density PY of the observations Y at input locations X. This can be used for
+%       example in the cross-validation. Here Y has to be vector.
+%
+%       NOTE! In case of FIC and PIC sparse approximation the prediction for only some PREDCF 
+%             covariance functions is just an approximation since the covariance functions 
+%             are coupled in the approximation and are not strictly speaking additive anymore. 
+%
+%             For example, if you use covariance such as K = K1 + K2 your predictions
+%             Ef1 = gp_pred(gp, tx, ty, x, 1) and Ef2 = gp_pred(gp, tx, ty, x, 2) should sum up 
+%             to Ef = gp_pred(gp, tx, ty, x). That is Ef = Ef1 + Ef2. With FULL model this works 
+%             but with FIC and PIC this works only approximately. That is Ef \approx Ef1 + Ef2.
+%
+%             With CS+FIC the predictions are exact if the PREDCF covariance functions are all 
+%             in the FIC part or if they are CS covariances. 
+%
+%       NOTE! When making predictions with a subset of covariance functions with FIC approximation
+%             the predictive variance can in some cases be ill-behaved i.e. negative or 
+%             unrealistically small. This miay happen because of the approximative nature of the 
+%             prediction. 
 %
 %	See also
 %	GP_PREDS, GP_PAK, GP_UNPAK
 %
 
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2008      Jouni Hartikainen
 
 % This software is distributed under the GNU General Public
@@ -35,6 +53,18 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
 % License.txt, included with the software, for details.
 
 tn = size(tx,1);
+
+if nargin < 7
+    y = [];
+end
+
+if nargout > 4 && isempty(y)
+    error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
+end
+
+if nargin < 6
+    tstind = [];
+end
 
 if nargin < 5
     predcf = [];
@@ -58,7 +88,7 @@ switch gp.type
 
     if nargout > 1
         if issparse(C)
-            V = gp_trvar(gp,x,predcf);
+            [V, Cv] = gp_trvar(gp,x,predcf);
             Varf = V - diag(K'*ldlsolve(LD,K));
         else
             v = L\K;
@@ -74,12 +104,12 @@ switch gp.type
         Vary = Cv - diag(v'*v);
     end
     if nargout > 4
-        
+        py = norm_pdf(y, Ey, sqrt(Vary));
     end
   case 'FIC'
-    % Here tstind = 1 if the prediction is made for the training set 
+    % Check the tstind vector
     if nargin > 5
-        if length(tstind) ~= size(tx,1)
+        if ~isempty(tstind) && length(tstind) ~= size(tx,1)
             error('tstind (if provided) has to be of same lenght as tx.')
         end
     else
@@ -153,13 +183,9 @@ switch gp.type
     if nargout > 2
         Ey = Ef;
         Vary = Varf + Cnn_v - Knn_v;
-        
-% $$$         % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
-% $$$         %            = B'*(I-B*La_f^(-1)*B' + B*L*L'*B')*B + La_n
-% $$$         Lav_n = Kv_ff-Qv_ff;
-% $$$         BL = B*L;
-% $$$         Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,size(K_uu,1)).\B') + BL*BL';
-% $$$         noisyY = Ef + B'*(chol(Sigm_mm)'*randn(size(K_uu,1),1)) + randn(size(Ef)).*sqrt(Lav_n);
+    end
+    if nargout > 4
+        py = norm_pdf(y, Ey, sqrt(Vary));
     end
   case {'PIC' 'PIC_BLOCK'}
     u = gp.X_u;
@@ -254,10 +280,13 @@ switch gp.type
         [Knn_v, Cnn_v] = gp_trvar(gp,x,predcf);
         Vary = Varf + Cnn_v - Knn_v;
     end
+    if nargout > 4
+        py = norm_pdf(y, Ey, sqrt(Vary));
+    end
   case 'CS+FIC'
     % Here tstind = 1 if the prediction is made for the training set 
     if nargin > 5
-        if length(tstind) ~= size(tx,1)
+        if ~isempty(tstind) && length(tstind) ~= size(tx,1)
             error('tstind (if provided) has to be of same lenght as tx.')
         end
     else
@@ -373,11 +402,11 @@ switch gp.type
     % Add also Lav2 if the prediction is made for training set
     % and non-CS covariance function is used for prediction
     if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-        Ef = Ef + Lav2.*p;
+        Ef(tstind) = Ef(tstind) + Lav2(tstind).*p(tstind);
     end
     
     if nargout > 1
-        Knn_v = gp_trvar(gp,x,predcf);
+        [Knn_v, Cnn_v] = gp_trvar(gp,x,predcf);
         Luu = chol(K_uu)';
         B=Luu\(K_fu');
         B2=Luu\(K_nu');
@@ -392,10 +421,10 @@ switch gp.type
             if  ~isempty(tstind)
                 % Non-CS covariance
                 if ptype == 1
-                    Kcs_nf = sparse(tstind,1:n,Lav2,n2,n);
+                    Kcs_nf = sparse(tstind,1:n,Lav2(tstind),n2,n);
                 % Non-CS and CS covariances
                 else
-                    Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2,n2,n);
+                    Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2(tstind),n2,n);
                 end
                 % Add Lav2 and possibly Kcs_nf
                 Varf = Varf - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ...
@@ -413,7 +442,11 @@ switch gp.type
     end
     
     if nargout > 2
-        error('gp_pred with three output arguments is not implemented for CS+FIC!')
+        Ey = Ef;
+        Vary = Varf + Cnn_v - Knn_v;
+    end
+    if nargout > 4
+        py = norm_pdf(y, Ey, sqrt(Vary));
     end
   case 'SSGP'
     if nargin > 4

@@ -559,7 +559,7 @@ function gpcf = gpcf_dotproduct(do, varargin)
         gpp = gpcf.p;
         % record coeffSigma2
         if ~isempty(gpcf.coeffSigma2)
-            if ~isempty(gpp.coeffSigma2)
+            if isfield(gpp.coeffSigma2, 'p') && ~isempty(gpp.coeffSigma2)
                 reccf.lengthHyper(ri,:)=gpp.coeffSigma2.a.s;
                 if isfield(gpp.coeffSigma2,'p')
                     if isfield(gpp.coeffSigma2.p,'nu')

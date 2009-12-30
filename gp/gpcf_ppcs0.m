@@ -916,7 +916,7 @@ function gpcf = gpcf_ppcs0(do, varargin)
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_ppcs0';
-            reccf.nin = ri;
+            reccf.nin = ri.nin;
             reccf.nout = 1;
             reccf.l = floor(reccf.nin/2)+4;
 

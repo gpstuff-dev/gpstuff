@@ -1,5 +1,5 @@
 %   Author: Jarno Vanhatalo <Jarno.Vanhatalo@tkk.fi>
-%   Last modified: 2009-09-17 17:02:13 EEST
+%   Last modified: 2009-12-21 09:09:21 EET
 
 Modifications:
 - jitterSigmas is initialized to zero (used to be 1e-4)
@@ -9,90 +9,15 @@ Modifications:
 - Luokittelu: logit - korjaa {0,1}->{-1,1} helppiin
               demoon sama
 
-- ep_pred.m
-  -> full malli katkaistulla kovarianssilla rikki
 
-la_pred
-ep_pred
-gp_int
--------------
-- p(y|D):n laskenta. Nyt lasketaan vain Ef ja Varf, mutta voitaisiin
-  laskea myös E(y|D), Var(y|D) ja p(y|D)
+RM-HMC toteutus ?
+------------------
+
 
 sinvchi2_*
 ---------
 - gradientti pielessä
 
-GPCF_*
------------
-- Kovarianssifunktioiden record on pielessä hyperparametrien osalta. 
-  Muuta lengthHyper yms. reccf.p.lenghtScale.a.s jne. muotoon.
-
-GP_CVE:
---------------------
-- Tälle demo
-
-LIKELIH_LOGIT:
----------------
-- Puuttuu: Laplace aproksimaation toteutus
-- Puuttuu: EP toteutus
-- Puuttuu: MCMC toteutus harvoille malleille
-
-LIKELIH_PROBIT:
----------------
-- Puuttuu: Laplace aproksimaation toteutus
-- Puuttuu: MCMC toteutus
-
-LIKELIH_NEGBIN:
----------------
-- momenttien integroinnin tehostaminen (katso Poisson)
-
-GPCF_SSSEXP:
-------------
-- puuttuu: gradientit spektral pisteiden suhteen.
-
-
-COV.C:
-------
-- Puuttuu: kokonaan
-
-PERUS GP RAKENNE:
-------------------
-- SPARSE malleista
-  * FITC 
-    + t-malli
-    + katkaistu kovarianssi
-  * PITC
-    + t-malli
-    + t-malli + lohkomalli kohinalle
-    + katkaistu kovarianssi
-
-- Luokitteluun tarvitaan vielä classprior toteutus (latent_mh funktioon)
-
-%-------------------------------------------------
-
-- lisää kaikkiin opteihin (hmc2_opt, sls_opt jne) .repeat kenttä
-
-GP_MC:
-------
-- puuttuu regressio-ongelman kohdalla opetus ja testivirheen
-  laskenta ja printtaus (tällä hetkellä laskee ja printtaa väärin).
-- Recappendiin täytyy muuttaa training errorin laskenta latenttien
-  muuttujien tapauksessa. Parempi voisi olla esim. ottaa errorit
-  diagn:n kautta 
-- diagnostiikan printtaus ylipäänsä toteutettava uudestaan.
-   * Voisi toteuttaa esim. siten, että kukin sämpleri alustettaisiin
-     gp_mc:n alussa, jolloin nämä laittaisivat gp_mc:n sisällä olevaan
-     structuuriin omille diagnostiikoilleen lokerot
-     nimineen. Sämpläyksen aikana näihin sitten lisättäisiin lukuarvot
-     printattaviksi. 
-   * Mietittävä vielä
-
-- poista lvpoisson_e, *_g ja latent_hmc2:sta  kohta "diag(Lav)" ja korvaa nopeammalla.
-
-- Indusoivien pisteiden sämpläys
-Tämä täytyy huomioida recordin käsittelyssä. Nyt tällä hetkellä U
-annetaan erillisenä parametrina -> vaatii jonkin verran muokkausta 
 
 
 

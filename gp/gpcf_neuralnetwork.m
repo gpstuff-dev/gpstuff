@@ -727,8 +727,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         gpp = gpcf.p;
         % record weightSigma2
         if ~isempty(gpcf.weightSigma2)
-            if ~isempty(gpp.weightSigma2)
-                reccf.lengthHyper(ri,:)=gpp.weightSigma2.a.s;
+            if isfield(gpp.weightSigma2, 'p') && ~isempty(gpp.weightSigma2.p)
+                reccf.weightSigma2(ri,:)=gpp.weightSigma2.a.s;
                 if isfield(gpp.weightSigma2,'p')
                     if isfield(gpp.weightSigma2.p,'nu')
                         reccf.lengthHyperNu(ri,:)=gpp.weightSigma2.a.nu;
