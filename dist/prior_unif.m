@@ -1,15 +1,12 @@
-function p = prior_t(do, varargin)
+function p = prior_unif(do, varargin)
 
-% PRIOR_T     Student-t prior structure     
+% PRIOR_UNIF     Uniform prior structure     
 %       
 %        Description
-%        P = PRIOR_T('INIT') returns a structure that specifies Student's
-%        t-distribution prior. 
+%        P = PRIOR_UNIF('INIT') returns a structure that specifies uniform prior. 
 %    
 %	The fields in P are:
-%           p.type         = 'Student-t'
-%           p.s            = The scale (default 1)
-%           p.nu           = The degrees of freedom (default 4)
+%           p.type         = 'uniform'
 %           p.fh_pak       = Function handle to parameter packing routine
 %           p.fh_unpak     = Function handle to parameter unpacking routine
 %           p.fh_e         = Function handle to energy evaluation routine
@@ -18,13 +15,11 @@ function p = prior_t(do, varargin)
 %
 %	P = PRIOR_T('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. 
-%       Fields that can be set are 's' and 'nu'.
 %
 %	See also
 %       PRIOR_GAMMA, GPCF_SEXP, LIKELIH_PROBIT
 
     
-% Copyright (c) 2000-2001 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
@@ -38,19 +33,15 @@ function p = prior_t(do, varargin)
 
     % Initialize the prior structure
     if strcmp(do, 'init')
-        p.type = 'Student-t';
+        p.type = 'uniform';
         
         % set functions
-        p.fh_pak = @prior_t_pak;
-        p.fh_unpak = @prior_t_unpak;
-        p.fh_e = @prior_t_e;
-        p.fh_g = @prior_t_g;
-        p.fh_recappend = @prior_t_recappend;
-        
-        % set parameters
-        p.s = 1;
-        p.nu = 4;
-                
+        p.fh_pak = @prior_unif_pak;
+        p.fh_unpak = @prior_unif_unpak;
+        p.fh_e = @prior_unif_e;
+        p.fh_g = @prior_unif_g;
+        p.fh_recappend = @prior_unif_recappend;
+                        
         if nargin > 1
             if mod(nargin-1,2) ~=0
                 error('Wrong number of arguments')
@@ -58,10 +49,6 @@ function p = prior_t(do, varargin)
             % Loop through all the parameter values that are changed
             for i=1:2:length(varargin)-1
                 switch varargin{i}
-                  case 'scale'
-                    p.s = varargin{i+1};
-                  case 'nu'
-                    p.nu = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -79,10 +66,6 @@ function p = prior_t(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'scale'
-                p.s = varargin{i+1};
-              case 'nu'
-                p.nu = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -91,25 +74,24 @@ function p = prior_t(do, varargin)
 
    
     
-    function w = prior_t_pak(p, w)
+    function w = prior_unif_pak(p, w)
         w = w;
     end
     
-    function [p, w] = prior_t_unpak(p, w)
+    function [p, w] = prior_unif_unpak(p, w)
         w = w;
         p = p;
     end
     
-    function e = prior_t_e(x, p)
-        e = sum(log(1 + (x./p.s).^2 ./ p.nu)).* (p.nu+1)/2;
+    function e = prior_unif_e(x, p)
+        e = 0;
     end
     
-    function g = prior_t_g(x, p)
-        d=x./p.s;
-        g=(p.nu+1)./p.nu .* (d./p.s) ./ (1 + (d.^2)./p.nu);
+    function g = prior_unif_g(x, p)
+        g = 0;
     end
     
-    function rec = prior_t_recappend(rec, ri, p)
+    function rec = prior_unif_recappend(rec, ri, p)
     % The parameters are not sampled in any case.
         rec = rec;
     end
