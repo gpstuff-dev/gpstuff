@@ -12,7 +12,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
 %
 %       OPT.FMINUNC consists of the options for fminunc
 %       OPT.INT_METHOD is the method used for integration
-%                      'grid_based' for grid search
+%                      'grid' for grid search
 %                      'is_normal' for sampling from gaussian appr
 %                      'is_normal_qmc' for quasi monte carlo samples
 
@@ -59,7 +59,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
     end
 
     if ~isfield(opt,'int_method')
-        opt.int_method = 'is_normal_qmc';
+        opt.int_method = 'grid';
     end
 
     if ~isfield(opt,'threshold')
@@ -75,10 +75,25 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
     end
 
     if ~isfield(opt,'improved')
-        opt.improved = 'off';
+        opt.improved = '0';
     end
 
+    if ~isfield(opt,'isscale')
+        opt.isscale = 1;
+    end
 
+    if ~isfield(opt,'noisy')
+        opt.noisy = 0;
+    end
+    
+    if ~isfield(opt,'validate')
+        opt.validate = 0;
+    end
+    
+    if ~isfield(opt,'qmc')
+        opt.qmc = 0;
+    end
+    
     % ====================================
     % Find the mode of the hyperparameters
     % ====================================
@@ -95,7 +110,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
     nParam = length(w);
 
     switch opt.int_method
-      case {'grid_based', 'CCD'}
+      case {'grid', 'CCD'}
         
         % ===============================
         % New variable z for exploration
@@ -134,7 +149,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
         th=[]; % List of hyperparameters
         
         switch opt.int_method
-          case 'grid_based'
+          case 'grid'
             % Make the predictions in the mode if needed and estimate the density of the mode
             if exist('tx')
                 if isfield(gp,'latent_method')
@@ -274,9 +289,9 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
             design = points;
             
             switch opt.improved 
-              case 'off'
+              case 0
                 points = f0*points;
-              case 'on'
+              case 1
                 optim = optimset('Display','off');
                 
 % $$$             sigma = zeros(size(points));
@@ -313,10 +328,18 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
                 if exist('tx')
                     if isfield(gp,'latent_method')
                         p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
-                        [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                        if ~isempty(tstindex)
+                            [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[],tstindex);
+                        else
+                            [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,param,[]);
+                        end
                     else
                         p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
-                        [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
+                        if ~isempty(tstindex)
+                            [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[],tstindex);
+                        else
+                            [Ef_grid(end+1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,xx,yy,tx,[]);
+                        end
                     end
                 else
                     p_th(end+1) = -feval(fh_e,th(i1,:),gp,xx,yy,param);
@@ -346,6 +369,10 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
         % Covariance of the gaussian approximation
         H = full(hessian(w));
         Sigma = inv(H);
+        Scale = Sigma;
+        [V,D] = eig(full(Sigma));
+        z = (V*sqrt(D))'.*opt.step_size;
+        P0 =  -feval(fh_e,w,gp,xx,yy,param);
         
         % Some jitter may be needed to get positive semi-definite covariance
         if any(eig(Sigma)<0)
@@ -367,12 +394,70 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
         switch opt.int_method
           case 'is_normal' 
             % Normal samples
-            th = mvnrnd(w,Sigma,N);
-            p_th_appr = mvnpdf(th, w, Sigma);        
-          case 'is_normal_qmc' 
-            % Quasi MC samples
-            th  = repmat(w,N,1)+(chol(Sigma)'*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
-            p_th_appr = mvnpdf(th, w, Sigma);        
+            
+            if opt.qmc
+                th  = repmat(w,N,1)+(chol(Sigma)'*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
+                p_th_appr = mvnpdf(th, w, Sigma);        
+            else
+                th = mvnrnd(w,Sigma,N);
+                p_th_appr = mvnpdf(th, w, Sigma);        
+            end
+            
+            
+            if opt.improved
+                
+                if opt.qmc
+                    e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
+                else
+                    e = randn(N,size(Sigma,1));
+                end
+                
+                % Scaling of the covariance (see Geweke, 1989, Bayesian inference in econometric models using monte carlo integration
+                delta = -6:.5:6;
+                for i0 = 1 : nParam
+                    for i1 = 1 : length(delta)
+                        ttt = zeros(1,nParam);
+                        ttt(i0)=1;
+                        phat = (-feval(fh_e,w+(delta(i1)*chol(Sigma)'*ttt')',gp,xx,yy,param));
+                        fi(i1) = abs(delta(i1)).*(2.*(P0-phat)).^(-.5);
+                        
+                        pp(i1) = exp(phat);
+                        pt(i1) = mvnpdf(delta(i1)*chol(Sigma)'*ttt', 0, Sigma);
+                    end
+                    
+                    q(i0) = max(fi(delta>0));
+                    r(i0) = max(fi(delta<0));
+                    
+% $$$                     scl = ones(1,length(delta));
+% $$$                     scl(1:floor(length(delta)/2))=repmat(r(i0),1,floor(length(delta)/2));
+% $$$                     scl(ceil(length(delta)/2):end)=repmat(q(i0),1,ceil(length(delta)/2));
+                    
+% $$$                     in{i0} = scl.*delta;
+% $$$                     out{i0} = pt/max(pt);
+% $$$                     in2off = delta;
+                    
+                end
+
+                %% Samples one by one
+                for i3 = 1 : N
+                    C = 0;
+                    for i2 = 1 : nParam
+                        if e(i3,i2)<0
+                            eta(i3,i2) = e(i3,i2)*r(i2);
+                            C = C + log(r(i2));
+                        else
+                            eta(i3,i2) = e(i3,i2)*q(i2);
+                            C = C + log(q(i2));
+                        end
+                        
+                    end
+                    p_th_appr(i3) = exp(-C-.5*e(i3,:)*e(i3,:)');
+                    th(i3,:)=w+(chol(Scale)'*eta(i3,:)')';
+                end
+            end
+            
+            
+
           case 'is_student-t'
             % Student-t Samples
             if isfield(opt, 'nu')
@@ -382,29 +467,91 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
             end
             chi2 = repmat(chi2rnd(nu, [1 N]), nParam, 1);
             Scale = (nu-2)./nu.*Sigma;
-            th  = repmat(w,N,1) + ( chol(Scale)' * randn(nParam, N).*sqrt(nu./chi2) )';
-            p_th_appr = mvtpdf(th - repmat(w,N,1), Sigma, nu);
+            Scale = Sigma;
+
+            if opt.qmc == 1
+                e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
+                th = repmat(w,N,1) + ( chol(Scale)' * e' .* sqrt(nu./chi2) )';                
+            else                                    
+                th = repmat(w,N,1) + ( chol(Scale)' * randn(nParam, N).*sqrt(nu./chi2) )';
+            end
+
+            p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);
+            
+            if opt.improved 
+                delta = -6:.5:6;
+                for i0 = 1 : nParam
+                    ttt = zeros(1,nParam);
+                    ttt(i0)=1;
+                    for i1 = 1 : length(delta)
+                        phat = exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,xx,yy,param));
+                        
+                        fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
+                        rel(i1) = (exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,xx,yy,param)))/ ...
+                                  mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
+                        pp(i1) = phat;
+                        pt(i1) = mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
+                    end
+                    
+                    q(i0) = max(fi(delta>0));
+                    r(i0) = max(fi(delta<0));
+                    
+                    scl = ones(1,length(delta));
+                    scl(1:floor(length(delta)/2))=repmat(r(i0),1,floor(length(delta)/2));
+                    scl(ceil(length(delta)/2):end)=repmat(q(i0),1,ceil(length(delta)/2));
+                end
+                
+                %% Samples
+                if opt.qmc
+                    e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
+                else
+                    e = randn(N,size(Sigma,1));
+                end
+                
+                for i3 = 1 : N
+                    C = 0;
+                    for i2 = 1 : nParam
+                        chi(i2) = chi2rnd(nu);
+                        if e(i3,i2)<0
+                            eta(i3,i2) = e(i3,i2)*r(i2)*(sqrt(nu/chi(i2)));
+                            C = C -log(r(i2));
+                        else
+                            eta(i3,i2) = e(i3,i2)*q(i2)*(sqrt(nu/chi(i2)));
+                            C = C  -log(q(i2));
+                        end
+                    end
+                    p_th_appr(i3) = exp(C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
+                    th(i3,:)=w+(chol(Scale)'*eta(i3,:)')';
+                end
+            end
         end
-        
         gp_array=cell(N,1);
-        
-        % (Scaled) Densities of the samples in the approximation of the target distribution
-        p_th_appr = p_th_appr/sum(p_th_appr);
         
         % Densities of the samples in target distribution and predictions, if needed.
         for j = 1 : N
             gp_array{j}=gp_unpak(gp,th(j,:),param);
             if exist('tx')
                 p_th(j) = -feval(fh_e,th(j,:),gp_array{j},xx,yy,param);
-                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,param,[],tstindex);
+                if ~isempty(tstindex)
+                    [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,param,[],tstindex);
+                else
+                    if isfield(gp, 'latent_method')
+                        [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,param);
+                    else 
+                        [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx);
+                    end
+                end
             else
                 p_th(j) = -feval(fh_e,th(j,:),gp_array{j},xx,yy,param);
+% $$$                 p_th(j) = -feval(fh_e,th(j,:),gp_array{j},xx,yy);
             end
         end
-
         p_th = exp(p_th-min(p_th));
         p_th = p_th/sum(p_th);
-        
+
+        % (Scaled) Densities of the samples in the approximation of the target distribution
+        p_th_appr = p_th_appr/sum(p_th_appr);
+                
         % Importance weights for the samples
         iw = p_th(:)./p_th_appr(:);
         iw = iw/sum(iw);
@@ -476,7 +623,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
             
             if exist('tx')
                 p_th(j) = 1;
-                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,param,[],tstindex);
+                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},xx,yy,tx,[]);
             else
                 p_th(j) = 1;
             end
@@ -509,10 +656,25 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
         % Grid of 501 points around 10 stds to both directions around the mode
         % ====================================================================
         x = zeros(size(Ef_grid,2),501);
-        for j = 1 : size(Ef_grid,2);
-            x(j,:) = Ef_grid(1,j)-10*sqrt(Varf_grid(1,j)) : 20*sqrt(Varf_grid(1,j))/500 : Ef_grid(1,j)+10*sqrt(Varf_grid(1,j));  
+        
+        if opt.noisy == 0
+            for j = 1 : size(Ef_grid,2);
+                x(j,:) = Ef_grid(1,j)-10*sqrt(Varf_grid(1,j)) : 20*sqrt(Varf_grid(1,j))/500 : Ef_grid(1,j)+10*sqrt(Varf_grid(1,j));  
+            end
         end
-
+        
+        
+        if opt.noisy == 1
+            for i1 = 1 : length(gp_array)
+                obsnoise(i1,1) = gp_array{i1}.noise{1}.noiseSigmas2;
+            end
+            
+            for j = 1 : size(Ef_grid,2);
+                x(j,:) = Ef_grid(1,j)-10*sqrt(Varf_grid(1,j)+obsnoise(i1,1)) : 20*sqrt(Varf_grid(1,j)+obsnoise(i1,1))/500 : Ef_grid(1,j)+10*sqrt(Varf_grid(1,j)+obsnoise(i1,1));  
+            end
+            
+        end
+        
         % Calculate the density in each grid point by integrating over
         % different models
         fx = zeros(size(Ef_grid,2),501);
@@ -520,6 +682,14 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
             fx(j,:) = sum(normpdf(repmat(x(j,:),size(Ef_grid,1),1), repmat(Ef_grid(:,j),1,size(x,2)), repmat(sqrt(Varf_grid(:,j)),1,size(x,2))).*repmat(P_TH,1,size(x,2))); 
         end
 
+       
+        
+        if opt.noisy == 1
+            fx = zeros(size(Ef_grid,2),501);
+            for j = 1 : size(Ef_grid,2)
+                fx(j,:) = sum(normpdf(repmat(x(j,:),size(Ef_grid,1),1), repmat(Ef_grid(:,j),1,size(x,2)), repmat(sqrt(Varf_grid(:,j)+obsnoise),1,size(x,2))).*repmat(P_TH,1,size(x,2))); 
+            end
+        end
         % Normalize distributions
         fx = fx./repmat(sum(fx,2),1,size(fx,2));
 
@@ -632,6 +802,14 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
         gp_array{i}.ia_weight = P_TH(i);
     end
     
+    function p = mt_pdf(x,Sigma,nu)
+        d = length(Sigma);
+        for i1 = 1 : size(x,1);
+            p(i1) = gamma((nu+1)/2) ./ gamma(nu/2) .* nu^(d/2) .* pi^(d/2) ...
+                    .* det(Sigma)^(-.5) .* (1+(1/nu) .* (x(i1,:))*inv(Sigma)*(x(i1,:))')^(-.5*(nu+d));
+        end
+    end
+
     function H = hessian(w0)
         
         m = length(w);
@@ -962,3 +1140,57 @@ end
 % $$$ 
 % $$$     p_th(idx:end)=[];
 % $$$     P_TH=exp(p_th-min(p_th))./sum(exp(p_th-min(p_th)));
+
+% $$$           case 'is_normal_qmc' 
+% $$$             delta = -2:.1:2;
+% $$$             for i0 = 1 : nParam
+% $$$                 for i1 = 1 : length(delta)
+% $$$                     ttt = zeros(1,nParam);
+% $$$                     ttt(i0)=1;
+% $$$                     phat = (-feval(fh_e,w+(delta(i1)*chol(Sigma)'*ttt')',gp,xx,yy,param));
+% $$$                     fi(i1) = abs(delta(i1)).*(2.*(P0-phat)).^(-.5);
+% $$$                     
+% $$$                     pp(i1) = exp(phat);
+% $$$                     pt(i1) = mvnpdf(delta(i1)*chol(Sigma)'*ttt', 0, Sigma);
+% $$$                 end
+% $$$                 
+% $$$                 origo = (length(delta)-1)/2;
+% $$$                 
+% $$$                 q(i0) = max(fi(delta>0));
+% $$$                 r(i0) = max(fi(delta<0));
+% $$$                 
+% $$$                 scl = ones(1,length(delta));
+% $$$                 scl(1:floor(length(delta)/2))=repmat(r(i0),1,floor(length(delta)/2));
+% $$$                 
+% $$$                 scl(ceil(length(delta)/2):end)=repmat(q(i0),1,ceil(length(delta)/2));
+% $$$                 
+% $$$                 in{i0} = scl.*delta;
+% $$$                 out{i0} = pt/max(pt);
+% $$$                 in2off = delta;
+% $$$ % $$$                 figure; plot(delta,pp/max(pp),'linewidth',2); hold on; plot(scl.*delta,pt/max(pt),'r','linewidth',2)
+% $$$ % $$$                 legend('posterior','importance')
+% $$$ % $$$                 set(gca,'fontsize',16,'fontweight','bold','ytick',[],'xlim',[-6,6]);
+% $$$ % $$$                 figure; plot(delta,pp/max(pp),'linewidth',2); hold on; plot(delta,pt/max(pt),'r','linewidth',2)
+% $$$ % $$$                 legend('posterior','importance')
+% $$$ % $$$                 set(gca,'fontsize',16,'fontweight','bold','ytick',[],'xlim',[-6,6]);
+% $$$                 
+% $$$             end
+% $$$             % Quasi MC samples
+% $$$             th  = repmat(w,N,1)+(chol(Sigma)'*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
+% $$$             p_th_appr = mvnpdf(th, w, Sigma);        
+% $$$             if strcmp(opt.improved,'on');
+% $$$                 e=(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
+% $$$                 for i3 = 1 : N
+% $$$                     for i2 = 1 : nParam
+% $$$                         if e(i3,i2)<0
+% $$$                             eta(i3,i2) = e(i3,i2)*r(i2);
+% $$$                         else
+% $$$                             eta(i3,i2) = e(i3,i2)*q(i2);
+% $$$                         end
+% $$$                         p_th_appr(i3) = mvnpdf(e(i3,:));
+% $$$                     end
+% $$$                     %                if i3 == 1,keyboard, end
+% $$$                     th(i3,:)=w+(chol(Scale)'*eta(i3,:)')';
+% $$$                 end
+% $$$                 p_th_appr = mvnpdf(th, w, Sigma);        
+% $$$             end

@@ -12,8 +12,8 @@ function opt = gp_iaopt(opt, method);
 %             structure OPT. METHOD is a string defining the integration method.
 %             Possibilities and their parameters are:
 %   
-%             'grid_based'  = a grid based integration
-%                  opt.int_method = 'grid_based';
+%             'grid'  = a grid based integration
+%                  opt.int_method = 'grid';
 %                  opt.stepsize   = 1;
 %                  opt.threshold  = 2.5;
 %                  opt.validate   = 1;    (check that the integration results are valid)
@@ -63,15 +63,15 @@ end
 
 opt.fminunc=optimset('GradObj','on');
 opt.fminunc=optimset(opt.fminunc,'LargeScale', 'on');
-opt.fminunc=optimset(opt.fminunc,'Display', 'iter');
+opt.fminunc=optimset(opt.fminunc,'Display', 'off');
 
 if nargin < 2
     method = 'is_normal_qmc';
 end
 
 switch method
-  case 'grid_based'
-    opt.int_method = 'grid_based';
+  case 'grid'
+    opt.int_method = 'grid';
     opt.stepsize = 1;
     opt.threshold = 2.5;
     opt.validate = 1;
@@ -79,15 +79,20 @@ switch method
     opt.int_method = 'is_normal';
     opt.nsamples = 40;
     opt.validate = 1;
+    opt.qmc = 0;
+    opt.improved = 0;
   case 'is_normal_qmc'
-    opt.int_method = 'is_normal_qmc';
+    opt.int_method = 'is_normal';
     opt.nsamples = 40;
     opt.validate = 1;
+    opt.qmc = 1;
+    opt.improved = 0;
   case 'is_student-t'
     opt.int_method = 'is_student-t';
     opt.nsamples = 40;
     opt.nu = 4;
     opt.validate = 1;
+    opt.improved = 0;
   case 'mcmc_hmc'
     opt.int_method = 'mcmc_hmc';
     opt.nsamples = 40;
@@ -111,7 +116,7 @@ switch method
     % Set the sls sampling options
   case 'CCD'
     opt.int_method = 'CCD';
-    opt.improved = 'off';
+    opt.improved = 0;
     opt.stepsize = 1;
     opt.f0 = 1.1;
 end    
