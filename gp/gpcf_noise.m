@@ -17,21 +17,21 @@ function gpcf = gpcf_noise(do, varargin)
 %         p              = prior structure for covariance function
 %                          parameters. 
 %         fh_pak         = function handle to packing function
-%                          (@gpcf_se_pak)
+%                          (@gpcf_noise_pak)
 %         fh_unpak       = function handle to unpackin function
-%                          (@gpcf_se_unpak)
+%                          (@gpcf_noise_unpak)
 %         fh_e           = function handle to error function
-%                          (@gpcf_se_e)
+%                          (@gpcf_noise_e)
 %         fh_ghyper      = function handle to gradient function (with respect to hyperparameters)
-%                          (@gpcf_se_ghyper)
-%         fh_gind        = function handle to gradient function (with respect to inducing inputs)
-%                          (@gpcf_se_gind)
+%                          (@gpcf_noise_ghyper)
+%         fh_ginput      = function handle to gradient function (with respect to the inputs)
+%                          (@gpcf_noise_ginput)
 %         fh_cov         = function handle to covariance function
-%                          (@gpcf_se_cov)
+%                          (@gpcf_noise_cov)
 %         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_se_trcov)
+%                          (@gpcf_noise_trcov)
 %         fh_trvar       = function handle to training variance function
-%                          (@gpcf_se_trvar)
+%                          (@gpcf_noise_trvar)
 %         fh_sampling    = function handle to parameter sampling function
 %                          (@hmc2)
 %         sampling_opt   = options structure for fh_sampling
@@ -47,7 +47,7 @@ function gpcf = gpcf_noise(do, varargin)
 %       GP_INIT, GPCF_SEXP, GPCF_MATERN32, GPCF_MATERN52, GPCF_EXP, GPCF_PPCS2
 
 % Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
+% Copyright (c) 2006-2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -77,7 +77,7 @@ if strcmp(do, 'init')
     gpcf.fh_unpak = @gpcf_noise_unpak;
     gpcf.fh_e = @gpcf_noise_e;
     gpcf.fh_ghyper = @gpcf_noise_ghyper;
-    gpcf.fh_gind = @gpcf_noise_gind;
+    gpcf.fh_gind = @gpcf_noise_ginput;
     gpcf.fh_cov = @gpcf_noise_cov;
     gpcf.fh_trcov  = @gpcf_noise_trcov;
     gpcf.fh_trvar  = @gpcf_noise_trvar;
@@ -91,11 +91,14 @@ if strcmp(do, 'init')
         end
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
-            if strcmp(varargin{i},'noiseSigmas2')
+            switch varargin{i}
+              case 'noiseSigmas2'
                 gpcf.noiseSigmas2 = varargin{i+1};
-            elseif strcmp(varargin{i},'fh_sampling')
+              case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
-            else
+              case 'noiseSigmas2_prior'
+                gpcf.p.noiseSigmas2 = varargin{i+1};
+              otherwise
                 error('Wrong parameter name!')
             end
         end
@@ -110,13 +113,16 @@ if strcmp(do, 'set')
     gpcf = varargin{1};
     % Loop through all the parameter values that are changed
     for i=2:2:length(varargin)-1
-        if strcmp(varargin{i},'noiseSigmas2')
+        switch varargin{i}
+          case 'noiseSigmas2'
             gpcf.noiseSigmas2 = varargin{i+1};
-        elseif strcmp(varargin{i},'fh_sampling')
+          case 'fh_sampling'
             gpcf.fh_sampling = varargin{i+1};
-        else
+          case 'noiseSigmas2_prior'
+            gpcf.p.noiseSigmas2 = varargin{i+1};
+          otherwise
             error('Wrong parameter name!')
-        end    
+        end
     end
 end
 
@@ -135,13 +141,6 @@ function w = gpcf_noise_pak(gpcf, w)
 %	See also
 %	GPCF_NOISE_UNPAK
 %
-
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
 
 gpp=gpcf.p;
 
@@ -166,13 +165,6 @@ function [gpcf, w] = gpcf_noise_unpak(gpcf, w)
 %	See also
 %	GP_NOISE_PAK, GP_PAK
 
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2006      Jarno Vanhatalo
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
 gpp=gpcf.p;
 i1=0;i2=1;
 
@@ -195,22 +187,11 @@ function eprior =gpcf_noise_e(gpcf, p, t)
 %	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
 %
 
-% Copyright (c) 1998-2006 Aki Vehtari
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
 [n, m] =size(p);
 
 % Evaluate the prior contribution to the error.
-eprior = 0;
 gpp=gpcf.p;
-
-eprior=eprior...
-       +feval(gpp.noiseSigmas2.fe, ...
-              gpcf.noiseSigmas2, gpp.noiseSigmas2.a)...
-       -sum(log(gpcf.noiseSigmas2));
+eprior = feval(gpp.noiseSigmas2.fh_e, gpcf.noiseSigmas2, gpp.noiseSigmas2) - log(gpcf.noiseSigmas2);
 
 
 function [D,gprior]  = gpcf_noise_ghyper(gpcf, x, x2) %g, gdata, gprior
@@ -227,26 +208,15 @@ function [D,gprior]  = gpcf_noise_ghyper(gpcf, x, x2) %g, gdata, gprior
 %	data and prior contributions to the gradient.
 %
 %	See also
-%
-
-% Copyright (c) 1998-2001 Aki Vehtari
-% Copyright (c) 2006-2007 Jarno Vanhatalo
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
 
 gpp=gpcf.p;
 
 i1=1;
 D{i1}=gpcf.noiseSigmas2;
-
-gprior(i1)=feval(gpp.noiseSigmas2.fg, ...
-                 gpcf.noiseSigmas2, ...
-                 gpp.noiseSigmas2.a, 'x').*gpcf.noiseSigmas2-1;
+gprior(i1) = feval(gpp.noiseSigmas2.fh_g, gpcf.noiseSigmas2, gpp.noiseSigmas2).*gpcf.noiseSigmas2 - 1;
 
 
-function [g_ind, gdata_ind, gprior_ind]  = gpcf_noise_gind(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
+function [g_ind, gdata_ind, gprior_ind]  = gpcf_noise_ginput(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
 %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
 %                  with respect to inducing inputs.
 %
@@ -277,12 +247,6 @@ function C = gpcf_noise_cov(gpcf, x1, x2)
 %         Neal R. M. Regression and Classification Using Gaussian 
 %         Process Priors, Bayesian Statistics 6.
 
-% Copyright (c) 2006  Jarno Vanhatalo
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
 if isempty(x2)
     x2=x1;
 end
@@ -293,7 +257,6 @@ if m1~=m2
     error('the number of columns of X1 and X2 has to be same')
 end
 
-%C=zeros(n1,n2);
 C = sparse([],[],[],n1,n2,0);
 
 
@@ -310,16 +273,9 @@ function C = gpcf_noise_trcov(gpcf, x)
 %         Neal R. M. Regression and Classification Using Gaussian 
 %         Process Priors, Bayesian Statistics 6.
 
-% Copyright (c) 1998-2004 Aki Vehtari
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
-
 [n, m] =size(x);
 n1=n+1;
 
-%C=zeros(n,n);
 C = sparse([],[],[],n,n,0);
 C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigmas2;
 
@@ -336,12 +292,6 @@ function C = gpcf_noise_trvar(gpcf, x)
 %         Neal R. M. Regression and Classification Using Gaussian 
 %         Process Priors, Bayesian Statistics 6.
 
-% Copyright (c) 1998-2004 Aki Vehtari
-% Copyright (c) 2006      Aki Vehtari, Jarno Vanhatalo
-
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
 
 [n, m] =size(x);
 C=ones(n,1)*gpcf.noiseSigmas2;
@@ -385,10 +335,8 @@ gpp = gpcf.p;
 
 % record noiseSigma
 if ~isempty(gpcf.noiseSigmas2)
-    if isfield(gpp.noiseSigmas2, 'p') && ~isempty(gpp.noiseSigmas2.p)
-        reccf.p.noiseSigmas2.a.s(ri,:)=gpp.noiseSigmas2.a.s;
-    end
     reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
+    reccf.p.noiseSigmas2 = feval(gpp.noiseSigmas2.fh_recappend, reccf.p.noiseSigmas2, ri, gpcf.p.noiseSigmas2);
 elseif ri==1
     reccf.noiseSigmas2=[];
 end

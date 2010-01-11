@@ -75,7 +75,7 @@ ye = ye(ind,:);
 % Create the covariance function
 % The hyper-parameters are initialized very close to posterior mode in order to 
 % speed up convergence
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 

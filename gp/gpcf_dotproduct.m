@@ -96,6 +96,10 @@ function gpcf = gpcf_dotproduct(do, varargin)
                     gpcf.coeffSigma2 = varargin{i+1};
                   case 'fh_sampling'
                     gpcf.fh_sampling = varargin{i+1};
+                  case 'constSigma2_prior'
+                    gpcf.p.constSigma2 = varargin{i+1};
+                  case 'coeffSigma2_prior'
+                    gpcf.p.coeffSigma2 = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -118,6 +122,10 @@ function gpcf = gpcf_dotproduct(do, varargin)
                 gpcf.coeffSigma2 = varargin{i+1};
               case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
+              case 'constSigma2_prior'
+                gpcf.p.constSigma2 = varargin{i+1};
+              case 'coeffSigma2_prior'
+                gpcf.p.coeffSigma2 = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -151,14 +159,7 @@ function gpcf = gpcf_dotproduct(do, varargin)
         i1=i2;
         
         % Hyperparameters of coeffSigma2
-        if isfield(gpp.coeffSigma2, 'p') && ~isempty(gpp.coeffSigma2.p)
-            i1=i1+1;
-            w(i1)=gpp.coeffSigma2.a.s;
-            if any(strcmp(fieldnames(gpp.coeffSigma2.p),'nu'))
-                i1=i1+1;
-                w(i1)=gpp.coeffSigma2.a.nu;
-            end
-        end
+        w = feval(gpcf.p.coeffSigma2.fh_pak, gpcf.p.coeffSigma2, w);
     end
 
 
@@ -185,16 +186,11 @@ function gpcf = gpcf_dotproduct(do, varargin)
         i1=i1+1;
         gpcf.coeffSigma2=w(i1:i2);
         i1=i2;
+        
         % Hyperparameters of coeffSigma2
-        if isfield(gpp.coeffSigma2, 'p') && ~isempty(gpp.coeffSigma2.p)
-            i1=i1+1;
-            gpcf.p.coeffSigma2.a.s=w(i1);
-            if any(strcmp(fieldnames(gpp.coeffSigma2.p),'nu'))
-                i1=i1+1;
-                gpcf.p.coeffSigma2.a.nu=w(i1);
-            end
-        end        
         w = w(i1+1:end);
+        [p, w] = feval(gpcf.p.coeffSigma2.fh_unpak, gpcf.p.coeffSigma2, w);
+        gpcf.p.coeffSigma2 = p;
     end
 
     function eprior =gpcf_dotproduct_e(gpcf, x, t)
@@ -220,27 +216,8 @@ function gpcf = gpcf_dotproduct(do, varargin)
         eprior = 0;
         gpp=gpcf.p;
 
-        eprior=eprior...
-               +feval(gpp.constSigma2.fe, ...
-                      gpcf.constSigma2, gpp.constSigma2.a)...
-               -log(gpcf.constSigma2);
-        if isfield(gpp.coeffSigma2, 'p') && ~isempty(gpp.coeffSigma2.p)
-            eprior=eprior...
-                   +feval(gpp.coeffSigma2.p.s.fe, ...
-                          gpp.coeffSigma2.a.s, gpp.coeffSigma2.p.s.a)...
-                   -log(gpp.coeffSigma2.a.s);
-            if any(strcmp(fieldnames(gpp.coeffSigma2.p),'nu'))
-                eprior=eprior...
-                       +feval(gpp.p.coeffSigma2.nu.fe, ...
-                              gpp.coeffSigma2.a.nu, gpp.coeffSigma2.p.nu.a)...
-                       -log(gpp.coeffSigma2.a.nu);
-            end
-        end
-        eprior=eprior...
-               +feval(gpp.coeffSigma2.fe, ...
-                      gpcf.coeffSigma2, gpp.coeffSigma2.a)...
-               -sum(log(gpcf.coeffSigma2));
-
+        eprior = feval(gpp.constSigma2.fh_e, gpcf.constSigma2, gpp.constSigma2) - log(gpcf.constSigma2);
+        eprior = eprior + feval(gpp.coeffSigma2.fh_e, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
     end
 
     function [DKff, gprior]  = gpcf_dotproduct_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
@@ -323,43 +300,17 @@ function gpcf = gpcf_dotproduct(do, varargin)
         if nargout > 1
             % Evaluate the gprior with respect to constSigma2
             i1 = i1+1;
-            gprior(i1)=feval(gpp.constSigma2.fg, ...
-                             gpcf.constSigma2, ...
-                             gpp.constSigma2.a, 'x').*gpcf.constSigma2 - 1;
+            gprior(i1) = feval(gpp.constSigma2.fh_g, gpcf.constSigma2, gpp.constSigma2).*gpcf.constSigma2 - 1;
+                            
             % Evaluate the data contribution of gradient with respect to coeffSigma2
             if length(gpcf.coeffSigma2)>1
                 for i2=1:gpcf.nin
                     i1=i1+1;
-                    gprior(i1)=feval(gpp.coeffSigma2.fg, ...
-                                     gpcf.coeffSigma2(i2), ...
-                                     gpp.coeffSigma2.a, 'x').*gpcf.coeffSigma2(i2) - 1;
+                    gprior(i1) = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2(i2), gpp.coeffSigma2).*gpcf.coeffSigma2(i2) - 1;
                 end
             else
                 i1=i1+1;
-                gprior(i1)=feval(gpp.coeffSigma2.fg, ...
-                                 gpcf.coeffSigma2, ...
-                                 gpp.coeffSigma2.a, 'x').*gpcf.coeffSigma2 -1;
-            end
-            % Evaluate the prior contribution of gradient with respect to coeffSigma2.p.s (and coeffSigma2.p.nu)
-            if isfield(gpp.coeffSigma2, 'p') && ~isempty(gpp.coeffSigma2.p)
-                i1=i1+1;
-                gprior(i1)=...
-                    feval(gpp.coeffSigma2.p.s.fg, ...
-                          gpp.coeffSigma2.a.s,...
-                          gpp.coeffSigma2.p.s.a, 'x').*gpp.coeffSigma2.a.s - 1 ...
-                    +feval(gpp.coeffSigma2.fg, ...
-                           gpcf.coeffSigma2, ...
-                           gpp.coeffSigma2.a, 's').*gpp.coeffSigma2.a.s;
-                if any(strcmp(fieldnames(gpp.coeffSigma2.p),'nu'))
-                    i1=i1+1;
-                    gprior(i1)=...
-                        feval(gpp.coeffSigma2.p.nu.fg, ...
-                              gpp.coeffSigma2.a.nu,...
-                              gpp.coeffSigma2.p.nu.a, 'x').*gpp.coeffSigma2.a.nu -1 ...
-                        +feval(gpp.coeffSigma2.fg, ...
-                               gpcf.coeffSigma2, ...
-                               gpp.coeffSigma2.a, 'nu').*gpp.coeffSigma2.a.nu;
-                end
+                gprior(i1) = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2, gpp.coeffSigma2).*gpcf.coeffSigma2 - 1;
             end
         end
     end
@@ -559,15 +510,8 @@ function gpcf = gpcf_dotproduct(do, varargin)
         gpp = gpcf.p;
         % record coeffSigma2
         if ~isempty(gpcf.coeffSigma2)
-            if isfield(gpp.coeffSigma2, 'p') && ~isempty(gpp.coeffSigma2)
-                reccf.lengthHyper(ri,:)=gpp.coeffSigma2.a.s;
-                if isfield(gpp.coeffSigma2,'p')
-                    if isfield(gpp.coeffSigma2.p,'nu')
-                        reccf.lengthHyperNu(ri,:)=gpp.coeffSigma2.a.nu;
-                    end
-                end
-            end
             reccf.coeffSigma2(ri,:)=gpcf.coeffSigma2;
+            reccf.p.coeffSigma2 = feval(gpp.coeffSigma2.fh_recappend, reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
         elseif ri==1
             reccf.coeffSigma2=[];
         end

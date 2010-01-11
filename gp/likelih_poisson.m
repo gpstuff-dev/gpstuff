@@ -8,7 +8,7 @@ function likelih = likelih_poisson(do, varargin)
 %       incidences
 %
 %	The fields in LIKELIH are:
-%	  type                     = 'likelih_poisson'
+%	  likelih.type             = 'likelih_poisson'
 %         likelih.avgE             = YE;
 %         likelih.gamlny           = gammaln(Y+1);
 %         likelih.fh_pak           = function handle to pak

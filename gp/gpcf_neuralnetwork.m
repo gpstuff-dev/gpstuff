@@ -44,7 +44,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 %       gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2009 Jaakko Riihimaki
 
 % This software is distributed under the GNU General Public
@@ -95,6 +95,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     gpcf.weightSigma2 = varargin{i+1};
                   case 'fh_sampling'
                     gpcf.fh_sampling = varargin{i+1};
+                  case 'biasSigma2_prior'
+                    gpcf.p.biasSigma2 = varargin{i+1};
+                  case 'weightSigma2_prior'
+                    gpcf.p.weightSigma2 = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -117,6 +121,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                 gpcf.weightSigma2 = varargin{i+1};
               case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
+              case 'biasSigma2_prior'
+                gpcf.p.biasSigma2 = varargin{i+1};
+              case 'weightSigma2_prior'
+                gpcf.p.weightSigma2 = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -150,14 +158,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         i1=i2;
         
         % Hyperparameters of weightSigma2
-        if isfield(gpp.weightSigma2, 'p') && ~isempty(gpp.weightSigma2.p)
-            i1=i1+1;
-            w(i1)=gpp.weightSigma2.a.s;
-            if any(strcmp(fieldnames(gpp.weightSigma2.p),'nu'))
-                i1=i1+1;
-                w(i1)=gpp.weightSigma2.a.nu;
-            end
-        end
+        w = feval(gpcf.p.weightSigma2.fh_pak, gpcf.p.weightSigma2, w);        
     end
 
 
@@ -184,16 +185,11 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         i1=i1+1;
         gpcf.weightSigma2=w(i1:i2);
         i1=i2;
+        
         % Hyperparameters of weightSigma2
-        if isfield(gpp.weightSigma2, 'p') && ~isempty(gpp.weightSigma2.p)
-            i1=i1+1;
-            gpcf.p.weightSigma2.a.s=w(i1);
-            if any(strcmp(fieldnames(gpp.weightSigma2.p),'nu'))
-                i1=i1+1;
-                gpcf.p.weightSigma2.a.nu=w(i1);
-            end
-        end        
         w = w(i1+1:end);
+        [p, w] = feval(gpcf.p.weightSigma2.fh_unpak, gpcf.p.weightSigma2, w);
+        gpcf.p.weightSigma2 = p;
     end
 
     function eprior =gpcf_neuralnetwork_e(gpcf, x, t)
@@ -219,26 +215,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         eprior = 0;
         gpp=gpcf.p;
 
-        eprior=eprior...
-               +feval(gpp.biasSigma2.fe, ...
-                      gpcf.biasSigma2, gpp.biasSigma2.a)...
-               -log(gpcf.biasSigma2);
-        if isfield(gpp.weightSigma2, 'p') && ~isempty(gpp.weightSigma2.p)
-            eprior=eprior...
-                   +feval(gpp.weightSigma2.p.s.fe, ...
-                          gpp.weightSigma2.a.s, gpp.weightSigma2.p.s.a)...
-                   -log(gpp.weightSigma2.a.s);
-            if any(strcmp(fieldnames(gpp.weightSigma2.p),'nu'))
-                eprior=eprior...
-                       +feval(gpp.p.weightSigma2.nu.fe, ...
-                              gpp.weightSigma2.a.nu, gpp.weightSigma2.p.nu.a)...
-                       -log(gpp.weightSigma2.a.nu);
-            end
-        end
-        eprior=eprior...
-               +feval(gpp.weightSigma2.fe, ...
-                      gpcf.weightSigma2, gpp.weightSigma2.a)...
-               -sum(log(gpcf.weightSigma2));
+        eprior = feval(gpp.biasSigma2.fh_e, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
+        eprior = eprior + feval(gpp.weightSigma2.fh_e, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
 
     end
 
@@ -413,43 +391,17 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         if nargout > 1
             % Evaluate the gprior with respect to biasSigma2
             i1 = i1+1;
-            gprior(i1)=feval(gpp.biasSigma2.fg, ...
-                             gpcf.biasSigma2, ...
-                             gpp.biasSigma2.a, 'x').*gpcf.biasSigma2 - 1;
+            gprior(i1) = feval(gpp.biasSigma2.fh_g, gpcf.biasSigma2, gpp.biasSigma2).*gpcf.biasSigma2 - 1;
+            
             % Evaluate the data contribution of gradient with respect to weightSigma2
             if length(gpcf.weightSigma2)>1
                 for i2=1:gpcf.nin
                     i1=i1+1;
-                    gprior(i1)=feval(gpp.weightSigma2.fg, ...
-                                     gpcf.weightSigma2(i2), ...
-                                     gpp.weightSigma2.a, 'x').*gpcf.weightSigma2(i2) - 1;
+                    gprior(i1) = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2(i2), gpp.weightSigma2).*gpcf.weightSigma2(i2) - 1;
                 end
             else
                 i1=i1+1;
-                gprior(i1)=feval(gpp.weightSigma2.fg, ...
-                                 gpcf.weightSigma2, ...
-                                 gpp.weightSigma2.a, 'x').*gpcf.weightSigma2 -1;
-            end
-            % Evaluate the prior contribution of gradient with respect to weightSigma2.p.s (and weightSigma2.p.nu)
-            if isfield(gpp.weightSigma2, 'p') && ~isempty(gpp.weightSigma2.p)
-                i1=i1+1;
-                gprior(i1)=...
-                    feval(gpp.weightSigma2.p.s.fg, ...
-                          gpp.weightSigma2.a.s,...
-                          gpp.weightSigma2.p.s.a, 'x').*gpp.weightSigma2.a.s - 1 ...
-                    +feval(gpp.weightSigma2.fg, ...
-                           gpcf.weightSigma2, ...
-                           gpp.weightSigma2.a, 's').*gpp.weightSigma2.a.s;
-                if any(strcmp(fieldnames(gpp.weightSigma2.p),'nu'))
-                    i1=i1+1;
-                    gprior(i1)=...
-                        feval(gpp.weightSigma2.p.nu.fg, ...
-                              gpp.weightSigma2.a.nu,...
-                              gpp.weightSigma2.p.nu.a, 'x').*gpp.weightSigma2.a.nu -1 ...
-                        +feval(gpp.weightSigma2.fg, ...
-                               gpcf.weightSigma2, ...
-                               gpp.weightSigma2.a, 'nu').*gpp.weightSigma2.a.nu;
-                end
+                gprior(i1) = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2).*gpcf.weightSigma2 - 1;
             end
         end
     end
@@ -727,15 +679,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         gpp = gpcf.p;
         % record weightSigma2
         if ~isempty(gpcf.weightSigma2)
-            if isfield(gpp.weightSigma2, 'p') && ~isempty(gpp.weightSigma2.p)
-                reccf.weightSigma2(ri,:)=gpp.weightSigma2.a.s;
-                if isfield(gpp.weightSigma2,'p')
-                    if isfield(gpp.weightSigma2.p,'nu')
-                        reccf.lengthHyperNu(ri,:)=gpp.weightSigma2.a.nu;
-                    end
-                end
-            end
             reccf.weightSigma2(ri,:)=gpcf.weightSigma2;
+            reccf.p.weightSigma2 = feval(gpp.weightSigma2.fh_recappend, reccf.p.weightSigma2, ri, gpcf.p.weightSigma2);
         elseif ri==1
             reccf.weightSigma2=[];
         end

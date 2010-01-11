@@ -84,18 +84,45 @@ y = data(:,3);
 % ---------------------------
 % --- Construct the model ---
 % 
-% First create squared exponential covariance function with ARD and 
-% Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+% $$$ % First create squared exponential covariance function with ARD and 
+% $$$ % Gaussian noise data structures...
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2 1.2], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+% $$$ gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
+% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+% $$$ 
+% $$$ % ... Finally create the GP data structure
+% $$$ gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
 
-% ... Finally create the GP data structure
+
+
+gpcf1.p.lengthScale = logunif_p();
+gpcf1.p.magnSigma2 = logunif_p();
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+
+[e, edata, eprior] = gp_e(w, gp, x, y)
+[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
+
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2 1.1], 'magnSigma2', 0.2^2);
+pl = prior_logunif('init')
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
+pm = prior_logunif('init')
+gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pm);
+
+gp2 = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+
+[e, edata, eprior] = gp_e(w, gp2, x, y)
+[g, gdata, gprior] = gp_g(w, gp2, x, y, 'hyper')
+
+w = gp_pak(gp2, 'hyper');
+
+gradcheck(w, @gp_e, @gp_g, gp2, x, y, 'hyper');
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 
@@ -197,7 +224,7 @@ rfull = thin(rfull, 10, 2);
 % hyperparameter value. Thus, the returned Ef_sfull is a matrix of 
 % size n x (number of samples). By taking the mean over the samples
 % we do the Monte Carlo integration over the hyperparameters.
-Ef_sfull = gp_preds(rfull, x, y, p);
+Ef_sfull = mc_pred(rfull, x, y, p);
 meanEf_full = mean(squeeze(Ef_sfull)');
 
 figure(1)

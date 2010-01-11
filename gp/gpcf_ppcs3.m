@@ -116,6 +116,10 @@ function gpcf = gpcf_ppcs3(do, varargin)
                   case 'metric'
                     gpcf.metric = varargin{i+1};
                     gpcf = rmfield(gpcf, 'lengthScale');
+                  case 'lengthScale_prior'
+                    gpcf.p.lengthScale = varargin{i+1};
+                  case 'magnSigma2_prior'
+                    gpcf.p.magnSigma2 = varargin{i+1};
                   case 'l_nin'
                     if varargin{i+1} < gpcf.nin
                         error('The l_nin has to be greater than egual to the number of inputs!')
@@ -146,6 +150,10 @@ function gpcf = gpcf_ppcs3(do, varargin)
               case 'metric'
                 gpcf.metric = varargin{i+1};
                 gpcf = rmfield(gpcf, 'lengthScale');
+              case 'lengthScale_prior'
+                gpcf.p.lengthScale = varargin{i+1};
+              case 'magnSigma2_prior'
+                gpcf.p.magnSigma2 = varargin{i+1};
               case 'l_nin'
                 if varargin{i+1} < gpcf.nin
                     error('The l_nin has to be greater than egual to the number of inputs!')
@@ -195,14 +203,10 @@ function gpcf = gpcf_ppcs3(do, varargin)
             i1=i1+1;
             w(i1:i2)=gpcf.lengthScale;
             i1=i2;
-            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                i1=i1+1;
-                w(i1)=gpp.lengthScale.a.s;
-                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
-                    i1=i1+1;
-                    w(i1)=gpp.lengthScale.a.nu;
-                end
-            end
+            
+            % Hyperparameters of lengthScale
+            w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
+                       
         end
     end
 
@@ -238,15 +242,11 @@ function gpcf = gpcf_ppcs3(do, varargin)
             i1=i1+1;
             gpcf.lengthScale=w(i1:i2);
             i1=i2;
-            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                i1=i1+1;
-                gpcf.p.lengthScale.a.s=w(i1);
-                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
-                    i1=i1+1;
-                    gpcf.p.lengthScale.a.nu=w(i1);
-                end
-            end
+
+            % Hyperparameters of lengthScale
             w = w(i1+1:end);
+            [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
+            gpcf.p.lengthScale = p;
         end
     end
     
@@ -283,26 +283,9 @@ function gpcf = gpcf_ppcs3(do, varargin)
             % into account also the  Jakobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         
-            eprior=eprior...
-                   +feval(gpp.magnSigma2.fe, ...
-                          gpcf.magnSigma2, gpp.magnSigma2.a)...
-                   -log(gpcf.magnSigma2);
-            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                eprior=eprior...
-                       +feval(gpp.lengthScale.p.s.fe, ...
-                              gpp.lengthScale.a.s, gpp.lengthScale.p.s.a)...
-                       -log(gpp.lengthScale.a.s);
-                if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
-                    eprior=eprior...
-                           +feval(gpp.p.lengthScale.nu.fe, ...
-                                  gpp.lengthScale.a.nu, gpp.lengthScale.p.nu.a)...
-                           -log(gpp.lengthScale.a.nu);
-                end
-            end
-            eprior=eprior...
-                   +feval(gpp.lengthScale.fe, ...
-                          gpcf.lengthScale, gpp.lengthScale.a)...
-                   -sum(log(gpcf.lengthScale));
+            eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+            eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
+            
         end
     end
     
@@ -637,44 +620,18 @@ function gpcf = gpcf_ppcs3(do, varargin)
             else
                 % Evaluate the gdata and gprior with respect to magnSigma2
                 i1 = i1+1;
-                gprior(i1)=feval(gpp.magnSigma2.fg, ...
-                                 gpcf.magnSigma2, ...
-                                 gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
+                gprior(i1) = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2).*gpcf.magnSigma2 - 1;
+
                 % Evaluate the data contribution of gradient with respect to lengthScale
                 if length(gpcf.lengthScale)>1
                     for i2=1:gpcf.nin
                         i1=i1+1;
-                        gprior(i1)=feval(gpp.lengthScale.fg, ...
-                                         gpcf.lengthScale(i2), ...
-                                         gpp.lengthScale.a, 'x').*gpcf.lengthScale(i2) - 1;
+                        gprior(i1) = feval(gpp.lengthScale.fh_g, gpcf.lengthScale(i2), gpp.lengthScale).*gpcf.lengthScale(i2) - 1;
                     end
                 else
                     i1=i1+1;
-                    gprior(i1)=feval(gpp.lengthScale.fg, ...
-                                     gpcf.lengthScale, ...
-                                     gpp.lengthScale.a, 'x').*gpcf.lengthScale -1;
+                    gprior(i1) = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale).*gpcf.lengthScale - 1;
                     
-                end
-                % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
-                if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                    i1=i1+1;
-                    gprior(i1)=...
-                        feval(gpp.lengthScale.p.s.fg, ...
-                              gpp.lengthScale.a.s,...
-                              gpp.lengthScale.p.s.a, 'x').*gpp.lengthScale.a.s - 1 ...
-                        +feval(gpp.lengthScale.fg, ...
-                               gpcf.lengthScale, ...
-                               gpp.lengthScale.a, 's').*gpp.lengthScale.a.s;
-                    if any(strcmp(fieldnames(gpp.lengthScale.p),'nu'))
-                        i1=i1+1;
-                        gprior(i1)=...
-                            feval(gpp.lengthScale.p.nu.fg, ...
-                                  gpp.lengthScale.a.nu,...
-                                  gpp.lengthScale.p.nu.a, 'x').*gpp.lengthScale.a.nu -1 ...
-                            +feval(gpp.lengthScale.fg, ...
-                                   gpcf.lengthScale, ...
-                                   gpp.lengthScale.a, 'nu').*gpp.lengthScale.a.nu;
-                    end
                 end
             end
         end
@@ -1006,15 +963,8 @@ function gpcf = gpcf_ppcs3(do, varargin)
 
         % record lengthScale
         if ~isempty(gpcf.lengthScale)
-            if isfield(gpp.lengthScale, 'p') && ~isempty(gpp.lengthScale.p)
-                reccf.lengthHyper(ri,:)=gpp.lengthScale.a.s;
-                if isfield(gpp.lengthScale,'p')
-                    if isfield(gpp.lengthScale.p,'nu')
-                        reccf.lengthHyperNu(ri,:)=gpp.lengthScale.a.nu;
-                    end
-                end
-            end
             reccf.lengthScale(ri,:)=gpcf.lengthScale;
+            reccf.p.lengthScale = feval(gpp.lengthScale.fh_recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
         elseif ri==1
             reccf.lengthScale=[];
         end

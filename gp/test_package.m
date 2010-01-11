@@ -29,8 +29,9 @@ covfunc = {'gpcf_sexp' 'gpcf_exp' 'gpcf_matern32' 'gpcf_matern52' ...
            'gpcf_dotproduct' 'gpcf_prod'};
 
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-gpcf2.p.noiseSigmas2 = logunif_p;
-
+pl = prior_logunif('init');
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', pl);
+        
 for i = 1:length(covfunc)
     
     switch covfunc{i}
@@ -38,31 +39,35 @@ for i = 1:length(covfunc)
         gpcf1 = feval(covfunc{i}, 'init', nin);
         
         % Set prior
-        gpcf1.p.weightSigma2 = logunif_p;
-        gpcf1.p.biasSigma2 = logunif_p;
+        pl = prior_logunif('init');
+        gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', pl);
+        gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'biasSigma2_prior', pl);
       case 'gpcf_dotproduct'
         gpcf1 = feval(covfunc{i}, 'init', nin);
 
         % Set prior
-        gpcf1.p.coeffSigma2 = logunif_p;
-        gpcf1.p.constSigma2 = logunif_p;
+        pl = prior_logunif('init');
+        gpcf1 = gpcf_dotproduct('set', gpcf1, 'coeffSigma2_prior', pl);
+        gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl);
       case 'gpcf_prod'
         gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.5);
         gpcf4 = gpcf_exp('init', nin, 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.2^2);
 
         % Set prior
-        gpcf3.p.lengthScale = logunif_p;
-        gpcf3.p.magnSigma2 = logunif_p;
-        gpcf4.p.lengthScale = logunif_p;
-        gpcf4.p.magnSigma2 = logunif_p;
+        pl = prior_logunif('init');
+        gpcf3 = gpcf_ppcs2('set', gpcf3, 'lengthScale_prior', pl);
+        gpcf3 = gpcf_ppcs2('set', gpcf3, 'magnSigma2_prior', pl);
+        gpcf4 = gpcf_exp('set', gpcf4, 'lengthScale_prior', pl);
+        gpcf4 = gpcf_exp('set', gpcf4, 'magnSigma2_prior', pl);
 
         gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
       otherwise
         gpcf1 = feval(covfunc{i}, 'init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
         
         % Set prior
-        gpcf1.p.lengthScale = logunif_p;
-        gpcf1.p.magnSigma2 = logunif_p;
+        pl = prior_logunif('init');
+        gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
+        gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pl);
     end
            
     gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
@@ -115,7 +120,7 @@ for i = 1:length(covfunc)
         numwarn = numwarn + 1;
     end
         
-    if sqrt(mean((y - mean(gp_preds(rfull, x, y, x),2) ).^2)) > 0.186*2
+    if sqrt(mean((y - mean(mc_pred(rfull, x, y, x),2) ).^2)) > 0.186*2
         warnings = sprintf([warnings '\n * Check the MCMC sampling of hyper-parameters of ' covfunc{i} ' with GP regression']);
         numwarn = numwarn + 1;
     end
@@ -136,11 +141,10 @@ gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
-gpcf1.p.lengthScale = logunif_p;
-gpcf1.p.magnSigma2 = logunif_p;
-gpcf2.p.noiseSigmas2 = logunif_p;
-gpcf3.p.lengthScale = logunif_p;
-gpcf3.p.magnSigma2 = logunif_p;
+pl = prior_logunif('init');
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', pl);
+gpcf3 = gpcf_ppcs2('set', gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Initialize the inducing inputs in a regular grid over the input space
 [u1,u2]=meshgrid(linspace(-1.8,1.8,7),linspace(-1.8,1.8,7));
@@ -231,7 +235,7 @@ for i = 1:length(sparse)
         numwarn = numwarn + 1;
     end
         
-    if sqrt(mean((y - mean(gp_preds(rfull, x, y, x, [], tstindex),2) ).^2)) > 0.186*2
+    if sqrt(mean((y - mean(mc_pred(rfull, x, y, x, [], tstindex),2) ).^2)) > 0.186*2
         warnings = sprintf([warnings '\n * Check the MCMC sampling of hyper-parameters of ' covfunc{i} ' with GP regression']);
         numwarn = numwarn + 1;
     end
@@ -240,7 +244,7 @@ end
 
 %----------------------------
 % Check the additive model and 
-% gp_pred and gp_preds
+% gp_pred and mc_pred
 %----------------------------
 
 fprintf(' \n ================================= \n \n Checking the additive model and gp_pred \n \n =================================\n ')
@@ -250,11 +254,10 @@ gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
-gpcf1.p.lengthScale = logunif_p;
-gpcf1.p.magnSigma2 = logunif_p;
-gpcf2.p.noiseSigmas2 = logunif_p;
-gpcf3.p.lengthScale = logunif_p;
-gpcf3.p.magnSigma2 = logunif_p;
+pl = prior_logunif('init');
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', pl);
+gpcf3 = gpcf_ppcs2('set', gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Initialize the inducing inputs in a regular grid over the input space
 [u1,u2]=meshgrid(linspace(-1.8,1.8,7),linspace(-1.8,1.8,7));
@@ -388,59 +391,59 @@ for i=1:length(models)
     [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
     
     % --- Check predictions ---
-    [Efa, Varfa] = gp_preds(rfull, x, y, p, [], tstindex);
-    [Ef1, Varf1] = gp_preds(rfull, x, y, p, [1], tstindex);
-    [Ef2, Varf2] = gp_preds(rfull, x, y, p, [2], tstindex);
+    [Efa, Varfa] = mc_pred(rfull, x, y, p, [], tstindex);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p, [1], tstindex);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p, [2], tstindex);
     
     switch models{i}
       case {'FULL' 'CS+FIC'}
         if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
-            warnings = sprintf([warnings '\n * Check gp_preds for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
         % In FIC and PIC the additive phenomenon is only approximate
       case {'FIC' 'PIC'}
         if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
-            warnings = sprintf([warnings '\n * Check gp_preds for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
     end
     
-    [Efa, Varfa] = gp_preds(rfull, x, y, p2, [], tstindex2);
-    [Ef1, Varf1] = gp_preds(rfull, x, y, p2, [1], tstindex2);
-    [Ef2, Varf2] = gp_preds(rfull, x, y, p2, [2], tstindex2);
+    [Efa, Varfa] = mc_pred(rfull, x, y, p2, [], tstindex2);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p2, [1], tstindex2);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p2, [2], tstindex2);
 
     switch models{i}
       case {'FULL' 'CS+FIC'}
         if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
-            warnings = sprintf([warnings '\n * Check gp_preds for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
         % In FIC and PIC the additive phenomenon is only approximate
       case {'FIC' 'PIC'}
         if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
-            warnings = sprintf([warnings '\n * Check gp_preds for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
     end
     
-    [Efaa, Varfaa, Ey, Vary] = gp_preds(rfull, x, y, p2, [], tstindex2);
+    [Efaa, Varfaa, Ey, Vary] = mc_pred(rfull, x, y, p2, [], tstindex2);
     
     if max( abs(Efaa - Ey) ) > 1e-12 
-        warnings = sprintf([warnings '\n * Check gp_preds for ' models{i} ' model. The predictive mean for f and y do not match.']);
+        warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictive mean for f and y do not match.']);
         numwarn = numwarn + 1;
     end
 
     if max( abs(Varfaa + repmat(rfull.noise{1}.noiseSigmas2',length(p2),1)  - Vary) ) > 1e-12 
-        warnings = sprintf([warnings '\n * Check gp_preds for ' models{i} ' model. The predictive variance for f and y do not match.']);
+        warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictive variance for f and y do not match.']);
         numwarn = numwarn + 1;
     end
     
     switch models{i}
       case {'PIC'}
-        [Ef, Varf, Ey, Vary, py] = gp_preds(rfull, x, y, x, [], trindex, y);
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], trindex, y);
       otherwise
-        [Ef, Varf, Ey, Vary, py] = gp_preds(rfull, x, y, x, [], tstindex2, y);
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], tstindex2, y);
     end
    
     
@@ -452,6 +455,9 @@ end
 %----------------------------
 % check metrics
 %----------------------------
+
+% priors
+% mcmc
 
 %----------------------------
 % check priors
