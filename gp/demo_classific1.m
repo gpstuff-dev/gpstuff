@@ -59,8 +59,8 @@ x(:,end)=[];
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
-gpcf1.p.lengthScale = gamma_p({3 7 3 7});
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+pl = prior_logunif('init');
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Create the likelihood structure
 likelih = likelih_logit('init', y);

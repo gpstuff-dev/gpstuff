@@ -1,4 +1,4 @@
-function [Ef, Varf, Ey, Vary, py] = gp_preds(gp, tx, ty, x, predcf, tstind, y)
+function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
 %GP_PREDS	(Multible) Predictions of Gaussian Processes.
 %
 %	Description
@@ -76,7 +76,7 @@ function [Ef, Varf, Ey, Vary, py] = gp_preds(gp, tx, ty, x, predcf, tstind, y)
    
     % Non-Gaussian likelihood. Thus latent variables should be used in place of observations
     if isfield(gp, 'latentValues')
-        ty = gp.latentValues;
+        ty = gp.latentValues';
     else 
         ty = repmat(ty,1,nmc);
     end
@@ -109,7 +109,12 @@ function [Ef, Varf, Ey, Vary, py] = gp_preds(gp, tx, ty, x, predcf, tstind, y)
             [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind, y);
         else 
             if isfield(gp, 'latentValues')
-              
+                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind);
+                if nargout < 5
+                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1));
+                else
+                    [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), y);
+                end                
             else
                 if nargout < 5
                     [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind);

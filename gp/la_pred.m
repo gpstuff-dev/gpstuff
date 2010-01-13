@@ -58,7 +58,7 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
         if nargout > 1
             kstarstar = gp_trvar(gp,x,predcf);
             if W >= 0
-                if issparse(K_nf)
+                if issparse(K_nf) && issparse(L)
                     K = gp_trcov(gp, tx);
                     p = analyze(K);
                     sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);

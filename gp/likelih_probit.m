@@ -315,7 +315,7 @@ function likelih = likelih_probit(do, varargin)
         
     end
 
-    function [Ey, Vary, py] = likelih_probit_predy(gp, Ef, Varf, y)
+    function [Ey, Vary, py] = likelih_probit_predy(likelih, Ef, Varf, y)
     % Return the predictive probability of ty given the posterior mean Ef 
     % and variance Varf
         
@@ -338,8 +338,8 @@ function likelih = likelih_probit(do, varargin)
     %          lengthHyperNu  =
     %          lengthScale    =
     %          magnSigma2     =
-
-
+        
+        reclikelih = likelih;
 
     end
 

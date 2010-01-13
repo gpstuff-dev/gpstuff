@@ -363,7 +363,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % Initialize the record for likelihood
             if isstruct(gp.likelih)
                 likelih = gp.likelih;
-                rec.likelih = feval(likelih.fh_recappend, [], []);
+                rec.likelih = feval(likelih.fh_recappend, [], [], []);
             end
             
             rec.e = [];

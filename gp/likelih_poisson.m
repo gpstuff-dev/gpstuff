@@ -261,8 +261,8 @@ function likelih = likelih_poisson(do, varargin)
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
         if yy > 0
-            mean_app = (myy_i/sigm2_i + log(yy/avgE.^2)*avgE/yy)/(1/sigm2_i + avgE/yy);
-            sigm_app = sqrt((1/sigm2_i + avgE/yy)^-1);
+            mean_app = (myy_i/sigm2_i + log(yy/avgE)*yy)/(1/sigm2_i + yy);
+            sigm_app = sqrt((1/sigm2_i + yy)^-1);
         else
             mean_app = myy_i;
             sigm_app = sqrt(sigm2_i);                    
@@ -309,7 +309,7 @@ function likelih = likelih_poisson(do, varargin)
         end
 
         % ------------------------------------------------
-% $$$         % Plot the integrands to check that integration limits are ok. Uncomment if you want to use this.
+        % Plot the integrands to check that integration limits are ok. Uncomment if you want to use this.
 % $$$         fm = @first_moment; sm = @second_moment;
 % $$$         function integrand = first_moment(f)
 % $$$             lambda = avgE.*exp(f);

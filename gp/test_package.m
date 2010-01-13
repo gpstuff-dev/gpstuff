@@ -1,6 +1,6 @@
 % TODO!
 % - tulosten oikeellisuuden tarkistus (nyt tarkistetaan vain, että funktioissa ei bugeja) 
-
+% - metriikat
 
 % Initialize the statistics parameters:
 warnings = '';
@@ -459,22 +459,420 @@ end
 % priors
 % mcmc
 
+
 %----------------------------
 % check priors
 %----------------------------
 
+S = which('test_package');
+L = strrep(S,'test_package.m','demos/dat.1');
+data=load(L);
+data = data(1:2:end,:);
+x = [data(:,1) data(:,2)];
+y = data(:,3);
+[n, nin] = size(x);
+
+fprintf(' \n ================================= \n \n Checking the prior structures \n \n ================================= \n ')
+
+priorfunc = {'prior_t' 'prior_unif' 'prior_logunif'};
+
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+ps = prior_logunif('init');
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', ps);
+        
+for i = 1:length(priorfunc)
+    
+    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.3 1.4], 'magnSigma2', 0.2^2);
+    
+    % Set prior
+    pl = feval(priorfunc{i}, 'init');
+    gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
+    gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', ps);
+           
+    gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+    
+    w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+    fe=str2fun('gp_e');     % create a function handle to negative log posterior
+    fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+    
+    % set the options for scg2
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+    
+    % do the optimization
+    w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    
+    % Set the optimized hyperparameter values back to the gp structure
+    gp=gp_unpak(gp,w, 'hyper');
+
+    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters of ' covfunc{i}]);
+        warning([' Check the gradients of ' covfunc{i}]);
+        numwarn = numwarn + 1;
+    end
+
+    % --- MCMC approach ---
+    opt=gp_mcopt;
+    opt.nsamples= 20;
+    opt.repeat=2;
+    opt.hmc_opt = hmc2_opt;
+    opt.hmc_opt.steps=2;
+    opt.hmc_opt.stepadj=0.07;
+    opt.hmc_opt.persistence=0;
+    opt.hmc_opt.decay=0.6;
+    opt.hmc_opt.nsamples=1;
+    hmc2('state', sum(100*clock));
+    
+    % Do the sampling
+    [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+
+    % After sampling we delete the burn-in and thin the sample chain
+    rfull = thin(rfull, 5, 2);            
+end
+
+% ==========================================
+% ==========================================
+% Other models than Gaussian regression
+% ==========================================
+% ==========================================
+
+% =========================== 
+% Probit model 
+% ===========================
+
+fprintf(' \n ================================= \n \n Check the probit model \n \n =================================\n ')
+
+S = which('demo_classific1');
+L = strrep(S,'demo_classific1.m','demos/synth.tr');
+x=load(L);
+y=x(:,end);
+y = 2.*y-1;
+x(:,end)=[];
+[n, nin] = size(x);
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2);
+gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2);
+
+% Set prior
+pl = prior_t('init');
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf3 = gpcf_ppcs2('set', gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+
+% Initialize the inducing inputs in a regular grid over the input space
+[u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
+X_u=[u1(:) u2(:)];
+X_u = X_u([3 4 7:18 20:24 26:30 33:36],:);
+
+% set the data points into clusters
+[p1,p2]=meshgrid(-1.25:0.1:0.9, -0.2:0.1:1.1);
+p=[p1(:) p2(:)];
+b1 = linspace(-1.25, 0.9, 5);
+b2 = linspace(-0.2,  1.1, 5);
+trindex={}; testindex={};
+for i1=1:4
+    for i2=1:4
+        ind = 1:size(x,1);
+        ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
+        ind = ind(: , b2(i2)<=x(ind',2) & x(ind',2) < b2(i2+1));
+        trindex{4*(i1-1)+i2} = ind';
+        ind2 = 1:size(p,1);
+        ind2 = ind2(: , b1(i1)<=p(ind2',1) & p(ind2',1) < b1(i1+1));
+        ind2 = ind2(: , b2(i2)<=p(ind2',2) & p(ind2',2) < b2(i2+1));
+        testindex{4*(i1-1)+i2} = ind2';
+    end
+end
+%trindex = {trindex{[1:3 5:16]}};
+p2 = [x ; p(1:10,:)];
+models = {'FULL' 'FIC' 'PIC' 'CS+FIC'};
+
+likelih = likelih_probit('init', y);
+
+for i=1:length(models)
+    switch models{i}
+      case 'FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'FIC' 
+        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'PIC'
+        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+        tstindex = testindex;
+        tstindex2 = trindex;
+        tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
+      case 'CS+FIC'
+        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+    end
+    
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
+   
+    fe=str2fun('gpla_e');
+    fg=str2fun('gpla_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp, 'hyper');
+    [w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    gp=gp_unpak(gp,w, 'hyper');
+
+    delta = gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'hyper');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for probit model and ' models{i} ' GP']);
+        warning([' Check the gradients of ' covfunc{i}]);
+        numwarn = numwarn + 1;
+    end
+
+    % --- Check predictions ---
+    [Efa, Varfa] = la_pred(gp, x, y, p, 'hyper', [], tstindex);
+    [Ef1, Varf1] = la_pred(gp, x, y, p, 'hyper', [1], tstindex);
+    [Ef2, Varf2] = la_pred(gp, x, y, p, 'hyper', [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = la_pred(gp, x, y, p2, 'hyper', [], tstindex2);
+    [Ef1, Varf1] = la_pred(gp, x, y, p2, 'hyper', [1], tstindex2);
+    [Ef2, Varf2] = la_pred(gp, x, y, p2, 'hyper', [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = la_pred(gp, x, y, p2, 'hyper', [], tstindex2);
+        
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'hyper', [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'hyper', [], tstindex2, y);
+    end
+
+
+    % -------------------
+    % --- EP approach ---
+    % -------------------
+    switch models{i}
+      case 'FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'FIC' 
+        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'PIC'
+        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+        tstindex = testindex;
+        tstindex2 = trindex;
+        tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
+      case 'CS+FIC'
+        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+    end
+
+    gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
+   
+    fe=str2fun('gpep_e');
+    fg=str2fun('gpep_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp, 'hyper');
+    [w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    gp=gp_unpak(gp,w, 'hyper');
+
+    delta = gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'hyper');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for probit model and ' models{i} ' GP']);
+        warning([' Check the gradients of ' covfunc{i}]);
+        numwarn = numwarn + 1;
+    end
+
+    % --- Check predictions ---
+    [Efa, Varfa] = ep_pred(gp, x, y, p, 'hyper', [], tstindex);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p, 'hyper', [1], tstindex);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p, 'hyper', [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = ep_pred(gp, x, y, p2, 'hyper', [], tstindex2);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p2, 'hyper', [1], tstindex2);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p2, 'hyper', [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = ep_pred(gp, x, y, p2, 'hyper', [], tstindex2);
+    
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'hyper', [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'hyper', [], tstindex2, y);
+    end
+    
+    % --- MCMC approach ---
+    opt=gp_mcopt;
+    opt.nsamples= 50;
+    opt.repeat=2;
+    opt.hmc_opt = hmc2_opt;
+    opt.hmc_opt.steps=2;
+    opt.hmc_opt.stepadj=0.02;
+    opt.hmc_opt.persistence=0;
+    opt.hmc_opt.decay=0.6;
+    opt.hmc_opt.nsamples=1;
+    opt.latent_opt.display=0;
+    opt.latent_opt.repeat = 20;
+    opt.latent_opt.sample_latent_scale = 0.5;
+    hmc2('state', sum(100*clock));
+
+    gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+    gp=gp_unpak(gp,w, 'hyper');
+    gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))'});
+    
+    % Do the sampling (this takes approximately 5-10 minutes)    
+    [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+    
+    % --- Check predictions ---
+    [Efa, Varfa] = mc_pred(rfull, x, y, p, [], tstindex);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p, [1], tstindex);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p, [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(mean(Efa) - (mean(Ef1)+mean(Ef2))) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = mc_pred(rfull, x, y, p2, [], tstindex2);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p2, [1], tstindex2);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p2, [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(mean(Efa) - (mean(Ef1)+mean(Ef2))) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = mc_pred(rfull, x, y, p2, [], tstindex2);
+        
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], tstindex2, y);
+    end
+end
 
 
 
+% =========================== 
+% Logit model 
+% ===========================
+
+
+%----------------------------
+% check priors
+%----------------------------
+
+%----------------------------
+% check sparse approximations
+%----------------------------
+
+
+% =========================== 
+% Poisson model
+% ===========================
 
 
 
-
-
-
-
-
-
+% =========================== 
+% Neg-Bin model
+% ===========================
 
 
 
@@ -484,21 +882,7 @@ end
 % Student-t regression
 % ===========================
 
-%----------------------------
-% check priors
-%----------------------------
 
-%----------------------------
-% check sparse approximations
-%----------------------------
-
-
-% =========================== 
-% Classification
-% ===========================
-
-% probit
-% logit
 
 %----------------------------
 % check priors
@@ -507,11 +891,3 @@ end
 %----------------------------
 % check sparse approximations
 %----------------------------
-
-
-% =========================== 
-% spatial models
-% ===========================
-
-% Poisson
-% Neg-Bin
