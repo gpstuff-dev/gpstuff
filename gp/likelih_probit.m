@@ -319,8 +319,14 @@ function likelih = likelih_probit(do, varargin)
     % Return the predictive probability of ty given the posterior mean Ef 
     % and variance Varf
         
-        Ey = 2*normcdf(Ef./sqrt(1+Varf)) - 1;
-        Vary = Ey.*(1-Ey.^2);
+        py1 = normcdf(Ef./sqrt(1+Varf));
+        Ey = 2*py1 - 1;
+
+        % This seems wrong?
+        %Vary = Ey.*(1-Ey.^2);      
+
+        Vary = 1-(2*py1-1).2;
+        
         if nargin > 3
             py = normcdf(Ef.*y./sqrt(1+Varf));    % Probability p(y_new)
         end
