@@ -93,6 +93,14 @@ function p = prior_t(do, varargin)
     
     function w = prior_t_pak(p, w)
         w = w;
+        if isfield(p, 'p')
+            if isfield(p.p, 'nu')
+                w = [w log(nu)];
+            end
+            if isfield(p.p, 's')
+                w = [w log(nu)];
+            end
+        end
     end
     
     function [p, w] = prior_t_unpak(p, w)
@@ -102,16 +110,41 @@ function p = prior_t(do, varargin)
     
     function e = prior_t_e(x, p)
         e = sum(log(1 + (x./p.s).^2 ./ p.nu)).* (p.nu+1)/2;
+        if isfield(p, 'p')
+            if isfield(p.p, 'nu')
+                e = e + feval(p.p.nu.fh_e, p.nu, p.p.nu)  - log(p.nu);
+            end
+            if isfield(p.p, 's')
+                e = e + feval(p.p.s.fh_e, p.s, p.p.s) - log(p.s);
+            end
+        end
     end
     
     function g = prior_t_g(x, p)
         d=x./p.s;
         g=(p.nu+1)./p.nu .* (d./p.s) ./ (1 + (d.^2)./p.nu);
+        if isfield(p, 'p')
+            if isfield(p.p, 'nu')
+                gnu = feval(p.p.nu.fh_g, p.nu, p.p.nu).*p.nu - 1; 
+                g = [g gnu];
+            end
+            if isfield(p.p, 's')
+                gsigma2 = feval(p.p.s.fh_g, p.s, p.p.s).*p.s - 1; 
+                w = [w gsigma2];
+            end
+        end
     end
     
     function rec = prior_t_recappend(rec, ri, p)
     % The parameters are not sampled in any case.
         rec = rec;
-    end
-    
+        if isfield(p, 'p')
+            if isfield(p.p, 'nu')
+                rec.nu(ri) = p.nu;
+            end
+            if isfield(p.p, 's')
+                rec.s(ri) = p.s;
+            end
+        end         
+    end    
 end
