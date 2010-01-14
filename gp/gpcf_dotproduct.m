@@ -151,19 +151,25 @@ function gpcf = gpcf_dotproduct(do, varargin)
         if ~isempty(w)
             i1 = length(w);
         end
-        i1 = i1+1;
-        w(i1) = gpcf.constSigma2;
-        i2=i1+length(gpcf.coeffSigma2);
-        i1=i1+1;
-        w(i1:i2)=gpcf.coeffSigma2;
-        i1=i2;
         
-        % Hyperparameters of coeffSigma2
-        w = feval(gpcf.p.coeffSigma2.fh_pak, gpcf.p.coeffSigma2, w);
+        if ~isempty(gpcf.p.constSigma2)
+            i1 = i1+1;
+            w(i1) = gpcf.constSigma2;
+            
+            % Hyperparameters of constSigma2
+            w = feval(gpcf.p.constSigma2.fh_pak, gpcf.p.constSigma2, w);
+        end
+        
+        if ~isempty(gpcf.p.coeffSigma2)
+            i2=i1+length(gpcf.coeffSigma2);
+            i1=i1+1;
+            w(i1:i2)=gpcf.coeffSigma2;
+            i1=i2;
+            
+            % Hyperparameters of coeffSigma2
+            w = feval(gpcf.p.coeffSigma2.fh_pak, gpcf.p.coeffSigma2, w);
+        end        
     end
-
-
-
 
     function [gpcf, w] = gpcf_dotproduct_unpak(gpcf, w)
     %GPCF_DOTPRODUCT_UNPAK  Separate covariance function hyper-parameter vector into components.
@@ -178,19 +184,27 @@ function gpcf = gpcf_dotproduct(do, varargin)
     %	See also
     %	GPCF_DOTPRODUCT_PAK
     %
-        gpp=gpcf.p;
-        i1=0;i2=1;
-        i1=i1+1;
-        gpcf.constSigma2=w(i1);
-        i2=i1+length(gpcf.coeffSigma2);
-        i1=i1+1;
-        gpcf.coeffSigma2=w(i1:i2);
-        i1=i2;
+        gpp=gpcf.p;        
+        if ~isempty(gpp.constSigma2)
+            i1=1;
+            gpcf.constSigma2=w(i1);
+            w = w(i1+1:end);
+            
+            % Hyperparameters of constSigma2
+            [p, w] = feval(gpcf.p.constSigma2.fh_unpak, gpcf.p.constSigma2, w);
+            gpcf.p.constSigma2 = p;
+        end
         
-        % Hyperparameters of coeffSigma2
-        w = w(i1+1:end);
-        [p, w] = feval(gpcf.p.coeffSigma2.fh_unpak, gpcf.p.coeffSigma2, w);
-        gpcf.p.coeffSigma2 = p;
+        if ~isempty(gpp.coeffSigma2)
+            i1 = 1;
+            i2 = length(gpcf.coeffSigma2);
+            gpcf.coeffSigma2=w(i1:i2);
+            w = w(i2+1:end);
+        
+            % Hyperparameters of coeffSigma2
+            [p, w] = feval(gpcf.p.coeffSigma2.fh_unpak, gpcf.p.coeffSigma2, w);
+            gpcf.p.coeffSigma2 = p;
+        end
     end
 
     function eprior =gpcf_dotproduct_e(gpcf, x, t)
@@ -216,8 +230,12 @@ function gpcf = gpcf_dotproduct(do, varargin)
         eprior = 0;
         gpp=gpcf.p;
 
-        eprior = feval(gpp.constSigma2.fh_e, gpcf.constSigma2, gpp.constSigma2) - log(gpcf.constSigma2);
-        eprior = eprior + feval(gpp.coeffSigma2.fh_e, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
+        if ~isempty(gpp.constSigma2)
+            eprior = feval(gpp.constSigma2.fh_e, gpcf.constSigma2, gpp.constSigma2) - log(gpcf.constSigma2);
+        end
+        if ~isempty(gpp.coeffSigma2)
+            eprior = eprior + feval(gpp.coeffSigma2.fh_e, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
+        end
     end
 
     function [DKff, gprior]  = gpcf_dotproduct_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
@@ -243,6 +261,8 @@ function gpcf = gpcf_dotproduct(do, varargin)
         [n, m] =size(x);
 
         i1=0;i2=1;
+        DKff = {};
+        gprior = [];
         
         % Evaluate: DKff{1} = d Kff / d constSigma2
         %           DKff{2} = d Kff / d coeffSigma2
@@ -253,14 +273,23 @@ function gpcf = gpcf_dotproduct(do, varargin)
         % evaluate the gradient for training covariance
         if nargin == 2
             
-            DKff{1}=ones(n)*gpcf.constSigma2;
-            if length(gpcf.coeffSigma2) == 1
-                DKff{2}=gpcf.coeffSigma2*x*(x');
-            else
-                for i=1:m
-                    DD = gpcf.coeffSigma2(i)*x(:,i)*(x(:,i)');
-                    DD(abs(DD)<=eps) = 0;
-                    DKff{1+i}= (DD+DD')./2;
+            ii1 = 0;
+            if ~isempty(gpcf.p.constSigma2)
+                ii1 = ii1 + 1;
+                DKff{ii1}=ones(n)*gpcf.constSigma2;
+            end
+
+            if ~isempty(gpcf.p.coeffSigma2)
+                if length(gpcf.coeffSigma2) == 1
+                    ii1 = ii1 + 1;
+                    DKff{2}=gpcf.coeffSigma2*x*(x');
+                else
+                    for i=1:m
+                        DD = gpcf.coeffSigma2(i)*x(:,i)*(x(:,i)');
+                        DD(abs(DD)<=eps) = 0;
+                        ii1 = ii1 + 1;
+                        DKff{ii1}= (DD+DD')./2;
+                    end
                 end
             end
             
@@ -270,47 +299,69 @@ function gpcf = gpcf_dotproduct(do, varargin)
             if size(x,2) ~= size(x2,2)
                 error('gpcf_dotproduct -> _ghyper: The number of columns in x and x2 has to be the same. ')
             end
-            
-            DKff{1}=ones([n size(x2,1)])*gpcf.constSigma2;
-            if length(gpcf.coeffSigma2) == 1
-                DKff{2}=gpcf.coeffSigma2*x*(x2');
-            else
-                for i=1:m
-                    DKff{1+i}=gpcf.coeffSigma2(i)*x(:,i)*(x2(:,i)');
-                end
+
+            ii1 = 0;
+            if ~isempty(gpcf.p.constSigma2)
+                ii1 = ii1 + 1;
+                DKff{ii1}=ones([n size(x2,1)])*gpcf.constSigma2;
             end
-            
+
+            if ~isempty(gpcf.p.coeffSigma2)
+                if length(gpcf.coeffSigma2) == 1
+                    ii1 = ii1 + 1;
+                    DKff{ii1}=gpcf.coeffSigma2*x*(x2');
+                else
+                    for i=1:m
+                        ii1 = ii1 + 1;
+                        DKff{ii1}=gpcf.coeffSigma2(i)*x(:,i)*(x2(:,i)');
+                    end
+                end
+            end            
             
             % Evaluate: DKff{1}    = d mask(Kff,I) / d constSigma2
             %           DKff{2...} = d mask(Kff,I) / d coeffSigma2
         elseif nargin == 4
 
-            DKff{1}=ones(n,1)*gpcf.constSigma2; % d mask(Kff,I) / d constSigma2
-            if length(gpcf.coeffSigma2) == 1
-                DKff{2}=gpcf.coeffSigma2*sum(x.^2,2); % d mask(Kff,I) / d coeffSigma2
-            else
-                for i=1:m
-                    DKff{1+i}=gpcf.coeffSigma2(i)*(x(:,i).^2); % d mask(Kff,I) / d coeffSigma2
+            ii1 = 0;
+            if ~isempty(gpcf.p.constSigma2)
+                ii1 = ii1 + 1;
+                DKff{ii1}=ones(n,1)*gpcf.constSigma2; % d mask(Kff,I) / d constSigma2
+            end
+                
+            if ~isempty(gpcf.p.coeffSigma2)
+                if length(gpcf.coeffSigma2) == 1
+                    ii1 = ii1 + 1;
+                    DKff{ii1}=gpcf.coeffSigma2*sum(x.^2,2); % d mask(Kff,I) / d coeffSigma2
+                else
+                    for i=1:m
+                        ii1 = ii1 + 1;
+                        DKff{ii1}=gpcf.coeffSigma2(i)*(x(:,i).^2); % d mask(Kff,I) / d coeffSigma2
+                    end
                 end
             end
-            
-
         end
 
         if nargout > 1
             % Evaluate the gprior with respect to constSigma2
-            i1 = i1+1;
-            gprior(i1) = feval(gpp.constSigma2.fh_g, gpcf.constSigma2, gpp.constSigma2).*gpcf.constSigma2 - 1;
-                            
+            if ~isempty(gpcf.p.constSigma2)
+                gprior = feval(gpp.constSigma2.fh_g, gpcf.constSigma2, gpp.constSigma2).*gpcf.constSigma2 - 1;
+                i1 = length(gprior);
+            end
+                
             % Evaluate the data contribution of gradient with respect to coeffSigma2
-            if length(gpcf.coeffSigma2)>1
-                for i2=1:gpcf.nin
-                    i1=i1+1;
-                    gprior(i1) = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2(i2), gpp.coeffSigma2).*gpcf.coeffSigma2(i2) - 1;
+            if ~isempty(gpcf.p.coeffSigma2)
+                if length(gpcf.coeffSigma2)>1
+                    for i2=1:gpcf.nin
+                        i1=i1+1;
+                        gg = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2(i2), gpp.coeffSigma2).*gpcf.coeffSigma2(i2) - 1;
+                        gprior(i1) =  gg(1);
+                    end
+                    if length(gg) > 1
+                        gprior = [gprior gg(2:end)];
+                    end
+                else
+                    gprior = [gprior feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2).*gpcf.weightSigma2 - 1];
                 end
-            else
-                i1=i1+1;
-                gprior(i1) = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2, gpp.coeffSigma2).*gpcf.coeffSigma2 - 1;
             end
         end
     end

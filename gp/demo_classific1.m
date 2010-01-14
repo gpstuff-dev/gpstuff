@@ -93,7 +93,7 @@ opt.latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,rstate2]=gp_mc(opt, gp, x, y, [], [], r);
+[rgp,g,rstate2]=gp_mc(opt, gp, x, y, r);
 
 % Thin the sample chain. 
 % Note! the thinning is not optimal and the chain is too short. Run

@@ -183,8 +183,14 @@ function gpcf = gpcf_ppcs0(do, varargin)
             if ~isempty(w)
                 i1 = length(w);
             end
-            i1 = i1+1;
-            w(i1) = gpcf.magnSigma2;
+            
+            if ~isempty(gpcf.p.magnSigma2)
+                i1 = i1+1;
+                w(i1) = gpcf.magnSigma2;
+                
+                % Hyperparameters of magnSigma2
+                w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
+            end
             
             w = feval(gpcf.metric.pak, gpcf.metric, w);
             
@@ -196,16 +202,23 @@ function gpcf = gpcf_ppcs0(do, varargin)
                 i1 = length(w);
             end
             
-            i1 = i1+1;
-            w(i1) = gpcf.magnSigma2;
-            i2=i1+length(gpcf.lengthScale);
-            i1=i1+1;
-            w(i1:i2)=gpcf.lengthScale;            
-            i1=i2;
+            if ~isempty(gpcf.p.magnSigma2)
+                i1 = i1+1;
+                w(i1) = gpcf.magnSigma2;
+                
+                % Hyperparameters of magnSigma2
+                w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
+            end
             
-            % Hyperparameters of lengthScale
-            w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
-
+            if ~isempty(gpcf.p.lengthScale)
+                i2=i1+length(gpcf.lengthScale);
+                i1=i1+1;
+                w(i1:i2)=gpcf.lengthScale;
+                i1=i2;
+                
+                % Hyperparameters of lengthScale
+                w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
+            end
         end
     end
 
@@ -224,29 +237,44 @@ function gpcf = gpcf_ppcs0(do, varargin)
     %
     %	See also
     %	GPCF_ppcs0_PAK
-        
+
         if isfield(gpcf,'metric')
-            i1=1;
-            gpcf.magnSigma2=w(i1);
-            w = w(i1+1:end);
+            
+            if ~isempty(gpcf.p.magnSigma2)
+                i1=1;
+                gpcf.magnSigma2=w(i1);
+                w = w(i1+1:end);
+                
+                % Hyperparameters of magnSigma2
+                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+                gpcf.p.magnSigma2 = p;
+            end
+            
             [metric, w] = feval(gpcf.metric.unpak, gpcf.metric, w);
             gpcf.metric = metric;
         else
-            
             gpp=gpcf.p;
-            i1=0;i2=1;
-            i1=i1+1;
-            gpcf.magnSigma2=w(i1);
-            i2=i1+length(gpcf.lengthScale);
-            i1=i1+1;
-            gpcf.lengthScale=w(i1:i2);
-            i1=i2;
-
-            % Hyperparameters of lengthScale
-            w = w(i1+1:end);
-            [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
-            gpcf.p.lengthScale = p;          
-        end
+            if ~isempty(gpp.magnSigma2)
+                i1=1;
+                gpcf.magnSigma2=w(i1);
+                w = w(i1+1:end);
+                
+                % Hyperparameters of magnSigma2
+                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+                gpcf.p.magnSigma2 = p;
+            end
+            
+            if ~isempty(gpp.lengthScale)
+                i2=length(gpcf.lengthScale);
+                i1=1;
+                gpcf.lengthScale=w(i1:i2);
+                w = w(i2+1:end);
+                                
+                % Hyperparameters of lengthScale
+                [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
+                gpcf.p.lengthScale = p;
+            end
+        end 
     end
     
     function eprior =gpcf_ppcs0_e(gpcf, x, t)
@@ -268,23 +296,28 @@ function gpcf = gpcf_ppcs0(do, varargin)
         [n, m] =size(x);
 
         if isfield(gpcf,'metric')
-            eprior=eprior...
-                   +feval(gpp.magnSigma2.fe, ...
-                          gpcf.magnSigma2, gpp.magnSigma2.a)...
-                   -log(gpcf.magnSigma2);
+            
+            if ~isempty(gpcf.p.magnSigma2)
+                eprior=eprior...
+                       +feval(gpp.magnSigma2.fe, ...
+                              gpcf.magnSigma2, gpp.magnSigma2.a)...
+                       -log(gpcf.magnSigma2);
+            end
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
             
         else
-
             % Evaluate the prior contribution to the error. The parameters that
-            % are sampled are from space W = log(w) where w is all the "real" samples.  
-            % On the other hand errors are evaluated in the W-space so we need take 
-            % into account also the  Jakobian of transformation W -> w = exp(W).
+            % are sampled are from space W = log(w) where w is all the "real" samples.
+            % On the other hand errors are evaluated in the W-space so we need take
+            % into account also the  Jacobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-        
-            eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
-            eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
-            
+
+            if ~isempty(gpcf.p.magnSigma2)
+                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+            end
+            if ~isempty(gpp.lengthScale)
+                eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
+            end
         end
     end
     
@@ -311,6 +344,8 @@ function gpcf = gpcf_ppcs0(do, varargin)
         [n, m] =size(x);
 
         i1=0;i2=1;
+        DKff = {};
+        gprior = [];
         
         % Evaluate: DKff{1} = d Kff / d magnSigma2
         %           DKff{2} = d Kff / d lengthScale
@@ -321,8 +356,11 @@ function gpcf = gpcf_ppcs0(do, varargin)
         if nargin == 2
             Cdm = gpcf_ppcs0_trcov(gpcf, x);
 
-            ii1=1;
-            DKff{ii1} = Cdm;
+            ii1=0;
+            if ~isempty(gpcf.p.magnSigma2)
+                ii1 = ii1 +1;
+                DKff{ii1} = Cdm;
+            end
             
             l = gpcf.l;
             [I,J] = find(Cdm);
@@ -371,64 +409,66 @@ function gpcf = gpcf_ppcs0(do, varargin)
                 end
                 
             else
-                % loop over all the lengthScales
-                if length(gpcf.lengthScale) == 1
-                    % In the case of isotropic ppcs0
-                    s2 = 1./gpcf.lengthScale.^2;
-                    ma2 = gpcf.magnSigma2;
+                if ~isempty(gpcf.p.lengthScale)
+                    % loop over all the lengthScales
+                    if length(gpcf.lengthScale) == 1
+                        % In the case of isotropic ppcs0
+                        s2 = 1./gpcf.lengthScale.^2;
+                        ma2 = gpcf.magnSigma2;
+                        
+                        % Calculate the sparse distance (lower triangle) matrix
+                        d2 = 0;
+                        for i = 1:m
+                            d2 = d2 + s2.*(x(I,i) - x(J,i)).^2;
+                        end
+                        d = sqrt(d2);
+                        
+                        % Create the 'compact support' matrix, that is, (1-R)_+,
+                        % where ()_+ truncates all non-positive inputs to zero.
+                        cs = 1-d;
                     
-                    % Calculate the sparse distance (lower triangle) matrix
-                    d2 = 0;
-                    for i = 1:m
-                        d2 = d2 + s2.*(x(I,i) - x(J,i)).^2;
-                    end
-                    d = sqrt(d2);
-                    
-                    % Create the 'compact support' matrix, that is, (1-R)_+,
-                    % where ()_+ truncates all non-positive inputs to zero.
-                    cs = 1-d;
-                    
-                    % Calculate the gradient matrix                                        
-                    D = -l.*cs.^(l-1);
-                    D = -d.*ma2.*D;
-                    D = sparse(I,J,D,n,n);
-                                        
-                    ii1 = ii1+1;
-                    DKff{ii1} = D;
-                else
-                    % In the case ARD is used
-                    s2 = 1./gpcf.lengthScale.^2;
-                    ma2 = gpcf.magnSigma2;
-                    
-                    % Calculate the sparse distance (lower triangle) matrix
-                    % and the distance matrix for each component
-                    d2 = 0;
-                    d_l2 = [];
-                    for i = 1:m
-                        d_l2(:,i) = s2(i).*(x(I,i) - x(J,i)).^2;
-                        d2 = d2 + d_l2(:,i);
-                    end
-                    d = sqrt(d2);
-                    d_l = d_l2;
-                    
-                    % Create the 'compact support' matrix, that is, (1-R)_+,
-                    % where ()_+ truncates all non-positive inputs to zero.
-                    cs = 1-d;
-                    
-                    Dd = -l.*cs.^(l-1);
-                    Dd = -ma2.*Dd;                    
-                    int = d ~= 0;
-
-                    
-                    for i = 1:m
-                        % Calculate the gradient matrix
-                        D = d_l(:,i).*Dd;
-                        % Divide by r in cases where r is non-zero
-                        D(int) = D(int)./d(int);
+                        % Calculate the gradient matrix                                        
+                        D = -l.*cs.^(l-1);
+                        D = -d.*ma2.*D;
                         D = sparse(I,J,D,n,n);
                         
                         ii1 = ii1+1;
                         DKff{ii1} = D;
+                    else
+                        % In the case ARD is used
+                        s2 = 1./gpcf.lengthScale.^2;
+                        ma2 = gpcf.magnSigma2;
+                        
+                        % Calculate the sparse distance (lower triangle) matrix
+                        % and the distance matrix for each component
+                        d2 = 0;
+                        d_l2 = [];
+                        for i = 1:m
+                            d_l2(:,i) = s2(i).*(x(I,i) - x(J,i)).^2;
+                            d2 = d2 + d_l2(:,i);
+                        end
+                        d = sqrt(d2);
+                        d_l = d_l2;
+                        
+                        % Create the 'compact support' matrix, that is, (1-R)_+,
+                        % where ()_+ truncates all non-positive inputs to zero.
+                        cs = 1-d;
+                        
+                        Dd = -l.*cs.^(l-1);
+                        Dd = -ma2.*Dd;                    
+                        int = d ~= 0;
+                        
+                        
+                        for i = 1:m
+                            % Calculate the gradient matrix
+                            D = d_l(:,i).*Dd;
+                            % Divide by r in cases where r is non-zero
+                            D(int) = D(int)./d(int);
+                            D = sparse(I,J,D,n,n);
+                            
+                            ii1 = ii1+1;
+                            DKff{ii1} = D;
+                        end
                     end
                 end
             end
@@ -438,9 +478,13 @@ function gpcf = gpcf_ppcs0(do, varargin)
                 error('gpcf_ppcs -> _ghyper: The number of columns in x and x2 has to be the same. ')
             end
             
-            ii1=1;
+            ii1=0;
             K = feval(gpcf.fh_cov, gpcf, x, x2);
-            DKff{ii1} = K;
+            
+            if ~isempty(gpcf.p.magnSigma2)
+                ii1 = ii1 +1;
+                DKff{ii1} = K;
+            end
 
             l = gpcf.l;
             
@@ -498,60 +542,65 @@ function gpcf = gpcf_ppcs0(do, varargin)
                 end
 
             else
-            
-                % loop over all the lengthScales
-                if length(gpcf.lengthScale) == 1
-                    % In the case of isotropic ppcs0
-                    s2 = 1./gpcf.lengthScale.^2;
-                    ma2 = gpcf.magnSigma2;
-                    
-                    % Calculate the sparse distance (lower triangle) matrix
-                    dist1 = 0;
-                    for i=1:m
-                        dist1 = dist1 + s2.*(gminus(x(:,i),x2(:,i)')).^2;
-                    end
-                    d1 = sqrt(dist1); 
-                    cs1 = max(1-d1,0);
-                    
-                    DK_l = -l.*cs1.^(l-1);
-                    DK_l = -d1.*ma2.*DK_l;
-                    
-                    ii1=ii1+1;
-                    DKff{ii1} = DK_l;
-                else
-                    % In the case ARD is used
-                    s2 = 1./gpcf.lengthScale.^2;
-                    ma2 = gpcf.magnSigma2;
-                    
-                    % Calculate the sparse distance (lower triangle) matrix
-                    % and the distance matrix for each component
-                    dist1 = 0; 
-                    d_l1 = [];
-                    for i = 1:m
-                        dist1 = dist1 + s2(i).*gminus(x(:,i),x2(:,i)').^2;
-                        d_l1{i} = s2(i).*(gminus(x(:,i),x2(:,i)')).^2;
-                    end
-                    d1 = sqrt(dist1); 
-                    cs1 = max(1-d1,0);
-                    
-                    for i = 1:m
-                        % Calculate the gradient matrix
-                        DK_l = -l.*cs1.^(l-1);                
-                        DK_l = -ma2.*DK_l.*d_l1{i};
-                        % Divide by r in cases where r is non-zero
-                        DK_l(d1 ~= 0) = DK_l(d1 ~= 0)./d1(d1 ~= 0);
+                if ~isempty(gpcf.p.lengthScale)
+                    % loop over all the lengthScales
+                    if length(gpcf.lengthScale) == 1
+                        % In the case of isotropic ppcs0
+                        s2 = 1./gpcf.lengthScale.^2;
+                        ma2 = gpcf.magnSigma2;
+                        
+                        % Calculate the sparse distance (lower triangle) matrix
+                        dist1 = 0;
+                        for i=1:m
+                            dist1 = dist1 + s2.*(gminus(x(:,i),x2(:,i)')).^2;
+                        end
+                        d1 = sqrt(dist1); 
+                        cs1 = max(1-d1,0);
+                        
+                        DK_l = -l.*cs1.^(l-1);
+                        DK_l = -d1.*ma2.*DK_l;
+                        
                         ii1=ii1+1;
                         DKff{ii1} = DK_l;
+                    else
+                        % In the case ARD is used
+                        s2 = 1./gpcf.lengthScale.^2;
+                        ma2 = gpcf.magnSigma2;
+                        
+                        % Calculate the sparse distance (lower triangle) matrix
+                        % and the distance matrix for each component
+                        dist1 = 0; 
+                        d_l1 = [];
+                        for i = 1:m
+                            dist1 = dist1 + s2(i).*gminus(x(:,i),x2(:,i)').^2;
+                            d_l1{i} = s2(i).*(gminus(x(:,i),x2(:,i)')).^2;
+                        end
+                        d1 = sqrt(dist1); 
+                        cs1 = max(1-d1,0);
+                        
+                        for i = 1:m
+                            % Calculate the gradient matrix
+                            DK_l = -l.*cs1.^(l-1);                
+                            DK_l = -ma2.*DK_l.*d_l1{i};
+                            % Divide by r in cases where r is non-zero
+                            DK_l(d1 ~= 0) = DK_l(d1 ~= 0)./d1(d1 ~= 0);
+                            ii1=ii1+1;
+                            DKff{ii1} = DK_l;
+                        end
                     end
                 end
             end
           % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
           %           DKff{2...} = d mask(Kff,I) / d lengthScale
         elseif nargin == 4
-            if isfield(gpcf,'metric')
-                ii1=1;
+            ii1=0;
+            
+            if ~isempty(gpcf.p.magnSigma2)
+                ii1 = ii1+1;
                 DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
-                
+            end
+            
+            if isfield(gpcf,'metric')
                 dist = 0;
                 [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, [], 1);
                 for i=1:length(gdist)
@@ -559,40 +608,43 @@ function gpcf = gpcf_ppcs0(do, varargin)
                     DKff{ii1} = 0;
                 end
             else
-                ii1=1;
-                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
-                for i2=1:length(gpcf.lengthScale)
-                    ii1 = ii1+1;
-                    DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
+                if ~isempty(gpcf.p.lengthScale)
+                    for i2=1:length(gpcf.lengthScale)
+                        ii1 = ii1+1;
+                        DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
+                    end
                 end
             end
         end
-        if nargout > 1
-            if isfield(gpcf,'metric')
+        if nargout > 1            
+            if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
-                i1 = i1+1;
-                gprior(i1)=feval(gpp.magnSigma2.fg, ...
-                                 gpcf.magnSigma2, ...
-                                 gpp.magnSigma2.a, 'x').*gpcf.magnSigma2 - 1;
+                gprior = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2).*gpcf.magnSigma2 - 1;
+                i1 = length(gprior);
+            end
+            
+            if isfield(gpcf,'metric')
                 % Evaluate the data contribution of gradient with respect to lengthScale
                 for i2=1:length(gprior_dist)
                     i1 = i1+1;                    
                     gprior(i1)=gprior_dist(i2);
                 end
             else
-                % Evaluate the gdata and gprior with respect to magnSigma2
-                i1 = i1+1;
-                gprior(i1) = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2).*gpcf.magnSigma2 - 1;
-                
-                % Evaluate the data contribution of gradient with respect to lengthScale
-                if length(gpcf.lengthScale)>1
-                    for i2=1:gpcf.nin
-                        i1=i1+1;
-                        gprior(i1) = feval(gpp.lengthScale.fh_g, gpcf.lengthScale(i2), gpp.lengthScale).*gpcf.lengthScale(i2) - 1;
+                if ~isempty(gpcf.p.lengthScale)
+                    % Evaluate the data contribution of gradient with respect to lengthScale
+                    if length(gpcf.lengthScale)>1
+                        for i2=1:gpcf.nin
+                            i1=i1+1;
+                            gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale(i2), gpp.lengthScale).*gpcf.lengthScale(i2) - 1;
+                            gprior(i1) = gg(1);
+                        end
+                        if length(gg) > 1
+                            gprior = [gprior gg(2:end)];
+                        end
+                    else
+                        i1=i1+1; 
+                        gprior = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale).*gpcf.lengthScale - 1;
                     end
-                else
-                    i1=i1+1;
-                    gprior(i1) = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale).*gpcf.lengthScale - 1;
                 end
             end
         end

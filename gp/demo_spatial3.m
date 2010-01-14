@@ -122,8 +122,9 @@ ye = ye(ind,:);
 % Create the covariance functions
 %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
 gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_ppcs2('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 likelih = likelih_negbin('init', yy, ye, 10);

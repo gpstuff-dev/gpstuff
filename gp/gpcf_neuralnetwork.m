@@ -144,25 +144,33 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %
     %	See also
     %	GPCF_NEURALNETWORK_UNPAK
-        gpp=gpcf.p;
 
+        gpp=gpcf.p;
+            
         i1=0;i2=1;
         if ~isempty(w)
             i1 = length(w);
         end
-        i1 = i1+1;
-        w(i1) = gpcf.biasSigma2;
-        i2=i1+length(gpcf.weightSigma2);
-        i1=i1+1;
-        w(i1:i2)=gpcf.weightSigma2;
-        i1=i2;
         
-        % Hyperparameters of weightSigma2
-        w = feval(gpcf.p.weightSigma2.fh_pak, gpcf.p.weightSigma2, w);        
+        if ~isempty(gpcf.p.biasSigma2)
+            i1 = i1+1;
+            w(i1) = gpcf.biasSigma2;
+            
+            % Hyperparameters of biasSigma2
+            w = feval(gpcf.p.biasSigma2.fh_pak, gpcf.p.biasSigma2, w);
+        end
+        
+        if ~isempty(gpcf.p.weightSigma2)
+            i2=i1+length(gpcf.weightSigma2);
+            i1=i1+1;
+            w(i1:i2)=gpcf.weightSigma2;
+            i1=i2;
+            
+            % Hyperparameters of weightSigma2
+            w = feval(gpcf.p.weightSigma2.fh_pak, gpcf.p.weightSigma2, w);
+        end
     end
-
-
-
+    
 
     function [gpcf, w] = gpcf_neuralnetwork_unpak(gpcf, w)
     %GPCF_NEURALNETWORK_UNPAK  Separate covariance function hyper-parameter vector into components.
@@ -177,19 +185,28 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %	See also
     %	GPCF_NEURALNETWORK_PAK
     %
+
         gpp=gpcf.p;
-        i1=0;i2=1;
-        i1=i1+1;
-        gpcf.biasSigma2=w(i1);
-        i2=i1+length(gpcf.weightSigma2);
-        i1=i1+1;
-        gpcf.weightSigma2=w(i1:i2);
-        i1=i2;
-        
-        % Hyperparameters of weightSigma2
-        w = w(i1+1:end);
-        [p, w] = feval(gpcf.p.weightSigma2.fh_unpak, gpcf.p.weightSigma2, w);
-        gpcf.p.weightSigma2 = p;
+        if ~isempty(gpp.biasSigma2)
+            i1=1;
+            gpcf.biasSigma2=w(i1);
+            w = w(i1+1:end);
+                
+            % Hyperparameters of biasSigma2
+            [p, w] = feval(gpcf.p.biasSigma2.fh_unpak, gpcf.p.biasSigma2, w);
+            gpcf.p.biasSigma2 = p;
+        end
+            
+        if ~isempty(gpp.weightSigma2)
+            i2=length(gpcf.weightSigma2);
+            i1=1;
+            gpcf.weightSigma2=w(i1:i2);
+            w = w(i2+1:end);
+            
+            % Hyperparameters of weightSigma2
+            [p, w] = feval(gpcf.p.weightSigma2.fh_unpak, gpcf.p.weightSigma2, w);
+            gpcf.p.weightSigma2 = p;
+        end
     end
 
     function eprior =gpcf_neuralnetwork_e(gpcf, x, t)
@@ -215,8 +232,12 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         eprior = 0;
         gpp=gpcf.p;
 
-        eprior = feval(gpp.biasSigma2.fh_e, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
-        eprior = eprior + feval(gpp.weightSigma2.fh_e, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
+        if ~isempty(gpp.biasSigma2)
+            eprior = feval(gpp.biasSigma2.fh_e, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
+        end
+        if ~isempty(gpp.weightSigma2)
+            eprior = eprior + feval(gpp.weightSigma2.fh_e, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
+        end
 
     end
 
@@ -243,6 +264,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         [n, m] =size(x);
         
         i1=0;
+        DKff = {};
+        gprior = [];
         
         % Evaluate: DKff{1} = d Kff / d biasSigma2
         %           DKff{2} = d Kff / d weightSigma2
@@ -275,23 +298,31 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
             bden_g=(0.5./S_den).*(bnom_g.*repmat(S_den_tmp',n,1)+repmat(S_den_tmp,1,n).*bnom_g);
             bg=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
 
-            DKff{1}=(bg+bg')/2;
+            ii1 = 0;
+            if ~isempty(gpcf.p.biasSigma2)
+                ii1 = ii1+1;
+                DKff{ii1}=(bg+bg')/2;
+            end
             
-            if length(gpcf.weightSigma2) == 1
+            if ~isempty(gpcf.p.weightSigma2)
+                if length(gpcf.weightSigma2) == 1
                     wnom_g=2*x*x';
                     tmp_g=sum(2*x.^2,2);
                     wden_g=0.5./S_den.*(tmp_g*S_den_tmp'+S_den_tmp*tmp_g');
                     wg=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
                     
-                    DKff{2}=(wg+wg')/2;
-            else
-                for d1=1:m
-                    wnom_g=2*x(:,d1)*x(:,d1)';
-                    tmp_g=2*x(:,d1).^2;
-                    wden_g=0.5./S_den.*(tmp_g*S_den_tmp'+S_den_tmp*tmp_g');
-                    wg=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
-                    
-                    DKff{d1+1}=(wg+wg')/2;
+                    ii1 = ii1+1;
+                    DKff{ii1}=(wg+wg')/2;
+                else
+                    for d1=1:m
+                        wnom_g=2*x(:,d1)*x(:,d1)';
+                        tmp_g=2*x(:,d1).^2;
+                        wden_g=0.5./S_den.*(tmp_g*S_den_tmp'+S_den_tmp*tmp_g');
+                        wg=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+                        
+                        ii1 = ii1+1;
+                        DKff{ii1}=(wg+wg')/2;
+                    end
                 end
             end
             
@@ -328,23 +359,31 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
             bnom_g=2*ones(n, n2);            
             bden_g=(0.5./S_den).*(bnom_g.*repmat(S_den_tmp2',n,1)+repmat(S_den_tmp1,1,n2).*bnom_g);
             
-            DKff{1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+            ii1 = 0;
+            if ~isempty(gpcf.p.biasSigma2)
+                ii1 = ii1 + 1;
+                DKff{ii1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+            end
             
-            if length(gpcf.weightSigma2) == 1
+            if ~isempty(gpcf.p.weightSigma2)
+                if length(gpcf.weightSigma2) == 1
                     wnom_g=2*x*x2';
                     tmp_g1=sum(2*x.^2,2);
                     tmp_g2=sum(2*x2.^2,2);
                     wden_g=0.5./S_den.*(tmp_g1*S_den_tmp2'+S_den_tmp1*tmp_g2');
-
-                    DKff{2}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
-            else
-                for d1=1:m
-                    wnom_g=2*x(:,d1)*x2(:,d1)';
-                    tmp_g1=2*x(:,d1).^2;
-                    tmp_g2=2*x2(:,d1).^2;
-                    wden_g=0.5./S_den.*(tmp_g1*S_den_tmp2'+S_den_tmp1*tmp_g2');
-
-                    DKff{d1+1}=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+               
+                    ii1 = ii1 + 1;
+                    DKff{ii1}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+                else
+                    for d1=1:m
+                        wnom_g=2*x(:,d1)*x2(:,d1)';
+                        tmp_g1=2*x(:,d1).^2;
+                        tmp_g2=2*x2(:,d1).^2;
+                        wden_g=0.5./S_den.*(tmp_g1*S_den_tmp2'+S_den_tmp1*tmp_g2');
+                        
+                        ii1 = ii1 + 1;
+                        DKff{ii1}=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+                    end
                 end
             end
 
@@ -372,36 +411,52 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
             bnom_g=2*ones(n,1);
             bden_g=(0.5./S_den).*(2*bnom_g.*S_den);
             
-            DKff{1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+            ii1 = 0;
+            if ~isempty(gpcf.p.biasSigma2)
+                ii1 = ii1 + 1;
+                DKff{ii1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+            end
             
-            if length(gpcf.weightSigma2) == 1
+            if ~isempty(gpcf.p.weightSigma2)
+                if length(gpcf.weightSigma2) == 1
                     wnom_g=sum(2*x.^2,2);
                     wden_g=0.5./S_den.*(2*wnom_g.*S_den);
-
-                    DKff{2}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
-            else
-                for d1=1:m
-                    wnom_g=2*x(:,d1).^2;
-                    wden_g=0.5./S_den.*(2*wnom_g.*S_den);
-
-                    DKff{d1+1}=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+                    
+                    ii1 = ii1+1;
+                    DKff{ii1}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+                else
+                    for d1=1:m
+                        wnom_g=2*x(:,d1).^2;
+                        wden_g=0.5./S_den.*(2*wnom_g.*S_den);
+                        
+                        ii1 = ii1+1;                        
+                        DKff{ii1}=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
+                    end
                 end
             end
         end
         if nargout > 1
             % Evaluate the gprior with respect to biasSigma2
-            i1 = i1+1;
-            gprior(i1) = feval(gpp.biasSigma2.fh_g, gpcf.biasSigma2, gpp.biasSigma2).*gpcf.biasSigma2 - 1;
+            
+            if ~isempty(gpcf.p.biasSigma2)
+                gprior = feval(gpp.biasSigma2.fh_g, gpcf.biasSigma2, gpp.biasSigma2).*gpcf.biasSigma2 - 1;
+                i1 = length(gprior);
+            end
             
             % Evaluate the data contribution of gradient with respect to weightSigma2
-            if length(gpcf.weightSigma2)>1
-                for i2=1:gpcf.nin
-                    i1=i1+1;
-                    gprior(i1) = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2(i2), gpp.weightSigma2).*gpcf.weightSigma2(i2) - 1;
+            if ~isempty(gpcf.p.weightSigma2)
+                if length(gpcf.weightSigma2)>1
+                    for i2=1:gpcf.nin
+                        i1=i1+1;
+                        gg = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2(i2), gpp.weightSigma2).*gpcf.weightSigma2(i2) - 1;
+                        gprior(i1) = gg(1);
+                    end
+                    if length(gg) > 1
+                        gprior = [gprior gg(2:end)];
+                    end
+                else
+                    gprior = [gprior feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2).*gpcf.weightSigma2 - 1];
                 end
-            else
-                i1=i1+1;
-                gprior(i1) = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2).*gpcf.weightSigma2 - 1;
             end
         end
     end

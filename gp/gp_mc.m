@@ -170,7 +170,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             
             % ----------- Sample latent Values  ---------------------
             if isfield(opt,'latent_opt')
-                [z, energ, diagnl] = feval(gp.likelih.fh_mcmc, z, opt.latent_opt, gp, x, y, varargin{:});
+                [z, energ, diagnl] = feval(gp.fh_mc, z, opt.latent_opt, gp, x, y);
+% $$$                 [z, energ, diagnl] = feval(gp.likelih.fh_mcmc, z, opt.latent_opt, gp, x, y);
                 gp.latentValues = z(:)';
                 z = z(:);
                 lrej=lrej+diagnl.rej/opt.repeat;

@@ -177,6 +177,7 @@ function gp = gp_init(do, varargin)
                     switch varargin{i+1}{1}
                       case 'MCMC'
                         gp.latentValues = varargin{i+1}{2};
+                        gp.fh_mc = varargin{i+1}{3};
                       case 'EP'
                         % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
                         gp.ep_opt.maxiter = 20;
@@ -245,6 +246,7 @@ function gp = gp_init(do, varargin)
                 switch varargin{i+1}{1}
                   case 'MCMC'
                     gp.latentValues = varargin{i+1}{2};
+                    gp.fh_mc = varargin{i+1}{3};
                   case 'EP'
                     % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
                     gp.ep_opt.maxiter = 20;

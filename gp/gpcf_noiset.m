@@ -59,7 +59,6 @@ function gpcf = gpcf_noiset(do, varargin)
 %
 %
 
-% Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 1998,1999 Aki Vehtari
 % Copyright (c) 2006-2008 Jarno Vanhatalo
 

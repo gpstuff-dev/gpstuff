@@ -3,36 +3,36 @@ function metric = metric_euclidean(do, varargin)
 %
 %	Description
 %
-%	METRIC = METRIC_EUCLIDEAN('INIT', NIN, COMPONENTS) Constructs an data
+%	METRIC = METRIC_EUCLIDEAN('INIT', NIN, COMPONENTS) Constructs data
 %       structure for an euclidean metric used in covariance function of a GP model.
 %
 %	The fields and (default values) in METRIC_EUCLIDEAN are:
-%	  type        = 'metric_euclidean'
-%	  nin         = Number of inputs in the data. (NIN)
-%	  components  = Cell array of vectors specifying which inputs are grouped together
-%                       with a same scaling parameter. 
-%                       For example, the component specification {[1 2] [3]} means that
-%                       distance between 3 dimensional vectors x and z is computed as
-%                       r = sqrt(((x_1-z_1)^2+(x_2-z_2)^2)/l_1 + (x_3-z_3)/l_2),
-%                       where l_1 and l_2 are lengthscales for corresponding component sets.
-%         params      = Hyperparameters of the metric, which in this case are 
+%	  type         = 'metric_euclidean'
+%	  nin          = Number of inputs in the data. (NIN)
+%	  components   = Cell array of vectors specifying which inputs are grouped together
+%                        with a same scaling parameter. 
+%                        For example, the component specification {[1 2] [3]} means that
+%                        distance between 3 dimensional vectors x and z is computed as
+%                        r = sqrt( ( (x_1-z_1)^2+(x_2-z_2)^2 )/l_1 + (x_3-z_3)/l_2),
+%                        where l_1 and l_2 are lengthscales for corresponding component sets.
+%         lengthScales = Hyperparameters of the metric, which in this case are 
 %                       lengthscales for each input component set. 
-%         p           = Prior structure for metric parameters. 
-%                       (e.g. p.params.)
-%         pak         = function handle to pack function
-%                       (@metric_euclidean_pak)
-%         unpak       = function handle to unpack function
-%                       (@metric_euclidean_unpak)
-%         e           = function handle to energy function
-%                       (@metric_euclidean_e)
-%         ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                       (@metric_euclidean_ghyper)
-%         ginput      = function handle to gradient of function with respect to inducing inputs
-%                       (@metric_euclidean_ginput)
-%         distance    = function handle to distance function of the metric.
-%                       (@metric_euclidean_distance)
-%         fh_recappend   = function handle to append the record function 
-%                          (metric_euclidean_recappend)
+%         p            = Prior structure for metric parameters. 
+%                        (e.g. p.lengthScales.)
+%         pak          = function handle to pack function
+%                        (@metric_euclidean_pak)
+%         unpak        = function handle to unpack function
+%                        (@metric_euclidean_unpak)
+%         e            = function handle to energy function
+%                        (@metric_euclidean_e)
+%         ghyper       = function handle to gradient of energy with respect to hyperparameters
+%                        (@metric_euclidean_ghyper)
+%         ginput       = function handle to gradient of function with respect to inducing inputs
+%                        (@metric_euclidean_ginput)
+%         distance     = function handle to distance function of the metric.
+%                        (@metric_euclidean_distance)
+%         fh_recappend = function handle to append the record function 
+%                        (metric_euclidean_recappend)
 %
 %	METRIC = METRIC_EUCLIDEAN('SET', METRIC, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in METRIC.
@@ -54,11 +54,11 @@ function metric = metric_euclidean(do, varargin)
         metric.nin = varargin{1};
         metric.components = varargin{2};
         
-        metric.params = repmat(1,1,length(metric.components));
+        metric.lengthScales = repmat(1,1,length(metric.components));
 
         % Initialize prior structure
         metric.p=[];
-        metric.p.params=[];
+        metric.p.lengthScales=[];
         
         % Set the function handles to the nested functions
         metric.pak        = @metric_euclidean_pak;
@@ -76,11 +76,13 @@ function metric = metric_euclidean(do, varargin)
             % Loop through all the parameter values that are changed
             for i=3:2:length(varargin)-1
                 switch varargin{i}
-                  case 'params'
-                    if size(varargin{i+1}) ~= size(metric.params)
+                  case 'lengthScales'
+                    if size(varargin{i+1}) ~= size(metric.lengthScales)
                         error('Incorrect number of parameters given.');
                     end
-                    metric.params = varargin{i+1};
+                    metric.lengthScales = varargin{i+1};
+                  case 'lengthScales_prior'
+                    gpcf.p.lengthScales = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -98,11 +100,13 @@ function metric = metric_euclidean(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'params'
-                if size(varargin{i+1}) ~= size(metric.params)
+              case 'lengthScales'
+                if size(varargin{i+1}) ~= size(metric.lengthScales)
                     error('Incorrect number of parameters given.');
                 end                
-                metric.params = varargin{i+1};
+                metric.lengthScales = varargin{i+1};
+              case 'lengthScales_prior'
+                gpcf.p.lengthScales = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -121,22 +125,25 @@ end
     %	METRIC_EUCLIDEAN_UNPAK
         mp=metric.p;
 
-        i1=0;i2=1;
-        if ~isempty(w)
-            i1 = length(w);
-        end
-        i2=i1+length(metric.params);
-        i1=i1+1;
-        w(i1:i2)=metric.params;
-        i1=i2;
-        
-        % Parameters
-        if isfield(mp.params, 'p') && ~isempty(mp.params.p)
+        if ~isempty(mp.lengthScales)
+            i1=0;i2=1;
+            if ~isempty(w)
+                i1 = length(w);
+            end
+            i2=i1+length(metric.lengthScales);
             i1=i1+1;
-            w(i1)=mp.params.a.s;
-            if any(strcmp(fieldnames(mp.params.p),'nu'))
+            w(i1:i2)=metric.lengthScales;
+            i1=i2;
+            
+            w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
+            % hyper-parameters
+            if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
                 i1=i1+1;
-                w(i1)=mp.params.a.nu;
+                w(i1)=mp.lengthScales.a.s;
+                if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
+                    i1=i1+1;
+                    w(i1)=mp.lengthScales.a.nu;
+                end
             end
         end
     end
@@ -155,17 +162,17 @@ end
     %
         mp=metric.p;
         i1=0;i2=1;
-        i2=i1+length(metric.params);
+        i2=i1+length(metric.lengthScales);
         i1=i1+1;
-        metric.params=w(i1:i2);
+        metric.lengthScales=w(i1:i2);
         i1=i2;
         % Parameters
-        if isfield(mp.params, 'p') && ~isempty(mp.params.p)
+        if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
             i1=i1+1;
-            metric.p.params.a.s=w(i1);
-            if any(strcmp(fieldnames(mp.params.p),'nu'))
+            metric.p.lengthScales.a.s=w(i1);
+            if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
                 i1=i1+1;
-                metric.p.params.a.nu=w(i1);
+                metric.p.lengthScales.a.nu=w(i1);
             end
         end        
         w = w(i1+1:end);
@@ -194,22 +201,22 @@ end
         eprior = 0;
         mp=metric.p;
 
-        if isfield(mp.params, 'p') && ~isempty(mp.params.p)
+        if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
             eprior=eprior...
-                   +feval(mp.params.p.s.fe, ...
-                          gpp.params.a.s, mp.params.p.s.a)...
-                   -log(mp.params.a.s);
-            if any(strcmp(fieldnames(mp.params.p),'nu'))
+                   +feval(mp.lengthScales.p.s.fe, ...
+                          gpp.lengthScales.a.s, mp.lengthScales.p.s.a)...
+                   -log(mp.lengthScales.a.s);
+            if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
                 eprior=eprior...
-                       +feval(mp.p.params.nu.fe, ...
-                              mp.params.a.nu, mp.params.p.nu.a)...
-                       -log(mp.params.a.nu);
+                       +feval(mp.p.lengthScales.nu.fe, ...
+                              mp.lengthScales.a.nu, mp.lengthScales.p.nu.a)...
+                       -log(mp.lengthScales.a.nu);
             end
         end
         eprior=eprior...
-               +feval(mp.params.fe, ...
-                      metric.params, mp.params.a)...
-               -sum(log(metric.params));
+               +feval(mp.lengthScales.fe, ...
+                      metric.lengthScales, mp.lengthScales.a)...
+               -sum(log(metric.lengthScales));
 
     end
     
@@ -252,7 +259,7 @@ end
             distc = cell(1,m);
             % Compute the distances for each component set
             for i=1:m
-                s = 1./metric.params(i).^2;
+                s = 1./metric.lengthScales(i).^2;
                 distc{i} = 0;
                 for j = 1:length(components{i})
                     distc{i} = distc{i} + gminus(x(:,components{i}(j)),x2(:,components{i}(j))').^2;
@@ -274,36 +281,36 @@ end
 % $$$                 error('metric_euclidean -> _ghyper: The number of columns in x and x2 has to be the same. ')
 % $$$             end
         elseif nargin == 4
-            gdist = cell(1,length(metric.params));
+            gdist = cell(1,length(metric.lengthScales));
         end
         
         % Evaluate the prior contribution of gradient with respect to lengthScale
         for i2=1:m
             i1=i1+1;
-            gprior_dist(i1)=feval(mp.params.fg, ...
-                             metric.params(i2), ...
-                             mp.params.a, 'x').*metric.params(i2) - 1;
+            gprior_dist(i1)=feval(mp.lengthScales.fg, ...
+                             metric.lengthScales(i2), ...
+                             mp.lengthScales.a, 'x').*metric.lengthScales(i2) - 1;
         end
 
         % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
-        if isfield(mp.params, 'p') && ~isempty(mp.params.p)
+        if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
             i1=i1+1;
             gprior_dist(i1)=...
-                feval(mp.params.p.s.fg, ...
-                      mp.params.a.s,...
-                      mp.params.p.s.a, 'x').*mp.params.a.s - 1 ...
-                +feval(mp.params.fg, ...
-                       metric.params, ...
-                       mp.params.a, 's').*mp.params.a.s;
-            if any(strcmp(fieldnames(mp.params.p),'nu'))
+                feval(mp.lengthScales.p.s.fg, ...
+                      mp.lengthScales.a.s,...
+                      mp.lengthScales.p.s.a, 'x').*mp.lengthScales.a.s - 1 ...
+                +feval(mp.lengthScales.fg, ...
+                       metric.lengthScales, ...
+                       mp.lengthScales.a, 's').*mp.lengthScales.a.s;
+            if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
                 i1=i1+1;
                 gprior_dist(i1)=...
-                    feval(mp.params.p.nu.fg, ...
-                          mp.params.a.nu,...
-                          mp.params.p.nu.a, 'x').*mp.params.a.nu -1 ...
-                    +feval(mp.params.fg, ...
-                           metric.params, ...
-                           mp.params.a, 'nu').*mp.params.a.nu;
+                    feval(mp.lengthScales.p.nu.fg, ...
+                          mp.lengthScales.a.nu,...
+                          mp.lengthScales.p.nu.a, 'x').*mp.lengthScales.a.nu -1 ...
+                    +feval(mp.lengthScales.fg, ...
+                           metric.lengthScales, ...
+                           mp.lengthScales.a, 'nu').*mp.lengthScales.a.nu;
             end
         end
     end
@@ -341,7 +348,7 @@ end
         dist  =  0;        
         
         for i=1:m
-            s = 1./metric.params(i).^2;
+            s = 1./metric.lengthScales(i).^2;
             for j = 1:length(components{i})
                 dist = dist + s.*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
             end
@@ -368,7 +375,7 @@ end
             error('the number of columns of X1 and X2 has to be same')
         end
         
-        s = 1./metric.params.^2;
+        s = 1./metric.lengthScales.^2;
         dist = 0;
         for i=1:length(components)
             for j = 1:length(components{i})
@@ -423,7 +430,7 @@ end
             metric.components = recmetric.components;
             
             % Initialize parameters
-            recmetric.params = [];
+            recmetric.lengthScales = [];
 
             % Set the function handles
             recmetric.pak       = @metric_euclidean_pak;
@@ -438,19 +445,19 @@ end
         mp = metric.p;
 
         % record parameters
-        if ~isempty(metric.params)
-            if ~isempty(mp.params)
-                recmetric.lengthHyper(ri,:)=mp.params.a.s;
-                if isfield(mp.params,'p')
-                    if isfield(mp.params.p,'nu')
-                        recmetric.lengthHyperNu(ri,:)=mp.params.a.nu;
+        if ~isempty(metric.lengthScales)
+            if ~isempty(mp.lengthScales)
+                recmetric.lengthHyper(ri,:)=mp.lengthScales.a.s;
+                if isfield(mp.lengthScales,'p')
+                    if isfield(mp.lengthScales.p,'nu')
+                        recmetric.lengthHyperNu(ri,:)=mp.lengthScales.a.nu;
                     end
                 end
             elseif ri==1
                 recmetric.lengthHyper=[];
             end
-            recmetric.params(ri,:)=metric.params;
+            recmetric.lengthScales(ri,:)=metric.lengthScales;
         elseif ri==1
-            recmetric.params=[];
+            recmetric.lengthScales=[];
         end
     end

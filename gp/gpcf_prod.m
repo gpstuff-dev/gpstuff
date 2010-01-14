@@ -208,6 +208,7 @@ function gpcf = gpcf_prod(do, varargin)
         [n, m] =size(x);
 
         gprior = [];
+        DKff = {};
         % Evaluate: DKff{1} = d Kff / d magnSigma2
         %           DKff{2} = d Kff / d lengthScale
         % NOTE! Here we have already taken into account that the parameters are transformed

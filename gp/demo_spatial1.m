@@ -75,9 +75,10 @@ ye = ye(ind,:);
 % Create the covariance function
 % The hyper-parameters are initialized very close to posterior mode in order to 
 % speed up convergence
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
@@ -86,7 +87,7 @@ likelih = likelih_poisson('init', yy, ye);
 gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, []);   %{gpcf2}
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
 
 % Set the sampling options
 opt=gp_mcopt;
@@ -137,7 +138,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(1)
     clf
@@ -207,8 +208,10 @@ dims = [1    60     1    35];
 % The hyper-parameters are initialized very close to posterior mode in order to 
 % speed up convergence
 gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
@@ -217,7 +220,7 @@ likelih = likelih_poisson('init', yy, ye);
 gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
 
 % Set the approximate inference method to MCMC
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
 
 % Set the sampling options
 opt=gp_mcopt;
@@ -268,7 +271,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(3)
     clf
@@ -337,8 +340,9 @@ dims = [1    60     1    35];
 
 % Create the covariance functions
 gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
@@ -348,7 +352,7 @@ gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to MCMC
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
 
 % Set the sampling options
 opt=gp_mcopt;
@@ -399,7 +403,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(6)
     clf
@@ -471,12 +475,12 @@ dims = [1    60     1    35];
 
 % Create the covariance functions
 gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 4, 'magnSigma2', 0.05);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.03);
-gpcf2.p.lengthScale = t_p({1 4});
-gpcf2.p.magnSigma2 = t_p({0.3 4});
+gpcf2 = gpcf_ppcs2('set', gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
@@ -485,7 +489,7 @@ likelih = likelih_poisson('init', yy, ye);
 gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
 
 % Set the approximate inference method to MCMC
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
 
 % Set the sampling options
 opt=gp_mcopt;
@@ -536,7 +540,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<200 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, [], [], rgp);
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(7)
     clf

@@ -13,7 +13,8 @@ y = data(:,3);
 
 % This part is done as usual
 gpcf1 = gpcf_matern52('init', nin, 'magnSigma2', 0.2);
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_ppcs2('set', gpcf1,  'magnSigma2_prior', pm);
 
 % Lets now initialize an euclidean metric structure, which uses only the first
 % component of the input vector for calculating distances used by the
@@ -32,7 +33,10 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 % inside the metric structures as they are essentially parameters
 % of the euclidean metric.
 
-metric1 = metric_euclidean('init', nin, {[1]},'params',[0.8]);
+
+pl = prior_t('init');
+
+metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8]);
 
 % We also need to specify a prior for the length scales.
 metric1.p.params = gamma_p({3 7});  

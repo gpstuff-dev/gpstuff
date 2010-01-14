@@ -70,7 +70,7 @@ for i = 1:length(covfunc)
         gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pl);
     end
            
-    gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+    gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
     
     w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
@@ -87,15 +87,6 @@ for i = 1:length(covfunc)
     
     % Set the optimized hyperparameter values back to the gp structure
     gp=gp_unpak(gp,w, 'hyper');
-
-    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
-    
-    % check that gradients are OK
-    if delta>0.0001
-        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters of ' covfunc{i}]);
-        warning([' Check the gradients of ' covfunc{i}]);
-        numwarn = numwarn + 1;
-    end
 
     % --- MCMC approach ---
     opt=gp_mcopt;
@@ -124,8 +115,91 @@ for i = 1:length(covfunc)
         warnings = sprintf([warnings '\n * Check the MCMC sampling of hyper-parameters of ' covfunc{i} ' with GP regression']);
         numwarn = numwarn + 1;
     end
+
+    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+    
         
+    switch covfunc{i}
+      case 'gpcf_neuralnetwork'
+        gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', pl, 'biasSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', [], 'biasSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+      case 'gpcf_dotproduct'
+        gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl, 'coeffSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', [], 'coeffSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+      case 'gpcf_prod'
+        gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', []);
+        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
+        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
+        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+      otherwise
+        gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        
+        gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
+        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        w=gp_pak(gp, 'hyper');
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+    end
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters of ' covfunc{i}]);
+        warning([' Check the gradients of ' covfunc{i}]);
+        numwarn = numwarn + 1;
+    end
+
 end
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', []);
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+w=gp_pak(gp, 'hyper');
+delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
 
 
 %----------------------------
@@ -460,6 +534,9 @@ end
 % mcmc
 
 
+
+
+
 %----------------------------
 % check priors
 %----------------------------
@@ -545,7 +622,7 @@ end
 % Probit model 
 % ===========================
 
-fprintf(' \n ================================= \n \n Check the probit model \n \n =================================\n ')
+fprintf(' \n ================================= \n \n Check the probit model \n \n =================================\n')
 
 S = which('demo_classific1');
 L = strrep(S,'demo_classific1.m','demos/synth.tr');

@@ -54,6 +54,7 @@ function likelih = likelih_negbin(do, varargin)
         likelih.disper = disper;
 
         % Initialize prior structure
+        likelih.p.disper = [];
 
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_negbin_pak;
@@ -81,6 +82,8 @@ function likelih = likelih_negbin(do, varargin)
                     likelih.gamlny = varargin{i+1};
                   case 'disper'
                     likelih.disper = varargin{i+1};
+                  case 'disper_prior'
+                    gpcf.p.disper = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -103,6 +106,8 @@ function likelih = likelih_negbin(do, varargin)
                 likelih.gamlny = varargin{i+1};
               case 'disper'
                 likelih.disper = varargin{i+1};
+              case 'disper_prior'
+                gpcf.p.disper = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -121,8 +126,10 @@ function likelih = likelih_negbin(do, varargin)
     %
     %	See also
     %	LIKELIH_NEGBIN_UNPAK
-   
-        w = likelih.disper;
+        
+        if ~isempty(gpcf.p.disper)
+            w = likelih.disper;
+        end
     end
 
 
@@ -137,9 +144,11 @@ function likelih = likelih_negbin(do, varargin)
     %	See also
     %	LIKELIH_NEGBIN_PAK    
 
-        i1=1;
-        likelih.disper = w(i1);
-        w = w(i1+1:end);
+        if ~isempty(gpcf.p.disper)
+            i1=1;
+            likelih.disper = w(i1);
+            w = w(i1+1:end);
+        end
     end
 
 
