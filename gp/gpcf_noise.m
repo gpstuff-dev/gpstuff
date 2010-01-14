@@ -152,7 +152,7 @@ function gpcf = gpcf_noise(do, varargin)
             
             i2=i1+length(gpcf.noiseSigmas2);
             i1=i1+1;
-            w(i1:i2)=gpcf.noiseSigmas2;
+            w(i1:i2) = log(gpcf.noiseSigmas2);
         end
     end
 
@@ -174,7 +174,7 @@ function gpcf = gpcf_noise(do, varargin)
 
             i2=i1+length(gpcf.noiseSigmas2);
             i1=i1+1;
-            gpcf.noiseSigmas2=w(i1:i2);
+            gpcf.noiseSigmas2 = exp(w(i1:i2));
             w = w(i1+1:end);
         end 
     end

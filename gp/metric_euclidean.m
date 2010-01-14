@@ -132,7 +132,7 @@ end
             end
             i2=i1+length(metric.lengthScales);
             i1=i1+1;
-            w(i1:i2)=metric.lengthScales;
+            w(i1:i2)=log(metric.lengthScales);
             i1=i2;
             
             w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
@@ -164,7 +164,7 @@ end
         i1=0;i2=1;
         i2=i1+length(metric.lengthScales);
         i1=i1+1;
-        metric.lengthScales=w(i1:i2);
+        metric.lengthScales = exp(w(i1:i2));
         i1=i2;
         % Parameters
         if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)

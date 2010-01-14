@@ -67,7 +67,6 @@ if isfield(gp, 'noise')
         w = feval(noise.fh_pak, noise, w);
     end
 end
-w = log(w);
 
 % Pak the inducing inputs
 function w = pak_inducing(gp)

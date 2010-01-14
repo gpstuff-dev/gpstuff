@@ -151,42 +151,28 @@ function gpcf = gpcf_sexp(do, varargin)
     %	See also
     %	GPCF_SEXP_UNPAK
         
+        i1=0;i2=1;
+        if ~isempty(w)
+            i1 = length(w);
+        end
+        
+        if ~isempty(gpcf.p.magnSigma2)
+            i1 = i1+1;
+            w(i1) = log(gpcf.magnSigma2);
+            
+            % Hyperparameters of magnSigma2
+            w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
+        end        
+        
         if isfield(gpcf,'metric')
-            i1=0;i2=1;
-            if ~isempty(w)
-                i1 = length(w);
-            end
             
-            if ~isempty(gpcf.p.magnSigma2)
-                i1 = i1+1;
-                w(i1) = gpcf.magnSigma2;
-                
-                % Hyperparameters of magnSigma2
-                w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
-            end
-            
-            w = feval(gpcf.metric.pak, gpcf.metric, w);
-            
+            w = feval(gpcf.metric.pak, gpcf.metric, w);            
         else
-            gpp=gpcf.p;
-            
-            i1=0;i2=1;
-            if ~isempty(w)
-                i1 = length(w);
-            end
-            
-            if ~isempty(gpcf.p.magnSigma2)
-                i1 = i1+1;
-                w(i1) = gpcf.magnSigma2;
-                
-                % Hyperparameters of magnSigma2
-                w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
-            end
             
             if ~isempty(gpcf.p.lengthScale)
                 i2=i1+length(gpcf.lengthScale);
                 i1=i1+1;
-                w(i1:i2)=gpcf.lengthScale;
+                w(i1:i2)=log(gpcf.lengthScale);
                 i1=i2;
                 
                 % Hyperparameters of lengthScale
@@ -211,36 +197,25 @@ function gpcf = gpcf_sexp(do, varargin)
     %	See also
     %	GPCF_SEXP_PAK
     %
+        gpp=gpcf.p;
+        if ~isempty(gpp.magnSigma2)
+            i1=1;
+            gpcf.magnSigma2 = exp(w(i1));
+            w = w(i1+1:end);
+            
+            % Hyperparameters of magnSigma2
+            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+            gpcf.p.magnSigma2 = p;
+        end
+
         if isfield(gpcf,'metric')
-            
-            if ~isempty(gpcf.p.magnSigma2)
-                i1=1;
-                gpcf.magnSigma2=w(i1);
-                w = w(i1+1:end);
-                
-                % Hyperparameters of magnSigma2
-                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
-                gpcf.p.magnSigma2 = p;
-            end
-            
             [metric, w] = feval(gpcf.metric.unpak, gpcf.metric, w);
             gpcf.metric = metric;
-        else
-             gpp=gpcf.p;
-            if ~isempty(gpp.magnSigma2)
-                i1=1;
-                gpcf.magnSigma2=w(i1);
-                w = w(i1+1:end);
-                
-                % Hyperparameters of magnSigma2
-                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
-                gpcf.p.magnSigma2 = p;
-            end
-            
+        else            
             if ~isempty(gpp.lengthScale)
                 i2=length(gpcf.lengthScale);
                 i1=1;
-                gpcf.lengthScale=w(i1:i2);
+                gpcf.lengthScale = exp(w(i1:i2));
                 w = w(i2+1:end);
                                 
                 % Hyperparameters of lengthScale

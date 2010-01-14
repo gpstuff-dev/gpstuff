@@ -65,10 +65,6 @@ end
 
 % Function for unpacking the hyperparameters
 function gp = unpak_hyper(w, gp)
-
-w(w<-10)=-10;
-w(w>10)=10;
-w=exp(w);
     
 w1 = w;
 ncf = length(gp.cf);
