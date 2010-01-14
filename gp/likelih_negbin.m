@@ -261,9 +261,8 @@ function likelih = likelih_negbin(do, varargin)
             g3 = mu.*(y.*r - 2.*r.*mu - mu.*y)./(r+mu).^3;
         end
     end
-
-
-    function [m_0, m_1, m_2] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    
+    function [m_0, m_1, sigm2hati1] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
     %LIKELIH_NEGBIN_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -274,13 +273,11 @@ function likelih = likelih_negbin(do, varargin)
     %
     %   See also
     %   GPEP_E
+       
+        yy = y(i1);
+        % Create function handle for the function to be integrated (likelihood * cavity). 
 
         zm = @zeroth_moment;
-        fm = @first_moment;
-        sm = @second_moment;
-
-        tol = 1e-8;
-        yy = y(i1);
         gamlny = likelih.gamlny(i1);
         avgE = likelih.avgE(i1);
         r = likelih.disper;
@@ -296,7 +293,7 @@ function likelih = likelih_negbin(do, varargin)
             mean_app = myy_i;
             sigm_app = sqrt(sigm2_i);                    
         end
-
+        
         lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
         test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
@@ -335,55 +332,34 @@ function likelih = likelih_negbin(do, varargin)
                 end
             end
             mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        end
+        end  
+        RTOL = 1.e-6;
+        ATOL = 1.e-10;
+                        
+        % Integrate with quadrature
+        [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
         
-        % ------------------------------------------------
-% $$$         % Plot the integrands to check that integration limits are ok
-% $$$         clf; ff = [lambdaconf(1):0.01:lambdaconf(2)];
-% $$$         subplot(3,1,1);plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(zm, ff));
-% $$$         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-% $$$         subplot(3,1,2);plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(fm, ff));
-% $$$         [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
-% $$$         subplot(3,1,3);plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(sm, ff));
-% $$$         drawnow;S = sprintf('iter %d, y=%d, avgE=%.1f, sigm_a=%.2f, sigm2_i=%.2f', i1, yy, avgE, sigm_app, sigm2_i);title(S);
-% $$$         pause
-        % ------------------------------------------------
-        
-        % Integrate with quad
-        [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-        [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
-        [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
-
+        sigm2hati1 = m_2 - m_1.^2;
+                
         % If the second central moment is less than cavity variance integrate more
-        % precisely. Theoretically should be sigm2hati1 < sigm2_i
+        % precisely. Theoretically should be sigm2hati1 < sigm2_i.
         if sigm2hati1 >= sigm2_i
-            tol = tol.^2;
-            [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-            [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
-            [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
+            ATOL = ATOL.^2;
+            RTOL = RTOL.^2;
+            [m_0, m_1, m_2] = moments(zm, lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+            sigm2hati1 = m_2 - m_1.^2;
+            if sigm2hati1 >= sigm2_i
+                error('likelih_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
+            end
         end
-        m_2 = sigm2hati1;
         
         function integrand = zeroth_moment(f)
             mu = avgE.*exp(f);
             integrand = exp(-gammaln(r)-gammaln(yy+1)+yy.*(log(mu)-log(r+mu))+gammaln(r+yy)+r.*(log(r)-log(r+mu))); %
             integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
         end
-        
-        function integrand = first_moment(f)
-            mu = avgE.*exp(f);
-            integrand = exp(-gammaln(r)-gammaln(yy+1)+yy.*(log(mu)-log(r+mu))+gammaln(r+yy)+r.*(log(r)-log(r+mu))); %
-            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-            integrand = f.*integrand./m_0; %
-        end
-        function integrand = second_moment(f)
-            mu = avgE.*exp(f);
-            integrand = exp(-gammaln(r)-gammaln(yy+1)+yy.*(log(mu)-log(r+mu))+gammaln(r+yy)+r.*(log(r)-log(r+mu))); %
-            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-            integrand = (f-m_1).^2.*integrand./m_0; %
-        end
+
     end
-    
     
     function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i)
     %LIKELIH_NEGBIN_SITEDERIV    Evaluate the derivative with respect to cite parameters
