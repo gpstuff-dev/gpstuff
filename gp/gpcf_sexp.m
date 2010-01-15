@@ -67,8 +67,8 @@ function gpcf = gpcf_sexp(do, varargin)
 
         % Initialize prior structure and set the priors to uniform
         gpcf.p=[];
-        gpcf.p.lengthScale=[];
-        gpcf.p.magnSigma2=[];
+        gpcf.p.lengthScale = prior_unif('init');
+        gpcf.p.magnSigma2 = prior_unif('init');
 
         % Set the function handles to the nested functions
         gpcf.fh_pak = @gpcf_sexp_pak;
@@ -96,7 +96,9 @@ function gpcf = gpcf_sexp(do, varargin)
                     gpcf.fh_sampling = varargin{i+1};
                   case 'metric'
                     gpcf.metric = varargin{i+1};
-                    gpcf = rmfield(gpcf, 'lengthScale');
+                    if isfield(gpcf, 'lengthScale')
+                        gpcf = rmfield(gpcf, 'lengthScale');
+                    end
                   case 'lengthScale_prior'
                     gpcf.p.lengthScale = varargin{i+1};
                   case 'magnSigma2_prior'
@@ -125,7 +127,9 @@ function gpcf = gpcf_sexp(do, varargin)
                 gpcf.fh_sampling = varargin{i+1};
               case 'metric'
                 gpcf.metric = varargin{i+1};
-                gpcf = rmfield(gpcf, 'lengthScale');
+                if isfield(gpcf, 'lengthScale')
+                    gpcf = rmfield(gpcf, 'lengthScale');
+                end
               case 'lengthScale_prior'
                 gpcf.p.lengthScale = varargin{i+1};
               case 'magnSigma2_prior'
@@ -152,7 +156,7 @@ function gpcf = gpcf_sexp(do, varargin)
     %	GPCF_SEXP_UNPAK
         
         i1=0;i2=1;
-        ww = [];
+        ww = []; w = [];
         
         if ~isempty(gpcf.p.magnSigma2)
             i1 = i1+1;
@@ -412,7 +416,8 @@ function gpcf = gpcf_sexp(do, varargin)
             end
         end
         
-        if nargout > 1            
+        if nargout > 1
+            ggs = [];
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = 1;
@@ -430,7 +435,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 if ~isempty(gpcf.p.lengthScale)
                     i1=i1+1; 
                     lll = length(gpcf.lengthScale);
-                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale)
+                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end

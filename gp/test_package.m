@@ -90,7 +90,7 @@ for i = 1:length(covfunc)
 
     % --- MCMC approach ---
     opt=gp_mcopt;
-    opt.nsamples= 150;
+    opt.nsamples= 30;
     opt.repeat=2;
     opt.hmc_opt = hmc2_opt;
     opt.hmc_opt.steps=2;
@@ -281,7 +281,7 @@ for i = 1:length(sparse)
 
     % --- MCMC approach ---
     opt=gp_mcopt;
-    opt.nsamples= 150;
+    opt.nsamples= 30;
     opt.repeat=2;
     opt.hmc_opt = hmc2_opt;
     opt.hmc_opt.steps=2;
@@ -451,7 +451,7 @@ for i=1:length(models)
 
     % --- MCMC approach ---
     opt=gp_mcopt;
-    opt.nsamples= 50;
+    opt.nsamples= 30;
     opt.repeat=2;
     opt.hmc_opt = hmc2_opt;
     opt.hmc_opt.steps=2;
@@ -524,14 +524,116 @@ for i=1:length(models)
 end
 
 
+%----------------------------
+% check metrics
+%----------------------------
 
+
+warnings = '';
+numwarn = 0;
+
+% =========================== 
+% Regression models
+% ===========================
+
+S = which('test_package');
+L = strrep(S,'test_package.m','demos/dat.1');
+data=load(L);
+data = data(1:2:end,:);
+x = [data(:,1) data(:,2)];
+y = data(:,3);
+[n, nin] = size(x);
 
 %----------------------------
 % check metrics
 %----------------------------
 
-% priors
-% mcmc
+fprintf(' \n ================================= \n \n Checking the metrics \n \n ================================= \n ')
+
+% priors 
+pm = prior_logunif('init');
+pl = prior_logunif('init');
+
+% First input
+gpcf1 = gpcf_sexp('init', nin, 'magnSigma2', 0.2, 'magnSigma2_prior', pm);
+metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
+% Lastly, plug the metric to the covariance function structure.
+gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
+
+% Do the same for the second input
+gpcf2 = gpcf_sexp('init', nin, 'magnSigma2', 0.2);
+metric2 = metric_euclidean('init', nin, {[2]},'lengthScales',[1.2], 'lengthScales_prior', pl);
+gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
+
+% We also need the noise component
+gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
+
+% ... Finally create the GP data structure
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)
+
+param = 'hyper';
+gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
+
+w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+fe=str2fun('gp_e');     % create a function handle to negative log posterior
+fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+
+% set the options for scg2
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+% do the optimization
+w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+
+% Set the optimized hyperparameter values back to the gp structure
+gp=gp_unpak(gp,w, 'hyper');
+
+% --- MCMC approach ---
+opt=gp_mcopt;
+opt.nsamples= 30;
+opt.repeat=2;
+opt.hmc_opt = hmc2_opt;
+opt.hmc_opt.steps=2;
+opt.hmc_opt.stepadj=0.07;
+opt.hmc_opt.persistence=0;
+opt.hmc_opt.decay=0.6;
+opt.hmc_opt.nsamples=1;
+hmc2('state', sum(100*clock));
+    
+% Do the sampling (this takes approximately 5-10 minutes)    
+[rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+
+% After sampling we delete the burn-in and thin the sample chain
+rfull = thin(rfull, 10, 2);
+
+if sqrt(mean((y - gp_pred(gp, x, y, x)).^2)) > 0.186*2
+    warnings = sprintf([warnings '\n * Check the optimization of hyper-parameters of ' covfunc{i} ' with GP regression']);       
+    numwarn = numwarn + 1;
+end
+
+if sqrt(mean((y - mean(mc_pred(rfull, x, y, x),2) ).^2)) > 0.186*2
+    warnings = sprintf([warnings '\n * Check the MCMC sampling of hyper-parameters of ' covfunc{i} ' with GP regression']);
+    numwarn = numwarn + 1;
+end
+
+delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+    
+metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
+% Lastly, plug the metric to the covariance function structure.
+gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.0001);
+w=gp_pak(gp, 'hyper');
+delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+
+% check that gradients are OK
+if delta>0.0001
+    warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters of ' covfunc{i}]);
+    warning([' Check the gradients of ' covfunc{i}]);
+    numwarn = numwarn + 1;
+end
+
 
 
 

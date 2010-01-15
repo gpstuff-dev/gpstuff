@@ -68,8 +68,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 
         % Initialize prior structure
         gpcf.p=[];
-        gpcf.p.weightSigma2=[];
-        gpcf.p.biasSigma2=[];
+        gpcf.p.weightSigma2=prior_unif('init');
+        gpcf.p.biasSigma2=prior_unif('init');
 
         % Set the function handles to the nested functions
         gpcf.fh_pak = @gpcf_neuralnetwork_pak;
@@ -145,30 +145,24 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %	See also
     %	GPCF_NEURALNETWORK_UNPAK
 
-        gpp=gpcf.p;
-            
         i1=0;i2=1;
-        if ~isempty(w)
-            i1 = length(w);
-        end
+        ww = []; w = [];
         
         if ~isempty(gpcf.p.biasSigma2)
             i1 = i1+1;
-            w(i1) = gpcf.biasSigma2;
+            w(i1) = log(gpcf.biasSigma2);
             
-            % Hyperparameters of biasSigma2
-            w = feval(gpcf.p.biasSigma2.fh_pak, gpcf.p.biasSigma2, w);
-        end
+            % Hyperparameters of magnSigma2
+            ww = feval(gpcf.p.biasSigma2.fh_pak, gpcf.p.biasSigma2);
+        end        
         
         if ~isempty(gpcf.p.weightSigma2)
-            i2=i1+length(gpcf.weightSigma2);
-            i1=i1+1;
-            w(i1:i2)=gpcf.weightSigma2;
-            i1=i2;
+            w = [w log(gpcf.weightSigma2)];
             
-            % Hyperparameters of weightSigma2
-            w = feval(gpcf.p.weightSigma2.fh_pak, gpcf.p.weightSigma2, w);
+            % Hyperparameters of lengthScale
+            w = [w feval(gpcf.p.weightSigma2.fh_pak, gpcf.p.weightSigma2)];
         end
+        w = [w ww];
     end
     
 
@@ -185,27 +179,29 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %	See also
     %	GPCF_NEURALNETWORK_PAK
     %
-
+        
         gpp=gpcf.p;
         if ~isempty(gpp.biasSigma2)
             i1=1;
-            gpcf.biasSigma2=w(i1);
+            gpcf.biasSigma2 = exp(w(i1));
             w = w(i1+1:end);
-                
-            % Hyperparameters of biasSigma2
-            [p, w] = feval(gpcf.p.biasSigma2.fh_unpak, gpcf.p.biasSigma2, w);
-            gpcf.p.biasSigma2 = p;
         end
-            
+
         if ~isempty(gpp.weightSigma2)
             i2=length(gpcf.weightSigma2);
             i1=1;
-            gpcf.weightSigma2=w(i1:i2);
+            gpcf.weightSigma2 = exp(w(i1:i2));
             w = w(i2+1:end);
             
-            % Hyperparameters of weightSigma2
+            % Hyperparameters of lengthScale
             [p, w] = feval(gpcf.p.weightSigma2.fh_unpak, gpcf.p.weightSigma2, w);
             gpcf.p.weightSigma2 = p;
+        end
+        
+        if ~isempty(gpp.biasSigma2)
+            % Hyperparameters of magnSigma2
+            [p, w] = feval(gpcf.p.biasSigma2.fh_unpak, gpcf.p.biasSigma2, w);
+            gpcf.p.biasSigma2 = p;
         end
     end
 
@@ -326,7 +322,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                 end
             end
             
-        % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
+            % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
         elseif nargin == 3
             
             if size(x,2) ~= size(x2,2)
@@ -371,7 +367,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     tmp_g1=sum(2*x.^2,2);
                     tmp_g2=sum(2*x2.^2,2);
                     wden_g=0.5./S_den.*(tmp_g1*S_den_tmp2'+S_den_tmp1*tmp_g2');
-               
+                    
                     ii1 = ii1 + 1;
                     DKff{ii1}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
                 else
@@ -437,26 +433,23 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         end
         if nargout > 1
             % Evaluate the gprior with respect to biasSigma2
-            
+            ggs = [];
             if ~isempty(gpcf.p.biasSigma2)
-                gprior = feval(gpp.biasSigma2.fh_g, gpcf.biasSigma2, gpp.biasSigma2).*gpcf.biasSigma2 - 1;
-                i1 = length(gprior);
+                % Evaluate the gprior with respect to magnSigma2
+                i1 = 1;
+                ggs = feval(gpp.biasSigma2.fh_g, gpcf.biasSigma2, gpp.biasSigma2);
+                gprior = ggs(i1).*gpcf.biasSigma2 - 1;
             end
             
-            % Evaluate the data contribution of gradient with respect to weightSigma2
             if ~isempty(gpcf.p.weightSigma2)
-                if length(gpcf.weightSigma2)>1
-                    for i2=1:gpcf.nin
-                        i1=i1+1;
-                        gg = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2(i2), gpp.weightSigma2).*gpcf.weightSigma2(i2) - 1;
-                        gprior(i1) = gg(1);
-                    end
-                    if length(gg) > 1
-                        gprior = [gprior gg(2:end)];
-                    end
-                else
-                    gprior = [gprior feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2).*gpcf.weightSigma2 - 1];
-                end
+                i1=i1+1; 
+                lll = length(gpcf.weightSigma2);
+                gg = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2);
+                gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.weightSigma2 - 1;
+                gprior = [gprior gg(lll+1:end)];
+            end
+            if length(ggs) > 1
+                gprior = [gprior ggs(2:end)];
             end
         end
     end
@@ -557,7 +550,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     DK = zeros(n, n2);
                     DK(j,:)=s(d1)*x2(:,d1)';
                     inom_g=2*DK;
-                                        
+                    
                     tmp_g=zeros(n, n2);
                     tmp_g(j,:)=2*s(d1)*2*x(j,d1)*S_den_tmp2';
                     
@@ -601,10 +594,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         x_aug2=[ones(n2,1) x2];
         
         if length(gpcf.weightSigma2) == 1
-             % In the case of an isotropic NEURALNETWORK
-             s = gpcf.weightSigma2*ones(1,m1);
+            % In the case of an isotropic NEURALNETWORK
+            s = gpcf.weightSigma2*ones(1,m1);
         else
-             s = gpcf.weightSigma2;
+            s = gpcf.weightSigma2;
         end
         
         S_nom=2*x_aug1*diag([gpcf.biasSigma2 s])*x_aug2';
@@ -617,8 +610,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         
         C(abs(C)<=eps) = 0;
     end
-    
-    
+
+
     function C = gpcf_neuralnetwork_trcov(gpcf, x)
     % GP_NEURALNETWORK_TRCOV     Evaluate training covariance matrix of inputs.
     %
@@ -636,10 +629,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         x_aug=[ones(n,1) x];
         
         if length(gpcf.weightSigma2) == 1
-         	% In the case of an isotropic NEURALNETWORK
-             s = gpcf.weightSigma2*ones(1,m);
+            % In the case of an isotropic NEURALNETWORK
+            s = gpcf.weightSigma2*ones(1,m);
         else
-             s = gpcf.weightSigma2;
+            s = gpcf.weightSigma2;
         end
         
         S_nom=2*x_aug*diag([gpcf.biasSigma2 s])*x_aug';
@@ -665,12 +658,12 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %
     %         See also
     %         GPCF_NEURALNETWORK_COV, GPCF_NEURALNETWORK_COVVEC, GP_COV, GP_TRCOV
-    
+        
         [n,m]=size(x);
         x_aug=[ones(n,1) x];
         
         if length(gpcf.weightSigma2) == 1
-        	% In the case of an isotropic NEURALNETWORK
+            % In the case of an isotropic NEURALNETWORK
             s = gpcf.weightSigma2*ones(1,m);
         else
             s = gpcf.weightSigma2;

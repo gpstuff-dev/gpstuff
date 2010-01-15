@@ -58,7 +58,7 @@ function metric = metric_euclidean(do, varargin)
 
         % Initialize prior structure
         metric.p=[];
-        metric.p.lengthScales=[];
+        metric.p.lengthScales = prior_unif('init');
         
         % Set the function handles to the nested functions
         metric.pak        = @metric_euclidean_pak;
@@ -82,7 +82,7 @@ function metric = metric_euclidean(do, varargin)
                     end
                     metric.lengthScales = varargin{i+1};
                   case 'lengthScales_prior'
-                    gpcf.p.lengthScales = varargin{i+1};
+                    metric.p.lengthScales = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -106,149 +106,112 @@ function metric = metric_euclidean(do, varargin)
                 end                
                 metric.lengthScales = varargin{i+1};
               case 'lengthScales_prior'
-                gpcf.p.lengthScales = varargin{i+1};
+                metric.p.lengthScales = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
         end
     end
 end
-    
-    function w = metric_euclidean_pak(metric, w)
-    %METRIC_EUCLIDEAN_PAK	 Combine the metric parameters into one vector.
-    %
-    %	Description
-    %	W = METRIC_EUCLIDEAN_PAK(METRIC, W) takes a metric data structure METRIC and
-    %	combines the parameters into a single row vector W.
-    %
-    %	See also
-    %	METRIC_EUCLIDEAN_UNPAK
-        mp=metric.p;
 
-        if ~isempty(mp.lengthScales)
-            i1=0;i2=1;
-            if ~isempty(w)
-                i1 = length(w);
-            end
-            i2=i1+length(metric.lengthScales);
-            i1=i1+1;
-            w(i1:i2)=log(metric.lengthScales);
-            i1=i2;
-            
-            w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
-            % hyper-parameters
-            if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
-                i1=i1+1;
-                w(i1)=mp.lengthScales.a.s;
-                if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
-                    i1=i1+1;
-                    w(i1)=mp.lengthScales.a.nu;
-                end
-            end
-        end
+function w = metric_euclidean_pak(metric)
+%METRIC_EUCLIDEAN_PAK	 Combine the metric parameters into one vector.
+%
+%	Description
+%	W = METRIC_EUCLIDEAN_PAK(METRIC, W) takes a metric data structure METRIC and
+%	combines the parameters into a single row vector W.
+%
+%	See also
+%	METRIC_EUCLIDEAN_UNPAK
+
+    if ~isempty(metric.p.lengthScales)
+        w = log(metric.lengthScales);
+        
+        % Hyperparameters of lengthScale
+        w = [w feval(metric.p.lengthScales.fh_pak, metric.p.lengthScales)];
     end
+end
+
+function [metric, w] = metric_euclidean_unpak(metric, w)
+%METRIC_EUCLIDEAN_UNPAK  Separate metric parameter vector into components.
+%
+%	Description
+%	[METRIC, W] = METRIC_EUCLIDEAN_UNPAK(METRIC, W) takes a metric data structure
+%   METRIC parameter vector W, and returns a metric data structure  identical to the
+%   input, except that the parameters has been set to the values in W. Deletes the values
+%   set to METRIC from W and returns the modified W. 
+%
+%	See also
+%	METRIC_EUCLIDEAN_PAK
+%
     
-    function [metric, w] = metric_euclidean_unpak(metric, w)
-    %METRIC_EUCLIDEAN_UNPAK  Separate metric parameter vector into components.
-    %
-    %	Description
-    %	[METRIC, W] = METRIC_EUCLIDEAN_UNPAK(METRIC, W) takes a metric data structure
-    %   METRIC parameter vector W, and returns a metric data structure  identical to the
-    %   input, except that the parameters has been set to the values in W. Deletes the values
-    %   set to METRIC from W and returns the modified W. 
-    %
-    %	See also
-    %	METRIC_EUCLIDEAN_PAK
-    %
-        mp=metric.p;
-        i1=0;i2=1;
-        i2=i1+length(metric.lengthScales);
-        i1=i1+1;
+    if ~isempty(metric.p.lengthScales)
+        i2=length(metric.lengthScales);
+        i1=1;
         metric.lengthScales = exp(w(i1:i2));
-        i1=i2;
-        % Parameters
-        if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
-            i1=i1+1;
-            metric.p.lengthScales.a.s=w(i1);
-            if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
-                i1=i1+1;
-                metric.p.lengthScales.a.nu=w(i1);
-            end
-        end        
-        w = w(i1+1:end);
+        w = w(i2+1:end);
+        
+        % Hyperparameters of lengthScale
+        [p, w] = feval(metric.p.lengthScales.fh_unpak, metric.p.lengthScales, w);
+        metric.p.lengthScales = p;
     end
+end
 
-    function eprior = metric_euclidean_e(metric, x, t)
-    %METRIC_EUCLIDEAN_E     Evaluate the energy of prior of metric parameters
-    %
-    %	Description
-    %	E = METRIC_EUCLIDEAN_E(METRIC, X, T) takes a metric data structure 
-    %   METRIC together with a matrix X of input vectors and a matrix T of target 
-    %   vectors and evaluates log p(th) x J, where th is a vector of metric parameters 
-    %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
-    %   are log transformed, when packed.)
-    %
-    %	See also
-    %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
-    %
-        [n, m] = size(x);
+function eprior = metric_euclidean_e(metric, x, t)
+%METRIC_EUCLIDEAN_E     Evaluate the energy of prior of metric parameters
+%
+%	Description
+%	E = METRIC_EUCLIDEAN_E(METRIC, X, T) takes a metric data structure 
+%   METRIC together with a matrix X of input vectors and a matrix T of target 
+%   vectors and evaluates log p(th) x J, where th is a vector of metric parameters 
+%   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
+%   are log transformed, when packed.)
+%
+%	See also
+%	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
+%
+    [n, m] = size(x);
 
-        % Evaluate the prior contribution to the error. The parameters that
-        % are sampled are from space W = log(w) where w is all the "real" samples.
-        % On the other hand errors are evaluated in the W-space so we need take
-        % into account also the  Jakobian of transformation W -> w = exp(W).
-        % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-        eprior = 0;
-        mp=metric.p;
+    % Evaluate the prior contribution to the error. The parameters that
+    % are sampled are from space W = log(w) where w is all the "real" samples.
+    % On the other hand errors are evaluated in the W-space so we need take
+    % into account also the  Jakobian of transformation W -> w = exp(W).
+    % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
 
-        if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
-            eprior=eprior...
-                   +feval(mp.lengthScales.p.s.fe, ...
-                          gpp.lengthScales.a.s, mp.lengthScales.p.s.a)...
-                   -log(mp.lengthScales.a.s);
-            if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
-                eprior=eprior...
-                       +feval(mp.p.lengthScales.nu.fe, ...
-                              mp.lengthScales.a.nu, mp.lengthScales.p.nu.a)...
-                       -log(mp.lengthScales.a.nu);
-            end
-        end
-        eprior=eprior...
-               +feval(mp.lengthScales.fe, ...
-                      metric.lengthScales, mp.lengthScales.a)...
-               -sum(log(metric.lengthScales));
-
-    end
+    eprior = feval(metric.p.lengthScales.fh_e, metric.lengthScales, metric.p.lengthScales) - sum(log(metric.lengthScales));
     
-    function [gdist, gprior_dist]  = metric_euclidean_ghyper(metric, x, x2, mask) 
-    %METRIC_EUCLIDEAN_GHYPER     Evaluate the gradient of the metric function and hyperprior 
-    %                            w.r.t to it's hyperparameters.
-    %
-    %	Description
-    %	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X) takes a
-    %   metric data structure METRIC together with a matrix X of input vectors and 
-    %   return the gradient matrices GDIST and GPRIOR_DIST for each hyperparameter.
-    %
-    %	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2) forms the gradient
-    %   matrices between two input vectors X and X2.
-    %     
-    %	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2, MASK) forms
-    %   the gradients for masked covariances matrices used in sparse approximations.
-    %
-    %	See also
-    %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
-    %
+end
 
-        mp=metric.p;
-        components = metric.components;
-        
-        n = size(x,1);
-        m = length(components);
-        i1=0;i2=1;
+function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask) 
+%METRIC_EUCLIDEAN_GHYPER     Evaluate the gradient of the metric function and hyperprior 
+%                            w.r.t to it's hyperparameters.
+%
+%	Description
+%	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X) takes a
+%   metric data structure METRIC together with a matrix X of input vectors and 
+%   return the gradient matrices GDIST and GPRIOR_DIST for each hyperparameter.
+%
+%	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2) forms the gradient
+%   matrices between two input vectors X and X2.
+%     
+%	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2, MASK) forms
+%   the gradients for masked covariances matrices used in sparse approximations.
+%
+%	See also
+%	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
+%
 
-        % NOTE! Here we have already taken into account that the parameters are transformed
-        % through log() and thus dK/dlog(p) = p * dK/dp
-        
+    mp=metric.p;
+    components = metric.components;
+    
+    n = size(x,1);
+    m = length(components);
+    i1=0;i2=1;
+
+    % NOTE! Here we have already taken into account that the parameters are transformed
+    % through log() and thus dK/dlog(p) = p * dK/dp
+    
+    if ~isempty(metric.p.lengthScales)
         if nargin <= 3
             if nargin == 2
                 x2 = x;
@@ -283,181 +246,153 @@ end
         elseif nargin == 4
             gdist = cell(1,length(metric.lengthScales));
         end
-        
+
         % Evaluate the prior contribution of gradient with respect to lengthScale
-        for i2=1:m
-            i1=i1+1;
-            gprior_dist(i1)=feval(mp.lengthScales.fg, ...
-                             metric.lengthScales(i2), ...
-                             mp.lengthScales.a, 'x').*metric.lengthScales(i2) - 1;
-        end
-
-        % Evaluate the prior contribution of gradient with respect to lengthScale.p.s (and lengthScale.p.nu)
-        if isfield(mp.lengthScales, 'p') && ~isempty(mp.lengthScales.p)
-            i1=i1+1;
-            gprior_dist(i1)=...
-                feval(mp.lengthScales.p.s.fg, ...
-                      mp.lengthScales.a.s,...
-                      mp.lengthScales.p.s.a, 'x').*mp.lengthScales.a.s - 1 ...
-                +feval(mp.lengthScales.fg, ...
-                       metric.lengthScales, ...
-                       mp.lengthScales.a, 's').*mp.lengthScales.a.s;
-            if any(strcmp(fieldnames(mp.lengthScales.p),'nu'))
-                i1=i1+1;
-                gprior_dist(i1)=...
-                    feval(mp.lengthScales.p.nu.fg, ...
-                          mp.lengthScales.a.nu,...
-                          mp.lengthScales.p.nu.a, 'x').*mp.lengthScales.a.nu -1 ...
-                    +feval(mp.lengthScales.fg, ...
-                           metric.lengthScales, ...
-                           mp.lengthScales.a, 'nu').*mp.lengthScales.a.nu;
-            end
+        if ~isempty(metric.p.lengthScales)
+            i1=1; 
+            lll = length(metric.lengthScales);
+            gg = feval(metric.p.lengthScales.fh_g, metric.lengthScales, metric.p.lengthScales);
+            gprior(i1:i1-1+lll) = gg(1:lll).*metric.lengthScales - 1;
+            gprior = [gprior gg(lll+1:end)];
         end
     end
-    
-    
-    function [dist]  = metric_euclidean_distance(metric, x1, x2)         
-    %METRIC_EUCLIDEAN_DISTANCE   Compute the euclidean distence between
-    %                            one or two matrices.
-    %
-    %	Description
-    %	[DIST] = METRIC_EUCLIDEAN_DISTANCE(METRIC, X) takes a metric data
-    %   structure METRIC together with a matrix X of input vectors and 
-    %   calculates the euclidean distance matrix DIST.
-    %
-    %	[DIST] = METRIC_EUCLIDEAN_DISTANCE(METRIC, X1, X2) takes a metric data
-    %   structure METRIC together with a matrices X1 and X2 of input vectors and 
-    %   calculates the euclidean distance matrix DIST.
-    %
-    %	See also
-    %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
-    %
-        if nargin == 2 || isempty(x2)
-            x2=x1;
-        end
-        
-        [n1,m1]=size(x1);
-        [n2,m2]=size(x2);
-        
-        if m1~=m2
-            error('the number of columns of X1 and X2 has to be same')
-        end
-        
-        components = metric.components;
-        m = length(components);
-        dist  =  0;        
-        
-        for i=1:m
-            s = 1./metric.lengthScales(i).^2;
-            for j = 1:length(components{i})
-                dist = dist + s.*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
-            end
-        end
-        dist = sqrt(dist);
+end
 
+
+function [dist]  = metric_euclidean_distance(metric, x1, x2)         
+%METRIC_EUCLIDEAN_DISTANCE   Compute the euclidean distence between
+%                            one or two matrices.
+%
+%	Description
+%	[DIST] = METRIC_EUCLIDEAN_DISTANCE(METRIC, X) takes a metric data
+%   structure METRIC together with a matrix X of input vectors and 
+%   calculates the euclidean distance matrix DIST.
+%
+%	[DIST] = METRIC_EUCLIDEAN_DISTANCE(METRIC, X1, X2) takes a metric data
+%   structure METRIC together with a matrices X1 and X2 of input vectors and 
+%   calculates the euclidean distance matrix DIST.
+%
+%	See also
+%	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
+%
+    if nargin == 2 || isempty(x2)
+        x2=x1;
     end
     
-    function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)         
-    %METRIC_EUCLIDEAN_GINPUT   Compute the gradient of the euclidean distance
-    %                          function with respect to input.
-    %[n, m] =size(x);
-        ii1 = 0;
-        components = metric.components;
-               
-        if nargin == 2 || isempty(x2)
-            x2=x1;
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
+    
+    if m1~=m2
+        error('the number of columns of X1 and X2 has to be same')
+    end
+    
+    components = metric.components;
+    m = length(components);
+    dist  =  0;        
+    
+    for i=1:m
+        s = 1./metric.lengthScales(i).^2;
+        for j = 1:length(components{i})
+            dist = dist + s.*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
         end
-        
-        [n1,m1]=size(x1);
-        [n2,m2]=size(x2);
-        
-        if m1~=m2
-            error('the number of columns of X1 and X2 has to be same')
+    end
+    dist = sqrt(dist);
+
+end
+
+function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)         
+%METRIC_EUCLIDEAN_GINPUT   Compute the gradient of the euclidean distance
+%                          function with respect to input.
+%[n, m] =size(x);
+    ii1 = 0;
+    components = metric.components;
+    
+    if nargin == 2 || isempty(x2)
+        x2=x1;
+    end
+    
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
+    
+    if m1~=m2
+        error('the number of columns of X1 and X2 has to be same')
+    end
+    
+    s = 1./metric.lengthScales.^2;
+    dist = 0;
+    for i=1:length(components)
+        for j = 1:length(components{i})
+            dist = dist + s(i).*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
         end
-        
-        s = 1./metric.lengthScales.^2;
-        dist = 0;
-        for i=1:length(components)
-            for j = 1:length(components{i})
-                dist = dist + s(i).*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
-            end
-        end
-        dist = sqrt(dist);
-        
-        for i=1:m1
-            for j = 1:n1
-                DK = zeros(n1,n2);                
-                for k = 1:length(components)
-                    if ismember(i,components{k})
-                        DK(j,:) = DK(j,:)+s(k).*gminus(x1(j,i),x2(:,i)');
-                    end
+    end
+    dist = sqrt(dist);
+    
+    for i=1:m1
+        for j = 1:n1
+            DK = zeros(n1,n2);                
+            for k = 1:length(components)
+                if ismember(i,components{k})
+                    DK(j,:) = DK(j,:)+s(k).*gminus(x1(j,i),x2(:,i)');
                 end
-                if nargin == 2
-                    DK = DK + DK';
-                end
-                DK(dist~=0) = DK(dist~=0)./dist(dist~=0);
-                                        
-                ii1 = ii1 + 1;
-                ginput{ii1} = DK;
-                gprior_input(ii1) = 0; 
             end
-        end
-        %size(ginput)
-        %ginput
-        
-    end
-    
-    
-    function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
-    % RECAPPEND - Record append
-    %          Description
-    %          RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC) takes old covariance
-    %          function record RECMETRIC, record index RI and covariance function structure. 
-    %          Appends the parameters of METRIC to the RECMETRIC in the ri'th place.
-    %
-    %          RECAPPEND returns a structure RECMETRIC containing following record fields:
-    %          lengthHyper    
-    %          lengthHyperNu  
-    %          lengthScale    
-    %
-    %          See also
-    %          GP_MC and GP_MC -> RECAPPEND
-
-    % Initialize record
-        if nargin == 2
-            recmetric.type = 'metric_euclidean';
-            recmetric.nin = ri;
-            metric.components = recmetric.components;
+            if nargin == 2
+                DK = DK + DK';
+            end
+            DK(dist~=0) = DK(dist~=0)./dist(dist~=0);
             
-            % Initialize parameters
-            recmetric.lengthScales = [];
-
-            % Set the function handles
-            recmetric.pak       = @metric_euclidean_pak;
-            recmetric.unpak     = @metric_euclidean_unpak;
-            recmetric.e         = @metric_euclidean_e;
-            recmetric.ghyper    = @metric_euclidean_ghyper;
-            recmetric.ginput    = @metric_euclidean_ginput;            
-            recmetric.distance  = @metric_euclidean_distance;
-            recmetric.recappend = @metric_euclidean_recappend;
-            return
-        end
-        mp = metric.p;
-
-        % record parameters
-        if ~isempty(metric.lengthScales)
-            if ~isempty(mp.lengthScales)
-                recmetric.lengthHyper(ri,:)=mp.lengthScales.a.s;
-                if isfield(mp.lengthScales,'p')
-                    if isfield(mp.lengthScales.p,'nu')
-                        recmetric.lengthHyperNu(ri,:)=mp.lengthScales.a.nu;
-                    end
-                end
-            elseif ri==1
-                recmetric.lengthHyper=[];
-            end
-            recmetric.lengthScales(ri,:)=metric.lengthScales;
-        elseif ri==1
-            recmetric.lengthScales=[];
+            ii1 = ii1 + 1;
+            ginput{ii1} = DK;
+            gprior_input(ii1) = 0; 
         end
     end
+    %size(ginput)
+    %ginput
+    
+end
+
+
+function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
+% RECAPPEND - Record append
+%          Description
+%          RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC) takes old covariance
+%          function record RECMETRIC, record index RI and covariance function structure. 
+%          Appends the parameters of METRIC to the RECMETRIC in the ri'th place.
+%
+%          RECAPPEND returns a structure RECMETRIC containing following record fields:
+%          lengthHyper    
+%          lengthHyperNu  
+%          lengthScale    
+%
+%          See also
+%          GP_MC and GP_MC -> RECAPPEND
+
+% Initialize record
+    if nargin == 2
+        recmetric.type = 'metric_euclidean';
+        recmetric.nin = ri;
+        metric.components = recmetric.components;
+        
+        % Initialize parameters
+        recmetric.lengthScales = [];
+
+        % Set the function handles
+        recmetric.pak       = @metric_euclidean_pak;
+        recmetric.unpak     = @metric_euclidean_unpak;
+        recmetric.e         = @metric_euclidean_e;
+        recmetric.ghyper    = @metric_euclidean_ghyper;
+        recmetric.ginput    = @metric_euclidean_ginput;            
+        recmetric.distance  = @metric_euclidean_distance;
+        recmetric.recappend = @metric_euclidean_recappend;
+        return
+    end
+    mp = metric.p;
+
+    % record parameters
+    if ~isempty(metric.lengthScales)
+        recmetric.lengthScales(ri,:)=metric.lengthScales;
+        recmetric.p.lengthScales = feval(metric.p.lengthScales.fh_recappend, recmetric.p.lengthScales, ri, metric.p.lengthScales);
+    elseif ri==1
+        recmetric.lengthScales=[];
+    end
+
+end

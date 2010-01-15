@@ -84,8 +84,8 @@ function gpcf = gpcf_ppcs1(do, varargin)
         
         % Initialize prior structure
         gpcf.p=[];
-        gpcf.p.lengthScale=[];
-        gpcf.p.magnSigma2=[];
+        gpcf.p.lengthScale=prior_unif('init');
+        gpcf.p.magnSigma2=prior_unif('init');
 
         
         % Set the function handles to the nested functions
@@ -148,7 +148,9 @@ function gpcf = gpcf_ppcs1(do, varargin)
                 gpcf.fh_sampling = varargin{i+1};
               case 'metric'
                 gpcf.metric = varargin{i+1};
-                gpcf = rmfield(gpcf, 'lengthScale');
+                if isfield(gpcf, 'lengthScale')
+                    gpcf = rmfield(gpcf, 'lengthScale');
+                end
               case 'lengthScale_prior'
                 gpcf.p.lengthScale = varargin{i+1};
               case 'magnSigma2_prior'
@@ -178,48 +180,29 @@ function gpcf = gpcf_ppcs1(do, varargin)
     %	See also
     %	GPCF_ppcs1_UNPAK        
         
+        i1=0;i2=1;
+        ww = []; w = [];
+        
+        if ~isempty(gpcf.p.magnSigma2)
+            i1 = i1+1;
+            w(i1) = log(gpcf.magnSigma2);
+            
+            % Hyperparameters of magnSigma2
+            ww = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2);
+        end        
+        
         if isfield(gpcf,'metric')
-            i1=0;i2=1;
-            if ~isempty(w)
-                i1 = length(w);
-            end
             
-            if ~isempty(gpcf.p.magnSigma2)
-                i1 = i1+1;
-                w(i1) = gpcf.magnSigma2;
-                
-                % Hyperparameters of magnSigma2
-                w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
-            end
-            
-            w = feval(gpcf.metric.pak, gpcf.metric, w);
-            
+            w = [w feval(gpcf.metric.pak, gpcf.metric)];
         else
-            gpp=gpcf.p;
-            
-            i1=0;i2=1;
-            if ~isempty(w)
-                i1 = length(w);
-            end
-            
-            if ~isempty(gpcf.p.magnSigma2)
-                i1 = i1+1;
-                w(i1) = gpcf.magnSigma2;
-                
-                % Hyperparameters of magnSigma2
-                w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
-            end
-            
             if ~isempty(gpcf.p.lengthScale)
-                i2=i1+length(gpcf.lengthScale);
-                i1=i1+1;
-                w(i1:i2)=gpcf.lengthScale;
-                i1=i2;
-                
+                w = [w log(gpcf.lengthScale)];
+                            
                 % Hyperparameters of lengthScale
-                w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
+                w = [w feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
             end
         end
+        w = [w ww];
     end
 
 
@@ -238,42 +221,33 @@ function gpcf = gpcf_ppcs1(do, varargin)
     %	See also
     %	GPCF_ppcs1_PAK
         
+        gpp=gpcf.p;
+        if ~isempty(gpp.magnSigma2)
+            i1=1;
+            gpcf.magnSigma2 = exp(w(i1));
+            w = w(i1+1:end);
+        end
+
         if isfield(gpcf,'metric')
-            
-            if ~isempty(gpcf.p.magnSigma2)
-                i1=1;
-                gpcf.magnSigma2=w(i1);
-                w = w(i1+1:end);
-                
-                % Hyperparameters of magnSigma2
-                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
-                gpcf.p.magnSigma2 = p;
-            end
-            
             [metric, w] = feval(gpcf.metric.unpak, gpcf.metric, w);
             gpcf.metric = metric;
-        else
-            gpp=gpcf.p;
-            if ~isempty(gpp.magnSigma2)
-                i1=1;
-                gpcf.magnSigma2=w(i1);
-                w = w(i1+1:end);
-                
-                % Hyperparameters of magnSigma2
-                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
-                gpcf.p.magnSigma2 = p;
-            end
-            
+        else            
             if ~isempty(gpp.lengthScale)
                 i2=length(gpcf.lengthScale);
                 i1=1;
-                gpcf.lengthScale=w(i1:i2);
+                gpcf.lengthScale = exp(w(i1:i2));
                 w = w(i2+1:end);
                                 
                 % Hyperparameters of lengthScale
                 [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
+        end
+        
+        if ~isempty(gpp.magnSigma2)
+            % Hyperparameters of magnSigma2
+            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+            gpcf.p.magnSigma2 = p;
         end
     end
     
@@ -643,10 +617,12 @@ function gpcf = gpcf_ppcs1(do, varargin)
             end
         end
         if nargout > 1            
+            ggs = [];
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
-                gprior = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2).*gpcf.magnSigma2 - 1;
-                i1 = length(gprior);
+                i1 = 1;
+                ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
+                gprior = ggs(i1).*gpcf.magnSigma2 - 1;
             end
             
             if isfield(gpcf,'metric')
@@ -657,21 +633,15 @@ function gpcf = gpcf_ppcs1(do, varargin)
                 end
             else
                 if ~isempty(gpcf.p.lengthScale)
-                    % Evaluate the data contribution of gradient with respect to lengthScale
-                    if length(gpcf.lengthScale)>1
-                        for i2=1:gpcf.nin
-                            i1=i1+1;
-                            gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale(i2), gpp.lengthScale).*gpcf.lengthScale(i2) - 1;
-                            gprior(i1) = gg(1);
-                        end
-                        if length(gg) > 1
-                            gprior = [gprior gg(2:end)];
-                        end
-                    else
-                        i1=i1+1; 
-                        gprior = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale).*gpcf.lengthScale - 1;
-                    end
+                    i1=i1+1; 
+                    lll = length(gpcf.lengthScale);
+                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale);
+                    gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
+                    gprior = [gprior gg(lll+1:end)];
                 end
+            end
+            if length(ggs) > 1
+                gprior = [gprior ggs(2:end)];
             end
         end
     end

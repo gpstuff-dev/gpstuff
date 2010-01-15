@@ -113,7 +113,7 @@ function gpcf = gpcf_prod(do, varargin)
     end
 
     
-    function w = gpcf_prod_pak(gpcf, w)
+    function w = gpcf_prod_pak(gpcf)
     %GPCF_PROD_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
@@ -128,13 +128,12 @@ function gpcf = gpcf_prod(do, varargin)
     %	GPCF_PROD_UNPAK
         
         ncf = length(gpcf.functions);
+        w = [];
         
         for i=1:ncf
             cf = gpcf.functions{i};
-            w = feval(cf.fh_pak, cf, w);
+            w = [w feval(cf.fh_pak, cf)];
         end
-
-        
     end
 
 

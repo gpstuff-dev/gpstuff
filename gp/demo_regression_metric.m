@@ -11,63 +11,29 @@ y = data(:,3);
 % Construct additive covariance functions for two dimensional
 % regression (Gaussian noise) data.
 
-% This part is done as usual
-gpcf1 = gpcf_matern52('init', nin, 'magnSigma2', 0.2);
-pm = prior_t('init', 'scale', 0.3);
-gpcf1 = gpcf_ppcs2('set', gpcf1,  'magnSigma2_prior', pm);
+% priors 
+pm = prior_logunif('init');
+pl = prior_logunif('init');
 
-% Lets now initialize an euclidean metric structure, which uses only the first
-% component of the input vector for calculating distances used by the
-% covariance function. 
-% 
-% This is done by specifying a cell array whose entries are vectors
-% representing subsets of input components, which are used in calculating
-% the distances such that each subset is given it's own lenght scale. In
-% this case, we only need to have vector containing the number one representing
-% the first component of the input vector. 
-% 
-% Note that isotropic covariance is constructed with cell array {[1:d]}
-% (d being the number of inputs), and ARD metric with {[1] ... [d]}.
-%
-% Notice also that lengthscale hyperparameters are now stored
-% inside the metric structures as they are essentially parameters
-% of the euclidean metric.
-
-
-pl = prior_t('init');
-
-metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8]);
-
-% We also need to specify a prior for the length scales.
-metric1.p.params = gamma_p({3 7});  
-
+% First input
+gpcf1 = gpcf_sexp('init', nin, 'magnSigma2', 0.2, 'magnSigma2_prior', pm);
+metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
 % Lastly, plug the metric to the covariance function structure.
-gpcf1 = gpcf_matern52('set', gpcf1, 'metric', metric1);
+gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
 
 % Do the same for the second input
-gpcf2 = gpcf_matern52('init', nin, 'magnSigma2', 0.2);
-gpcf2.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-metric2 = metric_euclidean('init', nin, {[2]},'params',[0.8]);
-metric2.p.params = gamma_p({3 7});
-gpcf2 = gpcf_matern52('set', gpcf2, 'metric', metric2);
+gpcf2 = gpcf_sexp('init', nin, 'magnSigma2', 0.2);
+metric2 = metric_euclidean('init', nin, {[2]},'lengthScales',[1.2], 'lengthScales_prior', pl);
+gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
 
 % We also need the noise component
 gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
-gpcfn.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)
 
-% Uncomment these if you want to use a sparse model instead
-% $$$ gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)    
-% $$$ [U1 U2] = meshgrid(-1.0:1:1.0,-1.0:1:1.0);
-% $$$ [U1 U2] = meshgrid(-0.5:0.5:0.5,0);
-% $$$ U = [U1(:) U2(:)];
-% $$$ gp = gp_init('set', gp, 'X_u', U);
-% $$$ param = 'hyper+inducing';
-
 param = 'hyper';
-gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param)
+gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
 
 % Conduct the inference
 w=gp_pak(gp, param);  % pack the hyperparameters into one vector

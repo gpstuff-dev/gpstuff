@@ -69,8 +69,8 @@ function gpcf = gpcf_dotproduct(do, varargin)
 
         % Initialize prior structure
         gpcf.p=[];
-        gpcf.p.coeffSigma2=[];
-        gpcf.p.constSigma2=[];
+        gpcf.p.coeffSigma2=prior_unif('init');
+        gpcf.p.constSigma2=prior_unif('init');
 
         % Set the function handles to the nested functions
         gpcf.fh_pak = @gpcf_dotproduct_pak;
@@ -145,30 +145,25 @@ function gpcf = gpcf_dotproduct(do, varargin)
     %
     %	See also
     %	GPCF_DOTPRODUCT_UNPAK
-        gpp=gpcf.p;
-
+        
         i1=0;i2=1;
-        if ~isempty(w)
-            i1 = length(w);
-        end
+        ww = []; w = [];
         
         if ~isempty(gpcf.p.constSigma2)
             i1 = i1+1;
-            w(i1) = gpcf.constSigma2;
+            w(i1) = log(gpcf.constSigma2);
             
-            % Hyperparameters of constSigma2
-            w = feval(gpcf.p.constSigma2.fh_pak, gpcf.p.constSigma2, w);
-        end
+            % Hyperparameters of magnSigma2
+            ww = feval(gpcf.p.constSigma2.fh_pak, gpcf.p.constSigma2);
+        end        
         
         if ~isempty(gpcf.p.coeffSigma2)
-            i2=i1+length(gpcf.coeffSigma2);
-            i1=i1+1;
-            w(i1:i2)=gpcf.coeffSigma2;
-            i1=i2;
+            w = [w log(gpcf.coeffSigma2)];
             
-            % Hyperparameters of coeffSigma2
-            w = feval(gpcf.p.coeffSigma2.fh_pak, gpcf.p.coeffSigma2, w);
-        end        
+            % Hyperparameters of lengthScale
+            w = [w feval(gpcf.p.coeffSigma2.fh_pak, gpcf.p.coeffSigma2)];
+        end
+        w = [w ww];
     end
 
     function [gpcf, w] = gpcf_dotproduct_unpak(gpcf, w)
@@ -184,26 +179,28 @@ function gpcf = gpcf_dotproduct(do, varargin)
     %	See also
     %	GPCF_DOTPRODUCT_PAK
     %
-        gpp=gpcf.p;        
+        gpp=gpcf.p;
         if ~isempty(gpp.constSigma2)
             i1=1;
-            gpcf.constSigma2=w(i1);
+            gpcf.constSigma2 = exp(w(i1));
             w = w(i1+1:end);
-            
-            % Hyperparameters of constSigma2
-            [p, w] = feval(gpcf.p.constSigma2.fh_unpak, gpcf.p.constSigma2, w);
-            gpcf.p.constSigma2 = p;
         end
-        
+
         if ~isempty(gpp.coeffSigma2)
-            i1 = 1;
-            i2 = length(gpcf.coeffSigma2);
-            gpcf.coeffSigma2=w(i1:i2);
+            i2=length(gpcf.coeffSigma2);
+            i1=1;
+            gpcf.coeffSigma2 = exp(w(i1:i2));
             w = w(i2+1:end);
-        
-            % Hyperparameters of coeffSigma2
+            
+            % Hyperparameters of lengthScale
             [p, w] = feval(gpcf.p.coeffSigma2.fh_unpak, gpcf.p.coeffSigma2, w);
             gpcf.p.coeffSigma2 = p;
+        end
+        
+        if ~isempty(gpp.constSigma2)
+            % Hyperparameters of magnSigma2
+            [p, w] = feval(gpcf.p.constSigma2.fh_unpak, gpcf.p.constSigma2, w);
+            gpcf.p.constSigma2 = p;
         end
     end
 
@@ -342,26 +339,23 @@ function gpcf = gpcf_dotproduct(do, varargin)
         end
 
         if nargout > 1
-            % Evaluate the gprior with respect to constSigma2
+            ggs = [];
             if ~isempty(gpcf.p.constSigma2)
-                gprior = feval(gpp.constSigma2.fh_g, gpcf.constSigma2, gpp.constSigma2).*gpcf.constSigma2 - 1;
-                i1 = length(gprior);
+                % Evaluate the gprior with respect to magnSigma2
+                i1 = 1;
+                ggs = feval(gpp.constSigma2.fh_g, gpcf.constSigma2, gpp.constSigma2);
+                gprior = ggs(i1).*gpcf.constSigma2 - 1;
             end
-                
-            % Evaluate the data contribution of gradient with respect to coeffSigma2
+            
             if ~isempty(gpcf.p.coeffSigma2)
-                if length(gpcf.coeffSigma2)>1
-                    for i2=1:gpcf.nin
-                        i1=i1+1;
-                        gg = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2(i2), gpp.coeffSigma2).*gpcf.coeffSigma2(i2) - 1;
-                        gprior(i1) =  gg(1);
-                    end
-                    if length(gg) > 1
-                        gprior = [gprior gg(2:end)];
-                    end
-                else
-                    gprior = [gprior feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2).*gpcf.weightSigma2 - 1];
-                end
+                i1=i1+1; 
+                lll = length(gpcf.coeffSigma2);
+                gg = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2, gpp.coeffSigma2);
+                gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.coeffSigma2 - 1;
+                gprior = [gprior gg(lll+1:end)];
+            end
+            if length(ggs) > 1
+                gprior = [gprior ggs(2:end)];
             end
         end
     end

@@ -93,9 +93,15 @@ switch gp.type
             
             for i2 = 1:length(DCff)
                 i1 = i1+1;
-                B = trace(invC);
-                C=b'*b;    
-                gdata(i1)=0.5.*DCff{i2}.*(B - C); 
+                if size(DCff{i2}) > 1
+                    Bdl = b'*(DCff{i2}*b);
+                    Cdl = sum(sum(invC.*DCff{i2})); % help arguments
+                    gdata(i1)=0.5.*(Cdl - Bdl);
+                else
+                    B = trace(invC);
+                    C=b'*b;
+                    gdata(i1)=0.5.*DCff{i2}.*(B - C); 
+                end
                 gprior(i1) = gprior_cf(i2);
             end
             % Set the gradients of hyper-hyperparameter

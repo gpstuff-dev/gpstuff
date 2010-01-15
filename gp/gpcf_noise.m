@@ -70,7 +70,7 @@ function gpcf = gpcf_noise(do, varargin)
         
         % Initialize prior structure
         gpcf.p=[];
-        gpcf.p.noiseSigmas2=[];
+        gpcf.p.noiseSigmas2=prior_unif('init');
         
         % Set the function handles
         gpcf.fh_pak = @gpcf_noise_pak;
@@ -142,14 +142,13 @@ function gpcf = gpcf_noise(do, varargin)
     %	GPCF_NOISE_UNPAK
     %
 
+        w = [];
         if ~isempty(gpcf.p.noiseSigmas2)
             gpp=gpcf.p;
             
             i1=0;i2=1;
            
-            i2=i1+length(gpcf.noiseSigmas2);
-            i1=i1+1;
-            w(i1:i2) = log(gpcf.noiseSigmas2);
+            w = log(gpcf.noiseSigmas2);
         end
     end
 
@@ -222,7 +221,12 @@ function gpcf = gpcf_noise(do, varargin)
             gpp=gpcf.p;
             
             D{1}=gpcf.noiseSigmas2;
-            gprior = feval(gpp.noiseSigmas2.fh_g, gpcf.noiseSigmas2, gpp.noiseSigmas2).*gpcf.noiseSigmas2 - 1;    
+            
+            ggs = feval(gpp.noiseSigmas2.fh_g, gpcf.noiseSigmas2, gpp.noiseSigmas2);
+            gprior = ggs(1).*gpcf.noiseSigmas2 - 1;    
+            if length(ggs) > 1
+                gprior = [gprior ggs(2:end)];
+            end            
         end
     end
 
