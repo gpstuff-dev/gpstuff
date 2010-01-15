@@ -22,14 +22,14 @@ function q = sinvchi2_p(pr)
 q.f='sinvchi2';
 q.fe=str2fun('sinvchi2_e');
 q.fg=str2fun('sinvchi2_g');
-q.a.s=pr{1};
+q.a.s2=pr{1};
 q.a.nu=pr{2};
 q.p=[];
 if length(pr) > 2
-  q.p.s.f='sinvchi2';
-  q.p.s.fe=str2fun('sinvchi2_e');
-  q.p.s.fg=str2fun('sinvchi2_g');
-  q.p.s.a.s=pr{3};
-  q.p.s.a.nu=pr{4};
-  q.p.s.p=[];
+  q.p.s2.f='sinvchi2';
+  q.p.s2.fe=str2fun('sinvchi2_e');
+  q.p.s2.fg=str2fun('sinvchi2_g');
+  q.p.s2.a.s2=pr{3};
+  q.p.s2.a.nu=pr{4};
+  q.p.s2.p=[];
 end

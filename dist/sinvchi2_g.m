@@ -23,12 +23,12 @@ function g = sinvchi2_g(x, a1, a)
 if nargin < 3
   a='x';
 end
-nu=a1.nu;s=a1.s;
+nu=a1.nu;s2=a1.s2;
 switch a
  case 'x'
-  g = (nu/2+1)./x-nu.*s.^2./(2*x.^2);
- case 's'
-  g=sum(nu.*(s./x-1./s));
+  g = (nu/2+1)./x-nu.*s2./(2*x.^2);
+ case 's2'
+  g=sum(nu/2.*(1./x-1./s2));
  case 'nu'
-  g=sum(0.5*(log(x) + s.^2./x + log(2./s.^2./nu) - 1 + digamma1(nu/2)));
+  g=sum(0.5*(log(x) + s2./x + log(2./s2./nu) - 1 + digamma1(nu/2)));
 end

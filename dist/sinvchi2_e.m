@@ -18,5 +18,5 @@ function e = sinvchi2_e(x, a)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-nu = a.nu; s2=a.s;
+nu = a.nu; s2=a.s2;
 e = sum((nu./2+1) .* log(x) + (s2.*nu./2./x) + (nu/2) .* log(2./(s2.*nu))+ gammaln(nu/2)) ;

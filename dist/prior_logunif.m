@@ -75,8 +75,8 @@ function p = prior_logunif(do, varargin)
 
    
     
-    function w = prior_logunif_pak(p, w)
-        w = w;
+    function w = prior_logunif_pak(p)
+        w = [];
     end
     
     function [p, w] = prior_logunif_unpak(p, w)
