@@ -137,7 +137,7 @@ function gpcf = gpcf_sexp(do, varargin)
     end
 
     
-    function w = gpcf_sexp_pak(gpcf, w)
+    function w = gpcf_sexp_pak(gpcf)
     %GPCF_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
@@ -152,33 +152,28 @@ function gpcf = gpcf_sexp(do, varargin)
     %	GPCF_SEXP_UNPAK
         
         i1=0;i2=1;
-        if ~isempty(w)
-            i1 = length(w);
-        end
+        ww = [];
         
         if ~isempty(gpcf.p.magnSigma2)
             i1 = i1+1;
             w(i1) = log(gpcf.magnSigma2);
             
             % Hyperparameters of magnSigma2
-            w = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2, w);
+            ww = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2);
         end        
         
         if isfield(gpcf,'metric')
             
-            w = feval(gpcf.metric.pak, gpcf.metric, w);            
+            w = [w feval(gpcf.metric.pak, gpcf.metric)];
         else
-            
             if ~isempty(gpcf.p.lengthScale)
-                i2=i1+length(gpcf.lengthScale);
-                i1=i1+1;
-                w(i1:i2)=log(gpcf.lengthScale);
-                i1=i2;
-                
+                w = [w log(gpcf.lengthScale)];
+                            
                 % Hyperparameters of lengthScale
-                w = feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale, w);
+                w = [w feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
             end
         end
+        w = [w ww];
     end
 
 
@@ -202,10 +197,6 @@ function gpcf = gpcf_sexp(do, varargin)
             i1=1;
             gpcf.magnSigma2 = exp(w(i1));
             w = w(i1+1:end);
-            
-            % Hyperparameters of magnSigma2
-            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
-            gpcf.p.magnSigma2 = p;
         end
 
         if isfield(gpcf,'metric')
@@ -222,6 +213,12 @@ function gpcf = gpcf_sexp(do, varargin)
                 [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
+        end
+        
+        if ~isempty(gpp.magnSigma2)
+            % Hyperparameters of magnSigma2
+            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+            gpcf.p.magnSigma2 = p;
         end
     end
     
@@ -242,15 +239,12 @@ function gpcf = gpcf_sexp(do, varargin)
         gpp=gpcf.p;
         
         [n, m] =size(x);
-
+        if ~isempty(gpcf.p.magnSigma2)
+                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+        end
+        
         if isfield(gpcf,'metric')
-            
-            if ~isempty(gpcf.p.magnSigma2)
-                eprior=eprior...
-                       +feval(gpp.magnSigma2.fe, ...
-                              gpcf.magnSigma2, gpp.magnSigma2.a)...
-                       -log(gpcf.magnSigma2);
-            end
+          
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
             
         else
@@ -259,10 +253,7 @@ function gpcf = gpcf_sexp(do, varargin)
             % On the other hand errors are evaluated in the W-space so we need take
             % into account also the  Jacobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-
-            if ~isempty(gpcf.p.magnSigma2)
-                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
-            end
+            
             if ~isempty(gpp.lengthScale)
                 eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
@@ -424,8 +415,9 @@ function gpcf = gpcf_sexp(do, varargin)
         if nargout > 1            
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
-                gprior = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2).*gpcf.magnSigma2 - 1;
-                i1 = length(gprior);
+                i1 = 1;
+                ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
+                gprior = ggs(i1).*gpcf.magnSigma2 - 1;
             end
             
             if isfield(gpcf,'metric')
@@ -436,21 +428,15 @@ function gpcf = gpcf_sexp(do, varargin)
                 end
             else
                 if ~isempty(gpcf.p.lengthScale)
-                    % Evaluate the data contribution of gradient with respect to lengthScale
-                    if length(gpcf.lengthScale)>1
-                        for i2=1:gpcf.nin
-                            i1=i1+1;
-                            gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale(i2), gpp.lengthScale).*gpcf.lengthScale(i2) - 1;
-                            gprior(i1) = gg(1);
-                        end
-                        if length(gg) > 1
-                            gprior = [gprior gg(2:end)];
-                        end
-                    else
-                        i1=i1+1; 
-                        gprior = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale).*gpcf.lengthScale - 1;
-                    end
+                    i1=i1+1; 
+                    lll = length(gpcf.lengthScale);
+                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale)
+                    gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
+                    gprior = [gprior gg(lll+1:end)];
                 end
+            end
+            if length(ggs) > 1
+                gprior = [gprior ggs(2:end)];
             end
         end
     end

@@ -68,7 +68,7 @@
 %========================================================
 % PART 1 data analysis with full GP model
 %========================================================
-
+clear, clc
 % Load the data
 S = which('demo_regression1');
 L = strrep(S,'demo_regression1.m','demos/dat.1');
@@ -86,11 +86,11 @@ y = data(:,3);
 % 
 % $$$ % First create squared exponential covariance function with ARD and 
 % $$$ % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2 1.2], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+%gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 % $$$ gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
 % $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 % $$$ 
@@ -99,30 +99,43 @@ gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
 
 
-gpcf1.p.lengthScale = logunif_p();
-gpcf1.p.magnSigma2 = logunif_p();
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+%gpcf1.p.lengthScale = logunif_p();
+%gpcf1.p.magnSigma2 = logunif_p();
+%gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
 
-[e, edata, eprior] = gp_e(w, gp, x, y)
-[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
+%[e, edata, eprior] = gp_e(w, gp, x, y)
+%[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
 
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+%gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+%gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2 1.1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2 1.1], 'magnSigma2', 0.2^2);
 pl = prior_logunif('init')
+%gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
+pt = prior_t('init')
+%gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pm);
+
+pps2 = prior_sinvchi2('init');
+ps2 = prior_sinvchi2('init', 'scale', 3^2, 'nu', 1, 'scale_prior', pps2)
+ps22 = prior_sinvchi2('init', 'scale', 2^2, 'nu', 2, 'scale_prior', pps2)
+
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
-pm = prior_logunif('init')
-gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', ps2);
 
-gp2 = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2, 'noiseSigmas2_prior', pl);
+%gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
-[e, edata, eprior] = gp_e(w, gp2, x, y)
-[g, gdata, gprior] = gp_g(w, gp2, x, y, 'hyper')
+gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
 
-w = gp_pak(gp2, 'hyper');
+w = gp_pak(gp, 'hyper');
+%[e, edata, eprior] = gp_e(w, gp, x, y)
+%[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
 
-gradcheck(w, @gp_e, @gp_g, gp2, x, y, 'hyper');
+
+gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+;
+w0=randn(size(w))
+gradcheck(w0, @gp_e, @gp_g, gp, x, y, 'hyper');
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 

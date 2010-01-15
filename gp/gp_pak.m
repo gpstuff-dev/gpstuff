@@ -57,14 +57,14 @@ ncf = length(gp.cf);
 
 for i=1:ncf
     gpcf = gp.cf{i};
-    w = feval(gpcf.fh_pak, gpcf, w);
+    w = [w feval(gpcf.fh_pak, gpcf)];
 end
 
 if isfield(gp, 'noise')
     nn = length(gp.noise);
     for i=1:nn
         noise = gp.noise{i};
-        w = feval(noise.fh_pak, noise, w);
+        w = [w feval(noise.fh_pak, noise)];
     end
 end
 
