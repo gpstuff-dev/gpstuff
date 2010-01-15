@@ -75,7 +75,7 @@ function p = prior_unif(do, varargin)
    
     
     function w = prior_unif_pak(p, w)
-        w = w;
+        w = [];
     end
     
     function [p, w] = prior_unif_unpak(p, w)

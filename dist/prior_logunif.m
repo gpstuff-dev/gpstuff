@@ -22,6 +22,7 @@ function p = prior_logunif(do, varargin)
 
     
 % Copyright (c) 2009 Jarno Vanhatalo
+% Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
