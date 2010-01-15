@@ -115,11 +115,14 @@ pl = prior_logunif('init')
 pt = prior_t('init')
 %gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pm);
 
-pps2 = prior_sinvchi2('init');
-ps2 = prior_sinvchi2('init', 'scale', 3^2, 'nu', 1, 'scale_prior', pps2)
-ps22 = prior_sinvchi2('init', 'scale', 2^2, 'nu', 2, 'scale_prior', pps2)
+pps2 = prior_sinvchi2('init', 'scale', 6, 'nu', 10);
+ppps2 = prior_sinvchi2('init', 'scale', 1.7^2, 'nu', 0.2);
+%ps2 = prior_sinvchi2('init', 'scale', 3^2, 'nu', 1, 'nu_prior', pps2)
+%ps22 = prior_sinvchi2('init', 'scale', 2^2, 'nu', 0.9, 'nu_prior', ppps2)
+ps2 = prior_sinvchi2('init', 'scale', 3^2, 'nu', 1, 'scale_prior', pps2, 'nu_prior', pps2)
+ps22 = prior_sinvchi2('init', 'scale', 2^2, 'nu', 2, 'scale_prior', ppps2, 'nu_prior', ppps2)
 
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', ps22);
 gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', ps2);
 
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2, 'noiseSigmas2_prior', pl);
