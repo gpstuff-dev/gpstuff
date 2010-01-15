@@ -26,6 +26,7 @@ function p = prior_t(do, varargin)
     
 % Copyright (c) 2000-2001 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
+% Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -50,7 +51,11 @@ function p = prior_t(do, varargin)
         % set parameters
         p.s = 1;
         p.nu = 4;
-                
+        
+        % set parameter priors
+        p.p.s = [];
+        p.p.nu = [];
+        
         if nargin > 1
             if mod(nargin-1,2) ~=0
                 error('Wrong number of arguments')
@@ -62,6 +67,10 @@ function p = prior_t(do, varargin)
                     p.s = varargin{i+1};
                   case 'nu'
                     p.nu = varargin{i+1};
+                  case 'scale_prior'
+                    p.p.s = varargin{i+1};
+                  case 'nu_prior'
+                    p.p.nu = varargin{i+1};                    
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -89,62 +98,65 @@ function p = prior_t(do, varargin)
         end
     end
 
-   
     
-    function w = prior_t_pak(p, w)
-        w = w;
-        if isfield(p, 'p')
-            if isfield(p.p, 'nu')
-                w = [w log(nu)];
-            end
-            if isfield(p.p, 's')
-                w = [w log(nu)];
-            end
+    function w = prior_t_pak(p)
+        
+        w = [];
+        if ~isempty(p.p.s)
+            w = log(p.s);
+        end
+         if ~isempty(p.p.nu)
+            w = [w log(p.nu)];
         end
     end
     
     function [p, w] = prior_t_unpak(p, w)
-        w = w;
-        p = p;
+
+        if ~isempty(p.p.s)
+            i1=1;
+            p.s = exp(w(i1));
+            w = w(i1+1:end);
+        end
+        if ~isempty(p.p.nu)
+            i1=1;
+            p.nu = exp(w(i1));
+            w = w(i1+1:end);
+        end
     end
     
     function e = prior_t_e(x, p)
         e = sum(log(1 + (x./p.s).^2 ./ p.nu)).* (p.nu+1)/2;
-        if isfield(p, 'p')
-            if isfield(p.p, 'nu')
-                e = e + feval(p.p.nu.fh_e, p.nu, p.p.nu)  - log(p.nu);
-            end
-            if isfield(p.p, 's')
-                e = e + feval(p.p.s.fh_e, p.s, p.p.s) - log(p.s);
-            end
+        
+        if ~isempty(p.p.s)
+            e = e + feval(p.p.s.fh_e, p.s, p.p.s) - log(p.s);
+        end
+        if ~isempty(p.p.nu)
+            e = e + feval(p.p.nu.fh_e, p.nu, p.p.nu)  - log(p.nu);
         end
     end
     
     function g = prior_t_g(x, p)
         d=x./p.s;
         g=(p.nu+1)./p.nu .* (d./p.s) ./ (1 + (d.^2)./p.nu);
-        if isfield(p, 'p')
-            if isfield(p.p, 'nu')
-                gnu = feval(p.p.nu.fh_g, p.nu, p.p.nu).*p.nu - 1; 
-                g = [g gnu];
-            end
-            if isfield(p.p, 's')
-                gsigma2 = feval(p.p.s.fh_g, p.s, p.p.s).*p.s - 1; 
-                w = [w gsigma2];
-            end
+        
+        if ~isempty(p.p.s)
+        	gsigma = (sum(-(p.nu+1)./(p.nu.*p.s^3).*x.^2./(1+d.^2./p.nu)) + feval(p.p.s.fh_g, p.s, p.p.s)).*p.s - 1;
+            g = [g gsigma];
+        end
+        if ~isempty(p.p.nu)
+            gnu = (sum(0.5*log(1+d.^2./p.nu) - (p.nu+1)./(2*p.nu.^2).*d.^2./(1+d.^2./p.nu)) + feval(p.p.nu.fh_g, p.nu, p.p.nu)).*p.nu - 1;
+            g = [g gnu];
         end
     end
     
     function rec = prior_t_recappend(rec, ri, p)
     % The parameters are not sampled in any case.
         rec = rec;
-        if isfield(p, 'p')
-            if isfield(p.p, 'nu')
-                rec.nu(ri) = p.nu;
-            end
-            if isfield(p.p, 's')
-                rec.s(ri) = p.s;
-            end
-        end         
+        if ~isempty(p.p.s)
+        	rec.s(ri) = p.s;
+        end
+        if ~isempty(p.p.nu)
+        	rec.nu(ri) = p.nu;
+        end
     end    
 end
