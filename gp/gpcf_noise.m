@@ -92,12 +92,12 @@ function gpcf = gpcf_noise(do, varargin)
             % Loop through all the parameter values that are changed
             for i=2:2:length(varargin)-1
                 switch varargin{i}
-                  case 'noiseSigmas2'
-                    gpcf.noiseSigmas2 = varargin{i+1};
+                  case 'noiseSigma2'
+                    gpcf.noiseSigma2 = varargin{i+1};
                   case 'fh_sampling'
                     gpcf.fh_sampling = varargin{i+1};
-                  case 'noiseSigmas2_prior'
-                    gpcf.p.noiseSigmas2 = varargin{i+1};
+                  case 'noiseSigma2_prior'
+                    gpcf.p.noiseSigma2 = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -114,12 +114,12 @@ function gpcf = gpcf_noise(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'noiseSigmas2'
-                gpcf.noiseSigmas2 = varargin{i+1};
+              case 'noiseSigma2'
+                gpcf.noiseSigma2 = varargin{i+1};
               case 'fh_sampling'
                 gpcf.fh_sampling = varargin{i+1};
-              case 'noiseSigmas2_prior'
-                gpcf.p.noiseSigmas2 = varargin{i+1};
+              case 'noiseSigma2_prior'
+                gpcf.p.noiseSigma2 = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -142,14 +142,14 @@ function gpcf = gpcf_noise(do, varargin)
     %	GPCF_NOISE_UNPAK
     %
 
-        w = [];
-        if ~isempty(gpcf.p.noiseSigmas2)
-            gpp=gpcf.p;
+    
+        if ~isempty(gpcf.noiseSigma2)
+            w(1) = log(gpcf.noiseSigma2);
             
-            i1=0;i2=1;
-           
-            w = log(gpcf.noiseSigmas2);
-        end
+            % Hyperparameters of magnSigma2
+            w = [w feval(gpcf.p.noiseSigma2.fh_pak, gpcf.p.noiseSigma2)];
+        end    
+
     end
 
     function [gpcf, w] = gpcf_noise_unpak(gpcf, w)
@@ -163,16 +163,15 @@ function gpcf = gpcf_noise(do, varargin)
     %
     %	See also
     %	GP_NOISE_PAK, GP_PAK
-
-        if ~isempty(gpcf.p.noiseSigmas2)
-            gpp=gpcf.p;
-            i1=0;i2=1;
-
-            i2=i1+length(gpcf.noiseSigmas2);
-            i1=i1+1;
-            gpcf.noiseSigmas2 = exp(w(i1:i2));
-            w = w(i1+1:end);
-        end 
+    
+        if ~isempty(gpcf.p.noiseSigma2)
+                gpcf.noiseSigma2 = exp(w(1));
+                w = w(2:end);
+                                
+                % Hyperparameters of lengthScale
+                [p, w] = feval(gpcf.p.noiseSigma2.fh_unpak, gpcf.p.noiseSigma2, w);
+                gpcf.p.noiseSigma2 = p;
+        end
     end
 
 
@@ -192,10 +191,10 @@ function gpcf = gpcf_noise(do, varargin)
 
         eprior = 0;
 
-        if ~isempty(gpcf.p.noiseSigmas2)
+        if ~isempty(gpcf.p.noiseSigma2)
             % Evaluate the prior contribution to the error.
             gpp=gpcf.p;
-            eprior = feval(gpp.noiseSigmas2.fh_e, gpcf.noiseSigmas2, gpp.noiseSigmas2) - log(gpcf.noiseSigmas2);
+            eprior = feval(gpp.noiseSigma2.fh_e, gpcf.noiseSigma2, gpp.noiseSigma2) - log(gpcf.noiseSigma2);
         end
     end
 
@@ -217,13 +216,13 @@ function gpcf = gpcf_noise(do, varargin)
         D = {};
         gprior = {};
 
-        if ~isempty(gpcf.p.noiseSigmas2)
+        if ~isempty(gpcf.p.noiseSigma2)
             gpp=gpcf.p;
             
-            D{1}=gpcf.noiseSigmas2;
+            D{1}=gpcf.noiseSigma2;
             
-            ggs = feval(gpp.noiseSigmas2.fh_g, gpcf.noiseSigmas2, gpp.noiseSigmas2);
-            gprior = ggs(1).*gpcf.noiseSigmas2 - 1;    
+            ggs = feval(gpp.noiseSigma2.fh_g, gpcf.noiseSigma2, gpp.noiseSigma2);
+            gprior = ggs(1).*gpcf.noiseSigma2 - 1;
             if length(ggs) > 1
                 gprior = [gprior ggs(2:end)];
             end            
@@ -292,7 +291,7 @@ function gpcf = gpcf_noise(do, varargin)
         n1=n+1;
 
         C = sparse([],[],[],n,n,0);
-        C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigmas2;
+        C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigma2;
 
     end
 
@@ -311,7 +310,7 @@ function gpcf = gpcf_noise(do, varargin)
 
 
         [n, m] =size(x);
-        C=ones(n,1)*gpcf.noiseSigmas2;
+        C=ones(n,1)*gpcf.noiseSigma2;
 
     end
 
@@ -329,7 +328,7 @@ function gpcf = gpcf_noise(do, varargin)
             gpcf.nout = 1;
             
             % Initialize parameters
-            reccf.noiseSigmas2 = []; 
+            reccf.noiseSigma2 = []; 
             
             % Set the function handles
             reccf.fh_pak = @gpcf_noise_pak;
@@ -343,9 +342,9 @@ function gpcf = gpcf_noise(do, varargin)
             reccf.sampling_opt = hmc2_opt;
             reccf.fh_recappend = @gpcf_noise_recappend;  
             reccf.p=[];
-            reccf.p.noiseSigmas2=[];
-            if ~isempty(ri.p.noiseSigmas2)
-                reccf.p.noiseSigmas2 = ri.p.noiseSigmas2;
+            reccf.p.noiseSigma2=[];
+            if ~isempty(ri.p.noiseSigma2)
+                reccf.p.noiseSigma2 = ri.p.noiseSigma2;
             end
             return
         end
@@ -353,11 +352,11 @@ function gpcf = gpcf_noise(do, varargin)
         gpp = gpcf.p;
 
         % record noiseSigma
-        if ~isempty(gpcf.noiseSigmas2)
-            reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
-            reccf.p.noiseSigmas2 = feval(gpp.noiseSigmas2.fh_recappend, reccf.p.noiseSigmas2, ri, gpcf.p.noiseSigmas2);
+        if ~isempty(gpcf.noiseSigma2)
+            reccf.noiseSigma2(ri,:)=gpcf.noiseSigma2;
+            reccf.p.noiseSigma2 = feval(gpp.noiseSigma2.fh_recappend, reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
         elseif ri==1
-            reccf.noiseSigmas2=[];
+            reccf.noiseSigma2=[];
         end
     end
 
