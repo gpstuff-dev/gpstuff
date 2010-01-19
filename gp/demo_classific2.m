@@ -65,8 +65,8 @@ gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.6 0.9], 'magnSigma2', 0.5);
 % Set the prior for the parameters of covariance functions 
 % $$$ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 % $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = unif_p;
-gpcf1.p.magnSigma2 = unif_p;
+%gpcf1.p.lengthScale = unif_p;
+%gpcf1.p.magnSigma2 = unif_p;
 
 
 % Create the likelihood structure
@@ -83,7 +83,7 @@ cputime - tt
 gp.laplace_opt.optim_method = 'newton';
 
 w = gp_pak(gp, 'hyper');
-gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'hyper')
+gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'hyper');
 
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');

@@ -116,7 +116,6 @@ xx = xx(ind,:);
 yy = yy(ind,:);
 ye = ye(ind,:);
 
-
 [n,nin] = size(xx);
 
 % Create the covariance functions
@@ -127,7 +126,7 @@ pm = prior_t('init', 'scale', 0.3);
 gpcf1 = gpcf_ppcs2('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-likelih = likelih_negbin('init', yy, ye, 10);
+likelih = likelih_negbin('init', yy, ye, 100);
 param = 'hyper+likelih'
 
 % Create the GP data structure
@@ -142,7 +141,7 @@ opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'iter');
 
 w0 = gp_pak(gp, param);
-gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param)
+gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param);
 
 mydeal = @(varargin)varargin{1:nargout};
 w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, param), gpla_g(ww, gp, xx, yy, param)), w0, opt);
@@ -156,7 +155,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 [X1,X2]=meshgrid(1:35,1:60);
 
 % plot figures
-figure(1)
+figure%(1)
 G=repmat(NaN,size(X1));
 G(xxii)=exp(Ef + Varf/2);
 pcolor(X1,X2,G),shading flat
@@ -166,7 +165,7 @@ axis equal
 axis([0 35 0 60])
 title('Posterior mean of the relative risk, full GP')
 
-figure(2)
+figure%(2)
 G=repmat(NaN,size(X1));
 G(xxii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
 pcolor(X1,X2,G),shading flat

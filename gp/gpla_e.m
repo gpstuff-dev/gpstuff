@@ -1,4 +1,3 @@
-
 function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 %GPLA_E Conduct LAplace approximation and return marginal log posterior estimate
 %
@@ -50,7 +49,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
         La20 = [];
         a0 = 0;
 
-% $$$         laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
+        laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
@@ -93,26 +92,19 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
                 % If K is sparse, permute all the inputs so that evaluations are more efficient
                 if issparse(K)
-                    p = analyze(K);
-                    r(p) = 1:n;
-                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
-                    y = y(p);
-                    K = K(p,p);
+% $$$                     p = analyze(K);
+% $$$                     r(p) = 1:n;
+% $$$                     gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+% $$$                     y = y(p);
+% $$$                     K = K(p,p);
+                    LD = ldlchol(K);
+                else
+                    LD = chol(K);
                 end
                 
                 switch gp.laplace_opt.optim_method
                     % find the mode by fminunc large scale method
                   case 'fminunc_large'
-                    if issparse(K)
-                        % TODO !!!
-                        % Find fill reducing permutation and permute all the
-                        % matrices
-                        LD = ldlchol(K);
-                    else
-                        LD = chol(K);
-                        iK = inv(K);
-                    end
-
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
                         opt=optimset(opt,'Hessian','on');
@@ -151,14 +143,6 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     end
 
                   case 'newton'
-                    
-                    if issparse(K)
-                        % TODO !!!
-                        % Find fill reducing permutation and permute all the
-                        % matrices
-                        LD = ldlchol(K);
-                    end
-
                     tol = 1e-12;
                     a = f;
                     W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
@@ -166,14 +150,14 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f);
                     lp_old = -Inf;
                     
-                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                    while lp_new - lp_old > tol                                
                         lp_old = lp_new; a_old = a; 
                         sW = sqrt(W);    
                         if issparse(K)
                             sW = sparse(1:n, 1:n, sW, n, n);
                             L = ldlchol( speye(n)+sW*K*sW );
                         else
-                            L = chol(eye(n)+sW*sW'.*K);                            % L'*L=B=eye(n)+sW*K*sW
+                            L = chol(eye(n)+sW*sW'.*K);                        % L'*L=B=eye(n)+sW*K*sW
                         end
                         b = W.*f+dlp;
                         if issparse(K)
@@ -188,114 +172,68 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         lp_new = -a'*f/2 + lp;
                         i = 0;
                         while i < 10 && lp_new < lp_old                       % if objective didn't increase
-                            a = (a_old+a)/2;                      % reduce step size by half
+                            a = (a_old+a)/2;                                  % reduce step size by half
                             f = K*a;
                             W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                             lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
-                    end                                                    % end Newton's iterations
-                                        
-                  case 'likelih_specific'
-% $$$                             iter = 1;
-% $$$                             sigma = gp.likelih.sigma;
-% $$$                             nu = gp.likelih.nu;
-% $$$                             n = length(y);
-% $$$                             
-% $$$                             
-% $$$                             
-% $$$     % $$$                     iV = diag( ones(1,n)./sigma.^2);
-% $$$     % $$$                     f1 = (iK+iV)\iV*y;            
-% $$$                             iV = ones(n,1)./sigma.^2;
-% $$$                             siV = sqrt(iV);
-% $$$                             B = eye(n) + siV*siV'.*K;
-% $$$                             L = chol(B)';
-% $$$                             b = iV.*y;
-% $$$                             a = b - siV.*(L'\(L\(siV.*(K*b))));
-% $$$                             f = K*a;
-% $$$                             while iter < 200
-% $$$                                 fold = f;
-% $$$     % $$$                         iV = diag((nu+1) ./ (nu.*sigma^2 + (y-f1).^2));
-% $$$     % $$$                         f1 = (iK+iV)\iV*y;
-% $$$                                 
-% $$$                                 iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
-% $$$                                 siV = sqrt(iV);
-% $$$                                 B = eye(n) + siV*siV'.*K;
-% $$$                                 L = chol(B)';
-% $$$                                 b = iV.*y;
-% $$$                                 a = b - siV.*(L'\(L\(siV.*(K*b))));
-% $$$                                 f = K*a;
-% $$$                                 
-% $$$                                 if max(abs(f-fold)) < 1e-8
-% $$$                                     break
-% $$$                                 end
-% $$$                                 iter = iter + 1;
-% $$$                             end
-                            
+                    end
+                  
+                  case 'likelih_specific'                            
                     [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
                 end
                 
                 % evaluate the approximate log marginal likelihood
-                if issparse(K)
-                    W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'), n,n);
-                    sqrtW = sqrt(W);
-                    B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
-                    L = ldlchol(B);
-                    logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);                 
-                    % Note that here we use LDL cholesky
-                    edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; % 
-                    
-                    % Reorder some of the returned and stored values
-                    f = f(r);
-                    
-                else
-                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-                    
-                    logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
-                                       
-                    if W >= 0
+                if min(W) >= 0
+                    if issparse(K)
+                        W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'), n,n);
+                        sqrtW = sqrt(W);
+                        B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
+                        L = ldlchol(B);
+                        logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);                 
+                        % Note that here we use LDL cholesky
+                        edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+                        
+% $$$                         % Reorder some of the returned and stored values
+% $$$                         f = f(r);
+                    else
+                        logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
+
                         sW = sqrt(W);
                         B = eye(size(K)) + sW*sW'.*K;
                         L = chol(B)';
                         edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
-                    else
-% $$$                         [W,I] = sort(W, 1, 'descend');
-% $$$                         K = K(I,I);
-                        [W2,I] = sort(W, 1, 'descend');
-                        
-                        L = chol(K);
-                        L1 = L;
-                        for jj=1:size(K,1)
-                            i = I(jj);
-                            ll = sum(L(:,i).^2);
-                            l = L'*L(:,i);
-                            upfact = W(i)./(1 + W(i).*ll);
-                            
-                            % Check that Cholesky factorization will remain positive definite
-                            if 1./ll + W(i) < 0 %1 + W(i).*ll <= 0 | abs(upfact) > abs(1./ll) %upfact > 1./ll
-                                warning('gpla_e: 1./Sigma(i,i) + W(i) < 0')
-                                
-                                ind = 1:i-1;
-                                mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');
-                                upfact = feval(gp.likelih.fh_upfact, gp, y(I(i)), mu, ll);
-                                
-% $$$                                 W2 = -1./(ll+1e-3);
-% $$$                                 upfact = W2./(1 + W2.*ll);
-                            end
-                            if upfact > 0
-                                L = cholupdate(L, l.*sqrt(upfact), '-');
-                            else
-                                L = cholupdate(L, l.*sqrt(-upfact));
-                            end
-                        end
-                        edata = logZ + sum(log(diag(L1))) - sum(log(diag(L)));  % sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W)))));
-
-% $$$                         edata = logZ + 0.5*log(det(eye(size(K)) + K*diag(W)));  % sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W)))));
-% $$$                         L = 0;
                     end
+                else
+                    [W2,I] = sort(W, 1, 'descend');
+
+                    L = chol(K);
+                    L1 = L;
+                    for jj=1:size(K,1)
+                        i = I(jj);
+                        ll = sum(L(:,i).^2);
+                        l = L'*L(:,i);
+                        upfact = W(i)./(1 + W(i).*ll);
+                        
+                        % Check that Cholesky factorization will remain positive definite
+                        if 1./ll + W(i) < 0 %1 + W(i).*ll <= 0 | abs(upfact) > abs(1./ll) %upfact > 1./ll
+                            warning('gpla_e: 1./Sigma(i,i) + W(i) < 0')
+                            
+                            ind = 1:i-1;
+                            mu = K(i,ind)*feval(gp.likelih.fh_g, gp.likelih, y(I(ind)), f(I(ind)), 'latent');
+                            upfact = feval(gp.likelih.fh_upfact, gp, y(I(i)), mu, ll);
+                        end
+                        if upfact > 0
+                            L = cholupdate(L, l.*sqrt(upfact), '-');
+                        else
+                            L = cholupdate(L, l.*sqrt(-upfact));
+                        end
+                    end
+                    edata = logZ + sum(log(diag(L1))) - sum(log(diag(L)));
                 end
-                                                
+                                                                
                 La2 = W;
 
                 % ============================================================
@@ -797,10 +735,11 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     eprior = eprior + feval(noise.fh_e, noise, x, y);
                 end
             end
+            
             % Evaluate the prior contribution to the error from likelihood function
             if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
                 likelih = gp.likelih;
-                eprior = eprior - feval(likelih.fh_priore, likelih);
+                eprior = eprior + feval(likelih.fh_priore, likelih);
             end
 
             e = edata + eprior;

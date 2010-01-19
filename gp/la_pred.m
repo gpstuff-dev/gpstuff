@@ -60,9 +60,11 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
             if W >= 0
                 if issparse(K_nf) && issparse(L)
                     K = gp_trcov(gp, tx);
-                    p = analyze(K);
-                    sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);
-                    sqrtWKfn = sqrtW*K_nf(:,p)';
+% $$$                     p = analyze(K);
+% $$$                     sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);
+% $$$                     sqrtWKfn = sqrtW*K_nf(:,p)';
+                    sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
+                    sqrtWKfn = sqrtW*K_nf';
                     V = ldlsolve(L,sqrtWKfn);
                     Varf = kstarstar - sum(sqrtWKfn.*V,1)';
                 else
@@ -71,16 +73,9 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
                     Varf = kstarstar - sum(V'.*V',2);
                 end
             else
-% $$$                 [W,I] = sort(W, 1, 'descend');
-% $$$                 r(I) = 1:tn;
                 V = L*diag(W);
                 R = diag(W) - V'*V;
-% $$$                 R = R(r,r);
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
-                
-% $$$                 K = gp_trcov(gp,x);
-% $$$                 R = K + diag(1./W(r));
-% $$$                 Varf = kstarstar - sum(K_nf.*(R\K_nf')',2);
             end
             if nargout > 2 && nargin < 8
                 [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);

@@ -111,6 +111,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 [K,C] = gp_trcov(gp, x);
 
                 % The EP algorithm for full support covariance function
+                %------------------------------------------------------
                 if ~issparse(C)
                     Sigm = C;
                     Ls = chol(Sigm);
@@ -133,6 +134,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         for ii=1:n
                             i1 = I(ii);
                             % Algorithm utilizing Cholesky updates
+                            % This is numerically more stable but slower
 % $$$                             % approximate cavity parameters
 % $$$                             S11 = sum(Ls(:,i1).^2);
 % $$$                             S1 = Ls'*Ls(:,i1);
@@ -240,15 +242,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             Sigm=Ls'*Ls; myy=Sigm*nutilde;
                             
                             % Compute the marginal likelihood
-                            % Direct formula (3.65):
-                            % Sigmtilde=diag(1./tautilde);
-                            % mutilde=inv(Stilde)*nutilde;
-                            %
-                            % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
-                            %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
-                            %         0.5*sum(log(sigm2vec_i+1./tautilde))+
-                            %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
-                            
                             % 4. term & 1. term
                             term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
                             
@@ -271,6 +264,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     end
                     
                 % EP algorithm for compact support covariance function (that is C is sparse)
+                %---------------------------------------------------------------------------
                 else
                     p = analyze(K);
                     r(p) = 1:n;
@@ -282,7 +276,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     sqrtS = sparse(1:n,1:n,0,n,n);
                     myy = zeros(size(y));
                     gamma = zeros(size(y));
-                    %KsqrtS = K*sqrtS;                
                     VD = ldlchol(Inn);
                     
                     
@@ -316,11 +309,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             deltanutilde = nutilde(i1) - nutilde_old;
                             
                             % Update the LDL decomposition
-                            %D2_o = ssmult(sqrtS,KsqrtS(:,i1)) + Inn(:,i1);
-                            %D2_o =  sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
                             sqrtS(i1,i1) = sqrt(tautilde(i1));
-                            %KsqrtS(:,i1) = Ki1.*sqrtS(i1,i1);
-                            %D2_n = ssmult(sqrtS,KsqrtS(:,i1)) + Inn(:,i1);
                             sqrtSKi1(i1) = sqrt(tautilde(i1)).*Ki1(i1);
                             D2_n = sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
                             
@@ -332,7 +321,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             end
                             
                             gamma = gamma + Ki1.*deltanutilde;
-% $$$                             myy = (K-KsqrtS*ldlsolve(VD,KsqrtS'))*nutilde;
                             
                             muvec_i(i1,1)=myy_i;
                             sigm2vec_i(i1,1)=sigm2_i;
@@ -345,8 +333,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         Knutilde = K*nutilde;
                         myy = Knutilde - KsqrtS*ldlsolve(VD,sqrtS*Knutilde);
                         
-                        % Compute the marginal likelihood
-                        
+                        % Compute the marginal likelihood                        
                         % 4. term & 1. term
                         term41=0.5*sum(log(1+tautilde.*sigm2vec_i)) - 0.5.*sum(log(diag(VD)));
                         
@@ -635,11 +622,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         P(ind{i},:) = D{i}*(Labl{i}\K_fu(ind{i},:));
                         
                         temp2(:,ind{i}) = R0P0t(:,ind{i})*sdtautilde/Dhat*sdtautilde;
-% $$$                         temp2(:,ind{i}) = (R0P0t(:,ind{i})*sdtautilde)/Ldhat{i};
                         eta(ind{i}) = D{i}*nutilde(ind{i});
                     end
                     R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
-% $$$                     R = chol(inv(eye(size(R0)) + temp2*temp2')) * R0;
                     gamma = R'*(R*(P'*nutilde));
                     myy = eta + P*gamma;
 
@@ -995,6 +980,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             % =====================================================================================
             % Evaluate the prior contribution to the error from covariance functions and likelihood
             % =====================================================================================
+
+            % Evaluate the prior contribution to the error from covariance functions
             eprior = 0;
             for i=1:ncf
                 gpcf = gp.cf{i};
@@ -1009,6 +996,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     eprior = eprior + feval(noise.fh_e, noise, x, y);
                 end
             end
+            
+            % Evaluate the prior contribution to the error from likelihood functions
             if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
                 likelih = gp.likelih;
                 eprior = eprior - feval(likelih.fh_priore, likelih);

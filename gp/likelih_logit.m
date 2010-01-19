@@ -396,7 +396,7 @@ function likelih = likelih_logit(do, varargin)
             py1(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);                             
         end
         Ey = 2*py1-1;
-        Vary = 1-(2*py1-1)^2;        
+        Vary = 1-(2*py1-1).^2;        
         if nargin > 3
             % NOTE: This is only approximation since \int logit(y|f) N(f|Ef,Varf) df
             % has no analytic solution.

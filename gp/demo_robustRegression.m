@@ -66,8 +66,8 @@ disp(' ')
 
 % load the data. First 100 variables are for training
 % and last 100 for test
-S = which('demo_noiset');
-L = strrep(S,'demo_noiset.m','demos/odata');
+S = which('demo_robustRegression');
+L = strrep(S,'demo_robustRegression.m','demos/odata');
 x = load(L);
 xt = x(101:end,1);
 yt = x(101:end,2);
@@ -86,14 +86,13 @@ disp(' parameters is Gaussian multivariate hierarchical. The residual is given a
 disp(' first Gaussian prior to find good starting value for noiseSigmas..')
 disp(' ')
 
-% create the Gaussian process
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+% Construct the priors for the parameters of covariance functions...
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
 
-% ... Then set the prior for the parameters of covariance functions...
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = gamma_p({3 7});  
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+% create the Gaussian process
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2, 'noiseSigma2_prior', pm);
 
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
@@ -118,8 +117,8 @@ opt(14) = 0;
 gp=gp_unpak(gp,w, 'hyper');
 
 % Prediction
-[Ef, Varf] = gp_pred(gp, x, y, xx');
-std_f = sqrt(Varf + gp.noise{1}.noiseSigmas2);
+[Ef, Varf, Ey, Vary] = gp_pred(gp, x, y, xx');
+std_f = sqrt(Vary);
 
 % Plot the prediction and data
 % plot the training data with dots and the underlying 
@@ -135,7 +134,7 @@ legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
 axis on;
 title('The predictions and the data points (MAP solution and normal noise)');
-S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f,  noiseSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.noise{1}.noiseSigmas2)
+S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f,  noiseSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.noise{1}.noiseSigma2)
 
 
 % ========================================
@@ -251,16 +250,13 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 3, 'magnSigma2', 1);
-
-% ... Then set the prior for the parameters of covariance functions...
-gpcf1.p.lengthScale = logunif_p;  
-gpcf1.p.magnSigma2 = logunif_p;
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-likelih = likelih_t('init', 4, 0.5);
-likelih.p.nu = logunif_p;
-likelih.p.sigma = logunif_p;
+pll = prior_logunif('init');
+likelih = likelih_t('init', 4, 0.5, 'sigma_prior', pll, 'nu_prior', pll);
+%likelih.p.nu = logunif_p;
+%likelih.p.sigma = logunif_p;
 % Set freeze_nu = 0 so that nu is also optimized
 likelih = likelih_t('set', likelih, 'freeze_nu', 0)
 
@@ -274,7 +270,7 @@ gp.laplace_opt.optim_method = 'likelih_specific';
 
 %w = randn(size(gp_pak(gp,param)));
 w = gp_pak(gp,param);
-gradcheck(w, @gpla_e, @gpla_g, gp, x, y, param)
+gradcheck(w, @gpla_e, @gpla_g, gp, x, y, param);
 exp(w) 
 
 opt=optimset('GradObj','on');

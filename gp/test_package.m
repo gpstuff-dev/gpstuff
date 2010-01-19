@@ -524,17 +524,10 @@ for i=1:length(models)
 end
 
 
-%----------------------------
-% check metrics
-%----------------------------
-
-
-warnings = '';
-numwarn = 0;
-
 % =========================== 
-% Regression models
+% check metrics
 % ===========================
+
 
 S = which('test_package');
 L = strrep(S,'test_package.m','demos/dat.1');
@@ -543,10 +536,6 @@ data = data(1:2:end,:);
 x = [data(:,1) data(:,2)];
 y = data(:,3);
 [n, nin] = size(x);
-
-%----------------------------
-% check metrics
-%----------------------------
 
 fprintf(' \n ================================= \n \n Checking the metrics \n \n ================================= \n ')
 
@@ -602,19 +591,18 @@ opt.hmc_opt.decay=0.6;
 opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
     
-% Do the sampling (this takes approximately 5-10 minutes)    
 [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
 
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
 if sqrt(mean((y - gp_pred(gp, x, y, x)).^2)) > 0.186*2
-    warnings = sprintf([warnings '\n * Check the optimization of hyper-parameters of ' covfunc{i} ' with GP regression']);       
+    warnings = sprintf([warnings '\n * Check the optimization of hyper-parameters of metric_euclidean with GP regression']);       
     numwarn = numwarn + 1;
 end
 
 if sqrt(mean((y - mean(mc_pred(rfull, x, y, x),2) ).^2)) > 0.186*2
-    warnings = sprintf([warnings '\n * Check the MCMC sampling of hyper-parameters of ' covfunc{i} ' with GP regression']);
+    warnings = sprintf([warnings '\n * Check the MCMC sampling of hyper-parameters of metric_euclidean with GP regression']);
     numwarn = numwarn + 1;
 end
 
@@ -629,19 +617,16 @@ delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
 
 % check that gradients are OK
 if delta>0.0001
-    warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters of ' covfunc{i}]);
-    warning([' Check the gradients of ' covfunc{i}]);
+    warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters of metric_euclidean']);
     numwarn = numwarn + 1;
 end
 
 
 
 
-
-
-%----------------------------
+% ===========================
 % check priors
-%----------------------------
+% ===========================
 
 S = which('test_package');
 L = strrep(S,'test_package.m','demos/dat.1');
@@ -735,7 +720,7 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2);
-gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2);
+gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.2^2);
 
 % Set prior
 pl = prior_t('init');
@@ -813,7 +798,6 @@ for i=1:length(models)
     % check that gradients are OK
     if delta>0.0001
         warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for probit model and ' models{i} ' GP']);
-        warning([' Check the gradients of ' covfunc{i}]);
         numwarn = numwarn + 1;
     end
 

@@ -1,3 +1,4 @@
+
 function gpcf = gpcf_sexp(do, varargin)
 %GPCF_SEXP	Create a squared exponential covariance function for Gaussian Process
 %
@@ -248,9 +249,7 @@ function gpcf = gpcf_sexp(do, varargin)
         end
         
         if isfield(gpcf,'metric')
-          
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
-            
         else
             % Evaluate the prior contribution to the error. The parameters that
             % are sampled are from space W = log(w) where w is all the "real" samples.

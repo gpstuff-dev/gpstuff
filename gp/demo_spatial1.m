@@ -112,7 +112,7 @@ opt.latent_opt.window=5;
 
 % Here we make an initialization with 
 % slow sampling parameters
-opt.display = 0;
+opt.display = 1;
 [rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
 
 % Now we reset the sampling parameters to 

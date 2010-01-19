@@ -97,7 +97,11 @@ likelih = likelih_poisson('init', yy, ye);
 gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, []);   %{gpcf2}
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'hyper'});
+
+param = 'hyper';
+w0 = gp_pak(gp, param);
+gradcheck(w0, @gpla_e, @gpla_g, gp, xx, yy, param);
 
 param = 'hyper';
 opt=optimset('GradObj','on');
@@ -167,8 +171,9 @@ dims = [1    60     1    35];
 
 % Create the covariance functions
 gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
-gpcf1.p.lengthScale = unif_p; %t_p({1 4});
-gpcf1.p.magnSigma2 = unif_p; %t_p({0.3 4});
+pl = prior_t('init');
+pm = prior_t('init', 'scale', 0.3);
+gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);

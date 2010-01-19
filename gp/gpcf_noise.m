@@ -10,7 +10,7 @@ function gpcf = gpcf_noise(do, varargin)
 %	  type           = 'gpcf_se'
 %	  nin            = number of inputs (NIN)
 %	  nout           = number of outputs: always 1
-%	  noiseSigmas2   = scale of residual distribution
+%	  noiseSigma2   = scale of residual distribution
 %                          Variation for normal distribution 
 %                          Degrees of freedom squared for t-distribution 
 %                          (0.1^2)
@@ -66,11 +66,11 @@ function gpcf = gpcf_noise(do, varargin)
         gpcf.nout = 1;
         
         % Initialize parameters
-        gpcf.noiseSigmas2 = 0.1^2; 
+        gpcf.noiseSigma2 = 0.1^2; 
         
         % Initialize prior structure
         gpcf.p=[];
-        gpcf.p.noiseSigmas2=prior_unif('init');
+        gpcf.p.noiseSigma2=prior_unif('init');
         
         % Set the function handles
         gpcf.fh_pak = @gpcf_noise_pak;

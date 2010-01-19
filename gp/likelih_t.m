@@ -56,7 +56,9 @@ function likelih = likelih_t(do, varargin)
         likelih.freeze_nu = 1;
         
         % Initialize prior structure
-
+        likelih.p.sigma = prior_logunif('init');
+        likelih.p.nu = prior_logunif('init');
+        
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_t_pak;
         likelih.fh_unpak = @likelih_t_unpak;
@@ -88,6 +90,10 @@ function likelih = likelih_t(do, varargin)
                     likelih.sigma = varargin{i+1};
                   case 'freeze_nu'
                     likelih.freeze_nu = varargin{i+1};
+                  case 'sigma_prior'
+                    likelih.p.sigma = varargin{i+1}; 
+                  case 'nu_prior'
+                    likelih.p.nu = varargin{i+1}; 
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -110,6 +116,10 @@ function likelih = likelih_t(do, varargin)
                 likelih.sigma = varargin{i+1};
               case 'freeze_nu'
                 likelih.freeze_nu = varargin{i+1};
+              case 'sigma_prior'
+                likelih.p.sigma = varargin{i+1}; 
+              case 'nu_prior'
+                likelih.p.nu = varargin{i+1}; 
               otherwise
                 error('Wrong parameter name!')
             end
@@ -128,12 +138,23 @@ function likelih = likelih_t(do, varargin)
     %	See also
     %	LIKELIH_T_UNPAK
         
-        if likelih.freeze_nu == 1
-            w(1) = log(likelih.sigma);
-        else
-            w(1) = log(likelih.sigma);
-            w(2) = log(log(likelih.nu));
+        w = [];
+        i1 = 0;
+        if ~isempty(likelih.p.sigma)
+            i1 = i1+1;
+            w(i1) = log(likelih.sigma);
         end
+        if ~isempty(likelih.p.nu)
+            i1 = i1+1;
+            w(i1) = log(log(likelih.nu));
+        end        
+        
+% $$$         if likelih.freeze_nu == 1
+% $$$             w(1) = log(likelih.sigma);
+% $$$         else
+% $$$             w(1) = log(likelih.sigma);
+% $$$             w(2) = log(log(likelih.nu));
+% $$$         end
     end
 
 
@@ -148,17 +169,27 @@ function likelih = likelih_t(do, varargin)
     %	See also
     %	LIKELIH_T_PAK    
 
-        if likelih.freeze_nu == 1
-            i1=1;        
+        i1 = 0;
+        if ~isempty(likelih.p.sigma)
+            i1 = i1+1;
             likelih.sigma = exp(w(i1));
-            w = w(i1+1:end);
-        else
-            i1=1;
-            likelih.sigma = exp(w(i1));
+        end
+        if ~isempty(likelih.p.nu)
             i1 = i1+1;
             likelih.nu = exp(exp(w(i1)));
-            w = w(i1+1:end);            
         end
+        
+% $$$         if likelih.freeze_nu == 1
+% $$$             i1=1;        
+% $$$             likelih.sigma = exp(w(i1));
+% $$$             w = w(i1+1:end);
+% $$$         else
+% $$$             i1=1;
+% $$$             likelih.sigma = exp(w(i1));
+% $$$             i1 = i1+1;
+% $$$             likelih.nu = exp(exp(w(i1)));
+% $$$             w = w(i1+1:end);            
+% $$$         end
     end
 
 
@@ -187,21 +218,31 @@ function likelih = likelih_t(do, varargin)
         
         v = likelih.nu;
         sigma = likelih.sigma;
-
-        % Evaluate the log(prior)
-        if isfield(likelih, 'p')
-            % notice that nu is handled in log(log(nu)) space and sigma is handled in log(sigma) space
-            gpl = likelih.p;
-            
-            if likelih.freeze_nu == 1
-                logPrior =  - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
-            else
-                logPprior = - feval(gpl.nu.fe, likelih.nu, gpl.nu.a) + log(v) + log(log(v));
-                logPrior =  logPprior - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
-            end
-        else
-            error('likelih_t -> likelih_t_priore: Priors for the likelihood parameters are not defined!')
-        end    
+        logPrior = 0;
+        if ~isempty(likelih.p.sigma) 
+            logPrior = feval(likelih.p.sigma.fh_e, likelih.sigma, likelih.p.sigma) - log(sigma);
+        end
+        if ~isempty(likelih.p.nu) 
+            logPrior = logPrior + feval(likelih.p.nu.fh_e, likelih.nu, likelih.p.nu)  - log(v) - log(log(v));
+        end
+        
+% $$$         v = likelih.nu;
+% $$$         sigma = likelih.sigma;
+% $$$ 
+% $$$         % Evaluate the log(prior)
+% $$$         if isfield(likelih, 'p')
+% $$$             % notice that nu is handled in log(log(nu)) space and sigma is handled in log(sigma) space
+% $$$             gpl = likelih.p;
+% $$$             
+% $$$             if likelih.freeze_nu == 1
+% $$$                 logPrior =  - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
+% $$$             else
+% $$$                 logPprior = - feval(gpl.nu.fe, likelih.nu, gpl.nu.a) + log(v) + log(log(v));
+% $$$                 logPrior =  logPprior - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
+% $$$             end
+% $$$         else
+% $$$             error('likelih_t -> likelih_t_priore: Priors for the likelihood parameters are not defined!')
+% $$$         end    
     end
     
     function glogPrior = likelih_t_priorg(likelih, varargin)
@@ -214,21 +255,35 @@ function likelih = likelih_t(do, varargin)
     %   See also
     %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
         
-    % Evaluate the log(prior)
+    % Evaluate the gradients of log(prior)
+
         v = likelih.nu;
         sigma = likelih.sigma;
-        
-        if isfield(likelih, 'p')
-            gpl = likelih.p;
-            if likelih.freeze_nu == 1
-                glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma  + 1;
-            else
-                glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma + 1;
-                glogPrior(2) = - feval(gpl.nu.fg, likelih.nu, gpl.nu.a).*v.*log(v) + log(v) + 1;
-            end
-        else
-            error('likelih_t -> likelih_t_priorg: Priors for the likelihood parameters are not defined!')
+        glogPrior = [];
+        i1 = 0;
+        if ~isempty(likelih.p.sigma) 
+            i1 = i1+1;
+            glogPrior(i1) = feval(likelih.p.sigma.fh_g, likelih.sigma, likelih.p.sigma).*sigma - 1;
         end
+        if ~isempty(likelih.p.nu) 
+            i1 = i1+1;
+            glogPrior(i1) = feval(likelih.p.nu.fh_g, likelih.nu, likelih.p.nu).*v.*log(v) - log(v) - 1;
+        end    
+    
+% $$$         v = likelih.nu;
+% $$$         sigma = likelih.sigma;
+% $$$         
+% $$$         if isfield(likelih, 'p')
+% $$$             gpl = likelih.p;
+% $$$             if likelih.freeze_nu == 1
+% $$$                 glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma  + 1;
+% $$$             else
+% $$$                 glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma + 1;
+% $$$                 glogPrior(2) = - feval(gpl.nu.fg, likelih.nu, gpl.nu.a).*v.*log(v) + log(v) + 1;
+% $$$             end
+% $$$         else
+% $$$             error('likelih_t -> likelih_t_priorg: Priors for the likelihood parameters are not defined!')
+% $$$         end
     end
     
     function logLikelih = likelih_t_e(likelih, y, f, varargin)
