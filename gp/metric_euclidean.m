@@ -210,7 +210,7 @@ function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask)
 
     % NOTE! Here we have already taken into account that the parameters are transformed
     % through log() and thus dK/dlog(p) = p * dK/dp
-    
+   
     if ~isempty(metric.p.lengthScales)
         if nargin <= 3
             if nargin == 2

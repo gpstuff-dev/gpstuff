@@ -269,10 +269,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
         if isfield(gpcf,'metric')
             
             if ~isempty(gpcf.p.magnSigma2)
-                eprior=eprior...
-                       +feval(gpp.magnSigma2.fe, ...
-                              gpcf.magnSigma2, gpp.magnSigma2.a)...
-                       -log(gpcf.magnSigma2);
+                eprior=eprior + feval(gpp.magnSigma2.fe, gpcf.magnSigma2, gpp.magnSigma2.a) - log(gpcf.magnSigma2);
             end
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
             
@@ -813,6 +810,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
             % If a scaled euclidean metric try first mex-implementation 
             % and if there is not such... 
             C = trcov(gpcf,x);
+            
             % ... evaluate the covariance here.
             if isnan(C)
                 [n, m] =size(x);

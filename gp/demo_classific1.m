@@ -63,13 +63,13 @@ pl = prior_logunif('init');
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Create the likelihood structure
-likelih = likelih_logit('init', y);
+likelih = likelih_probit('init', y);
 
 % Create the GP data structure
 gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [],'jitterSigmas', 0.1);   %{gpcf2}
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))'});
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
 
 % Set the optimization parameters...
 opt=gp_mcopt;
@@ -116,7 +116,7 @@ xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
 % Make predictions
-p1 = mean(squeeze(logsig(gp_preds(rr, x, rr.latentValues', xstar))),2);
+p1 = mean(squeeze(logsig(mc_pred(rr, x, rr.latentValues', xstar))),2);
 
 figure, hold on;
 n_pred=size(xstar,1);
@@ -154,10 +154,10 @@ Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 gp_fic = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.1, 'X_u', Xu);
 
 % Set the approximate inference method
-gp_fic = gp_init('set', gp_fic, 'latent_method', {'MCMC', zeros(size(y))'});
+gp_fic = gp_init('set', gp_fic, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
 
 % Set the sampling options
-opt.nsamples=1000;
+opt.nsamples=100;
 opt.repeat=1;
 opt.hmc_opt.steps=5;
 opt.hmc_opt.stepadj=0.02;
@@ -170,7 +170,7 @@ hmc2('state', sum(100*clock))
 % Thin the sample chain. 
 % Note! the thinning is not optimal and the chain is too short. Run
 % longer chain, if you want good analysis.
-rr_fic=thin(rgp_fic,150,4);
+rr_fic=thin(rgp_fic,15,1);
 
 % Plot the sample chains of the hyperparameters
 figure(1)
@@ -188,7 +188,7 @@ xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
 % Make predictions
-p1_fic = mean(squeeze(logsig(gp_preds(rr_fic, x, rr_fic.latentValues', xstar))),2);
+p1_fic = mean(squeeze(logsig(mc_pred(rr_fic, x, rr_fic.latentValues', xstar))),2);
 
 figure, hold on;
 n_pred=size(xstar,1);

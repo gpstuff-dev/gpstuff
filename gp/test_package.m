@@ -1,6 +1,7 @@
 % TODO!
 % - tulosten oikeellisuuden tarkistus (nyt tarkistetaan vain, että funktioissa ei bugeja) 
 % - metriikat
+% - IA:n testaus regressiossa ja muilla likelihoodeilla
 
 % Initialize the statistics parameters:
 warnings = '';
@@ -719,13 +720,12 @@ y = 2.*y-1;
 x(:,end)=[];
 [n, nin] = size(x);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2);
-gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.2^2);
-
 % Set prior
-pl = prior_t('init');
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-gpcf3 = gpcf_ppcs2('set', gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+pl = prior_logunif('init');
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf2 = gpcf_ppcs1('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf3 = gpcf_ppcs3('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.5^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Initialize the inducing inputs in a regular grid over the input space
 [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
@@ -752,7 +752,7 @@ for i1=1:4
 end
 %trindex = {trindex{[1:3 5:16]}};
 p2 = [x ; p(1:10,:)];
-models = {'FULL' 'FIC' 'PIC' 'CS+FIC'};
+models = {'FULL' 'CS-FULL' 'FIC' 'PIC' 'CS+FIC'};
 
 likelih = likelih_probit('init', y);
 
@@ -760,6 +760,10 @@ for i=1:length(models)
     switch models{i}
       case 'FULL' 
         gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'CS-FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
@@ -787,10 +791,11 @@ for i=1:length(models)
     opt.tolfun = 1e-3;
     opt.tolx = 1e-3;
     opt.display = 1;
+    opt.maxiter = 30;
 
     % do scaled conjugate gradient optimization 
     w = gp_pak(gp, 'hyper');
-    [w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    w = scg2(fe, w, opt, fg, gp, x, y, 'hyper');
     gp=gp_unpak(gp,w, 'hyper');
 
     delta = gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'hyper');
@@ -808,7 +813,7 @@ for i=1:length(models)
     
     switch models{i}
       case {'FULL' 'CS+FIC'}
-        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11
             warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
@@ -826,7 +831,7 @@ for i=1:length(models)
 
     switch models{i}
       case {'FULL' 'CS+FIC'}
-        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
             warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
@@ -856,6 +861,10 @@ for i=1:length(models)
         gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
+      case 'CS-FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
       case 'FIC' 
         gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
         tstindex = [];
@@ -881,10 +890,11 @@ for i=1:length(models)
     opt.tolfun = 1e-3;
     opt.tolx = 1e-3;
     opt.display = 1;
+    opt.maxiter = 30;
 
     % do scaled conjugate gradient optimization 
     w = gp_pak(gp, 'hyper');
-    [w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
     gp=gp_unpak(gp,w, 'hyper');
 
     delta = gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'hyper');
@@ -903,14 +913,14 @@ for i=1:length(models)
     
     switch models{i}
       case {'FULL' 'CS+FIC'}
-        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
-            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
         % In FIC and PIC the additive phenomenon is only approximate
       case {'FIC' 'PIC'}
         if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
-            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
     end
@@ -921,14 +931,14 @@ for i=1:length(models)
 
     switch models{i}
       case {'FULL' 'CS+FIC'}
-        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-12 
-            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
         % In FIC and PIC the additive phenomenon is only approximate
       case {'FIC' 'PIC'}
         if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
-            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
             numwarn = numwarn + 1;
         end
     end
@@ -959,7 +969,7 @@ for i=1:length(models)
 
     gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
     gp=gp_unpak(gp,w, 'hyper');
-    gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))'});
+    gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
     
     % Do the sampling (this takes approximately 5-10 minutes)    
     [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
@@ -1010,7 +1020,6 @@ for i=1:length(models)
         [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], tstindex2, y);
     end
 end
-
 
 
 % =========================== 

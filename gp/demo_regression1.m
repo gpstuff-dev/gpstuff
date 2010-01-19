@@ -86,47 +86,8 @@ y = data(:,3);
 % 
 % $$$ % First create squared exponential covariance function with ARD and 
 % $$$ % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-
-% ... Then set the prior for the parameters of covariance functions...
-%gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-% $$$ gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
-% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-% $$$ 
-% $$$ % ... Finally create the GP data structure
-% $$$ gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
-
-
-
-%gpcf1.p.lengthScale = logunif_p();
-%gpcf1.p.magnSigma2 = logunif_p();
-%gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
-
-%[e, edata, eprior] = gp_e(w, gp, x, y)
-%[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
-
-%gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-%gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.2 1.1], 'magnSigma2', 0.2^2);
-pl = prior_logunif('init')
-%gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
-pt = prior_t('init')
-%gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pm);
-
-pps2 = prior_sinvchi2('init', 'scale', 6, 'nu', 10);
-ppps2 = prior_sinvchi2('init', 'scale', 1.7^2, 'nu', 0.2);
-%ps2 = prior_sinvchi2('init', 'scale', 3^2, 'nu', 1, 'nu_prior', pps2)
-%ps22 = prior_sinvchi2('init', 'scale', 2^2, 'nu', 0.9, 'nu_prior', ppps2)
-ps2 = prior_sinvchi2('init', 'scale', 3^2, 'nu', 1, 'scale_prior', pps2, 'nu_prior', pps2)
-ps22 = prior_sinvchi2('init', 'scale', 2^2, 'nu', 2, 'scale_prior', ppps2, 'nu_prior', ppps2)
-
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', ps22);
-gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', ps2);
-
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2, 'noiseSigmas2_prior', pl);
-%gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
+gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [1.2], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
 
@@ -184,7 +145,7 @@ opt.display = 1;
 
 % do the optimization
 w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
-
+gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w, 'hyper');
 

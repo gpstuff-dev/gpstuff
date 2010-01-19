@@ -18,7 +18,6 @@ function likelih = likelih_probit(do, varargin)
 %         likelih.fh_g2            = function handle to second derivative of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
-%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_PROBIT('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
@@ -30,7 +29,7 @@ function likelih = likelih_probit(do, varargin)
 %
 
 % Copyright (c) 2007      Jaakko Riihimäki
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -57,7 +56,6 @@ function likelih = likelih_probit(do, varargin)
         likelih.fh_g2 = @likelih_probit_g2;
         likelih.fh_g3 = @likelih_probit_g3;
         likelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
-        likelih.fh_mcmc = @likelih_probit_mcmc;
         likelih.fh_predy = @likelih_probit_predy;
         likelih.fh_recappend = @likelih_probit_recappend;
         
@@ -229,90 +227,6 @@ function likelih = likelih_probit(do, varargin)
         sigm2hati1=sigm2_i-(sigm2_i^2*normp_zi)/((1+sigm2_i)*normc_zi)*(zi+normp_zi/normc_zi);
         m_1 = muhati1;
         m_2 = sigm2hati1;
-    end
-
-
-    function [z, energ, diagn] = likelih_probit_mcmc(z, opt, varargin)
-    %LIKELIH_PROBIT_MCMC        Conducts the MCMC sampling of latent values
-    %
-    %
-    %   NOT IMPLEMENTED!
-    %
-    %   Description
-    %   [F, ENERG, DIAG] = LIKELIH_PROBIT_MCMC(F, OPT, GP, X, Y) takes the current latent 
-    %   values F, options structure OPT, Gaussian process data structure GP, inputs X and
-    %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
-    %   diagnostics DIAG.
-    %
-    %   See also
-    %   GP_MC
-        
-        gp = varargin{1};
-        p = varargin{2};
-        t = varargin{3};
-        
-        maxcut = -log(eps);
-        mincut = -log(1/realmin - 1);
-        lvs=opt.sample_latent_scale;
-        a = max(min(z, maxcut),mincut);
-        [K,C]=gp_trcov(gp, p);
-        L=chol(C)';
-        n=length(t);
-        likelih_e = @probit;
-        e = feval(likelih_e, gp, z, t);
-
-        % Adaptive control algorithm to find such a value for lvs 
-        % that the rejection rate of Metropolis is optimal. 
-        slrej = 0;
-        for li=1:100
-            zt=sqrt(1-lvs.^2).*z+lvs.*L*randn(n,1);
-            at = max(min(zt, maxcut),mincut);
-            ed = feval(likelih_e, gp, zt, t);
-            a=e-ed;
-            if exp(a) > rand(1)
-                z=zt;
-                e=ed;
-                lvs=min(1,lvs*1.1);
-            else
-                lvs=max(1e-8,lvs/1.05);
-            end
-        end
-        opt.sample_latent_scale=lvs;
-        % Do the actual sampling 
-        for li=1:(opt.repeat)
-            zt=sqrt(1-lvs.^2).*z+lvs.*L*randn(n,1);
-            at = max(min(zt, maxcut),mincut);
-            ed = feval(likelih_e, gp, zt, t);
-            a=e-ed;
-            if exp(a) > rand(1)
-                z=zt;
-                e=ed;
-            else
-                slrej=slrej+1;
-            end
-        end
-        diagn.rej = slrej/opt.repeat;
-        diagn.lvs = lvs;
-        diagn.opt=opt;
-        energ=[];
-        z = z';
-
-
-        function e = probit(gp, z, t)
-        % LH_2CLASS     Minus log likelihood function for 2 class classification.
-        %               A logistic likelihod
-        %
-        %       E = H_LOGIT(GP, P, T, Z) takes.... and returns minus log from 
-            
-        % If class prior is defined use it
-            if isfield(gp,'classprior');
-                cp=gp.classprior;     % THIS IS NOT YET IMPLEMENTED
-            else
-                cp=1;
-            end
-            e = -sum(log(normcdf(y.*z)));
-        end
-        
     end
 
     function [Ey, Vary, py] = likelih_probit_predy(likelih, Ef, Varf, y)

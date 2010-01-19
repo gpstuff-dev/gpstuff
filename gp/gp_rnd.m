@@ -47,10 +47,10 @@ switch gp.type
     if issparse(C)
         LD = ldlchol(C);
         Ef = repmat( K'*ldlsolve(LD,ty), 1, nsamp) ;
-        predcov = chol(K2 - K'*ldlsolve(LD,K)) ;
+        predcov = chol(K2 - K'*ldlsolve(LD,K))';
         sampf = Ef + predcov*randn(size(Ef));
         if nargout > 1
-            predcov = chol(C2 - K'*ldlsolve(LD,K));            
+            predcov = chol(C2 - K'*ldlsolve(LD,K))';            
             sampy = Ef + predcov*randn(size(Ef));
         end        
     else
