@@ -1,6 +1,6 @@
 function p = prior_logunif(do, varargin)
 
-% PRIOR_LOGUNIF      Uniform prior for the logarithm of the parameter
+% PRIOR_LOGUNIF      Uniform prior structure for the logarithm of the parameter
 %       
 %       Description
 %       P = PRIOR_LOGUNIF('INIT') returns a structure that specifies uniform prior
@@ -18,7 +18,7 @@ function p = prior_logunif(do, varargin)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. 
 %
 %	See also
-%       PRIOR_GAMMA, GPCF_SEXP, LIKELIH_PROBIT
+%       PRIOR_GAMMA, PRIOR_UNIF, PRIOR_T, GPCF_SEXP, LIKELIH_PROBIT
 
     
 % Copyright (c) 2009 Jarno Vanhatalo
@@ -92,7 +92,7 @@ function p = prior_logunif(do, varargin)
     end
     
     function g = prior_logunif_g(x, p)
-        g = 1/x;
+        g = 1./x;
     end
     
     function rec = prior_logunif_recappend(rec, ri, p)

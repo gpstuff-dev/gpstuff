@@ -5,11 +5,14 @@ function p = prior_sinvchi2(do, varargin)
 %        Description
 %        P = PRIOR_SINVCHI2('INIT') returns a structure that specifies
 %        Scaled inverse-chi-square prior. 
+%
+%        Parameterisation is done by Bayesian Data Analysis,  
+%        second edition, Gelman et.al 2004.
 %    
 %	The fields in P are:
 %           p.type         = 'Sinvchi2'
-%           p.s2           = The scale (default 1)
-%           p.nu           = The degrees of freedom (default 4)
+%           p.s2           = Scale (default 1)
+%           p.nu           = Degrees of freedom (default 4)
 %           p.fh_pak       = Function handle to parameter packing routine
 %           p.fh_unpak     = Function handle to parameter unpacking routine
 %           p.fh_e         = Function handle to energy evaluation routine
@@ -18,12 +21,12 @@ function p = prior_sinvchi2(do, varargin)
 %
 %	P = PRIOR_SINVCHI2('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. 
-%       Fields that can be set are 's2' and 'nu'.
+%       Fields that can be set: 's2', 'nu', 's2_prior', 'nu_prior'.
 %
 %	See also
-%       PRIOR_GAMMA, GPCF_SEXP, LIKELIH_PROBIT
+%       PRIOR_GAMMA, PRIOR_T, PRIOR_LOGUNIF, GPCF_SEXP, LIKELIH_PROBIT
 
-    
+
 % Copyright (c) 2000-2001 Aki Vehtari
 % Copyright (c) 2010 Jaakko Riihimäki
 
@@ -62,11 +65,11 @@ function p = prior_sinvchi2(do, varargin)
             % Loop through all the parameter values that are changed
             for i=1:2:length(varargin)-1
                 switch varargin{i}
-                  case 'scale'
+                  case 's2'
                     p.s2 = varargin{i+1};
                   case 'nu'
                     p.nu = varargin{i+1};
-                  case 'scale_prior'
+                  case 's2_prior'
                     p.p.s2 = varargin{i+1};
                   case 'nu_prior'
                     p.p.nu = varargin{i+1};
@@ -87,7 +90,7 @@ function p = prior_sinvchi2(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'scale'
+              case 's2'
                 p.s2 = varargin{i+1};
               case 'nu'
                 p.nu = varargin{i+1};

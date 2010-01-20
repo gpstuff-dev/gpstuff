@@ -17,9 +17,9 @@ function p = prior_unif(do, varargin)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. 
 %
 %	See also
-%       PRIOR_GAMMA, GPCF_SEXP, LIKELIH_PROBIT
+%       PRIOR_INVGAM, PRIOR_SINVCHI2, PRIOR_T, GPCF_SEXP, LIKELIH_PROBIT
 
-    
+
 % Copyright (c) 2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
@@ -88,7 +88,7 @@ function p = prior_unif(do, varargin)
     end
     
     function g = prior_unif_g(x, p)
-        g = 0;
+        g = zeros(size(x));
     end
     
     function rec = prior_unif_recappend(rec, ri, p)
