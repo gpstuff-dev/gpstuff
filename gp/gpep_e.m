@@ -284,7 +284,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         
                         logZep_tmp=logZep;
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                        for i1=1:n    
+                        for i1=1:n
                             % approximate cavity parameters
                             Ki1 = K(:,i1);
                             sqrtSKi1 = ssmult(sqrtS, Ki1);
@@ -804,7 +804,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
                             VD = ldlrowupdate(i1,VD,D2_n,'+');
                         else
-                            VD = ldlrowmodify(VD, D2_o, D2_n, i1);
+                            VD = ldlrowmodify(VD, D2_n, i1);
                         end
                     end
                     % Re-evaluate the parameters

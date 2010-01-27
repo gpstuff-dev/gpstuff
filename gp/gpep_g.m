@@ -68,70 +68,73 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
         end
 
-        
-        % Evaluate the gradients from covariance functions
-        for i=1:ncf
-            i1=0;
-            if ~isempty(gprior)
-                i1 = length(gprior);
-            end
-            gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-                        
-            
-            for i2 = 1:length(DKff)
-                i1 = i1+1;                
-                Bdl = b'*(DKff{i2}*b);
-                Cdl = sum(sum(invC.*DKff{i2})); % help arguments for lengthScale
-                gdata(i1)=0.5.*(Cdl - Bdl);
-                gprior(i1) = gprior_cf(i2);
-            end
-            
-            % Set the gradients of hyper-hyperparameter
-            if length(gprior_cf) > length(DKff)
-                for i2=length(DKff)+1:length(gprior_cf)
-                    i1 = i1+1;
-                    gdata(i1) = 0;
-                    gprior(i1) = gprior_cf(i2);
-                end
-            end
-        end
-        
-        % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
-            for i=1:nn
+        % =================================================================
+        % Gradient with respect to covariance function parameters
+        if ~isempty(strfind(param, 'covariance'))        
+            % Evaluate the gradients from covariance functions
+            for i=1:ncf
                 i1=0;
                 if ~isempty(gprior)
                     i1 = length(gprior);
                 end
+                gpcf = gp.cf{i};
+                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                 
-                noise = gp.noise{i};
-                [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
                 
-                for i2 = 1:length(DCff)
-                    i1 = i1+1;
-                
-                    B = trace(invC);
-                    C=b'*b;    
-                    gdata(i1)=0.5.*DCff{i2}.*(B - C); 
+                for i2 = 1:length(DKff)
+                    i1 = i1+1;                
+                    Bdl = b'*(DKff{i2}*b);
+                    Cdl = sum(sum(invC.*DKff{i2})); % help arguments for lengthScale
+                    gdata(i1)=0.5.*(Cdl - Bdl);
                     gprior(i1) = gprior_cf(i2);
                 end
                 
                 % Set the gradients of hyper-hyperparameter
-                if length(gprior_cf) > length(DCff)
-                    for i2=length(DCff)+1:length(gprior_cf)
+                if length(gprior_cf) > length(DKff)
+                    for i2=length(DKff)+1:length(gprior_cf)
                         i1 = i1+1;
                         gdata(i1) = 0;
                         gprior(i1) = gprior_cf(i2);
                     end
                 end
             end
+            
+            % Evaluate the gradient from noise functions
+            if isfield(gp, 'noise')
+                nn = length(gp.noise);
+                for i=1:nn
+                    i1=0;
+                    if ~isempty(gprior)
+                        i1 = length(gprior);
+                    end
+                    
+                    noise = gp.noise{i};
+                    [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
+                    
+                    for i2 = 1:length(DCff)
+                        i1 = i1+1;
+                        
+                        B = trace(invC);
+                        C=b'*b;    
+                        gdata(i1)=0.5.*DCff{i2}.*(B - C); 
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                    
+                    % Set the gradients of hyper-hyperparameter
+                    if length(gprior_cf) > length(DCff)
+                        for i2=length(DCff)+1:length(gprior_cf)
+                            i1 = i1+1;
+                            gdata(i1) = 0;
+                            gprior(i1) = gprior_cf(i2);
+                        end
+                    end
+                end
+            end
         end
         
-        % likelihood parameters
-        %--------------------------------------
-        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+        % =================================================================
+        % Gradient with respect to likelihood function parameters
+        if ~isempty(strfind(param, 'likelihood'))
             [Ef, Varf] = ep_pred(gp, x, y, x, param);
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -174,8 +177,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         LL = sum(L.*L,2);
         
         % =================================================================
-        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-        % Evaluate the gradients from covariance functions
+        % Gradient with respect to covariance function parameters
+        if ~isempty(strfind(param, 'covariance'))
             for i=1:ncf            
                 i1=0;
                 if ~isempty(gprior)
@@ -232,40 +235,55 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
         end
         
-        % Inducing inputs
-        %--------------------------------------
-        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing')
-            st=0;
-            if ~isempty(gprior)
-                st = length(gprior);
-            end
-            gdata(st+1:st+length(gp.X_u(:))) = 0;
-            
-            for i=1:ncf
-                i1=st;
+        % =================================================================
+        % Gradient with respect to inducing inputs
+        
+        if ~isempty(strfind(param, 'inducing'))
+            if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                m = size(gp.X_u,2);
+                st=0;
+                if ~isempty(gprior)
+                    st = length(gprior);
+                end
                 
-                gpcf = gp.cf{i};
-                [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
-                [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
+                gdata(st+1:st+length(gp.X_u(:))) = 0;
+                i1 = st+1;
+                for i = 1:size(gp.X_u,1)
+                    if iscell(gp.p.X_u) % Own prior for each inducing input
+                        pr = gp.p.X_u{i};
+                        gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    else % One prior for all inducing inputs
+                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                    end
+                    i1 = i1 + m;
+                end
                 
-                for i2 = 1:length(DKuu)
-                    i1 = i1+1;
-
-                    KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                for i=1:ncf
+                    i1=st;
                     
-                    gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                    gpcf = gp.cf{i};
+                    DKuu = feval(gpcf.fh_ginput, gpcf, u);
+                    DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                
+                    for i2 = 1:length(DKuu)
+                        i1 = i1+1;
+                        
+                        KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                        
+                        gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
                                                           2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                    gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                          sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
-                    gprior(i1) = gprior_ind(i2);
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                                                      sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                    end
                 end
             end
         end
         
-        % likelihood parameters
-        %--------------------------------------
-        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+        % =================================================================
+        % Gradient with respect to likelihood function parameters
+        
+        if ~isempty(strfind(param, 'likelihood'))
             [Ef, Varf] = ep_pred(gp, x, y, x, param, [], 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -306,7 +324,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         iKuuKuf = K_uu\K_fu';
         
         % =================================================================
-        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
+        % Gradient with respect to covariance function parameters
+        if ~isempty(strfind(param, 'covariance'))
+            
             % Evaluate the gradients from covariance functions
             for i=1:ncf            
                 i1=0;
@@ -373,42 +393,61 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
         end
             
-            
-        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
-            st=0;
-            if ~isempty(gprior)
-                st = length(gprior);
-            end
-            gdata(st+1:st+length(gp.X_u(:))) = 0;
 
-            % Loop over the  covariance functions
-            for i=1:ncf            
-                i1=st;
-                gpcf = gp.cf{i};
-                [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
-                [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
+        % =================================================================
+        % Gradient with respect to inducing inputs
+        
+        if ~isempty(strfind(param, 'inducing'))
+            if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                m = size(gp.X_u,2);
                 
-                for i2 = 1:length(DKuu)
-                    i1 = i1+1;
-                    KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
-                    
-                    gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
-                                                 sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
-
-                    for kk=1:length(ind)
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
-                                                              b(ind{kk})*KfuiKuuDKuu_u(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
-                                                              + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
-                                                              sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuDKuu_u(ind{kk},:))*iKuuKuf(:,ind{kk})))));
+                st=0;
+                if ~isempty(gprior)
+                    st = length(gprior);
+                end
+                gdata(st+1:st+length(gp.X_u(:))) = 0;
+                
+                i1 = st+1;
+                for i = 1:size(gp.X_u,1)
+                    if iscell(gp.p.X_u) % Own prior for each inducing input
+                        pr = gp.p.X_u{i};
+                        gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    else % One prior for all inducing inputs
+                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
                     end
-                    gprior(i1) = gprior_ind(i2);
+                    i1 = i1 + m;
+                end
+                
+                % Loop over the  covariance functions
+                for i=1:ncf            
+                    i1=st;
+                    gpcf = gp.cf{i};
+                    DKuu = feval(gpcf.fh_ginput, gpcf, u);
+                    DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                    
+                    for i2 = 1:length(DKuu)
+                        i1 = i1+1;
+                        KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
+                        
+                        gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
+                                                      sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
+                        
+                        for kk=1:length(ind)
+                            gdata(i1) = gdata(i1) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
+                                                          b(ind{kk})*KfuiKuuDKuu_u(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
+                                                          + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
+                                                          sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuDKuu_u(ind{kk},:))*iKuuKuf(:,ind{kk})))));
+                        end
+                    end
                 end
             end
         end
         
-        % likelihood parameters
-        %--------------------------------------
-        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+        % =================================================================
+        % Gradient with respect to likelihood function parameters
+        
+        if ~isempty(strfind(param, 'likelihood'))
+
             [Ef, Varf] = ep_pred(gp, x, y, x, param, [], gp.tr_index);
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -478,8 +517,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         LL = sum(L.*L,2);
         
         % =================================================================
-        if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
-            % Evaluate the gradients from covariance functions
+        % Gradient with respect to covariance function parameters
+        if ~isempty(strfind(param, 'covariance'))
             for i=1:ncf            
                 i1=0;
                 if ~isempty(gprior)
@@ -564,42 +603,61 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             end
         end             
             
-        if strcmp(param,'inducing') || strcmp(param,'hyper+inducing') || strcmp(param,'all')
-            st=0;
-            if ~isempty(gprior)
-                st = length(gprior);
-            end
-            gdata(st+1:st+length(gp.X_u(:))) = 0;
-
-            for i=1:ncf
-                i1=st;
+        % =================================================================
+        % Gradient with respect to inducing inputs
+        
+        if ~isempty(strfind(param, 'inducing'))
+            if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                m = size(gp.X_u,2);
+                st=0;
+                if ~isempty(gprior)
+                    st = length(gprior);
+                end
                 
-                gpcf = gp.cf{i};            
-                if ~isfield(gpcf,'cs')
-                    [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
-                    [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
-                    
-                    for i2 = 1:length(DKuu)
-                        i1 = i1 + 1;
-                        KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                        
-                        gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                                             2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                        gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                                              sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
-                        
-                        gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
-                        gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
-                        gprior(i1) = gprior_ind(i2);
+                gdata(st+1:st+length(gp.X_u(:))) = 0;
+                i1 = st+1;
+                for i = 1:size(gp.X_u,1)
+                    if iscell(gp.p.X_u) % Own prior for each inducing input
+                        pr = gp.p.X_u{i};
+                        gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    else % One prior for all inducing inputs
+                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
                     end
-                end                
-            end           
+                    i1 = i1 + m;
+                end
+                
+                for i=1:ncf
+                    i1=st;
+                    
+                    gpcf = gp.cf{i};            
+                    if ~isfield(gpcf,'cs')
+                        [DKuu, gprior_ind] = feval(gpcf.fh_ginput, gpcf, u);
+                        [DKuf] = feval(gpcf.fh_ginput, gpcf, u, x);
+                        
+                        for i2 = 1:length(DKuu)
+                            i1 = i1 + 1;
+                            KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                            
+                            gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                                                          2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                            gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                            gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                                                          sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                            
+                            gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
+                            gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+                            gprior(i1) = gprior_ind(i2);
+                        end
+                    end
+                end
+            end
         end
         
-        % likelihood parameters
-        %--------------------------------------
-        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+
+        % =================================================================
+        % Gradient with respect to likelihood function parameters
+        
+        if ~isempty(strfind(param, 'likelihood'))
             [Ef, Varf] = ep_pred(gp, x, y, x, param, [], 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;

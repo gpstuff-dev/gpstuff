@@ -91,15 +91,15 @@ gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
 
-w = gp_pak(gp, 'hyper');
+w = gp_pak(gp, 'covariance');
 %[e, edata, eprior] = gp_e(w, gp, x, y)
 %[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
 
 
-gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
 ;
 w0=randn(size(w))
-gradcheck(w0, @gp_e, @gp_g, gp, x, y, 'hyper');
+gradcheck(w0, @gp_e, @gp_g, gp, x, y, 'covariance');
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 
@@ -440,13 +440,9 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1 1.2], 'magnSigma2', 0.4^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 
-% ... Then set the prior for the parameters of covariance functions...
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = gamma_p({3 7});  
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % Here we conduct the same analysis as in part 1, but this time we 
 % use FIC approximation
@@ -457,6 +453,22 @@ X_u = [u1(:) u2(:)];
 
 % Create the FIC GP data structure
 gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0, 'X_u', X_u)
+
+w = gp_pak(gp_fic);
+gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
+
+gp_fic = gp_init('set', gp_fic, 'Xu_prior', prior_unif('init'));
+w = gp_pak(gp_fic);
+gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1 1.2], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
+gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0, 'X_u', X_u);
+w = gp_pak(gp_fic);
+gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
+
+gp_fic = gp_init('set', gp_fic, 'Xu_prior', prior_unif('init'));
+w = gp_pak(gp_fic);
+gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -646,12 +658,7 @@ y = data(:,3);
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-
-% ... Then set the prior for the parameters of covariance functions...
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = gamma_p({3 7});  
-gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 
 % Here we conduct the same analysis as in part 1, but this time we 
 % use FIC approximation
@@ -683,6 +690,24 @@ end
 % Create the FIC GP data structure
 gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
 gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
+
+w = gp_pak(gp_pic);
+gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
+
+gp_pic = gp_init('set', gp_pic, 'Xu_prior', prior_unif('init'));
+w = gp_pak(gp_pic);
+gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1 1.2], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
+gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
+gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
+w = gp_pak(gp_pic);
+gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
+
+gp_pic = gp_init('set', gp_pic, 'Xu_prior', prior_unif('init'));
+w = gp_pak(gp_pic);
+gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
+
 
 % -----------------------------
 % --- Conduct the inference ---

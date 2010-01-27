@@ -37,7 +37,14 @@ function gpcf = gpcf_matern32(do, varargin)
 %                          (gpcf_sexp_recappend)
 %
 %	GPCF = GPCF_MATERN32('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
+%       can be modified are:
+%
+%             'magnSigma2'         : set the magnSigma2
+%             'lengthScale'        : set the lengthScale
+%             'metric'             : set the metric structure into the covariance function
+%             'lengthScale_prior'  : set the prior structure for lengthScale
+%             'magnSigma2_prior'   ; set the prior structure for magnSigma2
 %
 %	See also
 %       gpcf_sexp, gpcf_exp, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
@@ -92,8 +99,6 @@ function gpcf = gpcf_matern32(do, varargin)
                     gpcf.magnSigma2 = varargin{i+1};
                   case 'lengthScale'
                     gpcf.lengthScale = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
                   case 'metric'
                     gpcf.metric = varargin{i+1};
                     if isfield(gpcf, 'lengthScale')
@@ -123,8 +128,6 @@ function gpcf = gpcf_matern32(do, varargin)
                 gpcf.magnSigma2 = varargin{i+1};
               case 'lengthScale'
                 gpcf.lengthScale = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
               case 'metric'
                 gpcf.metric = varargin{i+1};
                 if isfield(gpcf, 'lengthScale')
@@ -458,12 +461,10 @@ function gpcf = gpcf_matern32(do, varargin)
     %                       respect to the inducing inputs.
     %
     %	Descriptioni
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_MATERN32_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %	DKuf = GPCF_MATERN32_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %      DKff    = gradients of covariance matrix Kff with respect to x (cell array with matrix elements)
     %
     %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
@@ -478,13 +479,12 @@ function gpcf = gpcf_matern32(do, varargin)
             if isfield(gpcf,'metric')
                 K = feval(gpcf.fh_trcov, gpcf, x);
                 dist = feval(gpcf.metric.distance, gpcf.metric, x);
-                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x);
+                gdist = feval(gpcf.metric.ginput, gpcf.metric, x);
                 ii1 = 0;
                 for i=1:length(gdist)
                     ii1 = ii1+1;
                     %DKff{ii1} = -2.*K.*dist.*gdist{ii1};
                     DKff{ii1} = -K./(1+sqrt(3)*dist).*3.*dist.*gdist{ii1};
-                    gprior(ii1) = gprior_dist(ii1);
                 end
             else
             
@@ -507,7 +507,6 @@ function gpcf = gpcf_matern32(do, varargin)
                         
                         ii1 = ii1 + 1;
                         DKff{ii1} = DK;
-                        gprior(ii1) = 0; 
                     end
                 end
             end
@@ -515,13 +514,12 @@ function gpcf = gpcf_matern32(do, varargin)
             if isfield(gpcf,'metric')
                 K = feval(gpcf.fh_cov, gpcf, x, x2);
                 dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
-                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
+                gdist = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
                 ii1 = 0;
                 for i=1:length(gdist)
                     ii1 = ii1+1;
                     %DKff{ii1}   = -2.*K.*dist.*gdist{ii1};
                     DKff{ii1} = -K./(1+sqrt(3)*dist).*3.*dist.*gdist{ii1};
-                    gprior(ii1) = gprior_dist(ii1);
                 end
             else
 
@@ -543,7 +541,6 @@ function gpcf = gpcf_matern32(do, varargin)
                         DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
                         ii1 = ii1 + 1;
                         DKff{ii1} = DK;
-                        gprior(ii1) = 0; 
                     end
                 end
             end

@@ -1,4 +1,3 @@
-
 function gpcf = gpcf_sexp(do, varargin)
 %GPCF_SEXP	Create a squared exponential covariance function for Gaussian Process
 %
@@ -38,7 +37,14 @@ function gpcf = gpcf_sexp(do, varargin)
 %                          (gpcf_sexp_recappend)
 %
 %	GPCF = GPCF_SEXP('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
+%       can be modified are:
+%
+%             'magnSigma2'         : set the magnSigma2
+%             'lengthScale'        : set the lengthScale
+%             'metric'             : set the metric structure into the covariance function
+%             'lengthScale_prior'  : set the prior structure for lengthScale
+%             'magnSigma2_prior'   ; set the prior structure for magnSigma2
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
@@ -93,8 +99,6 @@ function gpcf = gpcf_sexp(do, varargin)
                     gpcf.magnSigma2 = varargin{i+1};
                   case 'lengthScale'
                     gpcf.lengthScale = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
                   case 'metric'
                     gpcf.metric = varargin{i+1};
                     if isfield(gpcf, 'lengthScale')
@@ -124,8 +128,6 @@ function gpcf = gpcf_sexp(do, varargin)
                 gpcf.magnSigma2 = varargin{i+1};
               case 'lengthScale'
                 gpcf.lengthScale = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
               case 'metric'
                 gpcf.metric = varargin{i+1};
                 if isfield(gpcf, 'lengthScale')
@@ -446,17 +448,15 @@ function gpcf = gpcf_sexp(do, varargin)
     end
 
 
-    function [DKff, gprior]  = gpcf_sexp_ginput(gpcf, x, x2)
+    function DKff  = gpcf_sexp_ginput(gpcf, x, x2)
     %GPCF_SEXP_GIND     Evaluate gradient of covariance function with 
     %                   respect to x.
     %
     %	Descriptioni
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_SEXP_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %	DKff = GPCF_SEXP_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %      DKff    = gradients of covariance matrix Kff with respect to x (cell array with matrix elements)
     %
     %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
@@ -470,11 +470,10 @@ function gpcf = gpcf_sexp(do, varargin)
             K = feval(gpcf.fh_trcov, gpcf, x);
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x);
-                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x);
+                gdist = feval(gpcf.metric.ginput, gpcf.metric, x);
                 for i=1:length(gdist)
                     ii1 = ii1+1;
                     DKff{ii1} = -2.*K.*dist.*gdist{ii1};
-                    gprior(ii1) = gprior_dist(ii1);
                 end
             else
                 if length(gpcf.lengthScale) == 1
@@ -493,7 +492,6 @@ function gpcf = gpcf_sexp(do, varargin)
                         
                         ii1 = ii1 + 1;
                         DKff{ii1} = DK;
-                        gprior(ii1) = 0; 
                     end
                 end
             end
@@ -503,14 +501,13 @@ function gpcf = gpcf_sexp(do, varargin)
             
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
-                [gdist, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
+                gdist = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
                 for i=1:length(gdist)
                     ii1 = ii1+1;
                     DKff{ii1}   = -2.*K.*dist.*gdist{ii1};
-                    gprior(ii1) = gprior_dist(ii1);
                 end
             else
-            
+                
                 if length(gpcf.lengthScale) == 1
                     % In the case of an isotropic SEXP
                     s = repmat(1./gpcf.lengthScale.^2, 1, m);
@@ -528,7 +525,6 @@ function gpcf = gpcf_sexp(do, varargin)
                         
                         ii1 = ii1 + 1;
                         DKff{ii1} = DK;
-                        gprior(ii1) = 0; 
                     end
                 end
             end

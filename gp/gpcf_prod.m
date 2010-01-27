@@ -33,14 +33,16 @@ function gpcf = gpcf_prod(do, varargin)
 %                          (gpcf_prod_recappend)
 %
 %	GPCF = GPCF_PROD('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.  The fields that 
+%       can be modified are:
+%
+%                'functions'   : sets the covariance functions
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
 %       gp_cov, gp_unpak, gp_pak
     
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2009-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -308,17 +310,15 @@ function gpcf = gpcf_prod(do, varargin)
     end
 
 
-    function [DKff, gprior]  = gpcf_prod_ginput(gpcf, x, x2)
+    function DKff  = gpcf_prod_ginput(gpcf, x, x2)
     %GPCF_PROD_GIND     Evaluate gradient of covariance function with 
     %                   respect to x.
     %
     %	Descriptioni
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_PROD_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %	DKff = GPCF_PROD_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %      DKuf    = gradients of covariance matrix Kff with respect to x (cell array with matrix elements)
     %
     %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
@@ -327,7 +327,6 @@ function gpcf = gpcf_prod(do, varargin)
     %   GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_E, GP_G
         
         [n, m] =size(x);
-        gprior = [];
         % Evaluate: DKff{1} = d Kff / d magnSigma2
         %           DKff{2} = d Kff / d lengthScale
         % NOTE! Here we have already taken into account that the parameters are transformed
@@ -349,7 +348,6 @@ function gpcf = gpcf_prod(do, varargin)
             for i=1:ncf
                 cf = gpcf.functions{i};
                 [DK, gpr] = feval(cf.fh_g, cf, x);
-                gprior = [gprior gpr];
                 
                 CC = 1;
                 for kk = ind(ind~=i)
@@ -380,7 +378,6 @@ function gpcf = gpcf_prod(do, varargin)
             for i=1:ncf
                 cf = gpcf.functions{i};
                 [DK, gpr] = feval(cf.fh_g, cf, x, x2);
-                gprior = [gprior gpr];
                 
                 CC = 1;
                 for kk = ind(ind~=i)

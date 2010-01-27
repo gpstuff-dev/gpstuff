@@ -171,7 +171,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % ----------- Sample latent Values  ---------------------
             if isfield(opt,'latent_opt')
                 [z, energ, diagnl] = feval(gp.fh_mc, z, opt.latent_opt, gp, x, y);
-% $$$                 [z, energ, diagnl] = feval(gp.likelih.fh_mcmc, z, opt.latent_opt, gp, x, y);
                 gp.latentValues = z(:)';
                 z = z(:);
                 lrej=lrej+diagnl.rej/opt.repeat;
@@ -180,11 +179,11 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 end
             end
             
-            % ----------- Sample hyperparameters with HMC --------------------- 
+            % ----------- Sample covariance function hyperparameters with HMC --------------------- 
             if isfield(opt, 'hmc_opt')
-                w = gp_pak(gp, 'hyper');
+                w = gp_pak(gp, 'covariance');
                 hmc2('state',hmc_rstate)              % Set the state
-                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'hyper');
+                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'covariance');
                 hmc_rstate=hmc2('state');             % Save the current state
                 hmcrej=hmcrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')
@@ -192,18 +191,18 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 end
                 opt.hmc_opt.rstate = hmc_rstate;
                 w=w(end,:);
-                gp = gp_unpak(gp, w, 'hyper');
+                gp = gp_unpak(gp, w, 'covariance');
             end
             
             % ----------- Sample hyperparameters with SLS --------------------- 
             if isfield(opt, 'sls_opt')
-                w = gp_pak(gp, 'hyper');
-                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'hyper');
+                w = gp_pak(gp, 'covariance');
+                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'covariance');
                 if isfield(diagns, 'opt')
                     opt.sls_opt = diagns.opt;
                 end
                 w=w(end,:);
-                gp = gp_unpak(gp, w, 'hyper');
+                gp = gp_unpak(gp, w, 'covariance');
             end
 
             % ----------- Sample hyperparameters with Gibbs sampling --------------------- 
@@ -231,14 +230,14 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if isfield(opt, 'likelih_sls_opt')
-                w = gp_pak(gp, 'likelih');
+                w = gp_pak(gp, 'likelihood');
                 fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
                 [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.likelih_sls_opt = diagns.opt;
                 end
                 w=w(end,:);
-                gp = gp_unpak(gp, w, 'likelih');
+                gp = gp_unpak(gp, w, 'likelihood');
             end
             
             % ----------- Sample inducing inputs with hmc  ------------ 

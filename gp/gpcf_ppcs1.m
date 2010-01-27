@@ -40,7 +40,16 @@ function gpcf = gpcf_ppcs1(do, varargin)
 %                          (gpcf_sexp_recappend)
 %
 %	GPCF = GPCF_ppcs1('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
+%       can be modified are:
+%
+%             'magnSigma2'         : set the magnSigma2
+%             'lengthScale'        : set the lengthScale
+%             'metric'             : set the metric structure into the covariance function
+%             'lengthScale_prior'  : set the prior structure for lengthScale
+%             'magnSigma2_prior'   ; set the prior structure for magnSigma2
+%             'l_nin'              : set gpcf.l = floor(l_nin/2) + 1
+%
 %
 %       The piecewise polynomial function is the following:
 %
@@ -57,7 +66,7 @@ function gpcf = gpcf_ppcs1(do, varargin)
 %       gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2006-2007 Jouni Hartikainen
-% Copyright (c) 2006-2009 Jarno Vanhatalo
+% Copyright (c) 2006-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -110,8 +119,6 @@ function gpcf = gpcf_ppcs1(do, varargin)
                     gpcf.magnSigma2 = varargin{i+1};
                   case 'lengthScale'
                     gpcf.lengthScale = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
                   case 'metric'
                     gpcf.metric = varargin{i+1};
                     gpcf = rmfield(gpcf, 'lengthScale');
@@ -144,8 +151,6 @@ function gpcf = gpcf_ppcs1(do, varargin)
                 gpcf.magnSigma2 = varargin{i+1};
               case 'lengthScale'
                 gpcf.lengthScale = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
               case 'metric'
                 gpcf.metric = varargin{i+1};
                 if isfield(gpcf, 'lengthScale')

@@ -229,7 +229,7 @@ function gpcf = gpcf_noise(do, varargin)
         end
     end
 
-    function [g_ind, gdata_ind, gprior_ind]  = gpcf_noise_ginput(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
+    function DKff  = gpcf_noise_ginput(gpcf, x, t, g_ind, gdata_ind, gprior_ind, varargin)
     %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function 
     %                  with respect to inducing inputs.
     %

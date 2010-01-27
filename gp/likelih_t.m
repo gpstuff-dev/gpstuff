@@ -158,7 +158,7 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function [likelih] = likelih_t_unpak(w, likelih)
+    function [likelih, w] = likelih_t_unpak(w, likelih)
     %LIKELIH_T_UNPAK      Combine likelihood parameters into one vector.
     %
     %	Description
@@ -178,6 +178,7 @@ function likelih = likelih_t(do, varargin)
             i1 = i1+1;
             likelih.nu = exp(exp(w(i1)));
         end
+        w = w(i1+1:end);
         
 % $$$         if likelih.freeze_nu == 1
 % $$$             i1=1;        

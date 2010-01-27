@@ -6,87 +6,89 @@ function gp = gp_unpak(gp, w, param)
 %	and  a parameter vector W, and returns a Gaussian Process data
 %	structure identical to the input, except that the parameters has been 
 %       set to the ones in W. PARAM defines which parameters are present in the
-%       W vector.
+%       W vector. If PARAM is not given the function unpacks all parameters.
 %
-%       The possiple values for PARAM are
-%       'hyper'          = unpack only hyperparameters
-%                          W = log([hyper-params of gp.cf, hyper-params of gp.noise])
-%       'indicing'       = unpack only iducing inputs
-%                          W = gp.X_u(:)
-%       'likelih'        = unpack only parameters of likelihood
-%       'hyper+inducing' = pack hyperparameters and induging inputs
-%                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), gp.X_u(:)];
-%       'hyper+likelih'  = unpack hyperparameters and parameters of likelihood
-%                          W = [log(hyper-params of gp.cf, hyper-params of gp.noise), parameters of likelihood];
-%       'all'            = unpack all parameters in one vector
+%       Each of the following strings in PARAM defines one group of parameters 
+%       to pack:
+%         'covariance'     = unpack hyperparameters of covariance function
+%         'inducing'       = unpack iducing inputs
+%                            W = gp.X_u(:)
+%         'likelihood'     = unpack parameters of likelihood
+%
+%       By compining the strings one can pack more than one group of parameters. 
+%       For example:
+%         'covariance+inducing' = unpack covariance function parameters and induging inputs
+%         'covariance+likelih'  = unpack covariance function parameters of likelihood parameters
+%
+%       Inside each group (such as covariance functions) the parameters to be unpacked
+%       is defined by the existence of a prior structure. For example, if GP has two
+%       covariance functions but only the first one has prior for its parameters then 
+%       only the parameters of the first one are unpacked. Thus, also inducing inputs 
+%       require prior if they are to be optimized.
+% 
+%       gp_pak and gp_unpak functions are used when GP parameters are optimized
+%       or sampled with gp_mc. The same PARAM string should be given for all of 
+%       these functions.
 %
 %	See also
 %	GP_PAK
 %
 
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-
-switch param
-  case 'hyper'
-    gp = unpak_hyper(w, gp);
-  case 'inducing'    
-    gp = unpak_inducing(w, gp);
-  case 'likelih'    
-    lik = feval(gp.likelih.fh_unpak, w, gp.likelih);
-    gp.likelih = lik;
-  case 'hyper+inducing'
-    w1 = w(1:end-length(gp.X_u(:)));
-    gp = unpak_hyper(w1, gp);
-    w2 = w(length(w1)+1:end);
-    gp = unpak_inducing(w2, gp);
-  case 'hyper+likelih'
-    w1 = w(1:length(gp_pak(gp,'hyper')));
-    gp = unpak_hyper(w1, gp);
-    w2 = w(length(w1)+1:end);
-    lik = feval(gp.likelih.fh_unpak, w2, gp.likelih);
-    gp.likelih = lik;
-  case 'all'
-    w1 = w(1:length(gp_pak(gp,'hyper')));
-    gp = unpak_hyper(w1, gp);
-    w2 = w(length(w1)+1:length(w1)+length(gp.X_u(:)));
-    gp = unpak_inducing(w2, gp);
-    w3 = w(length(w1)+length(w2)+1:end);
-    lik = feval(gp.likelih.fh_unpak, w3, gp.likelih);
-    gp.likelih = lik;
-  otherwise
-    error('Unknown parameter to take the gradient with respect to! \n')
+if nargin < 3
+    param = 'covariance+inducing+likelihood';
 end
 
 
-% Function for unpacking the hyperparameters
-function gp = unpak_hyper(w, gp)
+% Unpack the hyperparameters of covariance functions
+if ~isempty(strfind(param, 'covariance'))
+    ncf = length(gp.cf);
     
-w1 = w;
-ncf = length(gp.cf);
-
-for i=1:ncf
-    gpcf = gp.cf{i};
-    [gpcf, w1] = feval(gpcf.fh_unpak, gpcf, w1);
-    gp.cf{i} = gpcf;
+    for i=1:ncf
+        gpcf = gp.cf{i};
+        [gpcf, w] = feval(gpcf.fh_unpak, gpcf, w);
+        gp.cf{i} = gpcf;
+    end
+    
+    if isfield(gp, 'noise')
+        nn = length(gp.noise);
+        for i=1:nn
+            noise = gp.noise{i};
+            [noise, w] = feval(noise.fh_unpak, noise, w);
+            gp.noise{i} = noise;
+        end
+    end
 end
 
-if isfield(gp, 'noise')
-    nn = length(gp.noise);
-    for i=1:nn
-        noise = gp.noise{i};
-        [noise, w1] = feval(noise.fh_unpak, noise, w1);
-        gp.noise{i} = noise;
+% Unpack the inducing inputs
+if ~isempty(strfind(param, 'inducing'))
+    if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+        lu = length(gp.X_u(:));
+        gp.X_u = reshape(w(1:lu), size(gp.X_u));
+        if lu < length(w)
+            w = w(lu+1:end);
+        end
+    end
+end
+
+% Unpack the hyperparameters of likelihood function
+if ~isempty(strfind(param, 'likelihood'))
+    if isstruct(gp.likelih)
+        [lik w] = feval(gp.likelih.fh_unpak, w, gp.likelih);
+        gp.likelih = lik;
     end
 end
 
 
 
-% Function for unpacking the inducing inputs
-function gp = unpak_inducing(w, gp)
-gp.X_u = reshape(w, size(gp.X_u));
+
+
+% Function for unpacking the hyperparameters
+function gp = unpak_hyper(w, gp)
+    
 

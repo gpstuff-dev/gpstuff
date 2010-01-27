@@ -38,14 +38,20 @@ function gpcf = gpcf_dotproduct(do, varargin)
 %                          (gpcf_dotproduct_recappend)
 %
 %	GPCF = GPCF_DOTPRODUCT('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
+%       can be modified are:
+%
+%             'constSigma2'         : set the constSigma2
+%             'coeffSigma2'         : set the coeffSigma2
+%             'coeffSigma2_prior'   : set the prior structure for coeffSigma2
+%             'constSigma2_prior'   ; set the prior structure for constSigma2
+%
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
 %       gp_cov, gp_unpak, gp_pak
     
-% Copyright (c) 2000-2001 Aki Vehtari
-% Copyright (c) 2007-2009 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008      Jaakko Riihimaki
 
 % This software is distributed under the GNU General Public
@@ -94,8 +100,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
                     gpcf.constSigma2 = varargin{i+1};
                   case 'coeffSigma2'
                     gpcf.coeffSigma2 = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
                   case 'constSigma2_prior'
                     gpcf.p.constSigma2 = varargin{i+1};
                   case 'coeffSigma2_prior'
@@ -120,8 +124,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
                 gpcf.constSigma2 = varargin{i+1};
               case 'coeffSigma2'
                 gpcf.coeffSigma2 = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
               case 'constSigma2_prior'
                 gpcf.p.constSigma2 = varargin{i+1};
               case 'coeffSigma2_prior'
@@ -361,17 +363,15 @@ function gpcf = gpcf_dotproduct(do, varargin)
     end
 
 
-    function [DKff, gprior]  = gpcf_dotproduct_ginput(gpcf, x, x2)
+    function DKff  = gpcf_dotproduct_ginput(gpcf, x, x2)
     %GPCF_DOTPRODUCT_GIND     Evaluate gradient of covariance function with 
     %                   respect to x.
     %
     %	Description
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_DOTPRODUCT_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %	DKff = GPCF_DOTPRODUCT_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %      DKff    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
     %
     %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
@@ -403,7 +403,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
                     
                     ii1 = ii1 + 1;
                     DKff{ii1} = DK;
-                    gprior(ii1) = 0;
                 end
             end
             
@@ -426,7 +425,6 @@ function gpcf = gpcf_dotproduct(do, varargin)
                     
                     ii1 = ii1 + 1;
                     DKff{ii1} = DK;
-                    gprior(ii1) = 0; 
                 end
             end
         end

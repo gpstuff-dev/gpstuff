@@ -87,7 +87,7 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
       case 'FIC'
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
-            if length(tstind) ~= size(tx,1)
+            if ~isempty(tstind) && length(tstind) ~= size(tx,1)
                 error('tstind (if provided) has to be of same lenght as tx.')
             end
         else
@@ -209,20 +209,16 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
                 KnfL2(tstind{i},:) = KnfL2(tstind{i},:) - v_bu*L2(ind{i},:) + v_n*L2(ind{i},:);
             end
             Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
-
-            for i1=1:ntest
-                switch gp.likelih.type
-                  case 'probit'
-                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
-                    p1 = NaN;
-                end
+            if nargout > 2 && nargin < 8
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+            elseif nargout > 2 
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);
             end
         end
       case 'CS+FIC'
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
-            if length(tstind) ~= size(tx,1)
+            if ~isempty(tstind) && length(tstind) ~= size(tx,1)
                 error('tstind (if provided) has to be of same lenght as tx.')
             end
         else
@@ -365,15 +361,10 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
                 KcssW = Kcs_nf*sqrtW;
                 Varf = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
             end        
-
-            
-            for i1=1:ntest
-                switch gp.likelih.type
-                  case 'probit'
-                    p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
-                    p1 = NaN;
-                end
+            if nargout > 2 && nargin < 8
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+            elseif nargout > 2 
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);
             end
         end
 

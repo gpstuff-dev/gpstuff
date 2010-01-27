@@ -146,31 +146,72 @@ set(gcf, 'color', 'w'), title('predictive probability contours, full GP', 'fonts
 %========================================================
 
 % Set the inducing inputs
-[u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
+[u1,u2]=meshgrid(linspace(-1.25, 0.9,10),linspace(-0.2, 1.1,10));
 Xu=[u1(:) u2(:)];
-Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
+%Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
+
+likelih = likelih_probit('init', y);
+
+% Set the prior for the parameters of covariance functions 
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
+pl = prior_logunif('init');
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Create the GP data structure
 gp_fic = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.1, 'X_u', Xu);
+
+% Initialize the hyperparameters with Laplace approximation
+    gp_fic = gp_init('set', gp_fic, 'latent_method', {'Laplace', x, y, 'hyper'});
+   
+    fe=str2fun('gpla_e');
+    fg=str2fun('gpla_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+    opt.maxiter = 30;
+
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp_fic, 'hyper');
+    w = scg2(fe, w, opt, fg, gp_fic, x, y, 'hyper');
+    gp=gp_unpak(gp_fic,w, 'hyper');
+
 
 % Set the approximate inference method
 gp_fic = gp_init('set', gp_fic, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
 
 % Set the sampling options
-opt.nsamples=100;
-opt.repeat=1;
-opt.hmc_opt.steps=5;
-opt.hmc_opt.stepadj=0.02;
-opt.latent_opt.repeat = 5;
-hmc2('state', sum(100*clock));
+opt=gp_mcopt;
+opt.repeat=10;
+opt.latent_opt.sample_latent_scale = 0.5;
 
-hmc2('state', sum(100*clock))
+opt.nsamples=20000;
+opt.repeat=1;
+% $$$ opt.hmc_opt.steps=5;
+% $$$ opt.hmc_opt.stepadj=0.02;
+opt.latent_opt.repeat = 5;
+
+defaultStream = RandStream.getDefaultStream;
+savedState = defaultStream.State;
+
+%hmc2('state', sum(100*clock));
+
+gp.tyyppi = 'FULL'
+defaultStream.State = savedState;
 [rgp_fic,gp_fic,rstate2]=gp_mc(opt, gp_fic, x, y);
+gp.tyyppi = 'FIC1'
+defaultStream.State = savedState;
+[rgp_fic1,gp_fic,rstate2]=gp_mc(opt, gp_fic, x, y);
+gp.tyyppi = 'FIC'
+defaultStream.State = savedState;
+[rgp_fic2,gp_fic,rstate2]=gp_mc(opt, gp_fic, x, y);
+
 
 % Thin the sample chain. 
 % Note! the thinning is not optimal and the chain is too short. Run
 % longer chain, if you want good analysis.
-rr_fic=thin(rgp_fic,15,1);
+rr_fic=thin(rgp_fic,100,2);
 
 % Plot the sample chains of the hyperparameters
 figure(1)
@@ -196,7 +237,7 @@ h1=pcolor(reshape(xstar(:,1),20,20),reshape(xstar(:,2),20,20),reshape(p1_fic,20,
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), axis off
-plot(x(y==0,1),x(y==0,2),'o', 'markersize', 8, 'linewidth', 2);
+plot(x(y==-1,1),x(y==-1,2),'o', 'markersize', 8, 'linewidth', 2);
 plot(x(y==1,1),x(y==1,2),'rx', 'markersize', 8, 'linewidth', 2);
 set(gcf, 'color', 'w'), title('predictive probability and training cases, FIC', 'fontsize', 14)
 
@@ -208,7 +249,7 @@ set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
 colormap(c1)
 plot(x(y==1,1), x(y==1,2), 'rx', 'markersize', 8, 'linewidth', 2),
-plot(x(y==0,1), x(y==0,2), 'bo', 'markersize', 8, 'linewidth', 2)
+plot(x(y==-1,1), x(y==-1,2), 'bo', 'markersize', 8, 'linewidth', 2)
 plot(xstar(:,1), xstar(:,2), 'k.'), axis([-inf inf -inf inf]), axis off
 set(gcf, 'color', 'w'), title('predictive probability contours, FIC', 'fontsize', 14)
 

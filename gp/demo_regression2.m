@@ -91,7 +91,7 @@ y = y-avgy;
 % Gaussian noise data structures...
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 5, 'magnSigma2', 3);
 gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 2, 'magnSigma2', 3);
-gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 1);
+gpcfn = gpcf_noise('init', nin, 'noiseSigma2', 1);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf1.p.lengthScale = t_p({3 4});
@@ -270,6 +270,24 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 
 % Create the CS+FIC GP data structure
 gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
+
+
+w = gp_pak(gp_csfic);
+gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
+
+gp_csfic = gp_init('set', gp_csfic, 'Xu_prior', prior_unif('init'));
+w = gp_pak(gp_csfic);
+gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
+
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
+gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0, 'X_u', Xu);
+w = gp_pak(gp_csfic);
+gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
+
+gp_csfic = gp_init('set', gp_csfic, 'Xu_prior', prior_unif('init'));
+w = gp_pak(gp_csfic);
+gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
+
 
 % -----------------------------
 % --- Conduct the inference ---

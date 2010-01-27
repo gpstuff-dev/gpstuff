@@ -28,7 +28,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, param)
 % License.txt, included with the software, for details.
 
 if nargin < 5
-    param = 'hyper';
+    param = 'covariance+inducing+likelihood';
 end
 
 gp=gp_unpak(gp, w, param);
@@ -51,7 +51,7 @@ switch gp.type
         b=L\t;
         edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
     end
-   
+    
     % ============================================================
     % FIC
     % ============================================================
@@ -229,6 +229,19 @@ if isfield(gp, 'noise')
         eprior = eprior + feval(noise.fh_e, noise, x, t);
     end
 end
+
+% Evaluate the prior contribution to the error from the inducing inputs
+if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+    for i = 1:size(gp.X_u,1)
+        if iscell(gp.p.X_u) % Own prior for each inducing input
+            pr = gp.p.X_u{i};
+            eprior = eprior + feval(pr.fh_e, gp.X_u(i,:), pr);
+        else
+            eprior = eprior + feval(gp.p.X_u.fh_e, gp.X_u(i,:), gp.p.X_u);
+        end
+    end
+end
+
 e = edata + eprior;
 
 end

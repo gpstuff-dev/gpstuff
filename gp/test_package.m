@@ -29,9 +29,9 @@ covfunc = {'gpcf_sexp' 'gpcf_exp' 'gpcf_matern32' 'gpcf_matern52' ...
            'gpcf_ppcs0' 'gpcf_ppcs1' 'gpcf_ppcs2' 'gpcf_ppcs3' 'gpcf_neuralnetwork'...
            'gpcf_dotproduct' 'gpcf_prod'};
 
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 pl = prior_logunif('init');
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', pl);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pl);
         
 for i = 1:length(covfunc)
     
@@ -73,7 +73,7 @@ for i = 1:length(covfunc)
            
     gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
     
-    w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+    w=gp_pak(gp);  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
     fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
     
@@ -84,10 +84,10 @@ for i = 1:length(covfunc)
     opt.display = 1;
     
     % do the optimization
-    w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    w=scg2(fe, w, opt, fg, gp, x, y);
     
     % Set the optimized hyperparameter values back to the gp structure
-    gp=gp_unpak(gp,w, 'hyper');
+    gp=gp_unpak(gp,w);
 
     % --- MCMC approach ---
     opt=gp_mcopt;
@@ -117,73 +117,73 @@ for i = 1:length(covfunc)
         numwarn = numwarn + 1;
     end
 
-    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y);
     
         
     switch covfunc{i}
       case 'gpcf_neuralnetwork'
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', pl, 'biasSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', [], 'biasSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
       case 'gpcf_dotproduct'
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl, 'coeffSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', [], 'coeffSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
+        w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
       case 'gpcf_prod'
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', []);
         gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
         gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
         gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
       otherwise
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
         gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-        w=gp_pak(gp, 'hyper');
-        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+        w=gp_pak(gp);
+        delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
     end
     
     % check that gradients are OK
@@ -199,8 +199,8 @@ gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', []);
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
-w=gp_pak(gp, 'hyper');
-delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+w=gp_pak(gp);
+delta = gradcheck(w, @gp_e, @gp_g, gp, x, y);
 
 
 %----------------------------
@@ -244,18 +244,18 @@ for i = 1:length(sparse)
     
     switch sparse{i}
       case 'FIC'
-        gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u, 'Xu_prior', prior_unif('init'));
         tstindex = 1:n;
       case 'PIC'
         gp = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u);
-        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex}, 'Xu_prior', prior_unif('init'));
         tstindex = trindex;
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u)
+        gp = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u, 'Xu_prior', prior_unif('init'))
         tstindex = 1:n;
     end
     
-    param = 'hyper+inducing';
+    param = 'covariance+inducing';
     w=gp_pak(gp, param);  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
     fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
@@ -325,13 +325,13 @@ end
 fprintf(' \n ================================= \n \n Checking the additive model and gp_pred \n \n =================================\n ')
 
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
 pl = prior_logunif('init');
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', pl);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pl);
 gpcf3 = gpcf_ppcs2('set', gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Initialize the inducing inputs in a regular grid over the input space
@@ -381,7 +381,7 @@ for i=1:length(models)
         tstindex2 = 1:n;
     end
     
-    w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+    w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
     fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
     
@@ -392,7 +392,7 @@ for i=1:length(models)
     opt.display = 1;
     
     % do the optimization
-    w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
 
     % --- Check predictions ---
     [Efa, Varfa] = gp_pred(gp, x, y, p, [], tstindex);
@@ -438,7 +438,7 @@ for i=1:length(models)
         numwarn = numwarn + 1;
     end
 
-    if max( abs(Varfaa + gp.noise{1}.noiseSigmas2  - Vary) ) > 1e-12 
+    if max( abs(Varfaa + gp.noise{1}.noiseSigma2  - Vary) ) > 1e-12 
         warnings = sprintf([warnings '\n * Check gp_pred for ' models{i} ' model. The predictive variance for f and y do not match.']);
         numwarn = numwarn + 1;
     end
@@ -509,7 +509,7 @@ for i=1:length(models)
         numwarn = numwarn + 1;
     end
 
-    if max( abs(Varfaa + repmat(rfull.noise{1}.noiseSigmas2',length(p2),1)  - Vary) ) > 1e-12 
+    if max( abs(Varfaa + repmat(rfull.noise{1}.noiseSigma2',length(p2),1)  - Vary) ) > 1e-12 
         warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictive variance for f and y do not match.']);
         numwarn = numwarn + 1;
     end
@@ -519,9 +519,7 @@ for i=1:length(models)
         [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], trindex, y);
       otherwise
         [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], tstindex2, y);
-    end
-   
-    
+    end    
 end
 
 
@@ -556,15 +554,15 @@ metric2 = metric_euclidean('init', nin, {[2]},'lengthScales',[1.2], 'lengthScale
 gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
 
 % We also need the noise component
-gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
+gpcfn = gpcf_noise('init', nin, 'noiseSigma2', 0.2);
 
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)
 
-param = 'hyper';
+param = 'covariance';
 gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
 
-w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -575,10 +573,10 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
 
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w, 'hyper');
+gp=gp_unpak(gp,w, 'covariance');
 
 % --- MCMC approach ---
 opt=gp_mcopt;
@@ -607,14 +605,14 @@ if sqrt(mean((y - mean(mc_pred(rfull, x, y, x),2) ).^2)) > 0.186*2
     numwarn = numwarn + 1;
 end
 
-delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
     
 metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
 % Lastly, plug the metric to the covariance function structure.
 gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
 gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.0001);
-w=gp_pak(gp, 'hyper');
-delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
+w=gp_pak(gp, 'covariance');
+delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance')];
 
 % check that gradients are OK
 if delta>0.0001
@@ -639,11 +637,11 @@ y = data(:,3);
 
 fprintf(' \n ================================= \n \n Checking the prior structures \n \n ================================= \n ')
 
-priorfunc = {'prior_t' 'prior_unif' 'prior_logunif'};
+priorfunc = {'prior_t' 'prior_unif' 'prior_logunif', 'prior_gamma', 'prior_laplace', 'prior_sinvchi2', 'prior_normal', 'prior_invgam'};
 
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
 ps = prior_logunif('init');
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', ps);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', ps);
         
 for i = 1:length(priorfunc)
     
@@ -656,7 +654,7 @@ for i = 1:length(priorfunc)
            
     gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
     
-    w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+    w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
     fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
     
@@ -667,12 +665,12 @@ for i = 1:length(priorfunc)
     opt.display = 1;
     
     % do the optimization
-    w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
+    w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
     
     % Set the optimized hyperparameter values back to the gp structure
-    gp=gp_unpak(gp,w, 'hyper');
+    gp=gp_unpak(gp,w, 'covariance');
 
-    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
     
     % check that gradients are OK
     if delta>0.0001
@@ -750,7 +748,7 @@ for i1=1:4
         testindex{4*(i1-1)+i2} = ind2';
     end
 end
-%trindex = {trindex{[1:3 5:16]}};
+trindex = {trindex{[1:3 5:16]}};
 p2 = [x ; p(1:10,:)];
 models = {'FULL' 'CS-FULL' 'FIC' 'PIC' 'CS+FIC'};
 
@@ -782,7 +780,7 @@ for i=1:length(models)
         tstindex2 = 1:n;
     end
     
-    gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'hyper'});
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
    
     fe=str2fun('gpla_e');
     fg=str2fun('gpla_g');
@@ -794,11 +792,11 @@ for i=1:length(models)
     opt.maxiter = 30;
 
     % do scaled conjugate gradient optimization 
-    w = gp_pak(gp, 'hyper');
-    w = scg2(fe, w, opt, fg, gp, x, y, 'hyper');
-    gp=gp_unpak(gp,w, 'hyper');
+    w = gp_pak(gp, 'covariance');
+    w = scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+    gp=gp_unpak(gp,w, 'covariance');
 
-    delta = gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'hyper');
+    delta = gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'covariance');
     
     % check that gradients are OK
     if delta>0.0001
@@ -807,9 +805,9 @@ for i=1:length(models)
     end
 
     % --- Check predictions ---
-    [Efa, Varfa] = la_pred(gp, x, y, p, 'hyper', [], tstindex);
-    [Ef1, Varf1] = la_pred(gp, x, y, p, 'hyper', [1], tstindex);
-    [Ef2, Varf2] = la_pred(gp, x, y, p, 'hyper', [2], tstindex);
+    [Efa, Varfa] = la_pred(gp, x, y, p, 'covariance', [], tstindex);
+    [Ef1, Varf1] = la_pred(gp, x, y, p, 'covariance', [1], tstindex);
+    [Ef2, Varf2] = la_pred(gp, x, y, p, 'covariance', [2], tstindex);
     
     switch models{i}
       case {'FULL' 'CS+FIC'}
@@ -825,9 +823,9 @@ for i=1:length(models)
         end
     end
     
-    [Efa, Varfa] = la_pred(gp, x, y, p2, 'hyper', [], tstindex2);
-    [Ef1, Varf1] = la_pred(gp, x, y, p2, 'hyper', [1], tstindex2);
-    [Ef2, Varf2] = la_pred(gp, x, y, p2, 'hyper', [2], tstindex2);
+    [Efa, Varfa] = la_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    [Ef1, Varf1] = la_pred(gp, x, y, p2, 'covariance', [1], tstindex2);
+    [Ef2, Varf2] = la_pred(gp, x, y, p2, 'covariance', [2], tstindex2);
 
     switch models{i}
       case {'FULL' 'CS+FIC'}
@@ -843,13 +841,13 @@ for i=1:length(models)
         end
     end
     
-    [Efaa, Varfaa, Ey, Vary] = la_pred(gp, x, y, p2, 'hyper', [], tstindex2);
+    [Efaa, Varfaa, Ey, Vary] = la_pred(gp, x, y, p2, 'covariance', [], tstindex2);
         
     switch models{i}
       case {'PIC'}
-        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'hyper', [], trindex, y);
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'covariance', [], trindex, y);
       otherwise
-        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'hyper', [], tstindex2, y);
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'covariance', [], tstindex2, y);
     end
 
 
@@ -866,22 +864,22 @@ for i=1:length(models)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.5, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
 
-    gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
+    gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
    
     fe=str2fun('gpep_e');
     fg=str2fun('gpep_g');
@@ -893,11 +891,11 @@ for i=1:length(models)
     opt.maxiter = 30;
 
     % do scaled conjugate gradient optimization 
-    w = gp_pak(gp, 'hyper');
-    w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
-    gp=gp_unpak(gp,w, 'hyper');
+    w = gp_pak(gp, 'covariance');
+    w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+    gp=gp_unpak(gp,w, 'covariance');
 
-    delta = gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'hyper');
+    delta = gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'covariance');
     
     % check that gradients are OK
     if delta>0.0001
@@ -907,9 +905,9 @@ for i=1:length(models)
     end
 
     % --- Check predictions ---
-    [Efa, Varfa] = ep_pred(gp, x, y, p, 'hyper', [], tstindex);
-    [Ef1, Varf1] = ep_pred(gp, x, y, p, 'hyper', [1], tstindex);
-    [Ef2, Varf2] = ep_pred(gp, x, y, p, 'hyper', [2], tstindex);
+    [Efa, Varfa] = ep_pred(gp, x, y, p, 'covariance', [], tstindex);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p, 'covariance', [1], tstindex);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p, 'covariance', [2], tstindex);
     
     switch models{i}
       case {'FULL' 'CS+FIC'}
@@ -925,9 +923,9 @@ for i=1:length(models)
         end
     end
     
-    [Efa, Varfa] = ep_pred(gp, x, y, p2, 'hyper', [], tstindex2);
-    [Ef1, Varf1] = ep_pred(gp, x, y, p2, 'hyper', [1], tstindex2);
-    [Ef2, Varf2] = ep_pred(gp, x, y, p2, 'hyper', [2], tstindex2);
+    [Efa, Varfa] = ep_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p2, 'covariance', [1], tstindex2);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p2, 'covariance', [2], tstindex2);
 
     switch models{i}
       case {'FULL' 'CS+FIC'}
@@ -943,13 +941,13 @@ for i=1:length(models)
         end
     end
     
-    [Efaa, Varfaa, Ey, Vary] = ep_pred(gp, x, y, p2, 'hyper', [], tstindex2);
+    [Efaa, Varfaa, Ey, Vary] = ep_pred(gp, x, y, p2, 'covariance', [], tstindex2);
     
     switch models{i}
       case {'PIC'}
-        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'hyper', [], trindex, y);
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'covariance', [], trindex, y);
       otherwise
-        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'hyper', [], tstindex2, y);
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'covariance', [], tstindex2, y);
     end
     
     % --- MCMC approach ---
@@ -967,8 +965,8 @@ for i=1:length(models)
     opt.latent_opt.sample_latent_scale = 0.5;
     hmc2('state', sum(100*clock));
 
-    gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
-    gp=gp_unpak(gp,w, 'hyper');
+% $$$     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+    gp=gp_unpak(gp,w, 'covariance');
     gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
     
     % Do the sampling (this takes approximately 5-10 minutes)    
@@ -1026,19 +1024,612 @@ end
 % Logit model 
 % ===========================
 
+likelih = likelih_logit('init', y);
 
-%----------------------------
-% check priors
-%----------------------------
+for i=1:length(models)
+    switch models{i}
+      case 'FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'CS-FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'FIC' 
+        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'PIC'
+        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+        tstindex = testindex;
+        tstindex2 = trindex;
+        tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
+      case 'CS+FIC'
+        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+    end
+    
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
+   
+    fe=str2fun('gpla_e');
+    fg=str2fun('gpla_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+    opt.maxiter = 30;
 
-%----------------------------
-% check sparse approximations
-%----------------------------
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp, 'covariance');
+    w = scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+    gp=gp_unpak(gp,w, 'covariance');
+
+    delta = gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'covariance');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for logit model and ' models{i} ' GP']);
+        numwarn = numwarn + 1;
+    end
+
+    % --- Check predictions ---
+    [Efa, Varfa] = la_pred(gp, x, y, p, 'covariance', [], tstindex);
+    [Ef1, Varf1] = la_pred(gp, x, y, p, 'covariance', [1], tstindex);
+    [Ef2, Varf2] = la_pred(gp, x, y, p, 'covariance', [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = la_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    [Ef1, Varf1] = la_pred(gp, x, y, p2, 'covariance', [1], tstindex2);
+    [Ef2, Varf2] = la_pred(gp, x, y, p2, 'covariance', [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = la_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+        
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'covariance', [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'covariance', [], tstindex2, y);
+    end
+
+
+    % -------------------
+    % --- EP approach ---
+    % -------------------
+    switch models{i}
+      case 'FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'CS-FULL' 
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'FIC' 
+        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'PIC'
+        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+        tstindex = testindex;
+        tstindex2 = trindex;
+        tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
+      case 'CS+FIC'
+        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.5, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+    end
+
+    gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
+   
+    fe=str2fun('gpep_e');
+    fg=str2fun('gpep_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+    opt.maxiter = 30;
+
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp, 'covariance');
+    w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+    gp=gp_unpak(gp,w, 'covariance');
+
+    delta = gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'covariance');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for logit model and ' models{i} ' GP']);
+        warning([' Check the gradients of ' covfunc{i}]);
+        numwarn = numwarn + 1;
+    end
+
+    % --- Check predictions ---
+    [Efa, Varfa] = ep_pred(gp, x, y, p, 'covariance', [], tstindex);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p, 'covariance', [1], tstindex);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p, 'covariance', [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = ep_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p2, 'covariance', [1], tstindex2);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p2, 'covariance', [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with logit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = ep_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'covariance', [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'covariance', [], tstindex2, y);
+    end
+    
+    % --- MCMC approach ---
+    opt=gp_mcopt;
+    opt.nsamples= 50;
+    opt.repeat=2;
+    opt.hmc_opt = hmc2_opt;
+    opt.hmc_opt.steps=2;
+    opt.hmc_opt.stepadj=0.02;
+    opt.hmc_opt.persistence=0;
+    opt.hmc_opt.decay=0.6;
+    opt.hmc_opt.nsamples=1;
+    opt.latent_opt.display=0;
+    opt.latent_opt.repeat = 20;
+    opt.latent_opt.sample_latent_scale = 0.5;
+    hmc2('state', sum(100*clock));
+
+% $$$     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+    gp=gp_unpak(gp,w, 'covariance');
+    gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
+    
+    % Do the sampling (this takes approximately 5-10 minutes)    
+    [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+    
+    % --- Check predictions ---
+    [Efa, Varfa] = mc_pred(rfull, x, y, p, [], tstindex);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p, [1], tstindex);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p, [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(mean(Efa) - (mean(Ef1)+mean(Ef2))) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = mc_pred(rfull, x, y, p2, [], tstindex2);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p2, [1], tstindex2);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p2, [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(mean(Efa) - (mean(Ef1)+mean(Ef2))) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = mc_pred(rfull, x, y, p2, [], tstindex2);
+        
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], tstindex2, y);
+    end
+end
 
 
 % =========================== 
 % Poisson model
 % ===========================
+
+fprintf(' \n ================================= \n \n Check the poisson model \n \n =================================\n')
+
+
+S = which('demo_spatial1');
+L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
+load(L)
+
+x = xx;
+
+% Create the covariance function
+gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_ppcs1('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf3 = gpcf_ppcs3('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.5^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+
+p = x+0.5;
+dims = [1    60     1    35];
+[trindex, Xu, tstindex] = set_PIC(xx, dims, 5, 'corners+1xside', 1, p);
+p2 = [x ; p(1:10,:)];
+models = {'FULL' 'CS-FULL' 'FIC' 'PIC' 'CS+FIC'};
+
+for i=1:length(models)
+    switch models{i}
+      case 'FULL' 
+        % reduce the data in order to make the demo faster
+        ind = find(xx(:,2)<25);
+        x = xx(ind,:);
+        y = yy(ind,:);
+        yee = ye(ind,:);
+        [n,nin] = size(xx);
+        
+        % Create the likelihood structure
+        likelih = likelih_poisson('init', y, yee);
+
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'CS-FULL' 
+        x = xx;
+        y = yy;
+        yee = ye;
+        [n,nin] = size(xx);
+        
+        % Create the likelihood structure
+        likelih = likelih_poisson('init', y, yee);
+        
+        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'FIC' 
+        x = xx;
+        y = yy;
+        yee = ye;
+        [n,nin] = size(xx);
+        
+        % Create the likelihood structure
+        likelih = likelih_poisson('init', y, yee);
+        
+        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+      case 'PIC'
+        x = xx;
+        y = yy;
+        yee = ye;
+        [n,nin] = size(xx);
+        
+        % Create the likelihood structure
+        likelih = likelih_poisson('init', y, yee);
+        
+        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+        tstindex = testindex;
+        tstindex2 = trindex;
+        tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
+      case 'CS+FIC'
+        x = xx;
+        y = yy;
+        yee = ye;
+        [n,nin] = size(xx);
+        
+        % Create the likelihood structure
+        likelih = likelih_poisson('init', y, yee);
+        
+        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        tstindex = [];
+        tstindex2 = 1:n;
+    end
+    
+    gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
+   
+    fe=str2fun('gpla_e');
+    fg=str2fun('gpla_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+    opt.maxiter = 30;
+
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp, 'covariance');
+    w = scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+    gp=gp_unpak(gp,w, 'covariance');
+
+    delta = gradcheck(w, @gpla_e, @gpla_g, gp, x, y, 'covariance');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for poisson model and ' models{i} ' GP']);
+        numwarn = numwarn + 1;
+    end
+
+    % --- Check predictions ---
+    [Efa, Varfa] = la_pred(gp, x, y, p, 'covariance', [], tstindex);
+    [Ef1, Varf1] = la_pred(gp, x, y, p, 'covariance', [1], tstindex);
+    [Ef2, Varf2] = la_pred(gp, x, y, p, 'covariance', [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with poisson model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with poisson model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = la_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    [Ef1, Varf1] = la_pred(gp, x, y, p2, 'covariance', [1], tstindex2);
+    [Ef2, Varf2] = la_pred(gp, x, y, p2, 'covariance', [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with poisson model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check la_pred for ' models{i} ' GP with poisson model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = la_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+        
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'covariance', [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = la_pred(gp, x, y, x, 'covariance', [], tstindex2, y);
+    end
+
+
+    % -------------------
+    % --- EP approach ---
+    % -------------------
+% $$$     switch models{i}
+% $$$       case 'FULL' 
+% $$$         gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$         tstindex = [];
+% $$$         tstindex2 = 1:n;
+% $$$       case 'CS-FULL' 
+% $$$         gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$         tstindex = [];
+% $$$         tstindex2 = 1:n;
+% $$$       case 'FIC' 
+% $$$         gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+% $$$         tstindex = [];
+% $$$         tstindex2 = 1:n;
+% $$$       case 'PIC'
+% $$$         gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+% $$$         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
+% $$$         tstindex = testindex;
+% $$$         tstindex2 = trindex;
+% $$$         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
+% $$$       case 'CS+FIC'
+% $$$         gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.5, 'X_u', X_u);
+% $$$         tstindex = [];
+% $$$         tstindex2 = 1:n;
+% $$$     end
+
+    gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
+   
+    fe=str2fun('gpep_e');
+    fg=str2fun('gpep_g');
+    n=length(y);
+    opt = scg2_opt;
+    opt.tolfun = 1e-3;
+    opt.tolx = 1e-3;
+    opt.display = 1;
+    opt.maxiter = 30;
+
+    % do scaled conjugate gradient optimization 
+    w = gp_pak(gp, 'covariance');
+    w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+    gp=gp_unpak(gp,w, 'covariance');
+
+    delta = gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'covariance');
+    
+    % check that gradients are OK
+    if delta>0.0001
+        warnings = sprintf([warnings '\n * Check the gradients of hyper-parameters for Laplace approximation for probit model and ' models{i} ' GP']);
+        warning([' Check the gradients of ' covfunc{i}]);
+        numwarn = numwarn + 1;
+    end
+
+    % --- Check predictions ---
+    [Efa, Varfa] = ep_pred(gp, x, y, p, 'covariance', [], tstindex);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p, 'covariance', [1], tstindex);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p, 'covariance', [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = ep_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    [Ef1, Varf1] = ep_pred(gp, x, y, p2, 'covariance', [1], tstindex2);
+    [Ef2, Varf2] = ep_pred(gp, x, y, p2, 'covariance', [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 1e-11 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check ep_pred for ' models{i} ' GP with probit model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = ep_pred(gp, x, y, p2, 'covariance', [], tstindex2);
+    
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'covariance', [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = ep_pred(gp, x, y, x, 'covariance', [], tstindex2, y);
+    end
+    
+    % --- MCMC approach ---
+    opt=gp_mcopt;
+    opt.nsamples= 50;
+    opt.repeat=2;
+    opt.hmc_opt = hmc2_opt;
+    opt.hmc_opt.steps=2;
+    opt.hmc_opt.stepadj=0.02;
+    opt.hmc_opt.persistence=0;
+    opt.hmc_opt.decay=0.6;
+    opt.hmc_opt.nsamples=1;
+    
+    opt.latent_opt.nsamples=1;
+    opt.latent_opt.nomit=0;
+    opt.latent_opt.persistence=0;    
+    opt.latent_opt.repeat=1;
+    opt.latent_opt.steps=7;
+    opt.latent_opt.window=1;
+    opt.latent_opt.stepadj=0.15;
+
+    opt.latent_opt.display=0;
+    hmc2('state', sum(100*clock));
+
+% $$$     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+    gp=gp_unpak(gp,w, 'covariance');
+    gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_hmc});
+    
+    % Do the sampling (this takes approximately 5-10 minutes)    
+    [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+    
+    % --- Check predictions ---
+    [Efa, Varfa] = mc_pred(rfull, x, y, p, [], tstindex);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p, [1], tstindex);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p, [2], tstindex);
+    
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(mean(Efa) - (mean(Ef1)+mean(Ef2))) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efa, Varfa] = mc_pred(rfull, x, y, p2, [], tstindex2);
+    [Ef1, Varf1] = mc_pred(rfull, x, y, p2, [1], tstindex2);
+    [Ef2, Varf2] = mc_pred(rfull, x, y, p2, [2], tstindex2);
+
+    switch models{i}
+      case {'FULL' 'CS+FIC'}
+        if max( abs(mean(Efa) - (mean(Ef1)+mean(Ef2))) ) > 1e-11
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+        % In FIC and PIC the additive phenomenon is only approximate
+      case {'FIC' 'PIC'}
+        if max( abs(Efa - (Ef1+Ef2)) ) > 0.1 
+            warnings = sprintf([warnings '\n * Check mc_pred for ' models{i} ' model. The predictions with only one covariance function do not match the full prediction.']);
+            numwarn = numwarn + 1;
+        end
+    end
+    
+    [Efaa, Varfaa, Ey, Vary] = mc_pred(rfull, x, y, p2, [], tstindex2);
+        
+    switch models{i}
+      case {'PIC'}
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], trindex, y);
+      otherwise
+        [Ef, Varf, Ey, Vary, py] = mc_pred(rfull, x, y, x, [], tstindex2, y);
+    end
+end
+
 
 
 

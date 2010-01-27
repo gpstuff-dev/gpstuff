@@ -37,13 +37,19 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 %                          (gpcf_neuralnetwork_recappend)
 %
 %	GPCF = GPCF_NEURALNETWORK('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
+%       can be modified are:
+%
+%             'biasSigma2'         : set the biasSigma2
+%             'weightSigma2'       : set the weightSigma2
+%             'weightSigma2_prior'  : set the prior structure for weightSigma2
+%             'biasSigma2_prior'   ; set the prior structure for biasSigma2
+%
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
 %       gp_cov, gp_unpak, gp_pak
     
-% Copyright (c) 2000-2001 Aki Vehtari
 % Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2009 Jaakko Riihimaki
 
@@ -93,8 +99,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     gpcf.biasSigma2 = varargin{i+1};
                   case 'weightSigma2'
                     gpcf.weightSigma2 = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
                   case 'biasSigma2_prior'
                     gpcf.p.biasSigma2 = varargin{i+1};
                   case 'weightSigma2_prior'
@@ -119,8 +123,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                 gpcf.biasSigma2 = varargin{i+1};
               case 'weightSigma2'
                 gpcf.weightSigma2 = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
               case 'biasSigma2_prior'
                 gpcf.p.biasSigma2 = varargin{i+1};
               case 'weightSigma2_prior'
@@ -455,7 +457,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     end
 
 
-    function [DKff, gprior]  = gpcf_neuralnetwork_ginput(gpcf, x, x2)
+    function DKff  = gpcf_neuralnetwork_ginput(gpcf, x, x2)
     %GPCF_NEURALNETWORK_GIND     Evaluate gradient of covariance function with 
     %                   respect to x.
     %
@@ -513,8 +515,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     
                     ii1=ii1+1;
                     DKff{ii1}=C_tmp.*(inom_g.*S_den-iden_g.*S_nom)./S_den2;
-                    
-                    gprior(ii1) = 0;
                 end
             end
             
@@ -558,8 +558,6 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     
                     ii1=ii1+1;
                     DKff{ii1}=C_tmp.*(inom_g.*S_den-iden_g.*S_nom)./S_den2;
-
-                    gprior(ii1) = 0;
                 end
             end
         end

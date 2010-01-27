@@ -138,7 +138,7 @@ function likelih = likelih_negbin(do, varargin)
     end
 
 
-    function [likelih] = likelih_negbin_unpak(w, likelih)
+    function [likelih, w] = likelih_negbin_unpak(w, likelih)
     %LIKELIH_NEGBIN_UNPAK      Combine likelihood parameters into one vector.
     %
     %	Description
