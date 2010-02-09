@@ -50,7 +50,6 @@ function gpcf = gpcf_matern52(do, varargin)
 %       gpcf_sexp, gpcf_exp, gpcf_matern32, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
 %       gp_cov, gp_unpak, gp_pak
     
-
 % Copyright (c) 2000-2001 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
@@ -519,9 +518,9 @@ function gpcf = gpcf_matern52(do, varargin)
                 dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
                 gdist = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
                 ii1 = 0;
+                ma2 = gpcf.magnSigma2;
                 for i=1:length(gdist)
                     ii1 = ii1+1;
-                    ma2 = gpcf.magnSigma2;
                     DKff{ii1} = ma2.*(sqrt(5) + 10.*dist./3).*gdist{i}.*exp(-sqrt(5).*dist);
                     DKff{ii1} = DKff{ii1} - ma2.*(1+sqrt(5).*dist+5.*dist.^2./3).*exp(-sqrt(5).*dist).*sqrt(5).*gdist{i};
                 end
@@ -572,11 +571,11 @@ function gpcf = gpcf_matern52(do, varargin)
         end
         [n1,m1]=size(x1);
         [n2,m2]=size(x2);
-        
+
         if m1~=m2
             error('the number of columns of X1 and X2 has to be same')
         end
-       
+
         if isfield(gpcf,'metric')
             ma2 = gpcf.magnSigma2;
             dist = sqrt(5).*feval(gpcf.metric.distance, gpcf.metric, x1, x2);
@@ -669,7 +668,7 @@ function gpcf = gpcf_matern52(do, varargin)
     %         GPCF_MATERN52_COV, GP_COV, GP_TRCOV
         
         [n, m] =size(x);
-        
+
         C = ones(n,1)*gpcf.magnSigma2;
         C(C<eps)=0;
     end
