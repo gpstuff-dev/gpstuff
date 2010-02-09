@@ -238,7 +238,6 @@ function gpcf = gpcf_matern32(do, varargin)
     %	See also
     %	GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_G, GP_E
 
-        
         eprior = 0;
         gpp=gpcf.p;
         
@@ -247,10 +246,7 @@ function gpcf = gpcf_matern32(do, varargin)
         if isfield(gpcf,'metric')
             
             if ~isempty(gpcf.p.magnSigma2)
-                eprior=eprior...
-                       +feval(gpp.magnSigma2.fe, ...
-                              gpcf.magnSigma2, gpp.magnSigma2.a)...
-                       -log(gpcf.magnSigma2);
+                eprior=eprior + feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
             end
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
             
@@ -310,7 +306,7 @@ function gpcf = gpcf_matern32(do, varargin)
                 ii1 = ii1 +1;
                 DKff{ii1} = Cdm;
             end
-            
+
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x);
                 [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x);
@@ -488,7 +484,7 @@ function gpcf = gpcf_matern32(do, varargin)
                 end
             else
             
-                if length(gpcf.lengthScale) == 1  % In the case of an isotropic EXP
+                if length(gpcf.lengthScale) == 1  % In the case of an isotropic
                     s = repmat(1./gpcf.lengthScale.^2, 1, m);
                 else
                     s = 1./gpcf.lengthScale.^2;
