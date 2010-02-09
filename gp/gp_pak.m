@@ -10,11 +10,11 @@ function w = gp_pak(gp, param)
 %       Each of the following strings in PARAM defines one group of parameters 
 %       to pack:
 %         'covariance'     = pack hyperparameters of covariance function
-%         'inducing'       = pack iducing inputs
+%         'inducing'       = pack inducing inputs
 %                            W = gp.X_u(:)
 %         'likelihood'     = pack parameters of likelihood
 %
-%       By compining the strings one can pack more than one group of parameters. 
+%       By combining the strings one can pack more than one group of parameters. 
 %       For example:
 %         'covariance+inducing' = pack covariance function parameters and induging inputs
 %         'covariance+likelih'  = pack covariance function parameters of likelihood parameters
