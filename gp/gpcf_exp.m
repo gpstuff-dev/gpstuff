@@ -247,10 +247,7 @@ function gpcf = gpcf_exp(do, varargin)
         if isfield(gpcf,'metric')
             
             if ~isempty(gpcf.p.magnSigma2)
-                eprior=eprior...
-                       +feval(gpp.magnSigma2.fe, ...
-                              gpcf.magnSigma2, gpp.magnSigma2.a)...
-                       -log(gpcf.magnSigma2);
+                eprior=eprior + feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
             end
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
             
