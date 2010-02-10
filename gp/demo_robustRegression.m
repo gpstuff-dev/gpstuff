@@ -88,7 +88,7 @@ disp(' ')
 
 % Construct the priors for the parameters of covariance functions...
 pl = prior_t('init');
-pm = prior_t('init', 'scale', 0.3);
+pm = prior_t('init', 's2', 0.3);
 
 % create the Gaussian process
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -118,7 +118,7 @@ gp=gp_unpak(gp,w, 'hyper');
 
 % Prediction
 [Ef, Varf, Ey, Vary] = gp_pred(gp, x, y, xx');
-std_f = sqrt(Vary);
+std_f = sqrt(Varf);
 
 % Plot the prediction and data
 % plot the training data with dots and the underlying 
@@ -132,9 +132,10 @@ plot(x,y,'b.')
 %plot(xt,yt,'r.')
 legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
+plot(xx, Ef-2*std_f, 'r--')
 axis on;
 title('The predictions and the data points (MAP solution and normal noise)');
-S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f,  noiseSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.noise{1}.noiseSigma2)
+S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 
 % ========================================
@@ -250,6 +251,8 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
+pl = prior_t('init');
+pm = prior_t('init', 's2', 0.3);
 gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
@@ -261,8 +264,8 @@ likelih = likelih_t('init', 4, 0.5, 'sigma_prior', pll, 'nu_prior', pll);
 likelih = likelih_t('set', likelih, 'freeze_nu', 0)
 
 % ... Finally create the GP data structure
-param = 'hyper+likelih'
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.001); % 
+param = 'covariance+likelihood'
+gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.000001); % 
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
 
 gp.laplace_opt.optim_method = 'likelih_specific';
@@ -282,6 +285,19 @@ mydeal = @(varargin)varargin{1:nargout};
 w = fminunc(@(ww) mydeal(gpla_e(ww, gp, x, y, param), gpla_g(ww, gp, x, y, param)), w0, opt);
 gp = gp_unpak(gp,w,param);
 
+[Ef, Varf] = la_pred(gp, x, y, x, param);
+
+[e, edata, eprior, f, L] = gpla_e(gp_pak(gp,param), gp, x, y, param);
+W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+
+S = L'*L;
+iS=L\(L'\eye(size(S)));
+diS = diag(iS);
+diS(diS>1e3) = 100;
+figure
+plot(1./Varf)
+hold on;
+plot(diS, 'r')
 
 
 % $$$ w=gp_pak(gp, param);  % pack the hyperparameters into one vector

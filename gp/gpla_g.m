@@ -46,7 +46,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
         
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-        if W >= 0
+        if W >= 0 
             if issparse(K)                               % use sparse matrix routines
 % $$$                 p = analyze(K);
 % $$$                 gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
@@ -70,6 +70,11 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 R = sqrtW*(L'\(L\sqrtW));
                 C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
                 s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+% $$$                 W = diag(W);
+% $$$                 sqrtW = sqrt(W);
+% $$$                 R = sqrtW*(L'\(L\sqrtW));
+% $$$                 C = L\(sqrtW*K);
+% $$$                 s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
             end
         else
             C = L;
@@ -91,16 +96,18 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             
                 gpcf = gp.cf{i};
                 [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-                
+                g1 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
                 for i2 = 1:length(DKff)
                     i1 = i1+1;
                     
                     s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
-                    b = DKff{i2} * feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    b = DKff{i2} * g1;
                     if issparse(K)
                         s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
                     else
                         s3 = b - K*(R*b);
+                        b = DKff{i2} * g1;
+                        %s3 = (1./W).*(R*b);
                     end
                     gdata(i1) = -(s1 + s2'*s3);
                     gprior(i1) = gprior_cf(i2);
@@ -154,7 +161,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
             gdata_likelih = 0;
             likelih = gp.likelih;
             
-            g_logPrior = feval(likelih.fh_priorg, likelih, y, f, 'hyper');
+            g_logPrior = feval(likelih.fh_priorg, likelih);
             if ~isempty(g_logPrior)
             
                 DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
@@ -164,7 +171,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
                 nl= size(DW_sigma,2);
                 
                 gdata_likelih = - DL_sigma - 0.5.*sum(repmat(C2,1,nl).*DW_sigma) - s2'*s3;
-                
+
                 % set the gradients into vectors that will be returned
                 gdata = [gdata gdata_likelih];
                 gprior = [gprior g_logPrior];

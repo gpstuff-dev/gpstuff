@@ -59,7 +59,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
     function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
         
-        if  abs(w-w0) < 1e-8 % 1e-8
+        if 1==0% abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -186,24 +186,27 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 end
                 
                 % evaluate the approximate log marginal likelihood
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
                 if min(W) >= 0
+                    1
                     if issparse(K)
                         W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'), n,n);
                         sqrtW = sqrt(W);
                         B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
                         L = ldlchol(B);
-                        logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);                 
+
                         % Note that here we use LDL cholesky
                         edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                         
 % $$$                         % Reorder some of the returned and stored values
 % $$$                         f = f(r);
                     else
-                        logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
-
                         sW = sqrt(W);
                         B = eye(size(K)) + sW*sW'.*K;
                         L = chol(B)';
+                        isreal(L)
+                        sum(log(diag(L)))
                         edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                     end
                 else

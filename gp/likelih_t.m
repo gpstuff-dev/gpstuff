@@ -141,7 +141,7 @@ function likelih = likelih_t(do, varargin)
         w = [];
         i1 = 0;
         if ~isempty(likelih.p.sigma)
-            i1 = i1+1;
+            i1 = 1;
             w(i1) = log(likelih.sigma);
         end
         if ~isempty(likelih.p.nu)
@@ -171,14 +171,13 @@ function likelih = likelih_t(do, varargin)
 
         i1 = 0;
         if ~isempty(likelih.p.sigma)
-            i1 = i1+1;
+            i1 = 1;
             likelih.sigma = exp(w(i1));
         end
         if ~isempty(likelih.p.nu)
             i1 = i1+1;
             likelih.nu = exp(exp(w(i1)));
         end
-        w = w(i1+1:end);
         
 % $$$         if likelih.freeze_nu == 1
 % $$$             i1=1;        
@@ -220,6 +219,7 @@ function likelih = likelih_t(do, varargin)
         v = likelih.nu;
         sigma = likelih.sigma;
         logPrior = 0;
+        
         if ~isempty(likelih.p.sigma) 
             logPrior = feval(likelih.p.sigma.fh_e, likelih.sigma, likelih.p.sigma) - log(sigma);
         end
@@ -262,8 +262,9 @@ function likelih = likelih_t(do, varargin)
         sigma = likelih.sigma;
         glogPrior = [];
         i1 = 0;
+        
         if ~isempty(likelih.p.sigma) 
-            i1 = i1+1;
+            i1 = 1;
             glogPrior(i1) = feval(likelih.p.sigma.fh_g, likelih.sigma, likelih.p.sigma).*sigma - 1;
         end
         if ~isempty(likelih.p.nu) 
