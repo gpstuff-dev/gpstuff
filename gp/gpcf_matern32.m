@@ -490,7 +490,7 @@ function gpcf = gpcf_matern32(do, varargin)
                     s = 1./gpcf.lengthScale.^2;
                 end
                 dist=0; 
-                for i2=1:nin
+                for i2=1:m
                     dist = dist + s(i2).*(gminus(x(:,i2),x(:,i2)')).^2;
                 end
                 ii1 = 0;
@@ -526,7 +526,7 @@ function gpcf = gpcf_matern32(do, varargin)
                     s = 1./gpcf.lengthScale.^2;
                 end
                 dist=0; 
-                for i2=1:nin
+                for i2=1:m
                     dist = dist + s(i2).*(gminus(x(:,i2),x2(:,i2)')).^2;
                 end
                 ii1 = 0;

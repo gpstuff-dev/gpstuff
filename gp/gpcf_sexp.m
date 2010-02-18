@@ -43,8 +43,8 @@ function gpcf = gpcf_sexp(do, varargin)
 %             'magnSigma2'         : set the magnSigma2
 %             'lengthScale'        : set the lengthScale
 %             'metric'             : set the metric structure into the covariance function
-%             'lengthScale_prior'  : set the prior structure for lengthScale
 %             'magnSigma2_prior'   ; set the prior structure for magnSigma2
+%             'lengthScale_prior'  : set the prior structure for lengthScale
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
@@ -148,7 +148,7 @@ function gpcf = gpcf_sexp(do, varargin)
     %GPCF_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
-    %	W = GPCF_SEXP_PAK(GPCF, W) takes a covariance function data structure GPCF and
+    %	W = GPCF_SEXP_PAK(GPCF) takes a covariance function data structure GPCF and
     %	combines the hyper-parameters into a single row vector W.
     %
     %	The ordering of the parameters in W is:
@@ -236,7 +236,7 @@ function gpcf = gpcf_sexp(do, varargin)
     %	E = GPCF_SEXP_E(GPCF, X, T) takes a covariance function data structure 
     %   GPCF together with a matrix X of input vectors and a matrix T of target 
     %   vectors and evaluates log p(th) x J, where th is a vector of SEXP parameters 
-    %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
+    %   and J is the Jacobian of transformation exp(w) = th. (Note that the parameters 
     %   are log transformed, when packed.)
     %
     %	See also
@@ -249,7 +249,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if ~isempty(gpcf.p.magnSigma2)
                 eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
         end
-        
+
         if isfield(gpcf,'metric')
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
         else
@@ -258,7 +258,7 @@ function gpcf = gpcf_sexp(do, varargin)
             % On the other hand errors are evaluated in the W-space so we need take
             % into account also the  Jacobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-            
+
             if ~isempty(gpp.lengthScale)
                 eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
@@ -290,7 +290,7 @@ function gpcf = gpcf_sexp(do, varargin)
         i1=0;i2=1;
         DKff = {};
         gprior = [];
-        
+
         % Evaluate: DKff{1} = d Kff / d magnSigma2
         %           DKff{2} = d Kff / d lengthScale
         % NOTE! Here we have already taken into account that the parameters are transformed
@@ -300,7 +300,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if nargin == 2
             Cdm = gpcf_sexp_trcov(gpcf, x);
             ii1=0;
-            
+
             if ~isempty(gpcf.p.magnSigma2)
                 ii1 = ii1 +1;
                 DKff{ii1} = Cdm;
@@ -602,7 +602,6 @@ function gpcf = gpcf_sexp(do, varargin)
 
         if isfield(gpcf,'metric')
             % If other than scaled euclidean metric
-            
             [n, m] =size(x);            
             ma = gpcf.magnSigma2;
             
@@ -640,7 +639,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     end
                     C(col_ind,ii1) = d;
                 end
-                C(C<eps) = 0;
+                C(C<eps)=0;
                 C = C+C';
                 C = ma.*exp(-C);
             end

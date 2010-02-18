@@ -18,33 +18,33 @@ function gpcf = gpcf_exp(do, varargin)
 %         p              = Prior structure for covariance function parameters. 
 %                          (e.g. p.lengthScale.)
 %         fh_pak         = function handle to pack function
-%                          (@gpcf_sexp_pak)
+%                          (@gpcf_exp_pak)
 %         fh_unpak       = function handle to unpack function
-%                          (@gpcf_sexp_unpak)
+%                          (@gpcf_exp_unpak)
 %         fh_e           = function handle to energy function
-%                          (@gpcf_sexp_e)
+%                          (@gpcf_exp_e)
 %         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                          (@gpcf_sexp_ghyper)
+%                          (@gpcf_exp_ghyper)
 %         fh_ginput      = function handle to gradient of function with respect to inducing inputs
-%                          (@gpcf_sexp_ginput)
+%                          (@gpcf_exp_ginput)
 %         fh_cov         = function handle to covariance function
-%                          (@gpcf_sexp_cov)
+%                          (@gpcf_exp_cov)
 %         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_sexp_trcov)
+%                          (@gpcf_exp_trcov)
 %         fh_trvar       = function handle to training variance function
-%                          (@gpcf_sexp_trvar)
+%                          (@gpcf_exp_trvar)
 %         fh_recappend   = function handle to append the record function 
-%                          (gpcf_sexp_recappend)
+%                          (gpcf_exp_recappend)
 %
 %	GPCF = GPCF_EXP('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
-%       can be modified are:
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. 
+%       The fields that can be modified are:
 %
 %             'magnSigma2'         : set the magnSigma2
 %             'lengthScale'        : set the lengthScale
 %             'metric'             : set the metric structure into the covariance function
-%             'lengthScale_prior'  : set the prior structure for lengthScale
 %             'magnSigma2_prior'   ; set the prior structure for magnSigma2
+%             'lengthScale_prior'  : set the prior structure for lengthScale
 %
 %	See also
 %       gpcf_sexp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
@@ -67,7 +67,7 @@ function gpcf = gpcf_exp(do, varargin)
         gpcf.type = 'gpcf_exp';
         gpcf.nin = nin;
         gpcf.nout = 1;
-        
+
         % Initialize parameters
         gpcf.lengthScale= repmat(10, 1, nin); 
         gpcf.magnSigma2 = 0.1;
@@ -110,7 +110,7 @@ function gpcf = gpcf_exp(do, varargin)
                     gpcf.p.magnSigma2 = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
-                end    
+                end
             end
         end
     end
@@ -156,7 +156,7 @@ function gpcf = gpcf_exp(do, varargin)
     %
     %	See also
     %	GPCF_EXP_UNPAK
-        
+
         i1=0;i2=1;
         ww = []; w = [];
         
@@ -195,7 +195,7 @@ function gpcf = gpcf_exp(do, varargin)
     %
     %	See also
     %	GPCF_EXP_PAK
-        
+
         gpp=gpcf.p;
         if ~isempty(gpp.magnSigma2)
             i1=1;
@@ -292,7 +292,7 @@ function gpcf = gpcf_exp(do, varargin)
         i1=0;i2=1;
         DKff = {};
         gprior = [];
-        
+
         % Evaluate: DKff{1} = d Kff / d magnSigma2
         %           DKff{2} = d Kff / d lengthScale
         % NOTE! Here we have already taken into account that the parameters are transformed
@@ -301,7 +301,7 @@ function gpcf = gpcf_exp(do, varargin)
         % evaluate the gradient for training covariance
         if nargin == 2
             Cdm = gpcf_exp_trcov(gpcf, x);
-                        
+
             ii1=0;
             
             if ~isempty(gpcf.p.magnSigma2)
@@ -324,7 +324,7 @@ function gpcf = gpcf_exp(do, varargin)
                         % In the case of isotropic EXP (no ARD)
                         s = 1./gpcf.lengthScale;
                         dist = 0;
-                        for i=1:nin
+                        for i=1:m
                             dist = dist + (gminus(x(:,i),x(:,i)')).^2;
                         end
                         D = Cdm.*s.*sqrt(dist);
@@ -335,11 +335,11 @@ function gpcf = gpcf_exp(do, varargin)
                         s = 1./gpcf.lengthScale.^2;
                         dist = 0;
                         dist2 = 0;
-                        for i=1:nin
+                        for i=1:m
                             dist = dist + s(i).*(gminus(x(:,i),x(:,i)')).^2;
                         end
                         dist = sqrt(dist);
-                        for i=1:nin                      
+                        for i=1:m                      
                             D = s(i).*Cdm.*(gminus(x(:,i),x(:,i)')).^2;
                             D(dist~=0) = D(dist~=0)./dist(dist~=0);
                             ii1 = ii1+1;
@@ -386,11 +386,11 @@ function gpcf = gpcf_exp(do, varargin)
                         % In the case ARD is used
                         s = 1./gpcf.lengthScale.^2;        % set the length
                         dist = 0; 
-                        for i=1:nin
+                        for i=1:m
                             dist = dist + s(i).*(gminus(x(:,i),x2(:,i)')).^2;
                         end
                         dist = sqrt(dist);
-                        for i=1:nin
+                        for i=1:m
                             D1 = s(i).*K.* gminus(x(:,i),x2(:,i)').^2;
                             D1(dist~=0) = D1(dist~=0)./dist(dist~=0);
                             ii1=ii1+1;
@@ -493,7 +493,7 @@ function gpcf = gpcf_exp(do, varargin)
                 end
                 
                 dist=0;
-                for i2=1:nin
+                for i2=1:m
                     dist = dist + s(i2).*(gminus(x(:,i2),x(:,i2)')).^2;
                 end
                 dist = sqrt(dist); 
@@ -531,7 +531,7 @@ function gpcf = gpcf_exp(do, varargin)
                 end
                 
                 dist=0;
-                for i2=1:nin
+                for i2=1:m
                     dist = dist + s(i2).*(gminus(x(:,i2),x2(:,i2)')).^2;
                 end
                 dist = sqrt(dist); 

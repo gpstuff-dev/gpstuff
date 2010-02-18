@@ -97,7 +97,6 @@ w = gp_pak(gp, 'covariance');
 
 
 gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
-;
 w0=randn(size(w))
 gradcheck(w0, @gp_e, @gp_g, gp, x, y, 'covariance');
 
