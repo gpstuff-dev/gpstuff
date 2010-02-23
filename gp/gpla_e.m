@@ -59,7 +59,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
     function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
         
-        if 1==0% abs(w-w0) < 1e-8 % 1e-8
+        if abs(w-w0) < 1e-8 % 1e-8
                % The covariance function parameters haven't changed so just
                % return the Energy and the site parameters that are saved
             e = e0;
@@ -180,7 +180,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                             i = i+1;
                         end 
                     end
-                  
+                    
                   case 'likelih_specific'                            
                     [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
                 end
@@ -189,7 +189,6 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                 W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                 logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f);
                 if min(W) >= 0
-                    1
                     if issparse(K)
                         W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent'), n,n);
                         sqrtW = sqrt(W);
@@ -205,8 +204,6 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         sW = sqrt(W);
                         B = eye(size(K)) + sW*sW'.*K;
                         L = chol(B)';
-                        isreal(L)
-                        sum(log(diag(L)))
                         edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                     end
                 else

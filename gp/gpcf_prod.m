@@ -3,7 +3,7 @@ function gpcf = gpcf_prod(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_PROD('INIT', NIN, 'functions', {GPCF_1, GPCF_2, ...}) Create and 
+%	GPCF = GPCF_PROD('INIT', 'functions', {GPCF_1, GPCF_2, ...}) Create and 
 %       initialize product form covariance function for Gaussian process. The covariance 
 %       will be 
 %          GPCF = GPCF_1 .* GPCF_2 .* ... .* GPCF_N
@@ -48,16 +48,13 @@ function gpcf = gpcf_prod(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nin = varargin{1};
         gpcf.type = 'gpcf_prod';
-        gpcf.nin = nin;
-        gpcf.nout = 1;
 
         % Initialize parameters
         gpcf.functions = {};
@@ -73,12 +70,12 @@ function gpcf = gpcf_prod(do, varargin)
         gpcf.fh_trvar  = @gpcf_prod_trvar;
         gpcf.fh_recappend = @gpcf_prod_recappend;
 
-        if length(varargin) > 1
-            if mod(nargin,2) ~=0
+        if nargin > 1
+            if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=2:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'functions'
                     % Set covariance functions into gpcf

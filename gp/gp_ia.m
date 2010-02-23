@@ -5,18 +5,22 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
 %       Description [GP_ARRAY, P_TH, EF, VARF, X, FX] = GP_IA(OPT,
 %       GP, XX, YY, TX, PARAM, TSTINDEX) takes a gp data structure GP
 %       with covariates XX and observations YY and returns an array of
-%       GPs GP_ARRAY and corresponding weights P_TH. Iff test
+%       GPs GP_ARRAY and corresponding weights P_TH. If test
 %       covariates TX is included, GP_IA also returns corresponding
 %       mean EF and variance VARF (FX is PDF evaluated at X). TSTINDEX
-%       is for FIC. (will be explained better ...)
+%       defines the test index for FIC, PIC and CS+FIC (see e.g. gp_pred).
 %
-%       OPT.FMINUNC consists of the options for fminunc
-%       OPT.INT_METHOD is the method used for integration
-%                      'grid' for grid search
-%                      'is_normal' for sampling from gaussian appr
-%                      'is_normal_qmc' for quasi monte carlo samples
+%       Options structure OPT contains the integration and optimization options.
+%         OPT.SCG        contains the options for scaled conjugate gradients
+%         OPT.FMINUNC    contains the options for fminunc
+%         OPT.INT_METHOD is the method used for integration
+%                        'grid' for grid search
+%                        'is_normal' for sampling from gaussian appr
+%                        'is_normal_qmc' for quasi monte carlo samples
+%
+%         see gp_iaopt for more detailed desription for options.
 
-% Copyright (c) 2009 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % Licence (version 2 or later); please refer to the file 
@@ -45,17 +49,18 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
     end
 
     if nargin < 6 | isempty(param)
-        param = 'hyper';
+        param = 'covariance';
     end
     
     if nargin < 7
         tstindex = [];
     end
     
-    if ~isfield(opt, 'fminunc')
-        opt.fminunc=optimset(opt.fminunc,'GradObj','on');
-        opt.fminunc=optimset(opt.fminunc,'LargeScale', 'off');
-        opt.fminunc=optimset(opt.fminunc,'Display', 'iter');
+    if ~isfield(opt, 'fminunc') && ~isfield(opt, 'scg')
+        opt.scg = scg2_opt;
+        opt.scg.tolfun = 1e-3;
+        opt.scg.tolx = 1e-3;
+        opt.scg.display = 1;
     end
 
     if ~isfield(opt,'int_method')
@@ -103,7 +108,11 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
     mydeal = @(varargin)varargin{1:nargout};
 
     % The mode and hessian at it 
-    w = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt.fminunc);
+    if isfield(opt, 'scg')
+        w = scg2(fh_e, w0, opt, fh_g, gp, xx, yy, param);
+    elseif isfield(opt, 'fminunc')
+        w = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt.fminunc);
+    end
     gp = gp_unpak(gp,w,param);
 
     % Number of parameters
@@ -308,7 +317,11 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
 
                     % Find the scaling parameter so that when we move 2 stds from the
                     % mode, the log desity drops by 2
-                    t = fminunc(@(x) abs(-feval(fh_e,x*temp*z+w,gp,xx,yy,param)+feval(fh_e,w,gp,xx,yy,param)+2), 1.3,optim);
+                    if isfield(opt, 'scg')
+                        error('The improved CCD works only when the optimization method is fminunc.')
+                    elseif isfield(opt, 'fminunc')
+                        t = fminunc(@(x) abs(-feval(fh_e,x*temp*z+w,gp,xx,yy,param)+feval(fh_e,w,gp,xx,yy,param)+2), 1.3,optim);
+                    end
                     sd(points(:,ind)*dir>0, ind) = 0.5*t/sqrt(nParam);
                 end
                 % Each points is scaled with corresponding scaling parameter and
@@ -700,31 +713,32 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
         % Calculate mean and variance of the disrtibutions
         Ef = sum(x.*fx,2)./sum(fx,2);
         Varf = sum(fx.*(repmat(Ef,1,size(x,2))-x).^2,2)./sum(fx,2);
-
-        % - validate the integration over hyperparameters
-        % - Check the number of effective parameters in GP:s
-        % - Check the normal approximations if Laplace approximation or EP has been used
-        if opt.validate == 1 && size(Ef_grid,1) > 1
-            % Check the importance weights if used 
-            % Check also that the integration over theta has converged 
-            switch opt.int_method
-              case {'is_normal' 'is_normal_qmc' 'is_student-t'}
-                pth_w = P_TH./sum(P_TH);
-                meff = 1./sum(pth_w.^2);
-                
-                figure
-                plot(cumsum(sort(pth_w)))
-                title('The cumulative mass of importance weights')
-                ylabel('cumulative weight, \Sigma_{i=1}^k w_i')
-                xlabel('i, the i''th largest integration point')
-                
-                fprintf('\n \n')
-                            
-                fprintf('The effective number of importance samples is %.2f out of total %.2f samples \n', meff, length(P_TH))
-                
-                
-                
-
+    end
+    
+    % ====================================================================
+    % If validation of the approximation is used perform tests
+    % ====================================================================
+    % - validate the integration over hyperparameters
+    % - Check the number of effective parameters in GP:s
+    % - Check the normal approximations if Laplace approximation or EP has been used
+    if opt.validate == 1 && size(Ef_grid,1) > 1
+        % Check the importance weights if used 
+        % Check also that the integration over theta has converged 
+        switch opt.int_method
+          case {'is_normal' 'is_normal_qmc' 'is_student-t'}
+            pth_w = P_TH./sum(P_TH);
+            meff = 1./sum(pth_w.^2);
+            
+            figure
+            plot(cumsum(sort(pth_w)))
+            title('The cumulative mass of importance weights')
+            ylabel('cumulative weight, \Sigma_{i=1}^k w_i')
+            xlabel('i, the i''th largest integration point')
+            
+            fprintf('\n \n')
+            
+            fprintf('The effective number of importance samples is %.2f out of total %.2f samples \n', meff, length(P_TH))
+            
 % $$$                 fprintf('Validating the integration over hyperparameters...  \n')
 % $$$                 
 % $$$                 Ef2(:,1) = Ef;
@@ -767,35 +781,34 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
 % $$$             title('The convergence of the integration over hyperparameters')
 % $$$             ylabel('\Sigma_{i=1}^n KL(q_m(f_i)||q_{m-1}(f_i))')
 % $$$             xlabel('m, the number of integration points in hyperparam. space')
-            end
+        end
             
-            % Evaluate the number of effective latent variables in GPs
-            for i3 = 1:length(gp_array)
-                p_eff(i3) = gp_peff(gp_array{i3}, xx, yy, param);
-            end
+        % Evaluate the number of effective latent variables in GPs
+        for i3 = 1:length(gp_array)
+            p_eff(i3) = gp_peff(gp_array{i3}, xx, yy, param);
+        end
             
-            figure
-            plot(p_eff./size(xx,1))
-            title('The number of effective latent variables vs. number of latent variables')
-            ylabel('p_eff / size(f,1)')
-            xlabel('m, the index of integration point in hyperparam. space')
-            
-            fprintf('\n \n')
-            
-            if max(p_eff./size(xx,1)) < 0.5 % This is a limit whithout good justification
-                fprintf('The maximum number of effective latent variables vs. the number of latent \n')
-                fprintf('variables is %.4e at integration point %d .\n', max(p_eff./size(xx,1)), find(p_eff == max(p_eff)))
-                fprintf('The Normal approximations for the conditional posteriors seem reliable.\n')
-            else
-                fprintf('The maximum number of effective latent variables vs. the number of latent \n')
-                fprintf('variables is %.4e at integration point %d .\n', max(p_eff./size(xx,1)), find(p_eff == max(p_eff)))
-                fprintf('The Normal approximations for the conditional posteriors should be checked.\n')
-            end
-
-            
+        figure
+        plot(p_eff./size(xx,1))
+        title('The number of effective latent variables vs. number of latent variables')
+        ylabel('p_{eff} / size(f,1)')
+        xlabel('m, the index of integration point in hyperparam. space')
+        
+        fprintf('\n \n')
+        
+        if max(p_eff./size(xx,1)) < 0.5 % This is a limit whithout good justification
+            fprintf('The maximum number of effective latent variables vs. the number of latent \n')
+            fprintf('variables is %.4e at integration point %d .\n', max(p_eff./size(xx,1)), find(p_eff == max(p_eff)))
+            fprintf('The Normal approximations for the conditional posteriors seem reliable.\n')
+        else
+            fprintf('The maximum number of effective latent variables vs. the number of latent \n')
+            fprintf('variables is %.4e at integration point %d .\n', max(p_eff./size(xx,1)), find(p_eff == max(p_eff)))
+            fprintf('The Normal approximations for the conditional posteriors should be checked.\n')
         end
         
+        fprintf('\n \n')
     end
+    
 
     % Add the integration weights into the gp_array    
     for i = 1:length(gp_array)

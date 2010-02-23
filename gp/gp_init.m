@@ -3,12 +3,12 @@ function gp = gp_init(do, varargin)
 %
 %	Description
 %
-%	GP = GP_INIT('INIT', 'TYPE', NIN, 'LIKELIH', GPCF, NOISE, VARARGIN) 
-%       Creates a Gaussian Process model with a single output. Takes the number 
-%	of inputs  NIN together with string/structure 'LIKELIH', which spesifies 
-%       likelihood function used, GPCF array specifying the covariance functions 
-%       and NOISE array, which specify the noise covariance functions used for
-%       Gaussian process. At minimum one covariance function has to be given. 
+%	GP = GP_INIT('INIT', 'TYPE', 'LIKELIH', GPCF, NOISE, VARARGIN) 
+%       Creates a Gaussian Process model with a single output. Takes a string/structure 
+%       'LIKELIH', which spesifies likelihood function used, GPCF array specifying 
+%       the covariance functions and NOISE array, which specify the noise covariance
+%       functions used for Gaussian process. At minimum one covariance function has 
+%       to be given.
 %       
 %       The GPCF and NOISE arrays consist of covariance function structures 
 %       (see, for example, gpcf_sexp).
@@ -32,8 +32,6 @@ function gp = gp_init(do, varargin)
 %	The minimum number of fields (in case of full GP regression model) and 
 %       their default values are:
 %         type           = 'FULL'
-%	  nin            = number of inputs
-%	  nout           = number of outputs: always 1
 %         cf             = struct of covariance functions
 %         noise          = struct of noise functions
 %	  jitterSigmas   = jitter term for covariance function
@@ -87,8 +85,7 @@ function gp = gp_init(do, varargin)
 %
 %
 
-% Copyright (c) 2006      Helsinki University of Technology (author Jarno Vanhatalo)
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2006-2010 Jarno Vanhatalo
     
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -99,25 +96,22 @@ function gp = gp_init(do, varargin)
     end
 
     % Initialize the Gaussian process
-    if strcmp(do, 'init')
-        
+    if strcmp(do, 'init')        
         gp.type = varargin{1};
-        gp.nin = varargin{2};
-        gp.nout = 1;
         
         % Set likelihood. 
-        gp.likelih = varargin{3};   % Remember to set the latent_method.
+        gp.likelih = varargin{2};   % Remember to set the latent_method.
 
         % Set covariance functions into gpcf
-        gpcf = varargin{4};
+        gpcf = varargin{3};
         for i = 1:length(gpcf)
             gp.cf{i} = gpcf{i};
         end
         
         % Set noise functions into noise
-        if length(varargin) > 4
+        if length(varargin) > 3
             gp.noise = [];
-            gpnoise = varargin{5};
+            gpnoise = varargin{4};
             for i = 1:length(gpnoise)
                 gp.noise{i} = gpnoise{i};
             end
@@ -141,12 +135,12 @@ function gp = gp_init(do, varargin)
             gp.tr_index = {};            
         end
                 
-        if length(varargin) > 5
-            if mod(length(varargin),2) ==0
+        if length(varargin) > 4
+            if mod(length(varargin),2) ~=0
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=6:2:length(varargin)-1
+            for i=5:2:length(varargin)-1
                 switch varargin{i}
                   case 'jitterSigmas'
                     gp.jitterSigmas = varargin{i+1};
@@ -162,12 +156,8 @@ function gp = gp_init(do, varargin)
                   case 'type'
                     gp.type = varargin{i+1};
                   case 'X_u'
-                    if size(varargin{i+1},2)~=gp.nin
-                        error('The size of X_u has to be u x nin.')
-                    else
-                        gp.X_u = varargin{i+1};
-                        gp.nind = size(varargin{i+1},1);
-                    end
+                    gp.X_u = varargin{i+1};
+                    gp.nind = size(varargin{i+1},1);
                   case 'Xu_prior'
                     gp.p.X_u = varargin{i+1};
                   case 'blocks'
@@ -232,12 +222,8 @@ function gp = gp_init(do, varargin)
               case 'type'
                 gp.type = varargin{i+1};
               case 'X_u'
-                if size(varargin{i+1},2)~=gp.nin
-                    error('The size of X_u has to be u x nin.')
-                else
-                    gp.X_u = varargin{i+1};
-                    gp.nind = size(varargin{i+1},1);
-                end
+                gp.X_u = varargin{i+1};
+                gp.nind = size(varargin{i+1},1);
               case 'Xu_prior'
                 gp.p.X_u = varargin{i+1};
               case 'blocks'
@@ -265,7 +251,7 @@ function gp = gp_init(do, varargin)
                     gp.laplace_opt.optim_method = 'newton';
                     gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
                     w = gp_pak(gp, varargin{i+1}{4});
-                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});                    
                   otherwise
                     error('Unknown type of latent_method!')
                 end
@@ -316,11 +302,7 @@ function gp = gp_init(do, varargin)
         R= var{2};
         gp.truncated_R = R;
         n = size(x,1);
-        
-        if size(x,2)~=gp.nin
-            error('The size of x for "truncated" has to be n x nin!')
-        end
-                
+                        
         C = sparse([],[],[],n,n,0);
         for i1=2:n
             i1n=(i1-1)*n;

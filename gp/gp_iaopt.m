@@ -1,17 +1,16 @@
-function opt = gp_iaopt(opt, method);
-%GP_MCOPT     Default options for GP_INA
+function opt = gp_iaopt(opt, method, optmethod);
+%GP_IAOPT     Default options for GP_IA
 %
 %             Description
-%             OPT = GP_INAOPT(OPT) sets default options for integrated nested
-%             approximation (INA) in the structure OPT. The default integration 
-%             method is the quasi Monte Carlo with importance samping:
-%
+%             OPT = GP_IAOPT(OPT) sets default options for integration
+%             approximation (IA) in the structure OPT. The default integration 
+%             method is the importance samping with quasi Monte Carlo:
 %    
-%             OPT = GP_INAOPT(OPT, METHOD) sets default options for integrated 
-%             nested approximation (INA) with user specified method in the 
-%             structure OPT. METHOD is a string defining the integration method.
-%             Possibilities and their parameters are:
-%   
+%             OPT = GP_IAOPT(OPT, METHOD) sets default options for integration 
+%             approximation (IA) with user specified method. METHOD is a string 
+%             defining the integration method. Possibilities and their
+%             parameters are:
+%
 %             'grid'  = a grid based integration
 %                  opt.int_method = 'grid';
 %                  opt.stepsize   = 1;
@@ -49,9 +48,19 @@ function opt = gp_iaopt(opt, method);
 %                  opt.hmc_opt.persistence_reset = 0;
 %                  opt.hmc_opt.decay = 0.8;
 %
-%             For reference on the method see ...
+%             OPT = GP_IAOPT(OPT, METHOD, OPTMETHOD) sets also user specified
+%             optimization method in the structure OPT. OPTMETHOD is a string defining 
+%             the optimization method used to find the posterior mode for hyperparameters. 
+%             Possibilities are:
+%
+%             'scg'      = Scaled conjugate gradient algorithm (the default) 
+%             'fminunc'  = Matlabs fminunc algorithm 
+%
+%             The scaled conjugate
+%   
+%             For reference on the method see Vanhatalo, Pietilainen and Vehtari (2010)
 
-% Copyright (c) 2009 Jarno Vanhatalo
+% Copyright (c) 2009-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -61,10 +70,22 @@ if nargin < 1
     opt=[];
 end
 
-opt.fminunc=optimset('GradObj','on');
-opt.fminunc=optimset(opt.fminunc,'LargeScale', 'on');
-opt.fminunc=optimset(opt.fminunc,'Display', 'off');
+if nargin < 3
+    optmethod = 'scg';
+end
 
+switch optmethod
+  case 'scg'
+    opt.scg = scg2_opt;
+    opt.scg.tolfun = 1e-3;
+    opt.scg.tolx = 1e-3;
+    opt.scg.display = 1;    
+  case 'fminunc'
+    opt.fminunc=optimset('GradObj','on');
+    opt.fminunc=optimset(opt.fminunc,'LargeScale', 'on');    
+    opt.fminunc=optimset(opt.fminunc,'Display', 'off');
+end
+    
 if nargin < 2
     method = 'is_normal_qmc';
 end
@@ -74,31 +95,31 @@ switch method
     opt.int_method = 'grid';
     opt.stepsize = 1;
     opt.threshold = 2.5;
-    opt.validate = 1;
+    opt.validate = 0;
   case 'is_normal'
     opt.int_method = 'is_normal';
     opt.nsamples = 40;
-    opt.validate = 1;
+    opt.validate = 0;
     opt.qmc = 0;
     opt.improved = 0;
   case 'is_normal_qmc'
     opt.int_method = 'is_normal';
     opt.nsamples = 40;
-    opt.validate = 1;
+    opt.validate = 0;
     opt.qmc = 1;
     opt.improved = 0;
   case 'is_student-t'
     opt.int_method = 'is_student-t';
     opt.nsamples = 40;
     opt.nu = 4;
-    opt.validate = 1;
+    opt.validate = 0;
     opt.improved = 0;
   case 'mcmc_hmc'
     opt.int_method = 'mcmc_hmc';
     opt.nsamples = 40;
     opt.repeat = 1;
     opt.display = 1;
-    opt.validate = 1;
+    opt.validate = 0;
     
     % Set the hmc sampling options
     opt.hmc_opt.steps = 3;
@@ -112,6 +133,7 @@ switch method
     opt.nsamples = 40;
     opt.repeat = 1;
     opt.display = 1;
+    opt.validate = 0;
     
     % Set the sls sampling options
   case 'CCD'
@@ -119,4 +141,5 @@ switch method
     opt.improved = 0;
     opt.stepsize = 1;
     opt.f0 = 1.1;
+    opt.validate = 0;
 end    

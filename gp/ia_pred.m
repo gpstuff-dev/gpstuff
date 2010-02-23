@@ -1,5 +1,7 @@
 function [Ef, Varf, f, ff, Ey, Vary, y, fy, py] = ia_pred(gp_array, tx, ty, x, predcf, tstind, Y) 
-        
+    
+    
+    
 % Copyright (c) 2009 Ville Pietiläinen
 
 % This software is distributed under the GNU General Public 

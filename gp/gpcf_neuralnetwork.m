@@ -3,13 +3,11 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_NEURALNETWORK('INIT', NIN) Create and initialize neural
+%	GPCF = GPCF_NEURALNETWORK('INIT') Create and initialize neural
 %       network covariance function for Gaussian process
 %
 %	The fields and (default values) in GPCF_NEURALNETWORK are:
 %	  type           = 'gpcf_neuralnetwork'
-%	  nin            = Number of inputs. (NIN)
-%	  nout           = Number of outputs. (always 1)
 %	  biasSigma2     = Prior variance on the network bias term. 
 %                          (0.1)
 %	  weightSigma2   = Prior variances on the network weights. This can be either scalar corresponding 
@@ -57,19 +55,16 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nin = varargin{1};
         gpcf.type = 'gpcf_neuralnetwork';
-        gpcf.nin = nin;
-        gpcf.nout = 1;
 
         % Initialize parameters
-        gpcf.weightSigma2= repmat(10, 1, nin);
+        gpcf.weightSigma2= 10;
         gpcf.biasSigma2 = 0.1;
 
         % Initialize prior structure
@@ -88,12 +83,12 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         gpcf.fh_trvar  = @gpcf_neuralnetwork_trvar;
         gpcf.fh_recappend = @gpcf_neuralnetwork_recappend;
 
-        if length(varargin) > 1
-            if mod(nargin,2) ~=0
+        if nargin > 1
+            if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=2:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'biasSigma2'
                     gpcf.biasSigma2 = varargin{i+1};

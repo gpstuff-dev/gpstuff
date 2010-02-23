@@ -226,7 +226,7 @@ function likelih = likelih_logit(do, varargin)
     %
     %   See also
     %   GPEP_E
-       
+        
         yy = y(i1);
         % Create function handle for the function to be integrated (likelihood * cavity). 
         zm = @(f)exp(-log(1+exp(-yy.*f)) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); 
@@ -276,12 +276,12 @@ function likelih = likelih_logit(do, varargin)
         end  
         RTOL = 1.e-6;
         ATOL = 1.e-10;
-                        
+        
         % Integrate with quadrature
         [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
         
         sigm2hati1 = m_2 - m_1.^2;
-                
+        
         % If the second central moment is less than cavity variance integrate more
         % precisely. Theoretically should be sigm2hati1 < sigm2_i.
         if sigm2hati1 >= sigm2_i
@@ -315,7 +315,7 @@ function likelih = likelih_logit(do, varargin)
             for i1 = 1:length(Ef)
                 ci = sqrt(Varf(i1));
                 F = @(x)1./(1+exp(-y(i1).*x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-                py(i1,1)=quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);                     
+                py(i1)=quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);                     
             end
             
             % Monte Carlo alternative
@@ -323,11 +323,10 @@ function likelih = likelih_logit(do, varargin)
             %     samp = normrnd(Ef(i1),sqrt(Varf(i1)),10000,1);
             %     p1(i1,1) = mean(1./(1+exp(-samp)));           
             % end    
-            end
         end
     end
 
-    
+
     function reclikelih = likelih_logit_recappend(reclikelih, ri, likelih)
     % RECAPPEND - Record append
     %          Description
@@ -338,8 +337,9 @@ function likelih = likelih_logit(do, varargin)
     %          lengthHyperNu  =
     %          lengthScale    =
     %          magnSigma2     =
-
-
+        
+        reclikelih = likelih;
+        
     end
 end
 

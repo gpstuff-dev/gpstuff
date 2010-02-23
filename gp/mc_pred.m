@@ -70,8 +70,9 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
         predcf = [];
     end
 
-    nin  = gp.nin;
-    nout = gp.nout;
+    
+    nin  = size(tx,2);
+    nout = 1;
     nmc=size(gp.etr,1);
    
     % Non-Gaussian likelihood. Thus latent variables should be used in place of observations

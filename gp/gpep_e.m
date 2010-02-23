@@ -34,12 +34,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 % License.txt, included with the software, for details.
     
 % Check the inputs
-    if size(x,2) ~= gp.nin
-        error('The size of x has to be n x nin');
-    end
-    if size(y,2) ~= 1 || length(y) ~= size(x,1)
-        error('The size of y has to be n x 1');
-    end
     
     if strcmp(w, 'init')
         w0 = rand(size(gp_pak(gp, param)));

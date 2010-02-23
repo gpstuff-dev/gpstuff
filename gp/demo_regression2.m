@@ -87,43 +87,36 @@ y = y-avgy;
 % ---------------------------
 % --- Construct the model ---
 % 
-% First create squared exponential covariance function with ARD and 
-% Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 5, 'magnSigma2', 3);
-gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 2, 'magnSigma2', 3);
-gpcfn = gpcf_noise('init', nin, 'noiseSigma2', 1);
+% First create squared exponential and piecewise polynomial 2 covariance functions and 
+% Gaussian noise data structures and set priors for their hyperparameters
+pl = prior_t('init', 's2', 3, 'nu', 4);
+pm = prior_t('init', 's2', 0.3, 'nu', 4);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
+gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
 
-% ... Then set the prior for the parameters of covariance functions...
-gpcf1.p.lengthScale = t_p({3 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
-gpcf2.p.lengthScale = t_p({0.3 4}); %gamma_p({1 0.2});
-gpcf2.p.magnSigma2 = t_p({0.3 4});
-gpcfn.p.noiseSigmas2 = t_p({0.3 4});
-
-% ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)    
+% Finally create the GP data structure
+gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)    
 
 % -----------------------------
 % --- Conduct the inference ---
 %
-% We will make the inference first by finding a maximum a posterior estimate 
-% for the hyperparameters via gradient based optimization.  
+% --- MAP estimate -----------
+w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+fe=str2fun('gp_e');     % create a function handle to negative log posterior
+fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
-% --- MAP estimate using modified Newton algorithm ---
-%     (see fminunc for more details)
+% set the options for scg2
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
 
-opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-4);
-opt=optimset(opt,'TolFun', 1e-4);
-opt=optimset(opt,'LargeScale', 'off');
-opt=optimset(opt,'Display', 'iter');
-param = 'hyper'
+% do the optimization
+w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
 
-% Learn the hyperparameters
-w0 = gp_pak(gp, param);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp, x, y, param), gp_g(ww, gp, x, y, param)), w0, opt);
-gp = gp_unpak(gp,w,param);
+% Set the optimized hyperparameter values back to the gp structure
+gp=gp_unpak(gp,w, 'covariance');
 
 % NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
 % they are also transformed through logarithm. The reason for this is that they 
@@ -131,21 +124,31 @@ gp = gp_unpak(gp,w,param);
 
 % Make predictions. Below Ef_full is the predictive mean and Varf_full the 
 % predictive variance.
-[Ef_full, Varf_full] = gp_pred(gp, x, y, x);
-Varf_full = Varf_full + gp.noise{1}.noiseSigmas2;
+[Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
+[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 1);
+[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 2);
 
 % Plot the prediction and data
 figure(1)
-%subplot(4,1,1)
+subplot(2,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(x,Ef_full,'k', 'LineWidth', 2)
-plot(x,Ef_full-2.*sqrt(Varf_full),'g--')
-plot(x,Ef_full+2.*sqrt(Varf_full),'g--')
+plot(x,Ey_full,'k', 'LineWidth', 2)
+plot(x,Ey_full-2.*sqrt(Vary_full),'g--')
+plot(x,Ey_full+2.*sqrt(Vary_full),'g--')
 axis tight
-caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noise{1}.noiseSigmas2);
+caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noise{1}.noiseSigma2);
 title(caption1)
 legend('Data point', 'predicted mean', '2\sigma error')
+
+subplot(2,1,2)
+[AX, H1, H2] = plotyy(x, Ef_full2, x, Ef_full1);
+set(H2,'LineStyle','--')
+set(H2, 'LineWidth', 2)
+%set(H1, 'Color', 'k')
+set(H1,'LineStyle','-')
+set(H1, 'LineWidth', 0.8)
+title('The long and short term trend')
 
 %========================================================
 % PART 2 data analysis with FIC approximation
@@ -186,20 +189,19 @@ mydeal = @(varargin)varargin{1:nargout};
 gp_fic = gp_unpak(gp_fic,w,param);
 
 % Make the prediction
-[Ef_fic, Varf_fic] = gp_pred(gp_fic, x, y, x);
-Varf_fic = Varf_fic + gp_fic.noise{1}.noiseSigmas2;
+[Ef_fic, Varf_fic, Ey_fic, Vary_fic] = gp_pred(gp_fic, x, y, x);
 
 % Plot the solution of FIC
 figure(2)
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(x,Ef_fic,'k', 'LineWidth', 2)
-plot(x,Ef_fic-2.*sqrt(Varf_fic),'g--', 'LineWidth', 2)
+plot(x,Ey_fic,'k', 'LineWidth', 2)
+plot(x,Ey_fic-2.*sqrt(Varf_fic),'g--', 'LineWidth', 2)
 plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ef_fic+2.*sqrt(Varf_fic),'g--', 'LineWidth', 2)
+plot(x,Ey_fic+2.*sqrt(Varf_fic),'g--', 'LineWidth', 2)
 axis tight
-caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigmas2);
+caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 

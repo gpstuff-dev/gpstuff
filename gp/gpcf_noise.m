@@ -3,13 +3,11 @@ function gpcf = gpcf_noise(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_NOISE('INIT', NIN) Create and initialize noise
+%	GPCF = GPCF_NOISE('INIT') Create and initialize noise
 %       covariance function fo Gaussian process 
 %
 %	The fields and (default values) in GPCF_NOISE are:
-%	  type           = 'gpcf_se'
-%	  nin            = number of inputs (NIN)
-%	  nout           = number of outputs: always 1
+%	  type           = 'gpcf_noise'
 %	  noiseSigma2   = scale of residual distribution
 %                          Variation for normal distribution 
 %                          Degrees of freedom squared for t-distribution 
@@ -59,11 +57,7 @@ function gpcf = gpcf_noise(do, varargin)
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nin = varargin{1};
-        
         gpcf.type = 'gpcf_noise';
-        gpcf.nin = nin;
-        gpcf.nout = 1;
         
         % Initialize parameters
         gpcf.noiseSigma2 = 0.1^2; 
@@ -85,12 +79,12 @@ function gpcf = gpcf_noise(do, varargin)
         gpcf.sampling_opt = hmc2_opt;
         gpcf.fh_recappend = @gpcf_noise_recappend;
         
-        if length(varargin) > 1
-            if mod(nargin,2) ~=0
+        if length(nargin) > 1
+            if mod(vargin,2) ~=0
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=2:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'noiseSigma2'
                     gpcf.noiseSigma2 = varargin{i+1};
@@ -324,8 +318,6 @@ function gpcf = gpcf_noise(do, varargin)
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_noise';
-            reccf.nin = ri;
-            gpcf.nout = 1;
             
             % Initialize parameters
             reccf.noiseSigma2 = []; 

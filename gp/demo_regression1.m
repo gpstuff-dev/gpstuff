@@ -68,7 +68,7 @@
 %========================================================
 % PART 1 data analysis with full GP model
 %========================================================
-clear, clc
+
 % Load the data
 S = which('demo_regression1');
 L = strrep(S,'demo_regression1.m','demos/dat.1');
@@ -84,21 +84,17 @@ y = data(:,3);
 % ---------------------------
 % --- Construct the model ---
 % 
-% $$$ % First create squared exponential covariance function with ARD and 
-% $$$ % Gaussian noise data structures...
-gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', [1.2], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
+% First create squared exponential covariance function with ARD and 
+% Gaussian noise data structures...
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
+gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+pl = prior_t('init');                          % a prior structure
+pm = prior_t('init', 's2', 0.3);               % a prior structure
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
-w = gp_pak(gp, 'covariance');
-%[e, edata, eprior] = gp_e(w, gp, x, y)
-%[g, gdata, gprior] = gp_g(w, gp, x, y, 'hyper')
-
-
-gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
-w0=randn(size(w))
-gradcheck(w0, @gp_e, @gp_g, gp, x, y, 'covariance');
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 
@@ -116,7 +112,7 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 %   and magnitude of the squared exponential covariance function and the 
 %   prior of the noise variance. These structures were set into 'gpcf1' and 
 %   'gpcf2'
-%   (see sinvchi2_p and gamma_p for more details)
+%   (see prior_t for more details)
 % - we created a GP data structure 'gp', which has among others 'gpcf1' and 
 %   'gpcf2' data structures.
 %   (see gp_init for more details)
@@ -127,12 +123,12 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 % We will make the inference first by finding a maximum a posterior estimate 
 % for the hyperparameters via gradient based optimization. After this we will
 % perform an extensive Markov chain Monte Carlo sampling for the hyperparameters.
-% 
+ 
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
+w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -143,10 +139,10 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y, 'hyper');
-gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper');
+w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w, 'hyper');
+gp=gp_unpak(gp,w, 'covariance');
 
 % NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
 % they are also transformed through logarithm. The reason for this is that they 
@@ -157,26 +153,43 @@ gp=gp_unpak(gp,w, 'hyper');
 % variance.
 [p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
 p=[p1(:) p2(:)];
-[Ef_full, Varf_full] = gp_pred(gp, x, y, p);
+[Ef_map, Varf_map] = gp_pred(gp, x, y, p);
 
 % Plot the prediction and data
 figure(1)
-mesh(p1, p2, reshape(Ef_full,37,37));
+mesh(p1, p2, reshape(Ef_map,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title('The predicted underlying function and the data points (MAP solution)');
 
 
-% --- MCMC approach ---
-%  (see gp_mc for details
+% --- Grid integration ---
+% Set the options for grid integration 
+opt = gp_iaopt([], 'grid');
+
+% Perform the grid integration and make predictions for p
+[gp_array, P_TH, th, Ef_ia, Varf_ia, x_ia, fx_ia] = gp_ia(opt, gp, x, y, p, 'covariance');
+
+% Plot the prediction for few input location
+figure(3)
+subplot(1,2,1)
+plot(x_ia(100,:), fx_ia(100,:))
+title('p(f|D) at input location (-1.6, 0.7)');
+subplot(1,2,2)
+plot(x_ia(400,:), fx_ia(400,:))
+title('p(f|D) at input location (-0.8, 1.1)');
+
+
+% --- MCMC ---
+%  (see gp_mc for details)
 % The hyperparameters are sampled with hybrid Monte Carlo 
 % (see, for example, Neal (1996)). 
 
 % The sampling options are set to 'opt' structure, which is given to
 % 'gp_mc' sampler
 opt=gp_mcopt;
-opt.nsamples= 300;
+opt.nsamples= 400;
 opt.repeat=5;
 opt.hmc_opt = hmc2_opt;
 opt.hmc_opt.steps=4;
@@ -200,19 +213,18 @@ rfull = thin(rfull, 10, 2);
 % hyperparameter value. Thus, the returned Ef_sfull is a matrix of 
 % size n x (number of samples). By taking the mean over the samples
 % we do the Monte Carlo integration over the hyperparameters.
-Ef_sfull = mc_pred(rfull, x, y, p);
-meanEf_full = mean(squeeze(Ef_sfull)');
+[Ef_mc, Varf_mc] = mc_pred(rfull, x, y, p);
 
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,37,37));
+mesh(p1, p2, reshape(Ef_map,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function ';
        'and the data points (MAP solution)']);
 subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_full,37,37));
+mesh(p1, p2, reshape(mean(Ef_mc'),37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -222,7 +234,7 @@ set(gcf,'pos',[93 511 1098 420])
 
 % We can compare the posterior samples of the hyperparameters to the 
 % MAP estimate that we got from optimization
-figure(2)
+figure(4)
 clf, subplot(1,2,1)
 plot(rfull.cf{1}.lengthScale)
 title('The sample chain of length-scales')
@@ -231,7 +243,7 @@ plot(rfull.cf{1}.magnSigma2)
 title('The sample chain of magnitude')
 set(gcf,'pos',[93 511 1098 420])
 
-figure(3)
+figure(5)
 clf, subplot(1,4,1)
 hist(rfull.cf{1}.lengthScale(:,1))
 hold on
@@ -248,731 +260,46 @@ hold on
 plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('magnitude')
 subplot(1,4,4)
-hist(rfull.noise{1}.noiseSigmas2)
+hist(rfull.noise{1}.noiseSigma2)
 hold on
-plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+plot(gp.noise{1}.noiseSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Noise variance')
 legend('MCMC samples', 'MAP estimate')
 set(gcf,'pos',[93 511 1098 420])
 
 
+% Sample from two posterior marginals and plot them alongside 
+% with the MAP and grid integration results
+sf = normrnd(Ef_mc(100,:), sqrt(Varf_mc(100,:)));
+sf2 = normrnd(Ef_mc(400,:), sqrt(Varf_mc(400,:)));
 
-%========================================================
-% PART 2 data analysis with compact support (CS) GP 
-%========================================================
-
-% Load the data
-S = which('demo_regression1');
-L = strrep(S,'demo_regression1.m','demos/dat.1');
-data=load(L);
-x = [data(:,1) data(:,2)];
-y = data(:,3);
-[n, nin] = size(x);
-
-% Here we conduct the same analysis as in part 1, but this time we 
-% use compact support covariance function
-
-% Create the piece wise polynomial covariance function
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-
-gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf3.p.lengthScale = gamma_p({3 7});  
-gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-
-% Create the GP data structure
-gp_cs = gp_init('init', 'FULL', nin, 'regr', {gpcf3}, {gpcf2}, 'jitterSigmas', 0.001)
-
-% -----------------------------
-% --- Conduct the inference ---
-
-% --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
-
-param = 'hyper';
-
-% set the options
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-w = gp_pak(gp_cs, param);          % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_cs, x, y, param);       % do the optimization
-gp_cs = gp_unpak(gp_cs,w, param);     % Set the optimized hyperparameter values back to the gp structure
-
-% Make the prediction
-[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
-p=[p1(:) p2(:)];
-[Ef_cs, Varf_cs] = gp_pred(gp_cs, x, y, p);
-
-% Plot the solution of full GP and CS
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and data points (full GP)']);
-xlim([-2 2]), ylim([-2 2])
-subplot(1,2,2)
-mesh(p1, p2, reshape(Ef_cs,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and data points (CS)']);
-xlim([-2 2]), ylim([-2 2])
-set(gcf,'pos',[93 511 1098 420])
-
-
-% --- MCMC approach ---
-%  (see gp_mc for details
-% The hyperparameters are sampled with hybrid Monte Carlo 
-% the Inducing inputs are kept fixed at the optimized locations
-
-% The sampling options are set to 'opt' structure, which is given to
-% 'gp_mc' sampler
-opt=gp_mcopt;
-opt.nsamples= 300;
-opt.repeat=5;
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.02;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 3-5 minutes)
-[rcs,g2,rstate2] = gp_mc(opt, gp_cs, x, y);
-
-% After sampling we delete the burn-in and thin the sample chain
-rcs = thin(rcs, 10, 2);
-
-% Make the predictions. 
-Ef_scs = gp_preds(rcs, x, y, p);
-meanEf_cs = mean(squeeze(Ef_scs)');
-
-% Plot the results
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_cs,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and';
-       'the data points (MAP solutionm, CS)  ']);
-subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_cs,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and';
-       'the data points (MCMC solution, CS)  ']);
-set(gcf,'pos',[93 511 1098 420])
-
-
-% Here we copare the hyperparameter posteriors of CS and full GP
 figure(3)
-clf, subplot(2,4,1)
-hist(rcs.cf{1}.lengthScale(:,1),20)
+subplot(1,2,1)
+[N,X] = hist(sf);
+hist(sf)
 hold on
-plot(gp_cs.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1 (CS)')
-subplot(2,4,2)
-hist(rcs.cf{1}.lengthScale(:,2),20)
-hold on
-plot(gp_cs.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2 (CS)')
-subplot(2,4,3)
-hist(rcs.cf{1}.magnSigma2,20)
-hold on
-plot(gp_cs.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude (CS)')
-subplot(2,4,4)
-hist(rcs.noise{1}.noiseSigmas2,20)
-hold on
-plot(gp_cs.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance (CS)')
-subplot(2,4,5)
-hist(rfull.cf{1}.lengthScale(:,1),20)
-hold on
-plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1 (full GP)')
-subplot(2,4,6)
-hist(rfull.cf{1}.lengthScale(:,2),20)
-hold on
-plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2 (full GP)')
-subplot(2,4,7)
-hist(rfull.cf{1}.magnSigma2,20)
-hold on
-plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude (full GP)')
-subplot(2,4,8)
-hist(rfull.noise{1}.noiseSigmas2,20)
-hold on
-plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance (full GP)')
-set(gcf,'pos',[93 511 1098 420])
+plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
+ff = normpdf(x_ia(100,:)', Ef_map(100), sqrt(Varf_map(100)));
+plot(x_ia(100,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
+set(gca, 'Ytick', [])
+title('p(f|D) at input location (-1.6, 0.7)');
+%xlim([0 1])
 
-
-%========================================================
-% PART 3 data analysis with FIC approximation
-%========================================================
-
-% Load the data
-S = which('demo_regression1');
-L = strrep(S,'demo_regression1.m','demos/dat.1');
-data=load(L);
-x = [data(:,1) data(:,2)];
-y = data(:,3);
-[n, nin] = size(x);
-
-% Now 'x' consist of the inputs and 'y' of the output. 
-% 'n' and 'nin' are the number of data points and the 
-% dimensionality of 'x' (the number of inputs).
-
-% ---------------------------
-% --- Construct the model ---
-% 
-% First create squared exponential covariance function with ARD and 
-% Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1 1.2], 'magnSigma2', 0.4^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
-
-
-% Here we conduct the same analysis as in part 1, but this time we 
-% use FIC approximation
-
-% Initialize the inducing inputs in a regular grid over the input space
-[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
-X_u = [u1(:) u2(:)];
-
-% Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0, 'X_u', X_u)
-
-w = gp_pak(gp_fic);
-gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
-
-gp_fic = gp_init('set', gp_fic, 'Xu_prior', prior_unif('init'));
-w = gp_pak(gp_fic);
-gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
-
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1 1.2], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
-gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0, 'X_u', X_u);
-w = gp_pak(gp_fic);
-gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
-
-gp_fic = gp_init('set', gp_fic, 'Xu_prior', prior_unif('init'));
-w = gp_pak(gp_fic);
-gradcheck(w, @gp_e, @gp_g, gp_fic, x, y);
-
-% -----------------------------
-% --- Conduct the inference ---
-
-% --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
-
-% Now you can choose, if you want to optimize only hyperparameters or 
-% optimize simultaneously hyperparameters and inducing inputs. Note that 
-% the inducing inputs are not transformed through logarithm when packed
-
-%param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
-param = 'hyper';          % optimize only hyperparameters
-
-% set the options
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-opt.maxiter = 200;
-
-w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
-gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
-
-% To optimize the hyperparameters and inducing inputs sequentially uncomment the below lines
-% $$$ iter = 1
-% $$$ e = gp_e(w,gp_fic,x,y,param)
-% $$$ while iter < 100 & abs(e_old-e) > 1e-3
-% $$$     e_old = e;
-% $$$     
-% $$$     param = 'hyper';          % optimize only hyperparameters
-% $$$     w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
-% $$$     w=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
-% $$$     gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
-% $$$     
-% $$$     
-% $$$     param = 'inducing';          % optimize only inducing inputs
-% $$$     w = gp_pak(gp_fic, param);          % pack the hyperparameters into one vector
-% $$$     w=scg2(fe, w, opt, fg, gp_fic, x, y, param);       % do the optimization
-% $$$     gp_fic = gp_unpak(gp_fic,w, param);     % Set the optimized hyperparameter values back to the gp structure
-% $$$     e = gp_e(w,gp_fic,x,y,param);
-% $$$     iter = iter +1;
-% $$$     [iter e]
-% $$$ end
-
-
-% Make the prediction
-[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
-p=[p1(:) p2(:)];
-[Ef_fic, Varf_fic] = gp_pred(gp_fic, x, y, p);
-
-% Plot the solution of full GP and FIC
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function ';
-       'and data points (full GP)         ']);
-xlim([-2 2]), ylim([-2 2])
 subplot(1,2,2)
-mesh(p1, p2, reshape(Ef_fic,37,37));
+[N,X] = hist(sf2);
+hist(sf2)
 hold on
-plot3(x(:,1), x(:,2), y, '*')
-plot3(gp_fic.X_u(:,1), gp_fic.X_u(:,2), -3*ones(length(u1(:))), 'rx')
-axis on;
-title(['The predicted underlying function,   ';
-       'data points and inducing inputs (FIC)']);
-xlim([-2 2]), ylim([-2 2])
-set(gcf,'pos',[93 511 1098 420])
-
-
-% --- MCMC approach ---
-%  (see gp_mc for details
-% The hyperparameters are sampled with hybrid Monte Carlo 
-% the Inducing inputs are kept fixed at the optimized locations
-
-% The sampling options are set to 'opt' structure, which is given to
-% 'gp_mc' sampler
-opt=gp_mcopt;
-opt.nsamples= 300;
-opt.repeat=5;
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.02;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 3-5 minutes)
-[rfic,g2,rstate2] = gp_mc(opt, gp_fic, x, y);
-
-% After sampling we delete the burn-in and thin the sample chain
-rfic = thin(rfic, 10, 2);
-
-% Make the predictions. 
-Ef_sfic = gp_preds(rfic, x, y, p);
-meanEf_fic = mean(squeeze(Ef_sfic)');
-
-% Plot the results
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_fic,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and';
-       'the data points (MAP solutionm, FIC) ']);
-subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_fic,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and';
-       'the data points (MCMC solution, FIC) ']);
-set(gcf,'pos',[93 511 1098 420])
-
-
-% Here we copare the hyperparameter posteriors of FIC and full GP
-figure(3)
-clf, subplot(2,4,1)
-hist(rfic.cf{1}.lengthScale(:,1),20)
-hold on
-plot(gp_fic.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1 (FIC)')
-subplot(2,4,2)
-hist(rfic.cf{1}.lengthScale(:,2),20)
-hold on
-plot(gp_fic.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2 (FIC)')
-subplot(2,4,3)
-hist(rfic.cf{1}.magnSigma2,20)
-hold on
-plot(gp_fic.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude (FIC)')
-subplot(2,4,4)
-hist(rfic.noise{1}.noiseSigmas2,20)
-hold on
-plot(gp_fic.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance (FIC)')
-subplot(2,4,5)
-hist(rfull.cf{1}.lengthScale(:,1),20)
-hold on
-plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1 (full GP)')
-subplot(2,4,6)
-hist(rfull.cf{1}.lengthScale(:,2),20)
-hold on
-plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2 (full GP)')
-subplot(2,4,7)
-hist(rfull.cf{1}.magnSigma2,20)
-hold on
-plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude (full GP)')
-subplot(2,4,8)
-hist(rfull.noise{1}.noiseSigmas2,20)
-hold on
-plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance (full GP)')
-set(gcf,'pos',[93 511 1098 420])
-
-
-%========================================================
-% PART 4 data analysis with PIC approximation
-%========================================================
-
-% Load the data
-S = which('demo_regression1');
-L = strrep(S,'demo_regression1.m','demos/dat.1');
-data=load(L);
-x = [data(:,1) data(:,2)];
-y = data(:,3);
-[n, nin] = size(x);
-
-% Now 'x' consist of the inputs and 'y' of the output. 
-% 'n' and 'nin' are the number of data points and the 
-% dimensionality of 'x' (the number of inputs).
-
-% ---------------------------
-% --- Construct the model ---
-% 
-% First create squared exponential covariance function with ARD and 
-% Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
-
-% Here we conduct the same analysis as in part 1, but this time we 
-% use FIC approximation
-
-% Initialize the inducing inputs in a regular grid over the input space
-[u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
-X_u = [u1(:) u2(:)];
-
-[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
-p=[p1(:) p2(:)];
-
-% set the data points into clusters
-b1 = [-1.7 -0.8 0.1 1 1.9];
-mask = zeros(size(x,1),size(x,1));
-trindex={}; tstindex={}; 
-for i1=1:4
-    for i2=1:4
-        ind = 1:size(x,1);
-        ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
-        ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));
-        trindex{4*(i1-1)+i2} = ind';
-        ind2 = 1:size(p,1);
-        ind2 = ind2(: , b1(i1)<=p(ind2',1) & p(ind2',1) < b1(i1+1));
-        ind2 = ind2(: , b1(i2)<=p(ind2',2) & p(ind2',2) < b1(i2+1));
-        tstindex{4*(i1-1)+i2} = ind2';
-    end
-end
-
-% Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
-gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
-
-w = gp_pak(gp_pic);
-gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
-
-gp_pic = gp_init('set', gp_pic, 'Xu_prior', prior_unif('init'));
-w = gp_pak(gp_pic);
-gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
-
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1 1.2], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
-gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
-gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
-w = gp_pak(gp_pic);
-gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
-
-gp_pic = gp_init('set', gp_pic, 'Xu_prior', prior_unif('init'));
-w = gp_pak(gp_pic);
-gradcheck(w, @gp_e, @gp_g, gp_pic, x, y);
-
-
-% -----------------------------
-% --- Conduct the inference ---
-
-% --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
-
-% Now you can choose, if you want to optimize only hyperparameters or 
-% optimize simultaneously hyperparameters and inducing inputs. Note that 
-% the inducing inputs are not transformed through logarithm when packed
-
-% param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
-param = 'hyper';          % optimize only hyperparameters
-
-% set the options
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-w = gp_pak(gp_pic, param);          % pack the hyperparameters into one vector
-[w, opt, flog]=scg2(fe, w, opt, fg, gp_pic, x, y, param);       % do the optimization
-gp_pic = gp_unpak(gp_pic,w, param);     % Set the optimized hyperparameter values back to the gp structure
-
-% Make the prediction
-[Ef_pic, Varf_pic] = gp_pred(gp_pic, x, y, p, tstindex);
-
-% Plot the solution of full GP and FIC
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_full,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function ';
-       'and data points (full GP)         ']);
-xlim([-2 2]), ylim([-2 2])
-subplot(1,2,2)
-mesh(p1, p2, reshape(Ef_pic,37,37));
-hold on
-% plot the data points in each block with different colors and marks
-col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
-hold on
-for i=1:16
-    plot3(x(trindex{i},1),x(trindex{i},2), y(trindex{i}),col{i})
-end
-plot3(gp_pic.X_u(:,1), gp_pic.X_u(:,2), -3*ones(length(u1(:))), 'rx')
-axis on;
-title(['The predicted underlying function, data points (colors ';
-       'distinguish the blocks) and inducing inputs (PIC)      ']);
-xlim([-2 2]), ylim([-2 2])
-set(gcf,'pos',[93 511 1098 420])
-
-
-% --- MCMC approach ---
-%  (see gp_mc for details
-% The hyperparameters are sampled with hybrid Monte Carlo 
-% the Inducing inputs are kept fixed at the optimized locations
-
-% The sampling options are set to 'opt' structure, which is given to
-% 'gp_mc' sampler
-opt=gp_mcopt;
-opt.nsamples= 300;
-opt.repeat=5;
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.02;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 3-5 minutes)
-[rpic,g2,rstate2] = gp_mc(opt, gp_pic, x, y);
-
-% After sampling we delete the burn-in and thin the sample chain
-rpic = rmfield(rpic, 'tr_index');
-rpic = thin(rpic, 10, 2);
-rpic.tr_index = trindex;
-
-% Make the predictions. 
-Ef_spic = gp_preds(rpic, x, y, p, tstindex);
-meanEf_pic = mean(squeeze(Ef_spic)');
-
-% Plot the results
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_pic,37,37));
-hold on
-% plot the data points in each block with different colors and marks
-col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
-hold on
-for i=1:16
-    plot3(x(trindex{i},1),x(trindex{i},2), y(trindex{i}),col{i})
-end
-axis on;
-title(['The predicted underlying function and';
-       'the data points (MAP solutionm, PIC) ']);
-subplot(1,2,2)
-mesh(p1, p2, reshape(meanEf_pic,37,37));
-hold on
-% plot the data points in each block with different colors and marks
-col = {'b*','g*','r*','c*','m*','y*','k*','b*','b.','g.','r.','c.','m.','y.','k.','b.'};
-hold on
-for i=1:16
-    plot3(x(trindex{i},1),x(trindex{i},2), y(trindex{i}),col{i})
-end
-axis on;
-title(['The predicted underlying function and';
-       'the data points (MCMC solution, PIC) ']);
-set(gcf,'pos',[93 511 1098 420])
-
-
-% Here we copare the hyperparameter posteriors of FIC and full GP
-figure(3)
-clf, subplot(2,4,1)
-hist(rpic.cf{1}.lengthScale(:,1),20)
-hold on
-plot(gp_pic.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1 (PIC)')
-subplot(2,4,2)
-hist(rpic.cf{1}.lengthScale(:,2),20)
-hold on
-plot(gp_pic.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2 (PIC)')
-subplot(2,4,3)
-hist(rpic.cf{1}.magnSigma2,20)
-hold on
-plot(gp_pic.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude (PIC)')
-subplot(2,4,4)
-hist(rpic.noise{1}.noiseSigmas2,20)
-hold on
-plot(gp_pic.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance (PIC)')
-subplot(2,4,5)
-hist(rfull.cf{1}.lengthScale(:,1),20)
-hold on
-plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1 (full GP)')
-subplot(2,4,6)
-hist(rfull.cf{1}.lengthScale(:,2),20)
-hold on
-plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2 (full GP)')
-subplot(2,4,7)
-hist(rfull.cf{1}.magnSigma2,20)
-hold on
-plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude (full GP)')
-subplot(2,4,8)
-hist(rfull.noise{1}.noiseSigmas2,20)
-hold on
-plot(gp.noise{1}.noiseSigmas2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance (full GP)')
-set(gcf,'pos',[93 511 1098 420])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%========================================================
-% PART 2 data analysis with compact support (CS) GP 
-%========================================================
-
-% Load the data
-S = which('demo_regression1');
-L = strrep(S,'demo_regression1.m','demos/dat.1');
-data=load(L);
-x = [data(:,1) data(:,2)];
-y = data(:,3);
-[n, nin] = size(x);
-
-% Here we conduct the same analysis as in part 1, but this time we 
-% use compact support covariance function
-gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
-
-% ... Then set the prior for the parameters of covariance functions...
-gpcf1.p.lengthScale = t_p({2 4});
-gpcf1.p.magnSigma2 =  t_p({0.6 4});
-% $$$ gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
-% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
-
-gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf3.p.lengthScale = t_p({5 4});
-gpcf3.p.magnSigma2 =  t_p({0.6 4});
-% $$$ gpcf3.p.lengthScale = gamma_p({3 7});  
-% $$$ gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-
-gpcfp = gpcf_prod('init', nin, 'functions', {gpcf1, gpcf3});
-
-% Create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcfp}, {gpcf2}, 'jitterSigmas', 0.001)
-
-K = gp_trcov(gp,x);
-K2 = gp_cov(gp,x,x);
-
-% -----------------------------
-% --- Conduct the inference ---
-
-% --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
-
-param = 'hyper';
-
-% set the options
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-w = gp_pak(gp, param);          % pack the hyperparameters into one vector
-gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')
-
-w=scg2(fe, w, opt, fg, gp, x, y, param);       % do the optimization
-gp = gp_unpak(gp,w, param);     % Set the optimized hyperparameter values back to the gp structure
-
-K = gp_trcov(gp,x);
-nnz(K)./prod(size(K))
-exp(w)
-
-% Make the prediction
-[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
-p=[p1(:) p2(:)];
-[Ef, Varf] = gp_pred(gp, x, y, p);
-
-% Plot the solution of full GP and CS
-figure(1)
-clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and data points (full GP)']);
-xlim([-2 2]), ylim([-2 2])
-subplot(1,2,2)
-mesh(p1, p2, reshape(Ef,37,37));
-hold on
-plot3(x(:,1), x(:,2), y, '*')
-axis on;
-title(['The predicted underlying function and data points (CS)']);
-xlim([-2 2]), ylim([-2 2])
-set(gcf,'pos',[93 511 1098 420])
-
+plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
+ff = normpdf(x_ia(400,:)', Ef_map(400), sqrt(Varf_map(400)));
+plot(x_ia(400,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
+set(gca, 'Ytick', [])
+title('p(f|D) at input location (-0.8, 1.1)');
+%xlim([-1.2 -0.5])
+
+% $$$ set(gcf,'units','centimeters');
+% $$$ set(gcf,'pos',[15 14 7 5])
+% $$$ set(gcf,'paperunits',get(gcf,'units'))
+% $$$ set(gcf,'paperpos',get(gcf,'pos'))
+% $$$ 
+% $$$ 
+% $$$ print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_regression1_fig3.eps

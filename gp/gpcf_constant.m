@@ -3,13 +3,11 @@ function gpcf = gpcf_constant(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_CONSTANT('INIT', NIN) Create and initialize constant
+%	GPCF = GPCF_CONSTANT('INIT') Create and initialize constant
 %       covariance function for Gaussian process
 %
 %	The fields and (default values) in GPCF_CONSTANT are:
 %	  type           = 'gpcf_constant'
-%	  nin            = Number of inputs. (NIN)
-%	  nout           = Number of outputs. (always 1)
 %	  constSigma2     = Prior variance on the constant term.
 %                          (0.1)
 %         p              = Prior structure for covariance function parameters. 
@@ -48,16 +46,13 @@ function gpcf = gpcf_constant(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nin = varargin{1};
         gpcf.type = 'gpcf_constant';
-        gpcf.nin = nin;
-        gpcf.nout = 1;
 
         % Initialize parameters
         gpcf.constSigma2 = 0.1;
@@ -77,12 +72,12 @@ function gpcf = gpcf_constant(do, varargin)
         gpcf.fh_trvar  = @gpcf_constant_trvar;
         gpcf.fh_recappend = @gpcf_constant_recappend;
 
-        if length(varargin) > 1
-            if mod(nargin,2) ~=0
+        if nargin > 1
+            if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=2:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'constSigma2'
                     gpcf.constSigma2 = varargin{i+1};
@@ -403,8 +398,6 @@ function gpcf = gpcf_constant(do, varargin)
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_constant';
-            reccf.nin = ri;
-            reccf.nout = 1;
 
             % Initialize parameters
             reccf.constSigma2 = [];

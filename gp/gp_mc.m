@@ -305,8 +305,6 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         nn = length(gp.noise);
         
         if nargin == 0   % Initialize record structure
-            rec.nin = gp.nin;
-            rec.nout = gp.nout;
             rec.type = gp.type;
             rec.likelih = gp.likelih;
             % If sparse model is used save the information about which
@@ -352,7 +350,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 rec.cf{i} = feval(cf.fh_recappend, [], gp.cf{i});
                 % Initialize metric structure
                 if isfield(cf,'metric')
-                    rec.cf{i}.metric = feval(cf.metric.recappend, cf.metric, gp.nin);
+                    rec.cf{i}.metric = feval(cf.metric.recappend, cf.metric, 1);
                 end
             end
             for i=1:nn
