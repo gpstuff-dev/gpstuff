@@ -3,12 +3,11 @@ function metric = metric_euclidean(do, varargin)
 %
 %	Description
 %
-%	METRIC = METRIC_EUCLIDEAN('INIT', NIN, COMPONENTS) Constructs data
+%	METRIC = METRIC_EUCLIDEAN('INIT', COMPONENTS) Constructs data
 %       structure for an euclidean metric used in covariance function of a GP model.
 %
 %	The fields and (default values) in METRIC_EUCLIDEAN are:
 %	  type         = 'metric_euclidean'
-%	  nin          = Number of inputs in the data. (NIN)
 %	  components   = Cell array of vectors specifying which inputs are grouped together
 %                        with a same scaling parameter. 
 %                        For example, the component specification {[1 2] [3]} means that
@@ -51,8 +50,7 @@ function metric = metric_euclidean(do, varargin)
 
     if strcmp(do, 'init')
         metric.type = 'metric_euclidean';
-        metric.nin = varargin{1};
-        metric.components = varargin{2};
+        metric.components = varargin{1};
         
         metric.lengthScales = repmat(1,1,length(metric.components));
 
@@ -69,12 +67,12 @@ function metric = metric_euclidean(do, varargin)
         metric.distance   = @metric_euclidean_distance;
         metric.recappend  = @metric_euclidean_recappend;
         
-        if length(varargin) > 2
-            if mod(nargin,2) ~=1
+        if length(varargin) > 1
+            if mod(nargin,2) ~=0
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=3:2:length(varargin)-1
+            for i=2:2:length(varargin)-1
                 switch varargin{i}
                   case 'lengthScales'
                     if size(varargin{i+1}) ~= size(metric.lengthScales)
@@ -369,7 +367,6 @@ function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
 % Initialize record
     if nargin == 2
         recmetric.type = 'metric_euclidean';
-        recmetric.nin = ri;
         metric.components = recmetric.components;
         
         % Initialize parameters

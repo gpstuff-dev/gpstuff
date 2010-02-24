@@ -3,17 +3,15 @@ function gpcf = gpcf_linear(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_LINEAR('INIT', NIN) Create and initialize linear
+%	GPCF = GPCF_LINEAR('INIT') Create and initialize linear
 %       covariance function for Gaussian process
 %
 %	The fields and (default values) in GPCF_LINEAR are:
 %	  type           = 'gpcf_linear'
-%	  nin            = Number of inputs. (NIN)
-%	  nout           = Number of outputs. (always 1)
 %	  coeffSigma2    = Prior variances on the linear coefficients. This can be
 %                      either scalar corresponding 
 %                      isotropic or vector corresponding ARD. 
-%                      (repmat(10, 1, nin))
+%                      (10)
 %         p              = Prior structure for covariance function parameters. 
 %                          (e.g. p.coeffSigma2.)
 %         fh_pak         = function handle to pack function
@@ -53,19 +51,16 @@ function gpcf = gpcf_linear(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nin = varargin{1};
         gpcf.type = 'gpcf_linear';
-        gpcf.nin = nin;
-        gpcf.nout = 1;
         
         % Initialize parameters
-        gpcf.coeffSigma2= repmat(10, 1, nin);        
+        gpcf.coeffSigma2= 10;
         
         % Initialize prior structure
         gpcf.p=[];
@@ -82,12 +77,12 @@ function gpcf = gpcf_linear(do, varargin)
         gpcf.fh_trvar  = @gpcf_linear_trvar;
         gpcf.fh_recappend = @gpcf_linear_recappend;
 
-        if length(varargin) > 1
-            if mod(nargin,2) ~=0
+        if length(varargin) > 0
+            if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=2:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'coeffSigma2'
                     gpcf.coeffSigma2 = varargin{i+1};
@@ -543,8 +538,6 @@ function gpcf = gpcf_linear(do, varargin)
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_linear';
-            reccf.nin = ri;
-            reccf.nout = 1;
 
             % Initialize parameters
             reccf.coeffSigma2= [];

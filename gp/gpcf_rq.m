@@ -3,13 +3,11 @@ function gpcf = gpcf_rq(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_RQ('INIT', NIN) Create and initialize rational quaratic
+%	GPCF = GPCF_RQ('INIT') Create and initialize rational quaratic
 %       covariance function for Gaussian process
 %
 %	The fields and (default values) in GPCF_RQ are:
 %	  type           = 'gpcf_rq'
-%	  nin            = Number of inputs. (NIN)
-%	  nout           = Number of outputs. (always 1)
 %	  magnSigma2     = Magnitude (squared) for exponential part. 
 %                          (0.1)
 %	  lengthScale    = Length scale for each input. This can be either scalar corresponding 
@@ -60,19 +58,16 @@ function gpcf = gpcf_rq(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nin = varargin{1};
         gpcf.type = 'gpcf_rq';
-        gpcf.nin = nin;
-        gpcf.nout = 1;
 
         % Initialize parameters
-        gpcf.lengthScale= repmat(10, 1, nin);
+        gpcf.lengthScale= 10;
         gpcf.magnSigma2 = 0.1;
         gpcf.alpha = 20;  % Value for the exponent in the rq covariance function
         
@@ -93,12 +88,12 @@ function gpcf = gpcf_rq(do, varargin)
         gpcf.fh_trvar  = @gpcf_rq_trvar;
         gpcf.fh_recappend = @gpcf_rq_recappend;
 
-        if length(varargin) > 1
-            if mod(nargin,2) ~=0
+        if length(varargin) > 0
+            if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=2:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'magnSigma2'
                     gpcf.magnSigma2 = varargin{i+1};
