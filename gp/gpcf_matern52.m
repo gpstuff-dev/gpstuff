@@ -15,23 +15,23 @@ function gpcf = gpcf_matern52(do, varargin)
 %         p              = Prior structure for covariance function parameters. 
 %                          (e.g. p.lengthScale.)
 %         fh_pak         = function handle to pack function
-%                          (@gpcf_sexp_pak)
+%                          (@gpcf_matern52_pak)
 %         fh_unpak       = function handle to unpack function
-%                          (@gpcf_sexp_unpak)
+%                          (@gpcf_matern52_unpak)
 %         fh_e           = function handle to energy function
-%                          (@gpcf_sexp_e)
+%                          (@gpcf_matern52_e)
 %         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                          (@gpcf_sexp_ghyper)
+%                          (@gpcf_matern52_ghyper)
 %         fh_ginput      = function handle to gradient of function with respect to inducing inputs
-%                          (@gpcf_sexp_ginput)
+%                          (@gpcf_matern52_ginput)
 %         fh_cov         = function handle to covariance function
-%                          (@gpcf_sexp_cov)
+%                          (@gpcf_matern52_cov)
 %         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_sexp_trcov)
+%                          (@gpcf_matern52_trcov)
 %         fh_trvar       = function handle to training variance function
-%                          (@gpcf_sexp_trvar)
+%                          (@gpcf_matern52_trvar)
 %         fh_recappend   = function handle to append the record function 
-%                          (gpcf_sexp_recappend)
+%                          (gpcf_matern52_recappend)
 %
 %	GPCF = GPCF_MATERN52('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
@@ -225,7 +225,7 @@ function gpcf = gpcf_matern52(do, varargin)
     %	Description
     %	E = GPCF_MATERN52_E(GPCF, X, T) takes a covariance function data structure 
     %   GPCF together with a matrix X of input vectors and a matrix T of target 
-    %   vectors and evaluates log p(th) x J, where th is a vector of SEXP parameters 
+    %   vectors and evaluates log p(th) x J, where th is a vector of MATERN52 parameters 
     %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
     %   are log transformed, when packed.)
     %

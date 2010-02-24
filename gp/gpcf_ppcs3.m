@@ -21,23 +21,23 @@ function gpcf = gpcf_ppcs3(do, varargin)
 %         p              = Prior structure for covariance function parameters. 
 %                          (e.g. p.lengthScale.)
 %         fh_pak         = function handle to pack function
-%                          (@gpcf_sexp_pak)
+%                          (@gpcf_ppcs3_pak)
 %         fh_unpak       = function handle to unpack function
-%                          (@gpcf_sexp_unpak)
+%                          (@gpcf_ppcs3_unpak)
 %         fh_e           = function handle to energy function
-%                          (@gpcf_sexp_e)
+%                          (@gpcf_ppcs3_e)
 %         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                          (@gpcf_sexp_ghyper)
+%                          (@gpcf_ppcs3_ghyper)
 %         fh_ginput      = function handle to gradient of function with respect to inducing inputs
-%                          (@gpcf_sexp_ginput)
+%                          (@gpcf_ppcs3_ginput)
 %         fh_cov         = function handle to covariance function
-%                          (@gpcf_sexp_cov)
+%                          (@gpcf_ppcs3_cov)
 %         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_sexp_trcov)
+%                          (@gpcf_ppcs3_trcov)
 %         fh_trvar       = function handle to training variance function
-%                          (@gpcf_sexp_trvar)
+%                          (@gpcf_ppcs3_trvar)
 %         fh_recappend   = function handle to append the record function 
-%                          (gpcf_sexp_recappend)
+%                          (gpcf_ppcs3_recappend)
 %
 %	GPCF = GPCF_PPCS3('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.  The fields that 
@@ -263,7 +263,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %	Description
     %	E = GPCF_ppcs3_E(GPCF, X, T) takes a covariance function data structure 
     %   GPCF together with a matrix X of input vectors and a matrix T of target 
-    %   vectors and evaluates log p(th) x J, where th is a vector of SEXP parameters 
+    %   vectors and evaluates log p(th) x J, where th is a vector of PPCS3 parameters 
     %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
     %   are log transformed, when packed.)
     %
@@ -658,11 +658,11 @@ function gpcf = gpcf_ppcs3(do, varargin)
     end
     
     function [gprior,DKff]  = gpcf_ppcs3_ginput(gpcf, x, x2)
-    %GPCF_SEXP_GIND     Evaluate gradient of covariance function with 
+    %GPCF_PPCS3_GINPUT     Evaluate gradient of covariance function with 
     %                   respect to the inducing inputs.
     %
     %	Descriptioni
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_SEXP_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_PPCS3_GINPUT(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
     %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
@@ -673,7 +673,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
     %
     %	See also
-    %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_E, GP_G
+    %   GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_E, GP_G
         
         DKuu={};
         DKff={};
@@ -793,10 +793,10 @@ function gpcf = gpcf_ppcs3(do, varargin)
     end
     
     function C = gpcf_ppcs3_trcov(gpcf, x)
-    % GP_SEXP_TRCOV     Evaluate training covariance matrix of inputs.
+    % GP_PPCS3_TRCOV     Evaluate training covariance matrix of inputs.
     %
     %         Description
-    %         C = GP_SEXP_TRCOV(GP, TX) takes in covariance function of a Gaussian
+    %         C = GP_PPCS3_TRCOV(GP, TX) takes in covariance function of a Gaussian
     %         process GP and matrix TX that contains training input vectors. 
     %         Returns covariance matrix C. Every element ij of C contains covariance 
     %         between inputs i and j in TX
