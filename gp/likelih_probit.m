@@ -219,6 +219,10 @@ function likelih = likelih_probit(do, varargin)
     %   See also
     %   GPEP_E
 
+        if ~isreal(y(i1).*myy_i./sqrt(1+sigm2_i))
+            error('problem with moments')
+        end
+        
         m_0 = normcdf(y(i1).*myy_i./sqrt(1+sigm2_i));
         zi=y(i1)*myy_i/sqrt(1+sigm2_i);
         normp_zi = normpdf(zi);

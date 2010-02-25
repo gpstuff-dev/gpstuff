@@ -125,6 +125,9 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
 
+w = gp_pak(gp, 'covariance');
+gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'covariance');
+
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);
