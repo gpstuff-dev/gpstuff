@@ -73,8 +73,8 @@ yy = sin(xx/3)*5 + 0.3*randn(size(xx));
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 1);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 1);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
@@ -82,10 +82,10 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp1 = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)
+gp1 = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)
 
 % Create the squared exponential sparse spectral covariance function
-gpcf3 = gpcf_SSsexp('init', nin, 'lengthScale', 2, 'magnSigma2', 1);
+gpcf3 = gpcf_SSsexp('init', 'lengthScale', 2, 'magnSigma2', 1);
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 10);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -93,7 +93,7 @@ gpcf3.p.lengthScale = gamma_p({3 7});
 gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 
 % compare the covariance functions
 [K1, C1] = gp_trcov(gp1, xx);
@@ -107,7 +107,7 @@ plot(xx,K2(201,:), 'r')
 title('10 spectral points')
 
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 50);
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 [Phi, S] = gp_trcov(gp2, xx);
 subplot(2,2,2)
 plot(xx,K1(201,:))
@@ -117,7 +117,7 @@ plot(xx,K2(201,:), 'r')
 title('50 spectral points')
 
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 100);
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 [Phi, S] = gp_trcov(gp2, xx);
 subplot(2,2,3)
 plot(xx,K1(201,:))
@@ -127,7 +127,7 @@ plot(xx,K2(201,:), 'r')
 title('100 spectral points')
 
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 200);
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 [Phi, S] = gp_trcov(gp2, xx);
 subplot(2,2,4)
 plot(xx,K1(201,:))
@@ -158,8 +158,8 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
@@ -167,7 +167,7 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp1 = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)
+gp1 = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -225,7 +225,7 @@ title('The predicted underlying function and the data points (MAP solution)');
 % ================================================
 
 % Create the squared exponential sparse spectral covariance function
-gpcf3 = gpcf_SSsexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf3 = gpcf_SSsexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 200);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -233,7 +233,7 @@ gpcf3.p.lengthScale = gamma_p({3 7});
 gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
@@ -321,8 +321,8 @@ xx = [x1(:) x2(:)];
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 4, 'magnSigma2', 1);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 4, 'magnSigma2', 1);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
@@ -330,10 +330,10 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp1 = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)
+gp1 = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)
 
 % Create the squared exponential sparse spectral covariance function
-gpcf3 = gpcf_SSsexp('init', nin, 'lengthScale', 4, 'magnSigma2', 1);
+gpcf3 = gpcf_SSsexp('init', 'lengthScale', 4, 'magnSigma2', 1);
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 10);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -341,7 +341,7 @@ gpcf3.p.lengthScale = gamma_p({3 7});
 gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 
 % compare the covariance functions
 [K1, C1] = gp_trcov(gp1, xx);
@@ -355,7 +355,7 @@ plot(xx,K2(201,:), 'r')
 title('10 spectral points')
 
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 50);
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 [Phi, S] = gp_trcov(gp2, xx);
 subplot(2,2,2)
 plot(xx,K1(201,:))
@@ -365,7 +365,7 @@ plot(xx,K2(201,:), 'r')
 title('50 spectral points')
 
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 100);
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 [Phi, S] = gp_trcov(gp2, xx);
 subplot(2,2,3)
 plot(xx,K1(201,:))
@@ -375,7 +375,7 @@ plot(xx,K2(201,:), 'r')
 title('100 spectral points')
 
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 200);
-gp2 = gp_init('init', 'SSGP', nin, 'regr', {gpcf3}, {gpcf2})
+gp2 = gp_init('init', 'SSGP', 'regr', {gpcf3}, {gpcf2})
 [Phi, S] = gp_trcov(gp2, xx);
 subplot(2,2,4)
 plot(xx,K1(201,:))

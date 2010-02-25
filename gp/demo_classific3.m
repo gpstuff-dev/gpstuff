@@ -60,7 +60,7 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 1);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 1);
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7});
@@ -70,7 +70,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 likelih = likelih_probit('init', y);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.0001);   %{gpcf2}
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.0001.^2);
 
 % Set the approximate inference method
 gp.ep_opt.display = 1;
@@ -129,7 +129,7 @@ set(gcf, 'color', 'w'), title('predictive probability contours, full GP with Lap
 %========================================================
 
 % Create the squared exponential sparse spectral covariance function
-gpcf3 = gpcf_SSsexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 1);
+gpcf3 = gpcf_SSsexp('init', 'lengthScale', [1 1], 'magnSigma2', 1);
 gpcf3 = gpcf_SSsexp('set', gpcf3, 'nfreq', 200);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -140,7 +140,7 @@ gpcf3.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 likelih = likelih_probit('init', y);
 
 % ... Finally create the GP data structure
-gp2 = gp_init('init', 'SSGP', nin, likelih, {gpcf3}, [])
+gp2 = gp_init('init', 'SSGP', likelih, {gpcf3}, [])
 
 % Set the approximate inference method
 gp2.ep_opt.display = 1;
@@ -231,7 +231,7 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 1);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 1);
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});
@@ -241,7 +241,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 likelih = likelih_probit('init', y);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.01.^2);
 
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
@@ -305,7 +305,7 @@ Xu=[u1(:) u2(:)];
 Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 
 % Create the GP data structure
-gp_fic = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);   %{gpcf2}
+gp_fic = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
 
 % Set the approximate inference method
 gp_fic = gp_init('set', gp_fic, 'latent_method', {'EP', x, y, 'hyper'});

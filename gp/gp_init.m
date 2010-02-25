@@ -34,7 +34,7 @@ function gp = gp_init(do, varargin)
 %         type           = 'FULL'
 %         cf             = struct of covariance functions
 %         noise          = struct of noise functions
-%	  jitterSigmas   = jitter term for covariance function
+%	  jitterSigma2   = jitter term for covariance function
 %                          (initialized to 0)
 %         p.r            = Prior Structure for residual parameters
 %                          (defined only in case likelih == 'regr')
@@ -120,7 +120,7 @@ function gp = gp_init(do, varargin)
         end
 
         % Initialize parameters
-        gp.jitterSigmas=0;
+        gp.jitterSigma2=0;
         gp.p=[];
         
         switch gp.type
@@ -142,8 +142,8 @@ function gp = gp_init(do, varargin)
             % Loop through all the parameter values that are changed
             for i=5:2:length(varargin)-1
                 switch varargin{i}
-                  case 'jitterSigmas'
-                    gp.jitterSigmas = varargin{i+1};
+                  case 'jitterSigma2'
+                    gp.jitterSigma2 = varargin{i+1};
                   case 'likelih'
                     gp.likelih = varargin{i+1};
                     if strcmp(gp.likelih_e, 'regr')
@@ -208,8 +208,8 @@ function gp = gp_init(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'jitterSigmas'
-                gp.jitterSigmas = varargin{i+1};
+              case 'jitterSigma2'
+                gp.jitterSigma2 = varargin{i+1};
               case 'likelih'
                 gp.likelih = varargin{i+1};
                 if strcmp(gp.likelih, 'regr')

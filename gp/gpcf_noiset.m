@@ -3,13 +3,12 @@ function gpcf = gpcf_noiset(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_NOISET('INIT', NIN, NDATA) Create and initialize noise
+%	GPCF = GPCF_NOISET('INIT', NDATA) Create and initialize noise
 %       covariance function fo Gaussian process. NOTE! In contrast to most of 
 %       the gpcf functions gpcf_noiset needs the number of data points NDATA.
 %
 %	The fields and (default values) in GPCF_NOISET are:
 %	  type           = 'gpcf_se'
-%	  nin            = number of inputs (NIN)
 %         ndata          = number of data points
 %	  nout           = number of outputs: always 1
 %	  noiseSigmas2   = scale of residual distribution
@@ -75,11 +74,9 @@ if strcmp(do, 'init')
    if isempty(varargin{2})
         error('Not enough arguments. NDATA is missing')
     end
-    nin = varargin{1};
     
     gpcf.type = 'gpcf_noiset';
-    gpcf.nin = nin;
-    gpcf.ndata = varargin{2};
+    gpcf.ndata = varargin{1};
     gpcf.nout = 1;
     
     % Initialize parameters

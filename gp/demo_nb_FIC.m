@@ -51,10 +51,10 @@ function demo_nb_FIC
     
     [n, nin] = size(xx);
 
-    %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    %gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_exp('init', 'lengthScale', 2, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_matern52('init', 'lengthScale', 2, 'magnSigma2', 0.01);
 
     
     gpcf1.p.lengthScale = t_p({1 4});
@@ -68,7 +68,7 @@ function demo_nb_FIC
     % MCMC 
     %==========================
     
-    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, []);   %{gpcf2}
+    gp = gp_init('init', 'FIC', likelih, {gpcf1}, []);   %{gpcf2}
     gp = gp_init('set', gp, 'X_u', Xu);
     gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))'});
     
@@ -146,13 +146,13 @@ function demo_nb_FIC
     %==========================================
     % EP optimization
     %==========================================
-    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
+    gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
 
     gradcheck(gp_pak(gp,'hyper'), @gpep_e, @gpep_g, gp, xx, yy, 'hyper')
 
     
-    gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
+    gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu);   %{gpcf2}
     gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper+likelih'});
         
     opt=optimset('GradObj','on');

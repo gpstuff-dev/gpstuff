@@ -46,11 +46,11 @@ xx=[xx randn(size(xx))];
 [n, nin] = size(x);
 ylim=[-0.4 0.9];
 
-% gpcf1 = gpcf_dotproduct('init', nin, 'constSigma2',10,'coeffSigma2',ones(1,nin));
+% gpcf1 = gpcf_dotproduct('init', 'constSigma2',10,'coeffSigma2',ones(1,nin));
 % gpcf1.p.constSigma2 = logunif_p;
 % gpcf1.p.coeffSigma2 = logunif_p;
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale',ones(1,nin),'magnSigma2',1);
+gpcf1 = gpcf_sexp('init', 'lengthScale',ones(1,nin),'magnSigma2',1);
 gpcf1.p.lengthScale = logunif_p;
 gpcf1.p.magnSigma2 = logunif_p;
 
@@ -68,7 +68,7 @@ likelih.p.sigma = logunif_p;
 
 % Laplace approximation Student-t likelihood
 param = 'hyper+likelih';
-gp_la = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', J);
+gp_la = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', J.^2);
 gp_la = gp_init('set', gp_la, 'latent_method', {'Laplace', x, y, param});
 gp_la.laplace_opt.optim_method='likelih_specific';
 %gp_la.laplace_opt.optim_method='fminunc_large';
@@ -125,8 +125,8 @@ legend(h1,'True','Laplace','Data')
 % Full MCMC solution
 % ======================
 [n, nin] = size(x);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noiset('init', nin, n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
+gpcf1 = gpcf_sexp('init', 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noiset('init', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
 
 % Un-freeze nu
 %gpcf2 = gpcf_noiset('set', gpcf2, 'freeze_nu', 0);
@@ -137,7 +137,7 @@ gpcf2 = gpcf_noiset('set', gpcf2, 'censored', {[-0.4 0.9], y});
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas2', 1e-4) %
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 1e-4.^2)
 w = gp_pak(gp, 'hyper')
 gp2 = gp_unpak(gp,w, 'hyper')
 

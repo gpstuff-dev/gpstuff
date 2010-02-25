@@ -32,8 +32,8 @@ for i=1:length(predcf)
     K = K + feval(gpcf.fh_trvar, gpcf, x1);
 end
 
-if ~isempty(gp.jitterSigmas)
-    K = K + gp.jitterSigmas.^2;
+if ~isempty(gp.jitterSigma2)
+    K = K + gp.jitterSigma2;
 end
 
 if nargout >1

@@ -41,13 +41,13 @@ y = data(:,3);
 
 % ---------------------------
 % --- Construct the model ---
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 gpcf1.p.lengthScale = logunif_p   %gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001.^2)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -142,7 +142,7 @@ models{3} = 'full_IA';
 X_u = [u1(:) u2(:)];
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u)
+gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001.^2, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -234,7 +234,7 @@ for i1=1:4
 end
 
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001, 'X_u', X_u)
+gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2, 'X_u', X_u)
 gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 
 % -----------------------------

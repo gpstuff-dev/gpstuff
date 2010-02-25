@@ -29,7 +29,7 @@ covfunc = {'gpcf_sexp' 'gpcf_exp' 'gpcf_matern32' 'gpcf_matern52' ...
            'gpcf_ppcs0' 'gpcf_ppcs1' 'gpcf_ppcs2' 'gpcf_ppcs3' 'gpcf_neuralnetwork'...
            'gpcf_dotproduct' 'gpcf_prod'};
 
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 pl = prior_logunif('init');
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pl);
         
@@ -52,7 +52,7 @@ for i = 1:length(covfunc)
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl);
       case 'gpcf_prod'
         gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.5);
-        gpcf4 = gpcf_exp('init', nin, 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.2^2);
+        gpcf4 = gpcf_exp('init', 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.2^2);
 
         % Set prior
         pl = prior_logunif('init');
@@ -61,9 +61,9 @@ for i = 1:length(covfunc)
         gpcf4 = gpcf_exp('set', gpcf4, 'lengthScale_prior', pl);
         gpcf4 = gpcf_exp('set', gpcf4, 'magnSigma2_prior', pl);
 
-        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
+        gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
       otherwise
-        gpcf1 = feval(covfunc{i}, 'init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+        gpcf1 = feval(covfunc{i}, 'init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
         
         % Set prior
         pl = prior_logunif('init');
@@ -71,7 +71,7 @@ for i = 1:length(covfunc)
         gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pl);
     end
            
-    gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+    gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
     
     w=gp_pak(gp);  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
@@ -123,65 +123,65 @@ for i = 1:length(covfunc)
     switch covfunc{i}
       case 'gpcf_neuralnetwork'
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', pl, 'biasSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', [], 'biasSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
       case 'gpcf_dotproduct'
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl, 'coeffSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', [], 'coeffSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
       case 'gpcf_prod'
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', []);
-        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
-        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
-        gpcf1 = gpcf_prod('init', nin, 'functions', {gpcf3, gpcf4});
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
       otherwise
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
     end
@@ -195,10 +195,10 @@ for i = 1:length(covfunc)
 
 end
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigmas2_prior', []);
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001);
 w=gp_pak(gp);
 delta = gradcheck(w, @gp_e, @gp_g, gp, x, y);
 
@@ -211,8 +211,8 @@ fprintf(' \n ================================= \n \n Checking the sparse approxi
 
 sparse = {'FIC' 'PIC' 'CS+FIC'};
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
@@ -244,14 +244,14 @@ for i = 1:length(sparse)
     
     switch sparse{i}
       case 'FIC'
-        gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u, 'Xu_prior', prior_unif('init'));
+        gp = gp_init('init', 'FIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u, 'Xu_prior', prior_unif('init'));
         tstindex = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex}, 'Xu_prior', prior_unif('init'));
         tstindex = trindex;
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u, 'Xu_prior', prior_unif('init'))
+        gp = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u, 'Xu_prior', prior_unif('init'))
         tstindex = 1:n;
     end
     
@@ -324,8 +324,8 @@ end
 
 fprintf(' \n ================================= \n \n Checking the additive model and gp_pred \n \n =================================\n ')
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
@@ -362,21 +362,21 @@ models = {'FULL' 'FIC' 'PIC' 'CS+FIC'};
 for i=1:length(models)
     switch models{i}
       case 'FULL' 
-        gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -543,21 +543,21 @@ pm = prior_logunif('init');
 pl = prior_logunif('init');
 
 % First input
-gpcf1 = gpcf_sexp('init', nin, 'magnSigma2', 0.2, 'magnSigma2_prior', pm);
-metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
+gpcf1 = gpcf_sexp('init', 'magnSigma2', 0.2, 'magnSigma2_prior', pm);
+metric1 = metric_euclidean('init', {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
 % Lastly, plug the metric to the covariance function structure.
 gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
 
 % Do the same for the second input
-gpcf2 = gpcf_sexp('init', nin, 'magnSigma2', 0.2);
-metric2 = metric_euclidean('init', nin, {[2]},'lengthScales',[1.2], 'lengthScales_prior', pl);
+gpcf2 = gpcf_sexp('init', 'magnSigma2', 0.2);
+metric2 = metric_euclidean('init', {[2]},'lengthScales',[1.2], 'lengthScales_prior', pl);
 gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
 
 % We also need the noise component
-gpcfn = gpcf_noise('init', nin, 'noiseSigma2', 0.2);
+gpcfn = gpcf_noise('init', 'noiseSigma2', 0.2);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)
+gp = gp_init('init', 'FULL', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001)
 
 param = 'covariance';
 gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
@@ -607,10 +607,10 @@ end
 
 delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
     
-metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
+metric1 = metric_euclidean('init', {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
 % Lastly, plug the metric to the covariance function structure.
 gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.0001);
+gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.0001);
 w=gp_pak(gp, 'covariance');
 delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance')];
 
@@ -639,20 +639,20 @@ fprintf(' \n ================================= \n \n Checking the prior structur
 
 priorfunc = {'prior_t' 'prior_unif' 'prior_logunif', 'prior_gamma', 'prior_laplace', 'prior_sinvchi2', 'prior_normal', 'prior_invgam'};
 
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 ps = prior_logunif('init');
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', ps);
         
 for i = 1:length(priorfunc)
     
-    gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.3 1.4], 'magnSigma2', 0.2^2);
+    gpcf1 = gpcf_sexp('init', 'lengthScale', [1.3 1.4], 'magnSigma2', 0.2^2);
     
     % Set prior
     pl = feval(priorfunc{i}, 'init');
     gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
     gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', ps);
            
-    gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001)
+    gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001)
     
     w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
@@ -721,7 +721,7 @@ x(:,end)=[];
 % Set prior
 pl = prior_logunif('init');
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf2 = gpcf_ppcs1('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf3 = gpcf_ppcs3('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.5^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
@@ -757,25 +757,25 @@ likelih = likelih_probit('init', y);
 for i=1:length(models)
     switch models{i}
       case 'FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'CS-FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf2, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -856,25 +856,25 @@ for i=1:length(models)
     % -------------------
     switch models{i}
       case 'FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'CS-FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf2, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.1, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.1, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.5, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.5, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -965,7 +965,7 @@ for i=1:length(models)
     opt.latent_opt.sample_latent_scale = 0.5;
     hmc2('state', sum(100*clock));
 
-% $$$     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$     gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
     gp=gp_unpak(gp,w, 'covariance');
     gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
     
@@ -1029,25 +1029,25 @@ likelih = likelih_logit('init', y);
 for i=1:length(models)
     switch models{i}
       case 'FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'CS-FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf2, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -1128,25 +1128,25 @@ for i=1:length(models)
     % -------------------
     switch models{i}
       case 'FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'CS-FULL' 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf2, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.1, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.1, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.5, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.5, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -1237,7 +1237,7 @@ for i=1:length(models)
     opt.latent_opt.sample_latent_scale = 0.5;
     hmc2('state', sum(100*clock));
 
-% $$$     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$     gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
     gp=gp_unpak(gp,w, 'covariance');
     gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
     
@@ -1306,7 +1306,7 @@ load(L)
 x = xx;
 
 % Create the covariance function
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_ppcs1('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf3 = gpcf_ppcs3('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.5^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
@@ -1329,7 +1329,7 @@ for i=1:length(models)
         % Create the likelihood structure
         likelih = likelih_poisson('init', y, yee);
 
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'CS-FULL' 
@@ -1341,7 +1341,7 @@ for i=1:length(models)
         % Create the likelihood structure
         likelih = likelih_poisson('init', y, yee);
         
-        gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+        gp = gp_init('init', 'FULL', likelih, {gpcf2, gpcf3}, {}, 'jitterSigma2', 0.0001)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
@@ -1353,7 +1353,7 @@ for i=1:length(models)
         % Create the likelihood structure
         likelih = likelih_poisson('init', y, yee);
         
-        gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
@@ -1365,7 +1365,7 @@ for i=1:length(models)
         % Create the likelihood structure
         likelih = likelih_poisson('init', y, yee);
         
-        gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
@@ -1379,7 +1379,7 @@ for i=1:length(models)
         % Create the likelihood structure
         likelih = likelih_poisson('init', y, yee);
         
-        gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -1460,25 +1460,25 @@ for i=1:length(models)
     % -------------------
 % $$$     switch models{i}
 % $$$       case 'FULL' 
-% $$$         gp = gp_init('init', 'FULL', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$         gp = gp_init('init', 'FULL', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
 % $$$         tstindex = [];
 % $$$         tstindex2 = 1:n;
 % $$$       case 'CS-FULL' 
-% $$$         gp = gp_init('init', 'FULL', nin, likelih, {gpcf2, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$         gp = gp_init('init', 'FULL', likelih, {gpcf2, gpcf3}, {}, 'jitterSigma2', 0.0001)
 % $$$         tstindex = [];
 % $$$         tstindex2 = 1:n;
 % $$$       case 'FIC' 
-% $$$         gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+% $$$         gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.1, 'X_u', X_u);
 % $$$         tstindex = [];
 % $$$         tstindex2 = 1:n;
 % $$$       case 'PIC'
-% $$$         gp = gp_init('init', 'PIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.1, 'X_u', X_u);
+% $$$         gp = gp_init('init', 'PIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.1, 'X_u', X_u);
 % $$$         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
 % $$$         tstindex = testindex;
 % $$$         tstindex2 = trindex;
 % $$$         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
 % $$$       case 'CS+FIC'
-% $$$         gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.5, 'X_u', X_u);
+% $$$         gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.5, 'X_u', X_u);
 % $$$         tstindex = [];
 % $$$         tstindex2 = 1:n;
 % $$$     end
@@ -1576,7 +1576,7 @@ for i=1:length(models)
     opt.latent_opt.display=0;
     hmc2('state', sum(100*clock));
 
-% $$$     gp = gp_init('init', 'FIC', nin, likelih, {gpcf1, gpcf3}, {}, 'jitterSigmas', 0.0001)
+% $$$     gp = gp_init('init', 'FIC', likelih, {gpcf1, gpcf3}, {}, 'jitterSigma2', 0.0001)
     gp=gp_unpak(gp,w, 'covariance');
     gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_hmc});
     

@@ -67,7 +67,7 @@ likelih = likelih_probit('init', y);
 %likelih = likelih_logit('init', y);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigmas', 0.1);   %{gpcf2}
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.1.^2);
 
 
 % ------- Laplace approximation --------
@@ -388,12 +388,12 @@ Xu=[u1(:) u2(:)];
 likelih = likelih_probit('init', y);
 
 % Set the prior for the parameters of covariance functions 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
 pl = prior_logunif('init');
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 
 % Create the GP data structure
-gp_fic = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.1, 'X_u', Xu);
+gp_fic = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'jitterSigma2', 0.1.^2, 'X_u', Xu);
 
 % Initialize the hyperparameters with Laplace approximation
     gp_fic = gp_init('set', gp_fic, 'latent_method', {'Laplace', x, y, 'hyper'});
@@ -508,7 +508,7 @@ gpcf2.p.lengthScale = gamma_p({3 7 3 7});
 gpcf2.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % Create the GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.1, 'X_u', Xu);
+gp_csfic = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf2}, [], 'jitterSigma2', 0.1.^2, 'X_u', Xu);
 
 % Set the approximate inference method
 gp_csfic = gp_init('set', gp_csfic, 'latent_method', {'MCMC', zeros(size(y))'});

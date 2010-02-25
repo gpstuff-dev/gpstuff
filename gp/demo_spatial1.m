@@ -75,7 +75,7 @@ ye = ye(ind,:);
 % Create the covariance function
 % The hyper-parameters are initialized very close to posterior mode in order to 
 % speed up convergence
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
+gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.03);
 pl = prior_t('init');
 pm = prior_t('init', 'scale', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -84,7 +84,7 @@ gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior',
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, []);   %{gpcf2}
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, []);   %{gpcf2}
 
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
@@ -207,7 +207,7 @@ dims = [1    60     1    35];
 % Create the covariance functions
 % The hyper-parameters are initialized very close to posterior mode in order to 
 % speed up convergence
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
+gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.03);
 pl = prior_t('init');
 pm = prior_t('init', 'scale', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -217,7 +217,7 @@ gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior',
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'FIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
 
 % Set the approximate inference method to MCMC
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
@@ -339,7 +339,7 @@ dims = [1    60     1    35];
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.03);
+gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.03);
 pl = prior_t('init');
 pm = prior_t('init', 'scale', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -348,7 +348,7 @@ gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior',
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the PIC GP data structure
-gp = gp_init('init', 'PIC', nin, likelih, {gpcf1}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'PIC', likelih, {gpcf1}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
 gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
 
 % Set the approximate inference method to MCMC
@@ -474,7 +474,7 @@ dims = [1    60     1    35];
 [n,nin] = size(xx);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 4, 'magnSigma2', 0.05);
+gpcf1 = gpcf_matern32('init', 'lengthScale', 4, 'magnSigma2', 0.05);
 pl = prior_t('init');
 pm = prior_t('init', 'scale', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -486,7 +486,7 @@ gpcf2 = gpcf_ppcs2('set', gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'CS+FIC', nin, likelih, {gpcf1, gpcf2}, [], 'jitterSigmas', 0.01, 'X_u', Xu);
+gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf2}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
 
 % Set the approximate inference method to MCMC
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});

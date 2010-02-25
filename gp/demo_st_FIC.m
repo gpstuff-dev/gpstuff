@@ -71,14 +71,14 @@ end
 % Create covariance functions
 gpcf1 = gpcf_st_sexp('init', nin_no_ard, nin_ard, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001);
+gp = gp_init('init', 'FIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2);
 [u1,u2]=meshgrid(linspace(-1.8,1.8,8),linspace(-1.8,1.8,8));
 U = zeros((length(t)-2)*length(u1(:)),3);
 for i = t_0+1:t_max-1

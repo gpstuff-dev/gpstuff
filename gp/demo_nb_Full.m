@@ -49,16 +49,16 @@ function demo_nb_Full
     
     [n, nin] = size(xx);
 
-    %gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    gpcf1 = gpcf_exp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    %gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
-    %gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 0.01);
+    gpcf1 = gpcf_exp('init', 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.01);
+    %gpcf1 = gpcf_matern52('init', 'lengthScale', 2, 'magnSigma2', 0.01);
 
     
     gpcf1.p.lengthScale = t_p({1 4});
     gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-    gp = gp_init('init', 'FULL', nin, 'negbin', {gpcf1}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+    gp = gp_init('init', 'FULL', 'negbin', {gpcf1}, [], 'jitterSigma2', 0.01.^2);
 
     gp.avgE = ye; 
     gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr_nb, zeros(size(yy))', 100});

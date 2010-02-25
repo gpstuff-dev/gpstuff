@@ -96,7 +96,7 @@ gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
 
 % Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)    
+gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2)    
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -161,7 +161,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
+gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -217,7 +217,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
+gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2, 'X_u', Xu)
 gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 
 % -----------------------------
@@ -271,7 +271,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigmas', 0.001, 'X_u', Xu)
+gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2, 'X_u', Xu)
 
 
 w = gp_pak(gp_csfic);
@@ -281,8 +281,8 @@ gp_csfic = gp_init('set', gp_csfic, 'Xu_prior', prior_unif('init'));
 w = gp_pak(gp_csfic);
 gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1.1], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
-gp_csfic = gp_init('init', 'CS+FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0, 'X_u', Xu);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1.1], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
+gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0, 'X_u', Xu);
 w = gp_pak(gp_csfic);
 gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
 

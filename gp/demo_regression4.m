@@ -80,8 +80,8 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('init', 'noiseSigmas2', 0.2^2);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
@@ -89,8 +89,7 @@ gpcf1.p.lengthScale = gamma_p({3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
-
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -152,7 +151,7 @@ title('The predicted underlying function and the data points (MAP solution)');
 % Here we conduct the same analysis as in part 1, but this time we 
 % use LOO-CV energy function
 
-gp_cv = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
+gp_cv = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)    
 
 
 % -----------------------------

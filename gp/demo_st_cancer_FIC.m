@@ -22,7 +22,7 @@
    gpcf3.p.magnSigma2 = t_p({0.3 4});     
 
    % Initialize GP
-   gp = gp_init('init', 'FIC', nin, 'poisson', {gpcf1,gpcf2,gpcf3}, [], 'jitterSigmas', 0.01);   %{gpcf2}
+   gp = gp_init('init', 'FIC', 'poisson', {gpcf1,gpcf2,gpcf3}, [], 'jitterSigma2', 0.01.^2);
    gp.avgE = ye; 
    gp = gp_init('set', gp, 'latent_method', {'MCMC', @latent_hmcr, zeros(size(yy))'});
    

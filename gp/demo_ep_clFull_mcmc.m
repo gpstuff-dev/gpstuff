@@ -59,24 +59,24 @@ disp(' ')
 
 % Create covariance functions
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_sexp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
-%gpcf1 = gpcf_exp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_exp('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_exp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
-%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_matern32('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern32('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
-%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2);
-%gpcf1 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+%gpcf1 = gpcf_matern52('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-%gp = gp_init('init', nin, 'lh_2class', {gpcf1}, [], 'jitterSigmas', 1)   %{gpcf2}
-gp = gp_init('init', 'FULL', nin, 'probit', {gpcf1}, [], 'jitterSigmas', 0.01)   %{gpcf2}
+%gp = gp_init('init', 'lh_2class', {gpcf1}, [], 'jitterSigma2', 1)
+gp = gp_init('init', 'FULL', 'probit', {gpcf1}, [], 'jitterSigma2', 0.01.^2)
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'hyper'});
 
 [e, edata, eprior] = gpep_e(gp_pak(gp,'hyper'), gp, x, y, 'hyper')

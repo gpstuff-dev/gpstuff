@@ -94,7 +94,7 @@ pm = prior_t('init', 's2', 0.3);               % a prior structure
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.0001);
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001.^2);
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 

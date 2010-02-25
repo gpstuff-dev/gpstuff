@@ -333,7 +333,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 rec.latentValues = [];
                 rec.lrejects = 0;
             end
-            rec.jitterSigmas = [];
+            rec.jitterSigma2 = [];
             rec.hmcrejects = 0;
             
             if isfield(gp, 'site_tau')
@@ -396,9 +396,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             rec.likelih = feval(likelih.fh_recappend, rec.likelih, ri, likelih);
         end
 
-        % Set jitterSigmas to record
-        if ~isempty(gp.jitterSigmas)
-            rec.jitterSigmas(ri,:) = gp.jitterSigmas;
+        % Set jitterSigma2 to record
+        if ~isempty(gp.jitterSigma2)
+            rec.jitterSigma2(ri,:) = gp.jitterSigma2;
         end
 
         % Set the latent values to record structure

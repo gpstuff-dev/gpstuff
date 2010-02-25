@@ -16,21 +16,21 @@ pm = prior_logunif('init');
 pl = prior_logunif('init');
 
 % First input
-gpcf1 = gpcf_sexp('init', nin, 'magnSigma2', 0.2, 'magnSigma2_prior', pm);
-metric1 = metric_euclidean('init', nin, {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
+gpcf1 = gpcf_sexp('init', 'magnSigma2', 0.2, 'magnSigma2_prior', pm);
+metric1 = metric_euclidean('init', {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
 % Lastly, plug the metric to the covariance function structure.
 gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
 
 % Do the same for the second input
-gpcf2 = gpcf_sexp('init', nin, 'magnSigma2', 0.2);
-metric2 = metric_euclidean('init', nin, {[2]},'lengthScales',[1.2], 'lengthScales_prior', pl);
+gpcf2 = gpcf_sexp('init', 'magnSigma2', 0.2);
+metric2 = metric_euclidean('init', {[2]},'lengthScales',[1.2], 'lengthScales_prior', pl);
 gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
 
 % We also need the noise component
-gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
+gpcfn = gpcf_noise('init', 'noiseSigmas2', 0.2);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)
+gp = gp_init('init', 'FULL', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2)
 
 param = 'hyper';
 gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
@@ -106,7 +106,7 @@ y = data(:,3);
 % regression (Gaussian noise) data.
 
 % This part is done as usual
-gpcf1 = gpcf_matern52('init', nin, 'magnSigma2', 0.2);
+gpcf1 = gpcf_matern52('init', 'magnSigma2', 0.2);
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
 % Lets now initialize an euclidean metric structure, which uses only the first
@@ -126,7 +126,7 @@ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 % inside the metric structures as they are essentially parameters
 % of the euclidean metric.
 
-metric1 = metric_euclidean('init', nin, {[1]},'params',[0.8]);
+metric1 = metric_euclidean('init', {[1]},'params',[0.8]);
 
 % We also need to specify a prior for the length scales.
 metric1.p.params = gamma_p({3 7});  
@@ -135,21 +135,21 @@ metric1.p.params = gamma_p({3 7});
 gpcf1 = gpcf_matern52('set', gpcf1, 'metric', metric1);
 
 % Do the same for the second input
-gpcf2 = gpcf_matern52('init', nin, 'magnSigma2', 0.2);
+gpcf2 = gpcf_matern52('init', 'magnSigma2', 0.2);
 gpcf2.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-metric2 = metric_euclidean('init', nin, {[2]},'params',[0.8]);
+metric2 = metric_euclidean('init', {[2]},'params',[0.8]);
 metric2.p.params = gamma_p({3 7});
 gpcf2 = gpcf_matern52('set', gpcf2, 'metric', metric2);
 
 % We also need the noise component
-gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
+gpcfn = gpcf_noise('init', 'noiseSigmas2', 0.2);
 gpcfn.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)
+gp = gp_init('init', 'FULL', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2)
 
 % Uncomment these if you want to use a sparse model instead
-gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigmas', 0.001)    
+gp = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2)    
 [U1 U2] = meshgrid(-1.0:1:1.0,-1.0:1:1.0);
 [U1 U2] = meshgrid(-0.5:0.5:0.5,0);
 U = [U1(:) U2(:)];
@@ -269,26 +269,26 @@ param = 'hyper';
 % regression (Gaussian noise) data.
 
 % This part is done as usual
-gpcf11 = gpcf_matern52('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2);
+gpcf11 = gpcf_matern52('init', 'lengthScale', [1 1], 'magnSigma2', 0.2);
 gpcf11.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 gpcf11.p.lengthScale = gamma_p({3 7});
 
 % We also need the noise component
-gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
+gpcfn = gpcf_noise('init', 'noiseSigmas2', 0.2);
 gpcfn.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-%gp2 = gp_init('init', 'FIC', nin, 'regr', {gpcf11}, {gpcfn}, 'jitterSigmas', 0.001)    
+%gp2 = gp_init('init', 'FIC', 'regr', {gpcf11}, {gpcfn}, 'jitterSigma2', 0.001.^2)    
 %gp2 = gp_init('set', gp2, 'X_u', U);
-gp2 = gp_init('init', 'FULL', nin, 'regr', {gpcf11}, {gpcfn}, 'jitterSigmas', 0.001)
+gp2 = gp_init('init', 'FULL', 'regr', {gpcf11}, {gpcfn}, 'jitterSigma2', 0.001.^2)
 
 
 
 
-gpcf1 = gpcf_matern52('init', nin, 'magnSigma2', 0.2);
+gpcf1 = gpcf_matern52('init', 'magnSigma2', 0.2);
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-metric1 = metric_euclidean('init', nin, {[1] [2]},'params',[1 1]);
+metric1 = metric_euclidean('init', {[1] [2]},'params',[1 1]);
 
 % We also need to specify a prior for the length scales.
 metric1.p.params = gamma_p({3 7});  
@@ -297,13 +297,13 @@ metric1.p.params = gamma_p({3 7});
 gpcf1 = gpcf_matern52('set', gpcf1, 'metric', metric1);
 
 % We also need the noise component
-gpcfn = gpcf_noise('init', nin, 'noiseSigmas2', 0.2);
+gpcfn = gpcf_noise('init', 'noiseSigmas2', 0.2);
 gpcfn.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcfn}, 'jitterSigmas', 0.001)    
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcfn}, 'jitterSigma2', 0.001.^2)
 
 
-gp = gp_init('init', 'FIC', nin, 'regr', {gpcf1}, {gpcfn}, 'jitterSigmas', 0.001)
+gp = gp_init('init', 'FIC', 'regr', {gpcf1}, {gpcfn}, 'jitterSigma2', 0.001.^2)
 gp = gp_init('set', gp, 'X_u', U);
 

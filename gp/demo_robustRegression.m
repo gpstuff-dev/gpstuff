@@ -91,11 +91,11 @@ pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
 
 % create the Gaussian process
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise('init', nin, 'noiseSigma2', 0.2^2, 'noiseSigma2_prior', pm);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2, 'noiseSigma2_prior', pm);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}, 'jitterSigmas', 0.001)    
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)    
 
 w=gp_pak(gp, 'hyper');  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
@@ -144,8 +144,8 @@ S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp
 %     (lenghtScale, magnSigma, sigma(noise-t) and nu)
 % ========================================
 [n, nin] = size(x);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noiset('init', nin, n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
+gpcf1 = gpcf_sexp('init', 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noiset('init', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
 
 % Un-freeze nu
 gpcf2 = gpcf_noiset('set', gpcf2, 'freeze_nu', 0);
@@ -154,7 +154,7 @@ gpcf2 = gpcf_noiset('set', gpcf2, 'freeze_nu', 0);
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}) %
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}) %
 w = gp_pak(gp, 'hyper')
 gp2 = gp_unpak(gp,w, 'hyper')
 
@@ -253,7 +253,7 @@ yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
 pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 pll = prior_logunif('init');
@@ -265,7 +265,7 @@ likelih = likelih_t('set', likelih, 'freeze_nu', 0)
 
 % ... Finally create the GP data structure
 param = 'covariance+likelihood'
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.000001); % 
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.000001.^2); % 
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
 
 gp.laplace_opt.optim_method = 'likelih_specific';
@@ -342,14 +342,14 @@ S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 %   which means that degrees of freedom is not sampled/optimized
 % ========================================
 [n, nin] = size(x);
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noiset('init', nin, n, 'noiseSigmas2', repmat(1^2,n,1), 'nu', 4);   % Here set own Sigma2 for every data point
+gpcf1 = gpcf_sexp('init', 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noiset('init', n, 'noiseSigmas2', repmat(1^2,n,1), 'nu', 4);   % Here set own Sigma2 for every data point
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', nin, 'regr', {gpcf1}, {gpcf2}) %
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}) %
 w = gp_pak(gp, 'hyper')
 gp2 = gp_unpak(gp,w, 'hyper')
 
@@ -445,7 +445,7 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 1);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 1);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf1.p.lengthScale = gamma_p({3 7});  
@@ -458,7 +458,7 @@ likelih.p.sigma = logunif_p;
 
 % ... Finally create the GP data structure
 param = 'hyper+likelih'
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.001);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.001.^2);
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
 
 gp.laplace_opt.optim_method = 'likelih_specific';
@@ -528,7 +528,7 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1.02, 'magnSigma2', 1.29);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1.02, 'magnSigma2', 1.29);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf1.p.lengthScale = gamma_p({3 7});  
@@ -540,7 +540,7 @@ likelih.p.nu = loglogunif_p;
 likelih.p.sigma = logunif_p;
 
 % the GP data structure
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.0001);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001.^2);
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))'});
 
 opt=gp_mcopt;
@@ -591,7 +591,7 @@ S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 % ========================================
 
 % ... the GP data structure
-gp_la = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.01);
+gp_la = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.01.^2);
 gp_la = gp_init('set', gp_la, 'latent_method', {'Laplace', x, y, 'hyper'});
 
 [Ef_la, Varf_la] = la_pred(gp_la, x, y, xx', 'hyper');
@@ -698,7 +698,7 @@ x = x(1:100,1);
 xx = [-2.7:0.01:2.7];
 yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
-gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 2, 'magnSigma2', 0.5);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 0.5);
 
 % ... Then set the prior for the parameters of covariance functions...
 gpcf1.p.lengthScale = gamma_p({3 7});  
@@ -711,7 +711,7 @@ likelih.p.sigma = logunif_p;
 
 % ... Finally create the GP data structure
 param = 'hyper+likelih'
-gp = gp_init('init', 'FULL', nin, likelih, {gpcf1}, {}, 'jitterSigmas', 0.0001);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001.^2);
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, param});
 
 

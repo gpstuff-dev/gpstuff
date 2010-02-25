@@ -39,11 +39,11 @@ switch gp.type
         K = K + feval(gpcf.fh_trcov, gpcf, x1);
     end
     
-    if ~isempty(gp.jitterSigmas)
+    if ~isempty(gp.jitterSigma2)
         if issparse(K)
-            K = K + sparse(1:n,1:n,gp.jitterSigmas.^2,n,n);
+            K = K + sparse(1:n,1:n,gp.jitterSigma2,n,n);
         else
-            K(1:n1:end)=K(1:n1:end) + gp.jitterSigmas.^2;
+            K(1:n1:end)=K(1:n1:end) + gp.jitterSigma2;
         end
     end
     if nargout > 1 

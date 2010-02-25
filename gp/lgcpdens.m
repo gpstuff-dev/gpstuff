@@ -296,9 +296,9 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
   
   % Create the GP data structure
   if isempty(gpcf3)
-    gp = gp_init('init', 'FULL', likelih, {gpcf1 gpcf2}, [], 'jitterSigmas', 0.00001);
+    gp = gp_init('init', 'FULL', likelih, {gpcf1 gpcf2}, [], 'jitterSigma2', 1e-4);
   else
-    gp = gp_init('init', 'FULL', likelih, {gpcf1 gpcf2 gpcf3}, [], 'jitterSigmas', 0.00001);
+    gp = gp_init('init', 'FULL', likelih, {gpcf1 gpcf2 gpcf3}, [], 'jitterSigma2', 1e-4);
   end
 
   % prepare to optimize covariance parameters
