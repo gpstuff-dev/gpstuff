@@ -51,7 +51,7 @@ stream.Substream = 1;
 x=[trnd(4,1,100) 3+trnd(4,1,50)*0.1]';
 [N,X]=hist(x);
 h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
-[p,~,xt]=lgcpdens(x,'expansion',.1);
+[p,pq,xt]=lgcpdens(x,'expansion',.1);
 line(xt,p,'color','r','marker','none','linewidth',2)
 title('Mixture of two t_4')
 % correct density
@@ -63,7 +63,7 @@ stream.Substream = 1;
 x=trnd(4,500,1);x(x>2)=2;
 [N,X]=hist(x);
 h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
-[p,~,xt]=lgcpdens(x,'gridn',200,'expansion',0);
+[p,pq,xt]=lgcpdens(x,'gridn',200,'expansion',0);
 line(xt,p,'color','r','marker','none','linewidth',2)
 title('Truncated t_4')
 
@@ -84,7 +84,7 @@ stream.Substream = 1;
 x=gamrnd(1,1,100,1);
 [N,X]=hist(x);
 h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
-[p,~,xt]=lgcpdens(x,'expansion',0);
+[p,pq,xt]=lgcpdens(x,'expansion',0);
 line(xt,p,'color','r','marker','none','linewidth',2)
 title('Gamma(1,1)')
 
