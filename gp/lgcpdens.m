@@ -1,5 +1,4 @@
 function [p,pq,xt] = lgcpdens(x,varargin)
-%bn,a,type,gpcf,latent_method
 % LGCPDENS - Log Gaussian Cox Process density estimate for 1D and 2D data
 %   
 %   LGCPDENS(X)
@@ -19,12 +18,13 @@ function [p,pq,xt] = lgcpdens(x,varargin)
 %       'gpcf' is optional function handle of a GPstuff covariance function 
 %         (default is @gpcf_sexp)
 %       'latent_method' is optional 'EP' (default) or 'Laplace'
+%       'hyperint' is optional 'mode' (default), 'CCD' or 'grid_based'
 % 
 %     P is the estimated density  
 %     PQ is the 5% and 95% percentiles of the density estimate
 %     XT contains the used test points
   
-% Copyright (c) 2009 Aki Vehtari
+% Copyright (c) 2009-2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -45,8 +45,9 @@ function [p,pq,xt] = lgcpdens(x,varargin)
                    @(x) ischar(x) && (strcmpi(x,'unif') ||...
                                       strcmpi(x,'exp')||...
                                       strcmpi(x,'gaussian')));
-  ip.addParamValue('hyperint',[], ...
-                   @(x) ischar(x) && (strcmpi(x,'CCD') ||...
+  ip.addParamValue('hyperint','mode', ...
+                   @(x) ischar(x) && (strcmpi(x,'mode') ||...
+                                      strcmpi(x,'CCD') ||...
                                       strcmpi(x,'grid_based')));
   
   ip.parse(x,varargin{:});
@@ -321,7 +322,7 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
       gp = gp_unpak(gp,w,param);
 
       % Make prediction for the test points
-      if isempty(hyperint)
+      if strcmpi(hyperint,'mode')
         % point estimate for the hyperparameters
         [Ef,Varf] = ep_pred(gp, xx, yy, xt, param);
       else
@@ -344,7 +345,7 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
       gp = gp_unpak(gp,w,param);
       
       % Make prediction for the test points
-      if isempty(hyperint)
+      if strcmpi(hyperint,'mode')
         % point estimate for the hyperparameters
         [Ef,Varf] = la_pred(gp, xx, yy, xt, param);
       else
