@@ -241,7 +241,7 @@ function likelih = likelih_poisson(do, varargin)
     %   Description
     %   [M_0, M_1, M2] = LIKELIH_POISSON_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
     %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
     %   M_2 of the tilted distribution
     %
     %   See also
@@ -328,6 +328,7 @@ function likelih = likelih_poisson(do, varargin)
 
     
     function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, y)
+    % Return E, Var, and p of the predictive density
 
         atol = 1e-10;
         reltol = 1e-6;

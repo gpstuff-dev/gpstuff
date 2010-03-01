@@ -213,7 +213,7 @@ function likelih = likelih_probit(do, varargin)
     %   Description
     %   [M_0, M_1, M2] = LIKELIH_PROBIT_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
     %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
     %   M_2 of the tilted distribution
     %
     %   See also
@@ -234,8 +234,7 @@ function likelih = likelih_probit(do, varargin)
     end
 
     function [Ey, Vary, py] = likelih_probit_predy(likelih, Ef, Varf, y)
-    % Return the predictive probability of ty given the posterior mean Ef 
-    % and variance Varf
+    % Return E, Var, and p of the predictive density
         
         py1 = normcdf(Ef./sqrt(1+Varf));
         Ey = 2*py1 - 1;

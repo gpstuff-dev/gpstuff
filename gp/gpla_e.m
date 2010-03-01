@@ -2,7 +2,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 %GPLA_E Conduct LAplace approximation and return marginal log posterior estimate
 %
 %	Description
-%	E = GPLA_E(W, GP, X, Y, PARAM) takes a gp data structure GP together
+%	E = GPLA_E(W, GP, X, Y, PARAM) takes a GP data structure GP together
 %	with a matrix X of input vectors and a matrix Y of target vectors,
 %	and finds the Laplace approximation for the conditional posterior p(Y|X, th), 
 %       where th is the hyperparameters. Returns the energy E at th. Each row 
@@ -28,7 +28,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
 % Copyright (c) 2007-2009      Jarno Vanhatalo
 % 
-% The Newtons iteration is implemented as described in 
+% The Newton's method is implemented as described in 
 % Rasmussen and Williams (2006).
 
 % This software is distributed under the GNU General Public
@@ -60,8 +60,8 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
     function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
         
         if abs(w-w0) < 1e-8 % 1e-8
-               % The covariance function parameters haven't changed so just
-               % return the Energy and the site parameters that are saved
+            % The covariance function parameters haven't changed so just
+            % return the Energy and the site parameters that are saved
             e = e0;
             edata = edata0;
             eprior = eprior0;
@@ -157,7 +157,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                             sW = sparse(1:n, 1:n, sW, n, n);
                             L = ldlchol( speye(n)+sW*K*sW );
                         else
-                            L = chol(eye(n)+sW*sW'.*K);                        % L'*L=B=eye(n)+sW*K*sW
+                            L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                         end
                         b = W.*f+dlp;
                         if issparse(K)
@@ -171,8 +171,10 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
-                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
-                            a = (a_old+a)/2;                                  % reduce step size by half
+                        while i < 10 && lp_new < lp_old                       
+                          % if objective didn't increase
+                          % reduce step size by half
+                            a = (a_old+a)/2;                                  
                             f = K*a;
                             W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                             lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
@@ -285,7 +287,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 
                     a = f./Lav - L*L'*f;
                     
-                    % find the mode by newton method
+                    % find the mode by Newton's method
                   case 'newton'
                     tol = 1e-12;
                     a = f;
@@ -430,7 +432,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     
                     a = iKf(f);
                                         
-                    % find the mode by Scaled conjugate gradient method
+                  % find the mode by Newton's method
                   case 'newton'
                     tol = 1e-12;
                     a = f;
@@ -593,6 +595,8 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     f = f';
                     
                     a = ldlsolve(VD,f) - L*L'*f;
+                    
+                  % find the mode by Newton's method
                   case 'newton'
                     tol = 1e-8;
                     a = f;
@@ -704,7 +708,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     b = L'*f;
                     logZ = 0.5*(f'*(f./Sv) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
                   case 'Newton'
-                    error('The Newton algorithm is not implemented for FIC!\n')
+                    error('The Newton's method is not implemented for FIC!\n')
                 end
                 WPhi = repmat(sqrtW,1,m).*Phi;
                 A = eye(m,m) + WPhi'./repmat((1+Sv.*W)',m,1)*WPhi;   A = (A+A')./2;

@@ -333,7 +333,7 @@ function likelih = likelih_negbin(do, varargin)
     %   Description
     %   [M_0, M_1, M2] = LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
     %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
     %   M_2 of the tilted distribution
     %
     %   See also
@@ -427,7 +427,7 @@ function likelih = likelih_negbin(do, varargin)
     end
     
     function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i)
-    %LIKELIH_NEGBIN_SITEDERIV    Evaluate the derivative with respect to cite parameters
+    %LIKELIH_NEGBIN_SITEDERIV    Evaluate the derivative with respect to site parameters
     %
     %
         zm = @zeroth_moment;

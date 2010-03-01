@@ -8,7 +8,7 @@ function likelih = likelih_binomial(do, varargin)
 %       contains the number of trials.
 %
 %	The fields in LIKELIH are:
-%	  likelih.type                 = 'likelih_binomial'
+%	  likelih.type             = 'likelih_binomial'
 %         likelih.N                = N;
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
@@ -246,7 +246,7 @@ function likelih = likelih_binomial(do, varargin)
     %   Description
     %   [M_0, M_1, M2] = LIKELIH_BINOMIAL_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
     %   likelihood data structure LIKELIH, the number of 'successes' Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
     %   M_2 of the tilted distribution
     %
     %   See also
@@ -337,7 +337,8 @@ function likelih = likelih_binomial(do, varargin)
 
     
     function [Ey, Vary, py] = likelih_binomial_predy(gp, Ef, Varf, y)
-        
+    % Return E, Var, and p of the predictive density
+      
         likelih=gp.likelih;
         nt=length(Ef);
         Ey=zeros(nt,1);

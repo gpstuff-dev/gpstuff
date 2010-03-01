@@ -38,7 +38,7 @@ function likelih = likelih_logit(do, varargin)
         error('Not enough arguments')
     end
 
-    % Initialize the covariance function
+    % Initialize the likelihood structure
     if strcmp(do, 'init')
         likelih.type = 'logit';
         y = varargin{1};
@@ -221,7 +221,7 @@ function likelih = likelih_logit(do, varargin)
     %   Description
     %   [M_0, M_1, M2] = LIKELIH_LOGIT_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
     %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, firtst moment M_1 and second moment 
+    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
     %   M_2 of the tilted distribution
     %
     %   See also

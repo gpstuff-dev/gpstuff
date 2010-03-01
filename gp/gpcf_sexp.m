@@ -413,9 +413,10 @@ function gpcf = gpcf_sexp(do, varargin)
         
         if nargout > 1
             ggs = [];
+            i1=0;
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
-                i1 = 1;
+                i1 = i1+1;
                 ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
                 gprior = ggs(i1).*gpcf.magnSigma2 - 1;
             end
