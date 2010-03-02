@@ -102,7 +102,7 @@ function p = prior_laplace(do, varargin)
         
         w = [];
         if ~isempty(p.p.mu)
-            w = log(p.mu);
+            w = p.mu;
         end
          if ~isempty(p.p.s)
             w = [w log(p.s)];
@@ -113,7 +113,7 @@ function p = prior_laplace(do, varargin)
         
         if ~isempty(p.p.mu)
             i1=1;
-            p.mu = exp(w(i1));
+            p.mu = w(i1);
             w = w(i1+1:end);
         end
         if ~isempty(p.p.s)
@@ -128,7 +128,7 @@ function p = prior_laplace(do, varargin)
         e = sum(log(2*p.s) + 1./p.s.* abs(x-p.mu));
         
         if ~isempty(p.p.mu)
-            e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu) - log(p.mu);
+            e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
         end
         if ~isempty(p.p.s)
             e = e + feval(p.p.s.fh_e, p.s, p.p.s)  - log(p.s);
@@ -140,7 +140,7 @@ function p = prior_laplace(do, varargin)
         g = sign(x-p.mu)./p.s; 
         
         if ~isempty(p.p.mu)
-        	gmu = ( sum(-sign(x-p.mu)./p.s) + feval(p.p.mu.fh_g, p.mu, p.p.mu)).*p.mu - 1;
+        	gmu = sum(-sign(x-p.mu)./p.s) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
             g = [g gmu];
         end
         if ~isempty(p.p.s)

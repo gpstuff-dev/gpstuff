@@ -116,7 +116,7 @@ function p = prior_t(do, varargin)
         
         w = [];
         if ~isempty(p.p.mu)
-            w = log(p.mu);
+            w = p.mu;
         end        
         if ~isempty(p.p.s2)
             w = [w log(p.s2)];
@@ -130,7 +130,7 @@ function p = prior_t(do, varargin)
         
         if ~isempty(p.p.mu)
             i1=1;
-            p.mu = exp(w(i1));
+            p.mu = w(i1);
             w = w(i1+1:end);
         end
         if ~isempty(p.p.s2)
@@ -150,7 +150,7 @@ function p = prior_t(do, varargin)
         e=sum(-gammaln((p.nu+1)./2) + gammaln(p.nu./2) + 0.5*log(p.nu.*pi.*p.s2) + (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2));
         
         if ~isempty(p.p.mu)
-            e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu) - log(p.mu);
+            e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
         end
         if ~isempty(p.p.s2)
             e = e + feval(p.p.s2.fh_e, p.s2, p.p.s2) - log(p.s2);
@@ -165,7 +165,7 @@ function p = prior_t(do, varargin)
         g=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
         
         if ~isempty(p.p.mu)
-        	gmu = (sum( -(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2) ) + feval(p.p.mu.fh_g, p.mu, p.p.mu)).*p.mu - 1;
+        	gmu = sum( -(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2) ) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
             g = [g gmu];
         end
         if ~isempty(p.p.s2)

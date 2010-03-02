@@ -103,7 +103,7 @@ function p = prior_normal(do, varargin)
         
         w = [];
         if ~isempty(p.p.mu)
-            w = log(p.mu);
+            w = p.mu;
         end
          if ~isempty(p.p.s2)
             w = [w log(p.s2)];
@@ -114,7 +114,7 @@ function p = prior_normal(do, varargin)
 
         if ~isempty(p.p.mu)
             i1=1;
-            p.mu = exp(w(i1));
+            p.mu = w(i1);
             w = w(i1+1:end);
         end
         if ~isempty(p.p.s2)
@@ -129,7 +129,7 @@ function p = prior_normal(do, varargin)
         e = 0.5*sum(log(p.s2)+ 1./p.s2 .* sum((x-p.mu).^2,1));
         
         if ~isempty(p.p.mu)
-            e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu) - log(p.mu);
+            e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
         end
         if ~isempty(p.p.s2)
             e = e + feval(p.p.s2.fh_e, p.s2, p.p.s2)  - log(p.s2);
@@ -141,7 +141,7 @@ function p = prior_normal(do, varargin)
         g = (1./p.s2).*(x-p.mu);
         
         if ~isempty(p.p.mu)
-        	gmu = ( sum(-(1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh_g, p.mu, p.p.mu)).*p.mu - 1;
+        	gmu = sum(-(1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
             g = [g gmu];
         end
         if ~isempty(p.p.s2)
