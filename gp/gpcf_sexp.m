@@ -560,20 +560,20 @@ function gpcf = gpcf_sexp(do, varargin)
             
             % Evaluate the covariance
             if ~isempty(gpcf.lengthScale)
-                s = 1./gpcf.lengthScale.^2;
+                s2 = 1./gpcf.lengthScale.^2;
                 if m1==1 && m2==1
                     dd = gminus(x1,x2');
-                    dist=dd.^2*s;
+                    dist=dd.^2*s2;
                 else
                     % If ARD is not used make s a vector of
                     % equal elements
-                    if size(s)==1
-                        s = repmat(s,1,m1);
+                    if size(s2)==1
+                        s2 = repmat(s2,1,m1);
                     end
                     dist=zeros(n1,n2);
                     for j=1:m1
                         dd = gminus(x1(:,j),x2(:,j)');
-                        dist = dist + dd.^2.*s(:,j);
+                        dist = dist + dd.^2.*s2(:,j);
                     end
                 end
                 dist(dist<eps) = 0;
@@ -598,7 +598,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if isfield(gpcf,'metric')
             % If other than scaled euclidean metric
             [n, m] =size(x);            
-            ma = gpcf.magnSigma2;
+            ma2 = gpcf.magnSigma2;
             
             C = zeros(n,n);
             for ii1=1:n-1
@@ -609,7 +609,7 @@ function gpcf = gpcf_sexp(do, varargin)
             end
             C(C<eps) = 0;
             C = C+C';
-            C = ma.*exp(-C);            
+            C = ma2.*exp(-C);            
         else
             % If scaled euclidean metric
             % Try to use the C-implementation
@@ -623,7 +623,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 if size(s)==1
                     s2 = repmat(s2,1,m);
                 end
-                ma = gpcf.magnSigma2;
+                ma2 = gpcf.magnSigma2;
                 
                 C = zeros(n,n);
                 for ii1=1:n-1
@@ -636,7 +636,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 end
                 C(C<eps)=0;
                 C = C+C';
-                C = ma.*exp(-C);
+                C = ma2.*exp(-C);
             end
         end
     end
