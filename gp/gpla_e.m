@@ -708,7 +708,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     b = L'*f;
                     logZ = 0.5*(f'*(f./Sv) - b'*b) - feval(gp.likelih.fh_e, gp.likelih, y, f);
                   case 'Newton'
-                    error('The Newton's method is not implemented for FIC!\n')
+                    error('The Newton''s method is not implemented for FIC!\n')
                 end
                 WPhi = repmat(sqrtW,1,m).*Phi;
                 A = eye(m,m) + WPhi'./repmat((1+Sv.*W)',m,1)*WPhi;   A = (A+A')./2;
