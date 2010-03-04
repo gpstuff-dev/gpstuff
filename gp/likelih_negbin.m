@@ -266,12 +266,8 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
 
-
     function g2 = likelih_negbin_g2(likelih, y, f, param)
-    %LIKELIH_NEGBIN_G2    Third gradients of (likelihood) energy function
-    %
-    %
-    %   NOT IMPLEMENTED!
+    %LIKELIH_NEGBIN_G2  Second gradients of (likelihood) energy function
     %
     %   Description
     %   G2 = LIKELIH_NEGBIN_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
@@ -300,7 +296,7 @@ function likelih = likelih_negbin(do, varargin)
     end    
     
     function g3 = likelih_negbin_g3(likelih, y, f, param)
-    %LIKELIH_NEGBIN_G3    Gradient of (likelihood) Energy function
+    %LIKELIH_NEGBIN_G3  Third gradients of (likelihood) Energy function
     %
     %   Description
     %   G3 = LIKELIH_NEGBIN_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 

@@ -94,7 +94,7 @@ function likelih = likelih_logit(do, varargin)
     function w = likelih_logit_pak(likelih, w)
     %LIKELIH_LOGIT_PAK      Combine likelihood parameters into one vector.
     %
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %	Description
     %	W = LIKELIH_LOGIT_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
@@ -103,13 +103,14 @@ function likelih = likelih_logit(do, varargin)
     %
     %	See also
     %	LIKELIH_LOGIT_UNPAK
+        w = [];
     end
 
 
-    function w = likelih_logit_unpak(likelih, w)
+    function [likelih, w] = likelih_logit_unpak(likelih, w)
     %LIKELIH_LOGIT_UNPAK      Combine likelihood parameters into one vector.
     %
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %	Description
     %	W = LIKELIH_LOGIT_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
@@ -126,7 +127,7 @@ function likelih = likelih_logit(do, varargin)
     %LIKELIH_LOGIT_PERMUTE    A function to permute the ordering of parameters 
     %                           in likelihood structure
     %   
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %   Description
     %	LIKELIH = LIKELIH_LOGIT_UNPAK(LIKELIH, P) takes a likelihood data structure
@@ -141,9 +142,6 @@ function likelih = likelih_logit(do, varargin)
     function logLikelih = likelih_logit_e(likelih, y, f)
     %LIKELIH_LOGIT_E    (Likelihood) Energy function
     %
-    %   
-    %   NOT IMPLEMENTED!
-    %
     %   Description
     %   E = LIKELIH_LOGIT_E(LIKELIH, Y, F) takes a likelihood data structure
     %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
@@ -157,9 +155,6 @@ function likelih = likelih_logit(do, varargin)
 
     function deriv = likelih_logit_g(likelih, y, f, param)
     %LIKELIH_LOGIT_G    Gradient of (likelihood) energy function
-    %
-    %   
-    %   NOT IMPLEMENTED!
     %
     %   Description
     %   G = LIKELIH_LOGIT_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
@@ -179,9 +174,6 @@ function likelih = likelih_logit(do, varargin)
     function g2 = likelih_logit_g2(likelih, y, f, param)
     %LIKELIH_LOGIT_G2    Third gradients of (likelihood) energy function
     %
-    %   
-    %   NOT IMPLEMENTED!
-    %
     %   Description
     %   G2 = LIKELIH_LOGIT_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 
@@ -197,9 +189,6 @@ function likelih = likelih_logit(do, varargin)
     
     function third_grad = likelih_logit_g3(likelih, y, f, param)
     %LIKELIH_LOGIT_G3    Gradient of (likelihood) Energy function
-    %
-    %   
-    %   NOT IMPLEMENTED!
     %
     %   Description
     %   G3 = LIKELIH_LOGIT_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
@@ -342,5 +331,3 @@ function likelih = likelih_logit(do, varargin)
         
     end
 end
-
-

@@ -93,7 +93,7 @@ function likelih = likelih_probit(do, varargin)
     function w = likelih_probit_pak(likelih, w)
     %LIKELIH_PROBIT_PAK      Combine likelihood parameters into one vector.
     %
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %	Description
     %	W = LIKELIH_PROBIT_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
@@ -102,13 +102,14 @@ function likelih = likelih_probit(do, varargin)
     %
     %	See also
     %	LIKELIH_PROBIT_UNPAK
+        w = [];
     end
 
 
-    function w = likelih_probit_unpak(likelih, w)
+    function [likelih, w] = likelih_probit_unpak(likelih, w)
     %LIKELIH_PROBIT_UNPAK      Combine likelihood parameters into one vector.
     %
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %	Description
     %	W = LIKELIH_PROBIT_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
@@ -117,7 +118,6 @@ function likelih = likelih_probit(do, varargin)
     %
     %	See also
     %	LIKELIH_PROBIT_PAK
-
     end
 
 

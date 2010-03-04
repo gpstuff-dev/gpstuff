@@ -352,9 +352,6 @@ function likelih = likelih_t(do, varargin)
     function g2 = likelih_t_g2(likelih, y, f, param)
     %LIKELIH_T_G2    Second gradients of (likelihood) energy function
     %
-    %
-    %   NOT IMPLEMENTED!
-    %
     %   Description
     %   G2 = LIKELIH_T_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
     %   structure LIKELIH, incedence counts Y and latent values F and returns the 

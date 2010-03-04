@@ -118,7 +118,7 @@ function likelih = likelih_poisson(do, varargin)
     function w = likelih_poisson_pak(likelih, w)
     %LIKELIH_POISSON_PAK      Combine likelihood parameters into one vector.
     %
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %	Description
     %	W = LIKELIH_POISSON_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
@@ -131,10 +131,10 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-    function w = likelih_poisson_unpak(likelih, w)
+    function [likelih, w] = likelih_poisson_unpak(likelih, w)
     %LIKELIH_POISSON_UNPAK      Combine likelihood parameters into one vector.
     %
-    %   NOT IMPLEMENTED!
+    %   NO PARAMETERS
     %
     %	Description
     %	W = LIKELIH_POISSON_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
@@ -143,7 +143,6 @@ function likelih = likelih_poisson(do, varargin)
     %
     %	See also
     %	LIKELIH_POISSON_PAK
-        w = w;
     end
 
 
