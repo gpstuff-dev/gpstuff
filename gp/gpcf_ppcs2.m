@@ -271,13 +271,12 @@ function gpcf = gpcf_ppcs2(do, varargin)
         
         [n, m] =size(x);
 
+        if ~isempty(gpcf.p.magnSigma2)
+                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+        end
+
         if isfield(gpcf,'metric')
-            
-            if ~isempty(gpcf.p.magnSigma2)
-                eprior=eprior + feval(gpp.magnSigma2.fe, gpcf.magnSigma2, gpp.magnSigma2.a) - log(gpcf.magnSigma2);
-            end
             eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
-            
         else
             % Evaluate the prior contribution to the error. The parameters that
             % are sampled are from space W = log(w) where w is all the "real" samples.
@@ -344,7 +343,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 I = zeros(ntriplets,1);
                 J = zeros(ntriplets,1);
                 dist = zeros(ntriplets,1);
-                for jj = 1:length(gpcf.metric.params)
+                for jj = 1:length(gpcf.metric.components)
                     gdist{jj} = zeros(ntriplets,1);
                 end
                 ntriplets = 0;                
@@ -478,7 +477,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
                 J = zeros(ntriplets,1);
                 R = zeros(ntriplets,1);
                 dist = zeros(ntriplets,1);
-                for jj = 1:length(gpcf.metric.params)
+                for jj = 1:length(gpcf.metric.components)
                     gdist{jj} = zeros(ntriplets,1);
                 end
                 ntriplets = 0;

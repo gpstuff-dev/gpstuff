@@ -347,7 +347,7 @@ function gpcf = gpcf_ppcs1(do, varargin)
                 I = zeros(ntriplets,1);
                 J = zeros(ntriplets,1);
                 dist = zeros(ntriplets,1);
-                for jj = 1:length(gpcf.metric.params)
+                for jj = 1:length(gpcf.metric.components)
                     gdist{jj} = zeros(ntriplets,1);
                 end
                 ntriplets = 0;                
@@ -493,7 +493,7 @@ function gpcf = gpcf_ppcs1(do, varargin)
                 J = zeros(ntriplets,1);
                 R = zeros(ntriplets,1);
                 dist = zeros(ntriplets,1);
-                for jj = 1:length(gpcf.metric.params)
+                for jj = 1:length(gpcf.metric.components)
                     gdist{jj} = zeros(ntriplets,1);
                 end
                 ntriplets = 0;

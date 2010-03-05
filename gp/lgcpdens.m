@@ -248,8 +248,14 @@ function [p,pq,xt] = lgcpdens(x,varargin)
 function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
+  nin = size(xx,2);
   % init gp
-  gpcf1 = gpcf('init');
+  if strfind(func2str(gpcf),'ppcs')
+    % ppcs still have nin parameter...
+    gpcf1 = gpcf('init',nin);
+  else
+    gpcf1 = gpcf('init');
+  end
   % default vague prior
   pt = prior_t('init', 's2', 10^2);
   % different covariance functions have different parameters
@@ -268,7 +274,6 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
   gpcf2.p.constSigma2 = [];
 
   % possible basis function
-  nin = size(xx,2);
   switch lower(base)
     case 'unif'
       gpcf3=[];
