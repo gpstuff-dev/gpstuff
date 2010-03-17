@@ -53,14 +53,13 @@ for i1=1:length(b1)-1
         if ~isempty(ind)
             index{end+1} = ind';
             indexsize(end+1) = length(ind);
+            if also_test == 1 
+                indtest = 1:size(xtest,1);
+                indtest = indtest(: , b1(i1)<=xtest(indtest',1) & xtest(indtest',1) < b1(i1+1));
+                indtest = indtest(: , b2(i2)<=xtest(indtest',2) & xtest(indtest',2) < b2(i2+1));
+                indextest{length(index)} = indtest';
+            end 
         end
-        %            plot(x(ind,1),x(ind,2),col{i1,i2})        
-        if also_test == 1 
-            indtest = 1:size(xtest,1);
-            indtest = indtest(: , b1(i1)<=xtest(indtest',1) & xtest(indtest',1) < b1(i1+1));
-            indtest = indtest(: , b2(i2)<=xtest(indtest',2) & xtest(indtest',2) < b2(i2+1));
-            indextest{length(index)} = indtest';
-        end 
     end       
 end
 minblock = min(indexsize); maxblock = max(indexsize); avgblock = mean(indexsize);

@@ -1,21 +1,45 @@
-function [m_0, m_1, m_2] = quad_moments(fun, a, b, varargin)
-% quad_moments  Calculate the 0th, 1st and 2nd moment of a given probability distribution
+function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol)
+% QUAD_MOMENTS  Calculate the 0th, 1st and 2nd moment of a given (unnormalized) probability distribution
+%
+%   [m_0, m_1, m_2] = quad_moments(fun, a, b, varargin) 
+%   Inputs:
+%      fun  = Function handle to the unnormalized probability distribution
+%      a,b  = integration limits [a,b]
+%      rtol = relative tolerance for the integration (optional, default 1e-6)
+%      atol = absolute tolerance for the integration (optional, default 1e-10)
 %               
+%   Returns the first three moments:
+%      m0  = int_a^b fun(x) dx
+%      m1  = int_a^b x*fun(x) dx / m0
+%      m2  = int_a^b x^2*fun(x) dx / m0
+%
+%   The function uses an adaptive Gaus Kronrod quadrature. The same set of 
+%   integration points and intervals are used for each moment. This speeds up 
+%   the evaluations by factor 3, since the function evaluations are done only 
+%   once.
+% 
+%   The quadrature method is described by:
+%   L.F. Shampine, "Vectorized Adaptive Quadrature in Matlab",
+%   Journal of Computational and Applied Mathematics, to appear.
+
+%   Copyright (c) 2010 Jarno Vanhatalo, Jouni Hartikainen
     
-    % Set integration parameters.
-    MAXINTERVALCOUNT = 650;
+% This software is distributed under the GNU General Public 
+% License (version 2 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
+% Set integration parameters.
     
-    if length(varargin) > 1
-        RTOL = varargin{1};
-    else
-        RTOL = 1.e-6;
+    maxint = 650;
+    
+    if nargin < 3
+        rtol = 1.e-6;
     end
-    if length(varargin) > 2
-        ATOL = varargin{2};
-    else
-        ATOL = 1.e-10;
+    if nargin < 4
+        atol = 1.e-10;
     end
 
+    % nodes and weights
     pnodes = [ ...
         0.2077849550078985; 0.4058451513773972; 0.5860872354676911; ...
         0.7415311855993944; 0.8648644233597691; 0.9491079123427585; ...
@@ -25,31 +49,29 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, varargin)
         0.1406532597155259, 0.1047900103222502, 0.06309209262997855, ...
         0.02293532201052922];
     pwt7 = [0,0.3818300505051189,0,0.2797053914892767,0,0.1294849661688697,0];
-    NODES = [-pnodes(end:-1:1); 0; pnodes];
-    WT = [pwt(end:-1:1), 0.2094821410847278, pwt];
-    EWT = WT - [pwt7(end:-1:1), 0.4179591836734694, pwt7];
+    nodes = [-pnodes(end:-1:1); 0; pnodes];
+    wt = [pwt(end:-1:1), 0.2094821410847278, pwt];
+    ewt = wt - [pwt7(end:-1:1), 0.4179591836734694, pwt7];
     
     % Integration interval
     tinterval = [a,b];
     
     % Compute the path length and split tinterval.
-    minsubs = 10;   % Minimum number subintervals to start.
-    absdx = abs(b-a);
-    pathlen = absdx;
-    if pathlen > 0
-        udelta = minsubs/pathlen;
-        nnew = ceil(absdx*udelta) - 1;
-        idxnew = find(nnew > 0);
-        nnew = nnew(idxnew);
-        for j = numel(idxnew):-1:1
-            k = idxnew(j);
-            nnj = nnew(j);
-            % Calculate new points.
-            newpts = tinterval(k) + (1:nnj)./(nnj+1)*(tinterval(k+1)-tinterval(k));
-            % Insert the new points.
-            tinterval = [tinterval(1:k),newpts,tinterval(k+1:end)];
-        end
+    minsubs = 10;   % number of subintervals
+    pathlen = abs(b-a);
+    if pathlen == 0
+        error('The integration interval has to be greater than zero.')
     end
+    nnew = ceil(pathlen*minsubs/pathlen) - 1;
+    idxnew = find(nnew > 0);
+    nnew = nnew(idxnew);
+    for j = numel(idxnew):-1:1
+        k = idxnew(j);
+        nnj = nnew(j);
+        newpts = tinterval(k) + (1:nnj)./(nnj+1)*(tinterval(k+1)-tinterval(k));
+        tinterval = [tinterval(1:k),newpts,tinterval(k+1:end)];
+    end
+    
     % Remove useless subintervals.
     tinterval(abs(diff(tinterval))==0) = [];
     
@@ -67,50 +89,38 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, varargin)
         % points and the second row, the corresponding right endpoints.
         midpt = sum(subs)/2;   % midpoints of the subintervals
         halfh = diff(subs)/2;  % half the lengths of the subintervals            
-        x = bsxfun(@plus,NODES*halfh,midpt);
+        x = bsxfun(@plus,nodes*halfh,midpt);
         x = reshape(x,1,[]);   % function f expects a row vector
         fx = fun(x);
         fx1 = fx.*x;
         fx2 = fx.*x.^2;
         
-        fx = reshape(fx,numel(WT),[]);
-        fx1 = reshape(fx1,numel(WT),[]);
-        fx2 = reshape(fx2,numel(WT),[]);
+        fx = reshape(fx,numel(wt),[]);
+        fx1 = reshape(fx1,numel(wt),[]);
+        fx2 = reshape(fx2,numel(wt),[]);
+        
         % Quantities for subintervals.
-        qsubs = (WT*fx) .* halfh;
-        errsubs = (EWT*fx) .* halfh;
-        qsubs1 = (WT*fx1) .* halfh;
-        qsubs2 = (WT*fx2) .* halfh;
+        qsubs = (wt*fx) .* halfh;
+        errsubs = (ewt*fx) .* halfh;
+        qsubs1 = (wt*fx1) .* halfh;
+        qsubs2 = (wt*fx2) .* halfh;
+
         % Calculate current values of q and tol.
         q = sum(qsubs) + q_ok;
         q1 = sum(qsubs1) + q1_ok;
         q2 = sum(qsubs2) + q2_ok;
-        tol = max(ATOL,RTOL*abs(q));
+        tol = max(atol,rtol*abs(q));
+        
         % Locate subintervals where the approximate integrals are
         % sufficiently accurate and use them to update the partial
         % error sum.
         ndx = find(abs(errsubs) <= (2*tol/pathlen)*halfh);
         err_ok = err_ok + sum(errsubs(ndx));
+        
         % Remove errsubs entries for subintervals with accurate
         % approximations.
         errsubs(ndx) = [];
-        % The approximate error bound is constructed by adding the
-        % approximate error bounds for the subintervals with accurate
-        % approximations to the 1-norm of the approximate error bounds
-        % for the remaining subintervals.  This guards against
-        % excessive cancellation of the errors of the remaining
-        % subintervals.
-        errbnd = abs(err_ok) + norm(errsubs,1);
-        % Check for nonfinites.
-        if ~(isfinite(q) && isfinite(errbnd))
-            warning('MATLAB:quadgk:NonFiniteValue', ...
-                    'Infinite or Not-a-Number value encountered.');
-            break
-        end
-        % Test for convergence.
-        if errbnd <= tol
-            break
-        end         
+        
         % Remove subintervals with accurate approximations.
         subs(:,ndx) = [];
         if isempty(subs)
@@ -123,9 +133,8 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, varargin)
         % Split the remaining subintervals in half. Quit if splitting
         % results in too many subintervals.
         nsubs = 2*size(subs,2);
-        if nsubs > MAXINTERVALCOUNT
-            warning('quadgk2:MaxIntervalCountReached', ...
-                    ['Reached the limit on the maximum number of intervals in use.']);
+        if nsubs > maxint
+            warning('quad_moments: Reached the limit on the maximum number of intervals in use.');
             break
         end
         midpt(ndx) = []; % Remove unneeded midpoints.
