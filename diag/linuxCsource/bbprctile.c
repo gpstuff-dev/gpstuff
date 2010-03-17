@@ -10,7 +10,7 @@
  *
  * Copyright (C) 1998-2003 Aki Vehtari
  *
- * Last modified: 2006-01-19 16:09:01 EET
+ * Last modified: 2009-08-24 14:41:46 EEST
  *
  */
 
@@ -49,7 +49,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
     if (dims[0]>1 && dims[1]>1)
       mexErrMsgTxt("P must be a vector.");
     plen = dims[0]*dims[1];
-    mexCallMATLAB(1,&P,1,&prhs[1],"sort");
+    mexCallMATLAB(1, &P, 1, &prhs[1], "sort");
     p = mxGetPr(P);
     for (j = 0; j < plen; j++) {
       p[j]=p[j]/100;
