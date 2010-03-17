@@ -488,8 +488,6 @@ function gpcf = gpcf_prod(do, varargin)
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_prod';
-            reccf.nin = ri.nin;
-            reccf.nout = 1;
 
             % Initialize parameters
             ncf = length(ri.functions);

@@ -79,8 +79,8 @@ function gpcf = gpcf_noise(do, varargin)
         gpcf.sampling_opt = hmc2_opt;
         gpcf.fh_recappend = @gpcf_noise_recappend;
         
-        if length(nargin) > 1
-            if mod(vargin,2) ~=0
+        if nargin > 1
+            if mod(length(varargin),2) ~=0
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
@@ -136,11 +136,11 @@ function gpcf = gpcf_noise(do, varargin)
     %	GPCF_NOISE_UNPAK
     %
 
-    
-        if ~isempty(gpcf.noiseSigma2)
+        w = [];    
+        if ~isempty(gpcf.p.noiseSigma2)
             w(1) = log(gpcf.noiseSigma2);
             
-            % Hyperparameters of magnSigma2
+            % Hyperparameters of noiseSigma2
             w = [w feval(gpcf.p.noiseSigma2.fh_pak, gpcf.p.noiseSigma2)];
         end    
 

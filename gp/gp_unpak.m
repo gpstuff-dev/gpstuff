@@ -44,7 +44,6 @@ if nargin < 3
     param = 'covariance+inducing+likelihood';
 end
 
-
 % Unpack the hyperparameters of covariance functions
 if ~isempty(strfind(param, 'covariance'))
     ncf = length(gp.cf);
@@ -83,12 +82,4 @@ if ~isempty(strfind(param, 'likelihood'))
         gp.likelih = lik;
     end
 end
-
-
-
-
-
-% Function for unpacking the hyperparameters
-function gp = unpak_hyper(w, gp)
-    
 

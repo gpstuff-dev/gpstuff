@@ -657,17 +657,15 @@ function gpcf = gpcf_ppcs3(do, varargin)
         end
     end
     
-    function [gprior,DKff]  = gpcf_ppcs3_ginput(gpcf, x, x2)
+    function DKff  = gpcf_ppcs3_ginput(gpcf, x, x2)
     %GPCF_PPCS3_GINPUT     Evaluate gradient of covariance function with 
     %                   respect to the inducing inputs.
     %
     %	Descriptioni
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_PPCS3_GINPUT(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
+    %	DK = GPCF_PPCS3_GINPUT(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
     %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
     %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %      DK    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
     %
     %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
     %   between u and f). See Vanhatalo and Vehtari (2007) for details.
@@ -675,8 +673,225 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %	See also
     %   GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_E, GP_G
         
-        DKuu={};
-        DKff={};
+        
+        [n, m] =size(x);
+        
+        ii1=0;
+        DKff = {};
+        
+        % evaluate the gradient for training covariance
+        if nargin == 2
+            K = gpcf_ppcs3_trcov(gpcf, x);
+            
+            l = gpcf.l;
+            [I,J] = find(K);
+            
+            if isfield(gpcf,'metric')
+                % Compute the sparse distance matrix and its gradient.
+                ntriplets = (nnz(Cdm)-n)./2;
+                I = zeros(ntriplets,1);
+                J = zeros(ntriplets,1);
+                dist = zeros(ntriplets,1);
+                for jj = 1:length(gpcf.metric.components)
+                    gdist{jj} = zeros(ntriplets,1);
+                end
+                ntriplets = 0;                
+                for ii=1:n-1
+                    col_ind = ii + find(Cdm(ii+1:n,ii));
+                    d = zeros(length(col_ind),1);
+                    d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii,:));
+                    
+                    [gd, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x(col_ind,:), x(ii,:));
+
+                    ntrip_prev = ntriplets;
+                    ntriplets = ntriplets + length(d);
+                    
+                    ind_tr = ntrip_prev+1:ntriplets;
+                    I(ind_tr) = col_ind;
+                    J(ind_tr) = ii;
+                    dist(ind_tr) = d;
+                    for jj = 1:length(gd)
+                        gdist{jj}(ind_tr) = gd{jj};
+                    end
+                end
+                
+                ma2 = gpcf.magnSigma2;
+                    
+                cs = 1-dist;
+                
+                const1 = l^3 + 9*l^2 + 23*l + 15;
+                const2 = 6*l^2 + 36*l + 45;
+                const3 = 15*l + 45;
+                                      
+                Dd = -(l+3).*cs.^(l+2).*(const1.*d.^3 + const2.*d.^2 + const3.*d + 15)/15;
+                Dd = Dd + cs.^(l+3).*(3.*const1.*d.^2 + 2.*const2.*d + const3)./15;
+                Dd = ma2.*Dd;
+                
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+                    D = Dd.*gdist{i};
+                    D = sparse(I,J,D,n,n);
+                    DKff{ii1} = D + D';
+                end
+                
+            else
+                if length(gpcf.lengthScale) == 1
+                    s2 = repmat(1./gpcf.lengthScale.^2, 1, m);
+                else
+                    s2 = 1./gpcf.lengthScale.^2;
+                end
+                ma2 = gpcf.magnSigma2;
+                        
+                % Calculate the sparse distance (lower triangle) matrix
+                % and the distance matrix for each component
+                d2 = 0;
+                for i = 1:m
+                    d2 = d2 + s2(i).*(x(I,i) - x(J,i)).^2;
+                end
+                d = sqrt(d2);
+                
+                % Create the 'compact support' matrix, that is, (1-R)_+,
+                % where ()_+ truncates all non-positive inputs to zero.
+                cs = 1-d;
+                
+                const1 = l^3 + 9*l^2 + 23*l + 15;
+                const2 = 6*l^2 + 36*l + 45;
+                const3 = 15*l + 45;
+                                      
+                Dd = -(l+3).*cs.^(l+2).*(const1.*d.^3 + const2.*d.^2 + const3.*d + 15)/15;
+                Dd = Dd + cs.^(l+3).*(3.*const1.*d.^2 + 2.*const2.*d + const3)./15;
+                Dd = ma2.*Dd;
+                
+                Dd = sparse(I,J,Dd,n,n);
+                d = sparse(I,J,d,n,n);
+                
+                row = ones(n,1);
+                cols = 1:n;
+                for i = 1:m
+                    for j = 1:n
+                        % Calculate the gradient matrix
+                        ind = find(d(:,j));
+                        apu = full(Dd(:,j)).*s2(i).*(x(j,i)-x(:,i));
+                        apu(ind) = apu(ind)./d(ind,j);
+                        D = sparse(row*j, cols, apu, n, n);
+                        D = D+D';
+                                               
+                        ii1 = ii1+1;
+                        DKff{ii1} = D;
+                    end
+                end
+            end
+            % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
+        elseif nargin == 3
+            if size(x,2) ~= size(x2,2)
+                error('gpcf_ppcs -> _ghyper: The number of columns in x and x2 has to be the same. ')
+            end
+            
+            ii1=0;
+            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            n2 = size(x2,1);
+            l = gpcf.l;
+            
+            if isfield(gpcf,'metric')
+                % If other than scaled euclidean metric
+                [n1,m1]=size(x);
+                [n2,m2]=size(x2);
+                
+                ma = gpcf.magnSigma2;
+                
+                % Compute the sparse distance matrix.
+                ntriplets = nnz(K);
+                I = zeros(ntriplets,1);
+                J = zeros(ntriplets,1);
+                R = zeros(ntriplets,1);
+                dist = zeros(ntriplets,1);
+                for jj = 1:length(gpcf.metric.components)
+                    gdist{jj} = zeros(ntriplets,1);
+                end
+                ntriplets = 0;
+                for ii=1:n2
+                    d = zeros(n1,1);
+                    d = feval(gpcf.metric.distance, gpcf.metric, x, x2(ii,:));
+                    [gd, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x, x2(ii,:));
+                    
+                    I0t = find(d==0);
+                    d(d >= 1) = 0;
+                    [I2,J2,R2] = find(d);
+                    len = length(R);
+                    ntrip_prev = ntriplets;
+                    ntriplets = ntriplets + length(R2);
+
+                    ind_tr = ntrip_prev+1:ntriplets;
+                    I(ind_tr) = I2;
+                    J(ind_tr) = ii;
+                    dist(ind_tr) = R2;
+                    for jj = 1:length(gd)
+                        gdist{jj}(ind_tr) = gd{jj}(I2);
+                    end
+                end
+
+                
+                ma2 = gpcf.magnSigma2;
+                    
+                cs = 1-dist;
+                    
+                const1 = l^3 + 9*l^2 + 23*l + 15;
+                const2 = 6*l^2 + 36*l + 45;
+                const3 = 15*l + 45;
+                                      
+                Dd = -(l+3).*cs.^(l+2).*(const1.*d.^3 + const2.*d.^2 + const3.*d + 15)/15;
+                Dd = Dd + cs.^(l+3).*(3.*const1.*d.^2 + 2.*const2.*d + const3)./15;
+                Dd = ma2.*Dd;
+                
+                for i=1:length(gdist)
+                    ii1 = ii1+1;
+                    D = Dd.*gdist{i};
+                    D = sparse(I,J,D,n1,n2);
+                    DKff{ii1} = D;
+                end
+
+            else
+                if length(gpcf.lengthScale) == 1
+                    % In the case of an isotropic SEXP
+                    s2 = repmat(1./gpcf.lengthScale.^2, 1, m);
+                else
+                    s2 = 1./gpcf.lengthScale.^2;
+                end
+                ma2 = gpcf.magnSigma2;
+                        
+                % Calculate the sparse distance (lower triangle) matrix
+                % and the distance matrix for each component
+                d2 = 0; 
+                for i = 1:m
+                    d2 = d2 + s2(i).*gminus(x(:,i),x2(:,i)').^2;
+                end
+                d = sqrt(d2); 
+                cs = max(1-d,0);
+
+                const1 = l^3 + 9*l^2 + 23*l + 15;
+                const2 = 6*l^2 + 36*l + 45;
+                const3 = 15*l + 45;
+                                      
+                Dd = -(l+3).*cs.^(l+2).*(const1.*d.^3 + const2.*d.^2 + const3.*d + 15)/15;
+                Dd = Dd + cs.^(l+3).*(3.*const1.*d.^2 + 2.*const2.*d + const3)./15;
+                Dd = ma2.*Dd;
+
+                row = ones(n2,1);
+                cols = 1:n2;
+                for i = 1:m
+                    for j = 1:n
+                        % Calculate the gradient matrix
+                        ind = find(d(j,:));
+                        apu = Dd(j,:).*s2(i).*(x(j,i)-x2(:,i))';
+                        apu(ind) = apu(ind)./d(j,ind);
+                        D = sparse(row*j, cols, apu, n, n2);
+                                               
+                        ii1 = ii1+1;
+                        DKff{ii1} = D;
+                    end
+                end
+            end
+        end
     end
     
     

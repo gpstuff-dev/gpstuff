@@ -26,8 +26,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 %       GPEP_G, EP_PRED, GP_E
 %
 
-% Copyright (c) 2007      Jarno Vanhatalo, Jaakko Riihim�ki
-% Copyright (c) 2008      Jarno Vanhatalo
+% Copyright (c) 2007           Jarno Vanhatalo, Jaakko Riihim�ki
+% Copyright (c) 2008-2010      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -296,6 +296,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
                             
                             % update site parameters
+                            tautilde_old = tautilde(i1);
                             deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
                             tautilde(i1)=tautilde(i1)+deltatautilde;
                             nutilde_old = nutilde(i1);
@@ -306,14 +307,13 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             sqrtS(i1,i1) = sqrt(tautilde(i1));
                             sqrtSKi1(i1) = sqrt(tautilde(i1)).*Ki1(i1);
                             D2_n = sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
-                            
-                            if tautilde(i1) - deltatautilde == 0
+                                                        
+                            if tautilde_old == 0
                                 VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
                                 VD = ldlrowupdate(i1,VD,D2_n,'+');
                             else
                                 VD = ldlrowmodify(VD, D2_n, i1);
-                            end
-                            
+                            end                                                        
                             gamma = gamma + Ki1.*deltanutilde;
                             
                             muvec_i(i1,1)=myy_i;

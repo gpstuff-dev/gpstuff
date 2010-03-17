@@ -511,8 +511,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         gp.cf = cf_orig;
         
         LD = ldlchol(La);
-% $$$         siLa = spinv(LD,1);
-        siLa = spinv(La);
+        siLa = spinv(LD,1);
+% $$$         siLa = spinv(La);
         idiagLa = diag(siLa);
         LL = sum(L.*L,2);
         

@@ -51,9 +51,9 @@ void mexFunction
     const mxArray *pargin [ ]
     )
 {
-  double *Lx, *Lx2, *cx, *cx2, d, db, alpha, alpha2, beta, beta2, gamma, gamma2, *w, *wu, *wd, *deltal12;
+  double *Lx, *Lx2, *cx, *cxf, d, db, alpha, alpha2, beta, beta2, gamma, gamma2, *w, *wu=NULL, *wd=NULL, *deltal12=NULL;
   mwSize nnz, n;
-  mwIndex p, i, j, k, cind, *Li, *Lp, *Li2, *Lp2, *ci, *cp, *krowind, *krowcol, lrowk;
+  mwIndex p, i, j, k, *Li, *Lp, *Li2, *Lp2, *ci, *cp, *krowind=NULL, *krowcol=NULL, lrowk;
  
   /* ---------------------------------------------------------------------- */
   /* check inputs */
@@ -64,7 +64,7 @@ void mexFunction
       mexErrMsgTxt ("Usage: L = ldlrowmodify (L, c2, k)") ; 
     }
   
-  n = mxGetN (pargin [0]) ;
+  n = (mwSize) mxGetN (pargin [0]) ;
 
 
 
@@ -92,11 +92,11 @@ void mexFunction
   Lx2 = mxGetPr(pargin[0]);
 
   /* ---------------------------------------------------------------------- */
-  /* get c and c2: sparse matrices of incoming/outgoing columns */
+  /* get c: sparse matrix of incoming column */
   /* ---------------------------------------------------------------------- */
   cp = mxGetJc(pargin[1]);
   ci = mxGetIr(pargin[1]);
-  cx2 = mxGetPr(pargin[1]);
+  cx = mxGetPr(pargin[1]);
 
   /* ---------------------------------------------------------------------- */
   /* Create the output: the modified sparse LDL factorization */
@@ -131,7 +131,17 @@ void mexFunction
   }
   Lp[n] = Lp2[n];
 
-
+  /* ---------------------------------------------------------------------- */
+  /* Copy the sparse incoming column into full vector */
+  /* ---------------------------------------------------------------------- */
+  cxf = mxCalloc((mwSize)n, sizeof(double));
+  /*  printf("cp[0]=%d cp[1]=%d \n", cp[0], cp[1]); */
+  
+  for (j = cp[0] ;  j < cp[1] ; j++) {
+    cxf[ci[j]] = cx[j];
+  }
+  /*  printf("cxf[%d] = %.2e \n\n", k, cxf[k]); */
+      
   /* ---------------------------------------------------------------------- */
   /* Solve the l_12 vector and the D22 element */
   /* ---------------------------------------------------------------------- */
@@ -139,7 +149,7 @@ void mexFunction
     deltal12 = mxCalloc((mwSize)k, sizeof(double));
     for (p = cp[0] ; p < cp[1] ; p++){
       if (ci[p] >=k ) break;
-      deltal12[ci[p]] = cx2[p];   /* deltal12 is a full vector */
+      deltal12[ci[p]] = cx[p];   /* deltal12 is a full vector */
     }
 
     /* Solve L11*D11*deltal12 = deltac12 */
@@ -158,14 +168,7 @@ void mexFunction
 
     /* Evaluate the D22 element*/
     d = Lx[Lp[k]];
-    for ( i=0; i < cp[1] ; i++){
-      if (ci[i] == k) {
-	cind = i;
-	break;
-      }
-    }
-    if (i >= cp[1]) mexErrMsgTxt ("The vector c must contain k'th element!");
-    db = cx2[cind];
+    db = cxf[k];
 
     for (j = 0; j < lrowk ; j++)  {
       deltal12[krowcol[j]] = deltal12[krowcol[j]] * Lx2[Lp2[krowcol[j]]];
@@ -176,8 +179,7 @@ void mexFunction
   else {
     /* Since k==0 we have to evaluate only the D22 element*/
     d = Lx[Lp[k]];
-    cind = 0;
-    db = cx2[cind];
+    db = cxf[k];
     Lx[Lp[k]] = db;
   }
 
@@ -185,7 +187,7 @@ void mexFunction
   /* ---------------------------------------------------------------------- */
   /* Solve the l_32 vector and LDL_33*/
   /* ---------------------------------------------------------------------- */
-
+  
   if (k < n-1){
     /* Update the l_32 part */
     if (k>0) {
@@ -197,28 +199,15 @@ void mexFunction
 	  if (Li[p] > k)  w[Li[p]] += Lx2[p] * deltal12[j];
 	}
       }
-      /* evaluate l32 = (deltac_32 + l_22*d_22 - w) / db_22 */
-      cind += 1;
-      for ( p = Lp[k]+1 ; p < Lp[k+1] ; p++) {	
-	if (Li[p] == ci[cind]) {
-	  Lx[p] = (cx2[cind] - w[Li[p]] ) / db;
-	  cind++;
-	} else {
-	  Lx[p] = ( - w[Li[p]] ) / db;
-	}
+      /* evaluate l32 = (deltac_32 - w) / db_22 */
+      for ( p = Lp[k]+1 ; p < Lp[k+1] ; p++) {
+	Lx[p] = (cxf[Li[p]] - w[Li[p]] ) / db;
       }
       /* Free memory */
       mxFree(w);
     } else {
-      cind = cp[k]+1;
-      for ( p = Lp[k]+1 ; p < Lp[k+1] ; p++) {	
-	if (Li[p] == ci[cind]) {
-	  Lx[p] = (cx2[cind]) / db;
-	  cind++;
-	} else {
-	  Lx[p] = 0;
-	  printf("täällä\n");
-	}
+      for ( p = Lp[k]+1 ; p < Lp[k+1] ; p++) {
+	Lx[p] = (cxf[Li[p]]) / db;
       }
     }
 
@@ -251,9 +240,9 @@ void mexFunction
 	  
 	  wd[Li[p]] -= wd[i] * Lx[p];
 	  Lx[p] -= gamma2 * wd[Li[p]];	  
-	}	
-      }	
-    }    
+	}
+      }
+    }
   }
 
   /* Free the memory */
@@ -266,4 +255,6 @@ void mexFunction
     mxFree(wu);
     mxFree(wd);
   }
+  mxFree(cxf);
+  
 }

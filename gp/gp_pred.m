@@ -100,8 +100,13 @@ switch gp.type
         end
     end
     if nargout > 2
-        Ey = Ef;
-        Vary = Cv - diag(v'*v);
+        if issparse(C)
+            Ey = Ef;
+            Vary = Cv - diag(K'*ldlsolve(LD,K));
+        else
+            Ey = Ef;
+            Vary = Cv - diag(v'*v);
+        end
     end
     if nargout > 4
         py = norm_pdf(y, Ey, sqrt(Vary));
