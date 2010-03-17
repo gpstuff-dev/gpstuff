@@ -16,5 +16,3 @@
 %    SLS1MM        - 1-dimensional fast minmax Slice Sampling
 %    SLS1MM_OPT    - Default options for SLS1MM_OPT
 %    SOFTMAX2      - Softmax transfer function
-
-
