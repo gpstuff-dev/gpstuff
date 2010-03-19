@@ -1,5 +1,24 @@
 function y = wprctile(x, p, w)
-% wprctile - 
+% WPRCTILE Percentiles of a weighted sample.
+%    Y = PRCTILE(X, P, W) returns percentiles of the values in X. P
+%    is a scalar or a vector of percent values. W is a vector of
+%    unnormalized weights for samples. Length of W has to be same
+%    as length of X. X need to be a a vector. Y is the same size as
+%    P, and Y(i) contains the P(i)-th percentile.
+%
+%    Example
+%       y = prctile(x,50,w); % the median of x given sample weights w
+%
+%    See also wmean, prctile
+
+% BUGS: Accepts only vector valued X
+
+% Copyright (c) 2000-2010 Aki Vehtari
+
+% This software is distributed under the GNU General Public
+% License (version 2 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 x=sort(x);
 p=p./100;
 y=p;
