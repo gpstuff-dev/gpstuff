@@ -1,7 +1,7 @@
 function  [blocks, Xu, tstblocks] = set_PIC(x, dims, blocksize, indtype, visualize, xtest)
 % SET_PIC     Set the inducing inputs and blocks for two dimensional input data
 %
-%  [blocks, Xu] = set_PIC(x, dims, cellsize, blocksize, indtype, visualize)
+%  [blocks, Xu] = set_PIC(x, dims, blocksize, indtype, visualize)
 %     x = input matrix, where each row is length two co-ordinate vector, 
 %     dims = dimensions of the area that needs to be covered with inducing inputs 
 %           and block. The format is, e.g., dims = [1    60     1    35];
