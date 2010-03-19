@@ -28,167 +28,48 @@
 %    function and th its parameters, hyperparameters.  We place a hyperprior for
 %    hyperparameters, p(th).
 %
-%    The inference is conducted via MCMC. We sample from the full posterior 
+%    Since the data set used in this demo is rather large we use FIC sparse
+%    approximation for the GP prior.
+%
+%    The inference is conducted first with Laplace approximation, then with grid 
+%    integration and for last via MCMC. We sample from the full posterior 
 %    p(f, th| data) by alternating the sampling from the conditional posteriors
 %    p(f | th, data) and p(th | f, data). The sampling from the conditional 
 %    posteriors is done by hybrid Monte Carlo (see, for example, Neal, 1996).
 %
-%    See Vanhatalo and Vehtari (2007) for more detailed discussion.
+%    See Vanhatalo and Vehtari (2007) and Vanhatalo et.al. (2010) for more detailed 
+%    discussion.
+%
+%    This demo is organised in three parts:
+%     1) data analysis with Laplace approximation
+%     2) data analysis with integrated Laplace approximation
+%     3) data analysis with MCMC
 %
 %    See also  DEMO_REGRESSION1, DEMO_CLASSIFIC1
+%
+%
+%   Refernces:
+%    Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). Approximate inference 
+%    for disease mapping with sparse Gaussian processes.  Statistics in Medicine.  
+%
+%    Jarno Vanhatalo and Aki Vehtari (2007). Sparse Log Gaussian Processes via 
+%    MCMC for Spatial Epidemiology. JMLR Workshop and Conference Proceedings, 
+%    1:73-89. (Gaussian Processes in Practice) 
 
-% Copyright (c) 2008 Jarno Vanhatalo
+% Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 
-% This file is organised in three parts:
-%  1) data analysis with full GP model
-%  2) data analysis with FIC approximation
-%  3) data analysis with PIC approximation
-
-
 % =====================================
-% 1) FULL model
-% =====================================
-
-S = which('demo_spatial1');
-L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
-load(L)
-
-% Now we have loaded the following parameters
-% xx = co-ordinates 
-% yy = number of deaths
-% ye = the expexted number of deaths
-
-% reduce the data in order to make the demo faster
-ind = find(xx(:,2)<25);
-xx = xx(ind,:);
-yy = yy(ind,:);
-ye = ye(ind,:);
-
-
-[n,nin] = size(xx);
-
-% Create the covariance function
-% The hyper-parameters are initialized very close to posterior mode in order to 
-% speed up convergence
-gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.03);
-pl = prior_t('init');
-pm = prior_t('init', 'scale', 0.3);
-gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-
-% Create the likelihood structure
-likelih = likelih_poisson('init', yy, ye);
-
-% Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, []);   %{gpcf2}
-
-% Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
-
-% Set the sampling options
-opt=gp_mcopt;
-opt.nsamples=1;
-opt.repeat=1;
-
-% HMC-hyper
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.01;
-opt.hmc_opt.nsamples=1;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.8;
-    
-% HMC-latent
-opt.latent_opt.nsamples=1;
-opt.latent_opt.nomit=0;
-opt.latent_opt.persistence=0;
-opt.latent_opt.repeat=20;
-opt.latent_opt.steps=20;
-opt.latent_opt.stepadj=0.15;
-opt.latent_opt.window=5;
-
-% Here we make an initialization with 
-% slow sampling parameters
-opt.display = 1;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
-
-% Now we reset the sampling parameters to 
-% achieve faster sampling
-opt.latent_opt.repeat=1;
-opt.latent_opt.steps=7;
-opt.latent_opt.window=1;
-opt.latent_opt.stepadj=0.15;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.stepadj=0.005;
-opt.hmc_opt.steps=2;
-
-opt.display = 1;
-opt.hmc_opt.display = 0;
-opt.latent_opt.display=0;
-
-% Define help parameters for plotting
-xxii=sub2ind([60 35],xx(:,2),xx(:,1));
-[X1,X2]=meshgrid(1:35,1:60);
-
-% Conduct the actual sampling.
-% Inside the loop we sample one sample from the latent values and 
-% hyper-parameters at each iteration. After that we plot the samples 
-% so that we can visually inspect the progress of sampling
-while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
-    fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-    figure(1)
-    clf
-    subplot(1,2,1)
-    plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
-    hold on
-    plot(rgp.cf{1}.lengthScale(end), rgp.cf{1}.magnSigma2(end),'r*')
-    xlabel('lenght-scale')
-    ylabel('magnitude')
-    drawnow
-    %    subplot(2,2,[2 4])
-    subplot(1,2,2)
-    G=repmat(NaN,size(X1));
-    G(xxii)=exp(gp.latentValues);
-    pcolor(X1,X2,G),shading flat
-    colormap(mapcolor(G)),colorbar
-    axis equal
-    axis([0 35 0 60])
-    title('relative risk')
-    drawnow
-end
-
-figure(1)
-clf
-G=repmat(NaN,size(X1));
-G(xxii)=median(exp(rgp.latentValues));
-pcolor(X1,X2,G),shading flat
-colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.6    1.5])
-axis equal
-axis([0 35 0 60])
-title('Posterior median of relative risk, full GP')
-
-figure(2)
-G=repmat(NaN,size(X1));
-G(xxii)=std(exp(rgp.latentValues), [], 1).^2;
-pcolor(X1,X2,G),shading flat
-colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.005    0.03])
-axis equal
-axis([0 35 0 60])
-title('Posterior variance of relative risk, full GP')
-
-% =====================================
-% 2) FIC model
+% 1) Laplace approximation
 % =====================================
 
 % load the data
-S = which('demo_spatial1');
-L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
+S = which('demo_spatial2');
+L = strrep(S,'demo_spatial2.m','demos/spatial.mat');
 load(L)
 
 % Now we have loaded the following parameters
@@ -200,24 +81,83 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 3, 'corners', 0);
+[trindex, Xu] = set_PIC(xx, dims, 5, 'corners+1xside', 0);
 
 [n,nin] = size(xx);
 
 % Create the covariance functions
-% The hyper-parameters are initialized very close to posterior mode in order to 
-% speed up convergence
-gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.03);
+gpcf1 = gpcf_matern32('init', 'lengthScale', 5, 'magnSigma2', 0.05);
 pl = prior_t('init');
-pm = prior_t('init', 'scale', 0.3);
+pm = prior_t('init', 's2', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
+gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001);
+
+% --- MAP estimate with Laplace approximation ---
+
+% Set the approximate inference method to EP
+gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'covariance'});
+
+w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+fe=str2fun('gpla_e');     % create a function handle to negative log posterior
+fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
+
+% set the options for scg2
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+% do the optimization and set the optimized hyperparameter values back to the gp structure
+w=scg2(fe, w, opt, fg, gp, xx, yy, 'covariance');
+gp=gp_unpak(gp,w, 'covariance');
+
+% make prediction to the data points
+[Ef, Varf] = la_pred(gp, xx, yy, xx, 'covariance',[], [1:n]);
+
+% Define help parameters for plotting
+xxii=sub2ind([60 35],xx(:,2),xx(:,1));
+[X1,X2]=meshgrid(1:35,1:60);
+
+% Plot the figures
+% In the results it should be noticed that:
+% - there is much more people living in the south than in the north. 
+%   This results in rather high variance in the north
+% - The eastern Finland is known to be worse than western Finland in 
+%   heart diseases also from other studies.
+% - The inducing inputs are set slightly too sparsely for this data, 
+%   which results in oversmoothness in the maps
+figure
+G=repmat(NaN,size(X1));
+G(xxii)=exp(Ef);
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+%set(gca, 'Clim', [0.6    1.5])
+axis equal
+axis([0 35 0 60])
+title('Posterior median of the relative risk, FIC')
+
+figure
+G=repmat(NaN,size(X1));
+G(xxii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+%set(gca, 'Clim', [0.005    0.03])
+axis equal
+axis([0 35 0 60])
+title('Posterior variance of the relative risk, FIC')
+
+% the MAP estimate of the hyperparameters in kilometers. Notice that the 
+% co-ordinates in the data are not in kilometers. x=1 corresponds to 20km 
+% in real life
+S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+
+
+% --- MCMC ---
 
 % Set the approximate inference method to MCMC
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
@@ -316,266 +256,43 @@ axis([0 35 0 60])
 title('Posterior variance of relative risk, FIC GP')
 
 
-% =====================================
-% 3) PIC model
-% =====================================
 
-% load the data
-S = which('demo_spatial1');
-L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
-load(L)
 
-% Now we have loaded the following parameters
-% xx = co-ordinates 
-% yy = number of deaths
-% ye = the expexted number of deaths
 
-% Set the inducing inputs in a regular grid.
-% Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
-% data points, inducing inputs and blocks.
-dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 5, 'corners+1xside', 1);
-
-[n,nin] = size(xx);
-
-% Create the covariance functions
-gpcf1 = gpcf_matern32('init', 'lengthScale', 2, 'magnSigma2', 0.03);
-pl = prior_t('init');
-pm = prior_t('init', 'scale', 0.3);
-gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-
-% Create the likelihood structure
-likelih = likelih_poisson('init', yy, ye);
-
-% Create the PIC GP data structure
-gp = gp_init('init', 'PIC', likelih, {gpcf1}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
-gp = gp_init('set', gp, 'blocks', {'manual', xx, trindex});
-
-% Set the approximate inference method to MCMC
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
-
-% Set the sampling options
-opt=gp_mcopt;
-opt.nsamples=1;
-opt.repeat=1;
-
-% HMC-hyper
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.01;
-opt.hmc_opt.nsamples=1;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.8;
-    
-% HMC-latent
-opt.latent_opt.nsamples=1;
-opt.latent_opt.nomit=0;
-opt.latent_opt.persistence=0;
-opt.latent_opt.repeat=20;
-opt.latent_opt.steps=20;
-opt.latent_opt.stepadj=0.15;
-opt.latent_opt.window=5;
-
-% Here we make an initialization with 
-% slow sampling parameters
-opt.display = 0;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
-
-% Now we reset the sampling parameters to 
-% achieve faster sampling
-opt.latent_opt.repeat=1;
-opt.latent_opt.steps=7;
-opt.latent_opt.window=1;
-opt.latent_opt.stepadj=0.15;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.stepadj=0.01;
-opt.hmc_opt.steps=2;
-
-opt.display = 1;
-opt.hmc_opt.display = 0;
-opt.latent_opt.display=0;
-
-% Define help parameters for plotting
-xxii=sub2ind([60 35],xx(:,2),xx(:,1));
-[X1,X2]=meshgrid(1:35,1:60);
-
-% Conduct the actual sampling.
-% Inside the loop we sample one sample from the latent values and 
-% hyper-parameters at each iteration. After that we plot the samples 
-% so that we can visually inspect the progress of sampling
-while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
-    fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-    figure(6)
-    clf
-    subplot(1,2,1)
-    plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
-    xlabel('lenght-scale')
-    ylabel('magnitude')
-    hold on
-    plot(rgp.cf{1}.lengthScale(end), rgp.cf{1}.magnSigma2(end),'r*')
-    drawnow
-    %    subplot(2,2,[2 4])
-    subplot(1,2,2)
-    G=repmat(NaN,size(X1));
-    G(xxii)=exp(gp.latentValues);
-    pcolor(X1,X2,G),shading flat
-    colormap(mapcolor(G)),colorbar
-    axis equal
-    axis([0 35 0 60])
-    title('relative risk')
-    drawnow
-end
-
-figure(6)
-clf
+figure
+set(gcf,'units','centimeters');
+set(gcf,'DefaultAxesPosition',[0.0  0.02   0.85   0.96]);
+set(gcf,'DefaultAxesFontSize',8)   %6 8
+set(gcf,'DefaultTextFontSize',8)   %6 8
 G=repmat(NaN,size(X1));
-G(xxii)=median(exp(rgp.latentValues));
+G(xxii)=exp(Ef);
 pcolor(X1,X2,G),shading flat
-colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.6    1.5])
+colormap(mapcolor(G, [1 1])),colorbar
 axis equal
 axis([0 35 0 60])
-title('Posterior median of relative risk, PIC GP')
+set(gca,'YTick',[])
+set(gca,'XTick',[])
+set(gca,'XTicklabel',[])
+set(gca,'YTickLabel',[])
+set(gcf,'pos',[13.6    10   4  6.85])
+set(gcf,'paperunits',get(gcf,'units'))
+set(gcf,'paperpos',get(gcf,'pos'))
 
-figure(7)
+figure
+set(gcf,'units','centimeters');
+set(gcf,'DefaultAxesPosition',[0.0  0.02   0.85   0.96]);
+set(gcf,'DefaultAxesFontSize',8)   %6 8
+set(gcf,'DefaultTextFontSize',8)   %6 8
 G=repmat(NaN,size(X1));
-G(xxii)=std(exp(rgp.latentValues), [], 1).^2;
-pcolor(X1,X2,G),shading flat
-colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.005    0.03])
-axis equal
-axis([0 35 0 60])
-title('Posterior variance of relative risk, PIC GP')
-
-
-% =====================================
-% 4) CS+FIC model
-% =====================================
-
-% NOTE! The CS+FIC model forms a full nxn matrix. The latent 
-% value transformation is not yet implemented efficiently.
-
-% load the data
-S = which('demo_spatial1');
-L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
-load(L)
-
-% Now we have loaded the following parameters
-% xx = co-ordinates 
-% yy = number of deaths
-% ye = the expexted number of deaths
-
-% Set the inducing inputs in a regular grid.
-% Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
-% data points, inducing inputs and blocks.
-dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 3, 'corners', 1);
-
-[n,nin] = size(xx);
-
-% Create the covariance functions
-gpcf1 = gpcf_matern32('init', 'lengthScale', 4, 'magnSigma2', 0.05);
-pl = prior_t('init');
-pm = prior_t('init', 'scale', 0.3);
-gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-
-gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.03);
-gpcf2 = gpcf_ppcs2('set', gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-
-% Create the likelihood structure
-likelih = likelih_poisson('init', yy, ye);
-
-% Create the FIC GP data structure
-gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf2}, [], 'jitterSigma2', 0.01.^2, 'X_u', Xu);
-
-% Set the approximate inference method to MCMC
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
-
-% Set the sampling options
-opt=gp_mcopt;
-opt.nsamples=1;
-opt.repeat=1;
-
-% HMC-hyper
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.01;
-opt.hmc_opt.nsamples=1;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.8;
-    
-% HMC-latent
-opt.latent_opt.nsamples=1;
-opt.latent_opt.nomit=0;
-opt.latent_opt.persistence=0;
-opt.latent_opt.repeat=20;
-opt.latent_opt.steps=20;
-opt.latent_opt.stepadj=0.15;
-opt.latent_opt.window=5;
-
-% Here we make an initialization with 
-% slow sampling parameters
-opt.display = 0;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
-
-% Now we reset the sampling parameters to 
-% achieve faster sampling
-opt.latent_opt.repeat=1;
-opt.latent_opt.steps=7;
-opt.latent_opt.window=1;
-opt.latent_opt.stepadj=0.15;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.stepadj=0.01;
-opt.hmc_opt.steps=2;
-
-opt.display = 1;
-opt.hmc_opt.display = 0;
-opt.latent_opt.display=0;
-
-% Define help parameters for plotting
-xxii=sub2ind([60 35],xx(:,2),xx(:,1));
-[X1,X2]=meshgrid(1:35,1:60);
-
-% Conduct the actual sampling.
-% Inside the loop we sample one sample from the latent values and 
-% hyper-parameters at each iteration. After that we plot the samples 
-% so that we can visually inspect the progress of sampling
-while length(rgp.edata)<200 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
-    fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-    figure(7)
-    clf
-    subplot(2,2,1)
-    plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
-    xlabel('lenght-scale')
-    ylabel('magnitude')
-    hold on
-    plot(rgp.cf{1}.lengthScale(end), rgp.cf{1}.magnSigma2(end),'r*')
-    title('sexp')
-    drawnow
-    subplot(2,2,3)
-    plot(rgp.cf{1}.lengthScale, rgp.cf{2}.magnSigma2)
-    xlabel('lenght-scale')
-    ylabel('magnitude')
-    hold on
-    plot(rgp.cf{1}.lengthScale(end), rgp.cf{2}.magnSigma2(end),'r*')
-    title('ppcs2')
-    drawnow
-    subplot(2,2,[2 4])
-    G=repmat(NaN,size(X1));
-    G(xxii)=exp(gp.latentValues);
-    pcolor(X1,X2,G),shading flat
-    colormap(mapcolor(G)),colorbar
-    axis equal
-    axis([0 35 0 60])
-    title('relative risk')
-    drawnow
-end
-
-figure(8)
-G=repmat(NaN,size(X1));
-G(xxii)=median(exp(rgp.latentValues));
+G(xxii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
 axis equal
 axis([0 35 0 60])
-title('Posterior median of relative risk, FIC')
+set(gca,'YTick',[])
+set(gca,'XTick',[])
+set(gca,'XTicklabel',[])
+set(gca,'YTickLabel',[])
+%set(gcf,'pos',[13.6    10   4  6.85])
+set(gcf,'paperunits',get(gcf,'units'))
+set(gcf,'paperpos',get(gcf,'pos'))

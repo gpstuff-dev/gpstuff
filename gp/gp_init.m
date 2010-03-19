@@ -43,13 +43,9 @@ function gp = gp_init(do, varargin)
 %       The additional fields needed in sparse approximations are:
 %         X_u            = Inducing inputs in FIC, PIC and CS+FIC models
 %         blocks         = Initializes the blocks for the PIC model
-%                          The value for blocks has to be a cell array of type 
-%                          {'method', matrix of training inputs, param}. 
-%
-%                          The possible methods are:
-%                            'manual', which takes in the place of param a structure of the index vectors
-%                                appointing the data points into blocks. For example, if x is a matrix of data inputs
-%                                then x(param{i},:) are the inputs belonging to the ith block.
+%                          The value for blocks has to be a cell array of the index vectors
+%                          appointing the data points into blocks. For example, if x is a matrix 
+%                          of data inputs then x(param{i},:) are the inputs belonging to the ith block.
 %
 %       The additional fields when the model is not for regression (likelih ~='regr') is:
 %         latent_method  = Defines a method for marginalizing over latent values. Possible 
@@ -77,8 +73,6 @@ function gp = gp_init(do, varargin)
 %                            gp_init('SET', GP, 'latent_method', {'EP', x, y, 'param'});
 %                          where x is a matrix of inputs, y vector/matrix of outputs and 'param' a 
 %                          string defining wich parameters are sampled/optimized (see gp_pak).
-%
-%         
 %
 %	See also
 %	GPINIT, GP2PAK, GP2UNPAK
@@ -131,7 +125,6 @@ function gp = gp_init(do, varargin)
           case {'PIC' 'PIC_BLOCK'}
             gp.X_u = [];
             gp.nind = [];
-            gp.blocktype = [];
             gp.tr_index = {};            
         end
                 
@@ -158,10 +151,11 @@ function gp = gp_init(do, varargin)
                   case 'X_u'
                     gp.X_u = varargin{i+1};
                     gp.nind = size(varargin{i+1},1);
+                    gp.p.X_u = prior_unif('init');
                   case 'Xu_prior'
-                    gp.p.X_u = varargin{i+1};
+                    gp.p.X_u = varargin{i+1};                    
                   case 'blocks'
-                    init_blocks(varargin{i+1})
+                    gp.tr_index = varargin{i+1};
                   case 'truncated'
                     init_truncated(varargin{i+1})
                   case 'latent_method'
@@ -224,10 +218,11 @@ function gp = gp_init(do, varargin)
               case 'X_u'
                 gp.X_u = varargin{i+1};
                 gp.nind = size(varargin{i+1},1);
+                gp.p.X_u = prior_unif('init');
               case 'Xu_prior'
-                gp.p.X_u = varargin{i+1};
+                gp.p.X_u = varargin{i+1};                
               case 'blocks'
-                init_blocks(varargin{i+1})
+                gp.tr_index = varargin{i+1};
               case 'truncated'
                 init_truncated(varargin{i+1})
               case 'latent_method'
@@ -262,72 +257,5 @@ function gp = gp_init(do, varargin)
                 error('Wrong parameter name!')
             end    
         end
-    end
-
-
-    % Add new covariance function
-    if strcmp(do, 'add_cf')
-        gp = varargin{1};
-        for i = 2:length(varargin)
-            gp.cf{end+1} = varargin{i};
-        end
-    end
-
-
-    function init_blocks(var)
-        
-        if length(var) ~= 3
-            error('Wrong kind of value for the clustering type! See help gp_init!')
-        else
-            x = var{2};
-            switch var{1}
-              case 'manual'
-                gp.blocktype = 'manual';
-                gp.tr_index = var{3};
-              case 'farthest_point'
-                gp.blocktype = 'farthest_point';
-                gp.blockcent = var{3};
-              otherwise
-                error('Wrong value for the clustering type! See help gp_init!')
-            end
-        end
-    end
-    
-    function init_truncated(var)
-        if length(var) < 2
-            error('Wrong kind of value for the truncated type! See help gp_init!')
-        end
-
-        x= var{1};
-        R= var{2};
-        gp.truncated_R = R;
-        n = size(x,1);
-                        
-        C = sparse([],[],[],n,n,0);
-        for i1=2:n
-            i1n=(i1-1)*n;
-            for i2=1:i1-1
-                ii=i1+(i2-1)*n;
-                D = 0;
-                for i3=1:gp.nin
-                    D =D+(x(i1,i3)-x(i2,i3)).^2;       % the covariance function
-                end
-                if sqrt(D) < R
-                    C(ii)=1;
-                    C(i1n+i2)=C(ii); 
-                end
-            end
-        end
-        C= C + speye(n,n);
-        if length(var) == 3
-            if var{3} == 1
-                spy(C)
-                title('the sparsity structure of the covariance matrix')
-                fprintf('The density of the sparse correlation matrix is %f \n',nnz(C)/prod(size(C)))
-            end
-        end
-                
-        [I,J,s] = find(C);
-        gp.tr_index = [I(:) J(:)];
     end
 end

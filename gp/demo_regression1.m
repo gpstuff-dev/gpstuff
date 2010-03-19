@@ -32,38 +32,45 @@
 %         th
 %   
 %   If we want to find an approximation for the posterior of the hyperparameters, 
-%   we can sample them using Markov chain Monte Carlo (MCMC) methods.
+%   we can sample them using Markov chain Monte Carlo (MCMC) methods. We can 
+%   integrate over the hyperparameters also with other integration approximations 
+%   such as grid integration.
 %
 %   After finding MAP estimate or posterior samples of hyperparameters, we can 
 %   use them to make predictions for f_new:
 %
 %       p(f_new | y, th) = N(m, S),
 %
-%          m = K_no*(K + I*s^2)^(-1)*y
-%          S = K_new - K_no*(K + I*s^2)^(-1)*K_on
+%          m = K_nt*(K + I*s^2)^(-1)*y
+%          S = K_new - K_nt*(K + I*s^2)^(-1)*K_tn
 %   
-%      where K_new is the covariance matrix of new f, and K_no between new f 
+%      where K_new is the covariance matrix of new f, and K_nt between new f 
 %      and training f.
 %
 %   For more detailed discussion of Gaussian process regression see,
 %   for example, Rasmussen and Williams (2006) or Vanhatalo and Vehtari
 %   (2008)
 %
+%   The demo is organised in three parts:
+%     1) data analysis with MAP estimate for the hyperparameters
+%     2) data analysis with grid integration over the hyperparameters
+%     3) data analysis with MCMC integration over the hyperparameters
 %
 %   See also  DEMO_REGRESSION2
+%
+%   Refernces:
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
+%    Machine Learning. The MIT Press.
+%
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global phenomena with
+%    sparse Gaussian processes. Proceedings of the 24th Conference on Uncertainty in
+%    Artificial Intelligence,
 
-% Copyright (c) 2008 Jarno Vanhatalo
+% Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-
-% This file is organised in three parts:
-%  1) data analysis with full GP model
-%  2) data analysis with compact support (CS) GP model
-%  3) data analysis with FIC approximation
-%  4) data analysis with PIC approximation
 
 %========================================================
 % PART 1 data analysis with full GP model
@@ -122,7 +129,8 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 %
 % We will make the inference first by finding a maximum a posterior estimate 
 % for the hyperparameters via gradient based optimization. After this we will
-% perform an extensive Markov chain Monte Carlo sampling for the hyperparameters.
+% use grid integration and Markov chain Monte Carlo sampling to integrate over
+% the hyperparameters.
  
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---

@@ -146,12 +146,6 @@ x(:,end)=[];
 gpcf1 = gpcf_sexp('init', 'lengthScale', [0.6 0.8], 'magnSigma2', 0.2);
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 1);
 
-% Set the prior for the parameters of covariance functions 
-% $$$ gpcf1.p.lengthScale = gamma_p({3 7 3 7});
-% $$$ gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
-gpcf1.p.lengthScale = unif_p;
-gpcf1.p.magnSigma2 = unif_p;
-
 % Create the likelihood structure
 likelih = likelih_probit('init', y);
 
@@ -164,13 +158,10 @@ Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 gp_fic = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'jitterSigma2', 0, 'X_u', Xu);
 
 % Set the approximate inference method
-gp_fic = gp_init('set', gp_fic, 'latent_method', {'Laplace', x, y, 'hyper'});
+gp_fic = gp_init('set', gp_fic, 'latent_method', {'Laplace', x, y, 'covariance'});
 
-gp_fic.laplace_opt.optim_method = 'newton';
-%gp_fic.laplace_opt.optim_method = 'fminunc_large';
-
-w = gp_pak(gp_fic, 'hyper');
-gradcheck(w, @gpla_e, @gpla_g, gp_fic, x, y, 'hyper')
+w = gp_pak(gp_fic, 'covariance');
+gradcheck(w, @gpla_e, @gpla_g, gp_fic, x, y, 'covariance');
 
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');

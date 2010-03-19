@@ -1,4 +1,4 @@
-%DEMO_REGRESSION2    Regression problem demonstration for modeling multible phenomenon
+%DEMO_REGRESSION2    Regression problem demonstration for modeling multible phenomena
 %                    
 %
 %    Description
@@ -13,7 +13,7 @@
 %         y = f + g + e,    where e ~ N(0, s^2).
 %
 %    f and g are underlying latent functions, which we are interested in. 
-%    We place a zero mean Gaussian process prior them, which implies that
+%    We place a zero mean Gaussian process prior for them, which implies that
 %    at the observed input locations latent values have prior
 %
 %         f ~ N(0, Kf) and g ~ N(0,Kg)
@@ -32,35 +32,48 @@
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
-%   
-%   If we want to find an approximation for the posterior of the hyperparameters, 
-%   we can sample them using Markov chain Monte Carlo (MCMC) methods.
 %
 %   After finding MAP estimate or posterior samples of hyperparameters, we can 
-%   use them to make predictions for f:
+%   use them to make predictions for the latent functions. For example, the 
+%   posterior predictive distribution of f is:
 %
 %       p(f | y, th) = N(m, S),
-%       m = 
-%       S =
+%       m = Kf * (Kf + Kg + s^2I)^(-1) * y
+%       S = Kf - Kf * (Kf + Kg + s^2I)^(-1) * Kf
+%
+%       (We could integrate also over the hyperparameters with, for example, grid 
+%        integration or MCMC. This is not demonstrated here but it is done exactly 
+%        the similar way as in demo_regression1.)
 %   
-%   For more detailed discussion of Gaussian process regression see
+%   The demo is organised in four parts:
+%    1) data analysis with full GP model
+%    2) data analysis with FIC approximation
+%    3) data analysis with PIC approximation
+%    4) data analysis with CS+FIC model
+%
+%   For more detailed discussion of Gaussian process regression see Rasmussen and
+%   Williams (2006) and for a detailed discussion on sparse additive models see
 %   Vanhatalo and Vehtari (2008).
 %
+%   See also  DEMO_REGRESSION1, DEMO_SPARSEREGRESION
 %
-%   See also  DEMO_REGRESSION1
+%
+%   References:
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
+%    Machine Learning. The MIT Press.
+%
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global phenomena with
+%    sparse Gaussian processes. Proceedings of the 24th Conference on Uncertainty in
+%    Artificial Intelligence,
 
-% Copyright (c) 2008 Jarno Vanhatalo
+
+% Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-
-% This file is organised in three parts:
-%  1) data analysis with full GP model
-%  2) data analysis with FIC approximation
-%  3) data analysis with PIC approximation
-%  4) data analysis with CS+FIC model
 
 %========================================================
 % PART 1 data analysis with full GP model
@@ -74,7 +87,7 @@ y = data(:, 2:13);
 y=y';
 y=y(:);
 x = [1:1:length(y)]';
-x = x(y>0);
+x = x(y>0);             % Remove contaminated observations
 y = y(y>0);
 avgy = mean(y);
 y = y-avgy;
@@ -102,7 +115,7 @@ gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.
 % --- Conduct the inference ---
 %
 % --- MAP estimate -----------
-w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+w=gp_pak(gp);           % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -113,7 +126,7 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+w=scg2(fe, w, opt, fg, gp, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w, 'covariance');
@@ -154,14 +167,19 @@ title('The long and short term trend')
 % PART 2 data analysis with FIC approximation
 %========================================================
 
-% Here we conduct the same analysis as in part 1, but this time we 
-% use FIC approximation
+% Here we conduct the same analysis as in part 1, but this time 
+% using FIC approximation. Notice that both covariance components 
+% utilize the inducing inputs. This leads to problems since the 
+% number of inducing inputs is too small to capture the short term 
+% variation. In CS+FIC (later model) the compact support function 
+% does not utilize the inducing inputs and for this reason it is
+% able to capture also the fast variations.
 
 % Place inducing inputs evenly
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2, 'X_u', Xu)
+gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -172,20 +190,21 @@ gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
-param = 'hyper';          % optimize only hyperparameters
+% param = 'covariance+inducing'; % optimize hyperparameters and inducing inputs
+param = 'covariance';            % optimize only hyperparameters
 
-opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-4);
-opt=optimset(opt,'TolFun', 1e-4);
-opt=optimset(opt,'LargeScale', 'off');
-opt=optimset(opt,'Display', 'iter');
-param = 'hyper'
+w=gp_pak(gp_fic, param);    % pack the hyperparameters into one vector
+fe=str2fun('gp_e');     % create a function handle to negative log posterior
+fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
-% Learn the hyperparameters
-w0 = gp_pak(gp_fic, param);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp_fic, x, y, param), gp_g(ww, gp_fic, x, y, param)), w0, opt);
+% set the options for scg2
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+% do the optimization
+w=scg2(fe, w, opt, fg, gp_fic, x, y, param);
 gp_fic = gp_unpak(gp_fic,w,param);
 
 % Make the prediction
@@ -197,9 +216,9 @@ figure(2)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x,Ey_fic,'k', 'LineWidth', 2)
-plot(x,Ey_fic-2.*sqrt(Varf_fic),'g--', 'LineWidth', 2)
+plot(x,Ey_fic-2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ey_fic+2.*sqrt(Varf_fic),'g--', 'LineWidth', 2)
+plot(x,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 axis tight
 caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigma2);
 title(caption2)
@@ -217,8 +236,8 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2, 'X_u', Xu)
-gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
+gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
+gp_pic = gp_init('set', gp_pic, 'blocks', trindex);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -229,37 +248,41 @@ gp_pic = gp_init('set', gp_pic, 'blocks', {'manual', x, trindex});
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
-param = 'hyper';          % optimize only hyperparameters
+% param = 'covariance+inducing'; % optimize hyperparameters and inducing inputs
+param = 'covariance';          % optimize only hyperparameters
 
-opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-4);
-opt=optimset(opt,'TolFun', 1e-4);
-opt=optimset(opt,'LargeScale', 'off');
-opt=optimset(opt,'Display', 'iter');
-param = 'hyper'
+w=gp_pak(gp_pic, param);    % pack the hyperparameters into one vector
+fe=str2fun('gp_e');         % create a function handle to negative log posterior
+fg=str2fun('gp_g');         % create a function handle to gradient of negative log posterior
 
-% Learn the hyperparameters
-w0 = gp_pak(gp_pic, param);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp_pic, x, y, param), gp_g(ww, gp_pic, x, y, param)), w0, opt);
+% set the options for scg2
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+% do the optimization
+w=scg2(fe, w, opt, fg, gp_pic, x, y, param);
 gp_pic = gp_unpak(gp_pic,w,param);
 
 % Make the prediction
-[Ef_pic, Varf_pic] = gp_pred(gp_pic, x, y, x, trindex);
-Varf_pic = Varf_pic + gp_fic.noise{1}.noiseSigmas2;
+[Ef_pic, Varf_pic, Ey_pic, Vary_pic] = gp_pred(gp_pic, x, y, x, [], trindex);
 
-% Plot the solution of FIC
+
+% Plot the solution of PIC
 figure(3)
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x,Ef_pic,'k', 'LineWidth', 2)
-plot(x,Ef_pic-2.*sqrt(Varf_pic),'g--', 'LineWidth', 2)
+plot(x,Ef_pic-2.*sqrt(Vary_pic),'g--', 'LineWidth', 2)
 plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ef_pic+2.*sqrt(Varf_pic),'g--', 'LineWidth', 2)
+plot(x,Ef_pic+2.*sqrt(Vary_pic),'g--', 'LineWidth', 2)
+for i = 1:length(edges)
+    plot([edges(i) edges(i)],[-30 35], 'k:')
+end
 axis tight
-caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.noise{1}.noiseSigmas2);
+caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.noise{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 
@@ -271,25 +294,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2, 'X_u', Xu)
-
-
-w = gp_pak(gp_csfic);
-gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
-
-gp_csfic = gp_init('set', gp_csfic, 'Xu_prior', prior_unif('init'));
-w = gp_pak(gp_csfic);
-gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
-
-gpcf1 = gpcf_sexp('init', 'lengthScale', [1.1], 'magnSigma2', 0.4^2, 'lengthScale_prior', []);
-gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0, 'X_u', Xu);
-w = gp_pak(gp_csfic);
-gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
-
-gp_csfic = gp_init('set', gp_csfic, 'Xu_prior', prior_unif('init'));
-w = gp_pak(gp_csfic);
-gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
-
+gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -300,25 +305,25 @@ gradcheck(w, @gp_e, @gp_g, gp_csfic, x, y);
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'hyper+inducing'; % optimize hyperparameters and inducing inputs
-param = 'hyper';          % optimize only hyperparameters
+% param = 'covariance+inducing'; % optimize hyperparameters and inducing inputs
+param = 'covariance';          % optimize only hyperparameters
 
-opt=optimset('GradObj','on');
-opt=optimset(opt,'TolX', 1e-4);
-opt=optimset(opt,'TolFun', 1e-4);
-opt=optimset(opt,'LargeScale', 'off');
-opt=optimset(opt,'Display', 'iter');
-param = 'hyper'
+w=gp_pak(gp_csfic, param);    % pack the hyperparameters into one vector
+fe=str2fun('gp_e');         % create a function handle to negative log posterior
+fg=str2fun('gp_g');         % create a function handle to gradient of negative log posterior
 
-% Learn the hyperparameters
-w0 = gp_pak(gp_csfic, param);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp_csfic, x, y, param), gp_g(ww, gp_csfic, x, y, param)), w0, opt);
+% set the options for scg2
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+% do the optimization
+w=scg2(fe, w, opt, fg, gp_csfic, x, y, param);
 gp_csfic = gp_unpak(gp_csfic,w,param);
 
 % Make the prediction
-[Ef_csfic, Varf_csfic] = gp_pred(gp_csfic, x, y, x);
-Varf_csfic = Varf_csfic + gp_csfic.noise{1}.noiseSigmas2;
+[Ef_csfic, Varf_csfic, Ey_csfic, Vary_csfic] = gp_pred(gp_csfic, x, y, x);
 
 % Plot the solution of FIC
 figure(4)
@@ -326,78 +331,18 @@ figure(4)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x,Ef_csfic,'k', 'LineWidth', 2)
-plot(x,Ef_csfic-2.*sqrt(Varf_csfic),'g--', 'LineWidth', 1)
+plot(x,Ef_csfic-2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
 plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ef_csfic+2.*sqrt(Varf_csfic),'g--', 'LineWidth', 1)
+plot(x,Ef_csfic+2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
 axis tight
-caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noise{1}.noiseSigmas2);
+caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noise{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 
 
-% Make predictions of the two components separately
-gp = gp_csfic;
-
-tx=x;
-ty=y;
-tn=n;
-u = gp.X_u;
-ncf = length(gp.cf);
-cf_orig = gp.cf;
-
-cf1 = {};
-cf2 = {};
-j = 1;
-k = 1;
-for i = 1:ncf
-    if ~isfield(gp.cf{i},'cs')
-        cf1{j} = gp.cf{i};
-        j = j + 1;
-    else
-        cf2{k} = gp.cf{i};
-        k = k + 1;
-    end
-end
-gp.cf = cf1;
-
-% First evaluate needed covariance matrices
-% v defines that parameter is a vector
-[Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % f x 1  vector
-K_fu = gp_cov(gp, tx, u);         % f x u
-K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-Luu = chol(K_uu)';
-K_nu = gp_cov(gp, x, u);         % n x u
-
-% Evaluate the Lambda (La)
-% Q_ff = K_fu*inv(K_uu)*K_fu'
-B=Luu\(K_fu');       % u x f
-Qv_ff=sum(B.^2)';
-Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
-
-gp.cf = cf2;
-K_cs = gp_trcov(gp,tx);
-Kcs_nf = gp_cov(gp, x, tx);
-La = sparse(1:tn,1:tn,Lav,tn,tn) + K_cs;
-gp.cf = cf_orig;
-
-iLaKfu = La\K_fu;
-A = K_uu+K_fu'*iLaKfu;
-A = (A+A')./2;     % Ensure symmetry
-L = iLaKfu/chol(A);
-
-p = La\ty - L*(L'*ty);
-
-%p2 = ty./Lav - iLaKfu*(A\(iLaKfu'*ty));
-%    Knf = K_nu*(K_uu\K_fu');
-ylong = K_nu*(K_uu\(K_fu'*p))+avgy;
-yshort = Kcs_nf*p;
-
-B2=Luu\(K_nu');
-VarYlong = Kv_ff - sum(B2'.*(B*(La\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
-VarYshort = diag(K_cs) - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2);
-
-
+[Ef, Varf, Ey, Vary] = gp_pred(gp_csfic, x, y, x);
+[Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 1);
+[Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 2);
 
 figure(2)
 set(gcf,'units','centimeters');
@@ -405,13 +350,11 @@ set(gcf,'DefaultAxesPosition',[0.08  0.13   0.84   0.85]);
 set(gcf,'DefaultAxesFontSize',16)   %6 8
 set(gcf,'DefaultTextFontSize',16)   %6 8
 hold on
-[AX, H1, H2] = plotyy(x, yshort, x, ylong);
+[AX, H1, H2] = plotyy(x, Ef2, x, Ef1+avgy);
 set(H2,'LineStyle','--')
 set(H2, 'LineWidth', 3)
-%set(H1, 'Color', 'k')
 set(H1,'LineStyle','-')
 set(H1, 'LineWidth', 1)
-%set(H2, 'Color', 'g')
 
 set(AX(2), 'XLim', [-1 559])
 set(AX(1), 'XLim', [-1 559])
@@ -430,6 +373,6 @@ set(AX(1),'YTicklabel',[-5 0 5])
 set(get(AX(2),'Xlabel'),'String','year')
 set(get(AX(1),'Xlabel'),'String','year') 
 
-set(gcf,'pos',[10    8   18  10.7])
+set(gcf,'pos',[5    3   18  10.7])
 set(gcf,'paperunits',get(gcf,'units'))
 set(gcf,'paperpos',get(gcf,'pos'))

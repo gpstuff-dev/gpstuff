@@ -456,19 +456,19 @@ ye = ye(ind,:);
 
 % Create the covariance functions
 gpcf1 = gpcf_matern32('init', 'lengthScale', 5, 'magnSigma2', 0.05);
-gpcf1.p.lengthScale = t_p({1 4});
-gpcf1.p.magnSigma2 = t_p({0.3 4});
+% $$$ gpcf1.p.lengthScale = t_p({1 4});
+% $$$ gpcf1.p.magnSigma2 = t_p({0.3 4});
 
 % Create the likelihood structure
 likelih = likelih_poisson('init', yy, ye);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, []);   %{gpcf2}
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.01);   %{gpcf2}
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'hyper'});
+gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'covariance'});
 
-param = 'hyper';
+param = 'covariance';
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-3);
 opt=optimset(opt,'LargeScale', 'off');

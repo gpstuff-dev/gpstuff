@@ -1309,6 +1309,7 @@ L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
 load(L)
 
 x = xx;
+[n,nin] = size(x);
 
 % Create the covariance function
 gpcf1 = gpcf_sexp('init', 'lengthScale', [0.5 0.7], 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -1317,7 +1318,7 @@ gpcf3 = gpcf_ppcs3('init', nin, 'lengthScale', [1.1 1.3], 'magnSigma2', 0.5^2, '
 
 p = x+0.5;
 dims = [1    60     1    35];
-[trindex, Xu, tstindex] = set_PIC(xx, dims, 5, 'corners+1xside', 1, p);
+[trindex, Xu, tstindex] = set_PIC(xx, dims, 5, 'corners+1xside', 0, p);
 p2 = [x', p(1:10,:)']';
 models = {'FULL' 'CS-FULL' 'FIC' 'PIC' 'CS+FIC'};
 
