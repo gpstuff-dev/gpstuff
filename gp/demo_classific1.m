@@ -56,15 +56,15 @@ x(:,end)=[];
 gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
-pl = prior_logunif('init');
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+pl = prior_unif('init');
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the likelihood structure
 likelih = likelih_probit('init', y);
 %likelih = likelih_logit('init', y);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.1.^2);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 1);
 
 
 % ------- Laplace approximation --------
@@ -79,6 +79,7 @@ opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
+opt.maxiter = 20;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp, 'covariance');
@@ -123,8 +124,6 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
 
 w = gp_pak(gp, 'covariance');
-gradcheck(w, @gpep_e, @gpep_g, gp, x, y, 'covariance');
-
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);

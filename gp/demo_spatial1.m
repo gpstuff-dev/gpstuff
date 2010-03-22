@@ -31,11 +31,11 @@
 %    Since the data set used in this demo is rather large we use FIC sparse
 %    approximation for the GP prior.
 %
-%    The inference is conducted first with Laplace approximation, then with grid 
-%    integration and for last via MCMC. We sample from the full posterior 
-%    p(f, th| data) by alternating the sampling from the conditional posteriors
-%    p(f | th, data) and p(th | f, data). The sampling from the conditional 
-%    posteriors is done by hybrid Monte Carlo (see, for example, Neal, 1996).
+%    The inference is conducted first with Laplace approximation and then via MCMC. 
+%    We sample from the full posterior p(f, th| data) by alternating the sampling 
+%    from the conditional posteriors p(f | th, data) and p(th | f, data). The 
+%    sampling from the conditional posteriors is done by hybrid Monte Carlo (see, 
+%    for example, Neal, 1996).
 %
 %    See Vanhatalo and Vehtari (2007) and Vanhatalo et.al. (2010) for more detailed 
 %    discussion.
@@ -81,7 +81,7 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 5, 'corners+1xside', 0);
+[trindex, Xu] = set_PIC(xx, dims, 5, 'corners', 0);
 
 [n,nin] = size(xx);
 
@@ -258,41 +258,40 @@ title('Posterior variance of relative risk, FIC GP')
 
 
 
-
-figure
-set(gcf,'units','centimeters');
-set(gcf,'DefaultAxesPosition',[0.0  0.02   0.85   0.96]);
-set(gcf,'DefaultAxesFontSize',8)   %6 8
-set(gcf,'DefaultTextFontSize',8)   %6 8
-G=repmat(NaN,size(X1));
-G(xxii)=exp(Ef);
-pcolor(X1,X2,G),shading flat
-colormap(mapcolor(G, [1 1])),colorbar
-axis equal
-axis([0 35 0 60])
-set(gca,'YTick',[])
-set(gca,'XTick',[])
-set(gca,'XTicklabel',[])
-set(gca,'YTickLabel',[])
-set(gcf,'pos',[13.6    10   4  6.85])
-set(gcf,'paperunits',get(gcf,'units'))
-set(gcf,'paperpos',get(gcf,'pos'))
-
-figure
-set(gcf,'units','centimeters');
-set(gcf,'DefaultAxesPosition',[0.0  0.02   0.85   0.96]);
-set(gcf,'DefaultAxesFontSize',8)   %6 8
-set(gcf,'DefaultTextFontSize',8)   %6 8
-G=repmat(NaN,size(X1));
-G(xxii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
-pcolor(X1,X2,G),shading flat
-colormap(mapcolor(G)),colorbar
-axis equal
-axis([0 35 0 60])
-set(gca,'YTick',[])
-set(gca,'XTick',[])
-set(gca,'XTicklabel',[])
-set(gca,'YTickLabel',[])
-%set(gcf,'pos',[13.6    10   4  6.85])
-set(gcf,'paperunits',get(gcf,'units'))
-set(gcf,'paperpos',get(gcf,'pos'))
+% $$$ figure
+% $$$ set(gcf,'units','centimeters');
+% $$$ set(gcf,'DefaultAxesPosition',[0.0  0.02   0.85   0.96]);
+% $$$ set(gcf,'DefaultAxesFontSize',8)   %6 8
+% $$$ set(gcf,'DefaultTextFontSize',8)   %6 8
+% $$$ G=repmat(NaN,size(X1));
+% $$$ G(xxii)=exp(Ef);
+% $$$ pcolor(X1,X2,G),shading flat
+% $$$ colormap(mapcolor(G, [1 1])),colorbar
+% $$$ axis equal
+% $$$ axis([0 35 0 60])
+% $$$ set(gca,'YTick',[])
+% $$$ set(gca,'XTick',[])
+% $$$ set(gca,'XTicklabel',[])
+% $$$ set(gca,'YTickLabel',[])
+% $$$ set(gcf,'pos',[13.6    10   5.4  6])
+% $$$ set(gcf,'paperunits',get(gcf,'units'))
+% $$$ set(gcf,'paperpos',get(gcf,'pos'))
+% $$$ 
+% $$$ figure
+% $$$ set(gcf,'units','centimeters');
+% $$$ set(gcf,'DefaultAxesPosition',[0.0  0.02   0.85   0.96]);
+% $$$ set(gcf,'DefaultAxesFontSize',8)   %6 8
+% $$$ set(gcf,'DefaultTextFontSize',8)   %6 8
+% $$$ G=repmat(NaN,size(X1));
+% $$$ G(xxii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
+% $$$ pcolor(X1,X2,G),shading flat
+% $$$ colormap(mapcolor(G)),colorbar
+% $$$ axis equal
+% $$$ axis([0 35 0 60])
+% $$$ set(gca,'YTick',[])
+% $$$ set(gca,'XTick',[])
+% $$$ set(gca,'XTicklabel',[])
+% $$$ set(gca,'YTickLabel',[])
+% $$$ set(gcf,'pos',[13.6    10   5.5  6])
+% $$$ set(gcf,'paperunits',get(gcf,'units'))
+% $$$ set(gcf,'paperpos',get(gcf,'pos'))

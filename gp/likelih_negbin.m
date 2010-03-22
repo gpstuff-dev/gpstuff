@@ -490,7 +490,7 @@ function likelih = likelih_negbin(do, varargin)
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         [g_i, fhncnt] = quadgk(zd, lambdaconf(1), lambdaconf(2));
-        
+        g_i = g_i.*r;
 
         % ------------------------------------------------
         % Plot the integrand to check that integration limits are ok

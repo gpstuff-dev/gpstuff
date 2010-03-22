@@ -1,5 +1,5 @@
-%DEMO_SPATIAL4    Demonstration for a disease mapping problem
-%                 with Gaussian process prior and inference via Laplace approximation and EP
+%DEMO_SPATIAL4    Demonstration for a disease mapping problem with Gaussian
+%                 process prior and negative binomial observation model
 %
 %    Description
 %    The disease mapping problem consist of a data with number of death 
