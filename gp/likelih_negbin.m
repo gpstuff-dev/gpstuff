@@ -611,24 +611,8 @@ function likelih = likelih_negbin(do, varargin)
             reclikelih.fh_recappend = @likelih_negbin_recappend;
             return
         end
-
-% $$$         gpp = likelih.p;
-        % record lengthScale
-        if ~isempty(likelih.disper)
-% $$$             if ~isempty(gpp.disper)
-% $$$                 reclikelih.disperHyper(ri,:)=gpp.disper.a.s;
-% $$$                 if isfield(gpp.disper,'p')
-% $$$                     if isfield(gpp.disper.p,'nu')
-% $$$                         reclikelih.disperHyperNu(ri,:)=gpp.disper.a.nu;
-% $$$                     end
-% $$$                 end
-% $$$             elseif ri==1
-% $$$                 reclikelih.disperHyper=[];
-% $$$             end
-            reclikelih.disper(ri,:)=likelih.disper;
-        elseif ri==1
-            reclikelih.disper=[];
-        end
+        
+        reclikelih.disper(ri,:)=likelih.disper;
     end
 end
 

@@ -11,7 +11,7 @@ function likelih = likelih_t(do, varargin)
 %	  type                     = 'Student-t'
 %         likelih.nu               = nu;
 %         likelih.sigma            = sigma;
-%         likelih.freeze_nu        = 1 for keeping nu fixed, 0 for inferring it (1)
+%         likelih.fix_nu           = 1 for keeping nu fixed, 0 for inferring it (1)
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
 %         likelih.fh_permute       = function handle to permutation
@@ -34,7 +34,7 @@ function likelih = likelih_t(do, varargin)
 %
 %
 
-% Copyright (c) 2007-2008 Jarno Vanhatalo & Jouni Hartikainen
+% Copyright (c) 2009-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -53,7 +53,7 @@ function likelih = likelih_t(do, varargin)
         % Set parameters
         likelih.nu = nu;
         likelih.sigma = sigma;
-        likelih.freeze_nu = 1;
+        likelih.fix_nu = 1;
         
         % Initialize prior structure
         likelih.p.sigma = prior_logunif('init');
@@ -88,8 +88,8 @@ function likelih = likelih_t(do, varargin)
                     likelih.nu = varargin{i+1};
                   case 'sigma'
                     likelih.sigma = varargin{i+1};
-                  case 'freeze_nu'
-                    likelih.freeze_nu = varargin{i+1};
+                  case 'fix_nu'
+                    likelih.fix_nu = varargin{i+1};
                   case 'sigma_prior'
                     likelih.p.sigma = varargin{i+1}; 
                   case 'nu_prior'
@@ -114,8 +114,8 @@ function likelih = likelih_t(do, varargin)
                 likelih.nu = varargin{i+1};
               case 'sigma'
                 likelih.sigma = varargin{i+1};
-              case 'freeze_nu'
-                likelih.freeze_nu = varargin{i+1};
+              case 'fix_nu'
+                likelih.fix_nu = varargin{i+1};
               case 'sigma_prior'
                 likelih.p.sigma = varargin{i+1}; 
               case 'nu_prior'
@@ -149,7 +149,7 @@ function likelih = likelih_t(do, varargin)
             w(i1) = log(log(likelih.nu));
         end        
         
-% $$$         if likelih.freeze_nu == 1
+% $$$         if likelih.fix_nu == 1
 % $$$             w(1) = log(likelih.sigma);
 % $$$         else
 % $$$             w(1) = log(likelih.sigma);
@@ -178,18 +178,6 @@ function likelih = likelih_t(do, varargin)
             i1 = i1+1;
             likelih.nu = exp(exp(w(i1)));
         end
-        
-% $$$         if likelih.freeze_nu == 1
-% $$$             i1=1;        
-% $$$             likelih.sigma = exp(w(i1));
-% $$$             w = w(i1+1:end);
-% $$$         else
-% $$$             i1=1;
-% $$$             likelih.sigma = exp(w(i1));
-% $$$             i1 = i1+1;
-% $$$             likelih.nu = exp(exp(w(i1)));
-% $$$             w = w(i1+1:end);            
-% $$$         end
     end
 
 
@@ -226,24 +214,6 @@ function likelih = likelih_t(do, varargin)
         if ~isempty(likelih.p.nu) 
             logPrior = logPrior + feval(likelih.p.nu.fh_e, likelih.nu, likelih.p.nu)  - log(v) - log(log(v));
         end
-        
-% $$$         v = likelih.nu;
-% $$$         sigma = likelih.sigma;
-% $$$ 
-% $$$         % Evaluate the log(prior)
-% $$$         if isfield(likelih, 'p')
-% $$$             % notice that nu is handled in log(log(nu)) space and sigma is handled in log(sigma) space
-% $$$             gpl = likelih.p;
-% $$$             
-% $$$             if likelih.freeze_nu == 1
-% $$$                 logPrior =  - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
-% $$$             else
-% $$$                 logPprior = - feval(gpl.nu.fe, likelih.nu, gpl.nu.a) + log(v) + log(log(v));
-% $$$                 logPrior =  logPprior - feval(gpl.sigma.fe, likelih.sigma, gpl.sigma.a) + log(sigma);
-% $$$             end
-% $$$         else
-% $$$             error('likelih_t -> likelih_t_priore: Priors for the likelihood parameters are not defined!')
-% $$$         end    
     end
     
     function glogPrior = likelih_t_priorg(likelih, varargin)
@@ -271,21 +241,6 @@ function likelih = likelih_t(do, varargin)
             i1 = i1+1;
             glogPrior(i1) = feval(likelih.p.nu.fh_g, likelih.nu, likelih.p.nu).*v.*log(v) - log(v) - 1;
         end    
-    
-% $$$         v = likelih.nu;
-% $$$         sigma = likelih.sigma;
-% $$$         
-% $$$         if isfield(likelih, 'p')
-% $$$             gpl = likelih.p;
-% $$$             if likelih.freeze_nu == 1
-% $$$                 glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma  + 1;
-% $$$             else
-% $$$                 glogPrior(1) = - feval(gpl.sigma.fg, likelih.sigma, gpl.sigma.a).*sigma + 1;
-% $$$                 glogPrior(2) = - feval(gpl.nu.fg, likelih.nu, gpl.nu.a).*v.*log(v) + log(v) + 1;
-% $$$             end
-% $$$         else
-% $$$             error('likelih_t -> likelih_t_priorg: Priors for the likelihood parameters are not defined!')
-% $$$         end
     end
     
     function logLikelih = likelih_t_e(likelih, y, f, varargin)
@@ -327,7 +282,7 @@ function likelih = likelih_t(do, varargin)
           case 'hyper'
             n = length(y);
 
-            if likelih.freeze_nu == 1
+            if likelih.fix_nu == 1
                 % Derivative with respect to sigma
                 deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 +sigma.*r.^2));
                 
@@ -373,7 +328,7 @@ function likelih = likelih_t(do, varargin)
             % The hessian d^2 /(dfdf)
             g2 =  (v+1).*(r.^2 - v.*sigma.^2) ./ (v.*sigma.^2 + r.^2).^2;
           case 'latent+hyper'
-            if likelih.freeze_nu == 1
+            if likelih.fix_nu == 1
                 % gradient d^2 / (dfds), where s is either sigma or nu            
                 g2 = -2.*sigma.*v.*(v+1).*r ./ (v.*sigma.^2 + r.^2).^2;
                 
@@ -415,7 +370,7 @@ function likelih = likelih_t(do, varargin)
             % Return the diagonal of W differentiated with respect to latent values
             third_grad = (v+1).*(2.*r.^3 - 6.*v.*sigma.^2.*r) ./ (v.*sigma.^2 + r.^2).^3;
           case 'latent2+hyper'
-            if likelih.freeze_nu == 1
+            if likelih.fix_nu == 1
                 % Return the diagonal of W differentiated with respect to likelihood parameters
                 third_grad = 2.*(v+1).*sigma.*v.*( v.*sigma.^2 - 3.*r.^2) ./ (v.*sigma.^2 + r.^2).^3;
                 third_grad = third_grad.*sigma;
@@ -607,7 +562,7 @@ function likelih = likelih_t(do, varargin)
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         
-        if likelih.freeze_nu == 1
+        if likelih.fix_nu == 1
             [g_i(1), fhncnt] = quadgk(zsigma, lambdaconf(1), lambdaconf(2));
             g_i(1) = g_i(1).*likelih.sigma;
         else
@@ -789,7 +744,7 @@ function likelih = likelih_t(do, varargin)
               case {'PIC' 'PIC_BLOCK'}
                 
               case 'CS+FIC'
-
+                
             end
             r = y-z;
             term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi)/2 - log(sigma);
@@ -810,8 +765,6 @@ function likelih = likelih_t(do, varargin)
                 C2 = - (nu + 1) ./ (nu.*sigma.^2 + r.^2) + 2.*(nu+1).*r.^2 ./ (nu.*sigma.^2 + r.^2).^2;
                 
                 L2 = chol(C)';
-        % $$$                 L2 = C/chol(diag(-1./C2) + C);
-        % $$$                 L2 = chol(C - L2*L2')';
               case 'FIC'
                 error('likelih_t: Latent value sampling is not (yet) implemented for FIC!');
               case {'PIC' 'PIC_BLOCK'}
@@ -830,10 +783,7 @@ function likelih = likelih_t(do, varargin)
 
         
         switch gp.type
-          case 'FULL'
-            
-    % $$$                     iV = diag( ones(1,n)./sigma.^2);
-    % $$$                     f1 = (iK+iV)\iV*y;            
+          case 'FULL'            
             iV = ones(n,1)./sigma.^2;
             siV = sqrt(iV);
             B = eye(n) + siV*siV'.*K;
@@ -842,10 +792,7 @@ function likelih = likelih_t(do, varargin)
             a = b - siV.*(L'\(L\(siV.*(K*b))));
             f = K*a;
             while iter < 200
-                fold = f;
-    % $$$                         iV = diag((nu+1) ./ (nu.*sigma^2 + (y-f1).^2));
-    % $$$                         f1 = (iK+iV)\iV*y;
-                
+                fold = f;               
                 iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
                 siV = sqrt(iV);
                 B = eye(n) + siV*siV'.*K;
@@ -859,12 +806,7 @@ function likelih = likelih_t(do, varargin)
                 end
                 iter = iter + 1;
             end
-    % $$$                     if iter == 200
-    % $$$                         warning('likelih_t: optimize_f: Maximum number of iterations reached!')
-    % $$$                     end
           case 'FIC'
-    % $$$                     iV = diag( ones(1,n)./sigma.^2);
-    % $$$                     f1 = (iK+iV)\iV*y;
             K_uu = K;
             
             Luu = chol(K_uu)';
@@ -880,10 +822,7 @@ function likelih = likelih_t(do, varargin)
             a = b - siV.*(L'\(L\(siV.*(K*b))));
             f = K*a;
             while iter < 200
-                fold = f;
-    % $$$                         iV = diag((nu+1) ./ (nu.*sigma^2 + (y-f1).^2));
-    % $$$                         f1 = (iK+iV)\iV*y;
-                
+                fold = f;                
                 iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
                 siV = sqrt(iV);
                 B = eye(n) + siV*siV'.*K;
@@ -897,9 +836,6 @@ function likelih = likelih_t(do, varargin)
                 end
                 iter = iter + 1;
             end
-    % $$$                     if iter == 200
-    % $$$                         warning('likelih_t: optimize_f: Maximum number of iterations reached!')
-    % $$$                     end            
         end
                      
     end
@@ -996,25 +932,8 @@ function likelih = likelih_t(do, varargin)
             return
         end
 
-    % $$$         gpp = likelih.p;
-    % record lengthScale
-        if ~isempty(likelih.nu)
-    % $$$             if ~isempty(gpp.disper)
-    % $$$                 reclikelih.disperHyper(ri,:)=gpp.disper.a.s;
-    % $$$                 if isfield(gpp.disper,'p')
-    % $$$                     if isfield(gpp.disper.p,'nu')
-    % $$$                         reclikelih.disperHyperNu(ri,:)=gpp.disper.a.nu;
-    % $$$                     end
-    % $$$                 end
-    % $$$             elseif ri==1
-    % $$$                 reclikelih.disperHyper=[];
-    % $$$             end
-            reclikelih.nu(ri,:) = likelih.nu;
-            reclikelih.sigma(ri,:) = likelih.sigma;
-        elseif ri==1
-            reclikelih.nu=[];
-            reclikelih.sigma=[];
-        end
+        reclikelih.nu(ri,:) = likelih.nu;
+        reclikelih.sigma(ri,:) = likelih.sigma;
     end
 end
 

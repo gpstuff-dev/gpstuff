@@ -26,9 +26,9 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 %
 %
 
-% Copyright (c) 2007-2009      Jarno Vanhatalo
+% Copyright (c) 2007-2010      Jarno Vanhatalo
 % 
-% The Newton's method is implemented as described in 
+% The Newton's method is implemented as described in
 % Rasmussen and Williams (2006).
 
 % This software is distributed under the GNU General Public
@@ -171,8 +171,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
-                        while i < 10 && lp_new < lp_old                       
-                          % if objective didn't increase
+                        while i < 10 && lp_new < lp_old  || isnan(sum(f))
                           % reduce step size by half
                             a = (a_old+a)/2;                                  
                             f = K*a;
@@ -314,8 +313,9 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
-                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
-                            a = (a_old+a)/2;                                  % reduce step size by half
+                        while i < 10 && lp_new < lp_old      || isnan(sum(f))
+                            % reduce step size by half
+                            a = (a_old+a)/2;                                  
                             f = Lav.*a + B'*(B*a);
                             W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                             lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
@@ -472,8 +472,9 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                         lp = feval(gp.likelih.fh_e, gp.likelih, y, f);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
-                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
-                            a = (a_old+a)/2;                                  % reduce step size by half                            
+                        while i < 10 && lp_new < lp_old || isnan(sum(f))
+                            % reduce step size by half
+                            a = (a_old+a)/2;                                  
                             f = B'*(B*a);
                             for i=1:length(ind)
                                 f(ind{i}) = Labl{i}*a(ind{i}) + f(ind{i}) ;
@@ -584,13 +585,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
                     else
                         opt = gp.laplace_opt.fminunc_opt;
                     end
-
-% $$$                     fe = @(f, varargin) (0.5*f*(ldlsolve(VD,f') - L*(L'*f')) - feval(gp.likelih.fh_e, gp.likelih, y, f'));
-% $$$                     fg = @(f, varargin) (ldlsolve(VD,f') - L*(L'*f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent'))';
-% $$$                     fh = @(f, varargin) (-feval(gp.likelih.fh_hessian, gp.likelih, y, f', 'latent'));
-% $$$                     mydeal = @(varargin)varargin{1:nargout};
-% $$$                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
-% $$$                     f = f';
+                    
                     [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
                     f = f';
                     

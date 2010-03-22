@@ -21,9 +21,9 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
 %                                = mean(Varf,2) + var(Ef,0,2)
 %   
 %       Each row of X corresponds to one input vector and each row of Y corresponds to one 
-%       output vector. PREDCF is an array specifying the indexes of covariance functions, 
-%       which are used for making the prediction (others are considered noise). TSTIND is, 
-%       in case of PIC, a cell array containing index vectors specifying the blocking 
+%       output. PREDCF is an array specifying the indexes of covariance functions, which 
+%       are used for making the prediction (others are considered noise). TSTIND is, in 
+%       case of PIC, a cell array containing index vectors specifying the blocking 
 %       structure for test data, or in FIC and CS+FI a vector of length n that points out 
 %       the test inputs that are also in the training set (if none, set TSTIND = []).
 %       

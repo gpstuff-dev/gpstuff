@@ -1,5 +1,6 @@
 function gpcf = gpcf_noiset(do, varargin)
-%GPCF_NOISET	Create a Student-t noise covariance function for Gaussian Process.
+%GPCF_NOISET	Create a scale mixture noise covariance function (~Student-t) 
+%               for Gaussian Process.
 %
 %	Description
 %
@@ -18,7 +19,7 @@ function gpcf = gpcf_noiset(do, varargin)
 %         alpha          = (0.5)
 %         nu             = degrees of freedom (4)
 %         r              = the residuals
-%         freeze_nu      = 0 for sampling also nu, 1 for not sampling nu (1)
+%         fix_nu         = 0 for sampling also nu, 1 for not sampling nu (1)
 %         p              = prior structure for covariance function
 %                          parameters. 
 %         fh_pak         = function handle to packing function
@@ -42,24 +43,34 @@ function gpcf = gpcf_noiset(do, varargin)
 %                          (gpcf_noise_recappend)
 %
 %	GPCF = GPCF_NOISET('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
+%       can be modified are:
+%
+%             'noiseSigmas2'     : set the noiseSigmas2
+%             'U'                : set the vector U
+%             'tau2'             : set tau^2
+%             'alpha'            : set alpha
+%             'nu'               : set nu
+%             'fix_nu'           : set fix_nu to 0 or 1
+%             'nu_prior'         : set the prior structure for nu. 
+%                  (nu is the only parameter whose prior we can adjust)
 %
 %       NOTE!
 %       The Student-t residual model is greated as in Gelman et. al. (2004) page 304-305:
 %    
-%          y-E[y] ~ N(0, alphaa^2 * U), where U = diag(u_1, u_2, ..., u_n)
+%          y-E[y] ~ N(0, alpha^2 * U), where U = diag(u_1, u_2, ..., u_n)
 %             u_i ~ Inv-Chi^2(nu, tau^2)
 %       
 %          The degrees of freedom nu are given a 1/nu prior and they are sampled via 
 %          slice sampling.
 %
 %	See also
-%	
+%	gpcf_sexp, gpcf_noise
 %
 %
 
 % Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006-2008 Jarno Vanhatalo
+% Copyright (c) 2006-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -80,17 +91,18 @@ if strcmp(do, 'init')
     gpcf.nout = 1;
     
     % Initialize parameters
-    gpcf.noiseSigmas2 = 0.1^2.*ones(varargin{2},1);
-    gpcf.U = ones(varargin{2},1);
+    gpcf.noiseSigmas2 = 0.1^2.*ones(varargin{1},1);
+    gpcf.U = ones(varargin{1},1);
     gpcf.tau2 = 0.1;
     gpcf.alpha = 0.5;
     gpcf.nu = 4;
-    gpcf.r = zeros(varargin{2},1);
-    gpcf.freeze_nu = 1;
+    gpcf.r = zeros(varargin{1},1);
+    gpcf.fix_nu = 1;
     
     % Initialize prior structure
     gpcf.p=[];
     gpcf.p.noiseSigmas2=[];
+    gpcf.p.nu = prior_logunif('init');
     
     % Set the function handles
     gpcf.fh_pak = @gpcf_noiset_pak;
@@ -104,12 +116,12 @@ if strcmp(do, 'init')
     %    gpcf.sampling_opt = 'noiset_opt';
     gpcf.fh_recappend = @gpcf_noiset_recappend;
     
-    if length(varargin) > 2
-        if mod(nargin,2) ==0
+    if length(varargin) > 1
+        if mod(nargin,2) ~= 0
             error('Wrong number of arguments')
         end
         % Loop through all the parameter values that are changed
-        for i=3:2:length(varargin)-1
+        for i=2:2:length(varargin)-1
             switch varargin{i}
               case 'noiseSigmas2'
                 if size(varargin{i+1},1) == gpcf.ndata & size(varargin{i+1},2) == 1
@@ -131,8 +143,10 @@ if strcmp(do, 'init')
                 gpcf.alpha = varargin{i+1};
               case 'nu'
                 gpcf.nu = varargin{i+1};
-              case 'freeze_nu'
-                gpcf.freeze_nu = varargin{i+1};
+              case 'fix_nu'
+                gpcf.fix_nu = varargin{i+1};
+              case 'nu_prior'
+                gpcf.p.nu = varargin{i+1};
               case 'censored'
                 gpcf.censored = varargin{i+1}{1};
                 yy = varargin{i+1}{2};
@@ -186,8 +200,10 @@ if strcmp(do, 'set')
             gpcf.alpha = varargin{i+1};
           case 'nu'
             gpcf.nu = varargin{i+1};
-          case 'freeze_nu'
-            gpcf.freeze_nu = varargin{i+1};
+          case 'fix_nu'
+            gpcf.fix_nu = varargin{i+1};
+          case 'nu_prior'
+            gpcf.p.nu = varargin{i+1};
           case 'censored'
             gpcf.censored = varargin{i+1}{1};
             yy = varargin{i+1}{2};
@@ -213,7 +229,7 @@ end
 
 
 
-    function w = gpcf_noiset_pak(gpcf, w)
+    function w = gpcf_noiset_pak(gpcf)
     %GPcf_NOISET_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
@@ -227,13 +243,7 @@ end
     %	GPCF_NOISET_UNPAK
     %
 
-    % Copyright (c) 2000-2001 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
+        w = [];
     end
 
 
@@ -249,13 +259,6 @@ end
     %	See also
     %	GP_NOISET_PAK, GP_PAK
 
-    % Copyright (c) 2000-2001 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
     end
 
     function eprior =gpcf_noiset_e(gpcf, p, t)
@@ -271,12 +274,6 @@ end
     %	See also
     %	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
     %
-
-    % Copyright (c) 1998-2006 Aki Vehtari
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
         eprior = 0;
     end
 
@@ -295,14 +292,6 @@ end
     %
     %	See also
     %
-
-    % Copyright (c) 1998-2001 Aki Vehtari
-    % Copyright (c) 2006      Jarno Vanhatalo
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-
         
         DCff = [];
         gprior = [];
@@ -321,12 +310,6 @@ end
     %         Neal R. M. Regression and Classification Using Gaussian 
     %         Process Priors, Bayesian Statistics 6.
 
-    % Copyright (c) 2006  Jarno Vanhatalo
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-
         C = 0;
     end
 
@@ -344,16 +327,15 @@ end
     %         Neal R. M. Regression and Classification Using Gaussian 
     %         Process Priors, Bayesian Statistics 6.
 
-    % Copyright (c) 1998-2004 Aki Vehtari
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
 
         [n, m] =size(x);
         n1=n+1;
         
-        %        C = spdiags(gpcf.noiseSigmas2, 0, n, n);
+        if n ~= gpcf.ndata
+            error(['gpcf_noiset -> _trcov: The training covariance can be evaluated'... 
+                  '      only for training data.                                   '])
+        end
+        
         C = sparse(1:n, 1:n, gpcf.noiseSigmas2, n, n);
     end
 
@@ -367,14 +349,11 @@ end
     %         variance of input i in TX 
 
         
-    % Copyright (c) 1998-2004 Aki Vehtari
-    % Copyright (c) 2006      Aki Vehtari, Jarno Vanhatalo
-        
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
-        
         [n, m] =size(x);
+        if n ~= gpcf.ndata
+            error(['gpcf_noiset -> _trvar: The training variance can be evaluated'... 
+                  '      only for training data.                                 '])
+        end
         C = gpcf.noiseSigmas2;
         
     end
@@ -383,14 +362,8 @@ end
     % GPCF_NOISET_GIBBS     Function for sampling the noiseSigmas2:s
     %
     %         Description
-    %         
+    %         Perform Gibbs sampling for the covariance function parameters.
 
-    % Copyright (c) 1998-2004 Aki Vehtari
-    % Copyright (c) 2007-2009 Jarno Vanhatalo
-
-    % This software is distributed under the GNU General Public 
-    % License (version 2 or later); please refer to the file 
-    % License.txt, included with the software, for details.
             
         [n,m] = size(x);
         
@@ -431,8 +404,9 @@ end
 % $$$         alpha2=invgamrand(mean(r.^2./U),n);
         rss2=alpha2.*U;
         % Sample nu
-        if gpcf.freeze_nu == 0
-            nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
+        if gpcf.fix_nu == 0 && ~isempty(gpcf.p.nu)
+            pp = gpcf.p.nu;            
+            nu=sls1mm( @(nu) (-sum(sinvchi2_lpdf(U,nu,t2))+feval(pp.fh_e, nu, pp)) ,nu,opt ) ;
         end
         gpcf.noiseSigmas2 = rss2;
         gpcf.U = U;
@@ -466,8 +440,7 @@ end
     % Initialize record
     if nargin == 2
         reccf.type = 'gpcf_noiset';
-        reccf.nin = ri;
-        gpcf.nout = 1;
+        gpcf.ndata = [];
         
         % Initialize parameters
         reccf.noiseSigmas2 = []; 
@@ -485,7 +458,7 @@ end
         return
     end
 
-
+    reccf.ndata = gpcf.ndata;
     gpp = gpcf.p;
 
     % record noiseSigma

@@ -88,11 +88,11 @@ switch gp.type
 
     if nargout > 1
         if issparse(C)
-            [V, Cv] = gp_trvar(gp,x,predcf);
+            V = gp_trvar(gp,x,predcf);
             Varf = V - diag(K'*ldlsolve(LD,K));
         else
             v = L\K;
-            [V, Cv] = gp_trvar(gp,x,predcf);
+            V = gp_trvar(gp,x,predcf);
             % Vector of diagonal elements of covariance matrix
             % b = L\K;
             % Varf = V - sum(b.^2)';
@@ -101,9 +101,11 @@ switch gp.type
     end
     if nargout > 2
         if issparse(C)
+            [V, Cv] = gp_trvar(gp,x,predcf);
             Ey = Ef;
             Vary = Cv - diag(K'*ldlsolve(LD,K));
         else
+            [V, Cv] = gp_trvar(gp,x,predcf);
             Ey = Ef;
             Vary = Cv - diag(v'*v);
         end

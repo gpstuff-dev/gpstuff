@@ -100,6 +100,19 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             hmc_rstate=hmc2('state');
         end
     end    
+    if isfield(opt, 'likelih_hmc_opt')
+        if isfield(opt.likelih_hmc_opt, 'rstate')
+            if ~isempty(opt.likelih_hmc_opt.rstate)
+                likelih_hmc_rstate = opt.likelih_hmc_opt.rstate;
+            else
+                hmc2('state', sum(100*clock))
+                likelih_hmc_rstate=hmc2('state');
+            end
+        else
+            hmc2('state', sum(100*clock))
+            likelih_hmc_rstate=hmc2('state');
+        end        
+    end
     if isfield(opt, 'inducing_opt')
         if isfield(opt.inducing_opt, 'rstate')
             if ~isempty(opt.inducing_opt.rstate)
@@ -130,9 +143,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         if isfield(opt, 'sls_opt')
             fprintf('slsrej  ');
         end
-% $$$         if isfield(opt, 'nb_sls_opt')         % Rejection rate of dispersion parameter sampling
-% $$$             fprintf('rrej  ');
-% $$$         end
+        if isfield(opt, 'likelih_hmc_opt')
+            fprintf('likel.rej  ');
+        end
         if isfield(opt,'inducing_opt')
             fprintf('indrej     ')              % rejection rate of latent value sampling
         end
@@ -161,9 +174,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                     opt.latent_opt.rstate.mom = [];
                 end
             end
+            if isfield(opt, 'likelih_hmc_opt')
+                likelih_hmc_rstate.mom = [];
+            end
         end
         
-        hmcrej = 0;acc=0;
+        hmcrej = 0;acc = 0;
+        likelih_hmcrej = 0;
         lrej=0;
         indrej=0;
         for l=1:opt.repeat
@@ -240,6 +257,24 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 gp = gp_unpak(gp, w, 'likelihood');
             end
             
+            % ----------- Sample hyperparameters of the likelihood with HMC --------------------- 
+            if isfield(opt, 'likelih_hmc_opt')
+                w = gp_pak(gp, 'likelihood');
+                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fg = @(w, likelih) (-feval(likelih.fh_g,feval(likelih.fh_unpak,w,likelih),y,z,'hyper')-feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
+                
+                hmc2('state',likelih_hmc_rstate)              % Set the state
+                [w, energies, diagnh] = hmc2(fe, w, opt.likelih_hmc_opt, fg, gp.likelih);
+                likelih_hmc_rstate=hmc2('state');             % Save the current state
+                likelih_hmcrej=likelih_hmcrej+diagnh.rej/opt.repeat;
+                if isfield(diagnh, 'opt')
+                    opt.likelih_hmc_opt = diagnh.opt;
+                end
+                opt.likelih_hmc_opt.rstate = likelih_hmc_rstate;
+                w=w(end,:);
+                gp = gp_unpak(gp, w, 'likelihood');
+            end
+            
             % ----------- Sample inducing inputs with hmc  ------------ 
             if isfield(opt, 'inducing_opt')
                 w = gp_pak(gp, 'inducing');
@@ -273,6 +308,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             end
             if isfield(opt, 'sls_opt')
                 fprintf('sls  ');
+            end
+            if isfield(opt, 'likelih_hmc_opt')
+                fprintf(' %.1e  ',rec.likelih_hmcrejects(ri));
             end
             if isfield(opt, 'inducing_opt')
                 fprintf(' %.1e  ',rec.indrejects(ri)); 
@@ -361,7 +399,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % Initialize the record for likelihood
             if isstruct(gp.likelih)
                 likelih = gp.likelih;
-                rec.likelih = feval(likelih.fh_recappend, [], [], []);
+                rec.likelih = feval(likelih.fh_recappend, [], likelih);
             end
             
             rec.e = [];
@@ -372,6 +410,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             lrej = 0;
             indrej = 0;
             hmcrej=0;
+            likelih_hmcrej=0;
         end
 
         % Set the record for every covariance function
@@ -418,19 +457,23 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         % Record training error and rejects
         if isfield(gp,'latentValues')
             
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, gp.latentValues', 'hyper');
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'covariance'), gp, x, gp.latentValues', 'covariance');
             rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
             %            fprintf('error')
             
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'hyper'), gp, x, y, 'hyper', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'covariance'), gp, x, y, 'covariance', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end
         
         if isfield(opt, 'hmc_opt')
             rec.hmcrejects(ri,1)=hmcrej; 
+        end
+
+        if isfield(opt, 'likelih_hmc_opt')
+            rec.likelih_hmcrejects(ri,1)=likelih_hmcrej; 
         end
 
         % If inputs are sampled set the record which are on at this moment

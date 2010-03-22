@@ -64,7 +64,7 @@ demo_classific1.m
 demo_regression1.m
 demo_regression2.m
 demo_sparseRegression.m
-
+demo_robustRegression.m
 
 ep_pred.m
 
@@ -148,7 +148,6 @@ demo_nb_Full.m
 demo_regression3.m
 demo_regression4.m
 demo_regression_metric.m
-demo_robustRegression.m
 demo_spatial1.m
 demo_spatial2.m
 demo_spatial3.m

@@ -43,7 +43,7 @@
 
 
 % =====================================
-% 3) PIC model
+% EP approximation
 % =====================================
 
 % load the data
@@ -60,7 +60,7 @@ load(L)
 % Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
 % data points, inducing inputs and blocks.
 dims = [1    60     1    35];
-[trindex, Xu] = set_PIC(xx, dims, 6, 'corners+1xside', 1);
+[trindex, Xu] = set_PIC(xx, dims, 7, 'corners+1xside', 1);
 
 [n,nin] = size(xx);
 
@@ -75,7 +75,7 @@ likelih = likelih_negbin('init', yy, ye, 10);
 param = 'covariance+likelihood'
 
 % Create the PIC GP data structure
-gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001); 
+gp = gp_init('init', 'PIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001); 
 gp = gp_init('set', gp, 'blocks', trindex);
 
 % Set the approximate inference method to EP
@@ -134,3 +134,121 @@ title('Posterior variance of the relative risk, PIC')
 % co-ordinates in the data are not in kilometers. x=1 corresponds to 20km 
 % in real life
 S3 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f, disper: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.likelih.disper)
+
+
+
+% =====================================
+% MCMC approximation
+% =====================================
+
+% Set the approximate inference method to MCMC
+gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
+
+% Set the sampling options
+opt=gp_mcopt;
+opt.nsamples=1;
+opt.repeat=1;
+
+% HMC-hyper
+opt.hmc_opt.steps=3;
+opt.hmc_opt.stepadj=0.01;
+opt.hmc_opt.nsamples=1;
+opt.hmc_opt.persistence=0;
+opt.hmc_opt.decay=0.8;
+    
+% HMC-latent
+opt.latent_opt.nsamples=1;
+opt.latent_opt.nomit=0;
+opt.latent_opt.persistence=0;
+opt.latent_opt.repeat=20;
+opt.latent_opt.steps=20;
+opt.latent_opt.stepadj=0.15;
+opt.latent_opt.window=5;
+
+% SLS-likelihood
+opt.likelih_sls_opt = sls_opt;
+opt.likelih_sls_opt.maxiter = 400;
+opt.likelih_sls_opt.mmlimits = [0;1000];
+opt.likelih_sls_opt.nsamples = 1;
+opt.likelih_sls_opt.method = 'minmax';
+opt.likelih_sls_opt.display = 0;
+
+% Here we make an initialization with 
+% slow sampling parameters
+opt.display = 0;
+[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
+
+% Now we reset the sampling parameters to 
+% achieve faster sampling
+opt.latent_opt.repeat=1;
+opt.latent_opt.steps=7;
+opt.latent_opt.window=1;
+opt.latent_opt.stepadj=0.15;
+opt.hmc_opt.persistence=0;
+opt.hmc_opt.stepadj=0.01;
+opt.hmc_opt.steps=2;
+
+opt.display = 1;
+opt.hmc_opt.display = 0;
+opt.latent_opt.display=0;
+
+% Define help parameters for plotting
+xxii=sub2ind([60 35],xx(:,2),xx(:,1));
+[X1,X2]=meshgrid(1:35,1:60);
+
+% Conduct the actual sampling.
+% Inside the loop we sample one sample from the latent values and 
+% hyper-parameters at each iteration. After that we plot the samples 
+% so that we can visually inspect the progress of sampling
+while length(rgp.edata)<1000 %   1000
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
+    fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
+    figure(3)
+    clf
+    subplot(2,2,1)
+    plot(rgp.cf{1}.lengthScale, rgp.cf{1}.magnSigma2)
+    xlabel('lenght-scale')
+    ylabel('magnitude')
+    hold on
+    plot(rgp.cf{1}.lengthScale(end), rgp.cf{1}.magnSigma2(end),'r*')
+    drawnow
+
+    subplot(2,2,3)
+    plot(rgp.likelih.disper)
+    xlabel('iteration')
+    ylabel('dispersion param')
+    hold on
+    plot(length(rgp.likelih.disper), rgp.likelih.disper(end),'r*')
+    drawnow
+    
+    subplot(2,2,[2 4])
+    G=repmat(NaN,size(X1));
+    G(xxii)=exp(gp.latentValues);
+    pcolor(X1,X2,G),shading flat
+    colormap(mapcolor(G)),colorbar
+    axis equal
+    axis([0 35 0 60])
+    title('relative risk')
+    drawnow
+end
+
+figure(3)
+clf
+G=repmat(NaN,size(X1));
+G(xxii)=median(exp(rgp.latentValues));
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.6    1.5])
+axis equal
+axis([0 35 0 60])
+title('Posterior median of relative risk, FIC GP')
+
+figure(4)
+G=repmat(NaN,size(X1));
+G(xxii)=std(exp(rgp.latentValues), [], 1).^2;
+pcolor(X1,X2,G),shading flat
+colormap(mapcolor(G)),colorbar
+set(gca, 'Clim', [0.005    0.03])
+axis equal
+axis([0 35 0 60])
+title('Posterior variance of relative risk, FIC GP')
