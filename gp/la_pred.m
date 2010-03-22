@@ -78,9 +78,9 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
             end
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
             end
         end
         
@@ -148,9 +148,9 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
             end
         end
 
@@ -210,9 +210,9 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
             end
             Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
             end
         end
       case 'CS+FIC'
@@ -362,9 +362,9 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
                 Varf = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
             end        
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
             end
         end
 
