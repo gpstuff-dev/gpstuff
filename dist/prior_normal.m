@@ -9,7 +9,7 @@ function p = prior_normal(do, varargin)
 %	The fields in P are:
 %           p.type         = 'Normal'
 %           p.mu           = Location (default 0)
-%           p.s2           = Scale (default 4)
+%           p.s2           = Scale (default 1)
 %           p.fh_pak       = Function handle to parameter packing routine
 %           p.fh_unpak     = Function handle to parameter unpacking routine
 %           p.fh_e         = Function handle to energy evaluation routine
@@ -49,7 +49,7 @@ function p = prior_normal(do, varargin)
         
         % set parameters
         p.mu = 0;
-        p.s2 = 4;
+        p.s2 = 1;
 
         
         % set parameter priors
@@ -126,7 +126,7 @@ function p = prior_normal(do, varargin)
     
     function e = prior_normal_e(x, p)
         
-        e = 0.5*sum(log(p.s2)+ 1./p.s2 .* sum((x-p.mu).^2,1));
+        e = 0.5*sum(log(2*pi) + log(p.s2)+ 1./p.s2 .* sum((x-p.mu).^2,1));
         
         if ~isempty(p.p.mu)
             e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);

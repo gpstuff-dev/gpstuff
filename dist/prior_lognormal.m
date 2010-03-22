@@ -24,7 +24,7 @@ function p = prior_lognormal(do, varargin)
 
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihim‰ki
+% Copyright (c) 2010 Jaakko Riihim√§ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -125,7 +125,7 @@ function p = prior_lognormal(do, varargin)
     
     function e = prior_lognormal_e(x, p)
         
-        e = 0.5*sum(log(x.*p.s2)+ 1./p.s2 .* sum((log(x)-p.mu).^2,1));
+        e = 0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
         
         if ~isempty(p.p.mu)
             e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
@@ -137,14 +137,14 @@ function p = prior_lognormal(do, varargin)
     
     function g = prior_lognormal_g(x, p)
         
-        g = (1./(x.*p.s2)).*(log(x)-p.mu+p.s2/2);
+        g = (1./(x.*p.s2)).*(log(x)-p.mu+p.s2);
         
         if ~isempty(p.p.mu)
-        	gmu = sum(-(1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
+        	gmu = sum(-(1./p.s2).*(log(x)-p.mu)) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
             g = [g gmu];
         end
         if ~isempty(p.p.s2)
-            gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1;
+            gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(log(x)-p.mu).^2 )) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1;
             g = [g gs2];
         end
     end
