@@ -335,10 +335,9 @@ function likelih = likelih_binomial(do, varargin)
     end
 
     
-    function [Ey, Vary, py] = likelih_binomial_predy(gp, Ef, Varf, y)
+    function [Ey, Vary, py] = likelih_binomial_predy(likelih, Ef, Varf, y)
     % Return E, Var, and p of the predictive density
       
-        likelih=gp.likelih;
         nt=length(Ef);
         Ey=zeros(nt,1);
         EVary = zeros(nt,1);

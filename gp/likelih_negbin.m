@@ -71,6 +71,7 @@ function likelih = likelih_negbin(do, varargin)
         likelih.fh_tiltedMoments = @likelih_negbin_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_negbin_siteDeriv;
         likelih.fh_mcmc = @likelih_negbin_mcmc;
+        likelih.fh_predy = @likelih_negbin_predy;
         likelih.fh_recappend = @likelih_negbin_recappend;
 
         if length(varargin) > 3
@@ -515,6 +516,69 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
 
+    function [Ey, Vary, Py] = likelih_negbin_predy(likelih, Ef, Varf, y)
+    %LIKELIH_NEGBIN_PREDY    Returns the predictive mean, variance and density of y
+    %
+    %   Description
+    %   [Ey, Vary, py] = LIKELIH_NEGBIN_PREDY(LIKELIH, EF, VARF, Y) 
+
+       avgE = likelih.avgE;
+       r = likelih.disper;
+        
+       Py = zeros(size(Ef));
+       Ey = zeros(size(Ef));
+       EVary = zeros(size(Ef));
+       VarEy = zeros(size(Ef)); 
+        
+       % Evaluate Ey and Vary 
+       for i1=1:length(Ef)
+%            %%%% With MC 
+%            % First sample f
+%            f_samp = normrnd(Ef(i1),sqrt(Varf(i1)),nsamp,1);
+%            la_samp = avgE(i1).*exp(f_samp);
+%             
+%            % Conditional mean and variance of y (see Gelman et al. p. 23-24)
+%            Ey2(i1) = mean(la_samp);
+%            Vary2(i1) = mean(la_samp + la_samp.^2/r) + var(la_samp);
+
+           %%% With quadrature
+           ci = sqrt(Varf(i1));
+
+           F = @(x) avgE(i1).*exp(x).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           
+           F2 = @(x) (avgE(i1).*exp(x)+((avgE(i1).*exp(x)).^2/r)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           
+           F3 = @(x) (avgE(i1).*exp(x)).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+       end
+       Vary = EVary + VarEy;
+
+       % Evaluate predictive density of the given observations
+       if nargout > 2
+           for i1=1:length(Ef)
+               myy_i = Ef(i1);
+               sigm2_i = Varf(i1);
+               
+               if y(i1) > 0
+                   m = log(r./(y(i1)+r)./avgE(i1));
+                   s2 = r.*(y(i1)+r)./y(i1);
+                   mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
+                   sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
+               else
+                   mean_app = myy_i;
+                   sigm_app = sqrt(sigm2_i);
+               end
+               
+               % Predictive density of the given observations
+               pd = @(f) nbinpdf(y(i1),r,r./(avgE(i1).*exp(f)+r)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
+               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);%./m_0;
+           end
+       end
+    end
+
+
     function reclikelih = likelih_negbin_recappend(reclikelih, ri, likelih)
     % RECAPPEND - Record append
     %          Description
@@ -543,6 +607,7 @@ function likelih = likelih_negbin(do, varargin)
             reclikelih.fh_g3 = @likelih_negbin_g3;
             reclikelih.fh_tiltedMoments = @likelih_negbin_tiltedMoments;
             reclikelih.fh_mcmc = @likelih_negbin_mcmc;
+            reclikelih.fh_predy = @likelih_negbin_predy;
             reclikelih.fh_recappend = @likelih_negbin_recappend;
             return
         end

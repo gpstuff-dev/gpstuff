@@ -327,34 +327,60 @@ function likelih = likelih_poisson(do, varargin)
 
     
     function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, y)
-    % Return E, Var, and p of the predictive density
+    %LIKELIH_POISSON_PREDY    Returns the predictive mean, variance and density of y
+    %
+    %   Description
+    %   [Ey, Vary, py] = LIKELIH_POISSON_PREDY(LIKELIH, EF, VARF, Y) 
+       avgE = likelih.avgE;
 
-        atol = 1e-10;
-        reltol = 1e-6;
-        gamlny = likelih.gamlny;
-        avgE = likelih.avgE;
+       %nsamp = 10000;
+        
+       Py = zeros(size(Ef));
+       Ey = zeros(size(Ef));
+       EVary = zeros(size(Ef));
+       VarEy = zeros(size(Ef)); 
+       % Evaluate Ey and Vary (with MC)
+       for i1=1:length(Ef)
+%            %%% With MC
+%            % First sample f
+%            f_samp = normrnd(Ef(i1),sqrt(Varf(i1)),nsamp,1);
+%            la_samp = avgE(i1).*exp(f_samp);
+%  
+%            % Conditional mean and variance of y (see Gelman et al. p. 23-24)
+%            Ey(i1) = mean(la_samp);
+%            Vary(i1) = Ey(i1) + var(la_samp);
 
-        for i2=1:length(ty)
-            myy_i = Ef(i2);
-            sigm2_i = Varf(i2);
-            if ty(i2) > 0
-                mean_app = (myy_i/sigm2_i + log(ty(i2)/avgE(i2)).*ty(i2))/(1/sigm2_i + ty(i2));
-                sigm_app = sqrt((1/sigm2_i + avgE(i2))^-1);
-            else
-                mean_app = myy_i;
-                sigm_app = sqrt((1/sigm2_i + avgE(i2))^-1);
-            end
-            
-            zm = @(f) norm_pdf(f,myy_i,sqrt(sigm2_i));            
-            [m_0] = quadgk(zm, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
-            z1 = @(f) norm_pdf(f,myy_i,sqrt(sigm2_i));
-            
-            
-            if nargin == 5
-                pd = @(f) poisspdf(yyy(i2),avgE(i2).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
-                Py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app)./m_0;
-            end
-        end
+           %%% With quadrature
+           ci = sqrt(Varf(i1));
+
+           F = @(x) avgE(i1).*exp(x).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           
+           EVary(i1) = Ey(i1);
+           
+           F3 = @(x) (avgE(i1).*exp(x)).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+       end
+       Vary = EVary + VarEy;
+
+       % Evaluate predictive density of the given observations
+       if nargout > 2
+           for i1=1:length(Ef)
+               myy_i = Ef(i1);
+               sigm2_i = Varf(i1);
+               if y(i1) > 0
+                   mean_app = (myy_i/sigm2_i + log(y(i1)/avgE(i1)).*y(i1))/(1/sigm2_i + y(i1));
+                   sigm_app = sqrt((1/sigm2_i + avgE(i1))^-1);
+               else
+                   mean_app = myy_i;
+                   sigm_app = sqrt((1/sigm2_i + avgE(i1))^-1);
+               end
+               
+               % Predictive density of the given observations
+               pd = @(f) poisspdf(y(i1),avgE(i1).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
+               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);%./m_0;
+           end
+       end
     end
     
     
