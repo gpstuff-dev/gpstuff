@@ -378,7 +378,7 @@ function likelih = likelih_poisson(do, varargin)
                
                % Predictive density of the given observations
                pd = @(f) poisspdf(y(i1),avgE(i1).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
-               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);%./m_0;
+               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
            end
        end
     end

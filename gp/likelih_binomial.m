@@ -335,16 +335,19 @@ function likelih = likelih_binomial(do, varargin)
     end
 
     
-    function [Ey, Vary, py] = likelih_binomial_predy(likelih, Ef, Varf, y)
-    % Return E, Var, and p of the predictive density
-      
+    function [Ey, Vary, Py] = likelih_binomial_predy(likelih, Ef, Varf, y)
+    %LIKELIH_BINOMIAL_PREDY    Returns the predictive mean, variance and density of y
+    %
+    %   Description
+    %   [Ey, Vary, py] = LIKELIH_BINOMIAL_PREDY(LIKELIH, EF, VARF, Y) 
+
         nt=length(Ef);
         Ey=zeros(nt,1);
         EVary = zeros(nt,1);
         VarEy = zeros(nt,1);
         
         if nargin > 3
-            py=zeros(nt,1);
+            Py=zeros(nt,1);
         end
         
         for i1=1:nt
@@ -360,8 +363,9 @@ function likelih = likelih_binomial(do, varargin)
             
             if nargin > 3
                 bin_cc=exp(gammaln(likelih.Nt(i1)+1)-gammaln(y(i1)+1)-gammaln(likelih.Nt(i1)-y(i1)+1));
+                
                 F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(likelih.Nt(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-                py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+                Py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
             end
         end
         Vary = EVary+VarEy;

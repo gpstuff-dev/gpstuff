@@ -239,10 +239,7 @@ function likelih = likelih_probit(do, varargin)
         py1 = normcdf(Ef./sqrt(1+Varf));
         Ey = 2*py1 - 1;
 
-        % This seems wrong?
-        %Vary = Ey.*(1-Ey.^2);      
-
-        Vary = 1-(2*py1-1).^2;
+        Vary = 1-Ey.^2;
         
         if nargin > 3
             py = normcdf(Ef.*y./sqrt(1+Varf));    % Probability p(y_new)

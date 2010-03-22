@@ -573,7 +573,7 @@ function likelih = likelih_negbin(do, varargin)
                
                % Predictive density of the given observations
                pd = @(f) nbinpdf(y(i1),r,r./(avgE(i1).*exp(f)+r)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
-               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);%./m_0;
+               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
            end
        end
     end

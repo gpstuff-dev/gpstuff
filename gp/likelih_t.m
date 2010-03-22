@@ -921,10 +921,10 @@ function likelih = likelih_t(do, varargin)
         upfact = -(Varp - ll)./ll^2;
     end
 
-    function [Ey, Vary, Py] = likelih_t_predy(gp, Ef, Varf, y)
+    function [Ey, Vary, Py] = likelih_t_predy(likelih, Ef, Varf, y)
 
-        nu = gp.likelih.nu;
-        sigma = gp.likelih.sigma;
+        nu = likelih.nu;
+        sigma = likelih.sigma;
 
 % $$$         sampf = gp_rnd(gp, tx, ty, x, [], [], 400);
 % $$$         r = trand(nu,size(sampf));
@@ -932,16 +932,31 @@ function likelih = likelih_t(do, varargin)
 % $$$         
 % $$$         Ey = mean(r);
 % $$$         Vary = var(r, 0, 2);
+       Ey = zeros(size(Ef));
+       EVary = zeros(size(Ef));
+       VarEy = zeros(size(Ef)); 
+       Py = zeros(size(Ef));
+        for i1=1:length(Ef)
+           %%% With quadrature
+           ci = sqrt(Varf(i1));
+
+           F = @(x) x.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           
+           F2 = @(x) (nu./(nu-2).*sigma.^2).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           
+           F3 = @(x) x.^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+       end
         
         if nargin > 3
             for i2 = 1:length(Ef)
                 mean_app = Ef(i2);
                 sigm_app = sqrt(Varf(i2));
-                zm = @(f) norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
-                [m_0] = quadgk(zm, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
                                 
                 pd = @(f) t_pdf(y(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
-                Py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app)./m_0;
+                Py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
             end
         end
         

@@ -284,7 +284,7 @@ function likelih = likelih_logit(do, varargin)
         end
     end
     
-    function [Ey, Vary, py] = likelih_logit_predy(gp, Ef, Varf, y)
+    function [Ey, Vary, py] = likelih_logit_predy(likelih, Ef, Varf, y)
     % Return the predictive probability of ty given the posterior mean Ef 
     % and variance Varf
         py1 = zeros(1,length(Ef));
