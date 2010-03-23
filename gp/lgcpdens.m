@@ -260,7 +260,7 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
   pt = prior_t('init', 's2', 10^2);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
-     gpcf1 = gpcf('set', gpcf1, 'magnSigma2', 5, 'magnSigma2_prior', pt);
+     gpcf1 = gpcf('set', gpcf1, 'magnSigma2', .1, 'magnSigma2_prior', pt);
   end
   if isfield(gpcf1,'lengthScale')
      gpcf1 = gpcf('set', gpcf1, 'lengthScale', 1, 'lengthScale_prior', pt);
@@ -347,7 +347,8 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
       end
       
       % Optimize hyperparameters
-      w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, param), gpla_g(ww, gp, xx, yy, param)), w0, opt);
+      w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, param), ...
+                               gpla_g(ww, gp, xx, yy, param)), w0, opt);
       gp = gp_unpak(gp,w,param);
       
       % Make prediction for the test points
@@ -361,5 +362,4 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,base,hyperint)
         %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
         [notused, notused, notused, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
       end
-      
   end
