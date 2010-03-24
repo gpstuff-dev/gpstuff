@@ -362,9 +362,9 @@ function likelih = likelih_binomial(do, varargin)
             VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
             
             if nargin > 3
-                bin_cc=exp(gammaln(likelih.Nt(i1)+1)-gammaln(y(i1)+1)-gammaln(likelih.Nt(i1)-y(i1)+1));
-                
-                F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(likelih.Nt(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+                %bin_cc=exp(gammaln(likelih.Nt(i1)+1)-gammaln(y(i1)+1)-gammaln(likelih.Nt(i1)-y(i1)+1));
+                %F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(likelih.Nt(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+                F  = @(x)exp(gammaln(likelih.Nt(i1)+1)-gammaln(y(i1)+1)-gammaln(likelih.Nt(i1)-y(i1)+1) + y(i1).*log(1./(1+exp(-x))) + (likelih.Nt(i1)-y(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
                 Py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
             end
         end
