@@ -14,6 +14,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
 %         OPT.SCG        contains the options for scaled conjugate gradients
 %         OPT.FMINUNC    contains the options for fminunc
 %         OPT.INT_METHOD is the method used for integration
+%                        'CCD' for circular composite design
 %                        'grid' for grid search
 %                        'is_normal' for sampling from gaussian appr
 %                        'is_normal_qmc' for quasi monte carlo samples
@@ -109,7 +110,7 @@ function [gp_array, P_TH, th, Ef, Varf, x, fx, H] = gp_ia(opt, gp, xx, yy, tx, p
 
     % The mode and hessian at it 
     if isfield(opt, 'scg')
-        w = scg2(fh_e, w0, opt, fh_g, gp, xx, yy, param);
+        w = scg2(fh_e, w0, opt.scg, fh_g, gp, xx, yy, param);
     elseif isfield(opt, 'fminunc')
         w = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, xx, yy, param), feval(fh_g, ww, gp, xx, yy, param)), w0, opt.fminunc);
     end

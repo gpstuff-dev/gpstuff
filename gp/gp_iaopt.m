@@ -79,7 +79,7 @@ switch optmethod
     opt.scg = scg2_opt;
     opt.scg.tolfun = 1e-3;
     opt.scg.tolx = 1e-3;
-    opt.scg.display = 1;    
+    opt.scg.display = 0;    
   case 'fminunc'
     opt.fminunc=optimset('GradObj','on');
     opt.fminunc=optimset(opt.fminunc,'LargeScale', 'on');    
