@@ -46,7 +46,7 @@ function w = gp_pak(gp, param)
 w = [];
 
 if nargin < 2
-    param = 'covariance+inducing+likelihood';
+    param = gp.infer_params;
 end
 
 % Pack the hyperparameters of covariance functions

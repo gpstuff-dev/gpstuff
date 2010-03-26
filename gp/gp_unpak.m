@@ -41,7 +41,7 @@ function gp = gp_unpak(gp, w, param)
 % License.txt, included with the software, for details.
 
 if nargin < 3
-    param = 'covariance+inducing+likelihood';
+    param = gp.infer_params;
 end
 
 % Unpack the hyperparameters of covariance functions
