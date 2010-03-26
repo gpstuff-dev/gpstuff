@@ -1,23 +1,21 @@
-function [g, gdata, gprior] = gp_g(w, gp, x, t, param)
+function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
 %GP_G   Evaluate gradient of energy for Gaussian Process
 %
 %	Description
-%	G = GP_G(W, GP, X, Y) takes a full GP hyper-parameter vector W,
-%       data structure GP a matrix X of input vectors and a matrix Y
-%       of target vectors, and evaluates the gradient G of the energy function. 
-%	Each row of X corresponds to one input vector and each row of Y 
-%       corresponds to one target vector. NOTE! This parametrization works 
-%       only for full GP!
+%	G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
+%        vector W, data structure GP a matrix X of input vectors
+%        and a matrix Y of target vectors, and evaluates the
+%        gradient G of the energy function. Each row of X
+%        corresponds to one input vector and each row of Y NOTE! 
+%        This parametrization works only for full GP!
 %
-%	G = GP_G(W, GP, P, Y, PARAM) in case of sparse model takes also
-%       string PARAM defining the parameters to take the gradients with
-%       respect to. Possible parameters are 
-%       'hyper'          = hyperparameters
-%       'inducing'       = inducing inputs 
-%       'hyper+inducing' = hyperparameters and inducing inputs
+%	[G, GDATA, GPRIOR] = GP_G(W, GP, X, Y, OPTIONS) also returns
+%        separately the data and prior contributions to the gradient.
 %
-%	[G, GDATA, GPRIOR] = GP_G(GP, X, Y) also returns separately
-%	the data and prior contributions to the gradient.
+%     OPTIONS is optional parameter-value pair
+%       'param' with the default value 'covariance+inducing+likelihood'
+%         Tells which parameter groups are included in W. See GP_PAK for
+%         details.
 %
 %	See also
 %       GP_E, GP_PAK, GP_UNPAK, GPCF_*
@@ -28,9 +26,22 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, param)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if nargin < 5
-    param = 'covariance+inducing+likelihood';
-end
+ip=inputParser;
+ip.FunctionName = 'GP_E';
+ip.addRequired('w', @(x) isreal(x) && all(isfinite(x));
+ip.addRequired('gp',@isstruct);
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('t', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addParamValue('param','covariance+inducing+likelihood', ...
+                 @(x) isempty(x) || (ischar(x) && ...
+                 ~isempty(regexp(param,...
+                                 '(covariance)|(inducing)|(likelihood)'))));
+ip.parse(w, gp, x, t, varargin{:});
+w=ip.Results.w;
+gp=ip.Results.gp;
+x=ip.Results.x;
+t=ip.Results.t;
+param=ip.Results.param;
 
 gp=gp_unpak(gp, w, param);       % unpak the parameters
 ncf = length(gp.cf);

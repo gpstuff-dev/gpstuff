@@ -2,19 +2,19 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
 %GPLA_E Conduct Laplace approximation and return marginal log posterior estimate
 %
 %     Description
-%	GP = GPLA_E('init', GP, X, Y, OPT) takes a GP data structure GP 
+%	GP = GPLA_E('init', GP, X, Y, OPTIONS) takes a GP data structure GP 
 %        together with a matrix X of input vectors and a matrix Y of target
 %        vectors, and sets required fiels for the Laplace approximation.
 %
-%	E = GPLA_E(W, GP, X, Y, OPT) takes a GP data structure GP together
+%	E = GPLA_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP together
 %	 with a matrix X of input vectors and a matrix Y of target vectors,
 %	 and finds the Laplace approximation for the conditional posterior 
 %        p(Y|X, th), where th is the hyperparameters. Returns the energy E 
 %        at th. Each row of X corresponds to one input vector and each row
 %        of Y corresponds to one target vector.
 %
-%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, X, Y, OPT) also returns the data
-%        and prior components of the total error.
+%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, X, Y, OPTIONS) also returns the
+%        data and prior components of the total error.
 %
 %       The energy is minus log posterior cost function:
 %            E = EDATA + EPRIOR 
@@ -23,7 +23,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
 %       X is inputs and Y is observations (regression) or latent values
 %       (non-Gaussian likelihood).
 %
-%     OPT is optional parameter-value pair
+%     OPTIONS is optional parameter-value pair
 %       'param' with a default value 'covariance+inducing+likelihood'
 %        Tells which parameter groups are included in W. See GP_PAK for
 %        details.
@@ -49,10 +49,10 @@ ip=inputParser;
 ip.FunctionName = 'GPLA_E';
 ip.addRequired('w', @(x) ...
                (ischar(x) && strcmp(w, 'init')) || ...
-               (isreal(x) && all(isfinite(x))));
+               (isreal(x) && all(isfinite(x(:)))));
 ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('param','covariance+inducing+likelihood', ...
                  @(x) isempty(x) || (ischar(x) && ...
                  ~isempty(regexp(x,'(covariance)|(inducing)|(likelihood)'))));

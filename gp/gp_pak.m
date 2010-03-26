@@ -3,31 +3,35 @@ function w = gp_pak(gp, param)
 %
 %	Description
 %	W = GP_PAK(GP, PARAM) takes a Gaussian Process data structure GP and
-%	string PARAM defining, which parameters are packed and combines the 
-%       parameters into a single row vector W. If PARAM is not given the 
-%       function packs all parameters.
+%	 string PARAM defining, which parameters are packed and combines the 
+%        parameters into a single row vector W. If PARAM is not given the 
+%        function packs all parameters.
 %
-%       Each of the following strings in PARAM defines one group of parameters 
-%       to pack:
+%       Each of the following strings in PARAM defines one group of 
+%       parameters to pack:
 %         'covariance'     = pack hyperparameters of covariance function
 %         'inducing'       = pack inducing inputs
 %                            W = gp.X_u(:)
 %         'likelihood'     = pack parameters of likelihood
 %
-%       By combining the strings one can pack more than one group of parameters. 
+%       By combining the strings one can pack more than one group of 
+%       parameters. 
 %       For example:
-%         'covariance+inducing' = pack covariance function parameters and induging inputs
-%         'covariance+likelih'  = pack covariance function parameters of likelihood parameters
+%         'covariance+inducing' = pack covariance function parameters 
+%                                 and inducing inputs
+%         'covariance+likelih'  = pack covariance function parameters 
+%                                 of likelihood parameters
 %
-%       Inside each group (such as covariance functions) the parameters to be packed
-%       is defined by the existence of a prior structure. For example, if GP has two
-%       covariance functions but only the first one has prior for its parameters then 
-%       only the parameters of the first one are packed. Thus, also inducing inputs 
-%       require prior if they are to be optimized.
+%       Inside each group (such as covariance functions) the parameters
+%       to be packed is defined by the existence of a prior structure.
+%       For example, if GP has two covariance functions but only the first
+%       one has prior for its parameters then only the parameters of the
+%       first one are packed. Thus, also inducing inputs require prior if 
+%       they are to be optimized.
 % 
-%       gp_pak and gp_unpak functions are used when GP parameters are optimized
-%       or sampled with gp_mc. The same PARAM string should be given for all of 
-%       these functions.
+%       gp_pak and gp_unpak functions are used when GP parameters are
+%       optimized or sampled with gp_mc. The same PARAM string should
+%       be given for all of these functions.
 %
 %	See also
 %	GP_UNPAK

@@ -2,16 +2,17 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %GPLA_G   Evaluate gradient of Laplace approximation's marginal log posterior estimate 
 %
 %     Description
-%	G = GPLA_G(W, GP, X, Y, OPT) takes a full GP hyper-parameter vector W, 
-%        data structure GP a matrix X of input vectors and a matrix Y
-%        of target vectors, and evaluates the gradient G of EP's marginal 
-%        log posterior estimate . Each row of X corresponds to one input
-%        vector and each row of Y corresponds to one target vector. 
+%	G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
+%        vector W, data structure GP a matrix X of input vectors
+%        and a matrix Y of target vectors, and evaluates the
+%        gradient G of EP's marginal log posterior estimate . Each
+%        row of X corresponds to one input vector and each row of Y
+%        corresponds to one target vector.
 %
-%	[G, GDATA, GPRIOR] = GPLA_G(GP, X, Y, OPT) also returns the data
+%	[G, GDATA, GPRIOR] = GPLA_G(GP, X, Y, OPTIONS) also returns the data
 %	 and prior contributions to the gradient.
 %
-%     OPT is optional parameter-value pair
+%     OPTIONS is optional parameter-value pair
 %       'param' with the default value 'covariance+inducing+likelihood'
 %         Tells which parameter groups are included in W. See GP_PAK for
 %         details.
@@ -32,8 +33,8 @@ ip=inputParser;
 ip.FunctionName = 'GPLA_E';
 ip.addRequired('w', @(x) isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('param','covariance+inducing+likelihood', ...
                  @(x) isempty(x) || (ischar(x) && ...
                  ~isempty(regexp(x,...

@@ -2,10 +2,11 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
 %GP_PRED    Make predictions for Gaussian process
 %
 %	Description
-%	[Ef, Varf] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND) takes a GP data structure 
-%       together with a matrix X of input vectors, Matrix TX of training inputs and
-%       vector TY of training targets, and returns a vector Ef of predictive expectations 
-%       and variances of the latent function
+%	[Ef, Varf] = GP_PRED(GP, TX, TY, X, OPTIONS) takes a GP data
+%        structure together with a matrix X of input vectors, Matrix TX of
+%        training inputs and vector TY of training targets, and returns a
+%        vector Ef of predictive expectations and variances of the latent
+%        function
 %
 %            Ef =  E[f | x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
 %          Varf = Var[f | x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 

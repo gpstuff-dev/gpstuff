@@ -2,13 +2,14 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
 %GP_E	Evaluate energy function for Gaussian Process 
 %
 %     Description
-%	E = GP_E(W, GP, X, Y, OPT) takes a Gaussian process data structure GP 
-%	 together with a matrix X of input vectors and a matrix Y of targets,
-%	 and evaluates the energy function E.  Each row of X corresponds to
-%        one input vector and each row of Y corresponds to one target vector.
+%	E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process data
+%        structure GP together with a matrix X of input vectors and
+%        a matrix Y of targets, and evaluates the energy function
+%        E. Each row of X corresponds to one input vector and each
+%        row of Y corresponds to one target vector.
 %
-%	[E, EDATA, EPRIOR] = GP2_E(W, GP, X, Y, OPT) also returns the data 
-%        and prior components of the total energy.
+%	[E, EDATA, EPRIOR] = GP2_E(W, GP, X, Y, OPTIONS) also returns
+%        the data and prior components of the total energy.
 %
 %       The energy is minus log posterior cost function:
 %            E = EDATA + EPRIOR 
@@ -17,7 +18,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
 %       X is inputs and Y is observations (regression) or latent values
 %       (non-Gaussian likelihood).
 %
-%     OPT is optional parameter-value pair
+%     OPTIONS is optional parameter-value pair
 %       'param' with the default value 'covariance+inducing+likelihood'
 %         Tells which parameter groups are included in W. See GP_PAK for
 %         details.
