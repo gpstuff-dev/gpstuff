@@ -115,7 +115,7 @@ function likelih = likelih_poisson(do, varargin)
 
 
 
-    function w = likelih_poisson_pak(likelih, w)
+    function w = likelih_poisson_pak(likelih)
     %LIKELIH_POISSON_PAK      Combine likelihood parameters into one vector.
     %
     %   NO PARAMETERS
@@ -131,7 +131,7 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-    function [likelih, w] = likelih_poisson_unpak(likelih, w)
+    function [likelih, w] = likelih_poisson_unpak(w, likelih)
     %LIKELIH_POISSON_UNPAK      Combine likelihood parameters into one vector.
     %
     %   NO PARAMETERS
@@ -143,6 +143,8 @@ function likelih = likelih_poisson(do, varargin)
     %
     %	See also
     %	LIKELIH_POISSON_PAK
+      likelih=likelih;
+      w=[];
     end
 
 

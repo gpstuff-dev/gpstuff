@@ -91,7 +91,7 @@ function likelih = likelih_logit(do, varargin)
 
 
 
-    function w = likelih_logit_pak(likelih, w)
+    function w = likelih_logit_pak(likelih)
     %LIKELIH_LOGIT_PAK      Combine likelihood parameters into one vector.
     %
     %   NO PARAMETERS
@@ -107,7 +107,7 @@ function likelih = likelih_logit(do, varargin)
     end
 
 
-    function [likelih, w] = likelih_logit_unpak(likelih, w)
+    function [likelih, w] = likelih_logit_unpak(w, likelih)
     %LIKELIH_LOGIT_UNPAK      Combine likelihood parameters into one vector.
     %
     %   NO PARAMETERS
@@ -119,6 +119,8 @@ function likelih = likelih_logit(do, varargin)
     %
     %	See also
     %	LIKELIH_LOGIT_PAK
+      likelih=likelih;
+      w=[];
     end
 
 

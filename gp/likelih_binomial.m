@@ -111,7 +111,7 @@ function likelih = likelih_binomial(do, varargin)
 
 
 
-    function w = likelih_binomial_pak(likelih, w)
+    function w = likelih_binomial_pak(likelih)
     %LIKELIH_BINOMIAL_PAK      Combine likelihood parameters into one vector.
     %
     %   NO PARAMETERS!
@@ -127,7 +127,7 @@ function likelih = likelih_binomial(do, varargin)
     end
 
 
-    function [likelih, w] = likelih_binomial_unpak(likelih, w)
+    function [likelih, w] = likelih_binomial_unpak(w, likelih)
     %LIKELIH_BINOMIAL_UNPAK      Combine likelihood parameters into one vector.
     %
     %   NO PARAMETERS!
@@ -139,6 +139,8 @@ function likelih = likelih_binomial(do, varargin)
     %
     %	See also
     %	LIKELIH_BINOMIAL_PAK
+      likelih=likelih;
+      w=[];
     end
 
 
