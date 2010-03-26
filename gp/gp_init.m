@@ -1,27 +1,30 @@
 function gp = gp_init(do, varargin)
 %GP_INIT	Create a Gaussian Process.
 %
-%	Description
+%     Description
 %
-%	GP = GP_INIT('INIT', 'TYPE', 'LIKELIH', GPCF, NOISE, VARARGIN)
-%       Creates a Gaussian Process model with a single output. Takes a string/structure 
-%       'LIKELIH', which spesifies likelihood function used, GPCF array specifying 
-%       the covariance functions and NOISE array, which specify the noise covariance
-%       functions used for Gaussian process. At minimum one covariance function has 
-%       to be given.
+%	GP = GP_INIT(DO, TYPE, 'LIKELIH', GPCF, NOISE, VARARGIN) 
+%
+%        Creates a Gaussian Process model with a single output. 
+%        Takes a string/structure 'LIKELIH', which spesifies
+%        likelihood function used, GPCF array specifying the
+%        covariance functions and NOISE array, which specify the
+%        noise covariance functions used for Gaussian process. At
+%        minimum one covariance function has to be given.
 %       
-%       The GPCF and NOISE arrays consist of covariance function structures 
-%       (see, for example, gpcf_sexp).
-%   
-%       The LIKELIH is a string  'regr' for a regression model with additive Gaussian 
-%       noise. Other likelihood models require a likelihood structure for LIKELIH 
-%       parameter (see, for example, likelih_probit).
-%
 %       TYPE defines the type of GP, possible types are:
 %        'FULL'        (full GP), 
 %        'FIC'         (fully independent conditional), 
 %        'PIC'         (partially independent condional), 
 %        'CS+FIC'      (Compact support + FIC model)
+%   
+%       LIKELIH is a string 'regr' for a regression model with
+%        additive Gaussian noise. Other likelihood models require a
+%        likelihood structure for LIKELIH parameter (see, for
+%        example, likelih_probit).
+%
+%        The GPCF and NOISE arrays consist of covariance function
+%        structures (see, for example, gpcf_sexp, gpcf_noiset).
 %
 %       With VARAGIN the fields of the GP structure can be set into different values 
 %       VARARGIN = 'FIELD1', VALUE1, 'FIELD2', VALUE2, ... 
@@ -43,36 +46,45 @@ function gp = gp_init(do, varargin)
 %       The additional fields needed in sparse approximations are:
 %         X_u            = Inducing inputs in FIC, PIC and CS+FIC models
 %         blocks         = Initializes the blocks for the PIC model
-%                          The value for blocks has to be a cell array of the index vectors
-%                          appointing the data points into blocks. For example, if x is a matrix 
-%                          of data inputs then x(param{i},:) are the inputs belonging to the ith block.
+%                          The value for blocks has to be a cell
+%                          array of the index vectors appointing
+%                          the data points into blocks. For
+%                          example, if x is a matrix of data inputs
+%                          then x(param{i},:) are the inputs
+%                          belonging to the ith block.
 %
-%       The additional fields when the model is not for regression (likelih ~='regr') is:
-%         latent_method  = Defines a method for marginalizing over latent values. Possible 
-%                          methods are 'MCMC', 'Laplace' and 'EP'. The fields for them are
+%       The additional fields when the model is not for regression
+%       (likelih ~='regr') are:
+%         latent_method  = Defines a method for marginalizing over latent 
+%                          values. Possible methods are 'MCMC',
+%                          'Laplace' and 'EP'. The fields for them
+%                          are
 %                         
-%                          In case of MCMC:
-%                            fh_latentmc    = Function handle to function which samples the latent values
-%                            latentValues   = Vector of latent values 
-%                          and they are set as following
-%                            gp_init('SET', GP, 'latent_method', {'MCMC', @fh_latentmc Z});
+%        In case of MCMC:
+%         fh_latentmc    = Function handle to function which samples the 
+%                          latent values
+%         latentValues   = Vector of latent values and they are set as 
+%                          following
+%         gp_init('SET', GP, 'latent_method', {'MCMC', @fh_latentmc Z});
 %                          where Z is a (1xn) vector of latent values 
 %
-%                          In case of EP:
-%                            fh_e       = function handle to an energy function
-%                          and they are set as following
-%                            gp_init('SET', GP, 'latent_method', {'Laplace', x, y, 'param'});
-%                          where x is a matrix of inputs, y vector/matrix of outputs and 'param' a 
-%                          string defining wich parameters are sampled/optimized (see gp_pak).
+%        In case of Laplace:
+%         fh_e           = Function handle to an energy function and they 
+%                          are set as following
+%         gp_init('SET', GP, 'latent_method', {'Laplace', x, y, 'param'});
+%                          where x is a matrix of inputs, y vector/matrix 
+%                          of outputs and 'param' a string defining which 
+%                          parameters are inferred (see gp_pak).
 % 
-%                          In case of EP:
-%                            fh_e       = function handle to an energy function
-%                            site_tau   = vector (size 1xn) of tau site parameters 
-%                            site_mu    = vector (size 1xn) of mu site parameters 
+%        In case of EP:
+%         fh_e           = function handle to an energy function
+%         site_tau       = vector (size 1xn) of tau site parameters 
+%         site_mu        = vector (size 1xn) of mu site parameters 
 %                          and they are set as following
-%                            gp_init('SET', GP, 'latent_method', {'EP', x, y, 'param'});
-%                          where x is a matrix of inputs, y vector/matrix of outputs and 'param' a 
-%                          string defining wich parameters are sampled/optimized (see gp_pak).
+%         gp_init('SET', GP, 'latent_method', {'EP', x, y, 'param'});
+%                          where x is a matrix of inputs, y vector/matrix 
+%                          of outputs and 'param' a string defining which 
+%                          parameters are sampled/optimized (see gp_pak).
 %
 %	See also
 %	GPINIT, GP2PAK, GP2UNPAK
