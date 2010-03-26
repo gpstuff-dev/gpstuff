@@ -13,7 +13,7 @@ function opt = gp_iaopt(opt, method, optmethod);
 %
 %             'grid'  = a grid based integration
 %                  opt.int_method = 'grid';
-%                  opt.stepsize   = 1;
+%                  opt.step_size   = 1;
 %                  opt.threshold  = 2.5;
 %                  opt.validate   = 1;    (check that the integration results are valid)
 %
@@ -93,7 +93,7 @@ end
 switch method
   case 'grid'
     opt.int_method = 'grid';
-    opt.stepsize = 1;
+    opt.step_size = 1;
     opt.threshold = 2.5;
     opt.validate = 0;
   case 'is_normal'
@@ -139,7 +139,9 @@ switch method
   case 'CCD'
     opt.int_method = 'CCD';
     opt.improved = 0;
-    opt.stepsize = 1;
+    opt.step_size = 1;
     opt.f0 = 1.1;
     opt.validate = 0;
+  otherwise
+    error('gp_iaopt: unknown type of integration method.')
 end    

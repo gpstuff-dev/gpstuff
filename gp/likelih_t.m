@@ -3,9 +3,14 @@ function likelih = likelih_t(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_T('INIT', NU, SIGMA) Create and initialize Student-t likelihood. 
-%       The input argument Y contains incedence counts and YE the expected number of
-%       incidences
+%	LIKELIH = LIKELIH_T('INIT') Create and initialize Student-t likelihood. 
+%
+%       The likelihood is defined as follows:
+%                            __ n
+%                p(y|f, z) = || i=1 C(nu,s2) * ( 1 + 1/nu * (y_i - f_i)^2/s2 )^(-(nu+1)/2)
+%
+%       where nu is the degrees of freedom, s2 the scale and f_i the latent variable 
+%       defining the mean.  C(nu,s2) is constant depending on nu and s2.
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'Student-t'
@@ -14,7 +19,6 @@ function likelih = likelih_t(do, varargin)
 %         likelih.fix_nu           = 1 for keeping nu fixed, 0 for inferring it (1)
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
 %         likelih.fh_g2            = function handle to second derivatives of energy
@@ -40,14 +44,12 @@ function likelih = likelih_t(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        nu = varargin{1};
-        sigma = varargin{2};
         likelih.type = 'Student-t';
         
         % Set parameters
@@ -62,7 +64,6 @@ function likelih = likelih_t(do, varargin)
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_t_pak;
         likelih.fh_unpak = @likelih_t_unpak;
-        likelih.fh_permute = @likelih_t_permute;
         likelih.fh_priore = @likelih_t_priore;
         likelih.fh_priorg = @likelih_t_priorg;
         likelih.fh_e = @likelih_t_e;
@@ -181,20 +182,7 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function likelih = likelih_t_permute(likelih, p, varargin)
-    %LIKELIH_T_PERMUTE    A function to permute the ordering of parameters 
-    %                           in likelihood structure
-    %   Description
-    %	LIKELIH = LIKELIH_T_UNPAK(LIKELIH, P) takes a likelihood data structure
-    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
-    %   according to P.
-    %
-    %   See also 
-    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
-        
-    end
-
-    function logPrior = likelih_t_priore(likelih, varargin)
+    function logPrior = likelih_t_priore(likelih, varargin, z)
     %LIKELIH_T_PRIORE    log(prior) of the likelihood hyperparameters
     %
     %   Description
@@ -216,7 +204,7 @@ function likelih = likelih_t(do, varargin)
         end
     end
     
-    function glogPrior = likelih_t_priorg(likelih, varargin)
+    function glogPrior = likelih_t_priorg(likelih, varargin, z)
     %LIKELIH_T_PRIORG    d log(prior)/dth of the likelihood hyperparameters th
     %
     %   Description
@@ -243,7 +231,7 @@ function likelih = likelih_t(do, varargin)
         end    
     end
     
-    function logLikelih = likelih_t_e(likelih, y, f, varargin)
+    function logLikelih = likelih_t_e(likelih, y, f, varargin, z)
     %LIKELIH_T_E    (Likelihood) Energy function
     %
     %   Description
@@ -263,7 +251,7 @@ function likelih = likelih_t(do, varargin)
     end
 
     
-    function deriv = likelih_t_g(likelih, y, f, param)
+    function deriv = likelih_t_g(likelih, y, f, param, z)
     %LIKELIH_T_G    Gradient of (likelihood) energy function
     %
     %   Description
@@ -304,7 +292,7 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function g2 = likelih_t_g2(likelih, y, f, param)
+    function g2 = likelih_t_g2(likelih, y, f, param, z)
     %LIKELIH_T_G2    Second gradients of (likelihood) energy function
     %
     %   Description
@@ -347,7 +335,7 @@ function likelih = likelih_t(do, varargin)
         end
     end    
     
-    function third_grad = likelih_t_g3(likelih, y, f, param)
+    function third_grad = likelih_t_g3(likelih, y, f, param, z)
     %LIKELIH_T_G3    Third gradient of (likelihood) Energy function
     %
     %   Description
@@ -385,7 +373,7 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function [m_0, m_1, m_2] = likelih_t_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    function [m_0, m_1, m_2] = likelih_t_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_T_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -495,7 +483,7 @@ function likelih = likelih_t(do, varargin)
     end
     
     
-    function [g_i] = likelih_t_siteDeriv(likelih, y, i1, sigm2_i, myy_i)
+    function [g_i] = likelih_t_siteDeriv(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_T_SITEDERIV    Evaluate the derivative with respect to cite parameters
     %
     %
@@ -921,7 +909,6 @@ function likelih = likelih_t(do, varargin)
             % Set the function handles
             reclikelih.fh_pak = @likelih_t_pak;
             reclikelih.fh_unpak = @likelih_t_unpak;
-            reclikelih.fh_permute = @likelih_t_permute;
             reclikelih.fh_e = @likelih_t_e;
             reclikelih.fh_g = @likelih_t_g;    
             reclikelih.fh_g2 = @likelih_t_g2;

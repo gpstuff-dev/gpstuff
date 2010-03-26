@@ -57,13 +57,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
     % NOTE ! Here change the initialization of energy and gradient function
     % Initialize the error and gradient functions and get 
     % the function handle to them    
-    if isfield(opt, 'fh_e')
-        me = opt.fh_e;
-        mg = opt.fh_g;
-    else
-        me = @gp_e;
-        mg = @gp_g;
-    end
+    me = @gp_e;
+    mg = @gp_g;
 
     % Initialize record
     if nargin < 5 | isempty(rec)
@@ -399,9 +394,10 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % Initialize the record for likelihood
             if isstruct(gp.likelih)
                 likelih = gp.likelih;
-                rec.likelih = feval(likelih.fh_recappend, [], likelih);
+                rec.likelih = feval(likelih.fh_recappend, [], gp.likelih);
             end
             
+            rec.p = gp.p;
             rec.e = [];
             rec.edata = [];
             rec.eprior = [];
@@ -456,14 +452,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            
+            elikelih = feval(gp.likelih.fh_e, gp.likelih, y, gp.latentValues');
             [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'covariance'), gp, x, gp.latentValues', 'covariance');
-            rec.etr(ri,:) = rec.e(ri,:);   % feval(gp.likelih_e, gp.latentValues', gp, p, t, varargin{:});
+            rec.etr(ri,:) = rec.e(ri,:) - elikelih;   % 
+% $$$             rec.edata(ri,:) = elikelih;
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
-            %            fprintf('error')
-            
             [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'covariance'), gp, x, y, 'covariance', varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end

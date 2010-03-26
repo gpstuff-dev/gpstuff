@@ -1,8 +1,8 @@
-function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
-%GP_PREDS	(Multible) Predictions of Gaussian Processes.
+function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, param, predcf, tstind, y)
+%MC_PRED    Predictions with Gaussian Process MCMC solution.
 %
 %	Description
-%	[Ef, Varf] = GP_PREDS(RECGP, TX, TY, X, PREDCF, TSTIND) takes a Gaussian 
+%	[Ef, Varf] = MC_PRED(RECGP, TX, TY, X, PREDCF, TSTIND) takes a Gaussian 
 %       processes record structure RECGP (returned by gp_mc) together with a matrix X 
 %       of input vectors, matrix TX of training inputs and vector TY of training targets. 
 %       Returns matrices Ef and Varf that contain the predictive means and variances for 
@@ -43,7 +43,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
 %	See also
 %	GP, GP_PAK, GP_UNPAK, GP_PRED
 
-% Copyright (c) 2007-2009 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
     
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -54,7 +54,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
         error('Requires at least 4 arguments');
     end
 
-    if nargin < 7
+    if nargin < 8
         y = [];
     end
 
@@ -62,19 +62,22 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
         error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
     end
     
-    if nargin < 6
+    if nargin < 7
         tstind = [];
     end
     
-    if nargin < 5
+    if nargin < 6
         predcf = [];
     end
-
+    
+    if nargin < 6
+        param = [];
+    end
     
     nin  = size(tx,2);
     nout = 1;
     nmc=size(gp.etr,1);
-   
+    
     % Non-Gaussian likelihood. Thus latent variables should be used in place of observations
     if isfield(gp, 'latentValues')
         ty = gp.latentValues';
@@ -105,12 +108,12 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
             Gp.X_u = u;
             Gp.tr_index = ind;
         end
-       
+        
         if nargout < 3
-            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind, y);
+            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind, y);
         else 
             if isfield(gp, 'latentValues')
-                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind);
+                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind);
                 if nargout < 5
                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1));
                 else
@@ -118,13 +121,14 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
                 end                
             else
                 if nargout < 5
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind);
+                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind);
                 else
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, predcf, tstind, y); 
+                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind, y); 
                 end
             end            
         end
     end
+end
 
 function x = take_nth(x,nth)
 %TAKE_NTH    Take n'th parameters from MCMC-chains
@@ -134,19 +138,19 @@ function x = take_nth(x,nth)
 %
 %   See also
 %     THIN, JOIN
-
+    
 % Copyright (c) 1999 Simo S�rkk�
 % Copyright (c) 2000 Aki Vehtari
 % Copyright (c) 2006 Jarno Vanhatalo
-
+    
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
+    
     if nargin < 2
         n = 1;
     end
-
+    
     [m,n]=size(x);
 
     if isstruct(x)
@@ -175,3 +179,4 @@ function x = take_nth(x,nth)
     elseif m > 1
         x = x(nth,:);
     end
+end

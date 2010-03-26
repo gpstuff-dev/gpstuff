@@ -18,7 +18,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
 %	See also
 %	GPEP_E, GPEP_G, GP_PRED
 %
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -76,9 +76,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
         end
 
         if nargout > 2 && nargin < 8
-            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
         elseif nargout > 2 
-            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);
+            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y, zt);
         end
         
       case 'FIC'
@@ -138,9 +138,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             end
             
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y);            
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y, zt);            
             end
         end
         
@@ -186,9 +186,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             Varf = kstarstar - (Varf - sum((KnfL).^2,2));  
 
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf, [], zt);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);            
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y, zt);            
             end
         end
         % ============================================================
@@ -326,9 +326,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             end        
 
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf, [], zt);
             elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y);            
+                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y, zt);            
             end
 
         end

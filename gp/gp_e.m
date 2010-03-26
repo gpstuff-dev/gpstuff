@@ -132,7 +132,7 @@ switch gp.type
     B=Luu\(K_fu');       % u x f  and B'*B = K_fu*K_uu*K_uf
     iLaKfu = zeros(size(K_fu));  % f x u
     edata = 0;
-    for i=1:length(ind)
+    for i=1:length(ind)        
         Qbl_ff = B(:,ind{i})'*B(:,ind{i});
         [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
         Labl{i} = Cbl_ff - Qbl_ff;

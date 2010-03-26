@@ -143,7 +143,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 % $$$                             end
 % $$$                             
 % $$$                             % marginal moments
-% $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+% $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
 % $$$                             
 % $$$                             % update site parameters
 % $$$                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -171,7 +171,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             sigm2_i=tau_i^-1;
                             
                             % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
                             
                             % update site parameters
                             deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
@@ -262,7 +262,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 else
                     p = analyze(K);
                     r(p) = 1:n;
-                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+                    if ~isempty(z)
+                        z = z(p,:);
+                    end
                     y = y(p);
                     K = K(p,p);
                     
@@ -293,7 +295,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             sigm2_i=tau_i^-1;
                             
                             % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
                             
                             % update site parameters
                             tautilde_old = tautilde(i1);
@@ -352,7 +354,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     tautilde = tautilde(r);
                     myy = myy(r);
                     y = y(r);
-                    gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, r);
+                    if ~isempty(z)
+                        z = z(r,:);
+                    end
                     L = ldlchol(B);
                 end
                 edata = logZep;
@@ -420,7 +424,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         sigm2_i=tau_i^-1;
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
                         
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -573,7 +577,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             sigm2_i=tau_i^-1;
                             
                             % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
 
                             % update site parameters
                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -720,7 +724,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % matrices
                 p = analyze(La);
                 r(p) = 1:n;
-                gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+                if ~isempty(z)
+                    z = z(p,:);
+                end
                 y = y(p);
                 La = La(p,p);
                 K_fu = K_fu(p,:);
@@ -764,7 +770,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         sigm2_i= tau_i^-1;  % 1./tau_i;  % 
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
 
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -864,7 +870,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 myy = myy(r);
                 P = P(r,:);
                 y = y(r);
-                gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, r);
+                if ~isempty(z)
+                    z = z(r,:);
+                end
                 
                 % ============================================================
                 % SSGP
@@ -897,7 +905,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                         sigm2_i=tau_i^-1;
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
                         
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);

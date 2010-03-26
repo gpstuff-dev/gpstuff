@@ -238,6 +238,8 @@ function gp = gp_init(do, varargin)
                 gp.tr_index = varargin{i+1};
               case 'infer_params'
                 gp.infer_params = varargin{i+1};
+              case 'truncated'
+                init_truncated(varargin{i+1})
               case 'latent_method'
                 gp.latent_method = varargin{i+1}{1};
                 switch varargin{i+1}{1}

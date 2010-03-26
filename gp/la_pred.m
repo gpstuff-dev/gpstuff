@@ -21,6 +21,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 %       'tstind' is a vector defining, which rows of X belong to which 
 %                training block in *IC type sparse models. Deafult is [].
 %       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
+%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
 %         Some likelihoods may use this. For example, in case of Poisson
 %         likelihood we have z_i=E_i, that is, expected value for ith case. 
 %
@@ -41,18 +42,19 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
   ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('predcf', [], @(x) isvector(x) && isreal(x) && ...
                    all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isvector(x) && isreal(x) && ...
                    all(isfinite(x)&x>0))
-  ip.parse(w, gp, x, y, varargin{:});
-  w=ip.Results.w;
+  ip.parse(gp, tx, ty, xt, varargin{:});
   gp=ip.Results.gp;
   tx=ip.Results.tx;
   ty=ip.Results.ty;
   xt=ip.Results.xt;
   yt=ip.Results.yt;
   z=ip.Results.z;
+  zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
 
@@ -62,8 +64,8 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
       case 'FULL'
         [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
 
-        W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
         ntest=size(xt,1);
 
         % Evaluate the expectation
@@ -93,10 +95,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                 R = diag(W) - V'*V;
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
             end
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
-            elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt);
+            if isempty(yt)
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
+            else
+                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
             end
         end
         
@@ -120,7 +122,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 
         [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
         ntest=size(xt,1);
 
         K_nu=gp_cov(gp,xt,u,predcf);
@@ -140,15 +142,20 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
         
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+            % re-evaluate matrices with training components
+            Kfu_tr = gp_cov(gp, tx, u);
+            Kuu_tr = gp_trcov(gp, u);
+            Kuu_tr = (K_uu+K_uu')./2;
+            
+            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             La = W.*La2;
             Lahat = 1 + La;
-            B = (repmat(sqrt(W),1,m).*K_fu);
+            B = (repmat(sqrt(W),1,m).*Kfu_tr);
 
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
             B2 = repmat(Lahat,1,m).\B;
-            A2 = K_uu + B'*B2; A2=(A2+A2)/2;
+            A2 = Kuu_tr + B'*B2; A2=(A2+A2)/2;
             L2 = B2/chol(A2);
 
             % Set params for K_nf
@@ -164,9 +171,9 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
             elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt);
+                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
             end
         end
 
@@ -183,7 +190,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 
         [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
 
         iKuuKuf = K_uu\K_fu';
         w_bu=zeros(length(xt),length(u));
@@ -198,7 +205,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -226,9 +233,9 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
             end
             Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
             elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt);
+                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
             end
         end
       case 'CS+FIC'
@@ -298,7 +305,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 
         Kcs_nf = gp_cov(gp, xt, tx, predcf2);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
+        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
         ntest=size(xt,1);
 
         % Calculate the predictive mean according to the type of
@@ -331,7 +338,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
         
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
             kstarstar = gp_trvar(gp,xt,predcf);
             Luu = chol(K_uu)';
@@ -378,11 +385,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                 Varf = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
             end        
             if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf);
+                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
             elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt);
+                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
             end
         end
-
     end
 end

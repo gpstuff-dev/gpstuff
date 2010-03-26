@@ -3,17 +3,22 @@ function likelih = likelih_poisson(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_POISSON('INIT', Y, YE) Create and initialize Poisson likelihood. 
-%       The input argument Y contains incedence counts and YE the expected number of
-%       incidences
+%	LIKELIH = LIKELIH_POISSON('INIT') Create and initialize Poisson likelihood. 
+%
+%       The likelihood is defined as follows:
+%                            __ n
+%                p(y|f, z) = || i=1 Poisson(y_i|z_i*exp(f_i))
+%
+%       where z is a vector of expected mean and f the latent value vector whose 
+%       components are transformed to relative risk exp(f_i). When using Poisosn 
+%       likelihood you need to give the vector z as an extra parameter to each 
+%       function that requires y also. For example, you should call gpla_e as follows
+%           gpla_e(w, gp, x, y, 'z', z)
 %
 %	The fields in LIKELIH are:
 %	  likelih.type             = 'likelih_poisson'
-%         likelih.avgE             = YE;
-%         likelih.gamlny           = gammaln(Y+1);
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
 %         likelih.fh_g2            = function handle to second derivatives of energy
@@ -27,8 +32,6 @@ function likelih = likelih_poisson(do, varargin)
 %
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
-%
-%
 
 % Copyright (c) 2006      Helsinki University of Technology (author) Jarno Vanhatalo
 % Copyright (c) 2007-2008 Jarno Vanhatalo
@@ -37,35 +40,17 @@ function likelih = likelih_poisson(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the likelihood structure
     if strcmp(do, 'init')
-        y = varargin{1};
-        avgE = varargin{2};
         likelih.type = 'poisson';
-        
-        % check the arguments
-        if ~isempty(find(y<0))
-            error('The incidence counts have to be greater or equal to zero y >= 0.')
-        end     
-        if ~isempty(find(avgE<=0))
-            error('The expected counts have to be greater than zero avgE > 0.')
-        end
-        
-        % Set parameters
-        avgE = max(avgE,1e-3);
-        likelih.avgE = avgE;
-        likelih.gamlny = gammaln(y+1);
-
-        % Initialize prior structure
 
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_poisson_pak;
         likelih.fh_unpak = @likelih_poisson_unpak;
-        likelih.fh_permute = @likelih_poisson_permute;
         likelih.fh_e = @likelih_poisson_e;
         likelih.fh_g = @likelih_poisson_g;    
         likelih.fh_g2 = @likelih_poisson_g2;
@@ -74,18 +59,13 @@ function likelih = likelih_poisson(do, varargin)
         likelih.fh_predy = @likelih_poisson_predy;
         likelih.fh_recappend = @likelih_poisson_recappend;
 
-        if length(varargin) > 2
+        if nargin > 1
             if mod(nargin,2) ~=1
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
             for i=2:2:length(varargin)-1
                 switch varargin{i}
-                  case 'avgE'
-                    likelih.avgE = varargin{i+1};
-                    likelih.avgE = max(likelih.avgE,1e-3);
-                  case 'gamlny'
-                    likelih.gamlny = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -102,11 +82,6 @@ function likelih = likelih_poisson(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'avgE'
-                likelih.avgE = varargin{i+1};
-                likelih.avgE = max(likelih.avgE,1e-3);
-              case 'gamlny'
-                likelih.gamlny = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -148,24 +123,7 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-
-    function likelih = likelih_poisson_permute(likelih, p)
-    %LIKELIH_POISSON_PERMUTE    A function to permute the ordering of parameters 
-    %                           in likelihood structure
-    %   Description
-    %	LIKELIH = LIKELIH_POISSON_UNPAK(LIKELIH, P) takes a likelihood data structure
-    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
-    %   according to P.
-    %
-    %   See also 
-    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
-        
-        likelih.avgE = likelih.avgE(p,:);
-        likelih.gamlny = likelih.gamlny(p,:);
-    end
-
-
-    function logLikelih = likelih_poisson_e(likelih, y, f)
+    function logLikelih = likelih_poisson_e(likelih, y, f, z)
     %LIKELIH_POISSON_E    (Likelihood) Energy function
     %
     %   Description
@@ -175,13 +133,20 @@ function likelih = likelih_poisson(do, varargin)
     %   See also
     %   LIKELIH_POISSON_G, LIKELIH_POISSON_G3, LIKELIH_POISSON_G2, GPLA_E
         
-        lambda = likelih.avgE.*exp(f);
-        gamlny = likelih.gamlny;
+        if isempty(z)
+            error(['likelih_poisson -> likelih_poisson_e: missing z!'... 
+                   'Poisson likelihood needs the expected number of '...
+                   'occurrences as an extra input z. See, for       '...
+                   'example, likelih_poisson and gpla_e.            ']);
+        end
+        
+        lambda = z.*exp(f);
+        gamlny = gammaln(y+1);
         logLikelih =  sum(-lambda + y.*log(lambda) - gamlny);
     end
 
 
-    function deriv = likelih_poisson_g(likelih, y, f, param)
+    function deriv = likelih_poisson_g(likelih, y, f, param, z)
     %LIKELIH_POISSON_G    Gradient of (likelihood) energy function
     %
     %   Description
@@ -192,14 +157,21 @@ function likelih = likelih_poisson(do, varargin)
     %   See also
     %   LIKELIH_POISSON_E, LIKELIH_POISSON_G2, LIKELIH_POISSON_G3, GPLA_E
         
+        if isempty(z)
+            error(['likelih_poisson -> likelih_poisson_g: missing z!'... 
+                   'Poisson likelihood needs the expected number of '...
+                   'occurrences as an extra input z. See, for       '...
+                   'example, likelih_poisson and gpla_e.            ']);
+        end
+        
         switch param
           case 'latent'
-            deriv = y - likelih.avgE.*exp(f);
+            deriv = y - z.*exp(f);
         end
     end
 
 
-    function g2 = likelih_poisson_g2(likelih, y, f, param)
+    function g2 = likelih_poisson_g2(likelih, y, f, param, z)
     %LIKELIH_POISSON_G2    Third gradients of (likelihood) energy function
     %
     %   Description
@@ -212,13 +184,20 @@ function likelih = likelih_poisson(do, varargin)
     %   See also
     %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G3, GPLA_E
 
+        if isempty(z)
+            error(['likelih_poisson -> likelih_poisson_g2: missing z!'... 
+                   'Poisson likelihood needs the expected number of  '...
+                   'occurrences as an extra input z. See, for        '...
+                   'example, likelih_poisson and gpla_e.             ']);
+        end
+        
         switch param
           case 'latent'
-            g2 = -likelih.avgE.*exp(f);
+            g2 = -z.*exp(f);
         end
     end    
     
-    function third_grad = likelih_poisson_g3(likelih, y, f, param)
+    function third_grad = likelih_poisson_g3(likelih, y, f, param, z)
     %LIKELIH_POISSON_G3    Gradient of (likelihood) Energy function
     %
     %   Description
@@ -230,13 +209,20 @@ function likelih = likelih_poisson(do, varargin)
     %   See also
     %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G2, GPLA_E, GPLA_G
     
+        if isempty(z)
+            error(['likelih_poisson -> likelih_poisson_g3: missing z!'... 
+                   'Poisson likelihood needs the expected number of  '...
+                   'occurrences as an extra input z. See, for        '...
+                   'example, likelih_poisson and gpla_e.             ']);
+        end
+        
         switch param
           case 'latent'
-            third_grad = - likelih.avgE.*exp(f);
+            third_grad = - z.*exp(f);
         end
     end
 
-    function [m_0, m_1, sigm2hati1] = likelih_poisson_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    function [m_0, m_1, sigm2hati1] = likelih_poisson_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_POISSON_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -247,15 +233,17 @@ function likelih = likelih_poisson(do, varargin)
     %
     %   See also
     %   GPEP_E
+        
+        if isempty(z)
+            error(['likelih_poisson -> likelih_poisson_tiltedMoments: missing z!'... 
+                   'Poisson likelihood needs the expected number of             '...
+                   'occurrences as an extra input z. See, for                   '...
+                   'example, likelih_poisson and gpla_e.                        ']);
+        end
        
         yy = y(i1);
-        % Create function handle for the function to be integrated (likelihood * cavity). 
-        %zm = @(f)exp(-log(1+exp(-yy.*f)) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); 
-        
-        gamlny = likelih.gamlny(i1);
-        avgE = likelih.avgE(i1);
-        %lambda = avgE.*exp(f);
-        %zm = @(f)exp(-lambda + yy.*log(lambda) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+        gamlny = gammaln(y(i1)+1);
+        avgE = z(i1);
         zm = @(f)exp(-avgE.*exp(f) + yy.*log(avgE.*exp(f)) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
         
         % Set the integration limits (in this case based only on the prior).
@@ -328,16 +316,25 @@ function likelih = likelih_poisson(do, varargin)
     end
 
     
-    function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, y)
+    function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, y, z)
     %LIKELIH_POISSON_PREDY    Returns the predictive mean, variance and density of y
     %
     %   Description
     %   [Ey, Vary, py] = LIKELIH_POISSON_PREDY(LIKELIH, EF, VARF, Y) 
-       avgE = likelih.avgE;
 
-       %nsamp = 10000;
+        if isempty(z)
+            error(['likelih_poisson -> likelih_poisson_predy: missing z!'... 
+                   'Poisson likelihood needs the expected number of     '...
+                   'occurrences as an extra input z. See, for           '...
+                   'example, likelih_poisson and gpla_e.                ']);
+        end
+
         
-       Py = zeros(size(Ef));
+        avgE = z;
+
+        %nsamp = 10000;
+        
+        Py = zeros(size(Ef));
        Ey = zeros(size(Ef));
        EVary = zeros(size(Ef));
        VarEy = zeros(size(Ef)); 
@@ -397,7 +394,23 @@ function likelih = likelih_poisson(do, varargin)
     %          lengthScale    =
     %          magnSigma2     =
 
+        if nargin == 2
+            reclikelih.type = 'poisson';
 
+            % Set the function handles
+            reclikelih.fh_pak = @likelih_poisson_pak;
+            reclikelih.fh_unpak = @likelih_poisson_unpak;
+            reclikelih.fh_e = @likelih_poisson_e;
+            reclikelih.fh_g = @likelih_poisson_g;    
+            reclikelih.fh_g2 = @likelih_poisson_g2;
+            reclikelih.fh_g3 = @likelih_poisson_g3;
+            reclikelih.fh_tiltedMoments = @likelih_poisson_tiltedMoments;
+            reclikelih.fh_mcmc = @likelih_poisson_mcmc;
+            reclikelih.fh_predy = @likelih_poisson_predy;
+            reclikelih.fh_recappend = @likelih_poisson_recappend;
+            return
+        end
+        
     end
 end
 

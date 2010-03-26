@@ -52,11 +52,12 @@ function demo_robustRegression
 %
 %       See Vanhatalo et.al. for discussion on the model and methods.
 %
-%   Refernces:
-%    Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian process 
-%    regression with Student-t likelihood.  Advances in Neural Information 
-%    Processing Systems 23.
-
+%       Refernces:
+%         Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian process 
+%         regression with Student-t likelihood.  Advances in Neural Information 
+%
+%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis, second 
+%         edition. Chapman & Hall / CRC.
 
 % Copyright (c) 2010 Jarno Vanhatalo
 

@@ -1,4 +1,4 @@
-function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
+function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, param, predcf, tstind, y)
 %GP_PRED    Make predictions for Gaussian process
 %
 %	Description
@@ -46,7 +46,7 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
 %	GP_PREDS, GP_PAK, GP_UNPAK
 %
 
-% Copyright (c) 2007-2009 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008      Jouni Hartikainen
 
 % This software is distributed under the GNU General Public
@@ -55,7 +55,7 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, tx, ty, x, predcf, tstind, y)
 
 tn = size(tx,1);
 
-if nargin < 7
+if nargin < 8
     y = [];
 end
 
@@ -63,11 +63,11 @@ if nargout > 4 && isempty(y)
     error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
 end
 
-if nargin < 6
+if nargin < 7
     tstind = [];
 end
 
-if nargin < 5
+if nargin < 6
     predcf = [];
 end
 
@@ -101,15 +101,9 @@ switch gp.type
         end
     end
     if nargout > 2
-        if issparse(C)
-            [V, Cv] = gp_trvar(gp,x,predcf);
-            Ey = Ef;
-            Vary = Cv - diag(K'*ldlsolve(LD,K));
-        else
-            [V, Cv] = gp_trvar(gp,x,predcf);
-            Ey = Ef;
-            Vary = Cv - diag(v'*v);
-        end
+        [V, Cv] = gp_trvar(gp,x,predcf);
+        Ey = Ef;
+        Vary = Varf + Cv - V;
     end
     if nargout > 4
         py = norm_pdf(y, Ey, sqrt(Vary));
@@ -183,11 +177,14 @@ switch gp.type
 
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
-            Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
+            Varf(tstind) = Varf(tstind)...
+                - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
                 + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
-                - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);                
+                - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);
         end
     end
+        
+    
     if nargout > 2
         Ey = Ef;
         Vary = Varf + Cnn_v - Knn_v;
@@ -195,6 +192,7 @@ switch gp.type
     if nargout > 4
         py = norm_pdf(y, Ey, sqrt(Vary));
     end
+    
   case {'PIC' 'PIC_BLOCK'}
     u = gp.X_u;
     ind = gp.tr_index;
@@ -283,6 +281,28 @@ switch gp.type
         end        
         Varf = kstarstar - (Varf1 + Varf2 - Varf3);
     end
+    
+    
+% $$$     B2=Luu\(K_nu');
+% $$$     C = B'*B;
+% $$$     KKnn = gp_trcov(gp,x,predcf);
+% $$$     Knn = B2'*B2;
+% $$$     Knf = B2'*B;
+% $$$     KKnf = gp_cov(gp,x,tx,predcf);
+% $$$     for i=1:length(ind)
+% $$$         C(ind{i},ind{i}) = C(ind{i},ind{i}) + La{i};
+% $$$         Knn(ind{i},ind{i}) = Knn(ind{i},ind{i}) + KKnn(tstind{i},tstind{i}) - B2(:,tstind{i})'*B2(:,tstind{i});
+% $$$         Knf(tstind{i},ind{i}) = Knf(tstind{i},ind{i}) + KKnf(tstind{i},ind{i}) - B2(:,tstind{i})'*B(:,ind{i});
+% $$$     end
+% $$$     
+% $$$     L = chol(C)';
+% $$$     %    y=K'*(C\ty);
+% $$$     a = L'\(L\ty);
+% $$$     Ef = Knf*a;
+% $$$         
+% $$$     v = L\Knf';
+% $$$     Varf = diag(Knn) - diag(v'*v);
+    
     if nargout > 2
         Ey = Ef;
         [Knn_v, Cnn_v] = gp_trvar(gp,x,predcf);
@@ -392,25 +412,23 @@ switch gp.type
     elseif ptype == 2
         Ef = Kcs_nf*p;
     else 
-        Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;        
+        Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
     end
     
     % evaluate also Lav2 if the prediction is made for training set
     if ~isempty(tstind)
-        %Lav2 = Cv_ff(tstind)-Qv_ff(tstind);
         [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:), predcf1);
         Luu = chol(K_uu)';
         B=Luu\(K_fu');
         Qv_ff=sum(B.^2)';
         Lav2 = zeros(size(Ef));
         Lav2(tstind) = Kv_ff-Qv_ff;
-        %Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2,n2,n);
     end  
 
     % Add also Lav2 if the prediction is made for training set
     % and non-CS covariance function is used for prediction
     if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-        Ef(tstind) = Ef(tstind) + Lav2(tstind).*p(tstind);
+        Ef(tstind) = Ef(tstind) + Lav2(tstind).*p;
     end
     
     if nargout > 1
@@ -449,6 +467,20 @@ switch gp.type
         end        
     end
     
+% $$$     Lav_pr = Kv_ff-Qv_ff;
+% $$$     K2 = B'*B + K_cs + diag(Lav_pr);
+% $$$     C = B'*B + K_cs + diag(Lav);
+% $$$     K = B'*B + Kcs_nf + diag(Lav_pr); 
+% $$$     
+% $$$     L = chol(C)';
+% $$$     %    y=K'*(C\ty);
+% $$$     a = L'\(L\ty);
+% $$$     Ef = K'*a;
+% $$$ 
+% $$$     v = L\K;
+% $$$     V = gp_trvar(gp,x,predcf);
+% $$$     Varf = V - diag(v'*v);
+
     if nargout > 2
         Ey = Ef;
         Vary = Varf + Cnn_v - Knn_v;
@@ -456,6 +488,8 @@ switch gp.type
     if nargout > 4
         py = norm_pdf(y, Ey, sqrt(Vary));
     end
+    
+    
   case 'SSGP'
     if nargin > 4
         error(['Prediction with a subset of original ' ...

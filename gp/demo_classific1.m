@@ -56,21 +56,21 @@ x(:,end)=[];
 gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
-pl = prior_unif('init');
+pl = prior_logunif('init');
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the likelihood structure
-likelih = likelih_probit('init', y);
+likelih = likelih_probit('init');
 %likelih = likelih_logit('init', y);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 1);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01, 'infer_params', 'covariance');
 
 
 % ------- Laplace approximation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
@@ -82,9 +82,9 @@ opt.display = 1;
 opt.maxiter = 20;
 
 % do scaled conjugate gradient optimization 
-w=gp_pak(gp, 'covariance');
-[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
-gp=gp_unpak(gp,w, 'covariance');
+w=gp_pak(gp);
+w=scg2(fe, w, opt, fg, gp, x, y);
+gp=gp_unpak(gp,w);
 
 % Print some figures that show results
 % First create data for predictions
@@ -93,7 +93,7 @@ xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xstar=[xt1(:) xt2(:)];
 
 % make the prediction
-[Ef_la, Varf_la, Ey_la, Vary_la, p1_la] = la_pred(gp, x, y, xstar, 'covariance', [], [], ones(size(xstar,1),1) );
+[Ef_la, Varf_la, Ey_la, Vary_la, p1_la] = la_pred(gp, x, y, xstar, 'yt', ones(size(xstar,1),1) );
 
 figure, hold on;
 n_pred=size(xstar,1);
@@ -121,7 +121,7 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 % ------- Expectation propagation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
 w = gp_pak(gp, 'covariance');
 fe=str2fun('gpep_e');
@@ -134,7 +134,7 @@ opt.display = 1;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp, 'covariance');
-[w, opt, flog]=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
 gp=gp_unpak(gp,w, 'covariance');
 
 % make the prediction

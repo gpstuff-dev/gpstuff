@@ -71,7 +71,7 @@ pm = prior_t('init', 's2', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-likelih = likelih_negbin('init', yy, ye, 10);
+likelih = likelih_negbin('init');
 param = 'covariance+likelihood'
 
 % Create the PIC GP data structure

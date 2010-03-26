@@ -3,16 +3,23 @@ function likelih = likelih_binomial(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_BINOMIAL('INIT', Y, N) Create and initialize binomial likelihood. 
-%       The input argument Y contains the number 'successes', and N
-%       contains the number of trials.
+%	LIKELIH = LIKELIH_BINOMIAL('INIT') Create and initialize binomial likelihood. 
+%
+%       The likelihood is defined as follows:
+%                            __ n
+%                p(y|f, z) = || i=1 p_i^(y_i)*(1-p_i)^(z_i-y_i)) * gamma(z_i+1)/(gamma(y_i+1)*gamma(z_i-y_i+1))
+%
+%       where p_i = exp(f_i)/ (1+exp(f_i)) is the succes probability, which is a function 
+%       of the latent variable f_i and z is a vector of numbers of trials. When using Binomial
+%       likelihood you need to give the vector z as an extra parameter to each 
+%       function that requires y also. For example, you should call gpla_e as follows
+%           gpla_e(w, gp, x, y, 'z', z)
+%
 %
 %	The fields in LIKELIH are:
 %	  likelih.type             = 'likelih_binomial'
-%         likelih.N                = N;
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
 %         likelih.fh_g2            = function handle to second derivatives of energy
@@ -27,7 +34,6 @@ function likelih = likelih_binomial(do, varargin)
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %
-%
 
 % Copyright (c) 2009-2010	Jaakko Riihimäki & Jarno Vanhatalo
 
@@ -35,14 +41,12 @@ function likelih = likelih_binomial(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the likelihood structure
     if strcmp(do, 'init')
-        y = varargin{1};
-        N = varargin{2};
         likelih.type = 'binomial';
         
         % check the arguments
@@ -56,16 +60,9 @@ function likelih = likelih_binomial(do, varargin)
             error('The number of trials have to be greater or equal than the number of successes.')
         end
         
-        
-        % Set parameters
-        likelih.N = N;
-
-        % Initialize prior structure
-
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_binomial_pak;
         likelih.fh_unpak = @likelih_binomial_unpak;
-        likelih.fh_permute = @likelih_binomial_permute;
         likelih.fh_e = @likelih_binomial_e;
         likelih.fh_g = @likelih_binomial_g;    
         likelih.fh_g2 = @likelih_binomial_g2;
@@ -81,8 +78,6 @@ function likelih = likelih_binomial(do, varargin)
             % Loop through all the parameter values that are changed
             for i=2:2:length(varargin)-1
                 switch varargin{i}
-                  case 'N'
-                    likelih.N = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -99,10 +94,6 @@ function likelih = likelih_binomial(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'N'
-                likelih.N = varargin{i+1};
-              case 'Nt'
-                likelih.Nt = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -145,22 +136,7 @@ function likelih = likelih_binomial(do, varargin)
 
 
 
-    function likelih = likelih_binomial_permute(likelih, p)
-    %LIKELIH_BINOMIAL_PERMUTE    A function to permute the ordering of parameters 
-    %                           in likelihood structure
-    %   Description
-    %	LIKELIH = LIKELIH_BINOMIAL_UNPAK(LIKELIH, P) takes a likelihood data structure
-    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
-    %   according to P.
-    %
-    %   See also 
-    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
-        
-        likelih.N = likelih.N(p,:);
-    end
-
-
-    function logLikelih = likelih_binomial_e(likelih, y, f)
+    function logLikelih = likelih_binomial_e(likelih, y, f, z)
     %LIKELIH_BINOMIAL_E    (Likelihood) Energy function
     %
     %   Description
@@ -170,14 +146,22 @@ function likelih = likelih_binomial(do, varargin)
     %   See also
     %   LIKELIH_BINOMIAL_G, LIKELIH_BINOMIAL_G3, LIKELIH_BINOMIAL_G2, GPLA_E
         
+        if isempty(z)
+            error(['likelih_binomial -> likelih_binomial_e: missing z!'... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_binomial and gpla_e.             ']);
+        end
+
+        
         expf = exp(f);
         p = expf ./ (1+expf);
-        N = likelih.N;
+        N = z;
         logLikelih =  sum(gammaln(N+1)-gammaln(y+1)-gammaln(N-y+1)+y.*log(p)+(N-y).*log(1-p));
     end
 
 
-    function g = likelih_binomial_g(likelih, y, f, param)
+    function g = likelih_binomial_g(likelih, y, f, param, z)
     %LIKELIH_BINOMIAL_G    Gradient of (likelihood) energy function
     %
     %   Description
@@ -187,18 +171,27 @@ function likelih = likelih_binomial(do, varargin)
     %
     %   See also
     %   LIKELIH_BINOMIAL_E, LIKELIH_BINOMIAL_G2, LIKELIH_BINOMIAL_G3, GPLA_E
-    
-    switch param
-        case 'latent'
+
+        if isempty(z)
+            error(['likelih_binomial -> likelih_binomial_g: missing z!'... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_binomial and gpla_e.             ']);
+        end
+
+        
+        
+        switch param
+          case 'latent'
             expf = exp(f);
-            N = likelih.N;
+            N = z;
             
             g = y./(1+expf) - (N-y).*expf./(1+expf);
         end
     end
     
 
-    function g2 = likelih_binomial_g2(likelih, y, f, param)
+    function g2 = likelih_binomial_g2(likelih, y, f, param, z)
     %LIKELIH_BINOMIAL_G2    Third gradients of (likelihood) energy function
     %
     %   Description
@@ -211,17 +204,25 @@ function likelih = likelih_binomial(do, varargin)
     %   See also
     %   LIKELIH_BINOMIAL_E, LIKELIH_BINOMIAL_G, LIKELIH_BINOMIAL_G3, GPLA_E
 
-     switch param
+        if isempty(z)
+            error(['likelih_binomial -> likelih_binomial_g2: missing z!'... 
+                   'Poisson likelihood needs the expected number of    '...
+                   'occurrences as an extra input z. See, for          '...
+                   'example, likelih_binomial and gpla_e.              ']);
+        end
+        
+        
+        switch param
           case 'latent'
             expf = exp(f);
-            N = likelih.N;
+            N = z;
 
             g2 = -N.*expf./(1+expf).^2;
         end
     end
     
     
-    function g3 = likelih_binomial_g3(likelih, y, f, param)
+    function g3 = likelih_binomial_g3(likelih, y, f, param, z)
     %LIKELIH_BINOMIAL_G3    Gradient of (likelihood) Energy function
     %
     %   Description
@@ -233,15 +234,23 @@ function likelih = likelih_binomial(do, varargin)
     %   See also
     %   LIKELIH_BINOMIAL_E, LIKELIH_BINOMIAL_G, LIKELIH_BINOMIAL_G2, GPLA_E, GPLA_G
     
+        if isempty(z)
+            error(['likelih_binomial -> likelih_binomial_g3: missing z!'... 
+                   'Poisson likelihood needs the expected number of    '...
+                   'occurrences as an extra input z. See, for          '...
+                   'example, likelih_binomial and gpla_e.              ']);
+        end
+
+        
      switch param
           case 'latent'
             expf = exp(f);
-            N = likelih.N;
+            N = z
             g3 = N.*(expf.*(expf-1))./(1+expf).^3;
           end
      end
 
-    function [m_0, m_1, sigm2hati1] = likelih_binomial_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    function [m_0, m_1, sigm2hati1] = likelih_binomial_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_BINOMIAL_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -252,9 +261,17 @@ function likelih = likelih_binomial(do, varargin)
     %
     %   See also
     %   GPEP_E
+        
+        if isempty(z)
+            error(['likelih_binomial -> likelih_binomial_tiltedMoments: missing z!'... 
+                   'Poisson likelihood needs the expected number of               '...
+                   'occurrences as an extra input z. See, for                     '...
+                   'example, likelih_binomial and gpla_e.                         ']);
+        end
+
        
         yy = y(i1);
-        N = likelih.N(i1);
+        N = z(i1);
         
         
         % Create function handle for the function to be integrated (likelihood * cavity). 
@@ -337,12 +354,20 @@ function likelih = likelih_binomial(do, varargin)
     end
 
     
-    function [Ey, Vary, Py] = likelih_binomial_predy(likelih, Ef, Varf, y)
+    function [Ey, Vary, Py] = likelih_binomial_predy(likelih, Ef, Varf, zt, y, z)
     %LIKELIH_BINOMIAL_PREDY    Returns the predictive mean, variance and density of y
     %
     %   Description
     %   [Ey, Vary, py] = LIKELIH_BINOMIAL_PREDY(LIKELIH, EF, VARF, Y) 
 
+        if isempty(z)
+            error(['likelih_binomial -> likelih_binomial_predy: missing z!'... 
+                   'Poisson likelihood needs the expected number of       '...
+                   'occurrences as an extra input z. See, for             '...
+                   'example, likelih_binomial and gpla_e.                 ']);
+        end
+
+        
         nt=length(Ef);
         Ey=zeros(nt,1);
         EVary = zeros(nt,1);
@@ -354,19 +379,19 @@ function likelih = likelih_binomial(do, varargin)
         
         for i1=1:nt
             ci = sqrt(Varf(i1));
-            F  = @(x)likelih.Nt(i1)./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+            F  = @(x)z(i1)./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
             
-            F2  = @(x)likelih.Nt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+            F2  = @(x)z(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
             
-            F3  = @(x)(likelih.Nt(i1)./(1+exp(-x))).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+            F3  = @(x)(z(i1)./(1+exp(-x))).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
             
             if nargin > 3
-                %bin_cc=exp(gammaln(likelih.Nt(i1)+1)-gammaln(y(i1)+1)-gammaln(likelih.Nt(i1)-y(i1)+1));
-                %F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(likelih.Nt(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-                F  = @(x)exp(gammaln(likelih.Nt(i1)+1)-gammaln(y(i1)+1)-gammaln(likelih.Nt(i1)-y(i1)+1) + y(i1).*log(1./(1+exp(-x))) + (likelih.Nt(i1)-y(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+                %bin_cc=exp(gammaln(z(i1)+1)-gammaln(y(i1)+1)-gammaln(z(i1)-y(i1)+1));
+                %F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(z(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+                F  = @(x)exp(gammaln(z(i1)+1)-gammaln(y(i1)+1)-gammaln(z(i1)-y(i1)+1) + y(i1).*log(1./(1+exp(-x))) + (z(i1)-y(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
                 Py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
             end
         end
@@ -384,7 +409,24 @@ function likelih = likelih_binomial(do, varargin)
     %          lengthHyperNu  =
     %          lengthScale    =
     %          magnSigma2     =
-        reclikelih = likelih;
+        
+        
+        if nargin == 2
+            reclikelih.type = 'binomial';
+
+            % Set the function handles
+            reclikelih.fh_pak = @likelih_binomial_pak;
+            reclikelih.fh_unpak = @likelih_binomial_unpak;
+            reclikelih.fh_e = @likelih_binomial_e;
+            reclikelih.fh_g = @likelih_binomial_g;    
+            reclikelih.fh_g2 = @likelih_binomial_g2;
+            reclikelih.fh_g3 = @likelih_binomial_g3;
+            reclikelih.fh_tiltedMoments = @likelih_binomial_tiltedMoments;
+            reclikelih.fh_mcmc = @likelih_binomial_mcmc;
+            reclikelih.fh_predy = @likelih_binomial_predy;
+            reclikelih.fh_recappend = @likelih_binomial_recappend;
+            return
+        end
 
     end
 end

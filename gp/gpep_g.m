@@ -139,7 +139,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, Varf(k1), Ef(k1));
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, Varf(k1), Ef(k1), z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -288,7 +288,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             for k1 = 1:length(y)
                 sigm2_i = Varf(k1) ;
                 myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -452,7 +452,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             for k1 = 1:length(y)
                 sigm2_i = Varf(k1) ;
                 myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -662,7 +662,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             for k1 = 1:length(y)
                 sigm2_i = Varf(k1);
                 myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -760,7 +760,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             for k1 = 1:length(y)
                 sigm2_i = Varf(k1) ;
                 myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')

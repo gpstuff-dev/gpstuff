@@ -3,14 +3,17 @@ function likelih = likelih_logit(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_LOGIT('INIT', Y) Create and initialize Logit likelihood. 
-%       The input argument Y contains class labels {0,1}.
+%	LIKELIH = LIKELIH_LOGIT('INIT') Create and initialize Logit likelihood for 
+%       classification problem with class labels {-1,1}. 
+%       
+%       likelihood is defined as follows:
+%                            __ n
+%                p(y|f, z) = || i=1 1/(1 + exp(-y_i*f_i) )
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'likelih_logit'
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
 %         likelih.fh_g2            = function handle to second derivatives of energy
@@ -26,31 +29,23 @@ function likelih = likelih_logit(do, varargin)
 %	See also
 %       LIKELIH_POISSON, LIKELIH_PROBIT, LIKELIH_NEGBIN
 
-
-%       Copyright (c) 1998-2000 Aki Vehtari
-%       Copyright (c) 2008 Jarno Vanhatalo
+%       Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the likelihood structure
     if strcmp(do, 'init')
         likelih.type = 'logit';
-        y = varargin{1};
-        if ~isempty(find(y~=1 & y~=-1))
-            error('The class labels have to be {-1,1}')
-        end
-        likelih.t = (y+1)/2;
         
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_logit_pak;
         likelih.fh_unpak = @likelih_logit_unpak;
-        likelih.fh_permute = @likelih_logit_permute;
         likelih.fh_e = @likelih_logit_e;
         likelih.fh_g = @likelih_logit_g;    
         likelih.fh_g2 = @likelih_logit_g2;
@@ -125,23 +120,7 @@ function likelih = likelih_logit(do, varargin)
 
 
 
-    function likelih = likelih_logit_permute(likelih, p)
-    %LIKELIH_LOGIT_PERMUTE    A function to permute the ordering of parameters 
-    %                           in likelihood structure
-    %   
-    %   NO PARAMETERS
-    %
-    %   Description
-    %	LIKELIH = LIKELIH_LOGIT_UNPAK(LIKELIH, P) takes a likelihood data structure
-    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
-    %   according to P.
-    %
-    %   See also 
-    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
-    end
-
-
-    function logLikelih = likelih_logit_e(likelih, y, f)
+    function logLikelih = likelih_logit_e(likelih, y, f, z)
     %LIKELIH_LOGIT_E    (Likelihood) Energy function
     %
     %   Description
@@ -150,12 +129,15 @@ function likelih = likelih_logit(do, varargin)
     %
     %   See also
     %   LIKELIH_LOGIT_G, LIKELIH_LOGIT_G3, LIKELIH_LOGIT_G2, GPLA_E
-
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_logit: The class labels have to be {-1,1}')
+        end
+        
         logLikelih = sum(-log(1+exp(-y.*f)));
     end
 
 
-    function deriv = likelih_logit_g(likelih, y, f, param)
+    function deriv = likelih_logit_g(likelih, y, f, param, z)
     %LIKELIH_LOGIT_G    Gradient of (likelihood) energy function
     %
     %   Description
@@ -166,14 +148,19 @@ function likelih = likelih_logit(do, varargin)
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G2, LIKELIH_LOGIT_G3, GPLA_E
         
-        t  = likelih.t;
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_logit: The class labels have to be {-1,1}')
+        end
+
+        
+        t  = (y+1)/2;
         PI = 1./(1+exp(-f));
         deriv = t - PI;
         %deriv = (y+1)/2 - 1./(1+exp(-f));      
     end
 
 
-    function g2 = likelih_logit_g2(likelih, y, f, param)
+    function g2 = likelih_logit_g2(likelih, y, f, param, z)
     %LIKELIH_LOGIT_G2    Third gradients of (likelihood) energy function
     %
     %   Description
@@ -189,7 +176,7 @@ function likelih = likelih_logit(do, varargin)
         g2 = -PI.*(1-PI);        
     end    
     
-    function third_grad = likelih_logit_g3(likelih, y, f, param)
+    function third_grad = likelih_logit_g3(likelih, y, f, param, z)
     %LIKELIH_LOGIT_G3    Gradient of (likelihood) Energy function
     %
     %   Description
@@ -200,13 +187,18 @@ function likelih = likelih_logit(do, varargin)
     %
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G, LIKELIH_LOGIT_G2, GPLA_E, GPLA_G
+        
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_logit: The class labels have to be {-1,1}')
+        end
+
         t  = (y+1)/2;
         PI = 1./(1+exp(-f));
         third_grad = -PI.*(1-PI).*(1-2*PI);        
     end
 
 
-    function [m_0, m_1, sigm2hati1] = likelih_logit_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    function [m_0, m_1, sigm2hati1] = likelih_logit_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_LOGIT_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -217,6 +209,11 @@ function likelih = likelih_logit(do, varargin)
     %
     %   See also
     %   GPEP_E
+        
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_logit: The class labels have to be {-1,1}')
+        end
+
         
         yy = y(i1);
         % Create function handle for the function to be integrated (likelihood * cavity). 
@@ -286,17 +283,24 @@ function likelih = likelih_logit(do, varargin)
         end
     end
     
-    function [Ey, Vary, py] = likelih_logit_predy(likelih, Ef, Varf, y)
+    function [Ey, Vary, py] = likelih_logit_predy(likelih, Ef, Varf, y, z)
     % Return the predictive probability of ty given the posterior mean Ef 
     % and variance Varf
+        
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_logit: The class labels have to be {-1,1}')
+        end
+
+        
         py1 = zeros(1,length(Ef));
         for i1=1:length(Ef)
             ci = sqrt(Varf(i1));
             F  = @(x)1./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             py1(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);                             
         end
-        Ey = 2*py1-1;
-        Vary = 1-(2*py1-1).^2;        
+        Ey = 2*py1(:)-1;
+        Vary = 1-(2*py1(:)-1).^2;
+        
         if nargin > 3
             % NOTE: This is only approximation since \int logit(y|f) N(f|Ef,Varf) df
             % has no analytic solution.
@@ -313,7 +317,9 @@ function likelih = likelih_logit(do, varargin)
             % for i = 1:length(Ef)
             %     samp = normrnd(Ef(i1),sqrt(Varf(i1)),10000,1);
             %     p1(i1,1) = mean(1./(1+exp(-samp)));           
-            % end    
+            % end   
+            
+            py=py(:);    % transform to column vector
         end
     end
 
@@ -328,8 +334,23 @@ function likelih = likelih_logit(do, varargin)
     %          lengthHyperNu  =
     %          lengthScale    =
     %          magnSigma2     =
-        
-        reclikelih = likelih;
+
+        if nargin == 2
+            reclikelih.type = 'logit';
+
+            % Set the function handles
+            reclikelih.fh_pak = @likelih_logit_pak;
+            reclikelih.fh_unpak = @likelih_logit_unpak;
+            reclikelih.fh_e = @likelih_logit_e;
+            reclikelih.fh_g = @likelih_logit_g;    
+            reclikelih.fh_g2 = @likelih_logit_g2;
+            reclikelih.fh_g3 = @likelih_logit_g3;
+            reclikelih.fh_tiltedMoments = @likelih_logit_tiltedMoments;
+            reclikelih.fh_mcmc = @likelih_logit_mcmc;
+            reclikelih.fh_predy = @likelih_logit_predy;
+            reclikelih.fh_recappend = @likelih_logit_recappend;
+            return
+        end
         
     end
 end

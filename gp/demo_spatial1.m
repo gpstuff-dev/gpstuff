@@ -92,17 +92,17 @@ pm = prior_t('init', 's2', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-likelih = likelih_poisson('init', yy, ye);
+likelih = likelih_poisson('init');
 
 % Create the FIC GP data structure
-gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001);
+gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001, 'infer_params', 'covariance');
 
 % --- MAP estimate with Laplace approximation ---
 
 % Set the approximate inference method to EP
-gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'covariance'});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', ye});
 
-w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gpla_e');     % create a function handle to negative log posterior
 fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
 
@@ -113,11 +113,11 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization and set the optimized hyperparameter values back to the gp structure
-w=scg2(fe, w, opt, fg, gp, xx, yy, 'covariance');
-gp=gp_unpak(gp,w, 'covariance');
+w=scg2(fe, w, opt, fg, gp, xx, yy, 'z', ye);
+gp=gp_unpak(gp,w);
 
 % make prediction to the data points
-[Ef, Varf] = la_pred(gp, xx, yy, xx, 'covariance',[], [1:n]);
+[Ef, Varf] = la_pred(gp, xx, yy, xx, 'z', ye, 'tstind', [1:n]);
 
 % Define help parameters for plotting
 xxii=sub2ind([60 35],xx(:,2),xx(:,1));

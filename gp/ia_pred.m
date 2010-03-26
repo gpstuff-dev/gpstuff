@@ -1,8 +1,39 @@
-function [Ef, Varf, f, ff, Ey, Vary, y, fy, py] = ia_pred(gp_array, tx, ty, x, predcf, tstind, Y) 
-    
-    
-    
+function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, tx, ty, x, param, predcf, tstind, Y) 
+%IA_PRED	Prediction with Gaussian Process IA solution.
+%
+%	Description
+%	[Ef, Varf] = IA_PRED(GP_ARRAY, TX, TY, X, PREDCF, TSTIND) takes a Gaussian 
+%       processes record array RECGP (returned by gp_ia) together with a matrix X 
+%       of input vectors, matrix TX of training inputs and vector TY of training targets. 
+%       Returns the predictive mean and variance, Ef and Varf, for test inputs X. 
+%
+%       Each row of X corresponds to one input vector and each row of Y corresponds to one 
+%       output. PREDCF is an array specifying the indexes of covariance functions, which 
+%       are used for making the prediction (others are considered noise). TSTIND is, in 
+%       case of PIC, a cell array containing index vectors specifying the blocking 
+%       structure for test data, or in FIC and CS+FI a vector of length n that points out 
+%       the test inputs that are also in the training set (if none, set TSTIND = []).
+%       
+%       [Ef, Varf, Ey, Vary] = IA_PREDS(GP, TX, TY, X, PREDCF, TSTIND) returns also the 
+%       predictive means and variances for observations at input locations X. That is,
+%
+%                    Ey(:,i) = E[y | x, tx, ty]
+%                  Vary(:,i) = Var[y | x, tx, ty]
+%    
+%       [Ef, Varf, Ey, Vary, py] = IA_PREDS(GP, TX, TY, X, PREDCF, TSTIND, Y) 
+%       returns also the predictive density py of test output Y, that is py = p(Y).
+%
+%       [Ef, Varf, Ey, Vary, py, f, ff] = IA_PREDS(GP, TX, TY, X, PREDCF, TSTIND) returns also the 
+%       numerical representation of the marginal posterior of latent variables at each X. f is
+%       a vector of latent values and ff_i = p(f_i) is the posterior density for f_i.
+
+%
+%	See also
+%	GP, GP_PAK, GP_UNPAK, GP_PRED
+
+        
 % Copyright (c) 2009 Ville Pietiläinen
+% Copyright (c) 2010 Jarno Vanhatalo    
 
 % This software is distributed under the GNU General Public 
 % Licence (version 2 or later); please refer to the file 
@@ -13,25 +44,22 @@ function [Ef, Varf, f, ff, Ey, Vary, y, fy, py] = ia_pred(gp_array, tx, ty, x, p
         error('Requires at least 4 arguments');
     end
 
-    if nargin < 7
+    if nargin < 8 
         Y = [];
     end
     
-    if nargout > 8 && isempty(Y)
-        error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
+    if nargout > 4 && isempty(Y)
+        py = NaN;
     end
     
-    if nargin < 6
+    if nargin < 7
         tstind = [];
     end
     
-    if nargin < 5
+    if nargin < 6
         predcf = [];
     end
     
-% $$$     nin  = gp.nin;
-% $$$     nout = gp.nout;
-
     nGP = numel(gp_array);
     
     for i=1:nGP
@@ -62,28 +90,12 @@ function [Ef, Varf, f, ff, Ey, Vary, y, fy, py] = ia_pred(gp_array, tx, ty, x, p
     % ==================================================
     % Make predictions with different models in gp_array
     % ==================================================
-    
+
     for j = 1 : nGP
-        if exist('tstindex')
-            if ~isfield(gp_array{1}, 'latent_method')
-                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},tx,ty,x,[],tstindex);
-                Ey_grid(j,:) = Ef_grid(j,:);
-                Vary_grid(j,:) = Varf_grid(j,:)+gp_array{j}.noise{1}.noiseSigmas2;
-            else
-                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j},tx,ty,x,param,[],tstindex);
-                Ey_grid(j,:) = Ef_grid(j,:);
-                Vary_grid(j,:) = Varf_grid(j,:)+gp_array{j}.noise{1}.noiseSigmas2;
-            end
+        if isempty(Y)
+            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:)]=feval(fh_p,gp_array{j},tx,ty,x,param,[],tstind);
         else
-            if isfield(gp_array{1}, 'latent_method')   
-                [Ef_grid(j,:),Varf_grid(j,:)]=feval(fh_p,gp_array{j}, tx, ty, x, param);
-                Ey_grid(j,:) = Ef_grid(j,:);
-                Vary_grid(j,:) = Varf_grid(j,:)+gp_array{j}.noise{1}.noiseSigmas2;
-            else
-                [Ef_grid(j,:), Varf_grid(j,:)]=feval(fh_p,gp_array{j}, tx, ty, x);
-                Ey_grid(j,:) = Ef_grid(j,:);
-                Vary_grid(j,:) = Varf_grid(j,:)+gp_array{j}.noise{1}.noiseSigmas2;
-            end
+            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:), py_grid(j,:)]=feval(fh_p,gp_array{j},tx,ty,x, param, [],tstind, Y);
         end
     end
     
@@ -118,35 +130,16 @@ function [Ef, Varf, f, ff, Ey, Vary, y, fy, py] = ia_pred(gp_array, tx, ty, x, p
     Ef = sum(f.*ff,2)./sum(ff,2);
     Varf = sum(ff.*(repmat(Ef,1,size(f,2))-f).^2,2)./sum(ff,2);
     
-    % ==============================
-    % Observations y
-    % ==============================
+    Ey = sum(Ey_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
+    Vary = sum(Vary_grid.*repmat(P_TH,1,size(Ey_grid,2)),1) + sum( (Ey_grid - repmat(Ey,nGP,1)).^2, 1);
     
-    y = zeros(size(Ey_grid,2),501);
-    for j = 1 : size(Ey_grid,2);
-        y(j,:) = Ey_grid(1,j)-10*sqrt(Vary_grid(1,j)) : 20*sqrt(Vary_grid(1,j))/500 : Ey_grid(1,j)+10*sqrt(Vary_grid(1,j));  
+    if ~isempty(Y)
+        py = sum(py_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
+        py = py';
     end
     
-    % Calculate the density in each grid point by integrating over
-    % different models
-    fy = zeros(size(Ey_grid,2),501);
-    for j = 1 : size(Ey_grid,2)
-        fy(j,:) = sum(normpdf(repmat(y(j,:),size(Ey_grid,1),1), repmat(Ey_grid(:,j),1,size(y,2)), repmat(sqrt(Vary_grid(:,j)),1,size(y,2))).*repmat(P_TH,1,size(y,2)),1); 
-    end
-
-    % Normalize distributions
-    fy = fy./repmat(sum(fy,2),1,size(fy,2));
-
-    % Widths of each grid point
-    dy = diff(y,1,2);
-    dy(:,end+1)=dy(:,end);
-
-    % Calculate mean and variance of the disrtibutions
-    Ey = sum(y.*fy,2)./sum(fy,2);
-    Vary = sum(fy.*(repmat(Ey,1,size(y,2))-y).^2,2)./sum(fy,2);
-    
-    if nargin == 7
-        for i1 = 1 : length(Y)
-            py(i1) = sum(normpdf(repmat(Y(i1),size(Ey_grid,1),1), Ey_grid(:,i1), sqrt(Vary_grid(:,i1))).*P_TH); 
-        end
-    end
+    % Take transposes
+    Ef = Ef';
+    Varf = Varf';
+    Ey = Ey';    
+    Vary = Vary';

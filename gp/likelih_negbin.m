@@ -3,26 +3,33 @@ function likelih = likelih_negbin(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_NEGBIN('INIT', Y, YE) Create and initialize Negbin likelihood. 
-%       The input argument Y contains incedence counts and YE the expected number of
-%       incidences
+%	LIKELIH = LIKELIH_NEGBIN('INIT') Create and initialize Negbin likelihood. 
+%
+%       The likelihood is defined as follows:
+%                            __ n
+%                p(y|f, z) = || i=1 (r/(r+mu_i))^r * gamma(r+y_i)/( gamma(r)*gamma(y_i+1) ) * (mu/(r+mu_i))^y_i
+%
+%       where mu_i = z_i*exp(f_i) and r is the dispersion parameter.  z is a vector of 
+%       expected mean and f the latent value vector whose components are transformed to 
+%       relative risk exp(f_i). When using the likelihood you need to give the vector z 
+%       as an extra parameter to each function that requires y also. For example, you 
+%       should call gpla_e as follows: gpla_e(w, gp, x, y, 'z', z)
+%               
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'likelih_negbin'
-%         likelih.avgE             = YE;
-%         likelih.gamlny           = gammaln(Y+1);
+%         disper                   = The dispersion parameter
 %         p                        = Prior structure for hyperparameters of likelihood.
 %                                    Default prior for the dispersion parameter is logunif.
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_permute       = function handle to permutation
 %         likelih.fh_e             = function handle to energy of likelihood
 %         likelih.fh_g             = function handle to gradient of energy
 %         likelih.fh_g2            = function handle to second derivatives of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
-%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
+%         likelih.fh_predy         = function handle to evaluate the predictive mean, variance and density
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_NEGBIN('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
@@ -39,21 +46,15 @@ function likelih = likelih_negbin(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
-        y = varargin{1};
-        avgE = varargin{2};
-        disper = varargin{3};
         likelih.type = 'negbin';
         
-        % Set parameters
-        likelih.avgE = avgE;
-        likelih.gamlny = gammaln(y+1);
-        likelih.disper = disper;
+        likelih.disper = 10;
 
         % Initialize prior structure
         likelih.p.disper = prior_logunif('init');
@@ -61,7 +62,6 @@ function likelih = likelih_negbin(do, varargin)
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_negbin_pak;
         likelih.fh_unpak = @likelih_negbin_unpak;
-        likelih.fh_permute = @likelih_negbin_permute;
         likelih.fh_priore = @likelih_negbin_priore;
         likelih.fh_priorg = @likelih_negbin_priorg;
         likelih.fh_e = @likelih_negbin_e;
@@ -74,17 +74,13 @@ function likelih = likelih_negbin(do, varargin)
         likelih.fh_predy = @likelih_negbin_predy;
         likelih.fh_recappend = @likelih_negbin_recappend;
 
-        if length(varargin) > 3
-            if mod(nargin,2) ~=0
+        if nargin > 1
+            if mod(nargin,2) ==0
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
             for i=3:2:length(varargin)-1
                 switch varargin{i}
-                  case 'avgE'
-                    likelih.avgE = varargin{i+1};
-                  case 'gamlny'
-                    likelih.gamlny = varargin{i+1};
                   case 'disper'
                     likelih.disper = varargin{i+1};
                   case 'disper_prior'
@@ -105,10 +101,6 @@ function likelih = likelih_negbin(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
-              case 'avgE'
-                likelih.avgE = varargin{i+1};
-              case 'gamlny'
-                likelih.gamlny = varargin{i+1};
               case 'disper'
                 likelih.disper = varargin{i+1};
               case 'disper_prior'
@@ -159,21 +151,6 @@ function likelih = likelih_negbin(do, varargin)
     end
 
 
-    function likelih = likelih_negbin_permute(likelih, p, varargin)
-    %LIKELIH_NEGBIN_PERMUTE    A function to permute the ordering of parameters 
-    %                           in likelihood structure
-    %   Description
-    %	LIKELIH = LIKELIH_NEGBIN_UNPAK(LIKELIH, P) takes a likelihood data structure
-    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
-    %   according to P.
-    %
-    %   See also 
-    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
-
-        likelih.avgE = likelih.avgE(p,:);
-        likelih.gamlny = likelih.gamlny(p,:);
-    end
-
     function logPrior = likelih_negbin_priore(likelih, varargin)
     %LIKELIH_NEGBIN_PRIORE    log(prior) of the likelihood hyperparameters
     %
@@ -214,7 +191,7 @@ function likelih = likelih_negbin(do, varargin)
         end
     end  
     
-    function logLikelih = likelih_negbin_e(likelih, y, f, varargin)
+    function logLikelih = likelih_negbin_e(likelih, y, f, z)
     %LIKELIH_NEGBIN_E    (Likelihood) Energy function
     %
     %   Description
@@ -223,14 +200,21 @@ function likelih = likelih_negbin(do, varargin)
     %
     %   See also
     %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
-            
+        
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_e: missing z!    '... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_negbin and gpla_e.               ']);
+        end
+
+        
         r = likelih.disper;
-        E = likelih.avgE(:);
-        mu = exp(f).*E;
+        mu = exp(f).*z;
         logLikelih = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));        
     end
 
-    function g = likelih_negbin_g(likelih, y, f, param)
+    function g = likelih_negbin_g(likelih, y, f, param, z)
     %LIKELIH_NEGBIN_G    Gradient of (likelihood) energy function
     %
     %   Description
@@ -240,9 +224,16 @@ function likelih = likelih_negbin(do, varargin)
     %
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G2, LIKELIH_NEGBIN_G3, GPLA_E
-                            
-        E = likelih.avgE(:);
-        mu = exp(f).*E;
+
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_g: missing z!    '... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_negbin and gpla_e.               ']);
+        end
+
+        
+        mu = exp(f).*z;
         r = likelih.disper;
         switch param
           case 'hyper'      
@@ -267,7 +258,7 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
 
-    function g2 = likelih_negbin_g2(likelih, y, f, param)
+    function g2 = likelih_negbin_g2(likelih, y, f, param, z)
     %LIKELIH_NEGBIN_G2  Second gradients of (likelihood) energy function
     %
     %   Description
@@ -280,8 +271,15 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, GPLA_E
 
-        E = likelih.avgE(:);
-        mu = exp(f).*E;
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_g2: missing z!   '... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_negbin and gpla_e.               ']);
+        end
+
+        
+        mu = exp(f).*z;
         r = likelih.disper;
         switch param
           case 'hyper'
@@ -296,7 +294,7 @@ function likelih = likelih_negbin(do, varargin)
         end
     end    
     
-    function g3 = likelih_negbin_g3(likelih, y, f, param)
+    function g3 = likelih_negbin_g3(likelih, y, f, param, z)
     %LIKELIH_NEGBIN_G3  Third gradients of (likelihood) Energy function
     %
     %   Description
@@ -308,8 +306,15 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G2, GPLA_E, GPLA_G
 
-        E = likelih.avgE(:);
-        mu = exp(f).*E;
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_g3: missing z!   '... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_negbin and gpla_e.               ']);
+        end
+
+        
+        mu = exp(f).*z;
         r = likelih.disper;
         switch param
           case 'hyper'
@@ -324,7 +329,7 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
     
-    function [m_0, m_1, sigm2hati1] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    function [m_0, m_1, sigm2hati1] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_NEGBIN_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -336,12 +341,20 @@ function likelih = likelih_negbin(do, varargin)
     %   See also
     %   GPEP_E
        
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_tiltedMoments: missing z! '... 
+                   'Poisson likelihood needs the expected number of            '...
+                   'occurrences as an extra input z. See, for                  '...
+                   'example, likelih_negbin and gpla_e.                        ']);
+        end
+
+        
         yy = y(i1);
         % Create function handle for the function to be integrated (likelihood * cavity). 
 
         zm = @zeroth_moment;
-        gamlny = likelih.gamlny(i1);
-        avgE = likelih.avgE(i1);
+        gamlny = gammaln(y(i1)+1);
+        avgE = z(i1);
         r = likelih.disper;
 
         % Set the limits for integration and integrate with quad
@@ -423,17 +436,25 @@ function likelih = likelih_negbin(do, varargin)
 
     end
     
-    function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i)
+    function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_NEGBIN_SITEDERIV    Evaluate the derivative with respect to site parameters
     %
     %
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_siteDeriv: missing z!'... 
+                   'Poisson likelihood needs the expected number of       '...
+                   'occurrences as an extra input z. See, for             '...
+                   'example, likelih_negbin and gpla_e.                   ']);
+        end
+
+        
         zm = @zeroth_moment;
         zd = @deriv;
         
         tol = 1e-8;
         yy = y(i1);
-        gamlny = likelih.gamlny(i1);
-        avgE = likelih.avgE(i1);
+        gamlny = gammaln(y(i1)+1);
+        avgE = z(i1);
         r = likelih.disper;
         
         % Set the limits for integration and integrate with quad
@@ -516,13 +537,21 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
 
-    function [Ey, Vary, Py] = likelih_negbin_predy(likelih, Ef, Varf, y)
+    function [Ey, Vary, Py] = likelih_negbin_predy(likelih, Ef, Varf, y, z)
     %LIKELIH_NEGBIN_PREDY    Returns the predictive mean, variance and density of y
     %
     %   Description
     %   [Ey, Vary, py] = LIKELIH_NEGBIN_PREDY(LIKELIH, EF, VARF, Y) 
+        
+        if isempty(z)
+            error(['likelih_negbin -> likelih_negbin_predy: missing z!'... 
+                   'Poisson likelihood needs the expected number of   '...
+                   'occurrences as an extra input z. See, for         '...
+                   'example, likelih_negbin and gpla_e.               ']);
+        end
 
-       avgE = likelih.avgE;
+
+       avgE = z;
        r = likelih.disper;
         
        Py = zeros(size(Ef));
@@ -600,7 +629,6 @@ function likelih = likelih_negbin(do, varargin)
             % Set the function handles
             reclikelih.fh_pak = @likelih_negbin_pak;
             reclikelih.fh_unpak = @likelih_negbin_unpak;
-            reclikelih.fh_permute = @likelih_negbin_permute;
             reclikelih.fh_e = @likelih_negbin_e;
             reclikelih.fh_g = @likelih_negbin_g;    
             reclikelih.fh_g2 = @likelih_negbin_g2;

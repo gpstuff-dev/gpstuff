@@ -61,7 +61,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         K = gp_trcov(gp,x);
         [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
         
-        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
         if W >= 0 
             if issparse(K)                               % use sparse matrix routines
 % $$$                 p = analyze(K);
@@ -71,6 +71,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 % $$$                 K = K(p,p);
 % $$$                 W = W(p);
 % $$$                 f = f(p);
+% $$$                 if ~isempty(z)
+% $$$                     z = z(p,:);
+% $$$                 end
                 
                 sqrtW = sparse(1:n,1:n, sqrt(W), n,n);
 % $$$             B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
@@ -80,12 +83,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 sqrtWK = sqrtW*K;
                 C = ldlsolve(L,sqrtWK);
                 C2 = diag(K) - sum(sqrtWK.*C,1)';
-                s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+                s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
             else                                         % evaluate with full matrices
                 sqrtW = diag(sqrt(W));
                 R = sqrtW*(L'\(L\sqrtW));
                 C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
-                s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+                s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
 % $$$                 W = diag(W);
 % $$$                 sqrtW = sqrt(W);
 % $$$                 R = sqrtW*(L'\(L\sqrtW));
@@ -97,7 +100,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             V = L*diag(W);
             R = diag(W) - V'*V;
             C2 = sum(C.^2,1)';
-            s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+            s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
         end
 
         % =================================================================
@@ -112,7 +115,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             
                 gpcf = gp.cf{i};
                 [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-                g1 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                g1 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
                 for i2 = 1:length(DKff)
                     i1 = i1+1;
                     
@@ -181,9 +184,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             g_logPrior = feval(likelih.fh_priorg, likelih);
             if ~isempty(g_logPrior)
             
-                DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
-                DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');
-                b = K * feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+                DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper', z);
+                DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper', z);
+                b = K * feval(likelih.fh_g2, likelih, y, f, 'latent+hyper', z);
                 s3 = b - K*(R*b);
                 nl= size(DW_sigma,2);
                 
@@ -221,7 +224,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         B=Luu'\(K_fu');       % u x f
         iKuuKuf = Luu\B;
         
-        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
         sqrtW = sqrt(W);
         
         % Components for trace( inv(inv(W) + K) * dK) )
@@ -252,8 +255,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 % $$$         s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
 % $$$         s2t = diag(K) - diag(K*R*K);
 
-        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
+        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         
         
         % =================================================================
@@ -385,9 +388,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             likelih = gp.likelih;
 
             
-            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
-            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper', z);
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper', z);
+            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper', z);
             b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
             bb = (iLa2W.*b - L2*(L2'*b));
             s3 = b - (La1.*bb + B'*(B*bb));            
@@ -429,7 +432,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         iKuuKuf = Luu\(Luu'\K_fu');
         B=Luu'\(K_fu');       % u x f
 
-        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
         sqrtW = sqrt(W);
         
         % Components for trace( inv(inv(W) + K) * dK) )
@@ -463,8 +466,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         s2t = s2t - (s2t1 - sum(C2.^2)' + sum(B'.*((B*Bt)*B)',2)...
                     - sum(C1.^2)' + 2*sum(s2t2.*B',2) - 2*sum(s2t3.*C1',2));
 
-        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
+        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
 
         % =================================================================
         % Gradient with respect to covariance function parameters
@@ -622,9 +625,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             gdata_likelih = 0;
             likelih = gp.likelih;
             
-            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
-            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper', z);
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper', z);
+            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper', z);
             b = B'*(B*DL_f_sigma);
             for kk=1:length(ind)
                 b(ind{kk}) = b(ind{kk}) + La1{kk}*DL_f_sigma(ind{kk});
@@ -686,12 +689,14 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         gp.cf = cf_orig;
         
-        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
         
         % Find fill reducing permutation and permute all the
         % matrices
         p = analyze(La1);
-        gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
+        if ~isempty(z)
+            z = z(p,:);
+        end
         f = f(p);
         y = y(p);
         La1 = La1(p,p);
@@ -733,9 +738,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         s2t = s2t - (diag(La1) - sum(La1*sqrtW.*siLa2',2)./sW - sum(C2.^2)' + sum(B'.*(B*C3*B)',2)...
                     - sum(C1.^2)' + 2*sum((La1*C3).*B',2) - 2*sum(C2'.*C1',2));
         
-        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
+        s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
         
-        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+        b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         
         % =================================================================
         % Gradient with respect to covariance function parameters
@@ -899,9 +904,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             gdata_likelih = 0;
             likelih = gp.likelih;
             
-            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper');
-            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper');            
-            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper');
+            DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper', z);
+            DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper', z);
+            DL_f_sigma = feval(likelih.fh_g2, likelih, y, f, 'latent+hyper', z);
             b = La1*DL_f_sigma + B'*(B*DL_f_sigma);            
             bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
             s3 = b - (La1*bb + B'*(B*bb));            

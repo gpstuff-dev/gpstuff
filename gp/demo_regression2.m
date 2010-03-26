@@ -138,8 +138,8 @@ gp=gp_unpak(gp,w, 'covariance');
 % Make predictions. Below Ef_full is the predictive mean and Varf_full the 
 % predictive variance.
 [Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
-[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 1);
-[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 2);
+[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 'covariance', 1);
+[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 'covariance', 2);
 
 % Plot the prediction and data
 figure(1)
@@ -266,7 +266,7 @@ w=scg2(fe, w, opt, fg, gp_pic, x, y, param);
 gp_pic = gp_unpak(gp_pic,w,param);
 
 % Make the prediction
-[Ef_pic, Varf_pic, Ey_pic, Vary_pic] = gp_pred(gp_pic, x, y, x, [], trindex);
+[Ef_pic, Varf_pic, Ey_pic, Vary_pic] = gp_pred(gp_pic, x, y, x, 'covariance', [], trindex);
 
 
 % Plot the solution of PIC
@@ -341,8 +341,8 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 
 
 [Ef, Varf, Ey, Vary] = gp_pred(gp_csfic, x, y, x);
-[Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 1);
-[Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 2);
+[Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 'covariance', 1);
+[Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 'covariance', 2);
 
 figure(2)
 set(gcf,'units','centimeters');

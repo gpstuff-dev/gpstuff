@@ -3,8 +3,14 @@ function likelih = likelih_probit(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_PROBIT('INIT', Y, YE) Create and initialize Probit likelihood. 
-%       The input argument Y contains class labels {-1,1}.
+%	LIKELIH = LIKELIH_PROBIT('INIT') Create and initialize Probit likelihood for 
+%       classification problem with class labels {-1,1}. 
+%    
+%       likelihood is defined as follows:
+%                            __ n
+%                p(y|f, z) = || i=1 normcdf(y_i * f_i)
+%    
+%       where f is the latent value vector.
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'likelih_probit'
@@ -18,6 +24,7 @@ function likelih = likelih_probit(do, varargin)
 %         likelih.fh_g2            = function handle to second derivative of energy
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
+%         likelih.fh_predy         = function handle to evaluate the predictive mean, variance and density
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_PROBIT('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
@@ -35,17 +42,13 @@ function likelih = likelih_probit(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
+    if nargin < 1
         error('Not enough arguments')
     end
 
     % Initialize the covariance function
     if strcmp(do, 'init')
         likelih.type = 'probit';
-        y = varargin{1};
-        if ~isempty(find(y~=1 & y~= -1))
-            error('The class labels have to be {-1,1}')
-        end
         
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_probit_pak;
@@ -124,21 +127,21 @@ function likelih = likelih_probit(do, varargin)
 
 
 
-    function likelih = likelih_probit_permute(likelih, p)
-    %LIKELIH_PROBIT_PERMUTE    A function to permute the ordering of parameters 
-    %                           in likelihood structure
-    %   Description
-    %	LIKELIH = LIKELIH_PROBIT_UNPAK(LIKELIH, P) takes a likelihood data structure
-    %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
-    %   according to P.
-    %
-    %   See also 
-    %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
+% $$$     function likelih = likelih_probit_permute(likelih, p)
+% $$$     %LIKELIH_PROBIT_PERMUTE    A function to permute the ordering of parameters 
+% $$$     %                           in likelihood structure
+% $$$     %   Description
+% $$$     %	LIKELIH = LIKELIH_PROBIT_UNPAK(LIKELIH, P) takes a likelihood data structure
+% $$$     %   LIKELIH and permutation vector P and returns LIKELIH with its parameters permuted
+% $$$     %   according to P.
+% $$$     %
+% $$$     %   See also 
+% $$$     %   GPLA_E, GPLA_G, GPEP_E, GPEP_G with CS+FIC model
+% $$$ 
+% $$$     end
 
-    end
 
-
-    function logLikelih = likelih_probit_e(likelih, y, f)
+    function logLikelih = likelih_probit_e(likelih, y, f, z)
     %LIKELIH_PROBIT_E    (Likelihood) Energy function
     %
     %   Description
@@ -148,11 +151,15 @@ function likelih = likelih_probit(do, varargin)
     %   See also
     %   LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, LIKELIH_PROBIT_G2, GPLA_E
 
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_probit: The class labels have to be {-1,1}')
+        end
+
         logLikelih = sum(log(normcdf(y.*f)));
     end
 
 
-    function deriv = likelih_probit_g(likelih, y, f, param)
+    function deriv = likelih_probit_g(likelih, y, f, param, z)
     %LIKELIH_PROBIT_G    G2 of (likelihood) energy function
     %
     %   Description
@@ -163,6 +170,10 @@ function likelih = likelih_probit(do, varargin)
     %   See also
     %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G2, LIKELIH_PROBIT_G3, GPLA_E
 
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_probit: The class labels have to be {-1,1}')
+        end
+        
         switch param
           case 'latent'
             deriv = y.*normpdf(f)./normcdf(y.*f);
@@ -170,7 +181,7 @@ function likelih = likelih_probit(do, varargin)
     end
 
 
-    function g2 = likelih_probit_g2(likelih, y, f, param)
+    function g2 = likelih_probit_g2(likelih, y, f, param, z)
     %LIKELIH_PROBIT_G2    Third gradients of (likelihood) energy function
     %
     %   Description
@@ -182,6 +193,11 @@ function likelih = likelih_probit(do, varargin)
     %
     %   See also
     %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, GPLA_E
+        
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_probit: The class labels have to be {-1,1}')
+        end
+        
         switch param
           case 'latent'
             z = y.*f;
@@ -189,7 +205,7 @@ function likelih = likelih_probit(do, varargin)
         end
     end
     
-    function thir_grad = likelih_probit_g3(likelih, y, f, param)
+    function thir_grad = likelih_probit_g3(likelih, y, f, param, z)
     %LIKELIH_PROBIT_G3    Gradient of (likelihood) Energy function
     %
     %   Description
@@ -201,6 +217,10 @@ function likelih = likelih_probit(do, varargin)
     %   See also
     %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_G2, GPLA_E, GPLA_G
 
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_probit: The class labels have to be {-1,1}')
+        end
+        
         switch param
           case 'latent'
             z2 = normpdf(f)./normcdf(y.*f);
@@ -209,7 +229,7 @@ function likelih = likelih_probit(do, varargin)
     end
     
 
-    function [m_0, m_1, m_2] = likelih_probit_tiltedMoments(likelih, y, i1, sigm2_i, myy_i)
+    function [m_0, m_1, m_2] = likelih_probit_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_PROBIT_TILTEDMOMENTS    Returns the moments of the tilted distribution
     %
     %   Description
@@ -220,9 +240,9 @@ function likelih = likelih_probit(do, varargin)
     %
     %   See also
     %   GPEP_E
-
-        if ~isreal(y(i1).*myy_i./sqrt(1+sigm2_i))
-            error('problem with moments')
+        
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_probit: The class labels have to be {-1,1}')
         end
         
         m_0 = normcdf(y(i1).*myy_i./sqrt(1+sigm2_i));
@@ -235,15 +255,19 @@ function likelih = likelih_probit(do, varargin)
         m_2 = sigm2hati1;
     end
 
-    function [Ey, Vary, py] = likelih_probit_predy(likelih, Ef, Varf, y)
+    function [Ey, Vary, py] = likelih_probit_predy(likelih, Ef, Varf, y, z)
     % Return E, Var, and p of the predictive density
         
+        if ~isempty(find(y~=1 & y~=-1))
+            error('likelih_probit: The class labels have to be {-1,1}')
+        end
+
         py1 = normcdf(Ef./sqrt(1+Varf));
         Ey = 2*py1 - 1;
 
         Vary = 1-Ey.^2;
         
-        if nargin > 3
+        if nargout > 2
             py = normcdf(Ef.*y./sqrt(1+Varf));    % Probability p(y_new)
         end
     end
@@ -260,8 +284,24 @@ function likelih = likelih_probit(do, varargin)
     %          lengthHyperNu  =
     %          lengthScale    =
     %          magnSigma2     =
-        
-        reclikelih = likelih;
+
+        if nargin == 2
+            reclikelih.type = 'probit';
+
+            % Set the function handles
+            reclikelih.fh_pak = @likelih_probit_pak;
+            reclikelih.fh_unpak = @likelih_probit_unpak;
+            reclikelih.fh_permute = @likelih_probit_permute;
+            reclikelih.fh_e = @likelih_probit_e;
+            reclikelih.fh_g = @likelih_probit_g;    
+            reclikelih.fh_g2 = @likelih_probit_g2;
+            reclikelih.fh_g3 = @likelih_probit_g3;
+            reclikelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
+            reclikelih.fh_mcmc = @likelih_probit_mcmc;
+            reclikelih.fh_predy = @likelih_probit_predy;
+            reclikelih.fh_recappend = @likelih_probit_recappend;
+            return
+        end
 
     end
 
