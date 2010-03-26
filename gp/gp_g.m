@@ -28,10 +28,10 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_E';
-ip.addRequired('w', @(x) isreal(x) && all(isfinite(x));
+ip.addRequired('w', @(x) isreal(x) && all(isfinite(x(:)));
 ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
-ip.addRequired('t', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('t', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('param','covariance+inducing+likelihood', ...
                  @(x) isempty(x) || (ischar(x) && ...
                  ~isempty(regexp(param,...
