@@ -122,6 +122,9 @@ function gp = gp_init(do, varargin)
         else
             gp.noise = [];
         end
+        
+        % Default inference
+        gp.infer_params='covariance+inducing+likelihood';
 
         % Initialize parameters
         gp.jitterSigma2=0;
@@ -188,7 +191,7 @@ function gp = gp_init(do, varargin)
                         gp.laplace_opt.tol = 1e-12;
                         gp.laplace_opt.optim_method = 'newton';
                         gp = gpla_e('init', gp, varargin{i+1}{2:end});
-                        w = gp_pak(gp, varargin{i+1}{4});
+                        w = gp_pak(gp);
                         [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
                       otherwise
                         error('Unknown type of latent_method!')
@@ -255,7 +258,7 @@ function gp = gp_init(do, varargin)
                     gp.laplace_opt.tol = 1e-12;
                     gp.laplace_opt.optim_method = 'newton';
                     gp = gpla_e('init', gp, varargin{i+1}{2:end});
-                    w = gp_pak(gp, varargin{i+1}{4});
+                    w = gp_pak(gp);
                     [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
                   otherwise
                     error('Unknown type of latent_method!')
