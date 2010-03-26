@@ -9,18 +9,18 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %        row of X corresponds to one input vector and each row of Y
 %        corresponds to one target vector.
 %
-%	[G, GDATA, GPRIOR] = GPLA_G(GP, X, Y, OPTIONS) also returns the data
-%	 and prior contributions to the gradient.
+%	[G, GDATA, GPRIOR] = GPLA_G(W, GP, X, Y, OPTIONS) also returns 
+%        the data and prior contributions to the gradient.
 %
 %     OPTIONS is optional parameter-value pair
-%       'param' with the default value 'covariance+inducing+likelihood'
-%         Tells which parameter groups are included in W. See GP_PAK for
-%         details.
+%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
 %  
 %       NOTE! The CS+FIC model is not supported 
 %
 %	See also   
-%       GPLA_E, LA_PRED, GP_PAK
+%       GPLA_E, LA_PRED
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
@@ -29,25 +29,21 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-ip=inputParser;
-ip.FunctionName = 'GPLA_E';
-ip.addRequired('w', @(x) isreal(x) && all(isfinite(x)));
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('param','covariance+inducing+likelihood', ...
-                 @(x) isempty(x) || (ischar(x) && ...
-                 ~isempty(regexp(x,...
-                                 '(covariance)|(inducing)|(likelihood)'))));
-ip.parse(w, gp, x, y, varargin{:});
-w=ip.Results.w;
-gp=ip.Results.gp;
-x=ip.Results.x;
-y=ip.Results.y;
-param=ip.Results.param;
-paramopt.param=param;
+  ip=inputParser;
+  ip.FunctionName = 'GPLA_G';
+  ip.addRequired('w', @(x) isreal(x) && all(isfinite(x)));
+  ip.addRequired('gp',@isstruct);
+  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.parse(w, gp, x, y, varargin{:});
+  w=ip.Results.w;
+  gp=ip.Results.gp;
+  x=ip.Results.x;
+  y=ip.Results.y;
+  z=ip.Results.z;
 
-    gp = gp_unpak(gp, w, param);       % unpak the parameters
+    gp = gp_unpak(gp, w);       % unpak the parameters
     ncf = length(gp.cf);
     n=size(x,1);
 
@@ -63,7 +59,7 @@ paramopt.param=param;
       case 'FULL'   % A full GP
                     % Calculate covariance matrix and the site parameters
         K = gp_trcov(gp,x);
-        [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
+        [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
         
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         if W >= 0 
@@ -106,7 +102,7 @@ paramopt.param=param;
 
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
             % Evaluate the gradients from covariance functions
             for i=1:ncf
                 i1=0;
@@ -176,7 +172,8 @@ paramopt.param=param;
         
         % =================================================================
         % Gradient with respect to likelihood function parameters
-        if ~isempty(strfind(param, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
+            && ~isempty(gp.likelih.fh_pak(gp.likelih))
             
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -216,7 +213,7 @@ paramopt.param=param;
         u = gp.X_u;
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -261,7 +258,7 @@ paramopt.param=param;
         
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
             for i=1:ncf            
                 i1=0;
                 if ~isempty(gprior)
@@ -330,7 +327,7 @@ paramopt.param=param;
         % =================================================================
         % Gradient with respect to inducing inputs
         
-        if ~isempty(strfind(param, 'inducing'))
+        if ~isempty(strfind(gp.infer_params, 'inducing'))
             if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 m = size(gp.X_u,2);
                 st=0;
@@ -383,7 +380,7 @@ paramopt.param=param;
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(param, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
             gdata_likelih = 0;
             likelih = gp.likelih;
 
@@ -423,7 +420,7 @@ paramopt.param=param;
         m = size(u,1);
         ind = gp.tr_index;
 
-        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -471,7 +468,7 @@ paramopt.param=param;
 
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
             for i=1:ncf
                 i1=0;
                 if ~isempty(gprior)
@@ -556,7 +553,7 @@ paramopt.param=param;
         % =================================================================
         % Gradient with respect to inducing inputs
         
-        if ~isempty(strfind(param, 'inducing'))
+        if ~isempty(strfind(gp.infer_params, 'inducing'))
             if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 m = size(gp.X_u,2);
                 
@@ -621,7 +618,7 @@ paramopt.param=param;
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(param, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
             gdata_likelih = 0;
             likelih = gp.likelih;
             
@@ -662,7 +659,7 @@ paramopt.param=param;
         u = gp.X_u;
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
         cf_orig = gp.cf;
 
@@ -742,7 +739,7 @@ paramopt.param=param;
         
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))    
+        if ~isempty(strfind(gp.infer_params, 'covariance'))    
             for i=1:ncf
                 i1=0;
                 if ~isempty(gprior)
@@ -843,7 +840,7 @@ paramopt.param=param;
         % =================================================================
         % Gradient with respect to inducing inputs
         
-        if ~isempty(strfind(param, 'inducing'))
+        if ~isempty(strfind(gp.infer_params, 'inducing'))
             if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 m = size(gp.X_u,2);
                 st=0;
@@ -898,7 +895,7 @@ paramopt.param=param;
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(param, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
             gdata_likelih = 0;
             likelih = gp.likelih;
             

@@ -24,14 +24,14 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
 %       (non-Gaussian likelihood).
 %
 %     OPTIONS is optional parameter-value pair
-%       'param' with a default value 'covariance+inducing+likelihood'
-%        Tells which parameter groups are included in W. See GP_PAK for
-%        details.
+%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
+%        Some likelihoods may use this. For example, in case of Poisson
+%        likelihood we have z_i=E_i, that is, expected value for ith case. 
 %
 %       NOTE! The CS+FIC model is not supported 
 %
 %	See also
-%       GPLA_G, LA_PRED, GP_E, GP_PAK
+%       GPLA_G, LA_PRED, GP_E
 %
 %
 
@@ -45,26 +45,24 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-ip=inputParser;
-ip.FunctionName = 'GPLA_E';
-ip.addRequired('w', @(x) ...
-               (ischar(x) && strcmp(w, 'init')) || ...
-               (isreal(x) && all(isfinite(x(:)))));
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('param','covariance+inducing+likelihood', ...
-                 @(x) isempty(x) || (ischar(x) && ...
-                 ~isempty(regexp(x,'(covariance)|(inducing)|(likelihood)'))));
-ip.parse(w, gp, x, y, varargin{:});
-w=ip.Results.w;
-gp=ip.Results.gp;
-x=ip.Results.x;
-y=ip.Results.y;
-param=ip.Results.param;
-
+  ip=inputParser;
+  ip.FunctionName = 'GPLA_E';
+  ip.addRequired('w', @(x) ...
+                 (ischar(x) && strcmp(w, 'init')) || ...
+                 (isreal(x) && all(isfinite(x(:)))));
+  ip.addRequired('gp',@isstruct);
+  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.parse(w, gp, x, y, varargin{:});
+  w=ip.Results.w;
+  gp=ip.Results.gp;
+  x=ip.Results.x;
+  y=ip.Results.y;
+  z=ip.Results.z;
+  
     if strcmp(w, 'init')
-        w0 = rand(size(gp_pak(gp, param)));
+        w0 = rand(size(gp_pak(gp)));
         e0=[];
         edata0= inf;
         eprior0=[];
@@ -77,15 +75,15 @@ param=ip.Results.param;
         La20 = [];
         a0 = 0;
 
-        laplace_algorithm(gp_pak(gp,param), gp, x, y, param);
+        laplace_algorithm(gp_pak(gp), gp, x, y, z);
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
     else
-        [e, edata, eprior, f, L, a, La2] = feval(gp.fh_e, w, gp, x, y, param);
+        [e, edata, eprior, f, L, a, La2] = feval(gp.fh_e, w, gp, x, y, z);
     end
 
-    function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param)
+    function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, z)
         
         if abs(w-w0) < 1e-8 % 1e-8
             % The covariance function parameters haven't changed so just
@@ -100,7 +98,7 @@ param=ip.Results.param;
             a = a0;
         else
 
-            gp=gp_unpak(gp, w, param);
+            gp=gp_unpak(gp, w);
             ncf = length(gp.cf);
             n = length(x);
 
