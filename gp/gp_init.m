@@ -3,7 +3,7 @@ function gp = gp_init(do, varargin)
 %
 %	Description
 %
-%	GP = GP_INIT('INIT', 'TYPE', 'LIKELIH', GPCF, NOISE, VARARGIN) 
+%	GP = GP_INIT('INIT', 'TYPE', 'LIKELIH', GPCF, NOISE, VARARGIN)
 %       Creates a Gaussian Process model with a single output. Takes a string/structure 
 %       'LIKELIH', which spesifies likelihood function used, GPCF array specifying 
 %       the covariance functions and NOISE array, which specify the noise covariance
@@ -76,8 +76,6 @@ function gp = gp_init(do, varargin)
 %
 %	See also
 %	GPINIT, GP2PAK, GP2UNPAK
-%
-%
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
     
@@ -156,8 +154,8 @@ function gp = gp_init(do, varargin)
                     gp.p.X_u = varargin{i+1};                    
                   case 'blocks'
                     gp.tr_index = varargin{i+1};
-                  case 'truncated'
-                    init_truncated(varargin{i+1})
+                  case 'infer_params'
+                    gp.infer_params = varargin{i+1};
                   case 'latent_method'
                     gp.latent_method = varargin{i+1}{1};
                     switch varargin{i+1}{1}
@@ -168,18 +166,18 @@ function gp = gp_init(do, varargin)
                         % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
                         gp.ep_opt.maxiter = 20;
                         gp.ep_opt.tol = 1e-6;
-                        gp = gpep_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        gp = gpep_e('init', gp, varargin{i+1}{2:end});
                         w = gp_pak(gp, varargin{i+1}{4});
-                        [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2:end});
                         gp.site_tau = site_tau';
                         gp.site_nu = site_nu';
                       case 'Laplace'
                         gp.laplace_opt.maxiter = 20;
                         gp.laplace_opt.tol = 1e-12;
                         gp.laplace_opt.optim_method = 'newton';
-                        gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, 'param', varargin{i+1}{4});
+                        gp = gpla_e('init', gp, varargin{i+1}{2:end});
                         w = gp_pak(gp, varargin{i+1}{4});
-                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, 'param', varargin{i+1}{4});
+                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
                       otherwise
                         error('Unknown type of latent_method!')
                     end
@@ -223,8 +221,8 @@ function gp = gp_init(do, varargin)
                 gp.p.X_u = varargin{i+1};                
               case 'blocks'
                 gp.tr_index = varargin{i+1};
-              case 'truncated'
-                init_truncated(varargin{i+1})
+              case 'infer_params'
+                gp.infer_params = varargin{i+1};
               case 'latent_method'
                 gp.latent_method = varargin{i+1}{1};
                 switch varargin{i+1}{1}
@@ -235,18 +233,18 @@ function gp = gp_init(do, varargin)
                     % Note in the case of EP, you have to give varargin{i+1} = {x, y, param}
                     gp.ep_opt.maxiter = 20;
                     gp.ep_opt.tol = 1e-6;
-                    gp = gpep_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    gp = gpep_e('init', gp, varargin{i+1}{2:end});
                     w = gp_pak(gp, varargin{i+1}{4});
-                    [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    [e, edata, eprior, site_tau, site_nu] = gpep_e(w, gp, varargin{i+1}{2:end});
                     gp.site_tau = site_tau';
                     gp.site_nu = site_nu';
                   case 'Laplace'
                     gp.laplace_opt.maxiter = 20;
-                    gp.laplace_opt.tol = 1e-6;
+                    gp.laplace_opt.tol = 1e-12;
                     gp.laplace_opt.optim_method = 'newton';
-                    gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3},'param', varargin{i+1}{4});
+                    gp = gpla_e('init', gp, varargin{i+1}{2:end});
                     w = gp_pak(gp, varargin{i+1}{4});
-                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, 'param', varargin{i+1}{4});                    
+                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
                   otherwise
                     error('Unknown type of latent_method!')
                 end
