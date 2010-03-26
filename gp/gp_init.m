@@ -177,9 +177,9 @@ function gp = gp_init(do, varargin)
                         gp.laplace_opt.maxiter = 20;
                         gp.laplace_opt.tol = 1e-12;
                         gp.laplace_opt.optim_method = 'newton';
-                        gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, 'param', varargin{i+1}{4});
                         w = gp_pak(gp, varargin{i+1}{4});
-                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, 'param', varargin{i+1}{4});
                       otherwise
                         error('Unknown type of latent_method!')
                     end
@@ -244,9 +244,9 @@ function gp = gp_init(do, varargin)
                     gp.laplace_opt.maxiter = 20;
                     gp.laplace_opt.tol = 1e-6;
                     gp.laplace_opt.optim_method = 'newton';
-                    gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});
+                    gp = gpla_e('init', gp, varargin{i+1}{2}, varargin{i+1}{3},'param', varargin{i+1}{4});
                     w = gp_pak(gp, varargin{i+1}{4});
-                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, varargin{i+1}{4});                    
+                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2}, varargin{i+1}{3}, 'param', varargin{i+1}{4});                    
                   otherwise
                     error('Unknown type of latent_method!')
                 end

@@ -4,8 +4,8 @@ function w = gp_pak(gp, param)
 %	Description
 %	W = GP_PAK(GP, PARAM) takes a Gaussian Process data structure GP and
 %	string PARAM defining, which parameters are packed and combines the 
-%       parameters into a single row vector W. If PARAM is not given the function 
-%       packs all parameters.
+%       parameters into a single row vector W. If PARAM is not given the 
+%       function packs all parameters.
 %
 %       Each of the following strings in PARAM defines one group of parameters 
 %       to pack:

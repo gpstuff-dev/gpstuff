@@ -1,32 +1,51 @@
-function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
+function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %GPLA_G   Evaluate gradient of Laplace approximation's marginal log posterior estimate 
 %
-%	Description
-%	G = GPLA_G(W, GP, X, Y) takes a full GP hyper-parameter vector W, 
-%       data structure GP a matrix X of input vectors and a matrix Y
-%       of target vectors, and evaluates the gradient G of EP's marginal 
-%       log posterior estimate . Each row of X corresponds to one input
-%       vector and each row of Y corresponds to one target vector. 
+%     Description
+%	G = GPLA_G(W, GP, X, Y, OPT) takes a full GP hyper-parameter vector W, 
+%        data structure GP a matrix X of input vectors and a matrix Y
+%        of target vectors, and evaluates the gradient G of EP's marginal 
+%        log posterior estimate . Each row of X corresponds to one input
+%        vector and each row of Y corresponds to one target vector. 
 %
-%	G = GPLA_G(W, GP, P, Y, PARAM) in case of sparse model takes also  
-%       string PARAM defining the parameters to take the gradients with 
-%       respect to. Possible parameters are 'hyper' = hyperparameters and 
-%      'inducing' = inducing inputs, 'hyper+inducing' = hyper+inducing parameters.
+%	[G, GDATA, GPRIOR] = GPLA_G(GP, X, Y, OPT) also returns the data
+%	 and prior contributions to the gradient.
 %
-%	[G, GDATA, GPRIOR] = GPLA_G(GP, X, Y) also returns separately  the
-%	data and prior contributions to the gradient.
-%
+%     OPT is optional parameter-value pair
+%       'param' with the default value 'covariance+inducing+likelihood'
+%         Tells which parameter groups are included in W. See GP_PAK for
+%         details.
+%  
 %       NOTE! The CS+FIC model is not supported 
 %
 %	See also   
-%       GPLA_E, LA_PRED
+%       GPLA_E, LA_PRED, GP_PAK
 
-% Copyright (c) 2007-2008      Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
-    
+
+ip=inputParser;
+ip.FunctionName = 'GPLA_E';
+ip.addRequired('w', @(x) isreal(x) && all(isfinite(x)));
+ip.addRequired('gp',@isstruct);
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addParamValue('param','covariance+inducing+likelihood', ...
+                 @(x) isempty(x) || (ischar(x) && ...
+                 ~isempty(regexp(x,...
+                                 '(covariance)|(inducing)|(likelihood)'))));
+ip.parse(w, gp, x, y, varargin{:});
+w=ip.Results.w;
+gp=ip.Results.gp;
+x=ip.Results.x;
+y=ip.Results.y;
+param=ip.Results.param;
+paramopt.param=param;
+
     gp = gp_unpak(gp, w, param);       % unpak the parameters
     ncf = length(gp.cf);
     n=size(x,1);
@@ -43,7 +62,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
       case 'FULL'   % A full GP
                     % Calculate covariance matrix and the site parameters
         K = gp_trcov(gp,x);
-        [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
         
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
         if W >= 0 
@@ -196,7 +215,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         u = gp.X_u;
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -403,7 +422,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         m = size(u,1);
         ind = gp.tr_index;
 
-        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -642,7 +661,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, param, varargin)
         u = gp.X_u;
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, param, varargin{:});
+        [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp, param), gp, x, y, paramopt);
 
         cf_orig = gp.cf;
 

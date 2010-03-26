@@ -1,36 +1,55 @@
-function [e, edata, eprior] = gp_e(w, gp, x, t, param)
+function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
 %GP_E	Evaluate energy function for Gaussian Process 
 %
-%	Description
-%	E = GP_E(W, GP, X, Y, PARAM) takes a Gaussian process data structure GP 
-%	together with a matrix X of input vectors and a matrix Y of targets,
-%	and evaluates the energy function E.  Each row of X corresponds to one 
-%       input vector and each row of Y corresponds to one target vector.
+%     Description
+%	E = GP_E(W, GP, X, Y, OPT) takes a Gaussian process data structure GP 
+%	 together with a matrix X of input vectors and a matrix Y of targets,
+%	 and evaluates the energy function E.  Each row of X corresponds to
+%        one input vector and each row of Y corresponds to one target vector.
 %
-%	[E, EDATA, EPRIOR] = GP2R_E(W, GP, P, T, PARAM) also returns the data and
-%	prior components of the total energy.
+%	[E, EDATA, EPRIOR] = GP2_E(W, GP, X, Y, OPT) also returns the data 
+%        and prior components of the total energy.
 %
 %       The energy is minus log posterior cost function:
 %            E = EDATA + EPRIOR 
 %              = - log p(Y|X, th) - log p(th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...), X is
-%       inputs and Y is observations (regression) or latent values (non-Gaussian
-%       likelihood).
+%       where th represents the hyperparameters (lengthScale, magnSigma2...),
+%       X is inputs and Y is observations (regression) or latent values
+%       (non-Gaussian likelihood).
+%
+%     OPT is optional parameter-value pair
+%       'param' with the default value 'covariance+inducing+likelihood'
+%         Tells which parameter groups are included in W. See GP_PAK for
+%         details.
 %
 %	See also
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
 %
 
 % Copyright (c) 2006-2009 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if nargin < 5
-    param = 'covariance+inducing+likelihood';
-end
-
+ip=inputParser;
+ip.FunctionName = 'GP_E';
+ip.addRequired('w', @(x) isreal(x) && all(isfinite(x));
+ip.addRequired('gp',@isstruct);
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('t', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addParamValue('param','covariance+inducing+likelihood', ...
+                 @(x) isempty(x) || (ischar(x) && ...
+                 ~isempty(regexp(param,...
+                                 '(covariance)|(inducing)|(likelihood)'))));
+ip.parse(w, gp, x, t, varargin{:});
+w=ip.Results.w;
+gp=ip.Results.gp;
+x=ip.Results.x;
+t=ip.Results.t;
+param=ip.Results.param;
+  
 gp=gp_unpak(gp, w, param);
 ncf = length(gp.cf);
 n=length(x);

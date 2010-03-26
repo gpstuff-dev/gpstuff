@@ -1,32 +1,42 @@
-function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
-%GPLA_E Conduct LAplace approximation and return marginal log posterior estimate
+function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
+%GPLA_E Conduct Laplace approximation and return marginal log posterior estimate
 %
-%	Description
-%	E = GPLA_E(W, GP, X, Y, PARAM) takes a GP data structure GP together
-%	with a matrix X of input vectors and a matrix Y of target vectors,
-%	and finds the Laplace approximation for the conditional posterior p(Y|X, th), 
-%       where th is the hyperparameters. Returns the energy E at th. Each row 
-%       of X corresponds to one input vector and each row of Y corresponds to 
-%       one target vector.
+%     Description
+%	GP = GPLA_E('init', GP, X, Y, OPT) takes a GP data structure GP 
+%        together with a matrix X of input vectors and a matrix Y of target
+%        vectors, and sets required fiels for the Laplace approximation.
 %
-%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, P, T, PARAM) also returns the data and
-%	prior components of the total error.
+%	E = GPLA_E(W, GP, X, Y, OPT) takes a GP data structure GP together
+%	 with a matrix X of input vectors and a matrix Y of target vectors,
+%	 and finds the Laplace approximation for the conditional posterior 
+%        p(Y|X, th), where th is the hyperparameters. Returns the energy E 
+%        at th. Each row of X corresponds to one input vector and each row
+%        of Y corresponds to one target vector.
+%
+%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, X, Y, OPT) also returns the data
+%        and prior components of the total error.
 %
 %       The energy is minus log posterior cost function:
 %            E = EDATA + EPRIOR 
 %              = - log p(Y|X, th) - log p(th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...), X is
-%       inputs and Y is observations (regression) or latent values (non-Gaussian
-%       likelihood).
+%       where th represents the hyperparameters (lengthScale, magnSigma2...), 
+%       X is inputs and Y is observations (regression) or latent values
+%       (non-Gaussian likelihood).
+%
+%     OPT is optional parameter-value pair
+%       'param' with a default value 'covariance+inducing+likelihood'
+%        Tells which parameter groups are included in W. See GP_PAK for
+%        details.
 %
 %       NOTE! The CS+FIC model is not supported 
 %
 %	See also
-%       GPLA_G, LA_PRED, GP_E
+%       GPLA_G, LA_PRED, GP_E, GP_PAK
 %
 %
 
-% Copyright (c) 2007-2010      Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 % 
 % The Newton's method is implemented as described in
 % Rasmussen and Williams (2006).
@@ -34,6 +44,24 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
+
+ip=inputParser;
+ip.FunctionName = 'GPLA_E';
+ip.addRequired('w', @(x) ...
+               (ischar(x) && strcmp(w, 'init')) || ...
+               (isreal(x) && all(isfinite(x))));
+ip.addRequired('gp',@isstruct);
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x)))
+ip.addParamValue('param','covariance+inducing+likelihood', ...
+                 @(x) isempty(x) || (ischar(x) && ...
+                 ~isempty(regexp(x,'(covariance)|(inducing)|(likelihood)'))));
+ip.parse(w, gp, x, y, varargin{:});
+w=ip.Results.w;
+gp=ip.Results.gp;
+x=ip.Results.x;
+y=ip.Results.y;
+param=ip.Results.param;
 
     if strcmp(w, 'init')
         w0 = rand(size(gp_pak(gp, param)));
@@ -49,15 +77,15 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, param, varargin)
         La20 = [];
         a0 = 0;
 
-        laplace_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
+        laplace_algorithm(gp_pak(gp,param), gp, x, y, param);
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
     else
-        [e, edata, eprior, f, L, a, La2] = feval(gp.fh_e, w, gp, x, y, param, varargin);
+        [e, edata, eprior, f, L, a, La2] = feval(gp.fh_e, w, gp, x, y, param);
     end
 
-    function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param, varargin)
+    function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, param)
         
         if abs(w-w0) < 1e-8 % 1e-8
             % The covariance function parameters haven't changed so just

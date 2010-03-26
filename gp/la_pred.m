@@ -44,7 +44,7 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
 
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, f, L] = gpla_e(gp_pak(gp,param), gp, tx, ty, param);
+        [e, edata, eprior, f, L] = gpla_e(gp_pak(gp,param), gp, tx, ty, 'param', param);
 
         W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
         deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
@@ -102,7 +102,7 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
 
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, 'param', param);
 
         deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
         ntest=size(x,1);
@@ -165,7 +165,7 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
         ntest = size(x,1);
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, 'param', param);
 
         deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent');
 
@@ -230,7 +230,7 @@ function [Ef, Varf, Ey, Vary, Py] = la_pred(gp, tx, ty, x, param, predcf, tstind
         u = gp.X_u;
         m = length(u);
 
-        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp, param), gp, tx, ty, 'param', param);
         
         % Indexes to all non-compact support and compact support covariances.
         cf1 = [];
