@@ -95,11 +95,6 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                 R = diag(W) - V'*V;
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
             end
-            if isempty(yt)
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
-            else
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
-            end
         end
         
       case 'FIC'
@@ -170,11 +165,6 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                            - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu(tstind,:)')',2)...
                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
-            elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
-            end
         end
 
       case {'PIC' 'PIC_BLOCK'}
@@ -232,11 +222,6 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                 KnfL2(tstind{i},:) = KnfL2(tstind{i},:) - v_bu*L2(ind{i},:) + v_n*L2(ind{i},:);
             end
             Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
-            elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
-            end
         end
       case 'CS+FIC'
         % Here tstind = 1 if the prediction is made for the training set 
@@ -383,12 +368,17 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
             elseif ptype == 2
                 KcssW = Kcs_nf*sqrtW;
                 Varf = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
-            end        
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
-            elseif nargout > 2 
-                [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
             end
         end
     end
+    
+    if nargout > 2
+        if isempty(yt)
+            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
+        else
+            [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
+        end
+    end
+
+    
 end

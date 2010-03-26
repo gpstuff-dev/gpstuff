@@ -59,6 +59,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       case 'FULL'   % A full GP
                     % Calculate covariance matrix and the site parameters
         K = gp_trcov(gp,x);
+        
         [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
         
         W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);

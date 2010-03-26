@@ -31,7 +31,13 @@ function likelih = likelih_t(do, varargin)
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_T('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
+%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. The fields that 
+%       can be modified are:
+%
+%             'sigma'              : set the sigma
+%             'nu'                 : set the degrees of freedom
+%             'sigma_prior'        : set the prior structure for sigma
+%             'nu_prior'           : set the prior structure for nu
 %
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_T
@@ -53,8 +59,8 @@ function likelih = likelih_t(do, varargin)
         likelih.type = 'Student-t';
         
         % Set parameters
-        likelih.nu = nu;
-        likelih.sigma = sigma;
+        likelih.nu = 4;
+        likelih.sigma = 1;
         likelih.fix_nu = 1;
         
         % Initialize prior structure
@@ -182,7 +188,7 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function logPrior = likelih_t_priore(likelih, varargin, z)
+    function logPrior = likelih_t_priore(likelih)
     %LIKELIH_T_PRIORE    log(prior) of the likelihood hyperparameters
     %
     %   Description
@@ -204,7 +210,7 @@ function likelih = likelih_t(do, varargin)
         end
     end
     
-    function glogPrior = likelih_t_priorg(likelih, varargin, z)
+    function glogPrior = likelih_t_priorg(likelih)
     %LIKELIH_T_PRIORG    d log(prior)/dth of the likelihood hyperparameters th
     %
     %   Description
@@ -231,7 +237,7 @@ function likelih = likelih_t(do, varargin)
         end    
     end
     
-    function logLikelih = likelih_t_e(likelih, y, f, varargin, z)
+    function logLikelih = likelih_t_e(likelih, y, f, z)
     %LIKELIH_T_E    (Likelihood) Energy function
     %
     %   Description
@@ -845,7 +851,7 @@ function likelih = likelih_t(do, varargin)
         upfact = -(Varp - ll)./ll^2;
     end
 
-    function [Ey, Vary, Py] = likelih_t_predy(likelih, Ef, Varf, y)
+    function [Ey, Vary, Py] = likelih_t_predy(likelih, Ef, Varf, y, z)
 
         nu = likelih.nu;
         sigma = likelih.sigma;

@@ -28,9 +28,6 @@ function likelih = likelih_binomial(do, varargin)
 %         likelih.fh_predy         = function handle to evaluate predictive density of y
 %         likelih.fh_recappend     = function handle to record append
 %
-%	LIKELIH = LIKELIH_BINOMIAL('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
-%
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %

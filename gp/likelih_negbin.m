@@ -33,7 +33,11 @@ function likelih = likelih_negbin(do, varargin)
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_NEGBIN('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
+%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. The fields that 
+%       can be modified are:
+%
+%             'disper'             : set the dispersion parameter
+%             'disper_prior'       : set the prior structure for the dispersion parameter
 %
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN

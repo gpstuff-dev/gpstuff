@@ -211,7 +211,8 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
                         end 
                     end
                     
-                  case 'likelih_specific'                            
+                  case 'likelih_specific'
+                    
                     [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
                 end
                 
