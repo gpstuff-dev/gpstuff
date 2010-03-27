@@ -1,30 +1,33 @@
-function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
+function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 %LA_PRED	Predictions with Gaussian Process Laplace approximation
 %
 %     Description
 %	[EF, VARF, EY, VARY] = LA_PRED(GP, X, Y, XT, OPTIONS) takes a GP 
 %        data structure GP together with a matrix X of input vectors,
-%        matrix TX of training inputs and vector TY of training
+%        matrix X of training inputs and vector Y of training
 %        targets, and evaluates the predictive distribution at
 %        inputs X. Returns a posterior mean EF and variance VARF of
 %        latent variables and the posterior predictive mean EY and
 %        variance VARY of obervations at input locations X. 
+%
+%     OPTIONS is optional parameter-value pair
+%       'predcf' is index vector telling which covariance functions are 
+%                used for prediction. Default is all (1:gpcfn)
+%       'tstind' is a vector defining, which rows of X belong to which 
+%                training block in *IC type sparse models. Default is [].
+%       'yt' is optional observed yt in test points (see below)
+%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
+%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
 %
 %	[EF, VARF, EY, VARY, PYT] = LA_PRED(GP, X, Y, XT, 'yt', YT) 
 %        returns also the predictive density PYT of the test observations 
 %        YT at input locations XT. This can be used for example in the
 %        cross-validation.
 %  
-%     OPTIONS is optional parameter-value pair
-%       'predcf' is index vector telling which covariance functions are 
-%                used for prediction. Default is all (1:gpcfn)
-%       'tstind' is a vector defining, which rows of X belong to which 
-%                training block in *IC type sparse models. Deafult is [].
-%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
-%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%         Some likelihoods may use this. For example, in case of Poisson
-%         likelihood we have z_i=E_i, that is, expected value for ith case. 
-%
 %	See also
 %	GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
 %
@@ -37,8 +40,8 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
   ip=inputParser;
   ip.FunctionName = 'LA_PRED';
   ip.addRequired('gp',@isstruct);
-  ip.addRequired('tx', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('ty', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -47,29 +50,25 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
                    all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isvector(x) && isreal(x) && ...
                    all(isfinite(x)&x>0))
-  ip.parse(gp, tx, ty, xt, varargin{:});
-  gp=ip.Results.gp;
-  tx=ip.Results.tx;
-  ty=ip.Results.ty;
-  xt=ip.Results.xt;
+  ip.parse(gp, x, y, xt, varargin{:});
   yt=ip.Results.yt;
   z=ip.Results.z;
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
 
-    [tn, tnin] = size(tx);
+    [tn, tnin] = size(x);
     
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
+        [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-        W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
+        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         ntest=size(xt,1);
 
         % Evaluate the expectation
-        K_nf = gp_cov(gp,xt,tx,predcf);
+        K_nf = gp_cov(gp,xt,x,predcf);
         Ef = K_nf*deriv;
 
         % Evaluate the variance
@@ -77,7 +76,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
             kstarstar = gp_trvar(gp,xt,predcf);
             if W >= 0
                 if issparse(K_nf) && issparse(L)
-                    K = gp_trcov(gp, tx);
+                    K = gp_trcov(gp, x);
 % $$$                     p = analyze(K);
 % $$$                     sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);
 % $$$                     sqrtWKfn = sqrtW*K_nf(:,p)';
@@ -100,24 +99,24 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
       case 'FIC'
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
-            if ~isempty(tstind) && length(tstind) ~= size(tx,1)
-                error('tstind (if provided) has to be of same lenght as tx.')
+            if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
             end
         else
              tstind = [];
         end
 
         u = gp.X_u;
-        K_fu = gp_cov(gp, tx, u, predcf);         % f x u
+        K_fu = gp_cov(gp, x, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
         Luu = chol(K_uu)';
 
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         ntest=size(xt,1);
 
         K_nu=gp_cov(gp,xt,u,predcf);
@@ -138,11 +137,11 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
         % Evaluate the variance
         if nargout > 1
             % re-evaluate matrices with training components
-            Kfu_tr = gp_cov(gp, tx, u);
+            Kfu_tr = gp_cov(gp, x, u);
             Kuu_tr = gp_trcov(gp, u);
             Kuu_tr = (K_uu+K_uu')./2;
             
-            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
+            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             La = W.*La2;
             Lahat = 1 + La;
@@ -169,7 +168,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 
       case {'PIC' 'PIC_BLOCK'}
         u = gp.X_u;
-        K_fu = gp_cov(gp, tx, u, predcf);         % f x u
+        K_fu = gp_cov(gp, x, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
         K_nu=gp_cov(gp,xt,u,predcf);
@@ -178,16 +177,16 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
         ntest = size(xt,1);
         m = size(u,1);
 
-        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
 
         iKuuKuf = K_uu\K_fu';
         w_bu=zeros(length(xt),length(u));
         w_n=zeros(length(xt),1);
         for i=1:length(ind)
             w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
-            K_nf = gp_cov(gp, xt(tstind{i},:), tx(ind{i},:), predcf);              % n x u
+            K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
             w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
         end
 
@@ -195,7 +194,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
 
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
+            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -214,7 +213,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
             KnfL2 = K_nu*(iKuuB*L2);
             Varf = zeros(length(xt),1);
             for i=1:length(ind)
-                v_n = gp_cov(gp, xt(tstind{i},:), tx(ind{i},:),predcf).*repmat(sqrtW(ind{i},:)',length(tstind{i}),1);              % n x u
+                v_n = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf).*repmat(sqrtW(ind{i},:)',length(tstind{i}),1);              % n x u
                 v_bu = K_nu(tstind{i},:)*iKuuB(:,ind{i});
                 KnfLa = K_nu*(iKuuB(:,ind{i})/chol(Lahat{i}));
                 KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(Lahat{i});
@@ -226,19 +225,19 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
       case 'CS+FIC'
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
-            if ~isempty(tstind) && length(tstind) ~= size(tx,1)
-                error('tstind (if provided) has to be of same lenght as tx.')
+            if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
             end
         else
              tstind = [];
         end
 
-        n = size(tx,1);
+        n = size(x,1);
         n2 = size(xt,1);
         u = gp.X_u;
         m = length(u);
 
-        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty, 'z', z);
+        [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
         
         % Indexes to all non-compact support and compact support covariances.
         cf1 = [];
@@ -283,14 +282,14 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
             ptype = 3;
         end
         
-        K_fu = gp_cov(gp,tx,u,predcf1);         % f x u
+        K_fu = gp_cov(gp,x,u,predcf1);         % f x u
         K_uu = gp_trcov(gp,u,predcf1);    % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         K_nu=gp_cov(gp,xt,u,predcf1);
 
-        Kcs_nf = gp_cov(gp, xt, tx, predcf2);
+        Kcs_nf = gp_cov(gp, xt, x, predcf2);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, ty, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         ntest=size(xt,1);
 
         % Calculate the predictive mean according to the type of
@@ -323,7 +322,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, tx, ty, xt, varargin)
         
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent', z);
+            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
             kstarstar = gp_trvar(gp,xt,predcf);
             Luu = chol(K_uu)';

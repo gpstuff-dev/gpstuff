@@ -1,4 +1,4 @@
-function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
+function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 %GP_G   Evaluate gradient of energy for Gaussian Process
 %
 %	Description
@@ -13,14 +13,13 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
 %        separately the data and prior contributions to the gradient.
 %
 %     OPTIONS is optional parameter-value pair
-%       'param' with the default value 'covariance+inducing+likelihood'
-%         Tells which parameter groups are included in W. See GP_PAK for
-%         details.
+%       No applicable options
 %
 %	See also
 %       GP_E, GP_PAK, GP_UNPAK, GPCF_*
 
 % Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -28,22 +27,13 @@ function [g, gdata, gprior] = gp_g(w, gp, x, t, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_E';
-ip.addRequired('w', @(x) isreal(x) && all(isfinite(x(:)));
+ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('t', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('param','covariance+inducing+likelihood', ...
-                 @(x) isempty(x) || (ischar(x) && ...
-                 ~isempty(regexp(param,...
-                                 '(covariance)|(inducing)|(likelihood)'))));
-ip.parse(w, gp, x, t, varargin{:});
-w=ip.Results.w;
-gp=ip.Results.gp;
-x=ip.Results.x;
-t=ip.Results.t;
-param=ip.Results.param;
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.parse(w, gp, x, y, varargin{:});
 
-gp=gp_unpak(gp, w, param);       % unpak the parameters
+gp=gp_unpak(gp, w);       % unpak the parameters
 ncf = length(gp.cf);
 n=size(x,1);
 
@@ -62,15 +52,15 @@ switch gp.type
     if issparse(C)
         invC = spinv(C);       % evaluate the sparse inverse
         LD = ldlchol(C);
-        b = ldlsolve(LD,t);
+        b = ldlsolve(LD,y);
     else
         invC = inv(C);        % evaluate the full inverse
-        b = C\t;
+        b = C\y;
     end
 
     % =================================================================
     % Gradient with respect to covariance function parameters
-    if ~isempty(strfind(param, 'covariance'))
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
         for i=1:ncf
             i1=0;
             if ~isempty(gprior)
@@ -168,14 +158,14 @@ switch gp.type
     A = (A+A')./2;               % Ensure symmetry
     A = chol(A);
     L = iLaKfu/A;
-    b = t'./Lav' - (t'*L)*L';
+    b = y'./Lav' - (y'*L)*L';
     iKuuKuf = Luu'\(Luu\K_fu');
     La = Lav;
     LL = sum(L.*L,2);
     
     % =================================================================
     % Gradient with respect to covariance function parameters
-    if ~isempty(strfind(param, 'covariance'))    
+    if ~isempty(strfind(gp.infer_params, 'covariance'))    
         % Loop over the covariance functions
         for i=1:ncf            
             i1=0;
@@ -247,7 +237,7 @@ switch gp.type
     % =================================================================
     % Gradient with respect to inducing inputs
     
-    if ~isempty(strfind(param, 'inducing'))
+    if ~isempty(strfind(gp.infer_params, 'inducing'))
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
             m = size(gp.X_u,2);
             st=0;
@@ -330,16 +320,16 @@ switch gp.type
 
     L = iLaKfu/chol(A);
     b = zeros(1,n);
-    b_apu=(t'*L)*L';
+    b_apu=(y'*L)*L';
     for i=1:length(ind)
-        b(ind{i}) = t(ind{i})'/La{i} - b_apu(ind{i});
+        b(ind{i}) = y(ind{i})'/La{i} - b_apu(ind{i});
     end
     iKuuKuf = Luu'\(Luu\K_fu');
     
     % =================================================================
     % Gradient with respect to covariance function parameters
 
-    if ~isempty(strfind(param, 'covariance'))
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
         % Loop over the  covariance functions
         for i=1:ncf            
             i1=0;
@@ -419,7 +409,7 @@ switch gp.type
     
     % =================================================================
     % Gradient with respect to inducing inputs
-    if ~isempty(strfind(param, 'inducing'))
+    if ~isempty(strfind(gp.infer_params, 'inducing'))
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
             m = size(gp.X_u,2);
             
@@ -523,8 +513,8 @@ switch gp.type
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
     L = iLaKfu/chol(A);
-    %b = t'/La - (t'*L)*L';
-    b = ldlsolve(LD,t)' - (t'*L)*L';
+    %b = y'/La - (y'*L)*L';
+    b = ldlsolve(LD,y)' - (y'*L)*L';
     
     siLa = spinv(La);
     idiagLa = diag(siLa);
@@ -533,7 +523,7 @@ switch gp.type
     
     % =================================================================
     % Gradient with respect to covariance function parameters
-    if ~isempty(strfind(param, 'covariance'))
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
         % Loop over covariance functions 
         for i=1:ncf
             i1=0;
@@ -626,7 +616,7 @@ switch gp.type
     % =================================================================
     % Gradient with respect to inducing inputs
     
-    if ~isempty(strfind(param, 'inducing'))
+    if ~isempty(strfind(gp.infer_params, 'inducing'))
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
             m = size(gp.X_u,2);
             st=0;
@@ -693,7 +683,7 @@ switch gp.type
     A = chol(A)';
     L = (S\Phi)/A';
 
-    b = t'./Sv' - (t'*L)*L';
+    b = y'./Sv' - (y'*L)*L';
     iSPhi = S\Phi;
     
     % =================================================================
@@ -769,7 +759,7 @@ switch gp.type
             gpcf = gp.cf{i};
             
             gpcf.GPtype = gp.type;        
-            [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, t, g_ind, gdata_ind, gprior_ind);
+            [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
             
             for i2 = 1:length(DKuu)
                 KfuiKuuKuu = iKuuKuf'*DKuu{i2};

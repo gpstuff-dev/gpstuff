@@ -1,4 +1,4 @@
-function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
+function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %GP_E	Evaluate energy function for Gaussian Process 
 %
 %     Description
@@ -19,9 +19,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
 %       (non-Gaussian likelihood).
 %
 %     OPTIONS is optional parameter-value pair
-%       'param' with the default value 'covariance+inducing+likelihood'
-%         Tells which parameter groups are included in W. See GP_PAK for
-%         details.
+%       No applicable options
 %
 %	See also
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
@@ -36,22 +34,13 @@ function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_E';
-ip.addRequired('w', @(x) isreal(x) && all(isfinite(x(:)));
+ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('t', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('param','covariance+inducing+likelihood', ...
-                 @(x) isempty(x) || (ischar(x) && ...
-                 ~isempty(regexp(param,...
-                                 '(covariance)|(inducing)|(likelihood)'))));
-ip.parse(w, gp, x, t, varargin{:});
-w=ip.Results.w;
-gp=ip.Results.gp;
-x=ip.Results.x;
-t=ip.Results.t;
-param=ip.Results.param;
-  
-gp=gp_unpak(gp, w, param);
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.parse(w, gp, x, y, varargin{:});
+
+gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 n=length(x);
 
@@ -65,10 +54,10 @@ switch gp.type
 
     if issparse(C)
         LD = ldlchol(C);
-        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + t'*ldlsolve(LD,t));
+        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
     else
         L = chol(C)';
-        b=L\t;
+        b=L\y;
         edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
     end
     
@@ -99,9 +88,9 @@ switch gp.type
         iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
     % The data contribution to the error is
-    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)*t
-    %   = + 0.5*log(det(La)) + 0.5*trace(iLa*t*t') - 0.5*log(det(K_uu))
-    %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*t*t'*iLaKfu)
+    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)*y
+    %   = + 0.5*log(det(La)) + 0.5*trace(iLa*y*y') - 0.5*log(det(K_uu))
+    %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*y*y'*iLaKfu)
 
     % First some help matrices...
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
@@ -110,8 +99,8 @@ switch gp.type
     A = chol(A);
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-    b = (t'*iLaKfu)/A;
-    edata = sum(log(Lav)) + t'./Lav'*t - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
+    b = (y'*iLaKfu)/A;
+    edata = sum(log(Lav)) + y'./Lav'*y - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
     edata = .5*(edata + n*log(2*pi));
     % ============================================================
     % PIC
@@ -137,10 +126,10 @@ switch gp.type
         [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
         Labl{i} = Cbl_ff - Qbl_ff;
         iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
-        edata = edata + 2*sum(log(diag(chol(Labl{i})))) + t(ind{i},:)'*(Labl{i}\t(ind{i},:));
+        edata = edata + 2*sum(log(diag(chol(Labl{i})))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
     end
     % The data contribution to the error is
-    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
+    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)y
 
     % First some help matrices...
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
@@ -149,7 +138,7 @@ switch gp.type
     A = chol(A)';
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-    b = (t'*iLaKfu)*inv(A)';
+    b = (y'*iLaKfu)*inv(A)';
     edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
     edata = .5*(edata + n*log(2*pi));
     % ============================================================
@@ -199,9 +188,9 @@ switch gp.type
     
     %        iLaKfu = La\K_fu;
     iLaKfu = ldlsolve(LD,K_fu);
-    edata = sum(log(diag(LD))) + t'*ldlsolve(LD,t);
+    edata = sum(log(diag(LD))) + y'*ldlsolve(LD,y);
     % The data contribution to the error is
-    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)t
+    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)y
 
     % First some help matrices...
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
@@ -210,8 +199,8 @@ switch gp.type
     A = chol(A);
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
-    %b = (t'*iLaKfu)*inv(A)';
-    b = (t'*iLaKfu)/A;
+    %b = (y'*iLaKfu)*inv(A)';
+    b = (y'*iLaKfu)/A;
     edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
     edata = .5*(edata + n*log(2*pi));
     % ============================================================
@@ -224,8 +213,8 @@ switch gp.type
     A = eye(m,m) + Phi'*(S\Phi);
     A = chol(A)';
     
-    b = (t'/S*Phi)/A';
-    edata = 0.5*n.*log(2*pi) + 0.5*sum(log(diag(S))) + sum(log(diag(A))) + 0.5*t'*(S\t) - 0.5*b*b';
+    b = (y'/S*Phi)/A';
+    edata = 0.5*n.*log(2*pi) + 0.5*sum(log(diag(S))) + sum(log(diag(A))) + 0.5*y'*(S\y) - 0.5*b*b';
     
     
   otherwise
@@ -238,7 +227,7 @@ end
 eprior = 0;
 for i=1:ncf
     gpcf = gp.cf{i};
-    eprior = eprior + feval(gpcf.fh_e, gpcf, x, t);
+    eprior = eprior + feval(gpcf.fh_e, gpcf, x, y);
 end
 
 % Evaluate the prior contribution to the error from noise functions
@@ -246,7 +235,7 @@ if isfield(gp, 'noise')
     nn = length(gp.noise);
     for i=1:nn
         noise = gp.noise{i};
-        eprior = eprior + feval(noise.fh_e, noise, x, t);
+        eprior = eprior + feval(noise.fh_e, noise, x, y);
     end
 end
 

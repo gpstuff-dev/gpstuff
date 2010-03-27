@@ -31,16 +31,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPLA_G';
-  ip.addRequired('w', @(x) isreal(x) && all(isfinite(x)));
+  ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
   ip.addRequired('gp',@isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(w, gp, x, y, varargin{:});
-  w=ip.Results.w;
-  gp=ip.Results.gp;
-  x=ip.Results.x;
-  y=ip.Results.y;
   z=ip.Results.z;
 
     gp = gp_unpak(gp, w);       % unpak the parameters

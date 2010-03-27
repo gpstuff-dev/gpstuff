@@ -49,16 +49,12 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
   ip.FunctionName = 'GPLA_E';
   ip.addRequired('w', @(x) ...
                  (ischar(x) && strcmp(w, 'init')) || ...
-                 (isreal(x) && all(isfinite(x(:)))));
+                 isvector(x) && isreal(x) && all(isfinite(x)));
   ip.addRequired('gp',@isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(w, gp, x, y, varargin{:});
-  w=ip.Results.w;
-  gp=ip.Results.gp;
-  x=ip.Results.x;
-  y=ip.Results.y;
   z=ip.Results.z;
   
     if strcmp(w, 'init')
