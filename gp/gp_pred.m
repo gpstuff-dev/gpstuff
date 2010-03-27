@@ -89,20 +89,8 @@ tstind=ip.Results.tstind;
 
 tn = size(x,1);
 
-if nargin < 8
-    y = [];
-end
-
-if nargout > 4 && isempty(y)
-    error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
-end
-
-if nargin < 7
-    tstind = [];
-end
-
-if nargin < 6
-    predcf = [];
+if nargout > 4 && isempty(yt)
+    error('GP_PRED -> To compute PYT, the YT has to be provide.')
 end
 
 % Evaluate this if sparse model is used
