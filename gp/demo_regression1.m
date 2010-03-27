@@ -62,9 +62,10 @@
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
 %    Machine Learning. The MIT Press.
 %
-%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global phenomena with
-%    sparse Gaussian processes. Proceedings of the 24th Conference on Uncertainty in
-%    Artificial Intelligence,
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and
+%    global phenomena with sparse Gaussian processes. Proceedings
+%    of the 24th Conference on Uncertainty in Artificial
+%    Intelligence,
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
@@ -136,7 +137,7 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -147,10 +148,10 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+w=scg2(fe, w, opt, fg, gp, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w, 'covariance');
+gp=gp_unpak(gp,w);
 
 % NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
 % they are also transformed through logarithm. The reason for this is that they 
@@ -173,11 +174,8 @@ title('The predicted underlying function and the data points (MAP solution)');
 
 
 % --- Grid integration ---
-% Set the options for grid integration 
-opt = gp_iaopt([], 'grid');
-
 % Perform the grid integration and make predictions for p
-[gp_array, P_TH, th, Ef_ia, Varf_ia, x_ia, fx_ia] = gp_ia(opt, gp, x, y, p, 'covariance');
+[gp_array, P_TH, th, Ef_ia, Varf_ia, fx_ia, x_ia] = gp_ia(gp, x, y, p, 'int_method', 'grid');
 
 % Plot the prediction for few input location
 figure(3)

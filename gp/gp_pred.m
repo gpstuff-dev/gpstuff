@@ -78,10 +78,10 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('predcf', [], @(x) isvector(x) && isreal(x) && ...
-                 all(isfinite(x)&x>0))
-ip.addParamValue('tstind', [], @(x) isvector(x) && isreal(x) && ...
-                 all(isfinite(x)&x>0))
+ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+ip.addParamValue('tstind', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
 ip.parse(gp, x, y, xt, varargin{:});
 yt=ip.Results.yt;
 predcf=ip.Results.predcf;
