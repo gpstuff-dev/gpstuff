@@ -1,49 +1,55 @@
-function [dic, p_eff] = gp_dic(gp, x, y, focus, varargin);
+function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %GP_DIC     The DIC statistics and efective number of parameters in a GP model
 %
 %	Description
-%	[DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective number 
-%       of parameters as defined by Spiegelhalter et.al. (2002). The statistics are 
-%       evaluated with focus on hyperparameters or latent variables depending on the 
-%       input GP (See Spiegelhalter et.al. (2002) for discussion on the parameters
-%       in focus in Bayesian model). X contains training inputs and Y training
-%       outputs.
+%	[DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
+%        number of parameters as defined by Spiegelhalter et.al. 
+%        (2002). The statistics are evaluated with focus on
+%        hyperparameters or latent variables depending on the input
+%        GP (See Spiegelhalter et.al. (2002) for discussion on the
+%        parameters in focus in Bayesian model). X contains
+%        training inputs and Y training outputs.
 %
 %       DIC and p_eff are evaluated as follows:
-%   
-%       1) GP is a record structure form gp_mc or an array of GPs from gp_ia, 
-%    
-%         In this case the focus is in the hyperparameters (the parameters of the 
-%         covariance function and the likelihood). The DIC and the effective number of 
-%         parameters are evaluated as described in equation (6.10) of Bayesian Data 
-%         Analysis, second edition (Gelman et.al.):
+%        1) GP is a record structure form gp_mc or an array of GPs from gp_ia, 
 %
+%           In this case the focus is in the hyperparameters (the
+%           parameters of the covariance function and the
+%           likelihood). The DIC and the effective number of
+%           parameters are evaluated as described in equation
+%           (6.10) of Bayesian Data Analysis, second edition
+%           (Gelman et.al.):
 %               p_eff = E[D(y, th)|y] - D(y, E[th|y])
 %               DIC   = E[D(y, th)|y] + p_eff
-%
-%         where all the expectations are taken over p(th|y) and D(y, th) = -2log(p(y|th).
-%         Now in this formulation we first marginalize over the latent variables to obtain
-%         p(y|th) = \int p(y|f)(p(f|th) df. If the likelihood is non-Gaussian the 
-%         marginalization can not be performed exactly. In this case if GP is an MCMC record 
-%         we use Laplace approximation to approximate p(y|th). If GP is IA array we use the 
-%         either EP or Laplace approximation depending which has been used in gp_ia.
+%           where all the expectations are taken over p(th|y) and D(y, th) =
+%           -2log(p(y|th). Now in this formulation we first
+%           marginalize over the latent variables to obtain p(y|th)
+%           = \int p(y|f)(p(f|th) df. If the likelihood is
+%           non-Gaussian the marginalization can not be performed
+%           exactly. In this case if GP is an MCMC record we use
+%           Laplace approximation to approximate p(y|th). If GP is
+%           IA array we use the either EP or Laplace approximation
+%           depending which has been used in gp_ia.
 %
 %       2) GP is Gaussian process data structure
 %
-%         In this case the focus is in the latent variables and the hyperparameters are
-%         considered fixed. The mean of the deviance is now evaluated as
-%
+%          In this case the focus is in the latent variables and
+%          the hyperparameters are considered fixed. The mean of
+%          the deviance is now evaluated as
 %               E[D(y, f)|y] = -2 \int log(p(y|f) p(f|th) df
 %
-%       3) GP is a record structure form gp_mc or an array of GPs from gp_ia, but you define 
-%          the focus to be both latent-variables and hyperparameters, 
-%          [DIC, P_EFF] = EP_PEFF(GP, X, Y, 'all')
+%       3) GP is a record structure form gp_mc or an array of GPs from 
+%          gp_ia, but the focus is defined to be both latent-variables 
+%          and hyperparameters, 
+%               [DIC, P_EFF] = EP_PEFF(GP, X, Y, 'all')
 %
-%          In this case the focus will be the latent variables and hyperparameters. Thus now
-%          we will use the posterior p(f, th|y) instead of the conditional posterior p(f|th,y) 
-%          or posterior marginal p(th|y). The DIC and the effective number of parameters are
-%          evaluated as described in equation (6.10) of Bayesian Data Analysis, second edition
-%          (Gelman et.al.):
+%          In this case the focus will be the latent variables and
+%          hyperparameters. Thus now we will use the posterior p(f,
+%          th|y) instead of the conditional posterior p(f|th,y) or
+%          posterior marginal p(th|y). The DIC and the effective
+%          number of parameters are evaluated as described in
+%          equation (6.10) of Bayesian Data Analysis, second
+%          edition (Gelman et.al.):
 %
 %               p_eff = E[D(y, f, th)|y] - D(y, E[f, th|y])
 %               DIC   = E[D(y, f, th)|y] + p_eff
@@ -54,11 +60,13 @@ function [dic, p_eff] = gp_dic(gp, x, y, focus, varargin);
 %	     gp_peff
 %   
 %       References: 
-%         Spiegelhalter, Best, Carlin and van der Linde (2002). Bayesian measures
-%         of model complexity and fit. J. R. Statist. Soc. B, 64, 583-639.
+%
+%         Spiegelhalter, Best, Carlin and van der Linde (2002). 
+%         Bayesian measures of model complexity and fit. J. R. 
+%         Statist. Soc. B, 64, 583-639.
 %         
-%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis, second 
-%         edition. Chapman & Hall / CRC.
+%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data
+%         Analysis, second edition. Chapman & Hall / CRC.
 %   
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
@@ -68,18 +76,19 @@ function [dic, p_eff] = gp_dic(gp, x, y, focus, varargin);
 % License.xt, included with the software, for details.
 
     ip=inputParser;
-    ip.FunctionName = 'GP_PEFF';
+    ip.FunctionName = 'GP_DIC';
     ip.addRequired('gp',@isstruct);
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addOptional('focus', 'hyper', @(x) ismember(x,{'hyper','latent','all'}))
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.parse(gp, x, y, focus, varargin{:});
-    z=ip.Results.z;
+    ip.parse(gp, x, y, varargin{:});
+    focus=ip.Results.focus;
+    % pass these forward
     options=struct();
     if ~isempty(ip.Results.z)
-        options.zt=ip.Results.z;
-        options.z=ip.Results.z;
+      options.zt=ip.Results.z;
+      options.z=ip.Results.z;
     end
     
     [tn, nin] = size(x);
