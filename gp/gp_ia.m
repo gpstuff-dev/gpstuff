@@ -72,7 +72,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   ip.addParamValue('tstind', [], @(x) isempty(x) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('rotate', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('autoscale', false, @(x) islogical(x) && isscalar(x))
+  ip.addParamValue('autoscale', true, @(x) islogical(x) && isscalar(x))
   ip.addParamValue('validate', 1, @(x) ismember(x,[1 2]))
   ip.addParamValue('threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
@@ -328,9 +328,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
             
             if ~opt.autoscale
               points = f0*points;
-            elseif ~exist('fminunc')
-              warning('The autoscaling in CCD works only with fminunc.\n Using fixed scaling.')
-              points = f0*points;
             else
               for j = 1 : nParam*2
                 % Here temp is one of the points on the main axis in either
@@ -346,8 +343,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
                 
                 % Find the scaling parameter so that when we move 2 stds
                 % from the mode, the log density drops by 2
-                optim = optimset('Display','off');
-                t = fminunc(@(x) abs(-feval(fh_e,x*temp*z+w,gp,x,y,options)+feval(fh_e,w,gp,x,y,options)+2), f0,optim);
+                % No gradient and single-variable, so use fminbnd
+                optim1=optimset('TolX',0.1);
+                target=feval(fh_e,w,gp,x,y,options)+2;
+                t = fminbnd(@(t) (target-feval(fh_e,w+t*temp*z,gp,x,y,options)).^2, f0/4, f0*4, optim1);
                 sd(points(:,ind)*dir>0, ind) = 0.5*t/sqrt(nParam);
               end
               % Each point is scaled with corresponding scaling parameter
