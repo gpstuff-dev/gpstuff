@@ -119,11 +119,12 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
         else 
             if isfield(gp, 'latentValues')
                 [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-                if nargout < 5
-                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), yt, zt);
+                Varf(Varf<0) = min(abs(Varf)); % Ensure positiviness, which may be a problem with FIC
+                if isempty(yt)
+                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), [], zt);
                 else
                     [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), yt, zt);
-                end                
+                end
             else
                 if nargout < 5
                     [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);

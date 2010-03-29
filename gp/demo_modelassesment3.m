@@ -134,7 +134,7 @@ models{7} = 'Poisson_MCMC';
 [DIC2(7), p_eff2(7)] =  gp_dic(rgp, xx, yy, 'all', 'z', ye);
 
 % Evaluate the 10-fold cross validation results. 
-opt.nsamples=50;
+opt.nsamples=20;
 [mlpd_cv(7), Var_lpd_cv(7)] = gp_kfcv(gp, xx, yy, 'inf_method', 'MCMC', 'opt', opt, 'SAVE', 0, 'z', ye);
 
 

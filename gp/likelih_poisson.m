@@ -328,7 +328,8 @@ function likelih = likelih_poisson(do, varargin)
                    'occurrences as an extra input z. See, for           '...
                    'example, likelih_poisson and gpla_e.                ']);
         end
-
+        
+        
         
         avgE = z;
 
