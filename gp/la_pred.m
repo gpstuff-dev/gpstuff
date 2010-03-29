@@ -39,7 +39,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LA_PRED';
-  ip.addRequired('gp',@isstruct);
+  ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

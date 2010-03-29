@@ -109,6 +109,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   opt_hmc=ip.Results.opt_hmc;
   opt_sls=ip.Results.opt_sls;
   % pass these forward
+  options=struct();
   if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
   if ~isempty(ip.Results.z);options.z=ip.Results.z;end
   if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end

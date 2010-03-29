@@ -34,12 +34,8 @@ function [l,lq,xt] = lgcp(x,varargin)
   ip.addParamValue('gridn',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('range',[], @(x) isreal(x)&&(length(x)==2||length(x)==4));
   ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
-  ip.addParamValue('latent_method','EP',...
-                   @(x) ischar(x) && (strcmp(x,'EP') || strcmp(x,'Laplace')));
-  ip.addParamValue('hyperint','mode', ...
-                   @(x) ischar(x) && (strcmp(x,'mode') ||...
-                                      strcmp(x,'CCD') ||...
-                                      strcmp(x,'grid')));
+  ip.addParamValue('latent_method','EP', @(x) ismember(x,{'EP' 'Laplace'}))
+  ip.addParamValue('hyperint','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
   ip.addParamValue('normalize',false, @islogical);
   
   ip.parse(x,varargin{:});
