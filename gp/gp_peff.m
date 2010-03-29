@@ -226,7 +226,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
           case 'FULL'
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, param);
+                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, options);
                 
                 % The prior variance
                 K=gp_trcov(gp,x);
@@ -286,7 +286,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, x, y, param);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, options);
 
                 k = gp_trvar(gp,x);
                 
@@ -344,7 +344,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             switch gp.latent_method
               case 'EP'
             
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, x, y, param);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, options);
         
                 p_eff = - sum(sum(L.*((L'*B')*B)',2));
 
@@ -433,7 +433,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             switch gp.latent_method
               case 'EP'
 
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, x, y, param);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, options);
             
                 k = gp_trvar(gp,x,cf1);
                 Lav = k - sum(B.^2)';

@@ -235,7 +235,7 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
         % integrate over the hyperparameters
         %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
         [notused, notused, notused, Ef, Varf]=...
-            gp_ia(opt, gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
+            gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
       end
       
     case 'Laplace'
