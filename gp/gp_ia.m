@@ -1,4 +1,4 @@
-function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargin)
+function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 % GP_IA explores the hypeparameters around the mode and returns a
 % list of GPs with different hyperparameters and corresponding weights
 %
@@ -91,7 +91,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   ip.addParamValue('opt_fminunc', [], @isstruct);
   ip.addParamValue('opt_hmc', [], @isstruct);
   ip.addParamValue('opt_sls', [], @isstruct);
-  ip.parse(gp, x, y, xt, varargin{:});
+  ip.parse(gp, x, y, varargin{:});
+  xt=ip.Results.xt;
   % integration parameters
   int_method=ip.Results.int_method;
   opt.rotate=ip.Results.rotate;
