@@ -123,7 +123,7 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
-w = gp_pak(gp, 'covariance');
+w = gp_pak(gp);
 fe=str2fun('gpep_e');
 fg=str2fun('gpep_g');
 n=length(y);
@@ -133,12 +133,12 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do scaled conjugate gradient optimization 
-w=gp_pak(gp, 'covariance');
-w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
-gp=gp_unpak(gp,w, 'covariance');
+w=gp_pak(gp);
+w=scg2(fe, w, opt, fg, gp, x, y);
+gp=gp_unpak(gp,w);
 
 % make the prediction
-[Ef_ep, Varf_ep, Ey_ep, Vary_ep, p1_ep] = ep_pred(gp, x, y, xstar, 'covariance', [], [], ones(size(xstar,1),1) );
+[Ef_ep, Varf_ep, Ey_ep, Vary_ep, p1_ep] = ep_pred(gp, x, y, xstar, 'yt', ones(size(xstar,1),1) );
 
 figure, hold on;
 n_pred=size(xstar,1);

@@ -1,22 +1,35 @@
-function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind, y)
+function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
 %EP_PRED	Predictions with Gaussian Process EP
 %
-%	Description
-%	Y = EP_PRED(GP, TX, TY, X) takes a gp data structure GP together with a
-%	matrix X of input vectors, Matrix TX of training inputs and vector TY of 
-%       training targets, and evaluates the predictive distribution at inputs. 
-%       Returns a matrix Y of (noiseless) output vectors (mean(Y|X, TX, TY)). Each 
-%       row of X corresponds to one input vector and each row of Y corresponds to 
-%       one output vector.
+%     Description
+%	[EF, VARF, EY, VARY] = EP_PRED(GP, X, Y, XT, OPTIONS) takes a GP 
+%        data structure GP together with a matrix XT of input vectors,
+%        matrix X of training inputs and vector Y of training
+%        targets, and evaluates the predictive distribution at
+%        inputs X. Returns a posterior mean EF and variance VARF of
+%        latent variables and the posterior predictive mean EY and
+%        variance VARY of obervations at input locations X. 
 %
-%	Y = EP_PRED(GP, TX, TY, X, 'PARAM') in case of sparse model takes also 
-%       string defining, which parameters have been optimized.
+%     OPTIONS is optional parameter-value pair
+%       'predcf' is index vector telling which covariance functions are 
+%                used for prediction. Default is all (1:gpcfn)
+%       'tstind' is a vector defining, which rows of X belong to which 
+%                training block in *IC type sparse models. Default is [].
+%       'yt' is optional observed yt in test points (see below)
+%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
+%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
 %
-%	[Y, VarY] = EP_PRED(GP, TX, TY, X, VARARGIN) returns also the variances of Y 
-%       (1xn vector).
-%
+%	[EF, VARF, EY, VARY, PYT] = EP_PRED(GP, X, Y, XT, 'yt', YT) 
+%        returns also the predictive density PYT of the test observations 
+%        YT at input locations XT. This can be used for example in the
+%        cross-validation.
+%  
 %	See also
-%	GPEP_E, GPEP_G, GP_PRED
+%	GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
 %
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
@@ -24,24 +37,38 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-    [tn, tnin] = size(tx);
-    if nargin < 5
-        error('The argument telling the optimzed/sampled parameters has to be provided.') 
-    end
+    ip=inputParser;
+    ip.FunctionName = 'EP_PRED';
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                     isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+    ip.addParamValue('tstind', [], @(x) isempty(x) || ...
+                     isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+    ip.parse(gp, x, y, xt, varargin{:});
+    yt=ip.Results.yt;
+    z=ip.Results.z;
+    zt=ip.Results.zt;
+    predcf=ip.Results.predcf;
+    tstind=ip.Results.tstind;
+
     
-    if nargin < 6
-        predcf = [];
-    end
-    
+    [tn, tnin] = size(x);
+        
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         
-        [K, C]=gp_trcov(gp,tx);
-        kstarstar = gp_trvar(gp, x, predcf);
-        ntest=size(x,1);
-        K_nf=gp_cov(gp,x,tx,predcf);
-        [n,nin] = size(tx);
+        [K, C]=gp_trcov(gp,x);
+        kstarstar = gp_trvar(gp, xt, predcf);
+        ntest=size(xt,1);
+        K_nf=gp_cov(gp,xt,x,predcf);
+        [n,nin] = size(x);
  
         if tautilde > 0
             sqrttautilde = sqrt(tautilde);
@@ -74,20 +101,14 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
                 Varf = kstarstar - sum((K_nf*S).*K_nf,2) + sum(V.^2,2);
             end
         end
-
-        if nargout > 2 && nargin < 8
-            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
-        elseif nargout > 2 
-            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y, zt);
-        end
         
       case 'FIC'
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
-            if ~isempty(tstind) && length(tstind) ~= size(tx,1)
-                error('tstind (if provided) has to be of same lenght as tx.')
+            if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
             end
         else
              tstind = [];
@@ -96,25 +117,25 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
         u = gp.X_u;
         m = size(u,1);
         
-        K_fu = gp_cov(gp,tx,u,predcf);         % f x u
-        K_nu=gp_cov(gp,x,u,predcf);
+        K_fu = gp_cov(gp,x,u,predcf);         % f x u
+        K_nu=gp_cov(gp,xt,u,predcf);
         K_uu = gp_trcov(gp,u,predcf);          % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
 
-        kstarstar=gp_trvar(gp,x,predcf);        
+        kstarstar=gp_trvar(gp,xt,predcf);        
 
         % From this on evaluate the prediction
         % See Snelson and Ghahramani (2007) for details 
         %        p=iLaKfu*(A\(iLaKfu'*myytilde));
         p = b';
         
-        ntest=size(x,1);
+        ntest=size(xt,1);
         
         Ef = K_nu*(K_uu\(K_fu'*p));
         
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:), predcf);
+            [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
@@ -136,22 +157,16 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
                     + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav,1,m).*L), 2)  ...
                     - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
             end
-            
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
-            elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, y, zt);            
-            end
         end
         
       case {'PIC' 'PIC_BLOCK'}
         % Calculate some help matrices  
         u = gp.X_u;
         ind = gp.tr_index;
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         
-        K_fu = gp_cov(gp, tx, u, predcf);         % f x u
-        K_nu = gp_cov(gp, x, u, predcf);         % n x u   
+        K_fu = gp_cov(gp, x, u, predcf);         % f x u
+        K_nu = gp_cov(gp, xt, u, predcf);         % n x u   
         K_uu = gp_trcov(gp, u, predcf);    % u x u, noiseles covariance K_uu
 
         % From this on evaluate the prediction
@@ -161,22 +176,22 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
 
         iKuuKuf = K_uu\K_fu';
         
-        w_bu=zeros(length(x),length(u));
-        w_n=zeros(length(x),1);
+        w_bu=zeros(length(xt),length(u));
+        w_n=zeros(length(xt),1);
         for i=1:length(ind)
             w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
-            K_nf = gp_cov(gp, x(tstind{i},:), tx(ind{i},:), predcf);              % n x u
+            K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
             w_n(tstind{i},:) = K_nf*p(ind{i},:);
         end
         
         Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
 
         if nargout > 1
-            kstarstar = gp_trvar(gp, x, predcf);
+            kstarstar = gp_trvar(gp, xt, predcf);
             KnfL = K_nu*(iKuuKuf*L);
-            Varf = zeros(length(x),1);
+            Varf = zeros(length(xt),1);
             for i=1:length(ind)
-                v_n = gp_cov(gp, x(tstind{i},:), tx(ind{i},:), predcf);              % n x u
+                v_n = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
                 v_bu = K_nu(tstind{i},:)*iKuuKuf(:,ind{i});
                 KnfLa = K_nu*(iKuuKuf(:,ind{i})/chol(La{i}));
                 KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(La{i});
@@ -185,11 +200,6 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             end
             Varf = kstarstar - (Varf - sum((KnfL).^2,2));  
 
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf, [], zt);
-            elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y, zt);            
-            end
         end
         % ============================================================
         % CS+FIC
@@ -197,8 +207,8 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
       case 'CS+FIC'
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6 
-            if ~isempty(tstind) && length(tstind) ~= size(tx,1)
-                error('tstind (if provided) has to be of same lenght as tx.')
+            if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
             end
         else
             tstind = [];
@@ -206,10 +216,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
         
         u = gp.X_u;
         m = length(u);
-        n = size(tx,1);
-        n2 = size(x,1);
+        n = size(x,1);
+        n2 = size(xt,1);
                 
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
         % Indexes to all non-compact support and compact support covariances.
         cf1 = [];
@@ -254,15 +264,15 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             ptype = 3;
         end
            
-        K_fu = gp_cov(gp,tx,u,predcf1);   % f x u
+        K_fu = gp_cov(gp,x,u,predcf1);   % f x u
         K_uu = gp_trcov(gp,u,predcf1);     % u x u, noiseles covariance K_uu
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-        K_nu=gp_cov(gp,x,u,predcf1);
+        K_nu=gp_cov(gp,xt,u,predcf1);
         
-        Kcs_nf = gp_cov(gp, x, tx, predcf2);
+        Kcs_nf = gp_cov(gp, xt, x, predcf2);
         
         p = b';
-        ntest=size(x,1);
+        ntest=size(xt,1);
                 
         % Calculate the predictive mean according to the type of
         % covariance functions used for making the prediction
@@ -276,7 +286,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
 
         % evaluate also Lav if the prediction is made for training set
         if ~isempty(tstind)
-            [Kv_ff, Cv_ff] = gp_trvar(gp, x(tstind,:), predcf1);
+            [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
@@ -291,7 +301,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
 
         % Evaluate the variance
         if nargout > 1
-            Knn_v = gp_trvar(gp,x,predcf);
+            Knn_v = gp_trvar(gp,xt,predcf);
             Luu = chol(K_uu)';
             B=Luu\(K_fu');   
             B2=Luu\(K_nu');
@@ -324,23 +334,16 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
             elseif ptype == 2
                 Varf = Knn_v - sum((Kcs_nf(:,p)/chol(La(p,p))).^2,2) + sum((Kcs_nf*L).^2, 2) ;
             end        
-
-            if nargout > 2 && nargin < 8
-                [Ey, Vary] = feval(gp.likelih.fh_predy, gp, Ef, Varf, [], zt);
-            elseif nargout > 2 
-                [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp, Ef, Varf, y, zt);            
-            end
-
         end
       case 'SSGP'
-        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         %param = varargin{1};
 
-        Phi_f = gp_trcov(gp, tx);
-        Phi_a = gp_trcov(gp, x);
+        Phi_f = gp_trcov(gp, x);
+        Phi_a = gp_trcov(gp, xt);
 
         m = size(Phi_f,2);
-        ntest=size(x,1);
+        ntest=size(xt,1);
         
         Ef = Phi_a*(Phi_f'*b');
         
@@ -356,6 +359,14 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, tx, ty, x, param, predcf, tstind
                     p1 = NaN;
                 end
             end
+        end
+    end
+    
+    if nargout > 2
+        if isempty(yt)
+            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
+        else
+            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
         end
     end
 end

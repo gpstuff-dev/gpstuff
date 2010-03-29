@@ -129,7 +129,7 @@ opt.display = 1;
 w=scg2(fe, w, opt, fg, gp, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w, 'covariance');
+gp=gp_unpak(gp,w);
 
 % NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
 % they are also transformed through logarithm. The reason for this is that they 
@@ -138,8 +138,8 @@ gp=gp_unpak(gp,w, 'covariance');
 % Make predictions. Below Ef_full is the predictive mean and Varf_full the 
 % predictive variance.
 [Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
-[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 'covariance', 1);
-[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 'covariance', 2);
+[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 'predcf', 1);
+[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 'predcf', 2);
 
 % Plot the prediction and data
 figure(1)
@@ -190,10 +190,10 @@ gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'covariance+inducing'; % optimize hyperparameters and inducing inputs
-param = 'covariance';            % optimize only hyperparameters
+%gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
-w=gp_pak(gp_fic, param);    % pack the hyperparameters into one vector
+w=gp_pak(gp_fic);    % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -204,8 +204,8 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp_fic, x, y, param);
-gp_fic = gp_unpak(gp_fic,w,param);
+w=scg2(fe, w, opt, fg, gp_fic, x, y);
+gp_fic = gp_unpak(gp_fic,w);
 
 % Make the prediction
 [Ef_fic, Varf_fic, Ey_fic, Vary_fic] = gp_pred(gp_fic, x, y, x);
@@ -248,10 +248,10 @@ gp_pic = gp_init('set', gp_pic, 'blocks', trindex);
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'covariance+inducing'; % optimize hyperparameters and inducing inputs
-param = 'covariance';          % optimize only hyperparameters
+%gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
-w=gp_pak(gp_pic, param);    % pack the hyperparameters into one vector
+w=gp_pak(gp_pic);    % pack the hyperparameters into one vector
 fe=str2fun('gp_e');         % create a function handle to negative log posterior
 fg=str2fun('gp_g');         % create a function handle to gradient of negative log posterior
 
@@ -262,11 +262,11 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp_pic, x, y, param);
-gp_pic = gp_unpak(gp_pic,w,param);
+w=scg2(fe, w, opt, fg, gp_pic, x, y);
+gp_pic = gp_unpak(gp_pic,w);
 
 % Make the prediction
-[Ef_pic, Varf_pic, Ey_pic, Vary_pic] = gp_pred(gp_pic, x, y, x, 'covariance', [], trindex);
+[Ef_pic, Varf_pic, Ey_pic, Vary_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex);
 
 
 % Plot the solution of PIC
@@ -305,10 +305,10 @@ gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSig
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-% param = 'covariance+inducing'; % optimize hyperparameters and inducing inputs
-param = 'covariance';          % optimize only hyperparameters
+%gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
-w=gp_pak(gp_csfic, param);    % pack the hyperparameters into one vector
+w=gp_pak(gp_csfic);    % pack the hyperparameters into one vector
 fe=str2fun('gp_e');         % create a function handle to negative log posterior
 fg=str2fun('gp_g');         % create a function handle to gradient of negative log posterior
 
@@ -319,8 +319,8 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp_csfic, x, y, param);
-gp_csfic = gp_unpak(gp_csfic,w,param);
+w=scg2(fe, w, opt, fg, gp_csfic, x, y);
+gp_csfic = gp_unpak(gp_csfic,w);
 
 % Make the prediction
 [Ef_csfic, Varf_csfic, Ey_csfic, Vary_csfic] = gp_pred(gp_csfic, x, y, x);
@@ -341,8 +341,8 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 
 
 [Ef, Varf, Ey, Vary] = gp_pred(gp_csfic, x, y, x);
-[Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 'covariance', 1);
-[Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 'covariance', 2);
+[Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
+[Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
 
 figure(2)
 set(gcf,'units','centimeters');

@@ -1,4 +1,4 @@
-function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
+function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %GPEP_G   Evaluate gradient of EP's marginal log posterior estimate 
 %
 %	Description
@@ -8,26 +8,30 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
 %       log posterior estimate . Each row of X corresponds to one input
 %       vector and each row of Y corresponds to one target vector. 
 %
-%	G = GPEP_G(W, GP, P, Y, PARAM) in case of sparse model takes also  
-%       string PARAM defining the parameters to take the gradients with 
-%       respect to. Possible parameters are 'hyper' = hyperparameters and 
-%      'inducing' = inducing inputs, 'hyper+inducing' = hyper+inducing parameters.
-%
 %	[G, GDATA, GPRIOR] = GPEP_G(GP, X, Y) also returns separately  the
 %	data and prior contributions to the gradient.
-%
-%       NOTE! The CS+FIC model is not supported 
 %
 %	See also   
 %       GPEP_E, EP_PRED
 
-% Copyright (c) 2007-2008  Jarno Vanhatalo
+% Copyright (c) 2007-2010  Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
         
-    gp=gp_unpak(gp, w, param);       % unpak the parameters
+    ip=inputParser;
+    ip.FunctionName = 'GPEP_G';
+    ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.parse(w, gp, x, y, varargin{:});
+    z=ip.Results.z;
+
+    
+    gp=gp_unpak(gp, w);       % unpak the parameters
     ncf = length(gp.cf);
     n=size(x,1);
     
@@ -45,14 +49,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         [K, C] = gp_trcov(gp,x);
         
         if issparse(C)
-            [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, param, varargin);
+            [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, 'z', z);
             Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
             
             b = nutilde - Stildesqroot*ldlsolve(LD,Stildesqroot*(C*nutilde));
             invC = spinv(LD,1);       % evaluate the sparse inverse
             invC = Stildesqroot*invC*Stildesqroot;
         else
-            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, param, varargin);
+            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, 'z', z);
 
             if tautilde > 0
                 Stildesqroot=diag(sqrt(tautilde));
@@ -70,7 +74,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
 
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))        
+        if ~isempty(strfind(gp.infer_params, 'covariance'))        
             % Evaluate the gradients from covariance functions
             for i=1:ncf
                 i1=0;
@@ -134,8 +138,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % =================================================================
         % Gradient with respect to likelihood function parameters
-        if ~isempty(strfind(param, 'likelihood'))
-            [Ef, Varf] = ep_pred(gp, x, y, x, param);
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+            [Ef, Varf] = ep_pred(gp, x, y, x);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -165,7 +169,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         DKuu_u = 0;
         DKuf_u = 0;
 
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -176,7 +180,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
             for i=1:ncf            
                 i1=0;
                 if ~isempty(gprior)
@@ -236,7 +240,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % =================================================================
         % Gradient with respect to inducing inputs
         
-        if ~isempty(strfind(param, 'inducing'))
+        if ~isempty(strfind(gp.infer_params, 'inducing'))
             if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 m = size(gp.X_u,2);
                 st=0;
@@ -281,8 +285,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(param, 'likelihood'))
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, [], 1:n);
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -314,7 +318,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         DKuu_u = 0;
         DKuf_u = 0;
 
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -323,7 +327,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
             
             % Evaluate the gradients from covariance functions
             for i=1:ncf            
@@ -395,7 +399,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % =================================================================
         % Gradient with respect to inducing inputs
         
-        if ~isempty(strfind(param, 'inducing'))
+        if ~isempty(strfind(gp.infer_params, 'inducing'))
             if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 m = size(gp.X_u,2);
                 
@@ -444,9 +448,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(param, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
 
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, [], gp.tr_index);
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', gp.tr_index);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -479,7 +483,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         DKuu_u = 0;
         DKuf_u = 0;
 
-        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, param, varargin);
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
 
         m = length(u);
         cf_orig = gp.cf;
@@ -516,7 +520,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % =================================================================
         % Gradient with respect to covariance function parameters
-        if ~isempty(strfind(param, 'covariance'))
+        if ~isempty(strfind(gp.infer_params, 'covariance'))
             for i=1:ncf            
                 i1=0;
                 if ~isempty(gprior)
@@ -604,7 +608,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % =================================================================
         % Gradient with respect to inducing inputs
         
-        if ~isempty(strfind(param, 'inducing'))
+        if ~isempty(strfind(gp.infer_params, 'inducing'))
             if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 m = size(gp.X_u,2);
                 st=0;
@@ -655,8 +659,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(param, 'likelihood'))
-            [Ef, Varf] = ep_pred(gp, x, y, x, param, [], 1:n);
+        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -681,7 +685,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         % ============================================================        
       case 'SSGP'        
         
-        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(w, gp, x, y, param, varargin);
+        [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(w, gp, x, y, 'z', z);
 
         Phi = gp_trcov(gp, x);         % f x u
         m = size(Phi,2);
@@ -699,7 +703,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
             gpcf.GPtype = gp.type;
             % Covariance function hyperparameters
             %--------------------------------------
-            if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
+            if ~isempty(strfind(gp.infer_params, 'covariance'))
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
                 [gprior, DKff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior); 
@@ -743,7 +747,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
                 gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
-                if strcmp(param,'hyper') || strcmp(param,'hyper+inducing') || strcmp(param,'hyper+likelih')
+                if ~isempty(strfind(gp.infer_params, 'covariance'))
                     [gprior, DCff] = feval(gpcf.fh_ghyper, gpcf, x, y, g, gdata, gprior);
                     gdata(i1)= -0.5*DCff.*b*b';
                     gdata(i1)= gdata(i1) + 0.5*sum(1./La-sum(L.*L,2)).*DCff;
@@ -753,7 +757,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, param, varargin)
         
         % likelihood parameters
         %--------------------------------------
-        if strcmp(param,'likelih') || strcmp(param,'hyper+likelih')
+        if ~isempty(strfind(gp.infer_params, 'likelih'))
             [Ef, Varf] = ep_pred(gp, x, y, x, param);                
             gdata_likelih = 0;
             likelih = gp.likelih;

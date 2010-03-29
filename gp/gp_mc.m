@@ -193,9 +193,11 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             
             % ----------- Sample covariance function hyperparameters with HMC --------------------- 
             if isfield(opt, 'hmc_opt')
-                w = gp_pak(gp, 'covariance');
+                infer_params = gp.infer_params;
+                gp.infer_params = 'covariance';
+                w = gp_pak(gp);
                 hmc2('state',hmc_rstate)              % Set the state
-                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z, 'covariance');
+                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z);
                 hmc_rstate=hmc2('state');             % Save the current state
                 hmcrej=hmcrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')
@@ -203,18 +205,22 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 end
                 opt.hmc_opt.rstate = hmc_rstate;
                 w=w(end,:);
-                gp = gp_unpak(gp, w, 'covariance');
+                gp = gp_unpak(gp, w);
+                gp.infer_params = infer_params;
             end
             
             % ----------- Sample hyperparameters with SLS --------------------- 
             if isfield(opt, 'sls_opt')
-                w = gp_pak(gp, 'covariance');
-                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z, 'covariance');
+                infer_params = gp.infer_params;
+                gp.infer_params = 'covariance';
+                w = gp_pak(gp);
+                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z);
                 if isfield(diagns, 'opt')
                     opt.sls_opt = diagns.opt;
                 end
                 w=w(end,:);
-                gp = gp_unpak(gp, w, 'covariance');
+                gp = gp_unpak(gp, w);
+                gp.infer_params = infer_params;
             end
 
             % ----------- Sample hyperparameters with Gibbs sampling --------------------- 
@@ -453,13 +459,13 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         % Record training error and rejects
         if isfield(gp,'latentValues')
             elikelih = feval(gp.likelih.fh_e, gp.likelih, y, gp.latentValues');
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'covariance'), gp, x, gp.latentValues', 'covariance');
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues');
             rec.etr(ri,:) = rec.e(ri,:) - elikelih;   % 
 % $$$             rec.edata(ri,:) = elikelih;
                                            % Set rejects 
             rec.lrejects(ri,1)=lrej;
         else
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp, 'covariance'), gp, x, y, 'covariance', varargin{:});
+            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, y, varargin{:});
             rec.etr(ri,:) = rec.e(ri,:);
         end
         

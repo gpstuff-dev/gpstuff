@@ -1,4 +1,4 @@
-function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, param, varargin)
+function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, varargin)
 %GPEP_E Conduct Expectation propagation and return marginal log posterior estimate
 %
 %	Description
@@ -35,8 +35,22 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
     
 % Check the inputs
     
+    
+    ip=inputParser;
+    ip.FunctionName = 'GPEP_E';
+    ip.addRequired('w', @(x) ...
+                   (ischar(x) && strcmp(w, 'init')) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)));
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.parse(w, gp, x, y, varargin{:});
+    z=ip.Results.z;
+
+    
     if strcmp(w, 'init')
-        w0 = rand(size(gp_pak(gp, param)));
+        w0 = rand(size(gp_pak(gp)));
         e0=[];
         edata0= inf;
         eprior0=[];
@@ -52,16 +66,16 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
         DD0 = [];
         PP0=[];
         
-        ep_algorithm(gp_pak(gp,param), gp, x, y, param, varargin);
+        ep_algorithm(gp_pak(gp), gp, x, y, z);
 
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = feval(gp.fh_e, w, gp, x, y, param, varargin);
+        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = feval(gp.fh_e, w, gp, x, y, z);
 
     end
 
-    function [e, edata, eprior, tautilde, nutilde, L, La2, b, D, R, P] = ep_algorithm(w, gp, x, y, param, varargin)
+    function [e, edata, eprior, tautilde, nutilde, L, La2, b, D, R, P] = ep_algorithm(w, gp, x, y, z)
 
         if abs(w-w0) < 1e-8
             % The covariance function parameters haven't changed so just
@@ -80,7 +94,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             P = PP0;
         else
             % Conduct evaluation for the energy and the site parameters
-            gp=gp_unpak(gp, w, param);
+            gp=gp_unpak(gp, w);
             ncf = length(gp.cf);
             n = length(x);
 

@@ -1,4 +1,4 @@
-function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, param, predcf, tstind, y)
+function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
 %MC_PRED    Predictions with Gaussian Process MCMC solution.
 %
 %	Description
@@ -54,7 +54,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, param, predcf, tstind
         error('Requires at least 4 arguments');
     end
 
-    if nargin < 8
+    if nargin < 7
         y = [];
     end
 
@@ -62,18 +62,14 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, param, predcf, tstind
         error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
     end
     
-    if nargin < 7
+    if nargin < 6
         tstind = [];
     end
     
-    if nargin < 6
+    if nargin < 5
         predcf = [];
     end
-    
-    if nargin < 6
-        param = [];
-    end
-    
+        
     nin  = size(tx,2);
     nout = 1;
     nmc=size(gp.etr,1);
@@ -110,10 +106,10 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, param, predcf, tstind
         end
         
         if nargout < 3
-            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind, y);
+            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind);
         else 
             if isfield(gp, 'latentValues')
-                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind);
+                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind);
                 if nargout < 5
                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1));
                 else
@@ -121,9 +117,9 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, param, predcf, tstind
                 end                
             else
                 if nargout < 5
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind);
+                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind);
                 else
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, param, predcf, tstind, y); 
+                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind); 
                 end
             end            
         end
