@@ -131,7 +131,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
       if isempty(magnSigma2)
         gpcf.magnSigma2 = 0.1;
       else
-        gpcf.magnSigma2=magnSigma2
+        gpcf.magnSigma2=magnSigma2;
       end
       % Initialize prior structure
       gpcf.p=[];

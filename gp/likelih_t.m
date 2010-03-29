@@ -25,7 +25,6 @@ function likelih = likelih_t(do, varargin)
 %         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
 %         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
 %         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
-%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
 %         likelih.fh_predy         = function handle to evaluate predictive density of y
 %         likelih.fh_optimizef     = function handle to optimization of latent values
 %         likelih.fh_recappend     = function handle to record append
@@ -78,7 +77,6 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_g3 = @likelih_t_g3;
         likelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_t_siteDeriv;
-        likelih.fh_mcmc = @likelih_t_mcmc;
         likelih.fh_optimizef = @likelih_t_optimizef;
         likelih.fh_upfact = @likelih_t_upfact;
         likelih.fh_predy = @likelih_t_predy;
@@ -591,184 +589,6 @@ function likelih = likelih_t(do, varargin)
 
     end
 
-    function [z, energ, diagn] = likelih_t_mcmc(z, opt, varargin)
-    %LIKELIH_T_MCMC        Conducts the MCMC sampling of latent values
-    %
-    %   Description
-    %   [F, ENERG, DIAG] = LIKELIH_T_MCMC(F, OPT, GP, X, Y) takes the current latent 
-    %   values F, options structure OPT, Gaussian process data structure GP, inputs X and
-    %   incedence counts Y. Samples new latent values and returns also energies ENERG and 
-    %   diagnostics DIAG.
-    %
-    %   See also
-    %   GP_MC
-        
-    % Set the state of HMC samler
-        if isfield(opt, 'rstate')
-            if ~isempty(opt.rstate)
-                latent_rstate = opt.latent_opt.rstate;
-            end
-        else
-            latent_rstate = sum(100*clock);
-        end
-        
-        % Set the variables 
-        gp = varargin{1};
-        x = varargin{2}; 
-        y = varargin{3};         
-        [n,nin] = size(x);
-
-        J = [];
-        U = [];
-        iJUU = [];
-        Linv=[];
-        L2=[];
-        iLaKfuic=[];
-        mincut = -300;
-        
-        nu = gp.likelih.nu;
-        sigma = gp.likelih.sigma;
-        L2 = eye(size(n,n));       
-        % Evaluate the help matrices for covariance matrix
-        switch gp.type
-          case 'FULL'
-            u = [];
-            getL(z, gp, x, y);
-            % Rotate z towards prior
-            w = (L2\z)';    
-          case 'FIC'
-            error('likelih_t: Latent value sampling is not (yet) implemented for FIC!');
-          case {'PIC' 'PIC_BLOCK'}
-            error('likelih_t: Latent value sampling is not (yet) implemented for PIC!');
-          case 'CS+FIC'
-            error('likelih_t: Latent value sampling is not (yet) implemented for CS+FIC!');
-          otherwise 
-            error('unknown type of GP\n')
-        end
-        
-        
-        %gradcheck(w, @lvt_er, @lvt_gr, gp, x, y, [], z)
-        
-        
-        hmc2('state',latent_rstate)
-        rej = 0;
-        gradf = @lvt_gr;
-        f = @lvt_er;
-        for li=1:opt.repeat 
-            [w, energ, diagn] = hmc2(f, w, opt, gradf, gp, x, y, u, z);
-            w = w(end,:);
-            if li<opt.repeat/2
-                if diagn.rej
-                    opt.stepadj=max(1e-5,opt.stepadj/1.4);
-                else
-                    opt.stepadj=min(1,opt.stepadj*1.02);
-                end
-            end
-            rej=rej+diagn.rej/opt.repeat;
-            if isfield(diagn, 'opt')
-                opt=diagn.opt;
-            end
-        end
-
-        w = w(end,:);
-        % Rotate w to z
-        w=w(:);
-        switch gp.type
-          case 'FULL'
-            z=L2*w;
-          case 'FIC'
-            error('likelih_t: Latent value sampling is not (yet) implemented for FIC!');
-          case {'PIC' 'PIC_BLOCK'}
-            error('likelih_t: Latent value sampling is not (yet) implemented for PIC!');
-          case 'CS+FIC'
-            error('likelih_t: Latent value sampling is not (yet) implemented for CS+FIC!');
-        end
-        opt.latent_rstate = hmc2('state');
-        diagn.opt = opt;
-        diagn.rej = rej;
-        diagn.lvs = opt.stepadj;
-
-        function [g, gdata, gprior] = lvt_gr(w, gp, x, y, u, varargin)
-        %LVT_G	Evaluate gradient function for GP latent values with
-        %               Negative-Binomial likelihood
-            
-        % Force z and E to be a column vector
-            w=w(:);
-            
-            switch gp.type
-              case 'FULL'
-                z = L2*w;
-                z = max(z,mincut);
-                r = y-z;
-                gdata = - (nu + 1).*r./(nu.*sigma.^2 +r.^2);
-                b=Linv*z;
-                gprior=Linv'*b;              
-                g = (L2'*(gdata + gprior))';
-              case 'FIC'
-                
-              case {'PIC' 'PIC_BLOCK'}
-
-              case 'CS+FIC'
-
-            end
-        end
-
-        function [e, edata, eprior] = lvt_er(w, gp, x, t, u, varargin)
-        %function [e, edata, eprior] = gp_e(w, gp, x, t, varargin)
-        % LVT_E     
-        %
-        %       E = LVT_E(X, GP, T, Z) takes.... and returns minus log from 
-            
-        % The field gp.likelihavgE (if given) contains the information about averige
-        % expected number of cases at certain location. The target, t, is 
-        % distributed as t ~ t(avgE*exp(z))
-            
-        % force z and E to be a column vector
-
-            w=w(:);
-
-            switch gp.type
-              case 'FULL'
-                z = L2*w;        
-                z = max(z,mincut);
-                B=Linv*z;
-                eprior=.5*sum(B.^2);
-              case 'FIC' 
-
-              case {'PIC' 'PIC_BLOCK'}
-                
-              case 'CS+FIC'
-                
-            end
-            r = y-z;
-            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi)/2 - log(sigma);
-            edata = term + log(1 + ((r./sigma).^2)./nu) .* (-(nu+1)/2);
-            edata = sum(-edata);
-            e = edata + eprior;
-        end
-
-        function C2 = getL(w, gp, x, t, u)
-        % Evaluate the cholesky decomposition if needed
-            switch gp.type
-              case 'FULL'
-                C=gp_trcov(gp, x);
-                % Evaluate a approximation for posterior covariance
-                Linv = inv(chol(C)');
-                
-                r = y-w;
-                C2 = - (nu + 1) ./ (nu.*sigma.^2 + r.^2) + 2.*(nu+1).*r.^2 ./ (nu.*sigma.^2 + r.^2).^2;
-                
-                L2 = chol(C)';
-              case 'FIC'
-                error('likelih_t: Latent value sampling is not (yet) implemented for FIC!');
-              case {'PIC' 'PIC_BLOCK'}
-                error('likelih_t: Latent value sampling is not (yet) implemented for PIC!');
-              case 'CS+FIC'
-                error('likelih_t: Latent value sampling is not (yet) implemented for CS+FIC!');
-            end
-        end
-    end
-
     function [f, a] = likelih_t_optimizef(gp, y, K, Lav, K_fu)
         iter = 1;
         sigma = gp.likelih.sigma;
@@ -920,7 +740,6 @@ function likelih = likelih_t(do, varargin)
             reclikelih.fh_g2 = @likelih_t_g2;
             reclikelih.fh_g3 = @likelih_t_g3;
             reclikelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
-            reclikelih.fh_mcmc = @likelih_t_mcmc;
             reclikelih.fh_recappend = @likelih_t_recappend;
             return
         end

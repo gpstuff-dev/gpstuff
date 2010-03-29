@@ -196,7 +196,7 @@ function likelih = likelih_negbin(do, varargin)
     end  
     
     function logLikelih = likelih_negbin_e(likelih, y, f, z)
-    %LIKELIH_NEGBIN_E    (Likelihood) Energy function
+    %LIKELIH_NEGBIN_E    Log likelihood
     %
     %   Description
     %   E = LIKELIH_NEGBIN_E(LIKELIH, Y, F) takes a likelihood data structure
@@ -215,7 +215,7 @@ function likelih = likelih_negbin(do, varargin)
         
         r = likelih.disper;
         mu = exp(f).*z;
-        logLikelih = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));        
+        logLikelih = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));
     end
 
     function g = likelih_negbin_g(likelih, y, f, param, z)

@@ -61,35 +61,32 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
     
     switch gp.type
       case 'FULL'
-        [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
-        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         ntest=size(xt,1);
-
-        % Evaluate the expectation
         K_nf = gp_cov(gp,xt,x,predcf);
-        Ef = K_nf*deriv;
 
         % Evaluate the variance
         if nargout > 1
             kstarstar = gp_trvar(gp,xt,predcf);
             if W >= 0
                 if issparse(K_nf) && issparse(L)
-                    K = gp_trcov(gp, x);
-% $$$                     p = analyze(K);
-% $$$                     sqrtW = sparse(1:tn, 1:tn, sqrt(W(p)), tn, tn);
-% $$$                     sqrtWKfn = sqrtW*K_nf(:,p)';
-                    sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
-                    sqrtWKfn = sqrtW*K_nf';
+                    deriv = feval(gp.likelih.fh_g, gp.likelih, y(p), f, 'latent', z);
+                    Ef = K_nf(:,p)*deriv;
+                    sqrtW = sqrt(W);
+                    sqrtWKfn = sqrtW*K_nf(:,p)';
                     V = ldlsolve(L,sqrtWKfn);
                     Varf = kstarstar - sum(sqrtWKfn.*V,1)';
                 else
+                    deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+                    Ef = K_nf*deriv;
                     W = diag(W);
                     V = L\(sqrt(W)*K_nf');
                     Varf = kstarstar - sum(V'.*V',2);
                 end
             else
+                deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+                Ef = K_nf*deriv;
                 V = L*diag(W);
                 R = diag(W) - V'*V;
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);

@@ -30,6 +30,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
     else
         latent_rstate = sum(100*clock);
     end
+    
 
     % Initialize variables
     [n,nin] = size(x);

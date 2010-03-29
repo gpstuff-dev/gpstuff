@@ -87,8 +87,8 @@ fg=str2fun('gpep_g');     % create a function handle to gradient of negative log
 
 % set the options for scg2
 opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
+opt.tolfun = 1e-2;
+opt.tolx = 1e-2;
 opt.display = 1;
 
 % do the optimization and set the optimized hyperparameter values back to the gp structure
@@ -164,10 +164,18 @@ opt.latent_opt.steps=20;
 opt.latent_opt.stepadj=0.15;
 opt.latent_opt.window=5;
 
+
+opt.likelih_hmc_opt.steps=3;
+opt.likelih_hmc_opt.stepadj=0.01;
+opt.likelih_hmc_opt.nsamples=1;
+opt.likelih_hmc_opt.persistence=0;
+opt.likelih_hmc_opt.decay=0.8;
+
+
 % SLS-likelihood
 opt.likelih_sls_opt = sls_opt;
 opt.likelih_sls_opt.maxiter = 400;
-opt.likelih_sls_opt.mmlimits = [0;1000];
+opt.likelih_sls_opt.mmlimits = [0;10];
 opt.likelih_sls_opt.nsamples = 1;
 opt.likelih_sls_opt.method = 'minmax';
 opt.likelih_sls_opt.display = 0;

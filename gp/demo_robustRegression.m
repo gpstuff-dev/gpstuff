@@ -103,7 +103,7 @@ gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -114,10 +114,10 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y, 'covariance');
+w=scg2(fe, w, opt, fg, gp, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w, 'covariance');
+gp=gp_unpak(gp,w);
 
 % Prediction
 [Ef, Varf, Ey, Vary] = gp_pred(gp, x, y, xx');
@@ -279,9 +279,9 @@ pll = prior_logunif('init');
 likelih = likelih_t('init', 4, 0.5, 'sigma_prior', pll, 'nu_prior', []);
 
 % ... Finally create the GP data structure
-param = 'covariance+likelihood'
 gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001); % 
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
+gp = gp_init('set', gp, 'infer_params' , 'covariance+likelihood');
 
 % Set the parameters for MCMC...
 opt=gp_mcopt;
@@ -340,16 +340,15 @@ pll = prior_logunif('init');
 likelih = likelih_t('init', 4, 1, 'sigma_prior', pll);
 
 % ... Finally create the GP data structure
-param = 'covariance+likelihood'
 gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.001.^2);
-gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, param});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 
 gp.laplace_opt.optim_method = 'likelih_specific';
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp, param);  % pack the hyperparameters into one vector
+w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gpla_e');     % create a function handle to negative log posterior
 fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
 
@@ -360,12 +359,12 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do scaled conjugate gradient optimization 
-w=gp_pak(gp, param);
-w=scg2(fe, w, opt, fg, gp, x, y, param);
-gp =gp_unpak(gp,w, param);
+w=gp_pak(gp);
+w=scg2(fe, w, opt, fg, gp, x, y);
+gp =gp_unpak(gp,w);
 
 % Predictions to test points
-[Ef, Varf] = la_pred(gp, x, y, xx', param);
+[Ef, Varf] = la_pred(gp, x, y, xx');
 std_f = sqrt(Varf);
 
 % Plot the prediction and data

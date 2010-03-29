@@ -1,4 +1,4 @@
-function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
+function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
 %GPLA_E Conduct Laplace approximation and return marginal log posterior estimate
 %
 %     Description
@@ -70,16 +70,17 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
         n0 = size(x,1);
         La20 = [];
         a0 = 0;
+        p0 = [];
 
         laplace_algorithm(gp_pak(gp), gp, x, y, z);
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
     else
-        [e, edata, eprior, f, L, a, La2] = feval(gp.fh_e, w, gp, x, y, z);
+        [e, edata, eprior, f, L, a, La2, p] = feval(gp.fh_e, w, gp, x, y, z);
     end
 
-    function [e, edata, eprior, f, L, a, La2] = laplace_algorithm(w, gp, x, y, z)
+    function [e, edata, eprior, f, L, a, La2, p] = laplace_algorithm(w, gp, x, y, z)
         
         if abs(w-w0) < 1e-8 % 1e-8
             % The covariance function parameters haven't changed so just
@@ -92,11 +93,13 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
             La2 = La20;
             W = W0;
             a = a0;
+            p = p0;
         else
 
             gp=gp_unpak(gp, w);
             ncf = length(gp.cf);
             n = length(x);
+            p = [];
 
             % Begin optimization from the old f if it is better than the new
             %if edata0 < 
@@ -114,14 +117,12 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
 
                 % If K is sparse, permute all the inputs so that evaluations are more efficient
                 if issparse(K)
-% $$$                     p = analyze(K);
-% $$$                     r(p) = 1:n;
-% $$$                     gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
-% $$$                     y = y(p);
-% $$$                     K = K(p,p);
-% $$$                     if ~isempty(z)
-% $$$                         z = z(p,:);
-% $$$                     end
+                    p = analyze(K);
+                    y = y(p);
+                    K = K(p,p);
+                    if ~isempty(z)
+                        z = z(p,:);
+                    end
                     LD = ldlchol(K);
                 else
                     LD = chol(K);
@@ -223,10 +224,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
                         L = ldlchol(B);
 
                         % Note that here we use LDL cholesky
-                        edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
-                        
-% $$$                         % Reorder some of the returned and stored values
-% $$$                         f = f(r);
+                        edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %                        
                     else
                         sW = sqrt(W);
                         B = eye(size(K)) + sW*sW'.*K;
@@ -235,6 +233,12 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
                     end
                 else
                     [W2,I] = sort(W, 1, 'descend');
+
+                    if issparse(K)
+                        error(['gpla_e: Unfortunately the compact support covariance (CS) functions do not work if'...
+                               'the second gradient of negative likelihood is negative. This happens for example  '...
+                               'with Student-t likelihood. Please use non-CS functions instead (e.g. gpcf_sexp)   ']);
+                    end
 
                     L = chol(K);
                     L1 = L;
@@ -784,6 +788,7 @@ function [e, edata, eprior, f, L, a, La2] = gpla_e(w, gp, x, y, varargin)
             n0 = size(x,1);
             La20 = La2;
             a0 = a;
+            p0=p;
         end
         
         %

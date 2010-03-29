@@ -262,7 +262,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if isfield(opt, 'likelih_sls_opt')
                 w = gp_pak(gp, 'likelihood');
-                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z) + feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
                 [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.likelih_sls_opt = diagns.opt;
@@ -273,9 +273,11 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             
             % ----------- Sample hyperparameters of the likelihood with HMC --------------------- 
             if isfield(opt, 'likelih_hmc_opt')
-                w = gp_pak(gp, 'likelihood');
-                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
-                fg = @(w, likelih) (-feval(likelih.fh_g,feval(likelih.fh_unpak,w,likelih),y,f,'hyper')-feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
+                infer_params = gp.infer_params;
+                gp.infer_params = 'likelihood';
+                w = gp_pak(gp);
+                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z)+feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fg = @(w, likelih) (-feval(likelih.fh_g,feval(likelih.fh_unpak,w,likelih),y,f,'hyper',z)+feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
                 
                 hmc2('state',likelih_hmc_rstate)              % Set the state
                 [w, energies, diagnh] = hmc2(fe, w, opt.likelih_hmc_opt, fg, gp.likelih);
@@ -286,7 +288,8 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
                 end
                 opt.likelih_hmc_opt.rstate = likelih_hmc_rstate;
                 w=w(end,:);
-                gp = gp_unpak(gp, w, 'likelihood');
+                gp = gp_unpak(gp, w);
+                gp.infer_params = infer_params;
             end
             
             % ----------- Sample inducing inputs with hmc  ------------ 

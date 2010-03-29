@@ -56,25 +56,20 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     % Calculate covariance matrix and the site parameters
         K = gp_trcov(gp,x);
         
-        [e, edata, eprior, f, L, a, W] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
         
-        W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
         if W >= 0 
             if issparse(K)                               % use sparse matrix routines
-% $$$                 p = analyze(K);
-% $$$                 gp.likelih = feval(gp.likelih.fh_permute, gp.likelih, p);
-% $$$                 y = y(p);
-% $$$                 x = x(p,:);
-% $$$                 K = K(p,p);
-% $$$                 W = W(p);
-% $$$                 f = f(p);
-% $$$                 if ~isempty(z)
-% $$$                     z = z(p,:);
-% $$$                 end
-                
-                sqrtW = sparse(1:n,1:n, sqrt(W), n,n);
-% $$$             B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
-% $$$             L = ldlchol(B);
+
+                % permute
+                y = y(p);
+                x = x(p,:);
+                K = K(p,p);
+                if ~isempty(z)
+                    z = z(p,:);
+                end
+
+                sqrtW = sqrt(W);
                 
                 R = sqrtW*spinv(L,1)*sqrtW;
                 sqrtWK = sqrtW*K;
@@ -86,11 +81,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 R = sqrtW*(L'\(L\sqrtW));
                 C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
                 s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
-% $$$                 W = diag(W);
-% $$$                 sqrtW = sqrt(W);
-% $$$                 R = sqrtW*(L'\(L\sqrtW));
-% $$$                 C = L\(sqrtW*K);
-% $$$                 s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
             end
         else
             C = L;
@@ -243,15 +233,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         s2t = s2t - (La1.*iLa2W.*La1 - sum(C2.^2)' + sum(B'.*((B*(repmat(iLa2W,1,m).*B'))*B)',2)...
                     - sum(C1.^2)' + 2*La1.*iLa2W.*BB - 2*La1.*sum(L2.*C1',2));
 
-% $$$         R = diag(iLa2W) - L2*L2';
-% $$$         K = diag(La1) + B'*B;
-% $$$         
-% $$$         L = chol(eye(size(K)) + sqrtW*sqrtW'.*K)';
-% $$$         R = diag(sqrtW)*(L'\(L\diag(sqrtW)));
-% $$$         C = L\(diag(sqrtW)*K);
-% $$$         s2 = 0.5*( diag(K)-sum(C.^2,1)' ).*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent');
-% $$$         s2t = diag(K) - diag(K*R*K);
-
         s2 = 0.5*s2t.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
         b3 = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
         
@@ -285,8 +266,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     gdata(i1) = gdata(i1) + 0.5.*sum(DKff{i2}.*iLa2W - LL.*DKff{i2});
                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                     
-                    
-% $$$                     % b2*dK*b3
                     b = (2*DKuf{i2}' - KfuiKuuKuu)*(iKuuKuf*b3) + DKff{i2}.*b3 - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
                     bb = sqrtW.*(Lah.\(sqrtW.*b)) - L2*(L2'*b);
                     s3 = b - (La1.*bb + B'*(B*bb));

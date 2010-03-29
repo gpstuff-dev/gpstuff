@@ -53,7 +53,8 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
+%gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
+gpcf1 = gpcf_ppcs2('init', 2, 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
 pl = prior_logunif('init');
