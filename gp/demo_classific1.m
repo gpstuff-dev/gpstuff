@@ -189,10 +189,10 @@ opt.latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,rstate2]=gp_mc(opt, gp, x, y, r);
+[rgp,g,rstate2]=gp_mc(opt, gp, x, y, 'record', r);
 
 % Make predictions
-[Ef_mc, Varf_mc, Ey_mc, Vary_mc, p1_mc] = mc_pred(rgp, x, y, xstar, [], [], ones(size(xstar,1),1) );
+[Ef_mc, Varf_mc, Ey_mc, Vary_mc, p1_mc] = mc_pred(rgp, x, y, xstar, 'yt', ones(size(xstar,1),1) );
 p1_mc = mean(p1_mc,2);
 %p1 = mean(squeeze(logsig(mc_pred(rr, x, rr.latentValues', xstar))),2);
 
@@ -235,7 +235,7 @@ ff = normpdf(x_in, Ef_la(apu1), sqrt(Varf_la(apu1)));
 plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2)
 ff = normpdf(x_in, Ef_ep(apu1), sqrt(Varf_ep(apu1)));
 plot(x_in, max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
-ylim([0 105])
+%ylim([0 105])
 set(gca, 'Ytick', [])
 title(sprintf('p(f|D) at input location (%.1f, %.1f)', xstar(apu1,1), xstar(apu1,2)));
 xlim([-15 5])
@@ -249,7 +249,7 @@ ff = normpdf(x_in, Ef_la(apu2), sqrt(Varf_la(apu2)));
 plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2)
 ff = normpdf(x_in, Ef_ep(apu2), sqrt(Varf_ep(apu2)));
 plot(x_in, max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
-ylim([0 105])
+%ylim([0 105])
 set(gca, 'Ytick', [])
 title(sprintf('p(f|D) at input location (%.1f, %.1f)', xstar(apu2,1), xstar(apu2,2)));
 xlim([-2 10])

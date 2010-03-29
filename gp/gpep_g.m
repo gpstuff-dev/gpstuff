@@ -138,7 +138,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         % =================================================================
         % Gradient with respect to likelihood function parameters
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x);
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -285,7 +285,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -448,7 +448,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
 
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', gp.tr_index);
             gdata_likelih = 0;
@@ -659,7 +659,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
             gdata_likelih = 0;
             likelih = gp.likelih;
@@ -757,7 +757,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         % likelihood parameters
         %--------------------------------------
-        if ~isempty(strfind(gp.infer_params, 'likelih'))
+        if ~isempty(strfind(gp.infer_params, 'likelih')) && isfield(gp.likelih, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, param);                
             gdata_likelih = 0;
             likelih = gp.likelih;

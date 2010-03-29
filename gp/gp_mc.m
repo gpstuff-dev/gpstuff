@@ -1,11 +1,11 @@
-function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
+function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
 % GP_MC   Monte Carlo sampling for Gaussian process models
 %
 %   Description
-%   [REC, GP, OPT] = GP_MC(OPT, GP, TX, TY) Takes the options structure OPT, 
+%   [RECORD, GP, OPT] = GP_MC(OPT, GP, TX, TY) Takes the options structure OPT, 
 %   Gaussian process structure GP, training inputs TX and training outputs TY.
 %   Returns:
-%     REC     - Record structure
+%     RECORD     - Record structure
 %     GP      - The Gaussian process at current state of the sampler
 %     OPT     - Options structure containing iformation of the current state 
 %               of the sampler (e.g. the random number seed)
@@ -31,11 +31,11 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
 %   See, for example, hmc2_opt.
 %
 %
-%   REC = GP_MC(OPT, GP, TX, TY, X, Y, [], VARARGIN)
+%   RECORD = GP_MC(OPT, GP, TX, TY, X, Y, [], VARARGIN)
 %
-%   REC = GP_MC(OPT, GP, TX, TY, X, Y, REC, VARARGIN)
+%   RECORD = GP_MC(OPT, GP, TX, TY, X, Y, RECORD, VARARGIN)
 %
-%   REC = GP_MC(OPT, GP, TX, TY, X, Y, REC, VARARGIN)
+%   RECORD = GP_MC(OPT, GP, TX, TY, X, Y, RECORD, VARARGIN)
 %
 %
 %
@@ -49,6 +49,19 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
 
 %#function gp_e gp_g
     
+
+    ip=inputParser;
+    ip.FunctionName = 'GP_MC';
+    ip.addRequired('opt', @isstruct);
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('record',[], @isstruct);
+    ip.parse(opt, gp, x, y, varargin{:});
+    z=ip.Results.z;
+    record=ip.Results.record;
+    
 % Check arguments
     if nargin < 4
         error('Not enough arguments')
@@ -61,11 +74,11 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
     mg = @gp_g;
 
     % Initialize record
-    if nargin < 5 | isempty(rec)
+    if isempty(record)
         % No old record
-        rec=recappend;
+        record=recappend;
     else
-        ri=size(rec.etr,1);
+        ri=size(record.etr,1);
     end
 
     % Set the states of samplers if not given in opt structure
@@ -124,9 +137,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
 
     % Set latent values
     if isfield(opt, 'latent_opt')
-        z=gp.latentValues';
+        f=gp.latentValues';
     else
-        z=y;
+        f=y;
     end
     
     % Print labels for sampling information
@@ -182,9 +195,9 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             
             % ----------- Sample latent Values  ---------------------
             if isfield(opt,'latent_opt')
-                [z, energ, diagnl] = feval(gp.fh_mc, z, opt.latent_opt, gp, x, y);
-                gp.latentValues = z(:)';
-                z = z(:);
+                [f, energ, diagnl] = feval(gp.fh_mc, f, opt.latent_opt, gp, x, y, z);
+                gp.latentValues = f(:)';
+                f = f(:);
                 lrej=lrej+diagnl.rej/opt.repeat;
                 if isfield(diagnl, 'opt')
                     opt.latent_opt = diagnl.opt;
@@ -196,8 +209,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'covariance';
                 w = gp_pak(gp);
-                hmc2('state',hmc_rstate)              % Set the state
-                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, z);
+                hmc2('state',hmc_rstate)              % Set the state                
+                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, f);
                 hmc_rstate=hmc2('state');             % Save the current state
                 hmcrej=hmcrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')
@@ -214,7 +227,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'covariance';
                 w = gp_pak(gp);
-                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, z);
+                [w, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, f);
                 if isfield(diagns, 'opt')
                     opt.sls_opt = diagns.opt;
                 end
@@ -230,7 +243,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 for i1 = 1:ncf
                     gpcf = gp.cf{i1};
                     if isfield(gpcf, 'fh_gibbs')
-                        [gpcf, z] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, z);
+                        [gpcf, f] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, f);
                         gp.cf{i1} = gpcf;
                     end
                 end
@@ -240,7 +253,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
                 for i1 = 1:nnf
                     gpcf = gp.noise{i1};
                     if isfield(gpcf, 'fh_gibbs')
-                        [gpcf, z] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, z);
+                        [gpcf, f] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, f);
                         gp.noise{i1} = gpcf;
                     end
                 end
@@ -249,7 +262,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if isfield(opt, 'likelih_sls_opt')
                 w = gp_pak(gp, 'likelihood');
-                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
                 [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.likelih_sls_opt = diagns.opt;
@@ -261,8 +274,8 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             % ----------- Sample hyperparameters of the likelihood with HMC --------------------- 
             if isfield(opt, 'likelih_hmc_opt')
                 w = gp_pak(gp, 'likelihood');
-                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,z)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
-                fg = @(w, likelih) (-feval(likelih.fh_g,feval(likelih.fh_unpak,w,likelih),y,z,'hyper')-feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
+                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f)-feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fg = @(w, likelih) (-feval(likelih.fh_g,feval(likelih.fh_unpak,w,likelih),y,f,'hyper')-feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
                 
                 hmc2('state',likelih_hmc_rstate)              % Set the state
                 [w, energies, diagnh] = hmc2(fe, w, opt.likelih_hmc_opt, fg, gp.likelih);
@@ -280,7 +293,7 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
             if isfield(opt, 'inducing_opt')
                 w = gp_pak(gp, 'inducing');
                 hmc2('state',inducing_rstate)         % Set the state
-                [w, energies, diagnh] = hmc2(me, w, opt.inducing_opt, mg, gp, x, z, 'inducing');
+                [w, energies, diagnh] = hmc2(me, w, opt.inducing_opt, mg, gp, x, f, 'inducing');
                 inducing_rstate=hmc2('state');        % Save the current state
                 indrej=indrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')
@@ -299,115 +312,115 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         
         % ----------- Set record -----------------------    
         ri=ri+1;
-        rec=recappend(rec);
+        record=recappend(record);
         
         % Display some statistics  THIS COULD BE DONE NICER ALSO...
         if opt.display
-            fprintf(' %4d  %.3f  ',ri, rec.etr(ri,1));
+            fprintf(' %4d  %.3f  ',ri, record.etr(ri,1));
             if isfield(opt, 'hmc_opt')
-                fprintf(' %.1e  ',rec.hmcrejects(ri));
+                fprintf(' %.1e  ',record.hmcrejects(ri));
             end
             if isfield(opt, 'sls_opt')
                 fprintf('sls  ');
             end
             if isfield(opt, 'likelih_hmc_opt')
-                fprintf(' %.1e  ',rec.likelih_hmcrejects(ri));
+                fprintf(' %.1e  ',record.likelih_hmcrejects(ri));
             end
             if isfield(opt, 'inducing_opt')
-                fprintf(' %.1e  ',rec.indrejects(ri)); 
+                fprintf(' %.1e  ',record.indrejects(ri)); 
             end
             if isfield(opt,'latent_opt')
-                fprintf('%.1e',rec.lrejects(ri));
+                fprintf('%.1e',record.lrejects(ri));
                 fprintf('  ');
                 if isfield(diagnl, 'lvs')
                     fprintf('%.6f', diagnl.lvs);
                 end
             end
             if isfield(opt,'noise_opt')
-                fprintf('%.2f', rec.noise{1}.nu(ri));
+                fprintf('%.2f', record.noise{1}.nu(ri));
             end      
             fprintf('\n');
         end
     end
       
     %------------------------------------------------------------------------
-    function rec = recappend(rec)
+    function record = recappend(record)
     % RECAPPEND - Record append
     %          Description
-    %          REC = RECAPPEND(REC, RI, GP, P, T, PP, TT, REJS, U) takes
-    %          old record REC, record index RI, training data P, target
+    %          RECORD = RECAPPEND(RECORD, RI, GP, P, T, PP, TT, REJS, U) takes
+    %          old record RECORD, record index RI, training data P, target
     %          data T, test data PP, test target TT and rejections
-    %          REJS. RECAPPEND returns a structure REC containing following
+    %          REJS. RECAPPEND returns a structure RECORD containing following
     %          record fields of:
         
         ncf = length(gp.cf);
         nn = length(gp.noise);
         
         if nargin == 0   % Initialize record structure
-            rec.type = gp.type;
-            rec.likelih = gp.likelih;
+            record.type = gp.type;
+            record.likelih = gp.likelih;
             % If sparse model is used save the information about which
             switch gp.type
               case 'FIC'
-                rec.X_u = [];
+                record.X_u = [];
                 if isfield(opt, 'inducing_opt')
-                    rec.indrejects = 0;
+                    record.indrejects = 0;
                 end
               case {'PIC' 'PIC_BLOCK'}
-                rec.X_u = [];
+                record.X_u = [];
                 if isfield(opt, 'inducing_opt')
-                    rec.indrejects = 0;
+                    record.indrejects = 0;
                 end
-                rec.tr_index = gp.tr_index;
+                record.tr_index = gp.tr_index;
               case 'CS+FIC'
-                rec.X_u = [];
+                record.X_u = [];
                 if isfield(opt, 'inducing_opt')
-                    rec.indrejects = 0;
+                    record.indrejects = 0;
                 end
 
               otherwise
                 % Do nothing
             end
             if isfield(gp,'latentValues')
-                rec.latentValues = [];
-                rec.lrejects = 0;
+                record.latentValues = [];
+                record.lrejects = 0;
             end
-            rec.jitterSigma2 = [];
-            rec.hmcrejects = 0;
+            record.jitterSigma2 = [];
+            record.hmcrejects = 0;
             
             if isfield(gp, 'site_tau')
-                rec.site_tau = [];
-                rec.site_nu = [];
-                rec.Ef = [];
-                rec.Varf = [];
-                rec.p1 = [];
+                record.site_tau = [];
+                record.site_nu = [];
+                record.Ef = [];
+                record.Varf = [];
+                record.p1 = [];
             end
             
             % Initialize the records of covariance functions
             for i=1:ncf
                 cf = gp.cf{i};
-                rec.cf{i} = feval(cf.fh_recappend, [], gp.cf{i});
+                record.cf{i} = feval(cf.fh_recappend, [], gp.cf{i});
                 % Initialize metric structure
                 if isfield(cf,'metric')
-                    rec.cf{i}.metric = feval(cf.metric.recappend, cf.metric, 1);
+                    record.cf{i}.metric = feval(cf.metric.recappend, cf.metric, 1);
                 end
             end
             for i=1:nn
                 noise = gp.noise{i};
-                rec.noise{i} = feval(noise.fh_recappend, [], gp.noise{i});
+                record.noise{i} = feval(noise.fh_recappend, [], gp.noise{i});
             end
             
-            % Initialize the record for likelihood
+            % Initialize the recordord for likelihood
             if isstruct(gp.likelih)
                 likelih = gp.likelih;
-                rec.likelih = feval(likelih.fh_recappend, [], gp.likelih);
+                record.likelih = feval(likelih.fh_recappend, [], gp.likelih);
             end
             
-            rec.p = gp.p;
-            rec.e = [];
-            rec.edata = [];
-            rec.eprior = [];
-            rec.etr = [];
+            record.p = gp.p;
+            record.e = [];
+            record.edata = [];
+            record.eprior = [];
+            record.etr = [];
             ri = 1;
             lrej = 0;
             indrej = 0;
@@ -418,68 +431,68 @@ function [rec, gp, opt] = gp_mc(opt, gp, x, y, rec, varargin)
         % Set the record for every covariance function
         for i=1:ncf
             gpcf = gp.cf{i};
-            rec.cf{i} = feval(gpcf.fh_recappend, rec.cf{i}, ri, gpcf);
+            record.cf{i} = feval(gpcf.fh_recappend, record.cf{i}, ri, gpcf);
             % Record metric structure
             if isfield(gpcf,'metric')
-                rec.cf{i}.metric = feval(rec.cf{i}.metric.recappend, rec.cf{i}.metric, ri, gpcf.metric);
+                record.cf{i}.metric = feval(record.cf{i}.metric.recappend, record.cf{i}.metric, ri, gpcf.metric);
             end
         end
 
         % Set the record for every noise function
         for i=1:nn
             noise = gp.noise{i};
-            rec.noise{i} = feval(noise.fh_recappend, rec.noise{i}, ri, noise);
+            record.noise{i} = feval(noise.fh_recappend, record.noise{i}, ri, noise);
         end
 
         % Set the record for likelihood
         if isstruct(gp.likelih)
             likelih = gp.likelih;
-            rec.likelih = feval(likelih.fh_recappend, rec.likelih, ri, likelih);
+            record.likelih = feval(likelih.fh_recappend, record.likelih, ri, likelih);
         end
 
         % Set jitterSigma2 to record
         if ~isempty(gp.jitterSigma2)
-            rec.jitterSigma2(ri,:) = gp.jitterSigma2;
+            record.jitterSigma2(ri,:) = gp.jitterSigma2;
         end
 
         % Set the latent values to record structure
         if isfield(gp, 'latentValues')
-            rec.latentValues(ri,:)=gp.latentValues;
+            record.latentValues(ri,:)=gp.latentValues;
         end
 
         % Set the inducing inputs in the record structure
         switch gp.type
           case {'FIC', 'PIC', 'PIC_BLOCK', 'CS+FIC'}
-            rec.X_u(ri,:) = gp.X_u(:)';
+            record.X_u(ri,:) = gp.X_u(:)';
         end
         if isfield(opt, 'inducing_opt')
-            rec.indrejects(ri,1)=indrej; 
+            record.indrejects(ri,1)=indrej; 
         end
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            elikelih = feval(gp.likelih.fh_e, gp.likelih, y, gp.latentValues');
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues');
-            rec.etr(ri,:) = rec.e(ri,:) - elikelih;   % 
-% $$$             rec.edata(ri,:) = elikelih;
+            elikelih = feval(gp.likelih.fh_e, gp.likelih, y, gp.latentValues', z);
+            [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues');
+            record.etr(ri,:) = record.e(ri,:) - elikelih;   % 
+% $$$             record.edata(ri,:) = elikelih;
                                            % Set rejects 
-            rec.lrejects(ri,1)=lrej;
+            record.lrejects(ri,1)=lrej;
         else
-            [rec.e(ri,:),rec.edata(ri,:),rec.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, y, varargin{:});
-            rec.etr(ri,:) = rec.e(ri,:);
+            [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, y, varargin{:});
+            record.etr(ri,:) = record.e(ri,:);
         end
         
         if isfield(opt, 'hmc_opt')
-            rec.hmcrejects(ri,1)=hmcrej; 
+            record.hmcrejects(ri,1)=hmcrej; 
         end
 
         if isfield(opt, 'likelih_hmc_opt')
-            rec.likelih_hmcrejects(ri,1)=likelih_hmcrej; 
+            record.likelih_hmcrejects(ri,1)=likelih_hmcrej; 
         end
 
         % If inputs are sampled set the record which are on at this moment
         if isfield(gp,'inputii')
-            rec.inputii(ri,:)=gp.inputii;
+            record.inputii(ri,:)=gp.inputii;
         end
     end
 end

@@ -186,7 +186,7 @@ opt.latent_opt.window=5;
 % Here we make an initialization with 
 % slow sampling parameters
 opt.display = 0;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
+[rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'z', ye);
 
 % Now we reset the sampling parameters to 
 % achieve faster sampling
@@ -211,7 +211,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'record', rgp, 'z', ye);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(3)
     clf

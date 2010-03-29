@@ -48,8 +48,8 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
   ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-  ip.addParamValue('tstind', [], @(x) isempty(x) || ...
-                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+  ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
   ip.parse(gp, x, y, xt, varargin{:});
   yt=ip.Results.yt;
   z=ip.Results.z;

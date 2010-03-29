@@ -594,7 +594,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
           if ~isempty('opt_hmc')
             ww = gp_pak(gp);
             hmc2('state',hmc_rstate)              % Set the state
-            [ww, energies, diagnh] = hmc2(fh_e, ww, opt_hmc, fh_g, gp, x, y,options);
+            [ww, energies, diagnh] = hmc2(fh_e, ww, opt_hmc, fh_g, gp, x, y, options);
             hmc_rstate=hmc2('state');             % Save the current state
             hmcrej=hmcrej+diagnh.rej/opt.repeat;
             if isfield(diagnh, 'opt')

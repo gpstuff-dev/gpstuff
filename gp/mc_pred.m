@@ -1,42 +1,42 @@
-function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
+function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %MC_PRED    Predictions with Gaussian Process MCMC solution.
 %
 %	Description
-%	[Ef, Varf] = MC_PRED(RECGP, TX, TY, X, PREDCF, TSTIND) takes a Gaussian 
-%       processes record structure RECGP (returned by gp_mc) together with a matrix X 
-%       of input vectors, matrix TX of training inputs and vector TY of training targets. 
+%	[Ef, Varf] = MC_PRED(RECGP, X, Y, XT, PREDCF, TSTIND) takes a Gaussian 
+%       processes record structure RECGP (returned by gp_mc) together with a matrix XT 
+%       of input vectors, matrix X of training inputs and vector Y of training targets. 
 %       Returns matrices Ef and Varf that contain the predictive means and variances for 
 %       Gaussian processes stored in RECGP. The i'th column of Ef and Varf contain the 
 %       conditional predictive mean and variance for the latent variables given the i'th
 %       hyperparameter sample th_i in RECGP. That is:
 %       
-%                    Ef(:,i) = E[f | tx, ty, th_i]
-%                  Varf(:,i) = Var[f | tx, ty, th_i]
+%                    Ef(:,i) = E[f | x, y, th_i]
+%                  Varf(:,i) = Var[f | x, y, th_i]
 %    
 %       The marginal posterior mean and variance can be evaluated from these as follows:
 %
-%                    E[f | x, y] = E[ E[f | tx, ty, th] ]
+%                    E[f | xt, y] = E[ E[f | x, y, th] ]
 %                                = mean(Ef, 2)
-%                  Var[f | x, y] = E[ Var[f | tx, ty, th] ] + Var[ E[f | tx, ty, th] ]
+%                  Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
 %                                = mean(Varf,2) + var(Ef,0,2)
 %   
-%       Each row of X corresponds to one input vector and each row of Y corresponds to one 
+%       Each row of XT corresponds to one input vector and each row of Y corresponds to one 
 %       output. PREDCF is an array specifying the indexes of covariance functions, which 
 %       are used for making the prediction (others are considered noise). TSTIND is, in 
 %       case of PIC, a cell array containing index vectors specifying the blocking 
 %       structure for test data, or in FIC and CS+FI a vector of length n that points out 
 %       the test inputs that are also in the training set (if none, set TSTIND = []).
 %       
-%       [Ef, Varf, Ey, Vary] = GP_PREDS(GP, TX, TY, X, PREDCF, TSTIND) returns also the 
-%       predictive means and variances for observations at input locations X. That is,
+%       [Ef, Varf, Ey, Vary] = GP_PREDS(GP, X, Y, XT, PREDCF, TSTIND) returns also the 
+%       predictive means and variances for observations at input locations XT. That is,
 %
-%                    Ey(:,i) = E[y | x, tx, ty, th_i]
-%                  Vary(:,i) = Var[y | x, tx, ty, th_i]
+%                    Ey(:,i) = E[y | xt, x, y, th_i]
+%                  Vary(:,i) = Var[y | xt, x, y, th_i]
 %
 %       where the latent variables have been marginalized out.
 %
-%	[Ef, Varf, Ey, Vary, PY] = GP_PRED(GP, TX, TY, X, PREDCF, TSTIND, Y) returns also the 
-%       predictive density PY of the observations Y at input locations X. This can be used for
+%	[Ef, Varf, Ey, Vary, PY] = GP_PRED(GP, X, Y, XT, PREDCF, TSTIND, Y) returns also the 
+%       predictive density PY of the observations Y at input locations XT. This can be used for
 %       example in the cross-validation. Here Y has to be vector.
 %
 %
@@ -49,36 +49,43 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    tn = size(tx,1);
+    
+    ip=inputParser;
+    ip.FunctionName = 'MC_PRED';
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                     isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+    ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                     (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+    ip.parse(gp, x, y, xt, varargin{:});
+    yt=ip.Results.yt;
+    zt=ip.Results.zt;
+    predcf=ip.Results.predcf;
+    tstind=ip.Results.tstind;
+    
+    tn = size(x,1);
     if nargin < 4
         error('Requires at least 4 arguments');
     end
 
-    if nargin < 7
-        y = [];
+    if nargout > 4 && isempty(yt)
+        error('mc_pred -> If py is wanted you must provide the vector y as 7''th input.')
     end
-
-    if nargout > 4 && isempty(y)
-        error('gp_pred -> If py is wanted you must provide the vector y as 7''th input.')
-    end
-    
-    if nargin < 6
-        tstind = [];
-    end
-    
-    if nargin < 5
-        predcf = [];
-    end
-        
-    nin  = size(tx,2);
+            
+    nin  = size(x,2);
     nout = 1;
     nmc=size(gp.etr,1);
     
     % Non-Gaussian likelihood. Thus latent variables should be used in place of observations
     if isfield(gp, 'latentValues')
-        ty = gp.latentValues';
+        y = gp.latentValues';
     else 
-        ty = repmat(ty,1,nmc);
+        y = repmat(y,1,nmc);
     end
 
     if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
@@ -106,20 +113,20 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, tx, ty, x, predcf, tstind, y)
         end
         
         if nargout < 3
-            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind);
+            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
         else 
             if isfield(gp, 'latentValues')
-                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind);
+                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
                 if nargout < 5
-                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1));
+                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), yt, zt);
                 else
-                    [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), y);
+                    [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), yt, zt);
                 end                
             else
                 if nargout < 5
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind);
+                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
                 else
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, tx, ty(:,i1), x, 'predcf', predcf, 'tstind', tstind); 
+                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
                 end
             end            
         end

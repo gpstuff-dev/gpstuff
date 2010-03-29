@@ -72,17 +72,16 @@ gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior',
 
 % Create the likelihood structure
 likelih = likelih_negbin('init');
-param = 'covariance+likelihood'
 
 % Create the PIC GP data structure
 gp = gp_init('init', 'PIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001); 
-gp = gp_init('set', gp, 'blocks', trindex);
+gp = gp_init('set', gp, 'blocks', trindex, 'infer_params', 'covariance+likelihood');
 
 % Set the approximate inference method to EP
-gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, param});
-%gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, param});
+gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'z', ye});
+%gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy});
 
-w=gp_pak(gp, param);      % pack the hyperparameters into one vector
+w=gp_pak(gp);      % pack the hyperparameters into one vector
 fe=str2fun('gpep_e');     % create a function handle to negative log posterior
 fg=str2fun('gpep_g');     % create a function handle to gradient of negative log posterior
 
@@ -93,11 +92,11 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization and set the optimized hyperparameter values back to the gp structure
-w=scg2(fe, w, opt, fg, gp, xx, yy, param);
-gp = gp_unpak(gp,w,param);
+w=scg2(fe, w, opt, fg, gp, xx, yy, 'z', ye);
+gp = gp_unpak(gp,w);
 
 % make prediction to the data points
-[Ef, Varf] = ep_pred(gp, xx, yy, xx, param, [], trindex);
+[Ef, Varf] = ep_pred(gp, xx, yy, xx, 'tstind', trindex);
 
 % Define help parameters for plotting
 xxii=sub2ind([60 35],xx(:,2),xx(:,1));
@@ -176,7 +175,7 @@ opt.likelih_sls_opt.display = 0;
 % Here we make an initialization with 
 % slow sampling parameters
 opt.display = 0;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy);
+[rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'z', ye);
 
 % Now we reset the sampling parameters to 
 % achieve faster sampling
@@ -201,7 +200,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, rgp);
+    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'record', rgp, 'z', ye);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(3)
     clf
