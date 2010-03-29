@@ -128,7 +128,7 @@ switch gp.type
         Vary = Varf + Cv - V;
     end
     if nargout > 4
-        py = norm_pdf(y, Ey, sqrt(Vary));
+        py = norm_pdf(yt, Ey, sqrt(Vary));
     end
   case 'FIC'
     % Check the tstind vector
@@ -212,7 +212,7 @@ switch gp.type
         Vary = Varf + Cnn_v - Knn_v;
     end
     if nargout > 4
-        py = norm_pdf(y, Ey, sqrt(Vary));
+        py = norm_pdf(yt, Ey, sqrt(Vary));
     end
     
   case {'PIC' 'PIC_BLOCK'}
@@ -331,7 +331,7 @@ switch gp.type
         Vary = Varf + Cnn_v - Knn_v;
     end
     if nargout > 4
-        py = norm_pdf(y, Ey, sqrt(Vary));
+        py = norm_pdf(yt, Ey, sqrt(Vary));
     end
   case 'CS+FIC'
     % Here tstind = 1 if the prediction is made for the training set 
@@ -508,7 +508,7 @@ switch gp.type
         Vary = Varf + Cnn_v - Knn_v;
     end
     if nargout > 4
-        py = norm_pdf(y, Ey, sqrt(Vary));
+        py = norm_pdf(yt, Ey, sqrt(Vary));
     end
     
     

@@ -79,12 +79,12 @@ function gpcf = gpcf_ppcs2(do, varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'GP_E';
+  ip.FunctionName = 'GPCS_PPCS2';
   ip.addRequired('do', @(x) ismember(x, {'init','set'}));
   ip.addOptional('gp', [], @isstruct);
   ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
-  ip.addParamValue('lengthScale',[], @(x) isscalar(x) && x>0);
+  ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
   ip.addParamValue('l_nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('metric',[], @isstruct);
   ip.addParamValue('magnSigma2_prior',[], @isstruct);

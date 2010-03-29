@@ -298,7 +298,7 @@ function likelih = likelih_logit(do, varargin)
         Ey = 2*py1(:)-1;
         Vary = 1-(2*py1(:)-1).^2;
         
-        if nargin > 3
+        if nargout > 2
             % NOTE: This is only approximation since \int logit(y|f) N(f|Ef,Varf) df
             % has no analytic solution.
             

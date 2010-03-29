@@ -700,7 +700,7 @@ function likelih = likelih_t(do, varargin)
            VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
        end
         
-        if nargin > 3
+        if nargout > 2
             for i2 = 1:length(Ef)
                 mean_app = Ef(i2);
                 sigm_app = sqrt(Varf(i2));

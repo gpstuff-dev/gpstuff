@@ -58,6 +58,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
     ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                      isvector(x) && isreal(x) && all(isfinite(x)&x>0))
     ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
@@ -65,6 +66,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
     ip.parse(gp, x, y, xt, varargin{:});
     yt=ip.Results.yt;
     zt=ip.Results.zt;
+    z=ip.Results.z;
     predcf=ip.Results.predcf;
     tstind=ip.Results.tstind;
     

@@ -138,7 +138,6 @@ trcov.m
 demo_binomial.m
 demo_censored_t.m
 demo_classific2.m
-demo_classific3.m
 demo_ep_clFull_mcmc.m
 demo_infneuralnetwork.m
 demo_lgcpdens.m

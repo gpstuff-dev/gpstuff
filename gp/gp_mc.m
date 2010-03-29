@@ -420,6 +420,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             end
             
             record.p = gp.p;
+            record.infer_params = gp.infer_params;
             record.e = [];
             record.edata = [];
             record.eprior = [];

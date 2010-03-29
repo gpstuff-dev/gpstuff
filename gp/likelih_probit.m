@@ -58,6 +58,7 @@ function likelih = likelih_probit(do, varargin)
         likelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
         likelih.fh_predy = @likelih_probit_predy;
         likelih.fh_recappend = @likelih_probit_recappend;
+        likelih.fh_permute = @likelih_probit_permute;
         
         if length(varargin) > 1
             if mod(nargin,2) ~=0
@@ -88,7 +89,9 @@ function likelih = likelih_probit(do, varargin)
         end
     end
 
-
+    function likelih_probit_permute
+        
+    end
 
     function w = likelih_probit_pak(likelih)
     %LIKELIH_PROBIT_PAK      Combine likelihood parameters into one vector.

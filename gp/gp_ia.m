@@ -6,7 +6,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
 %       [GP_ARRAY, P_TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS) 
 %        takes a GP data structure GP with covariates X and observations 
 %        Y and returns an array of GPs GP_ARRAY and corresponding weights 
-%        P_TH. If optionak test covariates XT is included, GP_IA also
+%        P_TH. If optional test covariates XT is included, GP_IA also
 %        returns corresponding mean EF, variance VARF and density PF
 %        evaluated at points FF. 
 %
@@ -58,11 +58,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
 % Licence.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'GP_E';
+  ip.FunctionName = 'GP_IA';
   ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('xt',[], @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('xt',[], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('int_method', 'CCD', @(x) ischar(x) && ...

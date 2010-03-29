@@ -370,7 +370,7 @@ function likelih = likelih_binomial(do, varargin)
         EVary = zeros(nt,1);
         VarEy = zeros(nt,1);
         
-        if nargin > 3
+        if nargout > 2
             Py=zeros(nt,1);
         end
         
@@ -385,7 +385,7 @@ function likelih = likelih_binomial(do, varargin)
             F3  = @(x)(z(i1)./(1+exp(-x))).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
             
-            if nargin > 3
+            if nargout > 2
                 %bin_cc=exp(gammaln(z(i1)+1)-gammaln(y(i1)+1)-gammaln(z(i1)-y(i1)+1));
                 %F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(z(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
                 F  = @(x)exp(gammaln(z(i1)+1)-gammaln(y(i1)+1)-gammaln(z(i1)-y(i1)+1) + y(i1).*log(1./(1+exp(-x))) + (z(i1)-y(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));

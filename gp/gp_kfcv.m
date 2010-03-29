@@ -1,36 +1,39 @@
-function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_kfcv(gp, x, y, inf_method, opt, param, SAVE, trindex, tstindex, folder)
+function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_kfcv(gp, x, y, varargin)
 %GP_KFCV        K-fold cross validation for GP model
 %
 %	Description
 %	[mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = 
-%                gp_kfcv(gp, x, y, inf_method, opt, trindex, tstindex, param, SAVE, folder)
+%                gp_kfcv(gp, x, y, OPTIONS)
 %
 %       Perform K-fold cross validation for GP model.
 %
-%       The input arguments are the following:
+%       The mandatory input arguments are the following:
 %         gp           - GP data structure containing the model
 %         x            - inputs
 %         y            - outputs
-%         inf_method   - inference method. Possible methods are
+%
+%       OPTIONS is optional parameter-value pair
+%          'z'          - optional observed quantity in triplet (x_i,y_i,z_i)
+%                         Some likelihoods may use this. For example, Poisson
+%         'inf_method'  - inference method. Possible methods are
 %                         'MAP_scg2'     hyperparameter optimization with SCG
 %                         'MAP_fminunc'  hyperparameter optimization with fminunc
 %                         'MCMC'         MCMC sampling using gp_mc
 %                         'IA'           integration approximation using gp_ia
-%         opt           - options for the inference method
-%         trindex       - k-fold CV training indices. A cell array with k fields each 
+%                         The default is 'MAP_scg2'
+%         'opt'         - options for the inference method
+%         'trindex'     - k-fold CV training indices. A cell array with k fields each 
 %                         containing index vector for respective training set. 
-%                         Optional, if not given gp_kfcv constructs 10-fold CV indices.
-%         tstindex      - k-fold CV test indices. A cell array with k fields each 
+%                         By default gp_kfcv constructs 10-fold CV indices.
+%         'tstindex'    - k-fold CV test indices. A cell array with k fields each 
 %                         containing index vector for respective test set. 
-%                         Optional, if not given gp_kfcv constructs 10-fold CV indices.
-%         param         - String defining the inferred parameters (see e.g. gp_pak). 
-%                         Optional. Default value is 'covariance'.
-%         SAVE          - defines if results are stored (1) or not (0). By default 1.
+%                         By default gp_kfcv constructs 10-fold CV indices.
+%         'SAVE'        - defines if results are stored (1) or not (0). By default 1.
 %                         If SAVE==1 gp_kfcv stores the results in the current working 
 %                         directory (or in 'folder', see next option) into a cv_resultsX
 %                         folder, where X is a number. If there is already cv_results* 
 %                         folders X is the smallest number not in use yet.
-%         folder        - defines the folder where to save the results. By defauls the 
+%         'folder'      - defines the folder where to save the results. By default the 
 %                         current working directory.
 %
 %       The output arguments are the following
@@ -125,31 +128,48 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
 % License.txt, included with the software, for details.
 
     
+    ip=inputParser;
+    ip.FunctionName = 'GP_KFCV';
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('inf_method', 'MAP_scg2', @(x) ~isempty(strfind(x, 'MAP_scg2')) ...
+                     || ~isempty(strfind(x, 'MAP_fminunc')) || ~isempty(strfind(x, 'MCMC'))...
+                     || ~isempty(strfind(x, 'IA')))
+    ip.addParamValue('opt', scg2_opt)
+    ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))    
+    ip.addParamValue('tstindex', [], @(x) ~isempty(x) || iscell(x))
+    ip.addParamValue('SAVE', 1, @(x) x==1 || x==0)
+    ip.addParamValue('folder', [], @(x) exist(x)==7 )
+    ip.parse(gp, x, y, varargin{:});
+    z=ip.Results.z;
+    inf_method=ip.Results.inf_method;
+    opt=ip.Results.opt;
+    trindex=ip.Results.trindex;
+    tstindex=ip.Results.tstindex;
+    SAVE=ip.Results.SAVE;
+    folder = ip.Results.folder;
+    
     
     [n,nin] = size(x);
     
     gp_orig = gp;
     
-    if nargin < 5
-        error('gp_kfcv: Not enough arguments.')
-    end
-        
-    if nargin < 6 || isempty(param)
-        param = 'covariance';
-    end
-
-    if nargin < 7 || isempty(SAVE)
-        SAVE = 1;
+    if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
+        error('gp_kfcv: If you give cross validation indeces, you need to provide both trindex and tstindex.')
     end
     
-    if nargin < 8 || isempty(trindex)
+    if isempty(trindex) || isempty(tstindex)
         [trindex, tstindex] = cvitr(n, 10);
     end
     
-    if nargin < 10
-        folder = [];
+    if isempty(folder)
+        parent_folder = pwd;
+    else
+        parent_folder = folder;
     end
-    
+        
     % Check which energy and gradient function
     if ~isstruct(gp.likelih)   % a regression model
         fe=str2fun('gp_e');
@@ -192,6 +212,16 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         ytr = y(trindex{i},:);
         xtst = x(tstindex{i},:);
         ytst = y(tstindex{i},:);
+        
+        if ~isempty(z)
+            options_tr.z = z(trindex{i},:);
+            options_tst.zt = z;
+            options_tst.yt = y;
+        else
+            options_tr = struct();
+            options_tst.yt = y;
+        end
+        
         gp = gp_orig;
         
         switch gp.type
@@ -223,9 +253,9 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         if isstruct(gp.likelih)
             switch gp.latent_method
               case 'Laplace'
-                gp = gp_init('set', gp, 'latent_method', {'Laplace', xtr, ytr, param});
+                gp = gp_init('set', gp, 'latent_method', {'Laplace', xtr, ytr, options_tr});
               case 'EP'
-                gp = gp_init('set', gp, 'latent_method', {'EP', xtr, ytr, param});
+                gp = gp_init('set', gp, 'latent_method', {'EP', xtr, ytr, options_tr});
               case 'MCMC'
                 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(ytr))', gp_orig.fh_mc});
             end
@@ -234,22 +264,22 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         % Conduct inference
         switch inf_method
           case 'MAP_scg2'
-            w=gp_pak(gp, param);
-            w = scg2(fe, w, opt, fg, gp, xtr, ytr, param);
-            gp=gp_unpak(gp,w, param);
+            w=gp_pak(gp);
+            w = scg2(fe, w, opt, fg, gp, xtr, ytr, options_tr);
+            gp=gp_unpak(gp,w);
           case 'MAP_fminunc'
-            w=gp_pak(gp, param);
+            w=gp_pak(gp);
             mydeal = @(varargin)varargin{1:nargout};
-            w = fminunc(@(ww) mydeal(fe(ww, gp, xtr, ytr, param), fg(ww, gp, xtr, ytr, param)), w0, opt);
-            gp=gp_unpak(gp,w, param);
+            w = fminunc(@(ww) mydeal(fe(ww, gp, xtr, ytr, options_tr), fg(ww, gp, xtr, ytr, options_tr)), w0, opt);
+            gp=gp_unpak(gp,w);
           case 'MCMC'
-            gp = gp_mc(opt, gp, xtr, ytr);
+            gp = gp_mc(opt, gp, xtr, ytr, options_tr);
           case 'IA'
-            gp = gp_ia(opt, gp, xtr, ytr, [], param);
+            gp = gp_ia(gp, xtr, ytr, [], opt, options_tr);
         end
             
         % make the prediction
-        [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, param, [], tstind, y);
+        [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
                 
         % Evaluate statistics
         lpd_cv(tstindex{i}) = log(mean(py(tstindex{i},:),2));
@@ -286,6 +316,16 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
             tstind = gp.tr_index;
         end
         
+        if ~isempty(z)
+            options_tr.z = z;
+            options_tst.zt = z;
+            options_tst.yt = y;
+        else
+            options_tr = struct();
+            options_tst.yt = y;
+        end
+
+        
         % Evaluate the training utility
         fprintf('\n Evaluating the training utility \n')
         gp = gp_orig;
@@ -294,21 +334,23 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         cpu_time = cputime;
         switch inf_method
           case 'MAP_scg2'
-            w=gp_pak(gp, param);
-            w = scg2(fe, w, opt, fg, gp, x, y, param);
-            gp=gp_unpak(gp,w, param);
+            w=gp_pak(gp);
+            w = scg2(fe, w, opt, fg, gp, x, y, options_tr);
+            gp=gp_unpak(gp,w);
           case 'MAP_fminunc'
-            w=gp_pak(gp, param);
+            w=gp_pak(gp);
             mydeal = @(varargin)varargin{1:nargout};
-            w = fminunc(@(ww) mydeal(fe(ww, gp, x, y, param), fg(ww, gp, x, y, param)), w0, opt);
-            gp=gp_unpak(gp,w, param);
+            w = fminunc(@(ww) mydeal(fe(ww, gp, x, y, options_tr), fg(ww, gp, x, y, options_tr)), w0, opt);
+            gp=gp_unpak(gp,w);
           case 'MCMC'
-            gp = gp_mc(opt, gp, xtr, ytr);
+            gp = gp_mc(opt, gp, xtr, ytr, options_tr);
+          case 'IA'
+            gp = gp_ia(gp, xtr, ytr, options_tr, opt);
         end
         cpu_time = cputime - cpu_time;
         
         % make the prediction
-        [Ef, Varf, Ey, Vary, py] = feval(fp, gp, x, y, x, param, [], tstind, y);
+        [Ef, Varf, Ey, Vary, py] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
                 
         lpd_tr(i) = mean(log(mean(py,2)));
         rmse_tr(i) = sqrt(mean((mean(Ey,2) - y).^2));
@@ -319,7 +361,6 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         abs_ccv =  mabs_cv +  mean(abs_tr) -  mean(abs_cvtr);
         
         % Save the results
-        parent_folder = pwd;
         if isempty(folder)
             succes = 1;
             result = 1;

@@ -335,11 +335,11 @@ function likelih = likelih_poisson(do, varargin)
         %nsamp = 10000;
         
         Py = zeros(size(Ef));
-       Ey = zeros(size(Ef));
-       EVary = zeros(size(Ef));
-       VarEy = zeros(size(Ef)); 
-       % Evaluate Ey and Vary (with MC)
-       for i1=1:length(Ef)
+        Ey = zeros(size(Ef));
+        EVary = zeros(size(Ef));
+        VarEy = zeros(size(Ef)); 
+        % Evaluate Ey and Vary (with MC)
+        for i1=1:length(Ef)
 %            %%% With MC
 %            % First sample f
 %            f_samp = normrnd(Ef(i1),sqrt(Varf(i1)),nsamp,1);

@@ -1,12 +1,12 @@
-function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
+function [dic, p_eff] = gp_dic(gp, x, y, focus, varargin);
 %GP_DIC     The DIC statistics and efective number of parameters in a GP model
 %
 %	Description
-%	[DIC, P_EFF] = GP_DIC(GP, TX, TY) evaluates DIC and the effective number 
+%	[DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective number 
 %       of parameters as defined by Spiegelhalter et.al. (2002). The statistics are 
 %       evaluated with focus on hyperparameters or latent variables depending on the 
 %       input GP (See Spiegelhalter et.al. (2002) for discussion on the parameters
-%       in focus in Bayesian model). TX contains training inputs and TY training
+%       in focus in Bayesian model). X contains training inputs and Y training
 %       outputs.
 %
 %       DIC and p_eff are evaluated as follows:
@@ -37,7 +37,7 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
 %
 %       3) GP is a record structure form gp_mc or an array of GPs from gp_ia, but you define 
 %          the focus to be both latent-variables and hyperparameters, 
-%          [DIC, P_EFF] = EP_PEFF(GP, TX, TY, 'all')
+%          [DIC, P_EFF] = EP_PEFF(GP, X, Y, 'all')
 %
 %          In this case the focus will be the latent variables and hyperparameters. Thus now
 %          we will use the posterior p(f, th|y) instead of the conditional posterior p(f|th,y) 
@@ -65,10 +65,24 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
-% License.txt, included with the software, for details.
+% License.xt, included with the software, for details.
 
-    [tn, nin] = size(tx);
+    ip=inputParser;
+    ip.FunctionName = 'GP_PEFF';
+    ip.addRequired('gp',@isstruct);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addOptional('focus', 'hyper', @(x) ismember(x,{'hyper','latent','all'}))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.parse(gp, x, y, focus, varargin{:});
+    z=ip.Results.z;
+    options=struct();
+    if ~isempty(ip.Results.z)
+        options.zt=ip.Results.z;
+        options.z=ip.Results.z;
+    end
     
+    [tn, nin] = size(x);
     
     % ====================================================
     if isstruct(gp)     % Single GP or MCMC solution
@@ -127,7 +141,7 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
             % regression model
             if ~isstruct(gp.likelih)
                 Davg = 2*mean(gp.edata);
-                [e, edata] = gp_e(mean(w,1), Gp, tx, ty);
+                [e, edata] = gp_e(mean(w,1), Gp, x, y);
                 Dth = 2*edata;
             else % non-Gaussian likelihood
                 
@@ -135,29 +149,29 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
                 % For this reason we use Laplace approximation to approximate p(y|th)
                 
                 gp2 = Gp;
-                gp2 = gp_init('set', gp2, 'latent_method', {'Laplace', tx, ty});
-                [e, edata] = gpla_e(mean(w,1), gp2, tx, ty);
+                gp2 = gp_init('set', gp2, 'latent_method', {'Laplace', x, y, 'z', z});
+                [e, edata] = gpla_e(mean(w,1), gp2, x, y, 'z', z);
                 Dth = 2.*edata;
                 
                 for i1 = 1:length(gp.edata)
-                    [e, edata] = gpla_e(w(i1,:), gp2, tx, ty);
+                    [e, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
                     Davg(i1) = 2.*edata;
                 end
                 Davg = mean(Davg);
             end
             
           case 'latent'     % A single GP solution -> focus on latent variables
-            
-            [Ef, Varf, Ey, VarY] = feval(fh_pred, gp, tx, ty, tx, [], 'tstind', tstind);
-            sampf = gp_rnd(gp, tx, ty, tx,  [], tstind, 5000);
+
+            [Ef, Varf, Ey, VarY] = feval(fh_pred, gp, x, y, x, 'tstind', tstind, options);
+            sampf = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', 5000, options);
             if ~isstruct(gp.likelih) % regression model
                 sigma2 = VarY - Varf;
-                Dth = sum(log(2*pi*sigma2)) + sum( (ty - Ef).^2./sigma2 );
-                Davg = sum(log(2*pi*sigma2)) + mean(sum( (repmat(ty,1,5000) - sampf).^2./repmat(sigma2,1,5000), 1));
+                Dth = sum(log(2*pi*sigma2)) + sum( (y - Ef).^2./sigma2 );
+                Davg = sum(log(2*pi*sigma2)) + mean(sum( (repmat(y,1,5000) - sampf).^2./repmat(sigma2,1,5000), 1));
             else % non-Gaussian likelihood
-                Dth = -2.*feval(gp.likelih.fh_e, gp.likelih, ty, Ef);
+                Dth = -2.*feval(gp.likelih.fh_e, gp.likelih, y, Ef, z);
                 for i1 = 1:size(sampf, 2)
-                    Davg(i1) = feval(gp.likelih.fh_e, gp.likelih, ty, sampf(:,i1));
+                    Davg(i1) = feval(gp.likelih.fh_e, gp.likelih, y, sampf(:,i1), z);
                 end
                 Davg = -2.*mean(Davg);
             end
@@ -179,23 +193,23 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
                 end
                 Gp.tr_index = tr_index;
                 if ~isstruct(gp.likelih) % regression model
-                    sampf(:,i) = gp_rnd(Gp, tx, ty, tx, [], tstind);
+                    sampf(:,i) = gp_rnd(Gp, x, y, x, 'tstind', tstind, options);
                 end
-                [Ef(:,i), Varf, Ey, VarY] = gp_pred(Gp, tx, ty, tx, [], tstind);
+                [Ef(:,i), Varf, Ey, VarY] = gp_pred(Gp, x, y, x, 'tstind', tstind);
                 sigma2(:,i) = VarY - Varf;
             end
             Ef = mean(Ef, 2);
             
             if ~isstruct(gp.likelih) % regression model
                 msigma2 = mean(sigma2,2);
-                Dth = sum(log(2*pi*msigma2)) + sum( (ty - Ef).^2./msigma2 );
-                Davg = mean(sum(log(2*pi*sigma2),1)) + mean(sum( (repmat(ty,1,nsamples) - sampf).^2./sigma2, 1));
+                Dth = sum(log(2*pi*msigma2)) + sum( (y - Ef).^2./msigma2 );
+                Davg = mean(sum(log(2*pi*sigma2),1)) + mean(sum( (repmat(y,1,nsamples) - sampf).^2./sigma2, 1));
             else % non-Gaussian likelihood
                 Gp = gp_unpak(Gp, mean(w,1));
-                Dth = -2.*feval(Gp.likelih.fh_e, Gp.likelih, ty, mean(gp.latentValues,1)');
+                Dth = -2.*feval(Gp.likelih.fh_e, Gp.likelih, y, mean(gp.latentValues,1)', z);
                 for i1 = 1:nsamples
                     Gp = take_nth(gp,i1);
-                    Davg(i1) = feval(Gp.likelih.fh_e, Gp.likelih, ty, Gp.latentValues');
+                    Davg(i1) = feval(Gp.likelih.fh_e, Gp.likelih, y, Gp.latentValues', z);
                 end
                 Davg = -2.*mean(Davg);
             end
@@ -236,6 +250,7 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
                 fh_e = @gpep_e;
             end
         else
+            fh_e = @gp_e;
             fh_pred = @gp_pred;
         end
         
@@ -247,13 +262,13 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
                 Gp = gp{i};
                 weight(i) = Gp.ia_weight; 
                 w(i,:) = gp_pak(Gp);
-                [e, edata] = feval(fh_e, w(i,:), Gp, tx, ty);
+                [e, edata] = feval(fh_e, w(i,:), Gp, x, y, options);
                 energy(i) = edata;
             end
             Davg = 2*sum(energy.*weight);
             wh = sum(w.*repmat(weight',1,size(w,2)),1);
             Gp = gp_unpak(Gp, wh);
-            [e, edata] = feval(fh_e,wh, Gp, tx, ty);
+            [e, edata] = feval(fh_e,wh, Gp, x, y, options);
             Dth = 2*edata;
             
           case 'all'        % An IA solution and focus on all parameters
@@ -263,23 +278,23 @@ function [dic, p_eff] = gp_dic(gp, tx, ty, focus);
                 Gp = gp{i};
                 weight(i) = Gp.ia_weight;
                 w(i,:) = gp_pak(Gp);
-                [Ef(:,i), Varf(:,i), Ey, VarY] = feval(fh_pred, Gp, tx, ty, tx, [], 'tstind', tstind);
+                [Ef(:,i), Varf(:,i), Ey, VarY] = feval(fh_pred, Gp, x, y, x, 'tstind', tstind, options);
                 sigma2(:,i) = VarY - Varf(:,i);
             end
             mEf = sum(Ef.*repmat(weight, size(Ef,1), 1), 2);
 
             if ~isstruct(gp{1}.likelih) % regression model
                 msigma2 = sum(sigma2.*repmat(weight, size(Ef,1), 1), 2);
-                Dth = sum(log(2*pi*msigma2)) + sum( (ty - mEf).^2./msigma2 );
-                deviance = sum(log(2*pi*sigma2),1) + sum((Varf+Ef.^2-2.*repmat(ty,1,nsamples).*Ef+repmat(ty.^2,1,nsamples))./sigma2,1);
+                Dth = sum(log(2*pi*msigma2)) + sum( (y - mEf).^2./msigma2 );
+                deviance = sum(log(2*pi*sigma2),1) + sum((Varf+Ef.^2-2.*repmat(y,1,nsamples).*Ef+repmat(y.^2,1,nsamples))./sigma2,1);
                 Davg = sum(deviance.*weight);
             else % non-Gaussian likelihood
                 mw = sum(w.*repmat(weight', 1, size(w,2)), 1);
                 Gp = gp_unpak(Gp, mw);
-                Dth = -2.*feval(Gp.likelih.fh_e, Gp.likelih, ty, mEf);
+                Dth = -2.*feval(Gp.likelih.fh_e, Gp.likelih, y, mEf, z);
                 for i1 = 1:nsamples
                     Gp = gp{i1};
-                    Davg(i1) = feval(Gp.likelih.fh_e, Gp.likelih, ty, Ef(:,i));
+                    Davg(i1) = feval(Gp.likelih.fh_e, Gp.likelih, y, Ef(:,i), z);
                 end
                 Davg = -2.*sum(Davg.*weight);
             end

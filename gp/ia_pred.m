@@ -1,30 +1,38 @@
-function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, tx, ty, x, param, predcf, tstind, Y) 
+function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin) 
 %IA_PRED	Prediction with Gaussian Process IA solution.
 %
 %	Description
-%	[Ef, Varf] = IA_PRED(GP_ARRAY, TX, TY, X, PREDCF, TSTIND) takes a Gaussian 
-%       processes record array RECGP (returned by gp_ia) together with a matrix X 
-%       of input vectors, matrix TX of training inputs and vector TY of training targets. 
-%       Returns the predictive mean and variance, Ef and Varf, for test inputs X. 
+%	[Ef, Varf] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) takes a Gaussian 
+%       processes record array RECGP (returned by gp_ia) together with a matrix XT 
+%       of input vectors, matrix X of training inputs and vector Y of training targets. 
+%       Returns the predictive mean and variance, Ef and Varf, for test inputs XT. 
 %
-%       Each row of X corresponds to one input vector and each row of Y corresponds to one 
-%       output. PREDCF is an array specifying the indexes of covariance functions, which 
-%       are used for making the prediction (others are considered noise). TSTIND is, in 
-%       case of PIC, a cell array containing index vectors specifying the blocking 
-%       structure for test data, or in FIC and CS+FI a vector of length n that points out 
-%       the test inputs that are also in the training set (if none, set TSTIND = []).
+%
+%
+%     OPTIONS is optional parameter-value pair
+%       'predcf' is index vector telling which covariance functions are 
+%                used for prediction. Default is all (1:gpcfn)
+%       'tstind' is a vector defining, which rows of X belong to which 
+%                training block in *IC type sparse models. Default is [].
+%       'yt' is optional observed yt in test points (see below)
+%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
+%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%         Some likelihoods may use this. For example, in case of Poisson
+%         likelihood we have z_i=E_i, that is, expected value for ith case. 
 %       
-%       [Ef, Varf, Ey, Vary] = IA_PREDS(GP, TX, TY, X, PREDCF, TSTIND) returns also the 
-%       predictive means and variances for observations at input locations X. That is,
+%       [Ef, Varf, Ey, Vary] = IA_PREDS(GP, X, Y, XT, OPTIONS) returns also the 
+%       predictive means and variances for observations at input locations XT. That is,
 %
-%                    Ey(:,i) = E[y | x, tx, ty]
-%                  Vary(:,i) = Var[y | x, tx, ty]
+%                    Ey(:,i) = E[y | xt, x, y]
+%                  Vary(:,i) = Var[y | xt, x, y]
 %    
-%       [Ef, Varf, Ey, Vary, py] = IA_PREDS(GP, TX, TY, X, PREDCF, TSTIND, Y) 
-%       returns also the predictive density py of test output Y, that is py = p(Y).
+%       [Ef, Varf, Ey, Vary, py] = IA_PREDS(GP, X, Y, XT, 'yt', YT, OPTIONS) 
+%       returns also the predictive density py of test outputs YT, that is py(i) = p(YT_i).
 %
-%       [Ef, Varf, Ey, Vary, py, f, ff] = IA_PREDS(GP, TX, TY, X, PREDCF, TSTIND) returns also the 
-%       numerical representation of the marginal posterior of latent variables at each X. f is
+%       [Ef, Varf, Ey, Vary, py, f, ff] = IA_PREDS(GP, X, Y, XT, OPTIONS) returns also the 
+%       numerical representation of the marginal posterior of latent variables at each XT. f is
 %       a vector of latent values and ff_i = p(f_i) is the posterior density for f_i.
 
 %
@@ -38,28 +46,39 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, tx, ty, x, param, p
 % This software is distributed under the GNU General Public 
 % Licence (version 2 or later); please refer to the file 
 % Licence.txt, included with the software, for details.    
-    
-    tn = size(tx,1);
-    if nargin < 4
-        error('Requires at least 4 arguments');
-    end
 
-    if nargin < 8 
-        Y = [];
-    end
     
-    if nargout > 4 && isempty(Y)
+    ip=inputParser;
+    ip.FunctionName = 'IA_PRED';
+    ip.addRequired('gp_array', @iscell);
+    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                     isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+    ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                     (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+    ip.parse(gp_array, x, y, xt, varargin{:});
+    yt=ip.Results.yt;
+    z=ip.Results.z;
+    zt=ip.Results.zt;
+    predcf=ip.Results.predcf;
+    tstind=ip.Results.tstind;
+    
+    % pass these forward
+    options=struct();
+    if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
+    if ~isempty(ip.Results.z);options.z=ip.Results.z;end
+    if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
+    if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
+    
+    if nargout > 4 && isempty(yt)
         py = NaN;
     end
-    
-    if nargin < 7
-        tstind = [];
-    end
-    
-    if nargin < 6
-        predcf = [];
-    end
-    
+        
     nGP = numel(gp_array);
     
     for i=1:nGP
@@ -92,10 +111,10 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, tx, ty, x, param, p
     % ==================================================
 
     for j = 1 : nGP
-        if isempty(Y)
-            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:)]=feval(fh_p,gp_array{j},tx,ty,x,param,[],tstind);
+        if isempty(yt)
+            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
         else
-            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:), py_grid(j,:)]=feval(fh_p,gp_array{j},tx,ty,x, param, [],tstind, Y);
+            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:), py_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
         end
     end
     
@@ -133,7 +152,7 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, tx, ty, x, param, p
     Ey = sum(Ey_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
     Vary = sum(Vary_grid.*repmat(P_TH,1,size(Ey_grid,2)),1) + sum( (Ey_grid - repmat(Ey,nGP,1)).^2, 1);
     
-    if ~isempty(Y)
+    if ~isempty(yt)
         py = sum(py_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
         py = py';
     end

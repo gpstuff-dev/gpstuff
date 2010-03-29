@@ -57,21 +57,10 @@ function p_eff = gp_peff(gp, x, y, varargin);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-  ip.addParamValue('tstind', [], @(x) isempty(x) || ...
-                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.parse(gp, x, y, varargin{:});
-  % pass these forward
-  if ~isempty(ip.Results.z);options.z=ip.Results.z;end
-  if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
-  if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
-
-    tn = size(x,1);
-    
-    if isfield(gp, 'etr')
-        
-    end
+  z=ip.Results.z;
+  
+  tn = size(x,1);
 
     
     if ~isstruct(gp.likelih)    % a regression model
@@ -226,7 +215,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
           case 'FULL'
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
                 
                 % The prior variance
                 K=gp_trcov(gp,x);
@@ -248,9 +237,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
                 end
                 
               case 'Laplace'
-                [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', options.z);
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
                 
                 % Evaluate the prior variance
                 K = gp_trcov(gp,x);
@@ -286,7 +275,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
                 k = gp_trvar(gp,x);
                 
@@ -300,9 +289,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
 % $$$                 p_eff = trace(C*K);
                 
               case 'Laplace'
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
                 La = W.*Lav;
                 Lahat = 1 + La;
                 sqrtW = sqrt(W);
@@ -344,7 +333,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             switch gp.latent_method
               case 'EP'
             
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         
                 p_eff = - sum(sum(L.*((L'*B')*B)',2));
 
@@ -356,14 +345,14 @@ function p_eff = gp_peff(gp, x, y, varargin);
                 end
                 
               case 'Laplace'               
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
                 
                 iKuuKuf = K_uu\K_fu';
 
                 % Evaluate the variance
 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
                 sqrtW = sqrt(W);
                 
                 % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -433,7 +422,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
             switch gp.latent_method
               case 'EP'
 
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
             
                 k = gp_trvar(gp,x,cf1);
                 Lav = k - sum(B.^2)';
@@ -451,9 +440,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
 % $$$                 p_eff = trace(C*K);
                 
               case 'Laplace'
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, options);
+                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                                 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
                 sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
                 Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
                 B = sqrtW*K_fu;
