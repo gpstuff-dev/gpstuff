@@ -31,7 +31,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
 %                    parameter space according to Hessian at the mode. 
 %                    Default is TRUE.
 %       'autoscale'  tells whether automatic scaling is used in CCD and is_*
-%                    Default is TRUE.  
+%                    Default is FALSE (problems with CCD autoscale...).  
 %       'threshold'  Threshold for drop of log-density in grid search. 
 %                    Default is 2.5,
 %       'step_size'  Step-size for grid search. Default is 1.
@@ -63,6 +63,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('xt',[], @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('int_method', 'CCD', @(x) ischar(x) && ...
                    ismember(x,{'CCD','grid','is_normal','is_t'}))
   ip.addParamValue('predcf', [], @(x) isempty(x) || ...
@@ -70,7 +72,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   ip.addParamValue('tstind', [], @(x) isempty(x) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('rotate', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('autoscale', true, @(x) islogical(x) && isscalar(x))
+  ip.addParamValue('autoscale', false, @(x) islogical(x) && isscalar(x))
   ip.addParamValue('validate', 1, @(x) ismember(x,[1 2]))
   ip.addParamValue('threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
@@ -90,6 +92,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   ip.addParamValue('opt_hmc', [], @isstruct);
   ip.addParamValue('opt_sls', [], @isstruct);
   ip.parse(gp, x, y, xt, varargin{:});
+  % integration parameters
   int_method=ip.Results.int_method;
   opt.rotate=ip.Results.rotate;
   opt.autoscale=ip.Results.autoscale;
@@ -100,12 +103,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   opt.n_samples=ip.Results.n_samples;
   opt.f0=ip.Results.f0;
   opt.qmc=ip.Results.qmc;
+  % optimisation and smapling parameters
   opt_scg=ip.Results.opt_scg;
   opt_fminunc=ip.Results.opt_fminunc;
   opt_hmc=ip.Results.opt_hmc;
   opt_sls=ip.Results.opt_sls;
-  options.predcf=ip.Results.predcf;
-  options.tstind=ip.Results.tstind;
+  % pass these forward
+  if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
+  if ~isempty(ip.Results.z);options.z=ip.Results.z;end
+  if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
+  if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
 
   % ===========================
   % Which latent method is used
@@ -145,9 +152,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
 
   % The mode and Hessian at it 
   if ~isempty(opt_scg)
-    w = scg2(fh_e, w0, opt_scg, fh_g, gp, x, y);
+    w = scg2(fh_e, w0, opt_scg, fh_g, gp, x, y, options);
   else
-    w = fminunc(@(ww) mydeal(feval(fh_e,ww, gp, x, y), feval(fh_g, ww, gp, x, y)), w0, opt_fminunc);
+    w = fminunc(@(ww) mydeal(feval(fh_e, ww, gp, x, y, options), feval(fh_g, ww, gp, x, y, options)), w0, opt_fminunc);
   end
   gp = gp_unpak(gp,w);
 
@@ -196,7 +203,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
         switch int_method
           case 'grid'
             % density in the mode
-            p_th(1) = -feval(fh_e,w,gp,x,y);
+            p_th(1) = -feval(fh_e,w,gp,x,y,options);
             if ~isempty(xt)
               % predictions in the mode if needed
               [Ef_grid(1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,x,y,xt,options);
@@ -227,7 +234,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
                   gp_array{end+1} = gp;
                   
                   % density
-                  p_th(end+1) = -feval(fh_e,w_p,gp,x,y);
+                  p_th(end+1) = -feval(fh_e,w_p,gp,x,y,options);
                   if ~isempty(xt)
                     % predictions if needed
                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
@@ -254,7 +261,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
                   gp_array{end+1} = gp;
                   
                   % density
-                  p_th(end+1) = -feval(fh_e,w_n,gp,x,y);
+                  p_th(end+1) = -feval(fh_e,w_n,gp,x,y,options);
                   if ~isempty(xt)
                     % predictions if needed
                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
@@ -340,7 +347,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
                 % Find the scaling parameter so that when we move 2 stds
                 % from the mode, the log density drops by 2
                 optim = optimset('Display','off');
-                t = fminunc(@(x) abs(-feval(fh_e,x*temp*z+w,gp,x,y)+feval(fh_e,w,gp,x,y)+2), f0,optim);
+                t = fminunc(@(x) abs(-feval(fh_e,x*temp*z+w,gp,x,y,options)+feval(fh_e,w,gp,x,y,options)+2), f0,optim);
                 sd(points(:,ind)*dir>0, ind) = 0.5*t/sqrt(nParam);
               end
               % Each point is scaled with corresponding scaling parameter
@@ -357,7 +364,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
               gp_array{end+1} = gp;
 
               % density
-              p_th(end+1) = -feval(fh_e,th(i1,:),gp,x,y);
+              p_th(end+1) = -feval(fh_e,th(i1,:),gp,x,y,options);
               if ~isempty(xt)
                 % predictions if needed
                 [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
@@ -391,7 +398,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
       Scale = Sigma;
       [V,D] = eig(full(Sigma));
       z = (V*sqrt(D))'.*opt.step_size;
-      P0 =  -feval(fh_e,w,gp,x,y);
+      P0 =  -feval(fh_e,w,gp,x,y,options);
       
       % Some jitter may be needed to get positive semi-definite covariance
       if any(eig(Sigma)<0)
@@ -433,7 +440,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
               for i1 = 1 : length(delta)
                 ttt = zeros(1,nParam);
                 ttt(i0)=1;
-                phat = (-feval(fh_e,w+(delta(i1)*chol(Sigma)'*ttt')',gp,x,y));
+                phat = (-feval(fh_e,w+(delta(i1)*chol(Sigma)'*ttt')',gp,x,y,options));
                 fi(i1) = abs(delta(i1)).*(2.*(P0-phat)).^(-.5);
                 
                 pp(i1) = exp(phat);
@@ -485,10 +492,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
               ttt = zeros(1,nParam);
               ttt(i0)=1;
               for i1 = 1 : length(delta)
-                phat = exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y));
+                phat = exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options));
                 
                 fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
-                rel(i1) = (exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y)))/ ...
+                rel(i1) = (exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options)))/ ...
                           mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
                 pp(i1) = phat;
                 pt(i1) = mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
@@ -533,7 +540,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
       for j = 1 : N
         gp_array{j}=gp_unpak(gp,th(j,:));
         % density
-        p_th(j) = -feval(fh_e,th(j,:),gp_array{j},x,y);
+        p_th(j) = -feval(fh_e,th(j,:),gp_array{j},x,y,options);
         if ~isempty(xt)
           % predictions if needed
           [Ef_grid(j,:), Varf_grid(j,:)]=...
@@ -587,7 +594,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
           if ~isempty('opt_hmc')
             ww = gp_pak(gp);
             hmc2('state',hmc_rstate)              % Set the state
-            [ww, energies, diagnh] = hmc2(fh_e, ww, opt_hmc, fh_g, gp, x, y);
+            [ww, energies, diagnh] = hmc2(fh_e, ww, opt_hmc, fh_g, gp, x, y,options);
             hmc_rstate=hmc2('state');             % Save the current state
             hmcrej=hmcrej+diagnh.rej/opt.repeat;
             if isfield(diagnh, 'opt')
@@ -597,7 +604,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
             ww=ww(end,:);
             gp = gp_unpak(gp, ww);
 
-            etr = feval(fh_e,ww,gp,x,y);
+            etr = feval(fh_e,ww,gp,x,y,options);
           end
           
 % $$$             % ----------- Sample hyperparameters with SLS --------------------- 
@@ -744,7 +751,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
     
     % Evaluate the number of effective latent variables in GPs
     for i3 = 1:length(gp_array)
-      p_eff(i3) = gp_peff(gp_array{i3}, x, y);
+      p_eff(i3) = gp_peff(gp_array{i3}, x, y, options);
     end
     
     if opt.validate>1
@@ -788,7 +795,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
   function H = hessian(w0)
     
     m = length(w);
-    e0 = feval(fh_e,w0,gp,x,y);
+    e0 = feval(fh_e,w0,gp,x,y,options);
     delta = 1e-4;
     H = -1*ones(m,m);
 
@@ -802,8 +809,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
           w1(j) = w1(j) + delta;
           w2(j) = w2(j) - delta;
           
-          g1 = feval(fh_g,w1,gp,x,y);
-          g2 = feval(fh_g,w2,gp,x,y);
+          g1 = feval(fh_g,w1,gp,x,y,options);
+          g2 = feval(fh_g,w2,gp,x,y,options);
           
           H(i,j) = (g1(i)-g2(i))./(2.*delta);
           H(j,i) = H(i,j);
@@ -821,8 +828,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
         w1(i) = [w1(i)+2*delta];
         w4(i) = [w4(i)-2*delta];
         
-        e1 = feval(fh_e,w1,gp,x,y);
-        e4 = feval(fh_e,w4,gp,x,y);
+        e1 = feval(fh_e,w1,gp,x,y,options);
+        e4 = feval(fh_e,w4,gp,x,y,options);
         
         H(i,i) = (e1 - 2*e0 + e4)./(4.*delta.^2);
         for j = i+1:m
@@ -832,10 +839,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, xt, varargi
           w3([i j]) = [w3(i)+delta w3(j)-delta];
           w4([i j]) = [w4(i)-delta w4(j)-delta];
           
-          e1 = feval(fh_e,w1,gp,x,y);
-          e2 = feval(fh_e,w2,gp,x,y);
-          e3 = feval(fh_e,w3,gp,x,y);
-          e4 = feval(fh_e,w4,gp,x,y);
+          e1 = feval(fh_e,w1,gp,x,y,options);
+          e2 = feval(fh_e,w2,gp,x,y,options);
+          e3 = feval(fh_e,w3,gp,x,y,options);
+          e4 = feval(fh_e,w4,gp,x,y,options);
           
           H(i,j) = (e1 - e2 - e3 + e4)./(4.*delta.^2);
           H(j,i) = H(i,j);

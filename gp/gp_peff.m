@@ -1,41 +1,49 @@
-function p_eff = gp_peff(gp, tx, ty);
-%GP_PEFF	The efective number of parameters in GP model with focus on latent variables.
+function p_eff = gp_peff(gp, x, y, varargin);
+%GP_PEFF The efective number of parameters in GP model with focus on latent variables.
 %
 %	Description
-%	P_EFF = EP_PEFF(GP, TX, TY) Takes the Gaussian process data structure GP, 
-%       training inputs TX and training outputs and returns the efective number of 
-%       parameters as defined by Spiegelhalter et.al. (2002). 
+%        P_EFF = EP_PEFF(GP, X, Y) Takes the Gaussian process
+%        data structure GP, training inputs X and training outputs
+%        and returns the efective number of parameters as defined
+%        by Spiegelhalter et.al. (2002).
 %
 %       NOTE!
-%       The effective number of parameters is evaluated with focus on latent variable f. 
-%       This means that the hyperparameters th (parameters of covariance function and 
-%       likelihood) are considered fixed. (See Spiegelhalter et.al. (2002) for discussion 
-%       on the parameters in focus in Bayesian model). Thus, the returned p_eff tells the 
-%       effective number of latent variables. This statistics is important for example when 
-%       assessing the goodness of Laplace or EP approximation in case of non-Gaussian 
-%       likelihood (See Vanhatalo et. al. for discussion). 
+%        The effective number of parameters is evaluated with focus
+%        on latent variable f. This means that the hyperparameters
+%        th (parameters of covariance function and likelihood) are
+%        considered fixed. (See Spiegelhalter et.al. (2002) for
+%        discussion on the parameters in focus in Bayesian model). 
+%        Thus, the returned p_eff tells the effective number of
+%        latent variables. This statistics is important for example
+%        when assessing the goodness of Laplace or EP approximation
+%        in case of non-Gaussian likelihood (See Vanhatalo et. al. 
+%        for discussion).
 %
-%       If you want to evaluate the effective number of hyperparameters see gp_dic.
+%       If you want to evaluate the effective number of
+%       hyperparameters see gp_dic.
 %
 %       The effective number of parameters is approximated as follows:
 %
 %               p_eff = n - trace( K\C ),
 %
-%       where K is the prior covariance matrix and C the posterior covariance matrix. 
-%       This approximation is introduced by Spiegelhalter et.al. (2002) in equation (16). 
-%
-%       If the likelihood is non-Gaussian and gp.latent_method is either Laplace or EP, 
-%       then C is the Laplace or EP approximation for the posterior covariance.
+%       where K is the prior covariance matrix and C the posterior
+%       covariance matrix. This approximation is introduced by
+%       Spiegelhalter et.al. (2002) in equation (16). If the
+%       likelihood is non-Gaussian and gp.latent_method is either
+%       Laplace or EP, then C is the Laplace or EP approximation
+%       for the posterior covariance.
 %
 %	See also
 %         gp_dic, demo_modelassesment1	
 %   
 %       References: 
-%         Spiegelhalter, Best, Carlin and van der Linde (2002). Bayesian measures
-%         of model complexity and fit. J. R. Statist. Soc. B, 64, 583-639.
+%         Spiegelhalter, Best, Carlin and van der Linde (2002). 
+%         Bayesian measures of model complexity and fit. J. R. 
+%         Statist. Soc. B, 64, 583-639.
 %         
-%         Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). Approximate inference 
-%         for disease mapping with sparse Gaussian processes.  Statistics in Medicine.  
+%         Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). 
+%         Approximate inference for disease mapping with sparse
+%         Gaussian processes. Statistics in Medicine.
 %   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 
@@ -43,8 +51,23 @@ function p_eff = gp_peff(gp, tx, ty);
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+  ip=inputParser;
+  ip.FunctionName = 'GP_PEFF';
+  ip.addRequired('gp',@isstruct);
+  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+  ip.addParamValue('tstind', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+  ip.parse(gp, x, y, varargin{:});
+  % pass these forward
+  if ~isempty(ip.Results.z);options.z=ip.Results.z;end
+  if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
+  if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
 
-    tn = size(tx,1);
+    tn = size(x,1);
     
     if isfield(gp, 'etr')
         
@@ -56,7 +79,7 @@ function p_eff = gp_peff(gp, tx, ty);
         switch gp.type
           case 'FULL'
                         
-            [K, C] = gp_trcov(gp, tx);
+            [K, C] = gp_trcov(gp, x);
             L = chol(C);
             p_eff = trace( L\(L'\K) );
             
@@ -64,12 +87,12 @@ function p_eff = gp_peff(gp, tx, ty);
             u = gp.X_u;
             m = size(u,1);
             % Turn the inducing vector on right direction
-            if size(u,2) ~= size(tx,2)
+            if size(u,2) ~= size(x,2)
                 u=u';
             end
             % Calculate some help matrices
-            [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % 1 x f  vector
-            K_fu = gp_cov(gp, tx, u);   % f x u
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+            K_fu = gp_cov(gp, x, u);   % f x u
             K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
             Luu = chol(K_uu)';
             
@@ -82,7 +105,7 @@ function p_eff = gp_peff(gp, tx, ty);
             Lav2 = Cv_ff-Qv_ff;
 
             iLaKfu = zeros(size(K_fu));  % f x u,
-            for i=1:length(tx)
+            for i=1:length(x)
                 iLaKfu(i,:) = K_fu(i,:)./Lav2(i);  % f x u
             end
             A = K_uu+K_fu'*iLaKfu;
@@ -101,13 +124,13 @@ function p_eff = gp_peff(gp, tx, ty);
           case {'PIC' 'PIC_BLOCK'}
             u = gp.X_u;
             ind = gp.tr_index;
-            if size(u,2) ~= size(tx,2)
+            if size(u,2) ~= size(x,2)
                 u=u';
             end
             
             % Calculate some help matrices
-            [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % 1 x f  vector
-            K_fu = gp_cov(gp, tx, u);         % f x u
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+            K_fu = gp_cov(gp, x, u);         % f x u
             K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
             Luu = chol(K_uu)';
             
@@ -118,7 +141,7 @@ function p_eff = gp_peff(gp, tx, ty);
             iLaKfu = zeros(size(K_fu));  % f x u
             for i=1:length(ind)
                 Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-                [Kbl_ff, Cbl_ff] = gp_trcov(gp, tx(ind{i},:));
+                [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
                 La{i} = Kbl_ff - Qbl_ff;
                 La2{i} = Cbl_ff - Qbl_ff;
                 iLaKfu(ind{i},:) = La2{i}\K_fu(ind{i},:);    
@@ -137,7 +160,7 @@ function p_eff = gp_peff(gp, tx, ty);
             u = gp.X_u;
             m = size(u,1);
             % Turn the inducing vector on right direction
-            if size(u,2) ~= size(tx,2)
+            if size(u,2) ~= size(x,2)
                 u=u';
             end
 
@@ -157,12 +180,12 @@ function p_eff = gp_peff(gp, tx, ty);
                 end
             end
 
-            [Kv_ff, Cv_ff] = gp_trvar(gp, tx, cf1);  % f x 1  vector    
-            K_fu = gp_cov(gp,tx,u,cf1);         % f x u
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x, cf1);  % f x 1  vector    
+            K_fu = gp_cov(gp,x,u,cf1);         % f x u
             K_uu = gp_trcov(gp,u,cf1);    % u x u, noiseles covariance K_uu
             K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
             
-            Kcs = gp_trcov(gp, tx, cf2);
+            Kcs = gp_trcov(gp, x, cf2);
             Luu = chol(K_uu)';
             B=Luu\(K_fu');       % u x f
             Qv_ff=sum(B.^2)';
@@ -203,10 +226,10 @@ function p_eff = gp_peff(gp, tx, ty);
           case 'FULL'
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, tx, ty, param);
+                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, param);
                 
                 % The prior variance
-                K=gp_trcov(gp,tx);
+                K=gp_trcov(gp,x);
                
                 if tautilde > 0
                     sqrttautilde = sqrt(tautilde);
@@ -225,12 +248,12 @@ function p_eff = gp_peff(gp, tx, ty);
                 end
                 
               case 'Laplace'
-                [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, tx, ty);
+                [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, options);
                 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', options.z);
                 
                 % Evaluate the prior variance
-                K = gp_trcov(gp,tx);
+                K = gp_trcov(gp,x);
                 
                 if W >= 0
                     if issparse(K) && issparse(L)
@@ -253,8 +276,8 @@ function p_eff = gp_peff(gp, tx, ty);
             u = gp.X_u;
             m = size(u,1);
             % Calculate some help matrices
-            [Kv_ff, Cv_ff] = gp_trvar(gp, tx);  % 1 x f  vector
-            K_fu = gp_cov(gp, tx, u);   % f x u
+            [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+            K_fu = gp_cov(gp, x, u);   % f x u
             K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
@@ -263,9 +286,9 @@ function p_eff = gp_peff(gp, tx, ty);
             
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, x, y, param);
 
-                k = gp_trvar(gp,tx);
+                k = gp_trvar(gp,x);
                 
                 p_eff = sum( sum( (repmat(1./La,1,m).*B').*B',2) ) - sum(sum(L.*((L'*B')*B)',2));
                 Lav = k - sum(B.^2)';
@@ -277,9 +300,9 @@ function p_eff = gp_peff(gp, tx, ty);
 % $$$                 p_eff = trace(C*K);
                 
               case 'Laplace'
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty);
+                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, options);
                 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                 La = W.*Lav;
                 Lahat = 1 + La;
                 sqrtW = sqrt(W);
@@ -309,7 +332,7 @@ function p_eff = gp_peff(gp, tx, ty);
                 
           case {'PIC' 'PIC_BLOCK'}
             u = gp.X_u;
-            K_fu = gp_cov(gp, tx, u);
+            K_fu = gp_cov(gp, x, u);
             K_uu = gp_trcov(gp, u);
             K_uu = (K_uu+K_uu')./2;
                         
@@ -321,26 +344,26 @@ function p_eff = gp_peff(gp, tx, ty);
             switch gp.latent_method
               case 'EP'
             
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, x, y, param);
         
                 p_eff = - sum(sum(L.*((L'*B')*B)',2));
 
                 for i=1:length(ind)
-                    La1 = gp_trcov(gp, tx(ind{i},:)) - B(:,ind{i})'*B(:,ind{i});
+                    La1 = gp_trcov(gp, x(ind{i},:)) - B(:,ind{i})'*B(:,ind{i});
                     p_eff = p_eff + trace(La{i}\B(:,ind{i})'*B(:,ind{i}));
                     p_eff = p_eff + trace(La{i}\La1);
                     p_eff = p_eff - trace(L(ind{i},:)*L(ind{i},:)'*La1);
                 end
                 
               case 'Laplace'               
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty);
+                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, options);
                 
                 
                 iKuuKuf = K_uu\K_fu';
 
                 % Evaluate the variance
 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                 sqrtW = sqrt(W);
                 
                 % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -381,7 +404,7 @@ function p_eff = gp_peff(gp, tx, ty);
           
           case 'CS+FIC'
             u = gp.X_u;
-            [n,nin]=size(tx);
+            [n,nin]=size(x);
             % Indexes to all non-compact support and compact support covariances.
             cf1 = [];
             cf2 = [];
@@ -398,11 +421,11 @@ function p_eff = gp_peff(gp, tx, ty);
                 end
             end
             
-            K_fu = gp_cov(gp,tx,u,cf1);         % f x u
+            K_fu = gp_cov(gp,x,u,cf1);         % f x u
             K_uu = gp_trcov(gp,u,cf1);    % u x u, noiseles covariance K_uu
             K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
                 
-            Kcs = gp_trcov(gp, tx, cf2);
+            Kcs = gp_trcov(gp, x, cf2);
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
 
@@ -410,9 +433,9 @@ function p_eff = gp_peff(gp, tx, ty);
             switch gp.latent_method
               case 'EP'
 
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, tx, ty, param);
+                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp, param), gp, x, y, param);
             
-                k = gp_trvar(gp,tx,cf1);
+                k = gp_trvar(gp,x,cf1);
                 Lav = k - sum(B.^2)';
                 La1 = Kcs + sparse(1:n, 1:n, Lav, n, n);
                 
@@ -428,9 +451,9 @@ function p_eff = gp_peff(gp, tx, ty);
 % $$$                 p_eff = trace(C*K);
                 
               case 'Laplace'
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, tx, ty);
+                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, options);
                                 
-                W = -feval(gp.likelih.fh_g2, gp.likelih, ty, f, 'latent');
+                W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
                 sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
                 Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
                 B = sqrtW*K_fu;

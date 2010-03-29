@@ -66,7 +66,6 @@ function [l,lq,xt] = lgcp(x,varargin)
         xmin=min(xmin,xrange(1));
         xmax=max(xmax,xrange(2));
       end
-      xr=xmax-xmin;
       % Discretize the data
       xx=linspace(xmin,xmax,gridn)';
       yy=hist(x,xx)';
@@ -94,7 +93,7 @@ function [l,lq,xt] = lgcp(x,varargin)
         hp=patch([xt; xt(end:-1:1)],[lq(:,1); lq(end:-1:1,2)],[.9 .9 .9]);
         set(hp,'edgecolor',[.9 .9 .9])
         xlim([xmin xmax])
-        h=line(xt,lm,'linewidth',2);
+        line(xt,lm,'linewidth',2);
       else
         l=lm;
       end
@@ -112,8 +111,8 @@ function [l,lq,xt] = lgcp(x,varargin)
         % number of points in direction
         gridn=15;
       end
-      x1min=min(x(:,1));x1max=max(x(:,1));x1r=x1max-x1min;
-      x2min=min(x(:,2));x2max=max(x(:,2));x2r=x2max-x2min;
+      x1min=min(x(:,1));x1max=max(x(:,1));
+      x2min=min(x(:,2));x2max=max(x(:,2));
       if ~isempty(xrange)
         % range extension
         x1min=min(x1min,xrange(1));
@@ -205,61 +204,56 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
   gpcf2.p.constSigma2 = [];
 
   % Create the likelihood structure
-  likelih = likelih_poisson('init', yy, ye);
+  likelih = likelih_poisson('init');
   
   % Create the GP data structure
   gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 1e-4);
-  %gp = gp_init('init', 'FULL', likelih, {gpcf1 gpcf2}, [], 'jitterSigma2', 1e-4);
 
-  % prepare to optimize covariance parameters
-  param = 'covariance';
-  paramopt.param = 'covariance';
+  % Prepare to optimize covariance parameters
   opt=optimset('GradObj','on');
   opt=optimset(opt,'TolX', 1e-3);
   opt=optimset(opt,'LargeScale', 'off');
   opt=optimset(opt,'Display', 'off');
 
-  w0 = gp_pak(gp, param);
+  w0 = gp_pak(gp);
   mydeal = @(varargin)varargin{1:nargout};
   switch latent_method
     case 'EP'
       % Set the approximate inference method
-      gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'covariance'});
+      gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'z', ye});
      
       % Optimize hyperparameters
-      w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, param), ...
-                               gpep_g(ww, gp, xx, yy, param)), w0, opt);
-      gp = gp_unpak(gp,w,param);
+      w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, 'z', ye), ...
+                               gpep_g(ww, gp, xx, yy, 'z', ye)), w0, opt);
+      gp = gp_unpak(gp,w);
 
       % Make prediction for the test points
       if strcmpi(hyperint,'mode')
         % point estimate for the hyperparameters
-        [Ef,Varf] = ep_pred(gp, xx, yy, xt, param);
+        [Ef,Varf] = ep_pred(gp, xx, yy, xt, 'z', ye);
       else
         % integrate over the hyperparameters
-        opt = gp_iaopt([], hyperint);
-        opt.validate=0;
         %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
-        [notused, notused, notused, Ef, Varf]=gp_ia(opt, gp, xx, yy, xt, param);
+        [notused, notused, notused, Ef, Varf]=...
+            gp_ia(opt, gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
       end
       
     case 'Laplace'
       % Set the approximate inference method
-      gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'covariance'});
+      gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', ye});
       % Optimize hyperparameters
-      w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, paramopt), ...
-                               gpla_g(ww, gp, xx, yy, paramopt)), w0, opt);
-      gp = gp_unpak(gp,w,param);
+      w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, 'z', ye), ...
+                               gpla_g(ww, gp, xx, yy, 'z', ye)), w0, opt);
+      gp = gp_unpak(gp,w);
       
       % Make prediction for the test points
       if strcmpi(hyperint,'mode')
         % point estimate for the hyperparameters
-        [Ef,Varf] = la_pred(gp, xx, yy, xt, param);
+        [Ef,Varf] = la_pred(gp, xx, yy, xt, 'z', ye);
       else
         % integrate over the hyperparameters
-        opt = gp_iaopt([], hyperint);
-        opt.validate=0;
         %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
-        [notused, notused, notused, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, paramopt);
+        [notused, notused, notused, Ef, Varf] = ...
+            gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
       end
   end
