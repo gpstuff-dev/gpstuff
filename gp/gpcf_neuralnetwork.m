@@ -40,9 +40,9 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 %
 %             'biasSigma2'         : set the biasSigma2
 %             'weightSigma2'       : set the weightSigma2
-%             'weightSigma2_prior'  : set the prior structure for weightSigma2
-%             'biasSigma2_prior'   ; set the prior structure for biasSigma2
-%
+%             'weightSigma2_prior' : set the prior structure for weightSigma2
+%             'biasSigma2_prior'   : set the prior structure for biasSigma2
+%             'selectedVariables'  : uses only a selected subset of variables
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
@@ -98,6 +98,11 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                     gpcf.p.biasSigma2 = varargin{i+1};
                   case 'weightSigma2_prior'
                     gpcf.p.weightSigma2 = varargin{i+1};
+                  case 'selectedVariables'
+                    gpcf.selectedVariables = varargin{i+1};
+                    if ~sum(strcmp(varargin, 'weightSigma2'))
+                        gpcf.weightSigma2= repmat(10, 1, length(gpcf.selectedVariables));
+                    end
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -122,6 +127,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
                 gpcf.p.biasSigma2 = varargin{i+1};
               case 'weightSigma2_prior'
                 gpcf.p.weightSigma2 = varargin{i+1};
+              case 'selectedVariables'
+              	gpcf.selectedVariables = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -254,6 +261,14 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %   GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK, GPCF_NEURALNETWORK_E, GP_G
         
         gpp=gpcf.p;
+        
+        if isfield(gpcf, 'selectedVariables')
+           x=x(:,gpcf.selectedVariables); 
+            if nargin == 3
+                x2=x2(:,gpcf.selectedVariables); 
+            end
+        end
+        
         [n, m] =size(x);
         
         i1=0;
@@ -470,6 +485,13 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %	See also
     %   GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK, GPCF_NEURALNETWORK_E, GP_G
         
+       if isfield(gpcf, 'selectedVariables')
+            x=x(:,gpcf.selectedVariables); 
+            if nargin == 3
+                x2=x2(:,gpcf.selectedVariables); 
+            end
+        end
+    
         [n, m] =size(x);
         
         if nargin == 2
@@ -572,6 +594,14 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %         See also
     %         GPCF_NEURALNETWORK_TRCOV, GPCF_NEURALNETWORK_TRVAR, GP_COV, GP_TRCOV
         
+        if isfield(gpcf, 'selectedVariables')
+        	x1=x1(:,gpcf.selectedVariables); 
+            if nargin == 3
+                x2=x2(:,gpcf.selectedVariables); 
+            end
+        end
+    
+    
         if isempty(x2)
             x2=x1;
         end
@@ -618,6 +648,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %         See also
     %         GPCF_NEURALNETWORK_COV, GPCF_NEURALNETWORK_TRVAR, GP_COV, GP_TRCOV
         
+        if isfield(gpcf, 'selectedVariables')
+        	x=x(:,gpcf.selectedVariables); 
+        end
+    
         [n,m]=size(x);
         x_aug=[ones(n,1) x];
         
@@ -652,6 +686,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %         See also
     %         GPCF_NEURALNETWORK_COV, GPCF_NEURALNETWORK_COVVEC, GP_COV, GP_TRCOV
         
+    	if isfield(gpcf, 'selectedVariables')
+        	x=x(:,gpcf.selectedVariables); 
+        end
+    
         [n,m]=size(x);
         x_aug=[ones(n,1) x];
         
@@ -731,5 +769,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         elseif ri==1
             reccf.biasSigma2=[];
         end
+        
+        if isfield(gpcf, 'selectedVariables')
+        	reccf.selectedVariables = gpcf.selectedVariables;
+        end
+        
     end
 end
