@@ -3,21 +3,22 @@ function demo_robustRegression
 %
 %
 %       Description
-%       The synthetic data used here  is the same used by Radford M. Neal 
-%       in his regression problem with outliers example in Software for
-%       Flexible Bayesian Modeling (http://www.cs.toronto.edu/~radford/fbm.software.html).
-%       The problem consist of one dimensional input and target variables. The
-%       input data, x, is sampled from standard Gaussian distribution and
-%       the corresponding target values come from a distribution with mean
-%       given by 
+%        The synthetic data used here is the same used by Radford M. Neal in
+%        his regression problem with outliers example in Software for
+%        Flexible Bayesian Modeling
+%        (http://www.cs.toronto.edu/~radford/fbm.software.html). The problem
+%        consist of one dimensional input and target variables. The input
+%        data, x, is sampled from standard Gaussian distribution and the
+%        corresponding target values come from a distribution with mean given
+%        by
 %
 %           f = 0.3 + 0.4x + 0.5sin(2.7x) + 1.1/(1+x^2).
 %
 %       For most of the cases the distribution about this mean is Gaussian
-%       with standard deviation of 0.1, but with probability 0.05 a case is an
-%       outlier for wchich the standard deviation is 1.0. There are total 200
-%       cases from which the first 100 are used for training and the last 100
-%       for testing. 
+%       with standard deviation of 0.1, but with probability 0.05 a case is
+%       an outlier for wchich the standard deviation is 1.0. There are total
+%       200 cases from which the first 100 are used for training and the last
+%       100 for testing.
 %
 %       We use Student-t distribution as an abservation model
 %
@@ -28,16 +29,17 @@ function demo_robustRegression
 %
 %          f ~ N(0, K).
 %
-%       The model can be inferred with MCMC or Laplace approximation. The MCMC 
-%       can be performed either by utilizing the scale mixture representation of
-%       the Student-t distribution or the actual distribution. The scale mixture 
-%       representation is given as in Gelman et.al (2004)
+%       The model can be inferred with MCMC or Laplace approximation. The
+%       MCMC can be performed either by utilizing the scale mixture
+%       representation of the Student-t distribution or the actual
+%       distribution. The scale mixture representation is given as in Gelman
+%       et.al (2004)
 %
 %          y_i ~ N (f_i, a^2*U_i)
 %          U_i ~ Inv-Chi^2 (nu, t^2),
 %
-%       where nu represents the degrees of freedom and a*t = s in the Student-t 
-%       distribution. 
+%       where nu represents the degrees of freedom and a*t = s in the
+%       Student-t distribution.
 %
 %       The demo is organized as follows:
 %
@@ -53,11 +55,12 @@ function demo_robustRegression
 %       See Vanhatalo et.al. for discussion on the model and methods.
 %
 %       Refernces:
-%         Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian process 
-%         regression with Student-t likelihood.  Advances in Neural Information 
+%         Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian process
+%         regression with Student-t likelihood. Advances in Neural
+%         Information
 %
-%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis, second 
-%         edition. Chapman & Hall / CRC.
+%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
+%         second edition. Chapman & Hall / CRC.
 
 % Copyright (c) 2010 Jarno Vanhatalo
 
@@ -209,7 +212,7 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 % ========================================
 % Laplace approximation Student-t likelihood
 %  Here we optimize all the variables 
-%  (lenghtScale, magnSigma, sigma(noise-t) and nu)
+%  (lengthScale, magnSigma2, sigma(noise-t) and nu)
 % ========================================
 
 % load the data. First 100 variables are for training
@@ -328,7 +331,7 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 % ========================================
 % Laplace approximation Student-t likelihood
 %  Here we analyse the model with fixed degrees of freedom
-%   n = 4 
+%   nu = 4 
 %   Notice that the default value for fix_nu = 1, 
 %   which means that degrees of freedom is not sampled/optimized
 % ========================================

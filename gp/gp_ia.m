@@ -31,7 +31,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                    parameter space according to Hessian at the mode. 
 %                    Default is TRUE.
 %       'autoscale'  tells whether automatic scaling is used in CCD and is_*
-%                    Default is FALSE (problems with CCD autoscale...).  
+%                    Default is TRUE.
 %       'threshold'  Threshold for drop of log-density in grid search. 
 %                    Default is 2.5,
 %       'step_size'  Step-size for grid search. Default is 1.
@@ -180,7 +180,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 jitter = jitter + eye(size(H,1))*0.01;
                 Sigma = Sigma + jitter;
             end
-            warning('gp_ia -> singular Hessian. Jitter of %.4f added.', jitter)
+            warning(sprintf('gp_ia -> singular Hessian. Jitter of %.4f added.', jitter))
         end
 
         if ~opt.rotate

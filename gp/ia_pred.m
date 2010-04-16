@@ -3,11 +3,11 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
 %
 %	Description
 %	[Ef, Varf] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) takes a Gaussian 
-%       processes record array RECGP (returned by gp_ia) together with a matrix XT 
-%       of input vectors, matrix X of training inputs and vector Y of training targets. 
-%       Returns the predictive mean and variance, Ef and Varf, for test inputs XT. 
-%
-%
+%        processes record array RECGP (returned by gp_ia) together
+%        with a matrix XT of input vectors, matrix X of training
+%        inputs and vector Y of training targets. Returns the
+%        predictive mean and variance, Ef and Varf, for test inputs
+%        XT.
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 
@@ -22,23 +22,25 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
 %         Some likelihoods may use this. For example, in case of Poisson
 %         likelihood we have z_i=E_i, that is, expected value for ith case. 
 %       
-%       [Ef, Varf, Ey, Vary] = IA_PREDS(GP, X, Y, XT, OPTIONS) returns also the 
-%       predictive means and variances for observations at input locations XT. That is,
+%       [Ef, Varf, Ey, Vary] = IA_PREDS(GP, X, Y, XT, OPTIONS)
+%        returns also the predictive means and variances for
+%        observations at input locations XT. That is,
 %
 %                    Ey(:,i) = E[y | xt, x, y]
 %                  Vary(:,i) = Var[y | xt, x, y]
 %    
 %       [Ef, Varf, Ey, Vary, py] = IA_PREDS(GP, X, Y, XT, 'yt', YT, OPTIONS) 
-%       returns also the predictive density py of test outputs YT, that is py(i) = p(YT_i).
+%        returns also the predictive density py of test outputs YT,
+%        that is py(i) = p(YT_i).
 %
-%       [Ef, Varf, Ey, Vary, py, f, ff] = IA_PREDS(GP, X, Y, XT, OPTIONS) returns also the 
-%       numerical representation of the marginal posterior of latent variables at each XT. f is
-%       a vector of latent values and ff_i = p(f_i) is the posterior density for f_i.
-
+%       [Ef, Varf, Ey, Vary, py, f, ff] = IA_PREDS(GP, X, Y, XT, OPTIONS) 
+%        returns also the numerical representation of the marginal
+%        posterior of latent variables at each XT. f is a vector of
+%        latent values and ff_i = p(f_i) is the posterior density
+%        for f_i.
 %
 %	See also
 %	GP, GP_PAK, GP_UNPAK, GP_PRED
-
         
 % Copyright (c) 2009 Ville Pietiläinen
 % Copyright (c) 2010 Jarno Vanhatalo    
@@ -145,20 +147,17 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
     df = diff(f,1,2);
     df(:,end+1)=df(:,end);
 
-    % Calculate mean and variance of the disrtibutions
+    % Calculate mean and variance of the distributions
     Ef = sum(f.*ff,2)./sum(ff,2);
     Varf = sum(ff.*(repmat(Ef,1,size(f,2))-f).^2,2)./sum(ff,2);
     
     Ey = sum(Ey_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
     Vary = sum(Vary_grid.*repmat(P_TH,1,size(Ey_grid,2)),1) + sum( (Ey_grid - repmat(Ey,nGP,1)).^2, 1);
+    Ey=Ey';
+    Vary=Vary';
     
     if ~isempty(yt)
         py = sum(py_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
         py = py';
     end
     
-    % Take transposes
-    Ef = Ef';
-    Varf = Varf';
-    Ey = Ey';    
-    Vary = Vary';

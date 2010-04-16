@@ -5,8 +5,8 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
 %	[Ef, Varf] = GP_PRED(GP, X, Y, XT, OPTIONS) takes a GP data
 %        structure together with a matrix XT of input vectors, Matrix X of
 %        training inputs and vector Y of training targets, and returns a
-%        vector Ef of predictive expectations and variances of the latent
-%        function
+%        vector Ef of predictive expectations and vector Varf of marginal
+%        variances of the latent function
 %
 %            Ef =  E[f | x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
 %          Varf = Var[f | x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
@@ -43,7 +43,7 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
 %       additive anymore.
 %
 %       For example, if you use covariance such as K = K1 + K2 your
-%       predictions Ef1 = gp_pred(gp, x, y, x, 1) and Ef2 =
+%       predictions Ef1 = GP_PRED(GP, X, Y, X, 1) and Ef2 =
 %       gp_pred(gp, x, y, x, 2) should sum up to Ef = gp_pred(gp,
 %       x, y, x). That is Ef = Ef1 + Ef2. With FULL model this
 %       works but with FIC and PIC this works only approximately. 

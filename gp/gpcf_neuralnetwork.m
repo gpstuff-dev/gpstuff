@@ -10,8 +10,9 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 %	  type           = 'gpcf_neuralnetwork'
 %	  biasSigma2     = Prior variance on the network bias term. 
 %                          (0.1)
-%	  weightSigma2   = Prior variances on the network weights. This can be either scalar corresponding 
-%                          isotropic or vector corresponding ARD. 
+%	  weightSigma2   = Prior variances on the network weights. This can
+%                          be either scalar corresponding isotropic or 
+%                          vector corresponding ARD. 
 %                          (repmat(10, 1, nin))
 %         p              = Prior structure for covariance function parameters. 
 %                          (e.g. p.weightSigma2.)
