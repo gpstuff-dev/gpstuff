@@ -701,6 +701,7 @@ function likelih = likelih_t(do, varargin)
            F3 = @(x) x.^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
            VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
        end
+       Vary = EVary + VarEy;
         
         if nargout > 2
             for i2 = 1:length(Ef)
