@@ -189,7 +189,12 @@ function gp = gp_init(do, varargin)
                       case 'Laplace'
                         gp.laplace_opt.maxiter = 20;
                         gp.laplace_opt.tol = 1e-12;
-                        gp.laplace_opt.optim_method = 'newton';
+                        switch gp.likelih.type
+                          case 'Student-t'
+                            gp.laplace_opt.optim_method = 'likelih_specific';
+                          otherwise
+                            gp.laplace_opt.optim_method = 'newton';
+                        end
                         gp = gpla_e('init', gp, varargin{i+1}{2:end});
                         w = gp_pak(gp);
                         [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
@@ -258,7 +263,12 @@ function gp = gp_init(do, varargin)
                   case 'Laplace'
                     gp.laplace_opt.maxiter = 20;
                     gp.laplace_opt.tol = 1e-12;
-                    gp.laplace_opt.optim_method = 'newton';
+                    switch gp.likelih.type
+                      case 'Student-t'
+                        gp.laplace_opt.optim_method = 'likelih_specific';
+                      otherwise
+                        gp.laplace_opt.optim_method = 'newton';
+                    end
                     gp = gpla_e('init', gp, varargin{i+1}{2:end});
                     w = gp_pak(gp);
                     [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});

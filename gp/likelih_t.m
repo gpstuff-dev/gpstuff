@@ -3,14 +3,16 @@ function likelih = likelih_t(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_T('INIT') Create and initialize Student-t likelihood. 
+%	LIKELIH = LIKELIH_T('INIT') Create and initialize Student-t 
+%        likelihood. 
 %
 %       The likelihood is defined as follows:
-%                            __ n
-%                p(y|f, z) = || i=1 C(nu,s2) * ( 1 + 1/nu * (y_i - f_i)^2/s2 )^(-(nu+1)/2)
+%                    __ n
+%        p(y|f, z) = || i=1 C(nu,s2) * ( 1 + 1/nu * (y_i - f_i)^2/s2 )^(-(nu+1)/2)
 %
-%       where nu is the degrees of freedom, s2 the scale and f_i the latent variable 
-%       defining the mean.  C(nu,s2) is constant depending on nu and s2.
+%       where nu is the degrees of freedom, s2 the scale and f_i
+%       the latent variable defining the mean. C(nu,s2) is constant
+%       depending on nu and s2.
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'Student-t'
@@ -149,7 +151,7 @@ function likelih = likelih_t(do, varargin)
             i1 = 1;
             w(i1) = log(likelih.sigma);
         end
-        if ~isempty(likelih.p.nu)
+        if ~isempty(likelih.p.nu) && ~likelih.fix_nu
             i1 = i1+1;
             w(i1) = log(log(likelih.nu));
         end        
@@ -179,7 +181,7 @@ function likelih = likelih_t(do, varargin)
             i1 = 1;
             likelih.sigma = exp(w(i1));
         end
-        if ~isempty(likelih.p.nu)
+        if ~isempty(likelih.p.nu)  && ~likelih.fix_nu
             i1 = i1+1;
             likelih.nu = exp(exp(w(i1)));
         end
@@ -203,7 +205,7 @@ function likelih = likelih_t(do, varargin)
         if ~isempty(likelih.p.sigma) 
             logPrior = feval(likelih.p.sigma.fh_e, likelih.sigma, likelih.p.sigma) - log(sigma);
         end
-        if ~isempty(likelih.p.nu) 
+        if ~isempty(likelih.p.nu) && ~likelih.fix_nu
             logPrior = logPrior + feval(likelih.p.nu.fh_e, likelih.nu, likelih.p.nu)  - log(v) - log(log(v));
         end
     end
@@ -229,7 +231,7 @@ function likelih = likelih_t(do, varargin)
             i1 = 1;
             glogPrior(i1) = feval(likelih.p.sigma.fh_g, likelih.sigma, likelih.p.sigma).*sigma - 1;
         end
-        if ~isempty(likelih.p.nu) 
+        if ~isempty(likelih.p.nu)  && ~likelih.fix_nu
             i1 = i1+1;
             glogPrior(i1) = feval(likelih.p.nu.fh_g, likelih.nu, likelih.p.nu).*v.*log(v) - log(v) - 1;
         end    
@@ -274,7 +276,7 @@ function likelih = likelih_t(do, varargin)
           case 'hyper'
             n = length(y);
 
-            if likelih.fix_nu == 1
+            if likelih.fix_nu
                 % Derivative with respect to sigma
                 deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 +sigma.*r.^2));
                 
@@ -320,7 +322,7 @@ function likelih = likelih_t(do, varargin)
             % The hessian d^2 /(dfdf)
             g2 =  (v+1).*(r.^2 - v.*sigma.^2) ./ (v.*sigma.^2 + r.^2).^2;
           case 'latent+hyper'
-            if likelih.fix_nu == 1
+            if likelih.fix_nu
                 % gradient d^2 / (dfds), where s is either sigma or nu            
                 g2 = -2.*sigma.*v.*(v+1).*r ./ (v.*sigma.^2 + r.^2).^2;
                 
@@ -362,7 +364,7 @@ function likelih = likelih_t(do, varargin)
             % Return the diagonal of W differentiated with respect to latent values
             third_grad = (v+1).*(2.*r.^3 - 6.*v.*sigma.^2.*r) ./ (v.*sigma.^2 + r.^2).^3;
           case 'latent2+hyper'
-            if likelih.fix_nu == 1
+            if likelih.fix_nu
                 % Return the diagonal of W differentiated with respect to likelihood parameters
                 third_grad = 2.*(v+1).*sigma.*v.*( v.*sigma.^2 - 3.*r.^2) ./ (v.*sigma.^2 + r.^2).^3;
                 third_grad = third_grad.*sigma;
@@ -554,7 +556,7 @@ function likelih = likelih_t(do, varargin)
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         
-        if likelih.fix_nu == 1
+        if likelih.fix_nu
             [g_i(1), fhncnt] = quadgk(zsigma, lambdaconf(1), lambdaconf(2));
             g_i(1) = g_i(1).*likelih.sigma;
         else

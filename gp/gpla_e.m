@@ -791,6 +791,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
             p0=p;
         end
         
+        assert(isreal(edata))
+        assert(isreal(eprior))
+
         %
         % ==============================================================
         % Begin of the nested functions
