@@ -35,8 +35,10 @@ end
 
 sigma0 = 1.0e-4;
 fold = feval(f, x, varargin{:});	% Initial function value.
+assert(isreal(fold)&&all(isfinite(fold)))
 iter = 0;
 gradnew = feval(gradf, x, varargin{:});% Initial gradient.
+assert(isreal(gradnew)&&all(isfinite(gradnew)))
 gradold = gradnew;
 d = - gradnew;				% Initial search direction.
 success = 1;                            % Force calculation of directional derivs.
@@ -69,6 +71,7 @@ while (j <= niters)
     sigma = sigma0/sqrt(kappa);
     xplus = x + sigma*d;
     gplus = feval(gradf, xplus, varargin{:});
+    assert(isreal(gplus)&&all(isfinite(gplus)))
     gamma = (d*(gplus' - gradnew'))/sigma;
   end
 
@@ -83,6 +86,7 @@ while (j <= niters)
   % Calculate the comparison ratio.
   xnew = x + alpha*d;
   fnew = feval(f, xnew, varargin{:});
+  assert(isreal(fnew)&&all(isfinite(fnew)))
   iter = iter + 1;
   Delta = 2*(fnew - fold)/(alpha*mu);
   if (Delta  >= 0)
@@ -119,6 +123,7 @@ while (j <= niters)
       fold = fnew;
       gradold = gradnew;
       gradnew = feval(gradf, x, varargin{:});
+      assert(isreal(gradnew)&&all(isfinite(gradnew)))
       % If the gradient is zero then we are done.
       if (gradnew*gradnew' == 0)
         if (display >= 0)
