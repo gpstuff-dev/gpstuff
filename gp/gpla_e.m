@@ -101,9 +101,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
             n = length(x);
             p = [];
 
-            % Begin optimization from the old f if it is better than the new
-            %if edata0 < 
-            %f = f0;
+            % Initialize latent values
+            % zero seems to be a robust choice (Jarno)
             f = zeros(size(f0));
 
             % =================================================
@@ -206,6 +205,78 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
+                    end
+                    
+                  case 'stabilized-newton'
+                    % Gaussian initialization
+                    %   sigma=gp.likelih.sigma;
+                    %   W = ones(n,1)./sigma.^2;
+                    %   sW = sqrt(W);
+                    %   %B = eye(n) + siV*siV'.*K;
+                    %   L=bsxfun(@times,bsxfun(@times,sW,K),sW');
+                    %   L(1:n+1:end)=L(1:n+1:end)+1;
+                    %   L = chol(L,'lower');
+                    %   a=sW.*(L'\(L\(sW.*y)));
+                    %   f = K*a;
+                    
+                    % initialize to observations
+                    %f=y;
+                    
+                    nu=gp.likelih.nu;
+                    sigma=gp.likelih.sigma;
+                    Wmax=(nu+1)/nu /sigma.^2;
+                    Wlim=0;
+                    
+                    tol = 1e-10;
+                    W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                    dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                    lp = -(f'*(K\f))/2 +feval(gp.likelih.fh_e, gp.likelih, y, f);
+                    lp_old = -Inf;
+                    f_old = f+1;
+                    ge = Inf; %max(abs(a-dlp));
+                    
+                    i1=0;
+                    % begin Newton's iterations
+                    while lp - lp_old > tol || max(abs(f-f_old)) > tol
+                      i1=i1+1;
+                      
+                      W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
+                      dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+                      
+                      W(W<Wlim)=Wlim;
+                      sW = sqrt(W);
+                      L=bsxfun(@times,bsxfun(@times,sW,K),sW');
+                      L(1:n+1:end)=L(1:n+1:end)+1;
+                      L = chol(L);
+                      %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
+                      b = W.*f+dlp;
+                      a = b - sW.*(L\(L'\(sW.*(K*b))));
+                      
+                      f_new = K*a;
+                      lp_new = -(a'*f_new)/2 + feval(gp.likelih.fh_e, gp.likelih, y, f_new);
+                      ge_new=max(abs(a-dlp));
+                      
+                      d=lp_new-lp;
+                      if (d<-1e-6 || (abs(d)<1e-6 && ge_new>ge) )  && Wlim<Wmax*0.5
+                        %fprintf('%3d, p(f)=%.12f, max|a-g|=%.12f, %.3f \n',i1,lp,ge,Wlim)
+                        Wlim=Wlim+Wmax*0.05; %Wmax*0.01
+                      else
+                        Wlim=0;
+                        
+                        ge=ge_new;
+                        lp_old = lp;
+                        lp = lp_new;
+                        f_old = f;
+                        f = f_new;
+                        %fprintf('%3d, p(f)=%.12f, max|a-g|=%.12f, %.3f \n',i1,lp,ge,Wlim)
+                        
+                      end
+                      
+                      if Wlim>Wmax*0.5 || i1>5000
+                        %fprintf('\n%3d, p(f)=%.12f, max|a-g|=%.12f, %.3f \n',i1,lp,ge,Wlim)
+                        break
+                      end
+                      
                     end
                     
                   case 'likelih_specific'

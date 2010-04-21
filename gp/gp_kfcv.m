@@ -1,9 +1,8 @@
-function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_kfcv(gp, x, y, varargin)
+function [criteria, cvpreds, cvws, trpreds, trw] = gp_kfcv(gp, x, y, varargin)
 %GP_KFCV        K-fold cross validation for GP model
 %
 %	Description
-%	[mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = 
-%                gp_kfcv(gp, x, y, OPTIONS)
+%	[criteria, cvpreds, cvws, trpreds, trw] = gp_kfcv(gp, x, y, OPTIONS)
 %
 %       Perform K-fold cross validation for GP model.
 %
@@ -13,115 +12,156 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
 %         y            - outputs
 %
 %       OPTIONS is optional parameter-value pair
-%          'z'          - optional observed quantity in triplet (x_i,y_i,z_i)
+%         'z'          - optional observed quantity in triplet (x_i,y_i,z_i)
 %                         Some likelihoods may use this. For example, Poisson
-%         'inf_method'  - inference method. Possible methods are
+%         'inf_method' - inference method. Possible methods are
 %                         'MAP_scg2'     hyperparameter optimization with SCG
 %                         'MAP_fminunc'  hyperparameter optimization with fminunc
 %                         'MCMC'         MCMC sampling using gp_mc
 %                         'IA'           integration approximation using gp_ia
 %                         The default is 'MAP_scg2'
-%         'opt'         - options for the inference method
-%         'trindex'     - k-fold CV training indices. A cell array with k fields each 
-%                         containing index vector for respective training set. 
-%                         By default gp_kfcv constructs 10-fold CV indices.
-%         'tstindex'    - k-fold CV test indices. A cell array with k fields each 
-%                         containing index vector for respective test set. 
-%                         By default gp_kfcv constructs 10-fold CV indices.
-%         'SAVE'        - defines if results are stored (1) or not (0). By default 1.
-%                         If SAVE==1 gp_kfcv stores the results in the current working 
-%                         directory (or in 'folder', see next option) into a cv_resultsX
-%                         folder, where X is a number. If there is already cv_results* 
-%                         folders X is the smallest number not in use yet.
-%         'folder'      - defines the folder where to save the results. By default the 
-%                         current working directory.
+%         'opt'        - options for the inference method
+%         'k'          - number of folds in CV  
+%         'rstream'    - number of a random stream to be used for
+%                        perumuting the data befor divison. This way same 
+%                        permutation can be obtained for different models.
+%         'trindex'    - k-fold CV training indices. A cell array with k 
+%                        fields each containing index vector for respective 
+%                        training set. 
+%         'tstindex'   - k-fold CV test indices. A cell array with k fields 
+%                        each containing index vector for
+%                        respective test set. 
+%         'save'       - defines if results are stored 'false' or 'true'. 
+%                        By default false. If 'true' gp_kfcv stores
+%                        the results in the current working
+%                        directory (or in 'folder', see next
+%                        option) into a cv_resultsX folder, where
+%                        X is a number. If there is already
+%                        cv_results* folders X is the smallest
+%                        number not in use yet.
+%         'folder'     - defines the folder where to save the results. 
+%                        By default the current working directory.
 %
 %       The output arguments are the following
-%         mlpd_cv          - mean log predictive density
-%         Var_lpd_cv       - variance estimate for mlpd
-%         rmse_cv          - root mean squared error
-%         Var_rmse_cv      - variance estimate for mrmse
-%         mabs_cv          - mean absolute error
-%         Var_abs_cv       - variance estimate for mabs
+%         criteria     - structure including following fields
+%                         mlpd_cv     - mean log predictive density
+%                         Var_lpd_cv  - variance estimate for mlpd
+%                         rmse_cv     - root mean squared error
+%                         Var_rmse_cv - variance estimate for mrmse
+%                         mabs_cv     - mean absolute error
+%                         Var_abs_cv  - variance estimate for mabs
+%         cvpreds       - CV predictions structure including same fields 
+%                         as trpreds
+%         trpreds       - training predictionsstructure including 
+%                         following fields
+%                         Ef
+%                         Varf
+%                         Ey
+%                         Vary
+%                         py
+%         cvws          - hyperparameter weight vectors for each CV fold
+%         trw           - hyperparameter weight vector for training data
 %
-%
-%       The K-fold cross validation is performed as follows. The data is divided into 
-%       k groups D_k. For each group we evaluate the test statistics 
+%       The K-fold cross validation is performed as follows. The
+%       data is divided into k groups D_k. For each group we
+%       evaluate the test statistics
 %
 %            u(D_k | D_{k-1})
 % 
-%       where u is the utility function and D_{k-1} is the data in the k-1 groups other 
-%       than k. The utility functions provided by gp_kfcv are
+%       where u is the utility function and D_{k-1} is the data in
+%       the k-1 groups other than k. The utility functions provided
+%       by gp_kfcv are
 %
-%            lpd(D_k | D_{k-1})  = mean( log( p( y_k|D_{k-1} ) ) )       (log predictive density)
-%            rmse(D_k | D_{k-1}) = mean( ( E[y_k|D_{k-1}] - y_k ).^2 )   (squared error)
-%            abs(D_k | D_{k-1})  = mean( abs( E[y_k|D_{k-1}] - y_k ) )   (absolute error)
+%        log predictive density  
+%            lpd(D_k | D_{k-1})  = mean( log( p( y_k|D_{k-1} ) ) )
+%        squared error  
+%            rmse(D_k | D_{k-1}) = mean( ( E[y_k|D_{k-1}] - y_k ).^2 )
+%        absolute error  
+%            abs(D_k | D_{k-1})  = mean( abs( E[y_k|D_{k-1}] - y_k ) )
 %
-%       After the utility is evaluated for each group we can evaluate the output arguments 
-%       which are obtained as follows
+%       After the utility is evaluated for each group we can
+%       evaluate the output arguments which are obtained as follows
 %    
-%            mlpd_cv  = mean( lpd(D_k | D_{k-1}) )          ,k=1...K  (mean log predictive density)
-%            mrmse_cv = sqrt( mean( rmse(D_k | D_{k-1}) ) ) ,k=1...K  (root mean squared error)
-%            mabs_cv  = mean( abs(D_k | D_{k-1}) )          ,k=1...K  (mean absolute error)
+%        mean log predictive density  
+%            mlpd_cv  = mean( lpd(D_k | D_{k-1}) )          ,k=1...K
+%        root mean squared error  
+%            mrmse_cv = sqrt( mean( rmse(D_k | D_{k-1}) ) ) ,k=1...K
+%        mean absolute error
+%            mabs_cv  = mean( abs(D_k | D_{k-1}) )          ,k=1...K
 %    
-%       The variance estimates for the above statistics are evaluated across the 
-%       groups K. For mean log predictive density and mean absolute error this reduces 
-%       to evaluate, for example, 
+%       The variance estimates for the above statistics are
+%       evaluated across the groups K. For mean log predictive
+%       density and mean absolute error this reduces to evaluate,
+%       for example,
 %
 %            Var_lpd_cv = var( lpd(D_k | D_{k-1}) ) / K,    k=1...K.
 %
-%       For root mean squared error we need to take first the square root of 
-%       each group statistics to obtain
+%       For root mean squared error we need to take first the
+%       square root of each group statistics to obtain
 %
 %            Var_rmse_cv = var( sqrt( rmse(D_k | D_{k-1}) ) ) / K,    k=1...K.
 %   
-%       The above statistics are returned by the funtion. However, if we use the save option 
-%       we obtain little more test statistics which are only saved in the result file. These 
-%       extra statistics include, for example, bias corrected expected utilities
-%       (Vehtari and Lampinen. 2002), and the training utility for whole data and each cross
-%       validation training set. The detailed list of variables saved in the result file is:
+%       The above statistics are returned by the funtion. However,
+%       if we use the save option we obtain little more test
+%       statistics which are only saved in the result file. These
+%       extra statistics include, for example, bias corrected
+%       expected utilities (Vehtari and Lampinen. 2002), and the
+%       training utility for whole data and each cross validation
+%       training set. The detailed list of variables saved in the
+%       result file is:
 %
 %
-%                For more information see the file cv_results.mat, which contains
-%                the following variables
+%                For more information see the file cv_results.mat,
+%                which contains the following variables
 %                lpd_cv      = log predictive density (nx1 vector)
 %                rmse_cv     = squared error (nx1 vector)
 %                abs_cv      = absolute error (nx1 vector)
 %                mlpd_cv     = mean log predictive density (a scalar summary)
 %                mrmse_cv    = root mean squared error (a scalar summary)
 %                mabs_cv     = mean absolute error (a scalar summary)
-%                Var_lpd_cv  = variance of mean log predictive density (a scalar summary)
-%                Var_rmse_cv = variance of the root mean squared error (a scalar summary)
-%                Var_abs_cv  = variance of the mean absolute error (a scalar summary)
+%                Var_lpd_cv  = variance of mean log predictive density
+%                              (a scalar summary)
+%                Var_rmse_cv = variance of the root mean squared error 
+%                              (a scalar summary)
+%                Var_abs_cv  = variance of the mean absolute error 
+%                              (a scalar summary)
 %                trindex     = training indeces
 %                tstindex    = test indeces
-%                lpd_cvtr    = mean log predictive density for each of k cv trainng sets (kx1 vector)
-%                rmse_cvtr   = root mean squared error for each of k cv trainng sets (kx1 vector)
-%                abs_cvtr    = absolute error for each of k cv training sets (kx1 vector)
-%                lpd_tr      = log predictive density for the full trainng set
-%                rmse_tr     = root mean squared error for the full trainng set
+%                lpd_cvtr    = mean log predictive density for each of 
+%                              k-CV trainng sets (kx1 vector)
+%                rmse_cvtr   = root mean squared error for each of 
+%                              k-CV trainng sets (kx1 vector)
+%                abs_cvtr    = absolute error for each of 
+%                              k-CV training sets (kx1 vector)
+%                lpd_tr      = log predictive density for the 
+%                              full training set
+%                rmse_tr     = root mean squared error for the 
+%                              full training set
 %                abs_tr      = absolute error for the full trainng set
-%                lpd_ccv     = log predictive density with corrected cross validation
-%                rmse_ccv    = root mean squared error with corrected cross validation
-%                abs_ccv     = absolute error with corrected cross validation
-%                cpu_time    = The cpu time used for inferring the full data set
+%                lpd_ccv     = log predictive density with corrected k-CV
+%                rmse_ccv    = root mean squared error with corrected k-CV
+%                abs_ccv     = absolute error with corrected k-CV
+%                cpu_time    = The cpu time used for inferring the full 
+%                              data set
 %    
 %  
 %	See also
 %	     demo_modelassesment1, gp_peff, gp_dic
 %   
 %       References: 
-%         Spiegelhalter, Best, Carlin and van der Linde (2002). Bayesian measures
-%         of model complexity and fit. J. R. Statist. Soc. B, 64, 583-639.
+%         Spiegelhalter, Best, Carlin and van der Linde (2002). 
+%         Bayesian measures of model complexity and fit. J. R. 
+%         Statist. Soc. B, 64, 583-639.
 %         
-%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis, second 
-%         edition. Chapman & Hall / CRC.
+%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data
+%         Analysis, second edition. Chapman & Hall / CRC.
 %
-%         Aki Vehtari and Jouko Lampinen. Bayesian model assessment and comparison 
-%         using crossvalidation predictive densities. Neural Computation, 
-%         14(10):2439-2468, 2002.
+%         Aki Vehtari and Jouko Lampinen. Bayesian model assessment
+%         and comparison using crossvalidation predictive
+%         densities. Neural Computation, 14(10):2439-2468, 2002.
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -134,21 +174,24 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('inf_method', 'MAP_scg2', @(x) ~isempty(strfind(x, 'MAP_scg2')) ...
-                     || ~isempty(strfind(x, 'MAP_fminunc')) || ~isempty(strfind(x, 'MCMC'))...
-                     || ~isempty(strfind(x, 'IA')))
+    ip.addParamValue('inf_method', 'MAP_scg2', @(x) ...
+                     ismember(x,{'MAP_scg2' 'MAP_fminunc' 'MCMC' 'IA'}))
     ip.addParamValue('opt', scg2_opt)
+    ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
+    ip.addParamValue('rstream', round(rem(now,1e-3)*1e9), @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))    
     ip.addParamValue('tstindex', [], @(x) ~isempty(x) || iscell(x))
-    ip.addParamValue('SAVE', 1, @(x) x==1 || x==0)
+    ip.addParamValue('save', false, @(x) islogical(x))
     ip.addParamValue('folder', [], @(x) exist(x)==7 )
     ip.parse(gp, x, y, varargin{:});
     z=ip.Results.z;
     inf_method=ip.Results.inf_method;
     opt=ip.Results.opt;
+    k=ip.Results.k;
+    rstream=ip.Results.rstream;
     trindex=ip.Results.trindex;
     tstindex=ip.Results.tstindex;
-    SAVE=ip.Results.SAVE;
+    save=ip.Results.save;
     folder = ip.Results.folder;
     
     
@@ -161,7 +204,7 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
     end
     
     if isempty(trindex) || isempty(tstindex)
-        [trindex, tstindex] = cvitr(n, 10);
+        [trindex, tstindex] = cvit(n, k, rstream);
     end
     
     if isempty(folder)
@@ -201,6 +244,9 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
             fp=str2fun('ia_pred');
         end
     end
+    
+    cvws=[];
+    trw=[];
     
     % loop over the crossvalidation sets
     for i=1:length(trindex)
@@ -267,11 +313,13 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
             w=gp_pak(gp);
             w = scg2(fe, w, opt, fg, gp, xtr, ytr, options_tr);
             gp=gp_unpak(gp,w);
+            cvws(i,:)=w;
           case 'MAP_fminunc'
             w=gp_pak(gp);
             mydeal = @(varargin)varargin{1:nargout};
-            w = fminunc(@(ww) mydeal(fe(ww, gp, xtr, ytr, options_tr), fg(ww, gp, xtr, ytr, options_tr)), w0, opt);
+            w = fminunc(@(ww) mydeal(fe(ww, gp, xtr, ytr, options_tr), fg(ww, gp, xtr, ytr, options_tr)), w, opt);
             gp=gp_unpak(gp,w);
+            cvws(i,:)=w;
           case 'MCMC'
             gp = gp_mc(opt, gp, xtr, ytr, options_tr);
           case 'IA'
@@ -280,6 +328,11 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
             
         % make the prediction
         [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
+        cvpreds.Ef(tstindex{i},:)=Ef(tstindex{i},:);
+        cvpreds.Varf(tstindex{i},:)=Varf(tstindex{i},:);
+        cvpreds.Ey(tstindex{i},:)=Ey(tstindex{i},:);
+        cvpreds.Vary(tstindex{i},:)=Vary(tstindex{i},:);
+        cvpreds.py(tstindex{i},:)=py(tstindex{i},:);
                 
         % Evaluate statistics
         lpd_cv(tstindex{i}) = log(mean(py(tstindex{i},:),2));
@@ -304,8 +357,15 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
     Var_rmse_cv = var(rmse_cvm)./length(trindex);
     Var_abs_cv = var(abs_cvm)./length(trindex);
     
-    % save results
-    if SAVE == 1
+    criteria.mlpd_cv=mlpd_cv;
+    criteria.Var_lpd_cv=Var_lpd_cv;
+    criteria.mrmse_cv=mrmse_cv;
+    criteria.Var_rmse_cv=Var_rmse_cv;
+    criteria.mabs_cv=mabs_cv;
+    criteria.Var_abs_cv=Var_abs_cv;
+        
+    if save || nargout >=4
+    % compute full training result
         
         switch gp.type
           case 'FULL'
@@ -324,7 +384,6 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
             options_tr = struct();
             options_tst.yt = y;
         end
-
         
         % Evaluate the training utility
         fprintf('\n Evaluating the training utility \n')
@@ -337,11 +396,13 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
             w=gp_pak(gp);
             w = scg2(fe, w, opt, fg, gp, x, y, options_tr);
             gp=gp_unpak(gp,w);
+            trw=w;
           case 'MAP_fminunc'
             w=gp_pak(gp);
             mydeal = @(varargin)varargin{1:nargout};
-            w = fminunc(@(ww) mydeal(fe(ww, gp, x, y, options_tr), fg(ww, gp, x, y, options_tr)), w0, opt);
+            w = fminunc(@(ww) mydeal(fe(ww, gp, x, y, options_tr), fg(ww, gp, x, y, options_tr)), w, opt);
             gp=gp_unpak(gp,w);
+            trw=w;
           case 'MCMC'
             gp = gp_mc(opt, gp, xtr, ytr, options_tr);
           case 'IA'
@@ -351,15 +412,25 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         
         % make the prediction
         [Ef, Varf, Ey, Vary, py] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
-                
-        lpd_tr(i) = mean(log(mean(py,2)));
-        rmse_tr(i) = sqrt(mean((mean(Ey,2) - y).^2));
-        abs_tr(i) = mean(abs(mean(Ey,2) - y));
+        trpreds.Ef=Ef;
+        trpreds.Varf=Varf;
+        trpreds.Ey=Ey;
+        trpreds.Vary=Vary;
+        trpreds.py=py;
         
-        lpd_ccv =  mlpd_cv +  mean(lpd_tr) -  mean(lpd_cvtr);
-        rmse_ccv =  mrmse_cv +  mean(rmse_tr) -  mean(rmse_cvtr);
-        abs_ccv =  mabs_cv +  mean(abs_tr) -  mean(abs_cvtr);
+        lpd_tr = mean(log(mean(py,2)));
+        rmse_tr = sqrt(mean((mean(Ey,2) - y).^2));
+        abs_tr = mean(abs(mean(Ey,2) - y));
         
+        mlpd_ccv =  mlpd_cv +  mean(lpd_tr) -  mean(lpd_cvtr);
+        mrmse_ccv =  mrmse_cv +  mean(rmse_tr) -  mean(rmse_cvtr);
+        mabs_ccv =  mabs_cv +  mean(abs_tr) -  mean(abs_cvtr);
+        
+        criteria.mlpd_ccv=mlpd_ccv;
+        criteria.rmse_ccv=mrmse_ccv;
+        criteria.mabs_ccv=mabs_ccv;
+    end
+    if save
         % Save the results
         if isempty(folder)
             succes = 1;
@@ -402,9 +473,9 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         fprintf(f,'Var_abs_cv  = variance of the mean absolute error (a scalar summary) \n'); 
         fprintf(f,'trindex     = training indeces \n'); 
         fprintf(f,'tstindex    = test indeces \n'); 
-        fprintf(f,'lpd_cvtr    = mean log predictive density for each of k cv trainng sets (kx1 vector) \n'); 
-        fprintf(f,'rmse_cvtr   = root mean squared error for each of k cv trainng sets (kx1 vector) \n'); 
-        fprintf(f,'abs_cvtr    = absolute error for each of k cv training sets (kx1 vector) \n'); 
+        fprintf(f,'lpd_cvtr    = mean log predictive density for each of k-CV trainng sets (kx1 vector) \n'); 
+        fprintf(f,'rmse_cvtr   = root mean squared error for each of k-CV trainng sets (kx1 vector) \n'); 
+        fprintf(f,'abs_cvtr    = absolute error for each of k-CV training sets (kx1 vector) \n'); 
         fprintf(f,'lpd_tr      = log predictive density for the full trainng set  \n'); 
         fprintf(f,'rmse_tr     = root mean squared error for the full trainng set  \n'); 
         fprintf(f,'abs_tr      = absolute error for the full trainng set  \n'); 
@@ -415,4 +486,3 @@ function [mlpd_cv, Var_lpd_cv, mrmse_cv, Var_rmse_cv, mabs_cv, Var_abs_cv] = gp_
         fclose(f);
     end          
 end
-

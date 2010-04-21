@@ -905,4 +905,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         
     end
     
+    assert(isreal(gdata))
+    assert(isreal(gprior))
 end
