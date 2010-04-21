@@ -223,8 +223,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     %f=y;
                     
                     nu=gp.likelih.nu;
-                    sigma=gp.likelih.sigma;
-                    Wmax=(nu+1)/nu /sigma.^2;
+                    sigma2=gp.likelih.sigma2;
+                    Wmax=(nu+1)/nu/sigma2;
                     Wlim=0;
                     
                     tol = 1e-10;

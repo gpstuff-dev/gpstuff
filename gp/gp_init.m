@@ -191,7 +191,8 @@ function gp = gp_init(do, varargin)
                         gp.laplace_opt.tol = 1e-12;
                         switch gp.likelih.type
                           case 'Student-t'
-                            gp.laplace_opt.optim_method = 'likelih_specific';
+                            gp.laplace_opt.optim_method = 'stabilized-newton'; 
+                            %gp.laplace_opt.optim_method = 'likelih_specific'; % slower than stabilized-newton
                           otherwise
                             gp.laplace_opt.optim_method = 'newton';
                         end
@@ -265,7 +266,8 @@ function gp = gp_init(do, varargin)
                     gp.laplace_opt.tol = 1e-12;
                     switch gp.likelih.type
                       case 'Student-t'
-                        gp.laplace_opt.optim_method = 'likelih_specific';
+                        gp.laplace_opt.optim_method = 'stabilized-newton'; 
+                        %gp.laplace_opt.optim_method = 'likelih_specific'; % slower than stabilized-newton
                       otherwise
                         gp.laplace_opt.optim_method = 'newton';
                     end
