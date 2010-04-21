@@ -17,7 +17,7 @@ function likelih = likelih_t(do, varargin)
 %	The fields in LIKELIH are:
 %	  type                     = 'Student-t'
 %         likelih.nu               = nu;
-%         likelih.sigma            = sigma;
+%         likelih.sigma2           = sigma2;
 %         likelih.fix_nu           = 1 for keeping nu fixed, 0 for inferring it (1)
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
@@ -35,9 +35,9 @@ function likelih = likelih_t(do, varargin)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. The fields that 
 %       can be modified are:
 %
-%             'sigma'              : set the sigma
+%             'sigma2'             : set the sigma2
 %             'nu'                 : set the degrees of freedom
-%             'sigma_prior'        : set the prior structure for sigma
+%             'sigma2_prior'       : set the prior structure for sigma2
 %             'nu_prior'           : set the prior structure for nu
 %
 %	See also
@@ -61,11 +61,11 @@ function likelih = likelih_t(do, varargin)
         
         % Set parameters
         likelih.nu = 4;
-        likelih.sigma = 1;
+        likelih.sigma2 = 1;
         likelih.fix_nu = 1;
         
         % Initialize prior structure
-        likelih.p.sigma = prior_logunif('init');
+        likelih.p.sigma2 = prior_logunif('init');
         likelih.p.nu = prior_logunif('init');
         
         % Set the function handles to the nested functions
@@ -93,12 +93,12 @@ function likelih = likelih_t(do, varargin)
                 switch varargin{i}
                   case 'nu'
                     likelih.nu = varargin{i+1};
-                  case 'sigma'
-                    likelih.sigma = varargin{i+1};
+                  case 'sigma2'
+                    likelih.sigma2 = varargin{i+1};
                   case 'fix_nu'
                     likelih.fix_nu = varargin{i+1};
-                  case 'sigma_prior'
-                    likelih.p.sigma = varargin{i+1}; 
+                  case 'sigma2_prior'
+                    likelih.p.sigma2 = varargin{i+1}; 
                   case 'nu_prior'
                     likelih.p.nu = varargin{i+1}; 
                   otherwise
@@ -119,12 +119,12 @@ function likelih = likelih_t(do, varargin)
             switch varargin{i}
               case 'nu'
                 likelih.nu = varargin{i+1};
-              case 'sigma'
-                likelih.sigma = varargin{i+1};
+              case 'sigma2'
+                likelih.sigma2 = varargin{i+1};
               case 'fix_nu'
                 likelih.fix_nu = varargin{i+1};
-              case 'sigma_prior'
-                likelih.p.sigma = varargin{i+1}; 
+              case 'sigma2_prior'
+                likelih.p.sigma2 = varargin{i+1}; 
               case 'nu_prior'
                 likelih.p.nu = varargin{i+1}; 
               otherwise
@@ -147,9 +147,9 @@ function likelih = likelih_t(do, varargin)
         
         w = [];
         i1 = 0;
-        if ~isempty(likelih.p.sigma)
+        if ~isempty(likelih.p.sigma2)
             i1 = 1;
-            w(i1) = log(likelih.sigma);
+            w(i1) = log(likelih.sigma2);
         end
         if ~isempty(likelih.p.nu) && ~likelih.fix_nu
             i1 = i1+1;
@@ -177,9 +177,9 @@ function likelih = likelih_t(do, varargin)
     %	LIKELIH_T_PAK    
 
         i1 = 0;
-        if ~isempty(likelih.p.sigma)
+        if ~isempty(likelih.p.sigma2)
             i1 = 1;
-            likelih.sigma = exp(w(i1));
+            likelih.sigma2 = exp(w(i1));
         end
         if ~isempty(likelih.p.nu)  && ~likelih.fix_nu
             i1 = i1+1;
@@ -199,11 +199,11 @@ function likelih = likelih_t(do, varargin)
     %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
         
         v = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
         logPrior = 0;
         
-        if ~isempty(likelih.p.sigma) 
-            logPrior = feval(likelih.p.sigma.fh_e, likelih.sigma, likelih.p.sigma) - log(sigma);
+        if ~isempty(likelih.p.sigma2) 
+            logPrior = logPrior + feval(likelih.p.sigma2.fh_e, likelih.sigma2, likelih.p.sigma2) -log(sigma2);
         end
         if ~isempty(likelih.p.nu) && ~likelih.fix_nu
             logPrior = logPrior + feval(likelih.p.nu.fh_e, likelih.nu, likelih.p.nu)  - log(v) - log(log(v));
@@ -223,13 +223,13 @@ function likelih = likelih_t(do, varargin)
     % Evaluate the gradients of log(prior)
 
         v = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
         glogPrior = [];
         i1 = 0;
         
-        if ~isempty(likelih.p.sigma) 
-            i1 = 1;
-            glogPrior(i1) = feval(likelih.p.sigma.fh_g, likelih.sigma, likelih.p.sigma).*sigma - 1;
+        if ~isempty(likelih.p.sigma2) 
+            i1 = i1+1;
+            glogPrior(i1) = feval(likelih.p.sigma2.fh_g, likelih.sigma2, likelih.p.sigma2).*sigma2 - 1;
         end
         if ~isempty(likelih.p.nu)  && ~likelih.fix_nu
             i1 = i1+1;
@@ -249,10 +249,10 @@ function likelih = likelih_t(do, varargin)
 
         r = y-f;
         v = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
 
-        term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi)/2 - log(sigma);
-        logLikelih = term + log(1 + ((r./sigma).^2)./v) .* (-(v+1)/2);
+        term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi.*sigma2)/2;
+        logLikelih = term + log(1 + (r.^2)./v./sigma2) .* (-(v+1)/2);
         logLikelih = sum(logLikelih);
     end
 
@@ -270,29 +270,26 @@ function likelih = likelih_t(do, varargin)
         
         r = y-f;
         v = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
         
         switch param
           case 'hyper'
             n = length(y);
 
-            if likelih.fix_nu
-                % Derivative with respect to sigma
-                deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 +sigma.*r.^2));
+                % Derivative with respect to sigma2
+                deriv(1) = -n./sigma2/2 + (v+1)./2.*sum(r.^2./(v.*sigma2.^2+r.^2*sigma2));
                 
                 % correction for the log transformation
-                deriv(1) = deriv(1).*sigma;
-            else
-                % Derivative with respect to sigma
-                deriv(1) = - n./sigma + (v+1).*sum(r.^2./(v.*sigma.^3 + sigma.*r.^2));
-                deriv(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma.^2)) + (v+1).*r.^2./((v.*sigma).^2 + v.*r.^2));
+                deriv(1) = deriv(1).*sigma2;
+            if ~likelih.fix_nu
+                % Derivative with respect to nu
+                deriv(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma2)) + (v+1).*r.^2./(v.^2.*sigma2 + v.*r.^2));
                 
                 % correction for the log transformation
-                deriv(1) = deriv(1).*sigma;
                 deriv(2) = deriv(2).*v.*log(v);
             end
           case 'latent'
-            deriv  = (v+1).*r ./ (v.*sigma.^2 + r.^2);            
+            deriv  = (v+1).*r ./ (v.*sigma2 + r.^2);            
         end
         
     end
@@ -313,29 +310,25 @@ function likelih = likelih_t(do, varargin)
 
         r = y-f;
         v = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
 
         switch param
           case 'hyper'
             
           case 'latent'
-            % The hessian d^2 /(dfdf)
-            g2 =  (v+1).*(r.^2 - v.*sigma.^2) ./ (v.*sigma.^2 + r.^2).^2;
+            % The Hessian d^2 /(dfdf)
+            g2 =  (v+1).*(r.^2 - v.*sigma2) ./ (v.*sigma2 + r.^2).^2;
           case 'latent+hyper'
-            if likelih.fix_nu
-                % gradient d^2 / (dfds), where s is either sigma or nu            
-                g2 = -2.*sigma.*v.*(v+1).*r ./ (v.*sigma.^2 + r.^2).^2;
+            % gradient d^2 / (dfds2)
+            g2 = -v.*(v+1).*r ./ (v.*sigma2 + r.^2).^2;
                 
-                % Correction for the log transformation
-                g2 = g2.*sigma;
-            else
-                % gradient d^2 / (dfds), where s is either sigma or nu
-                
-                g2(:,1) = -2.*sigma.*v.*(v+1).*r ./ (v.*sigma.^2 + r.^2).^2;
-                g2(:,2) = r./(v.*sigma.^2 + r.^2) - sigma.^2.*(v+1).*r./(v.*sigma.^2 + r.^2).^2;
+            % Correction for the log transformation
+            g2 = g2.*sigma2;
+            if ~likelih.fix_nu
+                % gradient d^2 / (dfdnu)
+                g2(:,2) = r./(v.*sigma2 + r.^2) - sigma2.*(v+1).*r./(v.*sigma2 + r.^2).^2;
 
                 % Correction for the log transformation
-                g2(:,1) = g2(:,1).*sigma;
                 g2(:,2) = g2(:,2).*v.*log(v);
             end
         end
@@ -355,25 +348,22 @@ function likelih = likelih_t(do, varargin)
 
         r = y-f;
         v = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
         
         switch param
           case 'hyper'
             
           case 'latent'
-            % Return the diagonal of W differentiated with respect to latent values
-            third_grad = (v+1).*(2.*r.^3 - 6.*v.*sigma.^2.*r) ./ (v.*sigma.^2 + r.^2).^3;
+            % Return the diagonal of W differentiated with respect to latent values / dfdfdf
+            third_grad = (v+1).*(2.*r.^3 - 6.*v.*sigma2.*r) ./ (v.*sigma2 + r.^2).^3;
           case 'latent2+hyper'
-            if likelih.fix_nu
-                % Return the diagonal of W differentiated with respect to likelihood parameters
-                third_grad = 2.*(v+1).*sigma.*v.*( v.*sigma.^2 - 3.*r.^2) ./ (v.*sigma.^2 + r.^2).^3;
-                third_grad = third_grad.*sigma;
-            else
-                third_grad(:,1) = 2.*(v+1).*sigma.*v.*( v.*sigma.^2 - 3.*r.^2) ./ (v.*sigma.^2 + r.^2).^3;
-                third_grad(:,1) = third_grad(:,1).*sigma;
-                
-                third_grad(:,2) = (r.^2-2.*v.*sigma.^2-sigma.^2)./(v.*sigma.^2 + r.^2).^2 - 2.*sigma.^2.*(r.^2-v.*sigma.^2).*(v+1)./(v.*sigma.^2 + r.^2).^3;
-                third_grad(:,2) = third_grad(:,2).*v.*log(v);
+            % Return the diagonal of W differentiated with respect to likelihood parameters / dfdfds2
+            third_grad = (v+1).*v.*( v.*sigma2 - 3.*r.^2) ./ (v.*sigma2 + r.^2).^3;
+            third_grad = third_grad.*sigma2;
+            if ~likelih.fix_nu
+              % dfdfdnu
+              third_grad(:,2) = (r.^2-2.*v.*sigma2-sigma2)./(v.*sigma2 + r.^2).^2 - 2.*sigma2.*(r.^2-v.*sigma2).*(v+1)./(v.*sigma2 + r.^2).^3;
+              third_grad(:,2) = third_grad(:,2).*v.*log(v);
             end
         end
     end
@@ -399,7 +389,7 @@ function likelih = likelih_t(do, varargin)
         tol = 1e-8;
         yy = y(i1);
         nu = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
                 
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
@@ -467,22 +457,22 @@ function likelih = likelih_t(do, varargin)
         
         function integrand = zeroth_moment(f)
             r = yy-f;
-            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi)/2 - log(sigma);
-            integrand = exp(term + log(1 + ((r./sigma).^2)./nu) .* (-(nu+1)/2));
+            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+            integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
             integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
         end
         
         function integrand = first_moment(f)
             r = yy-f;
-            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi)/2 - log(sigma);
-            integrand = exp(term + log(1 + ((r./sigma).^2)./nu) .* (-(nu+1)/2));
+            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+            integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
             integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
             integrand = f.*integrand./m_0; %
         end
         function integrand = second_moment(f)
             r = yy-f;
-            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi)/2 - log(sigma);
-            integrand = exp(term + log(1 + ((r./sigma).^2)./nu) .* (-(nu+1)/2));
+            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma)/2;
+            integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
             integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
             integrand = (f-m_1).^2.*integrand./m_0; %
         end
@@ -496,12 +486,12 @@ function likelih = likelih_t(do, varargin)
 
         zm = @zeroth_moment;
         znu = @deriv_nu;
-        zsigma = @deriv_sigma;
+        zsigma2 = @deriv_sigma2;
         
         tol = 1e-8;
         yy = y(i1);
         nu = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
 
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
@@ -557,11 +547,11 @@ function likelih = likelih_t(do, varargin)
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         
         if likelih.fix_nu
-            [g_i(1), fhncnt] = quadgk(zsigma, lambdaconf(1), lambdaconf(2));
-            g_i(1) = g_i(1).*likelih.sigma;
+            [g_i(1), fhncnt] = quadgk(zsigma2, lambdaconf(1), lambdaconf(2));
+            g_i(1) = g_i(1).*likelih.sigma2;
         else
-            [g_i(1), fhncnt] = quadgk(zsigma, lambdaconf(1), lambdaconf(2));
-            g_i(1) = g_i(1).*likelih.sigma;
+            [g_i(1), fhncnt] = quadgk(zsigma2, lambdaconf(1), lambdaconf(2));
+            g_i(1) = g_i(1).*likelih.sigma2;
             [g_i(2), fhncnt] = quadgk(znu, lambdaconf(1), lambdaconf(2));
             g_i(2) = g_i(2).*likelih.nu.*log(likelih.nu);
         end
@@ -578,14 +568,14 @@ function likelih = likelih_t(do, varargin)
         
         function integrand = deriv_nu(f)
             r = yy-f;
-            temp = 1 + (r/sigma).^2./nu;
-            g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./(nu.*sigma)).^2;            
+            temp = 1 + r^2./nu./sigma2;
+            g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;            
             integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
         
-        function integrand = deriv_sigma(f)
+        function integrand = deriv_sigma2(f)
             r = yy-f;
-            g  =-1/sigma + (nu+1).*r.^2./(nu.*sigma.^3 + sigma.* r.^2);            
+            g  =-1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2+r.^2.*sigma2);
             integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
 
@@ -593,14 +583,14 @@ function likelih = likelih_t(do, varargin)
 
     function [f, a] = likelih_t_optimizef(gp, y, K, Lav, K_fu)
         iter = 1;
-        sigma = gp.likelih.sigma;
+        sigma2 = gp.likelih.sigma2;
         nu = gp.likelih.nu;
         n = length(y);
 
         
         switch gp.type
           case 'FULL'            
-            iV = ones(n,1)./sigma.^2;
+            iV = ones(n,1)./sigma2;
             siV = sqrt(iV);
             B = eye(n) + siV*siV'.*K;
             L = chol(B)';
@@ -609,7 +599,7 @@ function likelih = likelih_t(do, varargin)
             f = K*a;
             while iter < 200
                 fold = f;               
-                iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
+                iV = (nu+1) ./ (nu.*sigma2 + (y-f).^2);
                 siV = sqrt(iV);
                 B = eye(n) + siV*siV'.*K;
                 L = chol(B)';
@@ -630,7 +620,7 @@ function likelih = likelih_t(do, varargin)
 
             K = diag(Lav) + B'*B;
             
-            iV = ones(n,1)./sigma.^2;
+            iV = ones(n,1)./sigma2;
             siV = sqrt(iV);
             B = eye(n) + siV*siV'.*K;
             L = chol(B)';
@@ -639,7 +629,7 @@ function likelih = likelih_t(do, varargin)
             f = K*a;
             while iter < 200
                 fold = f;                
-                iV = (nu+1) ./ (nu.*sigma^2 + (y-f).^2);
+                iV = (nu+1) ./ (nu.*sigma2 + (y-f).^2);
                 siV = sqrt(iV);
                 B = eye(n) + siV*siV'.*K;
                 L = chol(B)';
@@ -658,7 +648,7 @@ function likelih = likelih_t(do, varargin)
     
     function upfact = likelih_t_upfact(gp, y, mu, ll)
         nu = gp.likelih.nu;
-        sigma = gp.likelih.sigma;
+        sigma = sqrt(gp.likelih.sigma2);
 
         fh_e = @(f) t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll);
         EE = quadgk(fh_e, -40, 40);
@@ -676,7 +666,8 @@ function likelih = likelih_t(do, varargin)
     function [Ey, Vary, Py] = likelih_t_predy(likelih, Ef, Varf, y, z)
 
         nu = likelih.nu;
-        sigma = likelih.sigma;
+        sigma2 = likelih.sigma2;
+        sigma = sqrt(sigma2);
 
 % $$$         sampf = gp_rnd(gp, tx, ty, x, [], [], 400);
 % $$$         r = trand(nu,size(sampf));
@@ -695,7 +686,7 @@ function likelih = likelih_t(do, varargin)
            F = @(x) x.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
            Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
            
-           F2 = @(x) (nu./(nu-2).*sigma.^2).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+           F2 = @(x) (nu./(nu-2).*sigma2).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
            EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
            
            F3 = @(x) x.^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
@@ -733,7 +724,7 @@ function likelih = likelih_t(do, varargin)
 
             % Initialize parameter
             reclikelih.nu = [];
-            reclikelih.sigma = [];
+            reclikelih.sigma2 = [];
 
             % Set the function handles
             reclikelih.fh_pak = @likelih_t_pak;
@@ -748,7 +739,7 @@ function likelih = likelih_t(do, varargin)
         end
 
         reclikelih.nu(ri,:) = likelih.nu;
-        reclikelih.sigma(ri,:) = likelih.sigma;
+        reclikelih.sigma2(ri,:) = likelih.sigma2;
     end
 end
 
