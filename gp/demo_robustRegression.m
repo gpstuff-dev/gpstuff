@@ -224,14 +224,12 @@ gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_pr
 
 % Create the likelihood structure
 pll = prior_logunif('init');
-likelih = likelih_t('init', 'nu', 4, 'sigma', 5, 'sigma_prior', pll, 'nu_prior', pll);
+likelih = likelih_t('init', 'nu', 4, 'sigma2', 5^2, 'sigma2_prior', pll, 'nu_prior', pll);
 likelih = likelih_t('set', likelih, 'fix_nu', 0)
 
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001, 'infer_params', 'covariance+likelihood'); % 
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
-
-gp.laplace_opt.optim_method = 'likelih_specific';
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -279,7 +277,7 @@ gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_pr
 
 % Create the likelihood structure
 pll = prior_logunif('init');
-likelih = likelih_t('init', 4, 0.5, 'sigma_prior', pll, 'nu_prior', []);
+likelih = likelih_t('init', 'nu', 4, 'sigma2', 0.5^2, 'sigma2_prior', pll, 'nu_prior', []);
 
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001); % 
@@ -340,13 +338,11 @@ gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 1);
 
 % Create the likelihood structure
 pll = prior_logunif('init');
-likelih = likelih_t('init', 4, 1, 'sigma_prior', pll);
+likelih = likelih_t('init', 'nu', 4, 'sigma2', 1, 'sigma2_prior', pll);
 
 % ... Finally create the GP data structure
 gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.001.^2);
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
-
-gp.laplace_opt.optim_method = 'likelih_specific';
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -379,5 +375,5 @@ plot(xx, Ef-2*std_f, 'r--')
 plot(x,y,'.')
 legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
-title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, gp.likelih.sigma));
-S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, sqrt(gp.likelih.sigma2)));
+S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)

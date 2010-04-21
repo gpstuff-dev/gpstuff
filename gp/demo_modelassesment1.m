@@ -71,14 +71,16 @@ w=scg2(fe, w, opt, fg, gp, x, y);
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w);
 
-% Evaluate the effective number of parameters and DIC with focus on latent variables.
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{1} = 'full_MAP';
 p_eff_latent = gp_peff(gp, x, y);
 [DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'latent');
 
-% Evaluate the 10-fold cross validation results. NOTE! This saves the results in a 
-% folder cv_resultsX (where X is a number) in your current workin directory. We save the 
-% results only for this case so that you can study them. The other models are not saved.
+% Evaluate the 10-fold cross-validation results. NOTE! This saves
+% the results in a folder cv_resultsX (where X is a number) in your
+% current working directory. We save the results only for this case
+% so that you can study them. The other models are not saved.
 [mlpd_cv(1), Var_lpd_cv(1), mrmse_cv(1), Var_rmse_cv(1)] = gp_kfcv(gp, x, y);
 
 % --- MCMC approach ---
