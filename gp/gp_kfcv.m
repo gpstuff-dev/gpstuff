@@ -1,4 +1,4 @@
-function [criteria, cvpreds, cvws, trpreds, trw] = gp_kfcv(gp, x, y, varargin)
+function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, varargin)
 %GP_KFCV        K-fold cross validation for GP model
 %
 %	Description
@@ -328,11 +328,20 @@ function [criteria, cvpreds, cvws, trpreds, trw] = gp_kfcv(gp, x, y, varargin)
             
         % make the prediction
         [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
-        cvpreds.Ef(tstindex{i},:)=Ef(tstindex{i},:);
-        cvpreds.Varf(tstindex{i},:)=Varf(tstindex{i},:);
-        cvpreds.Ey(tstindex{i},:)=Ey(tstindex{i},:);
-        cvpreds.Vary(tstindex{i},:)=Vary(tstindex{i},:);
-        cvpreds.py(tstindex{i},:)=py(tstindex{i},:);
+        if nargout>=6
+          cvtrpreds.Ef(:,i)=Ef;
+          cvtrpreds.Varf(:,i)=Varf;
+          cvtrpreds.Ey(:,i)=Ey;
+          cvtrpreds.Vary(:,i)=Vary;
+          cvtrpreds.py(:,i)=py;
+        end
+        if nargout>=2
+          cvpreds.Ef(tstindex{i},:)=Ef(tstindex{i},:);
+          cvpreds.Varf(tstindex{i},:)=Varf(tstindex{i},:);
+          cvpreds.Ey(tstindex{i},:)=Ey(tstindex{i},:);
+          cvpreds.Vary(tstindex{i},:)=Vary(tstindex{i},:);
+          cvpreds.py(tstindex{i},:)=py(tstindex{i},:);
+        end
                 
         % Evaluate statistics
         lpd_cv(tstindex{i}) = log(mean(py(tstindex{i},:),2));
@@ -412,11 +421,13 @@ function [criteria, cvpreds, cvws, trpreds, trw] = gp_kfcv(gp, x, y, varargin)
         
         % make the prediction
         [Ef, Varf, Ey, Vary, py] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
-        trpreds.Ef=Ef;
-        trpreds.Varf=Varf;
-        trpreds.Ey=Ey;
-        trpreds.Vary=Vary;
-        trpreds.py=py;
+        if nargout>=4
+          trpreds.Ef=Ef;
+          trpreds.Varf=Varf;
+          trpreds.Ey=Ey;
+          trpreds.Vary=Vary;
+          trpreds.py=py;
+        end
         
         lpd_tr = mean(log(mean(py,2)));
         rmse_tr = sqrt(mean((mean(Ey,2) - y).^2));
