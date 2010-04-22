@@ -37,9 +37,13 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010 Pasi Jylänki
 % 
 % The Newton's method is implemented as described in
 % Rasmussen and Williams (2006).
+%
+% The Stabilized Newton's method is XXX
+  
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
