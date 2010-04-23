@@ -6,7 +6,7 @@ function gp = gp_init(do, varargin)
 %	GP = GP_INIT(DO, TYPE, 'LIKELIH', GPCF, NOISE, VARARGIN) 
 %
 %        Creates a Gaussian Process model with a single output. 
-%        Takes a string/structure 'LIKELIH', which spesifies
+%        Takes a string/structure 'LIKELIH', which specifies
 %        likelihood function used, GPCF array specifying the
 %        covariance functions and NOISE array, which specify the
 %        noise covariance functions used for Gaussian process. At
@@ -26,11 +26,13 @@ function gp = gp_init(do, varargin)
 %        The GPCF and NOISE arrays consist of covariance function
 %        structures (see, for example, gpcf_sexp, gpcf_noiset).
 %
-%       With VARAGIN the fields of the GP structure can be set into different values 
-%       VARARGIN = 'FIELD1', VALUE1, 'FIELD2', VALUE2, ... 
+%       With VARAGIN the fields of the GP structure can be set into
+%       different values VARARGIN = 'FIELD1', VALUE1, 'FIELD2',
+%       VALUE2, ...
 %
 %	GP = GPINIT('SET', GP, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of the fields FIELD1... to the values VALUE1... in GP.
+%       Set the values of the fields FIELD1... to the values
+%       VALUE1... in GP.
 %
 %	The minimum number of fields (in case of full GP regression model) and 
 %       their default values are:
@@ -99,7 +101,7 @@ function gp = gp_init(do, varargin)
         error('Not enough arguments')
     end
 
-    % Initialize the Gaussian process
+    % Initialize a Gaussian process
     if strcmp(do, 'init')        
         gp.type = varargin{1};
         
@@ -210,6 +212,11 @@ function gp = gp_init(do, varargin)
                 end
             end
         end
+        
+        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK'}) && isempty(gp.X_u)
+          error(sprintf('Need to set X_u when using %s',gp.type))
+        end
+
     end
 
     % Set the parameter values of covariance function

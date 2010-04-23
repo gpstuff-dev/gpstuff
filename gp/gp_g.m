@@ -140,7 +140,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -156,7 +156,7 @@ switch gp.type
     % A = K_uu+K_uf*inv(La)*K_fu
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;               % Ensure symmetry
-    A = chol(A);
+    A = chol(A,'upper');
     L = iLaKfu/A;
     b = y'./Lav' - (y'*L)*L';
     iKuuKuf = Luu'\(Luu\K_fu');
@@ -299,7 +299,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -318,7 +318,7 @@ switch gp.type
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
 
-    L = iLaKfu/chol(A);
+    L = iLaKfu/chol(A,'upper');
     b = zeros(1,n);
     b_apu=(y'*L)*L';
     for i=1:length(ind)
@@ -491,7 +491,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -512,7 +512,7 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
-    L = iLaKfu/chol(A);
+    L = iLaKfu/chol(A,'upper');
     %b = y'/La - (y'*L)*L';
     b = ldlsolve(LD,y)' - (y'*L)*L';
     
@@ -680,7 +680,7 @@ switch gp.type
     m = size(Phi,2);
     
     A = eye(m,m) + Phi'*(S\Phi);
-    A = chol(A)';
+    A = chol(A,'lower');
     L = (S\Phi)/A';
 
     b = y'./Sv' - (y'*L)*L';

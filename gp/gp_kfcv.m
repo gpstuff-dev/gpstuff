@@ -329,11 +329,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         % make the prediction
         [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
         if nargout>=6
-          cvtrpreds.Ef(:,i)=Ef;
-          cvtrpreds.Varf(:,i)=Varf;
-          cvtrpreds.Ey(:,i)=Ey;
-          cvtrpreds.Vary(:,i)=Vary;
-          cvtrpreds.py(:,i)=py;
+          cvtrpreds.Ef([trindex{i} tstindex{i}],i)=Ef([trindex{i} tstindex{i}],:);
+          cvtrpreds.Varf([trindex{i} tstindex{i}],i)=Varf([trindex{i} tstindex{i}],:);
+          cvtrpreds.Ey([trindex{i} tstindex{i}],i)=Ey([trindex{i} tstindex{i}],:);
+          cvtrpreds.Vary([trindex{i} tstindex{i}],i)=Vary([trindex{i} tstindex{i}],:);
+          cvtrpreds.py([trindex{i} tstindex{i}],i)=py([trindex{i} tstindex{i}],:);
         end
         if nargout>=2
           cvpreds.Ef(tstindex{i},:)=Ef(tstindex{i},:);

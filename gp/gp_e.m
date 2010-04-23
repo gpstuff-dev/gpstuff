@@ -2,13 +2,13 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %GP_E	Evaluate energy function for Gaussian Process 
 %
 %     Description
-%	E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process data
+%	E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process
 %        structure GP together with a matrix X of input vectors and
 %        a matrix Y of targets, and evaluates the energy function
 %        E. Each row of X corresponds to one input vector and each
 %        row of Y corresponds to one target vector.
 %
-%	[E, EDATA, EPRIOR] = GP2_E(W, GP, X, Y, OPTIONS) also returns
+%	[E, EDATA, EPRIOR] = GP_E(W, GP, X, Y, OPTIONS) also returns
 %        the data and prior components of the total energy.
 %
 %       The energy is minus log posterior cost function:
@@ -56,7 +56,7 @@ switch gp.type
         LD = ldlchol(C);
         edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
     else
-        L = chol(C)';
+        L = chol(C,'lower');
         b=L\y;
         edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
     end
@@ -75,7 +75,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);          % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -96,7 +96,7 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A);
+    A = chol(A,'upper');
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     b = (y'*iLaKfu)/A;
@@ -113,7 +113,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);    % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
 
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -126,7 +126,7 @@ switch gp.type
         [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
         Labl{i} = Cbl_ff - Qbl_ff;
         iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
-        edata = edata + 2*sum(log(diag(chol(Labl{i})))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
+        edata = edata + 2*sum(log(diag(chol(Labl{i},'upper')))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
     end
     % The data contribution to the error is
     % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)y
@@ -135,7 +135,7 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A)';
+    A = chol(A,'lower');
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     b = (y'*iLaKfu)*inv(A)';
@@ -170,7 +170,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);    % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
 
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -196,7 +196,7 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A);
+    A = chol(A,'upper');
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     %b = (y'*iLaKfu)*inv(A)';
@@ -211,7 +211,7 @@ switch gp.type
     m = size(Phi,2);
     
     A = eye(m,m) + Phi'*(S\Phi);
-    A = chol(A)';
+    A = chol(A,'lower');
     
     b = (y'/S*Phi)/A';
     edata = 0.5*n.*log(2*pi) + 0.5*sum(log(diag(S))) + sum(log(diag(A))) + 0.5*y'*(S\y) - 0.5*b*b';
