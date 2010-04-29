@@ -249,12 +249,22 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                       
                       W(W<Wlim)=Wlim;
                       sW = sqrt(W);
-                      L=bsxfun(@times,bsxfun(@times,sW,K),sW');
-                      L(1:n+1:end)=L(1:n+1:end)+1;
-                      L = chol(L);
+                      if issparse(K)
+                        sW = sparse(1:n, 1:n, sW, n, n);
+                        L = ldlchol( speye(n)+sW*K*sW );
+                      else
+                        %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
+                        L=bsxfun(@times,bsxfun(@times,sW,K),sW');
+                        L(1:n+1:end)=L(1:n+1:end)+1;
+                        L = chol(L);
+                      end
                       %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                       b = W.*f+dlp;
-                      a = b - sW.*(L\(L'\(sW.*(K*b))));
+                        if issparse(K)
+                            a = b - sW*ldlsolve(L,sW*(K*b));
+                        else
+                            a = b - sW.*(L\(L'\(sW.*(K*b))));
+                        end
                       
                       f_new = K*a;
                       lp_new = -(a'*f_new)/2 + feval(gp.likelih.fh_e, gp.likelih, y, f_new);
