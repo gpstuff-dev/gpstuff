@@ -204,6 +204,56 @@ switch gp.type
     edata = edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
     edata = .5*(edata + n*log(2*pi));
     % ============================================================
+    % DTC/VAR
+    % ============================================================
+ case {'DTC' 'VAR'}
+    % The eguations in FIC are implemented as by Neil (2006)
+    % See also Snelson and Ghahramani (2006) and Vanhatalo and Vehtari (2007)
+
+    % First evaluate needed covariance matrices
+    % v defines that parameter is a vector
+    u = gp.X_u;
+    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % n x 1  vector
+    K_fu = gp_cov(gp, x, u);         % n x m
+    K_uu = gp_trcov(gp, u);          % m x m, noiseles covariance K_uu
+    K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+    Luu = chol(K_uu)';
+    % Evaluate the Lambda (La)
+    % Q_ff = K_fu*inv(K_uu)*K_fu';
+    % Here we need only the diag(Q_ff), which is evaluated below
+    B=Luu\(K_fu');       % m x n
+    Qv_ff=sum(B.^2)';
+    Lav = Cv_ff-Kv_ff;   % n x 1, Vector of diagonal elements
+                         % iLaKfu = diag(iLav)*K_fu = inv(La)*K_fu
+    iLaKfu = zeros(size(K_fu));  % f x u,
+    for i=1:n
+        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+    end
+    % The data contribution to the error is
+    % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)*t
+    %   = + 0.5*log(det(La)) + 0.5*trace(iLa*t*t') - 0.5*log(det(K_uu))
+    %     + 0.5*log(det(A)) - 0.5*trace(inv(A)*iLaKfu'*t*t'*iLaKfu)
+
+    % First some help matrices...
+    % A = chol(K_uu+K_uf*inv(La)*K_fu))
+    A = K_uu+K_fu'*iLaKfu;
+    A = (A+A')./2;     % Ensure symmetry
+    A = chol(A);
+    % The actual error evaluation
+    % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
+    b = (y'*iLaKfu)/A;
+    edata = sum(log(Lav)) + y'./Lav'*y - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
+    edata = 0.5*(edata + n*log(2*pi));
+    if strcmp(gp.type, 'VAR')
+        edata = edata + 0.5*sum((Kv_ff-Qv_ff)./Lav);
+    end
+    %edata = edata - 0.5*sum((Kv_ff-Qv_ff)./Lav);% - sum(diag(B'*B),1)); %sum(B.^2,1)'
+    %sum(Qv_ff)
+    %K_ff=gp_trcov(gp,x);
+    %0.5*trace(K_ff-K_fu*inv(K_uu)*K_fu')
+    %0.5*trace(K_ff-B'*B)
+    
+    % ============================================================
     % SSGP
     % ============================================================    
   case 'SSGP'

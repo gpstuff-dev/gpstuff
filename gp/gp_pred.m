@@ -511,6 +511,87 @@ switch gp.type
         py = norm_pdf(yt, Ey, sqrt(Vary));
     end
     
+  case {'VAR' 'DTC'}
+    % Check the tstind vector
+    if nargin > 5
+        if ~isempty(tstind) && length(tstind) ~= size(tx,1)
+            error('tstind (if provided) has to be of same lenght as tx.')
+        end
+    else
+        tstind = [];
+    end
+    
+    u = gp.X_u;
+    m = size(u,1);
+    % Turn the inducing vector on right direction
+    if size(u,2) ~= size(x,2)
+        u=u';
+    end
+    % Calculate some help matrices
+    [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+    K_fu = gp_cov(gp, x, u);   % f x u
+    K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
+    K_nu = gp_cov(gp,xt,u);       % n x u
+    Luu = chol(K_uu)';
+    
+    % Evaluate the Lambda (La) for specific model
+    % Q_ff = K_fu*inv(K_uu)*K_fu'
+    % Here we need only the diag(Q_ff), which is evaluated below
+    B=Luu\(K_fu');
+    Qv_ff=sum(B.^2)';
+    Lav = Cv_ff-Kv_ff;   % 1 x f, Vector of diagonal elements
+                         % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
+    iLaKfu = zeros(size(K_fu));  % f x u,
+    for i=1:length(x)
+        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+    end
+    A = K_uu+K_fu'*iLaKfu;
+    A = (A+A')./2;
+
+    L = iLaKfu/chol(A);
+    p = y./Lav - L*(L'*y);
+
+    % Prediction matrices formed with only subset of cf's.
+    if ~isempty(predcf)
+        K_fu = gp_cov(gp, x, u, predcf);   % f x u
+        K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
+        K_nu = gp_cov(gp,xt,u,predcf);       % n x u
+    end
+    Ef = K_nu*(K_uu\(K_fu'*p));
+
+    % if the prediction is made for training set, evaluate Lav also for prediction points
+    if ~isempty(tstind)
+        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+        Luu = chol(K_uu)';
+        B=Luu\(K_fu');
+        Qv_ff=sum(B.^2)';
+        Lav2 = zeros(size(Ef));
+        Lav2(tstind) = Kv_ff-Qv_ff;
+        Ef(tstind) = Ef(tstind) + Lav2(tstind).*p;
+    end
+
+    if nargout > 1
+        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+        Luu = chol(K_uu)';
+        B=Luu\(K_fu');
+        B2=Luu\(K_nu');
+        
+        Varf = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+            Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
+                + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
+                - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);                
+        end
+    end
+    if nargout > 2
+        Ey = Ef;
+        Vary = Varf + Cnn_v - Knn_v;
+    end
+    if nargout > 4
+        py = norm_pdf(y, Ey, sqrt(Vary));
+    end  
     
   case 'SSGP'
     if nargin > 4

@@ -24,7 +24,7 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % License.txt, included with the software, for details.
 
 switch gp.type
-  case {'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'CS+FIC'}
+  case {'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'CS+FIC' 'VAR' 'DTC'}
     [n,m]=size(x1);
     n1 = n+1;
     ncf = length(gp.cf);
