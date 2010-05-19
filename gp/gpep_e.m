@@ -887,6 +887,134 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 if ~isempty(z)
                     z = z(r,:);
                 end
+                % ============================================================
+                % DTC
+                % ============================================================
+              case 'DTC'
+                % First evaluate needed covariance matrices
+                % v defines that parameter is a vector
+                u = gp.X_u;
+                m = size(u,1);
+
+                % First evaluate needed covariance matrices
+                % v defines that parameter is a vector
+                [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
+                K_fu = gp_cov(gp, x, u);           % f x u
+                K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
+                K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+                Luu = chol(K_uu)';
+                % Evaluate the Lambda (La)
+                % Q_ff = K_fu*inv(K_uu)*K_fu'
+                % Here we need only the diag(Q_ff), which is evaluated below
+                B=Luu\(K_fu');       % u x f
+
+                
+                Phi = B';
+                m = size(Phi,2);
+                
+                R = eye(m,m);
+                P = Phi;
+                myy = zeros(size(y));                
+                gamma = zeros(m,1);
+                Ann=0;
+
+                while iter<=maxiter && abs(logZep_tmp-logZep)>tol
+
+                    logZep_tmp=logZep;
+                    muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                    for i1=1:n
+                        % approximate cavity parameters
+                        phi = Phi(i1,:)';
+                        Ann = sum((R*phi).^2);
+                        tau_i = Ann^-1-tautilde(i1);
+                        myy(i1) = phi'*gamma;
+                        vee_i = Ann^-1*myy(i1)-nutilde(i1);
+
+                        myy_i=vee_i/tau_i;
+                        sigm2_i=tau_i^-1;
+
+                        % marginal moments
+                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                        
+                        % update site parameters
+                        deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
+                        tautilde(i1) = tautilde(i1)+deltatautilde;
+                        deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
+                        nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+
+                        % Update the parameters
+                        lnn = sum((R*phi).^2);
+                        updfact = deltatautilde/(1 + deltatautilde*lnn);
+                        if updfact > 0
+                            RtLphiU = R'*(R*phi).*sqrt(updfact);
+                            R = cholupdate(R, RtLphiU, '-');
+                        elseif updfact < 0
+                            RtLphiU = R'*(R*phi).*sqrt(updfact);
+                            R = cholupdate(R, RtLphiU, '+');
+                        end
+                        gamma = gamma - R'*(R*phi)*(deltatautilde*myy(i1)-deltanutilde);
+                        
+                        % Store cavity parameters
+                        muvec_i(i1,1)=myy_i;
+                        sigm2vec_i(i1,1)=sigm2_i;
+                    end
+                    
+                    SS = Phi/(eye(m,m)+Phi'*diag(tautilde)*Phi)*Phi' ;
+                    
+                    % Re-evaluate the parameters
+                    R = chol(inv(eye(m,m) + Phi'*(repmat(tautilde,1,m).*Phi)));
+                    gamma = R'*(R*(Phi'*nutilde));
+                    myy = Phi*gamma;
+
+                    % Compute the marginal likelihood, see FULL model for
+                    % details about equations
+                    % 4. term & 1. term
+                    Stildesqroot=sqrt(tautilde);
+                    SsqrtPhi = Phi.*repmat(Stildesqroot,1,m);
+                    AA = eye(m,m) + SsqrtPhi'*SsqrtPhi; AA = (AA+AA')/2;
+                    AA = chol(AA,'lower');
+                    term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) + sum(log(diag(AA)));
+
+                    % 5. term (1/2 element) & 2. term
+                    T=1./sigm2vec_i;
+                    bb = nutilde'*Phi;
+                    bb2 = bb*SsqrtPhi';
+                    bb3 = bb2*SsqrtPhi/AA';
+                    term52 = -0.5*( bb*bb' - bb2*bb2' + bb3*bb3' - (nutilde./(T+tautilde))'*nutilde);
+
+                    % 5. term (2/2 element)
+                    term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
+
+                    % 3. term
+                    term3 = -sum(log(M0));
+                    
+                    logZep = term41+term52+term5+term3;
+
+                    iter=iter+1;
+                end
+                edata = logZep;
+                %L = iLaKfu;
+
+                temp = Phi*(SsqrtPhi'*(SsqrtPhi*bb'));
+                %                b = Phi*bb' - temp + Phi*(SsqrtPhi'*(SsqrtPhi*(AA'\(AA\temp))));
+                
+                b = nutilde - bb2'.*Stildesqroot + repmat(tautilde,1,m).*Phi*(AA'\bb3');
+                b = b';
+                
+%                 StildeKfu = zeros(size(K_fu));  % f x u,
+%                 for i=1:n
+%                     StildeKfu(i,:) = K_fu(i,:).*tautilde(i);  % f x u
+%                 end
+%                 A = K_uu+K_fu'*StildeKfu;  A = (A+A')./2;     % Ensure symmetry
+%                 A = chol(A);
+%                 L = StildeKfu/A;
+                L = repmat(tautilde,1,m).*Phi/AA';
+                %L = repmat(tautilde,1,m).*K_fu/AA';
+                mu=nutilde./tautilde;
+                %b = nutilde - mu'*L*L'*mu;
+                %b=b';
+                La2 = 1./tautilde;
+                D = 0;
                 
                 % ============================================================
                 % SSGP

@@ -335,6 +335,66 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                 Varf = Knn_v - sum((Kcs_nf(:,p)/chol(La(p,p))).^2,2) + sum((Kcs_nf*L).^2, 2) ;
             end        
         end
+        % ============================================================
+        % DTC/(VAR)
+        % ============================================================
+      case {'DTC' 'VAR'}
+        [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+
+        % Here tstind = 1 if the prediction is made for the training set 
+        if nargin > 6
+            if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
+            end
+        else
+             tstind = [];
+        end
+        
+        u = gp.X_u;
+        m = size(u,1);
+        
+        K_fu = gp_cov(gp,x,u,predcf);         % f x u
+        K_nu=gp_cov(gp,xt,u,predcf);
+        K_uu = gp_trcov(gp,u,predcf);          % u x u, noiseles covariance K_uu
+        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+
+        kstarstar=gp_trvar(gp,xt,predcf);        
+
+        % From this on evaluate the prediction
+        % See Snelson and Ghahramani (2007) for details 
+        %        p=iLaKfu*(A\(iLaKfu'*myytilde));
+        p = b';
+        
+        ntest=size(xt,1);
+        
+        Ef = K_nu*(K_uu\(K_fu'*p));
+        
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+            [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');
+            Qv_ff=sum(B.^2)';
+            Lav = Kv_ff-Cv_ff;
+            Ef(tstind) = Ef(tstind);% + Lav.*p;
+        end
+        
+        if nargout > 1
+            % Compute variances of predictions
+            %Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+            Luu = chol(K_uu)';
+            B=Luu\(K_fu');   
+            B2=Luu\(K_nu');   
+            Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+
+            % if the prediction is made for training set, evaluate Lav also for prediction points
+            if ~isempty(tstind)
+                Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((La.\Lav),1,m).*B'),2) ...
+                    + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav,1,m).*L), 2)  ...
+                    - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
+            end
+        end
+        
       case 'SSGP'
         [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         %param = varargin{1};
