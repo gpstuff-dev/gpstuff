@@ -102,7 +102,7 @@ y = y-avgy;
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
 gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3);
-%gpcf2 = gpcf_ppcs2('init',nin, 'lengthScale', 2, 'magnSigma2', 3);
+%gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3);
 gpcf2 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 3);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1);
 

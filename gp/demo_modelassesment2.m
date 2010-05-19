@@ -773,7 +773,7 @@ S = sprintf([S '\n '])
 % $$$ pl = prior_t('init', 's2', 3, 'nu', 4);
 % $$$ pm = prior_t('init', 's2', 0.3, 'nu', 4);
 % $$$ gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-% $$$ gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
+% $$$ gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 % $$$ 
 % $$$ % Create the GP data structure
 % $$$ gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');

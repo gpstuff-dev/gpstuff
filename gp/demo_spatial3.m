@@ -123,7 +123,7 @@ ye = ye(ind,:);
 gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 0.05);
 pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
-gpcf1 = gpcf_ppcs2('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 likelih = likelih_negbin('init', yy, ye, 100);
@@ -389,7 +389,7 @@ gpcf1 = gpcf_matern32('init', 'lengthScale', 4, 'magnSigma2', 0.03);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 4, 'magnSigma2', 0.02);
+gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 4, 'magnSigma2', 0.02);
 gpcf2.p.lengthScale = t_p({1 4});
 gpcf2.p.magnSigma2 = t_p({0.3 4});
 
@@ -506,7 +506,7 @@ ye = ye(ind,:);
 
 % Create the covariance functions
 %gpcf1 = gpcf_matern32('init', 'lengthScale', 5, 'magnSigma2', 0.05);
-gpcf1 = gpcf_ppcs2('init', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
+gpcf1 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 5, 'magnSigma2', 0.05);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
@@ -775,7 +775,7 @@ gpcf1 = gpcf_matern32('init', 'lengthScale', 4, 'magnSigma2', 0.03);
 gpcf1.p.lengthScale = t_p({1 4});
 gpcf1.p.magnSigma2 = t_p({0.3 4});
 
-gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 4, 'magnSigma2', 0.02);
+gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 4, 'magnSigma2', 0.02);
 gpcf2.p.lengthScale = t_p({1 4});
 gpcf2.p.magnSigma2 = t_p({0.3 4});
 

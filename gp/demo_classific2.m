@@ -496,7 +496,7 @@ gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 1);
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gpcf2 = gpcf_ppcs2('init', nin, 'lengthScale', 3, 'magnSigma2', 0.03);
+gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 3, 'magnSigma2', 0.03);
 gpcf2.p.lengthScale = t_p({1 4});
 gpcf2.p.magnSigma2 = t_p({0.3 4});
 
