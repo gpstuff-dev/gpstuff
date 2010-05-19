@@ -207,8 +207,11 @@ switch gp.type
     % DTC/VAR
     % ============================================================
  case {'DTC' 'VAR'}
-    % The eguations in FIC are implemented as by Neil (2006)
-    % See also Snelson and Ghahramani (2006) and Vanhatalo and Vehtari (2007)
+    % Implementation of DTC varies only slightly from FIC: essentially, only
+    % Lav is defined differently. For equations, see e.g. Quinonero-Candela
+    % and Rasmussen. For VAR, a trace term is added to the DTC model, see 
+    % Titsias (2009).
+    
 
     % First evaluate needed covariance matrices
     % v defines that parameter is a vector
