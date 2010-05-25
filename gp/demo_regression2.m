@@ -109,7 +109,7 @@ gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengt
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
 
 % Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2)    
+gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004.^2) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -179,7 +179,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001, 'X_u', Xu)
+gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -222,7 +222,7 @@ plot(x,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 axis tight
 caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigma2);
 title(caption2)
-legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
+legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
 
 %========================================================
@@ -284,7 +284,7 @@ end
 axis tight
 caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.noise{1}.noiseSigma2);
 title(caption2)
-legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
+legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
 %========================================================
 % PART 4 data analysis with CS+FIC model
@@ -294,7 +294,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.001, 'X_u', Xu)
+gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -337,14 +337,14 @@ plot(x,Ef_csfic+2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
 axis tight
 caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noise{1}.noiseSigma2);
 title(caption2)
-legend('Data point', 'predicted mean', '2\sigma error', 'inducing input')
+legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
 
 [Ef, Varf, Ey, Vary] = gp_pred(gp_csfic, x, y, x);
 [Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
 [Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
 
-figure(2)
+figure(5)
 set(gcf,'units','centimeters');
 set(gcf,'DefaultAxesPosition',[0.08  0.13   0.84   0.85]);
 set(gcf,'DefaultAxesFontSize',16)   %6 8
