@@ -158,7 +158,7 @@ gp=gp_unpak(gp,w);
 % are easier to sample with MCMC after log transformation.
 
 % for the last make prections of the underlying function on a dense grid 
-% and plot it. Below Ef_full is the predictive mean and Varf_full the predictive 
+% and plot it. Below Ef_map is the predictive mean and Varf_map the predictive 
 % variance.
 [p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
 p=[p1(:) p2(:)];
@@ -214,9 +214,9 @@ hmc2('state', sum(100*clock));
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
-% Now we make the predictions. 'gp_preds' is a function that returns 
+% Now we make the predictions. 'mc_pred' is a function that returns 
 % the predictive mean of the latent function with every sampled 
-% hyperparameter value. Thus, the returned Ef_sfull is a matrix of 
+% hyperparameter value. Thus, the returned Ef_mc is a matrix of 
 % size n x (number of samples). By taking the mean over the samples
 % we do the Monte Carlo integration over the hyperparameters.
 [Ef_mc, Varf_mc] = mc_pred(rfull, x, y, p);
