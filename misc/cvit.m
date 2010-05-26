@@ -1,10 +1,28 @@
-function [itr, itst] = cvit(n, k)
+function [itr, itst] = cvit(n, k, rsubstream)
 % CVIT - Create itr and itst indeces for k-fold-cv
-%   
+%
+%    Description
+%     [ITR,ITST]=CVITR(N,K) returns 1xK cell arrays ITR and ITST holding 
+%      cross-validation indeces for train and test sets respectively. 
+%      K-fold division is balanced with all sets having floor(N/K) or 
+%      ceil(N/K) elements.
+%
+%     [ITR,ITST]=CVITR(N,K,RS) with integer RS>0 also makes random 
+%      permutation, using substream RS. This way different permutations 
+%      can be produced with different RS values, but same permutation is 
+%      obtained when called again with same RS. Function restores the 
+%      previous random stream before exiting.
+%
 
-%   Author: Aki Vehtari <Aki.Vehtari@hut.fi>
-%   Last modified: 2006-12-21 13:29:48 EET
+% Copyright (c) 2010 Aki Vehtari
 
+% This software is distributed under the GNU General Public
+% License (version 2 or later); please refer to the file
+% License.txt, included with the software, for details.
+
+if nargin<3
+  rsubstream=0;
+end
 if nargin < 2
   k=10;
 end
@@ -18,3 +36,17 @@ for cvi=(a+1):k
   itst{cvi}=[(a*b)+[1:(b+1)]+(cvi-a-1)*(b+1)]; 
   itr{cvi}=setdiff(1:n,itst{cvi}); 
 end  
+
+if rsubstream>0
+  stream = RandStream('mrg32k3a');
+  prevstream=RandStream.setDefaultStream(stream);
+  stream.Substream = rsubstream;
+
+  rii=randperm(n);
+  for cvi=1:k
+    itst{cvi}=rii(itst{cvi});
+    itr{cvi}=rii(itr{cvi});
+  end
+
+  RandStream.setDefaultStream(prevstream);
+end
