@@ -1,7 +1,9 @@
 function y = wmean(x, w)
-% MEAN   Weighted average or mean value.
-%    WMEAN(X,W) is the weighted mean value of the elements in X given 
-%    weights W. 
+% WMEAN   Weighted average or mean value.
+%
+%    Description
+%      WMEAN(X,W) is the weighted mean value of the elements in X given 
+%       weights W. 
 %
 %    See also wprctile, mean
 
