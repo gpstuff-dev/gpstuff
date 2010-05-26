@@ -2,8 +2,8 @@ function p = prior_lognormal(do, varargin)
 % PRIOR_LOGNORMAL     Lognormal prior structure     
 %       
 %        Description
-%        P = PRIOR_LOGNORMAL('INIT') returns a structure that specifies lognormal
-%        prior. 
+%        P = PRIOR_LOGNORMAL('INIT') returns a structure that
+%         specifies lognormal prior.
 %    
 %	The fields in P are:
 %           p.type         = 'Lognormal'
