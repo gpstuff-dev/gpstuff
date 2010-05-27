@@ -3,26 +3,25 @@ function gpcf = gpcf_periodic(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_PERIODIC('INIT', NIN) Create and initialize periodic
+%	GPCF = GPCF_PERIODIC('init', 'nin', NIN) Create and initialize periodic
 %       covariance function for Gaussian process
 %
 %	The fields and (default values) in GPCF_PERIODIC are:
 %	  type           = 'gpcf_PERIODIC'
 %	  nin            = Number of inputs. (NIN)
-%	  nout           = Number of outputs. (always 1)
 %	  magnSigma2     = Magnitude (squared) for exponential part. 
 %                          (0.1)
 %	  lengthScale    = Length scale for each input. This can be either scalar corresponding 
 %                          isotropic or vector corresponding ARD. 
-%                          10
-%     period         = duration of one cycle of the periodic component(s)
 %                          (10)
+%     period         = duration of one cycle of the periodic component(s)
+%                          (1)
 %     optimPeriod    = determines whether the period is optimised (1) or kept
 %                          constant (0). Not a
 %                          hyperparameter for the function.
-%     lengthScale_exp= length scale for the squared exponential component. This can be either scalar corresponding 
-%                          isotropic or vector corresponding ARD. 
-%                          (10)
+%     lengthScale_exp= length scale for the squared exponential component. 
+%                          This can be either scalar corresponding 
+%                          isotropic or vector corresponding ARD. (10)
 %     decay          = determines whether the squared exponential decay
 %                          term is used (1) or not (0). Not a
 %                          hyperparameter for the function.
@@ -48,8 +47,17 @@ function gpcf = gpcf_periodic(do, varargin)
 %         fh_recappend   = function handle to append the record function 
 %                          (gpcf_periodic_recappend)
 %
-%	GPCF = GPCF_PERIODIC('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	GPCF = GPCF_PERIODIC('set', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
+%       The fields that can be modified are:
+%
+%             'magnSigma2'         : set the magnSigma2
+%             'lengthScale'        : set the lengthScale
+%             'period'             : 
+%             'optimPeriod'        : 
+%             'lengthScale_exp'    :
+%             'decay'              : 
+%
 %
 %	See also
 %       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
@@ -61,111 +69,232 @@ function gpcf = gpcf_periodic(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+%------------------------------
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_periodic'; 
-        gpcf.nout = 1;
-
-        % Initialize parameters
-        gpcf.lengthScale= 10;
-        gpcf.lengthScale_exp = 10;
-        gpcf.magnSigma2 = 0.1;
-        gpcf.period = 1;
-        gpcf.optimPeriod = 0;
-        gpcf.decay = 0;
-
-        % Initialize prior structure
-        gpcf.p=[];
-        gpcf.p.lengthScale=prior_unif('init');
-        gpcf.p.lengthScale_exp=[];
-        gpcf.p.magnSigma2=prior_unif('init');
-        gpcf.p.period=[];
-
-        % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_periodic_pak;
-        gpcf.fh_unpak = @gpcf_periodic_unpak;
-        gpcf.fh_e = @gpcf_periodic_e;
-        gpcf.fh_ghyper = @gpcf_periodic_ghyper;
-        gpcf.fh_ginput = @gpcf_periodic_ginput;
-        gpcf.fh_cov = @gpcf_periodic_cov;
-        gpcf.fh_covvec = @gpcf_periodic_covvec;
-        gpcf.fh_trcov  = @gpcf_periodic_trcov;
-        gpcf.fh_trvar  = @gpcf_periodic_trvar;
-        gpcf.fh_recappend = @gpcf_periodic_recappend;
-
-        if length(varargin) > 1
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_PERIODIC';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+    ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('period',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+    ip.addParamValue('lengthScale_exp',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('optimPeriod',[], @(x) isscalar(x) && (x==0||x==1));
+    ip.addParamValue('decay',[], @(x) isscalar(x) && (x==0||x==1));
+    ip.addParamValue('magnSigma2_prior',[], @isstruct);
+    ip.addParamValue('lengthScale_prior',[], @isstruct);
+    ip.addParamValue('lengthScale_exp_prior',[], @isstruct);
+    ip.addParamValue('period_prior',[], @isstruct);
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    nin=ip.Results.nin;
+    magnSigma2=ip.Results.magnSigma2;
+    lengthScale=ip.Results.lengthScale;
+    period=ip.Results.period;
+    optimPeriod=ip.Results.optimPeriod;
+    lengthScale_exp=ip.Results.lengthScale_exp;
+    decay=ip.Results.decay;
+    magnSigma2_prior=ip.Results.magnSigma2_prior;
+    lengthScale_prior=ip.Results.lengthScale_prior;
+    lengthScale_exp_prior=ip.Results.lengthScale_exp_prior;
+    period_prior=ip.Results.period_prior;
+    
+    switch do
+        case 'init'
+            % Initialize the covariance function
+            if isempty(nin)
+                error('nin has to be given in init: gpcf_periodic(''init'',''nin'',NIN,...)')
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'magnSigma2'
-                    gpcf.magnSigma2 = varargin{i+1};
-                  case 'lengthScale'
-                    gpcf.lengthScale = varargin{i+1};
-                  case 'period'
-                    gpcf.period = varargin{i+1};
-                  case 'optimPeriod'
-                    gpcf.optimPeriod = varargin{i+1};
-                  case 'lengthScale_exp'
-                    gpcf.lengthScale_exp = varargin{i+1};
-                  case 'decay'
-                    gpcf.decay=varargin{i+1};
-                  case 'lengthScale_prior'
-                    gpcf.p.lengthScale = varargin{i+1};
-                  case 'magnSigma2_prior'
-                    gpcf.p.magnSigma2 = varargin{i+1};
-                  case 'lengthScale_exp_prior'
-                    gpcf.p.lengthScale_exp = varargin{i+1};
-                  case 'period_prior'
-                    gpcf.p.period = varargin{i+1};
-                  otherwise
-                    error('Wrong parameter name!')
-                end
+            gpcf.type = 'gpcf_periodic';
+            gpcf.nin = nin;
+            
+            % Initialize parameters
+            if isempty(lengthScale)
+                gpcf.lengthScale = 10;
+            else
+                gpcf.lengthScale=lengthScale;
             end
-        end
-    end
-
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'magnSigma2'
-                gpcf.magnSigma2 = varargin{i+1};
-              case 'lengthScale'
-                gpcf.lengthScale = varargin{i+1};
-              case 'period'
-                gpcf.period = varargin{i+1};
-              case 'optimPeriod'
-                gpcf.optimPeriod = varargin{i+1};
-              case 'lengthScale_exp'
-                gpcf.lengthScale_exp = varargin{i+1};
-              case 'decay'
-                gpcf.decay=varargin{i+1};
-              case 'lengthScale_prior'
-                gpcf.p.lengthScale = varargin{i+1};
-              case 'magnSigma2_prior'
-                gpcf.p.magnSigma2 = varargin{i+1};
-              case 'lengthScale_exp_prior'
-                gpcf.p.lengthScale_exp = varargin{i+1};
-              case 'period_prior'
-                gpcf.p.period = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
+            if isempty(magnSigma2)
+                gpcf.magnSigma2 = 0.1;
+            else
+                gpcf.magnSigma2=magnSigma2;
             end
-        end
+            if isempty(lengthScale_exp)
+                gpcf.lengthScale_exp = 10;
+            else
+                gpcf.lengthScale_exp=lengthScale_exp;
+            end
+            if isempty(period)
+                gpcf.period = 1;
+            else
+                gpcf.period=period;
+            end
+            if isempty(optimPeriod)
+                gpcf.optimPeriod = 0;
+            else
+                gpcf.optimPeriod=optimPeriod;
+            end
+            if isempty(decay)
+                gpcf.decay = 0;
+            else
+                gpcf.decay=decay;
+            end
+            
+            % Initialize prior structure
+            gpcf.p=[];
+            gpcf.p.lengthScale_exp=[];
+            gpcf.p.period=[];
+            if isempty(lengthScale_prior)
+                gpcf.p.lengthScale=prior_unif('init');
+            else
+                gpcf.p.lengthScale=lengthScale_prior;
+            end
+            if isempty(magnSigma2_prior)
+                gpcf.p.magnSigma2=prior_unif('init');
+            else
+                gpcf.p.magnSigma2=magnSigma2_prior;
+            end
+            if ~isempty(period_prior);gpcf.p.period_prior=period_prior;end
+            if ~isempty(lengthScale_exp_prior);gpcf.p.lengthScale_exp_prior=lengthScale_exp_prior;end
+            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
+            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
+            
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_periodic_pak;
+            gpcf.fh_unpak = @gpcf_periodic_unpak;
+            gpcf.fh_e = @gpcf_periodic_e;
+            gpcf.fh_ghyper = @gpcf_periodic_ghyper;
+            gpcf.fh_ginput = @gpcf_periodic_ginput;
+            gpcf.fh_cov = @gpcf_periodic_cov;
+            gpcf.fh_covvec = @gpcf_periodic_covvec;
+            gpcf.fh_trcov  = @gpcf_periodic_trcov;
+            gpcf.fh_trvar  = @gpcf_periodic_trvar;
+            gpcf.fh_recappend = @gpcf_periodic_recappend;
+            
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(magnSigma2);gpcf.magnSigma2=magnSigma2;end
+            if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
+            if ~isempty(period);gpcf.period=period;end
+            if ~isempty(optimPeriod);gpcf.optimPeriod=optimPeriod;end
+            if ~isempty(lengthScale_exp);gpcf.lengthScale_exp=lengthScale_exp;end
+            if ~isempty(decay);gpcf.decay=decay;end
+            if ~isempty(period_prior);gpcf.p.period_prior=period_prior;end
+            if ~isempty(lengthScale_exp_prior);gpcf.p.lengthScale_exp_prior=lengthScale_exp_prior;end
+            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
+            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
     end
+    
 
+%------------------------------
+%     if nargin < 1
+%         error('Not enough arguments')
+%     end
+% 
+%     % Initialize the covariance function
+%     if strcmp(do, 'init')
+%         gpcf.type = 'gpcf_periodic'; 
+%         gpcf.nout = 1;
+% 
+%         % Initialize parameters
+%         gpcf.lengthScale= 10;
+%         gpcf.lengthScale_exp = 10;
+%         gpcf.magnSigma2 = 0.1;
+%         gpcf.period = 1;
+%         gpcf.optimPeriod = 0;
+%         gpcf.decay = 0;
+% 
+%         % Initialize prior structure
+%         gpcf.p=[];
+%         gpcf.p.lengthScale=prior_unif('init');
+%         gpcf.p.lengthScale_exp=[];
+%         gpcf.p.magnSigma2=prior_unif('init');
+%         gpcf.p.period=[];
+% 
+%         % Set the function handles to the nested functions
+%         gpcf.fh_pak = @gpcf_periodic_pak;
+%         gpcf.fh_unpak = @gpcf_periodic_unpak;
+%         gpcf.fh_e = @gpcf_periodic_e;
+%         gpcf.fh_ghyper = @gpcf_periodic_ghyper;
+%         gpcf.fh_ginput = @gpcf_periodic_ginput;
+%         gpcf.fh_cov = @gpcf_periodic_cov;
+%         gpcf.fh_covvec = @gpcf_periodic_covvec;
+%         gpcf.fh_trcov  = @gpcf_periodic_trcov;
+%         gpcf.fh_trvar  = @gpcf_periodic_trvar;
+%         gpcf.fh_recappend = @gpcf_periodic_recappend;
+% 
+%         if length(varargin) > 1
+%             if mod(nargin,2) ~=1
+%                 error('Wrong number of arguments')
+%             end
+%             % Loop through all the parameter values that are changed
+%             for i=1:2:length(varargin)-1
+%                 switch varargin{i}
+%                   case 'magnSigma2'
+%                     gpcf.magnSigma2 = varargin{i+1};
+%                   case 'lengthScale'
+%                     gpcf.lengthScale = varargin{i+1};
+%                   case 'period'
+%                     gpcf.period = varargin{i+1};
+%                   case 'optimPeriod'
+%                     gpcf.optimPeriod = varargin{i+1};
+%                   case 'lengthScale_exp'
+%                     gpcf.lengthScale_exp = varargin{i+1};
+%                   case 'decay'
+%                     gpcf.decay=varargin{i+1};
+%                   case 'lengthScale_prior'
+%                     gpcf.p.lengthScale = varargin{i+1};
+%                   case 'magnSigma2_prior'
+%                     gpcf.p.magnSigma2 = varargin{i+1};
+%                   case 'lengthScale_exp_prior'
+%                     gpcf.p.lengthScale_exp = varargin{i+1};
+%                   case 'period_prior'
+%                     gpcf.p.period = varargin{i+1};
+%                   otherwise
+%                     error('Wrong parameter name!')
+%                 end
+%             end
+%         end
+%     end
+% 
+%     % Set the parameter values of covariance function
+%     if strcmp(do, 'set')
+%         if mod(nargin,2) ~=0
+%             error('Wrong number of arguments')
+%         end
+%         gpcf = varargin{1};
+%         % Loop through all the parameter values that are changed
+%         for i=2:2:length(varargin)-1
+%             switch varargin{i}
+%               case 'magnSigma2'
+%                 gpcf.magnSigma2 = varargin{i+1};
+%               case 'lengthScale'
+%                 gpcf.lengthScale = varargin{i+1};
+%               case 'period'
+%                 gpcf.period = varargin{i+1};
+%               case 'optimPeriod'
+%                 gpcf.optimPeriod = varargin{i+1};
+%               case 'lengthScale_exp'
+%                 gpcf.lengthScale_exp = varargin{i+1};
+%               case 'decay'
+%                 gpcf.decay=varargin{i+1};
+%               case 'lengthScale_prior'
+%                 gpcf.p.lengthScale = varargin{i+1};
+%               case 'magnSigma2_prior'
+%                 gpcf.p.magnSigma2 = varargin{i+1};
+%               case 'lengthScale_exp_prior'
+%                 gpcf.p.lengthScale_exp = varargin{i+1};
+%               case 'period_prior'
+%                 gpcf.p.period = varargin{i+1};
+%               otherwise
+%                 error('Wrong parameter name!')
+%             end
+%         end
+%     end
+    
 
     function w = gpcf_periodic_pak(gpcf)
     %GPCF_PERIODIC_PAK	 Combine GP covariance function hyper-parameters into one vector.
@@ -886,7 +1015,6 @@ function gpcf = gpcf_periodic(do, varargin)
         if nargin == 2
             reccf.type = 'gpcf_periodic';
             reccf.nin = ri;
-            reccf.nout = 1;
 
             % Initialize parameters
             reccf.lengthScale= [];
