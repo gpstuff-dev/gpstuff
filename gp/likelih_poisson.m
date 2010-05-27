@@ -87,9 +87,7 @@ function likelih = likelih_poisson(do, varargin)
             end
         end
     end
-
-
-
+   
     function w = likelih_poisson_pak(likelih)
     %LIKELIH_POISSON_PAK      Combine likelihood parameters into one vector.
     %

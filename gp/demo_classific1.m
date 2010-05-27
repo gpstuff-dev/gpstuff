@@ -62,7 +62,7 @@ gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl);
 
 % Create the likelihood structure
 likelih = likelih_probit('init');
-%likelih = likelih_logit('init', y);
+%likelih = likelih_logit('init');
 
 % Create the GP data structure
 gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01, 'infer_params', 'covariance');

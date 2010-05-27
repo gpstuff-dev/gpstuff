@@ -47,7 +47,6 @@ function gpcf = gpcf_exp(do, varargin)
 %       gpcf_sexp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
 %       gp_cov, gp_unpak, gp_pak
     
-% Copyright (c) 2000-2001 Aki Vehtari
 % Copyright (c) 2007-2009 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public

@@ -70,8 +70,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
 %	See also
 %       gpcf_sexp, gpcf_exp, gpcf_matern32, gpcf_matern52, gp_init, gp_e, 
 %       gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
-  
-% Copyright (c) 2000-2001,2010 Aki Vehtari
+
+% Copyright (c) 2006-2007 Jouni Hartikainen
 % Copyright (c) 2006-2010 Jarno Vanhatalo, Jouni Hartikainen
 
 % This software is distributed under the GNU General Public
@@ -81,7 +81,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
   ip=inputParser;
   ip.FunctionName = 'GPCS_PPCS2';
   ip.addRequired('do', @(x) ismember(x, {'init','set'}));
-  ip.addOptional('gp', [], @isstruct);
+  ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
@@ -91,7 +91,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
   ip.addParamValue('lengthScale_prior',[], @isstruct);
   ip.parse(do, varargin{:});
   do=ip.Results.do;
-  gp=ip.Results.gp;
+  gpcf=ip.Results.gpcf;
   nin=ip.Results.nin;
   magnSigma2=ip.Results.magnSigma2;
   lengthScale=ip.Results.lengthScale;
@@ -164,7 +164,6 @@ function gpcf = gpcf_ppcs2(do, varargin)
       
     case 'set'
       % Set the parameter values of covariance function
-      gpcf = gp;
       % go through all the parameter values that are changed
       if ~isempty(magnSigma2);gpcf.magnSigma2=magnSigma2;end
       if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
@@ -185,7 +184,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
   end
   
   function w = gpcf_ppcs2_pak(gpcf, w)
-  %GPCF_PPCS2_PAK Combine GP covariance function hyper-parameters into one vector.
+  %GPCF_PPCS2_PAK Combine covariance function hyper-parameters into one vector.
   %
   %	Description
   %	W = GPCF_PPCS2_PAK(GPCF, W) takes a covariance function data structure GPCF and

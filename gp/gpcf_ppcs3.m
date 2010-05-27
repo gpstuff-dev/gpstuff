@@ -67,7 +67,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
 %       gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2006-2007 Jouni Hartikainen
-% Copyright (c) 2006-2009 Jarno Vanhatalo
+% Copyright (c) 2006-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
