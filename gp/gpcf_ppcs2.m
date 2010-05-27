@@ -11,7 +11,6 @@ function gpcf = gpcf_ppcs2(do, varargin)
 %	The fields and (default values) in GPCF_PPCS2 are:
 %	  type           = 'gpcf_PPCS2'
 %	  nin            = Number of inputs. (NIN)
-%	  nout           = Number of outputs. (always 1)
 %         cs             = 1. Tells that gpcf_ppcs2 is compact support 
 %                          function.
 %         l              = floor(nin/2) + 3. This parameter defines the
@@ -79,7 +78,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'GPCS_PPCS2';
+  ip.FunctionName = 'GPCF_PPCS2';
   ip.addRequired('do', @(x) ismember(x, {'init','set'}));
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
@@ -108,13 +107,12 @@ function gpcf = gpcf_ppcs2(do, varargin)
       end
       gpcf.type = 'gpcf_ppcs2';
       gpcf.nin = nin;
-      gpcf.nout = 1;
       
       if isempty(l_nin)
         gpcf.l = floor(nin/2) + 3;
       else
         if l_nin < gpcf.nin
-          error('The l_nin has to be greater than egual to the number of inputs!')
+          error('The l_nin has to be greater than or equal to the number of inputs!')
         end
         gpcf.l = floor(l_nin/2) + 3;
       end
@@ -133,6 +131,7 @@ function gpcf = gpcf_ppcs2(do, varargin)
       else
         gpcf.magnSigma2=magnSigma2;
       end
+      
       % Initialize prior structure
       gpcf.p=[];
       if isempty(lengthScale_prior)
@@ -145,7 +144,8 @@ function gpcf = gpcf_ppcs2(do, varargin)
       else
         gpcf.p.magnSigma2=magnSigma2_prior;
       end
-      % Intialize metric
+      
+      % Initialize metric
       if ~isempty(metric)
         gpcf.metric = metric;
         gpcf = rmfield(gpcf, 'lengthScale');
@@ -1130,7 +1130,6 @@ function gpcf = gpcf_ppcs2(do, varargin)
     if nargin == 2
       reccf.type = 'gpcf_ppcs2';
       reccf.nin = ri.nin;
-      reccf.nout = 1;
       reccf.l = floor(reccf.nin/2)+3;
 
       % cf is compactly supported
