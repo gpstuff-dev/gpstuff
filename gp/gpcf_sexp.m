@@ -3,7 +3,7 @@ function gpcf = gpcf_sexp(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_SEXP('INIT') Create and initialize squared exponential
+%	GPCF = GPCF_SEXP('init') Create and initialize squared exponential
 %       covariance function for Gaussian process
 %
 %	The fields and (default values) in GPCF_SEXP are:
@@ -54,87 +54,83 @@ function gpcf = gpcf_sexp(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_SEXP';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('metric',[], @isstruct);
+    ip.addParamValue('magnSigma2_prior',[], @isstruct);
+    ip.addParamValue('lengthScale_prior',[], @isstruct);
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    magnSigma2=ip.Results.magnSigma2;
+    lengthScale=ip.Results.lengthScale;
+    metric=ip.Results.metric;
+    magnSigma2_prior=ip.Results.magnSigma2_prior;
+    lengthScale_prior=ip.Results.lengthScale_prior;
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_sexp';
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_sexp';
 
-        % Initialize parameters
-        gpcf.lengthScale= 10;
-        gpcf.magnSigma2 = 0.1;
-
-        % Initialize prior structure and set the priors to uniform
-        gpcf.p=[];
-        gpcf.p.lengthScale = prior_unif('init');
-        gpcf.p.magnSigma2 = prior_unif('init');
-
-        % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_sexp_pak;
-        gpcf.fh_unpak = @gpcf_sexp_unpak;
-        gpcf.fh_e = @gpcf_sexp_e;
-        gpcf.fh_ghyper = @gpcf_sexp_ghyper;
-        gpcf.fh_ginput = @gpcf_sexp_ginput;
-        gpcf.fh_cov = @gpcf_sexp_cov;
-        gpcf.fh_trcov  = @gpcf_sexp_trcov;
-        gpcf.fh_trvar  = @gpcf_sexp_trvar;
-        gpcf.fh_recappend = @gpcf_sexp_recappend;
-
-        if nargin > 1
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+            % Initialize parameters
+            if isempty(lengthScale)
+                gpcf.lengthScale = 10;
+            else
+                gpcf.lengthScale=lengthScale;
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'magnSigma2'
-                    gpcf.magnSigma2 = varargin{i+1};
-                  case 'lengthScale'
-                    gpcf.lengthScale = varargin{i+1};
-                  case 'metric'
-                    gpcf.metric = varargin{i+1};
-                    if isfield(gpcf, 'lengthScale')
-                        gpcf = rmfield(gpcf, 'lengthScale');
-                    end
-                  case 'lengthScale_prior'
-                    gpcf.p.lengthScale = varargin{i+1};
-                  case 'magnSigma2_prior'
-                    gpcf.p.magnSigma2 = varargin{i+1};
-                  otherwise
-                    error('Wrong parameter name!')
-                end
+            if isempty(magnSigma2)
+                gpcf.magnSigma2 = 0.1;
+            else
+                gpcf.magnSigma2=magnSigma2;
             end
-        end
-    end
 
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'magnSigma2'
-                gpcf.magnSigma2 = varargin{i+1};
-              case 'lengthScale'
-                gpcf.lengthScale = varargin{i+1};
-              case 'metric'
-                gpcf.metric = varargin{i+1};
+            % Initialize prior structure
+            gpcf.p=[];
+            if isempty(lengthScale_prior)
+                gpcf.p.lengthScale=prior_unif('init');
+            else
+                gpcf.p.lengthScale=lengthScale_prior;
+            end
+            if isempty(magnSigma2_prior)
+                gpcf.p.magnSigma2=prior_unif('init');
+            else
+                gpcf.p.magnSigma2=magnSigma2_prior;
+            end
+
+            %Initialize metric
+            if ~isempty(metric)
+                gpcf.metric = metric;
+                gpcf = rmfield(gpcf, 'lengthScale');
+            end
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_sexp_pak;
+            gpcf.fh_unpak = @gpcf_sexp_unpak;
+            gpcf.fh_e = @gpcf_sexp_e;
+            gpcf.fh_ghyper = @gpcf_sexp_ghyper;
+            gpcf.fh_ginput = @gpcf_sexp_ginput;
+            gpcf.fh_cov = @gpcf_sexp_cov;
+            gpcf.fh_trcov  = @gpcf_sexp_trcov;
+            gpcf.fh_trvar  = @gpcf_sexp_trvar;
+            gpcf.fh_recappend = @gpcf_sexp_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(magnSigma2);gpcf.magnSigma2=magnSigma2;end
+            if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
+            if ~isempty(metric)
+                gpcf.metric=metric;
                 if isfield(gpcf, 'lengthScale')
                     gpcf = rmfield(gpcf, 'lengthScale');
                 end
-              case 'lengthScale_prior'
-                gpcf.p.lengthScale = varargin{i+1};
-              case 'magnSigma2_prior'
-                gpcf.p.magnSigma2 = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
             end
-        end
+            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
+            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
     end
 
     
