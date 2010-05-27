@@ -1,38 +1,47 @@
 function likelih = likelih_binomial(do, varargin)
-%likelih_binomial	Create a binomial likelihood structure for Gaussian Process
+%likelih_binomial	Create a binomial likelihood structure for a
+%                       Gaussian Process
 %
-%	Description
-%
-%	LIKELIH = LIKELIH_BINOMIAL('INIT') Create and initialize binomial likelihood. 
+%	Description%
+%	LIKELIH = LIKELIH_BINOMIAL('INIT') Create and initialize 
+%                 binomial likelihood. 
 %
 %       The likelihood is defined as follows:
 %                            __ n
-%                p(y|f, z) = || i=1 p_i^(y_i)*(1-p_i)^(z_i-y_i)) * gamma(z_i+1)/(gamma(y_i+1)*gamma(z_i-y_i+1))
+%                p(y|f, z) = || i=1 [ p_i^(y_i)*(1-p_i)^(z_i-y_i)) * 
+%                                    gamma(z_i+1)/(gamma(y_i+1)*gamma(z_i-y_i+1))]
 %
-%       where p_i = exp(f_i)/ (1+exp(f_i)) is the succes probability, which is a function 
-%       of the latent variable f_i and z is a vector of numbers of trials. When using Binomial
-%       likelihood you need to give the vector z as an extra parameter to each 
-%       function that requires y also. For example, you should call gpla_e as follows
-%           gpla_e(w, gp, x, y, 'z', z)
+%       where p_i = exp(f_i)/ (1+exp(f_i)) is the succes probability,
+%       which is a function of the latent variable f_i and z is a
+%       vector of numbers of trials. When using Binomial likelihood
+%       you need to give the vector z as an extra parameter to each
+%       function that requires y also. For example, you should call
+%       gpla_e as follows 
+%            gpla_e(w, gp, x, y, 'z', z)
 %
 %
 %	The fields in LIKELIH are:
 %	  likelih.type             = 'likelih_binomial'
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to energy of likelihood
-%         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_g2            = function handle to second derivatives of energy
-%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
-%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
-%         likelih.fh_predy         = function handle to evaluate predictive density of y
-%         likelih.fh_recappend     = function handle to record append
+%         likelih.fh_e             = function handle to the log likelihood
+%         likelih.fh_g             = function handle to the gradient of 
+%                                    the log likelihood
+%         likelih.fh_g2            = function handle to the second gradient
+%                                    of the log likelihood
+%         likelih.fh_g3            = function handle to the third gradient  
+%                                    of the log likelihood
+%         likelih.fh_tiltedMoments = function handle to evaluate posterior
+%                                    moments for EP
+%         likelih.fh_predy         = function handle to evaluate predictive 
+%                                    density of y
+%         likelih.fh_recappend     = function handle to append the record
 %
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %
 
-% Copyright (c) 2009-2010	Jaakko RiihimÃ¤ki & Jarno Vanhatalo
+% Copyright (c) 2009-2010	Jaakko Riihimäki & Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -100,33 +109,35 @@ function likelih = likelih_binomial(do, varargin)
 
 
     function w = likelih_binomial_pak(likelih)
-    %LIKELIH_BINOMIAL_PAK      Combine likelihood parameters into one vector.
+    %LIKELIH_BINOMIAL_PAK    Combine likelihood parameters into one vector.
     %
-    %   NO PARAMETERS!
-    %
-    %	Description
-    %	W = LIKELIH_BINOMIAL_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameters into a single row vector W.
+    %	Description 
+    %   W = LIKELIH_BINOMIAL_PAK(LIKELIH) takes a likelihood data
+    %   structure LIKELIH and returns an empty verctor W. If Binomial
+    %   likelihood had hyperparameters this would combine them into a
+    %   single row vector W (see e.g. likelih_negbin).
     %	  
     %
     %	See also
-    %	LIKELIH_BINOMIAL_UNPAK
+    %	LIKELIH_NEGBIN_UNPAK, GP_PAK
+
         w = [];
     end
 
 
     function [likelih, w] = likelih_binomial_unpak(w, likelih)
-    %LIKELIH_BINOMIAL_UNPAK      Combine likelihood parameters into one vector.
-    %
-    %   NO PARAMETERS!
+    %LIKELIH_BINOMIAL_UNPAK  Extract likelihood parameters from the vector.
     %
     %	Description
-    %	W = LIKELIH_BINOMIAL_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %   W = LIKELIH_BINOMIAL_UNPAK(W, LIKELIH) Doesn't do anything.
+    % 
+    %   If Binomial likelihood had hyperparameters this would extracts
+    %   them parameters from the vector W to the LIKELIH structure.
     %	  
     %
     %	See also
-    %	LIKELIH_BINOMIAL_PAK
+    %	LIKELIH_BINOMIAL_PAK, GP_UNPAK
+
       likelih=likelih;
       w=[];
     end
@@ -134,18 +145,19 @@ function likelih = likelih_binomial(do, varargin)
 
 
     function logLikelih = likelih_binomial_e(likelih, y, f, z)
-    %LIKELIH_BINOMIAL_E    (Likelihood) Energy function
+    %LIKELIH_BINOMIAL_E    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_BINOMIAL_E(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, the number of 'successes' Y and latent values F and returns the log likelihood.
+    %   E = LIKELIH_BINOMIAL_E(LIKELIH, Y, F, Z) takes a likelihood
+    %   data structure LIKELIH, succes counts Y, numbers of trials Z,
+    %   and latent values F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
     %   LIKELIH_BINOMIAL_G, LIKELIH_BINOMIAL_G3, LIKELIH_BINOMIAL_G2, GPLA_E
         
         if isempty(z)
             error(['likelih_binomial -> likelih_binomial_e: missing z!'... 
-                   'Poisson likelihood needs the expected number of   '...
+                   'Binomial likelihood needs the expected number of   '...
                    'occurrences as an extra input z. See, for         '...
                    'example, likelih_binomial and gpla_e.             ']);
         end
@@ -159,19 +171,21 @@ function likelih = likelih_binomial(do, varargin)
 
 
     function g = likelih_binomial_g(likelih, y, f, param, z)
-    %LIKELIH_BINOMIAL_G    Gradient of (likelihood) energy function
+    %LIKELIH_BINOMIAL_G    Gradient of log likelihood (energy)
     %
-    %   Description
-    %   G = LIKELIH_BINOMIAL_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
-    %   LIKELIH, the number of 'successes' Y and latent values F and returns the gradient of 
-    %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
+    %   Description 
+    %   G = LIKELIH_BINOMIAL_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, succes counts Y, numbers of trials Z
+    %   and latent values F. Returns the gradient of log likelihood 
+    %   with respect to PARAM. At the moment PARAM can be 'hyper' or
+    %   'latent'.
     %
     %   See also
     %   LIKELIH_BINOMIAL_E, LIKELIH_BINOMIAL_G2, LIKELIH_BINOMIAL_G3, GPLA_E
 
         if isempty(z)
             error(['likelih_binomial -> likelih_binomial_g: missing z!'... 
-                   'Poisson likelihood needs the expected number of   '...
+                   'Binomial likelihood needs the expected number of   '...
                    'occurrences as an extra input z. See, for         '...
                    'example, likelih_binomial and gpla_e.             ']);
         end
@@ -189,13 +203,14 @@ function likelih = likelih_binomial(do, varargin)
     
 
     function g2 = likelih_binomial_g2(likelih, y, f, param, z)
-    %LIKELIH_BINOMIAL_G2    Third gradients of (likelihood) energy function
+    %LIKELIH_BINOMIAL_G2  Second gradients of log likelihood (energy)
     %
-    %   Description
-    %   G2 = LIKELIH_BINOMIAL_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, the number of 'successes' Y and latent values F and returns the 
-    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
+    %   Description        
+    %   G2 = LIKELIH_BINOMIAL_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, succes counts Y, numbers of trials Z,
+    %   and latent values F. Returns the hessian of log likelihood
+    %   with respect to PARAM. At the moment PARAM can be only
+    %   'latent'. G2 is a vector with diagonal elements of the hessian
     %   matrix (off diagonals are zero).
     %
     %   See also
@@ -203,7 +218,7 @@ function likelih = likelih_binomial(do, varargin)
 
         if isempty(z)
             error(['likelih_binomial -> likelih_binomial_g2: missing z!'... 
-                   'Poisson likelihood needs the expected number of    '...
+                   'Binomial likelihood needs the expected number of    '...
                    'occurrences as an extra input z. See, for          '...
                    'example, likelih_binomial and gpla_e.              ']);
         end
@@ -220,20 +235,22 @@ function likelih = likelih_binomial(do, varargin)
     
     
     function g3 = likelih_binomial_g3(likelih, y, f, param, z)
-    %LIKELIH_BINOMIAL_G3    Gradient of (likelihood) Energy function
+    %LIKELIH_BINOMIAL_G3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_BINOMIAL_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH,  the number of 'successes' Y and latent values F and returns the 
-    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G3 is a vector with third gradients.
+        
+    %   G3 = LIKELIH_BINOMIAL_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   data structure LIKELIH, succes counts Y, numbers of trials Z
+    %   and latent values F and returns the third gradients of log
+    %   likelihood with respect to PARAM. At the moment PARAM can be
+    %   only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
     %   LIKELIH_BINOMIAL_E, LIKELIH_BINOMIAL_G, LIKELIH_BINOMIAL_G2, GPLA_E, GPLA_G
     
         if isempty(z)
             error(['likelih_binomial -> likelih_binomial_g3: missing z!'... 
-                   'Poisson likelihood needs the expected number of    '...
+                   'Binomial likelihood needs the expected number of    '...
                    'occurrences as an extra input z. See, for          '...
                    'example, likelih_binomial and gpla_e.              ']);
         end
@@ -248,20 +265,23 @@ function likelih = likelih_binomial(do, varargin)
      end
 
     function [m_0, m_1, sigm2hati1] = likelih_binomial_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_BINOMIAL_TILTEDMOMENTS    Returns the moments of the tilted distribution
+    %LIKELIH_BINOMIAL_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
     %
     %   Description
-    %   [M_0, M_1, M2] = LIKELIH_BINOMIAL_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
-    %   likelihood data structure LIKELIH, the number of 'successes' Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
-    %   M_2 of the tilted distribution
+    %   [M_0, M_1, M2] = LIKELIH_BINOMIAL_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) 
+    %   takes a likelihood data structure LIKELIH, succes counts Y, 
+    %   numbers of trials Z, index I and cavity variance S2 and mean
+    %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
+    %   of the posterior marginal (see Rasmussen and Williams (2006):
+    %   Gaussian processes for Machine Learning, page 55).
     %
     %   See also
     %   GPEP_E
+
         
         if isempty(z)
             error(['likelih_binomial -> likelih_binomial_tiltedMoments: missing z!'... 
-                   'Poisson likelihood needs the expected number of               '...
+                   'Binomial likelihood needs the expected number of               '...
                    'occurrences as an extra input z. See, for                     '...
                    'example, likelih_binomial and gpla_e.                         ']);
         end
@@ -351,15 +371,28 @@ function likelih = likelih_binomial(do, varargin)
     end
 
     
-    function [Ey, Vary, Py] = likelih_binomial_predy(likelih, Ef, Varf, zt, y, z)
+    function [Ey, Vary, Py] = likelih_binomial_predy(likelih, Ef, Varf, yt, zt)
     %LIKELIH_BINOMIAL_PREDY    Returns the predictive mean, variance and density of y
     %
-    %   Description
-    %   [Ey, Vary, py] = LIKELIH_BINOMIAL_PREDY(LIKELIH, EF, VARF, Y) 
+    %   Description         
+    %   [EY, VARY] = LIKELIH_BINOMIAL_PREDY(LIKELIH, EF, VARF)
+    %   takes a likelihood data structure LIKELIH, posterior mean EF
+    %   and posterior Variance VARF of the latent variable and returns
+    %   the posterior predictive mean EY and variance VARY of the
+    %   observations related to the latent variables
+    %        
+    %   [Ey, Vary, PY] = LIKELIH_BINOMIAL_PREDY(LIKELIH, EF, VARF YT, ZT)
+    %   Returns also the predictive density of YT, that is 
+    %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
+    %   This requires also the succes counts YT, numbers of trials ZT.
+    %
+    %   See also 
+    %   ep_pred, la_pred, mc_pred
 
-        if isempty(z)
+
+        if isempty(zt)
             error(['likelih_binomial -> likelih_binomial_predy: missing z!'... 
-                   'Poisson likelihood needs the expected number of       '...
+                   'Binomial likelihood needs the expected number of       '...
                    'occurrences as an extra input z. See, for             '...
                    'example, likelih_binomial and gpla_e.                 ']);
         end
@@ -376,19 +409,19 @@ function likelih = likelih_binomial(do, varargin)
         
         for i1=1:nt
             ci = sqrt(Varf(i1));
-            F  = @(x)z(i1)./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+            F  = @(x)zt(i1)./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
             
-            F2  = @(x)z(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+            F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
             
-            F3  = @(x)(z(i1)./(1+exp(-x))).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+            F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
             VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
             
             if nargout > 2
-                %bin_cc=exp(gammaln(z(i1)+1)-gammaln(y(i1)+1)-gammaln(z(i1)-y(i1)+1));
-                %F  = @(x)bin_cc.*(1./(1+exp(-x))).^y(i1).*(1-(1./(1+exp(-x)))).^(z(i1)-y(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-                F  = @(x)exp(gammaln(z(i1)+1)-gammaln(y(i1)+1)-gammaln(z(i1)-y(i1)+1) + y(i1).*log(1./(1+exp(-x))) + (z(i1)-y(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+                %bin_cc=exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1));
+                %F  = @(x)bin_cc.*(1./(1+exp(-x))).^yt(i1).*(1-(1./(1+exp(-x)))).^(zt(i1)-yt(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+                F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
                 Py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
             end
         end
@@ -397,15 +430,18 @@ function likelih = likelih_binomial(do, varargin)
     
     
     function reclikelih = likelih_binomial_recappend(reclikelih, ri, likelih)
-    % RECAPPEND - Record append
-    %          Description
-    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-    %          function record RECCF, record index RI, RECAPPEND returns a
-    %          structure RECCF containing following record fields:
-    %          lengthHyper    =
-    %          lengthHyperNu  =
-    %          lengthScale    =
-    %          magnSigma2     =
+    % RECAPPEND  Append the parameters to the record
+    %
+    %          Description 
+    %          RECLIKELIH = GPCF_BINOMIAL_RECAPPEND(RECLIKELIH, RI, LIKELIH)
+    %          takes a likelihood record structure RECLIKELIH, record
+    %          index RI and likelihood structure LIKELIH with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECLIKELIH which contains all the old samples and the
+    %          current samples from LIKELIH.
+    % 
+    %  See also:
+    %  gp_mc
         
         
         if nargin == 2

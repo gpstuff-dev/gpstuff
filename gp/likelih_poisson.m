@@ -3,38 +3,45 @@ function likelih = likelih_poisson(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_POISSON('INIT') Create and initialize Poisson likelihood. 
+%	LIKELIH = LIKELIH_POISSON('INIT') Create and initialize 
+%                 Poisson likelihood. 
 %
 %       The likelihood is defined as follows:
 %                            __ n
 %                p(y|f, z) = || i=1 Poisson(y_i|z_i*exp(f_i))
 %
-%       where z is a vector of expected mean and f the latent value vector whose 
-%       components are transformed to relative risk exp(f_i). When using Poisosn 
-%       likelihood you need to give the vector z as an extra parameter to each 
-%       function that requires y also. For example, you should call gpla_e as follows
-%           gpla_e(w, gp, x, y, 'z', z)
+%       where z is a vector of expected mean and f the latent value
+%       vector whose components are transformed to relative risk
+%       exp(f_i). When using Poisosn likelihood you need to give the
+%       vector z as an extra parameter to each function that requires
+%       y also. For example, you should call gpla_e as follows
+%          gpla_e(w, gp, x, y, 'z', z)
 %
 %	The fields in LIKELIH are:
 %	  likelih.type             = 'likelih_poisson'
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to energy of likelihood
-%         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_g2            = function handle to second derivatives of energy
-%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
-%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
-%         likelih.fh_predy         = function handle to evaluate predictive density of y
-%         likelih.fh_recappend     = function handle to record append
+%         likelih.fh_e             = function handle to the log likelihood
+%         likelih.fh_g             = function handle to the gradient of 
+%                                    the log likelihood
+%         likelih.fh_g2            = function handle to the second gradient
+%                                    of the log likelihood
+%         likelih.fh_g3            = function handle to the third gradient  
+%                                    of the log likelihood
+%         likelih.fh_tiltedMoments = function handle to evaluate posterior
+%                                    moments for EP
+%         likelih.fh_predy         = function handle to evaluate predictive 
+%                                    density of y
+%         likelih.fh_recappend     = function handle to append the record    
 %
 %	LIKELIH = LIKELIH_POISSON('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH.
+%       Set the values of fields FIELD1... to the values VALUE1... in
+%       LIKELIH.
 %
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 
-% Copyright (c) 2006      Helsinki University of Technology (author) Jarno Vanhatalo
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2006-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -89,47 +96,51 @@ function likelih = likelih_poisson(do, varargin)
     end
    
     function w = likelih_poisson_pak(likelih)
-    %LIKELIH_POISSON_PAK      Combine likelihood parameters into one vector.
+    %LIKELIH_POISSON_PAK    Combine likelihood parameters into one vector.
     %
-    %   NO PARAMETERS
-    %
-    %	Description
-    %	W = LIKELIH_POISSON_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameters into a single row vector W.
+    %	Description 
+    %   W = LIKELIH_POISSON_PAK(LIKELIH) takes a likelihood data
+    %   structure LIKELIH and returns an empty verctor W. If Poisson
+    %   likelihood had hyperparameters this would combine them into a
+    %   single row vector W (see e.g. likelih_negbin).
     %	  
     %
     %	See also
-    %	LIKELIH_POISSON_UNPAK
+    %	LIKELIH_NEGBIN_UNPAK, GP_PAK
+
         w = [];
     end
 
 
     function [likelih, w] = likelih_poisson_unpak(w, likelih)
-    %LIKELIH_POISSON_UNPAK      Combine likelihood parameters into one vector.
-    %
-    %   NO PARAMETERS
+    %LIKELIH_POISSON_UNPAK  Extract likelihood parameters from the vector.
     %
     %	Description
-    %	W = LIKELIH_POISSON_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %   W = LIKELIH_POISSON_UNPAK(W, LIKELIH) Doesn't do anything.
+    % 
+    %   If Poisson likelihood had hyperparameters this would extracts
+    %   them parameters from the vector W to the LIKELIH structure.
     %	  
     %
     %	See also
-    %	LIKELIH_POISSON_PAK
-      likelih=likelih;
-      w=[];
+    %	LIKELIH_POISSON_PAK, GP_UNPAK
+
+        likelih=likelih;
+        %w=[];
     end
 
 
     function logLikelih = likelih_poisson_e(likelih, y, f, z)
-    %LIKELIH_POISSON_E    (Likelihood) Energy function
+    %LIKELIH_POISSON_E    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_POISSON_E(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
+    %   E = LIKELIH_POISSON_E(LIKELIH, Y, F, Z) takes a likelihood
+    %   data structure LIKELIH, incedence counts Y, expected counts Z,
+    %   and latent values F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
     %   LIKELIH_POISSON_G, LIKELIH_POISSON_G3, LIKELIH_POISSON_G2, GPLA_E
+
         
         if isempty(z)
             error(['likelih_poisson -> likelih_poisson_e: missing z!'... 
@@ -145,12 +156,14 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function deriv = likelih_poisson_g(likelih, y, f, param, z)
-    %LIKELIH_POISSON_G    Gradient of (likelihood) energy function
+    %LIKELIH_POISSON_G    Gradient of log likelihood (energy)
     %
-    %   Description
-    %   G = LIKELIH_POISSON_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
-    %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
+    %   Description 
+    %   G = LIKELIH_POISSON_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, incedence counts Y, expected counts Z
+    %   and latent values F. Returns the gradient of log likelihood 
+    %   with respect to PARAM. At the moment PARAM can be 'hyper' or
+    %   'latent'.
     %
     %   See also
     %   LIKELIH_POISSON_E, LIKELIH_POISSON_G2, LIKELIH_POISSON_G3, GPLA_E
@@ -170,13 +183,14 @@ function likelih = likelih_poisson(do, varargin)
 
 
     function g2 = likelih_poisson_g2(likelih, y, f, param, z)
-    %LIKELIH_POISSON_G2    Third gradients of (likelihood) energy function
+    %LIKELIH_POISSON_G2  Second gradients of log likelihood (energy)
     %
-    %   Description
-    %   G2 = LIKELIH_POISSON_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
+    %   Description        
+    %   G2 = LIKELIH_POISSON_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, incedence counts Y, expected counts Z,
+    %   and latent values F. Returns the hessian of log likelihood
+    %   with respect to PARAM. At the moment PARAM can be only
+    %   'latent'. G2 is a vector with diagonal elements of the hessian
     %   matrix (off diagonals are zero).
     %
     %   See also
@@ -196,13 +210,15 @@ function likelih = likelih_poisson(do, varargin)
     end    
     
     function third_grad = likelih_poisson_g3(likelih, y, f, param, z)
-    %LIKELIH_POISSON_G3    Gradient of (likelihood) Energy function
+    %LIKELIH_POISSON_G3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_POISSON_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G3 is a vector with third gradients.
+        
+    %   G3 = LIKELIH_POISSON_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   data structure LIKELIH, incedence counts Y, expected counts Z
+    %   and latent values F and returns the third gradients of log
+    %   likelihood with respect to PARAM. At the moment PARAM can be
+    %   only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
     %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G2, GPLA_E, GPLA_G
@@ -221,16 +237,19 @@ function likelih = likelih_poisson(do, varargin)
     end
 
     function [m_0, m_1, sigm2hati1] = likelih_poisson_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_POISSON_TILTEDMOMENTS    Returns the moments of the tilted distribution
+    %LIKELIH_POISSON_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
     %
     %   Description
-    %   [M_0, M_1, M2] = LIKELIH_POISSON_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
-    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
-    %   M_2 of the tilted distribution
+    %   [M_0, M_1, M2] = LIKELIH_POISSON_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) 
+    %   takes a likelihood data structure LIKELIH, incedence counts Y, 
+    %   expected counts Z, index I and cavity variance S2 and mean
+    %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
+    %   of the posterior marginal (see Rasmussen and Williams (2006):
+    %   Gaussian processes for Machine Learning, page 55).
     %
     %   See also
     %   GPEP_E
+
         
         if isempty(z)
             error(['likelih_poisson -> likelih_poisson_tiltedMoments: missing z!'... 
@@ -314,22 +333,34 @@ function likelih = likelih_poisson(do, varargin)
     end
 
     
-    function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, y, z)
+    function [Ey, Vary, Py] = likelih_poisson_predy(likelih, Ef, Varf, yt, zt)
     %LIKELIH_POISSON_PREDY    Returns the predictive mean, variance and density of y
     %
-    %   Description
-    %   [Ey, Vary, py] = LIKELIH_POISSON_PREDY(LIKELIH, EF, VARF, Y) 
+    %   Description         
+    %   [EY, VARY] = LIKELIH_POISSON_PREDY(LIKELIH, EF, VARF)
+    %   takes a likelihood data structure LIKELIH, posterior mean EF
+    %   and posterior Variance VARF of the latent variable and returns
+    %   the posterior predictive mean EY and variance VARY of the
+    %   observations related to the latent variables
+    %        
+    %   [Ey, Vary, PY] = LIKELIH_POISSON_PREDY(LIKELIH, EF, VARF YT, ZT)
+    %   Returns also the predictive density of YT, that is 
+    %        p(yt | y,zt) = \int p(yt | f, zt) p(f|y) df.
+    %   This requires also the incedence counts YT, expected counts ZT.
+    %
+    %   See also 
+    %   ep_pred, la_pred, mc_pred
 
         if isempty(z)
-            error(['likelih_poisson -> likelih_poisson_predy: missing z!'... 
+            error(['likelih_poisson -> likelih_poisson_predy: missing zt!'... 
                    'Poisson likelihood needs the expected number of     '...
-                   'occurrences as an extra input z. See, for           '...
+                   'occurrences as an extra input zt. See, for           '...
                    'example, likelih_poisson and gpla_e.                ']);
         end
         
         
         
-        avgE = z;
+        avgE = zt;
 
         %nsamp = 10000;
         
@@ -366,8 +397,8 @@ function likelih = likelih_poisson(do, varargin)
            for i1=1:length(Ef)
                myy_i = Ef(i1);
                sigm2_i = Varf(i1);
-               if y(i1) > 0
-                   mean_app = (myy_i/sigm2_i + log(y(i1)/avgE(i1)).*y(i1))/(1/sigm2_i + y(i1));
+               if yt(i1) > 0
+                   mean_app = (myy_i/sigm2_i + log(yt(i1)/avgE(i1)).*yt(i1))/(1/sigm2_i + yt(i1));
                    sigm_app = sqrt((1/sigm2_i + avgE(i1))^-1);
                else
                    mean_app = myy_i;
@@ -375,7 +406,7 @@ function likelih = likelih_poisson(do, varargin)
                end
                
                % Predictive density of the given observations
-               pd = @(f) poisspdf(y(i1),avgE(i1).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
+               pd = @(f) poisspdf(yt(i1),avgE(i1).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
                Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
            end
        end
@@ -383,15 +414,18 @@ function likelih = likelih_poisson(do, varargin)
     
     
     function reclikelih = likelih_poisson_recappend(reclikelih, ri, likelih)
-    % RECAPPEND - Record append
-    %          Description
-    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-    %          function record RECCF, record index RI, RECAPPEND returns a
-    %          structure RECCF containing following record fields:
-    %          lengthHyper    =
-    %          lengthHyperNu  =
-    %          lengthScale    =
-    %          magnSigma2     =
+    % RECAPPEND  Append the parameters to the record
+    %
+    %          Description 
+    %          RECLIKELIH = GPCF_POISSON_RECAPPEND(RECLIKELIH, RI, LIKELIH)
+    %          takes a likelihood record structure RECLIKELIH, record
+    %          index RI and likelihood structure LIKELIH with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECLIKELIH which contains all the old samples and the
+    %          current samples from LIKELIH.
+    % 
+    %  See also:
+    %  gp_mc
 
         if nargin == 2
             reclikelih.type = 'poisson';

@@ -3,8 +3,8 @@ function likelih = likelih_logit(do, varargin)
 %
 %	Description
 %
-%	LIKELIH = LIKELIH_LOGIT('INIT') Create and initialize Logit likelihood for 
-%       classification problem with class labels {-1,1}. 
+%	LIKELIH = LIKELIH_LOGIT('INIT') Create and initialize Logit 
+%       likelihood for classification problem with class labels {-1,1}. 
 %       
 %       likelihood is defined as follows:
 %                            __ n
@@ -14,17 +14,21 @@ function likelih = likelih_logit(do, varargin)
 %	  type                     = 'likelih_logit'
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to energy of likelihood
-%         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_g2            = function handle to second derivatives of energy
-%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
-%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
-%         likelih.fh_mcmc          = function handle to MCMC sampling of latent values
-%         likelih.fh_predy         = function handle to evaluate predictive density of y
-%         likelih.fh_recappend     = function handle to record append
+%         likelih.fh_e             = function handle to the log likelihood
+%         likelih.fh_g             = function handle to the gradient of 
+%                                    the log likelihood
+%         likelih.fh_g2            = function handle to the second gradient
+%                                    of the log likelihood
+%         likelih.fh_g3            = function handle to the third gradient  
+%                                    of the log likelihood
+%         likelih.fh_tiltedMoments = function handle to evaluate posterior
+%                                    moments for EP
+%         likelih.fh_predy         = function handle to evaluate predictive 
+%                                    density of y
+%         likelih.fh_recappend     = function handle to append the record    
 %
 %	See also
-%       LIKELIH_POISSON, LIKELIH_PROBIT, LIKELIH_NEGBIN
+%       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 
 %       Copyright (c) 2008-2010 Jarno Vanhatalo
 
@@ -84,48 +88,52 @@ function likelih = likelih_logit(do, varargin)
 
 
     function w = likelih_logit_pak(likelih)
-    %LIKELIH_LOGIT_PAK      Combine likelihood parameters into one vector.
+    %LIKELIH_LOGIT_PAK    Combine likelihood parameters into one vector.
     %
-    %   NO PARAMETERS
-    %
-    %	Description
-    %	W = LIKELIH_LOGIT_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameters into a single row vector W.
+    %	Description 
+    %   W = LIKELIH_LOGIT_PAK(LIKELIH) takes a likelihood data
+    %   structure LIKELIH and returns an empty verctor W. If Logit
+    %   likelihood had hyperparameters this would combine them into a
+    %   single row vector W (see e.g. likelih_negbin).
     %	  
     %
     %	See also
-    %	LIKELIH_LOGIT_UNPAK
+    %	LIKELIH_NEGBIN_UNPAK, GP_PAK
+        
         w = [];
     end
 
 
     function [likelih, w] = likelih_logit_unpak(w, likelih)
-    %LIKELIH_LOGIT_UNPAK      Combine likelihood parameters into one vector.
-    %
-    %   NO PARAMETERS
+    %LIKELIH_LOGIT_UNPAK  Extract likelihood parameters from the vector.
     %
     %	Description
-    %	W = LIKELIH_LOGIT_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %   W = LIKELIH_LOGIT_UNPAK(W, LIKELIH) Doesn't do anything.
+    % 
+    %   If Logit likelihood had hyperparameters this would extracts
+    %   them parameters from the vector W to the LIKELIH structure.
     %	  
     %
     %	See also
-    %	LIKELIH_LOGIT_PAK
-      likelih=likelih;
-      w=[];
+    %	LIKELIH_LOGIT_PAK, GP_UNPAK
+
+        likelih=likelih;
+        %w=[];
     end
 
 
 
     function logLikelih = likelih_logit_e(likelih, y, f, z)
-    %LIKELIH_LOGIT_E    (Likelihood) Energy function
+    %LIKELIH_LOGIT_E    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_LOGIT_E(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
+    %   E = LIKELIH_LOGIT_E(LIKELIH, Y, F) takes a likelihood
+    %   data structure LIKELIH, class labels Y, and latent values
+    %   F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
     %   LIKELIH_LOGIT_G, LIKELIH_LOGIT_G3, LIKELIH_LOGIT_G2, GPLA_E
+
         if ~isempty(find(y~=1 & y~=-1))
             error('likelih_logit: The class labels have to be {-1,1}')
         end
@@ -135,12 +143,13 @@ function likelih = likelih_logit(do, varargin)
 
 
     function deriv = likelih_logit_g(likelih, y, f, param, z)
-    %LIKELIH_LOGIT_G    Gradient of (likelihood) energy function
+    %LIKELIH_LOGIT_G    Gradient of log likelihood (energy)
     %
     %   Description
-    %   G = LIKELIH_LOGIT_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
-    %   log likelihood with respect to PARAM. At the moment PARAM can be only 'latent'.
+    %   G = LIKELIH_LOGIT_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, class labels Y, and latent values
+    %   F. Returns the gradient of log likelihood with respect to
+    %   PARAM. At the moment PARAM can be 'hyper' or 'latent'.
     %
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G2, LIKELIH_LOGIT_G3, GPLA_E
@@ -158,29 +167,32 @@ function likelih = likelih_logit(do, varargin)
 
 
     function g2 = likelih_logit_g2(likelih, y, f, param, z)
-    %LIKELIH_LOGIT_G2    Third gradients of (likelihood) energy function
+    %LIKELIH_LOGIT_G2  Second gradients of log likelihood (energy)
     %
-    %   Description
-    %   G2 = LIKELIH_LOGIT_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. HESSIAN is a vector with diagonal elements of the hessian 
-    %   matrix (off diagonals are zero).
+    %   Description        
+    %   G2 = LIKELIH_LOGIT_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, class labels Y, and latent values
+    %   F. Returns the hessian of log likelihood with respect to
+    %   PARAM. At the moment PARAM can be only 'latent'. G2 is a
+    %   vector with diagonal elements of the hessian matrix (off
+    %   diagonals are zero).
     %
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G, LIKELIH_LOGIT_G3, GPLA_E
+
         PI = 1./(1+exp(-f));
         g2 = -PI.*(1-PI);        
     end    
     
     function third_grad = likelih_logit_g3(likelih, y, f, param, z)
-    %LIKELIH_LOGIT_G3    Gradient of (likelihood) Energy function
+    %LIKELIH_LOGIT_G3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_LOGIT_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G3 is a vector with third gradients.
+    %   G3 = LIKELIH_LOGIT_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   data structure LIKELIH, class labels Y, and latent values F
+    %   and returns the third gradients of log likelihood with respect
+    %   to PARAM. At the moment PARAM can be only 'latent'. G3 is a
+    %   vector with third gradients.
     %
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G, LIKELIH_LOGIT_G2, GPLA_E, GPLA_G
@@ -196,13 +208,15 @@ function likelih = likelih_logit(do, varargin)
 
 
     function [m_0, m_1, sigm2hati1] = likelih_logit_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_LOGIT_TILTEDMOMENTS    Returns the moments of the tilted distribution
+    %LIKELIH_LOGIT_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
     %
     %   Description
-    %   [M_0, M_1, M2] = LIKELIH_LOGIT_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
-    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
-    %   M_2 of the tilted distribution
+    %   [M_0, M_1, M2] = LIKELIH_LOGIT_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) 
+    %   takes a likelihood data structure LIKELIH, class labels Y,
+    %   index I and cavity variance S2 and mean MYY. Returns the
+    %   zeroth moment M_0, mean M_1 and variance M_2 of the posterior
+    %   marginal (see Rasmussen and Williams (2006): Gaussian
+    %   processes for Machine Learning, page 55).
     %
     %   See also
     %   GPEP_E
@@ -281,8 +295,22 @@ function likelih = likelih_logit(do, varargin)
     end
     
     function [Ey, Vary, py] = likelih_logit_predy(likelih, Ef, Varf, y, z)
-    % Return the predictive probability of ty given the posterior mean Ef 
-    % and variance Varf
+    %LIKELIH_LOGIT_PREDY    Returns the predictive mean, variance and density of y
+    %
+    %   Description         
+    %   [EY, VARY] = LIKELIH_LOGIT_PREDY(LIKELIH, EF, VARF)
+    %   takes a likelihood data structure LIKELIH, posterior mean EF
+    %   and posterior Variance VARF of the latent variable and returns
+    %   the posterior predictive mean EY and variance VARY of the
+    %   observations related to the latent variables
+    %        
+    %   [Ey, Vary, PY] = LIKELIH_LOGIT_PREDY(LIKELIH, EF, VARF YT)
+    %   Returns also the predictive density of YT, that is 
+    %        p(yt | y) = \int p(yt | f) p(f|y) df.
+    %   This requires also the class labels YT.
+    %
+    %   See also 
+    %   ep_pred, la_pred, mc_pred
         
         if ~isempty(find(y~=1 & y~=-1))
             error('likelih_logit: The class labels have to be {-1,1}')
@@ -322,15 +350,18 @@ function likelih = likelih_logit(do, varargin)
 
 
     function reclikelih = likelih_logit_recappend(reclikelih, ri, likelih)
-    % RECAPPEND - Record append
-    %          Description
-    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-    %          function record RECCF, record index RI, RECAPPEND returns a
-    %          structure RECCF containing following record fields:
-    %          lengthHyper    =
-    %          lengthHyperNu  =
-    %          lengthScale    =
-    %          magnSigma2     =
+    % RECAPPEND  Append the parameters to the record
+    %
+    %          Description 
+    %          RECLIKELIH = GPCF_LOGIT_RECAPPEND(RECLIKELIH, RI, LIKELIH)
+    %          takes a likelihood record structure RECLIKELIH, record
+    %          index RI and likelihood structure LIKELIH with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECLIKELIH which contains all the old samples and the
+    %          current samples from LIKELIH.
+    % 
+    %  See also:
+    %  gp_mc
 
         if nargin == 2
             reclikelih.type = 'logit';

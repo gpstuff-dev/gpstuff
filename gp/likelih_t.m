@@ -19,16 +19,27 @@ function likelih = likelih_t(do, varargin)
 %         likelih.nu               = nu;
 %         likelih.sigma2           = sigma2;
 %         likelih.fix_nu           = 1 for keeping nu fixed, 0 for inferring it (1)
+%         p                        = Prior structure for hyperparameters
+%                                    of likelihood.
+%                                    Default prior for the dispersion 
+%                                    parameter is logunif.
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to energy of likelihood
-%         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_g2            = function handle to second derivatives of energy
-%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
-%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
-%         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
-%         likelih.fh_predy         = function handle to evaluate predictive density of y
-%         likelih.fh_optimizef     = function handle to optimization of latent values
+%         likelih.fh_e             = function handle to the log likelihood
+%         likelih.fh_g             = function handle to the gradient of 
+%                                    the log likelihood
+%         likelih.fh_g2            = function handle to the second gradient
+%                                    of the log likelihood
+%         likelih.fh_g3            = function handle to the third gradient  
+%                                    of the log likelihood
+%         likelih.fh_tiltedMoments = function handle to evaluate posterior
+%                                    moments for EP
+%         likelih.fh_siteDeriv     = function handle to help gradient evaluations
+%                                    with respect to likelihood parameters in EP
+%         likelih.fh_predy         = function handle to evaluate predictive 
+%                                    density of y
+%         likelih.fh_optimizef     = function handle to optimization of latent 
+%                                    values for gpla_e
 %         likelih.fh_recappend     = function handle to record append
 %
 %	LIKELIH = LIKELIH_T('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
@@ -135,15 +146,16 @@ function likelih = likelih_t(do, varargin)
 
 
     function w = likelih_t_pak(likelih)
-    %LIKELIH_T_PAK      Combine likelihood parameters into one vector.
+    %LIKELIH_T_PAK  Combine likelihood parameters into one vector.
     %
-    %	Description
-    %	W = LIKELIH_T_PAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameters into a single row vector W.
+    %	Description 
+    %   W = LIKELIH_T_PAK(LIKELIH) takes a
+    %   likelihood data structure LIKELIH and combines the parameters
+    %   into a single row vector W.
     %	  
     %
     %	See also
-    %	LIKELIH_T_UNPAK
+    %	LIKELIH_T_UNPAK, GP_PAK
         
         w = [];
         i1 = 0;
@@ -155,26 +167,20 @@ function likelih = likelih_t(do, varargin)
             i1 = i1+1;
             w(i1) = log(log(likelih.nu));
         end        
-        
-% $$$         if likelih.fix_nu == 1
-% $$$             w(1) = log(likelih.sigma);
-% $$$         else
-% $$$             w(1) = log(likelih.sigma);
-% $$$             w(2) = log(log(likelih.nu));
-% $$$         end
     end
 
 
     function [likelih, w] = likelih_t_unpak(w, likelih)
-    %LIKELIH_T_UNPAK      Combine likelihood parameters into one vector.
+    %LIKELIH_T_UNPAK  Extract likelihood parameters from the vector.
     %
     %	Description
-    %	W = LIKELIH_T_UNPAK(GPCF, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %   W = LIKELIH_T_UNPAK(W, LIKELIH) takes a likelihood data
+    %   structure LIKELIH and extracts the parameters from the vector W
+    %   to the LIKELIH structure.
     %	  
     %
     %	See also
-    %	LIKELIH_T_PAK    
+    %	LIKELIH_T_PAK, GP_UNPAK
 
         i1 = 0;
         if ~isempty(likelih.p.sigma2)
@@ -189,11 +195,12 @@ function likelih = likelih_t(do, varargin)
 
 
     function logPrior = likelih_t_priore(likelih)
-    %LIKELIH_T_PRIORE    log(prior) of the likelihood hyperparameters
+    %LIKELIH_T_PRIORE  log(prior) of the likelihood hyperparameters
     %
     %   Description
-    %   E = LIKELIH_T_PRIORE(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH
+    %   E = LIKELIH_T_PRIORE(LIKELIH) takes a likelihood data 
+    %   structure LIKELIH and returns log(p(th)), where th collects 
+    %   the hyperparameters.
     %
     %   See also
     %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
@@ -211,14 +218,16 @@ function likelih = likelih_t(do, varargin)
     end
     
     function glogPrior = likelih_t_priorg(likelih)
-    %LIKELIH_T_PRIORG    d log(prior)/dth of the likelihood hyperparameters th
+    %LIKELIH_T_PRIORG    d log(prior)/dth of the likelihood 
+    %                         hyperparameters th
     %
     %   Description
-    %   E = LIKELIH_T_PRIORG(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, 
+    %   E = LIKELIH_T_PRIORG(LIKELIH, Y, F) takes a likelihood 
+    %   data structure LIKELIH and returns d log(p(th))/dth, where 
+    %   th collects the hyperparameters.
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
+    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_G
         
     % Evaluate the gradients of log(prior)
 
@@ -238,11 +247,12 @@ function likelih = likelih_t(do, varargin)
     end
     
     function logLikelih = likelih_t_e(likelih, y, f, z)
-    %LIKELIH_T_E    (Likelihood) Energy function
+    %LIKELIH_T_E    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_T_E(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, outputs Y and latent values F and returns the log likelihood.
+    %   E = LIKELIH_T_E(LIKELIH, Y, F) takes a likelihood
+    %   data structure LIKELIH, observations Y, and latent values
+    %   F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
     %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
@@ -258,12 +268,13 @@ function likelih = likelih_t(do, varargin)
 
     
     function deriv = likelih_t_g(likelih, y, f, param, z)
-    %LIKELIH_T_G    Gradient of (likelihood) energy function
+    %LIKELIH_T_G    Gradient of log likelihood (energy)
     %
     %   Description
-    %   G = LIKELIH_T_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
-    %   log likelihood with respect to PARAM. At the moment PARAM can be 'hyper' or 'latent'.
+    %   G = LIKELIH_T_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, observations Y, and latent values
+    %   F. Returns the gradient of log likelihood with respect to
+    %   PARAM. At the moment PARAM can be 'hyper' or 'latent'.
     %
     %   See also
     %   LIKELIH_T_E, LIKELIH_T_G2, LIKELIH_T_G3, GPLA_E
@@ -296,14 +307,15 @@ function likelih = likelih_t(do, varargin)
 
 
     function g2 = likelih_t_g2(likelih, y, f, param, z)
-    %LIKELIH_T_G2    Second gradients of (likelihood) energy function
+    %LIKELIH_T_G2  Second gradients of log likelihood (energy)
     %
-    %   Description
-    %   G2 = LIKELIH_T_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
-    %   matrix (off diagonals are zero).
+    %   Description        
+    %   G2 = LIKELIH_T_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, observations Y, and latent values
+    %   F. Returns the hessian of log likelihood with respect to
+    %   PARAM. At the moment PARAM can be only 'latent'. G2 is a
+    %   vector with diagonal elements of the hessian matrix (off
+    %   diagonals are zero).
     %
     %   See also
     %   LIKELIH_T_E, LIKELIH_T_G, LIKELIH_T_G3, GPLA_E
@@ -335,13 +347,14 @@ function likelih = likelih_t(do, varargin)
     end    
     
     function third_grad = likelih_t_g3(likelih, y, f, param, z)
-    %LIKELIH_T_G3    Third gradient of (likelihood) Energy function
+    %LIKELIH_T_G3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_T_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G3 is a vector with third gradients.
+    %   G3 = LIKELIH_T_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   data structure LIKELIH, observations Y and latent values F and
+    %   returns the third gradients of log likelihood with respect to
+    %   PARAM. At the moment PARAM can be only 'latent'. G3 is a
+    %   vector with third gradients.
     %
     %   See also
     %   LIKELIH_T_E, LIKELIH_T_G, LIKELIH_T_G2, GPLA_E, GPLA_G
@@ -370,13 +383,15 @@ function likelih = likelih_t(do, varargin)
 
 
     function [m_0, m_1, m_2] = likelih_t_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_T_TILTEDMOMENTS    Returns the moments of the tilted distribution
+    %LIKELIH_T_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
     %
     %   Description
-    %   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
-    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
-    %   M_2 of the tilted distribution
+    %   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) 
+    %   takes a likelihood data structure LIKELIH, observations Y,
+    %   index I and cavity variance S2 and mean MYY. Returns the
+    %   zeroth moment M_0, mean M_1 and variance M_2 of the posterior
+    %   marginal (see Rasmussen and Williams (2006): Gaussian
+    %   processes for Machine Learning, page 55).
     %
     %   See also
     %   GPEP_E
@@ -480,9 +495,23 @@ function likelih = likelih_t(do, varargin)
     
     
     function [g_i] = likelih_t_siteDeriv(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_T_SITEDERIV    Evaluate the derivative with respect to cite parameters
+    %LIKELIH_T_SITEDERIV   Evaluate the expectation of the gradient
+    %                           of the log likelihood term with respect
+    %                           to the likelihood parameters for EP 
     %
+    %   Description
+    %   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY)         
+    %   takes a likelihood data structure LIKELIH, observations Y, index I
+    %   and cavity variance S2 and mean MYY. Returns E_f [d log
+    %   p(y_i|f_i) /d a], where a is the likelihood parameter and the
+    %   expectation is over the marginal posterior. This term is
+    %   needed when evaluating the gradients of the marginal
+    %   likelihood estimate Z_EP with respect to the likelihood
+    %   parameters (see Seeger (2008): Expectation propagation for
+    %   exponential families)
     %
+    %   See also
+    %   GPEP_G
 
         zm = @zeroth_moment;
         znu = @deriv_nu;
@@ -582,6 +611,18 @@ function likelih = likelih_t(do, varargin)
     end
 
     function [f, a] = likelih_t_optimizef(gp, y, K, Lav, K_fu)
+    %LIKELIH_T_OPTIMIZEF   function to optimize the latent variables
+    %                      with EM algorithm
+
+    % Description:
+    % [F, A] = LIKELIH_T_OPTIMIZEF(GP, Y, K, Lav, K_fu) Takes Gaussian
+    % process data structure GP, observations Y and the covariance
+    % matrix K. Solves the posterior mode of F using EM algorithm and
+    % evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu are
+    % needed for sparse approximations. For details, see Vanhatalo,
+    % Jylänki and Vehtari (2009): Gaussian process regression with
+    % Student-t likelihood.      
+        
         iter = 1;
         sigma2 = gp.likelih.sigma2;
         nu = gp.likelih.nu;
@@ -664,6 +705,22 @@ function likelih = likelih_t(do, varargin)
     end
 
     function [Ey, Vary, Py] = likelih_t_predy(likelih, Ef, Varf, y, z)
+    %LIKELIH_T_PREDY    Returns the predictive mean, variance and density of y
+    %
+    %   Description         
+    %   [EY, VARY] = LIKELIH_T_PREDY(LIKELIH, EF, VARF)
+    %   takes a likelihood data structure LIKELIH, posterior mean EF
+    %   and posterior Variance VARF of the latent variable and returns
+    %   the posterior predictive mean EY and variance VARY of the
+    %   observations related to the latent variables
+    %        
+    %   [Ey, Vary, PY] = LIKELIH_T_PREDY(LIKELIH, EF, VARF YT)
+    %   Returns also the predictive density of YT, that is 
+    %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+    %   This requires also the observations YT.
+    %
+    % See also:
+    % la_pred, ep_pred, mc_pred
 
         nu = likelih.nu;
         sigma2 = likelih.sigma2;

@@ -2,35 +2,46 @@ function likelih = likelih_negbin(do, varargin)
 %likelih_negbin	Create a Negbin likelihood structure for Gaussian Process
 %
 %	Description
-%
-%	LIKELIH = LIKELIH_NEGBIN('INIT') Create and initialize Negbin likelihood. 
+%       LIKELIH = LIKELIH_NEGBIN('INIT') Create and initialize Negbin
+%        likelihood.
 %
 %       The likelihood is defined as follows:
-%                            __ n
-%                p(y|f, z) = || i=1 (r/(r+mu_i))^r * gamma(r+y_i)/( gamma(r)*gamma(y_i+1) ) * (mu/(r+mu_i))^y_i
+%                     __ n
+%         p(y|f, z) = || i=1 [ (r/(r+mu_i))^r * gamma(r+y_i)/( gamma(r)*gamma(y_i+1) )
+%                             * (mu/(r+mu_i))^y_i ]
 %
-%       where mu_i = z_i*exp(f_i) and r is the dispersion parameter.  z is a vector of 
-%       expected mean and f the latent value vector whose components are transformed to 
-%       relative risk exp(f_i). When using the likelihood you need to give the vector z 
-%       as an extra parameter to each function that requires y also. For example, you 
-%       should call gpla_e as follows: gpla_e(w, gp, x, y, 'z', z)
+%       where mu_i = z_i*exp(f_i) and r is the dispersion parameter.
+%       z is a vector of expected mean and f the latent value vector
+%       whose components are transformed to relative risk
+%       exp(f_i). When using the likelihood you need to give the
+%       vector z as an extra parameter to each function that requires
+%       also y. For example, you should call gpla_e as follows:
+%       gpla_e(w, gp, x, y, 'z', z)
 %               
 %
 %	The fields in LIKELIH are:
 %	  type                     = 'likelih_negbin'
 %         disper                   = The dispersion parameter
-%         p                        = Prior structure for hyperparameters of likelihood.
-%                                    Default prior for the dispersion parameter is logunif.
+%         p                        = Prior structure for hyperparameters
+%                                    of likelihood.
+%                                    Default prior for the dispersion 
+%                                    parameter is logunif.
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to energy of likelihood
-%         likelih.fh_g             = function handle to gradient of energy
-%         likelih.fh_g2            = function handle to second derivatives of energy
-%         likelih.fh_g3            = function handle to third (diagonal) gradient of energy 
-%         likelih.fh_tiltedMoments = function handle to evaluate tilted moments for EP
-%         likelih.fh_siteDeriv     = function handle to the derivative with respect to cite parameters
-%         likelih.fh_predy         = function handle to evaluate the predictive mean, variance and density
-%         likelih.fh_recappend     = function handle to record append
+%         likelih.fh_e             = function handle to the log likelihood
+%         likelih.fh_g             = function handle to the gradient of 
+%                                    the log likelihood
+%         likelih.fh_g2            = function handle to the second gradient
+%                                    of the log likelihood
+%         likelih.fh_g3            = function handle to the third gradient  
+%                                    of the log likelihood
+%         likelih.fh_tiltedMoments = function handle to evaluate posterior
+%                                    moments for EP
+%         likelih.fh_siteDeriv     = function handle to help gradient evaluations
+%                                    with respect to likelihood parameters in EP
+%         likelih.fh_predy         = function handle to evaluate predictive 
+%                                    density of y
+%         likelih.fh_recappend     = function handle to append the record
 %
 %	LIKELIH = LIKELIH_NEGBIN('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. The fields that 
@@ -44,7 +55,7 @@ function likelih = likelih_negbin(do, varargin)
 %
 %
 
-% Copyright (c) 2007-2008 Jarno Vanhatalo & Jouni Hartikainen
+% Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -118,33 +129,34 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function w = likelih_negbin_pak(likelih)
-    %LIKELIH_NEGBIN_PAK      Combine likelihood parameters into one vector.
+    %LIKELIH_NEGBIN_PAK  Combine likelihood parameters into one vector.
     %
-    %	Description
-    %	W = LIKELIH_NEGBIN_PAK(LIKELIH, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameters into a single row vector W.
+    %	Description 
+    %   W = LIKELIH_NEGBIN_PAK(LIKELIH) takes a
+    %   likelihood data structure LIKELIH and combines the parameters
+    %   into a single row vector W.
     %	  
     %
     %	See also
-    %	LIKELIH_NEGBIN_UNPAK
+    %	LIKELIH_NEGBIN_UNPAK, GP_PAK
         
         if ~isempty(likelih.p.disper)
             w = log(likelih.disper);
-            %w = likelih.disper;
         end
     end
 
 
     function [likelih, w] = likelih_negbin_unpak(w, likelih)
-    %LIKELIH_NEGBIN_UNPAK      Combine likelihood parameters into one vector.
+    %LIKELIH_NEGBIN_UNPAK  Extract likelihood parameters from the vector.
     %
     %	Description
-    %	W = LIKELIH_NEGBIN_UNPAK(LIKELIH, W) takes a likelihood data structure LIKELIH and
-    %	combines the parameter vector W and sets the parameters in LIKELIH.
+    %   W = LIKELIH_NEGBIN_UNPAK(W, LIKELIH) takes a likelihood data
+    %   structure LIKELIH and extracts the parameters from the vector W
+    %   to the LIKELIH structure.
     %	  
     %
     %	See also
-    %	LIKELIH_NEGBIN_PAK    
+    %	LIKELIH_NEGBIN_PAK, GP_UNPAK
 
         if ~isempty(likelih.p.disper)
             i1=1;
@@ -156,11 +168,12 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function logPrior = likelih_negbin_priore(likelih, varargin)
-    %LIKELIH_NEGBIN_PRIORE    log(prior) of the likelihood hyperparameters
+    %LIKELIH_NEGBIN_PRIORE  log(prior) of the likelihood hyperparameters
     %
     %   Description
-    %   E = LIKELIH_NEGBIN_PRIORE(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH
+    %   E = LIKELIH_NEGBIN_PRIORE(LIKELIH) takes a likelihood data 
+    %   structure LIKELIH and returns log(p(th)), where th collects 
+    %   the hyperparameters.
     %
     %   See also
     %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
@@ -175,14 +188,16 @@ function likelih = likelih_negbin(do, varargin)
 
     
     function glogPrior = likelih_negbin_priorg(likelih, varargin)
-    %LIKELIH_NEGBIN_PRIORG    d log(prior)/dth of the likelihood hyperparameters th
+    %LIKELIH_NEGBIN_PRIORG    d log(prior)/dth of the likelihood 
+    %                         hyperparameters th
     %
     %   Description
-    %   E = LIKELIH_NEGBIN_PRIORG(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, 
+    %   E = LIKELIH_NEGBIN_PRIORG(LIKELIH, Y, F) takes a likelihood 
+    %   data structure LIKELIH and returns d log(p(th))/dth, where 
+    %   th collects the hyperparameters.
     %
     %   See also
-    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
+    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_G
         
         
         if ~isempty(likelih.p.disper)            
@@ -199,8 +214,9 @@ function likelih = likelih_negbin(do, varargin)
     %LIKELIH_NEGBIN_E    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_NEGBIN_E(LIKELIH, Y, F) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the log likelihood.
+    %   E = LIKELIH_NEGBIN_E(LIKELIH, Y, F, Z) takes a likelihood
+    %   data structure LIKELIH, incedence counts Y, expected counts Z,
+    %   and latent values F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
     %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
@@ -219,12 +235,14 @@ function likelih = likelih_negbin(do, varargin)
     end
 
     function g = likelih_negbin_g(likelih, y, f, param, z)
-    %LIKELIH_NEGBIN_G    Gradient of (likelihood) energy function
+    %LIKELIH_NEGBIN_G    Gradient of log likelihood (energy)
     %
-    %   Description
-    %   G = LIKELIH_NEGBIN_G(LIKELIH, Y, F, PARAM) takes a likelihood data structure
-    %   LIKELIH, incedence counts Y and latent values F and returns the gradient of 
-    %   log likelihood with respect to PARAM. At the moment PARAM can be 'hyper' or 'latent'.
+    %   Description 
+    %   G = LIKELIH_NEGBIN_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, incedence counts Y, expected counts Z
+    %   and latent values F. Returns the gradient of log likelihood 
+    %   with respect to PARAM. At the moment PARAM can be 'hyper' or
+    %   'latent'.
     %
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G2, LIKELIH_NEGBIN_G3, GPLA_E
@@ -263,13 +281,14 @@ function likelih = likelih_negbin(do, varargin)
     end
 
     function g2 = likelih_negbin_g2(likelih, y, f, param, z)
-    %LIKELIH_NEGBIN_G2  Second gradients of (likelihood) energy function
+    %LIKELIH_NEGBIN_G2  Second gradients of log likelihood (energy)
     %
-    %   Description
-    %   G2 = LIKELIH_NEGBIN_G2(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   hessian of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G2 is a vector with diagonal elements of the hessian 
+    %   Description        
+    %   G2 = LIKELIH_NEGBIN_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   data structure LIKELIH, incedence counts Y, expected counts Z,
+    %   and latent values F. Returns the hessian of log likelihood
+    %   with respect to PARAM. At the moment PARAM can be only
+    %   'latent'. G2 is a vector with diagonal elements of the hessian
     %   matrix (off diagonals are zero).
     %
     %   See also
@@ -299,13 +318,15 @@ function likelih = likelih_negbin(do, varargin)
     end    
     
     function g3 = likelih_negbin_g3(likelih, y, f, param, z)
-    %LIKELIH_NEGBIN_G3  Third gradients of (likelihood) Energy function
+    %LIKELIH_NEGBIN_G3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_NEGBIN_G3(LIKELIH, Y, F, PARAM) takes a likelihood data 
-    %   structure LIKELIH, incedence counts Y and latent values F and returns the 
-    %   third gradients of log likelihood with respect to PARAM. At the moment PARAM can 
-    %   be only 'latent'. G3 is a vector with third gradients.
+        
+    %   G3 = LIKELIH_NEGBIN_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   data structure LIKELIH, incedence counts Y, expected counts Z
+    %   and latent values F and returns the third gradients of log
+    %   likelihood with respect to PARAM. At the moment PARAM can be
+    %   only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
     %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G2, GPLA_E, GPLA_G
@@ -334,13 +355,15 @@ function likelih = likelih_negbin(do, varargin)
     end
     
     function [m_0, m_1, sigm2hati1] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_NEGBIN_TILTEDMOMENTS    Returns the moments of the tilted distribution
+    %LIKELIH_NEGBIN_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
     %
     %   Description
-    %   [M_0, M_1, M2] = LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) takes a 
-    %   likelihood data structure LIKELIH, incedence counts Y, index I and cavity variance 
-    %   S2 and mean MYY. Returns the zeroth moment M_0, first moment M_1 and second moment 
-    %   M_2 of the tilted distribution
+    %   [M_0, M_1, M2] = LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) 
+    %   takes a likelihood data structure LIKELIH, incedence counts Y, 
+    %   expected counts Z, index I and cavity variance S2 and mean
+    %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
+    %   of the posterior marginal (see Rasmussen and Williams (2006):
+    %   Gaussian processes for Machine Learning, page 55).
     %
     %   See also
     %   GPEP_E
@@ -441,9 +464,24 @@ function likelih = likelih_negbin(do, varargin)
     end
     
     function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_NEGBIN_SITEDERIV    Evaluate the derivative with respect to site parameters
+    %LIKELIH_NEGBIN_SITEDERIV   Evaluate the expectation of the gradient
+    %                           of the log likelihood term with respect
+    %                           to the likelihood parameters for EP 
     %
+    %   Description [M_0, M_1, M2] =
+    %   LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) takes
+    %   a likelihood data structure LIKELIH, incedence counts Y,
+    %   expected counts Z, index I and cavity variance S2 and mean
+    %   MYY. Returns E_f [d log p(y_i|f_i) /d a], where a is the
+    %   likelihood parameter and the expectation is over the marginal
+    %   posterior. This term is needed when evaluating the gradients
+    %   of the marginal likelihood estimate Z_EP with respect to the
+    %   likelihood parameters (see Seeger (2008): Expectation
+    %   propagation for exponential families)
     %
+    %   See also
+    %   GPEP_G
+
         if isempty(z)
             error(['likelih_negbin -> likelih_negbin_siteDeriv: missing z!'... 
                    'Negbin likelihood needs the expected number of        '...
@@ -541,21 +579,32 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
 
-    function [Ey, Vary, Py] = likelih_negbin_predy(likelih, Ef, Varf, y, z)
+    function [Ey, Vary, Py] = likelih_negbin_predy(likelih, Ef, Varf, yt, zt)
     %LIKELIH_NEGBIN_PREDY    Returns the predictive mean, variance and density of y
     %
-    %   Description
-    %   [Ey, Vary, py] = LIKELIH_NEGBIN_PREDY(LIKELIH, EF, VARF, Y) 
-        
-        if isempty(z)
-            error(['likelih_negbin -> likelih_negbin_predy: missing z!'... 
+    %   Description         
+    %   [EY, VARY] = LIKELIH_NEGBIN_PREDY(LIKELIH, EF, VARF)
+    %   takes a likelihood data structure LIKELIH, posterior mean EF
+    %   and posterior Variance VARF of the latent variable and returns
+    %   the posterior predictive mean EY and variance VARY of the
+    %   observations related to the latent variables
+    %        
+    %   [Ey, Vary, PY] = LIKELIH_NEGBIN_PREDY(LIKELIH, EF, VARF YT, ZT)
+    %   Returns also the predictive density of YT, that is 
+    %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+    %   This requires also the incedence counts YT, expected counts ZT.
+    %
+    % See also:
+    % la_pred, ep_pred, mc_pred        
+        if isempty(zt)
+            error(['likelih_negbin -> likelih_negbin_predy: missing zt!'... 
                    'Negbin likelihood needs the expected number of    '...
-                   'occurrences as an extra input z. See, for         '...
+                   'occurrences as an extra input zt. See, for         '...
                    'example, likelih_negbin and gpla_e.               ']);
         end
 
 
-       avgE = z;
+       avgE = zt;
        r = likelih.disper;
         
        Py = zeros(size(Ef));
@@ -570,7 +619,7 @@ function likelih = likelih_negbin(do, varargin)
 %            f_samp = normrnd(Ef(i1),sqrt(Varf(i1)),nsamp,1);
 %            la_samp = avgE(i1).*exp(f_samp);
 %             
-%            % Conditional mean and variance of y (see Gelman et al. p. 23-24)
+%            % Conditional mean and variance of yt (see Gelman et al. p. 23-24)
 %            Ey2(i1) = mean(la_samp);
 %            Vary2(i1) = mean(la_samp + la_samp.^2/r) + var(la_samp);
 
@@ -594,9 +643,9 @@ function likelih = likelih_negbin(do, varargin)
                myy_i = Ef(i1);
                sigm2_i = Varf(i1);
                
-               if y(i1) > 0
-                   m = log(r./(y(i1)+r)./avgE(i1));
-                   s2 = r.*(y(i1)+r)./y(i1);
+               if yt(i1) > 0
+                   m = log(r./(yt(i1)+r)./avgE(i1));
+                   s2 = r.*(yt(i1)+r)./yt(i1);
                    mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
                    sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
                else
@@ -605,7 +654,7 @@ function likelih = likelih_negbin(do, varargin)
                end
                
                % Predictive density of the given observations
-               pd = @(f) nbinpdf(y(i1),r,r./(avgE(i1).*exp(f)+r)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
+               pd = @(f) nbinpdf(yt(i1),r,r./(avgE(i1).*exp(f)+r)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
                Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
            end
        end
@@ -613,15 +662,18 @@ function likelih = likelih_negbin(do, varargin)
 
 
     function reclikelih = likelih_negbin_recappend(reclikelih, ri, likelih)
-    % RECAPPEND - Record append
-    %          Description
-    %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-    %          function record RECCF, record index RI, RECAPPEND returns a
-    %          structure RECCF containing following record fields:
-    %          lengthHyper    =
-    %          lengthHyperNu  =
-    %          lengthScale    =
-    %          magnSigma2     =
+    % RECAPPEND  Append the parameters to the record
+    %
+    %          Description 
+    %          RECLIKELIH = GPCF_NEGBIN_RECAPPEND(RECLIKELIH, RI, LIKELIH)
+    %          takes a likelihood record structure RECLIKELIH, record
+    %          index RI and likelihood structure LIKELIH with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECLIKELIH which contains all the old samples and the
+    %          current samples from LIKELIH.
+    % 
+    %  See also:
+    %  gp_mc
 
     % Initialize record
         if nargin == 2
