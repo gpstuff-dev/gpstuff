@@ -693,7 +693,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         
         % ============================================================
-        % DTC
+        % DTC/VAR
         % ============================================================        
       case {'DTC'}
         g_ind = zeros(1,numel(gp.X_u));
@@ -762,6 +762,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                         i1 = i1+1;
                         gdata(i1)= -0.5*DCff{i2}.*b*b';
                         gdata(i1)= gdata(i1) + 0.5*sum(1./La-LL).*DCff{i2};
+                        if strcmp(gp.type, 'VAR')
+                            gdata(i1)= gdata(i1) + 0.5*(sum((Kv_ff-Qv_ff)./La));
+                        end
                         gprior(i1) = gprior_cf(i2);
                     end
                 end
@@ -805,6 +808,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                         gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
                         gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))))...
                         - sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))+ sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+
+                        if strcmp(gp.type, 'VAR')
+                            gdata(i1) = gdata(i1) + 0.5.*(0-2.*sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2)) + ...
+                                sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                        end
                     end
                 end
             end
@@ -833,6 +841,46 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
+        
+        % ============================================================
+        % VAR
+        % ============================================================        
+        
+        % NOTE! Not properly implemented as no analytical result has been
+        % derived. Not suitable for large data sets.
+        
+       case 'VAR'
+           epsilon = 1.0e-6;
+           
+           func = fcnchk(@gpep_e, 3);
+           %grad = fcnchk(grad, length(varargin));
+           
+           % Treat
+           nparams = length(w);
+           deltaf = zeros(1, nparams);
+           step = zeros(1, nparams);
+           for i = 1:nparams
+               % Move a small way in the ith coordinate of w
+               step(i) = 1.0;
+               func = fcnchk(func, 3);
+               fplus = feval(func, w+epsilon.*step, gp,x,y);
+               fminus = feval(func, w-epsilon.*step, gp,x,y);
+               %   fplus  = feval('linef_test', epsilon, func, w, step, varargin{:});
+               %   fminus = feval('linef_test', -epsilon, func, w, step, varargin{:});
+               % Use central difference formula for approximation
+               deltaf(i) = 0.5*(fplus - fminus)/epsilon;
+               step(i) = 0.0;
+           end
+           % gradient = feval(grad, w, varargin{:});
+           % fprintf(1, 'Checking gradient ...\n\n');
+           % fprintf(1, '   analytic   diffs     delta\n\n');
+           % disp([gradient', deltaf', gradient' - deltaf'])
+           
+           %delta = gradient' - deltaf';
+           gdata=deltaf;
+           
+           %gdata=numgrad_test(gp_pak(gp), @gpep_e, gp, x, y);
+           gprior=0;
 
         % ============================================================
         % SSGP
@@ -931,7 +979,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
+        
+     
     end
     
     g = gdata + gprior;
+   
 end

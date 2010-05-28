@@ -901,9 +901,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     z = z(r,:);
                 end
                 % ============================================================
-                % DTC
+                % DTC,VAR
                 % ============================================================
-              case 'DTC'
+              case {'DTC' 'VAR'}
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 u = gp.X_u;
@@ -1007,6 +1007,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 end
                 edata = logZep;
                 %L = iLaKfu;
+                if strcmp(gp.type,'VAR')
+                   Qv_ff = sum(B.^2)';
+                   edata = edata + 0.5*sum((Kv_ff-Qv_ff).*tautilde);
+                end
 
                 temp = Phi*(SsqrtPhi'*(SsqrtPhi*bb'));
                 %                b = Phi*bb' - temp + Phi*(SsqrtPhi'*(SsqrtPhi*(AA'\(AA\temp))));
