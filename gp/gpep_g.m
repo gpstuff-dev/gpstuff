@@ -2,20 +2,28 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %GPEP_G   Evaluate gradient of EP's marginal log posterior estimate 
 %
 %	Description
-%	G = GPEP_G(W, GP, X, Y) takes a full GP hyper-parameter vector W, 
-%       data structure GP a matrix X of input vectors and a matrix Y
-%       of target vectors, and evaluates the gradient G of EP's marginal 
-%       log posterior estimate . Each row of X corresponds to one input
-%       vector and each row of Y corresponds to one target vector. 
+%	G = GPEP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter 
+%       vector W, data structure GP a matrix X of input vectors and a 
+%       matrix Y of target vectors, and evaluates the gradient G of EP's 
+%       marginal log posterior estimate (gpep_e). Each row of X 
+%       corresponds to one input vector and each row of Y corresponds to 
+%       one target vector. 
 %
-%	[G, GDATA, GPRIOR] = GPEP_G(GP, X, Y) also returns separately  the
-%	data and prior contributions to the gradient.
+%	[G, GDATA, GPRIOR] = GPEP_G(GP, X, Y, OPTIONS) also returns 
+%	separately the data and prior contributions to the gradient.
+%    
+%     OPTIONS is optional parameter-value pair
+%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
+%              Some likelihoods may use this. For example, in case of 
+%              Poisson likelihood we have z_i=E_i, that is, expected 
+%              value for ith case. 
 %
 %	See also   
 %       GPEP_E, EP_PRED
 
 % Copyright (c) 2007-2010  Jarno Vanhatalo
-
+% Copyright (c) 2010       Heikki Peura
+    
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
@@ -48,7 +56,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % Calculate covariance matrix and the site parameters
         [K, C] = gp_trcov(gp,x);
         
-        if issparse(C)
+        if issparse(C)          % If compact support covariance functions are used 
+                                % the covariance matrix will be sparse
             [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, 'z', z);
             Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
             
@@ -58,13 +67,16 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         else
             [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, 'z', z);
 
-            if tautilde > 0
+            if tautilde > 0             % This is the usual case where likelihood is log concave
+                                        % for example, Poisson and probit
                 Stildesqroot=diag(sqrt(tautilde));
                 
                 % logZep; nutilde; tautilde;
                 b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
                 invC = Stildesqroot*(L'\(L\Stildesqroot));
-            else
+            else                         % We might end up here if the likelihood is not log concace
+                                         % For example Student-t likelihood. 
+                                         % NOTE! This does not work reliably yet
                 S = diag(tautilde);
                 b = nutilde - tautilde.*(L'*L*(nutilde));
                 invC = S*L';
@@ -283,7 +295,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         
         % =================================================================
-        % Gradient with respect to likelihood function parameters
+        % Gradient with respect to a likelihood function parameters
         
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
@@ -682,8 +694,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         % ============================================================
         % DTC
-        % ============================================================
-        
+        % ============================================================        
       case {'DTC'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
@@ -728,19 +739,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))))...
                     - sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))+ sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
                     gprior(i1) = gprior_cf(i2);
-%                     
-%                     KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-%                     gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-%                                        sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-% 
-%                     gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
-%                     gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-%                     gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}./La) - sum(LL.*DKff{i2}));
-%                     gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
-% 
-                    
-
-
                 end
                     
                 % Set the gradients of hyper-hyperparameter
@@ -807,11 +805,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                         gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
                         gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))))...
                         - sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))+ sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-%                         gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-%                                                           2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-%                         gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-%                         gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-%                                                       sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                     end
                 end
             end

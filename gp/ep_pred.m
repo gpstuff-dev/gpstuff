@@ -1,5 +1,5 @@
 function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
-%EP_PRED	Predictions with Gaussian Process EP
+%EP_PRED	Predictions with Gaussian Process EP approximation
 %
 %     Description
 %	[EF, VARF, EY, VARY] = EP_PRED(GP, X, Y, XT, OPTIONS) takes a GP 
@@ -12,26 +12,58 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 
-%                used for prediction. Default is all (1:gpcfn)
-%       'tstind' is a vector defining, which rows of X belong to which 
-%                training block in *IC type sparse models. Default is [].
-%       'yt' is optional observed yt in test points (see below)
-%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
-%         Some likelihoods may use this. For example, in case of Poisson
-%         likelihood we have z_i=E_i, that is, expected value for ith case. 
-%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%         Some likelihoods may use this. For example, in case of Poisson
-%         likelihood we have z_i=E_i, that is, expected value for ith case. 
+%                used for prediction. Default is all (1:gpcfn). See 
+%                additional information below.
+%       'tstind' is a vector/cell array defining, which rows of X belong 
+%                to which training block in *IC type sparse models. Deafult 
+%                is []. In case of PIC, a cell array containing index 
+%                vectors specifying the blocking structure for test data.
+%                IN FIC and CS+FIC a vector of length n that points out the 
+%                test inputs that are also in the training set (if none,
+%                set TSTIND = [])
+%       'yt'     is optional observed yt in test points (see below)
+%       'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
+%                Some likelihoods may use this. For example, in case of 
+%                Poisson likelihood we have z_i=E_i, that is, expected value 
+%                for ith case. 
+%       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%                Some likelihoods may use this. For example, in case of 
+%                Poisson likelihood we have z_i=E_i, that is, the expected 
+%                value for the ith case. 
 %
-%	[EF, VARF, EY, VARY, PYT] = EP_PRED(GP, X, Y, XT, 'yt', YT) 
+%	[EF, VARF, EY, VARY, PYT] = EP_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS) 
 %        returns also the predictive density PYT of the test observations 
 %        YT at input locations XT. This can be used for example in the
 %        cross-validation.
+%
+%       NOTE! In case of FIC and PIC sparse approximation the
+%       prediction for only some PREDCF covariance functions is
+%       just an approximation since the covariance functions are
+%       coupled in the approximation and are not strictly speaking
+%       additive anymore.
+%
+%       For example, if you use covariance such as K = K1 + K2 your
+%       predictions Ef1 = ep_pred(GP, X, Y, X, 'predcf', 1) and 
+%       Ef2 = ep_pred(gp, x, y, x, 'predcf', 2) should sum up to 
+%       Ef = ep_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With 
+%       FULL model this is true but with FIC and PIC this is true only 
+%       approximately. That is Ef \approx Ef1 + Ef2.
+%
+%       With CS+FIC the predictions are exact if the PREDCF
+%       covariance functions are all in the FIC part or if they are
+%       CS covariances.
+%
+%       NOTE! When making predictions with a subset of covariance
+%       functions with FIC approximation the predictive variance
+%       can in some cases be ill-behaved i.e. negative or
+%       unrealistically small. This may happen because of the
+%       approximative nature of the prediction.
 %  
 %	See also
 %	GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
 %
 % Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2010      Heikki Peura
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -61,7 +93,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
     [tn, tnin] = size(x);
         
     switch gp.type
-      case 'FULL'
+        % ============================================================
+        % FULL
+        % ============================================================
+      case 'FULL'        % Predictions with FULL GP model
         [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         
         [K, C]=gp_trcov(gp,x);
@@ -70,16 +105,18 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         K_nf=gp_cov(gp,xt,x,predcf);
         [n,nin] = size(x);
  
-        if tautilde > 0
+        if tautilde > 0             % This is the usual case where likelihood is log concave
+                                    % for example, Poisson and probit
             sqrttautilde = sqrt(tautilde);
             Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
                             
-            if issparse(L)
+            if issparse(L)          % If compact support covariance functions are used 
+                                    % the covariance matrix will be sparse
                 z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
             else
                 z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
             end
-            Ef=K_nf*(nutilde-z);
+            Ef=K_nf*(nutilde-z);    % The mean
 
             % Compute variance
             if nargout > 1
@@ -91,7 +128,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                     Varf = kstarstar - sum(V.^2)';
                 end
             end
-        else
+        else                         % We might end up here if the likelihood is not log concace
+                                     % For example Student-t likelihood. 
+                                     % NOTE! This does not work reliably yet
             z=tautilde.*(L'*(L*nutilde));
             Ef=K_nf*(nutilde-z);
             
@@ -101,8 +140,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                 Varf = kstarstar - sum((K_nf*S).*K_nf,2) + sum(V.^2,2);
             end
         end
-        
-      case 'FIC'
+        % ============================================================
+        % FIC
+        % ============================================================        
+      case 'FIC'        % Predictions with FIC sparse approximation for GP
         [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
         % Here tstind = 1 if the prediction is made for the training set 
@@ -117,10 +158,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         u = gp.X_u;
         m = size(u,1);
         
-        K_fu = gp_cov(gp,x,u,predcf);         % f x u
+        K_fu = gp_cov(gp,x,u,predcf);          % f x u
         K_nu=gp_cov(gp,xt,u,predcf);
         K_uu = gp_trcov(gp,u,predcf);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        K_uu = (K_uu+K_uu')./2;                % ensure the symmetry of K_uu
 
         kstarstar=gp_trvar(gp,xt,predcf);        
 
@@ -143,8 +184,8 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
             Ef(tstind) = Ef(tstind) + Lav.*p;
         end
         
+        % Compute variance
         if nargout > 1
-            % Compute variances of predictions
             %Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
             Luu = chol(K_uu)';
             B=Luu\(K_fu');   
@@ -158,8 +199,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                     - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
             end
         end
-        
-      case {'PIC' 'PIC_BLOCK'}
+        % ============================================================
+        % PIC
+        % ============================================================
+      case {'PIC' 'PIC_BLOCK'}        % Predictions with PIC sparse approximation for GP
         % Calculate some help matrices  
         u = gp.X_u;
         ind = gp.tr_index;
@@ -186,6 +229,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         
         Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
 
+        % Compute variance
         if nargout > 1
             kstarstar = gp_trvar(gp, xt, predcf);
             KnfL = K_nu*(iKuuKuf*L);
@@ -204,7 +248,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         % ============================================================
         % CS+FIC
         % ============================================================
-      case 'CS+FIC'
+      case 'CS+FIC'        % Predictions with CS+FIC sparse approximation for GP
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6 
             if ~isempty(tstind) && length(tstind) ~= size(x,1)
@@ -338,7 +382,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         % ============================================================
         % DTC/(VAR)
         % ============================================================
-      case {'DTC' 'VAR'}
+      case {'DTC' 'VAR'}        % Predictions with DTC or variational sparse approximation for GP
         [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
         % Here tstind = 1 if the prediction is made for the training set 
@@ -361,8 +405,6 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         kstarstar=gp_trvar(gp,xt,predcf);        
 
         % From this on evaluate the prediction
-        % See Snelson and Ghahramani (2007) for details 
-        %        p=iLaKfu*(A\(iLaKfu'*myytilde));
         p = b';
         
         ntest=size(xt,1);
@@ -394,8 +436,13 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                     - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
             end
         end
-        
-      case 'SSGP'
+        % ============================================================
+        % SSGP
+        % ============================================================
+      case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
+                         % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
+                         % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
+                         % NOTE! This does not work at the moment.
         [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         %param = varargin{1};
 
@@ -422,6 +469,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         end
     end
     
+    
+    % ============================================================
+    % Evaluate also the predictive mean and variance of new observation(s)
+    % ============================================================    
     if nargout > 2
         if isempty(yt)
             [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);

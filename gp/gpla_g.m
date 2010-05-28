@@ -13,12 +13,11 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %        the data and prior contributions to the gradient.
 %
 %     OPTIONS is optional parameter-value pair
-%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
-%         Some likelihoods may use this. For example, in case of Poisson
-%         likelihood we have z_i=E_i, that is, expected value for ith case. 
+%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
+%              Some likelihoods may use this. For example, in case of 
+%              Poisson likelihood we have z_i=E_i, that is, expected 
+%              value for ith case. 
 %  
-%       NOTE! The CS+FIC model is not supported 
-%
 %	See also   
 %       GPLA_E, LA_PRED
 
@@ -58,7 +57,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         
         [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
         
-        if W >= 0 
+        if W >= 0              % This is the usual case where likelihood is log concave
+                               % for example, Poisson and probit
             if issparse(K)                               % use sparse matrix routines
 
                 % permute
@@ -82,7 +82,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
                 s2 = 0.5*C2.*feval(gp.likelih.fh_g3, gp.likelih, y, f, 'latent', z);
             end
-        else
+        else                         % We might end up here if the likelihood is not log concace
+                                     % For example Student-t likelihood. 
             C = L;
             V = L*diag(W);
             R = diag(W) - V'*V;

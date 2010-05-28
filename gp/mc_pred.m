@@ -1,44 +1,86 @@
 function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
-%MC_PRED    Predictions with Gaussian Process MCMC solution.
+%MC_PRED    Predictions with Gaussian Process MCMC approximation.
 %
 %	Description
-%	[Ef, Varf] = MC_PRED(RECGP, X, Y, XT, PREDCF, TSTIND) takes a Gaussian 
-%       processes record structure RECGP (returned by gp_mc) together with a matrix XT 
-%       of input vectors, matrix X of training inputs and vector Y of training targets. 
-%       Returns matrices Ef and Varf that contain the predictive means and variances for 
-%       Gaussian processes stored in RECGP. The i'th column of Ef and Varf contain the 
-%       conditional predictive mean and variance for the latent variables given the i'th
-%       hyperparameter sample th_i in RECGP. That is:
+%	[EF, VARF] = MC_PRED(RECGP, X, Y, XT, OPTIONS) takes     
+%        a Gaussian processes record structure RECGP (returned by
+%        gp_mc) together with a matrix XT of input vectors, matrix X
+%        of training inputs and vector Y of training targets. Returns
+%        matrices EF and VARF that contain the posterior predictive
+%        means and variances of latent variables for Gaussian
+%        processes stored in RECGP. The i'th column of Ef and Varf
+%        contain the conditional predictive mean and variance for the
+%        latent variables given the i'th hyperparameter sample th_i in
+%        RECGP. That is:
 %       
-%                    Ef(:,i) = E[f | x, y, th_i]
-%                  Varf(:,i) = Var[f | x, y, th_i]
+%                  Ef(:,i) = E[f | x, y, th_i]
+%                Varf(:,i) = Var[f | x, y, th_i]
 %    
-%       The marginal posterior mean and variance can be evaluated from these as follows:
+%        The marginal posterior mean and variance can be evaluated from
+%        these as follows:
 %
-%                    E[f | xt, y] = E[ E[f | x, y, th] ]
-%                                = mean(Ef, 2)
-%                  Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
-%                                = mean(Varf,2) + var(Ef,0,2)
+%             E[f | xt, y] = E[ E[f | x, y, th] ]
+%                          = mean(Ef, 2)
+%           Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
+%                          = mean(Varf,2) + var(Ef,0,2)
 %   
-%       Each row of XT corresponds to one input vector and each row of Y corresponds to one 
-%       output. PREDCF is an array specifying the indexes of covariance functions, which 
-%       are used for making the prediction (others are considered noise). TSTIND is, in 
-%       case of PIC, a cell array containing index vectors specifying the blocking 
-%       structure for test data, or in FIC and CS+FI a vector of length n that points out 
-%       the test inputs that are also in the training set (if none, set TSTIND = []).
+%     OPTIONS is an optional parameter-value pair
+%       'predcf' is index vector telling which covariance functions are 
+%                used for prediction. Default is all (1:gpcfn). See 
+%                additional information below.
+%       'tstind' is a vector/cell array defining, which rows of X belong 
+%                to which training block in *IC type sparse models. Deafult 
+%                is []. In case of PIC, a cell array containing index 
+%                vectors specifying the blocking structure for test data.
+%                IN FIC and CS+FIC a vector of length n that points out the 
+%                test inputs that are also in the training set (if none,
+%                set TSTIND = [])
+%       'yt'     is optional observed yt in test points (see below)
+%       'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
+%                Some likelihoods may use this. For example, in case of 
+%                Poisson likelihood we have z_i=E_i, that is, expected value 
+%                for ith case. 
+%       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%                Some likelihoods may use this. For example, in case of 
+%                Poisson likelihood we have z_i=E_i, that is, the expected
+%                value for the ith case. 
 %       
-%       [Ef, Varf, Ey, Vary] = GP_PREDS(GP, X, Y, XT, PREDCF, TSTIND) returns also the 
-%       predictive means and variances for observations at input locations XT. That is,
+%       [EF, VARF, EY, VARY] = GP_PREDS(GP, X, Y, XT, OPTIONS) 
+%        returns also the predictive means and variances for test observations
+%        at input locations XT. That is,
 %
 %                    Ey(:,i) = E[y | xt, x, y, th_i]
 %                  Vary(:,i) = Var[y | xt, x, y, th_i]
 %
 %       where the latent variables have been marginalized out.
 %
-%	[Ef, Varf, Ey, Vary, PY] = GP_PRED(GP, X, Y, XT, PREDCF, TSTIND, Y) returns also the 
-%       predictive density PY of the observations Y at input locations XT. This can be used for
-%       example in the cross-validation. Here Y has to be vector.
+%	[EF, VARF, EY, VARY, PYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS) 
+%       returns also the predictive density PY of the observations Y
+%       at input locations XT. This can be used for example in the
+%       cross-validation. Here Y has to be vector.
 %
+%       NOTE! In case of FIC and PIC sparse approximation the
+%       prediction for only some PREDCF covariance functions is
+%       just an approximation since the covariance functions are
+%       coupled in the approximation and are not strictly speaking
+%       additive anymore.
+%
+%       For example, if you use covariance such as K = K1 + K2 your
+%       predictions Ef1 = mc_pred(GP, X, Y, X, 'predcf', 1) and 
+%       Ef2 = mc_pred(gp, x, y, x, 'predcf', 2) should sum up to 
+%       Ef = mc_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With 
+%       FULL model this is true but with FIC and PIC this is true only 
+%       approximately. That is Ef \approx Ef1 + Ef2.
+%
+%       With CS+FIC the predictions are exact if the PREDCF
+%       covariance functions are all in the FIC part or if they are
+%       CS covariances.
+%
+%       NOTE! When making predictions with a subset of covariance
+%       functions with FIC approximation the predictive variance
+%       can in some cases be ill-behaved i.e. negative or
+%       unrealistically small. This may happen because of the
+%       approximative nature of the prediction.
 %
 %	See also
 %	GP, GP_PAK, GP_UNPAK, GP_PRED

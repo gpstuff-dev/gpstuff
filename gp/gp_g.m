@@ -5,7 +5,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 %	G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
 %        vector W, data structure GP a matrix X of input vectors
 %        and a matrix Y of target vectors, and evaluates the
-%        gradient G of the energy function. Each row of X
+%        gradient G of the energy function (gp_e). Each row of X
 %        corresponds to one input vector and each row of Y NOTE! 
 %        This parametrization works only for full GP!
 %
@@ -18,8 +18,9 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 %	See also
 %       GP_E, GP_PAK, GP_UNPAK, GPCF_*
 
-% Copyright (c) 2007-2008 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010 Heikki Peura
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -664,7 +665,7 @@ switch gp.type
     
     g = gdata + gprior;
     
-        % ============================================================
+    % ============================================================
     % DTC/VAR
     % ============================================================
   case {'DTC' 'VAR'}
@@ -829,10 +830,10 @@ switch gp.type
     % ============================================================
     % SSGP
     % ============================================================
-  case 'SSGP'
-% $$$         g_ind = zeros(1,numel(gp.frequency));
-% $$$         gdata_ind = zeros(1,numel(gp.frequency));
-% $$$         gprior_ind = zeros(1,numel(gp.frequency));
+  case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
+                     % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
+                     % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
+                     % NOTE! This does not work at the moment.
 
     % First evaluate the needed covariance matrices
     % v defines that parameter is a vector

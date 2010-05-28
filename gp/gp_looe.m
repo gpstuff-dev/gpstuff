@@ -1,30 +1,32 @@
-function [ecv] = gp_cve(w, gp, x, y, param, varargin)
+function [ecv] = gp_looe(w, gp, x, y, varargin)
 %GP_CVE	Evaluate energy function for Gaussian Process 
 %
 %	Description
-%	ECV = GP_CVE(W, GP, X, Y, PARAM) takes a Gaussian process data structure GP 
-%	together with a matrix X of input vectors and a matrix Y of targets,
-%	and evaluates the energy function E.  Each row of X corresponds to one 
-%       input vector and each row of Y corresponds to one target vector.
+%	ECV = GP_CVE(W, GP, X, Y, PARAM) takes a Gaussian process data
+
+%       structure GP together with a matrix X of input vectors and a
+%       matrix Y of targets, and evaluates the energy function E.
+%       Each row of X corresponds to one input vector and each row of
+%       Y corresponds to one target vector.
 %
 %       The energy is minus log LOO-CV cost function:
 %            ECV  = - sum log p(Y_i | X, Y_{\i}, th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...), X is
-%       inputs and Y is observations (regression) or latent values (non-Gaussian
-%       likelihood).
+%       where th represents the hyperparameters (lengthScale, magnSigma2...), 
+%       X is inputs and Y is observations (regression) or latent values 
+%       (non-Gaussian likelihood).
 %
 %	See also
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
 %
 
-% Copyright (c) 2008-2009 Jarno Vanhatalo
+% Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
 
-gp=gp_unpak(gp, w, param);
+gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 n=length(x);
 

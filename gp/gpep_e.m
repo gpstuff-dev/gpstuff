@@ -1,40 +1,49 @@
 function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, varargin)
-%GPEP_E Conduct Expectation propagation and return marginal log posterior estimate
+%GPEP_E     Conduct Expectation propagation and return marginal 
+%           log posterior estimate
 %
-%	Description
-%	E = GPEP_E(W, GP, X, Y, PARAM) takes a gp data structure GP together
-%	with a matrix X of input vectors and a matrix Y of target vectors,
-%	and finds the EP approximation for the conditional posterior p(Y|X, th), 
-%       where th is the hyperparameters. Returns the energy E at th. Each row 
-%       of X corresponds to one input vector and each row of Y corresponds to 
-%       one target vector.
+%     Description
+%	GP = GPEP_E('init', GP, X, Y, OPTIONS) takes a GP data structure
+%        GP together with a matrix X of input vectors and a matrix Y
+%        of target vectors, and initializes required fiels for the
+%        EP algorithm.
 %
-%	[E, EDATA, EPRIOR] = GPEP_E(W, GP, P, T, PARAM) also returns the data and
-%	prior components of the total error.
-%    
-%	[E, EDATA, EPRIOR, SITE_TAU, SITE_NU] = GPEP_E(W, GP, P, T, PARAM) also returns
-%       the site parameters
+%	E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
+%        together with a matrix X of input vectors and a matrix Y of
+%        target vectors, and finds the EP approximation for the
+%        conditional posterior p(Y | X, th), where th is the
+%        hyperparameters. Returns the energy at th (see below).  Each
+%        row of X corresponds to one input vector and each row of Y
+%        corresponds to one target vector.
 %
-%       The energy is minus log posterior cost function:
+%	[E, EDATA, EPRIOR] = GPEP_E(W, GP, X, Y, OPTIONS) returns also 
+%        the data and prior components of the total energy.
+%
+%       The energy is minus log posterior cost function for th:
 %            E = EDATA + EPRIOR 
 %              = - log p(Y|X, th) - log p(th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...), X is
-%       inputs and Y is observations (regression) or latent values (non-Gaussian
-%       likelihood).
+%       where th represents the hyperparameters (lengthScale, magnSigma2...), 
+%       X is inputs and Y is observations.
+%
+%     OPTIONS is optional parameter-value pair
+%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
+%              Some likelihoods may use this. For example, in case of 
+%              Poisson likelihood we have z_i=E_i, that is, expected 
+%              value for ith case. 
 %
 %	See also
 %       GPEP_G, EP_PRED, GP_E
-%
 
-% Copyright (c) 2007           Jarno Vanhatalo, Jaakko Riihimï¿½ki
-% Copyright (c) 2008-2010      Jarno Vanhatalo
+    
+% Copyright (c) 2007           Jaakko Riihimäki
+% Copyright (c) 2007-2010      Jarno Vanhatalo
+% Copyright (c) 2010           Heikki Peura
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
     
 % Check the inputs
-    
     
     ip=inputParser;
     ip.FunctionName = 'GPEP_E';
@@ -202,7 +211,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             sigm2vec_i(i1,1)=sigm2_i;
                         end
                         % Recompute the approximate posterior parameters
-                        if tautilde > 0
+                        if tautilde > 0             % This is the usual case where likelihood is log concave
+                                                    % for example, Poisson and probit 
+                            
                             Stilde=tautilde;
                             Stildesqroot=diag(sqrt(tautilde));
                             
@@ -244,7 +255,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             
                             logZep = -(term41+term52+term5+term3);
                             iter=iter+1;
-                        else
+                        else                         % We might end up here if the likelihood is not log concace
+                                                     % For example Student-t likelihood. 
+                                                     % NOTE! This does not work reliably yet
                             Stilde=tautilde;
                             
                             Sigm=Ls'*Ls; myy=Sigm*nutilde;
@@ -1019,7 +1032,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % ============================================================
                 % SSGP
                 % ============================================================
-              case 'SSGP'
+              case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
+                                 % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
+                                 % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
+                                 % NOTE! This does not work at the moment.
+                
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 Phi = gp_trcov(gp, x);        % n x m matrix and nxn sparse matrix                

@@ -25,8 +25,9 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
 %
 
-% Copyright (c) 2006-2009 Jarno Vanhatalo
+% Copyright (c) 2006-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010 Heikki Peura
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -52,7 +53,7 @@ switch gp.type
   case 'FULL'   % A full GP
     [K, C] = gp_trcov(gp, x);
 
-    if issparse(C)
+    if issparse(C)            % compact support covariances are in use
         LD = ldlchol(C);
         edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
     else
@@ -212,7 +213,6 @@ switch gp.type
     % and Rasmussen. For VAR, a trace term is added to the DTC model, see 
     % Titsias (2009).
     
-
     % First evaluate needed covariance matrices
     % v defines that parameter is a vector
     u = gp.X_u;
@@ -259,7 +259,10 @@ switch gp.type
     % ============================================================
     % SSGP
     % ============================================================    
-  case 'SSGP'
+  case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
+                     % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
+                     % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
+                     % NOTE! This does not work at the moment.
     [Phi, S] = gp_trcov(gp, x);
     m = size(Phi,2);
     

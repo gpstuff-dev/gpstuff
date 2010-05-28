@@ -12,22 +12,53 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 
-%                used for prediction. Default is all (1:gpcfn)
-%       'tstind' is a vector defining, which rows of X belong to which 
-%                training block in *IC type sparse models. Default is [].
-%       'yt' is optional observed yt in test points (see below)
-%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
-%         Some likelihoods may use this. For example, in case of Poisson
-%         likelihood we have z_i=E_i, that is, expected value for ith case. 
-%       'zt' is optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%         Some likelihoods may use this. For example, in case of Poisson
-%         likelihood we have z_i=E_i, that is, expected value for ith case. 
+%                used for prediction. Default is all (1:gpcfn). See 
+%                additional information below.
+%       'tstind' is a vector/cell array defining, which rows of X belong 
+%                to which training block in *IC type sparse models. Deafult 
+%                is []. In case of PIC, a cell array containing index 
+%                vectors specifying the blocking structure for test data.
+%                IN FIC and CS+FIC a vector of length n that points out the 
+%                test inputs that are also in the training set (if none,
+%                set TSTIND = []).
+%       'yt'     is optional observed yt in test points (see below)
+%       'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
+%                Some likelihoods may use this. For example, in case of 
+%                Poisson likelihood we have z_i=E_i, that is, expected value 
+%                for ith case. 
+%       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%                Some likelihoods may use this. For example, in case of 
+%                Poisson likelihood we have z_i=E_i, that is, expected value 
+%                for ith case. 
 %
 %	[EF, VARF, EY, VARY, PYT] = LA_PRED(GP, X, Y, XT, 'yt', YT) 
 %        returns also the predictive density PYT of the test observations 
 %        YT at input locations XT. This can be used for example in the
 %        cross-validation.
-%  
+%
+%       NOTE! In case of FIC and PIC sparse approximation the
+%       prediction for only some PREDCF covariance functions is
+%       just an approximation since the covariance functions are
+%       coupled in the approximation and are not strictly speaking
+%       additive anymore.
+%
+%       For example, if you use covariance such as K = K1 + K2 your
+%       predictions Ef1 = la_pred(GP, X, Y, X, 'predcf', 1) and 
+%       Ef2 = la_pred(gp, x, y, x, 'predcf', 2) should sum up to 
+%       Ef = la_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With 
+%       FULL model this is true but with FIC and PIC this is true only 
+%       approximately. That is Ef \approx Ef1 + Ef2.
+%
+%       With CS+FIC the predictions are exact if the PREDCF
+%       covariance functions are all in the FIC part or if they are
+%       CS covariances.
+%
+%       NOTE! When making predictions with a subset of covariance
+%       functions with FIC approximation the predictive variance
+%       can in some cases be ill-behaved i.e. negative or
+%       unrealistically small. This may happen because of the
+%       approximative nature of the prediction.
+%
 %	See also
 %	GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
 %
@@ -60,6 +91,9 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
     [tn, tnin] = size(x);
     
     switch gp.type
+        % ============================================================
+        % FULL
+        % ============================================================
       case 'FULL'
         [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
@@ -69,8 +103,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         % Evaluate the variance
         if nargout > 1
             kstarstar = gp_trvar(gp,xt,predcf);
-            if W >= 0
-                if issparse(K_nf) && issparse(L)
+            if W >= 0             % This is the usual case where likelihood is log concave
+                                  % for example, Poisson and probit
+                if issparse(K_nf) && issparse(L)          % If compact support covariance functions are used 
+                                                          % the covariance matrix will be sparse
                     deriv = feval(gp.likelih.fh_g, gp.likelih, y(p), f, 'latent', z);
                     Ef = K_nf(:,p)*deriv;
                     sqrtW = sqrt(W);
@@ -84,7 +120,8 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                     V = L\(sqrt(W)*K_nf');
                     Varf = kstarstar - sum(V'.*V',2);
                 end
-            else
+            else                  % We may end up here if the likelihood is not log concace
+                                  % For example Student-t likelihood. 
                 deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
                 Ef = K_nf*deriv;
                 V = L*diag(W);
@@ -92,8 +129,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                 Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
             end
         end
-        
-      case 'FIC'
+        % ============================================================
+        % FIC
+        % ============================================================    
+      case 'FIC'        % Predictions with FIC sparse approximation for GP
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
             if ~isempty(tstind) && length(tstind) ~= size(x,1)
@@ -106,7 +145,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         u = gp.X_u;
         K_fu = gp_cov(gp, x, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
         Luu = chol(K_uu)';
 
         m = size(u,1);
@@ -162,12 +201,14 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
         end
-
-      case {'PIC' 'PIC_BLOCK'}
+        % ============================================================
+        % PIC
+        % ============================================================
+      case {'PIC' 'PIC_BLOCK'}        % Predictions with PIC sparse approximation for GP
         u = gp.X_u;
         K_fu = gp_cov(gp, x, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
-        K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
+        K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
         K_nu=gp_cov(gp,xt,u,predcf);
 
         ind = gp.tr_index;
@@ -219,7 +260,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             end
             Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
         end
-      case 'CS+FIC'
+        % ============================================================
+        % CS+FIC
+        % ============================================================
+      case 'CS+FIC'        % Predictions with CS+FIC sparse approximation for GP
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
             if ~isempty(tstind) && length(tstind) ~= size(x,1)
@@ -368,6 +412,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         end
     end
     
+    
+    % ============================================================
+    % Evaluate also the predictive mean and variance of new observation(s)
+    % ============================================================
     if nargout > 2
         if isempty(yt)
             [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
@@ -375,6 +423,4 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
         end
     end
-
-    
 end

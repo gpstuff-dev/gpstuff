@@ -2,47 +2,46 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
 %GPLA_E Conduct Laplace approximation and return marginal log posterior estimate
 %
 %     Description
-%	GP = GPLA_E('init', GP, X, Y, OPTIONS) takes a GP data structure GP 
-%        together with a matrix X of input vectors and a matrix Y of target
-%        vectors, and sets required fiels for the Laplace approximation.
+%	GP = GPLA_E('init', GP, X, Y, OPTIONS) takes a GP data structure
+%        GP together with a matrix X of input vectors and a matrix Y
+%        of target vectors, and initializes required fiels for the
+%        Laplace approximation.
 %
-%	E = GPLA_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP together
-%	 with a matrix X of input vectors and a matrix Y of target vectors,
-%	 and finds the Laplace approximation for the conditional posterior 
-%        p(Y|X, th), where th is the hyperparameters. Returns the energy E 
-%        at th. Each row of X corresponds to one input vector and each row
-%        of Y corresponds to one target vector.
+%	E = GPLA_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
+%        together with a matrix X of input vectors and a matrix Y of
+%        target vectors, and finds the Laplace approximation for the
+%        conditional posterior p(Y | X, th), where th is the
+%        hyperparameters. Returns the energy at th (see below).  Each
+%        row of X corresponds to one input vector and each row of Y
+%        corresponds to one target vector.
 %
-%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, X, Y, OPTIONS) also returns the
-%        data and prior components of the total error.
+%	[E, EDATA, EPRIOR] = GPLA_E(W, GP, X, Y, OPTIONS) returns also 
+%        the data and prior components of the total energy.
 %
-%       The energy is minus log posterior cost function:
+%       The energy is minus log posterior cost function for th:
 %            E = EDATA + EPRIOR 
 %              = - log p(Y|X, th) - log p(th),
 %       where th represents the hyperparameters (lengthScale, magnSigma2...), 
-%       X is inputs and Y is observations (regression) or latent values
-%       (non-Gaussian likelihood).
+%       X is inputs and Y is observations.
 %
 %     OPTIONS is optional parameter-value pair
-%       'z' is optional observed quantity in triplet (x_i,y_i,z_i)
-%        Some likelihoods may use this. For example, in case of Poisson
-%        likelihood we have z_i=E_i, that is, expected value for ith case. 
-%
-%       NOTE! The CS+FIC model is not supported 
+%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
+%              Some likelihoods may use this. For example, in case of 
+%              Poisson likelihood we have z_i=E_i, that is, expected 
+%              value for ith case. 
 %
 %	See also
 %       GPLA_G, LA_PRED, GP_E
-%
-%
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Pasi Jylänki
-% 
+
 % The Newton's method is implemented as described in
 % Rasmussen and Williams (2006).
 %
-% The Stabilized Newton's method is XXX
+% The Stabilized Newton's method is implemented as suggested by Hannes
+% Nickisch (personal communication).
   
 
 % This software is distributed under the GNU General Public
@@ -119,7 +118,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 K = gp_trcov(gp, x);
 
                 % If K is sparse, permute all the inputs so that evaluations are more efficient
-                if issparse(K)
+                if issparse(K)         % Check if compact support covariance is used
                     p = analyze(K);
                     y = y(p);
                     K = K(p,p);
@@ -132,7 +131,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 end
                 
                 switch gp.laplace_opt.optim_method
-                    % find the mode by fminunc large scale method
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by fminunc large scale method
                   case 'fminunc_large'
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
@@ -170,7 +170,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     else
                         a = LD\(LD'\f);
                     end
-
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by Newton method
                   case 'newton'
                     tol = 1e-12;
                     a = f;
@@ -210,7 +211,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             i = i+1;
                         end 
                     end
-                    
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by stabilized Newton method.
+                    % This is implemented as suggested by Hannes Nickisch (personal communication)
                   case 'stabilized-newton'
                     % Gaussian initialization
                     %   sigma=gp.likelih.sigma;
@@ -292,16 +295,21 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                       end
                       
                     end
-                    
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables with likelihood specific algorithm
+                    % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
+                    % likelih_t file.
                   case 'likelih_specific'
-                    
                     [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
+                  otherwise 
+                    error('gpla_e: Unknown optimization method ! ')
                 end
                 
                 % evaluate the approximate log marginal likelihood
                 W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
                 logZ = 0.5 * f'*a - feval(gp.likelih.fh_e, gp.likelih, y, f, z);
-                if min(W) >= 0
+                if min(W) >= 0             % This is the usual case where likelihood is log concave
+                                           % for example, Poisson and probit
                     if issparse(K)
                         W = sparse(1:n,1:n, -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z), n,n);
                         sqrtW = sqrt(W);
@@ -316,7 +324,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         L = chol(B)';
                         edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
                     end
-                else
+                else                        % We may end up here if the likelihood is not log concace
+                                            % For example Student-t likelihood. 
                     [W2,I] = sort(W, 1, 'descend');
 
                     if issparse(K)
@@ -377,7 +386,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 L = iLaKfu/A;
             
                 switch gp.laplace_opt.optim_method
-                    % find the mode by fminunc large scale method
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by fminunc large scale method
                   case 'fminunc_large'
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
@@ -401,7 +411,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
 
                     a = f./Lav - L*L'*f;
                     
-                    % find the mode by Newton's method
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by Newton method
                   case 'newton'
                     tol = 1e-12;
                     a = f;
@@ -410,7 +421,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f, z);
                     lp_old = -Inf;
                     
-                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                    while lp_new - lp_old > tol
                         lp_old = lp_new; a_old = a; 
                         sW = sqrt(W);
                         
@@ -437,11 +448,15 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
-                    end                                                    % end Newton's iterations 
+                    end
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables with likelihood specific algorithm
+                    % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
+                    % likelih_t file.
                   case 'likelih_specific'
                     [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K_uu, Lav, K_fu);
                   otherwise 
-                    error('gpla_e: Unknown optimization method !')
+                    error('gpla_e: Unknown optimization method ! ')
                 end
                                
                 W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
@@ -528,7 +543,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 L = iLaKfu/A;
                 % Begin optimization
                 switch gp.laplace_opt.optim_method
-                    % find the mode by fminunc large scale method
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by fminunc large scale method
                   case 'fminunc_large'
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
@@ -549,6 +565,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     a = iKf(f);
                                         
                   % find the mode by Newton's method
+                  % --------------------------------------------------------------------------------
                   case 'newton'
                     tol = 1e-12;
                     a = f;
@@ -557,7 +574,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f, z);
                     lp_old = -Inf;
                     
-                    while lp_new - lp_old > tol                        % begin Newton's iterations
+                    while lp_new - lp_old > tol
                         lp_old = lp_new; a_old = a;
                         sW = sqrt(W);
 
@@ -600,8 +617,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
-                    end                                                    % end Newton's iterations 
-                    
+                    end
+                  otherwise 
+                    error('gpla_e: Unknown optimization method ! ')    
                 end
                 
                 W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
@@ -688,7 +706,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 L = iLaKfu/A;
                 % Begin optimization
                 switch gp.laplace_opt.optim_method
-                    % find the mode by fminunc large scale method
+
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by fminunc large scale method
                   case 'fminunc_large'
                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
                         opt=optimset('GradObj','on');
@@ -709,7 +729,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     
                     a = ldlsolve(VD,f) - L*L'*f;
                     
-                  % find the mode by Newton's method
+                    % --------------------------------------------------------------------------------
+                    % find the posterior mode of latent variables by Newton method
                   case 'newton'
                     tol = 1e-8;
                     a = f;
@@ -740,15 +761,17 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         lp = feval(gp.likelih.fh_e, gp.likelih, y, f, z);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
-                        while i < 10 && lp_new < lp_old                       % if objective didn't increase
-                            a = (a_old+a)/2;                                  % reduce step size by half
+                        while i < 10 && lp_new < lp_old
+                            a = (a_old+a)/2;
                             f = La*a + B'*(B*a);
                             W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
                             lp = feval(gp.likelih.fh_e, gp.likelih, y, f, z);
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end
-                    end                                                    % end Newton's iterations 
+                    end
+                  otherwise 
+                    error('gpla_e: Unknown optimization method ! ')
                 end
                 
                 
@@ -782,7 +805,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 % ============================================================
                 % SSGP
                 % ============================================================
-              case 'SSGP'
+              case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
+                                 % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
+                                 % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
+                                 % NOTE! This does not work at the moment.
+                
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 [Phi, S] = gp_trcov(gp, x);        % n x m matrix and nxn sparse matrix

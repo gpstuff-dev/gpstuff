@@ -22,14 +22,14 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
 %       'predcf' is index vector telling which covariance functions are 
 %                used for prediction. Default is all (1:gpcfn). See 
 %                additional information below.
-%       'tstind' is a vector defining, which rows of X belong to which 
-%                training block in *IC type sparse models. Deafult is [].
-%       OR?      in case of PIC, a cell array containing index vectors 
-%                specifying the blocking structure for test data, or in 
-%                FIC and CS+FIC a vector of length n that points out the 
+%       'tstind' is a vector/cell array defining, which rows of X belong 
+%                to which training block in *IC type sparse models. Deafult 
+%                is []. In case of PIC, a cell array containing index 
+%                vectors specifying the blocking structure for test data.
+%                IN FIC and CS+FIC a vector of length n that points out the 
 %                test inputs that are also in the training set (if none,
 %                set TSTIND = [])
-%       'yt' is optional observed yt in test points (see below)
+%       'yt'     is optional observed yt in test points (see below)
 %
 %      [Ef, Varf, Ey, Vary, PYT] = GP_PRED(GP, X, Y, XT, 'yt', YT) 
 %       returns also the predictive density PYT of the observations
@@ -43,11 +43,11 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
 %       additive anymore.
 %
 %       For example, if you use covariance such as K = K1 + K2 your
-%       predictions Ef1 = GP_PRED(GP, X, Y, X, 1) and Ef2 =
-%       gp_pred(gp, x, y, x, 2) should sum up to Ef = gp_pred(gp,
-%       x, y, x). That is Ef = Ef1 + Ef2. With FULL model this
-%       works but with FIC and PIC this works only approximately. 
-%       That is Ef \approx Ef1 + Ef2.
+%       predictions Ef1 = gp_pred(GP, X, Y, X, 'predcf', 1) and 
+%       Ef2 = gp_pred(gp, x, y, x, 'predcf', 2) should sum up to 
+%       Ef = gp_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With 
+%       FULL model this is true but with FIC and PIC this is true only 
+%       approximately. That is Ef \approx Ef1 + Ef2.
 %
 %       With CS+FIC the predictions are exact if the PREDCF
 %       covariance functions are all in the FIC part or if they are
