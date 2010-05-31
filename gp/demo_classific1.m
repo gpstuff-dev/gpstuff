@@ -169,17 +169,15 @@ set(gcf, 'color', 'w'), title('predictive probability contours with EP', 'fontsi
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
 
 % Set the parameters for MCMC...
-opt=gp_mcopt;
-opt.repeat=15;
-opt.nsamples=1;
-opt.hmc_opt.steps=10;
-opt.hmc_opt.stepadj=0.1;
-opt.hmc_opt.nsamples=1;
-opt.latent_opt.display=0;
-opt.latent_opt.repeat = 20;
-opt.latent_opt.sample_latent_scale = 0.5;
+hmc_opt.steps=10;
+hmc_opt.stepadj=0.1;
+hmc_opt.nsamples=1;
+latent_opt.display=0;
+latent_opt.repeat = 20;
+latent_opt.sample_latent_scale = 0.5;
 hmc2('state', sum(100*clock))
-[r,g,rstate1]=gp_mc(opt, gp, x, y);
+
+[r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % Set the sampling options
 opt.nsamples=400;
@@ -190,12 +188,11 @@ opt.latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,rstate2]=gp_mc(opt, gp, x, y, 'record', r);
+[rgp,g,opt]=gp_mc(gp, x, y, opt, 'record', r);
 
 % Make predictions
 [Ef_mc, Varf_mc, Ey_mc, Vary_mc, p1_mc] = mc_pred(rgp, x, y, xstar, 'yt', ones(size(xstar,1),1) );
 p1_mc = mean(p1_mc,2);
-%p1 = mean(squeeze(logsig(mc_pred(rr, x, rr.latentValues', xstar))),2);
 
 figure, hold on;
 n_pred=size(xstar,1);

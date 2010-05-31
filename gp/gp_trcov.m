@@ -2,22 +2,21 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % GP_TRCOV     Evaluate training covariance matrix. 
 %
 %         Description
-%         K = GP_TRCOV(GP, TX, PREDCF) takes in Gaussian process GP and matrix
-%         TX that contains training input vectors to GP. Returns noiseless
-%         covariance matrix K. Every element ij of K contains covariance 
-%         between inputs i and j in TX. PREDCF is an array specifying
-%         the indexes of covariance functions, which are used for forming the
-%         matrix. If not given, the matrix is formed with all functions.
+%          K = GP_TRCOV(GP, TX, PREDCF) takes in Gaussian process GP
+%          and matrix TX that contains training input vectors to
+%          GP. Returns noiseless covariance matrix K, which is formed
+%          as a sum of the covarance matrices from covariance
+%          functions in GP.cf array. Every element ij of K contains
+%          covariance between inputs i and j in TX. PREDCF is an array
+%          specifying the indexes of covariance functions, which are
+%          used for forming the matrix. If not given, the matrix is
+%          formed with all functions.
 %
-%         [K, C] = GP_TRCOV(GP, TX, PREDCF) returns also the noisy
-%         covariance matrix C.
-%
-%         For covariance function definition see manual or 
-%         Neal R. M. Regression and Classification Using Gaussian 
-%         Process Priors, Bayesian Statistics 6.
+%          [K, C] = GP_TRCOV(GP, TX, PREDCF) returns also the noisy
+%          covariance matrix C, which is sum of K and the covariance
+%          functions is gp.noise array.
 
-% Copyright (c) 2006 Jarno Vanhatalo
-%               2008 Jouni Hartikainen
+% Copyright (c) 2006-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -56,23 +55,8 @@ switch gp.type
                 C = C + feval(noise.fh_trcov, noise, x1);
             end
         end
-        
-% $$$   if issparse(C)
-% $$$       [I,J,c] = find(C);
-% $$$       c(c<eps) = 0;      
-% $$$       C = sparse(I,J,c,n,n);
-% $$$   else
-% $$$       C(C<eps)=0;
-% $$$   end
     end
 
-% $$$ if issparse(K)
-% $$$     [I,J,k] = find(K);
-% $$$     k(k<eps) = 0;
-% $$$     K = sparse(I,J,k,n,n);
-% $$$ else
-% $$$     K(K<eps)=0;
-% $$$ end
   case 'SSGP'
     [n,m]=size(x1);
     n1 = n+1;

@@ -1,92 +1,100 @@
 function gp = gp_init(do, varargin)
 %GP_INIT	Create a Gaussian Process.
 %
-%     Description
+%    Description
+%     GP = GP_INIT('init', TYPE, 'LIKELIH', GPCF, NOISE, OPTIONS)
+%     Creates a Gaussian Process model. TYPE defines the type of
+%     GP. LIKELIH is a string/structure defining the likelihood. GPCF
+%     and NOISE arrays consist of covariance function structures (see,
+%     for example, gpcf_sexp, gpcf_noiset). At minimum one covariance
+%     function has to be given. OPTIONS is optional parameter-value
+%     pair used as described below with GP_INIT('set'...
 %
-%	GP = GP_INIT(DO, TYPE, 'LIKELIH', GPCF, NOISE, VARARGIN) 
+%     GP = GP_INIT('set', GP, OPTIONS) Sets the fields of GP as
+%     described by the parameter-value pairs ('FIELD', VALUE) in the
+%     OPTIONS.
 %
-%        Creates a Gaussian Process model with a single output. 
-%        Takes a string/structure 'LIKELIH', which specifies
-%        likelihood function used, GPCF array specifying the
-%        covariance functions and NOISE array, which specify the
-%        noise covariance functions used for Gaussian process. At
-%        minimum one covariance function has to be given.
-%       
-%       TYPE defines the type of GP, possible types are:
-%        'FULL'        (full GP), 
-%        'FIC'         (fully independent conditional), 
-%        'PIC'         (partially independent condional), 
-%        'CS+FIC'      (Compact support + FIC model)
-%   
-%       LIKELIH is a string 'regr' for a regression model with
-%        additive Gaussian noise. Other likelihood models require a
-%        likelihood structure for LIKELIH parameter (see, for
-%        example, likelih_probit).
+%     The minimum number of fields and their possible values are 
+%     the following:
+%      type         = The type of Gaussian process
+%                      'FULL'   full GP
+%                      'FIC'    fully independent conditional sparse
+%                               approximation
+%                      'PIC'    partially independent condional  
+%                               sparse approximation
+%                      'CS+FIC' compact support + FIC model sparse 
+%                               approximation
+%                      'DTC'    deterministic training conditional 
+%                               sparse approximation
+%                      'VAR'    variational sparse approximation
+%      likelih      = The likelihood. If Gaussian noise is used this is 
+%                     string 'regr', otherwise this is structure created
+%                     by one of the likelihood functions likelih_*.
+%      cf           = cell array of covariance function structures 
+%                     created by gpcf_* functions
+%      noise        = cell array of noise covariance function structures
+%                     such as gpcf_noise or gpcf_noiset
+%      infer_params = String defining which hyperparameters are inferred.
+%                      'covariance'     = infer hyperparameters of 
+%                                         covariance function
+%                      'likelihood'     = infer parameters of likelihood
+%                      'inducing'       = infer inducing inputs (in sparse
+%                                         approximations): W = gp.X_u(:)    
+%                       By combining the strings one can infer more than 
+%                       one group of parameters. For example:
+%                      'covariance+inducing' = infer covariance function
+%                                              parameters and inducing 
+%                                              inputs
+%                       'covariance+likelih' = infer covariance function
+%                                              and likelihood parameters
+%                       The default is 'covariance+inducing+likelihood'
+%      jitterSigma2 = positive jitter to be added in the diagonal of 
+%                      covariance matrix (default 0).
+%      p            = field for prior structure of inducing inputs 
+%                       in sparse GPs
 %
-%        The GPCF and NOISE arrays consist of covariance function
-%        structures (see, for example, gpcf_sexp, gpcf_noiset).
+%     The additional fields needed in sparse approximations are:
+%      X_u          = Inducing inputs 
+%      Xu_prior     = prior structure for the inducing inputs. returned,
+%                     for example, by prior_unif (the default)
 %
-%       With VARAGIN the fields of the GP structure can be set into
-%       different values VARARGIN = 'FIELD1', VALUE1, 'FIELD2',
-%       VALUE2, ...
+%     The additional field required by PIC sparse approximation is:
+%       tr_index    = The blocks for the PIC model. The value has to
+%                     be a cell array of the index vectors appointing
+%                     the data points into blocks. For example, if x  
+%                     is a matrix of data inputs then x(tr_index{i},:) 
+%                     are the inputs belonging to the i'th block.
 %
-%	GP = GPINIT('SET', GP, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of the fields FIELD1... to the values
-%       VALUE1... in GP.
+%     The additional fields when the likelihood is not Gaussian
+%     (likelih ~='regr') are:
+%       latent_method = Defines a method for marginalizing over 
+%                       latent values. Possible methods are 'MCMC', 
+%                       'Laplace' and 'EP' and they are initialized 
+%                       as following :
 %
-%	The minimum number of fields (in case of full GP regression model) and 
-%       their default values are:
-%         type           = 'FULL'
-%         cf             = struct of covariance functions
-%         noise          = struct of noise functions
-%	  jitterSigma2   = jitter term for covariance function
-%                          (initialized to 0)
-%         p.r            = Prior Structure for residual parameters
-%                          (defined only in case likelih == 'regr')
-%         likelih        = a string or structure defining the likelihood
-%    
-%       The additional fields needed in sparse approximations are:
-%         X_u            = Inducing inputs in FIC, PIC and CS+FIC models
-%         blocks         = Initializes the blocks for the PIC model
-%                          The value for blocks has to be a cell
-%                          array of the index vectors appointing
-%                          the data points into blocks. For
-%                          example, if x is a matrix of data inputs
-%                          then x(param{i},:) are the inputs
-%                          belonging to the ith block.
+%                  'latent_method', {'MCMC', F, @fh_latentmc}                
+%                        F            = 1xn vector of latent values and 
+%                                       they are set as 
+%                        fh_latentmc  = Function handle to function 
+%                                       which samples the latent values,
+%                                       e.g. @scaled_mh, @scaled_hmc
 %
-%       The additional fields when the model is not for regression
-%       (likelih ~='regr') are:
-%         latent_method  = Defines a method for marginalizing over latent 
-%                          values. Possible methods are 'MCMC',
-%                          'Laplace' and 'EP'. The fields for them
-%                          are
-%                         
-%        In case of MCMC:
-%         fh_latentmc    = Function handle to function which samples the 
-%                          latent values
-%         latentValues   = Vector of latent values and they are set as 
-%                          following
-%         gp_init('SET', GP, 'latent_method', {'MCMC', @fh_latentmc Z});
-%                          where Z is a (1xn) vector of latent values 
-%
-%        In case of Laplace:
-%         fh_e           = Function handle to an energy function and they 
-%                          are set as following
-%         gp_init('SET', GP, 'latent_method', {'Laplace', x, y, 'param'});
-%                          where x is a matrix of inputs, y vector/matrix 
-%                          of outputs and 'param' a string defining which 
-%                          parameters are inferred (see gp_pak).
-% 
-%        In case of EP:
-%         fh_e           = function handle to an energy function
-%         site_tau       = vector (size 1xn) of tau site parameters 
-%         site_mu        = vector (size 1xn) of mu site parameters 
-%                          and they are set as following
-%         gp_init('SET', GP, 'latent_method', {'EP', x, y, 'param'});
-%                          where x is a matrix of inputs, y vector/matrix 
-%                          of outputs and 'param' a string defining which 
-%                          parameters are sampled/optimized (see gp_pak).
+%                   'latent_method', {'Laplace', x, y(, z)}
+%                        x  =  a matrix of inputs
+%                        y  =  nx1 vector of outputs
+%                        z  = optional observed quantity in triplet
+%                             (x_i,y_i,z_i). Some likelihoods may use
+%                             this. For example, in case of Poisson 
+%                             likelihood we have z_i=E_i, that is, 
+%                             expected  value for ith case. 
+%                   'latent_method', {'EP', x, y(, z)}
+%                        x  =  a matrix of inputs
+%                        y  =  nx1 vector of outputs
+%                        z  = optional observed quantity in triplet
+%                             (x_i,y_i,z_i). Some likelihoods may use
+%                             this. For example, in case of Poisson 
+%                             likelihood we have z_i=E_i, that is, 
+%                             expected  value for ith case. 
 %
 %	See also
 %	GPINIT, GP2PAK, GP2UNPAK
@@ -133,14 +141,18 @@ function gp = gp_init(do, varargin)
         gp.p=[];
         
         switch gp.type
-          case 'FIC' 
+          case {'FIC' 'CS+FIC' 'DTC' 'VAR'}
             gp.X_u = [];
             gp.nind = [];
             gp.p.X_u = [];
           case {'PIC' 'PIC_BLOCK'}
             gp.X_u = [];
             gp.nind = [];
-            gp.tr_index = {};            
+            gp.tr_index = {};
+          case 'FULL'
+            % do nothing
+          otherwise 
+           error('Unknown type of GP!')
         end
                 
         if length(varargin) > 4
@@ -150,17 +162,23 @@ function gp = gp_init(do, varargin)
             % Loop through all the parameter values that are changed
             for i=5:2:length(varargin)-1
                 switch varargin{i}
+                  case 'covariance'
+                    % Set covariance functions into gpcf
+                    gpcf = varargin{i+1};
+                    for i = 1:length(gpcf)
+                        gp.cf{i} = gpcf{i};
+                    end
+                  case 'noise'                    
+                    % Set noise functions into noise
+                    gp.noise = [];
+                    gpnoise = varargin{i+1};
+                    for i = 1:length(gpnoise)
+                        gp.noise{i} = gpnoise{i};
+                    end
                   case 'jitterSigma2'
                     gp.jitterSigma2 = varargin{i+1};
                   case 'likelih'
                     gp.likelih = varargin{i+1};
-                    if strcmp(gp.likelih_e, 'regr')
-                        gp.p.r=[];
-                    end
-                  case 'likelih_e'
-                    gp.likelih_e = varargin{i+1};
-                  case 'likelih_g'
-                    gp.likelih_g = varargin{i+1};
                   case 'type'
                     gp.type = varargin{i+1};
                   case 'X_u'
@@ -169,7 +187,7 @@ function gp = gp_init(do, varargin)
                     gp.p.X_u = prior_unif('init');
                   case 'Xu_prior'
                     gp.p.X_u = varargin{i+1};                    
-                  case 'blocks'
+                  case 'tr_index'
                     gp.tr_index = varargin{i+1};
                   case 'infer_params'
                     gp.infer_params = varargin{i+1};
@@ -204,16 +222,13 @@ function gp = gp_init(do, varargin)
                       otherwise
                         error('Unknown type of latent_method!')
                     end
-                  case 'compact_support'
-                    % Note: Add the possibility for more than one compactly supported cf later.
-                    gp.cs = varargin{i+1};      
                   otherwise
                     error('Wrong parameter name!')
                 end
             end
         end
         
-        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK'}) && isempty(gp.X_u)
+        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC'}) && isempty(gp.X_u)
           error(sprintf('Need to set X_u when using %s',gp.type))
         end
 
@@ -228,17 +243,23 @@ function gp = gp_init(do, varargin)
         % Loop through all the parameter values that are changed
         for i=2:2:length(varargin)-1
             switch varargin{i}
+              case 'covariance'
+                % Set covariance functions into gpcf
+                gpcf = varargin{i+1};
+                for i = 1:length(gpcf)
+                    gp.cf{i} = gpcf{i};
+                end
+              case 'noise'                    
+                % Set noise functions into noise
+                gp.noise = [];
+                gpnoise = varargin{i+1};
+                for i = 1:length(gpnoise)
+                    gp.noise{i} = gpnoise{i};
+                end
               case 'jitterSigma2'
                 gp.jitterSigma2 = varargin{i+1};
               case 'likelih'
                 gp.likelih = varargin{i+1};
-                if strcmp(gp.likelih, 'regr')
-                    gp.p.r=[];
-                end
-              case 'likelih_e'
-                gp.likelih_e = varargin{i+1};
-              case 'likelih_g'
-                gp.likelih_g = varargin{i+1};
               case 'type'
                 gp.type = varargin{i+1};
               case 'X_u'
@@ -247,12 +268,10 @@ function gp = gp_init(do, varargin)
                 gp.p.X_u = prior_unif('init');
               case 'Xu_prior'
                 gp.p.X_u = varargin{i+1};                
-              case 'blocks'
+              case 'tr_index'
                 gp.tr_index = varargin{i+1};
               case 'infer_params'
                 gp.infer_params = varargin{i+1};
-              case 'truncated'
-                init_truncated(varargin{i+1})
               case 'latent_method'
                 gp.latent_method = varargin{i+1}{1};
                 switch varargin{i+1}{1}
@@ -284,12 +303,13 @@ function gp = gp_init(do, varargin)
                   otherwise
                     error('Unknown type of latent_method!')
                 end
-              case 'compact_support'
-                % Note: Add the possibility for more than one compactly supported cf later.
-                gp.cs = varargin{i+1};                
               otherwise
                 error('Wrong parameter name!')
-            end    
+            end
+        end
+
+        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC'}) && isempty(gp.X_u)
+          error(sprintf('Need to set X_u when using %s',gp.type))
         end
     end
 end

@@ -1,5 +1,5 @@
-function L = ldlrowmodify(L, c, c2, k)
-% function L = rowmodify(L, w, w2, k)
+function L = ldlrowmodify(L, c2, k)
+% function L = rowmodify(L, c2, k)
 %
 % Function to modify the cholesky factorization L*D*L' = C (which 
 % is stored in L), when a row and column k of C have changed from c to 
@@ -12,9 +12,16 @@ function L = ldlrowmodify(L, c, c2, k)
 % See Davis and Hager 2005 (Row Modification of a sparse Cholesky 
 % factorization) section 4 for details of the algorithm.
     
-%  Copyright (c) 2009 Jarno Vanhatalo
+%  Copyright (c) 2009-2010 Jarno Vanhatalo
     
 % First evaluate the l_21 vector. That is the kth row vector of L
+    
+% Evaluate the old c. NOTE! The C-version (mex-file) of this algorithm
+% does not need the old c. However, this m-version is an old
+% implementation
+    [L2, D] = ldlsplit(L);
+    c = L2(k,:)*D(k)*L2(k,:)';
+    
     n = size(L,1);
     if k>1
         deltac12 = c2(1:k-1)-c(1:k-1);

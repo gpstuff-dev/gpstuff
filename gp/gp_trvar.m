@@ -2,15 +2,20 @@ function [K, C] = gp_trvar(gp, x1, predcf)
 % GP_TRVAR     Evaluate training variance vector. 
 %
 %         Description
-%         K = GP_TRVAR(GP, TX, PREDCF) takes in Gaussian process GP and matrix
-%         TX that contains training input vectors to GP. Returns 
-%         noiseless variance vector K. Every element i of K contains  
-%         variance of input i in TX. PREDCF is an array specifying
-%         the indexes of covariance functions, which are used for forming the
-%         vector. If not given, the vector is formed with all functions.
+%          K = GP_TRVAR(GP, TX, PREDCF) takes in Gaussian process GP
+%          and matrix TX that contains training input vectors to
+%          GP. Returns noiseless variance vector K (diagonal of the
+%          covariance matrix returned by gp_trcov), which is formed as
+%          a sum of the variances from covariance functions in GP.cf
+%          array. Every element ij of K contains covariance between
+%          inputs i and j in TX. PREDCF is an array specifying the
+%          indexes of covariance functions, which are used for forming
+%          the matrix. If not given, the matrix is formed with all
+%          functions.
 %
-%         [K, C] = GP_TRVAR(GP, TX, PREDCF) returns also the noisy
-%         variance vector C.
+%          [K, C] = GP_TRCOV(GP, TX, PREDCF) returns also the noisy
+%          variance vector C, which is sum of K and the variances from
+%          the covariance functions is gp.noise array.
 
 % Copyright (c) 2006 Jarno Vanhatalo
 
@@ -47,6 +52,4 @@ if nargout >1
       C = C + feval(noise.fh_trvar, noise, x1);
     end
   end
-  C(C<eps)=0;
 end
-K(K<eps)=0;

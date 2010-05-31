@@ -1,47 +1,61 @@
-function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
+function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 % GP_MC   Monte Carlo sampling for Gaussian process models
 %
 %   Description
-%   [RECORD, GP, OPT] = GP_MC(OPT, GP, TX, TY) Takes the options structure OPT, 
-%   Gaussian process structure GP, training inputs TX and training outputs TY.
-%   Returns:
-%     RECORD     - Record structure
-%     GP      - The Gaussian process at current state of the sampler
-%     OPT     - Options structure containing iformation of the current state 
-%               of the sampler (e.g. the random number seed)
+%   [RECORD, GP, OPT] = GP_MC(GP, X, Y, OPTIONS) Takes the Gaussian 
+%    process structure GP, inputs X and outputs Y. Returns record 
+%    structure RECORD with parameter samples, the Gaussian process GP
+%    at current state of the sampler and an options structure OPT 
+%    containing all the options in OPTIONS and information of the
+%    current state of the sampler (e.g. the random number seed)
 %
-%   The GP_MC function makes opt.nsamples iterations and stores every opt.repeat'th
-%   sample. At each iteration it searches from the options structure strings 
-%   specifying the samplers for different parameters. For example, 'hmc_opt' string 
-%   in the OPT structure tells that GP_MC should run the hybrid Monte Carlo 
-%   sampler. Possiple samplers are:
-%      hmc_opt         = hybrid Monte Carlo sampler for covariance/noise function 
-%                        parameters (see hmc2)
-%      sls_opt         = slice sampler for covariance/noise function parameters 
-%                        (see sls2)
-%      latent_opt      = sample latent values according to sampler in gp.likelih 
-%                        structure (see, for example, likelih_logit)
-%      gibbs_opt       = Gibbs sampler for covariance/noise function parameters 
-%                        not packed with gp_pak (see gpcf_noiset)
-%      likelih_sls_opt = Slice sampling for the parameters of the likelihood function
-%                        (see, for example, likelih_negbin)
+%     OPTIONS is optional parameter-value pair
+%      'z'          Optional observed quantity in triplet (x_i,y_i,z_i).
+%                   Some likelihoods may use this. For example, in case of
+%                   Poisson likelihood we have z_i=E_i, that is, expected
+%                   value for ith case.
+%      'repeat'     Number of iterations between successive sample saves
+%                   (that is every repeat'th sample is stored), default 1.
+%      'nsamples'   Number of samples to be returned
+%      'display'    Defines if sampling information is printed, 1=yes, 0=no.
+%                   Default 1.
+%      'hmc_opt'    Options structure for HMC sampler (see hmc2_opt). When
+%                   this is given the hyperparameters are sampled with hmc2.
+%      'sls_opt'    Options structure for slice sampler (see sls_opt). When 
+%                   this is given the hyperparameters are sampled with sls.
+%      'gibbs_opt'  Options structure for gibbs sampler. Some covariance
+%                   function parameters need to be sampled with Gibbs sampling
+%                   (such as gpcf_noiset). The gibbs sampler is implemented
+%                   in the respective gpcf_* file and this structure is used 
+%                   to give the options for it.
+%      'latent_opt' Options structure for latent variable sampler. When this 
+%                   is given the latent variables are sampled with function 
+%                   stored in the gp.fh_mc field in the GP structure. 
+%                   See gp_init. 
+%      'likelih_hmc_opt'   Options structure for HMC sampler (see hmc2_opt). 
+%                          When this is given the hyperparameters of the 
+%                          likelihood are sampled with hmc2.
+%      'likelih_sls_opt'   Options structure for slice sampler (see sls_opt). 
+%                          When this is given the hyperparameters of the 
+%                          likelihood are sampled with hmc2.
+%      'persistence_reset' Reset the momentum parameter in HMC sampler after 
+%                          every repeat'th iteration, default 0.
+%      'record'      An old record structure from where the sampling is 
+%                    continued
+%         
+%      The GP_MC function makes nsamples*repeat iterations and stores
+%      every repeat'th sample. At each iteration it samples first the
+%      latent variables (if 'latent_opt' option is given), then
+%      hyperparameters of the covariance function(s) (if 'hmc_opt',
+%      'sls_opt' or 'gibbs_opt' option is given), and for last the
+%      hyperparameters in the likelihood function (if
+%      'likelih_hmc_opt' or 'likelih_sls_opt' option is given). 
 %
-%   The default OPT values for GP_MC are set by GP_MCOPT. The default sampler 
-%   options for the actual sampling algorithms are set by their specific fucntions. 
-%   See, for example, hmc2_opt.
-%
-%
-%   RECORD = GP_MC(OPT, GP, TX, TY, X, Y, [], VARARGIN)
-%
-%   RECORD = GP_MC(OPT, GP, TX, TY, X, Y, RECORD, VARARGIN)
-%
-%   RECORD = GP_MC(OPT, GP, TX, TY, X, Y, RECORD, VARARGIN)
-%
-%
-%
+%  See also:
+%  demo_classific1, demo_robustregression
 
 % Copyright (c) 1998-2000 Aki Vehtari
-% Copyright (c) 2007-2009 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -52,15 +66,34 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
 
     ip=inputParser;
     ip.FunctionName = 'GP_MC';
-    ip.addRequired('opt', @isstruct);
     ip.addRequired('gp',@isstruct);
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('nsamples', 1, @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('repeat', 1, @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addParamValue('display', 1, @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('record',[], @isstruct);
-    ip.parse(opt, gp, x, y, varargin{:});
+    ip.addParamValue('hmc_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('gibbs_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('likelih_hmc_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('likelih_sls_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x))
+    ip.parse(gp, x, y, varargin{:});
     z=ip.Results.z;
+    opt.nsamples=ip.Results.nsamples;
+    opt.repeat=ip.Results.repeat;
+    opt.display=ip.Results.display;
     record=ip.Results.record;
+    opt.hmc_opt = ip.Results.hmc_opt;
+    opt.sls_opt = ip.Results.sls_opt;
+    opt.gibbs_opt = ip.Results.gibbs_opt;
+    opt.latent_opt = ip.Results.latent_opt;
+    opt.likelih_hmc_opt = ip.Results.likelih_hmc_opt;
+    opt.likelih_sls_opt = ip.Results.likelih_sls_opt;
+    opt.persistence_reset = ip.Results.persistence_reset;
     
 % Check arguments
     if nargin < 4
@@ -82,7 +115,9 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
     end
 
     % Set the states of samplers if not given in opt structure
-    if isfield(opt, 'latent_opt')
+    if ~isempty(opt.latent_opt)
+        % Set latent values
+        f=gp.latentValues';
         if isfield(opt.latent_opt, 'rstate')
             if ~isempty(opt.latent_opt.rstate)
                 latent_rstate = opt.latent_opt.rstate;
@@ -94,8 +129,10 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             hmc2('state', sum(100*clock))
             latent_rstate=hmc2('state');
         end
+    else
+        f=y;
     end
-    if isfield(opt, 'hmc_opt')
+    if ~isempty(opt.hmc_opt)
         if isfield(opt.hmc_opt, 'rstate')
             if ~isempty(opt.hmc_opt.rstate)
                 hmc_rstate = opt.hmc_opt.rstate;
@@ -108,7 +145,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             hmc_rstate=hmc2('state');
         end
     end    
-    if isfield(opt, 'likelih_hmc_opt')
+    if ~isempty(opt.likelih_hmc_opt)
         if isfield(opt.likelih_hmc_opt, 'rstate')
             if ~isempty(opt.likelih_hmc_opt.rstate)
                 likelih_hmc_rstate = opt.likelih_hmc_opt.rstate;
@@ -121,43 +158,20 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             likelih_hmc_rstate=hmc2('state');
         end        
     end
-    if isfield(opt, 'inducing_opt')
-        if isfield(opt.inducing_opt, 'rstate')
-            if ~isempty(opt.inducing_opt.rstate)
-                inducing_rstate = opt.inducing_opt.rstate;
-            else
-                hmc2('state', sum(100*clock))
-                inducing_rstate=hmc2('state');
-            end
-        else
-            hmc2('state', sum(100*clock))
-            inducing_rstate=hmc2('state');
-        end
-    end
-
-    % Set latent values
-    if isfield(opt, 'latent_opt')
-        f=gp.latentValues';
-    else
-        f=y;
-    end
     
     % Print labels for sampling information
     if opt.display
         fprintf(' cycle  etr      ');
-        if isfield(opt,'hmc_opt')
+        if ~isempty(opt.hmc_opt)
             fprintf('hrej     ')              % rejection rate of latent value sampling
         end
-        if isfield(opt, 'sls_opt')
+        if ~isempty(opt.sls_opt)
             fprintf('slsrej  ');
         end
-        if isfield(opt, 'likelih_hmc_opt')
+        if ~isempty(opt.likelih_hmc_opt)
             fprintf('likel.rej  ');
         end
-        if isfield(opt,'inducing_opt')
-            fprintf('indrej     ')              % rejection rate of latent value sampling
-        end
-        if isfield(opt,'latent_opt')
+        if ~isempty(opt.latent_opt)
             fprintf('lrej ')              % rejection rate of latent value sampling
             if isfield(opt.latent_opt, 'sample_latent_scale') 
                 fprintf('    lvScale    ')
@@ -171,18 +185,15 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
     for k=1:opt.nsamples
         
         if opt.persistence_reset
-            if isfield(opt, 'hmc_opt')
+            if ~isempty(opt.hmc_opt)
                 hmc_rstate.mom = [];
             end
-            if isfield(opt, 'inducing_opt')
-                inducing_rstate.mom = [];
-            end
-            if isfield(opt, 'latent_opt')
+            if ~isempty(opt.latent_opt)
                 if isfield(opt.latent_opt, 'rstate')
                     opt.latent_opt.rstate.mom = [];
                 end
             end
-            if isfield(opt, 'likelih_hmc_opt')
+            if ~isempty(opt.likelih_hmc_opt)
                 likelih_hmc_rstate.mom = [];
             end
         end
@@ -194,7 +205,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
         for l=1:opt.repeat
             
             % ----------- Sample latent Values  ---------------------
-            if isfield(opt,'latent_opt')
+            if ~isempty(opt.latent_opt)
                 [f, energ, diagnl] = feval(gp.fh_mc, f, opt.latent_opt, gp, x, y, z);
                 gp.latentValues = f(:)';
                 f = f(:);
@@ -205,7 +216,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             end
             
             % ----------- Sample covariance function hyperparameters with HMC --------------------- 
-            if isfield(opt, 'hmc_opt')
+            if ~isempty(opt.hmc_opt)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'covariance';
                 w = gp_pak(gp);
@@ -223,7 +234,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             end
             
             % ----------- Sample hyperparameters with SLS --------------------- 
-            if isfield(opt, 'sls_opt')
+            if ~isempty(opt.sls_opt)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'covariance';
                 w = gp_pak(gp);
@@ -237,7 +248,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             end
 
             % ----------- Sample hyperparameters with Gibbs sampling --------------------- 
-            if isfield(opt, 'gibbs_opt')
+            if ~isempty(opt.gibbs_opt)
                 % loop over the covariance functions
                 ncf = length(gp.cf);
                 for i1 = 1:ncf
@@ -260,7 +271,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             end
             
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
-            if isfield(opt, 'likelih_sls_opt')
+            if ~isempty(opt.likelih_sls_opt)
                 w = gp_pak(gp, 'likelihood');
                 fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z) + feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
                 [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
@@ -272,7 +283,7 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             end
             
             % ----------- Sample hyperparameters of the likelihood with HMC --------------------- 
-            if isfield(opt, 'likelih_hmc_opt')
+            if ~isempty(opt.likelih_hmc_opt)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'likelihood';
                 w = gp_pak(gp);
@@ -290,26 +301,8 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
                 w=w(end,:);
                 gp = gp_unpak(gp, w);
                 gp.infer_params = infer_params;
-            end
-            
-            % ----------- Sample inducing inputs with hmc  ------------ 
-            if isfield(opt, 'inducing_opt')
-                w = gp_pak(gp, 'inducing');
-                hmc2('state',inducing_rstate)         % Set the state
-                [w, energies, diagnh] = hmc2(me, w, opt.inducing_opt, mg, gp, x, f, 'inducing');
-                inducing_rstate=hmc2('state');        % Save the current state
-                indrej=indrej+diagnh.rej/opt.repeat;
-                if isfield(diagnh, 'opt')
-                    opt.inducing_opt = diagnh.opt;
-                end
-                opt.inducing_opt.rstate = inducing_rstate;
-                w=w(end,:);
-                gp = gp_unpak(gp, w, 'inducing');
-            end
-            
-            
-            % ----------- Sample inputs  ---------------------
-            
+            end        
+                        
             
         end % ------------- for l=1:opt.repeat -------------------------  
         
@@ -320,28 +313,22 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
         % Display some statistics  THIS COULD BE DONE NICER ALSO...
         if opt.display
             fprintf(' %4d  %.3f  ',ri, record.etr(ri,1));
-            if isfield(opt, 'hmc_opt')
+            if ~isempty(opt.hmc_opt)
                 fprintf(' %.1e  ',record.hmcrejects(ri));
             end
-            if isfield(opt, 'sls_opt')
+            if ~isempty(opt.sls_opt)
                 fprintf('sls  ');
             end
-            if isfield(opt, 'likelih_hmc_opt')
+            if ~isempty(opt.likelih_hmc_opt)
                 fprintf(' %.1e  ',record.likelih_hmcrejects(ri));
             end
-            if isfield(opt, 'inducing_opt')
-                fprintf(' %.1e  ',record.indrejects(ri)); 
-            end
-            if isfield(opt,'latent_opt')
+            if ~isempty(opt.latent_opt)
                 fprintf('%.1e',record.lrejects(ri));
                 fprintf('  ');
                 if isfield(diagnl, 'lvs')
                     fprintf('%.6f', diagnl.lvs);
                 end
             end
-            if isfield(opt,'noise_opt')
-                fprintf('%.2f', record.noise{1}.nu(ri));
-            end      
             fprintf('\n');
         end
     end
@@ -366,21 +353,11 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             switch gp.type
               case 'FIC'
                 record.X_u = [];
-                if isfield(opt, 'inducing_opt')
-                    record.indrejects = 0;
-                end
               case {'PIC' 'PIC_BLOCK'}
                 record.X_u = [];
-                if isfield(opt, 'inducing_opt')
-                    record.indrejects = 0;
-                end
                 record.tr_index = gp.tr_index;
               case 'CS+FIC'
                 record.X_u = [];
-                if isfield(opt, 'inducing_opt')
-                    record.indrejects = 0;
-                end
-
               otherwise
                 % Do nothing
             end
@@ -469,9 +446,6 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
           case {'FIC', 'PIC', 'PIC_BLOCK', 'CS+FIC'}
             record.X_u(ri,:) = gp.X_u(:)';
         end
-        if isfield(opt, 'inducing_opt')
-            record.indrejects(ri,1)=indrej; 
-        end
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
@@ -486,11 +460,11 @@ function [record, gp, opt] = gp_mc(opt, gp, x, y, varargin)
             record.etr(ri,:) = record.e(ri,:);
         end
         
-        if isfield(opt, 'hmc_opt')
+        if ~isempty(opt.hmc_opt)
             record.hmcrejects(ri,1)=hmcrej; 
         end
 
-        if isfield(opt, 'likelih_hmc_opt')
+        if ~isempty(opt.likelih_hmc_opt)
             record.likelih_hmcrejects(ri,1)=likelih_hmcrej; 
         end
 

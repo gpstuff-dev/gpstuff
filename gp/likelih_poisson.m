@@ -417,7 +417,7 @@ function likelih = likelih_poisson(do, varargin)
     % RECAPPEND  Append the parameters to the record
     %
     %          Description 
-    %          RECLIKELIH = GPCF_POISSON_RECAPPEND(RECLIKELIH, RI, LIKELIH)
+    %          RECLIKELIH = LIKELIH_POISSON_RECAPPEND(RECLIKELIH, RI, LIKELIH)
     %          takes a likelihood record structure RECLIKELIH, record
     %          index RI and likelihood structure LIKELIH with the
     %          current MCMC samples of the hyperparameters. Returns

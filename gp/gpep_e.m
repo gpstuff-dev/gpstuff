@@ -25,11 +25,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 %       where th represents the hyperparameters (lengthScale, magnSigma2...), 
 %       X is inputs and Y is observations.
 %
-%     OPTIONS is optional parameter-value pair
-%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
-%              Some likelihoods may use this. For example, in case of 
-%              Poisson likelihood we have z_i=E_i, that is, expected 
-%              value for ith case. 
+%       OPTIONS is optional parameter-value pair
+%        'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, expected 
+%               value for ith case. 
 %
 %	See also
 %       GPEP_G, EP_PRED, GP_E

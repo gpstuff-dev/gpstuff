@@ -2,18 +2,21 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %scaled_mh        A scaled Metropolis Hastings samping for latent values
 %
 %   Description
-%   [F, ENERG, DIAG] = SCALED_MH(F, OPT, GP, X, Y) takes the current latent 
-%   values F, options structure OPT, Gaussian process data structure GP, inputs X and
-%   outputs Y. Samples new latent values and returns also energies ENERG and 
-%   diagnostics DIAG. The latent values are sampled from their conditional posterior
-%   p(f|y,th).
+
+%   [F, ENERG, DIAG] = SCALED_MH(F, OPT, GP, X, Y) takes the current
+%   latent values F, options structure OPT, Gaussian process data
+%   structure GP, inputs X and outputs Y. Samples new latent values
+%   and returns also energies ENERG and diagnostics DIAG. The latent
+%   values are sampled from their conditional posterior p(f|y,th).
 %
-%   The latent values are whitened with the prior covariance before the sampling. 
-%   This reduces the autocorrelation and speeds up the mixing of the 
-%   sampler. See (Neal, 1993) for details on implementation.
+%   The latent values are whitened with the prior covariance before
+%   the sampling. This reduces the autocorrelation and speeds up the
+%   mixing of the sampler. See (Neal, 1993) for details on
+%   implementation.
 %
 %   The options structure should include the following fields:
-%      opt.repeat              : The number MH-steps before returning single sample
+%      opt.repeat              : The number MH-steps before 
+%                                returning single sample
 %      opt.sample_latent_scale : scale for the MH-step
 %
 %

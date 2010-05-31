@@ -2,66 +2,40 @@ function gpcf = gpcf_periodic(do, varargin)
 %GPCF_PERIODIC	Create a periodic covariance function for Gaussian Process
 %
 %	Description
+%        GPCF = GPCF_PERIODIC('init', 'nin', NIN, OPTIONS) Create and
+%        initialize periodic covariance function for Gaussian process
+%        for input dimension NIN. OPTIONS is optional parameter-value
+%        pair used as described below by GPCF_PERIODIC('set',...
 %
-%	GPCF = GPCF_PERIODIC('init', 'nin', NIN) Create and initialize periodic
-%       covariance function for Gaussian process
+%        GPCF = GPCF_PERIODIC('SET', GPCF, OPTIONS) Set the fields of GPCF
+%        as described by the parameter-value pairs ('FIELD', VALUE) in
+%        the OPTIONS. The fields that can be modified are:
 %
-%	The fields and (default values) in GPCF_PERIODIC are:
-%	  type           = 'gpcf_PERIODIC'
 %	  nin            = Number of inputs. (NIN)
 %	  magnSigma2     = Magnitude (squared) for exponential part. 
 %                          (0.1)
-%	  lengthScale    = Length scale for each input. This can be either scalar corresponding 
-%                          isotropic or vector corresponding ARD. 
-%                          (10)
-%     period         = duration of one cycle of the periodic component(s)
-%                          (1)
-%     optimPeriod    = determines whether the period is optimised (1) or kept
-%                          constant (0). Not a
-%                          hyperparameter for the function.
-%     lengthScale_exp= length scale for the squared exponential component. 
+%	  lengthScale    = Length scale for each input. This can be 
+%                          either scalar corresponding isotropic or
+%                          vector corresponding ARD. (default 10)
+%         period         = duration of one cycle of the periodic
+%                          component(s) (default 1)
+%         optimPeriod    = determines whether the period is optimised 
+%                          (1) or kept constant (0). Not a hyperparameter
+%                           for the function.
+%         lengthScale_exp= length scale for the squared exponential component. 
 %                          This can be either scalar corresponding 
 %                          isotropic or vector corresponding ARD. (10)
-%     decay          = determines whether the squared exponential decay
+%         decay          = determines whether the squared exponential decay
 %                          term is used (1) or not (0). Not a
 %                          hyperparameter for the function.
-%
-%         p              = Prior structure for covariance function parameters. 
-%                          (e.g. p.lengthScale.)
-%         fh_pak         = function handle to pack function
-%                          (@gpcf_periodic_pak)
-%         fh_unpak       = function handle to unpack function
-%                          (@gpcf_periodic_unpak)
-%         fh_e           = function handle to energy function
-%                          (@gpcf_periodic_e)
-%         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                          (@gpcf_periodic_ghyper)
-%         fh_ginput      = function handle to gradient of function with respect to inducing inputs
-%                          (@gpcf_periodic_ginput)
-%         fh_cov         = function handle to covariance function
-%                          (@gpcf_periodic_cov)
-%         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_periodic_trcov)
-%         fh_trvar       = function handle to training variance function
-%                          (@gpcf_periodic_trvar)
-%         fh_recappend   = function handle to append the record function 
-%                          (gpcf_periodic_recappend)
-%
-%	GPCF = GPCF_PERIODIC('set', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
-%       The fields that can be modified are:
-%
-%             'magnSigma2'         : set the magnSigma2
-%             'lengthScale'        : set the lengthScale
-%             'period'             : 
-%             'optimPeriod'        : 
-%             'lengthScale_exp'    :
-%             'decay'              : 
+%         magnSigma2_prior      = prior structure for magnSigma2
+%         lengthScale_prior     = prior structure for lengthScale
+%         lengthScale_exp_prior = prior structure for lengthScale_exp
+%         period_prior          = prior structure for period 
 %
 %
 %	See also
-%       gpcf_exp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
-%       gp_cov, gp_unpak, gp_pak
+%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2009-2010 Heikki Peura
 
@@ -189,126 +163,28 @@ function gpcf = gpcf_periodic(do, varargin)
     end
     
 
-%------------------------------
-%     if nargin < 1
-%         error('Not enough arguments')
-%     end
-% 
-%     % Initialize the covariance function
-%     if strcmp(do, 'init')
-%         gpcf.type = 'gpcf_periodic'; 
-%         gpcf.nout = 1;
-% 
-%         % Initialize parameters
-%         gpcf.lengthScale= 10;
-%         gpcf.lengthScale_exp = 10;
-%         gpcf.magnSigma2 = 0.1;
-%         gpcf.period = 1;
-%         gpcf.optimPeriod = 0;
-%         gpcf.decay = 0;
-% 
-%         % Initialize prior structure
-%         gpcf.p=[];
-%         gpcf.p.lengthScale=prior_unif('init');
-%         gpcf.p.lengthScale_exp=[];
-%         gpcf.p.magnSigma2=prior_unif('init');
-%         gpcf.p.period=[];
-% 
-%         % Set the function handles to the nested functions
-%         gpcf.fh_pak = @gpcf_periodic_pak;
-%         gpcf.fh_unpak = @gpcf_periodic_unpak;
-%         gpcf.fh_e = @gpcf_periodic_e;
-%         gpcf.fh_ghyper = @gpcf_periodic_ghyper;
-%         gpcf.fh_ginput = @gpcf_periodic_ginput;
-%         gpcf.fh_cov = @gpcf_periodic_cov;
-%         gpcf.fh_covvec = @gpcf_periodic_covvec;
-%         gpcf.fh_trcov  = @gpcf_periodic_trcov;
-%         gpcf.fh_trvar  = @gpcf_periodic_trvar;
-%         gpcf.fh_recappend = @gpcf_periodic_recappend;
-% 
-%         if length(varargin) > 1
-%             if mod(nargin,2) ~=1
-%                 error('Wrong number of arguments')
-%             end
-%             % Loop through all the parameter values that are changed
-%             for i=1:2:length(varargin)-1
-%                 switch varargin{i}
-%                   case 'magnSigma2'
-%                     gpcf.magnSigma2 = varargin{i+1};
-%                   case 'lengthScale'
-%                     gpcf.lengthScale = varargin{i+1};
-%                   case 'period'
-%                     gpcf.period = varargin{i+1};
-%                   case 'optimPeriod'
-%                     gpcf.optimPeriod = varargin{i+1};
-%                   case 'lengthScale_exp'
-%                     gpcf.lengthScale_exp = varargin{i+1};
-%                   case 'decay'
-%                     gpcf.decay=varargin{i+1};
-%                   case 'lengthScale_prior'
-%                     gpcf.p.lengthScale = varargin{i+1};
-%                   case 'magnSigma2_prior'
-%                     gpcf.p.magnSigma2 = varargin{i+1};
-%                   case 'lengthScale_exp_prior'
-%                     gpcf.p.lengthScale_exp = varargin{i+1};
-%                   case 'period_prior'
-%                     gpcf.p.period = varargin{i+1};
-%                   otherwise
-%                     error('Wrong parameter name!')
-%                 end
-%             end
-%         end
-%     end
-% 
-%     % Set the parameter values of covariance function
-%     if strcmp(do, 'set')
-%         if mod(nargin,2) ~=0
-%             error('Wrong number of arguments')
-%         end
-%         gpcf = varargin{1};
-%         % Loop through all the parameter values that are changed
-%         for i=2:2:length(varargin)-1
-%             switch varargin{i}
-%               case 'magnSigma2'
-%                 gpcf.magnSigma2 = varargin{i+1};
-%               case 'lengthScale'
-%                 gpcf.lengthScale = varargin{i+1};
-%               case 'period'
-%                 gpcf.period = varargin{i+1};
-%               case 'optimPeriod'
-%                 gpcf.optimPeriod = varargin{i+1};
-%               case 'lengthScale_exp'
-%                 gpcf.lengthScale_exp = varargin{i+1};
-%               case 'decay'
-%                 gpcf.decay=varargin{i+1};
-%               case 'lengthScale_prior'
-%                 gpcf.p.lengthScale = varargin{i+1};
-%               case 'magnSigma2_prior'
-%                 gpcf.p.magnSigma2 = varargin{i+1};
-%               case 'lengthScale_exp_prior'
-%                 gpcf.p.lengthScale_exp = varargin{i+1};
-%               case 'period_prior'
-%                 gpcf.p.period = varargin{i+1};
-%               otherwise
-%                 error('Wrong parameter name!')
-%             end
-%         end
-%     end
-    
-
     function w = gpcf_periodic_pak(gpcf)
     %GPCF_PERIODIC_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
-    %	W = GPCF_PERIODIC_PAK(GPCF, W) takes a covariance function data structure GPCF and
-    %	combines the hyper-parameters into a single row vector W.
+    %   W = GPCF_PERIODIC_PAK(GPCF) takes a covariance function data
+    %   structure GPCF and combines the covariance function parameters
+    %   and their hyperparameters into a single row vector W and takes
+    %   a logarithm of the covariance function parameters.
     %
-    %	The ordering of the parameters in W is:
-    %       w = [gpcf.magnSigma2 gpcf.lengthScale (hyperparameters of gpcf.lengthScale) gpcf.lengthScale_exp gpcf.period]
+    %       w = [ log(gpcf.magnSigma2)
+    %             (hyperparameters of gpcf.magnSigma2) 
+    %             log(gpcf.lengthScale(:))
+    %             (hyperparameters of gpcf.lengthScale)
+    %             log(gpcf.lengthScale_exp)
+    %             (hyperparameters of gpcf.lengthScale_exp)
+    %             log(gpcf.period)
+    %             (hyperparameters of gpcf.period)]'
     %	  
     %
     %	See also
     %	GPCF_PERIODIC_UNPAK
+
         
         if isfield(gpcf,'metric')
            error('Periodic covariance function not compatible with metrics.');
@@ -353,18 +229,22 @@ function gpcf = gpcf_periodic(do, varargin)
 
 
     function [gpcf, w] = gpcf_periodic_unpak(gpcf, w)
-    %GPCF_PERIODIC_UNPAK  Separate covariance function hyper-parameter vector into components.
+    %GPCF_PERIODIC_UNPAK  Sets the covariance function parameters pack into the structure
     %
     %	Description
-    %	[GPCF, W] = GPCF_PERIODIC_UNPAK(GPCF, W) takes a covariance function data structure GPCF
-    %	and  a hyper-parameter vector W, and returns a covariance function data
-    %	structure  identical to the input, except that the covariance hyper-parameters 
-    %   has been set to the values in W. Deletes the values set to GPCF from W and returns 
-    %   the modeified W. 
+    %   [GPCF, W] = GPCF_PERIODIC_UNPAK(GPCF, W) takes a covariance
+    %   function data structure GPCF and a hyper-parameter vector W,
+    %   and returns a covariance function data structure identical to
+    %   the input, except that the covariance hyper-parameters have
+    %   been set to the values in W. Deletes the values set to GPCF
+    %   from W and returns the modeified W.
+    %
+    %   The covariance function parameters are transformed via exp
+    %   before setting them into the structure.
     %
     %	See also
     %	GPCF_PERIODIC_PAK
-    %
+
         if isfield(gpcf,'metric')
            error('Covariance function not compatible with metrics');
         else
@@ -417,15 +297,20 @@ function gpcf = gpcf_periodic(do, varargin)
     %GPCF_PERIODIC_E     Evaluate the energy of prior of PERIODIC parameters
     %
     %	Description
-    %	E = GPCF_PERIODIC_E(GPCF, X, T) takes a covariance function data structure 
-    %   GPCF together with a matrix X of input vectors and a matrix T of target 
-    %   vectors and evaluates log p(th) x J, where th is a vector of PERIODIC parameters 
-    %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
-    %   are log transformed, when packed.)
+    %   E = GPCF_PERIODIC_E(GPCF, X, T) takes a covariance function data
+    %   structure GPCF together with a matrix X of input vectors and a
+    %   vector T of target vectors and evaluates log p(th) x J, where
+    %   th is a vector of PERIODIC parameters and J is the Jacobian of
+    %   transformation exp(w) = th. (Note that the parameters are log
+    %   transformed, when packed.) 
+    %
+    %   Also the log prior of the hyperparameters of the covariance
+    %   function parameters is added to E if hyper-hyperprior is
+    %   defined.
     %
     %	See also
     %	GPCF_PERIODIC_PAK, GPCF_PERIODIC_UNPAK, GPCF_PERIODIC_G, GP_E
-    %
+
         eprior = 0;
         gpp=gpcf.p;
         
@@ -457,21 +342,32 @@ function gpcf = gpcf_periodic(do, varargin)
 
     end
     
-    function [DKff, gprior]  = gpcf_periodic_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
+    function [DKff, gprior]  = gpcf_periodic_ghyper(gpcf, x, x2, mask)
     %GPCF_PERIODIC_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
     %	Description
-    %	[GPRIOR, DKff, DKuu, DKuf] = GPCF_PERIODIC_GHYPER(GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) 
-    %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
-    %   matrix T of target vectors and vectors GDATA and GPRIOR. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKff    = gradients of covariance matrix Kff with respect to th (cell array with matrix elements)
-    %      DKuu    = gradients of covariance matrix Kuu with respect to th (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to th (cell array with matrix elements)
+    %	[DKff, GPRIOR] = GPCF_PERIODIC_GHYPER(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X) with respect to th (cell array with matrix
+    %   elements), and GPRIOR = d log (p(th))/dth, where th is the
+    %   vector of hyperparameters
     %
-    %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
-    %   between u and f). See Vanhatalo and Vehtari (2007) for details.
+    %	[DKff, GPRIOR] = GPCF_PERIODIC_GHYPER(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
+    %   elements), and GPRIOR = d log (p(th))/dth, where th is the
+    %   vector of hyperparameters
+    %
+    %	[DKff, GPRIOR] = GPCF_PERIODIC_GHYPER(GPCF, X, [], MASK) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the diagonal of gradients of
+    %   covariance matrix Kff = k(X,X2) with respect to th (cell array
+    %   with matrix elements), and GPRIOR = d log (p(th))/dth, where
+    %   th is the vector of hyperparameters. This is needed for
+    %   example with FIC sparse approximation.
     %
     %	See also
     %   GPCF_PERIODIC_PAK, GPCF_PERIODIC_UNPAK, GPCF_PERIODIC_E, GP_G
@@ -501,7 +397,7 @@ function gpcf = gpcf_periodic(do, varargin)
             else
                 % loop over all the lengthScales
                 if length(gpcf.lengthScale) == 1
-                    % In the case of isotropic SEXP
+                    % In the case of isotropic PERIODIC
                     s = 2./gpcf.lengthScale.^2;
                     dist = 0;
                     for i=1:m
@@ -526,7 +422,7 @@ function gpcf = gpcf_periodic(do, varargin)
                 
                 if gpcf.decay == 1
                     if length(gpcf.lengthScale_exp) == 1
-                        % In the case of isotropic SEXP
+                        % In the case of isotropic PERIODIC
                         s = 1./gpcf.lengthScale_exp.^2;
                         dist = 0;
                         for i=1:m
@@ -554,7 +450,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % Evaluate help matrix for calculations of derivatives
                     % with respect to the period
                     if length(gpcf.lengthScale) == 1
-                    % In the case of an isotropic SEXP
+                    % In the case of an isotropic PERIODIC
                         s = repmat(1./gpcf.lengthScale.^2, 1, m);
                     
                  
@@ -594,7 +490,7 @@ function gpcf = gpcf_periodic(do, varargin)
             else 
                 % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
                 if length(gpcf.lengthScale) == 1
-                    % In the case of an isotropic SEXP
+                    % In the case of an isotropic PERIODIC
                     s = 1./gpcf.lengthScale.^2;
                     dist = 0; dist2 = 0;
                     for i=1:m
@@ -620,7 +516,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % Evaluate help matrix for calculations of derivatives with
                     % respect to the lengthScale_exp
                     if length(gpcf.lengthScale_exp) == 1
-                        % In the case of an isotropic SEXP
+                        % In the case of an isotropic PERIODIC
                         s = 1./gpcf.lengthScale_exp.^2;
                         dist = 0; dist2 = 0;
                         for i=1:m
@@ -647,7 +543,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % Evaluate help matrix for calculations of derivatives
                     % with respect to the period
                     if length(gpcf.lengthScale) == 1
-                    % In the case of an isotropic SEXP
+                    % In the case of an isotropic PERIODIC
                         s = repmat(1./gpcf.lengthScale.^2, 1, m);
                     else
                         s = 1./gpcf.lengthScale.^2;
@@ -736,19 +632,21 @@ function gpcf = gpcf_periodic(do, varargin)
 
 
     function [DKff, gprior]  = gpcf_periodic_ginput(gpcf, x, x2)
-    %GPCF_PERIODIC_GIND     Evaluate gradient of covariance function with 
-    %                   respect to x.
+    %GPCF_PERIODIC_GINPUT     Evaluate gradient of covariance function with 
+    %                     respect to x.
     %
-    %	Descriptioni
-    %	[GPRIOR_IND, DKuu, DKuf] = GPCF_PERIODIC_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
-    %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
-    %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKuu    = gradients of covariance matrix Kuu with respect to Xu (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %	Description
+    %	DKff = GPCF_PERIODIC_GHYPER(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X) with respect to X (cell array with matrix
+    %   elements)
     %
-    %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
-    %   between u and f). See Vanhatalo and Vehtari (2007) for details.
+    %	DKff = GPCF_PERIODIC_GHYPER(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
+    %   elements).
     %
     %	See also
     %   GPCF_PERIODIC_PAK, GPCF_PERIODIC_UNPAK, GPCF_PERIODIC_E, GP_G
@@ -757,7 +655,7 @@ function gpcf = gpcf_periodic(do, varargin)
         gp_period=gpcf.period;
         ii1 = 0;
         if length(gpcf.lengthScale) == 1
-            % In the case of an isotropic SEXP
+            % In the case of an isotropic PERIODIC
             s = repmat(1./gpcf.lengthScale.^2, 1, m);
             gp_period = repmat(1./gp_period, 1, m);
         else
@@ -765,7 +663,7 @@ function gpcf = gpcf_periodic(do, varargin)
         end
         if gpcf.decay == 1
             if length(gpcf.lengthScale_exp) == 1
-                % In the case of an isotropic SEXP
+                % In the case of an isotropic PERIODIC
                 s_exp = repmat(1./gpcf.lengthScale_exp.^2, 1, m);
             else
                 s_exp = 1./gpcf.lengthScale_exp.^2;
@@ -827,11 +725,12 @@ function gpcf = gpcf_periodic(do, varargin)
     function C = gpcf_periodic_cov(gpcf, x1, x2)
     % GP_PERIODIC_COV     Evaluate covariance matrix between two input vectors.
     %
-    %         Description
-    %         C = GP_PERIODIC_COV(GP, TX, X) takes in covariance function of a Gaussian
-    %         process GP and two matrixes TX and X that contain input vectors to
-    %         GP. Returns covariance matrix C. Every element ij of C contains
-    %         covariance between inputs i in TX and j in X.
+    %         Description         
+    %         C = GP_PERIODIC_COV(GP, TX, X) takes in covariance function of a
+    %         Gaussian process GP and two matrixes TX and X that
+    %         contain input vectors to GP. Returns covariance matrix
+    %         C. Every element ij of C contains covariance between
+    %         inputs i in TX and j in X.
     %
     %
     %         See also
@@ -900,11 +799,11 @@ function gpcf = gpcf_periodic(do, varargin)
     % GP_PERIODIC_TRCOV     Evaluate training covariance matrix of inputs.
     %
     %         Description
-    %         C = GP_PERIODIC_TRCOV(GP, TX) takes in covariance function of a Gaussian
-    %         process GP and matrix TX that contains training input vectors. 
-    %         Returns covariance matrix C. Every element ij of C contains covariance 
-    %         between inputs i and j in TX
-    %
+    %         C = GP_PERIODIC_TRCOV(GP, TX) takes in covariance function of a
+    %         Gaussian process GP and matrix TX that contains training
+    %         input vectors. Returns covariance matrix C. Every
+    %         element ij of C contains covariance between inputs i and
+    %         j in TX
     %
     %         See also
     %         GPCF_PERIODIC_COV, GPCF_PERIODIC_TRVAR, GP_COV, GP_TRCOV
@@ -951,28 +850,6 @@ function gpcf = gpcf_periodic(do, varargin)
             C(C<eps) = 0;
             C = C+C';
             C = ma.*exp(-C);
-
-% $$$         [n, m] =size(x);
-% $$$ 
-% $$$         s = 1./(gpcf.lengthScale);
-% $$$         s2 = s.^2;
-% $$$         if size(s)==1
-% $$$             s2 = repmat(s2,1,m);
-% $$$         end
-% $$$         ma = gpcf.magnSigma2;
-% $$$ 
-% $$$         C = zeros(n,n);
-% $$$         for ii1=1:n-1
-% $$$             d = zeros(n-ii1,1);
-% $$$             col_ind = ii1+1:n;
-% $$$             for ii2=1:m
-% $$$                 d = d+2.*s2(ii2).*sin((x(col_ind,ii2)-x(ii1,ii2))/2).^2;
-% $$$             end
-% $$$             C(col_ind,ii1) = d;
-% $$$         end
-% $$$         C(C<eps) = 0;
-% $$$         C = C+C';
-% $$$         C = ma.*exp(-C);
         end
     end
 
@@ -980,13 +857,14 @@ function gpcf = gpcf_periodic(do, varargin)
     % GP_PERIODIC_TRVAR     Evaluate training variance vector
     %
     %         Description
-    %         C = GP_PERIODIC_TRVAR(GPCF, TX) takes in covariance function of a Gaussian
-    %         process GPCF and matrix TX that contains training inputs. Returns variance 
-    %         vector C. Every element i of C contains variance of input i in TX
+    %         C = GP_PERIODIC_TRVAR(GPCF, TX) takes in covariance function 
+    %         of a Gaussian process GPCF and matrix TX that contains
+    %         training inputs. Returns variance vector C. Every
+    %         element i of C contains variance of input i in TX
     %
     %
     %         See also
-    %         GPCF_PERIODIC_COV, GPCF_PERIODIC_COVVEC, GP_COV, GP_TRCOV
+    %         GPCF_PERIODIC_COV, GP_COV, GP_TRCOV
 
 
         [n, m] =size(x);
@@ -997,20 +875,18 @@ function gpcf = gpcf_periodic(do, varargin)
 
     function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
     % RECAPPEND - Record append
-    %          Description
-    %          RECCF = GPCF_PERIODIC_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-    %          function record RECCF, record index RI and covariance function structure. 
-    %          Appends the parameters of GPCF to the RECCF in the ri'th place.
     %
-    %          RECAPPEND returns a structure RECCF containing following record fields:
-    %          lengthHyper    
-    %          lengthHyperNu  
-    %          lengthScale    
-    %          magnSigma2     
+    %          Description
+    %          RECCF = GPCF_PERIODIC_RECAPPEND(RECCF, RI, GPCF)
+    %          takes a likelihood record structure RECCF, record
+    %          index RI and likelihood structure GPCF with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECCF which contains all the old samples and the
+    %          current samples from GPCF .
     %
     %          See also
     %          GP_MC and GP_MC -> RECAPPEND
-
+        
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_periodic';

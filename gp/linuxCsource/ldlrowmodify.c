@@ -1,11 +1,10 @@
 /* LDLROWMODIFY    Modify the LDL factorization of C, when kth row and column change
  *
- * function L = rowmodify(L, w, w2, k)
+ * function L = rowmodify(L, c2, k)
  * Function to modify the cholesky factorization L*D*L' = C (which 
  * is stored in L), when a row and column k of C have changed from c to 
  * c2. The change in C is assumed to be such that the sparsity structure 
- * of C is remained the same. c is the old kth column of C and c2 is 
- * the new column.
+ * of C is remained the same. c2 is the new column of C.
  *   
  * See gpep_e for usage
  *

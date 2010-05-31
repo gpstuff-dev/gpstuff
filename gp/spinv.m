@@ -1,19 +1,27 @@
 function Z = spinv(A, B)
-% SINV    Evaluate the sparse inverse matrix
+% SPINV    Evaluate the sparse inverse matrix
 %
 % z = sinv(A)  returns the elements of inv(A)_ij, for which A_ij
 %      is different from zero. 
 %
 % z = sinv(LD, 1)  returns the elements of inv(A)_ij, for which A_ij
 %     is different from zero, and where LD is the LDL cholesky
-%     decomposition of A. LD has to be in the form returned by ldlchol.
+%     decomposition of A. LD has to be in the form returned by ldlchol
+%     in SuiteSparse by Tim Davis. 
 %
-%     See Vanhatalo and Vehtari (2008) for details. 
+%   Note! If z = sinv(LD, 1) is used LD must not be modified in Matlab
+%   after ldlchol. Matlab destroys the symbolic sparsity structure in
+%   the Cholesky decomposition, which is needed in the spinv
+%   algorithm. If LD is modified the worst scenario is memory corruption. 
+%   
 %
+%     For details, see:
+%     Jarno Vanhatalo and Aki Vehtari (2008). Modelling local and
+%     global phenomena with sparse Gaussian processes. Proceedings of
+%     the 24th Conference on Uncertainty in Artificial Intelligence
 %
-%   Note! The function works only for symmetric matrices!
 
-% Copyright (c) 2008      Jarno Vanhatalo
+% Copyright (c) 2008-2010      Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file

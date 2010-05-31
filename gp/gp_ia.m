@@ -45,7 +45,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                    importance sampling. Default is TRUE.
 %       'opt_scg'    Option structure for SCG2 optimisation (Default is [])
 %       'opt_fminunc' Option structure for FMINUNC optimisation (Default is [])
-%       'opt_hmc'    Option structure for HMC2 optimisation (Default is [])
+%       'opt_hmc'    Option structure for HMC2 sampling (Default is [])
 %
 %     Default optimisation method is SCG (scaled conjugate gradient)
 %     To use FMINUNC, give option 'optfminunc' and no 'optscg'
@@ -104,7 +104,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   opt.n_samples=ip.Results.n_samples;
   opt.f0=ip.Results.f0;
   opt.qmc=ip.Results.qmc;
-  % optimisation and smapling parameters
+  % optimisation and sampling parameters
   opt_scg=ip.Results.opt_scg;
   opt_fminunc=ip.Results.opt_fminunc;
   opt_hmc=ip.Results.opt_hmc;
@@ -606,19 +606,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             gp = gp_unpak(gp, ww);
 
             etr = feval(fh_e,ww,gp,x,y,options);
-          end
-          
-% $$$             % ----------- Sample hyperparameters with SLS --------------------- 
-% $$$             if isfield(opt, 'sls_opt')
-% $$$                 ww = gp_pak(gp, 'hyper');
-% $$$                 [ww, energies, diagns] = sls(me, w, opt.sls_opt, mg, gp, x, y, 'hyper', varargin{:});
-% $$$                 if isfield(diagns, 'opt')
-% $$$                     opt.sls_opt = diagns.opt;
-% $$$                 end
-% $$$                 w=w(end,:);
-% $$$                 gp = gp_unpak(gp, w, 'hyper');
-% $$$             end
-          
+          end          
         end % ------------- for l=1:opt.repeat -------------------------  
 
         th(j,:) = ww;

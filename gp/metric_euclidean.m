@@ -1,41 +1,33 @@
 function metric = metric_euclidean(do, varargin)
-%METRIC_EUCLIDEAN An Euclidean distance metric for Gaussian process models.
+%METRIC_EUCLIDEAN An Euclidean distance for Gaussian process models.
 %
 %	Description
+%	METRIC = METRIC_EUCLIDEAN('INIT', COMPONENTS, OPTIONS) Constructs data
+%       structure for an euclidean metric used in covariance function
+%       of a GP model. OPTIONS is optional parameter-value pair used
+%       as described below by GPCF_SEXP('set',...
 %
-%	METRIC = METRIC_EUCLIDEAN('INIT', COMPONENTS) Constructs data
-%       structure for an euclidean metric used in covariance function of a GP model.
+%       METRIC = METRIC_EUCLIDEAN('SET', METRIC, OPTIONS) Set the
+%       fields of GPCF as described by the parameter-value pairs
+%       ('FIELD', VALUE) in the OPTIONS. The fields that can be
+%       modified are:
 %
-%	The fields and (default values) in METRIC_EUCLIDEAN are:
-%	  type         = 'metric_euclidean'
-%	  components   = Cell array of vectors specifying which inputs are grouped together
-%                        with a same scaling parameter. 
-%                        For example, the component specification {[1 2] [3]} means that
-%                        distance between 3 dimensional vectors x and z is computed as
-%                        r = sqrt( ( (x_1-z_1)^2+(x_2-z_2)^2 )/l_1 + (x_3-z_3)/l_2),
-%                        where l_1 and l_2 are lengthscales for corresponding component sets.
-%         lengthScales = Hyperparameters of the metric, which in this case are 
-%                       lengthscales for each input component set. 
-%         p            = Prior structure for metric parameters. 
-%                        (e.g. p.lengthScales.)
-%         pak          = function handle to pack function
-%                        (@metric_euclidean_pak)
-%         unpak        = function handle to unpack function
-%                        (@metric_euclidean_unpak)
-%         e            = function handle to energy function
-%                        (@metric_euclidean_e)
-%         ghyper       = function handle to gradient of energy with respect to hyperparameters
-%                        (@metric_euclidean_ghyper)
-%         ginput       = function handle to gradient of function with respect to inducing inputs
-%                        (@metric_euclidean_ginput)
-%         distance     = function handle to distance function of the metric.
-%                        (@metric_euclidean_distance)
-%         fh_recappend = function handle to append the record function 
-%                        (metric_euclidean_recappend)
+%	components          = Cell array of vectors specifying which 
+%                             inputs are grouped together with a same
+%                             scaling parameter. For example, the 
+%                             component specification {[1 2] [3]} means 
+%                             that distance between 3 dimensional vectors 
+%                             x and z is computed as 
+%                             r = sqrt( ( (x_1-z_1)^2+(x_2-z_2)^2 )/l_1 + (x_3-z_3)/l_2), 
+%                             where l_1 and l_2 are lengthscales for 
+%                             corresponding component sets.
+%       lengthScales        = Hyperparameters of the metric, which in
+%                             this case are lengthscales for each 
+%                             input component set. 
+%       lengthScale_prior   = prior structure for lengthScales
 %
-%	METRIC = METRIC_EUCLIDEAN('SET', METRIC, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in METRIC.
-%
+%       See also
+%       GPCF_SEXP
     
 % Copyright (c) 2008 Jouni Hartikainen 
 % Copyright (c) 2008 Jarno Vanhatalo     
@@ -113,15 +105,21 @@ function metric = metric_euclidean(do, varargin)
 end
 
 function w = metric_euclidean_pak(metric)
-%METRIC_EUCLIDEAN_PAK	 Combine the metric parameters into one vector.
-%
-%	Description
-%	W = METRIC_EUCLIDEAN_PAK(METRIC, W) takes a metric data structure METRIC and
-%	combines the parameters into a single row vector W.
-%
-%	See also
-%	METRIC_EUCLIDEAN_UNPAK
-
+%METRIC_EUCLIDEAN_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %
+    %	Description
+    %   W = METRIC_EUCLIDEAN_PAK(GPCF) takes a covariance function data
+    %   structure GPCF and combines the covariance function parameters
+    %   and their hyperparameters into a single row vector W and takes
+    %   a logarithm of the covariance function parameters.
+    %
+    %       w = [ log(gpcf.lengthScale(:))
+    %             (hyperparameters of gpcf.lengthScale)]'
+    %	  
+    %
+    %	See also
+    %	GPCF_SEXP_UNPAK
+    
     if ~isempty(metric.p.lengthScales)
         w = log(metric.lengthScales);
         
@@ -133,11 +131,16 @@ end
 function [metric, w] = metric_euclidean_unpak(metric, w)
 %METRIC_EUCLIDEAN_UNPAK  Separate metric parameter vector into components.
 %
-%	Description
-%	[METRIC, W] = METRIC_EUCLIDEAN_UNPAK(METRIC, W) takes a metric data structure
-%   METRIC parameter vector W, and returns a metric data structure  identical to the
-%   input, except that the parameters has been set to the values in W. Deletes the values
-%   set to METRIC from W and returns the modified W. 
+%   Description
+%   METRIC, W] = METRIC_EUCLIDEAN_UNPAK(METRIC, W) takes a metric data
+%   structure GPCF and a hyper-parameter vector W, and returns a
+%   covariance function data structure identical to the input, except
+%   that the covariance hyper-parameters have been set to the values
+%   in W. Deletes the values set to GPCF from W and returns the
+%   modeified W.
+%
+%   The covariance function parameters are transformed via exp
+%   before setting them into the structure.
 %
 %	See also
 %	METRIC_EUCLIDEAN_PAK
@@ -158,15 +161,19 @@ end
 function eprior = metric_euclidean_e(metric, x, t)
 %METRIC_EUCLIDEAN_E     Evaluate the energy of prior of metric parameters
 %
-%	Description
-%	E = METRIC_EUCLIDEAN_E(METRIC, X, T) takes a metric data structure 
-%   METRIC together with a matrix X of input vectors and a matrix T of target 
-%   vectors and evaluates log p(th) x J, where th is a vector of metric parameters 
-%   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
-%   are log transformed, when packed.)
+%   Description
+%   E = METRIC_EUCLIDEAN_E(METRIC, X, T) takes a metric data structure
+%   GPCF together with a matrix X of input vectors and a vector T of
+%   target vectors and evaluates log p(th) x J, where th is a vector
+%   of SEXP parameters and J is the Jacobian of transformation exp(w)
+%   = th. (Note that the parameters are log transformed, when packed.)
 %
-%	See also
-%	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
+%   Also the log prior of the hyperparameters of the covariance
+%   function parameters is added to E if hyper-hyperprior is
+%   defined.
+%
+%   See also
+%   METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
 %
     [n, m] = size(x);
 
@@ -355,11 +362,6 @@ function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
 %          RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC) takes old covariance
 %          function record RECMETRIC, record index RI and covariance function structure. 
 %          Appends the parameters of METRIC to the RECMETRIC in the ri'th place.
-%
-%          RECAPPEND returns a structure RECMETRIC containing following record fields:
-%          lengthHyper    
-%          lengthHyperNu  
-%          lengthScale    
 %
 %          See also
 %          GP_MC and GP_MC -> RECAPPEND

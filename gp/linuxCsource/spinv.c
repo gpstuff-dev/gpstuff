@@ -7,16 +7,24 @@
  *      is different from zero, and where LD is the LDL cholesky
  *      decomposition of A. LD has to be in the form returned by ldlchol.
  *
- *    See Vanhatalo and Vehtari (2008) for details. 
  *
+ *   Note! If z = sinv(LD, 1) is used LD must not be modified in Matlab
+ *   after ldlchol. Matlab destroys the symbolic sparsity structure in
+ *   the Cholesky decomposition, which is needed in the spinv
+ *   algorithm. If LD is modified the worst scenario is memory corruption. 
+ *   
  *
- *   Note! The function works only for symmetric matrices!
+ *     For details, see:
+ *     Jarno Vanhatalo and Aki Vehtari (2008). Modelling local and
+ *     global phenomena with sparse Gaussian processes. Proceedings of
+ *     the 24th Conference on Uncertainty in Artificial Intelligence
+ *
  *
  */
 
 /* -----------------------------------------------------------------------------
  * Copyright (C) 2005-2006 Timothy A. Davis
- * Copyright (c) 2008-2009 Jarno Vanhatalo
+ * Copyright (c) 2008-2010 Jarno Vanhatalo
  *
  * This software is distributed under the GNU General Public
  * License (version 2 or later); please refer to the file

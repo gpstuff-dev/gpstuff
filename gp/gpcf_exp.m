@@ -1,53 +1,32 @@
 function gpcf = gpcf_exp(do, varargin)
-%GPCF_EXP	Create an exponential covariance function for Gaussian Process
+%GPCF_EXP	Create a squared exponential covariance function
 %
 %	Description
+%        GPCF = GPCF_EXP('init', OPTIONS) Create and initialize
+%        exponential covariance function for Gaussian process. OPTIONS
+%        is optional parameter-value pair used as described below by
+%        GPCF_EXP('set',...
 %
-%	GPCF = GPCF_EXP('INIT') Create and initialize exponential
-%       covariance function for Gaussian process
+%        GPCF = GPCF_EXP('SET', GPCF, OPTIONS) Set the fields of GPCF
+%        as described by the parameter-value pairs ('FIELD', VALUE) in
+%        the OPTIONS. The fields that can be modified are:
 %
-%	The fields and (default values) in GPCF_EXP are:
-%	  type           = 'gpcf_exp'
-%	  magnSigma2     = Magnitude (squared) for exponential part. 
-%                          (0.1)
-%	  lengthScale    = Length scale for each input. This can be either scalar corresponding 
-%                          isotropic or vector corresponding ARD. (10)
-%         p              = Prior structure for covariance function parameters. 
-%                          (e.g. p.lengthScale.)
-%         fh_pak         = function handle to pack function
-%                          (@gpcf_exp_pak)
-%         fh_unpak       = function handle to unpack function
-%                          (@gpcf_exp_unpak)
-%         fh_e           = function handle to energy function
-%                          (@gpcf_exp_e)
-%         fh_ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                          (@gpcf_exp_ghyper)
-%         fh_ginput      = function handle to gradient of function with respect to inducing inputs
-%                          (@gpcf_exp_ginput)
-%         fh_cov         = function handle to covariance function
-%                          (@gpcf_exp_cov)
-%         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_exp_trcov)
-%         fh_trvar       = function handle to training variance function
-%                          (@gpcf_exp_trvar)
-%         fh_recappend   = function handle to append the record function 
-%                          (gpcf_exp_recappend)
-%
-%	GPCF = GPCF_EXP('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. 
-%       The fields that can be modified are:
-%
-%             'magnSigma2'         : set the magnSigma2
-%             'lengthScale'        : set the lengthScale
-%             'metric'             : set the metric structure into the covariance function
-%             'magnSigma2_prior'   ; set the prior structure for magnSigma2
-%             'lengthScale_prior'  : set the prior structure for lengthScale
+%             'magnSigma2'        : Magnitude (squared) for exponential 
+%                                   part. (default 0.1)
+%             'lengthScale'       : Length scale for each input. This 
+%                                   can be either scalar corresponding 
+%                                   to an isotropic function or vector 
+%                                   defining own length-scale for each 
+%                                   input direction. (default 10).
+%             'magnSigma2_prior'  : prior structure for magnSigma2
+%             'lengthScale_prior' : prior structure for lengthScale
+%             'metric'            : metric structure into the 
+%                                   covariance function
 %
 %	See also
-%       gpcf_sexp, gpcf_matern32, gpcf_matern52, gpcf_ppcs2, gp_init, gp_e, gp_g, gp_trcov
-%       gp_cov, gp_unpak, gp_pak
+%       gpcf_sexp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
     
-% Copyright (c) 2007-2009 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -140,11 +119,15 @@ function gpcf = gpcf_exp(do, varargin)
     %GPCF_EXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
     %	Description
-    %	W = GPCF_EXP_PAK(GPCF, W) takes a covariance function data structure GPCF and
-    %	combines the hyper-parameters into a single row vector W.
+    %   W = GPCF_EXP_PAK(GPCF) takes a covariance function data
+    %   structure GPCF and combines the covariance function parameters
+    %   and their hyperparameters into a single row vector W and takes
+    %   a logarithm of the covariance function parameters.
     %
-    %	The ordering of the parameters in W is:
-    %       w = [gpcf.magnSigma2 (hyperparameters of gpcf.lengthScale) gpcf.lengthScale]
+    %       w = [ log(gpcf.magnSigma2)
+    %             (hyperparameters of gpcf.magnSigma2) 
+    %             log(gpcf.lengthScale(:))
+    %             (hyperparameters of gpcf.lengthScale)]'
     %	  
     %
     %	See also
@@ -177,18 +160,22 @@ function gpcf = gpcf_exp(do, varargin)
 
 
     function [gpcf, w] = gpcf_exp_unpak(gpcf, w)
-    %GPCF_EXP_UNPAK  Separate covariance function hyper-parameter vector into components.
+    %GPCF_EXP_UNPAK  Sets the covariance function parameters pack into the structure
     %
     %	Description
-    %	[GPCF, W] = GPCF_EXP_UNPAK(GPCF, W) takes a covariance function data structure GPCF
-    %	and  a hyper-parameter vector W, and returns a covariance function data
-    %	structure  identical to the input, except that the covariance hyper-parameters 
-    %   has been set to the values in W. Deletes the values set to GPCF from W and returns 
-    %   the modeified W. 
+    %   [GPCF, W] = GPCF_EXP_UNPAK(GPCF, W) takes a covariance
+    %   function data structure GPCF and a hyper-parameter vector W,
+    %   and returns a covariance function data structure identical to
+    %   the input, except that the covariance hyper-parameters have
+    %   been set to the values in W. Deletes the values set to GPCF
+    %   from W and returns the modeified W.
+    %
+    %   The covariance function parameters are transformed via exp
+    %   before setting them into the structure.
     %
     %	See also
     %	GPCF_EXP_PAK
-
+    
         gpp=gpcf.p;
         if ~isempty(gpp.magnSigma2)
             i1=1;
@@ -223,15 +210,20 @@ function gpcf = gpcf_exp(do, varargin)
     %GPCF_EXP_E     Evaluate the energy of prior of EXP parameters
     %
     %	Description
-    %	E = GPCF_EXP_E(GPCF, X, T) takes a covariance function data structure 
-    %   GPCF together with a matrix X of input vectors and a matrix T of target 
-    %   vectors and evaluates log p(th) x J, where th is a vector of SEXP parameters 
-    %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
-    %   are log transformed, when packed.)
+    %   E = GPCF_EXP_E(GPCF, X, T) takes a covariance function data
+    %   structure GPCF together with a matrix X of input vectors and a
+    %   vector T of target vectors and evaluates log p(th) x J, where
+    %   th is a vector of EXP parameters and J is the Jacobian of
+    %   transformation exp(w) = th. (Note that the parameters are log
+    %   transformed, when packed.) 
+    %
+    %   Also the log prior of the hyperparameters of the covariance
+    %   function parameters is added to E if hyper-hyperprior is
+    %   defined.
     %
     %	See also
     %	GPCF_EXP_PAK, GPCF_EXP_UNPAK, GPCF_EXP_G, GP_E
-        
+    %
         eprior = 0;
         gpp=gpcf.p;
         
@@ -264,17 +256,29 @@ function gpcf = gpcf_exp(do, varargin)
     %GPCF_EXP_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                    respect to the hyperparameters.
     %
-    %	Descriptioni
-    %	[GPRIOR, DKff, DKuu, DKuf] = GPCF_EXP_GHYPER(GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) 
-    %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
-    %   matrix T of target vectors and vectors GDATA and GPRIOR. Returns:
-    %      GPRIOR  = d log(p(th))/dth, where th is the vector of hyperparameters 
-    %      DKff    = gradients of covariance matrix Kff with respect to th (cell array with matrix elements)
-    %      DKuu    = gradients of covariance matrix Kuu with respect to th (cell array with matrix elements)
-    %      DKuf    = gradients of covariance matrix Kuf with respect to th (cell array with matrix elements)
+    %	Description
+    %	[DKff, GPRIOR] = GPCF_EXP_GHYPER(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X) with respect to th (cell array with matrix
+    %   elements), and GPRIOR = d log (p(th))/dth, where th is the
+    %   vector of hyperparameters
     %
-    %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
-    %   between u and f). See Vanhatalo and Vehtari (2007) for details.
+    %	[DKff, GPRIOR] = GPCF_EXP_GHYPER(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
+    %   elements), and GPRIOR = d log (p(th))/dth, where th is the
+    %   vector of hyperparameters
+    %
+    %	[DKff, GPRIOR] = GPCF_EXP_GHYPER(GPCF, X, [], MASK) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the diagonal of gradients of
+    %   covariance matrix Kff = k(X,X2) with respect to th (cell array
+    %   with matrix elements), and GPRIOR = d log (p(th))/dth, where
+    %   th is the vector of hyperparameters. This is needed for
+    %   example with FIC sparse approximation.
+    %
     %
     %	See also
     %   GPCF_EXP_PAK, GPCF_EXP_UNPAK, GPCF_EXP_E, GP_G
@@ -450,17 +454,21 @@ function gpcf = gpcf_exp(do, varargin)
     end
 
     function [DKff, gprior]  = gpcf_exp_ginput(gpcf, x, x2)
-    %GPCF_EXP_GIND     Evaluate gradient of covariance function with 
-    %                  respect to the inducing inputs.
+    %GPCF_EXP_GINPUT     Evaluate gradient of covariance function with 
+    %                     respect to x.
     %
-    %	Descriptioni
-    %	DKff = GPCF_EXP_GIND(GPCF, X, T, G, GDATA_IND, GPRIOR_IND, VARARGIN) 
-    %   takes a covariance function data structure GPCF, a matrix X of input vectors, a
-    %   matrix T of target vectors and vectors GDATA_IND and GPRIOR_IND. Returns:
-    %      DKff    = gradients of covariance matrix Kuf with respect to Xu (cell array with matrix elements)
+    %	Description
+    %	DKff = GPCF_EXP_GHYPER(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X) with respect to X (cell array with matrix
+    %   elements)
     %
-    %   Here f refers to latent values and u to inducing varianble (e.g. Kuf is the covariance 
-    %   between u and f). See Vanhatalo and Vehtari (2007) for details.
+    %	DKff = GPCF_EXP_GHYPER(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
+    %   elements).
     %
     %	See also
     %   GPCF_EXP_PAK, GPCF_EXP_UNPAK, GPCF_EXP_E, GP_G
@@ -547,11 +555,12 @@ function gpcf = gpcf_exp(do, varargin)
     function C = gpcf_exp_cov(gpcf, x1, x2)
     % GP_EXP_COV     Evaluate covariance matrix between two input vectors.
     %
-    %         Description
-    %         C = GP_EXP_COV(GP, TX, X) takes in covariance function of a Gaussian
-    %         process GP and two matrixes TX and X that contain input vectors to
-    %         GP. Returns covariance matrix C. Every element ij of C contains
-    %         covariance between inputs i in TX and j in X.
+    %         Description        
+    %         C = GP_EXP_COV(GP, TX, X) takes in covariance function of a
+    %         Gaussian process GP and two matrixes TX and X that
+    %         contain input vectors to GP. Returns covariance matrix
+    %         C. Every element ij of C contains covariance between
+    %         inputs i in TX and j in X.
     %
     %
     %         See also
@@ -596,10 +605,11 @@ function gpcf = gpcf_exp(do, varargin)
     % GP_EXP_TRCOV     Evaluate training covariance matrix of inputs.
     %
     %         Description
-    %         C = GP_EXP_TRCOV(GP, TX) takes in covariance function of a Gaussian
-    %         process GP and matrix TX that contains training input vectors. 
-    %         Returns covariance matrix C. Every element ij of C contains covariance 
-    %         between inputs i and j in TX
+    %         C = GP_EXP_TRCOV(GP, TX) takes in covariance function of a
+    %         Gaussian process GP and matrix TX that contains training
+    %         input vectors. Returns covariance matrix C. Every
+    %         element ij of C contains covariance between inputs i and
+    %         j in TX
     %
     %
     %         See also
@@ -665,16 +675,14 @@ function gpcf = gpcf_exp(do, varargin)
 
     function reccf = gpcf_exp_recappend(reccf, ri, gpcf)
     % RECAPPEND - Record append
-    %          Description
-    %          RECCF = GPCF_EXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-    %          function record RECCF, record index RI and covariance function structure. 
-    %          Appends the parameters of GPCF to the RECCF in the ri'th place.
     %
-    %          RECAPPEND returns a structure RECCF containing following record fields:
-    %          lengthHyper    
-    %          lengthHyperNu  
-    %          lengthScale    
-    %          magnSigma2     
+    %          Description
+    %          RECCF = GPCF_EXP_RECAPPEND(RECCF, RI, GPCF)
+    %          takes a likelihood record structure RECCF, record
+    %          index RI and likelihood structure GPCF with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECCF which contains all the old samples and the
+    %          current samples from GPCF .
     %
     %          See also
     %          GP_MC and GP_MC -> RECAPPEND

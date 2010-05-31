@@ -3,48 +3,15 @@ function gpcf = gpcf_noiset(do, varargin)
 %               for Gaussian Process.
 %
 %	Description
+%        GPCF = GPCF_NOISET('init', OPTIONS) Create and initialize
+%        Student't noise covariance function , with a scale mixture
+%        representation, for Gaussian process. OPTIONS is optional
+%        parameter-value pair used as described below by
+%        GPCF_NOISET('set',...
 %
-%	GPCF = GPCF_NOISET('INIT', NDATA) Create and initialize noise
-%       covariance function fo Gaussian process. NOTE! In contrast to most of 
-%       the gpcf functions gpcf_noiset needs the number of data points NDATA.
-%
-%	The fields and (default values) in GPCF_NOISET are:
-%	  type           = 'gpcf_se'
-%         ndata          = number of data points
-%	  nout           = number of outputs: always 1
-%	  noiseSigmas2   = scale of residual distribution
-%                          Variation for normal distribution (0.01)
-%         U              = (1)
-%         tau2           = (0.1)
-%         alpha          = (0.5)
-%         nu             = degrees of freedom (4)
-%         r              = the residuals
-%         fix_nu         = 0 for sampling also nu, 1 for not sampling nu (1)
-%         p              = prior structure for covariance function
-%                          parameters. 
-%         fh_pak         = function handle to packing function
-%                          (@gpcf_se_pak)
-%         fh_unpak       = function handle to unpackin function
-%                          (@gpcf_se_unpak)
-%         fh_e           = function handle to error function
-%                          (@gpcf_se_e)
-%         fh_ghyper      = function handle to gradient function
-%                          (@gpcf_se_g)
-%         fh_cov         = function handle to covariance function
-%                          (@gpcf_se_cov)
-%         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_se_trcov)
-%         fh_trvar       = function handle to training variance function
-%                          (@gpcf_se_trvar)
-%         fh_gibbs       = function handle to parameter sampling function (Gibbs sampling)
-%         sampling_opt   = options structure for fh_sampling
-%                          (hmc2_opt)
-%         fh_recappend   = function handle to record append function
-%                          (gpcf_noise_recappend)
-%
-%	GPCF = GPCF_NOISET('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in GPCF. The fields that 
-%       can be modified are:
+%        GPCF = GPCF_NOISET('SET', GPCF, OPTIONS) Set the fields of GPCF
+%        as described by the parameter-value pairs ('FIELD', VALUE) in
+%        the OPTIONS. The fields that can be modified are:
 %
 %             'noiseSigmas2'     : set the noiseSigmas2
 %             'U'                : set the vector U
@@ -65,12 +32,12 @@ function gpcf = gpcf_noiset(do, varargin)
 %          slice sampling.
 %
 %	See also
-%	gpcf_sexp, gpcf_noise
+%	gpcf_noiset, gpcf_noise
 %
 %
 
 % Copyright (c) 1998,1999 Aki Vehtari
-% Copyright (c) 2006-2010 Jarno Vanhatalo
+% Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -230,103 +197,44 @@ end
 
 
     function w = gpcf_noiset_pak(gpcf)
-    %GPcf_NOISET_PAK	 Combine GP covariance function hyper-parameters into one vector.
-    %
-    %	Description
-    %	W = GP_NOISET_PAK(GPCF, W) takes a Gaussian Process covariance function
-    %	GPCF and combines the hyper-parameters into a single row vector W.
-    %
-    %	The ordering of the parameters in HP is defined by
-    %	  hp = [hyper-params of gp.cf{1}, hyper-params of gp.cf{2}, ...];
-    %
-    %	See also
-    %	GPCF_NOISET_UNPAK
-    %
-
         w = [];
     end
 
 
     function [gpcf, w] = gpcf_noiset_unpak(gpcf, w)
-    %GPCF_SE_UNPAK  Separate GP covariance function hyper-parameter vector into components. 
-    %
-    %	Description
-    %	GP = GPCF_NOISET_UNPAK(GP, W) takes a Gaussian Process covariance function
-    %	GPCF and  a hyper-parameter vector W, and returns a covariance function data 
-    %	structure  identical to the input model, except that the covariance
-    %	hyper-parameters has been set to the of W.
-    %
-    %	See also
-    %	GP_NOISET_PAK, GP_PAK
+
 
     end
 
     function eprior =gpcf_noiset_e(gpcf, p, t)
-    %GPCF_NOISET_E	Evaluate prior contribution of error of covariance function noiset.
-    %
-    %	Description
-    %	E = GPCF_NOISET_E(W, GP, P, T) takes a gp data structure GPCF together
-    %	with a matrix P of input vectors and a matrix T of target vectors,
-    %	and evaluates the error function E. Each row of P corresponds
-    %	to one input vector and each row of T corresponds to one
-    %	target vector.
-    %
-    %	See also
-    %	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
-    %
+
         eprior = 0;
     end
 
     function [DCff, gprior]  = gpcf_noiset_ghyper(gpcf, p, t, g, gdata, gprior, invC, varargin)
-    %GPCF_NOISE_G Evaluate gradient of error for SE covariance function.
-    %
-    %	Description
-    %	G = GPCF_NOISET_G(W, GPCF, X, T) takes a gp hyper-parameter vector W, 
-    %       data structure GPCF a matrix X of input vectors and a matrix T 
-    %       of target vectors, and evaluates the error gradient G. Each row of X
-    %	corresponds to one input vector and each row of T corresponds
-    %       to one target vector.
-    %
-    %	[G, GDATA, GPRIOR] = GPCF_NOISET_G(GP, P, T) also returns separately  the
-    %	data and prior contributions to the gradient.
-    %
-    %	See also
-    %
         
         DCff = [];
         gprior = [];
     end
 
     function C = gpcf_noiset_cov(gpcf, x1, x2)
-    % GP_NOISET_COV     Evaluate covariance matrix between two input vectors. 
-    %
-    %         Description
-    %         C = GP_NOISET_COV(GP, TX, X) takes in covariance function of a Gaussian
-    %         process GP and two matrixes TX and X that contain input vectors to 
-    %         GP. Returns covariance matrix C. Every element ij of C contains  
-    %         covariance between inputs i in TX and j in X.
-    %
-    %         For covariance function definition see manual or 
-    %         Neal R. M. Regression and Classification Using Gaussian 
-    %         Process Priors, Bayesian Statistics 6.
 
         C = 0;
     end
 
 
     function C = gpcf_noiset_trcov(gpcf, x)
-    % GP_SE_COV     Evaluate training covariance matrix of inputs. 
+    % GP_NOISET_TRCOV     Evaluate training covariance matrix of inputs.
     %
     %         Description
-    %         C = GP_SE_COV(GP, TX) takes in covariance function of a Gaussian
-    %         process GP and matrix TX that contains training input vectors to 
-    %         GP. Returns covariance matrix C. Every element ij of C contains  
-    %         covariance between inputs i and j in TX 
+    %         C = GP_NOISET_TRCOV(GP, TX) takes in covariance function of a
+    %         Gaussian process GP and matrix TX that contains training
+    %         input vectors. Returns covariance matrix C. Every
+    %         element ij of C contains covariance between inputs i and
+    %         j in TX
     %
-    %         For covariance function definition see manual or 
-    %         Neal R. M. Regression and Classification Using Gaussian 
-    %         Process Priors, Bayesian Statistics 6.
-
+    %         See also
+    %         GPCF_NOISET_COV, GPCF_NOISET_TRVAR, GP_COV, GP_TRCOV
 
         [n, m] =size(x);
         n1=n+1;
@@ -340,14 +248,17 @@ end
     end
 
     function C = gpcf_noiset_trvar(gpcf, x)
-    % GP_NOISE_TRVAR     Evaluate training variance vector of inputs. 
+    % GP_NOISET_TRVAR     Evaluate training variance vector
     %
     %         Description
-    %         C = GP_NOISE_TRVAR(GP, TX) takes in covariance function of a Gaussian
-    %         process GP and matrix TX that contains training input vectors to 
-    %         GP. Returns variance vector C. Every element i of C contains  
-    %         variance of input i in TX 
-
+    %         C = GP_NOISET_TRVAR(GPCF, TX) takes in covariance function 
+    %         of a Gaussian process GPCF and matrix TX that contains
+    %         training inputs. Returns variance vector C. Every
+    %         element i of C contains variance of input i in TX
+    %
+    %
+    %         See also
+    %         GPCF_NOISET_COV, GP_COV, GP_TRCOV
         
         [n, m] =size(x);
         if n ~= gpcf.ndata
@@ -432,10 +343,18 @@ end
 
     function reccf = gpcf_noiset_recappend(reccf, ri, gpcf)
     % RECAPPEND - Record append
+    %
     %          Description
-    %          RECCF = GPCF_NOISET_RECAPPEND(RECCF, RI, GPCF) takes old covariance 
-    %          function record RECCF, record index RI, RECAPPEND returns a 
-    %          structure REC containing following record fields:
+    %          RECCF = GPCF_NOISET_RECAPPEND(RECCF, RI, GPCF)
+    %          takes a likelihood record structure RECCF, record
+    %          index RI and likelihood structure GPCF with the
+    %          current MCMC samples of the hyperparameters. Returns
+    %          RECCF which contains all the old samples and the
+    %          current samples from GPCF .
+    %
+    %          See also
+    %          GP_MC and GP_MC -> RECAPPEND
+
         
     % Initialize record
     if nargin == 2
