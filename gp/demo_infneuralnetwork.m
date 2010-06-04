@@ -20,20 +20,22 @@
 %    the inference is done with a MAP estimate for hyperparameter values.
 %
 %    For more detailed discussion of infinite neural networks, see e.g.
-%    Williams (1998) and Rasmussen and Williams (2006). 
+%    
+%    Neal, R. M. (1996). Bayesian Learning for Neural Networks.
+%    Springer-Verlag.
+%
+%    Williams, C. K. I. (1996). Computing with infinite networks. In Advances
+%    in Neural Information Processing Systems 9. MIT Press, Cambridge, MA. 
+%
 %
 %  See also  DEMO_REGRESSION1
-
+%
 % Copyright (c) 2010 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-
-%========================================================
-% PART 1 data analysis with full GP model
-%========================================================
 
 
 % 2D REGRESSION DATA
@@ -61,13 +63,13 @@ gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt)
 gpcf2 = gpcf_neuralnetwork('set', gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 gpcf3 = gpcf_noise('set', gpcf3, 'noiseSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf3}, 'jitterSigma2', 1e-6);
-gp2 = gp_init('init', 'FULL', 'regr', {gpcf2}, {gpcf3}, 'jitterSigma2', 1e-6);
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf3}, 'jitterSigma2', 1e-6, 'infer_params', 'covariance');
+gp2 = gp_init('init', 'FULL', 'regr', {gpcf2}, {gpcf3}, 'jitterSigma2', 1e-6, 'infer_params', 'covariance');
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w0=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+w0=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
 fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
 
@@ -78,12 +80,12 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
-wopt=scg2(fe, w0, opt, fg, gp, x, y, 'covariance');
-wopt2=scg2(fe, w0, opt, fg, gp2, x, y, 'covariance');
+wopt=scg2(fe, w0, opt, fg, gp, x, y);
+wopt2=scg2(fe, w0, opt, fg, gp2, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp, wopt, 'covariance');
-gp2=gp_unpak(gp2, wopt2, 'covariance');
+gp=gp_unpak(gp, wopt);
+gp2=gp_unpak(gp2, wopt2);
 
 % create points where predictions are made
 [p1,p2]=meshgrid(-1.5:0.05:1.5,-1.5:0.05:1.5);
@@ -123,21 +125,21 @@ gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt)
 gpcf2 = gpcf_neuralnetwork('set', gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 gpcf3 = gpcf_noise('set', gpcf3, 'noiseSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf3}, 'jitterSigma2', 1e-6);
-gp2 = gp_init('init', 'FULL', 'regr', {gpcf2}, {gpcf3}, 'jitterSigma2', 1e-6);
+gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf3}, 'jitterSigma2', 1e-6, 'infer_params', 'covariance');
+gp2 = gp_init('init', 'FULL', 'regr', {gpcf2}, {gpcf3}, 'jitterSigma2', 1e-6, 'infer_params', 'covariance');
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w0=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
+w0=gp_pak(gp);  % pack the hyperparameters into one vector
 
 % do the optimization
-wopt=scg2(fe, w0, opt, fg, gp, x, y, 'covariance');
-wopt2=scg2(fe, w0, opt, fg, gp2, x, y, 'covariance');
+wopt=scg2(fe, w0, opt, fg, gp, x, y);
+wopt2=scg2(fe, w0, opt, fg, gp2, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp, wopt, 'covariance');
-gp2=gp_unpak(gp2, wopt2, 'covariance');
+gp=gp_unpak(gp, wopt);
+gp2=gp_unpak(gp2, wopt2);
 
 % create points where predictions are made
 xgrid=linspace(min(x)-1.5,max(x)+1.5,200)';

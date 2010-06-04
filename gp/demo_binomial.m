@@ -2,11 +2,11 @@
 %                 likelihood
 %
 %      Description
-%      Demonstration of estimating the unknown the population proportion
+%      Demonstration of estimating the unknown population proportion
 %      in binomial model from a sequence of success/failure trials. Data
 %      consists of observations Y describing the number of successes in
-%      a sequence of N iid (Bernoulli) trials, and of explanatory
-%      variables X. The binomial model is 
+%      a sequence of N iid trials, and of explanatory variables X.
+%      The binomial model is 
 %
 %      Y_i ~ Binomial(Y_i | N_i, p_i),
 %
@@ -23,9 +23,9 @@
 %
 %      The elements of the covariance matrix K are given as 
 %      K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
-%      function and th its parameters, hyperparameters.  We place a
-%      hyperprior for hyperparameters, p(th). The inference is done with
-%      Laplace approximation.
+%      function and th its hyperparameters.  We place a hyperprior for
+%      hyperparameters, p(th). The inference is done with Laplace
+%      approximation.
 %
 %      NOTE! In the prediction, the total number of trials Nt at the
 %      test points Xt must be set additionally in the likelihood structure
@@ -75,16 +75,16 @@ ppn = prior_normal('init', 'mu', 6, 's2', 9, 'mu_prior', pn, 's2_prior', ps2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', ppn, 'magnSigma2_prior', ps2);
 
 % Create the likelihood structure
-likelih = likelih_binomial('init', y, N);
+likelih = likelih_binomial('init');
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 1e-3);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 1e-3, 'infer_params', 'covariance');
 
 
 % ------- Laplace approximation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'z', N});
 
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
@@ -96,32 +96,14 @@ opt_scg.tolx = 1e-3;
 opt_scg.display = 1;
 
 % do scaled conjugate gradient optimization 
-w=gp_pak(gp, 'covariance');
-[wopt, opt, flog]=scg2(fe, w, opt_scg, fg, gp, x, y, 'covariance');
-gp=gp_unpak(gp, wopt, 'covariance');
-
-
-% Compute the predictive densities at the test points
-
-% Set the total number of trials Nt at the test points xt 
-likelih = likelih_binomial('set', likelih, 'Nt', Nt);
-gp = gp_init('set', gp, 'likelih', likelih');
-
-% predictions at the test points
-[Ef_la, Varf_la, Ey_la, Vary_la, py_la] = la_pred(gp, x, y, xt, 'covariance',[],[],yt);
-
-figure, set(gcf, 'color', 'w'), hold on
-hist(log(py_la), 20)
-title('histogram of log-predictive densities at the test points')
-
+w=gp_pak(gp);
+[wopt, opt, flog]=scg2(fe, w, opt_scg, fg, gp, x, y, 'z', N);
+gp=gp_unpak(gp, wopt);
 
 % Make predictions at the grid points
 
 % Set the total number of trials Nt at the grid points xgrid
-likelih = likelih_binomial('set', likelih, 'Nt', Ntgrid);
-gp = gp_init('set', gp, 'likelih', likelih');
-[Ef_la, Varf_la, Ey_la, Vary_la] = la_pred(gp, x, y, xgrid, 'covariance');
-
+[Ef_la, Varf_la, Ey_la, Vary_la] = la_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
 
 % Visalise the predictions
 figure, set(gcf, 'color', 'w'), hold on
@@ -137,4 +119,22 @@ h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 h4=plot(xgrid, 1./(1+exp(-(-1.5.*xgrid.^3+0.5*xgrid.^2+0.75*xgrid)))*100, 'color', 'r', 'linewidth', 2);
 legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
 title('Gaussian process prediction with a squared exponential covariance function')
+
+
+% To compute predictive densities at the test points xt, the total number
+% of trials Nt must be set additionally:
+[Ef_la, Varf_la, Ey_la, Vary_la, py_la] = la_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
+
+figure, set(gcf, 'color', 'w'), hold on
+hist(log(py_la), 20)
+title('histogram of log-predictive densities at the test points')
+
+figure, set(gcf, 'color', 'w'), hold on
+plot([min(yt) max(yt)], [min(yt) max(yt)], 'r', 'linewidth', 2)
+plot(yt, Ey_la, '.k', 'markersize', 15)
+axis equal
+xlabel('observed y')
+ylabel('predicted E[y]')
+title('Observations versus predictions E[y]')
+
 

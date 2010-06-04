@@ -41,7 +41,7 @@ function likelih = likelih_binomial(do, varargin)
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %
 
-% Copyright (c) 2009-2010	Jaakko Riihim‰ki & Jarno Vanhatalo
+% Copyright (c) 2009-2010	Jaakko Riihim√§ki & Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -54,17 +54,6 @@ function likelih = likelih_binomial(do, varargin)
     % Initialize the likelihood structure
     if strcmp(do, 'init')
         likelih.type = 'binomial';
-        
-        % check the arguments
-        if ~isempty(find(y<0))
-            error('The number of successes have to be greater or equal to zero y >= 0.')
-        end     
-        if ~isempty(find(N<=0))
-            error('The number of trials have to be greater than zero N > 0.')
-        end
-        if ~isempty(find(N<y))
-            error('The number of trials have to be greater or equal than the number of successes.')
-        end
         
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_binomial_pak;
@@ -259,7 +248,7 @@ function likelih = likelih_binomial(do, varargin)
      switch param
           case 'latent'
             expf = exp(f);
-            N = z
+            N = z;
             g3 = N.*(expf.*(expf-1))./(1+expf).^3;
           end
      end
