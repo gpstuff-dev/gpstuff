@@ -50,7 +50,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %     Default optimisation method is SCG (scaled conjugate gradient)
 %     To use FMINUNC, give option 'optfminunc' and no 'optscg'
 
-% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
@@ -80,7 +80,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                    isfinite(x) && x>0)
   ip.addParamValue('t_nu', 4, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>=1)
-  ip.addParamValue('n_samples', 40, @(x) isscalar(x) && isreal(x) && ...
+  ip.addParamValue('nsamples', 40, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>=1)
   ip.addParamValue('repeat', 10, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>=1)
@@ -101,7 +101,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   opt.threshold=ip.Results.threshold;
   opt.step_size=ip.Results.step_size;
   opt.t_nu=ip.Results.t_nu;
-  opt.n_samples=ip.Results.n_samples;
+  opt.nsamples=ip.Results.nsamples;
   opt.f0=ip.Results.f0;
   opt.qmc=ip.Results.qmc;
   % optimisation and sampling parameters
@@ -162,6 +162,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 
   % Number of parameters
   nParam = length(w);
+  
+  gp_array={}; % Array of gp-models with different hyperparameters
+  Ef_grid = []; % Predicted means with different hyperparameters
+  Varf_grid = []; % Variance of predictions with different hyperparameters
+  p_th=[]; % List of the weights of different hyperparameters (un-normalized)
+  th=[]; % List of hyperparameters
 
   switch int_method
     case {'grid', 'CCD'}
@@ -196,12 +202,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         
         checked = zeros(1,nParam); % List of locations already visited
         candidates = zeros(1,nParam); % List of locations with enough density
-        gp_array={}; % Array of gp-models with different hyperparameters
-        Ef_grid = []; % Predicted means with different hyperparameters
-        Varf_grid = []; % Variance of predictions with different hyperparameters
-        p_th=[]; % List of the weights of different hyperparameters (un-normalized)
-        th=[]; % List of hyperparameters
-        
+                
         switch int_method
           case 'grid'
             % density in the mode
@@ -676,7 +677,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   % - Check the number of effective parameters in GP:s
   % - Check the normal approximations if Laplace approximation or EP
   % has been used
-  if opt.validate>0 && size(Ef_grid,1) > 1
+  if opt.validate>0 && ~isempty(Ef_grid)
     % Check the importance weights if used 
     % Check also that the integration over theta has converged 
     switch int_method
