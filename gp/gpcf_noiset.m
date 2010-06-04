@@ -281,10 +281,12 @@ end
         % Draw a sample of the mean of y. Its distribution is
         % f ~ N(K*inv(C)*y, K - K*inv(C)*K')
         switch gp.type
-          case {'FULL', 'FIC'}
-            sampy = gp_rnd(gp, x, y, x, [], 1:n);
+          case 'FULL'
+            sampy = gp_rnd(gp, x, y, x);
+          case 'FIC'
+            sampy = gp_rnd(gp, x, y, x, 'tstind', 1:n);
           case {'PIC' 'PIC_BLOCK'}
-            sampy = gp_rnd(gp, x, y, x, [], gp.tr_index);
+            sampy = gp_rnd(gp, x, y, x, 'tstind', gp.tr_index);
         end
         % Calculate the residual
         r = y-sampy;
@@ -304,8 +306,7 @@ end
 % $$$         %nu=sls1mm(@invgam_nu_e,nu,soptnu,[],t2,U);
 % $$$         nu=sls1mm(@(nu) -sum(sinvchi2_lpdf(U,nu,t2))+log(nu),nu,opt);
         
-        U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));
-        
+        U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));        
 % $$$         U2=invgamrand((nu.*t2+(r./alpha).^2)./(nu+1),nu+1);
         shape = n*nu./2;                               % These are parameters...
         invscale = nu.*sum(1./U)./2;                   % used in Gelman        

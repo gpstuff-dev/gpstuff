@@ -36,7 +36,7 @@ function [sampf, sampy] = gp_rnd(gp, x, y, xt, varargin)
 % License.txt, included with the software, for details.
 
 ip=inputParser;
-ip.FunctionName = 'LA_PRED';
+ip.FunctionName = 'GP_RND';
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -63,7 +63,6 @@ tn = size(x,1);
 % ===================================
 
 if ~isstruct(gp.likelih)
-
     % Evaluate this if sparse model is used
     switch gp.type
       case 'FULL'

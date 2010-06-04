@@ -1,38 +1,42 @@
-%DEMO_REGRESSION_VAR Regression demo comparing different sparse
-% approximations
+%DEMO_REGRESSION_VAR     Regression demo comparing different sparse
+%                        approximations
 %
 %   Description
-%   A regression problem with one input variable and one output variable with 
-%   Gaussian noise. The output is assumed to be realization of additive
-%   functions and Gaussian noise.
+%   A regression problem with one input variable and one output
+%   variable with Gaussian noise. The output is assumed to be
+%   realization of additive functions and Gaussian noise.
 % 
-%   For standard full GP demonstration, see for example DEMO_REGRESSION1,
-%   DEMO_REGRESSION2, and for detailed discussion, Rasmussen and Williams (2006)
+%   For standard full GP demonstration, see for example
+%   DEMO_REGRESSION1, DEMO_REGRESSION2, and for detailed discussion,
+%   Rasmussen and Williams (2006)
 % 
-%   In this demo, sparse approximations for the full GP model are compared. We use
+%   In this demo, sparse approximations for the full GP model are
+%   compared. We use
 %     - FIC, fully independent conditional
 %     - DTC, deterministic training conditional
 %     - VAR, variational approach
 %     
-%   For technical details, see Quinonero-Candela and Rasmussen (2005) for the 
-%   FIC and DTC models and Titsias (2009) for the VAR model.
+%   For technical details, see Quinonero-Candela and Rasmussen (2005)
+%   for the FIC and DTC models and Titsias (2009) for the VAR model.
 % 
-%   We use a simple one dimensional data set to present the three methods.
+%   We use a simple one dimensional data set to present the three
+%   methods.
 % 
 %   See also DEMO_REGRESSION1, DEMO_REGRESSION2
 %
 %
 %   References:
 % 
-%   Quinonero-Candela, J. and Rasmussen, C. E. (2005). A Unifying View of Sparse 
-%   Approximate Gaussian Process Regression. Journal of Machine Learning Research.
+%    Quinonero-Candela, J. and Rasmussen, C. E. (2005). A Unifying
+%    View of Sparse Approximate Gaussian Process Regression. Journal
+%    of Machine Learning Research.
 % 
-%   Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
-%   Machine Learning. The MIT Press.
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
 % 
-%   Titsias, M. K. (2009). Variational Model Selection for Sparse Gaussian Process
-%   Regression. Technical Report, University of Manchester.
-
+%    Titsias, M. K. (2009). Variational Model Selection for Sparse
+%    Gaussian Process Regression. Technical Report, University of
+%    Manchester.
 
 % Copyright (c) 2010 Heikki Peura
 
@@ -43,43 +47,27 @@
 
 
 % Start by creating 1D data
-
 x=linspace(1,10,901);
-%y=2*sin(4*x)+0.2*randn(size(x));
-
-%figure;plot(y)
-
-
 
 % Choose a subset of data so that the data are less dense in the right end.
 % xt are the inputs and yt are the outputs, xstar are the values we want to
 % predict.
-
 x1=logspace(0,1,100);
-%figure;plot(x1,'.');
 x1=round(x1*100)-99;
 xt=x(x1)';
 yt=2*sin(4*xt)+0.2*randn(size(xt));
-%figure;plot(xt,yt,'.')
 xstar=[1:0.01:14]';
 
 % Initialize full GP with a squared exponential component and set
 % priors for their hyperparameters.
-
-% Periodic covariance commented out.
-
 [n,nin] = size(xt);
-%gpcfp = gpcf_periodic('init','lengthScale', 1.3, 'magnSigma2', 2.4*2.4, 'period', 2,'optimPeriod',1,'lengthScale_exp', 5, 'decay', 1);
 gpcfse = gpcf_sexp('init','lengthScale',1.3,'magnSigma2',5);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 0.3);
 
 ppl = prior_t('init', 's2', 10, 'nu', 3);
 ppm = prior_t('init', 's2', 10, 'nu', 3);
-%pple = prior_t('init', 's2', 1000, 'nu', 3);
-%ppp = prior_t('init', 's2', 10000, 'nu', 4);
 pn = prior_t('init', 's2', 10, 'nu', 4);
 
-%gpcfp = gpcf_periodic('set', gpcfp, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm, 'period_prior', ppp, 'lengthScale_exp_prior', pple);
 gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pn);
 gpcfse = gpcf_periodic('set', gpcfse, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm);
 
@@ -100,7 +88,9 @@ gp = gp_unpak(gp,w);
 Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
 
 figure;hold on
-title('Blue crosses are the initial inducing input locations, red ones are the optimised ones. Black circles represent the distance to the next optimized location, with a dashed trendline.');
+% Blue crosses are the initial inducing input locations, red ones are
+% the optimised ones. Black circles represent the distance to the next
+% optimized location, with a dashed trendline.');
 
 subplot(2,2,1);hold on;
 plot(xstar,Ef_full,'k', 'LineWidth', 2)
@@ -114,19 +104,12 @@ w_full=w; % optimized hyperparameters
 % then proceed with the inference with the optimized hyperparameters from
 % the full GP: here, we optimize only the locations of the inducing inputs
 % for the FIC model.
-
-
-%Xu=[1:0.2:5]';
-%Xu=[6:0.2:10]';
 Xu=round(10+90*rand(18,1))/10; % Random placement
-%gp_fic=gp_init('set',gp,'type','FIC','infer_params','inducing','X_u',Xu);
 
 gp_fic = gp_init('init', 'FIC', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
 gp_fic.cf{1}.lengthScale=exp(w_full(2));
 gp_fic.cf{1}.magnSigma2=exp(w_full(1));
 gp_fic.noise{1}.noiseSigma2=exp(w_full(end));
-% gp_fic.cf{1}.period=exp(w_full(4));
-% gp_fic.cf{1}.lengthScale_exp=exp(w_full(3));
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
@@ -167,16 +150,10 @@ title('FIC')
 % the data becomes more sparse), with predictions closely matching the full 
 % GP model. The other two sparse approximations yield less reliable
 % results.
-
-
-%gp_fic=gp_init('set',gp,'type','FIC','infer_params','inducing','X_u',Xu);
-
 gp_var = gp_init('init', 'VAR', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
 gp_var.cf{1}.lengthScale=exp(w_full(2));
 gp_var.cf{1}.magnSigma2=exp(w_full(1));
 gp_var.noise{1}.noiseSigma2=exp(w_full(end));
-% gp_var.cf{1}.period=exp(w_full(4));
-% gp_var.cf{1}.lengthScale_exp=exp(w_full(3));
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
@@ -214,16 +191,10 @@ title('VAR')
 
 % Run the DTC model similarly to the FIC model with the same starting
 % inducing inputs. The difference in the optimized results is notable.
-
-
-%gp_fic=gp_init('set',gp,'type','FIC','infer_params','inducing','X_u',Xu);
-
 gp_dtc = gp_init('init', 'DTC', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
 gp_dtc.cf{1}.lengthScale=exp(w_full(2));
 gp_dtc.cf{1}.magnSigma2=exp(w_full(1));
 gp_dtc.noise{1}.noiseSigma2=exp(w_full(end));
-% gp_dtc.cf{1}.period=exp(w_full(4));
-% gp_dtc.cf{1}.lengthScale_exp=exp(w_full(3));
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);

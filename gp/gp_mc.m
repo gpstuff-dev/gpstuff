@@ -456,7 +456,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                                            % Set rejects 
             record.lrejects(ri,1)=lrej;
         else
-            [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, y, varargin{:});
+            [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, y);
             record.etr(ri,:) = record.e(ri,:);
         end
         

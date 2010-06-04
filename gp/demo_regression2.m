@@ -1,10 +1,10 @@
-%DEMO_REGRESSION2    Regression problem demonstration for modeling multible phenomena
+%DEMO_REGRESSION2    Regression problem demonstration with additive model
 %                    
 %
 %    Description
-%    A regression problem with one input variable and one output variable with 
-%    Gaussian noise. The output is assumed to be realization of two additive 
-%    functions and Gaussian noise.
+%    A regression problem with one input variable and one output
+%    variable with Gaussian noise. The output is assumed to be
+%    realization of two additive functions and Gaussian noise.
 %
 %    The model constructed is following:
 %
@@ -12,38 +12,40 @@
 %
 %         y = f + g + e,    where e ~ N(0, s^2).
 %
-%    f and g are underlying latent functions, which we are interested in. 
-%    We place a zero mean Gaussian process prior for them, which implies that
-%    at the observed input locations latent values have prior
+%    f and g are underlying latent functions, which we are interested
+%    in. We place a zero mean Gaussian process prior for them, which
+%    implies that at the observed input locations latent values have
+%    prior
 %
 %         f ~ N(0, Kf) and g ~ N(0,Kg)
 %
-%    where K is the covariance matrix, whose elements are given as 
-%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
-%    function and th its parameters, hyperparameters. 
+%    where K is the covariance matrix, whose elements are given as
+%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
+%    covariance function and th its parameters, hyperparameters.
 %
-%    Since both likelihoods and prior are Gaussian, we obtain a Gaussian 
-%    marginal likelihood
+%    Since both likelihoods and prior are Gaussian, we obtain a
+%    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, Kf + Kg + I*s^2).
 %    
-%   By placing a hyperprior for hyperparameters, p(th), we can find the 
-%   maximum a posterior (MAP) estimate for them by maximizing
+%   By placing a hyperprior for hyperparameters, p(th), we can find
+%   the maximum a posterior (MAP) estimate for them by maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
 %
-%   After finding MAP estimate or posterior samples of hyperparameters, we can 
-%   use them to make predictions for the latent functions. For example, the 
-%   posterior predictive distribution of f is:
+%   After finding MAP estimate or posterior samples of
+%   hyperparameters, we can use them to make predictions for the
+%   latent functions. For example, the posterior predictive
+%   distribution of f is:
 %
 %       p(f | y, th) = N(m, S),
 %       m = Kf * (Kf + Kg + s^2I)^(-1) * y
 %       S = Kf - Kf * (Kf + Kg + s^2I)^(-1) * Kf
 %
-%       (We could integrate also over the hyperparameters with, for example, grid 
-%        integration or MCMC. This is not demonstrated here but it is done exactly 
-%        the similar way as in demo_regression1.)
+%   (We could integrate also over the hyperparameters with, for
+%   example, grid integration or MCMC. This is not demonstrated here
+%   but it is done exactly similarly as in the demo_regression1.)
 %   
 %   The demo is organised in four parts:
 %    1) data analysis with full GP model
@@ -51,21 +53,21 @@
 %    3) data analysis with PIC approximation
 %    4) data analysis with CS+FIC model
 %
-%   For more detailed discussion of Gaussian process regression see Rasmussen and
-%   Williams (2006) and for a detailed discussion on sparse additive models see
-%   Vanhatalo and Vehtari (2008).
+%   For more detailed discussion of Gaussian process regression see
+%   Rasmussen and Williams (2006) and for a detailed discussion on
+%   sparse additive models see Vanhatalo and Vehtari (2008).
 %
 %   See also  DEMO_REGRESSION1, DEMO_SPARSEREGRESION
 %
 %
 %   References:
 %
-%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
-%    Machine Learning. The MIT Press.
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
 %
-%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global phenomena with
-%    sparse Gaussian processes. Proceedings of the 24th Conference on Uncertainty in
-%    Artificial Intelligence,
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global
+%    phenomena with sparse Gaussian processes. Proceedings of the 24th
+%    Conference on Uncertainty in Artificial Intelligence.
 
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
@@ -108,7 +110,7 @@ gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior'
 gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
 
-% Finally create the GP data structure
+% Create the GP data structure
 gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004.^2) 
 
 % -----------------------------
@@ -131,12 +133,13 @@ w=scg2(fe, w, opt, fg, gp, x, y);
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w);
 
-% NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
-% they are also transformed through logarithm. The reason for this is that they 
-% are easier to sample with MCMC after log transformation.
+% NOTICE here that when the hyperparameters are packed into vector
+% with 'gp_pak' they are also transformed through logarithm. The
+% reason for this is that they are easier to optimize after log
+% transformation.
 
-% Make predictions. Below Ef_full is the predictive mean and Varf_full the 
-% predictive variance.
+% Make predictions. Below Ef_full is the predictive mean and Varf_full
+% the predictive variance.
 [Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
 [Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 'predcf', 1);
 [Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 'predcf', 2);
@@ -217,7 +220,7 @@ hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x,Ey_fic,'k', 'LineWidth', 2)
 plot(x,Ey_fic-2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
-plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
+plot(gp_fic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(x,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 axis tight
 caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigma2);
@@ -237,7 +240,7 @@ for i=1:length(edges)-1
 end
 % Create the FIC GP data structure
 gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
-gp_pic = gp_init('set', gp_pic, 'blocks', trindex);
+gp_pic = gp_init('set', gp_pic, 'tr_index', trindex);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -248,8 +251,8 @@ gp_pic = gp_init('set', gp_pic, 'blocks', trindex);
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_pic = gp_init('set', gp_pic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_pic = gp_init('set', gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_pic);    % pack the hyperparameters into one vector
 fe=str2fun('gp_e');         % create a function handle to negative log posterior
@@ -276,7 +279,7 @@ hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x,Ef_pic,'k', 'LineWidth', 2)
 plot(x,Ef_pic-2.*sqrt(Vary_pic),'g--', 'LineWidth', 2)
-plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
+plot(gp_pic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(x,Ef_pic+2.*sqrt(Vary_pic),'g--', 'LineWidth', 2)
 for i = 1:length(edges)
     plot([edges(i) edges(i)],[-30 35], 'k:')
@@ -305,8 +308,8 @@ gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSig
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_csfic = gp_init('set', gp_csfic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_csfic = gp_init('set', gp_csfic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_csfic);    % pack the hyperparameters into one vector
 fe=str2fun('gp_e');         % create a function handle to negative log posterior
@@ -332,7 +335,7 @@ hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x,Ef_csfic,'k', 'LineWidth', 2)
 plot(x,Ef_csfic-2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
-plot(Xu, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
+plot(gp_csfic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(x,Ef_csfic+2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
 axis tight
 caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noise{1}.noiseSigma2);

@@ -1,66 +1,64 @@
-function demo_robustRegression
-%    DEMO_TGP      A regression demo with Student-t distribution as a residual model.
+%DEMO_TGP      A regression demo with Student-t distribution as a residual model.
 %
-%
-%       Description
-%        The synthetic data used here is the same used by Radford M. Neal in
-%        his regression problem with outliers example in Software for
-%        Flexible Bayesian Modeling
-%        (http://www.cs.toronto.edu/~radford/fbm.software.html). The problem
-%        consist of one dimensional input and target variables. The input
-%        data, x, is sampled from standard Gaussian distribution and the
-%        corresponding target values come from a distribution with mean given
-%        by
+%    Description
+%    The synthetic data used here is the same used by Radford M. Neal
+%    in his regression problem with outliers example in Software for
+%    Flexible Bayesian Modeling
+%    (http://www.cs.toronto.edu/~radford/fbm.software.html). The
+%    problem consist of one dimensional input and target
+%    variables. The input data, x, is sampled from standard Gaussian
+%    distribution and the corresponding target values come from a
+%    distribution with mean given by
 %
 %           f = 0.3 + 0.4x + 0.5sin(2.7x) + 1.1/(1+x^2).
 %
-%       For most of the cases the distribution about this mean is Gaussian
-%       with standard deviation of 0.1, but with probability 0.05 a case is
-%       an outlier for wchich the standard deviation is 1.0. There are total
-%       200 cases from which the first 100 are used for training and the last
-%       100 for testing.
+%    For most of the cases the distribution about this mean is
+%    Gaussian with standard deviation of 0.1, but with probability
+%    0.05 a case is an outlier for wchich the standard deviation is
+%    1.0. There are total 200 cases from which the first 100 are used
+%    for training and the last 100 for testing.
 %
-%       We use Student-t distribution as an abservation model
+%    We use Student-t distribution as an abservation model
 %
 %          y ~ St(f, nu, s^2),
 %
-%       where f is the mean, nu the degrees of freedom and s^2 the scale. The 
-%       mean is given a GP prior
+%    where f is the mean, nu the degrees of freedom and s^2 the
+%    scale. The mean is given a GP prior
 %
 %          f ~ N(0, K).
 %
-%       The model can be inferred with MCMC or Laplace approximation. The
-%       MCMC can be performed either by utilizing the scale mixture
-%       representation of the Student-t distribution or the actual
-%       distribution. The scale mixture representation is given as in Gelman
-%       et.al (2004)
+%    The model can be inferred with MCMC or Laplace approximation. The
+%    MCMC can be performed either by utilizing the scale mixture
+%    representation of the Student-t distribution or the actual
+%    distribution. The scale mixture representation is given as in
+%    Gelman et.al (2004)
 %
 %          y_i ~ N (f_i, a^2*U_i)
 %          U_i ~ Inv-Chi^2 (nu, t^2),
 %
-%       where nu represents the degrees of freedom and a*t = s in the
-%       Student-t distribution.
+%    where nu represents the degrees of freedom and a*t = s in the
+%    Student-t distribution.
 %
-%       The demo is organized as follows:
+%    The demo is organized as follows:
 %
-%        1) Optimization approach with Normal noise
-%        2) MCMC approach with scale mixture noise model (~=Student-t)
-%           All parameters sampled
-%        3) Laplace approximation Student-t likelihood
-%           All parameters optimized
-%        4) MCMC approach with Student-t likelihood nu kept fixed to 4
-%        5) Laplace approximation Student-t likelihood
-%           nu kept fixed to 4
+%     1) Optimization approach with Normal noise
+%     2) MCMC approach with scale mixture noise model (~=Student-t)
+%        All parameters sampled
+%     3) Laplace approximation Student-t likelihood
+%        All parameters optimized
+%     4) MCMC approach with Student-t likelihood nu kept fixed to 4
+%     5) Laplace approximation Student-t likelihood
+%        nu kept fixed to 4
 %
-%       See Vanhatalo et.al. for discussion on the model and methods.
+%    See Vanhatalo et.al. for discussion on the model and methods.
 %
-%       Refernces:
-%         Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian process
-%         regression with Student-t likelihood. Advances in Neural
-%         Information
+%    Refernces:
+%     Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian
+%     process regression with Student-t likelihood. Advances in Neural
+%     Information Processing systems
 %
-%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
-%         second edition. Chapman & Hall / CRC.
+%     Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
+%     second edition. Chapman & Hall / CRC.
 
 % Copyright (c) 2010 Jarno Vanhatalo
 
@@ -158,37 +156,35 @@ gpcf2 = gpcf_noiset('set', gpcf2, 'fix_nu', 0);
 
 gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001) %
 
-opt=gp_mcopt;
-opt.repeat=1;
-opt.nsamples=300;
-opt.hmc_opt.steps=10;
-opt.hmc_opt.stepadj=0.08;
-opt.hmc_opt.nsamples=1;
+hmc_opt.steps=10;
+hmc_opt.stepadj=0.08;
+hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
-opt.hmc_opt.persistence=1;
-opt.hmc_opt.decay=0.6;
+hmc_opt.persistence=1;
+hmc_opt.decay=0.6;
 
-opt.gibbs_opt = sls1mm_opt;
-opt.gibbs_opt.maxiter = 50;
-opt.gibbs_opt.mmlimits = [0 40];
-opt.gibbs_opt.method = 'minmax';
+gibbs_opt = sls1mm_opt;
+gibbs_opt.maxiter = 50;
+gibbs_opt.mmlimits = [0 40];
+gibbs_opt.method = 'minmax';
 
 % Sample 
-[r,g,rstate1]=gp_mc(opt, gp, x, y);
+[r,g,opt]=gp_mc(gp, x, y, 'nsamples', 300, 'hmc_opt', hmc_opt, 'gibbs_opt', gibbs_opt);
 
 % thin the record
 rr = thin(r,100,2);
 
 figure 
+subplot(2,2,1)
 hist(rr.noise{1}.nu,20)
 title('Mixture model, \nu')
-figure 
+subplot(2,2,2)
 hist(sqrt(rr.noise{1}.tau2).*rr.noise{1}.alpha,20)
 title('Mixture model, \sigma')
-figure 
+subplot(2,2,3) 
 hist(rr.cf{1}.lengthScale,20)
 title('Mixture model, length-scale')
-figure 
+subplot(2,2,4) 
 hist(rr.cf{1}.magnSigma2,20)
 title('Mixture model, magnSigma2')
 
@@ -214,9 +210,6 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 %  Here we optimize all the variables 
 %  (lengthScale, magnSigma2, sigma(noise-t) and nu)
 % ========================================
-
-% load the data. First 100 variables are for training
-% and last 100 for test
 
 pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
@@ -261,7 +254,7 @@ plot(xx, Ef-2*std_f, 'r--')
 plot(x,y,'.')
 legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
-title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, gp.likelih.sigma));
+title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma2=%.3f) noise)',gp.likelih.nu, gp.likelih.sigma2));
 S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 % ========================================
@@ -285,28 +278,24 @@ gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
 gp = gp_init('set', gp, 'infer_params' , 'covariance+likelihood');
 
 % Set the parameters for MCMC...
-opt=gp_mcopt;
-opt.repeat=15;
-opt.nsamples=400;
-opt.repeat=1;
 
-% Covariance-options
-opt.hmc_opt.steps=5;
-opt.hmc_opt.stepadj=0.02;
-opt.hmc_opt.nsamples=1;
+% Covariance parameter-options
+hmc_opt.steps=5;
+hmc_opt.stepadj=0.02;
+hmc_opt.nsamples=1;
 
 % Latent-options
-opt.latent_opt.display=0;
-opt.latent_opt.repeat = 5;
-opt.latent_opt.sample_latent_scale = 0.5;
+latent_opt.display=0;
+latent_opt.repeat = 5;
+latent_opt.sample_latent_scale = 0.2
 
 % Likelihood-options
-opt.likelih_hmc_opt.steps=10;
-opt.likelih_hmc_opt.stepadj=0.1;
-opt.likelih_hmc_opt.nsamples=1;
+likelih_hmc_opt.steps=10;
+likelih_hmc_opt.stepadj=0.1;
+likelih_hmc_opt.nsamples=1;
 
 % Sample 
-[rgp,g,rstate2]=gp_mc(opt, gp, x, y);
+[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'latent_opt', latent_opt, 'likelih_hmc_opt', likelih_hmc_opt, 'hmc_opt', hmc_opt);
 rr = thin(rgp,100,2);
 
 % make predictions for test set

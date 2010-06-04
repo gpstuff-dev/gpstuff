@@ -105,7 +105,7 @@ function gpcf = gpcf_periodic(do, varargin)
             else
                 gpcf.period=period;
             end
-            if isempty(optimPeriod)
+            if isempty(optimPeriod)                
                 gpcf.optimPeriod = 0;
             else
                 gpcf.optimPeriod=optimPeriod;
@@ -118,8 +118,6 @@ function gpcf = gpcf_periodic(do, varargin)
             
             % Initialize prior structure
             gpcf.p=[];
-            gpcf.p.lengthScale_exp=[];
-            gpcf.p.period=[];
             if isempty(lengthScale_prior)
                 gpcf.p.lengthScale=prior_unif('init');
             else
@@ -130,10 +128,16 @@ function gpcf = gpcf_periodic(do, varargin)
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
             end
-            if ~isempty(period_prior);gpcf.p.period_prior=period_prior;end
-            if ~isempty(lengthScale_exp_prior);gpcf.p.lengthScale_exp_prior=lengthScale_exp_prior;end
-            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
-            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
+            if isempty(period_prior);
+                gpcf.p.period=[];
+            else
+                gpcf.p.period=period_prior;
+            end
+            if isempty(lengthScale_exp_prior)
+                gpcf.p.lengthScale_exp=[];
+            else
+                gpcf.p.lengthScale_exp=lengthScale_exp_prior;
+            end
             
             % Set the function handles to the nested functions
             gpcf.fh_pak = @gpcf_periodic_pak;
@@ -156,8 +160,8 @@ function gpcf = gpcf_periodic(do, varargin)
             if ~isempty(optimPeriod);gpcf.optimPeriod=optimPeriod;end
             if ~isempty(lengthScale_exp);gpcf.lengthScale_exp=lengthScale_exp;end
             if ~isempty(decay);gpcf.decay=decay;end
-            if ~isempty(period_prior);gpcf.p.period_prior=period_prior;end
-            if ~isempty(lengthScale_exp_prior);gpcf.p.lengthScale_exp_prior=lengthScale_exp_prior;end
+            if ~isempty(period_prior);gpcf.p.period=period_prior;end
+            if ~isempty(lengthScale_exp_prior);gpcf.p.lengthScale_exp=lengthScale_exp_prior;end
             if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
             if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
     end
@@ -214,14 +218,13 @@ function gpcf = gpcf_periodic(do, varargin)
                 ww = [ww feval(gpcf.p.lengthScale_exp.fh_pak, gpcf.p.lengthScale_exp)];
             end
             
-            if ~isempty(gpcf.p.period)
+            if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                 w = [w log(gpcf.period)];
-                            
+                
                 % Hyperparameters of period
                 ww = [ww feval(gpcf.p.period.fh_pak, gpcf.p.period)];
             end
-             w = [w ww];
-            
+            w = [w ww];
         end
     end
 
@@ -285,7 +288,7 @@ function gpcf = gpcf_periodic(do, varargin)
                 [p, w] = feval(gpcf.p.lengthScale_exp.fh_unpak, gpcf.p.lengthScale_exp, w);
                 gpcf.p.lengthScale_exp = p;
             end
-            if ~isempty(gpp.period)
+            if ~isempty(gpp.period)  && gpcf.optimPeriod == 1
                 [p, w] = feval(gpcf.p.period.fh_unpak, gpcf.p.period, w);
                 gpcf.p.period = p;
             end
@@ -335,7 +338,7 @@ function gpcf = gpcf_periodic(do, varargin)
             if ~isempty(gpp.lengthScale_exp)
                 eprior = eprior + feval(gpp.lengthScale_exp.fh_e, gpcf.lengthScale_exp, gpp.lengthScale_exp) - sum(log(gpcf.lengthScale_exp));
             end
-            if ~isempty(gpcf.p.period)
+            if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                 eprior = feval(gpp.period.fh_e, gpcf.period, gpp.period) - sum(log(gpcf.period));
             end
         end
@@ -619,7 +622,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale_exp - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
-                if gpcf.optimPeriod == 1
+                if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                     i1=i1+1; 
                     lll = length(gpcf.period);
                     gg = feval(gpp.period.fh_g, gpcf.period, gpp.period);

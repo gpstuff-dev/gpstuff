@@ -3,53 +3,53 @@
 %
 %    Description
 %    The regression problem consist of a data with two input variables
-%    and one output variable with Gaussian noise. The model constructed 
-%    is following:
+%    and one output variable with Gaussian noise. The model
+%    constructed is following:
 %
 %    The observations y are assumed to satisfy
 %
 %         y = f + e,    where e ~ N(0, s^2)
 %
-%    where f is an underlying function, which we are interested in. 
-%    We place a zero mean Gaussian process prior for f, which implies that
-%    at the observed input locations latent values have prior
+%    where f is an underlying function, which we are interested in. We
+%    place a zero mean Gaussian process prior for f, which implies
+%    that at the observed input locations latent values have prior
 %
 %         f ~ N(0, K),
 %
-%    where K is the covariance matrix, whose elements are given as 
-%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
-%    function and th its parameters, hyperparameters. 
+%    where K is the covariance matrix, whose elements are given as
+%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
+%    covariance function and th its parameters, hyperparameters.
 %
-%    Since both likelihood and prior are Gaussian, we obtain a Gaussian 
-%    marginal likelihood
+%    Since both likelihood and prior are Gaussian, we obtain a
+%    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, K + I*s^2).
 %    
-%   By placing a hyperprior for hyperparameters, p(th), we can find the 
-%   maximum a posterior (MAP) estimate for them by maximizing
+%   By placing a hyperprior for hyperparameters, p(th), we can find
+%   the maximum a posterior (MAP) estimate for them by maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
 %   
-%   If we want to find an approximation for the posterior of the hyperparameters, 
-%   we can sample them using Markov chain Monte Carlo (MCMC) methods. We can 
-%   integrate over the hyperparameters also with other integration approximations 
-%   such as grid integration.
+%   An approximation for the posterior of the hyperparameters, can be
+%   found using Markov chain Monte Carlo (MCMC) methods. We can
+%   integrate over the hyperparameters also with other integration
+%   approximations such as grid integration.
 %
-%   After finding MAP estimate or posterior samples of hyperparameters, we can 
-%   use them to make predictions for f_new:
+%   After finding MAP estimate or posterior samples of
+%   hyperparameters, we can use them to make predictions for f_new:
 %
 %       p(f_new | y, th) = N(m, S),
 %
 %          m = K_nt*(K + I*s^2)^(-1)*y
 %          S = K_new - K_nt*(K + I*s^2)^(-1)*K_tn
 %   
-%      where K_new is the covariance matrix of new f, and K_nt between new f 
-%      and training f.
+%   where K_new is the covariance matrix of new f, and K_nt between
+%   new f and training f.
 %
 %   For more detailed discussion of Gaussian process regression see,
-%   for example, Rasmussen and Williams (2006) or Vanhatalo and Vehtari
-%   (2008)
+%   for example, Rasmussen and Williams (2006) or Vanhatalo and
+%   Vehtari (2008)
 %
 %   The demo is organised in three parts:
 %     1) data analysis with MAP estimate for the hyperparameters
@@ -59,13 +59,12 @@
 %   See also  DEMO_REGRESSION2
 %
 %   Refernces:
-%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
-%    Machine Learning. The MIT Press.
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
 %
-%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and
-%    global phenomena with sparse Gaussian processes. Proceedings
-%    of the 24th Conference on Uncertainty in Artificial
-%    Intelligence,
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global
+%    phenomena with sparse Gaussian processes. Proceedings of the 24th
+%    Conference on Uncertainty in Artificial Intelligence,
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
@@ -114,24 +113,22 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 
 % What has happend this far is the following
 % - we created data structures 'gpcf1' and 'gpcf2', which describe 
-%   the properties of the covariance function and Gaussian noise
-%   (see gpcf_sexp and gpcf_noise for more details)
+%   the properties of the covariance function and Gaussian noise (see
+%   gpcf_sexp and gpcf_noise for more details)
 % - we created data structures that describe the prior of the length-scale 
-%   and magnitude of the squared exponential covariance function and the 
-%   prior of the noise variance. These structures were set into 'gpcf1' and 
-%   'gpcf2'
-%   (see prior_t for more details)
-% - we created a GP data structure 'gp', which has among others 'gpcf1' and 
-%   'gpcf2' data structures.
-%   (see gp_init for more details)
+%   and magnitude of the squared exponential covariance function and
+%   the prior of the noise variance. These structures were set into
+%   'gpcf1' and 'gpcf2' (see prior_t for more details)
+% - we created a GP data structure 'gp', which has among others 'gpcf1' 
+%   and 'gpcf2' data structures.  (see gp_init for more details)
 
 % -----------------------------
 % --- Conduct the inference ---
 %
-% We will make the inference first by finding a maximum a posterior estimate 
-% for the hyperparameters via gradient based optimization. After this we will
-% use grid integration and Markov chain Monte Carlo sampling to integrate over
-% the hyperparameters.
+% We will make the inference first by finding a maximum a posterior
+% estimate for the hyperparameters via gradient based
+% optimization. After this we will use grid integration and Markov
+% chain Monte Carlo sampling to integrate over the hyperparameters.
  
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
@@ -153,13 +150,14 @@ w=scg2(fe, w, opt, fg, gp, x, y);
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w);
 
-% NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
-% they are also transformed through logarithm. The reason for this is that they 
-% are easier to sample with MCMC after log transformation.
+% NOTICE here that when the hyperparameters are packed into vector
+% with 'gp_pak' they are also transformed through logarithm. The
+% reason for this is that they are easier to optimize and sample with
+% MCMC after log transformation.
 
-% for the last make prections of the underlying function on a dense grid 
-% and plot it. Below Ef_map is the predictive mean and Varf_map the predictive 
-% variance.
+% For last, make predictions of the underlying function on a dense
+% grid and plot it. Below Ef_map is the predictive mean and Varf_map
+% the predictive variance.
 [p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
 p=[p1(:) p2(:)];
 [Ef_map, Varf_map] = gp_pred(gp, x, y, p);
@@ -178,7 +176,7 @@ title('The predicted underlying function and the data points (MAP solution)');
 [gp_array, P_TH, th, Ef_ia, Varf_ia, fx_ia, x_ia] = gp_ia(gp, x, y, p, 'int_method', 'grid');
 
 % Plot the prediction for few input location
-figure(3)
+figure(2)
 subplot(1,2,1)
 plot(x_ia(100,:), fx_ia(100,:))
 title('p(f|D) at input location (-1.6, 0.7)');
@@ -192,24 +190,21 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % The hyperparameters are sampled with hybrid Monte Carlo 
 % (see, for example, Neal (1996)). 
 
-% The sampling options are set to 'opt' structure, which is given to
-% 'gp_mc' sampler
-opt=gp_mcopt;
-opt.nsamples= 400;
-opt.repeat=5;
-opt.hmc_opt = hmc2_opt;
-opt.hmc_opt.steps=4;
-opt.hmc_opt.stepadj=0.05;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
+% The HMC sampling options are set to 'hmc_opt' structure, which is
+% given to 'gp_mc' sampler
+hmc_opt = hmc2_opt;
+hmc_opt.steps=4;
+hmc_opt.stepadj=0.05;
+hmc_opt.persistence=0;
+hmc_opt.decay=0.6;
+hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
 % Do the sampling (this takes approximately 5-10 minutes)
 % 'rfull'   will contain a record structure with all the sampls
 % 'g'       will contain a GP structure at the current state of the sampler
 % 'rstate1' will contain a structure with information of the state of the sampler
-[rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+[rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 400, 'repeat', 5, 'hmc_opt', hmc_opt);
 
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
@@ -240,7 +235,7 @@ set(gcf,'pos',[93 511 1098 420])
 
 % We can compare the posterior samples of the hyperparameters to the 
 % MAP estimate that we got from optimization
-figure(4)
+figure(3)
 clf, subplot(1,2,1)
 plot(rfull.cf{1}.lengthScale)
 title('The sample chain of length-scales')
@@ -249,7 +244,7 @@ plot(rfull.cf{1}.magnSigma2)
 title('The sample chain of magnitude')
 set(gcf,'pos',[93 511 1098 420])
 
-figure(5)
+figure(4)
 clf, subplot(1,4,1)
 hist(rfull.cf{1}.lengthScale(:,1))
 hold on
@@ -279,7 +274,7 @@ set(gcf,'pos',[93 511 1098 420])
 sf = normrnd(Ef_mc(100,:), sqrt(Varf_mc(100,:)));
 sf2 = normrnd(Ef_mc(400,:), sqrt(Varf_mc(400,:)));
 
-figure(3)
+figure(2)
 subplot(1,2,1)
 [N,X] = hist(sf);
 hist(sf)
