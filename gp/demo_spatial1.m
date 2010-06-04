@@ -2,12 +2,14 @@
 %                 with Gaussian process prior
 %
 %    Description
-%    The disease mapping problem consist of a data with number of death 
-%    cases, Y, and background population, N, appointed to co-ordinates, X.
-%    The goal is to find a relative risk surface, which describes if the 
-%    number of death cases in certain areas is lower or higher than expected.
-%    The data consists of the heart attacks in Finland from 1996-2000 aggregated 
-%    into 20kmx20km lattice cells.
+
+%    The disease mapping problem consist of a data with number of
+%    death cases, Y, and background population, N, appointed to
+%    co-ordinates, X.  The goal is to find a relative risk surface,
+%    which describes if the number of death cases in certain areas is
+%    lower or higher than expected.  The data consists of the heart
+%    attacks in Finland from 1996-2000 aggregated into 20kmx20km
+%    lattice cells.
 %
 %    The model constructed is as follows:
 %
@@ -15,30 +17,33 @@
 %
 %         Y_i ~ Poisson(Y_i| E_i * r_i)
 %
-%    where E_i is the expected number of deaths (see Vanhatalo and Vehtari (2007), 
-%    how E_i is evaluated) at area i and r_i is the relative risk.
+%    where E_i is the expected number of deaths (see Vanhatalo and
+%    Vehtari (2007, 2010), how E_i is evaluated) at area i and r_i is
+%    the relative risk.
 %
-%    We place a zero mean Gaussian process prior for log(R), R = [r_1, r_2,...,r_n], 
-%    which implies that at the observed input locations latent values, f, have prior
+%    We place a zero mean Gaussian process prior for log(R), R = [r_1,
+%    r_2,...,r_n], which implies that at the observed input locations
+%    latent values, f, have prior
 %
 %         f = log(R) ~ N(0, K),
 %
-%    where K is the covariance matrix, whose elements are given as 
-%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
-%    function and th its parameters, hyperparameters.  We place a hyperprior for
-%    hyperparameters, p(th).
+%    where K is the covariance matrix, whose elements are given as
+%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
+%    covariance function and th its parameters, hyperparameters.  We
+%    place a hyperprior for hyperparameters, p(th).
 %
-%    Since the data set used in this demo is rather large we use FIC sparse
-%    approximation for the GP prior.
+%    Since the data set used in this demo is rather large we use FIC
+%    sparse approximation for the GP prior.
 %
-%    The inference is conducted first with Laplace approximation and then via MCMC. 
-%    We sample from the full posterior p(f, th| data) by alternating the sampling 
-%    from the conditional posteriors p(f | th, data) and p(th | f, data). The 
-%    sampling from the conditional posteriors is done by hybrid Monte Carlo (see, 
-%    for example, Neal, 1996).
+%    The inference is conducted first with Laplace approximation and
+%    then via MCMC. We sample from the full posterior p(f, th| data)
+%    by alternating the sampling from the conditional posteriors p(f |
+%    th, data) and p(th | f, data). The sampling from the conditional
+%    posteriors is done by hybrid Monte Carlo (see, for example, Neal,
+%    1996).
 %
-%    See Vanhatalo and Vehtari (2007) and Vanhatalo et.al. (2010) for more detailed 
-%    discussion.
+%    See Vanhatalo and Vehtari (2007) and Vanhatalo et.al. (2010) for
+%    more detailed discussion.
 %
 %    This demo is organised in three parts:
 %     1) data analysis with Laplace approximation
@@ -49,12 +54,13 @@
 %
 %
 %   Refernces:
-%    Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). Approximate inference 
-%    for disease mapping with sparse Gaussian processes.  Statistics in Medicine.  
+%    Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). Approximate
+%    inference for disease mapping with sparse Gaussian processes.
+%    Statistics in Medicine, 29(15):.
 %
-%    Jarno Vanhatalo and Aki Vehtari (2007). Sparse Log Gaussian Processes via 
-%    MCMC for Spatial Epidemiology. JMLR Workshop and Conference Proceedings, 
-%    1:73-89. (Gaussian Processes in Practice) 
+%    Jarno Vanhatalo and Aki Vehtari (2007). Sparse Log Gaussian
+%    Processes via MCMC for Spatial Epidemiology. JMLR Workshop and
+%    Conference Proceedings, 1:73-89. (Gaussian Processes in Practice)
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
@@ -68,8 +74,8 @@
 % =====================================
 
 % load the data
-S = which('demo_spatial2');
-L = strrep(S,'demo_spatial2.m','demos/spatial.mat');
+S = which('demo_spatial1');
+L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
 load(L)
 
 % Now we have loaded the following parameters
@@ -77,9 +83,9 @@ load(L)
 % yy = number of deaths
 % ye = the expexted number of deaths
 
-% Set the inducing inputs in a regular grid.
-% Set_PIC returns the induving inputs and blockindeces for PIC. It also plots the 
-% data points, inducing inputs and blocks.
+% Set the inducing inputs in a regular grid.  Set_PIC returns the
+% induving inputs and blockindeces for PIC. It also plots the data
+% points, inducing inputs and blocks.
 dims = [1    60     1    35];
 [trindex, Xu] = set_PIC(xx, dims, 5, 'corners', 0);
 
@@ -163,30 +169,26 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
 
 % Set the sampling options
-opt=gp_mcopt;
-opt.nsamples=1;
-opt.repeat=1;
 
 % HMC-hyper
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.01;
-opt.hmc_opt.nsamples=1;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.8;
+hmc_opt.steps=3;
+hmc_opt.stepadj=0.01;
+hmc_opt.nsamples=1;
+hmc_opt.persistence=0;
+hmc_opt.decay=0.8;
     
 % HMC-latent
-opt.latent_opt.nsamples=1;
-opt.latent_opt.nomit=0;
-opt.latent_opt.persistence=0;
-opt.latent_opt.repeat=20;
-opt.latent_opt.steps=20;
-opt.latent_opt.stepadj=0.15;
-opt.latent_opt.window=5;
+latent_opt.nsamples=1;
+latent_opt.nomit=0;
+latent_opt.persistence=0;
+latent_opt.repeat=20;
+latent_opt.steps=20;
+latent_opt.stepadj=0.15;
+latent_opt.window=5;
 
 % Here we make an initialization with 
 % slow sampling parameters
-opt.display = 0;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'z', ye);
+[rgp,gp,opt]=gp_mc(gp, xx, yy, 'z', ye, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt);
 
 % Now we reset the sampling parameters to 
 % achieve faster sampling
@@ -211,7 +213,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'record', rgp, 'z', ye);
+    [rgp,gp,opt]=gp_mc(gp, xx, yy, 'record', rgp, 'z', ye, opt);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(3)
     clf

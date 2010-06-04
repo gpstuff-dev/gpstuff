@@ -286,8 +286,8 @@ hmc_opt.nsamples=1;
 
 % Latent-options
 latent_opt.display=0;
-latent_opt.repeat = 5;
-latent_opt.sample_latent_scale = 0.2
+latent_opt.repeat = 10
+latent_opt.sample_latent_scale = 0.05
 
 % Likelihood-options
 likelih_hmc_opt.steps=10;

@@ -19,19 +19,19 @@ function p_eff = gp_peff(gp, x, y, varargin);
 %        in case of non-Gaussian likelihood (See Vanhatalo et. al. 
 %        for discussion).
 %
-%       If you want to evaluate the effective number of
-%       hyperparameters see gp_dic.
+%        If you want to evaluate the effective number of
+%        hyperparameters see gp_dic.
 %
-%       The effective number of parameters is approximated as follows:
+%        The effective number of parameters is approximated as follows:
 %
 %               p_eff = n - trace( K\C ),
 %
-%       where K is the prior covariance matrix and C the posterior
-%       covariance matrix. This approximation is introduced by
-%       Spiegelhalter et.al. (2002) in equation (16). If the
-%       likelihood is non-Gaussian and gp.latent_method is either
-%       Laplace or EP, then C is the Laplace or EP approximation
-%       for the posterior covariance.
+%        where K is the prior covariance matrix and C the posterior
+%        covariance matrix. This approximation is introduced by
+%        Spiegelhalter et.al. (2002) in equation (16). If the
+%        likelihood is non-Gaussian and gp.latent_method is either
+%        Laplace or EP, then C is the Laplace or EP approximation
+%        for the posterior covariance.
 %
 %	See also
 %         gp_dic, demo_modelassesment1	

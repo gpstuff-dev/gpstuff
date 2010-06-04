@@ -23,7 +23,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         'opt'        - options for the inference method
 %         'k'          - number of folds in CV  
 %         'rstream'    - number of a random stream to be used for
-%                        perumuting the data befor divison. This way same 
+%                        perumuting the data befor division. This way same 
 %                        permutation can be obtained for different models.
 %         'trindex'    - k-fold CV training indices. A cell array with k 
 %                        fields each containing index vector for respective 
@@ -176,7 +176,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('inf_method', 'MAP_scg2', @(x) ...
                      ismember(x,{'MAP_scg2' 'MAP_fminunc' 'MCMC' 'IA'}))
-    ip.addParamValue('opt', scg2_opt)
+    ip.addParamValue('opt', struct)
     ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     ip.addParamValue('rstream', round(rem(now,1e-3)*1e9), @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))    
@@ -198,6 +198,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     [n,nin] = size(x);
     
     gp_orig = gp;
+
+    if isempty(opt) && strcmp(inf_method,'MAP_scg2')
+       opt = scg2_opt; 
+    end
     
     if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
         error('gp_kfcv: If you give cross validation indeces, you need to provide both trindex and tstindex.')
@@ -321,9 +325,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp=gp_unpak(gp,w);
             cvws(i,:)=w;
           case 'MCMC'
-            gp = gp_mc(opt, gp, xtr, ytr, options_tr);
+            gp = gp_mc(gp, xtr, ytr, options_tr, opt);
           case 'IA'
-            gp = gp_ia(gp, xtr, ytr, [], opt, options_tr);
+            gp = gp_ia(gp, xtr, ytr, [], options_tr, opt);
         end
             
         % make the prediction
@@ -413,9 +417,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp=gp_unpak(gp,w);
             trw=w;
           case 'MCMC'
-            gp = gp_mc(opt, gp, xtr, ytr, options_tr);
+            gp = gp_mc(gp, xtr, ytr, options_tr, opt);
           case 'IA'
-            gp = gp_ia(gp, xtr, ytr, options_tr, opt);
+            gp = gp_ia(gp, xtr, ytr, [], options_tr, opt);
         end
         cpu_time = cputime - cpu_time;
         

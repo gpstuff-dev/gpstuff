@@ -1,13 +1,15 @@
 %DEMO_SPATIAL4    Demonstration for a disease mapping problem with Gaussian
-%                 process prior and negative binomial observation model
+%                 process prior and negative binomial observation
+%                 model
 %
 %    Description
-%    The disease mapping problem consist of a data with number of death 
-%    cases, Y, and background population, N, appointed to co-ordinates, X.
-%    The goal is to find a relative risk surface, which describes if the 
-%    number of death cases in certain areas is lower or higher than expected.
-%    The data consists of the heart attacks in Finland from 1996-2000 aggregated 
-%    into 20kmx20km lattice cells.
+%    The disease mapping problem consist of a data with number of
+%    death cases, Y, and background population, N, appointed to
+%    co-ordinates, X.  The goal is to find a relative risk surface,
+%    which describes if the number of death cases in certain areas is
+%    lower or higher than expected.  The data consists of the heart
+%    attacks in Finland from 1996-2000 aggregated into 20kmx20km
+%    lattice cells.
 %
 %    The model is constructed as follows:
 %
@@ -15,23 +17,26 @@
 %
 %         Y_i ~ Neg-Bin(Y_i| d, E_i * r_i)
 %
-%    where E_i is the expected number of deaths (see Vanhatalo and Vehtari (2007), 
-%    how E_i is evaluated) at area i, r_i is the relative risk and d is the dispersion 
-%    parameter coverning the variance.
+%    where E_i is the expected number of deaths (see Vanhatalo and
+%    Vehtari (2007), how E_i is evaluated) at area i, r_i is the
+%    relative risk and d is the dispersion parameter coverning the
+%    variance.
 %
-%    We place a zero mean Gaussian process prior for log(R), R = [r_1, r_2,...,r_n], 
-%    which implies that at the observed input locations latent values, f, have prior
+%    We place a zero mean Gaussian process prior for log(R), R = [r_1,
+%    r_2,...,r_n], which implies that at the observed input locations
+%    latent values, f, have prior
 %
 %         f = log(R) ~ N(0, K),
 %
-%    where K is the covariance matrix, whose elements are given as 
-%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
-%    function and th its parameters, hyperparameters.  We place a hyperprior for
-%    hyperparameters, p(th).
+%    where K is the covariance matrix, whose elements are given as
+%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
+%    covariance function and th its parameters, hyperparameters.  We
+%    place a hyperprior for hyperparameters, p(th).
 %
-%    The inference is conducted first with EP, and then via MCMC. We sample from 
-%    the full posterior p(f, th| data) by alternating the sampling from the 
-%    conditional posteriors p(f | th, data) and p(th | f, data). 
+%    The inference is conducted first with EP, and then via MCMC. We
+%    sample from the full posterior p(f, th| data) by alternating the
+%    sampling from the conditional posteriors p(f | th, data) and 
+%    p(th | f, data).
 %
 %    See also  DEMO_REGRESSION1, DEMO_CLASSIFIC1, DEMO_SPATIAL1
 
@@ -75,7 +80,7 @@ likelih = likelih_negbin('init');
 
 % Create the PIC GP data structure
 gp = gp_init('init', 'PIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001); 
-gp = gp_init('set', gp, 'blocks', trindex, 'infer_params', 'covariance+likelihood');
+gp = gp_init('set', gp, 'tr_index', trindex, 'infer_params', 'covariance+likelihood');
 
 % Set the approximate inference method to EP
 gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'z', ye});
@@ -108,7 +113,6 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 %   This results in rather high variance in the north
 % - The eastern Finland is known to be worse than western Finland in 
 %   heart diseases also from other studies.
-% - PIC has fixed the oversmoothness present in FIC
 figure
 G=repmat(NaN,size(X1));
 G(xxii)=exp(Ef);
@@ -144,11 +148,9 @@ S3 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f, disper: %.3f \n', gp.cf{1}.le
 gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(yy))', @scaled_hmc});
 
 % Set the sampling options
-opt=gp_mcopt;
-opt.nsamples=1;
-opt.repeat=1;
 
 % HMC-hyper
+opt = [];
 opt.hmc_opt.steps=3;
 opt.hmc_opt.stepadj=0.01;
 opt.hmc_opt.nsamples=1;
@@ -164,13 +166,11 @@ opt.latent_opt.steps=20;
 opt.latent_opt.stepadj=0.15;
 opt.latent_opt.window=5;
 
-
-opt.likelih_hmc_opt.steps=3;
-opt.likelih_hmc_opt.stepadj=0.01;
-opt.likelih_hmc_opt.nsamples=1;
-opt.likelih_hmc_opt.persistence=0;
-opt.likelih_hmc_opt.decay=0.8;
-
+% $$$ opt.likelih_hmc_opt.steps=3;
+% $$$ opt.likelih_hmc_opt.stepadj=0.01;
+% $$$ opt.likelih_hmc_opt.nsamples=1;
+% $$$ opt.likelih_hmc_opt.persistence=0;
+% $$$ opt.likelih_hmc_opt.decay=0.8;
 
 % SLS-likelihood
 opt.likelih_sls_opt = sls_opt;
@@ -183,7 +183,7 @@ opt.likelih_sls_opt.display = 0;
 % Here we make an initialization with 
 % slow sampling parameters
 opt.display = 0;
-[rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'z', ye);
+[rgp,gp,opt]=gp_mc(gp, xx, yy, 'z', ye, opt);
 
 % Now we reset the sampling parameters to 
 % achieve faster sampling
@@ -208,7 +208,7 @@ xxii=sub2ind([60 35],xx(:,2),xx(:,1));
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
 while length(rgp.edata)<1000 %   1000
-    [rgp,gp,opt]=gp_mc(opt, gp, xx, yy, 'record', rgp, 'z', ye);
+    [rgp,gp,opt]=gp_mc(gp, xx, yy, 'record', rgp, 'z', ye, opt);
     fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
     figure(3)
     clf

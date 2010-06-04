@@ -3,14 +3,14 @@
 %                       
 %
 %    Description
-%    We will consider the regression problem in demo_regression1. The 
-%    analysis is conducted with full Gaussian process, and FIC and PIC sparse
-%    approximations. The performance of these models are compared 
-%    by evaluating the DIC statistics, number of efficient parameters 
-%    and ten-fold cross validation. The inference will be conducted using
-%    maximum a postrior (MAP) estimate for the hyperparameters, via full 
-%    Markov chain Monte Carlo (MCMC) and with an integration approximation 
-%    (IA) for the hyperparameters.
+%    We will consider the regression problem in demo_regression1. The
+%    analysis is conducted with full Gaussian process, and FIC and PIC
+%    sparse approximations. The performance of these models are
+%    compared by evaluating the DIC statistics, number of efficient
+%    parameters and ten-fold cross validation. The inference will be
+%    conducted using maximum a postrior (MAP) estimate for the
+%    hyperparameters, via full Markov chain Monte Carlo (MCMC) and
+%    with an integration approximation (IA) for the hyperparameters.
 %
 %    This demo is organised in three parts:
 %     1) data analysis with full GP model
@@ -75,19 +75,21 @@ gp=gp_unpak(gp,w);
 % latent variables.
 models{1} = 'full_MAP';
 p_eff_latent = gp_peff(gp, x, y);
-[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'latent');
+[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent');
 
 % Evaluate the 10-fold cross-validation results. NOTE! This saves
 % the results in a folder cv_resultsX (where X is a number) in your
 % current working directory. We save the results only for this case
 % so that you can study them. The other models are not saved.
-[mlpd_cv(1), Var_lpd_cv(1), mrmse_cv(1), Var_rmse_cv(1)] = gp_kfcv(gp, x, y);
+cvres =  gp_kfcv(gp, x, y);
+mlpd_cv(1) = cvres.mlpd_cv;
+mrmse_cv(1) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 
 % The sampling options are set to 'opt' structure, which is given to
 % 'gp_mc' sampler
-opt=gp_mcopt;
+opt = [];
 opt.nsamples= 100;
 opt.repeat=4;
 opt.hmc_opt = hmc2_opt;
@@ -99,15 +101,15 @@ opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
 % Do the sampling (this takes few minutes)
-[rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+rfull = gp_mc(gp, x, y, opt);
 
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
 % Evaluate the effective number of parameters and DIC. 
 models{2} = 'full_MCMC';
-[DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'hyper');
-[DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'all');
+[DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'hyper');
+[DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'focus', 'all');
 
 % Evaluate the 10-fold cross validation results. 
 %
@@ -115,7 +117,10 @@ models{2} = 'full_MCMC';
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
-[mlpd_cv(2), Var_lpd_cv(2), mrmse_cv(2), Var_rmse_cv(2)] = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'SAVE', 0);
+cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt);
+mlpd_cv(2) = cvres.mlpd_cv;
+mrmse_cv(2) = cvres.mrmse_cv;
+
 
 % --- Integration approximation approach ---
 clear('opt')
@@ -123,15 +128,16 @@ opt.opt_scg = scg2_opt;
 opt.int_method = 'grid';
 opt.step_size = 2;
 
-gp_array = gp_ia(gp, x, y, [], opt);
+gp_array = gp_ia(gp, x, y, opt);
 
 models{3} = 'full_IA'; 
-[DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'hyper');
-[DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'all');
+[DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'hyper');
+[DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all');
 
 % Then the 10 fold cross-validation.
-[mlpd_cv(3), Var_lpd_cv(3), mrmse_cv(3), Var_rmse_cv(3)] = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'SAVE', 0);
-
+cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
+mlpd_cv(3) = cvres.mlpd_cv;
+mrmse_cv(3) = cvres.mrmse_cv;
 
 
 %========================================================
@@ -174,14 +180,16 @@ gp_fic = gp_unpak(gp_fic,w);     % Set the optimized hyperparameter values back 
 % Evaluate the effective number of parameters and DIC with focus on latent variables. 
 models{4} = 'FIC_MAP';
 p_eff_latent(4) = gp_peff(gp_fic, x, y);
-[DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'latent');
+[DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'focus', 'latent');
 
 % Evaluate the 10-fold cross validation results. 
-[mlpd_cv(4), Var_lpd_cv(4), mrmse_cv(4), Var_rmse_cv(4)] = gp_kfcv(gp_fic, x, y, 'SAVE', 0);
+cvres = gp_kfcv(gp_fic, x, y);
+mlpd_cv(4) = cvres.mlpd_cv;
+mrmse_cv(4) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 % (the inducing inputs are fixed)
-opt=gp_mcopt;
+clear('opt')
 opt.nsamples= 100;
 opt.repeat=5;
 opt.hmc_opt.steps=3;
@@ -192,7 +200,7 @@ opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
 % Do the sampling (this takes approximately 3-5 minutes)
-[rfic,g2,rstate2] = gp_mc(opt, gp_fic, x, y);
+rfic = gp_mc(gp_fic, x, y, opt);
 
 % After sampling we delete the burn-in and thin the sample chain
 rfic = thin(rfic, 10, 2);
@@ -201,14 +209,17 @@ rfic = thin(rfic, 10, 2);
 % the efective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{5} = 'FIC_MCMC'; 
-[DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'hyper');
-[DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y, 'all');
+[DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'hyper');
+[DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y, 'focus', 'all');
 
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
-[mlpd_cv(5), Var_lpd_cv(5), mrmse_cv(5), Var_rmse_cv(5)] = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'SAVE', 0);
+
+cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt);
+mlpd_cv(5) = cvres.mlpd_cv;
+mrmse_cv(5) = cvres.mrmse_cv;
 
 
 % --- Integration approximation approach ---
@@ -217,15 +228,16 @@ opt.opt_scg = scg2_opt;
 opt.int_method = 'grid';
 opt.step_size = 2;
 
-gpfic_array = gp_ia(gp_fic, x, y, [], opt);
+gpfic_array = gp_ia(gp_fic, x, y, opt);
 
 models{6} = 'FIC_IA'; 
 [DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'hyper');
 [DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
-[mlpd_cv(6), Var_lpd_cv(6), mrmse_cv(6), Var_rmse_cv(6)] = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt, 'SAVE', 0);
-
+cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt);
+mlpd_cv(6) = cvres.mlpd_cv;
+mrmse_cv(6) = cvres.mrmse_cv;
 
 %========================================================
 % PART 3 data analysis with PIC approximation
@@ -257,8 +269,8 @@ end
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 
-gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001);
-gp_pic = gp_init('set', gp_pic, 'X_u', X_u, 'blocks', trindex)
+gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
+gp_pic = gp_init('set', gp_pic, 'tr_index', trindex)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -283,11 +295,13 @@ p_eff_latent(7) = gp_peff(gp_pic, x, y);
 [DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'latent');
 
 % Evaluate the 10-fold cross validation results. 
-[mlpd_cv(7), Var_lpd_cv(7), mrmse_cv(7), Var_rmse_cv(7)] = gp_kfcv(gp_pic, x, y, 'SAVE', 0);
+cvres = gp_kfcv(gp_pic, x, y);
+mlpd_cv(7) = cvres.mlpd_cv;
+mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 
-opt=gp_mcopt;
+clear('opt')
 opt.nsamples= 100;
 opt.repeat=5;
 opt.hmc_opt.steps=3;
@@ -298,7 +312,7 @@ opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
 % Do the sampling (this takes approximately 3-5 minutes)
-[rpic,g2,rstate2] = gp_mc(opt, gp_pic, x, y);
+rpic = gp_mc(gp_pic, x, y, opt);
 
 % After sampling we delete the burn-in and thin the sample chain
 rpic = rmfield(rpic, 'tr_index');
@@ -316,7 +330,9 @@ models{8} = 'PIC_MCMC';
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
-[mlpd_cv(8), Var_lpd_cv(8), mrmse_cv(8), Var_rmse_cv(8)] = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'SAVE', 0);
+cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt);
+mlpd_cv(8) = cvres.mlpd_cv;
+mrmse_cv(8) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 clear('opt')
@@ -331,10 +347,9 @@ models{9} = 'PIC_IA';
 [DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
-[mlpd_cv(9), Var_lpd_cv(9), mrmse_cv(9), Var_rmse_cv(9)] = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt, 'SAVE', 0);
-
-
-
+cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt);
+mlpd_cv(9) = cvres.mlpd_cv;
+mrmse_cv(9) = cvres.mrmse_cv;
 
 
 
@@ -348,15 +363,15 @@ for i = 1:length(models)
 end
 
 S = sprintf([S '\n DIC_h   %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], DIC);
-S = sprintf([S '\n DIC_a   %.2f      %.2f     %.2f   %.2f     %.2f   %.2f  %.2f     %.2f     %.2f'], DIC2);
-S = sprintf([S '\n DIC_l   %.2f     %.2f      %.2f    %.2f    %.2f     %.2f    %.2f     %.2f     %.2f'], DIC_latent);
-S = sprintf([S '\n peff_h  %.2f      %.2f       %.2f     %.2f      %.2f      %.2f    %.2f      %.2f     %.2f'], p_eff);
-S = sprintf([S '\n peff_a  %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], p_eff2);
-S = sprintf([S '\n peff_l  %.2f      %.2f      %.2f    %.2f     %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent);
-S = sprintf([S '\n peff_l2 %.2f      %.2f      %.2f    %.2f     %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent2);
+S = sprintf([S '\n DIC_a   %.2f     %.2f     %.2f    %.2f     %.2f   %.2f   %.2f    %.2f     %.2f'], DIC2);
+S = sprintf([S '\n DIC_l  %.2f      %.2f      %.2f    %.2f    %.2f      %.2f   %.2f     %.2f     %.2f'], DIC_latent);
+S = sprintf([S '\n peff_h  %.2f       %.2f      %.2f     %.2f     %.2f      %.2f    %.2f      %.2f     %.2f'], p_eff);
+S = sprintf([S '\n peff_a  %.2f      %.2f     %.2f     %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], p_eff2);
+S = sprintf([S '\n peff_l  %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent);
+S = sprintf([S '\n peff_l2 %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent2);
 S = sprintf([S '\n ']);
-S = sprintf([S '\n mlpd    %.2f       %.2f      %.2f    %.2f       %.2f      %.2f     %.2f    %.2f    %.2f'], mlpd_cv);
-S = sprintf([S '\n mrmse   %.2f       %.2f      %.2f    %.2f       %.2f      %.2f     %.2f     %.2f     %.2f'], mrmse_cv);
+S = sprintf([S '\n mlpd    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f    %.2f    %.2f    %.2f'], mlpd_cv);
+S = sprintf([S '\n rmse    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f     %.2f     %.2f     %.2f'], mrmse_cv);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n The notation is as follows:']);
@@ -440,11 +455,13 @@ p_eff_latent(10) = gp_peff(gp_csfic, x, y);
 [DIC_latent(10), p_eff_latent2(10)] = gp_dic(gp_csfic, x, y);
 
 % Evaluate the 10-fold cross validation results. 
-[mlpd_cv(10), Var_lpd_cv(10), mrmse_cv(10), Var_rmse_cv(10)] = gp_kfcv(gp_csfic, x, y, 'SAVE', 0);
+cvres = gp_kfcv(gp_csfic, x, y);
+mlpd_cv(10) = cvres.mlpd_cv;
+mrmse_cv(10) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 % (the inducing inputs are fixed)
-opt=gp_mcopt;
+clear('opt')
 opt.nsamples= 100;
 opt.repeat=5;
 opt.hmc_opt.steps=3;
@@ -455,7 +472,7 @@ opt.hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 
 % Do the sampling (this takes approximately 3-5 minutes)
-[rcsfic,g2,rstate2] = gp_mc(opt, gp_csfic, x, y);
+[rcsfic,g2,rstate2] = gp_mc(gp_csfic, x, y, opt);
 
 % Evaluate the effective number of parameters and DIC. Note that 
 % the efective number of parameters as a second output, but here 
@@ -468,8 +485,9 @@ models{11} = 'CSFIC_MCMC';
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
-[mlpd_cv(5), Var_lpd_cv(5), mrmse_cv(5), Var_rmse_cv(5)] = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'SAVE', 0);
-
+cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt);
+mlpd_cv(11) = cvres.mlpd_cv;
+mrmse_cv(11) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 clear('opt')
@@ -477,14 +495,14 @@ opt.opt_scg = scg2_opt;
 opt.int_method = 'grid';
 opt.step_size = 2;
 
-gpcsfic_array = gp_ia(gp_csfic, x, y, [], opt);
-
-gpcsfic_array = gp_ia(opt, gp_csfic, x, y);
+gpcsfic_array = gp_ia(gp_csfic, x, y, opt);
 
 models{12} = 'CSFIC_IA'; 
 [DIC(12), p_eff(12)] =  gp_dic(gpcsfic_array, x, y);
 [DIC2(12), p_eff2(12)] =  gp_dic(gpcsfic_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
-[mlpd_cv(12), Var_lpd_cv(12), mrmse_cv(12), Var_rmse_cv(12)] = gp_kfcv(gp_csfic, x, y, 'inf_method', 'IA', 'opt', opt, 'SAVE', 0);
+cvres = gp_kfcv(gp_csfic, x, y, 'inf_method', 'IA', 'opt', opt);
+mlpd_cv(12) = cvres.mlpd_cv;
+mrmse_cv(12) = cvres.mrmse_cv;
 

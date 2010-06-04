@@ -11,7 +11,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %        training inputs and Y training outputs.
 %
 %       DIC and p_eff are evaluated as follows:
-%        1) GP is a record structure form gp_mc or an array of GPs from gp_ia, 
+%        1) GP is a record structure from gp_mc or an array of GPs from gp_ia, 
 %
 %           In this case the focus is in the hyperparameters (the
 %           parameters of the covariance function and the
@@ -38,10 +38,10 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %          the deviance is now evaluated as
 %               E[D(y, f)|y] = -2 \int log(p(y|f) p(f|th) df
 %
-%       3) GP is a record structure form gp_mc or an array of GPs from 
+%       3) GP is a record structure from gp_mc or an array of GPs from 
 %          gp_ia, but the focus is defined to be both latent-variables 
 %          and hyperparameters, 
-%               [DIC, P_EFF] = EP_PEFF(GP, X, Y, 'all')
+%               [DIC, P_EFF] = EP_PEFF(GP, X, Y, 'focus', 'all')
 %
 %          In this case the focus will be the latent variables and
 %          hyperparameters. Thus now we will use the posterior p(f,
@@ -77,7 +77,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 
     ip=inputParser;
     ip.FunctionName = 'GP_DIC';
-    ip.addRequired('gp',@isstruct);
+    ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addOptional('focus', 'hyper', @(x) ismember(x,{'hyper','latent','all'}))
