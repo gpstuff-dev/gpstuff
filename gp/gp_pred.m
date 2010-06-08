@@ -559,16 +559,6 @@ switch gp.type
     end
     Ef = K_nu*(K_uu\(K_fu'*p));
 
-    % if the prediction is made for training set, evaluate Lav also for prediction points
-    if ~isempty(tstind)
-        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
-        Lav2 = zeros(size(Ef));
-        Lav2(tstind) = Kv_ff-Qv_ff;
-        Ef(tstind) = Ef(tstind) + Lav2(tstind).*p;
-    end
 
     if nargout > 1
         [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
@@ -578,12 +568,6 @@ switch gp.type
         
         Varf = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
 
-        % if the prediction is made for training set, evaluate Lav also for prediction points
-        if ~isempty(tstind)
-            Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
-                + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
-                - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);                
-        end
     end
     if nargout > 2
         Ey = Ef;

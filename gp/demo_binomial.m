@@ -3,10 +3,10 @@
 %
 %      Description
 %      Demonstration of estimating the unknown population proportion
-%      in binomial model from a sequence of success/failure trials. Data
-%      consists of observations Y describing the number of successes in
-%      a sequence of N iid trials, and of explanatory variables X.
-%      The binomial model is 
+%      in binomial model from a sequence of success/failure
+%      trials. Data consists of observations Y describing the number
+%      of successes in a sequence of N iid trials, and of explanatory
+%      variables X.  The binomial model is
 %
 %      Y_i ~ Binomial(Y_i | N_i, p_i),
 %
@@ -21,17 +21,18 @@
 %       
 %      p_i = logit^-1(f_i) = 1/(1+exp(-f_i)).
 %
-%      The elements of the covariance matrix K are given as 
-%      K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
+%      The elements of the covariance matrix K are given as K_ij =
+%      k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance
 %      function and th its hyperparameters.  We place a hyperprior for
 %      hyperparameters, p(th). The inference is done with Laplace
 %      approximation.
 %
 %      NOTE! In the prediction, the total number of trials Nt at the
-%      test points Xt must be set additionally in the likelihood structure
-%      when E(Yt), Var(Yt) or predictive densities p(Yt) are computed.
+%      test points Xt must be set additionally in the likelihood
+%      structure when E(Yt), Var(Yt) or predictive densities p(Yt) are
+%      computed.
 
-% Copyright (c) 2010 Jaakko Riihim√§ki
+% Copyright (c) 2010 Jaakko Riihim‰ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

@@ -86,6 +86,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     focus=ip.Results.focus;
     % pass these forward
     options=struct();
+    z = ip.Results.z;
     if ~isempty(ip.Results.z)
       options.zt=ip.Results.z;
       options.z=ip.Results.z;

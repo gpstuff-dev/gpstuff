@@ -220,8 +220,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'covariance';
                 w = gp_pak(gp);
-                hmc2('state',hmc_rstate)              % Set the state                
-                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, f);
+                hmc2('state',hmc_rstate)              % Set the state
+                [w, energies, diagnh] = hmc2(me, w, opt.hmc_opt, mg, gp, x, f);                
                 hmc_rstate=hmc2('state');             % Save the current state
                 hmcrej=hmcrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')

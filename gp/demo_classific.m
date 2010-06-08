@@ -1,4 +1,4 @@
-function demo_classific1
+function demo_classific
 %DEMO_CLAASIFIC1    Classification problem demonstration for 2 classes via MCMC
 %
 %      Description
@@ -36,16 +36,16 @@ function demo_classific1
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-% This demonstration is based on the dataset used in the book Pattern Recognition and
-% Neural Networks by B.D. Ripley (1996) Cambridge University Press ISBN 0 521
-% 46986 7
+% This demonstration is based on the dataset used in the book Pattern
+% Recognition and Neural Networks by B.D. Ripley (1996) Cambridge
+% University Press ISBN 0 521 46986 7
 
 %========================================================
 % data analysis with full GP model
 %========================================================
 
-S = which('demo_classific1');
-L = strrep(S,'demo_classific1.m','demos/synth.tr');
+S = which('demo_classific');
+L = strrep(S,'demo_classific.m','demos/synth.tr');
 x=load(L);
 y=x(:,end);
 y = 2.*y-1;

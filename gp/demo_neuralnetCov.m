@@ -2,10 +2,10 @@
 %                        network covariance function
 %                    
 %    Description
-%    Infinite neural network solutions in 2D and 1D regression problems
-%    with a comparison to Gaussian process solution given by squared
-%    exponential covariance function. The noisy observations y are assumed
-%    to satisfy
+%    Infinite neural network solutions in 2D and 1D regression
+%    problems with a comparison to Gaussian process solution given by
+%    squared exponential covariance function. The noisy observations y
+%    are assumed to satisfy
 %
 %         y = f + e,    where e ~ N(0, s^2)
 %
@@ -14,23 +14,26 @@
 %
 %         f ~ N(0, K),
 %
-%    where K is the covariance matrix whose elements are given by neural
-%    network (or squared exponential) covariance function. A hyperprior is
-%    assumed for hyperparameters of the covariance functions, and 
-%    the inference is done with a MAP estimate for hyperparameter values.
+%    where K is the covariance matrix whose elements are given by
+%    neural network (or squared exponential) covariance function. A
+%    hyperprior is assumed for hyperparameters of the covariance
+%    functions, and the inference is done with a MAP estimate for
+%    hyperparameter values.
 %
-%    For more detailed discussion of infinite neural networks, see e.g.
-%    
+%    For more detailed discussion of infinite neural networks, see
+%    e.g. 
+%
 %    Neal, R. M. (1996). Bayesian Learning for Neural Networks.
 %    Springer-Verlag.
 %
-%    Williams, C. K. I. (1996). Computing with infinite networks. In Advances
-%    in Neural Information Processing Systems 9. MIT Press, Cambridge, MA. 
+%    Williams, C. K. I. (1996). Computing with infinite networks. In
+%    Advances in Neural Information Processing Systems 9. MIT Press,
+%    Cambridge, MA.
 %
 %
 %  See also  DEMO_REGRESSION1
 %
-% Copyright (c) 2010 Jaakko Riihim√§ki
+% Copyright (c) 2010 Jaakko Riihim‰ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
