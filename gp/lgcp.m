@@ -138,8 +138,8 @@ function [l,lq,xt] = lgcp(x,varargin)
         xt=[xt1(:) xt2(:)];
       end
       % normalise, so that same prior is ok for different scales
-      xxn=grdivide(gminus(xx,mean(xx,1)),std(xx,1));
-      xtn=grdivide(gminus(xt,mean(xx,1)),std(xx,1));
+      xxn=bsxfun(@rdivide,bsxfun(@minus,xx,mean(xx,1)),std(xx,1));
+      xtn=bsxfun(@rdivide,bsxfun(@minus,xt,mean(xx,1)),std(xx,1));
       % smooth...
       [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,hyperint);
       % compute mean

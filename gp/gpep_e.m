@@ -35,7 +35,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 %       GPEP_G, EP_PRED, GP_E
 
     
-% Copyright (c) 2007           Jaakko Riihimäki
+% Copyright (c) 2007           Jaakko Riihimï¿½ki
 % Copyright (c) 2007-2010      Jarno Vanhatalo
 % Copyright (c) 2010           Heikki Peura
 
@@ -497,7 +497,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     % Compute the marginal likelihood, see FULL model for
                     % details about equations
                     Lahat = 1./Lav + tautilde;
-                    Lhat = grdivide(L,Lahat);
+                    Lhat = bsxfun(@rdivide,L,Lahat);
                     H = I-L'*Lhat;
                     B = H\L';
                     Bhat = B./repmat(Lahat',m,1);

@@ -21,69 +21,49 @@ function gpcf = gpcf_prod(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_PROD';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('functions',[], @iscell);
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    cfs=ip.Results.functions;
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_prod';
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_prod';
 
-        % Initialize parameters
-        gpcf.functions = {};
-        
-        % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_prod_pak;
-        gpcf.fh_unpak = @gpcf_prod_unpak;
-        gpcf.fh_e = @gpcf_prod_e;
-        gpcf.fh_ghyper = @gpcf_prod_ghyper;
-        gpcf.fh_ginput = @gpcf_prod_ginput;
-        gpcf.fh_cov = @gpcf_prod_cov;
-        gpcf.fh_trcov  = @gpcf_prod_trcov;
-        gpcf.fh_trvar  = @gpcf_prod_trvar;
-        gpcf.fh_recappend = @gpcf_prod_recappend;
-
-        if nargin > 1
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
-            end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'functions'
-                    % Set covariance functions into gpcf
-                    cfs = varargin{i+1};
-                    for i = 1:length(cfs)
-                        gpcf.functions{i} = cfs{i};
-                    end
-                  otherwise
-                    error('Wrong parameter name!')
-                end
-            end
-        end
-    end
-
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'functions'
-                % Set covariance functions into gpcf
-                cfs = varargin{i+1};
+            % Initialize parameters
+            gpcf.functions = {};
+            if ~isempty(cfs)
                 for i = 1:length(cfs)
                     gpcf.functions{i} = cfs{i};
                 end
-              otherwise
-                error('Wrong parameter name!')
             end
-        end
-    end
 
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_prod_pak;
+            gpcf.fh_unpak = @gpcf_prod_unpak;
+            gpcf.fh_e = @gpcf_prod_e;
+            gpcf.fh_ghyper = @gpcf_prod_ghyper;
+            gpcf.fh_ginput = @gpcf_prod_ginput;
+            gpcf.fh_cov = @gpcf_prod_cov;
+            gpcf.fh_trcov  = @gpcf_prod_trcov;
+            gpcf.fh_trvar  = @gpcf_prod_trvar;
+            gpcf.fh_recappend = @gpcf_prod_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(cfs)
+                for i = 1:length(cfs)
+                    gpcf.functions{i} = cfs{i};
+                end
+            end
+    end
+    
     
     function w = gpcf_prod_pak(gpcf)
     %GPCF_PROD_PAK	 Combine GP covariance function hyper-parameters into one vector.

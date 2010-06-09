@@ -3,44 +3,19 @@ function gpcf = gpcf_SSsexp(do, varargin)
 %
 %	Description
 %
-%	GPCF = GPCF_SEXP('INIT', NIN) Create and initialize squared exponential
+%	GPCF = GPCF_SEXP('INIT','nin', NIN) Create and initialize squared exponential
 %       covariance function fo Gaussian process
 %
 %	The fields and (default values) in GPCF_SEXP are:
 %	  type           = 'gpcf_sexp'
 %	  nin            = number of inputs (NIN)
-%	  nout           = number of outputs: always 1
 %	  magnSigma2     = general magnitude (squared) for exponential part  (sampled with HMC)
 %                          (0.1)
 %	  lengthScale    = length scale for each input. This can be either   (sampled with HMC)
 %                          scalar (corresponding isotropic) or vector (corresponding ARD).
-%                          (repmat(10, 1, nin))
-%         p              = prior structure for covariance function   (p.lengthScale.a.s is sampled with HMC)
-%                          parameters.
-%         fh_pak         = function handle to packing function
-%                          (@gpcf_sexp_pak)
-%         fh_unpak       = function handle to unpackin function
-%                          (@gpcf_sexp_unpak)
-%         fh_e           = function handle to error function
-%                          (@gpcf_sexp_e)
-%         fh_ghyper      = function handle to gradient function (with respect to hyperparameters)
-%                          (@gpcf_sexp_ghyper)
-%         fh_gind        = function handle to gradient function (with respect to inducing inputs)
-%                          (@gpcf_sexp_gind)
-%         fh_cov         = function handle to covariance function
-%                          (@gpcf_sexp_cov)
-%         fh_trcov       = function handle to training covariance function
-%                          (@gpcf_sexp_trcov)
-%         fh_covvec      = function handle to elementvice covariance function
-%                          (@gpcf_sexp_covvec)
-%         fh_trvar       = function handle to training variance function
-%                          (@gpcf_sexp_trvar)
-%         fh_sampling    = function handle to parameter sampling function
-%                          (@hmc2)
-%         sampling_opt   = options structure for fh_sampling
-%                          (hmc2_opt)
-%         fh_recappend   = function handle to record append function
-%                          (gpcf_sexp_recappend)
+%                          (repmat(10, 1, NIN))
+%     freq           =
+%     nfreq          =
 %
 %	GPCF = GPCF_SEXP('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
@@ -56,103 +31,97 @@ function gpcf = gpcf_SSsexp(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if nargin < 2
-    error('Not enough arguments')
-end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_SSSEXP';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+    ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('nfreq',[], @isscalar)
+    ip.addParamValue('frequency',[], @isvector)
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    magnSigma2=ip.Results.magnSigma2;
+    lengthScale=ip.Results.lengthScale;
+    nfreq=ip.Results.nfreq;
+    nin=ip.Results.nin;
+    frequency=ip.Results.frequency;
 
-% Initialize the covariance function
-if strcmp(do, 'init')
-    nin = varargin{1};
-    gpcf.type = 'gpcf_SSsexp';
-    gpcf.nin = nin;
-    gpcf.nout = 1;
-
-    % Initialize parameters
-    gpcf.lengthScale= repmat(10, 1, nin);
-    gpcf.magnSigma2 = 0.1;
-    %    gpcf.frequency = randn(nin,100);
-    gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(nin,100) - 1);
-    gpcf.nfreq = size(gpcf.frequency,2);
-
-    % Initialize prior structure
-    gpcf.p=[];
-    gpcf.p.lengthScale=[];
-    gpcf.p.magnSigma2=[];
-
-    % Set the function handles to the nested functions
-    gpcf.fh_pak = @gpcf_SSsexp_pak;
-    gpcf.fh_unpak = @gpcf_SSsexp_unpak;
-    gpcf.fh_e = @gpcf_SSsexp_e;
-    gpcf.fh_ghyper = @gpcf_SSsexp_ghyper;
-    gpcf.fh_gind = @gpcf_SSsexp_gind;
-    gpcf.fh_cov = @gpcf_SSsexp_cov;
-    gpcf.fh_covvec = @gpcf_SSsexp_covvec;
-    gpcf.fh_trcov  = @gpcf_SSsexp_trcov;
-    gpcf.fh_trvar  = @gpcf_SSsexp_trvar;
-    gpcf.fh_recappend = @gpcf_SSsexp_recappend;
-
-    if length(varargin) > 1
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'magnSigma2'
-                gpcf.magnSigma2 = varargin{i+1};
-              case 'lengthScale'
-                gpcf.lengthScale = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
-              case 'frequency'
-                if size(varargin(i+1)) ~= gpcf.nin
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_SSsexp';
+            gpcf.nin = nin;
+            
+            % Initialize parameters
+            if isempty(lengthScale)
+                gpcf.lengthScale = 10;
+            else
+                gpcf.lengthScale = lengthScale;
+            end
+            if isempty(magnSigma2)
+                gpcf.magnSigma2 = 0.1;
+            else
+                gpcf.magnSigma2=magnSigma2;
+            end
+            if isempty(frequency)
+                gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(nin,100) - 1);
+            else
+                if size(frequency) ~= gpcf.nin
                     error('The size of the frequency matrix has to be m x nin!')
                 else
-                    gpcf.frequency = varargin{i+1};
+                    gpcf.frequency = frequency;
                     gpcf.nfreq = size(gpcf.frequency,1);
                 end
-              case 'nfreq'
-                gpcf.nfreq = varargin{i+1};
-                %gpcf.frequency = randn(gpcf.nin,gpcf.nfreq);
-                gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(gpcf.nin,gpcf.nfreq) - 1);
-              otherwise
-                error('Wrong parameter name!')
             end
-        end
-    end
-end
-
-% Set the parameter values of covariance function
-if strcmp(do, 'set')
-    if mod(nargin,2) ~=0
-        error('Wrong number of arguments')
-    end
-    gpcf = varargin{1};
-    % Loop through all the parameter values that are changed
-    for i=2:2:length(varargin)-1
-        switch varargin{i}
-          case 'magnSigma2'
-            gpcf.magnSigma2 = varargin{i+1};
-          case 'lengthScale'
-            gpcf.lengthScale = varargin{i+1};
-          case 'fh_sampling'
-            gpcf.fh_sampling = varargin{i+1};
-          case 'frequency'
-            if size(varargin(i+1)) ~= gpcf.nin
-                error('The size of the frequency matrix has to be m x nin!')
+            if isempty(nfreq)
+                gpcf.nfreq = size(gpcf.frequency,2);
             else
-                gpcf.frequency = varargin{i+1};
-                gpcf.nfreq = size(gpcf.frequency,1);
+                gpcf.nfreq = nfreq;
+                gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(gpcf.nin,gpcf.nfreq) - 1);
             end
-          case 'nfreq'
-            gpcf.nfreq = varargin{i+1};
-            %gpcf.frequency = randn(gpcf.nin,gpcf.nfreq);
-            gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(gpcf.nin,gpcf.nfreq) - 1);
-          otherwise
-            error('Wrong parameter name!')
-        end
+
+            % Initialize prior structure
+            gpcf.p=[];
+            gpcf.p.lengthScale=[];
+            gpcf.p.magnSigma2=[];
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_SSsexp_pak;
+            gpcf.fh_unpak = @gpcf_SSsexp_unpak;
+            gpcf.fh_e = @gpcf_SSsexp_e;
+            gpcf.fh_ghyper = @gpcf_SSsexp_ghyper;
+            gpcf.fh_gind = @gpcf_SSsexp_gind;
+            gpcf.fh_cov = @gpcf_SSsexp_cov;
+            gpcf.fh_covvec = @gpcf_SSsexp_covvec;
+            gpcf.fh_trcov  = @gpcf_SSsexp_trcov;
+            gpcf.fh_trvar  = @gpcf_SSsexp_trvar;
+            gpcf.fh_recappend = @gpcf_SSsexp_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(lengthScale)
+                gpcf.lengthScale = lengthScale;
+            end
+            if ~isempty(magnSigma2)
+                gpcf.magnSigma2=magnSigma2;
+            end
+            if ~isempty(frequency)
+                if size(frequency) ~= gpcf.nin
+                    error('The size of the frequency matrix has to be m x nin!')
+                else
+                    gpcf.frequency = frequency;
+                    gpcf.nfreq = size(gpcf.frequency,1);
+                end
+            end
+            if ~isempty(nfreq)
+                gpcf.nfreq =nfreq;
+                gpcf.frequency = sqrt(2).*erfinv(2.*hammersley(gpcf.nin,gpcf.nfreq) - 1);
+            end
     end
-end
+    
 
     function w = gpcf_SSsexp_pak(gpcf, w, param)
         %GPcf_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.

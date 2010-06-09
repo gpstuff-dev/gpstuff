@@ -397,7 +397,7 @@ function metric = metric_distancematrix(do, varargin)
 %                 s = 1./metric.params(i).^2;
 %                 distc{i} = 0;
 %                 for j = 1:length(components{i})
-%                     distc{i} = distc{i} + gminus(x(:,components{i}(j)),x2(:,components{i}(j))').^2;
+%                     distc{i} = distc{i} + bsxfun(@minus,x(:,components{i}(j)),x2(:,components{i}(j))').^2;
 %                 end
 %                 distc{i} = distc{i}.*s;
 %                 % Accumulate to the total distance
@@ -547,7 +547,7 @@ function metric = metric_distancematrix(do, varargin)
 %             for i=1:m
 %                 s = 1./metric.params(i).^2;
 %                 for j = 1:length(components{i})
-%                     dist = dist + s.*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+%                     dist = dist + s.*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
 %                 end
 %             end
 %         dist = sqrt(dist);
@@ -596,7 +596,7 @@ function metric = metric_distancematrix(do, varargin)
 %         dist = 0;
 %         for i=1:length(components)
 %             for j = 1:length(components{i})
-%                 dist = dist + s(i).*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+%                 dist = dist + s(i).*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
 %             end
 %         end
 %         dist = sqrt(dist);

@@ -32,88 +32,85 @@ function gpcf = gpcf_exp(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_EXP';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('metric',[], @isstruct);
+    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    magnSigma2=ip.Results.magnSigma2;
+    lengthScale=ip.Results.lengthScale;
+    metric=ip.Results.metric;
+    magnSigma2_prior=ip.Results.magnSigma2_prior;
+    lengthScale_prior=ip.Results.lengthScale_prior;
+    
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_exp';
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_exp';
-
-        % Initialize parameters
-        gpcf.lengthScale= 10; 
-        gpcf.magnSigma2 = 0.1;
-        
-        % Initialize prior structure
-        gpcf.p=[];
-        gpcf.p.lengthScale = prior_unif('init');
-        gpcf.p.magnSigma2 = prior_unif('init');
-        
-        % Set the function handles
-        gpcf.fh_pak = @gpcf_exp_pak;
-        gpcf.fh_unpak = @gpcf_exp_unpak;
-        gpcf.fh_e = @gpcf_exp_e;
-        gpcf.fh_ghyper = @gpcf_exp_ghyper;
-        gpcf.fh_ginput = @gpcf_exp_ginput;
-        gpcf.fh_cov = @gpcf_exp_cov;
-        gpcf.fh_trcov  = @gpcf_exp_trcov;
-        gpcf.fh_trvar  = @gpcf_exp_trvar;
-        gpcf.fh_recappend = @gpcf_exp_recappend;
-
-        if nargin > 1
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+            % Initialize parameters
+            if isempty(lengthScale)
+                gpcf.lengthScale = 10;
+            else
+                gpcf.lengthScale=lengthScale;
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'magnSigma2'
-                    gpcf.magnSigma2 = varargin{i+1};
-                  case 'lengthScale'
-                    gpcf.lengthScale = varargin{i+1};
-                  case 'metric'
-                    gpcf.metric = varargin{i+1};
-                    if isfield(gpcf, 'lengthScale')
-                        gpcf = rmfield(gpcf, 'lengthScale');
-                    end
-                  case 'lengthScale_prior'
-                    gpcf.p.lengthScale = varargin{i+1};
-                  case 'magnSigma2_prior'
-                    gpcf.p.magnSigma2 = varargin{i+1};
-                  otherwise
-                    error('Wrong parameter name!')
-                end
+            if isempty(magnSigma2)
+                gpcf.magnSigma2 = 0.1;
+            else
+                gpcf.magnSigma2=magnSigma2;
             end
-        end
-    end
 
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'magnSigma2'
-                gpcf.magnSigma2 = varargin{i+1};
-              case 'lengthScale'
-                gpcf.lengthScale = varargin{i+1};
-              case 'metric'
-                gpcf.metric = varargin{i+1};
+            % Initialize prior structure
+            gpcf.p=[];
+            if isempty(lengthScale_prior)
+                gpcf.p.lengthScale=prior_unif('init');
+            else
+                gpcf.p.lengthScale=lengthScale_prior;
+            end
+            if isempty(magnSigma2_prior)
+                gpcf.p.magnSigma2=prior_unif('init');
+            else
+                gpcf.p.magnSigma2=magnSigma2_prior;
+            end
+
+            %Initialize metric
+            if ~isempty(metric)
+                gpcf.metric = metric;
+                gpcf = rmfield(gpcf, 'lengthScale');
+            end
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_exp_pak;
+            gpcf.fh_unpak = @gpcf_exp_unpak;
+            gpcf.fh_e = @gpcf_exp_e;
+            gpcf.fh_ghyper = @gpcf_exp_ghyper;
+            gpcf.fh_ginput = @gpcf_exp_ginput;
+            gpcf.fh_cov = @gpcf_exp_cov;
+            gpcf.fh_trcov  = @gpcf_exp_trcov;
+            gpcf.fh_trvar  = @gpcf_exp_trvar;
+            gpcf.fh_recappend = @gpcf_exp_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(magnSigma2);gpcf.magnSigma2=magnSigma2;end
+            if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
+            if ~isempty(metric)
+                gpcf.metric=metric;
                 if isfield(gpcf, 'lengthScale')
                     gpcf = rmfield(gpcf, 'lengthScale');
                 end
-              case 'lengthScale_prior'
-                gpcf.p.lengthScale = varargin{i+1};
-              case 'magnSigma2_prior'
-                gpcf.p.magnSigma2 = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
             end
-        end
+            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
+            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
     end
+    
 
     function w = gpcf_exp_pak(gpcf, w)
     %GPCF_EXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
@@ -322,7 +319,7 @@ function gpcf = gpcf_exp(do, varargin)
                         s = 1./gpcf.lengthScale;
                         dist = 0;
                         for i=1:m
-                            dist = dist + (gminus(x(:,i),x(:,i)')).^2;
+                            dist = dist + (bsxfun(@minus,x(:,i),x(:,i)')).^2;
                         end
                         D = Cdm.*s.*sqrt(dist);
                         ii1 = ii1+1;
@@ -333,11 +330,11 @@ function gpcf = gpcf_exp(do, varargin)
                         dist = 0;
                         dist2 = 0;
                         for i=1:m
-                            dist = dist + s(i).*(gminus(x(:,i),x(:,i)')).^2;
+                            dist = dist + s(i).*(bsxfun(@minus,x(:,i),x(:,i)')).^2;
                         end
                         dist = sqrt(dist);
                         for i=1:m                      
-                            D = s(i).*Cdm.*(gminus(x(:,i),x(:,i)')).^2;
+                            D = s(i).*Cdm.*(bsxfun(@minus,x(:,i),x(:,i)')).^2;
                             D(dist~=0) = D(dist~=0)./dist(dist~=0);
                             ii1 = ii1+1;
                             DKff{ii1} = D;
@@ -374,7 +371,7 @@ function gpcf = gpcf_exp(do, varargin)
                         s = 1./gpcf.lengthScale;
                         dist = 0;
                         for i=1:m
-                            dist = dist + (gminus(x(:,i),x2(:,i)')).^2;
+                            dist = dist + (bsxfun(@minus,x(:,i),x2(:,i)')).^2;
                         end
                         DK_l = s.*K.*sqrt(dist);
                         ii1=ii1+1;
@@ -384,11 +381,11 @@ function gpcf = gpcf_exp(do, varargin)
                         s = 1./gpcf.lengthScale.^2;        % set the length
                         dist = 0; 
                         for i=1:m
-                            dist = dist + s(i).*(gminus(x(:,i),x2(:,i)')).^2;
+                            dist = dist + s(i).*(bsxfun(@minus,x(:,i),x2(:,i)')).^2;
                         end
                         dist = sqrt(dist);
                         for i=1:m
-                            D1 = s(i).*K.* gminus(x(:,i),x2(:,i)').^2;
+                            D1 = s(i).*K.* bsxfun(@minus,x(:,i),x2(:,i)').^2;
                             D1(dist~=0) = D1(dist~=0)./dist(dist~=0);
                             ii1=ii1+1;
                             DKff{ii1} = D1;
@@ -495,14 +492,14 @@ function gpcf = gpcf_exp(do, varargin)
                 
                 dist=0;
                 for i2=1:m
-                    dist = dist + s(i2).*(gminus(x(:,i2),x(:,i2)')).^2;
+                    dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x(:,i2)')).^2;
                 end
                 dist = sqrt(dist); 
                 ii1 = 0;
                 for i=1:m
                     for j = 1:n
                         D1 = zeros(n,n);
-                        D1(j,:) = -s(i).*gminus(x(j,i),x(:,i)');
+                        D1(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
                         D1 = D1 + D1';
                         
                         D1(dist~=0) = D1(dist~=0)./dist(dist~=0);
@@ -533,14 +530,14 @@ function gpcf = gpcf_exp(do, varargin)
                 
                 dist=0;
                 for i2=1:m
-                    dist = dist + s(i2).*(gminus(x(:,i2),x2(:,i2)')).^2;
+                    dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x2(:,i2)')).^2;
                 end
                 dist = sqrt(dist); 
                 ii1 = 0;
                 for i=1:m
                     for j = 1:n
                         D1 = zeros(n,n2);
-                        D1(j,:) = -s(i).*gminus(x(j,i),x2(:,i)');
+                        D1(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
                         
                         D1(dist~=0) = D1(dist~=0)./dist(dist~=0);
                         DK = D1.*K;
@@ -594,7 +591,7 @@ function gpcf = gpcf_exp(do, varargin)
                 end
                 dist=zeros(n1,n2);
                 for j=1:m1
-                    dist = dist + s2(j).*(gminus(x1(:,j),x2(:,j)')).^2;
+                    dist = dist + s2(j).*(bsxfun(@minus,x1(:,j),x2(:,j)')).^2;
                 end
                 C = ma2.*exp(-sqrt(dist));
             end

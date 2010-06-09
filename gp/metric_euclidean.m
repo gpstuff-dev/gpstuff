@@ -230,7 +230,7 @@ function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask)
                 s = 1./metric.lengthScales(i).^2;
                 distc{i} = 0;
                 for j = 1:length(components{i})
-                    distc{i} = distc{i} + gminus(x(:,components{i}(j)),x2(:,components{i}(j))').^2;
+                    distc{i} = distc{i} + bsxfun(@minus,x(:,components{i}(j)),x2(:,components{i}(j))').^2;
                 end
                 distc{i} = distc{i}.*s;
                 % Accumulate to the total distance
@@ -298,7 +298,7 @@ function [dist]  = metric_euclidean_distance(metric, x1, x2)
     for i=1:m
         s = 1./metric.lengthScales(i).^2;
         for j = 1:length(components{i})
-            dist = dist + s.*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+            dist = dist + s.*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
         end
     end
     dist = sqrt(dist);
@@ -327,7 +327,7 @@ function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)
     dist = 0;
     for i=1:length(components)
         for j = 1:length(components{i})
-            dist = dist + s(i).*gminus(x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+            dist = dist + s(i).*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
         end
     end
     dist = sqrt(dist);
@@ -337,7 +337,7 @@ function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)
             DK = zeros(n1,n2);                
             for k = 1:length(components)
                 if ismember(i,components{k})
-                    DK(j,:) = DK(j,:)+s(k).*gminus(x1(j,i),x2(:,i)');
+                    DK(j,:) = DK(j,:)+s(k).*bsxfun(@minus,x1(j,i),x2(:,i)');
                 end
             end
             if nargin == 2

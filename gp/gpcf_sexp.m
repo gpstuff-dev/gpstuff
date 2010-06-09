@@ -39,8 +39,8 @@ function gpcf = gpcf_sexp(do, varargin)
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('metric',[], @isstruct);
-    ip.addParamValue('magnSigma2_prior',[], @isstruct);
-    ip.addParamValue('lengthScale_prior',[], @isstruct);
+    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -313,7 +313,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         s = 2./gpcf.lengthScale.^2;
                         dist = 0;
                         for i=1:m
-                            D = gminus(x(:,i),x(:,i)');
+                            D = bsxfun(@minus,x(:,i),x(:,i)');
                             dist = dist + D.^2;
                         end
                         D = Cdm.*s.*dist;
@@ -324,7 +324,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         % In the case ARD is used
                         for i=1:m
                             s = 2./gpcf.lengthScale(i).^2;
-                            dist = gminus(x(:,i),x(:,i)');
+                            dist = bsxfun(@minus,x(:,i),x(:,i)');
                             D = Cdm.*s.*dist.^2;
                             
                             ii1 = ii1+1;
@@ -362,7 +362,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         s = 1./gpcf.lengthScale.^2;
                         dist = 0; dist2 = 0;
                         for i=1:m
-                            dist = dist + (gminus(x(:,i),x2(:,i)')).^2;                        
+                            dist = dist + (bsxfun(@minus,x(:,i),x2(:,i)')).^2;                        
                         end
                         DK_l = 2.*s.*K.*dist;
                         
@@ -372,7 +372,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         % In the case ARD is used
                         for i=1:m
                             s = 1./gpcf.lengthScale(i).^2;        % set the length
-                            dist = gminus(x(:,i),x2(:,i)');
+                            dist = bsxfun(@minus,x(:,i),x2(:,i)');
                             DK_l = 2.*s.*K.*dist.^2;
                             
                             ii1=ii1+1;
@@ -482,7 +482,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK = zeros(size(K));
-                        DK(j,:) = -2.*s(i).*gminus(x(j,i),x(:,i)');
+                        DK(j,:) = -2.*s(i).*bsxfun(@minus,x(j,i),x(:,i)');
                         DK = DK + DK';
                         
                         DK = DK.*K;      % dist2 = dist2 + dist2' - diag(diag(dist2));
@@ -516,7 +516,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK= zeros(size(K));
-                        DK(j,:) = -2.*s(i).*gminus(x(j,i),x2(:,i)');
+                        DK(j,:) = -2.*s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
                         
                         DK = DK.*K;
                         
@@ -565,7 +565,7 @@ function gpcf = gpcf_sexp(do, varargin)
             if ~isempty(gpcf.lengthScale)
                 s2 = 1./gpcf.lengthScale.^2;
                 if m1==1 && m2==1
-                    dd = gminus(x1,x2');
+                    dd = bsxfun(@minus,x1,x2');
                     dist=dd.^2*s2;
                 else
                     % If ARD is not used make s a vector of
@@ -575,7 +575,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     end
                     dist=zeros(n1,n2);
                     for j=1:m1
-                        dd = gminus(x1(:,j),x2(:,j)');
+                        dd = bsxfun(@minus,x1(:,j),x2(:,j)');
                         dist = dist + dd.^2.*s2(:,j);
                     end
                 end

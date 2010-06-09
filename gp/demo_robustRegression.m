@@ -53,7 +53,7 @@
 %    See Vanhatalo et.al. for discussion on the model and methods.
 %
 %    Refernces:
-%     Vanhatalo, J., Jylänki P. and Vehtari, A. (2009). Gaussian
+%     Vanhatalo, J., Jylï¿½nki P. and Vehtari, A. (2009). Gaussian
 %     process regression with Student-t likelihood. Advances in Neural
 %     Information Processing systems
 %
@@ -149,7 +149,7 @@ S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp
 % ========================================
 [n, nin] = size(x);
 gpcf1 = gpcf_sexp('init', 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noiset('init', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
+gpcf2 = gpcf_noiset('init','nin', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
 
 % Free nu
 gpcf2 = gpcf_noiset('set', gpcf2, 'fix_nu', 0);

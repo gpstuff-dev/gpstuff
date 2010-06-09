@@ -11,15 +11,17 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 %        as described by the parameter-value pairs ('FIELD', VALUE) in
 %        the OPTIONS. The fields that can be modified are:
 %
-%             'biasSigma2'        : Magnitude (squared) for exponential 
+%             'biasSigma2'         : Magnitude (squared) for exponential 
 %                                   part. (default 0.1)
-%             'weightSigma2'      : Length scale for each input. This 
+%             'weightSigma2'       : Length scale for each input. This 
 %                                   can be either scalar corresponding 
 %                                   to an isotropic function or vector 
 %                                   defining own length-scale for each 
 %                                   input direction. (default 10).
-%             'biasSigma2_prior'  : prior structure for magnSigma2
-%             'weigthSigma2_prior': prior structure for lengthScale
+%             'biasSigma2_prior'   : prior structure for magnSigma2
+%             'weightSigma2_prior' : prior structure for lengthScale
+%             'selectedVariables'  : vector defining which inputs are 
+%                                    active
 %
 %	See also
 %       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
@@ -31,85 +33,90 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_NEURALNETWORK';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('biasSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('weightSigma2',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('biasSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('weightSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    biasSigma2=ip.Results.biasSigma2;
+    weightSigma2=ip.Results.weightSigma2;
+    biasSigma2_prior=ip.Results.biasSigma2_prior;
+    weightSigma2_prior=ip.Results.weightSigma2_prior;
+    selectedVariables=ip.Results.selectedVariables;
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_neuralnetwork';
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_neuralnetwork';
 
-        % Initialize parameters
-        gpcf.weightSigma2= 10;
-        gpcf.biasSigma2 = 0.1;
-
-        % Initialize prior structure
-        gpcf.p=[];
-        gpcf.p.weightSigma2=prior_unif('init');
-        gpcf.p.biasSigma2=prior_unif('init');
-
-        % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_neuralnetwork_pak;
-        gpcf.fh_unpak = @gpcf_neuralnetwork_unpak;
-        gpcf.fh_e = @gpcf_neuralnetwork_e;
-        gpcf.fh_ghyper = @gpcf_neuralnetwork_ghyper;
-        gpcf.fh_ginput = @gpcf_neuralnetwork_ginput;
-        gpcf.fh_cov = @gpcf_neuralnetwork_cov;
-        gpcf.fh_trcov  = @gpcf_neuralnetwork_trcov;
-        gpcf.fh_trvar  = @gpcf_neuralnetwork_trvar;
-        gpcf.fh_recappend = @gpcf_neuralnetwork_recappend;
-
-        if nargin > 1
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+            % Initialize parameters
+            if isempty(weightSigma2)
+                gpcf.weightSigma2 = 10;
+            else
+                gpcf.weightSigma2=weightSigma2;
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'biasSigma2'
-                    gpcf.biasSigma2 = varargin{i+1};
-                  case 'weightSigma2'
-                    gpcf.weightSigma2 = varargin{i+1};
-                  case 'biasSigma2_prior'
-                    gpcf.p.biasSigma2 = varargin{i+1};
-                  case 'weightSigma2_prior'
-                    gpcf.p.weightSigma2 = varargin{i+1};
-                  case 'selectedVariables'
-                    gpcf.selectedVariables = varargin{i+1};
-                    if ~sum(strcmp(varargin, 'weightSigma2'))
-                        gpcf.weightSigma2= repmat(10, 1, length(gpcf.selectedVariables));
-                    end
-                  otherwise
-                    error('Wrong parameter name!')
+            if isempty(biasSigma2)
+                gpcf.biasSigma2 = 0.1;
+            else
+                gpcf.biasSigma2=biasSigma2;
+            end
+            if ~isempty(selectedVariables)
+                gpcf.selectedVariables = selectedVariables;
+                if ~sum(strcmp(varargin, 'weightSigma2'))
+                    gpcf.weightSigma2= repmat(10, 1, length(gpcf.selectedVariables));
                 end
             end
-        end
+
+            % Initialize prior structure
+            gpcf.p=[];
+            if isempty(biasSigma2_prior)
+                gpcf.p.biasSigma2=prior_unif('init');
+            else
+                gpcf.p.biasSigma2=biasSigma2_prior;
+            end
+            if isempty(weightSigma2_prior)
+                gpcf.p.weightSigma2=prior_unif('init');
+            else
+                gpcf.p.weightSigma2=weightSigma2_prior;
+            end
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_neuralnetwork_pak;
+            gpcf.fh_unpak = @gpcf_neuralnetwork_unpak;
+            gpcf.fh_e = @gpcf_neuralnetwork_e;
+            gpcf.fh_ghyper = @gpcf_neuralnetwork_ghyper;
+            gpcf.fh_ginput = @gpcf_neuralnetwork_ginput;
+            gpcf.fh_cov = @gpcf_neuralnetwork_cov;
+            gpcf.fh_trcov  = @gpcf_neuralnetwork_trcov;
+            gpcf.fh_trvar  = @gpcf_neuralnetwork_trvar;
+            gpcf.fh_recappend = @gpcf_neuralnetwork_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(weightSigma2);
+                gpcf.weightSigma2=weightSigma2;
+            end
+            if ~isempty(biasSigma2);
+                gpcf.biasSigma2=biasSigma2;
+            end
+            if ~isempty(biasSigma2_prior);
+                gpcf.p.biasSigma2=biasSigma2_prior;
+            end
+            if ~isempty(weightSigma2_prior);
+                gpcf.p.weightSigma2=weightSigma2_prior;
+            end
+            if ~isempty(selectedVariables)
+                gpcf.selectedVariables=selectedVariables;
+            end
     end
 
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'biasSigma2'
-                gpcf.biasSigma2 = varargin{i+1};
-              case 'weightSigma2'
-                gpcf.weightSigma2 = varargin{i+1};
-              case 'biasSigma2_prior'
-                gpcf.p.biasSigma2 = varargin{i+1};
-              case 'weightSigma2_prior'
-                gpcf.p.weightSigma2 = varargin{i+1};
-              case 'selectedVariables'
-              	gpcf.selectedVariables = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
-            end
-        end
-    end
 
     function w = gpcf_neuralnetwork_pak(gpcf, w)
     %GPCF_NEURALNETWORK_PAK	 Combine GP covariance function hyper-parameters into one vector.
@@ -122,8 +129,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %
     %       w = [ log(gpcf.biasSigma2)
     %             (hyperparameters of gpcf.biasSigma2) 
-    %             log(gpcf.weigthSigma2(:))
-    %             (hyperparameters of gpcf.weigthSigma2)]'
+    %             log(gpcf.weightSigma2(:))
+    %             (hyperparameters of gpcf.weightSigma2)]'
     %	  
     %
     %	See also

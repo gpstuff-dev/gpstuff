@@ -59,8 +59,8 @@ function gpcf = gpcf_ppcs1(do, varargin)
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('l_nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
     ip.addParamValue('metric',[], @isstruct);
-    ip.addParamValue('magnSigma2_prior',[], @isstruct);
-    ip.addParamValue('lengthScale_prior',[], @isstruct);
+    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -555,7 +555,7 @@ function gpcf = gpcf_ppcs1(do, varargin)
                         % Calculate the sparse distance (lower triangle) matrix
                         dist1 = 0;
                         for i=1:m
-                            dist1 = dist1 + s2.*(gminus(x(:,i),x2(:,i)')).^2;
+                            dist1 = dist1 + s2.*(bsxfun(@minus,x(:,i),x2(:,i)')).^2;
                         end
                         d1 = sqrt(dist1); 
                         cs1 = max(1-d1,0);
@@ -578,8 +578,8 @@ function gpcf = gpcf_ppcs1(do, varargin)
                         dist1 = 0; 
                         d_l1 = [];
                         for i = 1:m
-                            dist1 = dist1 + s2(i).*gminus(x(:,i),x2(:,i)').^2;
-                            d_l1{i} = s2(i).*(gminus(x(:,i),x2(:,i)')).^2;
+                            dist1 = dist1 + s2(i).*bsxfun(@minus,x(:,i),x2(:,i)').^2;
+                            d_l1{i} = s2(i).*(bsxfun(@minus,x(:,i),x2(:,i)')).^2;
                         end
                         d1 = sqrt(dist1); 
                         cs1 = max(1-d1,0);
@@ -866,7 +866,7 @@ function gpcf = gpcf_ppcs1(do, varargin)
                 % and the distance matrix for each component
                 dist1 = 0; 
                 for i = 1:m
-                    dist1 = dist1 + s2(i).*gminus(x(:,i),x2(:,i)').^2;
+                    dist1 = dist1 + s2(i).*bsxfun(@minus,x(:,i),x2(:,i)').^2;
                 end
                 d = sqrt(dist1); 
                 cs1 = max(1-d,0);

@@ -3,17 +3,17 @@ function gpcf = gpcf_noiset(do, varargin)
 %               for Gaussian Process.
 %
 %	Description
-%        GPCF = GPCF_NOISET('init', OPTIONS) Create and initialize
+%        GPCF = GPCF_NOISET('init', 'nin', NIN, OPTIONS) Create and initialize
 %        Student't noise covariance function , with a scale mixture
-%        representation, for Gaussian process. OPTIONS is optional
-%        parameter-value pair used as described below by
+%        representation, for Gaussian process with input dimension NIN.
+%        OPTIONS is optional parameter-value pair used as described below by
 %        GPCF_NOISET('set',...
 %
 %        GPCF = GPCF_NOISET('SET', GPCF, OPTIONS) Set the fields of GPCF
 %        as described by the parameter-value pairs ('FIELD', VALUE) in
 %        the OPTIONS. The fields that can be modified are:
 %
-%             'noiseSigmas2'     : set the noiseSigmas2
+%             'noiseSigmas2'     : set the noiseSigma2
 %             'U'                : set the vector U
 %             'tau2'             : set tau^2
 %             'alpha'            : set alpha
@@ -43,80 +43,80 @@ function gpcf = gpcf_noiset(do, varargin)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-if nargin < 2
-    error('Not enough arguments')
-end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_NOISET';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+    ip.addParamValue('noiseSigmas2',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('U',[], @isvector);
+    ip.addParamValue('tau2',[], @isscalar);
+    ip.addParamValue('alpha',[], @isscalar);
+    ip.addParamValue('fix_nu',[], @(x) isscalar(x) && (x==0||x==1));
+    ip.addParamValue('nu',[], @isscalar);
+    ip.addParamValue('nu_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('censored',[], @(x) isstruct);
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    noiseSigmas2=ip.Results.noiseSigmas2;
+    U=ip.Results.U;
+    tau2=ip.Results.tau2;
+    alpha=ip.Results.alpha;
+    fix_nu=ip.Results.fix_nu;
+    nu=ip.Results.nu;
+    nu_prior=ip.Results.nu_prior;
+    nin=ip.Results.nin;
+    censored=ip.Results.censored;
 
-% Initialize the covariance function
-if strcmp(do, 'init')
-   if isempty(varargin{2})
-        error('Not enough arguments. NDATA is missing')
-    end
-    
-    gpcf.type = 'gpcf_noiset';
-    gpcf.ndata = varargin{1};
-    gpcf.nout = 1;
-    
-    % Initialize parameters
-    gpcf.noiseSigmas2 = 0.1^2.*ones(varargin{1},1);
-    gpcf.U = ones(varargin{1},1);
-    gpcf.tau2 = 0.1;
-    gpcf.alpha = 0.5;
-    gpcf.nu = 4;
-    gpcf.r = zeros(varargin{1},1);
-    gpcf.fix_nu = 1;
-    
-    % Initialize prior structure
-    gpcf.p=[];
-    gpcf.p.noiseSigmas2=[];
-    gpcf.p.nu = prior_logunif('init');
-    
-    % Set the function handles
-    gpcf.fh_pak = @gpcf_noiset_pak;
-    gpcf.fh_unpak = @gpcf_noiset_unpak;
-    gpcf.fh_e = @gpcf_noiset_e;
-    gpcf.fh_ghyper = @gpcf_noiset_ghyper;
-    gpcf.fh_cov = @gpcf_noiset_cov;
-    gpcf.fh_trcov  = @gpcf_noiset_trcov;
-    gpcf.fh_trvar  = @gpcf_noiset_trvar;
-    gpcf.fh_gibbs = @gpcf_noiset_gibbs;
-    %    gpcf.sampling_opt = 'noiset_opt';
-    gpcf.fh_recappend = @gpcf_noiset_recappend;
-    
-    if length(varargin) > 1
-        if mod(nargin,2) ~= 0
-            error('Wrong number of arguments')
-        end
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'noiseSigmas2'
-                if size(varargin{i+1},1) == gpcf.ndata & size(varargin{i+1},2) == 1
-                    gpcf.noiseSigmas2 = varargin{i+1};
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_noiset';            
+            
+            % Initialize parameters
+            gpcf.ndata = nin;
+            gpcf.r = zeros(nin,1);
+            if isempty(U)
+                gpcf.U = ones(nin,1);
+            else
+                if size(U,1) == gpcf.ndata
+                    gpcf.U = U;
                 else
-                    error('the size of has to be NDATAx1')
+                    error('the size of U has to be NINx1')
                 end
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
-              case 'U'
-                if size(varargin{i+1},1) == gpcf.ndata
-                    gpcf.U = varargin{i+1};
-                else
-                    error('the size of U is wrong, it has to be NDATAx1')
+            end
+            if isempty(noiseSigmas2)
+                gpcf.noiseSigmass2 = 0.1^2.*ones(nin,1);
+            else
+                if (size(noiseSigmas2,1) == gpcf.ndata && size(noiseSigmas2,2) == 1)
+                        gpcf.noiseSigmas2 = noiseSigmas2;
+                    else
+                        error('the size of noiseSigmas2 has to be NINx1')
                 end
-              case 'tau2'
-                gpcf.tau2 = varargin{i+1};
-              case 'alpha'
-                gpcf.alpha = varargin{i+1};
-              case 'nu'
-                gpcf.nu = varargin{i+1};
-              case 'fix_nu'
-                gpcf.fix_nu = varargin{i+1};
-              case 'nu_prior'
-                gpcf.p.nu = varargin{i+1};
-              case 'censored'
-                gpcf.censored = varargin{i+1}{1};
-                yy = varargin{i+1}{2};
+            end
+            if isempty(tau2)
+                gpcf.tau2 = 0.1;
+            else
+                gpcf.tau2 = tau2;
+            end
+            if isempty(alpha)
+                gpcf.alpha = 0.5;
+            else
+                gpcf.alpha = alpha;
+            end
+            if isempty(nu)
+                gpcf.nu = 4;
+            else
+                gpcf.nu = nu;
+            end
+            if isempty(fix_nu)
+                gpcf.fix_nu = 1;
+            else
+                gpcf.fix_nu=fix_nu;
+            end
+            if ~isempty(censored)
+                gpcf.censored = censored{1};
+                yy = censored{2};
                 if gpcf.censored(1) >= gpcf.censored(2)
                     error('gpcf_noiset -> if censored model is used the limits have to be given in increasing order.')
                 end
@@ -131,69 +131,80 @@ if strcmp(do, 'init')
                 end                                
                 gpcf.cy = yy([imis1 ; imis2])';
                 gpcf.imis = [imis1 ; imis2];
-              otherwise
-                error('Wrong parameter name!')
             end
-        end
-    end
-end
 
-% Set the parameter values of covariance function
-if strcmp(do, 'set')
-    if mod(nargin,2) ~=0
-        error('Wrong number of arguments')
-    end
-    gpcf = varargin{1};
-    % Loop through all the parameter values that are changed
-    for i=2:2:length(varargin)-1
-        switch varargin{i}
-          case 'noiseSigmas2'
-            if size(varargin{i+1},1) == gpcf.ndata & size(varargin{i+1},2) == 1
-                gpcf.noiseSigmas2 = varargin{i+1};
+            % Initialize prior structure
+            gpcf.p=[];
+            gpcf.p.noiseSigmas2=[];
+            if isempty(nu_prior)
+                gpcf.p.nu=prior_logunif('init');
             else
-                error('the size of has to be NDATAx1')
+                gpcf.p.nu=nu_prior;
             end
-          case 'fh_sampling'
-            gpcf.fh_sampling = varargin{i+1};
-          case 'U'
-            if size(varargin{i+1},1) == gpcf.ndata
-                gpcf.U = varargin{i+1};
-            else
-                error('the size of U is wrong, it has to be NDATAx1')
-            end
-          case 'tau2'
-            gpcf.tau2 = varargin{i+1};
-          case 'alpha'
-            gpcf.alpha = varargin{i+1};
-          case 'nu'
-            gpcf.nu = varargin{i+1};
-          case 'fix_nu'
-            gpcf.fix_nu = varargin{i+1};
-          case 'nu_prior'
-            gpcf.p.nu = varargin{i+1};
-          case 'censored'
-            gpcf.censored = varargin{i+1}{1};
-            yy = varargin{i+1}{2};
-            if gpcf.censored(1) >= gpcf.censored(2)
-                error('gpcf_noiset -> if censored model is used the limits have to be given in increasing order.')
-            end
-            
-            imis1 = [];
-            imis2 = [];
-            if gpcf.censored(1) > -inf
-                imis1 = find(yy<=gpcf.censored(1));
-            end            
-            if gpcf.censored(1) < inf
-                imis2 = find(yy>=gpcf.censored(2));
-            end            
-            gpcf.cy = yy([imis1 ; imis2])';
-            gpcf.imis = [imis1 ; imis2];
-          otherwise
-            error('Wrong parameter name!')
-        end    
-    end
-end
 
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_noiset_pak;
+            gpcf.fh_unpak = @gpcf_noiset_unpak;
+            gpcf.fh_e = @gpcf_noiset_e;
+            gpcf.fh_ghyper = @gpcf_noiset_ghyper;
+            gpcf.fh_cov = @gpcf_noiset_cov;
+            gpcf.fh_trcov  = @gpcf_noiset_trcov;
+            gpcf.fh_trvar  = @gpcf_noiset_trvar;
+            gpcf.fh_gibbs = @gpcf_noiset_gibbs;
+            % gpcf.sampling_opt = 'noiset_opt';
+            gpcf.fh_recappend = @gpcf_noiset_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(U)
+                if size(U,1) == gpcf.ndata
+                    gpcf.U = U;
+                else
+                    error('the size of U has to be NINx1')
+                end
+            end
+            if ~isempty(noiseSigmas2)
+                if (size(noiseSigmas2,1) == gpcf.ndata && size(noiseSigmas2,2) == 1)
+                        gpcf.noiseSigmas2 = noiseSigma2;
+                    else
+                        error('the size of noiseSigmas2 has to be NINx1')
+                end
+            end
+            if ~isempty(tau2)
+                gpcf.tau2 = tau2;
+            end
+            if ~isempty(alpha)
+                gpcf.alpha = alpha;
+            end
+            if ~isempty(nu)
+                gpcf.nu = nu;
+            end
+            if ~isempty(fix_nu)
+                gpcf.fix_nu=fix_nu;
+            end
+            if ~isempty(censored)
+                gpcf.censored = censored{1};
+                yy = censored{2};
+                if gpcf.censored(1) >= gpcf.censored(2)
+                    error('gpcf_noiset -> if censored model is used the limits have to be given in increasing order.')
+                end
+                
+                imis1 = [];
+                imis2 = [];
+                if gpcf.censored(1) > -inf
+                    imis1 = find(yy<=gpcf.censored(1));
+                end            
+                if gpcf.censored(1) < inf
+                    imis2 = find(yy>=gpcf.censored(2));
+                end                                
+                gpcf.cy = yy([imis1 ; imis2])';
+                gpcf.imis = [imis1 ; imis2];
+            end
+            if ~isempty(nu_prior)
+                gpcf.p.nu=nu_prior;
+            end
+    end
 
 
     function w = gpcf_noiset_pak(gpcf)
@@ -343,63 +354,63 @@ end
     end
 
     function reccf = gpcf_noiset_recappend(reccf, ri, gpcf)
-    % RECAPPEND - Record append
-    %
-    %          Description
-    %          RECCF = GPCF_NOISET_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
-    %          current MCMC samples of the hyperparameters. Returns
-    %          RECCF which contains all the old samples and the
-    %          current samples from GPCF .
-    %
-    %          See also
-    %          GP_MC and GP_MC -> RECAPPEND
-
+        % RECAPPEND - Record append
+        %
+        %          Description
+        %          RECCF = GPCF_NOISET_RECAPPEND(RECCF, RI, GPCF)
+        %          takes a likelihood record structure RECCF, record
+        %          index RI and likelihood structure GPCF with the
+        %          current MCMC samples of the hyperparameters. Returns
+        %          RECCF which contains all the old samples and the
+        %          current samples from GPCF .
+        %
+        %          See also
+        %          GP_MC and GP_MC -> RECAPPEND
         
-    % Initialize record
-    if nargin == 2
-        reccf.type = 'gpcf_noiset';
-        gpcf.ndata = [];
         
-        % Initialize parameters
-        reccf.noiseSigmas2 = []; 
+        % Initialize record
+        if nargin == 2
+            reccf.type = 'gpcf_noiset';
+            gpcf.ndata = [];
+            
+            % Initialize parameters
+            reccf.noiseSigmas2 = [];
+            
+            % Set the function handles
+            reccf.fh_pak = @gpcf_noiset_pak;
+            reccf.fh_unpak = @gpcf_noiset_unpak;
+            reccf.fh_e = @gpcf_noiset_e;
+            reccf.fh_g = @gpcf_noiset_g;
+            reccf.fh_cov = @gpcf_noiset_cov;
+            reccf.fh_trcov  = @gpcf_noiset_trcov;
+            reccf.fh_trvar  = @gpcf_noiset_trvar;
+            reccf.fh_gibbs = @gpcf_noiset_gibbs;
+            reccf.fh_recappend = @gpcf_noiset_recappend;
+            return
+        end
         
-        % Set the function handles
-        reccf.fh_pak = @gpcf_noiset_pak;
-        reccf.fh_unpak = @gpcf_noiset_unpak;
-        reccf.fh_e = @gpcf_noiset_e;
-        reccf.fh_g = @gpcf_noiset_g;
-        reccf.fh_cov = @gpcf_noiset_cov;
-        reccf.fh_trcov  = @gpcf_noiset_trcov;
-        reccf.fh_trvar  = @gpcf_noiset_trvar;
-        reccf.fh_gibbs = @gpcf_noiset_gibbs;
-        reccf.fh_recappend = @gpcf_noiset_recappend;
-        return
+        reccf.ndata = gpcf.ndata;
+        gpp = gpcf.p;
+        
+        % record noiseSigma
+        if ~isempty(gpcf.noiseSigmas2)
+            reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
+        elseif ri==1
+            reccf.noiseSigmas2=[];
+        end
+        if ~isempty(gpcf.nu)
+            reccf.nu(ri,:)=gpcf.nu;
+            reccf.U(ri,:) = gpcf.U;
+            reccf.tau2(ri,:) = gpcf.tau2;
+            reccf.alpha(ri,:) = gpcf.alpha;
+            reccf.r(ri,:) = gpcf.r;
+        elseif ri==1
+            reccf.noiseSigmas2=[];
+        end
+        if isfield(gpcf, 'censored')
+            reccf.cy(ri,:) = gpcf.cy';
+        end
+        
     end
-
-    reccf.ndata = gpcf.ndata;
-    gpp = gpcf.p;
-
-    % record noiseSigma
-    if ~isempty(gpcf.noiseSigmas2)
-        reccf.noiseSigmas2(ri,:)=gpcf.noiseSigmas2;
-    elseif ri==1
-        reccf.noiseSigmas2=[];
-    end
-    if ~isempty(gpcf.nu)
-        reccf.nu(ri,:)=gpcf.nu;
-        reccf.U(ri,:) = gpcf.U;
-        reccf.tau2(ri,:) = gpcf.tau2;
-        reccf.alpha(ri,:) = gpcf.alpha;
-        reccf.r(ri,:) = gpcf.r;
-    elseif ri==1
-        reccf.noiseSigmas2=[];
-    end
-    if isfield(gpcf, 'censored')
-        reccf.cy(ri,:) = gpcf.cy';
-    end
-
-end
 end
 

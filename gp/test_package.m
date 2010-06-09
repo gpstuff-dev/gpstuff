@@ -1,5 +1,5 @@
 % TODO!
-% - tulosten oikeellisuuden tarkistus (nyt tarkistetaan vain, että funktioissa ei bugeja) 
+% - tulosten oikeellisuuden tarkistus (nyt tarkistetaan vain, ettï¿½ funktioissa ei bugeja) 
 % - metriikat
 % - IA:n testaus regressiossa ja muilla likelihoodeilla
 
@@ -7,9 +7,7 @@
 warnings = '';
 numwarn = 0;
 
-% =========================== 
-% Regression models
-% ===========================
+%% Regression models
 
 S = which('test_package');
 L = strrep(S,'test_package.m','demos/dat.1');
@@ -27,7 +25,7 @@ fprintf(' \n ================================= \n \n Checking the covariance fun
 
 covfunc = {'gpcf_sexp' 'gpcf_exp' 'gpcf_matern32' 'gpcf_matern52' ...
            'gpcf_ppcs0' 'gpcf_ppcs1' 'gpcf_ppcs2' 'gpcf_ppcs3' 'gpcf_neuralnetwork'...
-           'gpcf_dotproduct' 'gpcf_prod'};
+           'gpcf_prod'};
 
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 pl = prior_logunif('init');
@@ -43,15 +41,9 @@ for i = 1:length(covfunc)
         pl = prior_logunif('init');
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', pl);
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'biasSigma2_prior', pl);
-      case 'gpcf_dotproduct'
-        gpcf1 = feval(covfunc{i}, 'init', nin);
 
-        % Set prior
-        pl = prior_logunif('init');
-        gpcf1 = gpcf_dotproduct('set', gpcf1, 'coeffSigma2_prior', pl);
-        gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl);
       case 'gpcf_prod'
-        gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.5);
+        gpcf3 = gpcf_ppcs2('init','nin', nin, 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.5);
         gpcf4 = gpcf_exp('init', 'lengthScale', 1+0.01*randn(1,nin), 'magnSigma2', 0.2^2);
 
         % Set prior
@@ -64,7 +56,7 @@ for i = 1:length(covfunc)
         gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
       otherwise
         if ~isempty(strfind(covfunc{i}, 'ppcs'))
-            gpcf1 = feval(covfunc{i}, 'init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+            gpcf1 = feval(covfunc{i}, 'init', 'nin', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
         else
             gpcf1 = feval(covfunc{i}, 'init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
         end
@@ -77,7 +69,7 @@ for i = 1:length(covfunc)
            
     gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001);
     
-    w=gp_pak(gp);  % pack the hyperparameters into one vector
+    w=gp_pak(gp);           % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
     fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
     
@@ -94,7 +86,7 @@ for i = 1:length(covfunc)
     gp=gp_unpak(gp,w);
 
     % --- MCMC approach ---
-    opt=gp_mcopt;
+    clear('opt')
     opt.nsamples= 30;
     opt.repeat=2;
     opt.hmc_opt = hmc2_opt;
@@ -106,7 +98,7 @@ for i = 1:length(covfunc)
     hmc2('state', sum(100*clock));
     
     % Do the sampling (this takes approximately 5-10 minutes)    
-    [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+    [rfull,g] = gp_mc(gp, x, y, opt);
 
     % After sampling we delete the burn-in and thin the sample chain
     rfull = thin(rfull, 10, 2);
@@ -207,9 +199,7 @@ w=gp_pak(gp);
 delta = gradcheck(w, @gp_e, @gp_g, gp, x, y);
 
 
-%----------------------------
-% check sparse approximations
-%----------------------------
+%% check sparse approximations
 
 fprintf(' \n ================================= \n \n Checking the sparse approximations \n \n ================================= \n ')
 
@@ -217,7 +207,7 @@ sparse = {'FIC' 'PIC' 'CS+FIC'};
 
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
-gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
 pl = prior_logunif('init');
@@ -271,12 +261,12 @@ for i = 1:length(sparse)
     opt.display = 1;
     
     % do the optimization
-    w=scg2(fe, w, opt, fg, gp, x, y, param);
+    w=scg2(fe, w, opt, fg, gp, x, y);%, param);
     
     % Set the optimized hyperparameter values back to the gp structure
     gp=gp_unpak(gp,w, param);
 
-    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, param);
+    delta = gradcheck(w, @gp_e, @gp_g, gp, x, y);%, param);
     
     % check that gradients are OK
     if delta>0.01
@@ -285,7 +275,7 @@ for i = 1:length(sparse)
     end
 
     % --- MCMC approach ---
-    opt=gp_mcopt;
+    clear('opt')
     opt.nsamples= 30;
     opt.repeat=2;
     opt.hmc_opt = hmc2_opt;
@@ -297,7 +287,7 @@ for i = 1:length(sparse)
     hmc2('state', sum(100*clock));
     
     % Do the sampling (this takes approximately 5-10 minutes)    
-    [rfull,g,rstate1] = gp_mc(opt, gp, x, y);
+    [rfull,g] = gp_mc(gp, x, y,opt);
 
     % After sampling we delete the burn-in and thin the sample chain
     switch sparse{i}
@@ -330,7 +320,7 @@ fprintf(' \n ================================= \n \n Checking the additive model
 
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
-gpcf3 = gpcf_ppcs2('init', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Set prior
 pl = prior_logunif('init');
@@ -526,10 +516,8 @@ for i=1:length(models)
     end    
 end
 
-
-% =========================== 
-% check metrics
-% ===========================
+ 
+%% check metrics
 
 
 S = which('test_package');
@@ -703,11 +691,9 @@ for i = 1:length(priorfunc)
     rfull = thin(rfull, 5, 2);            
 end
 
-% ==========================================
-% ==========================================
-% Other models than Gaussian regression
-% ==========================================
-% ==========================================
+
+%% Other models than Gaussian regression
+
 
 % =========================== 
 % Probit model 

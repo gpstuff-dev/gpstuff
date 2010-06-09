@@ -21,85 +21,76 @@ function gpcf = gpcf_linear(do, varargin)
 %       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihimäki
+% Copyright (c) 2008-2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_LINEAR';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('coeffSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('coeffSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    coeffSigma2=ip.Results.coeffSigma2;
+    coeffSigma2_prior=ip.Results.coeffSigma2_prior;
+    selectedVariables=ip.Results.selectedVariables;
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_linear';
-        
-        % Initialize parameters
-        gpcf.coeffSigma2= 10;
-        
-        % Initialize prior structure
-        gpcf.p=[];
-        gpcf.p.coeffSigma2=prior_unif('init');
-        
-        % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_linear_pak;
-        gpcf.fh_unpak = @gpcf_linear_unpak;
-        gpcf.fh_e = @gpcf_linear_e;
-        gpcf.fh_ghyper = @gpcf_linear_ghyper;
-        gpcf.fh_ginput = @gpcf_linear_ginput;
-        gpcf.fh_cov = @gpcf_linear_cov;
-        gpcf.fh_trcov  = @gpcf_linear_trcov;
-        gpcf.fh_trvar  = @gpcf_linear_trvar;
-        gpcf.fh_recappend = @gpcf_linear_recappend;
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_linear';
 
-        if length(varargin) > 0
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+            % Initialize parameters
+            if isempty(coeffSigma2)
+                gpcf.coeffSigma2 = 10;
+            else
+                gpcf.coeffSigma2 = coeffSigma2;
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'coeffSigma2'
-                    gpcf.coeffSigma2 = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
-                  case 'coeffSigma2_prior'
-                    gpcf.p.coeffSigma2 = varargin{i+1};
-                  case 'selectedVariables'
-                    gpcf.selectedVariables = varargin{i+1};
-                    if ~sum(strcmp(varargin, 'coeffSigma2'))
-                        gpcf.coeffSigma2= repmat(10, 1, length(gpcf.selectedVariables));
-                    end
-                  otherwise
-                    error('Wrong parameter name!')
+            if ~isempty(selectedVariables)
+                gpcf.selectedVariables = selectedVariables;
+                if ~sum(strcmp(varargin, 'coeffSigma2'))
+                    gpcf.coeffSigma2 = repmat(10, 1, length(gpcf.selectedVariables));
                 end
             end
-        end
-    end
 
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'coeffSigma2'
-                gpcf.coeffSigma2 = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
-              case 'coeffSigma2_prior'
-                gpcf.p.coeffSigma2 = varargin{i+1};
-              case 'selectedVariables'
-              	gpcf.selectedVariables = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
+            % Initialize prior structure
+            gpcf.p=[];
+            if isempty(coeffSigma2_prior)
+                gpcf.p.coeffSigma2=prior_unif('init');
+            else
+                gpcf.p.coeffSigma2=coeffSigma2_prior;
             end
-        end
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_linear_pak;
+            gpcf.fh_unpak = @gpcf_linear_unpak;
+            gpcf.fh_e = @gpcf_linear_e;
+            gpcf.fh_ghyper = @gpcf_linear_ghyper;
+            gpcf.fh_ginput = @gpcf_linear_ginput;
+            gpcf.fh_cov = @gpcf_linear_cov;
+            gpcf.fh_trcov  = @gpcf_linear_trcov;
+            gpcf.fh_trvar  = @gpcf_linear_trvar;
+            gpcf.fh_recappend = @gpcf_linear_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(coeffSigma2);
+                gpcf.coeffSigma2=coeffSigma2;
+            end
+            if ~isempty(selectedVariables)
+                gpcf.selectedVariables=selectedVariables;
+            end
+            if ~isempty(coeffSigma2_prior);
+                gpcf.p.coeffSigma2=coeffSigma2_prior;
+            end
     end
+    
 
     function w = gpcf_linear_pak(gpcf, w)
     %GPCF_LINEAR_PAK	 Combine GP covariance function hyper-parameters into one vector.

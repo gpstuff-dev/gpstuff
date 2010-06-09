@@ -25,71 +25,57 @@ function gpcf = gpcf_constant(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_CONSTANT';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('constSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('constSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    constSigma2=ip.Results.constSigma2;
+    constSigma2_prior=ip.Results.constSigma2_prior;
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_constant';
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_constant';
 
-        % Initialize parameters
-        gpcf.constSigma2 = 0.1;
-
-        % Initialize prior structure
-        gpcf.p=[];
-        gpcf.p.constSigma2=prior_unif('init');
-
-        % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_constant_pak;
-        gpcf.fh_unpak = @gpcf_constant_unpak;
-        gpcf.fh_e = @gpcf_constant_e;
-        gpcf.fh_ghyper = @gpcf_constant_ghyper;
-        gpcf.fh_ginput = @gpcf_constant_ginput;
-        gpcf.fh_cov = @gpcf_constant_cov;
-        gpcf.fh_trcov  = @gpcf_constant_trcov;
-        gpcf.fh_trvar  = @gpcf_constant_trvar;
-        gpcf.fh_recappend = @gpcf_constant_recappend;
-
-        if nargin > 1
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+            % Initialize parameters
+            if isempty(constSigma2)
+                gpcf.constSigma2 = 0.1;
+            else
+                gpcf.constSigma2 = constSigma2;
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'constSigma2'
-                    gpcf.constSigma2 = varargin{i+1};
-                  case 'fh_sampling'
-                    gpcf.fh_sampling = varargin{i+1};
-                  case 'constSigma2_prior'
-                    gpcf.p.constSigma2 = varargin{i+1};
-                  otherwise
-                    error('Wrong parameter name!')
-                end
-            end
-        end
-    end
 
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'constSigma2'
-                gpcf.constSigma2 = varargin{i+1};
-              case 'fh_sampling'
-                gpcf.fh_sampling = varargin{i+1};
-              case 'constSigma2_prior'
-                gpcf.p.constSigma2 = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
+            % Initialize prior structure
+            gpcf.p=[];
+            if isempty(constSigma2_prior)
+                gpcf.p.constSigma2=prior_unif('init');
+            else
+                gpcf.p.constSigma2=constSigma2_prior;
             end
-        end
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_constant_pak;
+            gpcf.fh_unpak = @gpcf_constant_unpak;
+            gpcf.fh_e = @gpcf_constant_e;
+            gpcf.fh_ghyper = @gpcf_constant_ghyper;
+            gpcf.fh_ginput = @gpcf_constant_ginput;
+            gpcf.fh_cov = @gpcf_constant_cov;
+            gpcf.fh_trcov  = @gpcf_constant_trcov;
+            gpcf.fh_trvar  = @gpcf_constant_trvar;
+            gpcf.fh_recappend = @gpcf_constant_recappend;
+            
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(constSigma2);
+                gpcf.constSigma2=constSigma2;
+            end
+            if ~isempty(constSigma2_prior);
+                gpcf.p.constSigma2=constSigma2_prior;
+            end
     end
 
     function w = gpcf_constant_pak(gpcf, w)

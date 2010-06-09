@@ -19,12 +19,12 @@ function gpcf = gpcf_rq(do, varargin)
 %                                   to an isotropic function or vector 
 %                                   defining own length-scale for each 
 %                                   input direction. (default 10).
-%             'alpha'              : set the alpha
+%             'alpha'             : set the alpha
 %             'magnSigma2_prior'  : prior structure for magnSigma2
 %             'lengthScale_prior' : prior structure for lengthScale
 %             'metric'            : metric structure into the 
 %                                   covariance function
-%             'alpha_prior'        ; set the prior structure for alpha
+%             'alpha_prior'       : set the prior structure for alpha
 %
 %	See also
 %       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
@@ -36,104 +36,121 @@ function gpcf = gpcf_rq(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 1
-        error('Not enough arguments')
-    end
+    ip=inputParser;
+    ip.FunctionName = 'GPCF_RQ';
+    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
+    ip.addOptional('gpcf', [], @isstruct);
+    ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('alpha',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('metric',[], @isstruct);
+    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('alpha_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.parse(do, varargin{:});
+    do=ip.Results.do;
+    gpcf=ip.Results.gpcf;
+    magnSigma2=ip.Results.magnSigma2;
+    lengthScale=ip.Results.lengthScale;
+    alpha=ip.Results.alpha;
+    metric=ip.Results.metric;
+    magnSigma2_prior=ip.Results.magnSigma2_prior;
+    lengthScale_prior=ip.Results.lengthScale_prior;
+    alpha_prior=ip.Results.alpha_prior;
 
-    % Initialize the covariance function
-    if strcmp(do, 'init')
-        gpcf.type = 'gpcf_rq';
+    switch do
+        case 'init'
+            gpcf.type = 'gpcf_rq';
 
-        % Initialize parameters
-        gpcf.lengthScale= 10;
-        gpcf.magnSigma2 = 0.1;
-        gpcf.alpha = 20;  % Value for the exponent in the rq covariance function
-        
-        % Initialize prior structure
-        gpcf.p = [];
-        gpcf.p.lengthScale = prior_unif('init');
-        gpcf.p.magnSigma2 = prior_unif('init');
-        gpcf.p.alpha = prior_unif('init');
-        
-        % Set the function handles
-        gpcf.fh_pak = @gpcf_rq_pak;
-        gpcf.fh_unpak = @gpcf_rq_unpak;
-        gpcf.fh_e = @gpcf_rq_e;
-        gpcf.fh_ghyper = @gpcf_rq_ghyper;
-        gpcf.fh_ginput = @gpcf_rq_ginput;
-        gpcf.fh_cov = @gpcf_rq_cov;
-        gpcf.fh_trcov  = @gpcf_rq_trcov;
-        gpcf.fh_trvar  = @gpcf_rq_trvar;
-        gpcf.fh_recappend = @gpcf_rq_recappend;
-
-        if length(varargin) > 0
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
+            % Initialize parameters
+            if isempty(lengthScale)
+                gpcf.lengthScale = 10;
+            else
+                gpcf.lengthScale=lengthScale;
             end
-            % Loop through all the parameter values that are changed
-            for i=1:2:length(varargin)-1
-                switch varargin{i}
-                  case 'magnSigma2'
-                    gpcf.magnSigma2 = varargin{i+1};
-                  case 'lengthScale'
-                    gpcf.lengthScale = varargin{i+1};
-                  case 'alpha'
-                    gpcf.alpha = varargin{i+1};
-                  case 'metric'
-                    gpcf.metric = varargin{i+1};
-                    if isfield(gpcf, 'lengthScale')
-                        gpcf = rmfield(gpcf, 'lengthScale');
-                    end
-                    if isfield(gpcf.p, 'lengthScale')
-                        gpcf.p = rmfield(gpcf.p, 'lengthScale');
-                    end
-                  case 'lengthScale_prior'
-                    gpcf.p.lengthScale = varargin{i+1};
-                  case 'magnSigma2_prior'
-                    gpcf.p.magnSigma2 = varargin{i+1};
-                  case 'alpha_prior'
-                    gpcf.p.alpha = varargin{i+1};
-                  otherwise
-                    error('Wrong parameter name!')
-                end
+            if isempty(magnSigma2)
+                gpcf.magnSigma2 = 0.1;
+            else
+                gpcf.magnSigma2=magnSigma2;
             end
-        end
-    end
+            if isempty(alpha)
+                gpcf.alpha = 20;
+            else
+                gpcf.alpha=alpha;
+            end
 
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        gpcf = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-              case 'magnSigma2'
-                gpcf.magnSigma2 = varargin{i+1};
-              case 'lengthScale'
-                gpcf.lengthScale = varargin{i+1};
-              case 'alpha'
-                gpcf.alpha = varargin{i+1};                
-              case 'metric'
-                gpcf.metric = varargin{i+1};
+            % Initialize prior structure
+            gpcf.p=[];
+            if isempty(lengthScale_prior)
+                gpcf.p.lengthScale=prior_unif('init');
+            else
+                gpcf.p.lengthScale=lengthScale_prior;
+            end
+            if isempty(magnSigma2_prior)
+                gpcf.p.magnSigma2=prior_unif('init');
+            else
+                gpcf.p.magnSigma2=magnSigma2_prior;
+            end
+            if isempty(alpha_prior)
+                gpcf.p.alpha=prior_unif('init');
+            else
+                gpcf.p.alpha=alpha_prior;
+            end
+            
+            %Initialize metric
+            if ~isempty(metric)
+                gpcf.metric = metric;
                 if isfield(gpcf, 'lengthScale')
                     gpcf = rmfield(gpcf, 'lengthScale');
                 end
                 if isfield(gpcf.p, 'lengthScale')
                     gpcf.p = rmfield(gpcf.p, 'lengthScale');
                 end
-              case 'lengthScale_prior'
-                gpcf.p.lengthScale = varargin{i+1};
-              case 'magnSigma2_prior'
-                gpcf.p.magnSigma2 = varargin{i+1};
-              case 'alpha_prior'
-                gpcf.p.alpha = varargin{i+1};
-              otherwise
-                error('Wrong parameter name!')
+            end     
+
+            % Set the function handles to the nested functions
+            gpcf.fh_pak = @gpcf_rq_pak;
+            gpcf.fh_unpak = @gpcf_rq_unpak;
+            gpcf.fh_e = @gpcf_rq_e;
+            gpcf.fh_ghyper = @gpcf_rq_ghyper;
+            gpcf.fh_ginput = @gpcf_rq_ginput;
+            gpcf.fh_cov = @gpcf_rq_cov;
+            gpcf.fh_trcov  = @gpcf_rq_trcov;
+            gpcf.fh_trvar  = @gpcf_rq_trvar;
+            gpcf.fh_recappend = @gpcf_rq_recappend;
+
+        case 'set'
+            % Set the parameter values of covariance function
+            % go through all the parameter values that are changed
+            if ~isempty(magnSigma2);
+                gpcf.magnSigma2=magnSigma2;
             end
-        end
+            if ~isempty(lengthScale);
+                gpcf.lengthScale=lengthScale;
+            end
+            if ~isempty(alpha);
+                gpcf.alpha=alpha;
+            end
+            if ~isempty(metric)
+                gpcf.metric = metric;
+                if isfield(gpcf, 'lengthScale')
+                    gpcf = rmfield(gpcf, 'lengthScale');
+                end
+                if isfield(gpcf.p, 'lengthScale')
+                    gpcf.p = rmfield(gpcf.p, 'lengthScale');
+                end
+            end
+            if ~isempty(magnSigma2_prior);
+                gpcf.p.magnSigma2=magnSigma2_prior;
+            end
+            if ~isempty(lengthScale_prior);
+                gpcf.p.lengthScale=lengthScale_prior;
+            end
+            if ~isempty(alpha_prior);
+                gpcf.p.alpha=alpha_prior;
+            end
     end
+    
 
     function w = gpcf_rq_pak(gpcf)
     %GPCF_RQ_PAK	 Combine GP covariance function hyper-parameters into one vector.
@@ -371,7 +388,7 @@ function gpcf = gpcf_rq(do, varargin)
                     s = 1./(gpcf.lengthScale^2);
                     dist2 = 0;
                     for i=1:m
-                        dist2 = dist2 + (gminus(x(:,i),x(:,i)')).^2;
+                        dist2 = dist2 + (bsxfun(@minus,x(:,i),x(:,i)')).^2;
                     end
                     % dalpha
                     ii1=ii1+1;
@@ -387,7 +404,7 @@ function gpcf = gpcf_rq(do, varargin)
                     iialpha=ii1; 
                     D=zeros(size(Cdm));
                     for i=1:m
-                        dist2 =(gminus(x(:,i),x(:,i)')).^2;
+                        dist2 =(bsxfun(@minus,x(:,i),x(:,i)')).^2;
                         % sum distance for the dalpha
                         D=D+dist2.*s(i); 
                         % dlengthscale
@@ -422,7 +439,7 @@ function gpcf = gpcf_rq(do, varargin)
                     s = 1/gpcf.lengthScale^2;
                     dist = 0;
                     for i=1:m
-                        dist = dist + (gminus(x(:,i),x2(:,i)')).^2;
+                        dist = dist + (bsxfun(@minus,x(:,i),x2(:,i)')).^2;
                     end
                     DK_l = s.*K.^a.*dist.*gpcf.magnSigma2^(1-a);
                     ii1=ii1+1;
@@ -431,7 +448,7 @@ function gpcf = gpcf_rq(do, varargin)
                     % In the case ARD is used
                     s = 1./gpcf.lengthScale.^2;        % set the length
                     for i=1:m
-                        D1 = s(i).*K.^a.*gminus(x(:,i),x2(:,i)').^2.*gpcf.magnSigma2^(1-a);
+                        D1 = s(i).*K.^a.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*gpcf.magnSigma2^(1-a);
                         ii1=ii1+1;
                         DKff{ii1} = D1;
                     end
@@ -550,7 +567,7 @@ function gpcf = gpcf_rq(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK = zeros(size(K));
-                        DK(j,:) = -s(i).*gminus(x(j,i),x(:,i)');
+                        DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
                         DK = DK + DK';    
                         
                         DK = DK.*K.^a.*gpcf.magnSigma2^(1-a);      
@@ -585,7 +602,7 @@ function gpcf = gpcf_rq(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK= zeros(size(K));
-                        DK(j,:) = -s(i).*gminus(x(j,i),x2(:,i)');
+                        DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
                         
                         DK = DK.*K.^a.*gpcf.magnSigma2^(1-a);
                         
@@ -641,7 +658,7 @@ function gpcf = gpcf_rq(do, varargin)
                 end
                 dist=zeros(n1,n2);
                 for j=1:m1
-                    dist = dist + s2(j).*(gminus(x1(:,j),x2(:,j)')).^2;
+                    dist = dist + s2(j).*(bsxfun(@minus,x1(:,j),x2(:,j)')).^2;
                 end
                 dist(dist<eps) = 0;
                 C = ma2.*(1+dist).^(-gpcf.alpha);

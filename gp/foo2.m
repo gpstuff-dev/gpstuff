@@ -11,7 +11,7 @@ gpcf1 = gpcf_sexp('init', nin, 'lengthScale', 1, 'magnSigma2', 1);
 gpcf2 = gpcf_noise('init', nin, 'noiseSigmas2', 1);   % 0.1^2
 
 % Set the prior for the parameters of covariance functions 
-gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});    % MUUTA tässä invgam_p saman näköiseksi kuin gpcf_sexp('set'...)
+gpcf2.p.noiseSigmas2 = sinvchi2_p({0.05^2 0.5});    % MUUTA tï¿½ssï¿½ invgam_p saman nï¿½kï¿½iseksi kuin gpcf_sexp('set'...)
 gpcf1.p.lengthScale = gamma_p({3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
@@ -70,10 +70,10 @@ inv(Q_ff + mask.*(Cbl_ff-Q_ff)) - mask.*(Cbl_ff-Q_ff)
 
 
 
-dKuu_l = 2*K_uu.*gminus(u,u').^2./gp.cf{1}.lengthScale.^3
+dKuu_l = 2*K_uu.*bsxfun(@minus,u,u').^2./gp.cf{1}.lengthScale.^3
 %dKuu_l = dKuu_l + dKuu_l' - diag(diag(dKuu_l));
-dKuf_l = 2*K_fu'.*gminus(u,x').^2./gp.cf{1}.lengthScale.^3
-dKff_l = 2*K_ff.*gminus(x,x').^2./gp.cf{1}.lengthScale.^3
+dKuf_l = 2*K_fu'.*bsxfun(@minus,u,x').^2./gp.cf{1}.lengthScale.^3
+dKff_l = 2*K_ff.*bsxfun(@minus,x,x').^2./gp.cf{1}.lengthScale.^3
 %dKff_l = dKff_l + dKff_l' - diag(diag(dKff_l));
 
 [g gdata gprior] = gp_g(gp_pak(gp,'hyper'), gp, x, y, 'hyper');

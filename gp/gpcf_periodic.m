@@ -56,10 +56,10 @@ function gpcf = gpcf_periodic(do, varargin)
     ip.addParamValue('lengthScale_exp',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('optimPeriod',[], @(x) isscalar(x) && (x==0||x==1));
     ip.addParamValue('decay',[], @(x) isscalar(x) && (x==0||x==1));
-    ip.addParamValue('magnSigma2_prior',[], @isstruct);
-    ip.addParamValue('lengthScale_prior',[], @isstruct);
-    ip.addParamValue('lengthScale_exp_prior',[], @isstruct);
-    ip.addParamValue('period_prior',[], @isstruct);
+    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_exp_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('period_prior',[], @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -404,7 +404,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     s = 2./gpcf.lengthScale.^2;
                     dist = 0;
                     for i=1:m
-                        D = sin(pi.*gminus(x(:,i),x(:,i)')./gp_period);
+                        D = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
                         dist = dist + 2.*D.^2;
                     end
                     D = Cdm.*s.*dist;
@@ -415,7 +415,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % In the case ARD is used
                     for i=1:m
                         s = 2./gpcf.lengthScale(i).^2;
-                        dist = sin(pi.*gminus(x(:,i),x(:,i)')./gp_period);
+                        dist = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
                         D = Cdm.*s.*2.*dist.^2;
                         
                         ii1 = ii1+1;
@@ -429,7 +429,7 @@ function gpcf = gpcf_periodic(do, varargin)
                         s = 1./gpcf.lengthScale_exp.^2;
                         dist = 0;
                         for i=1:m
-                            D = gminus(x(:,i),x(:,i)');
+                            D = bsxfun(@minus,x(:,i),x(:,i)');
                             dist = dist + D.^2;
                         end
                         D = Cdm.*s.*dist;
@@ -440,7 +440,7 @@ function gpcf = gpcf_periodic(do, varargin)
                         % In the case ARD is used
                         for i=1:m
                             s = 1./gpcf.lengthScale_exp(i).^2;
-                            dist = gminus(x(:,i),x(:,i)');
+                            dist = bsxfun(@minus,x(:,i),x(:,i)');
                             D = Cdm.*s.*dist.^2;
                         
                             ii1 = ii1+1;
@@ -459,7 +459,7 @@ function gpcf = gpcf_periodic(do, varargin)
                  
                     dist = 0;
                     for i=1:m
-                        dist = dist + 2.*pi./gp_period.*sin(2.*pi.*gminus(x(:,i),x(:,i)')./gp_period).*gminus(x(:,i),x(:,i)').*s(i);                        
+                        dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)').*s(i);                        
                     end
                     D = Cdm.*dist;
                     ii1=ii1+1;
@@ -468,7 +468,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % In the case ARD is used
                     for i=1:m
                         s = 1./gpcf.lengthScale(i).^2;        % set the length
-                        dist = 2.*pi./gp_period.*sin(2.*pi.*gminus(x(:,i),x(:,i)')./gp_period).*gminus(x(:,i),x(:,i)');
+                        dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)');
                         D = Cdm.*s.*dist;
                         
                         ii1=ii1+1;
@@ -497,7 +497,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     s = 1./gpcf.lengthScale.^2;
                     dist = 0; dist2 = 0;
                     for i=1:m
-                        dist = dist + 2.*sin(pi.*gminus(x(:,i),x2(:,i)')./gp_period).^2;                        
+                        dist = dist + 2.*sin(pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).^2;                        
                     end
                     DK_l = 2.*s.*K.*dist;
                     
@@ -507,7 +507,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % In the case ARD is used
                     for i=1:m
                         s = 1./gpcf.lengthScale(i).^2;        % set the length
-                        dist = 2.*sin(pi.*gminus(x(:,i),x2(:,i)')./gp_period);
+                        dist = 2.*sin(pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period);
                         DK_l = 2.*s.*K.*dist.^2;
                         
                         ii1=ii1+1;
@@ -523,7 +523,7 @@ function gpcf = gpcf_periodic(do, varargin)
                         s = 1./gpcf.lengthScale_exp.^2;
                         dist = 0; dist2 = 0;
                         for i=1:m
-                            dist = dist + gminus(x(:,i),x2(:,i)').^2;                        
+                            dist = dist + bsxfun(@minus,x(:,i),x2(:,i)').^2;                        
                         end
                         DK_l = s.*K.*dist;
                     
@@ -533,7 +533,7 @@ function gpcf = gpcf_periodic(do, varargin)
                         % In the case ARD is used
                         for i=1:m
                             s = 1./gpcf.lengthScale_exp(i).^2;        % set the length
-                            dist = gminus(x(:,i),x2(:,i)');
+                            dist = bsxfun(@minus,x(:,i),x2(:,i)');
                             DK_l = s.*K.*dist.^2;
                         
                             ii1=ii1+1;
@@ -553,7 +553,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     end
                         dist = 0; dist2 = 0;
                         for i=1:m
-                            dist = dist + 2.*pi./gp_period.*sin(2.*pi.*gminus(x(:,i),x2(:,i)')./gp_period).*gminus(x(:,i),x2(:,i)').*s(i);                        
+                            dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x2(:,i)').*s(i);                        
                         end
                         DK_l = K.*dist;
                     
@@ -563,7 +563,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     % In the case ARD is used
                     for i=1:m
                         s = 1./gpcf.lengthScale(i).^2;        % set the length
-                        dist = 2.*pi./gp_period.*sin(2.*pi.*gminus(x(:,i),x2(:,i)')./gp_period).*gminus(x(:,i),x2(:,i)');
+                        dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x2(:,i)');
                         DK_l = s.*K.*dist;
                        
                         ii1=ii1+1;
@@ -683,9 +683,9 @@ function gpcf = gpcf_periodic(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK = zeros(size(K));
-                        DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*gminus(x(j,i),x(:,i)')./gp_period);
+                        DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x(:,i)')./gp_period);
                         if gpcf.decay == 1
-                            DK(j,:) = DK(j,:)-s_exp(i).*gminus(x(j,i),x(:,i)');
+                            DK(j,:) = DK(j,:)-s_exp(i).*bsxfun(@minus,x(j,i),x(:,i)');
                         end
                         DK = DK + DK';
 
@@ -709,9 +709,9 @@ function gpcf = gpcf_periodic(do, varargin)
                     for j = 1:n
                         DK= zeros(size(K));
                         if gpcf.decay == 1
-                            DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*gminus(x(j,i),x2(:,i)')./gp_period)-s_exp(i).*gminus(x(j,i),x2(:,i)');
+                            DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x2(:,i)')./gp_period)-s_exp(i).*bsxfun(@minus,x(j,i),x2(:,i)');
                         else
-                            DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*gminus(x(j,i),x2(:,i)')./gp_period);
+                            DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x2(:,i)')./gp_period);
                         end
                         DK = DK.*K;
 
@@ -764,7 +764,7 @@ function gpcf = gpcf_periodic(do, varargin)
                     s_exp = 1./gpcf.lengthScale_exp.^2;
                 end
                 if m1==1 && m2==1
-                    dd = gminus(x1,x2');
+                    dd = bsxfun(@minus,x1,x2');
                     dist=2.*sin(pi.*dd./gp_period).^2.*s;
                     if gpcf.decay == 1
                         dist = dist + dd.^2.*s_exp./2;
@@ -783,7 +783,7 @@ function gpcf = gpcf_periodic(do, varargin)
 
                     dist=zeros(n1,n2);
                     for j=1:m1
-                        dd = gminus(x1(:,j),x2(:,j)');
+                        dd = bsxfun(@minus,x1(:,j),x2(:,j)');
                         dist = dist + 2.*sin(pi.*dd./gp_period).^2.*s(:,j);
                         if gpcf.decay == 1
                             dist = dist +dd.^2.*s_exp(:,j)./2;
