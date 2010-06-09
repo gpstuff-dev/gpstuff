@@ -380,6 +380,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     if save || nargout >=4
     % compute full training result
         
+        gp = gp_orig; 
         switch gp.type
           case 'FULL'
             tstind = [];
@@ -400,7 +401,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         
         % Evaluate the training utility
         fprintf('\n Evaluating the training utility \n')
-        gp = gp_orig;
+       
         
         % Conduct inference
         cpu_time = cputime;
