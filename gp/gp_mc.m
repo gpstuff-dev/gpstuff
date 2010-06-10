@@ -80,7 +80,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
     ip.addParamValue('likelih_hmc_opt', [], @(x) isstruct(x) || isempty(x));
     ip.addParamValue('likelih_sls_opt', [], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x))
+    ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
     ip.parse(gp, x, y, varargin{:});
     z=ip.Results.z;
     opt.nsamples=ip.Results.nsamples;

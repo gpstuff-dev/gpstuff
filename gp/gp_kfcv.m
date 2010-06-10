@@ -23,7 +23,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         'opt'        - options for the inference method
 %         'k'          - number of folds in CV  
 %         'rstream'    - number of a random stream to be used for
-%                        perumuting the data befor division. This way same 
+%                        permuting the data befor division. This way same 
 %                        permutation can be obtained for different models.
 %         'trindex'    - k-fold CV training indices. A cell array with k 
 %                        fields each containing index vector for respective 
@@ -52,7 +52,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                         Var_abs_cv  - variance estimate for mabs
 %         cvpreds       - CV predictions structure including same fields 
 %                         as trpreds
-%         trpreds       - training predictionsstructure including 
+%         trpreds       - training predictions structure including 
 %                         following fields
 %                         Ef
 %                         Varf
