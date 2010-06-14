@@ -157,6 +157,9 @@ function gpcf = gpcf_noiset(do, varargin)
         case 'set'
             % Set the parameter values of covariance function
             % go through all the parameter values that are changed
+            if isempty(gpcf)
+                error('with set option you have to provide the old covariance structure.')
+            end
             if ~isempty(U)
                 if size(U,1) == gpcf.ndata
                     gpcf.U = U;

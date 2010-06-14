@@ -96,7 +96,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     opt.persistence_reset = ip.Results.persistence_reset;
     
 % Check arguments
-    if nargin < 4
+    if nargin < 3
         error('Not enough arguments')
     end
 

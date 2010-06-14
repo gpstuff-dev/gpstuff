@@ -51,6 +51,11 @@ function likelih = likelih_t(do, varargin)
 %             'sigma2_prior'       : set the prior structure for sigma2
 %             'nu_prior'           : set the prior structure for nu
 %
+%       Note! If the prior structure is set to empty matrix
+%       (e.g. 'nu_prior', []) then the parameter in question is
+%       considered fixed and it is not handled in optimization, grid
+%       integration, MCMC etc.
+%
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_T
 %

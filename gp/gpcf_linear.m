@@ -17,6 +17,11 @@ function gpcf = gpcf_linear(do, varargin)
 %             'selectedVariables'  : vector defining which inputs are 
 %                                    active
 %
+%       Note! If the prior structure is set to empty matrix
+%       (e.g. 'coeffSigma2_prior', []) then the parameter in question
+%       is considered fixed and it is not handled in optimization,
+%       grid integration, MCMC etc.
+%
 %	See also
 %       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
 
@@ -80,6 +85,9 @@ function gpcf = gpcf_linear(do, varargin)
         case 'set'
             % Set the parameter values of covariance function
             % go through all the parameter values that are changed
+            if isempty(gpcf)
+                error('with set option you have to provide the old covariance structure.')
+            end
             if ~isempty(coeffSigma2);
                 gpcf.coeffSigma2=coeffSigma2;
             end

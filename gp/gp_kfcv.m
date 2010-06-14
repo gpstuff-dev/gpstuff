@@ -378,7 +378,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     criteria.Var_abs_cv=Var_abs_cv;
         
     if save || nargout >=4
-    % compute full training result
+        % compute full training result
         
         gp = gp_orig; 
         switch gp.type

@@ -50,6 +50,11 @@ function likelih = likelih_negbin(do, varargin)
 %             'disper'             : set the dispersion parameter
 %             'disper_prior'       : set the prior structure for the dispersion parameter
 %
+%       Note! If the prior structure is set to empty matrix
+%       (e.g. 'disper_prior', []) then the parameter in question
+%       is considered fixed and it is not handled in optimization,
+%       grid integration, MCMC etc.
+%
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 %

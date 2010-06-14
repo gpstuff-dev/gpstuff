@@ -8,10 +8,17 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %        of training inputs and vector Y of training targets. Returns
 %        matrices EF and VARF that contain the posterior predictive
 %        means and variances of latent variables for Gaussian
-%        processes stored in RECGP. The i'th column of Ef and Varf
-%        contain the conditional predictive mean and variance for the
-%        latent variables given the i'th hyperparameter sample th_i in
-%        RECGP. That is:
+%        processes stored in RECGP. The i'th column contains mean and
+%        variance for i'th sample.
+%
+%        If likelihood is other than Gaussian also the latent
+%        variables are sampled and EF and VARF contain the marginal
+%        mean and variance, E[f|D] and Var[f|D]. With Gaussian
+%        regression the case is different since we have sampled from
+%        the marginal posterior of hyperparameters p(th|D). Then the
+%        i'th column of Ef and Varf contain the conditional predictive
+%        mean and variance for the latent variables given the i'th
+%        hyperparameter sample th_i in RECGP. That is:
 %       
 %                  Ef(:,i) = E[f | x, y, th_i]
 %                Varf(:,i) = Var[f | x, y, th_i]
@@ -24,26 +31,27 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %           Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
 %                          = mean(Varf,2) + var(Ef,0,2)
 %   
-%     OPTIONS is an optional parameter-value pair
-%       'predcf' is index vector telling which covariance functions are 
-%                used for prediction. Default is all (1:gpcfn). See 
-%                additional information below.
-%       'tstind' is a vector/cell array defining, which rows of X belong 
-%                to which training block in *IC type sparse models. Deafult 
-%                is []. In case of PIC, a cell array containing index 
-%                vectors specifying the blocking structure for test data.
-%                IN FIC and CS+FIC a vector of length n that points out the 
-%                test inputs that are also in the training set (if none,
-%                set TSTIND = [])
-%       'yt'     is optional observed yt in test points (see below)
-%       'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
-%                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, expected value 
-%                for ith case. 
-%       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, the expected
-%                value for the ith case. 
+%        OPTIONS is an optional parameter-value pair
+%         'predcf' is index vector telling which covariance functions are 
+%                  used for prediction. Default is all (1:gpcfn). See
+%                  additional information below.
+%         'tstind' is a vector/cell array defining, which rows of X belong 
+%                  to which training block in *IC type sparse
+%                  models. Deafult is []. In case of PIC, a cell array
+%                  containing index vectors specifying the blocking
+%                  structure for test data.  IN FIC and CS+FIC a
+%                  vector of length n that points out the test inputs
+%                  that are also in the training set (if none, set
+%                  TSTIND = [])
+%         'yt'     is optional observed yt in test points (see below)
+%         'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
+%                  Some likelihoods may use this. For example, in case
+%                  of Poisson likelihood we have z_i=E_i, that is,
+%                  expected value for ith case.
+%         'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%                  Some likelihoods may use this. For example, in case
+%                  of Poisson likelihood we have z_i=E_i, that is, the
+%                  expected value for the ith case.
 %       
 %       [EF, VARF, EY, VARY] = GP_PREDS(GP, X, Y, XT, OPTIONS) 
 %        returns also the predictive means and variances for test observations

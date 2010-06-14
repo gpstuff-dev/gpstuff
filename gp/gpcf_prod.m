@@ -57,6 +57,9 @@ function gpcf = gpcf_prod(do, varargin)
         case 'set'
             % Set the parameter values of covariance function
             % go through all the parameter values that are changed
+            if isempty(gpcf)
+                error('with set option you have to provide the old covariance structure.')
+            end
             if ~isempty(cfs)
                 for i = 1:length(cfs)
                     gpcf.functions{i} = cfs{i};

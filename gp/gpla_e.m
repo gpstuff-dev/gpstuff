@@ -98,7 +98,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
             a = a0;
             p = p0;
         else
-
+            % We end up here if the hyperparameters have changed since
+            % the last call for gpla_e. In this case we need to
+            % re-evaluate the Laplace approximation, which is done
+            % below
             gp=gp_unpak(gp, w);
             ncf = length(gp.cf);
             n = length(x);

@@ -297,10 +297,90 @@ set(gca, 'Ytick', [])
 title('p(f|D) at input location (-0.8, 1.1)');
 %xlim([-1.2 -0.5])
 
+
+
+
+% ========================
+% Print figures for manual
+% ========================
+% $$$ sf = normrnd(Ef_mc(100,:), sqrt(Varf_mc(100,:)));
+% $$$ sf2 = normrnd(Ef_mc(400,:), sqrt(Varf_mc(400,:)));
+% $$$ 
+% $$$ figure
+% $$$ subplot(1,2,1)
+% $$$ [N,X] = hist(sf);
+% $$$ hist(sf)
+% $$$ h = findobj(gca,'Type','patch');
+% $$$ set(h,'FaceColor','w','EdgeColor','k')
+% $$$ hold on
+% $$$ plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
+% $$$ ff = normpdf(x_ia(100,:)', Ef_map(100), sqrt(Varf_map(100)));
+% $$$ plot(x_ia(100,:), max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
+% $$$ set(gca, 'Ytick', [])
+% $$$ xlim([0 1])
+% $$$ ylim([0 110])
+% $$$ 
+% $$$ subplot(1,2,2)
+% $$$ [N,X] = hist(sf2);
+% $$$ hist(sf2)
+% $$$ h = findobj(gca,'Type','patch');
+% $$$ set(h,'FaceColor','w','EdgeColor','k')
+% $$$ hold on
+% $$$ plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
+% $$$ ff = normpdf(x_ia(400,:)', Ef_map(400), sqrt(Varf_map(400)));
+% $$$ plot(x_ia(400,:), max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
+% $$$ set(gca, 'Ytick', [])
+% $$$ xlim([-1.2 -0.5])
+% $$$ 
+% $$$ 
 % $$$ set(gcf,'units','centimeters');
 % $$$ set(gcf,'pos',[15 14 7 5])
 % $$$ set(gcf,'paperunits',get(gcf,'units'))
 % $$$ set(gcf,'paperpos',get(gcf,'pos'))
-% $$$ 
-% $$$ 
 % $$$ print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_regression1_fig3.eps
+% $$$ 
+% $$$ 
+% $$$ figure(4)
+% $$$ clf, subplot(1,4,1)
+% $$$ hist(rfull.cf{1}.lengthScale(:,1))
+% $$$ h = findobj(gca,'Type','patch');
+% $$$ set(h,'FaceColor','w','EdgeColor','k')
+% $$$ hold on
+% $$$ plot(gp.cf{1}.lengthScale(1), 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
+% $$$ xlabel('Length-s 1')
+% $$$ xlim([0.3 1.6])
+% $$$ 
+% $$$ subplot(1,4,2)
+% $$$ hist(rfull.cf{1}.lengthScale(:,2))
+% $$$ h = findobj(gca,'Type','patch');
+% $$$ set(h,'FaceColor','w','EdgeColor','k')
+% $$$ hold on
+% $$$ plot(gp.cf{1}.lengthScale(2), 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
+% $$$ xlabel('Length-s 2')
+% $$$ xlim([0.4 1.4])
+% $$$ 
+% $$$ subplot(1,4,3)
+% $$$ hist(rfull.cf{1}.magnSigma2)
+% $$$ h = findobj(gca,'Type','patch');
+% $$$ set(h,'FaceColor','w','EdgeColor','k')
+% $$$ hold on
+% $$$ plot(gp.cf{1}.magnSigma2, 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
+% $$$ xlabel('magnitude')
+% $$$ xlim([0.5 6])
+% $$$ 
+% $$$ subplot(1,4,4)
+% $$$ hist(rfull.noise{1}.noiseSigma2)
+% $$$ h = findobj(gca,'Type','patch');
+% $$$ set(h,'FaceColor','w','EdgeColor','k')
+% $$$ hold on
+% $$$ plot(gp.noise{1}.noiseSigma2, 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
+% $$$ xlabel('Noise variance')
+% $$$ xlim([0.03 0.06])
+% $$$ set(gca, 'Xtick', [0.03 0.06])
+% $$$ 
+% $$$ set(gcf,'units','centimeters');
+% $$$ set(gcf,'pos',[15 14 11 5])
+% $$$ set(gcf,'paperunits',get(gcf,'units'))
+% $$$ set(gcf,'paperpos',get(gcf,'pos'))
+% $$$ 
+% $$$ print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_regression1_fig2.eps

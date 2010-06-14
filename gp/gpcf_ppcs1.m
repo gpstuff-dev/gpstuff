@@ -30,6 +30,11 @@ function gpcf = gpcf_ppcs1(do, varargin)
 %             'metric'            : metric structure into the 
 %                                   covariance function
 %
+%       Note! If the prior structure is set to empty matrix
+%       (e.g. 'magnSigma2_prior', []) then the parameter in question
+%       is considered fixed and it is not handled in optimization,
+%       grid integration, MCMC etc.
+%
 %       The piecewise polynomial function is the following:
 %
 %           k(x_i, x_j) = ma.*cs.^(l+1).*((l+1).*rn + 1);
@@ -138,6 +143,9 @@ function gpcf = gpcf_ppcs1(do, varargin)
       case 'set'
         % Set the parameter values of covariance function
         % go through all the parameter values that are changed
+        if isempty(gpcf)
+            error('with set option you have to provide the old covariance structure.')
+        end        
         if ~isempty(magnSigma2);gpcf.magnSigma2=magnSigma2;end
         if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
         if ~isempty(l_nin);
