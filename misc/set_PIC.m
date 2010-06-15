@@ -68,7 +68,7 @@ switch indtype
   case 'corners'
     [xii,yii]=meshgrid(b1,b2);
     xii=[xii(:) yii(:)];
-    qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
+    qm=min(sqrt(bsxfun(@minus,x(:,1),xii(:,1)').^2+bsxfun(@minus,x(:,2),xii(:,2)').^2));
     qii=qm<=blocksize/2;
     Xu = unique(xii(qii,:), 'rows');
   case 'corners+1xside'
@@ -83,7 +83,7 @@ switch indtype
     [xii2,yii2]=meshgrid(b1,b22);
     xii2=[xii2(:) yii2(:)];
     xii = [xii;xii2];
-    qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
+    qm=min(sqrt(bsxfun(@minus,x(:,1),xii(:,1)').^2+bsxfun(@minus,x(:,2),xii(:,2)').^2));
     %qii=qm<=blocksize/4;sum(qii);
     qii=qm<=blocksize/4;
     Xu = unique(xii(qii,:), 'rows');
@@ -99,7 +99,7 @@ switch indtype
     [xii3a,yii3a]=meshgrid(b13,b2);
     [xii3b,yii3b]=meshgrid(b1,b23);
     xii = [xii(:) yii(:) ; xii2a(:) yii2a(:) ; xii2b(:) yii2b(:) ; xii3a(:) yii3a(:) ; xii3b(:) yii3b(:)];
-    qm=min(sqrt(gminus(x(:,1),xii(:,1)').^2+gminus(x(:,2),xii(:,2)').^2));
+    qm=min(sqrt(bsxfun(@minus,x(:,1),xii(:,1)').^2+bsxfun(@minus,x(:,2),xii(:,2)').^2));
     %qii=qm<=blocksize/4;sum(qii);
     qii=qm<=blocksize/6;
     Xu = unique(xii(qii,:), 'rows');
@@ -108,7 +108,7 @@ end
 numu = length(Xu);
 % $$$ D = 0;
 % $$$ for i1 = 1:size(Xu,2);
-% $$$     D = D + gminus(Xu(:,i1), Xu(:,i1)').^2;
+% $$$     D = D + bsxfun(@minus,Xu(:,i1), Xu(:,i1)').^2;
 % $$$ end
 % $$$ meandist = mean(mean(sqrt(D)));
 
@@ -129,7 +129,7 @@ while go == 1
         for i2 = 1:length(others)
             D = 0;
             for i3 = 1:size(x,2);
-                D = D + gminus(x(index{i1},i3), x(index{others(i2)},i3)').^2;
+                D = D + bsxfun(@minus,x(index{i1},i3), x(index{others(i2)},i3)').^2;
             end
             meandist(i2) = mean(mean(sqrt(D)));
         end
