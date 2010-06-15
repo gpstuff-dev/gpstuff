@@ -18,7 +18,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                      approximation at the mode
 %                    'is_t'for importance sampling using Student's t
 %                     approximation at the mode
-%                    'hmc' for hybrid Monte Carlo sampling
+%                    'hmc' for hybrid Monte Carlo sampling (started at the
+%                    mode)
 %       'validate'   Perform some checks to investigate approximation error.
 %                    1 gives warning only if necessary, 2 gives more details
 %       'predcf'     is index vector telling which covariance functions are
@@ -35,7 +36,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %       'threshold'  Threshold for drop of log-density in grid search.
 %                    Default is 2.5,
 %       'step_size'  Step-size for grid search. Default is 1.
-%       'nsample'    Number of samples for IS and MCMC methods.
+%       'nsamples'   Number of samples for IS and MCMC methods.
 %                    Default is 40.
 %       't_nu'       Degrees of freedom for Student's t-distribution.
 %                    Default is 4.
@@ -51,6 +52,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %       'display'    Defines if sampling information is printed, 1=yes, 0=no.
 %                    Default 1.
 %
+%       
 %     Default optimisation method is SCG (scaled conjugate gradient)
 %     To use FMINUNC, give option 'optfminunc' and no 'optscg'
 

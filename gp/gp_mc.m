@@ -95,7 +95,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     opt.likelih_sls_opt = ip.Results.likelih_sls_opt;
     opt.persistence_reset = ip.Results.persistence_reset;
     
-% Check arguments
+    % Check arguments
     if nargin < 3
         error('Not enough arguments')
     end
@@ -198,7 +198,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             end
         end
         
-        hmcrej = 0;acc = 0;
+        hmcrej = 0;
         likelih_hmcrej = 0;
         lrej=0;
         indrej=0;
