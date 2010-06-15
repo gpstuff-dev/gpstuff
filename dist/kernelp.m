@@ -37,9 +37,9 @@ else
   xx=xx(:);
 end
 m=length(x)/2;
-xd=gminus(x(1:m),x(m+1:end)');
+xd=bsxfun(@minus,x(1:m),x(m+1:end)');
 sh=fminbnd(@err,xab/n*4,xab,optimset('TolX',xab/n*4),xd);
-p=mean(normpdf(gminus(x(1:m),xx),0,sh));
+p=mean(normpdf(bsxfun(@minus,x(1:m),xx),0,sh));
 
 function e=err(s,xd)
 e=-sum(log(sum(normpdf(xd,0,s))));
@@ -48,7 +48,7 @@ function y = normpdf(x,mu,sigma)
 y = -0.5 * ((x-mu)./sigma).^2 -log(sigma) -log(2*pi)/2;
 y=exp(y);
 
-function y=gminus(x1,x2)
+function y=bsxfun(@minus,x1,x2)
 %GMINUS   Generalized minus.
 y=genop(@minus,x1,x2);
 

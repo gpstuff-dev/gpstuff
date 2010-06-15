@@ -33,4 +33,4 @@ if nargin < 2,
 end
 
 term = gammaln((v + 1) / 2) - gammaln(v/2) -log(x.*sqrt(v*pi));
-y = gminus(term,log(sigma .* (1 + (((log(x)-mu)./sigma) .^ 2) ./ v) .^ ((v+1)/2)));
+y = bsxfun(@minus,term,log(sigma .* (1 + (((log(x)-mu)./sigma) .^ 2) ./ v) .^ ((v+1)/2)));
