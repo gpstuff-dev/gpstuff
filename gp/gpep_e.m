@@ -113,6 +113,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             tol = gp.ep_opt.tol;
             nutilde = zeros(size(y));
             tautilde = zeros(size(y));
+            %tautilde = gp.likelih.sigma2^-1 *ones(size(y));
             myy = zeros(size(y));
             logZep_tmp=0; logZep=Inf;
 
@@ -134,20 +135,23 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     Ls = chol(Sigm);
                     Stildesqroot=zeros(n);
                     
+                    % If Student-t likelihood is used sort
+                    % the update order so that the problematic updates
+                    % are left for last
+                    if strcmp(gp.likelih.type,'Student-t')
+                      f=feval(gp.likelih.fh_optimizef,gp,y,K);
+                      W=-feval(gp.likelih.fh_g2,gp.likelih,y,f,'latent');
+                      [foo,I]=sort(W,'descend');
+                    else
+                      I=1:n;
+                    end
+                    
                     % The EP -algorithm
                     while iter<=maxiter && abs(logZep_tmp-logZep)>tol
                         
                         logZep_tmp=logZep;
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         
-                        % If any of the site precisions is negative sort 
-                        % the update order so that the problematic updates are left for last
-                        if any(tautilde < 0)
-                            [tt,I] = sort(tautilde, 1, 'descend'); % 
-                            %I = randperm(n);
-                        else 
-                            I = 1:n;
-                        end
                         for ii=1:n
                             i1 = I(ii);
                             % Algorithm utilizing Cholesky updates
@@ -190,8 +194,17 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             tau_i=Sigm(i1,i1)^-1-tautilde(i1);
                             vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
                             
+                            if tau_i<0
+                              tautilde(i1)=0;
+                              nutilde(i1)=0;
+                              
+                              tau_i=Sigm(i1,i1)^-1;
+                              vee_i=Sigm(i1,i1)^-1*myy(i1);
+                              disp('negative cavity')
+                            end
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
+ 
                             
                             % marginal moments
                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
@@ -201,9 +214,15 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             tautilde(i1)=tautilde(i1)+deltatautilde;
                             nutilde(i1)=sigm2hati^-1*muhati-vee_i;
                             
-                            apu = deltatautilde^-1+Sigm(i1,i1);
-                            apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
-                            Sigm = Sigm - apu;
+                            apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
+                            Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
+                            
+                            % The below is how Rasmussen and Williams
+                            % (2006) do the update. The above version is
+                            % more robust.
+                            %apu = deltatautilde^-1+Sigm(i1,i1);
+                            %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
+                            %Sigm = Sigm - apu;
                             %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
                             myy=Sigm*nutilde;
                             
@@ -259,8 +278,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                                                      % For example Student-t likelihood. 
                                                      % NOTE! This does not work reliably yet
                             Stilde=tautilde;
-                            
-                            Sigm=Ls'*Ls; myy=Sigm*nutilde;
+                            Ls = chol(Sigm);
+                            myy=Sigm*nutilde;
                             
                             % Compute the marginal likelihood
                             % 4. term & 1. term
@@ -281,6 +300,18 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             iter=iter+1;
                             B=Ls;
                             L=Ls;
+                            
+                            
+                            
+%                             lnZ=sum(log(Zm));
+%                             lnZ=lnZ+0.5*sum(log( ones(n,1)+Ws./Wc ));
+%                             %lnZ=lnZ+0.5*log(det(eye(n)-Sf*diag(Ws)));
+%                             
+%                             % the second term could be implemented with rank-1 Cholesky updates
+%                             lnZ=lnZ-sum(log(diag(chol(K))))+sum(log(diag(chol(Sf))));
+%                             
+%                             lnZ=lnZ+0.5*ts'*(Sf-diag(1./(Wc+Ws)))*ts;
+%                             lnZ=lnZ+0.5*sum( (mc.*Wc)./(Wc+Ws).*(mc.*Ws-2*ts) );
                         end
                     end
                     

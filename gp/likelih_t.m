@@ -387,24 +387,22 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function [m_0, m_1, m_2] = likelih_t_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
+    function [m_0, m_1, sigm2hati1] = likelih_t_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
     %LIKELIH_T_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
     %
     %   Description
-    %   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY) 
-    %   takes a likelihood data structure LIKELIH, observations Y,
-    %   index I and cavity variance S2 and mean MYY. Returns the
-    %   zeroth moment M_0, mean M_1 and variance M_2 of the posterior
-    %   marginal (see Rasmussen and Williams (2006): Gaussian
-    %   processes for Machine Learning, page 55).
+    %   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) 
+    %   takes a likelihood data structure LIKELIH, incedence counts Y, 
+    %   expected counts Z, index I and cavity variance S2 and mean
+    %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
+    %   of the posterior marginal (see Rasmussen and Williams (2006):
+    %   Gaussian processes for Machine Learning, page 55).
     %
     %   See also
     %   GPEP_E
 
         
         zm = @zeroth_moment;
-        fm = @first_moment;
-        sm = @second_moment;
         
         tol = 1e-8;
         yy = y(i1);
@@ -413,15 +411,11 @@ function likelih = likelih_t(do, varargin)
                 
         % Set the limits for integration and integrate with quad
         % -----------------------------------------------------
-% $$$         if nu > 2
-% $$$             mean_app = (myy_i/sigm2_i + yy.*(nu+1)/(sigma.^2.*nu))/(1/sigm2_i + sigma.^2.*nu/(nu+1));
-% $$$             sigm_app = sqrt( (1/sigm2_i + sigma.^2.*nu/(nu+1))^-1);
-% $$$         else
-            mean_app = myy_i;
-            sigm_app = sqrt(sigm2_i);
-% $$$         end
+        mean_app = myy_i;
+        sigm_app = sqrt(sigm2_i);
 
-        lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
+
+        lambdaconf(1) = mean_app - 8.*sigm_app; lambdaconf(2) = mean_app + 8.*sigm_app;
         test1 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(1));
         test2 = zm((lambdaconf(2)+lambdaconf(1))/2) > zm(lambdaconf(2));
         testiter = 1;
@@ -460,41 +454,19 @@ function likelih = likelih_t(do, varargin)
             end
             mean_app = (lambdaconf(2)+lambdaconf(1))/2;
         end
+        RTOL = 1.e-6;
+        ATOL = 1.e-10;
+                        
+        % Integrate with quadrature
+        [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
         
-        % Integrate with quad
-        [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-        [m_1, fhncnt] = quadgk(fm, lambdaconf(1), lambdaconf(2));
-        [sigm2hati1, fhncnt] = quadgk(sm, lambdaconf(1), lambdaconf(2));
-
-        m_2 = sigm2hati1;
-        
-% $$$         if ~isreal(m_2)
-% $$$             ff = [lambdaconf(1):0.01:lambdaconf(2)];
-% $$$             plot(ff, feval(zm, ff), 'r')
-% $$$             drawnow
-% $$$             pause
-% $$$         end
-        
+        sigm2hati1 = m_2 - m_1.^2;
+              
         function integrand = zeroth_moment(f)
             r = yy-f;
             term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
             integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
             integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-        end
-        
-        function integrand = first_moment(f)
-            r = yy-f;
-            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-            integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
-            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-            integrand = f.*integrand./m_0; %
-        end
-        function integrand = second_moment(f)
-            r = yy-f;
-            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma)/2;
-            integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
-            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-            integrand = (f-m_1).^2.*integrand./m_0; %
         end
     end
     
@@ -528,14 +500,8 @@ function likelih = likelih_t(do, varargin)
         sigma2 = likelih.sigma2;
 
         % Set the limits for integration and integrate with quad
-        % -----------------------------------------------------
-% $$$         if nu > 2
-% $$$             mean_app = (myy_i/sigm2_i + yy.*(nu+1)/(sigma.^2.*nu))/(1/sigm2_i + sigma.^2.*nu/(nu+1));
-% $$$             sigm_app = sqrt( (1/sigm2_i + sigma.^2.*nu/(nu+1))^-1);
-% $$$         else
-            mean_app = myy_i;
-            sigm_app = sqrt(sigm2_i);                    
-% $$$         end
+        mean_app = myy_i;
+        sigm_app = sqrt(sigm2_i);
 
         lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
@@ -580,22 +546,23 @@ function likelih = likelih_t(do, varargin)
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         
-        if likelih.fix_nu
-            [g_i(1), fhncnt] = quadgk(zsigma2, lambdaconf(1), lambdaconf(2));
-            g_i(1) = g_i(1).*likelih.sigma2;
-        else
-            [g_i(1), fhncnt] = quadgk(zsigma2, lambdaconf(1), lambdaconf(2));
-            g_i(1) = g_i(1).*likelih.sigma2;
+        [g_i(1), fhncnt] = quadgk(zsigma2, lambdaconf(1), lambdaconf(2));
+        g_i(1) = g_i(1).*likelih.sigma2;
+        
+        if ~likelih.fix_nu
             [g_i(2), fhncnt] = quadgk(znu, lambdaconf(1), lambdaconf(2));
             g_i(2) = g_i(2).*likelih.nu.*log(likelih.nu);
         end
-                
-    % $$$         ff = [lambdaconf(1):0.01:lambdaconf(2)];
-    % $$$         plot(ff, feval(zm, ff), 'r')
-    % $$$         hold on
-    % $$$         plot(ff, feval(zd, ff))
-    % $$$         drawnow
+        
+        % ------------------------------------------------
+        % Plot the integrand to check that integration limits are ok
+% $$$         clf;ff = [lambdaconf(1):0.01:lambdaconf(2)];
+% $$$         plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(zd, ff))
+% $$$         drawnow;S = sprintf('iter %d, y=%d, avgE=%.1f, sigm_a=%.2f, sigm2_i=%.2f', i1, yy, avgE, sigm_app, sigm2_i);title(S);
+% $$$         pause
+        % ------------------------------------------------
 
+     
         function integrand = zeroth_moment(f); %
             integrand = exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
         end        
@@ -608,9 +575,9 @@ function likelih = likelih_t(do, varargin)
         end
         
         function integrand = deriv_sigma2(f)
-            r = yy-f;
-            g  =-1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2+r.^2.*sigma2);
-            integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
+             r = yy-f;
+             g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2+r.^2.*sigma2);
+             integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
 
     end
@@ -625,7 +592,7 @@ function likelih = likelih_t(do, varargin)
     % matrix K. Solves the posterior mode of F using EM algorithm and
     % evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu are
     % needed for sparse approximations. For details, see Vanhatalo,
-    % Jylänki and Vehtari (2009): Gaussian process regression with
+    % Jylï¿½nki and Vehtari (2009): Gaussian process regression with
     % Student-t likelihood.      
         
         iter = 1;

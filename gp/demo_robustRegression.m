@@ -366,3 +366,121 @@ legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
 title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, sqrt(gp.likelih.sigma2)));
 S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%
+
+gpcf1 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 1);
+
+% Create the likelihood structure
+pll = prior_logunif('init');
+likelih = likelih_t('init', 'nu', 4, 'sigma2', 1, 'sigma2_prior', pll);
+
+% ... Finally create the GP data structure
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.001.^2);
+gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
+
+% --- MAP estimate using scaled conjugate gradient algorithm ---
+%     (see scg for more details)
+
+gradcheck(gp_pak(gp), @gpep_e, @gpep_g, gp, x, y)
+gpep_g(w,gp,x,y)
+
+w = [1.5981    0.4444   -4.6361];
+
+[e, edata, eprior, site_tau, site_nu, L]=gpep_e(w,gp,x,y);
+Sigm = L'*L;
+myy = Sigm*site_nu;
+plot(x,myy,'b.',x,y,'ro')
+
+%%
+
+min(gp.site_tau)
+gp = gp_unpak(gp,w);
+[Ef, Varf] = ep_pred(gp, x, y, xx');
+std_f = sqrt(Varf);
+
+% Plot the prediction and data
+figure
+plot(xx,yy,'k')
+hold on
+plot(xx,Ef)
+plot(xx, Ef-2*std_f, 'r--')
+plot(x,y,'.')
+legend('real f', 'Ef', 'Ef+std(f)','y')
+plot(xx, Ef+2*std_f, 'r--')
+title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, sqrt(gp.likelih.sigma2)));
+S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+
+%%
+w=gp_pak(gp);  % pack the hyperparameters into one vector
+fe=str2fun('gpep_e');     % create a function handle to negative log posterior
+fg=str2fun('gpep_g');     % create a function handle to gradient of negative log posterior
+
+n=length(y);
+opt = scg2_opt;
+opt.tolfun = 1e-3;
+opt.tolx = 1e-3;
+opt.display = 1;
+
+% do scaled conjugate gradient optimization 
+w=gp_pak(gp);
+w=scg2(fe, w, opt, fg, gp, x, y);
+gp =gp_unpak(gp,w);
+
+% Predictions to test points
+[Ef, Varf] = ep_pred(gp, x, y, xx');
+std_f = sqrt(Varf);
+
+% Plot the prediction and data
+figure
+plot(xx,yy,'k')
+hold on
+plot(xx,Ef)
+plot(xx, Ef-2*std_f, 'r--')
+plot(x,y,'.')
+legend('real f', 'Ef', 'Ef+std(f)','y')
+plot(xx, Ef+2*std_f, 'r--')
+title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, sqrt(gp.likelih.sigma2)));
+S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
