@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2009-08-13 13:08:59 EEST
+ * Last modified: 2010-06-16 13:08:28 EEST
  *
  */
 
@@ -20,6 +20,7 @@
  *
  */
 
+#include<string.h>
 #include <stdlib.h>
 #include <math.h>
 #include "mex.h"
@@ -210,9 +211,9 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
       }	
       
-      /* Evaluate the distances that are less than one, */
-      /* and evaluate the covariance at them. /*
-      /* This is strictly upper triangular matrix */
+      /* Evaluate the distances that are less than one, 
+	 and evaluate the covariance at them. 
+	 This is strictly upper triangular matrix */
       D2 = D;
       for (j=0;j<m;j++) {
 	for (k=0;k!=j;k++) {
@@ -310,9 +311,9 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
       }	
       
-      /* Evaluate the distances that are less than one, */
-      /* and evaluate the covariance at them. /*
-      /* This is strictly upper triangular matrix */
+      /* Evaluate the distances that are less than one, 
+	 and evaluate the covariance at them. 
+	 This is strictly upper triangular matrix */
       c1 = D + 1;
       D2 = D+1.0;
       for (j=0;j<m;j++) {
@@ -412,9 +413,9 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
       }	
       
-      /* Evaluate the distances that are less than one, */
-      /* and evaluate the covariance at them. /*
-      /* This is strictly upper triangular matrix */
+      /* Evaluate the distances that are less than one,
+	 and evaluate the covariance at them. 
+	 This is strictly upper triangular matrix */
       c1 = D*D + 4.0*D + 3.0;
       c2 = 3.0*D + 6.0;
       D2 = D+2.0;
@@ -515,9 +516,9 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	rr2[i]=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
       }	
       
-      /* Evaluate the distances that are less than one, */
-      /* and evaluate the covariance at them. /*
-      /* This is strictly upper triangular matrix */
+      /* Evaluate the distances that are less than one, 
+	 and evaluate the covariance at them. 
+	 This is strictly upper triangular matrix */
       c1 = D*D*D + 9.0*D*D + 23.0*D + 15.0;
       c2 = 6.0*D*D + 36.0*D + 45.0;
       c3 = 15.0*D + 45.0;

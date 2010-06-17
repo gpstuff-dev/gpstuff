@@ -45,6 +45,8 @@ function gpcf = gpcf_ppcs3(do, varargin)
 %             cs = max(0,1-r);
 %       and l_nin must be greater or equal to gpcf.nin
 %       
+%       NOTE2! Use of gpcf_ppcs2 requires that you have installed
+%       GPstuff with SuiteSparse.
 %
 %	See also
 %       gpcf_matern32, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
@@ -83,6 +85,12 @@ function gpcf = gpcf_ppcs3(do, varargin)
         if isempty(nin)
             error('nin has to be given in init: gpcf_ppcs3(''init'',''nin'',NIN,...)')
         end
+
+        % Check that SuiteSparse is available
+        if isempty(which('ldlchol'))
+            error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs3 cannot be used!')
+        end
+        
         gpcf.type = 'gpcf_ppcs3';
         gpcf.nin = nin;
         

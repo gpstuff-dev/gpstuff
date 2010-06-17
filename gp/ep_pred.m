@@ -382,7 +382,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         % ============================================================
         % DTC/(VAR)
         % ============================================================
-      case {'DTC' 'VAR'}        % Predictions with DTC or variational sparse approximation for GP
+      case {'DTC' 'VAR' 'SOR'}        % Predictions with DTC or variational sparse approximation for GP
         [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
         % Here tstind = 1 if the prediction is made for the training set 
@@ -427,13 +427,13 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
             Luu = chol(K_uu)';
             B=Luu\(K_fu');   
             B2=Luu\(K_nu');   
-            Varf = kstarstar - sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
 
-            % if the prediction is made for training set, evaluate Lav also for prediction points
-            if ~isempty(tstind)
-                Varf(tstind) = Varf(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((La.\Lav),1,m).*B'),2) ...
-                    + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav,1,m).*L), 2)  ...
-                    - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
+            Varf = sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+            switch gp.type
+              case {'VAR' 'DTC'}
+                Varf = kstarstar - Varf;
+              case 'SOR'
+                Varf = sum(B2.^2,1)' - Varf;
             end
         end
         % ============================================================

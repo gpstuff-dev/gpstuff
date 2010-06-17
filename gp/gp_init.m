@@ -26,6 +26,8 @@ function gp = gp_init(do, varargin)
 %                               approximation
 %                      'DTC'    deterministic training conditional 
 %                               sparse approximation
+%                      'DTC'    subset of regressors sparse
+%                               approximation
 %                      'VAR'    variational sparse approximation
 %      likelih      = The likelihood. If Gaussian noise is used this is 
 %                     string 'regr', otherwise this is structure created
@@ -98,7 +100,28 @@ function gp = gp_init(do, varargin)
 %
 %	See also
 %	GPINIT, GP2PAK, GP2UNPAK
+%
+%
+%   References:
+%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying view of sparse
+%    approximate Gaussian process regression. Journal of Machine Learning Re-
+%    search, 6(3):1939-1959.
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
+%    Snelson, E. and Ghahramani, Z. (2006). Sparse Gaussian process using pseudo-
+%    inputs. Advances in Neural Information Processing Systems 18. 
+%
+%    Titsias, M. K. (2009). Variational Model Selection for Sparse
+%    Gaussian Process Regression. Technical Report, University of
+%    Manchester.
+%
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global phenomena with
+%    sparse Gaussian processes. Proceedings of the 24th Conference on Uncertainty in
+%    Artificial Intelligence,
 
+    
 % Copyright (c) 2006-2010 Jarno Vanhatalo
     
 % This software is distributed under the GNU General Public 
@@ -141,7 +164,7 @@ function gp = gp_init(do, varargin)
         gp.p=[];
         
         switch gp.type
-          case {'FIC' 'CS+FIC' 'DTC' 'VAR'}
+          case {'FIC' 'CS+FIC' 'DTC' 'VAR' 'SOR'}
             gp.X_u = [];
             gp.nind = [];
             gp.p.X_u = [];
@@ -228,7 +251,7 @@ function gp = gp_init(do, varargin)
             end
         end
         
-        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC'}) && isempty(gp.X_u)
+        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC' 'SOR'}) && isempty(gp.X_u)
           error(sprintf('Need to set X_u when using %s',gp.type))
         end
 
@@ -308,7 +331,7 @@ function gp = gp_init(do, varargin)
             end
         end
 
-        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC'}) && isempty(gp.X_u)
+        if ismember(gp.type,{'FIC' 'PIC' 'PIC_BLOCK' 'VAR' 'DTC' 'SOR'}) && isempty(gp.X_u)
           error(sprintf('Need to set X_u when using %s',gp.type))
         end
     end

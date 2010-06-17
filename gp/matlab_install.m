@@ -19,7 +19,7 @@ function matlab_install(suiteSparse_path)
 %   The function matlab_install compiles the mex-files and prints on
 %   the screen, which directories should be added to Matlab paths. 
     
-% Copyright (c) 2008 Jarno Vanhatalo
+% Copyright (c) 2008-2010 Jarno Vanhatalo
     
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -28,7 +28,11 @@ function matlab_install(suiteSparse_path)
 
     
     if nargin < 1
-        error('The path to the SuiteSparse package has to be provided! See help matlab_install for info.')
+        suiteSparse_path = [];
+        fprintf('\n The path to the SuiteSparse package is not provided. \n')
+        fprintf('\n Installing GPstuff without compactly supported covariance functions. \n')
+        fprintf(' You are not able to use the following covariance functions:  \n')
+        fprintf(' gpcf_ppcs0  \n gpcf_ppcs1 \n gpcf_ppcs2 \n gpcf_ppcs3 \n\n\n')
     end
     
     % Go to diag/ and compile the mex-functions
@@ -58,24 +62,23 @@ function matlab_install(suiteSparse_path)
     PP = pwd;
     S{1} = [PP '/diag']; 
     S{2} = [PP '/dist']; 
-    S{3} = [PP '/genopsm']; 
-    S{4} = [PP '/gp']; 
-    S{5} = [PP '/mc']; 
-    S{6} = [PP '/misc']; 
-    S{7} = [PP '/optim']; 
+    S{3} = [PP '/gp']; 
+    S{4} = [PP '/mc']; 
+    S{5} = [PP '/misc']; 
+    S{6} = [PP '/optim']; 
     
     for i = 1:length(S)
        addpath(S{i}); 
     end
-    
+   
     fprintf ('\n The following paths have been added.  You may wish to add them\n') ;
-    fprintf ('permanently, using the MATLAB pathtool command.\n') ;
-    fprintf ('%s\n', S{1}) ;
-    fprintf ('%s\n', S{2}) ;
-    fprintf ('%s\n', S{3}) ;
-    fprintf ('%s\n', S{4}) ;
-    fprintf ('%s\n', S{5}) ;
-    fprintf ('%s\n', S{6}) ;
-    fprintf ('%s\n', S{7}) ;
+    fprintf ('permanently, using the MATLAB pathtool command or copying the below\n') ;
+    fprintf ('lines to your startup.m file. \n');
+    fprintf ('addpath %s\n', S{1}) ;
+    fprintf ('addpath %s\n', S{2}) ;
+    fprintf ('addpath %s\n', S{3}) ;
+    fprintf ('addpath %s\n', S{4}) ;
+    fprintf ('addpath %s\n', S{5}) ;
+    fprintf ('addpath %s\n', S{6}) ;
             
 end

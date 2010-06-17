@@ -163,7 +163,7 @@ pcolor(X1,X2,G),shading flat
 axis equal
 xlim([0 60])
 ylim([0 28])
-
+colormap(mapcolor(G)), colorbar
 
 
 
@@ -247,6 +247,8 @@ rfull = thin(rfull, 10, 2);
 % size n x (number of samples). By taking the mean over the samples
 % we do the Monte Carlo integration over the hyperparameters.
 Ef_mc = mc_pred(rfull, x, y, xx);
+%EF = Ef_mc;
+Ef_mc = mean(Ef_mc,2);
 
 figure
 G=repmat(NaN,size(X1));
@@ -255,8 +257,10 @@ pcolor(X1,X2,G),shading flat
 axis equal
 xlim([0 60])
 ylim([0 28])
+colormap(mapcolor(G)), colorbar
 title(['The predicted underlying function ';
        'and the data points (MAP solution)']);
+set(gcf,'pos',[93 511 1098 420])
 figure
 G=repmat(NaN,size(X1));
 G(ind)=(Ef_mc + avgy)*100;
@@ -264,6 +268,7 @@ pcolor(X1,X2,G),shading flat
 axis equal
 xlim([0 60])
 ylim([0 28])
+colormap(mapcolor(G)), colorbar
 title(['The predicted underlying function  ';
        'and the data points (MCMC solution)']);
 set(gcf,'pos',[93 511 1098 420])

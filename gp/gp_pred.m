@@ -511,7 +511,7 @@ switch gp.type
         py = norm_pdf(yt, Ey, sqrt(Vary));
     end
     
-  case {'VAR' 'DTC'}
+  case {'VAR' 'DTC' 'SOR'}
     % Check the tstind vector
     if nargin > 5
         if ~isempty(tstind) && length(tstind) ~= size(tx,1)
@@ -566,12 +566,23 @@ switch gp.type
         B=Luu\(K_fu');
         B2=Luu\(K_nu');
         
-        Varf = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        Varf = sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        switch gp.type
+          case {'VAR' 'DTC'}
+            Varf = Knn_v - Varf;
+          case  'SOR'
+            Varf = sum(B2.^2,1)' - Varf;
+        end
 
     end
     if nargout > 2
         Ey = Ef;
-        Vary = Varf + Cnn_v - Knn_v;
+        switch gp.type
+          case {'VAR' 'DTC'}
+            Vary = Varf + Cnn_v - Knn_v;
+          case 'SOR'
+            Vary = Varf + Cnn_v - sum(B2.^2,1)';
+        end
     end
     if nargout > 4
         py = norm_pdf(y, Ey, sqrt(Vary));

@@ -207,7 +207,7 @@ switch gp.type
     % ============================================================
     % DTC/VAR
     % ============================================================
- case {'DTC' 'VAR'}
+ case {'DTC' 'VAR' 'SOR'}
     % Implementation of DTC varies only slightly from FIC: essentially, only
     % Lav is defined differently. For equations, see e.g. Quinonero-Candela
     % and Rasmussen. For VAR, a trace term is added to the DTC model, see 

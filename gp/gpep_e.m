@@ -903,7 +903,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % ============================================================
                 % DTC,VAR
                 % ============================================================
-              case {'DTC' 'VAR'}
+              case {'DTC' 'VAR' 'SOR'}
                 % First evaluate needed covariance matrices
                 % v defines that parameter is a vector
                 u = gp.X_u;

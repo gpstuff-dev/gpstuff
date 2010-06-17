@@ -50,6 +50,10 @@ if nargin < 3
     param = gp.infer_params;
 end
 
+if size(w,1) > 1
+    error(' The vector to be packed has to be row vector! \n')
+end
+
 % Unpack the hyperparameters of covariance functions
 if ~isempty(strfind(param, 'covariance'))
     ncf = length(gp.cf);

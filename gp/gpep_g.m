@@ -695,7 +695,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % ============================================================
         % DTC/VAR
         % ============================================================        
-      case {'DTC'}
+      case {'DTC' 'SOR'}
         g_ind = zeros(1,numel(gp.X_u));
         gdata_ind = zeros(1,numel(gp.X_u));
         gprior_ind = zeros(1,numel(gp.X_u));

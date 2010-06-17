@@ -538,5 +538,3 @@ axis on;
 title(['The predicted underlying function,   ';
        'data points and inducing inputs (DTC)']);
 xlim([-2 2]), ylim([-2 2])
-
-

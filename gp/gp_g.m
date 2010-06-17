@@ -668,7 +668,7 @@ switch gp.type
     % ============================================================
     % DTC/VAR
     % ============================================================
-  case {'DTC' 'VAR'}
+  case {'DTC' 'VAR' 'SOR'}
     g_ind = zeros(1,numel(gp.X_u));
     gdata_ind = zeros(1,numel(gp.X_u));
     gprior_ind = zeros(1,numel(gp.X_u));
