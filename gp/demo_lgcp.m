@@ -49,7 +49,7 @@ lgcp(x,'hyperint','CCD')
 line([x x],[4.7 5],'color','k')
 line(xlim,[4.85 4.85],'color','k')
 xlim([1850 1963])
-title('The coal mine disater data, estimated intensity, and 90% interval')
+title('The coal mine disaster data, estimated intensity, and 90% interval')
 xlabel('Year')
 ylabel('Intensity')
 
