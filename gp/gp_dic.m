@@ -97,7 +97,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     % ====================================================
     if isstruct(gp)     % Single GP or MCMC solution
         switch gp.type
-          case 'FULL'
+          case {'FULL' 'VAR' 'DTC' 'SOR'}
             tstind = [];
           case {'FIC' 'CS+FIC'}
             tstind = 1:tn;
@@ -144,7 +144,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             end                
             Gp.tr_index = tr_index;
             Gp = gp_unpak(Gp, mean(w,1));
-            if strcmp(gp.type, 'FIC') | strcmp(gp.type, 'PIC')  || strcmp(gp.type, 'CS+FIC')
+            if strcmp(gp.type, 'FIC') | strcmp(gp.type, 'PIC')  || strcmp(gp.type, 'CS+FIC') || strcmp(gp.type, 'VAR') || strcmp(gp.type, 'DTC') || strcmp(gp.type, 'SOR')
                 Gp.X_u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
             end
 
@@ -198,7 +198,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             for i = 1:nsamples
                 Gp = take_nth(gp,i);
                 w(i,:) = gp_pak(Gp);
-                if strcmp(gp.type, 'FIC') || strcmp(gp.type, 'PIC') || strcmp(gp.type, 'CS+FIC')
+                if  strcmp(gp.type, 'FIC') | strcmp(gp.type, 'PIC')  || strcmp(gp.type, 'CS+FIC') || strcmp(gp.type, 'VAR') || strcmp(gp.type, 'DTC') || strcmp(gp.type, 'SOR')
                     Gp.X_u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
                 end
                 Gp.tr_index = tr_index;
@@ -241,7 +241,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
         end
         
         switch gp{1}.type
-          case 'FULL'
+          case {'FULL' 'VAR' 'DTC' 'SOR'}
             tstind = [];
           case {'FIC' 'CS+FIC'}
             tstind = 1:tn;

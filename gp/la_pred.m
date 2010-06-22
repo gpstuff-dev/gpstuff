@@ -107,7 +107,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                                   % for example, Poisson and probit
                 if issparse(K_nf) && issparse(L)          % If compact support covariance functions are used 
                                                           % the covariance matrix will be sparse
-                    deriv = feval(gp.likelih.fh_g, gp.likelih, y(p), f, 'latent', z);
+                    deriv = feval(gp.likelih.fh_g, gp.likelih, y(p), f, 'latent', z(p));
                     Ef = K_nf(:,p)*deriv;
                     sqrtW = sqrt(W);
                     sqrtWKfn = sqrtW*K_nf(:,p)';

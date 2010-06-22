@@ -160,8 +160,8 @@ Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
 figure;hold on
 plot(x,y,'.', 'MarkerSize',7)
 plot(x1,Ef_full,'k', 'LineWidth', 2)
-plot(x1,Ef_full-2.*sqrt(Varf_full),'g--')
-plot(x1,Ef_full+2.*sqrt(Varf_full),'g--')
+plot(x1,Ef_full-2.*sqrt(Varf_full),'k--')
+plot(x1,Ef_full+2.*sqrt(Varf_full),'k--')
 axis tight
 caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noise{1}.noiseSigma2);
 title(caption1)
@@ -182,13 +182,11 @@ legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 % exponential function, two short term ones, the periodic function and a
 % noise structure
 gpcf1 = gpcf_sexp('init', 'lengthScale', 67*12, 'magnSigma2', 66*66);
-gpcfp = gpcf_periodic('init', 'nin', nin, 'lengthScale', 1.3, 'magnSigma2', 2.4*2.4, 'period', 12,'optimPeriod',1,'lengthScale_exp', 90*12, 'decay', 1);
+gpcfp = gpcf_periodic('init', 'nin', nin, 'lengthScale', 1.3, 'magnSigma2', 2.4*2.4);
+gpcfp = gpcf_periodic('set', gpcfp, 'period', 12,'optimPeriod',1,'lengthScale_exp', 90*12, 'decay', 1);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 0.3);
 gpcf2 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 2);
 %gpcf3 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 1);
-
-
-
 
 % ... Then set the prior for the parameters of covariance functions...
 pl = prior_t('init', 's2', 10, 'nu', 3);
@@ -197,11 +195,12 @@ pn = prior_t('init', 's2', 10, 'nu', 4);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf2 = gpcf_sexp('set', gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 %gpcf3 = gpcf_sexp('set', gpcf3, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
-gpcfp = gpcf_periodic('set', gpcfp, 'lengthScale_prior', pl, 'magnSigma2_prior', pl,  'lengthScale_exp_prior', pl, 'period_prior', pn);
+gpcfp = gpcf_periodic('set', gpcfp, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
+gpcfp = gpcf_periodic('set', gpcfp, 'lengthScale_exp_prior', pl, 'period_prior', pn);
 gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcfp, gpcf2}, {gpcfn}, 'jitterSigma2', 0.003,'infer_params', 'covariance') 
+gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcfp, gpcf2}, {gpcfn}, 'jitterSigma2', 0.003) 
 
 
 % -----------------------------
@@ -237,21 +236,33 @@ gp = gp_unpak(gp,w);
 
 x1=[1:800]';
 
-[Ef_full, Varf_full] = gp_pred(gp, x, y, x1);
-Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
+[Ef_full, Varf_full, Ey, Vary] = gp_pred(gp, x, y, x1);
+Varf_full = Vary;
 
 % Plot the prediction and data
 figure;hold on
-plot(x1,Ef_full,'k', 'LineWidth', 2)
-plot(x1,Ef_full-2.*sqrt(Varf_full),'g--')
-plot(x1,Ef_full+2.*sqrt(Varf_full),'g--')
+plot(x1,Ef_full,'k')
+plot(x1,Ef_full-2.*sqrt(Varf_full),'k--')
+plot(x1,Ef_full+2.*sqrt(Varf_full),'k--')
 plot(x,y,'.', 'MarkerSize',7)
 axis tight
 caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f, p=%.2f, s_exp^2 = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n l_4= %.2f, s^2_4 = %.2f, \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.cf{2}.period, gp.cf{2}.lengthScale_exp, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.noise{1}.noiseSigma2);
 title(caption1)
 legend(caption1, 'predicted mean', '2\sigma error','Location','NorthWest')
 
+% Plot the components separately
+[Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
+[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 'predcf', 1);
+[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 'predcf', [2 3]);
 
+figure
+[AX, H1, H2] = plotyy(x, Ef_full2, x, Ef_full1);
+set(H2,'LineStyle','--')
+set(H2, 'LineWidth', 2)
+%set(H1, 'Color', 'k')
+set(H1,'LineStyle','-')
+set(H1, 'LineWidth', 0.8)
+title('The long and short term trend')
 
 
 

@@ -66,3 +66,12 @@ colorbar
 axis square
 set(gca,'xtick',[0:.2:1],'ytick',[0:.2:1])
 title('Redwood data and intensity estimate')
+
+
+ylim([0 5])
+set(gcf,'units','centimeters');
+set(gcf,'pos',[ 9.5742    9.5742    7.8962    5.9222])
+set(gcf,'paperunits',get(gcf,'units'))
+set(gcf,'paperpos',get(gcf,'pos'))
+
+print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_lgcp_fig2.eps

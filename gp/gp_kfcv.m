@@ -275,7 +275,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         gp = gp_orig;
         
         switch gp.type
-          case 'FULL'
+          case {'FULL' 'VAR' 'DTC' 'SOR'}
             tstind = [];
           case {'FIC' 'CS+FIC'}
             tstind = trindex{i};
@@ -382,7 +382,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         
         gp = gp_orig; 
         switch gp.type
-          case 'FULL'
+          case {'FULL' 'VAR' 'DTC' 'SOR'}
             tstind = [];
           case 'FIC'
             tstind = 1:n;

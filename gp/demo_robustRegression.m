@@ -147,9 +147,10 @@ S1 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp
 % Here we sample all the variables 
 %     (lenghtScale, magnSigma, sigma(noise-t) and nu)
 % ========================================
-[n, nin] = size(x);
-gpcf1 = gpcf_sexp('init', 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noiset('init','nin', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+% Here, set own Sigma2 for every data point
+gpcf2 = gpcf_noiset('init','nin', n, 'noiseSigmas2', repmat(1^2,n,1));
 
 % Free nu
 gpcf2 = gpcf_noiset('set', gpcf2, 'fix_nu', 0);
@@ -189,9 +190,9 @@ hist(rr.cf{1}.magnSigma2,20)
 title('Mixture model, magnSigma2')
 
 % make predictions for test set
-[Ef, Varf] = mc_pred(rr,x,y,xx');
-Ef = mean(squeeze(Ef),2);
-std_f = sqrt(mean(Varf,2) + var(Ef,0,2));
+[Ef_mc, Varf_mc] = mc_pred(rr,x,y,xx');
+Ef = mean(Ef_mc,2);
+std_f = sqrt(mean(Varf_mc,2) + var(Ef_mc,0,2));
 
 % Plot the network outputs as '.', and underlying mean with '--'
 figure
@@ -202,7 +203,7 @@ plot(xx, Ef-2*std_f, 'r--')
 plot(x,y,'.')
 legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
-title('The predictions and the data points (MCMC solution and hierarchical noise)')
+title('The predictions and the data points (MCMC solution and scale mixture noise)')
 S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
 
 % ========================================
@@ -213,7 +214,8 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 
 pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
-gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 pll = prior_logunif('init');
@@ -221,7 +223,8 @@ likelih = likelih_t('init', 'nu', 4, 'sigma2', 5^2, 'sigma2_prior', pll, 'nu_pri
 likelih = likelih_t('set', likelih, 'fix_nu', 0)
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001, 'infer_params', 'covariance+likelihood'); % 
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {}, 'jitterSigma2', 0.0001); % 
+gp = gp_init('set', gp, 'infer_params', 'covariance+likelihood');
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
@@ -266,7 +269,9 @@ S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 % ========================================
 pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
-gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+
 
 % Create the likelihood structure
 pll = prior_logunif('init');
@@ -280,28 +285,33 @@ gp = gp_init('set', gp, 'infer_params' , 'covariance+likelihood');
 % Set the parameters for MCMC...
 
 % Covariance parameter-options
-hmc_opt.steps=5;
-hmc_opt.stepadj=0.02;
-hmc_opt.nsamples=1;
+clear('opt')
+
+opt.hmc_opt = hmc2_opt;
+opt.hmc_opt.steps=5;
+opt.hmc_opt.stepadj=0.02;
+opt.hmc_opt.nsamples=1;
 
 % Latent-options
-latent_opt.display=0;
-latent_opt.repeat = 10
-latent_opt.sample_latent_scale = 0.05
+opt.latent_opt = hmc2_opt;
+opt.latent_opt.display=0;
+opt.latent_opt.repeat = 10
+opt.latent_opt.sample_latent_scale = 0.05
 
-% Likelihood-options
-likelih_hmc_opt.steps=10;
-likelih_hmc_opt.stepadj=0.1;
-likelih_hmc_opt.nsamples=1;
+% Likelihood-option
+opt.likelih_hmc_opt = hmc2_opt;
+opt.likelih_hmc_opt.steps=10;
+opt.likelih_hmc_opt.stepadj=0.1;
+opt.likelih_hmc_opt.nsamples=1;
 
 % Sample 
-[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'latent_opt', latent_opt, 'likelih_hmc_opt', likelih_hmc_opt, 'hmc_opt', hmc_opt);
+[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, opt);
 rr = thin(rgp,100,2);
 
 % make predictions for test set
-[Ef, Varf] = mc_pred(rr,x,y,xx');
-Ef = mean(squeeze(Ef),2);
-std_f = sqrt(mean(Varf,2) + var(Ef,0,2));
+[Ef_mc, Varf_mc] = mc_pred(rr,x,y,xx');
+Ef = mean(Ef_mc,2);
+std_f = sqrt( var(Ef_mc,0,2) );
 
 % Plot the network outputs as '.', and underlying mean with '--'
 figure
@@ -312,7 +322,7 @@ plot(xx, Ef-2*std_f, 'r--')
 plot(x,y,'.')
 legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
-title('The predictions and the data points (MAP solution and hierarchical noise)')
+title('The predictions and the data points (MCMC solution Student-t noise, \nu fixed)')
 S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
 
 % ========================================
@@ -364,7 +374,7 @@ plot(xx, Ef-2*std_f, 'r--')
 plot(x,y,'.')
 legend('real f', 'Ef', 'Ef+std(f)','y')
 plot(xx, Ef+2*std_f, 'r--')
-title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, sqrt(gp.likelih.sigma2)));
+title(sprintf('The predictions and the data points (MAP solution, Student-t , \nu fixed (nu=%.2f,sigma=%.3f) noise)',gp.likelih.nu, sqrt(gp.likelih.sigma2)));
 S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 

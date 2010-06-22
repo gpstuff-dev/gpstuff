@@ -3,7 +3,7 @@
 %
 %    Description
 %    We will analyze a US annual precipitation data from year 1995,
-%    which contains XX data points. The GP constructed utilizes
+%    which contains 5776 data points. The GP constructed utilizes
 %    compactly supported covariance function gpcf_ppcs2, for which
 %    reason theinference is lot faster than with globally supported
 %    covariance function (such as gpcf_sexp). The full data is
@@ -60,8 +60,6 @@
 %
 %   The demo is organised in three parts:
 %     1) data analysis with MAP estimate for the hyperparameters
-%     2) data analysis with grid integration over the hyperparameters
-%     3) data analysis with MCMC integration over the hyperparameters
 %
 %   Refernces:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
@@ -168,9 +166,6 @@ colormap(mapcolor(G)), colorbar
 
 
 
-
-
-
 % =========================
 % Print the figures for manual
 % =========================
@@ -194,158 +189,3 @@ colormap(mapcolor(G)), colorbar
 % $$$ set(gcf,'paperunits',get(gcf,'units'))
 % $$$ set(gcf,'paperpos',get(gcf,'pos'))
 % $$$ print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_ppcsCov2.eps
-
-
-
-
-
-
-
-
-% Grid integration
-% ===================================
-% Perform the grid integration and make predictions for p
-[gp_array, P_TH, th, Ef_ia, Varf_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xx, 'int_method', 'CCD');
-
-% Plot the prediction for few input location
-figure(2)
-subplot(1,2,1)
-plot(x_ia(100,:), fx_ia(100,:))
-title( sprintf('p(f|D) at input location (%.1f,%.1f)', xx(100,1), xx(100,2)) );
-subplot(1,2,2)
-plot(x_ia(400,:), fx_ia(400,:))
-title( sprintf('p(f|D) at input location (%.1f,%.1f)', xx(400,1), xx(400,2)) );
-
-
-% --- MCMC ---
-%  (see gp_mc for details)
-% The hyperparameters are sampled with hybrid Monte Carlo 
-% (see, for example, Neal (1996)). 
-
-% The HMC sampling options are set to 'hmc_opt' structure, which is
-% given to 'gp_mc' sampler
-hmc_opt = hmc2_opt;
-hmc_opt.steps=2;
-hmc_opt.stepadj=0.02;
-hmc_opt.persistence=0;
-hmc_opt.decay=0.6;
-hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 5-10 minutes)
-% 'rfull'   will contain a record structure with all the sampls
-% 'g'       will contain a GP structure at the current state of the sampler
-% 'rstate1' will contain a structure with information of the state of the sampler
-[rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 300, 'repeat', 2, 'hmc_opt', hmc_opt);
-
-% After sampling we delete the burn-in and thin the sample chain
-rfull = thin(rfull, 10, 2);
-
-% Now we make the predictions. 'mc_pred' is a function that returns 
-% the predictive mean of the latent function with every sampled 
-% hyperparameter value. Thus, the returned Ef_mc is a matrix of 
-% size n x (number of samples). By taking the mean over the samples
-% we do the Monte Carlo integration over the hyperparameters.
-Ef_mc = mc_pred(rfull, x, y, xx);
-%EF = Ef_mc;
-Ef_mc = mean(Ef_mc,2);
-
-figure
-G=repmat(NaN,size(X1));
-G(ind)=(Ef + avgy)*100;
-pcolor(X1,X2,G),shading flat
-axis equal
-xlim([0 60])
-ylim([0 28])
-colormap(mapcolor(G)), colorbar
-title(['The predicted underlying function ';
-       'and the data points (MAP solution)']);
-set(gcf,'pos',[93 511 1098 420])
-figure
-G=repmat(NaN,size(X1));
-G(ind)=(Ef_mc + avgy)*100;
-pcolor(X1,X2,G),shading flat
-axis equal
-xlim([0 60])
-ylim([0 28])
-colormap(mapcolor(G)), colorbar
-title(['The predicted underlying function  ';
-       'and the data points (MCMC solution)']);
-set(gcf,'pos',[93 511 1098 420])
-
-% We can compare the posterior samples of the hyperparameters to the 
-% MAP estimate that we got from optimization
-figure(3)
-clf, subplot(1,2,1)
-plot(rfull.cf{1}.lengthScale)
-title('The sample chain of length-scales')
-subplot(1,2,2)
-plot(rfull.cf{1}.magnSigma2)
-title('The sample chain of magnitude')
-set(gcf,'pos',[93 511 1098 420])
-
-figure(4)
-clf, subplot(1,4,1)
-hist(rfull.cf{1}.lengthScale(:,1))
-hold on
-plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 1')
-subplot(1,4,2)
-hist(rfull.cf{1}.lengthScale(:,2))
-hold on
-plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Length-scale 2')
-subplot(1,4,3)
-hist(rfull.cf{1}.magnSigma2)
-hold on
-plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('magnitude')
-subplot(1,4,4)
-hist(rfull.noise{1}.noiseSigma2)
-hold on
-plot(gp.noise{1}.noiseSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
-title('Noise variance')
-legend('MCMC samples', 'MAP estimate')
-set(gcf,'pos',[93 511 1098 420])
-
-
-% Sample from two posterior marginals and plot them alongside 
-% with the MAP and grid integration results
-sf = normrnd(Ef_mc(100,:), sqrt(Varf_mc(100,:)));
-sf2 = normrnd(Ef_mc(400,:), sqrt(Varf_mc(400,:)));
-
-figure(2)
-subplot(1,2,1)
-[N,X] = hist(sf);
-hist(sf)
-hold on
-plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
-ff = normpdf(x_ia(100,:)', Ef_map(100), sqrt(Varf_map(100)));
-plot(x_ia(100,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
-set(gca, 'Ytick', [])
-title('p(f|D) at input location (-1.6, 0.7)');
-%xlim([0 1])
-
-subplot(1,2,2)
-[N,X] = hist(sf2);
-hist(sf2)
-hold on
-plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
-ff = normpdf(x_ia(400,:)', Ef_map(400), sqrt(Varf_map(400)));
-plot(x_ia(400,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
-set(gca, 'Ytick', [])
-title('p(f|D) at input location (-0.8, 1.1)');
-%xlim([-1.2 -0.5])
-
-
-
-
-
-
-
-
-
-
-
-
-

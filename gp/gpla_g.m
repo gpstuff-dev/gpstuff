@@ -360,7 +360,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.likelih.fh_pak(gp.likelih))
             gdata_likelih = 0;
             likelih = gp.likelih;
 
@@ -598,7 +598,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.likelih.fh_pak(gp.likelih))
             gdata_likelih = 0;
             likelih = gp.likelih;
             
@@ -877,7 +877,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood'))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.likelih.fh_pak(gp.likelih))
             gdata_likelih = 0;
             likelih = gp.likelih;
             

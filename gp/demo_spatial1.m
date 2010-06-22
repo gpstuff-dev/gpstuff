@@ -100,12 +100,13 @@ gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior',
 % Create the likelihood structure
 likelih = likelih_poisson('init');
 
-% Create the FIC GP data structure
-gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001, 'infer_params', 'covariance');
+% Create the FIC GP data structure so that inducing inputs are not optimized
+gp = gp_init('init', 'FIC', likelih, {gpcf1}, [], 'X_u', Xu, 'jitterSigma2', 0.001);
+gp = gp_init('set', gp, 'infer_params', 'covariance');
 
 % --- MAP estimate with Laplace approximation ---
 
-% Set the approximate inference method to EP
+% Set the approximate inference method to Laplace approximation
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', ye});
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
