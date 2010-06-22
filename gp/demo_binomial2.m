@@ -63,7 +63,7 @@ load('demos/sim_binodata.mat')
 %   xx(:,2) - time period
 %   xx(:,3) - cohort (birth year)
 
-% Use only a proportion of original data points in training
+% Use only a (random) proportion of original data points in training
 inds = randperm(size(xx,1));
 ntr = 300;
 itr = sort(inds(1:ntr));
@@ -120,7 +120,7 @@ likelih = likelih_binomial('init', yy, nn);
 gp = gp_init('init', 'FULL', likelih, {gpcf1,gpcf2,gpcf3,gpcf4}, [],'jitterSigma2',0.01^2);   %{gpcf2}
     
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'covariance'});
+gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', nn});
 
 % Function handles for optimization
 fe=str2fun('gpla_e');
@@ -128,31 +128,27 @@ fg=str2fun('gpla_g');
 
 % Set the options for scaled conjugate optimazation
 opt_scg = scg2_opt;
-opt_scg.tolfun = 1e-3;
+opt_scg.tolfun = 1e-2;
 opt_scg.tolx = 1e-1;
 opt_scg.display = 1;
 
 % Do scaled conjugate gradient optimization 
-w=gp_pak(gp, 'covariance');
-[wopt, opt, flog]=scg2(fe, w, opt_scg, fg, gp, xx, yy, 'covariance');
-gp=gp_unpak(gp, wopt, 'covariance');
+w=gp_pak(gp);
+[wopt, opt, flog]=scg2(fe, w, opt_scg, fg, gp, xx, yy, 'z',nn);
+gp=gp_unpak(gp, wopt);
 
 % Making predictions
 
-% Set the total number of trials Nt at the test points xx 
-likelih = likelih_binomial('set', likelih, 'Nt', nt);
-gp = gp_init('set', gp, 'likelih',likelih);
-
 % First with all components
-[Ef,Varf,Ey,Vary,Py] = la_pred(gp,xx,yy,xt,'covariance',[],[],yt);
+[Ef,Varf,Ey,Vary,Py] = la_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
 % Age group effect
-[Ef_1,Varf_1] = la_pred(gp,xx,yy,xxo,'covariance',[1]);
+[Ef_1,Varf_1] = la_pred(gp,xx,yy,xxo,'predcf',[1],'z',nn,'zt',nno);
 % Time period effect
-[Ef_2,Varf_2] = la_pred(gp,xx,yy,xxo,'covariance',[2]);
+[Ef_2,Varf_2] = la_pred(gp,xx,yy,xxo,'predcf',[2],'z',nn,'zt',nno);
 % Cohort effect
-[Ef_3,Varf_3] = la_pred(gp,xx,yy,xxo,'covariance',[3]);
+[Ef_3,Varf_3] = la_pred(gp,xx,yy,xxo,'predcf',[3],'z',nn,'zt',nno);
 % Interaction effect between age group and time period
-[Ef_4,Varf_3] = la_pred(gp,xx,yy,xxo,'covariance',[4]);
+[Ef_4,Varf_3] = la_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
 
 % Plotting predictions
 
