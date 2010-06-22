@@ -1,16 +1,15 @@
 % PROBABILITY DISTRIBUTION FUNCTIONS (contents of the dist-folder):
 %
 % Priors 
-%
-%    PRIRO_GAMMA       - Create Gamma prior
-%    PRIOR_INVGAM      - Create inverse-Gamma prior
-%    PRIOR_LAPLACE     - Create Laplace (double exponential) prior
-%    PRIRO_NORMAL      - create Gaussian (multivariate) (hierarchical) prior
-%    PRIOR_T           - Create Student's-t prior
-%    PRIOR_LOGLOGUNIF  - Create uniform prior for the log(log(parameter))
-%    PRIOR_LOGUNIF     - Create uniform prior for the log(parameter)
-%    PRIOR_SINVCHI2    - Create scaled inverse Chi squared prior
-%    PRIOR_UNIF        - Create uniform prior 
+%  PRIOR_GAMMA     Gamma prior structure     
+%  PRIOR_INVGAM     Inverse-gamma prior structure     
+%  PRIOR_LAPLACE    Laplace (double exponential) prior structure
+%  PRIOR_LOGLOGUNIF Uniform prior structure for the log(log(parameter))
+%  PRIOR_LOGUNIF    Uniform prior structure for the logarithm of the parameter
+%  PRIOR_NORMAL     Normal prior structure     
+%  PRIOR_SINVCHI2   Scaled inverse-chi-square prior structure
+%  PRIOR_T          Student-t prior structure
+%  PRIOR_UNIF     Uniform prior structure     
 %
 % Probability density functions
 %
@@ -41,9 +40,6 @@
 %    T_LPDF        - Student's T log-probability density function (lpdf)
 %    T_PDF         - Student's T probability density function (pdf)
 %
-% Functions to sample from full conditional distribution
-%
-%
 % Random number generators
 %
 %    CATRAND       - Random matrices from categorical distribution.
@@ -68,3 +64,4 @@
 % Others
 %    KERNELP       - Kernel density estimator for one dimensional distribution.
 %    HAMMERSLEY    - Hammersley quasi-random sequence
+

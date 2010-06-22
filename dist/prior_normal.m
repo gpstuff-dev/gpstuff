@@ -1,5 +1,4 @@
 function p = prior_normal(do, varargin)
-
 % PRIOR_NORMAL     Normal prior structure     
 %       
 %        Description

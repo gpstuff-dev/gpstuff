@@ -1,5 +1,4 @@
 function p = prior_t(do, varargin)
-
 % PRIOR_T     Student-t prior structure     
 %       
 %        Description

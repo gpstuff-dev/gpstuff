@@ -1,5 +1,4 @@
 function p = prior_gamma(do, varargin)
-
 % PRIOR_GAMMA     Gamma prior structure     
 %       
 %        Description

@@ -1,5 +1,4 @@
 function p = prior_unif(do, varargin)
-
 % PRIOR_UNIF     Uniform prior structure     
 %       
 %        Description

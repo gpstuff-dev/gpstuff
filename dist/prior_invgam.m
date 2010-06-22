@@ -1,6 +1,5 @@
 function p = prior_invgam(do, varargin)
-
-% PRIOR_T     Inverse-gamma prior structure     
+% PRIOR_INVGAM     Inverse-gamma prior structure     
 %       
 %        Description
 %        P = PRIOR_NORMAL('INIT') returns a structure that specifies

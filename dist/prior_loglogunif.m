@@ -1,5 +1,4 @@
 function p = prior_loglogunif(do, varargin)
-
 % PRIOR_LOGLOGUNIF      Uniform prior structure for the log(log(parameter))
 %       
 %       Description

@@ -1,5 +1,4 @@
 function p = prior_laplace(do, varargin)
-
 % PRIOR_LAPLACE      Laplace (double exponential) prior structure     
 %       
 %        Description

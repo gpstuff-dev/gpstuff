@@ -1,5 +1,4 @@
 function p = prior_logunif(do, varargin)
-
 % PRIOR_LOGUNIF      Uniform prior structure for the logarithm of the parameter
 %       
 %       Description

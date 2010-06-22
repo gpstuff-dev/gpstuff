@@ -1,5 +1,4 @@
 function p = prior_sinvchi2(do, varargin)
-
 % PRIOR_SINVCHI2     Scaled inverse-chi-square prior structure
 %       
 %        Description
