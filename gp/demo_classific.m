@@ -40,10 +40,6 @@ function demo_classific
 % Recognition and Neural Networks by B.D. Ripley (1996) Cambridge
 % University Press ISBN 0 521 46986 7
 
-%========================================================
-% data analysis with full GP model
-%========================================================
-
 S = which('demo_classific');
 L = strrep(S,'demo_classific.m','demos/synth.tr');
 x=load(L);
