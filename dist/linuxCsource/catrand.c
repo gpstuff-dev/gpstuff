@@ -9,7 +9,7 @@
  *
  * Copyright (C) 1999-2003 Aki Vehtari
  *
- * Last modified: 2004-09-07 13:52:18 EEST
+ * Last modified: 2010-06-16 14:41:31 EEST
  *
  */
 
@@ -46,15 +46,15 @@ void mexFunction(int nlhs, mxArray *plhs[],
     }
     else if (nrhs < 3) {
       rlen=(int)mxGetScalar(prhs[1]);
-      MN[0]=prhs[1];
+      MN[0]=(mxArray *) prhs[1];
       MN[1]=mxCreateDoubleScalar(1.0);
       mexCallMATLAB(1,&plhs[0],2,MN,"rand");
       mxDestroyArray(MN[1]);
     }
     else {
       rlen=(int)mxGetScalar(prhs[1]) * (int)mxGetScalar(prhs[2]);
-      MN[0]=prhs[1];
-      MN[1]=prhs[2];
+      MN[0]=(mxArray *) prhs[1];
+      MN[1]=(mxArray *) prhs[2];
       mexCallMATLAB(1,&plhs[0],2,MN,"rand");
     }
 

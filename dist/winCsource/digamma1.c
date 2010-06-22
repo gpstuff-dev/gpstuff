@@ -1,7 +1,7 @@
 #include <math.h>
 #include "mex.h"
 
-/* DIGAMMA.C - Compute the digamma function. */
+/* DIGAMMA1.C - Compute the digamma function. */
 
 double digamma (double);
 
