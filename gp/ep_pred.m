@@ -1,5 +1,5 @@
 function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
-%EP_PRED	Predictions with Gaussian Process EP approximation
+%EP_PRED       Predictions with Gaussian Process EP approximation
 %
 %     Description
 %	[EF, VARF, EY, VARY] = EP_PRED(GP, X, Y, XT, OPTIONS) takes a GP 

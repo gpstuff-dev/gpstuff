@@ -1,16 +1,17 @@
 function metric = metric_ibs_gxe(do, varargin)
-%METRIC_ibs An Euclidean distance metric for Gaussian process models.
+%METRIC_IBS_GXE    An Euclidean distance metric for Gaussian process models.
 %
 %	Description
-%
 %	METRIC = METRIC_ibs_gxe('INIT', NIN) Constructs an data
-%       structure for using both a distancematrix and a euclidean metric used in covariance function of a GP model.
+%       structure for using both a distancematrix and a euclidean
+%       metric used in covariance function of a GP model.
 %
-%   Uses metric_distancematrix and metric_euclidean to combine genetic (ibs distance matrix) and
-%   environmental factors. These have to be set up beforehand and added to
-%   this using 'init' or 'set'. The input to the GP should a matrix of size
-%   n x n+d where n is the number of individuals and d the number of
-%   additional covariates.
+%       Uses metric_distancematrix and metric_euclidean to combine
+%       genetic (ibs distance matrix) and environmental factors. These
+%       have to be set up beforehand and added to this using 'init' or
+%       'set'. The input to the GP should a matrix of size n x n+d
+%       where n is the number of individuals and d the number of
+%       additional covariates.
 %
 %         pak         = function handle to pack function
 %                       (@metric_ibs_gxe_pak)

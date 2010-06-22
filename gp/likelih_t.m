@@ -1,5 +1,5 @@
 function likelih = likelih_t(do, varargin)
-%likelih_t	Create a T likelihood structure for Gaussian Process
+%LIKELIH_T       Create a Student-t likelihood structure 
 %
 %	Description
 %

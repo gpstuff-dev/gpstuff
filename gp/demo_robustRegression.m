@@ -1,4 +1,4 @@
-%DEMO_TGP      A regression demo with Student-t distribution as a residual model.
+%DEMO_ROBUSTREGRESSION      A regression demo with Student-t distribution as a residual model.
 %
 %    Description
 %    The synthetic data used here is the same used by Radford M. Neal

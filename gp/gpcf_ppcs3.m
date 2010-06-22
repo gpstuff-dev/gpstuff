@@ -1,5 +1,5 @@
 function gpcf = gpcf_ppcs3(do, varargin)
-%GPCF_ppcs3	Create a piece wise polynomial (q=3) covariance function for Gaussian Process
+%GPCF_PPCS3     Create a piece wise polynomial (q=3) covariance function 
 %
 %	Description
 %

@@ -1,5 +1,5 @@
 function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
-%GPLA_E Conduct Laplace approximation and return marginal log posterior estimate
+%GPLA_E Construct Laplace approximation and return marginal log posterior estimate
 %
 %     Description
 %	GP = GPLA_E('init', GP, X, Y, OPTIONS) takes a GP data structure

@@ -1,4 +1,4 @@
-%DEMO_REGRESSION_PERIODIC    Regression problem demonstration for periodic data
+%DEMO_PERIODICCOV    Regression problem demonstration for periodic data
 %                    
 %
 %    Description

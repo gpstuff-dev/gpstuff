@@ -1,13 +1,13 @@
 function [ecv] = gp_looe(w, gp, x, y, varargin)
-%GP_CVE	Evaluate energy function for Gaussian Process 
+%GP_LOOE   Evaluate the leave one out predictive density in case of
+%          Gaussian observation model
 %
 %	Description
 %	ECV = GP_CVE(W, GP, X, Y, PARAM) takes a Gaussian process data
-
 %       structure GP together with a matrix X of input vectors and a
-%       matrix Y of targets, and evaluates the energy function E.
-%       Each row of X corresponds to one input vector and each row of
-%       Y corresponds to one target vector.
+%       matrix Y of targets, and evaluates the leave one out
+%       predictive density E.  Each row of X corresponds to one input
+%       vector and each row of Y corresponds to one target vector.
 %
 %       The energy is minus log LOO-CV cost function:
 %            ECV  = - sum log p(Y_i | X, Y_{\i}, th),

@@ -1,6 +1,5 @@
 function likelih = likelih_binomial(do, varargin)
-%likelih_binomial	Create a binomial likelihood structure for a
-%                       Gaussian Process
+%LIKELIH_BINOMIAL       Create a binomial likelihood structure 
 %
 %	Description%
 %	LIKELIH = LIKELIH_BINOMIAL('INIT') Create and initialize 

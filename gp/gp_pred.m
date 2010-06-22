@@ -1,5 +1,5 @@
 function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
-%GP_PRED    Make predictions for Gaussian process
+%GP_PRED    Make predictions with Gaussian process 
 %
 %     Description
 %	[Ef, Varf] = GP_PRED(GP, X, Y, XT, OPTIONS) takes a GP data

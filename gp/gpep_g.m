@@ -1,5 +1,5 @@
 function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
-%GPEP_G   Evaluate gradient of EP's marginal log posterior estimate 
+%GPEP_G   Evaluate gradient of EP's marginal log posterior estimate (GPEP_E)
 %
 %	Description
 %	G = GPEP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter 

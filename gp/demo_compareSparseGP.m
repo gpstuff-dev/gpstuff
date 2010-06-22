@@ -1,5 +1,5 @@
-%DEMO_REGRESSION_VAR     Regression demo comparing different sparse
-%                        approximations
+%DEMO_COMPARESPARSEGP     Regression demo comparing different sparse
+%                         approximations
 %
 %   Description
 %   A regression problem with one input variable and one output

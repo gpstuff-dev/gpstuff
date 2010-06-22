@@ -1,5 +1,5 @@
 function likelih = likelih_negbin(do, varargin)
-%likelih_negbin	Create a Negbin likelihood structure for Gaussian Process
+%LIKELIH_NEGBIN    Create a Negbin likelihood structure 
 %
 %	Description
 %       LIKELIH = LIKELIH_NEGBIN('INIT') Create and initialize Negbin

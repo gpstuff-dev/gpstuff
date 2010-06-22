@@ -1,5 +1,6 @@
 function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
-%GPLA_G   Evaluate gradient of Laplace approximation's marginal log posterior estimate 
+%GPLA_G   Evaluate gradient of Laplace approximation's marginal 
+%         log posterior estimate (GPLA_E)
 %
 %     Description
 %	G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter

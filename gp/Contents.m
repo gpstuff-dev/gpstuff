@@ -1,188 +1,119 @@
 % THE GP TOOLS (/in the GP/ folder):
 % 
 %  Gaussian process utilities:
-%  GP_INIT            - Create a Gaussian Process
-%  GP_COV             - Evaluate covariance matrix between two input vectors. 
-%  GP_COVVEC          - Evaluate covariance vector between two input vectors. 
-%  GP_TRCOV           - Evaluate training covariance matrix
-%  GP_TRVAR           - Evaluate training variance vector
-%
+%   GPCOV     Evaluate covariance matrix between two input vectors. 
+%   GP_TRCOV  Evaluate training covariance matrix (gp_cov + noise covariance). 
+%   GP_TRVAR  Evaluate training variance vector. 
+%   GP_PAK    Combine GP hyper-parameters into one vector.
+%   GP_UNPAK  Set GP hyper-parameters from vector to structure
+%   GP_RND    Random draws from the postrior Gaussian process
+%   GP_INIT   Create a Gaussian Process data structure. 
 %
 %  Covariance functions:
-%  GPCF_EXP           - Create an exponential covariance function for Gaussian Process
-%  GPCF_MATERN32      - Create a Matern nu=3/2 covariance function for Gaussian Process
-%  GPCF_MATERN52      - Create a Matern nu=5/2 covariance function for Gaussian Process
-%  GPCF_NOISE         - Create a noise covariance function for Gaussian Process
-%  GPCF_PPCS2         - Create a piece wise polynomial covariance function for Gaussian Process
-%                       (this is compactly supported covariance function)
-%  GPCF_SEXP          - Create a squared exponential covariance function for Gaussian Process
-%
+%   GPCF_CONSTANT      Create a constant covariance function 
+%   GPCF_EXP           Create a squared exponential covariance function
+%   GPCF_LINEAR        Create a linear covariance function
+%   GPCF_MATERN32      Create a squared exponential covariance function
+%   GPCF_MATERN52      Create a squared exponential covariance function
+%   GPCF_NEURALNETWORK Create a squared exponential covariance function
+%   GPCF_NOISE         Create a noise covariance function 
+%   GPCF_NOISET        Create a scale mixture noise covariance function (~Student-t) 
+%   GPCF_PERIODIC      Create a periodic covariance function
+%   GPCF_PPCS0         Create a piece wise polynomial (q=0) covariance function 
+%   GPCF_PPCS1         Create a piece wise polynomial (q=1) covariance function 
+%   GPCF_PPCS2         Create a piece wise polynomial (q=2) covariance function 
+%   GPCF_PPCS3         Create a piece wise polynomial (q=3) covariance function 
+%   GPCF_PROD          Create a product form covariance function 
+%   GPCF_RQ            Create an rational quadratic covariance function 
+%   GPCF_SEXP          Create a squared exponential covariance function
 %
 %  Likelihood functions:
-%  LIKELIH_LOGIT      - Create a Logit likelihood structure for Gaussian Proces
-%  LIKELIHOOD_PROBIT  - Create a Probit likelihood structure for Gaussian Process
-%  LIKELIH_POISSON    - Create a Poisson likelihood structure for Gaussian Process
-%
+%   LIKELIH_BINOMIAL   Create a binomial likelihood structure 
+%   LIKELIH_LOGIT      Create a Logit likelihood structure 
+%   LIKELIH_NEGBIN     Create a Negbin likelihood structure 
+%   LIKELIH_POISSON    Create a Poisson likelihood structure 
+%   LIKELIHOOD_PROBIT  Create a Probit likelihood structure 
+%   LIKELIH_T          Create a Student-t likelihood structure 
 %
 % Inference utilities:
-%  EP_PRED            - Predictions with Gaussian Process EP
-%  GP_E               - Evaluate energy function for Gaussian Process 
-%  GP_G               - Evaluate gradient of energy for Gaussian Process
-%  GPEP_E             - Conduct Expectation propagation and return marginal 
-%                       log posterior estimate
-%  GPEP_G             - Evaluate gradient of EP's marginal log posterior estimate 
-%  GPLA_E             - Conduct LAplace approximation and return marginal log 
-%                       posterior estimate
-%  GPLA_G             - Evaluate gradient of Laplace approximation's marginal 
-%                       log posterior estimate 
-%  GP_MC              - Monte Carlo sampling for Gaussian process models
-%  GP_MCOPT           - Default options for GP_MC and GP_MC
-%  GP_PAK             - Combine GP hyper-parameters into one vector
-%  GP_PRED            - Make predictions for Gaussian process
-%  GP_PREDS           - (Multible) Predictions of Gaussian Processes
-%  GP_UNPAK           - Set GP hyper-parameters from vector to structure
-%  LA_PRED            - Predictions with Gaussian Process Laplace approximation
-%  SINV               - Evaluate the sparse inverse matrix
+%   GP_E          Evaluate energy function (un-normalized marginal log posterior) 
+%                 in case of Gaussian observation model
+%   GP_G          Evaluate gradient of energy (GP_E) for Gaussian Process
+%   GP_PRED       Make predictions with Gaussian process 
+%   GPEP_E        Conduct Expectation propagation and return marginal 
+%                 log posterior estimate
+%   GPEP_G        Evaluate gradient of EP's marginal log posterior estimate (GPEP_E)
+%   EP_PRED       Predictions with Gaussian Process EP approximation
+%   GPLA_E        Construct Laplace approximation and return marginal 
+%                 log posterior estimate
+%   GPLA_G        Evaluate gradient of Laplace approximation's marginal 
+%                 log posterior estimate (GPLA_E)
+%   LA_PRED       Predictions with Gaussian Process Laplace approximation
+%   GP_MC         Markov chain sampling for Gaussian process models
+%   MC_PRED       Predictions with Gaussian Process MCMC approximation.
+%   GP_IA         Integration approximation with grid, Monte Carlo or CCD integration
+%   IA_PRED       Prediction with Gaussian Process GP_IA solution.
+%    LGCP         Log Gaussian Cox Process intensity estimate for 1D and 2D data
 %
+%  Model assesment and comparison:
+%   GP_DIC        The DIC statistics and efective number of parameters in a GP model
+%   GP_KFCV       K-fold cross validation for a GP model
+%   GP_LOOE       Evaluate the leave one out predictive density in case of
+%                 Gaussian observation model
+%   GP_LOOE       Evaluate the gradient of the leave one out predictive 
+%                 density (GP_LOOE) in case of Gaussian observation model 
+%   GP_PEFF       The efective number of parameters in GP model with focus 
+%                 on latent variables.
+%
+%  Metrics:
+%   METRIC_DISTANCEMATRIX  An Euclidean distance for Gaussian process models. 
+%   METRIC_EUCLIDEAN       An Euclidean distance for Gaussian process models.
+%   METRIC_IBS_GXE         An Euclidean distance for Gaussian process models.
+%  
+%  Misc:
+%    LDLROWMODIFY  Function to modify the sparse cholesky factorization 
+%                  L*D*L' = C, when a row and column k of C have changed 
+%    LDLROWUPDATE  Multiple-rank update or downdate of a sparse LDL' factorization.
+%    SPINV         Evaluate the sparsified inverse matrix
+%    SCALED_HMC    A scaled hybric Monte Carlo samping for latent values
+%    SCALED_MH     A scaled Metropolis Hastings samping for latent values
+%    TRCOV         Evaluate training covariance matrix for covariance function
+%                  This is a mex-function that is called from gpcf_*_trcov
+%                  functions.
+%    GP_INSTALL    Matlab function to compile all the c-files to mex in the 
+%                  GPstuff/gp folder.
 %
 %  Demonstration programs:
-%  DEMO_CLAASIFIC1    - Classification problem demonstration for 2 classes via MCMC
-%  DEMO_CLAASIFIC1    - Classification problem demonstration for 2 classes via Laplace 
-%                       approximation and EP
-%  DEMO_REGRESSION1   - Regression problem demonstration for 2-input 
-%                       function with Gaussian process
-%  DEMO_REGRESSION2   - Regression problem demonstration for modeling 
-%                       multible phenomenon
-%  DEMO_SPATIAL1      - Demonstration for a disease mapping problem
-%                       with Gaussian process prior
-
-
-
-% To be included into the package
-
-demo_classific1.m
-demo_regression1.m
-demo_regression2.m
-demo_sparseRegression.m
-demo_robustRegression.m
-demo_spatial1.m
-
-ep_pred.m
-
-gpcf_constant.m
-gpcf_dotproduct.m
-gpcf_exp.m
-gpcf_linear.m
-gpcf_matern32.m
-gpcf_matern52.m
-gpcf_neuralnetwork.m
-gpcf_noise.m
-gpcf_noiset.m
-gpcf_ppcs0.m
-gpcf_ppcs1.m
-gpcf_ppcs2.m
-gpcf_ppcs3.m
-gpcf_prod.m
-gpcf_rq.m
-gpcf_sexp.m
-
-gp_cov.m
-gp_e.m
-gpep_e.m
-gpep_g.m
-gp_g.m
-gp_ia.m
-gp_iaopt.m
-gp_init.m
-gp_install.m
-
-gpla_e.m
-gpla_g.m
-gp_mc.m
-gp_mcopt.m
-gp_pak.m
-gp_pred.m
-gp_rnd.m
-gp_trcov.m
-gp_trvar.m
-gp_unpak.m
-ia_pred.m
-
-la_pred_alk.m
-la_pred.m
-ldlrowmodify.m
-
-likelih_binomial.m
-likelih_logit.m
-likelih_negbin.m
-likelih_poisson.m
-likelih_probit.m
-likelih_t.m
-matlab_install.m
-mc_pred.m
-metric_euclidean.m
-
-scaled_hmc.m
-scaled_mh.m
-
-spinv.m
-test_package.m
-
-trcov.m
-
-
-
-
-
-% To be decided if is included in the package
-demo_binomial.m
-demo_censored_t.m
-demo_classific2.m
-demo_ep_clFull_mcmc.m
-demo_infneuralnetwork.m
-demo_lgcpdens.m
-demo_modelassesment1.m
-demo_modelassesment2.m
-demo_nb_FIC.m
-demo_nb_Full.m
-demo_regression3.m
-demo_regression4.m
-demo_regression_metric.m
-
-demo_spatial2.m
-demo_spatial3.m
-demo_st_cancer_FIC.m
-demo_st_FIC.m
-demo_st_Full.m
-demo_st_PIC.m
-
-ep_post.m
-
-gp_ais2.m
-gp_ais3.m
-gp_ais.m
-gpcf_noise_cent.m
-gpcf_Ssexp.m
-gpcf_ssgp.m
-gpcf_SSsexp.m
-
-gp_cve.m
-gp_cvg.m
-gp_dic.m
-gp_kfcv.m
-gp_peff.m
-
-la_post.m
-lgcpdens.m
-
-likelih_cen_t.m
-
-pred_e.m
-pred_g.m
-
-quadgk2.m
-quadgk.m
-
-temp.m
-test_nested.m
-test_rowmod.m
+%   DEMO_BINOMIAL          Demonstration of Gaussian process model with binomial
+%                          likelihood
+%   DEMO_BINOMIAL2         Demonstration for modeling age-period-cohort data
+%                          by a binomial model combined with GP prior.
+%   DEMO_CLAASIFIC         Classification problem demonstration for 2 classes 
+%   DEMO_COMPARESPARSEGP   Regression demo comparing different sparse
+%                          approximations
+%   DEMO_LGCP              Demonstration for a log Gaussian Cox process
+%                          with inference via EP or Laplace approximation
+%   DEMO_MODELASSESMENT1   Demonstration for model assesment with DIC, number 
+%                          of effective parameters and ten-fold cross validation
+%   DEMO_MODELASSESMENT2   Demonstration for model assesment when the observation 
+%                          model is non-Gaussian
+%   DEMO_INFNEURALNETWORK  Demonstration of Gaussian process with a neural
+%                          network covariance function
+%   DEMO_PERIODICCOV       Regression problem demonstration for periodic data
+%   DEMO_PPCSCOV           Regression problem demonstration for 2-input 
+%                          function with Gaussian process using CS covariance
+%   DEMO_REGRESSION1       Regression problem demonstration for 2-input 
+%                          function with Gaussian process
+%   DEMO_REGRESSION2       Regression problem demonstration with additive model
+%   DEMO_REGRESSION_ADDITIVE Regression demonstration with additive Gaussian
+%                          process using linear, squared exponential and
+%                          neural network covariance fucntions 
+%   DEMO_ROBUSTREGRESSION  A regression demo with Student-t distribution as a 
+%                          residual model.
+%   DEMO_SPARSEREGRESSION  Regression problem demonstration for 2-input 
+%                          function with sparse Gaussian processes
+%   DEMO_SPATIAL1          Demonstration for a disease mapping problem
+%                          with Gaussian process prior and Poisson likelihood
+%   DEMO_SPATIAL2          Demonstration for a disease mapping problem with 
+%                          Gaussian process prior and negative binomial 
+%                          observation model

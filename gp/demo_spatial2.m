@@ -1,4 +1,4 @@
-%DEMO_SPATIAL4    Demonstration for a disease mapping problem with Gaussian
+%DEMO_SPATIAL2    Demonstration for a disease mapping problem with Gaussian
 %                 process prior and negative binomial observation
 %                 model
 %

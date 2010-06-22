@@ -1,14 +1,14 @@
 function gcv = gp_loog(w, gp, x, t, varargin)
-%GP_CVG   Evaluate gradient of energy for Gaussian Process
+%   GP_LOOE       Evaluate the gradient of the leave one out predictive 
+%                 density (GP_LOOE) in case of Gaussian observation model 
 %
 %	Description
 %	G = GP_CVG(W, GP, X, Y) takes a full GP hyper-parameter vector
-
-%       W, data structure GP a matrix X of input vectors and a matrix Y
-%       of target vectors, and evaluates the gradient G of the energy 
-%	function. Each row of X corresponds to one input vector and each 
-%       row of Y corresponds to one target vector. NOTE! This
-%       parametrization works only for full GP!
+%       W, data structure GP a matrix X of input vectors and a matrix
+%       Y of target vectors, and evaluates the gradient G of the leave
+%       one out predictive density. Each row of X corresponds to one
+%       input vector and each row of Y corresponds to one target
+%       vector. NOTE! This parametrization works only for full GP!
 %
 %	See also
 %       GP_CVE, GP_PAK, GP_UNPAK, GPCF_*

@@ -1,5 +1,5 @@
 function likelih = likelih_logit(do, varargin)
-%likelih_logit	Create a Logit likelihood structure for Gaussian Process
+%LIKELIH_LOGIT    Create a Logit likelihood structure 
 %
 %	Description
 %

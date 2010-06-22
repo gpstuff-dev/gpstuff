@@ -1,13 +1,14 @@
 function [sampf, sampy] = gp_rnd(gp, x, y, xt, varargin)
-%GP_RND    Random draws from the Gaussian process
+%GP_RND    Random draws from the postrior Gaussian process
 %
 %	Description
 %	[SAMPF, SAMPY] = GP_RND(GP, X, Y, XT, OPTIONS) takes a gp data 
-%       structure GP together with a matrix XT of input vectors, Matrix X of training 
-%       inputs and vector Y of training targets, and returns a random sample SAMPF and 
-%       SAMPY from the posterior distribution p(f|y) and the predictive distribution 
-%       p(y_new|y) at locations XT. Each row of XT corresponds to one input vector and 
-%       each row of Y corresponds to one output vector. 
+%       structure GP together with a matrix XT of input vectors,
+%       Matrix X of training inputs and vector Y of training targets,
+%       and returns a random sample SAMPF and SAMPY from the posterior
+%       distribution p(f|y) and the predictive distribution p(y_new|y)
+%       at locations XT. Each row of XT corresponds to one input
+%       vector and each row of Y corresponds to one output vector.
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 

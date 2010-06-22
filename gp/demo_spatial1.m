@@ -1,5 +1,5 @@
 %DEMO_SPATIAL1    Demonstration for a disease mapping problem
-%                 with Gaussian process prior
+%                 with Gaussian process prior and Poisson likelihood
 %
 %    Description
 

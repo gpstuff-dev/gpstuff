@@ -1,5 +1,6 @@
 function p_eff = gp_peff(gp, x, y, varargin);
-%GP_PEFF The efective number of parameters in GP model with focus on latent variables.
+%GP_PEFF  The efective number of parameters in GP model with focus 
+%         on latent variables.
 %
 %	Description
 %        P_EFF = EP_PEFF(GP, X, Y) Takes the Gaussian process

@@ -1,6 +1,5 @@
 function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
-% GP_IA explores the hypeparameters around the mode and returns a
-% list of GPs with different hyperparameters and corresponding weights
+% GP_IA    Integration approximation with grid, Monte Carlo or CCD integration
 %
 %     Description
 %       [GP_ARRAY, P_TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS)

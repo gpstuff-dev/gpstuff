@@ -1,5 +1,5 @@
 function [K, C] = gp_trcov(gp, x1, predcf)
-% GP_TRCOV     Evaluate training covariance matrix. 
+% GP_TRCOV     Evaluate training covariance matrix (gp_cov + noise covariance). 
 %
 %         Description
 %          K = GP_TRCOV(GP, TX, PREDCF) takes in Gaussian process GP

@@ -1,5 +1,5 @@
 function likelih = likelih_poisson(do, varargin)
-%likelih_poisson	Create a Poisson likelihood structure for Gaussian Process
+%LIKELIH_POISSON      Create a Poisson likelihood structure 
 %
 %	Description
 %

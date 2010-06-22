@@ -1,5 +1,5 @@
 function [record, gp, opt] = gp_mc(gp, x, y, varargin)
-% GP_MC   Monte Carlo sampling for Gaussian process models
+% GP_MC   Markov chain sampling for Gaussian process models
 %
 %   Description
 %   [RECORD, GP, OPT] = GP_MC(GP, X, Y, OPTIONS) Takes the Gaussian 

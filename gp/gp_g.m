@@ -1,5 +1,5 @@
 function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
-%GP_G   Evaluate gradient of energy for Gaussian Process
+%GP_G   Evaluate gradient of energy (GP_E) for Gaussian Process
 %
 %	Description
 %	G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter

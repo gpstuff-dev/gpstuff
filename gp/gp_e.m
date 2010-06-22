@@ -1,5 +1,6 @@
 function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
-%GP_E	Evaluate energy function for Gaussian Process 
+%GP_E	Evaluate energy function (un-normalized marginal log posterior) 
+%       in case of Gaussian observation model
 %
 %     Description
 %	E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process

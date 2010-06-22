@@ -1,5 +1,5 @@
 function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin) 
-%IA_PRED	Prediction with Gaussian Process IA solution.
+%IA_PRED	Prediction with Gaussian Process GP_IA solution.
 %
 %	Description
 %	[Ef, Varf] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) takes a Gaussian 

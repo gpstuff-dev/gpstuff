@@ -1,5 +1,5 @@
 function likelih = likelih_probit(do, varargin)
-%LIKELIHOOD_PROBIT	Create a Probit likelihood structure for Gaussian Process
+%LIKELIHOOD_PROBIT	Create a Probit likelihood structure 
 %
 %	Description
 %

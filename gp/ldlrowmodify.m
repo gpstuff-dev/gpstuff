@@ -1,6 +1,8 @@
 function L = ldlrowmodify(L, c2, k)
-% function L = rowmodify(L, c2, k)
+% LDLROWMODIFY    Function to modify the sparse cholesky factorization
+%                 L*D*L' = C, when a row and column k of C have changed
 %
+% L = rowmodify(L, c2, k)
 % Function to modify the cholesky factorization L*D*L' = C (which 
 % is stored in L), when a row and column k of C have changed from c to 
 % c2. The change in C is assumed to be such that the sparsity structure 

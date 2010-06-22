@@ -1,5 +1,5 @@
 function demo_classific
-%DEMO_CLAASIFIC1    Classification problem demonstration for 2 classes via MCMC
+%DEMO_CLAASIFIC    Classification problem demonstration for 2 classes
 %
 %      Description
 %      The demonstration program is based on synthetic two 

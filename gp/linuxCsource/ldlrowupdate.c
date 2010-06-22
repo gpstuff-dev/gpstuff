@@ -25,6 +25,16 @@
  * mexFunction could be much faster if it could safely modify its input LD.
  */
 
+/* -----------------------------------------------------------------------------
+ * Copyright (C) 2005-2006 Timothy A. Davis
+ * Copyright (c) 2009-2010      Jarno Vanhatalo
+ *
+ * This software is distributed under the GNU General Public
+ * License (version 2 or later); please refer to the file
+ * License.txt, included with the software, for details.
+ /* -----------------------------------------------------------------------------
+
+
 #include "cholmod_matlab.h"
 
 void mexFunction
