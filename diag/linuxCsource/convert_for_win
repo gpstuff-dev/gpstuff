@@ -1,7 +1,6 @@
 #
 
 cp *.c ../winCsource
-cp *.h ../winCsource
 cd ../winCsource
 
 set baddies=`grep -l '_(' *.c`
