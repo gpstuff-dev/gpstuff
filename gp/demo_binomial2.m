@@ -38,7 +38,7 @@
 %      test points Xt must be set additionally in the likelihood structure
 %      when E(Yt), Var(Yt) or predictive densities p(Yt) are computed.
 
-% Copyright (c) 2010 Jaakko Riihim√§ki, Jouni Hartikainen
+% Copyright (c) 2010 Jaakko Riihim‰ki, Jouni Hartikainen
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -49,14 +49,22 @@
 % data analysis with full GP model
 %========================================================
 
-% 
-
-
 % Demonstration for modeling age-period-cohort data
 % by a binomial model combined with GP prior.
 
 % First load data
-load('demos/sim_binodata.mat')
+S = which('demo_binomial2');
+L = strrep(S,'demo_binomial2.m','demos/binodata.txt');
+binodata=load(L);
+
+f = binodata(:,1);
+f1 = binodata(:,2);
+f2 = binodata(:,3);
+f3 = binodata(:,4);
+f4 = binodata(:,5);
+nn = binodata(:,6);
+xx = binodata(:,7:9);
+yy = binodata(:,10);
 
 % xx contains the three dimensional inputs for 1377 data points:
 %   xx(:,1) - age group

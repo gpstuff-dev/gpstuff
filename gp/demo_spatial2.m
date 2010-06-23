@@ -50,8 +50,11 @@
 
 % load the data
 S = which('demo_spatial2');
-L = strrep(S,'demo_spatial2.m','demos/spatial2.mat');
-load(L)
+data = load(strrep(S,'demo_spatial2.m','demos/spatial2.txt'));
+
+xx = data(:,1:2);
+ye = data(:,3);
+yy = data(:,4);
 
 % Now we have loaded the following parameters
 % xx = co-ordinates 
