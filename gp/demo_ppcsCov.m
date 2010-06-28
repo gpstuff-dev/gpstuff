@@ -124,7 +124,7 @@ gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pn);
 
 % MAP ESTIMATE
 % ============================================
-gp = gp_init('init', 'FULL', 'regr', {gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2);
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf2}, {gpcfn}, 'jitterSigma2', 0.001.^2);
 
 % Optimize the hyperparameters
 % ---------------------------------

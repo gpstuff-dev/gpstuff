@@ -67,7 +67,7 @@ for i = 1:length(covfunc)
         gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', pl);
     end
            
-    gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001);
+    gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001);
     
     w=gp_pak(gp);           % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior
@@ -119,65 +119,65 @@ for i = 1:length(covfunc)
     switch covfunc{i}
       case 'gpcf_neuralnetwork'
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', pl, 'biasSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_neuralnetwork('set', gpcf1, 'weightSigma2_prior', [], 'biasSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
       case 'gpcf_dotproduct'
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', pl, 'coeffSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_dotproduct('set', gpcf1, 'constSigma2_prior', [], 'coeffSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'hyper')];
       case 'gpcf_prod'
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', []);
         gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
         gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf4 = gpcf_exp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
         gpcf1 = gpcf_prod('init', 'functions', {gpcf3, gpcf4});
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
       otherwise
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
         
         gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', [], 'magnSigma2_prior', []);
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
         w=gp_pak(gp);
         delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y)];
     end
@@ -194,7 +194,7 @@ end
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', []);
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01);
 w=gp_pak(gp);
 delta = gradcheck(w, @gp_e, @gp_g, gp, x, y);
 
@@ -238,14 +238,14 @@ for i = 1:length(sparse)
     
     switch sparse{i}
       case 'FIC'
-        gp = gp_init('init', 'FIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u, 'Xu_prior', prior_unif('init'));
+        gp = gp_init('init', 'FIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u, 'Xu_prior', prior_unif('init'));
         tstindex = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex}, 'Xu_prior', prior_unif('init'));
         tstindex = trindex;
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u, 'Xu_prior', prior_unif('init'))
+        gp = gp_init('init', 'CS+FIC', 'gaussian', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u, 'Xu_prior', prior_unif('init'))
         tstindex = 1:n;
     end
     
@@ -356,21 +356,21 @@ models = {'FULL' 'FIC' 'PIC' 'CS+FIC'};
 for i=1:length(models)
     switch models{i}
       case 'FULL' 
-        gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01)
+        gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01)
         tstindex = [];
         tstindex2 = 1:n;
       case 'FIC' 
-        gp = gp_init('init', 'FIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
+        gp = gp_init('init', 'FIC', 'gaussian', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
       case 'PIC'
-        gp = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
+        gp = gp_init('init', 'PIC', 'gaussian', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
         gp = gp_init('set', gp, 'blocks', {'manual', x, trindex});
         tstindex = testindex;
         tstindex2 = trindex;
         tstindex2{1} = [tstindex2{1} ; [n+1:length(p2)]'];
       case 'CS+FIC'
-        gp = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
+        gp = gp_init('init', 'CS+FIC', 'gaussian', {gpcf1, gpcf3}, {gpcf2}, 'jitterSigma2', 0.01, 'X_u', X_u);
         tstindex = [];
         tstindex2 = 1:n;
     end
@@ -549,7 +549,7 @@ gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 0.2);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.01)
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.01)
 
 param = 'covariance';
 gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
@@ -602,7 +602,7 @@ delta = gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance');
 metric1 = metric_euclidean('init', {[1]},'lengthScales',[0.8], 'lengthScales_prior', pl);
 % Lastly, plug the metric to the covariance function structure.
 gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
-gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.01);
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.01);
 w=gp_pak(gp, 'covariance');
 delta = [delta ; gradcheck(w, @gp_e, @gp_g, gp, x, y, 'covariance')];
 
@@ -645,7 +645,7 @@ for i = 1:length(priorfunc)
     gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl);
     gpcf1 = gpcf_sexp('set', gpcf1, 'magnSigma2_prior', ps);
            
-    gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01)
+    gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01)
     
     w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
     fe=str2fun('gp_e');     % create a function handle to negative log posterior

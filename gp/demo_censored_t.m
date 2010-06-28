@@ -137,7 +137,7 @@ gpcf2 = gpcf_noiset('set', gpcf2, 'censored', {[-0.4 0.9], y});
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
 gpcf1.p.magnSigma2 = sinvchi2_p({0.05^2 0.5});
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 1e-4.^2)
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 1e-4.^2)
 w = gp_pak(gp, 'hyper')
 gp2 = gp_unpak(gp,w, 'hyper')
 

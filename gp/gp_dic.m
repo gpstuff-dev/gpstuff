@@ -148,7 +148,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
                 Gp.X_u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
             end
 
-            % regression model
+            % a Gaussian regression model
             if ~isstruct(gp.likelih)
                 Davg = 2*mean(gp.edata);
                 [e, edata] = gp_e(mean(w,1), Gp, x, y);
@@ -174,7 +174,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 
             [Ef, Varf, Ey, VarY] = feval(fh_pred, gp, x, y, x, 'tstind', tstind, options);
             sampf = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', 5000, options);
-            if ~isstruct(gp.likelih) % regression model
+            if ~isstruct(gp.likelih) % a Gaussian regression model
                 sigma2 = VarY - Varf;
                 Dth = sum(log(2*pi*sigma2)) + sum( (y - Ef).^2./sigma2 );
                 Davg = sum(log(2*pi*sigma2)) + mean(sum( (repmat(y,1,5000) - sampf).^2./repmat(sigma2,1,5000), 1));
@@ -202,7 +202,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
                     Gp.X_u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
                 end
                 Gp.tr_index = tr_index;
-                if ~isstruct(gp.likelih) % regression model
+                if ~isstruct(gp.likelih) % a Gaussian regression model
                     sampf(:,i) = gp_rnd(Gp, x, y, x, 'tstind', tstind, options);
                 end
                 [Ef(:,i), Varf, Ey, VarY] = gp_pred(Gp, x, y, x, 'tstind', tstind);
@@ -210,7 +210,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             end
             Ef = mean(Ef, 2);
             
-            if ~isstruct(gp.likelih) % regression model
+            if ~isstruct(gp.likelih) % a Gaussian regression model
                 msigma2 = mean(sigma2,2);
                 Dth = sum(log(2*pi*msigma2)) + sum( (y - Ef).^2./msigma2 );
                 Davg = mean(sum(log(2*pi*sigma2),1)) + mean(sum( (repmat(y,1,nsamples) - sampf).^2./sigma2, 1));
@@ -293,7 +293,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             end
             mEf = sum(Ef.*repmat(weight, size(Ef,1), 1), 2);
 
-            if ~isstruct(gp{1}.likelih) % regression model
+            if ~isstruct(gp{1}.likelih) % a Gaussian regression model
                 msigma2 = sum(sigma2.*repmat(weight, size(Ef,1), 1), 2);
                 Dth = sum(log(2*pi*msigma2)) + sum( (y - mEf).^2./msigma2 );
                 deviance = sum(log(2*pi*sigma2),1) + sum((Varf+Ef.^2-2.*repmat(y,1,nsamples).*Ef+repmat(y.^2,1,nsamples))./sigma2,1);

@@ -30,7 +30,7 @@ function gp = gp_init(do, varargin)
 %                               approximation
 %                      'VAR'    variational sparse approximation
 %      likelih      = The likelihood. If Gaussian noise is used this is 
-%                     string 'regr', otherwise this is structure created
+%                     string 'gaussian', otherwise this is structure created
 %                     by one of the likelihood functions likelih_*.
 %      cf           = cell array of covariance function structures 
 %                     created by gpcf_* functions
@@ -68,7 +68,7 @@ function gp = gp_init(do, varargin)
 %                     are the inputs belonging to the i'th block.
 %
 %     The additional fields when the likelihood is not Gaussian
-%     (likelih ~='regr') are:
+%     (likelih ~='gaussian') are:
 %       latent_method = Defines a method for marginalizing over 
 %                       latent values. Possible methods are 'MCMC', 
 %                       'Laplace' and 'EP' and they are initialized 

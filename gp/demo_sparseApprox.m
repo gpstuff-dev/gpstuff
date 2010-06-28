@@ -125,7 +125,7 @@ pm = prior_t('init', 's2', 0.3);               % a prior structure
 gpcf1 = gpcf_ppcs3('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001.^2);
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001.^2);
 
 % We have now constructed a GP model with gpcf_ppcs2 covariance function.
 % This is a compact support function which produces sparse covariance matrices
@@ -194,7 +194,7 @@ gpcf3 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 % them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_fic = gp_init('init', 'FIC', 'regr', {gpcf3}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u)
+gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf3}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -307,7 +307,7 @@ end
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 
-gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'X_u', X_u, 'tr_index', trindex);
+gp_pic = gp_init('init', 'PIC', 'gaussian', {gpcf1}, {gpcf2}, 'X_u', X_u, 'tr_index', trindex);
 gp_pic = gp_init('set', gp_pic, 'jitterSigma2', 0.001);
 
 % -----------------------------
@@ -378,7 +378,7 @@ gpcf3 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 % them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_var = gp_init('init', 'VAR', 'regr', {gpcf3}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
+gp_var = gp_init('init', 'VAR', 'gaussian', {gpcf3}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -468,7 +468,7 @@ gpcf3 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 % them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_dtc = gp_init('init', 'DTC', 'regr', {gpcf3}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
+gp_dtc = gp_init('init', 'DTC', 'gaussian', {gpcf3}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
 
 % -----------------------------
 % --- Conduct the inference ---

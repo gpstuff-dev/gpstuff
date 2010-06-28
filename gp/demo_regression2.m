@@ -111,7 +111,7 @@ gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengt
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004.^2) 
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004.^2) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -182,7 +182,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
+gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -239,7 +239,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
+gp_pic = gp_init('init', 'PIC', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
 gp_pic = gp_init('set', gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -297,7 +297,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', 'regr', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
+gp_csfic = gp_init('init', 'CS+FIC', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---

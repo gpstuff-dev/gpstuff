@@ -218,7 +218,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
         
     % Check which energy and gradient function
-    if ~isstruct(gp.likelih)   % a regression model
+    if ~isstruct(gp.likelih)   % a Gaussian regression model
         fe=str2fun('gp_e');
         fg=str2fun('gp_g');
         switch inf_method

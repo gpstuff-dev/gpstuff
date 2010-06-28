@@ -64,7 +64,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
   tn = size(x,1);
 
     
-    if ~isstruct(gp.likelih)    % a regression model
+    if ~isstruct(gp.likelih)    % a Gaussian regression model
         
         switch gp.type
           case 'FULL'

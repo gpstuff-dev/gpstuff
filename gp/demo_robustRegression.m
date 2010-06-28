@@ -99,7 +99,7 @@ gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_pr
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2, 'noiseSigma2_prior', pm);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)    
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001.^2)    
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -155,7 +155,7 @@ gpcf2 = gpcf_noiset('init','nin', n, 'noiseSigmas2', repmat(1^2,n,1));
 % Free nu
 gpcf2 = gpcf_noiset('set', gpcf2, 'fix_nu', 0);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001) %
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001) %
 
 hmc_opt.steps=10;
 hmc_opt.stepadj=0.08;

@@ -42,7 +42,7 @@ y = data(:,3);
 % --- Construct the model ---
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
-gp = gp_init('init', 'FULL', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001)
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -152,7 +152,7 @@ mrmse_cv(3) = cvres.mrmse_cv;
 X_u = [u1(:) u2(:)];
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u)
+gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -266,7 +266,7 @@ end
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 
-gp_pic = gp_init('init', 'PIC', 'regr', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
+gp_pic = gp_init('init', 'PIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
 gp_pic = gp_init('set', gp_pic, 'tr_index', trindex)
 
 % -----------------------------

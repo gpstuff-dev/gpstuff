@@ -71,7 +71,7 @@ pn = prior_t('init', 's2', 10, 'nu', 4);
 gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pn);
 gpcfse = gpcf_periodic('set', gpcfse, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','covariance') 
+gp = gp_init('init', 'FULL', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','covariance') 
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
@@ -106,7 +106,7 @@ w_full=w; % optimized hyperparameters
 % for the FIC model.
 Xu=round(10+90*rand(18,1))/10; % Random placement
 
-gp_fic = gp_init('init', 'FIC', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
+gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
 gp_fic.cf{1}.lengthScale=exp(w_full(2));
 gp_fic.cf{1}.magnSigma2=exp(w_full(1));
 gp_fic.noise{1}.noiseSigma2=exp(w_full(end));
@@ -150,7 +150,7 @@ title('FIC')
 % the data becomes more sparse), with predictions closely matching the full 
 % GP model. The other two sparse approximations yield less reliable
 % results.
-gp_var = gp_init('init', 'VAR', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
+gp_var = gp_init('init', 'VAR', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
 gp_var.cf{1}.lengthScale=exp(w_full(2));
 gp_var.cf{1}.magnSigma2=exp(w_full(1));
 gp_var.noise{1}.noiseSigma2=exp(w_full(end));
@@ -191,7 +191,7 @@ title('VAR')
 
 % Run the DTC model similarly to the FIC model with the same starting
 % inducing inputs. The difference in the optimized results is notable.
-gp_dtc = gp_init('init', 'DTC', 'regr', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
+gp_dtc = gp_init('init', 'DTC', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
 gp_dtc.cf{1}.lengthScale=exp(w_full(2));
 gp_dtc.cf{1}.magnSigma2=exp(w_full(1));
 gp_dtc.noise{1}.noiseSigma2=exp(w_full(end));

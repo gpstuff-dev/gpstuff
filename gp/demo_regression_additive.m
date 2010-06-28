@@ -88,7 +88,7 @@ gpcf_c = gpcf_constant('set', gpcf_c, 'constSigma2_prior', pt);
 gpcf_l = gpcf_linear('init');
 gpcf_l = gpcf_linear('set', gpcf_l, 'coeffSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf_c gpcf_l}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf_c gpcf_l}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 
@@ -127,7 +127,7 @@ gpcf_s1 = gpcf_sexp('set', gpcf_s1, 'metric', metric1);
 gpcf_l2 = gpcf_linear('init', 'selectedVariables', [2]);
 gpcf_l2 = gpcf_linear('set', gpcf_l2, 'coeffSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf_c gpcf_s1 gpcf_l2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf_c gpcf_s1 gpcf_l2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 
@@ -159,7 +159,7 @@ metric2 = metric_euclidean('init', {[2]},'lengthScales',[0.5], 'lengthScales_pri
 % set the metric to the covariance function structure:
 gpcf_s2 = gpcf_sexp('set', gpcf_s2, 'metric', metric2);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf_s1,gpcf_s2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf_s1,gpcf_s2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 
@@ -187,7 +187,7 @@ title('The predicted underlying function (additive sexp)');
 gpcf_s = gpcf_sexp('init', 'lengthScale', ones(1,nin), 'magnSigma2', 0.2^2);
 gpcf_s = gpcf_sexp('set', gpcf_s, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf_s}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf_s}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -219,7 +219,7 @@ gpcf_nn1 = gpcf_neuralnetwork('set', gpcf_nn1, 'weightSigma2_prior', pt, 'biasSi
 gpcf_nn2 = gpcf_neuralnetwork('init', 'weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [2]);
 gpcf_nn2 = gpcf_neuralnetwork('set', gpcf_nn2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf_nn1,gpcf_nn2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf_nn1,gpcf_nn2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
 
 w=gp_pak(gp);   % pack the hyperparameters into one vector
 
@@ -247,7 +247,7 @@ title('The predicted underlying function (additive neural network)');
 gpcf_nn = gpcf_neuralnetwork('init', 'weightSigma2', ones(1,nin), 'biasSigma2', 1);
 gpcf_nn = gpcf_neuralnetwork('set', gpcf_nn, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'regr', {gpcf_nn}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf_nn}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
 
 w=gp_pak(gp);   % pack the hyperparameters into one vector
 

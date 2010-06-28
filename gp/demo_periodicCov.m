@@ -120,7 +120,7 @@ gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pm);
 
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params', 'covariance')    
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params', 'covariance')    
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -200,7 +200,7 @@ gpcfp = gpcf_periodic('set', gpcfp, 'lengthScale_exp_prior', pl, 'period_prior',
 gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_init('init', 'FULL', 'regr', {gpcf1, gpcfp, gpcf2}, {gpcfn}, 'jitterSigma2', 0.003) 
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcfp, gpcf2}, {gpcfn}, 'jitterSigma2', 0.003) 
 
 
 % -----------------------------
