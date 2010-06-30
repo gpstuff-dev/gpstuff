@@ -61,7 +61,7 @@ likelih = likelih_probit('init');
 %likelih = likelih_logit('init');
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01);
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, {},'jitterSigma2', 0.01);
 
 
 % ------- Laplace approximation --------

@@ -7,7 +7,7 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2010-06-16 13:08:28 EEST
+ * Last modified: 2010-06-30 14:50:45 EEST
  *
  */
 
@@ -90,7 +90,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
 	for (j=0;j<m;j++) {
 	  for (k=0;k<j;k++) {
 	    d=x[j]-x[k];
-	    C[j*m+k]+=d*d/rr;
+	    C[j*m+k]+=d*d/rr/2.0;
 	  }
 	}
       }

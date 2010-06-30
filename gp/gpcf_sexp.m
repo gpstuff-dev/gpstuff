@@ -311,7 +311,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x);
                 for i=1:length(gdist)
                     ii1 = ii1+1;
-                    DKff{ii1} = -2.*Cdm.*dist.*gdist{i};
+                    DKff{ii1} = -Cdm.*dist.*gdist{i};
                 end
             else
                 if ~isempty(gpcf.p.lengthScale)
@@ -324,7 +324,7 @@ function gpcf = gpcf_sexp(do, varargin)
                             D = bsxfun(@minus,x(:,i),x(:,i)');
                             dist = dist + D.^2;
                         end
-                        D = Cdm.*s.*dist;
+                        D = Cdm.*s.*dist./2;
                         
                         ii1 = ii1+1;
                         DKff{ii1} = D;
@@ -333,7 +333,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         for i=1:m
                             s = 2./gpcf.lengthScale(i).^2;
                             dist = bsxfun(@minus,x(:,i),x(:,i)');
-                            D = Cdm.*s.*dist.^2;
+                            D = Cdm.*s.*dist.^2./2;
                             
                             ii1 = ii1+1;
                             DKff{ii1} = D;
@@ -360,7 +360,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, x2);
                 for i=1:length(gdist)
                     ii1 = ii1+1;                    
-                    DKff{ii1} = -2.*K.*dist.*gdist{i};                    
+                    DKff{ii1} = -K.*dist.*gdist{i};                    
                 end
             else
                 if ~isempty(gpcf.p.lengthScale)
@@ -372,7 +372,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         for i=1:m
                             dist = dist + (bsxfun(@minus,x(:,i),x2(:,i)')).^2;                        
                         end
-                        DK_l = 2.*s.*K.*dist;
+                        DK_l = s.*K.*dist;
                         
                         ii1=ii1+1;
                         DKff{ii1} = DK_l;
@@ -381,7 +381,7 @@ function gpcf = gpcf_sexp(do, varargin)
                         for i=1:m
                             s = 1./gpcf.lengthScale(i).^2;        % set the length
                             dist = bsxfun(@minus,x(:,i),x2(:,i)');
-                            DK_l = 2.*s.*K.*dist.^2;
+                            DK_l = s.*K.*dist.^2;
                             
                             ii1=ii1+1;
                             DKff{ii1} = DK_l;
@@ -478,7 +478,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 gdist = feval(gpcf.metric.ginput, gpcf.metric, x);
                 for i=1:length(gdist)
                     ii1 = ii1+1;
-                    DKff{ii1} = -2.*K.*dist.*gdist{ii1};
+                    DKff{ii1} = -K.*dist.*gdist{ii1};
                 end
             else
                 if length(gpcf.lengthScale) == 1
@@ -490,7 +490,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK = zeros(size(K));
-                        DK(j,:) = -2.*s(i).*bsxfun(@minus,x(j,i),x(:,i)');
+                        DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
                         DK = DK + DK';
                         
                         DK = DK.*K;      % dist2 = dist2 + dist2' - diag(diag(dist2));
@@ -509,7 +509,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 gdist = feval(gpcf.metric.ginput, gpcf.metric, x, x2);
                 for i=1:length(gdist)
                     ii1 = ii1+1;
-                    DKff{ii1}   = -2.*K.*dist.*gdist{ii1};
+                    DKff{ii1}   = -K.*dist.*gdist{ii1};
                 end
             else
                 
@@ -524,7 +524,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 for i=1:m
                     for j = 1:n
                         DK= zeros(size(K));
-                        DK(j,:) = -2.*s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
+                        DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
                         
                         DK = DK.*K;
                         
@@ -564,7 +564,7 @@ function gpcf = gpcf_sexp(do, varargin)
         if isfield(gpcf,'metric')
             dist = feval(gpcf.metric.distance, gpcf.metric, x1, x2).^2;
             dist(dist<eps) = 0;
-            C = gpcf.magnSigma2.*exp(-dist);            
+            C = gpcf.magnSigma2.*exp(-dist./2);            
         else
             C=zeros(n1,n2);
             ma2 = gpcf.magnSigma2;
@@ -588,7 +588,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     end
                 end
                 dist(dist<eps) = 0;
-                C = ma2.*exp(-dist);
+                C = ma2.*exp(-dist./2);
             end
         end
     end
@@ -616,7 +616,7 @@ function gpcf = gpcf_sexp(do, varargin)
                 d = zeros(n-ii1,1);
                 col_ind = ii1+1:n;
                 d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
-                C(col_ind,ii1) = d;
+                C(col_ind,ii1) = d./2;
             end
             C(C<eps) = 0;
             C = C+C';
@@ -643,7 +643,7 @@ function gpcf = gpcf_sexp(do, varargin)
                     for ii2=1:m
                         d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
-                    C(col_ind,ii1) = d;
+                    C(col_ind,ii1) = d./2;
                 end
                 C(C<eps)=0;
                 C = C+C';

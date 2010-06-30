@@ -93,6 +93,7 @@ x = x(y>0);             % Remove contaminated observations
 y = y(y>0);
 avgy = mean(y);
 y = y-avgy;
+xt = [0:0.5:565]';
 
 [n,nin] = size(x);
 % Now 'x' consist of the inputs and 'y' of the output. 
@@ -106,7 +107,7 @@ y = y-avgy;
 % Gaussian noise data structures and set priors for their hyperparameters
 pl = prior_t('init', 's2', 3, 'nu', 4);
 pm = prior_t('init', 's2', 0.3, 'nu', 4);
-gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 3, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
 
@@ -140,25 +141,25 @@ gp=gp_unpak(gp,w);
 
 % Make predictions. Below Ef_full is the predictive mean and Varf_full
 % the predictive variance.
-[Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
-[Ef_full1, Varf_full1] = gp_pred(gp, x, y, x, 'predcf', 1);
-[Ef_full2, Varf_full2] = gp_pred(gp, x, y, x, 'predcf', 2);
+[Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, xt);
+[Ef_full1, Varf_full1] = gp_pred(gp, x, y, xt, 'predcf', 1);
+[Ef_full2, Varf_full2] = gp_pred(gp, x, y, xt, 'predcf', 2);
 
 % Plot the prediction and data
 figure(1)
 subplot(2,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(x,Ey_full,'k', 'LineWidth', 2)
-plot(x,Ey_full-2.*sqrt(Vary_full),'g--')
-plot(x,Ey_full+2.*sqrt(Vary_full),'g--')
+plot(xt,Ey_full,'k', 'LineWidth', 2)
+plot(xt,Ey_full-2.*sqrt(Vary_full),'g--')
+plot(xt,Ey_full+2.*sqrt(Vary_full),'g--')
 axis tight
 caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noise{1}.noiseSigma2);
 title(caption1)
 legend('Data point', 'predicted mean', '2\sigma error')
 
 subplot(2,1,2)
-[AX, H1, H2] = plotyy(x, Ef_full2, x, Ef_full1);
+[AX, H1, H2] = plotyy(xt, Ef_full2, xt, Ef_full1);
 set(H2,'LineStyle','--')
 set(H2, 'LineWidth', 2)
 %set(H1, 'Color', 'k')
@@ -211,17 +212,17 @@ w=scg2(fe, w, opt, fg, gp_fic, x, y);
 gp_fic = gp_unpak(gp_fic,w);
 
 % Make the prediction
-[Ef_fic, Varf_fic, Ey_fic, Vary_fic] = gp_pred(gp_fic, x, y, x);
+[Ef_fic, Varf_fic, Ey_fic, Vary_fic] = gp_pred(gp_fic, x, y, xt);
 
 % Plot the solution of FIC
 figure(2)
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(x,Ey_fic,'k', 'LineWidth', 2)
-plot(x,Ey_fic-2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
+plot(xt,Ey_fic,'k', 'LineWidth', 2)
+plot(xt,Ey_fic-2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 plot(gp_fic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
+plot(xt,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 axis tight
 caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigma2);
 title(caption2)
