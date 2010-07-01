@@ -35,7 +35,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 %       GPEP_G, EP_PRED, GP_E
 
     
-% Copyright (c) 2007           Jaakko Riihimï¿½ki
+% Copyright (c) 2007           Jaakko Riihimäki
 % Copyright (c) 2007-2010      Jarno Vanhatalo
 % Copyright (c) 2010           Heikki Peura
 
@@ -194,17 +194,35 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             tau_i=Sigm(i1,i1)^-1-tautilde(i1);
                             vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
                             
-                            if tau_i<0
-                              tautilde(i1)=0;
-                              nutilde(i1)=0;
+                            if tau_i < 0
+                                tautilde(find(tautilde<0)) = 0;
+
+% $$$                                 tautilde(i1) = 0.9.*Sigm(i1,i1)^-1 ;
+                                
+                                Stilde=tautilde;
+                                Stildesqroot=diag(sqrt(tautilde));
+                                B=eye(n)+Stildesqroot*C*Stildesqroot;
+                                L=chol(B,'lower');
+                                V=(L\Stildesqroot)*C;
+                                Sigm=C-V'*V; 
+                                %myy=Sigm*nutilde;
+                                
+                                nutilde=Sigm\myy;
+                                                               
+                                tau_i=Sigm(i1,i1)^-1-tautilde(i1);
+                                vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                            
+% $$$                               tautilde(i1)=0;
+% $$$                               nutilde(i1)=0;                              
+% $$$                               % update posterior -> negative definite                              
+% $$$                               tau_i=Sigm(i1,i1)^-1;
+% $$$                               vee_i=Sigm(i1,i1)^-1*myy(i1);
                               
-                              tau_i=Sigm(i1,i1)^-1;
-                              vee_i=Sigm(i1,i1)^-1*myy(i1);
-                              disp('negative cavity')
+                              disp(sprintf('negative cavity at site %d', i1))
+% $$$                               continue
                             end
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
- 
                             
                             % marginal moments
                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);

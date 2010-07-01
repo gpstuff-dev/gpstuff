@@ -58,8 +58,6 @@ function likelih = likelih_t(do, varargin)
 %
 %	See also
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_T
-%
-%
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 
@@ -100,12 +98,12 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_predy = @likelih_t_predy;
         likelih.fh_recappend = @likelih_t_recappend;
 
-        if length(varargin) > 3
-            if mod(nargin,2) ~=1
+        if nargin > 1
+            if mod(nargin,2) == 0 
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=3:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'nu'
                     likelih.nu = varargin{i+1};
@@ -569,7 +567,7 @@ function likelih = likelih_t(do, varargin)
         
         function integrand = deriv_nu(f)
             r = yy-f;
-            temp = 1 + r^2./nu./sigma2;
+            temp = 1 + r.^2./nu./sigma2;
             g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;            
             integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end

@@ -31,16 +31,19 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         'tstindex'   - k-fold CV test indices. A cell array with k fields 
 %                        each containing index vector for
 %                        respective test set. 
-%         'save'       - defines if results are stored 'false' or 'true'. 
+%         'save_results'       - defines if results are stored 'false' or 'true'. 
 %                        By default false. If 'true' gp_kfcv stores
 %                        the results in the current working
-%                        directory (or in 'folder', see next
-%                        option) into a cv_resultsX folder, where
+%                        directory into a cv_resultsX folder (or in 
+%                        'folder', see next option), where
 %                        X is a number. If there is already
 %                        cv_results* folders X is the smallest
 %                        number not in use yet.
-%         'folder'     - defines the folder where to save the results. 
-%                        By default the current working directory.
+%         'folder'     - string defining the folder where to save the 
+%                        results. That is, the results will be stored in
+%                        'current working directory'/folder. See previous 
+%                        option for default.
+%                        
 %
 %       The output arguments are the following
 %         criteria     - structure including following fields
@@ -102,7 +105,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %            Var_rmse_cv = var( sqrt( rmse(D_k | D_{k-1}) ) ) / K,    k=1...K.
 %   
 %       The above statistics are returned by the funtion. However,
-%       if we use the save option we obtain little more test
+%       if we use the save_results option we obtain little more test
 %       statistics which are only saved in the result file. These
 %       extra statistics include, for example, bias corrected
 %       expected utilities (Vehtari and Lampinen. 2002), and the
@@ -181,8 +184,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     ip.addParamValue('rstream', round(rem(now,1e-3)*1e9), @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))    
     ip.addParamValue('tstindex', [], @(x) ~isempty(x) || iscell(x))
-    ip.addParamValue('save', false, @(x) islogical(x))
-    ip.addParamValue('folder', [], @(x) exist(x)==7 )
+    ip.addParamValue('save_results', false, @(x) islogical(x))
+    ip.addParamValue('folder', [], @(x) ischar(x) )
     ip.parse(gp, x, y, varargin{:});
     z=ip.Results.z;
     inf_method=ip.Results.inf_method;
@@ -191,7 +194,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     rstream=ip.Results.rstream;
     trindex=ip.Results.trindex;
     tstindex=ip.Results.tstindex;
-    save=ip.Results.save;
+    save_results=ip.Results.save_results;
     folder = ip.Results.folder;
     
     
@@ -211,11 +214,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         [trindex, tstindex] = cvit(n, k, rstream);
     end
     
-    if isempty(folder)
-        parent_folder = pwd;
-    else
-        parent_folder = folder;
-    end
+    parent_folder = pwd;
         
     % Check which energy and gradient function
     if ~isstruct(gp.likelih)   % a Gaussian regression model
@@ -377,7 +376,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     criteria.mabs_cv=mabs_cv;
     criteria.Var_abs_cv=Var_abs_cv;
         
-    if save || nargout >=4
+    if save_results || nargout >=4
         % compute full training result
         
         gp = gp_orig; 
@@ -446,7 +445,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         criteria.rmse_ccv=mrmse_ccv;
         criteria.mabs_ccv=mabs_ccv;
     end
-    if save
+    if save_results
         % Save the results
         if isempty(folder)
             succes = 1;
@@ -459,12 +458,27 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
                     succes = 0;
                 end
             end
+        else
+            if exist(folder)
+                folder_alk = folder;
+                succes = 1;
+                result = 1;
+                while succes == 1
+                    folder = sprintf([folder '%d'], result);
+                    if exist(['./' folder])
+                        result = result + 1;
+                    else
+                        succes = 0;
+                    end
+                end
+                warning('The given folder: %s exists already. gp_kfcv saves the results in: %s instead.', folder_alk, folder)
+            end
         end
-        mkdir(parent_folder, folder);
+        mkdir(folder);
         
-        save([parent_folder '/' folder '/cv_results.mat'], 'lpd_cv', 'rmse_cv', 'abs_cv', 'mlpd_cv', 'mrmse_cv',...
+        save([folder '/cv_results.mat'], 'lpd_cv', 'rmse_cv', 'abs_cv', 'mlpd_cv', 'mrmse_cv',...
              'mabs_cv','Var_lpd_cv', 'Var_rmse_cv', 'Var_abs_cv', 'trindex', 'tstindex', 'lpd_cvtr', 'rmse_cvtr',...
-             'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'lpd_ccv', 'rmse_ccv', 'abs_ccv', 'cpu_time');
+             'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'mlpd_ccv', 'mrmse_ccv', 'mabs_ccv', 'cpu_time');
         
         fprintf('The results have been saved in the folder:\n %s/%s \n', parent_folder, folder);
         
