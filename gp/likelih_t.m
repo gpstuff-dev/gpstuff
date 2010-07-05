@@ -544,12 +544,16 @@ function likelih = likelih_t(do, varargin)
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
         
-        [g_i(1), fhncnt] = quadgk(zsigma2, lambdaconf(1), lambdaconf(2));
-        g_i(1) = g_i(1).*likelih.sigma2;
+%         t=linspace(lambdaconf(1),lambdaconf(2),100);
+%         plot(t,zm(t))
+%         keyboard
+        
+        [g_i(1), fhncnt] = quadgk( @(f) zsigma2(f).*zm(f) , lambdaconf(1), lambdaconf(2));
+        g_i(1) = g_i(1)/m_0*sigma2;
         
         if ~likelih.fix_nu
-            [g_i(2), fhncnt] = quadgk(znu, lambdaconf(1), lambdaconf(2));
-            g_i(2) = g_i(2).*likelih.nu.*log(likelih.nu);
+            [g_i(2), fhncnt] = quadgk(@(f) znu(f).*zm(f) , lambdaconf(1), lambdaconf(2));
+            g_i(2) = g_i(2)/m_0.*nu.*log(nu);
         end
         
         % ------------------------------------------------
@@ -561,21 +565,28 @@ function likelih = likelih_t(do, varargin)
         % ------------------------------------------------
 
      
-        function integrand = zeroth_moment(f); %
-            integrand = exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+        function integrand = zeroth_moment(f)
+            r = yy-f;
+            term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+            integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
+            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
         end        
         
-        function integrand = deriv_nu(f)
+        function g = deriv_nu(f)
             r = yy-f;
             temp = 1 + r.^2./nu./sigma2;
             g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;            
-            integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
+            %integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
         
-        function integrand = deriv_sigma2(f)
-             r = yy-f;
-             g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2+r.^2.*sigma2);
-             integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
+        function g = deriv_sigma2(f)
+%             z2=(yy-f).^2 /sigma2;
+%             g=t_pdf(yy,nu,f,sqrt(sigma2)).*normpdf(f,myy_i,sqrt(sigm2_i))...
+%               .*((nu+1).*z2./(nu+z2)-1)/sigma2/2;
+          
+            r = yy-f;
+            g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2 + r.^2.*sigma2);
+            %integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
 
     end

@@ -81,6 +81,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 b = nutilde - tautilde.*(L'*L*(nutilde));
                 invC = S*L';
                 invC = S - invC*invC';
+                
+                Varf=sum(L.^2,1)';
+                Ef=L'*(L*nutilde);
+            
             end
         end
 
@@ -151,11 +155,15 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
-            [Ef, Varf] = ep_pred(gp, x, y, x);
+            %[Ef, Varf] = ep_pred(gp, x, y, x);
+            
+            sigm2_i = (Varf.^-1 - tautilde).^-1;
+            mu_i = sigm2_i.*(Ef./Varf - nutilde);
+            
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, Varf(k1), Ef(k1), z);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
