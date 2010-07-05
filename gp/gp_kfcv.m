@@ -31,7 +31,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         'tstindex'   - k-fold CV test indices. A cell array with k fields 
 %                        each containing index vector for
 %                        respective test set. 
-%         'save_results'       - defines if results are stored 'false' or 'true'. 
+%         'save_results'- defines if results are stored 'false' or 'true'. 
 %                        By default false. If 'true' gp_kfcv stores
 %                        the results in the current working
 %                        directory into a cv_resultsX folder (or in 

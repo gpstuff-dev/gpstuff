@@ -196,30 +196,19 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             
                             if tau_i < 0
                                 tautilde(find(tautilde<0)) = 0;
-
-% $$$                                 tautilde(i1) = 0.9.*Sigm(i1,i1)^-1 ;
-                                
+                               
                                 Stilde=tautilde;
                                 Stildesqroot=diag(sqrt(tautilde));
                                 B=eye(n)+Stildesqroot*C*Stildesqroot;
                                 L=chol(B,'lower');
                                 V=(L\Stildesqroot)*C;
-                                Sigm=C-V'*V; 
-                                %myy=Sigm*nutilde;
-                                
+                                Sigm=C-V'*V;                                 
                                 nutilde=Sigm\myy;
                                                                
                                 tau_i=Sigm(i1,i1)^-1-tautilde(i1);
                                 vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
                             
-% $$$                               tautilde(i1)=0;
-% $$$                               nutilde(i1)=0;                              
-% $$$                               % update posterior -> negative definite                              
-% $$$                               tau_i=Sigm(i1,i1)^-1;
-% $$$                               vee_i=Sigm(i1,i1)^-1*myy(i1);
-                              
-                              disp(sprintf('negative cavity at site %d', i1))
-% $$$                               continue
+                                disp(sprintf('negative cavity at site %d', i1))
                             end
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
@@ -717,7 +706,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     term41 = 0; term52 = 0;
                     for i=1:length(ind)
                         Bhat(:,ind{i}) = B(:,ind{i})*D{i};
-                        SsqrtKfu(ind{i},:) = gtimes(K_fu(ind{i},:),Stildesqroot(ind{i}));
+                        SsqrtKfu(ind{i},:) = bsxfun(@times,K_fu(ind{i},:),Stildesqroot(ind{i}));
+                        %SsqrtKfu(ind{i},:) = gtimes(K_fu(ind{i},:),Stildesqroot(ind{i}));
                         iDSsqrtKfu(ind{i},:) = Ldhat{i}\(Ldhat{i}'\SsqrtKfu(ind{i},:));
                         term41 = term41 + sum(log(diag(Ldhat{i})));
                         term52 = term52 + nutilde(ind{i})'*(D{i}*nutilde(ind{i}));

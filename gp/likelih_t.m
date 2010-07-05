@@ -575,18 +575,12 @@ function likelih = likelih_t(do, varargin)
         function g = deriv_nu(f)
             r = yy-f;
             temp = 1 + r.^2./nu./sigma2;
-            g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;            
-            %integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
+            g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;
         end
         
         function g = deriv_sigma2(f)
-%             z2=(yy-f).^2 /sigma2;
-%             g=t_pdf(yy,nu,f,sqrt(sigma2)).*normpdf(f,myy_i,sqrt(sigm2_i))...
-%               .*((nu+1).*z2./(nu+z2)-1)/sigma2/2;
-          
             r = yy-f;
             g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2 + r.^2.*sigma2);
-            %integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
 
     end

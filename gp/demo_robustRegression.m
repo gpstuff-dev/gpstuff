@@ -214,12 +214,12 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 
 pl = prior_t('init');
 pm = prior_t('init', 's2', 0.3);
-gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 pll = prior_logunif('init');
-likelih = likelih_t('init', 'nu', 4, 'sigma2', 5^2, 'sigma2_prior', pll, 'nu_prior', pll);
+likelih = likelih_t('init', 'nu', 4, 'sigma2', 20, 'sigma2_prior', pll, 'nu_prior', pll);
 likelih = likelih_t('set', likelih, 'fix_nu', 0)
 
 % ... Finally create the GP data structure
@@ -230,7 +230,6 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gpla_e');     % create a function handle to negative log posterior
 fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
 
@@ -238,6 +237,7 @@ opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
+opt.maxiter = 50;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp);

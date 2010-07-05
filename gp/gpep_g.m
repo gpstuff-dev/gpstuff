@@ -66,7 +66,27 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             invC = Stildesqroot*invC*Stildesqroot;
         else
             [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, 'z', z);
-
+            
+            
+            if tautilde > 0             % This is the usual case where likelihood is log concave
+                                        % for example, Poisson and probit
+                % Stildesqroot=diag(sqrt(tautilde));
+                % logZep; nutilde; tautilde;
+                % b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+                % invC = Stildesqroot*(L'\(L\Stildesqroot));
+                Stildesqroot=sqrt(tautilde);
+                temp=L\diag(Stildesqroot);
+                invC = temp'*temp;
+                b=nutilde-Stildesqroot.*(L'\(L\(Stildesqroot.*(C*nutilde))));
+            else                         % We might end up here if the likelihood is not log concace
+                                         % For example Student-t likelihood.
+                                         % NOTE! This does not work reliably yet
+                S = diag(tautilde);
+                b = nutilde - tautilde.*(L'*L*(nutilde));
+                invC = S*L';
+                invC = S - invC*invC';
+            end           
+            
             if tautilde > 0             % This is the usual case where likelihood is log concave
                                         % for example, Poisson and probit
                 Stildesqroot=diag(sqrt(tautilde));
@@ -155,7 +175,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
-            %[Ef, Varf] = ep_pred(gp, x, y, x);
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'z', z);
             
             sigm2_i = (Varf.^-1 - tautilde).^-1;
             mu_i = sigm2_i.*(Ef./Varf - nutilde);
@@ -303,17 +323,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         
         % =================================================================
-        % Gradient with respect to a likelihood function parameters
-        
+        % Gradient with respect to a likelihood function parameters        
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
-            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
+            sigm2_i = (Varf.^-1 - tautilde).^-1;
+            mu_i = sigm2_i.*(Ef./Varf - nutilde);
+            
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
-                sigm2_i = Varf(k1) ;
-                myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
+
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
                 g_logPrior = -feval(likelih.fh_priorg, likelih);
@@ -470,14 +491,16 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
 
-            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', gp.tr_index);
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', gp.tr_index, 'z', z);
+            sigm2_i = (Varf.^-1 - tautilde).^-1;
+            mu_i = sigm2_i.*(Ef./Varf - nutilde);
+            
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
-                sigm2_i = Varf(k1) ;
-                myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
+
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
                 g_logPrior = -feval(likelih.fh_priorg, likelih);
@@ -680,13 +703,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % Gradient with respect to likelihood function parameters
         
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
-            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
+            sigm2_i = (Varf.^-1 - tautilde).^-1;
+            mu_i = sigm2_i.*(Ef./Varf - nutilde);
+            
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
-                sigm2_i = Varf(k1);
-                myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
+                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
             % evaluate prior contribution for the gradient
             if isfield(gp.likelih, 'p')
@@ -830,7 +854,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % Gradient with respect to likelihood function parameters
         
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
-            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n);
+            [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)
@@ -968,7 +992,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % likelihood parameters
         %--------------------------------------
         if ~isempty(strfind(gp.infer_params, 'likelih')) && isfield(gp.likelih, 'fh_siteDeriv')
-            [Ef, Varf] = ep_pred(gp, x, y, x, param);                
+            [Ef, Varf] = ep_pred(gp, x, y, x, param);
             gdata_likelih = 0;
             likelih = gp.likelih;
             for k1 = 1:length(y)

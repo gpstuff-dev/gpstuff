@@ -558,7 +558,7 @@ function likelih = likelih_negbin(do, varargin)
         
         % Integrate with quad
         [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-        [g_i, fhncnt] = quadgk(zd, lambdaconf(1), lambdaconf(2));
+        [g_i, fhncnt] = quadgk(@(f) zd(f).*zm(f)./m_0, lambdaconf(1), lambdaconf(2));
         g_i = g_i.*r;
 
         % ------------------------------------------------
@@ -570,17 +570,18 @@ function likelih = likelih_negbin(do, varargin)
         % ------------------------------------------------
 
         function integrand = zeroth_moment(f); %
-            integrand = exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
+            mu = avgE.*exp(f);
+            integrand = exp(-gammaln(r)-gammaln(yy+1)+yy.*(log(mu)-log(r+mu))+gammaln(r+yy)+r.*(log(r)-log(r+mu))); %
+            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
         end        
         
-        function integrand = deriv(f)
+        function g = deriv(f)
             mu = avgE.*exp(f);
             g = 0;
             g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
             for i2 = 0:yy-1
                 g = g + 1 ./ (i2 + r);
             end
-            integrand = g.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2)./m_0; %
         end
     end
 
