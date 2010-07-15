@@ -154,7 +154,7 @@ gpcf1 = gpcf_ppcs2('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm
 likelih = likelih_negbin('init');
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.001); 
+gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.001, 'infer_params', 'covariance'); 
 
 % Set the approximate inference method to EP
 gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'z', ye});

@@ -80,7 +80,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = feval(gp.fh_e, w, gp, x, y, z);
+        [e, edata, eprior, site_tau, site_nu, L, La2, b, Ef, Varf] = feval(gp.fh_e, w, gp, x, y, z);
 
     end
 
@@ -321,8 +321,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
 %                             lnZ=lnZ+0.5*sum( (mc.*Wc)./(Wc+Ws).*(mc.*Ws-2*ts) );
                         end
                     end
-                    
-                % EP algorithm for compact support covariance function (that is C is sparse)
+                    Ef = myy;
+                    Varf = diag(Sigm);
+                % EP algorithm for compactly supported covariance function (that is C is sparse)
                 %---------------------------------------------------------------------------
                 else
                     p = analyze(K);
@@ -1204,7 +1205,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             % Evaluate the prior contribution to the error from likelihood functions
             if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
                 likelih = gp.likelih;
-                eprior = eprior - feval(likelih.fh_priore, likelih);
+                eprior = eprior + feval(likelih.fh_priore, likelih);
             end
 
             % The last things to do

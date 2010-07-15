@@ -1,4 +1,4 @@
-function gcv = gp_loog(w, gp, x, t, varargin)
+function gcv = gp_loog(w, gp, x, y, varargin)
 %   GP_LOOE       Evaluate the gradient of the leave one out predictive 
 %                 density (GP_LOOE) in case of Gaussian observation model 
 %
@@ -19,6 +19,14 @@ function gcv = gp_loog(w, gp, x, t, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+ip=inputParser;
+ip.FunctionName = 'GP_LOOE';
+ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+ip.addRequired('gp',@isstruct);
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.parse(w, gp, x, y, varargin{:});
+
 gp=gp_unpak(gp, w);       % unpak the parameters
 ncf = length(gp.cf);
 n=size(x,1);
@@ -38,10 +46,10 @@ switch gp.type
     if issparse(C)
         invC = spinv(C);       % evaluate the sparse inverse
         LD = ldlchol(C);
-        b = ldlsolve(LD,t);
+        b = ldlsolve(LD,y);
     else
         invC = inv(C);        % evaluate the full inverse
-        b = C\t;
+        b = C\y;
     end
 
     % Get the gradients of the covariance matrices and gprior
@@ -54,44 +62,32 @@ switch gp.type
         
         gpcf = gp.cf{i};
         gpcf.GPtype = gp.type;
-        [DKff,gprior] = feval(gpcf.fh_ghyper, gpcf, x, t);
-        i1 = i1+1;
-        i2 = 1;
+        [DKff,gprior] = feval(gpcf.fh_ghyper, gpcf, x);
         
-        % Evaluate the gradient with respect to magnSigma
-        Z = invC*DKff{i2};
-        Zb = Z*b;            
-        gcv(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
-        
-        if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
-            i1 = i1+1;
-            if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
-                i1 = i1+1;
-            end
-        end
-
-        % Evaluate the gradient with respect to lengthScale
-        for i2 = 2:length(DKff)
-            i1 = i1+1;                
+        % Evaluate the gradient with respect to covariance function parameters
+        for i2 = 1:length(DKff)
+            i1 = i1+1;  
             Z = invC*DKff{i2};
             Zb = Z*b;            
             gcv(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
-        end    
+        end
+        
     end
 
     % Evaluate the gradient from noise functions
     if isfield(gp, 'noise')
         nn = length(gp.noise);
         for i=1:nn
-            i1 = i1+1;
-            
             noise = gp.noise{i};
             noise.type = gp.type;
-            [DCff,gprior] = feval(noise.fh_ghyper, noise, x, t);
+            [DCff,gprior] = feval(noise.fh_ghyper, noise, x);
             
-            Z = invC*eye(n,n).*DCff;
-            Zb = Z*b;            
-            gcv(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
+            for i2 = 1:length(DCff)
+                i1 = i1+1;
+                Z = invC*eye(n,n).*DCff{i2};
+                Zb = Z*b;            
+                gcv(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
+            end
         end
     end
 
