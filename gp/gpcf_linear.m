@@ -11,9 +11,10 @@ function gpcf = gpcf_linear(do, varargin)
 %        as described by the parameter-value pairs ('FIELD', VALUE) in
 %        the OPTIONS. The fields that can be modified are:
 %
-%             'coeffSigma2'        : Magnitude (squared) for exponential 
-%                                    part. (default 10)
-%             'coeffSigma2_prior'  : prior structure for magnSigma2
+%             'coeffSigma2'        : variance (squared) for regressor 
+%                                    coefficient (default 10) (can
+%                                    also be vector)
+%             'coeffSigma2_prior'  : prior structure for coeffSigma2
 %             'selectedVariables'  : vector defining which inputs are 
 %                                    active
 %
@@ -36,7 +37,7 @@ function gpcf = gpcf_linear(do, varargin)
     ip.FunctionName = 'GPCF_LINEAR';
     ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
-    ip.addParamValue('coeffSigma2',[], @(x) isscalar(x) && x>0);
+    ip.addParamValue('coeffSigma2',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('coeffSigma2_prior',[], @(x) isstruct(x) || isempty(x));
     ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
     ip.parse(do, varargin{:});

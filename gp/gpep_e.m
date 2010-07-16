@@ -1,4 +1,4 @@
-function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, gp, x, y, varargin)
+function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, varargin)
 %GPEP_E     Conduct Expectation propagation and return marginal 
 %           log posterior estimate
 %
@@ -71,20 +71,17 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
         n0 = size(x,1);
         La20 = [];
         b0 = 0;
-        RR0 = [];
-        DD0 = [];
-        PP0=[];
         
         ep_algorithm(gp_pak(gp), gp, x, y, z);
 
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, Ef, Varf] = feval(gp.fh_e, w, gp, x, y, z);
+        [e, edata, eprior, site_tau, site_nu, L, La2, b] = feval(gp.fh_e, w, gp, x, y, z);
 
     end
 
-    function [e, edata, eprior, tautilde, nutilde, L, La2, b, D, R, P] = ep_algorithm(w, gp, x, y, z)
+    function [e, edata, eprior, tautilde, nutilde, L, La2, b] = ep_algorithm(w, gp, x, y, z)
 
         if abs(w-w0) < 1e-8
             % The covariance function parameters haven't changed so just
@@ -98,9 +95,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             L = L0;
             La2 = La20;
             b = b0;
-            R = RR0;
-            D = DD0;
-            P = PP0;
         else
             % Conduct evaluation for the energy and the site parameters
             gp=gp_unpak(gp, w);
@@ -306,23 +300,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             logZep = -(term41+term52+term5+term3);
                             iter=iter+1;
                             B=Ls;
-                            L=Ls;
-                            
-                            
-                            
-%                             lnZ=sum(log(Zm));
-%                             lnZ=lnZ+0.5*sum(log( ones(n,1)+Ws./Wc ));
-%                             %lnZ=lnZ+0.5*log(det(eye(n)-Sf*diag(Ws)));
-%                             
-%                             % the second term could be implemented with rank-1 Cholesky updates
-%                             lnZ=lnZ-sum(log(diag(chol(K))))+sum(log(diag(chol(Sf))));
-%                             
-%                             lnZ=lnZ+0.5*ts'*(Sf-diag(1./(Wc+Ws)))*ts;
-%                             lnZ=lnZ+0.5*sum( (mc.*Wc)./(Wc+Ws).*(mc.*Ws-2*ts) );
+                            L=Ls;                            
                         end
                     end
-                    Ef = myy;
-                    Varf = diag(Sigm);
                 % EP algorithm for compactly supported covariance function (that is C is sparse)
                 %---------------------------------------------------------------------------
                 else
@@ -337,6 +317,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                     Inn = sparse(1:n,1:n,1,n,n);
                     sqrtS = sparse(1:n,1:n,0,n,n);
                     myy = zeros(size(y));
+                    sigm2 = zeros(size(y));
                     gamma = zeros(size(y));
                     VD = ldlchol(Inn);
                     
@@ -351,11 +332,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                             Ki1 = K(:,i1);
                             sqrtSKi1 = ssmult(sqrtS, Ki1);
                             tttt = ldlsolve(VD,sqrtSKi1);
-                            sigm2 = Ki1(i1) - sqrtSKi1'*tttt;
+                            sigm2(i1) = Ki1(i1) - sqrtSKi1'*tttt;
                             myy(i1) = gamma(i1) - tttt'*sqrtS*gamma;
                             
-                            tau_i=sigm2^-1-tautilde(i1);
-                            vee_i=sigm2^-1*myy(i1)-nutilde(i1);
+                            tau_i=sigm2(i1)^-1-tautilde(i1);
+                            vee_i=sigm2(i1)^-1*myy(i1)-nutilde(i1);
                             
                             myy_i=vee_i/tau_i;
                             sigm2_i=tau_i^-1;
@@ -429,10 +410,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 % Set something into La2
                 La2 = B;
                 b = 0;
-                R=0;
-                P=0;
-                D =0;
-
+                
               % ============================================================
               % FIC
               % ============================================================
@@ -742,6 +720,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 b = nutilde' - ((b + (nutilde'*Lhat)*Bhat).*tautilde');
 
                 L = (repmat(Stildesqroot,1,m).*iDSsqrtKfu)/AA';
+
                 % ============================================================
                 % CS+FIC
                 % ============================================================
@@ -814,7 +793,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
                 myy = zeros(size(y));
                 eta = zeros(size(y));
                 gamma = zeros(size(K_uu,1),1);
-                Ann=0;               
+                Ann=0;
                 LasqrtS = La*sqrtS;                
                 VD = ldlchol(Inn);
                 while iter<=maxiter && abs(logZep_tmp-logZep)>tol
@@ -1226,9 +1205,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, D, R, P] = gpep_e(w, g
             n0 = size(x,1);
             La20 = La2;
             b0 = b;
-            RR0 = R;
-            DD0 = D;
-            PP0 = P;
         end
     end
 end

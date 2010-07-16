@@ -58,14 +58,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         if issparse(C)          % If compact support covariance functions are used 
                                 % the covariance matrix will be sparse
-            [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, 'z', z);
+            [e, edata, eprior, tautilde, nutilde, LD, La2, b] = gpep_e(w, gp, x, y, 'z', z);
             Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
             
             b = nutilde - Stildesqroot*ldlsolve(LD,Stildesqroot*(C*nutilde));
             invC = spinv(LD,1);       % evaluate the sparse inverse
             invC = Stildesqroot*invC*Stildesqroot;
         else
-            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, 'z', z);
+            [e, edata, eprior, tautilde, nutilde, L, La2, b] = gpep_e(w, gp, x, y, 'z', z);
             
             
             if tautilde > 0             % This is the usual case where likelihood is log concave
@@ -101,10 +101,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 b = nutilde - tautilde.*(L'*L*(nutilde));
                 invC = S*L';
                 invC = S - invC*invC';
-                
-                Varf=sum(L.^2,1)';
-                Ef=L'*(L*nutilde);
-            
             end
         end
 
@@ -492,6 +488,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
 
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', gp.tr_index, 'z', z);
+            
             sigm2_i = (Varf.^-1 - tautilde).^-1;
             mu_i = sigm2_i.*(Ef./Varf - nutilde);
             
