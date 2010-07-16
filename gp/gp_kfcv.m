@@ -36,9 +36,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                        the results in the current working
 %                        directory into a cv_resultsX folder (or in 
 %                        'folder', see next option), where
-%                        X is a number. If there is already
-%                        cv_results* folders X is the smallest
-%                        number not in use yet.
+%                        X is a number. If there are cv_results*
+%                        folders already, X is the smallest number
+%                        not in use yet.
 %         'folder'     - string defining the folder where to save the 
 %                        results. That is, the results will be stored in
 %                        'current working directory'/folder. See previous 
@@ -46,17 +46,17 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                        
 %
 %       The output arguments are the following
-%         criteria     - structure including following fields
+%         criteria     - structure including the following fields
 %                         mlpd_cv     - mean log predictive density
 %                         Var_lpd_cv  - variance estimate for mlpd
 %                         rmse_cv     - root mean squared error
 %                         Var_rmse_cv - variance estimate for mrmse
 %                         mabs_cv     - mean absolute error
 %                         Var_abs_cv  - variance estimate for mabs
-%         cvpreds       - CV predictions structure including same fields 
+%         cvpreds       - CV predictions structure including the same fields 
 %                         as trpreds
 %         trpreds       - training predictions structure including 
-%                         following fields
+%                         the following fields
 %                         Ef
 %                         Varf
 %                         Ey
@@ -65,8 +65,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         cvws          - hyperparameter weight vectors for each CV fold
 %         trw           - hyperparameter weight vector for training data
 %
-%       The K-fold cross validation is performed as follows. The
-%       data is divided into k groups D_k. For each group we
+%       The K-fold cross validation is performed as follows: The
+%       data are divided into k groups D_k. For each group, we
 %       evaluate the test statistics
 %
 %            u(D_k | D_{k-1})
@@ -82,8 +82,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %        absolute error  
 %            abs(D_k | D_{k-1})  = mean( abs( E[y_k|D_{k-1}] - y_k ) )
 %
-%       After the utility is evaluated for each group we can
-%       evaluate the output arguments which are obtained as follows
+%       After the utility is evaluated for each group, we can
+%       evaluate the output arguments, which are obtained as follows
 %    
 %        mean log predictive density  
 %            mlpd_cv  = mean( lpd(D_k | D_{k-1}) )          ,k=1...K
@@ -99,17 +99,17 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %
 %            Var_lpd_cv = var( lpd(D_k | D_{k-1}) ) / K,    k=1...K.
 %
-%       For root mean squared error we need to take first the
-%       square root of each group statistics to obtain
+%       For root mean squared error, we need to take the
+%       square root of each group statistics first to obtain
 %
 %            Var_rmse_cv = var( sqrt( rmse(D_k | D_{k-1}) ) ) / K,    k=1...K.
 %   
-%       The above statistics are returned by the funtion. However,
-%       if we use the save_results option we obtain little more test
-%       statistics which are only saved in the result file. These
+%       The above statistics are returned by the function. However,
+%       if we use the save_results option we obtain some additional
+%       test statistics, which are only saved in the result file. These
 %       extra statistics include, for example, bias corrected
-%       expected utilities (Vehtari and Lampinen. 2002), and the
-%       training utility for whole data and each cross validation
+%       expected utilities (Vehtari and Lampinen, 2002) and the
+%       training utility for the whole data and each cross-validation
 %       training set. The detailed list of variables saved in the
 %       result file is:
 %
@@ -128,12 +128,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                              (a scalar summary)
 %                Var_abs_cv  = variance of the mean absolute error 
 %                              (a scalar summary)
-%                trindex     = training indeces
-%                tstindex    = test indeces
+%                trindex     = training indices
+%                tstindex    = test indices
 %                lpd_cvtr    = mean log predictive density for each of 
-%                              k-CV trainng sets (kx1 vector)
+%                              k-CV training sets (kx1 vector)
 %                rmse_cvtr   = root mean squared error for each of 
-%                              k-CV trainng sets (kx1 vector)
+%                              k-CV training sets (kx1 vector)
 %                abs_cvtr    = absolute error for each of 
 %                              k-CV training sets (kx1 vector)
 %                lpd_tr      = log predictive density for the 
@@ -160,7 +160,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         Analysis, second edition. Chapman & Hall / CRC.
 %
 %         Aki Vehtari and Jouko Lampinen. Bayesian model assessment
-%         and comparison using crossvalidation predictive
+%         and comparison using cross-validation predictive
 %         densities. Neural Computation, 14(10):2439-2468, 2002.
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
@@ -207,7 +207,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
     
     if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
-        error('gp_kfcv: If you give cross validation indeces, you need to provide both trindex and tstindex.')
+        error('gp_kfcv: If you give cross validation indices, you need to provide both trindex and tstindex.')
     end
     
     if isempty(trindex) || isempty(tstindex)
@@ -417,9 +417,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp=gp_unpak(gp,w);
             trw=w;
           case 'MCMC'
-            gp = gp_mc(gp, xtr, ytr, options_tr, opt);
+            gp = gp_mc(gp, x, y, options_tr, opt);
           case 'IA'
-            gp = gp_ia(gp, xtr, ytr, [], options_tr, opt);
+            gp = gp_ia(gp, x, y, [], options_tr, opt);
         end
         cpu_time = cputime - cpu_time;
         
@@ -501,14 +501,14 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         fprintf(f,'Var_lpd_cv  = variance of mean log predictive density (a scalar summary) \n');
         fprintf(f,'Var_rmse_cv = variance of the root mean squared error (a scalar summary) \n'); 
         fprintf(f,'Var_abs_cv  = variance of the mean absolute error (a scalar summary) \n'); 
-        fprintf(f,'trindex     = training indeces \n'); 
-        fprintf(f,'tstindex    = test indeces \n'); 
+        fprintf(f,'trindex     = training indices \n'); 
+        fprintf(f,'tstindex    = test indices \n'); 
         fprintf(f,'lpd_cvtr    = mean log predictive density for each of k-CV trainng sets (kx1 vector) \n'); 
         fprintf(f,'rmse_cvtr   = root mean squared error for each of k-CV trainng sets (kx1 vector) \n'); 
         fprintf(f,'abs_cvtr    = absolute error for each of k-CV training sets (kx1 vector) \n'); 
-        fprintf(f,'lpd_tr      = log predictive density for the full trainng set  \n'); 
-        fprintf(f,'rmse_tr     = root mean squared error for the full trainng set  \n'); 
-        fprintf(f,'abs_tr      = absolute error for the full trainng set  \n'); 
+        fprintf(f,'lpd_tr      = log predictive density for the full training set  \n'); 
+        fprintf(f,'rmse_tr     = root mean squared error for the full training set  \n'); 
+        fprintf(f,'abs_tr      = absolute error for the full training set  \n'); 
         fprintf(f,'lpd_ccv     = log predictive density with corrected cross validation   \n'); 
         fprintf(f,'rmse_ccv    = root mean squared error with corrected cross validation \n');
         fprintf(f,'abs_ccv     = absolute error with corrected cross validation \n');
