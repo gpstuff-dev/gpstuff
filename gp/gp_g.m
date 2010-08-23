@@ -69,15 +69,121 @@ switch gp.type
             end
             
             gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
             
-            % Evaluate the gradient with respect to covariance function parameters
-            for i2 = 1:length(DKff)
-                i1 = i1+1;  
-                Bdl = b'*(DKff{i2}*b);
-                Cdl = sum(sum(invC.*DKff{i2})); % help arguments
-                gdata(i1)=0.5.*(Cdl - Bdl);
-                gprior(i1) = gprior_cf(i2);
+            % Are gradient observations available; gradobs=1->yes, gradobs=0->no
+            gradobs=isfield(gp,'grad_obs');
+            
+            if gradobs == 0 
+                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+            else
+               [n m]=size(x);
+               %Case: input dimension is 1
+               if m==1
+
+                   DKdf = feval(gpcf.fh_ghypergrad, gpcf, x);
+                   [DKffa, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                   DKdd = feval(gpcf.fh_ghypergrad2, gpcf, x);
+
+                   % DKff{1} -- d K / d magnSigma2
+                   % DKff{2} -- d K / d lengthScale
+                   DKff{1} = [DKffa{1}, DKdf{1}'; DKdf{1}, DKdd{1}];
+                   DKff{2} = [DKffa{2}, DKdf{2}'; DKdf{2}, DKdd{2}];
+                   
+               %Case: input dimension is >1    
+               else
+                   [DKffa, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                   DKdf = feval(gpcf.fh_ghypergrad, gpcf, x);
+                   DKdd = feval(gpcf.fh_ghypergrad2, gpcf, x);
+
+                   %Check whether ARD method is in use (with gpcf_sexp)
+                   Ard=length(gpcf.lengthScale);
+                    
+                   % DKff{1} - d K / d magnSigma2
+                   % DKff{2:end} - d K / d lengthScale(1:end)
+                   for i=1:2
+                       DKff{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
+                   end
+                   
+                   %If ARD is in use
+                   if Ard>1
+                       for i=2+1:2+Ard-1
+                           DKff{i}=[DKffa{i} DKdf{i}';DKdf{i} DKdd{i}];
+                       end  
+                   end
+               end
+            end
+            
+            % Are there specified mean functions
+            if  ~isfield(gp,'mean')
+                % Evaluate the gradient with respect to covariance function parameters
+                for i2 = 1:length(DKff)
+                    i1 = i1+1;  
+                    Bdl = b'*(DKff{i2}*b);
+                    Cdl = sum(sum(invC.*DKff{i2})); % help arguments
+                    gdata(i1)=0.5.*(Cdl - Bdl);
+                    gprior(i1) = gprior_cf(i2);
+                end
+            else
+                for i=1:length(gp.mean.meanFuncs)
+                    Hapu{i}=feval(gp.mean.meanFuncs{i},x);
+                end
+                %help arguments for predictions with both vague and
+                %non-vague prior
+                H = cat(1,Hapu{1:end});
+                b_m = gp.mean.p.b;            
+                B = gp.mean.p.B;
+                HinvC=H*invC;
+                HKH = HinvC*H';
+                Hby = H'*b_m-y;
+                
+                % is prior for weights of mean functions vague
+                if gp.mean.p.vague==0
+                    % help arguments that don't depend on DKff; non-vague p             
+                    KHBH = C + H'*B*H;
+                    KHBHhby=KHBH\Hby;
+                    A = B\eye(size(B)) + HKH;
+                    invAt=A\eye(size(A));
+                    invAt=invAt';
+                    for i2 = 1:length(DKff)
+                        i1 = i1+1;
+                        % help arguments that depend on DKff; non-vague p
+                        HDH = -1*HinvC*DKff{i2}*HinvC';
+                        M1 = Hby'*(KHBH\(DKff{i2}*KHBHhby));  % d (Hby)'*KHBH*((Hby)') / d th   
+                        trK = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
+                        trA = sum(invAt(:).*HDH(:));          % d log(|A|)/dth = trace(inv(A) * dA/dth)
+
+                        gdata(i1)=0.5*(-1*M1 + trK + trA);
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                else
+                    % help arguments that don't depend on DKff; vague p
+                    A = HKH;
+                    AH = A\H;
+                    invAt=A\eye(size(A));
+                    invAt=invAt';
+                    invCy=invC*y;
+                    yinvCHAH=invCy'*H'*AH;
+                    HAHinvCy=H'*AH*invCy;
+                    
+                    for i2 = 1:length(DKff)
+                        i1 = i1+1;
+                        % help arguments that depend on DKff; vague p
+                        Bdl = b'*(DKff{i2}*b);                % d y'*Ky⁻*y / d th
+                        Cdl = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
+                        HDH = -1*HinvC*DKff{i2}*HinvC';
+                        trA = sum(invAt(:).*HDH(:));          % d log(|A|)/dth = trace(inv(A) * dA/dth)
+                        iCi=invC*DKff{i2}*invC;
+                        yinvCAHiCi=yinvCHAH*iCi;
+                        
+                        dyCy1 = y'*iCi*HAHinvCy;           
+                        dyCy2 = yinvCAHiCi*y;
+                        dyCy3 = -yinvCAHiCi*HAHinvCy;
+                        dyCy = dyCy1 + dyCy2 + dyCy3;          % d y'*C'y /d th
+
+                        gdata(i1)=0.5*(Cdl - Bdl) + 0.5*trA + 0.5*dyCy;
+                        gprior(i1) = gprior_cf(i2);
+                     end
+                end
             end
             
             % Set the gradients of hyper-hyperparameter
@@ -102,11 +208,31 @@ switch gp.type
                     if size(DCff{i2}) > 1
                         Bdl = b'*(DCff{i2}*b);
                         Cdl = sum(sum(invC.*DCff{i2})); % help arguments
-                        gdata(i1)=0.5.*(Cdl - Bdl);
+                        gdata_zeromean(i1)=0.5.*(Cdl - Bdl);
                     else
                         B = trace(invC);
                         C=b'*b;
-                        gdata(i1)=0.5.*DCff{i2}.*(B - C); 
+                        gdata_zeromean(i1)=0.5.*DCff{i2}.*(B - C); 
+                    end
+                    % Are mean functions in use
+                    if ~isfield(gp,'mean')
+                        gdata(i1)=gdata_zeromean(i1);
+                    else
+                        HDH = -1*H*invC*DCff{i2}*invC*H';
+                        trA = sum(invAt(:).*HDH(:));
+                        % is prior vague
+                        if gp.mean.p.vague==0
+                            M1 = Hby'*(KHBH\(DCff{i2}*(KHBH\Hby)));
+                            gdata(i1)=0.5*(-1*M1 + trA)+gdata_zeromean(i1);
+                        else
+                            iCi=invC*DCff{i2}*invC;
+                            dyCy1 = y'*iCi*HAHinvCy;         
+                            dyCy2 = yinvCAHiCi*y;
+                            dyCy3 = -yinvCAHiCi*HAHinvCy;
+                            dyCy = dyCy1 + dyCy2 + dyCy3;          
+
+                            gdata(i1)=gdata_zeromean(i1) + 0.5*trA + 0.5*dyCy;
+                        end
                     end
                     gprior(i1) = gprior_cf(i2);
                 end

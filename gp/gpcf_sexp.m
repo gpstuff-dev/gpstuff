@@ -95,7 +95,12 @@ function gpcf = gpcf_sexp(do, varargin)
             gpcf.fh_unpak = @gpcf_sexp_unpak;
             gpcf.fh_e = @gpcf_sexp_e;
             gpcf.fh_ghyper = @gpcf_sexp_ghyper;
+            gpcf.fh_ghypergrad = @gpcf_sexp_ghypergrad;
+            gpcf.fh_ghypergrad2 = @gpcf_sexp_ghypergrad2;
             gpcf.fh_ginput = @gpcf_sexp_ginput;
+            gpcf.fh_ginput2 = @gpcf_sexp_ginput2;
+            gpcf.fh_ginput3 = @gpcf_sexp_ginput3;
+            gpcf.fh_ginput4 = @gpcf_sexp_ginput4;
             gpcf.fh_cov = @gpcf_sexp_cov;
             gpcf.fh_trcov  = @gpcf_sexp_trcov;
             gpcf.fh_trvar  = @gpcf_sexp_trvar;
@@ -448,6 +453,299 @@ function gpcf = gpcf_sexp(do, varargin)
         end
     end
 
+function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
+    %GPCF_SEXP_GHYPERGRAD     Evaluate gradient of covariance function, of which has been taken
+    %                         partial derivative with respect to x, with respect to hyperparameters. 
+    %
+    %	Description
+    %	DKff = GPCF_SEXP_GHYPERGRAD(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of derivatived covariance
+    %   matrix dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the hyperparameters
+    %
+    %   Evaluate: DKff{1:m} = d Kff / d magnSigma2
+    %             DKff{m+1:2m} = d Kff / d lengthScale_m
+    %   m is the dimension of inputs. If ARD is used, then multiple
+    %   lengthScales.
+    %
+    %	See also
+    %   GPCF_SEXP_GINPUT
+    
+        [n, m] =size(x);
+        ii1=0;
+        Cdm = feval(gpcf.fh_ginput4, gpcf, x);
+            
+        % grad with respect to MAGNSIGMA
+        if ~isempty(gpcf.p.magnSigma2)
+            if m==1
+                ii1 = ii1 +1;
+                DKff{ii1} = Cdm{1};
+            else
+                DKffapu = cat(1,Cdm{1:m});
+                ii1=ii1+1;
+                DKff{ii1}=DKffapu;
+            end
+        end
+        
+        % grad with respect to LENGTHSCALE
+        if isfield(gpcf,'metric')
+            error('Metric doesnt work with grad.obs')
+        else
+            if ~isempty(gpcf.p.lengthScale)
+                % loop over all the lengthScales
+                if length(gpcf.lengthScale) == 1
+                    % In the case of isotropic SEXP
+                    s = 1./gpcf.lengthScale.^2;
+                    dist = 0;
+                    for i=1:m
+                        D = bsxfun(@minus,x(:,i),x(:,i)');
+                        dist = dist + D.^2;
+                    end
+                    % input dimension is 1
+                    if m==1
+                        G = Cdm{1}.*(dist.*s - 2); 
+                        ii1 = ii1+1;
+                        DKff{ii1} = G;
+                    % input dimension is >1    
+                    else
+                        for i=1:m
+                            G{i} = 2.*Cdm{i}.*(dist.*s./2 - 1);
+                        end
+                        DKffapu=cat(1,G{1:m});
+                        ii1 = ii1+1;
+                        DKff{ii1} = DKffapu;
+                    end
+                else
+                     % In the case ARD is used
+                     if m~=length(gpcf.lengthScale)
+                         error('Amount of lengtscales dont match input dimension')
+                     end
+                     %Preparing
+                    for i=1:m
+                        dist{i} = bsxfun(@minus,x(:,i),x(:,i)').^2;
+                        s(i) = 1./gpcf.lengthScale(i);
+                    end
+
+                    for i=1:m
+                        for j=1:m
+                            % if structure is to check: is x derivative different from lengthscale
+                            % derivative
+                            if j~=i
+                                D{j}= Cdm{j}.*dist{i}.*s(i).^2;
+                            else
+                                D{j} = Cdm{i}.*(dist{i}.*s(i).^2 - 2);
+                            end
+                        end
+                        ii1=ii1+1;
+                        DKffapu2{i}=cat(1,D{1:m});
+                        DKff{ii1}=DKffapu2{i};
+                    end
+                end
+            end
+        end
+    end
+
+    function DKff  = gpcf_sexp_ghypergrad2(gpcf, x)
+    %GPCF_SEXP_GHYPERGRAD2     Evaluate gradient of covariance function, of which has been taken
+    %                          partial derivatives with respect to both input variables x, with respect to hyperparameters. 
+    %
+    %	Description
+    %	DKff = GPCF_SEXP_GHYPERGRAD2(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of derivatived covariance
+    %   matrix dK(df,df)/dhyp = d(d² k(X1,X2)/dX1dX2)/dhyp with respect to the hyperparameters
+    %
+    %   Evaluate: DKff{1-m} = d Kff / d magnSigma2
+    %             DKff{m+1-2m} = d Kff / d lengthScale_m
+    %   m is the dimension of inputs. If ARD is used, then multiple
+    %   lengthScales.
+    %
+    %	See also
+    %   GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2 
+    
+        [n, m] =size(x);
+        DKff = {};
+        [DKdd, DKdd3, DKdd4] = feval(gpcf.fh_ginput2, gpcf, x, x);
+        ii1=0;
+
+        if m>1
+            % Cross derivative matrices (non-diagonal).
+            DKdda=feval(gpcf.fh_ginput3, gpcf, x,x);
+
+            %MAGNSIGMA 
+            %add matrices to the diagonal of help matrix, size (m*n,m*n)
+             DKffapu=blkdiag(DKdd{:});
+             
+            % add non-diagonal matrices 
+            if m==2
+                DKffapund=[zeros(n,n) DKdda{1};DKdda{1} zeros(n,n)];
+            else
+                t1=1;
+                DKffapund=zeros(m*n,m*n);
+                for i=1:m-1
+                    aa=zeros(m-1,m);
+                    t2=t1+m-2-(i-1);
+                    aa(m-1,i)=1;
+                    k=kron(aa,cat(1,zeros((i)*n,n),DKdda{t1:t2}));
+                    k(1:n*(m),:)=[];
+                    k=k+k';
+                    DKffapund = DKffapund + k;
+                    t1=t2+1;
+                end
+            end
+            
+            DKffapu=DKffapu+DKffapund;
+        end
+            
+         % grad with respect to MAGNSIGMA
+         if ~isempty(gpcf.p.magnSigma2)
+             if m==1
+                 ii1 = ii1 +1;
+                 DKff{ii1} = DKdd{1};
+             else
+                 ii1=ii1+1;
+                 DKff{ii1}=DKffapu;
+             end
+         else
+             error('no prior set to magnSigma')
+         end  
+         
+        % grad with respect to LENGTHSCALE
+        % metric doesn't work with grad obs
+        if isfield(gpcf,'metric')
+            error('metric doesnt work with grad.obs')
+        else
+            if ~isempty(gpcf.p.lengthScale)
+                % loop over all the lengthScales
+                if length(gpcf.lengthScale) == 1
+                    % In the case of isotropic SEXP
+                    s = 1./gpcf.lengthScale;
+                    dist = 0;
+                    for i=1:m
+                        D = bsxfun(@minus,x(:,i),x(:,i)');
+                        dist = dist + D.^2;
+                    end
+                        if m==1
+                            %diagonal matrices
+                            ii1 = ii1+1;
+                            DKff{ii1} = DKdd3{1}.*(dist.*s.^2 - 2)-DKdd4{1}.*(dist.*s.^2 - 4);
+                        else
+                            %diagonal matrices
+                            for i=1:m
+                                DKffdiag{i} = DKdd3{i}.*(dist.*s.^2 - 2) - DKdd4{i}.*(dist.*s.^2 - 4);
+                            end
+                            
+                            %nondiag.matrices
+                            %how many pairs = num, m=2 -> 1 pair, m=3 -> 3pairs
+                            % m=4 -> 6 pairs
+                            num=1;
+                            if m>2
+                                for i=2:m-1
+                                    num=num+i;
+                                end
+                            end
+                            for i=1:num    
+                                DKffnondiag{i} = DKdda{i}.*(dist.*s.^2-4);
+                            end
+                            
+                            % Gather matrices to diagonal
+                            DKffapu2=blkdiag(DKffdiag{:});
+
+                            % non-diagonal matrices   
+                            if m==2
+                                DKffapu2nd=[zeros(n,n) DKffnondiag{1};DKffnondiag{1} zeros(n,n)];
+                            else
+                                t1=1;
+                                DKffapu2nd=zeros(m*n,m*n);
+                                for i=1:m-1
+                                    aa=zeros(m-1,m);
+                                    t2=t1+m-2-(i-1);
+                                    aa(m-1,i)=1;
+                                    k=kron(aa,cat(1,zeros((i)*n,n),DKffnondiag{t1:t2}));
+                                    k(1:n*(m),:)=[];
+                                    k=k+k';
+                                    DKffapu2nd = DKffapu2nd + k;
+                                    t1=t2+1;
+                                end
+                            end
+                            ii1=ii1+1;
+                            DKff{ii1}=DKffapu2+DKffapu2nd;
+                        end
+                else
+                % In the case ARD is used
+                % Now lengthScale derivatives differ from the case where
+                % there's only one lengthScale, so here we take that to account
+            
+                    %Preparing, Di is diagonal help matrix and NDi
+                    %is non-diagonal help matrix
+                    for i=1:m
+                        Di2{i}=zeros(n,n);
+                        NDi{i}=zeros(m*n,m*n);
+                        s(i) = 1./gpcf.lengthScale(i);
+                        D = bsxfun(@minus,x(:,i),x(:,i)').*s(i);
+                        dist{i} = D.^2;                        
+                    end
+                    
+                    % diagonal matrices for each lengthScale
+
+                    for j=1:m
+                        for i=1:m
+                            % same x and lengthscale derivative
+                            if i==j
+                                  Di2{i} = DKdd3{i}.*(dist{i} - 2) - DKdd4{i}.*(dist{i} - 4);
+                            end
+                            % different x and lengthscale derivative
+                            if i~=j
+                                  Di2{i}=DKdd3{i}.*dist{j} - DKdd4{i}.*dist{j};
+                            end
+                        end
+                        Di{j}=blkdiag(Di2{:});
+                    end 
+                    
+                    %Non-diagonal matrices
+                    if m==2
+                        for k=1:2
+                            Dnondiag=DKdda{1}.*(dist{k}-2);
+                            NDi{k}=[zeros(n,n) Dnondiag;Dnondiag zeros(n,n)];
+                        end
+                    else
+                        for k=1:m
+                            ii3=0;
+                            NDi{k}=zeros(m*n,m*n);
+                            for j=0:m-2
+                                for i=1+j:m-1
+                                     ii3=ii3+1;
+                                     sar=j*1+1;
+                                     riv=i+1;
+                                     % if lengthscale and either x derivate dimensions
+                                     % are same, else if not.
+                                     if sar==k || riv==k
+                                        Dnondiag{i}=DKdda{ii3}.*(dist{k}-2);
+                                     else
+                                        Dnondiag{i}=DKdda{ii3}.*dist{k};
+                                     end
+                                end
+                                aa=zeros(m-1,m);
+                                aa(m-1,j+1)=1;
+                                kk=kron(aa,cat(1,zeros((j+1)*n,n),Dnondiag{1+j:m-1}));
+                                kk(1:n*(m),:)=[];
+                                kk=kk+kk';
+                                NDi{k} = NDi{k} + kk;
+                            end
+                        end
+                    end
+
+                    %and the final matrix is diag. + non-diag matrices
+                    for i=1:m
+                        ii1=ii1+1;
+                        DKff{ii1}=NDi{i}+Di{i};        
+                    end
+                end
+            end
+        end
+    
+    end
+
 
     function DKff  = gpcf_sexp_ginput(gpcf, x, x2)
     %GPCF_SEXP_GINPUT     Evaluate gradient of covariance function with 
@@ -536,6 +834,163 @@ function gpcf = gpcf_sexp(do, varargin)
         end
     end
 
+    function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
+    %GPCF_SEXP_GINPUT2     Evaluate gradient of covariance function with
+    %                      respect to both input variables x and x2 (in
+    %                      same dimension).
+    %
+    %	Description
+    %	DKff = GPCF_SEXP_GINPUT2(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of twice derivatived covariance
+    %   matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix elements).
+    %   Input variable's dimensions are expected to be same.
+    %   The function returns also DKff1 and DKff2 which are parts
+    %   of DKff and needed with GHYPERGRAD2. DKff = DKff1 - DKff2.
+    %   
+    %	See also
+    %   GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_GHYPERGRAD2 
+    
+        [n, m] =size(x);
+        [n2,m2] =size(x2);
+        ii1 = 0;
+        if nargin ~= 3
+            error('Needs 3 input arguments')
+        end
+   
+        if isequal(x,x2)
+           K = feval(gpcf.fh_trcov, gpcf, x); 
+        else
+           K = feval(gpcf.fh_cov, gpcf, x, x2);
+        end
+
+        %metric doesn't work with grad.obs on
+        if isfield(gpcf,'metric')
+            error('Metric doesnt work with grad.obs')
+        else
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic SEXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+
+            for i=1:m
+                DK2 = s(i).^2.*bsxfun(@minus,x(:,i),x2(:,i)').^2.*K;
+                DK = s(i).*K;     
+                ii1 = ii1 + 1;
+                DKff1{ii1} = DK;
+                DKff2{ii1} = DK2;
+                DKff{ii1} = DK - DK2;
+            end
+        end
+    end
+
+    function DKff  = gpcf_sexp_ginput3(gpcf, x, x2)
+    %GPCF_SEXP_GINPUT3     Evaluate gradient of covariance function with
+    %                      respect to both input variables x and x2 (in different dimensions). 
+    %
+    %	Description
+    %	DKff = GPCF_SEXP_GINPUT3(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of twice derivatived covariance
+    %   matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix elements). 
+    %   The derivative is calculated in multidimensional problem between
+    %   input's observation dimensions which are not same .
+    %   
+    %	See also
+    %   GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_GHYPERGRAD2 
+        
+        [n, m] =size(x);
+        [n2,m2] =size(x2);
+        if nargin ~= 3
+            error('Needs 3 input arguments')
+        end
+
+        if isequal(x,x2)
+           K = feval(gpcf.fh_trcov, gpcf, x); 
+        else
+           K = feval(gpcf.fh_cov, gpcf, x, x2);
+        end
+        
+        % Derivative the cov.function with respect to both input variables
+        % but in different dimensions. Resulting matrices are for the cov. matrix
+        % k(df/dx,df/dx) non-diagonal part. Matrices are added to DKff in columnwise order
+        % for ex. dim=3: k(df/dx1,df/dx2),(..dx1,dx3..),(..dx2,dx3..)
+        
+        if isfield(gpcf,'metric')
+            error('Metric doesnt work with ginput3')
+        else
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic SEXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+            ii3=0;
+            for i=1:m-1
+                for j=i+1:m
+                    ii3=ii3+1;
+                    DKff{ii3} = s(j).*bsxfun(@minus,x(:,j),x2(:,j)').*(-s(i).*bsxfun(@minus,x(:,i),x2(:,i)').*K);
+                end
+            end
+        end
+    end
+
+    function DKff  = gpcf_sexp_ginput4(gpcf, x, x2)
+    %GPCF_SEXP_GINPUT     Evaluate gradient of covariance function with 
+    %                     respect to x. Simplified and faster version of
+    %                     sexp_ginput, returns full matrices.
+    %
+    %	Description
+    %	DKff = GPCF_SEXP_GHYPER(GPCF, X) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X) with respect to X (whole matrix)
+    %
+    %	DKff = GPCF_SEXP_GHYPER(GPCF, X, X2) 
+    %   takes a covariance function data structure GPCF, a matrix X of
+    %   input vectors and returns DKff, the gradients of covariance
+    %   matrix Kff = k(X,X2) with respect to X (whole matrix).
+    %
+    %	See also
+    %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_E, GP_G
+    
+        [n, m] =size(x);
+        ii1 = 0;
+        if nargin==2
+           flag=1;
+           K = feval(gpcf.fh_trcov, gpcf, x); 
+        else
+           flag=0;
+           K = feval(gpcf.fh_cov, gpcf, x, x2);
+           if isequal(x,x2)
+               error('ginput4 fuktio saa vaaran inputin')
+           end
+        end
+        
+        if isfield(gpcf,'metric')
+            error('no metric implemented')
+        else
+            if length(gpcf.lengthScale) == 1
+                % In the case of an isotropic SEXP
+                s = repmat(1./gpcf.lengthScale.^2, 1, m);
+            else
+                s = 1./gpcf.lengthScale.^2;
+            end
+            for i=1:m
+                DK = zeros(size(K));
+                if flag==1
+                   DK = -s(i).*bsxfun(@minus,x(:,i),x(:,i)');
+                else
+                   DK = -s(i).*bsxfun(@minus,x(:,i),x2(:,i)');
+                end
+                DK = DK.*K;
+                ii1 = ii1 + 1;
+                DKff{ii1} = DK;
+            end
+        end
+    end
 
     function C = gpcf_sexp_cov(gpcf, x1, x2)
     % GP_SEXP_COV     Evaluate covariance matrix between two input vectors.

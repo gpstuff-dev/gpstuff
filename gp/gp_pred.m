@@ -99,27 +99,79 @@ switch gp.type
     [c, C]=gp_trcov(gp,x);
     K=gp_cov(gp,x,xt,predcf);
 
-    if issparse(C)
-        LD = ldlchol(C);
-        Ef = K'*ldlsolve(LD,y);
+    % Are there specified mean functions
+    if  ~isfield(gp,'mean')         % zero mean
+        if issparse(C)
+            LD = ldlchol(C);
+            Ef = K'*ldlsolve(LD,y);
+        else
+            L = chol(C)';
+            %    y=K'*(C\y);
+            a = L'\(L\y);
+            Ef = K'*a;
+        end
     else
-        L = chol(C)';
-        %    y=K'*(C\y);
-        a = L'\(L\y);
-        Ef = K'*a;
+        if issparse(C)
+            LD = ldlchol(C);
+            a = ldlsolve(LD,y);
+        else
+            L = chol(C)';
+            a = L'\(L\y);
+        end
+        for i=1:length(gp.mean.meanFuncs)
+            Hapu{i}=feval(gp.mean.meanFuncs{i},x);
+            Hapu2{i}=feval(gp.mean.meanFuncs{i},xt);
+        end
+        H = cat(1,Hapu{1:end});
+        Hs= cat(1,Hapu2{1:end});
+        b = gp.mean.p.b;            
+        B = gp.mean.p.B;
+        KyK = L'\(L\K);
+        KyH = L'\(L\H');
+        R = Hs - H*KyK;
+        
+        if gp.mean.p.vague==0         % is prior vague
+            B1 = B\eye(size(B)) + H*KyH;
+            B2 = H*a + B\b;
+            Beta = B1\B2;
+
+            Ef = K'*a + R'*Beta;
+        else
+            B1 = H*KyH;
+            B2 = H*a;
+            Beta = B1\B2;
+
+            Ef = K'*a + R'*Beta;
+        end
     end
 
     if nargout > 1
-        if issparse(C)
-            V = gp_trvar(gp,xt,predcf);
-            Varf = V - diag(K'*ldlsolve(LD,K));
+        % Are there specified mean functions
+        if  ~isfield(gp,'mean')
+            if issparse(C)
+                V = gp_trvar(gp,xt,predcf);
+                Varf = V - diag(K'*ldlsolve(LD,K));
+            else
+                v = L\K;
+                V = gp_trvar(gp,xt,predcf);
+                % Vector of diagonal elements of covariance matrix
+                % b = L\K;
+                % Varf = V - sum(b.^2)';
+                Varf = V - diag(v'*v);
+            end
         else
-            v = L\K;
             V = gp_trvar(gp,xt,predcf);
-            % Vector of diagonal elements of covariance matrix
-            % b = L\K;
-            % Varf = V - sum(b.^2)';
-            Varf = V - diag(v'*v);
+            if issparse(C)
+                Varfapu = V - diag(K'*ldlsolve(LD,K)); 
+            else
+                v = L\K;
+                Varfapu= V - diag(v'*v);
+            end
+            B1R=B1\R;
+            RB1Rapu=R'.*B1R';
+            RB1R=sum(RB1Rapu,2);  % equals diag(R'*(HKH)*R)
+           
+            Varf = Varfapu + RB1R; 
         end
     end
     if nargout > 2

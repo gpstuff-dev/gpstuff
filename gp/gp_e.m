@@ -53,14 +53,54 @@ switch gp.type
     % ============================================================
   case 'FULL'   % A full GP
     [K, C] = gp_trcov(gp, x);
-
-    if issparse(C)            % compact support covariances are in use
-        LD = ldlchol(C);
-        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
+    
+    % Are there specified mean functions
+    if  ~isfield(gp,'mean')       % a zero mean function
+        if issparse(C)            % compact support covariances are in use
+            LD = ldlchol(C);
+            edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
+        else
+            L = chol(C,'lower');
+            b=L\y;
+            edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+        end
     else
-        L = chol(C,'lower');
-        b=L\y;
-        edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+        for i=1:length(gp.mean.meanFuncs)
+            Hapu{i}=feval(gp.mean.meanFuncs{i},x);
+        end
+        % Gather mean functions' values in one matrix
+        H = cat(1,Hapu{1:end});
+        b = gp.mean.p.b;            
+        B = gp.mean.p.B;                    
+        if issparse(C)  
+           L = ldlchol(C);
+           lB = 0.5*sum(log(diag(L)));
+        else
+           L = chol(C,'lower');
+           lB = sum(log(diag(L)));
+        end
+        KH = L'\(L\H');
+        
+        % is prior for mean function weights vague
+        if gp.mean.p.vague==0
+            A = B\eye(size(B)) + H*KH;
+            HBy = H'*b-y;
+            KHBH = C + H'*B*H;
+            M1 = HBy'*(KHBH\HBy);
+            
+            edata = 0.5*M1 + lB + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+        else
+            if issparse(C)
+                yKy=y'*ldlsolve(L,y);
+            else
+                b=L\y;
+                yKy=b'*b;
+            end
+            m=rank(H');
+            A = H*KH;
+            C_m = KH*(A\(H*(C\eye(size(C)))));
+            edata = 0.5*yKy - 0.5*y'*C_m*y + lB + 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
+        end
     end
     
     % ============================================================

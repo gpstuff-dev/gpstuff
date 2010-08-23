@@ -103,7 +103,7 @@ function gp = gp_init(do, varargin)
 %
 %
 %   References:
-%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying view of sparse
+%    Quiï¿½onero-Candela, J. and Rasmussen, C. E. (2005). A unifying view of sparse
 %    approximate Gaussian process regression. Journal of Machine Learning Re-
 %    search, 6(3):1939-1959.
 %
@@ -214,6 +214,15 @@ function gp = gp_init(do, varargin)
                     gp.tr_index = varargin{i+1};
                   case 'infer_params'
                     gp.infer_params = varargin{i+1};
+                  case 'meanFuncs'
+                    gp.mean.meanFuncs = varargin{i+1};
+                    gp.mean.p.b=0;
+                    gp.mean.p.B=0;
+                    gp.mean.p.vague=1;
+                  case 'mean_p'
+                    gp.mean.p.b=varargin{i+1}{1};
+                    gp.mean.p.B=varargin{i+1}{2};
+                    gp.mean.p.vague=0;
                   case 'latent_method'
                     gp.latent_method = varargin{i+1}{1};
                     switch varargin{i+1}{1}

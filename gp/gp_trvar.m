@@ -27,29 +27,62 @@ function [K, C] = gp_trvar(gp, x1, predcf)
 n1 = n+1;
 ncf = length(gp.cf);
 
-% Evaluate the covariance without noise
-K = 0;
-if nargin < 3 || isempty(predcf)
-    predcf = 1:ncf;
-end      
-for i=1:length(predcf)
-    gpcf = gp.cf{predcf(i)};
-    K = K + feval(gpcf.fh_trvar, gpcf, x1);
-end
+% Are gradient observations available; gradobs=1->yes, gradobs=0->no
+gradobs=isfield(gp,'grad_obs');
 
-if ~isempty(gp.jitterSigma2)
-    K = K + gp.jitterSigma2;
-end
+if gradobs==1
+    
+    % Evaluate the covariance without noise
+    K = 0;
+    gpcf = gp.cf{1};
+    %right sized vector for the tr_var
+    x2=zeros(m*n+n,1);
+    K = K + feval(gpcf.fh_trvar, gpcf, x2);
 
-if nargout >1
-  C=K;
-  
-  % Add noise to the covariance
-  if isfield(gp, 'noise')
-    nn = length(gp.noise);
-    for i=1:nn
-      noise = gp.noise{i};
-      C = C + feval(noise.fh_trvar, noise, x1);
+    if ~isempty(gp.jitterSigma2)
+        K = K + gp.jitterSigma2;
     end
-  end
+
+    if nargout >1
+       C=K;
+     % Add noise to the covariance
+       if isfield(gp, 'noise')
+          nn = length(gp.noise);
+          for i=1:nn
+              noise = gp.noise{i};
+              C = C + feval(noise.fh_trvar, noise, x2);
+          end
+       end
+       C(C<eps)=0;
+    end
+    K(K<eps)=0;
+        
+else
+
+    % Evaluate the covariance without noise
+    K = 0;
+    if nargin < 3 || isempty(predcf)
+        predcf = 1:ncf;
+    end      
+    for i=1:length(predcf)
+        gpcf = gp.cf{predcf(i)};
+        K = K + feval(gpcf.fh_trvar, gpcf, x1);
+    end
+
+    if ~isempty(gp.jitterSigma2)
+        K = K + gp.jitterSigma2;
+    end
+
+    if nargout >1
+      C=K;
+
+      % Add noise to the covariance
+      if isfield(gp, 'noise')
+        nn = length(gp.noise);
+        for i=1:nn
+          noise = gp.noise{i};
+          C = C + feval(noise.fh_trvar, noise, x1);
+        end
+      end
+    end
 end
