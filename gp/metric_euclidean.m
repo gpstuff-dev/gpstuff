@@ -120,11 +120,14 @@ function w = metric_euclidean_pak(metric)
     %	See also
     %	GPCF_SEXP_UNPAK
     
+    
     if ~isempty(metric.p.lengthScales)
         w = log(metric.lengthScales);
         
         % Hyperparameters of lengthScale
         w = [w feval(metric.p.lengthScales.fh_pak, metric.p.lengthScales)];
+    else
+        w = [];
     end
 end
 
@@ -182,8 +185,11 @@ function eprior = metric_euclidean_e(metric, x, t)
     % On the other hand errors are evaluated in the W-space so we need take
     % into account also the  Jakobian of transformation W -> w = exp(W).
     % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-
-    eprior = feval(metric.p.lengthScales.fh_e, metric.lengthScales, metric.p.lengthScales) - sum(log(metric.lengthScales));
+    if ~isempty(metric.p.lengthScales)
+      eprior = feval(metric.p.lengthScales.fh_e, metric.lengthScales, metric.p.lengthScales) - sum(log(metric.lengthScales));
+    else
+      eprior=0;
+    end
     
 end
 
@@ -206,7 +212,7 @@ function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask)
 %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
 %
 
-    mp=metric.p;
+    gdist=[];gprior=[];
     components = metric.components;
     
     n = size(x,1);
