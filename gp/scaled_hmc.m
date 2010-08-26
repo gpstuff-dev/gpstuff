@@ -60,6 +60,8 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
     iJUU = [];
     Linv=[];
     L2=[];
+    H_m=[];
+    test=[];
     iLaKfuic=[];
     mincut = -300;
 
@@ -86,7 +88,6 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
       otherwise 
         error('unknown type of GP\n')
     end
-    
     
     %gradcheck(w, @f_e, @f_g, gp, x, y, u, f);
     
@@ -145,8 +146,17 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             f = L2*w;
             f = max(f,mincut);
             gdata = - feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
-            b=Linv*f;
-            gprior=Linv'*b;
+            
+            if ~isfield(gp,'mean')
+                b=Linv*f;
+                gprior=Linv'*b;
+            else
+                b_m=gp.mean.p.b;
+                M = (H_m'*b_m-f);
+                b=Linv*M;
+                gprior=-1*Linv'*b;
+            end
+            
             g = (L2'*(gdata + gprior))';
           case 'FIC'
             %        w(w<eps)=0;
@@ -199,7 +209,19 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           case 'FULL'
             f = L2*w;        
             f = max(f,mincut);
-            B=Linv*f;
+            
+            if ~isfield(gp,'mean')
+                B=Linv*f;
+            else
+                b_m=gp.mean.p.b;
+                if gp.mean.p.vague==0
+                    M=H_m'*b_m-f;
+                else
+                    error('Not done yet')
+                end
+                B=Linv*M;
+            end
+            
             eprior=.5*sum(B.^2);
           case 'FIC' 
             f = Lp.*(w + U*(iJUU*w));
@@ -240,7 +262,23 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             % Evaluate a approximation for posterior variance
             % Take advantage of the matrix inversion lemma
             %        L=chol(inv(inv(C) + diag(E)))';
-            Linv = inv(chol(C)');
+            
+            if isfield(gp,'mean')
+                for i=1:length(gp.mean.meanFuncs)
+                    Hapu{i}=feval(gp.mean.meanFuncs{i},x);
+                end
+                H_m = cat(1,Hapu{1:end});
+                B_m=gp.mean.p.B;
+                if gp.mean.p.vague==0
+                    N = C + H_m'*B_m*H_m;
+                    Linv = inv(chol(N)');
+                else
+                    error('Not done yet')
+                end
+            else
+                Linv = inv(chol(C)');
+            end
+            
             L2 = C/chol(diag(1./E) + C);
             L2 = chol(C - L2*L2')';                    
           case 'FIC'

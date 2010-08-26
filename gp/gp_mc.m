@@ -396,6 +396,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 record.likelih = feval(likelih.fh_recappend, [], gp.likelih);
             end
             
+            % Set the meanfunctions into record if they exist
+            if isfield(gp, 'mean')
+               record.mean = gp.mean; 
+            end
+            
             record.p = gp.p;
             record.infer_params = gp.infer_params;
             record.e = [];

@@ -26,7 +26,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %        The marginal posterior mean and variance can be evaluated from
 %        these as follows:
 %
-%             E[f | xt, y] = E[ E[f | x, y, th] ]
+%             E[f | xt, y] = E[ï¿½E[f | x, y, th] ]
 %                          = mean(Ef, 2)
 %           Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
 %                          = mean(Varf,2) + var(Ef,0,2)
@@ -169,8 +169,11 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
         else 
             if isfield(gp, 'latentValues')
                 [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-                Varf(Varf<0) = min(min(abs(Varf))); % Ensure positiviness, which may be a problem with FIC
-                if isempty(yt)
+                if any(Varf(:,i1) <= 0)
+                    Varf(Varf<=0) = 1e-12; % Ensure positiviness, which may be a problem with FIC
+                    warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
+                end
+                 if isempty(yt)
                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), [], zt);
                 else
                     [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.likelih.fh_predy, Gp.likelih, Ef(:,i1), Varf(:,i1), yt, zt);
@@ -183,7 +186,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
                 end
             end            
         end
-    end
+    end    
 end
 
 function x = take_nth(x,nth)
