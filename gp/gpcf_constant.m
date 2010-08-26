@@ -35,7 +35,7 @@ function gpcf = gpcf_constant(do, varargin)
     ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('constSigma2',[], @(x) isscalar(x) && x>0);
-    ip.addParamValue('constSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('constSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -55,7 +55,7 @@ function gpcf = gpcf_constant(do, varargin)
 
             % Initialize prior structure
             gpcf.p=[];
-            if isempty(constSigma2_prior)
+            if ~isstruct(constSigma2_prior)&isnan(constSigma2_prior)
                 gpcf.p.constSigma2=prior_unif('init');
             else
                 gpcf.p.constSigma2=constSigma2_prior;
@@ -81,7 +81,7 @@ function gpcf = gpcf_constant(do, varargin)
             if ~isempty(constSigma2);
                 gpcf.constSigma2=constSigma2;
             end
-            if ~isempty(constSigma2_prior);
+            if ~isstruct(constSigma2_prior)&isnan(constSigma2_prior);else;
                 gpcf.p.constSigma2=constSigma2_prior;
             end
     end

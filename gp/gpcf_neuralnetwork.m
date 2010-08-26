@@ -44,8 +44,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('biasSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('weightSigma2',[], @(x) isvector(x) && all(x>0));
-    ip.addParamValue('biasSigma2_prior',[], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('weightSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('biasSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('weightSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
@@ -80,12 +80,12 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 
             % Initialize prior structure
             gpcf.p=[];
-            if isempty(biasSigma2_prior)
+            if ~isstruct(biasSigma2_prior)&isnan(biasSigma2_prior)
                 gpcf.p.biasSigma2=prior_unif('init');
             else
                 gpcf.p.biasSigma2=biasSigma2_prior;
             end
-            if isempty(weightSigma2_prior)
+            if ~isstruct(weightSigma2_prior)&isnan(weightSigma2_prior)
                 gpcf.p.weightSigma2=prior_unif('init');
             else
                 gpcf.p.weightSigma2=weightSigma2_prior;
@@ -114,10 +114,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
             if ~isempty(biasSigma2);
                 gpcf.biasSigma2=biasSigma2;
             end
-            if ~isempty(biasSigma2_prior);
+            if ~isstruct(biasSigma2_prior)&isnan(biasSigma2_prior);else;
                 gpcf.p.biasSigma2=biasSigma2_prior;
             end
-            if ~isempty(weightSigma2_prior);
+            if ~isstruct(weightSigma2_prior)&isnan(weightSigma2_prior);else;
                 gpcf.p.weightSigma2=weightSigma2_prior;
             end
             if ~isempty(selectedVariables)

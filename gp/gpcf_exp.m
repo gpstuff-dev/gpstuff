@@ -44,8 +44,8 @@ function gpcf = gpcf_exp(do, varargin)
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('metric',[], @isstruct);
-    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -73,12 +73,12 @@ function gpcf = gpcf_exp(do, varargin)
 
             % Initialize prior structure
             gpcf.p=[];
-            if isempty(lengthScale_prior)
+            if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior)
                 gpcf.p.lengthScale=prior_unif('init');
             else
                 gpcf.p.lengthScale=lengthScale_prior;
             end
-            if isempty(magnSigma2_prior)
+            if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
                 gpcf.p.magnSigma2=prior_unif('init');
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
@@ -115,8 +115,8 @@ function gpcf = gpcf_exp(do, varargin)
                     gpcf = rmfield(gpcf, 'lengthScale');
                 end
             end
-            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
-            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
+            if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior);else;gpcf.p.magnSigma2=magnSigma2_prior;end
+            if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior);else;gpcf.p.lengthScale=lengthScale_prior;end
     end
     
 

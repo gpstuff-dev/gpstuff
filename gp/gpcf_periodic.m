@@ -60,10 +60,10 @@ function gpcf = gpcf_periodic(do, varargin)
     ip.addParamValue('lengthScale_exp',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('optimPeriod',[], @(x) isscalar(x) && (x==0||x==1));
     ip.addParamValue('decay',[], @(x) isscalar(x) && (x==0||x==1));
-    ip.addParamValue('magnSigma2_prior',[], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('lengthScale_prior',[], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('lengthScale_exp_prior',[], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('period_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_exp_prior',NaN, @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('period_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -122,22 +122,22 @@ function gpcf = gpcf_periodic(do, varargin)
             
             % Initialize prior structure
             gpcf.p=[];
-            if isempty(lengthScale_prior)
+            if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior)
                 gpcf.p.lengthScale=prior_unif('init');
             else
                 gpcf.p.lengthScale=lengthScale_prior;
             end
-            if isempty(magnSigma2_prior)
+            if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
                 gpcf.p.magnSigma2=prior_unif('init');
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
             end
-            if isempty(period_prior);
+            if ~isstruct(period_prior)&isnan(period_prior);
                 gpcf.p.period=[];
             else
                 gpcf.p.period=period_prior;
             end
-            if isempty(lengthScale_exp_prior)
+            if isnan(lengthScale_exp_prior)
                 gpcf.p.lengthScale_exp=[];
             else
                 gpcf.p.lengthScale_exp=lengthScale_exp_prior;
@@ -167,10 +167,10 @@ function gpcf = gpcf_periodic(do, varargin)
             if ~isempty(optimPeriod);gpcf.optimPeriod=optimPeriod;end
             if ~isempty(lengthScale_exp);gpcf.lengthScale_exp=lengthScale_exp;end
             if ~isempty(decay);gpcf.decay=decay;end
-            if ~isempty(period_prior);gpcf.p.period=period_prior;end
-            if ~isempty(lengthScale_exp_prior);gpcf.p.lengthScale_exp=lengthScale_exp_prior;end
-            if ~isempty(magnSigma2_prior);gpcf.p.magnSigma2=magnSigma2_prior;end
-            if ~isempty(lengthScale_prior);gpcf.p.lengthScale=lengthScale_prior;end
+            if ~isstruct(period_prior)&isnan(period_prior);else;gpcf.p.period=period_prior;end
+            if ~isstruct(lengthScale_exp_prior)&isnan(lengthScale_exp_prior);else;gpcf.p.lengthScale_exp=lengthScale_exp_prior;end
+            if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior);else;gpcf.p.magnSigma2=magnSigma2_prior;end
+            if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior);else;gpcf.p.lengthScale=lengthScale_prior;end
     end
     
 

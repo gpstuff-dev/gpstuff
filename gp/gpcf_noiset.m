@@ -54,7 +54,7 @@ function gpcf = gpcf_noiset(do, varargin)
     ip.addParamValue('alpha',[], @isscalar);
     ip.addParamValue('fix_nu',[], @(x) isscalar(x) && (x==0||x==1));
     ip.addParamValue('nu',[], @isscalar);
-    ip.addParamValue('nu_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('nu_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('censored',[], @(x) isstruct);
     ip.parse(do, varargin{:});
     do=ip.Results.do;
@@ -136,7 +136,7 @@ function gpcf = gpcf_noiset(do, varargin)
             % Initialize prior structure
             gpcf.p=[];
             gpcf.p.noiseSigmas2=[];
-            if isempty(nu_prior)
+            if ~isstruct(nu_prior)&isnan(nu_prior)
                 gpcf.p.nu=prior_logunif('init');
             else
                 gpcf.p.nu=nu_prior;
@@ -204,7 +204,7 @@ function gpcf = gpcf_noiset(do, varargin)
                 gpcf.cy = yy([imis1 ; imis2])';
                 gpcf.imis = [imis1 ; imis2];
             end
-            if ~isempty(nu_prior)
+            if ~isstruct(nu_prior)&isnan(nu_prior);else;
                 gpcf.p.nu=nu_prior;
             end
     end

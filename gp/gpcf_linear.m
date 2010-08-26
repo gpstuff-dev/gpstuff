@@ -38,7 +38,7 @@ function gpcf = gpcf_linear(do, varargin)
     ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('coeffSigma2',[], @(x) isvector(x) && all(x>0));
-    ip.addParamValue('coeffSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('coeffSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
@@ -66,7 +66,7 @@ function gpcf = gpcf_linear(do, varargin)
 
             % Initialize prior structure
             gpcf.p=[];
-            if isempty(coeffSigma2_prior)
+            if ~isstruct(coeffSigma2_prior)&isnan(coeffSigma2_prior)
                 gpcf.p.coeffSigma2=prior_unif('init');
             else
                 gpcf.p.coeffSigma2=coeffSigma2_prior;
@@ -95,7 +95,7 @@ function gpcf = gpcf_linear(do, varargin)
             if ~isempty(selectedVariables)
                 gpcf.selectedVariables=selectedVariables;
             end
-            if ~isempty(coeffSigma2_prior);
+            if ~isstruct(coeffSigma2_prior)&isnan(coeffSigma2_prior);else;
                 gpcf.p.coeffSigma2=coeffSigma2_prior;
             end
     end

@@ -34,7 +34,7 @@ function gpcf = gpcf_noise(do, varargin)
     ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('noiseSigma2',[], @(x) isscalar(x) && x>0);
-    ip.addParamValue('noiseSigma2_prior',[], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('noiseSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
@@ -54,7 +54,7 @@ function gpcf = gpcf_noise(do, varargin)
 
             % Initialize prior structure
             gpcf.p=[];
-            if isempty(noiseSigma2_prior)
+            if ~isstruct(noiseSigma2_prior)&isnan(noiseSigma2_prior)
                 gpcf.p.noiseSigma2 = prior_unif('init');
             else
                 gpcf.p.noiseSigma2 = noiseSigma2_prior;
@@ -82,7 +82,8 @@ function gpcf = gpcf_noise(do, varargin)
             if ~isempty(noiseSigma2);
                 gpcf.noiseSigma2=noiseSigma2;
             end
-            if ~isempty(noiseSigma2_prior);
+            noiseSigma2_prior
+            if ~isstruct(noiseSigma2_prior)&isnan(noiseSigma2_prior);else;
                 gpcf.p.noiseSigma2=noiseSigma2_prior;
             end
     end
