@@ -74,21 +74,21 @@ switch gp.type
         B = gp.mean.p.B;                    
         if issparse(C)  
            L = ldlchol(C);
-           lB = 0.5*sum(log(diag(L)));
+           logK = 0.5*sum(log(diag(L)));
         else
            L = chol(C,'lower');
-           lB = sum(log(diag(L)));
+           logK = sum(log(diag(L)));
         end
         KH = L'\(L\H');
         
         % is prior for mean function weights vague
         if gp.mean.p.vague==0
             A = B\eye(size(B)) + H*KH;
-            HBy = H'*b-y;
-            KHBH = C + H'*B*H;
-            M1 = HBy'*(KHBH\HBy);
+            M = H'*b-y;
+            N = C + H'*B*H;
+            MNM = M'*(N\M);
             
-            edata = 0.5*M1 + lB + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+            edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
         else
             if issparse(C)
                 yKy=y'*ldlsolve(L,y);
@@ -99,7 +99,7 @@ switch gp.type
             m=rank(H');
             A = H*KH;
             C_m = KH*(A\(H*(C\eye(size(C)))));
-            edata = 0.5*yKy - 0.5*y'*C_m*y + lB + 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
+            edata = 0.5*yKy - 0.5*y'*C_m*y + logK + 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
         end
     end
     

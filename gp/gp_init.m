@@ -55,6 +55,27 @@ function gp = gp_init(do, varargin)
 %      p            = field for prior structure of inducing inputs 
 %                       in sparse GPs
 %
+%     The additional fields needed with derivative observations
+%      grad_obs     = A flag variable so that derivative observations are
+%                     in use. Provide with some value so that the init
+%                     system doesn't get confused. 'grad_obs',1
+%
+%
+%     The additional fields needed with mean functions
+%      meanFuncs    = mean functions to be used. Has to be a cell array
+%                     with inputs as function handles to mean function 
+%                     used for. ex {@gpmf_squared}. Provide this before
+%                     mean_prior.
+%      mean_prior   = parameters of gaussian prior for weights of mean 
+%                     function's basis functions, {b,B} = N(b,B).
+%                     Default (if not provided) b=0,B=0 so 
+%                     that the prior is vague and b and B 
+%                     values are not needed in the inference. 
+%                     Otherwise b is a column vector(n,1) and 
+%                     B matrix (n,n) where n matches with input dimension 
+%                     and the amount of mean functions used
+%                     for ex. dim(x)=2, meanFuncs=squared+linear->n=4
+%
 %     The additional fields needed in sparse approximations are:
 %      X_u          = Inducing inputs 
 %      Xu_prior     = prior structure for the inducing inputs. returned,
@@ -223,6 +244,8 @@ function gp = gp_init(do, varargin)
                     gp.mean.p.b=varargin{i+1}{1};
                     gp.mean.p.B=varargin{i+1}{2};
                     gp.mean.p.vague=0;
+                  case 'grad_obs'
+                    gp.grad_obs=1;
                   case 'latent_method'
                     gp.latent_method = varargin{i+1}{1};
                     switch varargin{i+1}{1}

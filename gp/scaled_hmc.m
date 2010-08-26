@@ -35,7 +35,6 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
         latent_rstate = sum(100*clock);
     end
     
-
     % Initialize variables
     [n,nin] = size(x);
     switch gp.type
@@ -67,7 +66,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
     % Transform the latent values
     switch gp.type
       case 'FULL'
-        getL(f, gp, x, y, z);             % Evaluate the help matrix for transformation
+        getL(f, gp, x, y, u, z);             % Evaluate the help matrix for transformation
         w = (L2\f)';                   % Rotate f towards prior
       case 'FIC'
         getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation

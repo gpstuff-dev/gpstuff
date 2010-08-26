@@ -45,31 +45,32 @@
 % License.txt, included with the software, for details.
 
  % Create the data
- tp=9;      %number of training points -1
- x=0:5/tp:5;
- y=sin(x).*cos(x).^2;
- dy=cos(x).^3 - 2*sin(x).^2.*cos(x);
- koh=0.06;   % noise standard deviation
+ tp=9;                                  %number of training points -1
+ x=-2:4/tp:2;
+ y=sin(x).*cos(x).^2;                   % The underlying process
+ dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
+ koh=0.06;                              % noise standard deviation
  
  % Add noise
  y=y + koh*randn(size(y));
- dy=dy + koh*randn(size(dy));   % derivative obs are also noisy
- x=x';
- y=y';
+ dy=dy + koh*randn(size(dy));           % derivative obs are also noisy
+ x=x';           
  dy=dy';
- %=====
- y2=[y;dy];     % observation vector with derivative obs !!!
- %=====
+ 
+ y=y';          % observation vector without derivative observations
+ y2=[y;dy];     % observation vector with derivative observations
+
  % test points
- p=-1:0.1:6;
+ p=-3:0.05:3;
  p=p';
  
+
 %========================================================
 % PART 1 data analysis with full GP model without derivative obs
 %========================================================
  
 gpcf1 = gpcf_sexp('init', 'lengthScale', 0.5, 'magnSigma2', .5);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.1^2);
+gpcf2 = gpcf_noise('init', 'noiseSigma2', koh^2);
 
 pl = prior_logunif('init');               % a prior structure
 pm = prior_logunif('init');               % a prior structure
@@ -98,17 +99,17 @@ gp=gp_unpak(gp,w);
 % PLOT THE DATA
 
 figure
-%m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
-m=plot(p,Ef(1:size(p)),'k','lineWidth',2);
+m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
+%m=plot(p,Ef(1:size(p)),'k','lineWidth',2);
 hold on
-plot(p,Ef(1:size(p))+2*sqrt(Varx(1:size(p))),'k--')
+%plot(p,Ef(1:size(p))+2*sqrt(Varx(1:size(p))),'k--')
 hold on
-m95=plot(p,Ef(1:size(p))-2*sqrt(Varx(1:size(p))),'k--');
+%m95=plot(p,Ef(1:size(p))-2*sqrt(Varx(1:size(p))),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on
 h=plot(p,sin(p).*cos(p).^2,'b--','lineWidth',2);
-legend([m m95 h hav],'prediction','95%','f(x)','observations');
+legend([m.mainLine m.patch h hav],'prediction','95%','f(x)','observations');
 title('GP without derivative observations')
 xlabel('input x')
 ylabel('output y')
@@ -118,19 +119,15 @@ ylabel('output y')
 %========================================================
 
 gpcf1 = gpcf_sexp('init', 'lengthScale', 0.5, 'magnSigma2', .5);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.1^2);
+gpcf2 = gpcf_noise('init', 'noiseSigma2', koh^2);
 
 pl = prior_logunif('init');               % a prior structure
 pm = prior_logunif('init');               % a prior structure
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00001);
-
-%set gradient obs in use !!!
-%=====
-gp.grad_obs=1;
-%=====
+% Field grad_obs added to gp_init so that the derivatives are in use
+gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00001,'grad_obs',1);
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=str2fun('gp_e');     % create a function handle to negative log posterior
@@ -153,17 +150,17 @@ gp=gp_unpak(gp,w);
 
 
 figure
-%m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
-m=plot(p,Ef2(1:size(p)),'k','lineWidth',2);
+m=shadedErrorBar(p,Ef2(1:size(p)),2*sqrt(Varx2(1:size(p))),{'k','lineWidth',2});
+%m=plot(p,Ef2(1:size(p)),'k','lineWidth',2);
 hold on
-plot(p,Ef2(1:size(p))+2*sqrt(Varx2(1:size(p))),'k--')
+%plot(p,Ef2(1:size(p))+2*sqrt(Varx2(1:size(p))),'k--')
 hold on
-m95=plot(p,Ef(1:size(p))-2*sqrt(Varx2(1:size(p))),'k--');
+%m95=plot(p,Ef(1:size(p))-2*sqrt(Varx2(1:size(p))),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on
 h=plot(p,sin(p).*cos(p).^2,'b--','lineWidth',2);
-legend([m m95 h hav],'prediction','95%','f(x)','observations');
+
 xlabel('input x')
 ylabel('output y')
 title('GP with derivative observations')
@@ -185,6 +182,6 @@ for i=1:2:length(ddx)
 hold on
 dhav=plot(ddx(i:i+1), ddy(i:i+1),'r','lineWidth',2);
 end
-
+legend([m.mainLine m.patch h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
 
 

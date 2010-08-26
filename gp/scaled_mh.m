@@ -48,7 +48,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         slrej = 0;
         for li=1:100
             ft=sqrt(1-lvs.^2).*f+lvs.*L*randn(n,1);
-            at = max(min(ft, maxcut),mincut);
             ed = -feval(gp.likelih.fh_e, gp.likelih, y, ft, z);
             a=e-ed;
             if exp(a) > rand(1)
@@ -63,7 +62,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         % Do the actual sampling 
         for li=1:(opt.repeat)
             ft=sqrt(1-lvs.^2).*f+lvs.*L*randn(n,1);
-            at = max(min(ft, maxcut),mincut);
             ed = -feval(gp.likelih.fh_e, gp.likelih, y, ft, z);
             a=e-ed;
             if exp(a) > rand(1)
@@ -106,7 +104,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         slrej = 0;
         for li=1:100
             ft=sqrt(1-lvs.^2).*f + lvs.*(sLav.*randn(n,1) + B'*randn(m,1));
-            at = max(min(ft, maxcut),mincut);
             ed = -feval(gp.likelih.fh_e, gp.likelih, y, ft, z);
             a=e-ed;
             if exp(a) > rand(1)
@@ -121,7 +118,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         % Do the actual sampling 
         for li=1:(opt.repeat)
             ft=sqrt(1-lvs.^2).*f + lvs.*(sLav.*randn(n,1) + B'*randn(m,1));
-            at = max(min(ft, maxcut),mincut);
             ed = -feval(gp.likelih.fh_e, gp.likelih, y, ft, z);
             a=e-ed;
             if exp(a) > rand(1)
@@ -259,7 +255,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         slrej = 0;
         for li=1:100
             ft=sqrt(1-lvs.^2).*f + lvs.*(sLa*randn(n,1) + B'*randn(m,1));
-            at = max(min(ft, maxcut),mincut);
             ed = -feval(gp.likelih.fh_e, gp.likelih, y, ft, z);
             a=e-ed;
             if exp(a) > rand(1)
@@ -274,7 +269,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         % Do the actual sampling 
         for li=1:(opt.repeat)
             ft=sqrt(1-lvs.^2).*f + lvs.*(sLa*randn(n,1) + B'*randn(m,1));
-            at = max(min(ft, maxcut),mincut);
             ed = -feval(gp.likelih.fh_e, gp.likelih, y, ft, z);
             a=e-ed;
             if exp(a) > rand(1)

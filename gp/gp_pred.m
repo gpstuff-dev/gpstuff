@@ -113,10 +113,10 @@ switch gp.type
     else
         if issparse(C)
             LD = ldlchol(C);
-            a = ldlsolve(LD,y);
+            Kyy = ldlsolve(LD,y);
         else
             L = chol(C)';
-            a = L'\(L\y);
+            Kyy = L'\(L\y);
         end
         for i=1:length(gp.mean.meanFuncs)
             Hapu{i}=feval(gp.mean.meanFuncs{i},x);
@@ -132,16 +132,16 @@ switch gp.type
         
         if gp.mean.p.vague==0         % is prior vague
             B1 = B\eye(size(B)) + H*KyH;
-            B2 = H*a + B\b;
+            B2 = H*Kyy + B\b;
             Beta = B1\B2;
 
-            Ef = K'*a + R'*Beta;
+            Ef = K'*Kyy + R'*Beta;
         else
             B1 = H*KyH;
-            B2 = H*a;
+            B2 = H*Kyy;
             Beta = B1\B2;
 
-            Ef = K'*a + R'*Beta;
+            Ef = K'*Kyy + R'*Beta;
         end
     end
 
