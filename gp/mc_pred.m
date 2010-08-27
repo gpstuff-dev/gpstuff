@@ -189,6 +189,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
     end    
 end
 
+
 function x = take_nth(x,nth)
 %TAKE_NTH    Take n'th parameters from MCMC-chains
 %
@@ -227,6 +228,8 @@ function x = take_nth(x,nth)
                     x = setfield(x,names{i},take_nth(value,nth));
                 elseif iscell(value)
                     x = setfield(x,names{i},{take_nth(value{1},nth)});
+                elseif isstruct(value)
+                    x = setfield(x,names{i},take_nth(value,nth));
                 end
             end
         end

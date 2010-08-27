@@ -44,81 +44,81 @@ function w = gp_pak(gp, param)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-w = [];
+    w = [];
 
-if isfield(gp,'etr') && length(gp.etr) > 1
-    if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
-        ind = gp.tr_index;           % block indeces for training points
-        gp = rmfield(gp,'tr_index');
-    end
-    ns = length(gp.etr);
-    for i1 = 1:ns
-        Gp = take_nth(gp,i1);
-        w(i1,:) = gp_pak(Gp);
-    end
-else
-    
-    if nargin < 2
-        param = gp.infer_params;
-    end
-    
-    % Pack the hyperparameters of covariance functions
-    if ~isempty(strfind(param, 'covariance'))
-        ncf = length(gp.cf);
+    if isfield(gp,'etr') && length(gp.etr) > 1
+        if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
+            ind = gp.tr_index;           % block indeces for training points
+            gp = rmfield(gp,'tr_index');
+        end
+        ns = length(gp.etr);
+        for i1 = 1:ns
+            Gp = take_nth(gp,i1);
+            w(i1,:) = gp_pak(Gp);
+        end
+    else
         
-        for i=1:ncf
-            gpcf = gp.cf{i};
-            w = [w feval(gpcf.fh_pak, gpcf)];
+        if nargin < 2
+            param = gp.infer_params;
         end
         
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
-            for i=1:nn
-                noise = gp.noise{i};
-                w = [w feval(noise.fh_pak, noise)];
+        % Pack the hyperparameters of covariance functions
+        if ~isempty(strfind(param, 'covariance'))
+            ncf = length(gp.cf);
+            
+            for i=1:ncf
+                gpcf = gp.cf{i};
+                w = [w feval(gpcf.fh_pak, gpcf)];
+            end
+            
+            if isfield(gp, 'noise')
+                nn = length(gp.noise);
+                for i=1:nn
+                    noise = gp.noise{i};
+                    w = [w feval(noise.fh_pak, noise)];
+                end
             end
         end
-    end
-    
-    % Pack the inducing inputs
-    if ~isempty(strfind(param, 'inducing'))
-        if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
-            w = [w gp.X_u(:)'];
+        
+        % Pack the inducing inputs
+        if ~isempty(strfind(param, 'inducing'))
+            if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+                w = [w gp.X_u(:)'];
+            end
         end
-    end
-    
-    % Pack the hyperparameters of likelihood function
-    if ~isempty(strfind(param, 'likelihood'))
-        if isstruct(gp.likelih)
-            w = [w feval(gp.likelih.fh_pak, gp.likelih)];
+        
+        % Pack the hyperparameters of likelihood function
+        if ~isempty(strfind(param, 'likelihood'))
+            if isstruct(gp.likelih)
+                w = [w feval(gp.likelih.fh_pak, gp.likelih)];
+            end
         end
+        
     end
-    
-end
 
     function x = take_nth(x,nth)
-        %TAKE_NTH    Take n'th parameters from MCMC-chains
-        %
-        %   x = take_nth(x,n) returns chain containing only
-        %   n'th simulation sample
-        %
-        %   See also
-        %     THIN, JOIN
+    %TAKE_NTH    Take n'th parameters from MCMC-chains
+    %
+    %   x = take_nth(x,n) returns chain containing only
+    %   n'th simulation sample 
+    %
+    %   See also
+    %     THIN, JOIN
         
-        % Copyright (c) 1999 Simo S�rkk�
-        % Copyright (c) 2000 Aki Vehtari
-        % Copyright (c) 2006 Jarno Vanhatalo
+    % Copyright (c) 1999 Simo S�rkk�
+    % Copyright (c) 2000 Aki Vehtari
+    % Copyright (c) 2006 Jarno Vanhatalo
         
-        % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
-        % License.txt, included with the software, for details.
+    % This software is distributed under the GNU General Public 
+    % License (version 2 or later); please refer to the file 
+    % License.txt, included with the software, for details.
         
         if nargin < 2
             n = 1;
         end
         
         [m,n]=size(x);
-        
+
         if isstruct(x)
             if (m>1 | n>1)
                 % array of structures
@@ -134,6 +134,8 @@ end
                         x = setfield(x,names{i},take_nth(value,nth));
                     elseif iscell(value)
                         x = setfield(x,names{i},{take_nth(value{1},nth)});
+                    elseif isstruct(value)
+                        x = setfield(x,names{i},take_nth(value,nth));
                     end
                 end
             end
@@ -146,4 +148,5 @@ end
             x = x(nth,:);
         end
     end
+
 end

@@ -251,6 +251,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     cvws=[];
     trw=[];
     
+    
     % loop over the crossvalidation sets
     for i=1:length(trindex)
         
@@ -328,7 +329,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           case 'IA'
             gp = gp_ia(gp, xtr, ytr, [], options_tr, opt);
         end
-            
+                    
         % make the prediction
         [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
         if nargout>=6

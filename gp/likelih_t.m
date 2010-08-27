@@ -700,7 +700,7 @@ function likelih = likelih_t(do, varargin)
         nu = likelih.nu;
         sigma2 = likelih.sigma2;
         sigma = sqrt(sigma2);
-
+        
 % $$$         sampf = gp_rnd(gp, tx, ty, x, [], [], 400);
 % $$$         r = trand(nu,size(sampf));
 % $$$         r = sampf + sqrt(sigma).*r;
@@ -761,11 +761,17 @@ function likelih = likelih_t(do, varargin)
             % Set the function handles
             reclikelih.fh_pak = @likelih_t_pak;
             reclikelih.fh_unpak = @likelih_t_unpak;
+            reclikelih.fh_priore = @likelih_t_priore;
+            reclikelih.fh_priorg = @likelih_t_priorg;
             reclikelih.fh_e = @likelih_t_e;
             reclikelih.fh_g = @likelih_t_g;    
             reclikelih.fh_g2 = @likelih_t_g2;
             reclikelih.fh_g3 = @likelih_t_g3;
             reclikelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
+            reclikelih.fh_siteDeriv = @likelih_t_siteDeriv;
+            reclikelih.fh_optimizef = @likelih_t_optimizef;
+            reclikelih.fh_upfact = @likelih_t_upfact;
+            reclikelih.fh_predy = @likelih_t_predy;
             reclikelih.fh_recappend = @likelih_t_recappend;
             return
         end
