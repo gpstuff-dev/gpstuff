@@ -325,7 +325,20 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp=gp_unpak(gp,w);
             cvws(i,:)=w;
           case 'MCMC'
+            % Scaled mixture noise model is a special case 
+            % where we need to modify the noiseSigmas2 vector 
+            % to right length
+            for i = 1:length(gp.noise)
+                if strcmp(gp.noise{i}.type, 'gpcf_noiset')
+                    gp.noise{i}.noiseSigmas2 = gp.noise{i}.noiseSigmas2(trindex{i});
+                    gp.noise{i}.r = gp.noise{i}.r(trindex{i});
+                    gp.noise{i}.U = gp.noise{i}.U(trindex{i});
+                    gp.noise{i}.ndata = length(trindex{i});
+                end
+            end
             gp = gp_mc(gp, xtr, ytr, options_tr, opt);
+            nburnin = floor(length(gp.etr)/3);
+            gp = thin(gp,nburnin);
           case 'IA'
             gp = gp_ia(gp, xtr, ytr, [], options_tr, opt);
         end
@@ -419,6 +432,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             trw=w;
           case 'MCMC'
             gp = gp_mc(gp, x, y, options_tr, opt);
+            nburnin = floor(length(gp.etr)/3);
+            gp = thin(gp,nburnin);
           case 'IA'
             gp = gp_ia(gp, x, y, [], options_tr, opt);
         end
