@@ -99,7 +99,7 @@ function likelih = likelih_negbin(do, varargin)
                 error('Wrong number of arguments')
             end
             % Loop through all the parameter values that are changed
-            for i=3:2:length(varargin)-1
+            for i=1:2:length(varargin)-1
                 switch varargin{i}
                   case 'disper'
                     likelih.disper = varargin{i+1};
