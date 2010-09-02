@@ -186,7 +186,7 @@ function likelih = likelih_negbin(do, varargin)
         
 
     % If prior for dispersion parameter, add its contribution
-        logPrior=[];
+        logPrior=0;
         if ~isempty(likelih.p.disper)
             logPrior = feval(likelih.p.disper.fh_e, likelih.disper, likelih.p.disper) - log(likelih.disper);
         end
