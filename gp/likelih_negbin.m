@@ -145,6 +145,7 @@ function likelih = likelih_negbin(do, varargin)
     %	See also
     %	LIKELIH_NEGBIN_UNPAK, GP_PAK
         
+        w=[];
         if ~isempty(likelih.p.disper)
             w = log(likelih.disper);
         end
@@ -185,6 +186,7 @@ function likelih = likelih_negbin(do, varargin)
         
 
     % If prior for dispersion parameter, add its contribution
+        logPrior=[];
         if ~isempty(likelih.p.disper)
             logPrior = feval(likelih.p.disper.fh_e, likelih.disper, likelih.p.disper) - log(likelih.disper);
         end
@@ -205,6 +207,7 @@ function likelih = likelih_negbin(do, varargin)
     %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_G
         
         
+        glogPrior=[];
         if ~isempty(likelih.p.disper)            
             % Evaluate the gprior with respect to magnSigma2
             ggs = feval(likelih.p.disper.fh_g, likelih.disper, likelih.p.disper);
