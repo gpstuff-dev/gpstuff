@@ -267,17 +267,16 @@ function gp = gp_init(do, varargin)
                       case 'Laplace'
                         gp.laplace_opt.maxiter = 20;
                         gp.laplace_opt.tol = 1e-12;
-                        if ~isfield(gp.laplace_opt,'optim_method') ...
-                            | isempty(gp.laplace_opt.optim_method)
-                          % If optim_method is not yet defined, use
-                          % default choices for optimisation inside Laplace
-                          switch gp.likelih.type
-                            case 'Student-t'
-                              % slower than stabilized-newton but more robust
-                              gp.laplace_opt.optim_method='likelih_specific'; 
-                            otherwise
-                              gp.laplace_opt.optim_method='stabilized-newton';
-                          end
+                        % use default choices for optimisation inside Laplace
+                        % other choices can be used with setting
+                        % gp.laplace_opt.optim_method before calling 
+                        % gp_init('set', gp, 'latent_method', {'Laplace', ...
+                        switch gp.likelih.type
+                          case 'Student-t'
+                            % slower than stabilized-newton but more robust
+                            gp.laplace_opt.optim_method='likelih_specific'; 
+                          otherwise
+                            gp.laplace_opt.optim_method='stabilized-newton';
                         end
                         gp = gpla_e('init', gp, varargin{i+1}{2:end});
                         w = gp_pak(gp);
@@ -353,12 +352,17 @@ function gp = gp_init(do, varargin)
                   case 'Laplace'
                     gp.laplace_opt.maxiter = 20;
                     gp.laplace_opt.tol = 1e-12;
-                    switch gp.likelih.type
-                      case 'Student-t'
-                        gp.laplace_opt.optim_method = 'stabilized-newton'; 
-                        %gp.laplace_opt.optim_method = 'likelih_specific'; % slower than stabilized-newton
-                      otherwise
-                        gp.laplace_opt.optim_method = 'newton';
+                    if ~isfield(gp.laplace_opt,'optim_method') ...
+                        | isempty(gp.laplace_opt.optim_method)
+                      % If optim_method is not yet defined, use
+                      % default choices for optimisation inside Laplace
+                      switch gp.likelih.type
+                        case 'Student-t'
+                          % slower than stabilized-newton but more robust
+                          gp.laplace_opt.optim_method = 'likelih_specific';
+                        otherwise
+                          gp.laplace_opt.optim_method = 'newton';
+                      end
                     end
                     gp = gpla_e('init', gp, varargin{i+1}{2:end});
                     w = gp_pak(gp);
