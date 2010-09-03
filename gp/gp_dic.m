@@ -1,12 +1,12 @@
 function [dic, p_eff] = gp_dic(gp, x, y, varargin);
-%GP_DIC     The DIC statistics and efective number of parameters in a GP model
+% GP_DIC The DIC statistics and effective number of parameters in a GP model
 %
 %	Description
 %	[DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
-%        number of parameters as defined by Spiegelhalter et.al. 
+%        number of parameters as defined by Spiegelhalter et al 
 %        (2002). The statistics are evaluated with focus on
 %        hyperparameters or latent variables depending on the input
-%        GP (See Spiegelhalter et.al. (2002) for discussion on the
+%        GP (See Spiegelhalter et al (2002) for discussion on the
 %        parameters in focus in Bayesian model). X contains
 %        training inputs and Y training outputs.
 %
@@ -18,7 +18,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %           likelihood). The DIC and the effective number of
 %           parameters are evaluated as described in equation
 %           (6.10) of Bayesian Data Analysis, second edition
-%           (Gelman et.al.):
+%           (Gelman et al):
 %               p_eff = E[D(y, th)|y] - D(y, E[th|y])
 %               DIC   = E[D(y, th)|y] + p_eff
 %           where all the expectations are taken over p(th|y) and D(y, th) =
@@ -26,9 +26,9 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %           marginalize over the latent variables to obtain p(y|th)
 %           = \int p(y|f)(p(f|th) df. If the likelihood is
 %           non-Gaussian the marginalization can not be performed
-%           exactly. In this case if GP is an MCMC record we use
+%           exactly. In this case, if GP is an MCMC record, we use
 %           Laplace approximation to approximate p(y|th). If GP is
-%           IA array we use the either EP or Laplace approximation
+%           IA array, we use the either EP or Laplace approximation,
 %           depending which has been used in gp_ia.
 %
 %       2) GP is Gaussian process data structure
@@ -41,7 +41,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %       3) GP is a record structure from gp_mc or an array of GPs from 
 %          gp_ia, but the focus is defined to be both latent-variables 
 %          and hyperparameters, 
-%               [DIC, P_EFF] = EP_PEFF(GP, X, Y, 'focus', 'all')
+%               [DIC, P_EFF] = GP_DIC(GP, X, Y, 'focus', 'all')
 %
 %          In this case the focus will be the latent variables and
 %          hyperparameters. Thus now we will use the posterior p(f,
@@ -49,7 +49,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %          posterior marginal p(th|y). The DIC and the effective
 %          number of parameters are evaluated as described in
 %          equation (6.10) of Bayesian Data Analysis, second
-%          edition (Gelman et.al.):
+%          edition (Gelman et al):
 %
 %               p_eff = E[D(y, f, th)|y] - D(y, E[f, th|y])
 %               DIC   = E[D(y, f, th)|y] + p_eff
@@ -57,7 +57,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %          where all the expectations are taken over p(f,th|y).
 %       
 %	See also
-%	     gp_peff
+%	     GP_PEFF, DEMO_MODELASSESMENT1
 %   
 %       References: 
 %

@@ -1,27 +1,27 @@
 function p_eff = gp_peff(gp, x, y, varargin);
-%GP_PEFF  The efective number of parameters in GP model with focus 
+%GP_PEFF  The effective number of parameters in GP model with focus 
 %         on latent variables.
 %
 %	Description
 %        P_EFF = EP_PEFF(GP, X, Y) Takes the Gaussian process
 %        data structure GP, training inputs X and training outputs
-%        and returns the efective number of parameters as defined
-%        by Spiegelhalter et.al. (2002).
+%        and returns the effective number of parameters as defined
+%        by Spiegelhalter et al  (2002).
 %
 %       NOTE!
 %        The effective number of parameters is evaluated with focus
 %        on latent variable f. This means that the hyperparameters
 %        th (parameters of covariance function and likelihood) are
-%        considered fixed. (See Spiegelhalter et.al. (2002) for
+%        considered fixed. (See Spiegelhalter et al (2002) for
 %        discussion on the parameters in focus in Bayesian model). 
 %        Thus, the returned p_eff tells the effective number of
 %        latent variables. This statistics is important for example
 %        when assessing the goodness of Laplace or EP approximation
-%        in case of non-Gaussian likelihood (See Vanhatalo et. al. 
+%        in case of non-Gaussian likelihood (See Vanhatalo et al 
 %        for discussion).
 %
 %        If you want to evaluate the effective number of
-%        hyperparameters see gp_dic.
+%        hyperparameters see GP_DIC.
 %
 %        The effective number of parameters is approximated as follows:
 %
@@ -29,22 +29,22 @@ function p_eff = gp_peff(gp, x, y, varargin);
 %
 %        where K is the prior covariance matrix and C the posterior
 %        covariance matrix. This approximation is introduced by
-%        Spiegelhalter et.al. (2002) in equation (16). If the
+%        Spiegelhalter et al. (2002) in equation (16). If the
 %        likelihood is non-Gaussian and gp.latent_method is either
 %        Laplace or EP, then C is the Laplace or EP approximation
 %        for the posterior covariance.
 %
 %	See also
-%         gp_dic, demo_modelassesment1	
+%         GP_DIC, DEMO_MODELASSESMENT1
 %   
 %       References: 
 %         Spiegelhalter, Best, Carlin and van der Linde (2002). 
 %         Bayesian measures of model complexity and fit. J. R. 
-%         Statist. Soc. B, 64, 583-639.
+%         Statist. Soc. B, 64(4):583-639.
 %         
 %         Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). 
 %         Approximate inference for disease mapping with sparse
-%         Gaussian processes. Statistics in Medicine.
+%         Gaussian processes. Statistics in Medicine, 29(15):1580-1607.
 %   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 
