@@ -1,19 +1,22 @@
-function [ecv] = gp_looe(w, gp, x, y, varargin)
-%GP_LOOE   Evaluate the leave one out predictive density in case of
-%          Gaussian observation model
+function [eloo, edata, eprior] = gp_looe(w, gp, x, y, varargin)
+% GP_LOOE Evaluate the negative log leave-one-out predictive density
+%         plus optional prior term, assuming Gaussian observation model
 %
-%	Description
-%	ECV = GP_CVE(W, GP, X, Y, PARAM) takes a Gaussian process data
-%       structure GP together with a matrix X of input vectors and a
-%       matrix Y of targets, and evaluates the leave one out
-%       predictive density E.  Each row of X corresponds to one input
-%       vector and each row of Y corresponds to one target vector.
+%   Description
+%     LOOE = GP_LOOE(W, GP, X, Y, PARAM) takes a hyper-parameter vector
+%     W, Gaussian process structure GP, a matrix X of input vectors and
+%     a matrix Y of targets, and evaluates the negative log leave-one-out
+%     predictive density plus prior term
+%       LOOE  = - sum log p(Y_i | X, Y_{\i}, th) - log p(th)
+%     where th represents the hyperparameters (lengthScale, magnSigma2...), 
+%     X is inputs and Y is observations. The prior term can be considered 
+%     as a penalty function for the parameters th. With the default uniform 
+%     priors in GPStuff, the penalty is zero.
 %
-%       The energy is minus log LOO-CV cost function:
-%            ECV  = - sum log p(Y_i | X, Y_{\i}, th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...), 
-%       X is inputs and Y is observations (regression) or latent values 
-%       (non-Gaussian likelihood).
+%   References:
+%     S. Sundararajan and S. S. Keerthi (2001). Predictive
+%     Approaches for Choosing Hyperparameters in Gaussian Processes. 
+%     Neural Computation 13:1103-1118.
 %
 %	See also
 %	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
@@ -39,41 +42,42 @@ switch gp.type
     [K, C] = gp_trcov(gp, x);
 
     if issparse(C)
-        LD = ldlchol(C);
-        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + t'*ldlsolve(LD,t));
+      iC = spinv(C); % evaluate the sparse inverse
+      LD = ldlchol(C);
+      b = ldlsolve(LD,y);
+      myy = y - b./full(diag(iC));
+      sigma2 = 1./full(diag(iC));
     else
-        b=C\y;
-        iC= inv(C);        
-        myy = y - b./diag(iC);
-        sigma2 = 1./diag(iC);
-        
-        ecv = 0.5 * (log(2*pi) + sum(log(sigma2) + (y-myy).^2./sigma2)./n );
-        
+      iC= inv(C);    % evaluate the full inverse
+      b=C\y;
+      myy = y - b./diag(iC);
+      sigma2 = 1./diag(iC);
     end
-   
+    edata = 0.5 * (log(2*pi) + sum(log(sigma2) + (y-myy).^2./sigma2)./n );
+    
     % ============================================================
     % FIC
     % ============================================================
   case 'FIC'
-    error('GP_CVE is not implemented for FIC!')
+    error('GP_LOOE is not implemented for FIC!')
     
     % ============================================================
     % PIC
     % ============================================================
   case {'PIC' 'PIC_BLOCK'}
-    error('GP_CVE is not implemented for PIC!')
+    error('GP_LOOE is not implemented for PIC!')
     
     % ============================================================
     % CS+FIC
     % ============================================================
   case 'CS+FIC'
-    error('GP_CVE is not implemented for CS+FIC!')
+    error('GP_LOOE is not implemented for CS+FIC!')
         
     % ============================================================
     % SSGP
     % ============================================================    
   case 'SSGP'
-    error('GP_CVE is not implemented for SSGP!')
+    error('GP_LOOE is not implemented for SSGP!')
     
   otherwise
     error('Unknown type of Gaussian process!')
@@ -82,5 +86,21 @@ end
 % ============================================================
 % Evaluate the prior contribution to the error from covariance functions
 % ============================================================
+eprior = 0;
+for i=1:ncf
+    gpcf = gp.cf{i};
+    eprior = eprior + feval(gpcf.fh_e, gpcf, x, y);
+end
+
+% Evaluate the prior contribution to the error from noise functions
+if isfield(gp, 'noise')
+    nn = length(gp.noise);
+    for i=1:nn
+        noise = gp.noise{i};
+        eprior = eprior + feval(noise.fh_e, noise, x, y);
+    end
+end
+
+eloo = edata + eprior;
 
 end
