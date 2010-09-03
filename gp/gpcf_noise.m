@@ -203,7 +203,7 @@ function gpcf = gpcf_noise(do, varargin)
     %   GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
 
         D = {};
-        gprior = {};
+        gprior = [];
 
         if ~isempty(gpcf.p.noiseSigma2)
             gpp=gpcf.p;
