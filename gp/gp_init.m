@@ -47,7 +47,7 @@ function gp = gp_init(do, varargin)
 %                      'covariance+inducing' = infer covariance function
 %                                              parameters and inducing 
 %                                              inputs
-%                       'covariance+likelih' = infer covariance function
+%                      'covariance+likelih' = infer covariance function
 %                                              and likelihood parameters
 %                       The default is 'covariance+inducing+likelihood'
 %      jitterSigma2 = positive jitter to be added in the diagonal of 
@@ -124,23 +124,26 @@ function gp = gp_init(do, varargin)
 %
 %
 %   References:
-%    Quiï¿½onero-Candela, J. and Rasmussen, C. E. (2005). A unifying view of sparse
-%    approximate Gaussian process regression. Journal of Machine Learning Re-
-%    search, 6(3):1939-1959.
+%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    view of sparse approximate Gaussian process regression. 
+%    Journal of Machine Learning Research, 6(3):1939-1959.
 %
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
 %
-%    Snelson, E. and Ghahramani, Z. (2006). Sparse Gaussian process using pseudo-
-%    inputs. Advances in Neural Information Processing Systems 18. 
+%    Snelson, E. and Ghahramani, Z. (2006). Sparse Gaussian process
+%    using pseudo-inputs. In Weiss, Y., Schölkopf, B., and Platt,
+%    J. (eds) Advances in Neural Information Processing Systems 18,
+%    pp. 1257-1264.
 %
 %    Titsias, M. K. (2009). Variational Model Selection for Sparse
 %    Gaussian Process Regression. Technical Report, University of
 %    Manchester.
 %
-%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global phenomena with
-%    sparse Gaussian processes. Proceedings of the 24th Conference on Uncertainty in
-%    Artificial Intelligence,
+%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and
+%    global phenomena with sparse Gaussian processes. Proceedings
+%    of the 24th Conference on Uncertainty in Artificial
+%    Intelligence,
 
     
 % Copyright (c) 2006-2010 Jarno Vanhatalo
@@ -264,12 +267,17 @@ function gp = gp_init(do, varargin)
                       case 'Laplace'
                         gp.laplace_opt.maxiter = 20;
                         gp.laplace_opt.tol = 1e-12;
-                        switch gp.likelih.type
-                          case 'Student-t'
-                            %gp.laplace_opt.optim_method = 'stabilized-newton'; 
-                            gp.laplace_opt.optim_method = 'likelih_specific'; % slower than stabilized-newton but more robust
-                          otherwise
-                            gp.laplace_opt.optim_method = 'newton';
+                        if ~isfield(gp.laplace_opt,'optim_method') ...
+                            | isempty(gp.laplace_opt.optim_method)
+                          % If optim_method is not yet defined, use
+                          % default choices for optimisation inside Laplace
+                          switch gp.likelih.type
+                            case 'Student-t'
+                              % slower than stabilized-newton but more robust
+                              gp.laplace_opt.optim_method='likelih_specific'; 
+                            otherwise
+                              gp.laplace_opt.optim_method='stabilized-newton';
+                          end
                         end
                         gp = gpla_e('init', gp, varargin{i+1}{2:end});
                         w = gp_pak(gp);
