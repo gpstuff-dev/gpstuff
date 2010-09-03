@@ -13,7 +13,7 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol)
 %      m1  = int_a^b x*fun(x) dx / m0
 %      m2  = int_a^b x^2*fun(x) dx / m0
 %
-%   The function uses an adaptive Gaus Kronrod quadrature. The same set of 
+%   The function uses an adaptive Gauss-Kronrod quadrature. The same set of 
 %   integration points and intervals are used for each moment. This speeds up 
 %   the evaluations by factor 3, since the function evaluations are done only 
 %   once.
