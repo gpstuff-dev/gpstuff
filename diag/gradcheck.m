@@ -1,21 +1,16 @@
 function delta  = gradcheck(w, func, grad, varargin)
-%GRADCHEK Checks a user-defined gradient function using finite differences.
+%GRADCHECK Checks a user-defined gradient function using finite differences.
 %
 %	Description
-%	This function is intended as a utility for other Netlab functions
-%	(particularly optimization functions) to use.  It enables the user to
-%	check whether a gradient calculation has been correctly implemented
-%	for a given function. GRADCHEK(W, FUNC, GRAD) checks how accurate the
-%	gradient  GRAD of a function FUNC is at a parameter vector X.   A
-%	central difference formula with step size 1.0e-6 is used, and the
-%	results for both gradient function and finite difference
-%	approximation are printed. There is no return value.
+%	This function is intended as a utility to check whether a gradient
+%       calculation has been correctly implemented for a given function. 
+%       GRADCHECK(W, FUNC, GRAD) checks how accurate the gradient GRAD of 
+%       a function FUNC is at a parameter vector X.   A central difference 
+%       formula with step size 1.0e-6 is used, and the results for both 
+%       gradient function and finite difference approximation are printed.
 %
-%	GRADCHEK(X, FUNC, GRAD, P1, P2, ...) allows additional arguments to
+%	GRADCHECK(X, FUNC, GRAD, P1, P2, ...) allows additional arguments to
 %	be passed to FUNC and GRAD.
-%
-%	See also
-%	CONJGRAD, GRADDESC, HMC, OLGD, QUASINEW, SCG
 %
 
 %	Copyright (c) Christopher M Bishop, Ian T Nabney (1996, 1997)
