@@ -1,7 +1,6 @@
 function dist_install
 
     if ispc   % A windows version of Matlab
-        mex -O -output catrand winCsource\catrand.c winCsource\binsgeq.c
         mex -O -output cond_invgam_invgam1 winCsource\cond_invgam_invgam1.c winCsource\ars.c winCsource\rand.c
         mex -O -output digamma1 winCsource\digamma1.c
         mex -O -output dirrand winCsource\dirrand.c
@@ -13,7 +12,6 @@ function dist_install
         mex -O -output tanh_f winCsource\tanh_f.c
         mex -O -output trand winCsource\trand.c winCsource\rand.c
     else
-        mex -O -output catrand linuxCsource/catrand.c linuxCsource/binsgeq.c;
         mex -O -output cond_invgam_invgam1 linuxCsource/cond_invgam_invgam1.c linuxCsource/ars.c linuxCsource/rand.c;
         mex -O -output digamma1 linuxCsource/digamma1.c;
         mex -O -output dirrand linuxCsource/dirrand.c;
