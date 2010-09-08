@@ -1,9 +1,10 @@
 function p = prior_logunif(do, varargin)
-% PRIOR_LOGUNIF      Uniform prior structure for the logarithm of the parameter
+% PRIOR_LOGUNIF  Uniform prior structure for the logarithm of the parameter
 %       
 %       Description
-%       P = PRIOR_LOGUNIF('INIT') returns a structure that specifies uniform prior
-%       for the logarithm of the parameters. 
+%       P = PRIOR_LOGUNIF('INIT') returns a structure that
+%       specifies uniform prior for the logarithm of the
+%       parameters.
 %    
 %	The fields in P are:
 %           p.type         = 'log-uniform'
@@ -13,7 +14,7 @@ function p = prior_logunif(do, varargin)
 %           p.fh_g         = Function handle to gradient of energy evaluation routine
 %           p.fh_recappend = Function handle to MCMC record appending routine
 %
-%	P = PRIOR_T('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	P = PRIOR_LOGUNIF('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. 
 %
 %	See also
@@ -21,7 +22,7 @@ function p = prior_logunif(do, varargin)
 
     
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihim√§ki
+% Copyright (c) 2010 Jaakko Riihim‰ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -86,8 +87,8 @@ function p = prior_logunif(do, varargin)
     
     function e = prior_logunif_e(x, p)
         e = sum(log(x));   % = - log(1./x)
-                           % where the log comes from the definition of energy 
-                           % as log( p(x) )
+                           % where the -log comes from the definition of 
+                           % energy as -log( p(x) )
     end
     
     function g = prior_logunif_g(x, p)

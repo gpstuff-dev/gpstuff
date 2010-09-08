@@ -2,7 +2,8 @@ function p = prior_unif(do, varargin)
 % PRIOR_UNIF     Uniform prior structure     
 %       
 %        Description
-%        P = PRIOR_UNIF('INIT') returns a structure that specifies uniform prior. 
+%        P = PRIOR_UNIF('INIT') returns a structure that specifies
+%        uniform prior.
 %    
 %	The fields in P are:
 %           p.type         = 'uniform'
@@ -12,7 +13,7 @@ function p = prior_unif(do, varargin)
 %           p.fh_g         = Function handle to gradient of energy evaluation routine
 %           p.fh_recappend = Function handle to MCMC record appending routine
 %
-%	P = PRIOR_T('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	P = PRIOR_UNIF('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. 
 %
 %	See also

@@ -5,7 +5,7 @@ function p = prior_t(do, varargin)
 %        P = PRIOR_T('INIT') returns a structure that specifies Student's
 %        t-distribution prior. 
 %
-%        Parameterisation is done by Bayesian Data Analysis,  
+%        Parameterisation is done as in Bayesian Data Analysis,  
 %        second edition, Gelman et.al 2004.
 %    
 %	The fields in P are:
@@ -155,20 +155,21 @@ function p = prior_t(do, varargin)
             e = e + feval(p.p.s2.fh_e, p.s2, p.p.s2) - log(p.s2);
         end
         if ~isempty(p.p.nu)
-            e = e + feval(p.p.nu.fh_e, p.nu, p.p.nu)  - log(p.nu);
+            e = e + feval(p.p.nu.fh_e, p.nu, p.p.nu) - log(p.nu);
         end
     end
     
     function g = prior_t_g(x, p)
 
-        g=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
+    %g=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
+      g=(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2);
         
         if ~isempty(p.p.mu)
-        	gmu = sum( -(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2) ) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
+            gmu = sum( -(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2) ) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
             g = [g gmu];
         end
         if ~isempty(p.p.s2)
-        	gs2 = (sum( 1./(2.*p.s2) - (p.nu+1)./(2*p.nu.*p.s2.^2).*(x-p.mu).^2./(1+(x-p.mu).^2./p.nu./p.s2) ) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1;
+            gs2 = (sum( 1./(2.*p.s2) -((p.nu + 1)*(p.mu - x)^2)/(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1;
             g = [g gs2];
         end
         if ~isempty(p.p.nu)
