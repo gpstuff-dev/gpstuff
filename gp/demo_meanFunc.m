@@ -27,7 +27,9 @@
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
 
- % Create the data
+% Copyright (c) 2010 Tuomas Nikoskinen
+
+% Create the data
 
  t=-2:0.6:2;
  res=4*cos(t).*sin(t)+0.4*randn(size(sin(t)));
@@ -44,14 +46,16 @@ gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm)
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
 % Set the prior values for basis functions' weigths
-b=[0.3;0.3;0.3];
+b=[0.3 0.3 0.3];
 B=diag([1;1;1]);
-% Set the constant value of the constant base function
-gpmf_constant('set',2);
+% Set the constant value of the constant base function to 2. Default value
+% is 1 without any set action.
+gpmf_constant('set',2);                                 
 % Define which basis functions are used
 s={@gpmf_linear,@gpmf_squared,@gpmf_constant};
 
 gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00001,'meanFuncs',s,'mean_p',{b,B});
+w=gp_pak(gp);
 gradcheck(w, @gp_e, @gp_g, gp, x, y2);
 
 
@@ -86,8 +90,8 @@ hav=plot(x,y2, 'ro','markerSize',6,'MarkerFaceColor','r');
 hold on
 h=plot(p,2 + p+p.^2+4*cos(p).*sin(p),'b--','lineWidth',2);
 hold on
-mean=plot(p,2+p+p.^2,'r--','lineWidth',1);
-legend([m m95 h mean hav],'prediction','95%','f(x)','mean function','observations');
+mmmean=plot(p,2+p+p.^2,'r--','lineWidth',1);
+legend([m m95 h mmmean hav],'prediction','95%','f(x)','mean function','observations');
 %legend([m.mainLine m.patch h mean hav],'prediction','95%','f(x)','meanfunction','observations');
 xlabel('input x')
 ylabel('output y')

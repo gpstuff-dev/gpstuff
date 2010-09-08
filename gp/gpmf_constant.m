@@ -8,7 +8,7 @@ function h = gpmf_constant(varargin)
 %        h = GPMF_CONSTANT(x) Call the constant function with input
 %        argument x, size(x)=(n,m). Returns a row vector, of size(m,n),
 %        containing the constant value. If the constant value hasn't been set
-%        use the default value 0.
+%        use the default value 1.
 % 
 %	See also
 %       gpmf_squared, gpmf_linear
@@ -30,7 +30,7 @@ if length(varargin)==2
 elseif size(varargin)==1
     [n m]=size(varargin{1});
     if isempty(gpmfConstVar)
-        h=zeros(m,n);
+        h=ones(m,n);
     else
         h=repmat(gpmfConstVar,m,n);
     end
