@@ -245,7 +245,7 @@ function gp = gp_init(do, varargin)
                     gp.mean.p.vague=1;
                   case 'mean_p'
                     gp.mean.p.b=varargin{i+1}{1};
-                    gp.mean.p.B=varargin{i+1}{2}(:)';
+                    gp.mean.p.B=varargin{i+1}{2};
                     gp.mean.p.vague=0;
                   case 'grad_obs'
                     gp.grad_obs=1;
