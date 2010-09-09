@@ -121,7 +121,7 @@ gpcf1 = gpcf_ppcs3('init', 'nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 
 pl = prior_t('init', 's2', 0.5);               % a prior structure
-pm = prior_t('init', 's2', 0.3);               % a prior structure
+pm = prior_sqrtt('init', 's2', 0.3);               % a prior structure
 gpcf1 = gpcf_ppcs3('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 

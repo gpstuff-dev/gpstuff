@@ -114,7 +114,7 @@ title('Inputs where to predict')
 
 % Create covariance function
 pl2 = prior_gamma('init', 'sh', 5, 'is', 1);
-pm2 = prior_t('init', 'nu', 1, 's2', 150);
+pm2 = prior_sqrtt('init', 'nu', 1, 's2', 150);
 gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3);
 gpcf2 = gpcf_ppcs2('set', gpcf2, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
 

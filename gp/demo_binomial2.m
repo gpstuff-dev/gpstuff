@@ -103,7 +103,7 @@ f3 = f3(itr,:); f4 = f4(itr,:);
 
 % First define priors for length scales and magnitudes
 pl = prior_t('init');
-pm = prior_t('init', 's2', 0.3);
+pm = prior_sqrtt('init', 's2', 0.3);
 
 gpcf1 = gpcf_sexp('init','magnSigma2', 1, 'magnSigma2_prior',pm);
 metric1 = metric_euclidean('init', {[1]},'lengthScales',[10], 'lengthScales_prior', pl);

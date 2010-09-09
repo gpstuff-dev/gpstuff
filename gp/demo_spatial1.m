@@ -98,7 +98,7 @@ dims = [1    60     1    35];
 % Create the covariance functions
 gpcf1 = gpcf_matern32('init', 'lengthScale', 5, 'magnSigma2', 0.05);
 pl = prior_t('init');
-pm = prior_t('init', 's2', 0.3);
+pm = prior_sqrtt('init', 's2', 0.3);
 gpcf1 = gpcf_matern32('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure

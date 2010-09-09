@@ -793,7 +793,7 @@ S = sprintf([S '\n '])
 % Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 % 
 % pl = prior_t('init', 's2', 3, 'nu', 4);
-% pm = prior_t('init', 's2', 0.3, 'nu', 4);
+% pm = prior_sqrtt('init', 's2', 0.3, 'nu', 4);
 % gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 % 

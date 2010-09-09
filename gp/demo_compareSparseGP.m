@@ -65,7 +65,7 @@ gpcfse = gpcf_sexp('init','lengthScale',1.3,'magnSigma2',5);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 0.3);
 
 ppl = prior_t('init', 's2', 10, 'nu', 3);
-ppm = prior_t('init', 's2', 10, 'nu', 3);
+ppm = prior_sqrtt('init', 's2', 10, 'nu', 3);
 pn = prior_t('init', 's2', 10, 'nu', 4);
 
 gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pn);

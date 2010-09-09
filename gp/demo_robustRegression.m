@@ -92,7 +92,7 @@ yy = 0.3+0.4*xx+0.5*sin(2.7*xx)+1.1./(1+xx.^2);
 
 % Construct the priors for the parameters of covariance functions...
 pl = prior_t('init');
-pm = prior_t('init', 's2', 0.3);
+pm = prior_sqrtt('init', 's2', 0.3);
 
 % create the Gaussian process
 gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -213,7 +213,7 @@ S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale
 % ========================================
 
 pl = prior_t('init');
-pm = prior_t('init', 's2', 0.3);
+pm = prior_sqrtt('init', 's2', 0.3);
 gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
@@ -268,7 +268,7 @@ S4 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.
 %   which means that degrees of freedom is not sampled/optimized
 % ========================================
 pl = prior_t('init');
-pm = prior_t('init', 's2', 0.3);
+pm = prior_sqrtt('init', 's2', 0.3);
 gpcf1 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 0.2^2);
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 

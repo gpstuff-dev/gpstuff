@@ -111,7 +111,7 @@ gpcfn = gpcf_noise('init', 'noiseSigma2', 1);
 
 % ... Then set the prior for the parameters of covariance functions...
 pl = prior_t('init', 's2', 3);
-pm = prior_t('init', 's2', 0.3);
+pm = prior_sqrtt('init', 's2', 0.3);
 
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_ppcs2('set', gpcf2, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
@@ -322,11 +322,11 @@ gpcf2 = gpcf_sexp('init', 'lengthScale', [2], 'magnSigma2', 2);
 
 % ... Then set the prior for the parameters of covariance functions...
 pl = prior_t('init', 's2', 1000, 'nu', 3);
-pm = prior_t('init', 's2', 2, 'nu', 3);
+pm = prior_sqrtt('init', 's2', 2, 'nu', 3);
 pl2 = prior_t('init', 's2', 5, 'nu', 3);
-pm2 = prior_t('init', 's2', 3, 'nu', 3);
+pm2 = prior_sqrtt('init', 's2', 3, 'nu', 3);
 ppl = prior_t('init', 's2', 100, 'nu', 3);
-ppm = prior_t('init', 's2', 1, 'nu', 3);
+ppm = prior_sqrtt('init', 's2', 1, 'nu', 3);
 pn = prior_t('init', 's2', 10, 'nu', 4);
 ppp = prior_t('init', 's2', 100, 'nu', 4);
 

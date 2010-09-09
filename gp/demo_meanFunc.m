@@ -41,7 +41,7 @@ gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.4^2);
 
 pl = prior_logunif('init');               % a prior structure
 pm = prior_logunif('init');               % a prior structure
-%pm = prior_t('init', 's2', 0.3);               % a prior structure
+%pm = prior_sqrtt('init', 's2', 0.3);               % a prior structure
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 

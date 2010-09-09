@@ -106,7 +106,7 @@ xt = [0:0.5:565]';
 % First create squared exponential and piecewise polynomial 2 covariance functions and 
 % Gaussian noise data structures and set priors for their hyperparameters
 pl = prior_t('init', 's2', 3, 'nu', 4);
-pm = prior_t('init', 's2', 0.3, 'nu', 4);
+pm = prior_sqrtt('init', 's2', 0.3, 'nu', 4);
 gpcf1 = gpcf_sexp('init', 'lengthScale', 3, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
