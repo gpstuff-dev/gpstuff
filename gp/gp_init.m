@@ -278,9 +278,16 @@ function gp = gp_init(do, varargin)
                           otherwise
                             gp.laplace_opt.optim_method='stabilized-newton';
                         end
-                        gp = gpla_e('init', gp, varargin{i+1}{2:end});
-                        w = gp_pak(gp);
-                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
+                        switch gp.likelih.type
+                          case 'softmax'
+                            gp = gpla_softmax_e('init', gp, varargin{i+1}{2:end});
+                            w = gp_pak(gp);
+                            [e, edata, eprior, f] = gpla_softmax_e(w, gp, varargin{i+1}{2:end});
+                          otherwise
+                            gp = gpla_e('init', gp, varargin{i+1}{2:end});
+                            w = gp_pak(gp);
+                            [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
+                        end
                       otherwise
                         error('Unknown type of latent_method!')
                     end
@@ -364,10 +371,17 @@ function gp = gp_init(do, varargin)
                           gp.laplace_opt.optim_method = 'newton';
                       end
                     end
-                    gp = gpla_e('init', gp, varargin{i+1}{2:end});
-                    w = gp_pak(gp);
-                    [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
-                  otherwise
+                    switch gp.likelih.type
+                      case 'softmax'
+                        gp = gpla_softmax_e('init', gp, varargin{i+1}{2:end});
+                        w = gp_pak(gp);
+                        [e, edata, eprior, f] = gpla_softmax_e(w, gp, varargin{i+1}{2:end});
+                      otherwise
+                        gp = gpla_e('init', gp, varargin{i+1}{2:end});
+                        w = gp_pak(gp);
+                        [e, edata, eprior, f] = gpla_e(w, gp, varargin{i+1}{2:end});
+                    end
+                    otherwise
                     error('Unknown type of latent_method!')
                 end
               otherwise
