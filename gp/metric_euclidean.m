@@ -1,11 +1,13 @@
 function metric = metric_euclidean(do, varargin)
-%METRIC_EUCLIDEAN An Euclidean distance for Gaussian process models.
+%METRIC_EUCLIDEAN An euclidean distance for Gaussian process models.
 %
-%	Description
-%	METRIC = METRIC_EUCLIDEAN('INIT', COMPONENTS, OPTIONS) Constructs data
-%       structure for an euclidean metric used in covariance function
-%       of a GP model. OPTIONS is optional parameter-value pair used
-%       as described below by GPCF_SEXP('set',...
+%     Description
+%      METRIC = METRIC_EUCLIDEAN('INIT', COMPONENTS, OPTIONS)
+%      Constructs data structure for an euclidean metric used in
+%      covariance function of a GP model. With an optional flag
+%      it is possible to use the delta distance (0 if x=x',
+%      and 1 otherwise) for specified components. OPTIONS is
+%      optional parameter-value pair used as described below.
 %
 %       METRIC = METRIC_EUCLIDEAN('SET', METRIC, OPTIONS) Set the
 %       fields of GPCF as described by the parameter-value pairs
@@ -17,20 +19,25 @@ function metric = metric_euclidean(do, varargin)
 %                             scaling parameter. For example, the 
 %                             component specification {[1 2] [3]} means 
 %                             that distance between 3 dimensional vectors 
-%                             x and z is computed as 
-%                             r = sqrt( ( (x_1-z_1)^2+(x_2-z_2)^2 )/l_1 + (x_3-z_3)/l_2), 
-%                             where l_1 and l_2 are lengthscales for 
+%                             computed as 
+%                             r = ( r_1^2 + r_2^2 )/l_1 + r_3^2/l_2, 
+%                             where r_i are distance along component i,
+%                             and l_1 and l_2 are lengthscales for 
 %                             corresponding component sets.
 %       lengthScales        = Hyperparameters of the metric, which in
 %                             this case are lengthscales for each 
 %                             input component set. 
-%       lengthScale_prior   = prior structure for lengthScales
+%       lengthScale_prior   = Prior structure for lengthScales
+%       deltaflag           = Indicator vector telling which components 
+%                             are handled using the delta distance. Default is
+%                             false for all components.
 %
 %       See also
 %       GPCF_SEXP
     
 % Copyright (c) 2008 Jouni Hartikainen 
 % Copyright (c) 2008 Jarno Vanhatalo     
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -45,6 +52,7 @@ function metric = metric_euclidean(do, varargin)
         metric.components = varargin{1};
         
         metric.lengthScales = repmat(1,1,length(metric.components));
+        metric.deltaflag = false(1,length(metric.components));
 
         % Initialize prior structure
         metric.p=[];
@@ -73,6 +81,8 @@ function metric = metric_euclidean(do, varargin)
                     metric.lengthScales = varargin{i+1};
                   case 'lengthScales_prior'
                     metric.p.lengthScales = varargin{i+1};
+                  case 'deltaflag'
+                    metric.deltaflag = varargin{i+1};
                   otherwise
                     error('Wrong parameter name!')
                 end
@@ -97,6 +107,8 @@ function metric = metric_euclidean(do, varargin)
                 metric.lengthScales = varargin{i+1};
               case 'lengthScales_prior'
                 metric.p.lengthScales = varargin{i+1};
+              case 'deltaflag'
+                metric.deltaflag = varargin{i+1};
               otherwise
                 error('Wrong parameter name!')
             end
@@ -194,19 +206,22 @@ function eprior = metric_euclidean_e(metric, x, t)
 end
 
 function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask) 
-%METRIC_EUCLIDEAN_GHYPER     Evaluate the gradient of the metric function and hyperprior 
-%                            w.r.t to it's hyperparameters.
+%METRIC_EUCLIDEAN_GHYPER Evaluate the gradient of the metric function
+%                    and hyperprior w.r.t to it's hyperparameters.
 %
-%	Description
-%	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X) takes a
-%   metric data structure METRIC together with a matrix X of input vectors and 
-%   return the gradient matrices GDIST and GPRIOR_DIST for each hyperparameter.
+%    Description
+%     [GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X) takes a
+%     metric data structure METRIC together with a matrix X of
+%     input vectors and return the gradient matrices GDIST and
+%     GPRIOR_DIST for each hyperparameter.
 %
-%	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2) forms the gradient
-%   matrices between two input vectors X and X2.
+%     [GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2)
+%     forms the gradient matrices between two input vectors X and
+%     X2.
 %     
-%	[GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2, MASK) forms
-%   the gradients for masked covariances matrices used in sparse approximations.
+%     [GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2,
+%     MASK) forms the gradients for masked covariances matrices
+%     used in sparse approximations.
 %
 %	See also
 %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
@@ -219,8 +234,8 @@ function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask)
     m = length(components);
     i1=0;i2=1;
 
-    % NOTE! Here we have already taken into account that the parameters are transformed
-    % through log() and thus dK/dlog(p) = p * dK/dp
+    % NOTE! Here we have already taken into account that the parameters
+    % are transformed through log() and thus dK/dlog(p) = p * dK/dp
    
     if ~isempty(metric.p.lengthScales)
         if nargin <= 3
@@ -236,7 +251,11 @@ function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask)
                 s = 1./metric.lengthScales(i).^2;
                 distc{i} = 0;
                 for j = 1:length(components{i})
+                  if metric.deltaflag(i)
+                    distc{i} = distc{i} + double(bsxfun(@ne,x(:,components{i}(j)),x2(:,components{i}(j))'));
+                  else
                     distc{i} = distc{i} + bsxfun(@minus,x(:,components{i}(j)),x2(:,components{i}(j))').^2;
+                  end
                 end
                 distc{i} = distc{i}.*s;
                 % Accumulate to the total distance
@@ -287,7 +306,7 @@ function [dist]  = metric_euclidean_distance(metric, x1, x2)
 %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
 %
     if nargin == 2 || isempty(x2)
-        x2=x1;
+      x2=x1;
     end
     
     [n1,m1]=size(x1);
@@ -302,19 +321,22 @@ function [dist]  = metric_euclidean_distance(metric, x1, x2)
     dist  =  0;        
     
     for i=1:m
-        s = 1./metric.lengthScales(i).^2;
-        for j = 1:length(components{i})
-            dist = dist + s.*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+      s = 1./metric.lengthScales(i).^2;
+      for j = 1:length(components{i})
+        if metric.deltaflag(i)
+          dist = dist + s.*double(bsxfun(@ne,x1(:,components{i}(j)),x2(:,components{i}(j))'));
+        else
+          dist = dist + s.*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
         end
+      end
     end
-    dist = sqrt(dist);
-
+    dist=sqrt(dist); % euclidean distance
+    
 end
 
 function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)         
-%METRIC_EUCLIDEAN_GINPUT   Compute the gradient of the euclidean distance
-%                          function with respect to input.
-%[n, m] =size(x);
+%METRIC_EUCLIDEAN_GINPUT  Compute the gradient of the
+%  euclidean distance function with respect to input. [n, m]=size(x);
     ii1 = 0;
     components = metric.components;
     
@@ -333,7 +355,11 @@ function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)
     dist = 0;
     for i=1:length(components)
         for j = 1:length(components{i})
+          if metric.deltaflag(i)
+            dist = dist + s(i).*double(bsxfun(@ne,x1(:,components{i}(j)),x2(:,components{i}(j))'));
+          else
             dist = dist + s(i).*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+          end
         end
     end
     dist = sqrt(dist);
@@ -343,7 +369,11 @@ function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)
             DK = zeros(n1,n2);                
             for k = 1:length(components)
                 if ismember(i,components{k})
+                  if metric.deltaflag(i)
+                    DK(j,:) = DK(j,:)+s(k).*double(bsxfun(@ne,x1(j,i),x2(:,i)'));
+                  else
                     DK(j,:) = DK(j,:)+s(k).*bsxfun(@minus,x1(j,i),x2(:,i)');
+                  end
                 end
             end
             if nargin == 2
@@ -364,10 +394,11 @@ end
 
 function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
 % RECAPPEND - Record append
-%          Description
-%          RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC) takes old covariance
-%          function record RECMETRIC, record index RI and covariance function structure. 
-%          Appends the parameters of METRIC to the RECMETRIC in the ri'th place.
+%   Description
+%     RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC)
+%     takes old covariance function record RECMETRIC, record index
+%     RI and covariance function structure. Appends the parameters
+%     of METRIC to the RECMETRIC in the ri'th place.
 %
 %          See also
 %          GP_MC and GP_MC -> RECAPPEND
@@ -400,4 +431,5 @@ function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
         recmetric.lengthScales=[];
     end
 
-end
+  end
+  
