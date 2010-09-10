@@ -3,9 +3,9 @@ function bbm = bbmean(x,B,w)
 %
 %    Description
 %    bbm = bbmean(x,B,w)
-%    x MxN matrix of data
+%    x NxM matrix of data
 %    B number of bootstrap replicates
-%    w Mx1 vector of weights 
+%    w Nx1 vector of weights 
 
 % Copyright (c) Aki Vehtari, 1998-2004
 %
