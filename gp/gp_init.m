@@ -276,7 +276,7 @@ function gp = gp_init(do, varargin)
                             % slower than stabilized-newton but more robust
                             gp.laplace_opt.optim_method='likelih_specific'; 
                           otherwise
-                            gp.laplace_opt.optim_method='stabilized-newton';
+                            gp.laplace_opt.optim_method='newton';
                         end
                         switch gp.likelih.type
                           case 'softmax'
