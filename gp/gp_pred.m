@@ -175,12 +175,33 @@ switch gp.type
         end
     end
     if nargout > 2
-        [V, Cv] = gp_trvar(gp,xt,predcf);
-        Ey = Ef;
-        Vary = Varf + Cv - V;
-    end
-    if nargout > 4
-        py = norm_pdf(yt, Ey, sqrt(Vary));
+        % Scale mixture model in gpcf_noiset is a special case 
+        % handle it separately
+        if ~strcmp(gp.noise{1}.type, 'gpcf_noiset') % normal case
+            [V, Cv] = gp_trvar(gp,xt,predcf);
+            Ey = Ef;
+            Vary = Varf + Cv - V;
+            if nargout > 4
+                py = norm_pdf(yt, Ey, sqrt(Vary));
+            end
+        else % scale mixture case
+            nu = gp.noise{1}.nu;
+            sigma2 = gp.noise{1}.tau2.*gp.noise{1}.alpha.^2;
+            sigma = sqrt(sigma2);
+            
+            Ey = Ef;
+            Vary = (nu./(nu-2).*sigma2);
+            
+            if nargout > 4
+                for i2 = 1:length(Ef)
+                    mean_app = Ef(i2);
+                    sigm_app = sqrt(Varf(i2));
+                    
+                    pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
+                    py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
+                end
+            end           
+        end
     end
   case 'FIC'
     % Check the tstind vector

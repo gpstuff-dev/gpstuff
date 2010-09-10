@@ -209,11 +209,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
         error('gp_kfcv: If you give cross validation indices, you need to provide both trindex and tstindex.')
     end
-    
+
     if isempty(trindex) || isempty(tstindex)
         [trindex, tstindex] = cvit(n, k, rstream);
     end
-    
     parent_folder = pwd;
         
     % Check which energy and gradient function
@@ -254,7 +253,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     
     % loop over the crossvalidation sets
     for i=1:length(trindex)
-        
+       
         fprintf('The CV-iteration number: %d \n', i)
         
         % Set the training and test sets for i'th cross-validation set
@@ -262,7 +261,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         ytr = y(trindex{i},:);
         xtst = x(tstindex{i},:);
         ytst = y(tstindex{i},:);
-        
+
         if ~isempty(z)
             options_tr.z = z(trindex{i},:);
             options_tst.zt = z;
@@ -283,7 +282,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             % Set the block indices for the cv set of data points
             ntr = size(xtr,1);
             ntst = size(xtst,1);
-            size(trindex{i});
             for i1=1:length(gp.tr_index)
                 tstind{i1} = [];
                 trind{i1} = [];
@@ -328,12 +326,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             % Scaled mixture noise model is a special case 
             % where we need to modify the noiseSigmas2 vector 
             % to right length
-            for i = 1:length(gp.noise)
-                if strcmp(gp.noise{i}.type, 'gpcf_noiset')
-                    gp.noise{i}.noiseSigmas2 = gp.noise{i}.noiseSigmas2(trindex{i});
-                    gp.noise{i}.r = gp.noise{i}.r(trindex{i});
-                    gp.noise{i}.U = gp.noise{i}.U(trindex{i});
-                    gp.noise{i}.ndata = length(trindex{i});
+            for i2 = 1:length(gp.noise)
+                if strcmp(gp.noise{i2}.type, 'gpcf_noiset')
+                    gp.noise{i2}.noiseSigmas2 = gp_orig.noise{i2}.noiseSigmas2(trindex{i});
+                    gp.noise{i2}.r = gp_orig.noise{i2}.r(trindex{i});
+                    gp.noise{i2}.U = gp_orig.noise{i2}.U(trindex{i});
+                    gp.noise{i2}.ndata = length(trindex{i});
                 end
             end
             gp = gp_mc(gp, xtr, ytr, options_tr, opt);
@@ -363,7 +361,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         % Evaluate statistics
         lpd_cv(tstindex{i}) = log(mean(py(tstindex{i},:),2));
         lpd_cvtr(i) = mean(log(mean(py(trindex{i}),2)));
-            
+       
         rmse_cv(tstindex{i}) = (mean(Ey(tstindex{i},:),2) - ytst).^2;
         rmse_cvtr(i) = sqrt(mean((mean(Ey(trindex{i},:),2) - ytr).^2));
         

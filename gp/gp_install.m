@@ -41,9 +41,9 @@ if isempty(suiteSparse)
     % Compile the 'trcov' mex-function
     if (~isempty (strfind (computer, '64')))
         % 64-bit MATLAB
-        mex -O -g -largeArrayDims -output trcov linuxCsource/trcov.c 
+        mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
     else
-        mex -O -output trcov linuxCsource/trcov.c 
+        mex -O -output private/trcov linuxCsource/trcov.c 
     end
     
     fprintf ('\n GP package succesfully compiled ') ;

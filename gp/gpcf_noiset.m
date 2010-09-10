@@ -252,10 +252,10 @@ function gpcf = gpcf_noiset(do, varargin)
 
         [n, m] =size(x);
         n1=n+1;
-        
+                
         if n ~= gpcf.ndata
-            error(['gpcf_noiset -> _trcov: The training covariance can be evaluated'... 
-                  '      only for training data.                                   '])
+            error(['gpcf_noiset -> _trvar: The training variance can be evaluated'... 
+                  '      only for training data.                                 '])
         end
         
         C = sparse(1:n, 1:n, gpcf.noiseSigmas2, n, n);

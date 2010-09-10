@@ -77,9 +77,6 @@
 %    SPINV         Evaluate the sparsified inverse matrix
 %    SCALED_HMC    A scaled hybric Monte Carlo samping for latent values
 %    SCALED_MH     A scaled Metropolis Hastings samping for latent values
-%    TRCOV         Evaluate training covariance matrix for covariance function
-%                  This is a mex-function that is called from gpcf_*_trcov
-%                  functions.
 %    GP_INSTALL    Matlab function to compile all the c-files to mex in the 
 %                  GPstuff/gp folder.
 %
