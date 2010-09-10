@@ -108,6 +108,7 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
     options=struct();
     if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
     if ~isempty(ip.Results.z);options.z=ip.Results.z;end
+    if ~isempty(ip.Results.zt);options.zt=ip.Results.zt;end
     if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
     if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
     
