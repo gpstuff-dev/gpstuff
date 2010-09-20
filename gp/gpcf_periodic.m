@@ -268,7 +268,7 @@ function gpcf = gpcf_periodic(do, varargin)
                 gpcf.lengthScale_exp = exp(w(i1:i2));
                 w = w(i2+1:end);
             end
-            if ~isempty(gpp.period)
+            if ~isempty(gpp.period) && gpcf.optimPeriod == 1
                 i2=length(gpcf.period);
                 i1=1;
                 gpcf.period = exp(w(i1:i2));
