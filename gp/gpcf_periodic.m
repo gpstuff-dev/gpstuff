@@ -2,7 +2,7 @@ function gpcf = gpcf_periodic(do, varargin)
 %GPCF_PERIODIC	Create a periodic covariance function for Gaussian Process
 %
 %	Description
-%        GPCF = GPCF_PERIODIC('init', 'nin', NIN, OPTIONS) Create and
+%        GPCF = GPCF_PERIODIC('init', OPTIONS) Create and
 %        initialize periodic covariance function for Gaussian process
 %        for input dimension NIN. OPTIONS is optional parameter-value
 %        pair used as described below by GPCF_PERIODIC('set',...
@@ -11,7 +11,6 @@ function gpcf = gpcf_periodic(do, varargin)
 %        as described by the parameter-value pairs ('FIELD', VALUE) in
 %        the OPTIONS. The fields that can be modified are:
 %
-%	  nin            = Number of inputs. (NIN)
 %	  magnSigma2     = Magnitude (squared) for exponential part. 
 %                          (0.1)
 %	  lengthScale    = Length scale for each input. This can be 
@@ -53,7 +52,6 @@ function gpcf = gpcf_periodic(do, varargin)
     ip.FunctionName = 'GPCF_PERIODIC';
     ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
-    ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('period',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
@@ -67,7 +65,6 @@ function gpcf = gpcf_periodic(do, varargin)
     ip.parse(do, varargin{:});
     do=ip.Results.do;
     gpcf=ip.Results.gpcf;
-    nin=ip.Results.nin;
     magnSigma2=ip.Results.magnSigma2;
     lengthScale=ip.Results.lengthScale;
     period=ip.Results.period;
@@ -82,11 +79,6 @@ function gpcf = gpcf_periodic(do, varargin)
     switch do
         case 'init'
             % Initialize the covariance function
-            if isempty(nin)
-                error('nin has to be given in init: gpcf_periodic(''init'',''nin'',NIN,...)')
-            end
-            gpcf.type = 'gpcf_periodic';
-            gpcf.nin = nin;
             
             % Initialize parameters
             if isempty(lengthScale)
@@ -900,7 +892,6 @@ function gpcf = gpcf_periodic(do, varargin)
     % Initialize record
         if nargin == 2
             reccf.type = 'gpcf_periodic';
-            reccf.nin = ri;
 
             % Initialize parameters
             reccf.lengthScale= [];
