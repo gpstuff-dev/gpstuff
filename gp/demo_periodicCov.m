@@ -106,7 +106,7 @@ y = y-avgy;
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
 gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3);
-gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3);
+gpcf2 = gpcf_sexp('init', 'lengthScale', 1, 'magnSigma2', 1);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 1);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -114,8 +114,7 @@ pl = prior_t('init', 's2', 3);
 pm = prior_sqrtt('init', 's2', 0.3);
 
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_ppcs2('set', gpcf2, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
-%gpcf2 = gpcf_sexp('set', gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_sexp('set', gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pm);
 
 
@@ -145,12 +144,13 @@ w0 = gp_pak(gp);
 w=scg2(fe, w0, opt, fg, gp, x, y);
 gp = gp_unpak(gp,w);
 
-% NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
-% they are also transformed through logarithm. The reason for this is that they 
-% are easier to sample with MCMC after log transformation.
+% NOTICE here that when the hyperparameters are packed into vector
+% with 'gp_pak' they are also transformed through logarithm. The
+% reason for this is that they are easier to sample with MCMC after
+% log transformation.
 
-% Make predictions. Below Ef_full is the predictive mean and Varf_full the 
-% predictive variance.
+% Make predictions. Below Ef_full is the predictive mean and
+% Varf_full the predictive variance.
 x1=[1:800]';
 
 [Ef_full, Varf_full] = gp_pred(gp, x, y, x1);
@@ -182,7 +182,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 % exponential function, two short term ones, the periodic function and a
 % noise structure
 gpcf1 = gpcf_sexp('init', 'lengthScale', 67*12, 'magnSigma2', 66*66);
-gpcfp = gpcf_periodic('init', 'nin', nin, 'lengthScale', 1.3, 'magnSigma2', 2.4*2.4);
+gpcfp = gpcf_periodic('init', 'lengthScale', 1.3, 'magnSigma2', 2.4*2.4);
 gpcfp = gpcf_periodic('set', gpcfp, 'period', 12,'optimPeriod',1,'lengthScale_exp', 90*12, 'decay', 1);
 gpcfn = gpcf_noise('init', 'noiseSigma2', 0.3);
 gpcf2 = gpcf_sexp('init', 'lengthScale', 2, 'magnSigma2', 2);
@@ -227,12 +227,13 @@ w0 = gp_pak(gp);
 w=scg2(fe, w0, opt, fg, gp, x, y);
 gp = gp_unpak(gp,w);
 
-% NOTICE here that when the hyperparameters are packed into vector with 'gp_pak'
-% they are also transformed through logarithm. The reason for this is that they 
-% are easier to sample with MCMC after log transformation.
+% NOTICE here that when the hyperparameters are packed into vector
+% with 'gp_pak' they are also transformed through logarithm. The
+% reason for this is that they are easier to sample with MCMC after
+% log transformation.
 
-% Make predictions. Below Ef_full is the predictive mean and Varf_full the 
-% predictive variance.
+% Make predictions. Below Ef_full is the predictive mean and
+% Varf_full the predictive variance.
 
 x1=[1:800]';
 
@@ -248,7 +249,7 @@ plot(x,y,'.', 'MarkerSize',7)
 axis tight
 caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f, p=%.2f, s_exp^2 = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n l_4= %.2f, s^2_4 = %.2f, \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.cf{2}.period, gp.cf{2}.lengthScale_exp, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.noise{1}.noiseSigma2);
 title(caption1)
-legend(caption1, 'predicted mean', '2\sigma error','Location','NorthWest')
+legend('Data point', 'predicted mean', '2\sigma error','Location','NorthWest')
 
 % Plot the components separately
 [Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, x);
@@ -315,7 +316,7 @@ x = [1:length(y)]';
 % to be exactly 12 months.
 
 gpcf1 = gpcf_sexp('init', 'lengthScale', [67], 'magnSigma2', 1);
-gpcfp = gpcf_periodic('init', 'nin', nin, 'lengthScale', [1.3], 'magnSigma2', 2.4*2.4,...
+gpcfp = gpcf_periodic('init', 'lengthScale', [1.3], 'magnSigma2', 2.4*2.4,...
     'period', 12,'optimPeriod',0, 'lengthScale_exp', 50, 'decay', 1);
 gpcfnn=gpcf_neuralnetwork('init', 'biasSigma2',10,'weightSigma2',3);
 gpcf2 = gpcf_sexp('init', 'lengthScale', [2], 'magnSigma2', 2);
