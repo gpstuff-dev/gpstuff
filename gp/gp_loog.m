@@ -1,4 +1,4 @@
-function gloo = gp_loog(w, gp, x, y, varargin)
+function [gloo, gdata, gprior] = gp_loog(w, gp, x, y, varargin)
 % GP_LOOG Evaluate the gradient of the negative log leave-one-out 
 %         predictive density plus optional prior term, assuming 
 %         Gaussian observation model
