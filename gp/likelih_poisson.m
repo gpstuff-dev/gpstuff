@@ -12,7 +12,7 @@ function likelih = likelih_poisson(do, varargin)
 %
 %       where z is a vector of expected mean and f the latent value
 %       vector whose components are transformed to relative risk
-%       exp(f_i). When using Poisosn likelihood you need to give the
+%       exp(f_i). When using the Poisson likelihood you need to give the
 %       vector z as an extra parameter to each function that requires
 %       y also. For example, you should call gpla_e as follows
 %          gpla_e(w, gp, x, y, 'z', z)
