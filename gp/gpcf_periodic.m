@@ -18,15 +18,15 @@ function gpcf = gpcf_periodic(do, varargin)
 %                          vector corresponding ARD. (default 10)
 %         period         = duration of one cycle of the periodic
 %                          component(s) (default 1)
-%         optimPeriod    = determines whether the period is optimised 
-%                          (1) or kept constant (0). Not a hyperparameter
-%                           for the function.
 %         lengthScale_exp= length scale for the squared exponential component. 
 %                          This can be either scalar corresponding 
 %                          isotropic or vector corresponding ARD. (10)
 %         decay          = determines whether the squared exponential decay
 %                          term is used (1) or not (0). Not a
 %                          hyperparameter for the function.
+%         optimPeriod    = determines whether the period is optimised 
+%                          (1) or kept constant (0). Not a hyperparameter
+%                           for the function.
 %         magnSigma2_prior      = prior structure for magnSigma2
 %         lengthScale_prior     = prior structure for lengthScale
 %         lengthScale_exp_prior = prior structure for lengthScale_exp
@@ -210,7 +210,7 @@ function gpcf = gpcf_periodic(do, varargin)
                 ww = [ww feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
             end
             
-            if ~isempty(gpcf.p.lengthScale_exp)
+            if ~isempty(gpcf.p.lengthScale_exp)  && gpcf.decay == 1
                 w = [w log(gpcf.lengthScale_exp)];
                             
                 % Hyperparameters of lengthScale_exp
@@ -262,7 +262,7 @@ function gpcf = gpcf_periodic(do, varargin)
                 gpcf.lengthScale = exp(w(i1:i2));
                 w = w(i2+1:end);
             end
-            if ~isempty(gpp.lengthScale_exp)
+            if ~isempty(gpp.lengthScale_exp) && gpcf.decay == 1
                 i2=length(gpcf.lengthScale_exp);
                 i1=1;
                 gpcf.lengthScale_exp = exp(w(i1:i2));
@@ -334,7 +334,7 @@ function gpcf = gpcf_periodic(do, varargin)
                 eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
           
-            if ~isempty(gpp.lengthScale_exp)
+            if ~isempty(gpp.lengthScale_exp) && gpcf.decay == 1
                 eprior = eprior + feval(gpp.lengthScale_exp.fh_e, gpcf.lengthScale_exp, gpp.lengthScale_exp) - sum(log(gpcf.lengthScale_exp));
             end
             if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
@@ -953,7 +953,7 @@ function gpcf = gpcf_periodic(do, varargin)
         end
         
         % record lengthScale_exp
-        if ~isempty(gpcf.lengthScale_exp)
+        if ~isempty(gpcf.lengthScale_exp) && gpcf.decay == 1
             reccf.lengthScale_exp(ri,:)=gpcf.lengthScale_exp;
             reccf.p.lengthScale_exp = feval(gpp.lengthScale_exp.fh_recappend, reccf.p.lengthScale_exp, ri, gpcf.p.lengthScale_exp);
 
