@@ -123,63 +123,29 @@ switch gp.type
                     gdata(i1)=0.5.*(Cdl - Bdl);
                     gprior(i1) = gprior_cf(i2);
                 end
-            else
-                for i=1:length(gp.mean.meanFuncs)
-                    Hapu{i}=feval(gp.mean.meanFuncs{i},x);
-                end
-                %help arguments for predictions with both vague and
-                %non-vague prior
-                H = cat(1,Hapu{1:end});
-                b_m = gp.mean.p.b;            
-                B = gp.mean.p.B;
-                HinvC=H*invC;
-                HKH = HinvC*H';
-                
-                
+            else 
                 % is prior for weights of mean functions vague
                 if gp.mean.p.vague==0
-                    % help arguments that don't depend on DKff; non-vague p
-                    M = H'*b_m-y;
-                    N = C + H'*B*H;
-                    iNM=N\M;
-                    A = B\eye(size(B)) + HKH;
-                    invAt=A\eye(size(A));
-                    invAt=invAt';
+                    [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
                     for i2 = 1:length(DKff)
-                        i1 = i1+1;
-                        % help arguments that depend on DKff; non-vague p
-                        dA = -1*HinvC*DKff{i2}*HinvC';
-                        dMNM = M'*(N\DKff{i2}*iNM);           % d M'*N*M / d th   
-                        trK = sum(sum(invC.*DKff{i2}));       % d log(|Ky⁻|) / d th
-                        trA = sum(invAt(:).*dA(:));           % d log(|A|) / dth 
-
-                        gdata(i1)=0.5*(-1*dMNM + trK + trA);
+                        i1=i1+1;
+                        trK = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
+                        gdata(i1)=0.5*(-1*dMNM{i2} + trK + trA{i2});
                         gprior(i1) = gprior_cf(i2);
                     end
                 else
-                    % help arguments that don't depend on DKff; vague p
-                    A     = HKH;
-                    AH    = A\H;
-                    invAt = A\eye(size(A));
-                    invAt = invAt';
-                    G     = H'*AH*invC*y;
-                    
+                    [nouse nouse dyKy dyCy trAv]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
                     for i2 = 1:length(DKff)
                         i1 = i1+1;
-                        % help arguments that depend on DKff; vague p
-                        yKy = b'*(DKff{i2}*b);                % d y'*Ky⁻*y / d th
+                        if size(DKff{i2}) > 1
+                            trK = sum(sum(invC.*DKff{i2})); % help arguments
+                        else 
+                            trK = DCff{i2}.*(trace(invC));
+                        end
                         trK = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
-                        dA  = -1*HinvC*DKff{i2}*HinvC';       % d A / d th  
-                        trA = sum(invAt(:).*dA(:));           % d log(|A|)/dth = trace(inv(A) * dA/dth)
-                        P   = invC*DKff{i2}*invC;
-                        
-                        dyCy1 = y'*P*G;           
-                        dyCy3 = -G'*P*G;
-                        dyCy = 2*dyCy1 + dyCy3;          % d y'*C*y /d th
-
-                        gdata(i1)=0.5*(trK - yKy + trA + dyCy);
+                        gdata(i1)=0.5*(trK - dyKy{i2} + trAv{i2} + dyCy{i2});
                         gprior(i1) = gprior_cf(i2);
-                     end
+                    end
                 end
             end
             
@@ -199,39 +165,43 @@ switch gp.type
             for i=1:nn
                 noise = gp.noise{i};
                 [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
+                if isfield(gp,'mean')
+                    if gp.mean.p.vague==0
+                        [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
+                    else
+                        [nouse nouse dyKy dyCy trAv]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
+                    end
+                end
                 
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
-                    if size(DCff{i2}) > 1
-                        yKy = b'*(DCff{i2}*b);
-                        trK = sum(sum(invC.*DCff{i2})); % help arguments
-                        gdata_zeromean(i1)=0.5.*(trK - yKy);
-                    else 
-                        yKy=DCff{i2}.*(b'*b);
-                        trK = DCff{i2}.*(trace(invC));
-                        gdata_zeromean(i1)=0.5.*(trK - yKy);
-                    end
-                    % Are mean functions in use
                     if ~isfield(gp,'mean')
+                        if size(DCff{i2}) > 1
+                            yKy = b'*(DCff{i2}*b);
+                            trK = sum(sum(invC.*DCff{i2})); % help arguments
+                            gdata_zeromean(i1)=0.5.*(trK - yKy);
+                        else 
+                            yKy=DCff{i2}.*(b'*b);
+                            trK = DCff{i2}.*(trace(invC));
+                            gdata_zeromean(i1)=0.5.*(trK - yKy);
+                        end
                         gdata(i1)=gdata_zeromean(i1);
                     else
-                        dA = -1*HinvC*DCff{i2}*HinvC';
-                        trA = sum(invAt(:).*dA(:));
-                        % is prior vague
+                        if size(DCff{i2}) > 1
+                            trK = sum(sum(invC.*DCff{i2})); % help arguments
+                        else 
+                            trK = DCff{i2}.*(trace(invC));
+                        end
+                        
                         if gp.mean.p.vague==0
-                            dMNM = M'*(N\(DCff{i2}*iNM));
-                            gdata(i1)=0.5*(-1*dMNM + trA + trK);
-                        else
-                            P=invC*DCff{i2}*invC;
-                            dyCy1 = y'*P*G;         
-                            dyCy3 = -G'*P*G;
-                            dyCy = 2*dyCy1 + dyCy3;          
-
-                            gdata(i1)=gdata_zeromean(i1) + 0.5*trA + 0.5*dyCy;
+                            gdata(i1)=0.5*(-1*dMNM{i2} + trA{i2} + trK);
+                        else      
+                            gdata(i1)=0.5*(trK - dyKy{i2} + trAv{i2} + dyCy{i2});
                         end
                     end
                     gprior(i1) = gprior_cf(i2);
                 end
+                
                 % Set the gradients of hyper-hyperparameter
                 if length(gprior_cf) > length(DCff)
                     for i2=length(DCff)+1:length(gprior_cf)

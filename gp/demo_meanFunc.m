@@ -46,7 +46,7 @@ gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm)
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
 % Set the prior values for basis functions' weigths
-b=[0.3;0.3;0.3];
+b=[0.3 0.3 0.3];
 B=diag([1;1;1]);
 % Set the constant value of the constant base function to 2. Default value
 % is 1 without any set action.

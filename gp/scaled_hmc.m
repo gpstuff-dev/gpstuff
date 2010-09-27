@@ -151,7 +151,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
                 b=Linv*f;
                 gprior=Linv'*b;
             else
-                b_m=gp.mean.p.b;
+                b_m=gp.mean.p.b';
                 M = (H_m'*b_m-f);
                 b=Linv*M;
                 gprior=-1*Linv'*b;
@@ -213,7 +213,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             if ~isfield(gp,'mean')
                 B=Linv*f;
             else
-                b_m=gp.mean.p.b;
+                b_m=gp.mean.p.b';
                 if gp.mean.p.vague==0
                     M=H_m'*b_m-f;
                 else
@@ -268,7 +268,8 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
                     Hapu{i}=feval(gp.mean.meanFuncs{i},x);
                 end
                 H_m = cat(1,Hapu{1:end});
-                B_m=gp.mean.p.B;
+                Bvec = gp.mean.p.B;
+                B_m = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));
                 if gp.mean.p.vague==0
                     N = C + H_m'*B_m*H_m;
                     Linv = inv(chol(N)');

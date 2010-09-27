@@ -35,7 +35,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
 %       GPEP_G, EP_PRED, GP_E
 
     
-% Copyright (c) 2007           Jaakko Riihimäki
+% Copyright (c) 2007           Jaakko Riihimï¿½ki
 % Copyright (c) 2007-2010      Jarno Vanhatalo
 % Copyright (c) 2010           Heikki Peura
 
@@ -65,12 +65,27 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
         eprior0=[];
         nutilde0 = zeros(size(y));
         tautilde0 = zeros(size(y));
-        myy0 = zeros(size(y));
         L0 = [];
         myy=zeros(size(y));
         n0 = size(x,1);
         La20 = [];
         b0 = 0;
+        if ~isfield(gp,'mean')
+            myy0 = zeros(size(y));
+        else
+            if gp.mean.p.vague ==0
+                for i=1:length(gp.mean.meanFuncs)
+                    Hapu{i}=feval(gp.mean.meanFuncs{i},x);
+                end
+                H = cat(1,Hapu{1:end});
+                b_m=gp.mean.p.b';
+                Bvec = gp.mean.p.B;
+                B_m = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));
+                myy0 = H'*b_m;
+            else
+                error('EP is not working with vague prior yet')
+            end
+        end
         
         ep_algorithm(gp_pak(gp), gp, x, y, z);
 
@@ -95,6 +110,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
             L = L0;
             La2 = La20;
             b = b0;
+            
         else
             % Conduct evaluation for the energy and the site parameters
             gp=gp_unpak(gp, w);
@@ -108,8 +124,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
             nutilde = zeros(size(y));
             tautilde = zeros(size(y));
             %tautilde = gp.likelih.sigma2^-1 *ones(size(y));
-            myy = zeros(size(y));
             logZep_tmp=0; logZep=Inf;
+            if ~isfield(gp,'mean')
+                myy = zeros(size(y));
+            else
+                myy = H'*b_m;
+            end
 
             M0 = [];
             
@@ -120,12 +140,16 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
                 % FULL
                 % ============================================================
               case 'FULL'   % A full GP
-                [K,C] = gp_trcov(gp, x);
+                 [K,C] = gp_trcov(gp, x);
 
                 % The EP algorithm for full support covariance function
                 %------------------------------------------------------
                 if ~issparse(C)
-                    Sigm = C;
+                    if ~isfield(gp,'mean')
+                        Sigm = C;
+                    else
+                        Sigm = C + H'*B_m*H;
+                    end
                     Ls = chol(Sigm);
                     Stildesqroot=zeros(n);
                     
@@ -142,7 +166,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
                     
                     % The EP -algorithm
                     while iter<=maxiter && abs(logZep_tmp-logZep)>tol
-                        
                         logZep_tmp=logZep;
                         muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
                         
@@ -186,7 +209,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
                             % Algorithm as in Rasmussen and Williams 2006
                             % approximate cavity parameters
                             tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                            vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                            vee_i = Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
                             
                             if tau_i < 0
                                 tautilde(find(tautilde<0)) = 0;
@@ -217,6 +240,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
                             
                             apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
                             Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
+
                             
                             % The below is how Rasmussen and Williams
                             % (2006) do the update. The above version is
@@ -225,7 +249,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
                             %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
                             %Sigm = Sigm - apu;
                             %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
-                            myy=Sigm*nutilde;
+                            
+                            if ~isfield(gp,'mean')
+                                myy=Sigm*nutilde;
+                            else
+                                myy=Sigm*(C\(H'*b_m)+nutilde);
+                            end
                             
                             muvec_i(i1,1)=myy_i;
                             sigm2vec_i(i1,1)=sigm2_i;
@@ -237,44 +266,96 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
                             Stilde=tautilde;
                             Stildesqroot=diag(sqrt(tautilde));
                             
-                            % NOTICE! upper triangle matrix! cf. to                    
-                            % line 13 in the algorithm 3.5, p. 58.
+                            if ~isfield(gp,'mean')  % zero mean function used
                             
-                            B=eye(n)+Stildesqroot*C*Stildesqroot;
-                            L=chol(B,'lower');
+                                % NOTICE! upper triangle matrix! cf. to                    
+                                % line 13 in the algorithm 3.5, p. 58.
+
+                                B=eye(n)+Stildesqroot*C*Stildesqroot;
+                                L=chol(B,'lower');
+
+                                V=(L\Stildesqroot)*C;
+                                Sigm=C-V'*V; myy=Sigm*nutilde;
+                                Ls = chol(Sigm);
+
+                                % Compute the marginal likelihood
+                                % Direct formula (3.65):
+                                % Sigmtilde=diag(1./tautilde);
+                                % mutilde=inv(Stilde)*nutilde;
+                                %
+                                % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
+                                %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
+                                %         0.5*sum(log(sigm2vec_i+1./tautilde))+
+                                %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+
+                                % 4. term & 1. term
+                                term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+
+                                % 5. term (1/2 element) & 2. term
+                                T=1./sigm2vec_i;
+                                Cnutilde = C*nutilde;
+                                L2 = V*nutilde;
+                                term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                                term52 = term52.*0.5;
+                               
+                                % 5. term (2/2 element)
+                                term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+
+                                % 3. term
+                                term3 = sum(log(M0));                         
+
+                                logZep = -(term41+term52+term5+term3);
+                                iter=iter+1;
                             
-                            V=(L\Stildesqroot)*C;
-                            Sigm=C-V'*V; myy=Sigm*nutilde;
-                            Ls = chol(Sigm);
+                            else                % mean function used
+                                % help variables
+                                hBh = H'*B_m*H;
+                                C_t = C + hBh;
+                                CHb  = C\H'*b_m;
+                                S   = Stildesqroot.^2; 
+                                B = eye(n)+Stildesqroot*C*Stildesqroot;
+                                B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
+                                L=chol(B,'lower');                      % L to return, without the hBh term
+                                L_m=chol(B_h,'lower');                  % L for the calculation with mean term
+
+                                % Recompute the approximate posterior
+                                % parameters
+                                V=(L_m\Stildesqroot)*C_t;
+                                Sigm=C_t-V'*V; myy=Sigm*(CHb+nutilde);
+                                
+                                
+                                Ls = chol(Sigm);
+                                T=1./sigm2vec_i;
+                                Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
+                                L2 = V*(S*H'*b_m-nutilde);
+                                
+                                if gp.mean.p.vague==0
+                                    zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                                    Ks  = eye(size(zz)) - zz;               % inv(K + S^-1)*S^-1
+                                    
+                                    % 5. term (1/2 element)   
+                                    term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);                           
+                                    % 2. term 
+                                    term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);                
+                                    % 4. term
+                                    term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));           
+                                    % 1. term
+                                    term1    = -1.*sum(log(diag(L_m)));                       
+                                    % 3. term
+                                    term3    = sum(log(M0));                                   
+                                    % 5. term (2/2 element)
+                                    term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+
+                                else
+                                    error('NOT DONE');
+                                end
+
+                                logZep = -(term4+term1+term5_1+term5+term2+term3);
+                                iter=iter+1;
+                            end
                             
-                            % Compute the marginal likelihood
-                            % Direct formula (3.65):
-                            % Sigmtilde=diag(1./tautilde);
-                            % mutilde=inv(Stilde)*nutilde;
-                            %
-                            % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
-                            %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
-                            %         0.5*sum(log(sigm2vec_i+1./tautilde))+
-                            %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+                            %==============================
                             
-                            % 4. term & 1. term
-                            term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                            
-                            % 5. term (1/2 element) & 2. term
-                            T=1./sigm2vec_i;
-                            Cnutilde = C*nutilde;
-                            L2 = V*nutilde;
-                            term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                            term52 = term52.*0.5;
-                            
-                            % 5. term (2/2 element)
-                            term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                            
-                            % 3. term
-                            term3 = sum(log(M0));
-                            
-                            logZep = -(term41+term52+term5+term3);
-                            iter=iter+1;
                         else                         % We might end up here if the likelihood is not log concace
                                                      % For example Student-t likelihood. 
                                                      % NOTE! This does not work reliably yet

@@ -97,7 +97,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         % FULL
         % ============================================================
       case 'FULL'        % Predictions with FULL GP model
-        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);  
         
         [K, C]=gp_trcov(gp,x);
         kstarstar = gp_trvar(gp, xt, predcf);
@@ -109,14 +109,27 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                                     % for example, Poisson and probit
             sqrttautilde = sqrt(tautilde);
             Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
-                            
-            if issparse(L)          % If compact support covariance functions are used 
-                                    % the covariance matrix will be sparse
-                z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+            
+            if ~isfield(gp,'mean')                
+                if issparse(L)          % If compact support covariance functions are used 
+                                        % the covariance matrix will be sparse
+                    z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+                else
+                    z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+                end
+
+                Ef=K_nf*(nutilde-z);    % The mean, zero mean GP            
             else
-                z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+                z = Stildesqroot*(L'\(L\(Stildesqroot*(C))));
+                
+                Ef_zm=K_nf*(nutilde-z*nutilde);              % The mean, zero mean GP    
+                Ks = eye(size(z)) - z;                       % inv(K + S^-1)*S^-1                    
+                Ksy = Ks*nutilde;
+                [RB RAR] = mean_predf(gp,x,xt,K_nf',Ks,Ksy,'EP',Stildesqroot.^2);
+                
+                Ef = Ef_zm + RB;        % The mean
             end
-            Ef=K_nf*(nutilde-z);    % The mean
+            
 
             % Compute variance
             if nargout > 1
@@ -126,6 +139,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                 else
                     V = (L\Stildesqroot)*K_nf';
                     Varf = kstarstar - sum(V.^2)';
+                end
+                if isfield(gp,'mean')
+                     Varf = Varf + RAR;
                 end
             end
         else                         % We might end up here if the likelihood is not log concace

@@ -117,13 +117,30 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                 
                 
-                for i2 = 1:length(DKff)
-                    i1 = i1+1;                
-                    Bdl = b'*(DKff{i2}*b);
-                    Cdl = sum(sum(invC.*DKff{i2})); % help arguments for lengthScale
-                    gdata(i1)=0.5.*(Cdl - Bdl);
-                    gprior(i1) = gprior_cf(i2);
+                if ~isfield(gp,'mean')
+                    for i2 = 1:length(DKff)
+                        i1 = i1+1;                
+                        Bdl = b'*(DKff{i2}*b);              
+                        Cdl = sum(sum(invC.*DKff{i2})); % help arguments for lengthScale
+                        gdata(i1)=0.5.*(Cdl - Bdl);
+                        gprior(i1) = gprior_cf(i2);
+                    end
+                else
+                    i1=0;
+                    invKs=eye(size(C))-Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                    if gp.mean.p.vague==0
+                        [dMNM trA]=mean_gf(gp,x,C,invKs,DKff,Stildesqroot,nutilde,'EP');
+                        for i2 = 1:length(DKff)
+                            i1=i1+1;
+                            trK=sum(sum(invC.*DKff{i2}));
+                            gdata(i2)=0.5*(-1*dMNM{i2} + trK + trA{i2});
+                            gprior(i1) = gprior_cf(i2);
+                        end
+                    else
+                        error('Not Done yet, EP with vague prior')
+                    end
                 end
+                
                 
                 % Set the gradients of hyper-hyperparameter
                 if length(gprior_cf) > length(DKff)

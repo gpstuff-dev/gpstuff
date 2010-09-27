@@ -65,13 +65,15 @@ switch gp.type
             edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
         end
     else
+        Hapu = cell(1,length(gp.mean.meanFuncs));
         for i=1:length(gp.mean.meanFuncs)
             Hapu{i}=feval(gp.mean.meanFuncs{i},x);
         end
         % Gather mean functions' values in one matrix
         H = cat(1,Hapu{1:end});
-        b = gp.mean.p.b;            
-        B = gp.mean.p.B;                    
+        b = gp.mean.p.b'; 
+        Bvec = gp.mean.p.B;  
+        B = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));                   
         if issparse(C)  
            L = ldlchol(C);
            logK = 0.5*sum(log(diag(L)));
@@ -81,15 +83,15 @@ switch gp.type
         end
         KH = L'\(L\H');
         
-        % is prior for mean function weights vague
-        if gp.mean.p.vague==0
+        % is prior for mean function weights vague?
+        if gp.mean.p.vague==0       % non-vague prior
             A = B\eye(size(B)) + H*KH;
             M = H'*b-y;
             N = C + H'*B*H;
             MNM = M'*(N\M);
             
             edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
-        else
+        else                        % vague prior
             if issparse(C)
                 yKy=y'*ldlsolve(L,y);
             else

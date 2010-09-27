@@ -71,8 +71,9 @@ function gp = gp_init(do, varargin)
 %                     Default (if not provided) b=0,B=0 so 
 %                     that the prior is vague and b and B 
 %                     values are not needed in the inference. 
-%                     Otherwise b is a column vector(n,1) and 
-%                     B matrix (n,n) where n matches with input dimension 
+%                     Otherwise b is a row vector(1,n) and 
+%                     B matrix (n,n), 
+%                     where n matches with input dimension 
 %                     and the amount of mean functions used
 %                     for ex. dim(x)=2, meanFuncs=squared+linear->n=4
 %
@@ -245,7 +246,7 @@ function gp = gp_init(do, varargin)
                     gp.mean.p.vague=1;
                   case 'mean_p'
                     gp.mean.p.b=varargin{i+1}{1};
-                    gp.mean.p.B=varargin{i+1}{2};
+                    gp.mean.p.B=varargin{i+1}{2}(:)';
                     gp.mean.p.vague=0;
                   case 'grad_obs'
                     gp.grad_obs=1;

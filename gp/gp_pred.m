@@ -110,39 +110,14 @@ switch gp.type
             a = L'\(L\y);
             Ef = K'*a;
         end
-    else
-        if issparse(C)
-            LD = ldlchol(C);
-            Kyy = ldlsolve(LD,y);
-        else
-            L = chol(C)';
-            Kyy = L'\(L\y);
-        end
-        for i=1:length(gp.mean.meanFuncs)
-            Hapu{i}=feval(gp.mean.meanFuncs{i},x);
-            Hapu2{i}=feval(gp.mean.meanFuncs{i},xt);
-        end
-        H = cat(1,Hapu{1:end});
-        Hs= cat(1,Hapu2{1:end});
-        b = gp.mean.p.b;            
-        B = gp.mean.p.B;
-        KyK = L'\(L\K);
-        KyH = L'\(L\H');
-        R = Hs - H*KyK;
+    else                            % non-zero mean
+        L = chol(C)';
+        Kyy = L'\(L\y);                 
         
-        if gp.mean.p.vague==0         % is prior vague
-            B1 = B\eye(size(B)) + H*KyH;
-            B2 = H*Kyy + B\b;
-            Beta = B1\B2;
-
-            Ef = K'*Kyy + R'*Beta;
-        else
-            B1 = H*KyH;
-            B2 = H*Kyy;
-            Beta = B1\B2;
-
-            Ef = K'*Kyy + R'*Beta;
-        end
+        [RB RAR] = mean_predf(gp,x,xt,K,L,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
+        
+        Ef_zm = K'*Kyy;                       % mean with zero mean -prior
+        Ef = Ef_zm + RB;
     end
 
     if nargout > 1
@@ -162,16 +137,13 @@ switch gp.type
         else
             V = gp_trvar(gp,xt,predcf);
             if issparse(C)
-                Varfapu = V - diag(K'*ldlsolve(LD,K)); 
+                Varf_zm = V - diag(K'*ldlsolve(LD,K)); 
             else
                 v = L\K;
-                Varfapu= V - diag(v'*v);
+                Varf_zm= V - diag(v'*v);
             end
-            B1R=B1\R;
-            RB1Rapu=R'.*B1R';
-            RB1R=sum(RB1Rapu,2);  % equals diag(R'*(HKH)*R)
            
-            Varf = Varfapu + RB1R; 
+            Varf = Varf_zm + RAR; 
         end
     end
     if nargout > 2
