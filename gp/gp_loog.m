@@ -1,19 +1,18 @@
-function [gloo, gdata, gprior] = gp_loog(w, gp, x, y, varargin)
-% GP_LOOG Evaluate the gradient of the negative log leave-one-out 
-%         predictive density plus optional prior term, assuming 
-%         Gaussian observation model
+function gloo = gp_loog(w, gp, x, y, varargin)
+% GP_LOOG Evaluate the gradient of the mean negative log 
+%         leave-one-out predictive density, assuming Gaussian 
+%         observation model
 %
 %   Description
 %     LOOG = GP_LOOG(W, GP, X, Y, PARAM) takes a hyper-parameter vector
 %     W, Gaussian process structure GP, a matrix X of input vectors and
-%     a matrix Y of targets, and evaluates the gradient of the negative 
-%     log leave-one-out predictive density plus prior term (see GP_LOOE).
+%     a matrix Y of targets, and evaluates the gradient of the mean 
+%     negative log leave-one-out predictive density (see GP_LOOE).
 %
 %   References:
 %     S. Sundararajan and S. S. Keerthi (2001). Predictive
 %     Approaches for Choosing Hyperparameters in Gaussian Processes. 
 %     Neural Computation 13:1103-1118.
-%	Description
 %
 %	See also
 %       GP_LOOE, GP_PAK, GP_UNPAK, GPCF_*
@@ -36,11 +35,12 @@ gp=gp_unpak(gp, w);       % unpak the parameters
 ncf = length(gp.cf);
 n=size(x,1);
 
+if isfield(gp,'mean') & ~isempty(gp.mean.meanFuncs)
+  error('GP_LOOE: Mean functions not yet supported');
+end
+
 g = [];
-gdata = [];
-gprior_cf = [];
-gprior_ncf = [];
-gprior = [];
+gloo = [];
 
 % ============================================================
 % FULL
@@ -70,14 +70,14 @@ switch gp.type
         gpcf = gp.cf{i};
         gpcf.GPtype = gp.type;
         [DKff,gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-        gprior=[gprior gprior_cf];
+        %gprior=[gprior gprior_cf];
         
         % Evaluate the gradient with respect to covariance function parameters
         for i2 = 1:length(DKff)
             i1 = i1+1;  
             Z = invC*DKff{i2};
             Zb = Z*b;            
-            gdata(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
+            gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
         end
         
     end
@@ -89,13 +89,13 @@ switch gp.type
             noise = gp.noise{i};
             noise.type = gp.type;
             [DCff,gprior_ncf] = feval(noise.fh_ghyper, noise, x);
-            gprior=[gprior gprior_ncf];
+            %gprior=[gprior gprior_ncf];
             
             for i2 = 1:length(DCff)
                 i1 = i1+1;
                 Z = invC*eye(n,n).*DCff{i2};
                 Zb = Z*b;            
-                gdata(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
+                gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
             end
         end
     end
@@ -121,7 +121,5 @@ switch gp.type
   case 'SSGP'
 
 end
-
-gloo=gdata+gprior;
 
 end
