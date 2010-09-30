@@ -3,7 +3,7 @@ function y = poiss_lpdf(x,l)
 %
 %   Description
 %   Y = POISS_LPDF(X,L) returns the log of Poisson probability density 
-%   function with parameter L at the values in X.
+%   function with location parameter L at the values in X.
 %
 %   The size of Y is the common size of X and L. A scalar input   
 %   functions as a constant matrix of the same size as the other input.    
@@ -18,10 +18,11 @@ function y = poiss_lpdf(x,l)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-y = zeros(size(x));
+y = repmat(-Inf,size(x));
 y(l < 0) = NaN;
+y(x==0 & l==0) = 0;
 
-k = (x >= 0 & x == round(x) & l >= 0);
+k = (x >= 0 & x == round(x) & l > 0);
 if (any(k))
-  y(k) = -l(k) +x(k).*log(l(k) + realmin.*(l(k)==0)) -gammaln(x(k)+1);
+  y(k) = -l(k) +x(k).*log(l(k)) -gammaln(x(k)+1);
 end
