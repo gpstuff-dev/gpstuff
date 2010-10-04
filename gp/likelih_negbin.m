@@ -37,6 +37,7 @@ function likelih = likelih_negbin(do, varargin)
 %                                    of the log likelihood
 %         likelih.fh_tiltedMoments = function handle to evaluate posterior
 %                                    moments for EP
+
 %         likelih.fh_siteDeriv     = function handle to help gradient evaluations
 %                                    with respect to likelihood parameters in EP
 %         likelih.fh_predy         = function handle to evaluate predictive 
@@ -44,8 +45,8 @@ function likelih = likelih_negbin(do, varargin)
 %         likelih.fh_recappend     = function handle to append the record
 %
 %	LIKELIH = LIKELIH_NEGBIN('SET', LIKELIH, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%       Set the values of fields FIELD1... to the values VALUE1... in LIKELIH. The fields that 
-%       can be modified are:
+%       Set the values of fields FIELD1... to the values VALUE1... 
+%       in LIKELIH. The fields that can be modified are:
 %
 %             'disper'             : set the dispersion parameter
 %             'disper_prior'       : set the prior structure for the dispersion parameter
@@ -61,6 +62,7 @@ function likelih = likelih_negbin(do, varargin)
 %
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -363,7 +365,7 @@ function likelih = likelih_negbin(do, varargin)
     end
     
     function [m_0, m_1, sigm2hati1] = likelih_negbin_tiltedMoments(likelih, y, i1, sigm2_i, myy_i, z)
-    %LIKELIH_NEGBIN_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+    %LIKELIH_NEGBIN_TILTEDMOMENTS Returns the marginal moments for EP algorithm
     %
     %   Description
     %   [M_0, M_1, M2] = LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) 
@@ -377,98 +379,38 @@ function likelih = likelih_negbin(do, varargin)
     %   GPEP_E
        
         if isempty(z)
-            error(['likelih_negbin -> likelih_negbin_tiltedMoments: missing z! '... 
-                   'Negbin likelihood needs the expected number of             '...
-                   'occurrences as an extra input z. See, for                  '...
-                   'example, likelih_negbin and gpla_e.                        ']);
+            error(['likelih_negbin -> likelih_negbin_tiltedMoments: missing z!'... 
+                   'Negbin likelihood needs the expected number of            '...
+                   'occurrences as an extra input z. See, for                 '...
+                   'example, likelih_negbin and gpep_e.                       ']);
         end
-
         
         yy = y(i1);
-        % Create function handle for the function to be integrated (likelihood * cavity). 
-
-        zm = @zeroth_moment;
-        gamlny = gammaln(y(i1)+1);
         avgE = z(i1);
         r = likelih.disper;
-
-        % Set the limits for integration and integrate with quad
-        % -----------------------------------------------------
-        if yy > 0
-            m = log(r./(yy+r)./avgE);
-            s2 = r.*(yy+r)./yy;
-            mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
-            sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
-        else
-            mean_app = myy_i;
-            sigm_app = sqrt(sigm2_i);                    
-        end
+        assert(sigm2_i>0)
         
-        lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        testiter = 1;
-        if test1 == 0 
-            lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-            test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-            if test1 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        elseif test2 == 0
-            lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-            test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-            if test2 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        end  
+        % get a function handle of an unnormalized tilted distribution 
+        % (likelih * cavity = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
+        
+        % Integrate with quadrature
         RTOL = 1.e-6;
         ATOL = 1.e-10;
-                        
-        % Integrate with quadrature
-        [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
-        
+        [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
         sigm2hati1 = m_2 - m_1.^2;
                 
-        % If the second central moment is less than cavity variance integrate more
-        % precisely. Theoretically should be sigm2hati1 < sigm2_i.
+        % If the second central moment is less than cavity variance
+        % try integrating more precisely, but for non-log-concave
+        % likelihood it can happen anyway
         if sigm2hati1 >= sigm2_i
-            ATOL = ATOL.^2;
-            RTOL = RTOL.^2;
-            [m_0, m_1, m_2] = moments(zm, lambdaconf(1), lambdaconf(2), RTOL, ATOL);
-            sigm2hati1 = m_2 - m_1.^2;
-            if sigm2hati1 >= sigm2_i
-                error('likelih_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
-            end
+          ATOL = ATOL.^2;
+          RTOL = RTOL.^2;
+          [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+          sigm2hati1 = m_2 - m_1.^2;
         end
         
-        function integrand = zeroth_moment(f)
-            mu = avgE.*exp(f);
-            integrand = exp(-gammaln(r)-gammaln(yy+1)+yy.*(log(mu)-log(r+mu))+gammaln(r+yy)+r.*(log(r)-log(r+mu))); %
-            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-        end
-
     end
     
     function [g_i] = likelih_negbin_siteDeriv(likelih, y, i1, sigm2_i, myy_i, z)
@@ -497,87 +439,22 @@ function likelih = likelih_negbin(do, varargin)
                    'example, likelih_negbin and gpla_e.                   ']);
         end
 
-        
-        zm = @zeroth_moment;
-        zd = @deriv;
-        
-        tol = 1e-8;
         yy = y(i1);
-        gamlny = gammaln(y(i1)+1);
         avgE = z(i1);
         r = likelih.disper;
         
-        % Set the limits for integration and integrate with quad
-        % -----------------------------------------------------
-        if yy > 0
-            m = log(r./(yy+r)./avgE);
-            s2 = r.*(yy+r)./yy;
-            mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
-            sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
-        else
-            mean_app = myy_i;
-            sigm_app = sqrt(sigm2_i);                    
-        end
-        lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
+        % get a function handle of an unnormalized tilted distribution 
+        % (likelih * cavity = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
+        % additionally get function handle for the derivative
+        td = @deriv;
         
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        testiter = 1;
-        if test1 == 0 
-            lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-            test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-            if test1 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        elseif test2 == 0
-            lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-            test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-            if test2 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        end
-        
-        % Integrate with quad
-        [m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2));
-        [g_i, fhncnt] = quadgk(@(f) zd(f).*zm(f)./m_0, lambdaconf(1), lambdaconf(2));
+        % Integrate with quadgk
+        [m_0, fhncnt] = quadgk(tf, minf, maxf);
+        [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
         g_i = g_i.*r;
 
-        % ------------------------------------------------
-        % Plot the integrand to check that integration limits are ok
-% $$$         clf;ff = [lambdaconf(1):0.01:lambdaconf(2)];
-% $$$         plot([lambdaconf(1) lambdaconf(2)], [0 0], 'r');hold on;plot(ff, feval(zd, ff))
-% $$$         drawnow;S = sprintf('iter %d, y=%d, avgE=%.1f, sigm_a=%.2f, sigm2_i=%.2f', i1, yy, avgE, sigm_app, sigm2_i);title(S);
-% $$$         pause
-        % ------------------------------------------------
-
-        function integrand = zeroth_moment(f); %
-            mu = avgE.*exp(f);
-            integrand = exp(-gammaln(r)-gammaln(yy+1)+yy.*(log(mu)-log(r+mu))+gammaln(r+yy)+r.*(log(r)-log(r+mu))); %
-            integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
-        end        
-        
         function g = deriv(f)
             mu = avgE.*exp(f);
             g = 0;
@@ -604,14 +481,13 @@ function likelih = likelih_negbin(do, varargin)
     %   This requires also the incedence counts YT, expected counts ZT.
     %
     % See also:
-    % la_pred, ep_pred, mc_pred        
-        if isempty(zt)
-            error(['likelih_negbin -> likelih_negbin_predy: missing zt!'... 
-                   'Negbin likelihood needs the expected number of    '...
-                   'occurrences as an extra input zt. See, for         '...
-                   'example, likelih_negbin and gpla_e.               ']);
-        end
-
+    % LA_PRED, EP_PRED, MC_PRED        
+       if isempty(zt)
+           error(['likelih_negbin -> likelih_negbin_predy: missing zt!'... 
+                  'Negbin likelihood needs the expected number of    '...
+                  'occurrences as an extra input zt. See, for         '...
+                  'example, likelih_negbin and gpla_e.               ']);
+       end
 
        avgE = zt;
        r = likelih.disper;
@@ -623,52 +499,142 @@ function likelih = likelih_negbin(do, varargin)
         
        % Evaluate Ey and Vary 
        for i1=1:length(Ef)
-%            %%%% With MC 
-%            % First sample f
-%            f_samp = normrnd(Ef(i1),sqrt(Varf(i1)),nsamp,1);
-%            la_samp = avgE(i1).*exp(f_samp);
-%             
-%            % Conditional mean and variance of yt (see Gelman et al. p. 23-24)
-%            Ey2(i1) = mean(la_samp);
-%            Vary2(i1) = mean(la_samp + la_samp.^2/r) + var(la_samp);
-
            %%% With quadrature
-           ci = sqrt(Varf(i1));
+           myy_i = Ef(i1);
+           sigm_i = sqrt(Varf(i1));
+           fmin=myy_i-6*sigm_i;
+           fmax=myy_i+6*sigm_i;
 
-           F = @(x) avgE(i1).*exp(x).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-           Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+           Ey(i1) = quadgk(F,fmin,fmax);
            
-           F2 = @(x) (avgE(i1).*exp(x)+((avgE(i1).*exp(x)).^2/r)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-           EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
+           EVary(i1) = quadgk(F2,fmin,fmax);
            
-           F3 = @(x) (avgE(i1).*exp(x)).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-           VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+           F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+           VarEy(i1) = quadgk(F3,fmin,fmax) - Ey(i1).^2;
        end
        Vary = EVary + VarEy;
 
-       % Evaluate predictive density of the given observations
+       % Evaluate the posterior predictive densities of the given observations
        if nargout > 2
            for i1=1:length(Ef)
-               myy_i = Ef(i1);
-               sigm2_i = Varf(i1);
-               
-               if yt(i1) > 0
-                   m = log(r./(yt(i1)+r)./avgE(i1));
-                   s2 = r.*(yt(i1)+r)./yt(i1);
-                   mean_app = (myy_i/sigm2_i + m/s2)/(1/sigm2_i + 1/s2);
-                   sigm_app = sqrt((1/sigm2_i + 1/s2)^-1);
-               else
-                   mean_app = myy_i;
-                   sigm_app = sqrt(sigm2_i);
-               end
-               
-               % Predictive density of the given observations
-               pd = @(f) nbinpdf(yt(i1),r,r./(avgE(i1).*exp(f)+r)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
-               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
+               % get a function handle of the model times posterior
+               % (model * posterior = Negative-binomial * Gaussian)
+               % and useful integration limits
+               [pdf,minf,maxf]=likelih_negbin_init_tilted(...
+                 yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
+               % integrate over the f to get posterior predictive distribution
+               Py(i1) = quadgk(pdf, minf, maxf);
            end
        end
     end
 
+    function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
+    %INIT_NEGBIN_NORM
+    %
+    %   Description
+    %    Return function handle to a function evaluating
+    %    Negative-Binomial x Gaussian which is used for evaluating  
+    %    (likelihood * cavity) or (model * posterior) 
+    %    Return also useful limits for integration.
+    %    This is private function for likelih_negbin.
+    %  
+    %   See also
+    %   LIKELIH_NEGBIN_TILTEDMOMENTS, LIKELIH_NEGBIN_SITEDERIV
+    
+      % avoid repetitive evaluation of constant part
+      lzmconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
+          - log(sigm2_i)/2 - log(2*pi)/2;
+      % Create function handle for the function to be integrated
+      df = @negbin_norm;
+      % use log to avoid underflow, and derivates for faster search
+      ld = @log_negbin_norm;
+      ldg = @log_negbin_norm_g;
+      ldg2 = @log_negbin_norm_g2;
+
+      % Set the limits for integration
+      niter=8;      % number of Newton iterations
+      mindelta=1e-5;% tolerance in stopping Netwon iterations
+      lddiff=25;    % min difference in log-density between mode and end-points
+      % use mode of the Gaussian (cavity or posterior) as a starting guess
+      modef = myy_i;
+      % find the mode of the integrand using Newton iterations
+      for ni=1:niter
+        g=ldg(modef);
+        h=ldg2(modef);
+        delta=-g/h;
+        modef=modef+delta;
+        if abs(delta)<mindelta
+          break
+        end
+      end
+      % integrand limits based on Gaussian approximation at mode
+      modes=sqrt(-1/h);
+      minf=modef-8*modes;
+      maxf=modef+8*modes;
+      modeld=ld(modef);
+      iter=0;
+      % check that density at end points is low enough
+      minld=ld(minf);
+      while minld>(modeld-lddiff)
+        minf=minf-modes;
+        minld=ld(minf);
+        iter=iter+1;
+        if iter>100
+          error(['likelih_negbin -> init_negbin_norm: ' ...
+                 'integration interval minimun not found ' ...
+                 'even after looking hard!'])
+        end
+      end
+      maxld=ld(maxf);
+      while maxld>(modeld-lddiff)
+        maxf=maxf+modes;
+        maxld=ld(maxf);
+        iter=iter+1;
+        if iter>100
+          error(['likelih_negbin -> init_negbin_norm: ' ...
+                 'integration interval maximum not found ' ...
+                 'even after looking hard!'])
+        end
+        
+      end
+    
+      function integrand = negbin_norm(f)
+      % Negative-binomial * Gaussian
+        mu = avgE.*exp(f);
+        integrand = exp(lzmconst ...
+                        +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
+                        -0.5*(f-myy_i).^2./sigm2_i);
+      end
+      
+      function log_int = log_negbin_norm(f)
+      % log(Negative-binomial * Gaussian)
+      % log_negbin_norm is used to avoid underflow when searching
+      % integration interval
+        mu = avgE.*exp(f);
+        log_int = lzmconst...
+                  +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
+                  -0.5*(f-myy_i).^2./sigm2_i;
+      end
+      
+      function g = log_negbin_norm_g(f)
+      % d/df log(Negative-binomial * Gaussian)
+      % derivative of log_negbin_norm
+        mu = avgE.*exp(f);
+        g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
+            + (myy_i - f)./sigm2_i;
+      end
+      
+      function g2 = log_negbin_norm_g2(f)
+      % d^2/df^2 log(Negative-binomial * Gaussian)
+      % second derivate of log_negbin_norm
+        mu = avgE.*exp(f);
+        g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
+             -1/sigm2_i;
+      end
+      
+    end
 
     function reclikelih = likelih_negbin_recappend(reclikelih, ri, likelih)
     % RECAPPEND  Append the parameters to the record
