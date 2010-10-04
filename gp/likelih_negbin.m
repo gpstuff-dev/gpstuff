@@ -402,13 +402,16 @@ function likelih = likelih_negbin(do, varargin)
         sigm2hati1 = m_2 - m_1.^2;
                 
         % If the second central moment is less than cavity variance
-        % try integrating more precisely, but for non-log-concave
-        % likelihood it can happen anyway
+        % integrate more precisely. Theoretically for log-concave
+        % density should be sigm2hati1 < sigm2_i.
         if sigm2hati1 >= sigm2_i
           ATOL = ATOL.^2;
           RTOL = RTOL.^2;
           [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
           sigm2hati1 = m_2 - m_1.^2;
+          if sigm2hati1 >= sigm2_i
+            error('likelih_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
+          end
         end
         
     end
@@ -554,12 +557,23 @@ function likelih = likelih_negbin(do, varargin)
       ldg2 = @log_negbin_norm_g2;
 
       % Set the limits for integration
-      niter=8;      % number of Newton iterations
-      mindelta=1e-5;% tolerance in stopping Netwon iterations
-      lddiff=25;    % min difference in log-density between mode and end-points
-      % use mode of the Gaussian (cavity or posterior) as a starting guess
-      modef = myy_i;
+      % Negative-binomial is log-concave so the negbin_norm
+      % function is unimodal, which makes things easier
+      if yy==0
+        % with yy==0, the mode of the likelihood is not defined
+        % use the mode of the Gaussian (cavity or posterior) as a first guess
+        modef = myy_i;
+      else
+        % use precision weighted mean of the Laplace approximated
+        % Negative-Binomial and Gaussian
+        mu=log(yy/avgE);
+        s2=(yy+r)./(yy.*r);
+        modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
+      end
       % find the mode of the integrand using Newton iterations
+      % few iterations is enough, since the first guess in the right direction
+      niter=4;       % number of Newton iterations
+      mindelta=1e-6; % tolerance in stopping Netwon iterations
       for ni=1:niter
         g=ldg(modef);
         h=ldg2(modef);
@@ -576,6 +590,7 @@ function likelih = likelih_negbin(do, varargin)
       modeld=ld(modef);
       iter=0;
       % check that density at end points is low enough
+      lddiff=25; % min difference in log-density between mode and end-points
       minld=ld(minf);
       while minld>(modeld-lddiff)
         minf=minf-modes;
