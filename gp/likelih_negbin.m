@@ -522,7 +522,7 @@ function likelih = likelih_negbin(do, varargin)
                % get a function handle of the model times posterior
                % (model * posterior = Negative-binomial * Gaussian)
                % and useful integration limits
-               [pdf,minf,maxf]=likelih_negbin_init_tilted(...
+               [pdf,minf,maxf]=init_negbin_norm(...
                  yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
                % integrate over the f to get posterior predictive distribution
                Py(i1) = quadgk(pdf, minf, maxf);
