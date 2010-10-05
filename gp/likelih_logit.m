@@ -134,7 +134,7 @@ function likelih = likelih_logit(do, varargin)
     %   See also
     %   LIKELIH_LOGIT_G, LIKELIH_LOGIT_G3, LIKELIH_LOGIT_G2, GPLA_E
 
-        if ~isempty(find(y~=1 & y~=-1))
+        if ~isempty(find(abs(y)~=1))
             error('likelih_logit: The class labels have to be {-1,1}')
         end
         
@@ -154,7 +154,7 @@ function likelih = likelih_logit(do, varargin)
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G2, LIKELIH_LOGIT_G3, GPLA_E
         
-        if ~isempty(find(y~=1 & y~=-1))
+        if ~isempty(find(abs(y)~=1))
             error('likelih_logit: The class labels have to be {-1,1}')
         end
 
@@ -197,7 +197,7 @@ function likelih = likelih_logit(do, varargin)
     %   See also
     %   LIKELIH_LOGIT_E, LIKELIH_LOGIT_G, LIKELIH_LOGIT_G2, GPLA_E, GPLA_G
         
-        if ~isempty(find(y~=1 & y~=-1))
+        if ~isempty(find(abs(y)~=1))
             error('likelih_logit: The class labels have to be {-1,1}')
         end
 
@@ -221,72 +221,29 @@ function likelih = likelih_logit(do, varargin)
     %   See also
     %   GPEP_E
         
-        if ~isempty(find(y~=1 & y~=-1))
+        if ~isempty(find(abs(y)~=1))
             error('likelih_logit: The class labels have to be {-1,1}')
         end
-
         
         yy = y(i1);
-        % Create function handle for the function to be integrated (likelihood * cavity). 
-        zm = @(f)exp(-log(1+exp(-yy.*f)) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); 
-        
-        % Set the integration limits (in this case based only on the prior).
-        mean_app = myy_i;
-        sigm_app = sqrt(sigm2_i);
-        
-        lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        testiter = 1;
-        if test1 == 0 
-            lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-            test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-            if test1 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        elseif test2 == 0
-            lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-            test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-            if test2 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        end  
+        % get a function handle of an unnormalized tilted distribution 
+        % (likelih * cavity = Logit * Gaussian)
+        % and useful integration limits
+        [tf,minf,maxf]=init_logit_norm(yy,myy_i,sigm2_i);
         RTOL = 1.e-6;
         ATOL = 1.e-10;
         
         % Integrate with quadrature
-        [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
-        
+        [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);        
         sigm2hati1 = m_2 - m_1.^2;
         
-        % If the second central moment is less than cavity variance integrate more
-        % precisely. Theoretically should be sigm2hati1 < sigm2_i.
+        % If the second central moment is less than cavity variance
+        % integrate more precisely. Theoretically should be
+        % sigm2hati1 < sigm2_i.
         if sigm2hati1 >= sigm2_i
             ATOL = ATOL.^2;
             RTOL = RTOL.^2;
-            [m_0, m_1, m_2] = moments(zm, lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+            [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
             sigm2hati1 = m_2 - m_1.^2;
             if sigm2hati1 >= sigm2_i
                 error('likelih_logit_tilted_moments: sigm2hati1 >= sigm2_i');
@@ -294,7 +251,7 @@ function likelih = likelih_logit(do, varargin)
         end
     end
     
-    function [Ey, Vary, py] = likelih_logit_predy(likelih, Ef, Varf, y, z)
+    function [Ey, Vary, Py] = likelih_logit_predy(likelih, Ef, Varf, yt, zt)
     %LIKELIH_LOGIT_PREDY    Returns the predictive mean, variance and density of y
     %
     %   Description         
@@ -304,50 +261,157 @@ function likelih = likelih_logit(do, varargin)
     %   the posterior predictive mean EY and variance VARY of the
     %   observations related to the latent variables
     %        
-    %   [Ey, Vary, PY] = LIKELIH_LOGIT_PREDY(LIKELIH, EF, VARF YT)
+    %   [EY, VARY, PY] = LIKELIH_LOGIT_PREDY(LIKELIH, EF, VARF, YT)
     %   Returns also the predictive density of YT, that is 
     %        p(yt | y) = \int p(yt | f) p(f|y) df.
     %   This requires also the class labels YT.
     %
     %   See also 
-    %   ep_pred, la_pred, mc_pred
+    %   LA_PRED, EP_PRED, MC_PRED
         
-        if ~isempty(find(y~=1 & y~=-1))
+        if ~isempty(find(abs(yt~=1)))
             error('likelih_logit: The class labels have to be {-1,1}')
         end
 
-        
-        py1 = zeros(1,length(Ef));
+        py1 = zeros(length(Ef),1);
         for i1=1:length(Ef)
-            ci = sqrt(Varf(i1));
-            F  = @(x)1./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-            py1(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);                             
+          myy_i = Ef(i1);
+          sigm_i = sqrt(Varf(i1));
+          minf=myy_i-6*sigm_i;
+          maxf=myy_i+6*sigm_i;
+          F  = @(f)1./(1+exp(-f)).*norm_pdf(f,myy_i,sigm_i);
+          py1(i1) = quadgk(F,minf,maxf);
         end
-        Ey = 2*py1(:)-1;
-        Vary = 1-(2*py1(:)-1).^2;
+        Ey = 2*py1-1;
+        Vary = 1-(2*py1-1).^2;
         
         if nargout > 2
-            % NOTE: This is only approximation since \int logit(y|f) N(f|Ef,Varf) df
-            % has no analytic solution.
-            
-            % Quadrature integration                                    
-            py = zeros(1,length(Ef));
-            for i1 = 1:length(Ef)
-                ci = sqrt(Varf(i1));
-                F = @(x)1./(1+exp(-y(i1).*x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-                py(i1)=quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);                     
+          % Quadrature integration                                    
+          Py = zeros(length(Ef),1);
+          for i1 = 1:length(Ef)
+            % get a function handle of the likelihood times posterior
+            % (likelihood * posterior = Poisson * Gaussian)
+            % and useful integration limits
+            [pdf,minf,maxf]=init_logit_norm(...
+              yt(i1),Ef(i1),Varf(i1));
+            % integrate over the f to get posterior predictive distribution
+            Py(i1) = quadgk(pdf, minf, maxf);
             end
-            
-            % Monte Carlo alternative
-            % for i = 1:length(Ef)
-            %     samp = normrnd(Ef(i1),sqrt(Varf(i1)),10000,1);
-            %     p1(i1,1) = mean(1./(1+exp(-samp)));           
-            % end   
-            
-            py=py(:);    % transform to column vector
         end
     end
 
+    function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
+    %INIT_LOGIT_NORM
+    %
+    %   Description
+    %    Return function handle to a function evaluating
+    %    Logit * Gaussian which is used for evaluating  
+    %    (likelihood * cavity) or (likelihood * posterior) 
+    %    Return also useful limits for integration.
+    %    This is private function for likelih_logit.
+    %  
+    %   See also
+    %   LIKELIH_LOGIT_TILTEDMOMENTS, LIKELIH_LOGIT_PREDY
+    
+      % avoid repetitive evaluation of constant part
+      ldconst = -log(sigm2_i)/2 -log(2*pi)/2;
+      
+      % Create function handle for the function to be integrated
+      df = @logit_norm;
+      % use log to avoid underflow, and derivates for faster search
+      ld = @log_logit_norm;
+      ldg = @log_logit_norm_g;
+      ldg2 = @log_logit_norm_g2;
+
+      % Set the limits for integration
+      % Logit likelihood is log-concave so the logit_norm
+      % function is unimodal, which makes things easier
+      
+      % approximate guess for the location of the mode
+      if sign(myy_i)==sign(yy)
+        % the log-likelihood is flat on this side
+        modef = myy_i;
+      else
+        % log-likelihood is approximately yy*f on this side
+        modef=sign(myy_i)*max(abs(myy_i)-sigm2_i,0);
+      end
+      % find the mode of the integrand using Newton iterations
+      % few iterations is enough, since the first guess in the right direction
+      niter=2;       % number of Newton iterations
+      mindelta=1e-6; % tolerance in stopping Newton iterations
+      for ni=1:niter
+        g=ldg(modef);
+        h=ldg2(modef);
+        delta=-g/h;
+        modef=modef+delta;
+        if abs(delta)<mindelta
+          break
+        end
+      end
+      % integrand limits based on Gaussian approximation at mode
+      modes=sqrt(-1/h);
+      minf=modef-8*modes;
+      maxf=modef+8*modes;
+      modeld=ld(modef);
+      iter=0;
+      % check that density at end points is low enough
+      lddiff=25; % min difference in log-density between mode and end-points
+      minld=ld(minf);
+      while minld>(modeld-lddiff)
+        minf=minf-modes;
+        minld=ld(minf);
+        iter=iter+1;
+        if iter>100
+          error(['likelih_logit -> init_logit_norm: ' ...
+                 'integration interval minimun not found ' ...
+                 'even after looking hard!'])
+        end
+      end
+      maxld=ld(maxf);
+      while maxld>(modeld-lddiff)
+        maxf=maxf+modes;
+        maxld=ld(maxf);
+        iter=iter+1;
+        if iter>100
+          error(['likelih_logit -> init_logit_norm: ' ...
+                 'integration interval maximum not found ' ...
+                 'even after looking hard!'])
+        end
+        
+      end
+    
+      function integrand = logit_norm(f)
+      % Logit * Gaussian
+        integrand = exp(ldconst ...
+                        -log(1+exp(-yy.*f)) ...
+                        -0.5*(f-myy_i).^2./sigm2_i);
+      end
+      
+      function log_int = log_logit_norm(f)
+      % log(Logit * Gaussian)
+      % log_logit_norm is used to avoid underflow when searching
+      % integration interval
+        log_int = ldconst ...
+                  -log(1+exp(-yy.*f)) ...
+                  -0.5*(f-myy_i).^2./sigm2_i;
+      end
+      
+      function g = log_logit_norm_g(f)
+      % d/df log(Logit * Gaussian)
+      % derivative of log_logit_norm
+        g = yy./(exp(f*yy)+1)...
+            + (myy_i - f)./sigm2_i;
+      end
+      
+      function g2 = log_logit_norm_g2(f)
+      % d^2/df^2 log(Logit * Gaussian)
+      % second derivate of log_logit_norm
+        a=exp(f*yy);
+        g2 = -a*(yy./(a+1)).^2 ...
+             -1/sigm2_i;
+      end
+      
+    end
 
     function reclikelih = likelih_logit_recappend(reclikelih, ri, likelih)
     % RECAPPEND  Append the parameters to the record

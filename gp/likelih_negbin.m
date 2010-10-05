@@ -504,25 +504,25 @@ function likelih = likelih_negbin(do, varargin)
            %%% With quadrature
            myy_i = Ef(i1);
            sigm_i = sqrt(Varf(i1));
-           fmin=myy_i-6*sigm_i;
-           fmax=myy_i+6*sigm_i;
+           minf=myy_i-6*sigm_i;
+           maxf=myy_i+6*sigm_i;
 
            F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-           Ey(i1) = quadgk(F,fmin,fmax);
+           Ey(i1) = quadgk(F,minf,maxf);
            
            F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-           EVary(i1) = quadgk(F2,fmin,fmax);
+           EVary(i1) = quadgk(F2,minf,maxf);
            
            F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-           VarEy(i1) = quadgk(F3,fmin,fmax) - Ey(i1).^2;
+           VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
        end
        Vary = EVary + VarEy;
 
        % Evaluate the posterior predictive densities of the given observations
        if nargout > 2
            for i1=1:length(Ef)
-               % get a function handle of the model times posterior
-               % (model * posterior = Negative-binomial * Gaussian)
+               % get a function handle of the likelihood times posterior
+               % (likelihood * posterior = Negative-binomial * Gaussian)
                % and useful integration limits
                [pdf,minf,maxf]=init_negbin_norm(...
                  yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
@@ -538,7 +538,7 @@ function likelih = likelih_negbin(do, varargin)
     %   Description
     %    Return function handle to a function evaluating
     %    Negative-Binomial * Gaussian which is used for evaluating  
-    %    (likelihood * cavity) or (model * posterior) 
+    %    (likelihood * cavity) or (likelihood * posterior) 
     %    Return also useful limits for integration.
     %    This is private function for likelih_negbin.
     %  
@@ -557,15 +557,15 @@ function likelih = likelih_negbin(do, varargin)
       ldg2 = @log_negbin_norm_g2;
 
       % Set the limits for integration
-      % Negative-binomial is log-concave so the negbin_norm
+      % Negative-binomial likelihood is log-concave so the negbin_norm
       % function is unimodal, which makes things easier
       if yy==0
         % with yy==0, the mode of the likelihood is not defined
         % use the mode of the Gaussian (cavity or posterior) as a first guess
         modef = myy_i;
       else
-        % use precision weighted mean of the Laplace approximated
-        % Negative-Binomial and Gaussian
+        % use precision weighted mean of the Gaussian approximation
+        % of the Negative-Binomial likelihood and Gaussian
         mu=log(yy/avgE);
         s2=(yy+r)./(yy.*r);
         modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
@@ -573,7 +573,7 @@ function likelih = likelih_negbin(do, varargin)
       % find the mode of the integrand using Newton iterations
       % few iterations is enough, since the first guess in the right direction
       niter=4;       % number of Newton iterations
-      mindelta=1e-6; % tolerance in stopping Netwon iterations
+      mindelta=1e-6; % tolerance in stopping Newton iterations
       for ni=1:niter
         g=ldg(modef);
         h=ldg2(modef);
