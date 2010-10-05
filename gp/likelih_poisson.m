@@ -42,6 +42,7 @@ function likelih = likelih_poisson(do, varargin)
 %       LIKELIH_LOGIT, LIKELIH_PROBIT, LIKELIH_NEGBIN
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -259,72 +260,26 @@ function likelih = likelih_poisson(do, varargin)
         end
        
         yy = y(i1);
-        gamlny = gammaln(y(i1)+1);
         avgE = z(i1);
-        zm = @(f)exp(-avgE.*exp(f) + yy.*log(avgE.*exp(f)) - gamlny - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2); %
         
-        % Set the integration limits (in this case based only on the prior).
-        if yy > 0
-            mean_app = (myy_i/sigm2_i + log(yy/avgE)*yy)/(1/sigm2_i + yy);
-            sigm_app = sqrt((1/sigm2_i + yy)^-1);
-        else
-            mean_app = myy_i;
-            sigm_app = sqrt(sigm2_i);                    
-        end
+        % get a function handle of an unnormalized tilted distribution 
+        % (likelih * cavity = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [tf,minf,maxf]=init_poisson_norm(yy,myy_i,sigm2_i,avgE);
         
-        lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        testiter = 1;
-        if test1 == 0 
-            lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-            test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-            if test1 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        elseif test2 == 0
-            lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-            test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-            if test2 == 0
-                go=true;
-                while testiter<10 & go
-                    lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-                    lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-                    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-                    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-                    if test1==1&test2==1
-                        go=false;
-                    end
-                    testiter=testiter+1;
-                end
-            end
-            mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-        end
+        % Integrate with quadrature
         RTOL = 1.e-6;
         ATOL = 1.e-10;
-                        
-        % Integrate with quadrature
-        [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
-        
+        [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
         sigm2hati1 = m_2 - m_1.^2;
                 
-        % If the second central moment is less than cavity variance integrate more
-        % precisely. Theoretically should be sigm2hati1 < sigm2_i.
+        % If the second central moment is less than cavity variance
+        % integrate more precisely. Theoretically for log-concave
+        % likelihood should be sigm2hati1 < sigm2_i.
         if sigm2hati1 >= sigm2_i
             ATOL = ATOL.^2;
             RTOL = RTOL.^2;
-            [m_0, m_1, m_2] = quad_moments(zm, lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+            [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
             sigm2hati1 = m_2 - m_1.^2;
             if sigm2hati1 >= sigm2_i
                 error('likelih_poisson_tilted_moments: sigm2hati1 >= sigm2_i');
@@ -349,7 +304,7 @@ function likelih = likelih_poisson(do, varargin)
     %   This requires also the incedence counts YT, expected counts ZT.
     %
     %   See also 
-    %   ep_pred, la_pred, mc_pred
+    %   LA_PRED, EP_PRED, MC_PRED
 
         if isempty(zt)
             error(['likelih_poisson -> likelih_poisson_predy: missing zt!'... 
@@ -358,60 +313,161 @@ function likelih = likelih_poisson(do, varargin)
                    'example, likelih_poisson and gpla_e.                ']);
         end
         
-        
-        
         avgE = zt;
-
-        %nsamp = 10000;
-        
         Py = zeros(size(Ef));
         Ey = zeros(size(Ef));
         EVary = zeros(size(Ef));
         VarEy = zeros(size(Ef)); 
-        % Evaluate Ey and Vary (with MC)
+        
+        % Evaluate Ey and Vary
         for i1=1:length(Ef)
-%            %%% With MC
-%            % First sample f
-%            f_samp = normrnd(Ef(i1),sqrt(Varf(i1)),nsamp,1);
-%            la_samp = avgE(i1).*exp(f_samp);
-%  
-%            % Conditional mean and variance of y (see Gelman et al. p. 23-24)
-%            Ey(i1) = mean(la_samp);
-%            Vary(i1) = Ey(i1) + var(la_samp);
-
            %%% With quadrature
-           ci = sqrt(Varf(i1));
+           myy_i = Ef(i1);
+           sigm_i = sqrt(Varf(i1));
+           fmin=myy_i-6*sigm_i;
+           fmax=myy_i+6*sigm_i;
 
-           F = @(x) avgE(i1).*exp(x).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-           Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+           F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+           Ey(i1) = quadgk(F,fmin,fmax);
            
            EVary(i1) = Ey(i1);
            
-           F3 = @(x) (avgE(i1).*exp(x)).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-           VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+           F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+           VarEy(i1) = quadgk(F3,fmin,fmax) - Ey(i1).^2;
        end
        Vary = EVary + VarEy;
 
-       % Evaluate predictive density of the given observations
+       % Evaluate the posterior predictive densities of the given observations
        if nargout > 2
            for i1=1:length(Ef)
-               myy_i = Ef(i1);
-               sigm2_i = Varf(i1);
-               if yt(i1) > 0
-                   mean_app = (myy_i/sigm2_i + log(yt(i1)/avgE(i1)).*yt(i1))/(1/sigm2_i + yt(i1));
-                   sigm_app = sqrt((1/sigm2_i + avgE(i1))^-1);
-               else
-                   mean_app = myy_i;
-                   sigm_app = sqrt((1/sigm2_i + avgE(i1))^-1);
-               end
-               
-               % Predictive density of the given observations
-               pd = @(f) poisspdf(yt(i1),avgE(i1).*exp(f)).*norm_pdf(f,myy_i,sqrt(sigm2_i));
-               Py(i1) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
+               % get a function handle of the model times posterior
+               % (model * posterior = Poisson * Gaussian)
+               % and useful integration limits
+               [pdf,minf,maxf]=init_poisson_norm(...
+                 yt(i1),Ef(i1),Varf(i1),avgE(i1));
+               % integrate over the f to get posterior predictive distribution
+               Py(i1) = quadgk(pdf, minf, maxf);
            end
        end
     end
     
+    function [df,minf,maxf] = init_poisson_norm(yy,myy_i,sigm2_i,avgE)
+    %INIT_POISSON_NORM
+    %
+    %   Description
+    %    Return function handle to a function evaluating
+    %    Poisson * Gaussian which is used for evaluating  
+    %    (likelihood * cavity) or (model * posterior) 
+    %    Return also useful limits for integration.
+    %    This is private function for likelih_poisson.
+    %  
+    %   See also
+    %   LIKELIH_POISSON_TILTEDMOMENTS, LIKELIH_POISSON_PREDY
+    
+      % avoid repetitive evaluation of constant part
+      ldconst = -gammaln(yy+1) - log(sigm2_i)/2 - log(2*pi)/2;
+      
+      % Create function handle for the function to be integrated
+      df = @poisson_norm;
+      % use log to avoid underflow, and derivates for faster search
+      ld = @log_poisson_norm;
+      ldg = @log_poisson_norm_g;
+      ldg2 = @log_poisson_norm_g2;
+
+      % Set the limits for integration
+      % Negative-binomial is log-concave so the poisson_norm
+      % function is unimodal, which makes things easier
+      if yy==0
+        % with yy==0, the mode of the likelihood is not defined
+        % use the mode of the Gaussian (cavity or posterior) as a first guess
+        modef = myy_i;
+      else
+        % use precision weighted mean of the Laplace approximated
+        % Negative-Binomial and Gaussian
+        mu=log(yy/avgE);
+        s2=1./(yy+1./sigm2_i);
+        modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
+      end
+      % find the mode of the integrand using Newton iterations
+      % few iterations is enough, since the first guess in the right direction
+      niter=3;       % number of Newton iterations
+      mindelta=1e-6; % tolerance in stopping Netwon iterations
+      for ni=1:niter
+        g=ldg(modef);
+        h=ldg2(modef);
+        delta=-g/h;
+        modef=modef+delta;
+        if abs(delta)<mindelta
+          break
+        end
+      end
+      % integrand limits based on Gaussian approximation at mode
+      modes=sqrt(-1/h);
+      minf=modef-8*modes;
+      maxf=modef+8*modes;
+      modeld=ld(modef);
+      iter=0;
+      % check that density at end points is low enough
+      lddiff=25; % min difference in log-density between mode and end-points
+      minld=ld(minf);
+      while minld>(modeld-lddiff)
+        minf=minf-modes;
+        minld=ld(minf);
+        iter=iter+1;
+        if iter>100
+          error(['likelih_poisson -> init_poisson_norm: ' ...
+                 'integration interval minimun not found ' ...
+                 'even after looking hard!'])
+        end
+      end
+      maxld=ld(maxf);
+      while maxld>(modeld-lddiff)
+        maxf=maxf+modes;
+        maxld=ld(maxf);
+        iter=iter+1;
+        if iter>100
+          error(['likelih_poisson -> init_poisson_norm: ' ...
+                 'integration interval maximum not found ' ...
+                 'even after looking hard!'])
+        end
+        
+      end
+    
+      function integrand = poisson_norm(f)
+      % Poisson * Gaussian
+        mu = avgE.*exp(f);
+        integrand = exp(ldconst ...
+                        -mu+yy.*log(mu) ...
+                        -0.5*(f-myy_i).^2./sigm2_i);
+      end
+      
+      function log_int = log_poisson_norm(f)
+      % log(Poisson * Gaussian)
+      % log_poisson_norm is used to avoid underflow when searching
+      % integration interval
+        mu = avgE.*exp(f);
+        log_int = ldconst ...
+                  -mu+yy.*log(mu) ...
+                  -0.5*(f-myy_i).^2./sigm2_i;
+      end
+      
+      function g = log_poisson_norm_g(f)
+      % d/df log(Poisson * Gaussian)
+      % derivative of log_poisson_norm
+        mu = avgE.*exp(f);
+        g = -mu+yy...
+            + (myy_i - f)./sigm2_i;
+      end
+      
+      function g2 = log_poisson_norm_g2(f)
+      % d^2/df^2 log(Poisson * Gaussian)
+      % second derivate of log_poisson_norm
+        mu = avgE.*exp(f);
+        g2 = -mu...
+             -1/sigm2_i;
+      end
+      
+    end
     
     function reclikelih = likelih_poisson_recappend(reclikelih, ri, likelih)
     % RECAPPEND  Append the parameters to the record

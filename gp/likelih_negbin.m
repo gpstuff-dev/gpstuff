@@ -388,7 +388,6 @@ function likelih = likelih_negbin(do, varargin)
         yy = y(i1);
         avgE = z(i1);
         r = likelih.disper;
-        assert(sigm2_i>0)
         
         % get a function handle of an unnormalized tilted distribution 
         % (likelih * cavity = Negative-binomial * Gaussian)
@@ -403,7 +402,7 @@ function likelih = likelih_negbin(do, varargin)
                 
         % If the second central moment is less than cavity variance
         % integrate more precisely. Theoretically for log-concave
-        % density should be sigm2hati1 < sigm2_i.
+        % likelihood should be sigm2hati1 < sigm2_i.
         if sigm2hati1 >= sigm2_i
           ATOL = ATOL.^2;
           RTOL = RTOL.^2;
@@ -422,7 +421,7 @@ function likelih = likelih_negbin(do, varargin)
     %                           to the likelihood parameters for EP 
     %
     %   Description [M_0, M_1, M2] =
-    %   LIKELIH_NEGBIN_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z) takes
+    %   LIKELIH_NEGBIN_SITEDERIV(LIKELIH, Y, I, S2, MYY, Z) takes
     %   a likelihood data structure LIKELIH, incedence counts Y,
     %   expected counts Z, index I and cavity variance S2 and mean
     %   MYY. Returns E_f [d log p(y_i|f_i) /d a], where a is the
@@ -538,16 +537,17 @@ function likelih = likelih_negbin(do, varargin)
     %
     %   Description
     %    Return function handle to a function evaluating
-    %    Negative-Binomial x Gaussian which is used for evaluating  
+    %    Negative-Binomial * Gaussian which is used for evaluating  
     %    (likelihood * cavity) or (model * posterior) 
     %    Return also useful limits for integration.
     %    This is private function for likelih_negbin.
     %  
     %   See also
-    %   LIKELIH_NEGBIN_TILTEDMOMENTS, LIKELIH_NEGBIN_SITEDERIV
+    %   LIKELIH_NEGBIN_TILTEDMOMENTS, LIKELIH_NEGBIN_SITEDERIV,
+    %   LIKELIH_NEGBIN_PREDY
     
       % avoid repetitive evaluation of constant part
-      lzmconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
+      ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
           - log(sigm2_i)/2 - log(2*pi)/2;
       % Create function handle for the function to be integrated
       df = @negbin_norm;
@@ -618,7 +618,7 @@ function likelih = likelih_negbin(do, varargin)
       function integrand = negbin_norm(f)
       % Negative-binomial * Gaussian
         mu = avgE.*exp(f);
-        integrand = exp(lzmconst ...
+        integrand = exp(ldconst ...
                         +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
                         -0.5*(f-myy_i).^2./sigm2_i);
       end
@@ -628,7 +628,7 @@ function likelih = likelih_negbin(do, varargin)
       % log_negbin_norm is used to avoid underflow when searching
       % integration interval
         mu = avgE.*exp(f);
-        log_int = lzmconst...
+        log_int = ldconst...
                   +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
                   -0.5*(f-myy_i).^2./sigm2_i;
       end
