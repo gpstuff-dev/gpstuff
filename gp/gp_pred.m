@@ -71,6 +71,30 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+if isfield(gp,'latent_method')
+  % use inference specific methods
+  % not the nicest way of doing this, but quick solution
+  switch gp.latent_method
+    case 'Laplace'
+      fh_pred=@la_pred;
+    case 'EP'
+      fh_pred=@ep_pred;
+  end
+  switch nargout % ugly...
+    case 1
+      [Ef] = fh_pred(gp, x, y, xt, varargin{:});
+    case 2
+      [Ef, Varf] = fh_pred(gp, x, y, xt, varargin{:});
+    case 3
+      [Ef, Varf, Ey] = fh_pred(gp, x, y, xt, varargin{:});
+    case 4
+      [Ef, Varf, Ey, Vary] = fh_pred(gp, x, y, xt, varargin{:});
+    case 5
+      [Ef, Varf, Ey, Vary, py] = fh_pred(gp, x, y, xt, varargin{:});
+  end
+  return
+end
+
 ip=inputParser;
 ip.FunctionName = 'GP_PRED';
 ip.addRequired('gp',@isstruct);
@@ -90,7 +114,7 @@ tstind=ip.Results.tstind;
 tn = size(x,1);
 
 if nargout > 4 && isempty(yt)
-    error('GP_PRED -> To compute PYT, the YT has to be provide.')
+    error('GP_PRED -> To compute PYT, the YT has to be provided.')
 end
 
 % Evaluate this if sparse model is used

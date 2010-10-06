@@ -1,5 +1,5 @@
 function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
-%GP_G   Evaluate gradient of energy (GP_E) for Gaussian Process
+%GP_G   Evaluate the gradient of energy (GP_E) for Gaussian Process
 %
 %	Description
 %	G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
@@ -26,8 +26,28 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+if isfield(gp,'latent_method')
+  % use inference specific methods
+  % not the nicest way of doing this, but quick solution
+  switch gp.latent_method
+    case 'Laplace'
+      fh_g=@gpla_g;
+    case 'EP'
+      fh_g=@gpep_g;
+  end
+  switch nargout 
+    case 1
+      [g] = fh_g(w, gp, x, y, varargin{:});
+    case 2
+      [g, gdata] = fh_g(w, gp, x, y, varargin{:});
+    case 3
+      [g, gdata, gprior] = fh_g(w, gp, x, y, varargin{:});
+  end
+  return
+end
+
 ip=inputParser;
-ip.FunctionName = 'GP_E';
+ip.FunctionName = 'GP_G';
 ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

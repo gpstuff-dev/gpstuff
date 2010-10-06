@@ -1,6 +1,6 @@
 function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
-%GP_E	Evaluate energy function (un-normalized marginal log posterior) 
-%       in case of Gaussian observation model
+%GP_E  Evaluate the energy function (un-normalized negative marginal
+%      log posterior) in case of Gaussian observation model
 %
 %     Description
 %	E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process
@@ -33,6 +33,26 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
+
+if isfield(gp,'latent_method')
+  % use inference specific methods
+  % not the nicest way of doing this, but quick solution
+  switch gp.latent_method
+    case 'Laplace'
+      fh_e=@gpla_e;
+    case 'EP'
+      fh_e=@gpep_e;
+  end
+  switch nargout 
+    case 1
+      [e] = fh_e(w, gp, x, y, varargin{:});
+    case 2
+      [e, edata] = fh_e(w, gp, x, y, varargin{:});
+    case 3
+      [e, edata, eprior] = fh_e(w, gp, x, y, varargin{:});
+  end
+  return
+end
 
 ip=inputParser;
 ip.FunctionName = 'GP_E';

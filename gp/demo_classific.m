@@ -1,5 +1,5 @@
 function demo_classific
-%DEMO_CLAASIFIC    Classification problem demonstration for 2 classes
+%DEMO_CLASSIFIC    Classification problem demonstration for 2 classes
 %
 %      Description
 %      The demonstration program is based on synthetic two 
