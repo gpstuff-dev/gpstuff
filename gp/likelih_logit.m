@@ -233,7 +233,12 @@ function likelih = likelih_logit(do, varargin)
         RTOL = 1.e-6;
         ATOL = 1.e-10;
         
-        % Integrate with quadrature
+        % Integrate with an adaptive Gauss-Kronrod quadrature
+        % (Rasmussen and Nickish use in GPML interpolation between
+        % a cumulative Gaussian scale mixture and linear tail
+        % approximation, which could be faster, but quadrature also
+        % takes only a fraction of the time EP uses overall, so no
+        % need to change...)
         [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);        
         sigm2hati1 = m_2 - m_1.^2;
         

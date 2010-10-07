@@ -57,7 +57,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
   z=ip.Results.z;
   
     if strcmp(w, 'init')
-        w0 = rand(size(gp_pak(gp)));
+        w0 = NaN;
         e0=[];
         edata0= inf;
         eprior0=[];
@@ -84,9 +84,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
 
     function [e, edata, eprior, f, L, a, E, M, p] = laplace_algorithm(w, gp, x, y, z)
         
-        if  abs(w-w0) < 1e-8 % 1e-8
+        if all(size(w)==size(w0)) & all(abs(w-w0)<1e-8)
             % The covariance function parameters haven't changed so just
-            % return the Energy and the site parameters that are saved
+            % return the energy and the site parameters that are saved
             e = e0;
             edata = edata0;
             eprior = eprior0;
@@ -100,9 +100,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
             p = p0;
         else
             % We end up here if the hyperparameters have changed since
-            % the last call for gpla_e. In this case we need to
+            % the last call for gpla_softmax_e. In this case we need to
             % re-evaluate the Laplace approximation, which is done
-            % below
+            % below.
             gp=gp_unpak(gp, w);
             ncf = length(gp.cf);
             n = length(x);

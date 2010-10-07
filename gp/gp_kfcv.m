@@ -4,7 +4,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %	Description
 %	[criteria, cvpreds, cvws, trpreds, trw] = gp_kfcv(gp, x, y, OPTIONS)
 %
-%       Perform K-fold cross validation for GP model.
+%       Perform K-fold cross-validation for GP model.
 %
 %       The mandatory input arguments are the following:
 %         gp           - GP data structure containing the model
@@ -19,6 +19,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                         'MAP_fminunc'  hyperparameter optimization with fminunc
 %                         'MCMC'         MCMC sampling using gp_mc
 %                         'IA'           integration approximation using gp_ia
+%                         'fixed'        hyperparameters are fixed in gp structure  
 %                         The default is 'MAP_scg2'
 %         'opt'        - options for the inference method
 %         'k'          - number of folds in CV  
@@ -31,6 +32,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         'tstindex'   - k-fold CV test indices. A cell array with k fields 
 %                        each containing index vector for
 %                        respective test set. 
+%         'display'    - defines is messages are displayed. Defailt is 'true'.
 %         'save_results'- defines if results are stored 'false' or 'true'. 
 %                        By default false. If 'true' gp_kfcv stores
 %                        the results in the current working
@@ -178,12 +180,13 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('inf_method', 'MAP_scg2', @(x) ...
-                     ismember(x,{'MAP_scg2' 'MAP_fminunc' 'MCMC' 'IA'}))
+                     ismember(x,{'MAP_scg2' 'MAP_fminunc' 'MCMC' 'IA' 'fixed'}))
     ip.addParamValue('opt', struct)
     ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     ip.addParamValue('rstream', round(rem(now,1e-3)*1e9), @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))    
     ip.addParamValue('tstindex', [], @(x) ~isempty(x) || iscell(x))
+    ip.addParamValue('display', true)
     ip.addParamValue('save_results', false, @(x) islogical(x))
     ip.addParamValue('folder', [], @(x) ischar(x) )
     ip.parse(gp, x, y, varargin{:});
@@ -194,9 +197,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     rstream=ip.Results.rstream;
     trindex=ip.Results.trindex;
     tstindex=ip.Results.tstindex;
+    display = ip.Results.display;
     save_results=ip.Results.save_results;
     folder = ip.Results.folder;
-    
     
     [n,nin] = size(x);
     
@@ -207,7 +210,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
     
     if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
-        error('gp_kfcv: If you give cross validation indices, you need to provide both trindex and tstindex.')
+        error('gp_kfcv: If you give cross-validation indexes, you need to provide both trindex and tstindex.')
     end
 
     if isempty(trindex) || isempty(tstindex)
@@ -220,7 +223,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         fe=str2fun('gp_e');
         fg=str2fun('gp_g');
         switch inf_method
-          case {'MAP_scg2' 'MAP_fminunc'}
+          case {'MAP_scg2' 'MAP_fminunc' 'fixed'}
             fp=str2fun('gp_pred');
           case 'MCMC'
             fp=str2fun('mc_pred');
@@ -229,7 +232,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         end
     else
         switch inf_method
-          case {'MAP_scg2' 'MAP_fminunc'}
+          case {'MAP_scg2' 'MAP_fminunc' 'fixed'}
             switch gp.latent_method
               case 'Laplace'
                 fe=str2fun('gpla_e');
@@ -249,12 +252,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     
     cvws=[];
     trw=[];
-    
-    
     % loop over the crossvalidation sets
     for i=1:length(trindex)
        
+      if display
         fprintf('The CV-iteration number: %d \n', i)
+      end
         
         % Set the training and test sets for i'th cross-validation set
         xtr = x(trindex{i},:);
@@ -325,7 +328,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           case 'MCMC'
             % Scaled mixture noise model is a special case 
             % where we need to modify the noiseSigmas2 vector 
-            % to right length
+            % to a right length
             for i2 = 1:length(gp.noise)
                 if strcmp(gp.noise{i2}.type, 'gpcf_noiset')
                     gp.noise{i2}.noiseSigmas2 = gp_orig.noise{i2}.noiseSigmas2(trindex{i});
@@ -411,9 +414,19 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         end
         
         % Evaluate the training utility
-        fprintf('\n Evaluating the training utility \n')
-       
-        
+        if display
+          fprintf('\n Evaluating the training utility \n')
+        end
+        if isstruct(gp.likelih)
+            switch gp.latent_method
+              case 'Laplace'
+                gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, options_tr});
+              case 'EP'
+                gp = gp_init('set', gp, 'latent_method', {'EP', x, y, options_tr});
+              case 'MCMC'
+                gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', gp_orig.fh_mc});
+            end
+        end
         % Conduct inference
         cpu_time = cputime;
         switch inf_method
@@ -451,6 +464,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         rmse_tr = sqrt(mean((mean(Ey,2) - y).^2));
         abs_tr = mean(abs(mean(Ey,2) - y));
         
+        % compute bias corrected results
         mlpd_ccv =  mlpd_cv +  mean(lpd_tr) -  mean(lpd_cvtr);
         mrmse_ccv =  mrmse_cv +  mean(rmse_tr) -  mean(rmse_cvtr);
         mabs_ccv =  mabs_cv +  mean(abs_tr) -  mean(abs_cvtr);
@@ -459,6 +473,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         criteria.rmse_ccv=mrmse_ccv;
         criteria.mabs_ccv=mabs_ccv;
     end
+    
     if save_results
         % Save the results
         if isempty(folder)
@@ -494,7 +509,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
              'mabs_cv','Var_lpd_cv', 'Var_rmse_cv', 'Var_abs_cv', 'trindex', 'tstindex', 'lpd_cvtr', 'rmse_cvtr',...
              'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'mlpd_ccv', 'mrmse_ccv', 'mabs_ccv', 'cpu_time');
         
-        fprintf('The results have been saved in the folder:\n %s/%s \n', parent_folder, folder);
+        if display
+          fprintf('The results have been saved in the folder:\n %s/%s \n', parent_folder, folder);
+        end
         
         f = fopen([folder '/description.txt'],'w');
         fprintf(f,'The cv results were the following: \n\n');

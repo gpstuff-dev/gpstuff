@@ -90,7 +90,7 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'z', N});
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
 
-% set the options for scaled conjugate optimazation
+% set the options for scaled conjugate optimization
 opt_scg = scg2_opt;
 opt_scg.tolfun = 1e-3;
 opt_scg.tolx = 1e-3;
@@ -106,7 +106,7 @@ gp=gp_unpak(gp, wopt);
 % Set the total number of trials Nt at the grid points xgrid
 [Ef_la, Varf_la, Ey_la, Vary_la] = la_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
 
-% Visalise the predictions
+% Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;
 

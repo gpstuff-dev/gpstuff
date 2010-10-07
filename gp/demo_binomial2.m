@@ -134,7 +134,7 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', nn});
 fe=str2fun('gpla_e');
 fg=str2fun('gpla_g');
 
-% Set the options for scaled conjugate optimazation
+% Set the options for scaled conjugate optimization
 opt_scg = scg2_opt;
 opt_scg.tolfun = 1e-2;
 opt_scg.tolx = 1e-1;

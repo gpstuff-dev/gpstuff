@@ -5,7 +5,7 @@
 %    The regression problem consist of a data with one input variable,
 %    two output variables with Gaussian noise; observations and 
 %    derivative observations. The constructed model is full GP with
-%    gaussian likelihood.
+%    Gaussian likelihood.
 %
 %    The covariance matrix K includes now also covariances between 
 %    derivative observations and between derivative and latent observations.
@@ -17,7 +17,7 @@
 %    Where D refers to derivative and l to latent observation and
 %       K_ll = k(x_i, x_j | th)
 %       K_Dl = d k(x_i, x_j | th) / dx_i
-%       K_DD = d² k(x_i, x_j | th) / dx_i dx_j
+%       K_DD = d^2 k(x_i, x_j | th) / dx_i dx_j
 %
 %
 %   To include derivative observations in the inference:

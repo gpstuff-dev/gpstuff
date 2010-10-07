@@ -1,4 +1,4 @@
-%DEMO_MODELASSESMENT1   Demonstration for model assesment with DIC, number 
+%DEMO_MODELASSESMENT1   Demonstration for model assessment with DIC, number 
 %                       of effective parameters and ten-fold cross validation
 %                       
 %
@@ -8,7 +8,7 @@
 %    sparse approximations. The performance of these models are
 %    compared by evaluating the DIC statistics, number of efficient
 %    parameters and ten-fold cross validation. The inference will be
-%    conducted using maximum a postrior (MAP) estimate for the
+%    conducted using maximum a posterior (MAP) estimate for the
 %    hyperparameters, via full Markov chain Monte Carlo (MCMC) and
 %    with an integration approximation (IA) for the hyperparameters.
 %
@@ -203,7 +203,7 @@ rfic = gp_mc(gp_fic, x, y, opt);
 rfic = thin(rfic, 10, 2);
 
 % Evaluate the effective number of parameters and DIC. Note that 
-% the efective number of parameters as a second output, but here 
+% the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{5} = 'FIC_MCMC'; 
 [DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'hyper');
@@ -262,7 +262,7 @@ for i1=1:4
     end
 end
 
-% Create the PIC GP data structure and set the inducing inputs and block indeces
+% Create the PIC GP data structure and set the inducing inputs and block indexes
 gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
 
@@ -317,7 +317,7 @@ rpic = thin(rpic, 10, 2);
 rpic.tr_index = trindex;
 
 % Evaluate the effective number of parameters and DIC. Note that 
-% the efective number of parameters as a second output, but here 
+% the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{8} = 'PIC_MCMC'; 
 [DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'hyper');
@@ -373,7 +373,7 @@ S = sprintf([S '\n ']);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n The notation is as follows:']);
 S = sprintf([S '\n DIC_h   = DIC with focus on hyperparameters. ']);
-S = sprintf([S '\n DIC_a   = DIC with focus on hyperparameters and laten variables (all). ']);
+S = sprintf([S '\n DIC_a   = DIC with focus on hyperparameters and latent variables (all). ']);
 S = sprintf([S '\n DIC_l   = DIC with focus on latent variables. ']);
 S = sprintf([S '\n peff_h  = effective number of hyperparameters (latent variables marginalized). ']);
 S = sprintf([S '\n peff_a  = effective number of hyperparameters and latent variables. ']);

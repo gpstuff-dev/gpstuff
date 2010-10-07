@@ -51,6 +51,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
   ip=inputParser;
   ip.FunctionName = 'GPLA_E';
   ip.addRequired('w', @(x) ...
+                 isempty(x) || ...
                  (ischar(x) && strcmp(w, 'init')) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)));
   ip.addRequired('gp',@isstruct);
@@ -61,7 +62,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
   z=ip.Results.z;
   
     if strcmp(w, 'init')
-        w0 = rand(size(gp_pak(gp)));
+        w0 = NaN;
         e0=[];
         edata0= inf;
         eprior0=[];
@@ -85,9 +86,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
 
     function [e, edata, eprior, f, L, a, La2, p] = laplace_algorithm(w, gp, x, y, z)
         
-        if abs(w-w0) < 1e-8 % 1e-8
+        if all(size(w)==size(w0)) & all(abs(w-w0)<1e-8)
             % The covariance function parameters haven't changed so just
-            % return the Energy and the site parameters that are saved
+            % return the energy and the site parameters that are saved
             e = e0;
             edata = edata0;
             eprior = eprior0;
@@ -109,7 +110,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
 
             % Initialize latent values
             % zero seems to be a robust choice (Jarno)
-            f = zeros(size(f0));
+            f = zeros(size(y));
 
             % =================================================
             % First Evaluate the data contribution to the error

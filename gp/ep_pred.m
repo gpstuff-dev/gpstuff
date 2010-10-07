@@ -8,14 +8,14 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
 %        targets, and evaluates the predictive distribution at
 %        inputs X. Returns a posterior mean EF and variance VARF of
 %        latent variables and the posterior predictive mean EY and
-%        variance VARY of obervations at input locations X. 
+%        variance VARY of observations at input locations X. 
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 
 %                used for prediction. Default is all (1:gpcfn). See 
 %                additional information below.
 %       'tstind' is a vector/cell array defining, which rows of X belong 
-%                to which training block in *IC type sparse models. Deafult 
+%                to which training block in *IC type sparse models. Default 
 %                is []. In case of PIC, a cell array containing index 
 %                vectors specifying the blocking structure for test data.
 %                IN FIC and CS+FIC a vector of length n that points out the 
@@ -71,7 +71,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
 
     ip=inputParser;
     ip.FunctionName = 'EP_PRED';
-    ip.addRequired('gp',@isstruct);
+    ip.addRequired('gp', @isstruct);
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -88,7 +88,6 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
     zt=ip.Results.zt;
     predcf=ip.Results.predcf;
     tstind=ip.Results.tstind;
-
     
     [tn, tnin] = size(x);
         
@@ -144,7 +143,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                      Varf = Varf + RAR;
                 end
             end
-        else                         % We might end up here if the likelihood is not log concace
+        else                         % We might end up here if the likelihood is not log concave
                                      % For example Student-t likelihood. 
                                      % NOTE! This does not work reliably yet
             z=tautilde.*(L'*(L*nutilde));
@@ -176,7 +175,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
         
         K_fu = gp_cov(gp,x,u,predcf);          % f x u
         K_nu=gp_cov(gp,xt,u,predcf);
-        K_uu = gp_trcov(gp,u,predcf);          % u x u, noiseles covariance K_uu
+        K_uu = gp_trcov(gp,u,predcf);          % u x u, noiseless covariance K_uu
         K_uu = (K_uu+K_uu')./2;                % ensure the symmetry of K_uu
 
         kstarstar=gp_trvar(gp,xt,predcf);        

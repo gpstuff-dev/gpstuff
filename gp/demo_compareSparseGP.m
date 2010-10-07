@@ -100,7 +100,7 @@ plot(xt,yt,'.', 'MarkerSize',7)
 title('FULL GP')
 w_full=w; % optimized hyperparameters
 
-% Run FIC approximation fot the same data: choose the inducing inputs Xu,
+% Run FIC approximation for the same data: choose the inducing inputs Xu,
 % then proceed with the inference with the optimized hyperparameters from
 % the full GP: here, we optimize only the locations of the inducing inputs
 % for the FIC model.

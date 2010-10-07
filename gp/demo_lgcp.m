@@ -3,14 +3,14 @@
 %
 %    Description 
 
-%    Log Gaussian Cox process (LGCP) is a model for non-homogoneus
+%    Log Gaussian Cox process (LGCP) is a model for non-homogeneous
 %    point-process in which the log intensity is modelled using
 %    Gaussian process. LGCP can be modelled using log GP and
 %    Poisson observation model in a discretized space. 
 %
 %    The model constructed is as follows:
 %
-%    The number of occurences of the realised point pattern within cell w_i
+%    The number of occurrences of the realised point pattern within cell w_i
 %
 %         y_i ~ Poisson(y_i| |w_i|exp(f_i))
 %

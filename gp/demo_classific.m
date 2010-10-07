@@ -3,12 +3,12 @@ function demo_classific
 %
 %      Description
 %      The demonstration program is based on synthetic two 
-%      class data used by B.D. Ripley (Pattern Regocnition and
+%      class data used by B.D. Ripley (Pattern Recognition and
 %      Neural Networks, 1996}. The data consists of 2-dimensional
 %      vectors that are divided into two classes, labeled 0 or 1.
 %      Each class has a bimodal distribution generated from equal
 %      mixtures of Gaussian distributions with identical covariance
-%      matrices. A Bayesian aproach is used to find the decision
+%      matrices. A Bayesian approach is used to find the decision
 %      line and predict the classes of new data points.
 %
 %      The probability of y being one is assumed to be 

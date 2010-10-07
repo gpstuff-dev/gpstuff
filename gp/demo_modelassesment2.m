@@ -1,14 +1,14 @@
-%DEMO_MODELASSESMENT2    Demonstration for model assesment when the observation 
+%DEMO_MODELASSESMENT2    Demonstration for model assessment when the observation 
 %                        model is non-Gaussian
 %
 %    Description
 %    We will consider the classification problem in
 %    demo_classific. The analysis is conducted with full Gaussian
-%    process usign both probit and logit likelihood. The performance
+%    process using both probit and logit likelihood. The performance
 %    of these two models are compared by evaluating the DIC
 %    statistics, number of efficient parameters and ten-fold cross
 %    validation. The inference will be conducted using maximum a
-%    posetrior (MAP) estimate for the hyperparameters using EP and
+%    posterior (MAP) estimate for the hyperparameters using EP and
 %    Laplace approximation, via full Markov chain Monte Carlo (MCMC)
 %    and with an integration approximation (IA) for the
 %    hyperparameters.
@@ -233,7 +233,7 @@ p_eff_latent(5) = gp_peff(gp, x, y);
 [DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'latent');
 
 % Evaluate the 10-fold cross validation results. NOTE! This saves the results in a 
-% folder cv_resultsX (where X is a number) in your current workin directory. We save the 
+% folder cv_resultsX (where X is a number) in your current working directory. We save the 
 % results only for this case so that you can study them. The other models are not saved.
 cvres = gp_kfcv(gp, x, y);
 mlpd_cv(5) = cvres.mlpd_cv;
