@@ -34,7 +34,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_loopred(gp, x, y, varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'EP_PRED';
+  ip.FunctionName = 'EP_LOOPRED';
   ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
