@@ -1,4 +1,4 @@
-function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, varargin)
+function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = gpep_e(w, gp, x, y, varargin)
 %GPEP_E     Conduct Expectation propagation and return marginal 
 %           log posterior estimate
 %
@@ -70,6 +70,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
         n0 = size(x,1);
         La20 = [];
         b0 = 0;
+        muvec_i0 = [];
+        sigm2vec_i0 = [];
         if ~isfield(gp,'mean')
             myy0 = zeros(size(y));
         else
@@ -92,11 +94,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-        [e, edata, eprior, site_tau, site_nu, L, La2, b] = feval(gp.fh_e, w, gp, x, y, z);
+        [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = feval(gp.fh_e, w, gp, x, y, z);
 
     end
 
-    function [e, edata, eprior, tautilde, nutilde, L, La2, b] = ep_algorithm(w, gp, x, y, z)
+    function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i] = ep_algorithm(w, gp, x, y, z)
 
         if all(size(w)==size(w0)) & all(abs(w-w0)<1e-8)
             % The covariance function parameters haven't changed so just
@@ -110,7 +112,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
             L = L0;
             La2 = La20;
             b = b0;
-            
+            muvec_i = muvec_i0;
+            sigm2vec_i = sigm2vec_i0;
         else
             % Conduct evaluation for the energy and the site parameters
             gp=gp_unpak(gp, w);
@@ -1288,6 +1291,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b] = gpep_e(w, gp, x, y, 
             n0 = size(x,1);
             La20 = La2;
             b0 = b;
+            muvec_i0 = muvec_i;
+            sigm2vec_i0 = sigm2vec_i;
         end
     end
 end

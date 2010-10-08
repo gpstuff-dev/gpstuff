@@ -61,7 +61,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
 %  
 %	See also
 %	GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
-%
+
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
 
