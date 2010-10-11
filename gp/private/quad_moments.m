@@ -1,4 +1,4 @@
-function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol)
+function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol, minsubs)
 % QUAD_MOMENTS Calculate the 0th, 1st and 2nd moment of a given
 %              (unnormalized) probability distribution
 %
@@ -21,7 +21,8 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol)
 % 
 %   The quadrature method is described by:
 %   L.F. Shampine, "Vectorized Adaptive Quadrature in Matlab",
-%   Journal of Computational and Applied Mathematics, to appear.
+%   Journal of Computational and Applied Mathematics, 211, 2008, 
+%   pp. 131-140.
 
 %   Copyright (c) 2010 Jarno Vanhatalo, Jouni Hartikainen
     
@@ -33,11 +34,14 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol)
     
     maxint = 650;
     
-    if nargin < 3
+    if nargin < 4
         rtol = 1.e-6;
     end
-    if nargin < 4
+    if nargin < 5
         atol = 1.e-10;
+    end
+    if nargin < 6
+        minsubs = 10;
     end
 
     % nodes and weights
@@ -58,7 +62,6 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol)
     tinterval = [a,b];
     
     % Compute the path length and split tinterval.
-    minsubs = 10;   % number of subintervals
     pathlen = abs(b-a);
     if pathlen == 0
         error('The integration interval has to be greater than zero.')
