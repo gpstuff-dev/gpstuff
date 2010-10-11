@@ -200,9 +200,9 @@ switch gp.type
 %             g_logPrior = feval(likelih.fh_priorg, likelih);
 %             if ~isempty(g_logPrior)
 %             
-%                 DW_sigma = feval(likelih.fh_g3, likelih, y, f, 'latent2+hyper', z);
-%                 DL_sigma = feval(likelih.fh_g, likelih, y, f, 'hyper', z);
-%                 b = K * feval(likelih.fh_g2, likelih, y, f, 'latent+hyper', z);
+%                 DW_sigma = feval(likelih.fh_llg3, likelih, y, f, 'latent2+hyper', z);
+%                 DL_sigma = feval(likelih.fh_llg, likelih, y, f, 'hyper', z);
+%                 b = K * feval(likelih.fh_llg2, likelih, y, f, 'latent+hyper', z);
 %                 s3 = b - K*(R*b);
 %                 nl= size(DW_sigma,2);
 %                 

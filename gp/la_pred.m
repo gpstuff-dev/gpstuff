@@ -107,14 +107,14 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                                   % for example, Poisson and probit
                 if issparse(K_nf) && issparse(L)          % If compact support covariance functions are used 
                                                           % the covariance matrix will be sparse
-                    deriv = feval(gp.likelih.fh_g, gp.likelih, y(p), f, 'latent', z(p));
+                    deriv = feval(gp.likelih.fh_llg, gp.likelih, y(p), f, 'latent', z(p));
                     Ef = K_nf(:,p)*deriv;
                     sqrtW = sqrt(W);
                     sqrtWKfn = sqrtW*K_nf(:,p)';
                     V = ldlsolve(L,sqrtWKfn);
                     Varf = kstarstar - sum(sqrtWKfn.*V,1)';
                 else
-                    deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+                    deriv = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
                     Ef = K_nf*deriv;
                     W = diag(W);
                     V = L\(sqrt(W)*K_nf');
@@ -122,7 +122,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                 end
             else                  % We may end up here if the likelihood is not log concace
                                   % For example Student-t likelihood. 
-                deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+                deriv = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
                 Ef = K_nf*deriv;
                 V = L*diag(W);
                 R = diag(W) - V'*V;
@@ -152,7 +152,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 
         [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
         ntest=size(xt,1);
 
         K_nu=gp_cov(gp,xt,u,predcf);
@@ -177,7 +177,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             Kuu_tr = gp_trcov(gp, u);
             Kuu_tr = (K_uu+K_uu')./2;
             
-            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
+            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             La = W.*La2;
             Lahat = 1 + La;
@@ -217,7 +217,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 
         [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
 
         iKuuKuf = K_uu\K_fu';
         w_bu=zeros(length(xt),length(u));
@@ -232,7 +232,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
+            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -330,7 +330,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 
         Kcs_nf = gp_cov(gp, xt, x, predcf2);
 
-        deriv = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent', z);
+        deriv = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
         ntest=size(xt,1);
 
         % Calculate the predictive mean according to the type of
@@ -363,7 +363,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         
         % Evaluate the variance
         if nargout > 1
-            W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent', z);
+            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
             kstarstar = gp_trvar(gp,xt,predcf);
             Luu = chol(K_uu)';

@@ -131,8 +131,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1,gpcf2,gpcf3,gpcf4}, [],'jitterSigma
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', nn});
 
 % Function handles for optimization
-fe=str2fun('gpla_e');
-fg=str2fun('gpla_g');
+fe=@gpla_e;
+fg=@gpla_g;
 
 % Set the options for scaled conjugate optimization
 opt_scg = scg2_opt;

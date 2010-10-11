@@ -87,8 +87,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 1e-3, 'infer_
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'z', N});
 
-fe=str2fun('gpla_e');
-fg=str2fun('gpla_g');
+fe=@gpla_e;
+fg=@gpla_g;
 
 % set the options for scaled conjugate optimization
 opt_scg = scg2_opt;

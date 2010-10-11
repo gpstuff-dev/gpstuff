@@ -25,12 +25,12 @@ function likelih = likelih_t(do, varargin)
 %                                    parameter is logunif.
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to the log likelihood
-%         likelih.fh_g             = function handle to the gradient of 
+%         likelih.fh_ll             = function handle to the log likelihood
+%         likelih.fh_llg             = function handle to the gradient of 
 %                                    the log likelihood
-%         likelih.fh_g2            = function handle to the second gradient
+%         likelih.fh_llg2            = function handle to the second gradient
 %                                    of the log likelihood
-%         likelih.fh_g3            = function handle to the third gradient  
+%         likelih.fh_llg3            = function handle to the third gradient  
 %                                    of the log likelihood
 %         likelih.fh_tiltedMoments = function handle to evaluate posterior
 %                                    moments for EP
@@ -87,10 +87,10 @@ function likelih = likelih_t(do, varargin)
         likelih.fh_unpak = @likelih_t_unpak;
         likelih.fh_priore = @likelih_t_priore;
         likelih.fh_priorg = @likelih_t_priorg;
-        likelih.fh_e = @likelih_t_e;
-        likelih.fh_g = @likelih_t_g;    
-        likelih.fh_g2 = @likelih_t_g2;
-        likelih.fh_g3 = @likelih_t_g3;
+        likelih.fh_ll = @likelih_t_ll;
+        likelih.fh_llg = @likelih_t_llg;    
+        likelih.fh_llg2 = @likelih_t_llg2;
+        likelih.fh_llg3 = @likelih_t_llg3;
         likelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_t_siteDeriv;
         likelih.fh_optimizef = @likelih_t_optimizef;
@@ -206,7 +206,7 @@ function likelih = likelih_t(do, varargin)
     %   the hyperparameters.
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
+    %   LIKELIH_T_LLG, LIKELIH_T_LLG3, LIKELIH_T_LLG2, GPLA_E
         
         v = likelih.nu;
         sigma2 = likelih.sigma2;
@@ -230,7 +230,7 @@ function likelih = likelih_t(do, varargin)
     %   th collects the hyperparameters.
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_G
+    %   LIKELIH_T_LLG, LIKELIH_T_LLG3, LIKELIH_T_LLG2, GPLA_G
         
     % Evaluate the gradients of log(prior)
 
@@ -249,16 +249,16 @@ function likelih = likelih_t(do, varargin)
         end    
     end
     
-    function logLikelih = likelih_t_e(likelih, y, f, z)
-    %LIKELIH_T_E    Log likelihood
+    function logLikelih = likelih_t_ll(likelih, y, f, z)
+    %LIKELIH_T_LL    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_T_E(LIKELIH, Y, F) takes a likelihood
+    %   E = LIKELIH_T_LL(LIKELIH, Y, F) takes a likelihood
     %   data structure LIKELIH, observations Y, and latent values
     %   F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
-    %   LIKELIH_T_G, LIKELIH_T_G3, LIKELIH_T_G2, GPLA_E
+    %   LIKELIH_T_LLG, LIKELIH_T_LLG3, LIKELIH_T_LLG2, GPLA_E
 
         r = y-f;
         v = likelih.nu;
@@ -270,17 +270,17 @@ function likelih = likelih_t(do, varargin)
     end
 
     
-    function deriv = likelih_t_g(likelih, y, f, param, z)
-    %LIKELIH_T_G    Gradient of log likelihood (energy)
+    function deriv = likelih_t_llg(likelih, y, f, param, z)
+    %LIKELIH_T_LLG    Gradient of log likelihood (energy)
     %
     %   Description
-    %   G = LIKELIH_T_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G = LIKELIH_T_LLG(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, observations Y, and latent values
     %   F. Returns the gradient of log likelihood with respect to
     %   PARAM. At the moment PARAM can be 'hyper' or 'latent'.
     %
     %   See also
-    %   LIKELIH_T_E, LIKELIH_T_G2, LIKELIH_T_G3, GPLA_E
+    %   LIKELIH_T_LL, LIKELIH_T_LLG2, LIKELIH_T_LLG3, GPLA_E
         
         r = y-f;
         v = likelih.nu;
@@ -309,11 +309,11 @@ function likelih = likelih_t(do, varargin)
     end
 
 
-    function g2 = likelih_t_g2(likelih, y, f, param, z)
-    %LIKELIH_T_G2  Second gradients of log likelihood (energy)
+    function g2 = likelih_t_llg2(likelih, y, f, param, z)
+    %LIKELIH_T_LLG2  Second gradients of log likelihood (energy)
     %
     %   Description        
-    %   G2 = LIKELIH_T_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G2 = LIKELIH_T_LLG2(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, observations Y, and latent values
     %   F. Returns the hessian of log likelihood with respect to
     %   PARAM. At the moment PARAM can be only 'latent'. G2 is a
@@ -321,7 +321,7 @@ function likelih = likelih_t(do, varargin)
     %   diagonals are zero).
     %
     %   See also
-    %   LIKELIH_T_E, LIKELIH_T_G, LIKELIH_T_G3, GPLA_E
+    %   LIKELIH_T_LL, LIKELIH_T_LLG, LIKELIH_T_LLG3, GPLA_E
 
         r = y-f;
         v = likelih.nu;
@@ -349,18 +349,18 @@ function likelih = likelih_t(do, varargin)
         end
     end    
     
-    function third_grad = likelih_t_g3(likelih, y, f, param, z)
-    %LIKELIH_T_G3  Third gradients of log likelihood (energy)
+    function third_grad = likelih_t_llg3(likelih, y, f, param, z)
+    %LIKELIH_T_LLG3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_T_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   G3 = LIKELIH_T_LLG3(LIKELIH, Y, F, PARAM) takes a likelihood 
     %   data structure LIKELIH, observations Y and latent values F and
     %   returns the third gradients of log likelihood with respect to
     %   PARAM. At the moment PARAM can be only 'latent'. G3 is a
     %   vector with third gradients.
     %
     %   See also
-    %   LIKELIH_T_E, LIKELIH_T_G, LIKELIH_T_G2, GPLA_E, GPLA_G
+    %   LIKELIH_T_LL, LIKELIH_T_LLG, LIKELIH_T_LLG2, GPLA_E, GPLA_G
 
         r = y-f;
         v = likelih.nu;
@@ -763,10 +763,10 @@ function likelih = likelih_t(do, varargin)
             reclikelih.fh_unpak = @likelih_t_unpak;
             reclikelih.fh_priore = @likelih_t_priore;
             reclikelih.fh_priorg = @likelih_t_priorg;
-            reclikelih.fh_e = @likelih_t_e;
-            reclikelih.fh_g = @likelih_t_g;    
-            reclikelih.fh_g2 = @likelih_t_g2;
-            reclikelih.fh_g3 = @likelih_t_g3;
+            reclikelih.fh_ll = @likelih_t_ll;
+            reclikelih.fh_llg = @likelih_t_llg;    
+            reclikelih.fh_llg2 = @likelih_t_llg2;
+            reclikelih.fh_llg3 = @likelih_t_llg3;
             reclikelih.fh_tiltedMoments = @likelih_t_tiltedMoments;
             reclikelih.fh_siteDeriv = @likelih_t_siteDeriv;
             reclikelih.fh_optimizef = @likelih_t_optimizef;

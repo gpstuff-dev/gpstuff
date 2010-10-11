@@ -79,8 +79,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.001);
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', ye});
 
 w=gp_pak(gp);      % pack the hyperparameters into one vector
-fe=str2fun('gpla_e');     % create a function handle to negative log posterior
-fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
+fe=@gpla_e;     % create a function handle to negative log posterior
+fg=@gpla_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -160,8 +160,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 0.001, 'infer
 gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'z', ye});
 
 w=gp_pak(gp);      % pack the hyperparameters into one vector
-fe=str2fun('gpep_e');     % create a function handle to negative log posterior
-fg=str2fun('gpep_g');     % create a function handle to gradient of negative log posterior
+fe=@gpep_e;     % create a function handle to negative log posterior
+fg=@gpep_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;

@@ -273,7 +273,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if ~isempty(opt.likelih_sls_opt)
                 w = gp_pak(gp, 'likelihood');
-                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z) + feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fe = @(w, likelih) (-feval(likelih.fh_ll,feval(likelih.fh_unpak,w,likelih),y,f,z) + feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
                 [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
                 if isfield(diagns, 'opt')
                     opt.likelih_sls_opt = diagns.opt;
@@ -287,8 +287,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'likelihood';
                 w = gp_pak(gp);
-                fe = @(w, likelih) (-feval(likelih.fh_e,feval(likelih.fh_unpak,w,likelih),y,f,z)+feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
-                fg = @(w, likelih) (-feval(likelih.fh_g,feval(likelih.fh_unpak,w,likelih),y,f,'hyper',z)+feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
+                fe = @(w, likelih) (-feval(likelih.fh_ll,feval(likelih.fh_unpak,w,likelih),y,f,z)+feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
+                fg = @(w, likelih) (-feval(likelih.fh_llg,feval(likelih.fh_unpak,w,likelih),y,f,'hyper',z)+feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
                 
                 hmc2('state',likelih_hmc_rstate)              % Set the state
                 [w, energies, diagnh] = hmc2(fe, w, opt.likelih_hmc_opt, fg, gp.likelih);
@@ -454,7 +454,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            elikelih = feval(gp.likelih.fh_e, gp.likelih, y, gp.latentValues', z);
+            elikelih = feval(gp.likelih.fh_ll, gp.likelih, y, gp.latentValues', z);
             [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues');
             record.etr(ri,:) = record.e(ri,:) - elikelih;   % 
 % $$$             record.edata(ri,:) = elikelih;

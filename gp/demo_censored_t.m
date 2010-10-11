@@ -95,7 +95,7 @@ fprintf('\nnu=%.3f, sigma=%.3f \nhyper=%s\n',gp_la.likelih.nu,...
 
 figure(2)
 [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp_la,param), gp_la, x, y, param);
-W=-gp_la.likelih.fh_g2(gp_la.likelih,y,f,'latent');
+W=-gp_la.likelih.fh_llg2(gp_la.likelih,y,f,'latent');
 [foo,ii]=sort(W,'ascend');
 ii=ii(1:5);
 plot(xx(:,1),yy,'k',x(:,1),f,'b.',x(:,1),y,'go',x(ii,1),y(ii),'r.')

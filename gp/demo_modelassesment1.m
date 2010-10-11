@@ -56,8 +56,8 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.000
 %     (see scg for more details)
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -162,8 +162,8 @@ gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.
 gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 % set the options
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;

@@ -129,8 +129,8 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf2}, {gpcfn}, 'jitterSigma2', 0.001
 % Optimize the hyperparameters
 % ---------------------------------
 w=gp_pak(gp);  
-fe=str2fun('gp_e');     
-fg=str2fun('gp_g');     
+fe=@gp_e;     
+fg=@gp_g;     
 
 % set the options for scg2
 opt = scg2_opt;

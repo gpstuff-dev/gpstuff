@@ -220,33 +220,33 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         
     % Check which energy and gradient function
     if ~isstruct(gp.likelih)   % a Gaussian regression model
-        fe=str2fun('gp_e');
-        fg=str2fun('gp_g');
+        fe=@gp_e;
+        fg=@gp_g;
         switch inf_method
           case {'MAP_scg2' 'MAP_fminunc' 'fixed'}
-            fp=str2fun('gp_pred');
+            fp=@gp_pred;
           case 'MCMC'
-            fp=str2fun('mc_pred');
+            fp=@mc_pred;
           case 'IA'
-            fp=str2fun('ia_pred');
+            fp=@ia_pred;
         end
     else
         switch inf_method
           case {'MAP_scg2' 'MAP_fminunc' 'fixed'}
             switch gp.latent_method
               case 'Laplace'
-                fe=str2fun('gpla_e');
-                fg=str2fun('gpla_g');
-                fp=str2fun('la_pred');
+                fe=@gpla_e;
+                fg=@gpla_g;
+                fp=@la_pred;
               case 'EP'
-                fe=str2fun('gpep_e');
-                fg=str2fun('gpep_g');
-                fp=str2fun('ep_pred');
+                fe=@gpep_e;
+                fg=@gpep_g;
+                fp=@ep_pred;
             end
           case 'MCMC'
-            fp=str2fun('mc_pred');
+            fp=@mc_pred;
           case 'IA'
-            fp=str2fun('ia_pred');
+            fp=@ia_pred;
         end
     end
     

@@ -21,12 +21,12 @@ function likelih = likelih_poisson(do, varargin)
 %	  likelih.type             = 'likelih_poisson'
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to the log likelihood
-%         likelih.fh_g             = function handle to the gradient of 
+%         likelih.fh_ll             = function handle to the log likelihood
+%         likelih.fh_llg             = function handle to the gradient of 
 %                                    the log likelihood
-%         likelih.fh_g2            = function handle to the second gradient
+%         likelih.fh_llg2            = function handle to the second gradient
 %                                    of the log likelihood
-%         likelih.fh_g3            = function handle to the third gradient  
+%         likelih.fh_llg3            = function handle to the third gradient  
 %                                    of the log likelihood
 %         likelih.fh_tiltedMoments = function handle to evaluate posterior
 %                                    moments for EP
@@ -59,10 +59,10 @@ function likelih = likelih_poisson(do, varargin)
         % Set the function handles to the nested functions
         likelih.fh_pak = @likelih_poisson_pak;
         likelih.fh_unpak = @likelih_poisson_unpak;
-        likelih.fh_e = @likelih_poisson_e;
-        likelih.fh_g = @likelih_poisson_g;    
-        likelih.fh_g2 = @likelih_poisson_g2;
-        likelih.fh_g3 = @likelih_poisson_g3;
+        likelih.fh_ll = @likelih_poisson_ll;
+        likelih.fh_llg = @likelih_poisson_llg;    
+        likelih.fh_llg2 = @likelih_poisson_llg2;
+        likelih.fh_llg3 = @likelih_poisson_llg3;
         likelih.fh_tiltedMoments = @likelih_poisson_tiltedMoments;
         likelih.fh_predy = @likelih_poisson_predy;
         likelih.fh_recappend = @likelih_poisson_recappend;
@@ -131,20 +131,20 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-    function logLikelih = likelih_poisson_e(likelih, y, f, z)
-    %LIKELIH_POISSON_E    Log likelihood
+    function logLikelih = likelih_poisson_ll(likelih, y, f, z)
+    %LIKELIH_POISSON_LL    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_POISSON_E(LIKELIH, Y, F, Z) takes a likelihood
+    %   E = LIKELIH_POISSON_LL(LIKELIH, Y, F, Z) takes a likelihood
     %   data structure LIKELIH, incedence counts Y, expected counts Z,
     %   and latent values F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
-    %   LIKELIH_POISSON_G, LIKELIH_POISSON_G3, LIKELIH_POISSON_G2, GPLA_E
+    %   LIKELIH_POISSON_LLG, LIKELIH_POISSON_LLG3, LIKELIH_POISSON_LLG2, GPLA_E
 
         
         if isempty(z)
-            error(['likelih_poisson -> likelih_poisson_e: missing z!'... 
+            error(['likelih_poisson -> likelih_poisson_ll: missing z!'... 
                    'Poisson likelihood needs the expected number of '...
                    'occurrences as an extra input z. See, for       '...
                    'example, likelih_poisson and gpla_e.            ']);
@@ -156,21 +156,21 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-    function deriv = likelih_poisson_g(likelih, y, f, param, z)
-    %LIKELIH_POISSON_G    Gradient of log likelihood (energy)
+    function deriv = likelih_poisson_llg(likelih, y, f, param, z)
+    %LIKELIH_POISSON_LLG    Gradient of log likelihood (energy)
     %
     %   Description 
-    %   G = LIKELIH_POISSON_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G = LIKELIH_POISSON_LLG(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, incedence counts Y, expected counts Z
     %   and latent values F. Returns the gradient of log likelihood 
     %   with respect to PARAM. At the moment PARAM can be 'hyper' or
     %   'latent'.
     %
     %   See also
-    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G2, LIKELIH_POISSON_G3, GPLA_E
+    %   LIKELIH_POISSON_LL, LIKELIH_POISSON_LLG2, LIKELIH_POISSON_LLG3, GPLA_E
         
         if isempty(z)
-            error(['likelih_poisson -> likelih_poisson_g: missing z!'... 
+            error(['likelih_poisson -> likelih_poisson_llg: missing z!'... 
                    'Poisson likelihood needs the expected number of '...
                    'occurrences as an extra input z. See, for       '...
                    'example, likelih_poisson and gpla_e.            ']);
@@ -183,11 +183,11 @@ function likelih = likelih_poisson(do, varargin)
     end
 
 
-    function g2 = likelih_poisson_g2(likelih, y, f, param, z)
-    %LIKELIH_POISSON_G2  Second gradients of log likelihood (energy)
+    function g2 = likelih_poisson_llg2(likelih, y, f, param, z)
+    %LIKELIH_POISSON_LLG2  Second gradients of log likelihood (energy)
     %
     %   Description        
-    %   G2 = LIKELIH_POISSON_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G2 = LIKELIH_POISSON_LLG2(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, incedence counts Y, expected counts Z,
     %   and latent values F. Returns the hessian of log likelihood
     %   with respect to PARAM. At the moment PARAM can be only
@@ -195,10 +195,10 @@ function likelih = likelih_poisson(do, varargin)
     %   matrix (off diagonals are zero).
     %
     %   See also
-    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G3, GPLA_E
+    %   LIKELIH_POISSON_LL, LIKELIH_POISSON_LLG, LIKELIH_POISSON_LLG3, GPLA_E
 
         if isempty(z)
-            error(['likelih_poisson -> likelih_poisson_g2: missing z!'... 
+            error(['likelih_poisson -> likelih_poisson_llg2: missing z!'... 
                    'Poisson likelihood needs the expected number of  '...
                    'occurrences as an extra input z. See, for        '...
                    'example, likelih_poisson and gpla_e.             ']);
@@ -210,22 +210,22 @@ function likelih = likelih_poisson(do, varargin)
         end
     end    
     
-    function third_grad = likelih_poisson_g3(likelih, y, f, param, z)
-    %LIKELIH_POISSON_G3  Third gradients of log likelihood (energy)
+    function third_grad = likelih_poisson_llg3(likelih, y, f, param, z)
+    %LIKELIH_POISSON_LLG3  Third gradients of log likelihood (energy)
     %
     %   Description
         
-    %   G3 = LIKELIH_POISSON_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   G3 = LIKELIH_POISSON_LLG3(LIKELIH, Y, F, PARAM) takes a likelihood 
     %   data structure LIKELIH, incedence counts Y, expected counts Z
     %   and latent values F and returns the third gradients of log
     %   likelihood with respect to PARAM. At the moment PARAM can be
     %   only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_POISSON_E, LIKELIH_POISSON_G, LIKELIH_POISSON_G2, GPLA_E, GPLA_G
+    %   LIKELIH_POISSON_LL, LIKELIH_POISSON_LLG, LIKELIH_POISSON_LLG2, GPLA_E, GPLA_G
     
         if isempty(z)
-            error(['likelih_poisson -> likelih_poisson_g3: missing z!'... 
+            error(['likelih_poisson -> likelih_poisson_llg3: missing z!'... 
                    'Poisson likelihood needs the expected number of  '...
                    'occurrences as an extra input z. See, for        '...
                    'example, likelih_poisson and gpla_e.             ']);
@@ -489,10 +489,10 @@ function likelih = likelih_poisson(do, varargin)
             % Set the function handles
             reclikelih.fh_pak = @likelih_poisson_pak;
             reclikelih.fh_unpak = @likelih_poisson_unpak;
-            reclikelih.fh_e = @likelih_poisson_e;
-            reclikelih.fh_g = @likelih_poisson_g;    
-            reclikelih.fh_g2 = @likelih_poisson_g2;
-            reclikelih.fh_g3 = @likelih_poisson_g3;
+            reclikelih.fh_ll = @likelih_poisson_ll;
+            reclikelih.fh_llg = @likelih_poisson_llg;    
+            reclikelih.fh_llg2 = @likelih_poisson_llg2;
+            reclikelih.fh_llg3 = @likelih_poisson_llg3;
             reclikelih.fh_tiltedMoments = @likelih_poisson_tiltedMoments;
             reclikelih.fh_mcmc = @likelih_poisson_mcmc;
             reclikelih.fh_predy = @likelih_poisson_predy;

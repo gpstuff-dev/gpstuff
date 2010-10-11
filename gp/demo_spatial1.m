@@ -114,8 +114,8 @@ gp = gp_init('set', gp, 'infer_params', 'covariance');
 gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', ye});
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=str2fun('gpla_e');     % create a function handle to negative log posterior
-fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
+fe=@gpla_e;     % create a function handle to negative log posterior
+fg=@gpla_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;

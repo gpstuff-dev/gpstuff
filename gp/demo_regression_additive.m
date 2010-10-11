@@ -67,8 +67,8 @@ gpcf_n = gpcf_noise('init', 'noiseSigma2', 0.2^2, 'noiseSigma2', 0.2^2);
 % Set a small amount of jitter 
 jitter=1e-3;
 
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;

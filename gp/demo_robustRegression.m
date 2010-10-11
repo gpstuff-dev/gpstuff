@@ -105,8 +105,8 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001
 %     (see scg for more details)
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -230,8 +230,8 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-fe=str2fun('gpla_e');     % create a function handle to negative log posterior
-fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
+fe=@gpla_e;     % create a function handle to negative log posterior
+fg=@gpla_g;     % create a function handle to gradient of negative log posterior
 
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -347,8 +347,8 @@ gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 %     (see scg for more details)
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=str2fun('gpla_e');     % create a function handle to negative log posterior
-fg=str2fun('gpla_g');     % create a function handle to gradient of negative log posterior
+fe=@gpla_e;     % create a function handle to negative log posterior
+fg=@gpla_g;     % create a function handle to gradient of negative log posterior
 
 n=length(y);
 opt = scg2_opt;
@@ -465,8 +465,8 @@ S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp
 
 %%
 w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=str2fun('gpep_e');     % create a function handle to negative log posterior
-fg=str2fun('gpep_g');     % create a function handle to gradient of negative log posterior
+fe=@gpep_e;     % create a function handle to negative log posterior
+fg=@gpep_g;     % create a function handle to gradient of negative log posterior
 
 n=length(y);
 opt = scg2_opt;

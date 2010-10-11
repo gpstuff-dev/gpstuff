@@ -70,8 +70,8 @@ for i = 1:length(covfunc)
     gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001);
     
     w=gp_pak(gp);           % pack the hyperparameters into one vector
-    fe=str2fun('gp_e');     % create a function handle to negative log posterior
-    fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+    fe=@gp_e;     % create a function handle to negative log posterior
+    fg=@gp_g;     % create a function handle to gradient of negative log posterior
     
     % set the options for scg2
     opt = scg2_opt;
@@ -251,8 +251,8 @@ for i = 1:length(sparse)
     
     param = 'covariance+inducing';
     w=gp_pak(gp, param);  % pack the hyperparameters into one vector
-    fe=str2fun('gp_e');     % create a function handle to negative log posterior
-    fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+    fe=@gp_e;     % create a function handle to negative log posterior
+    fg=@gp_g;     % create a function handle to gradient of negative log posterior
     
     % set the options for scg2
     opt = scg2_opt;
@@ -376,8 +376,8 @@ for i=1:length(models)
     end
     
     w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
-    fe=str2fun('gp_e');     % create a function handle to negative log posterior
-    fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+    fe=@gp_e;     % create a function handle to negative log posterior
+    fg=@gp_g;     % create a function handle to gradient of negative log posterior
     
     % set the options for scg2
     opt = scg2_opt;
@@ -555,8 +555,8 @@ param = 'covariance';
 gradcheck(gp_pak(gp,param), @gp_e, @gp_g, gp, x, y, param);
 
 w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -648,8 +648,8 @@ for i = 1:length(priorfunc)
     gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.01)
     
     w=gp_pak(gp, 'covariance');  % pack the hyperparameters into one vector
-    fe=str2fun('gp_e');     % create a function handle to negative log posterior
-    fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+    fe=@gp_e;     % create a function handle to negative log posterior
+    fg=@gp_g;     % create a function handle to gradient of negative log posterior
     
     % set the options for scg2
     opt = scg2_opt;
@@ -773,8 +773,8 @@ for i=1:length(models)
     
     gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
    
-    fe=str2fun('gpla_e');
-    fg=str2fun('gpla_g');
+    fe=@gpla_e;
+    fg=@gpla_g;
     n=length(y);
     opt = scg2_opt;
     opt.tolfun = 1e-3;
@@ -872,8 +872,8 @@ for i=1:length(models)
 
     gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
    
-    fe=str2fun('gpep_e');
-    fg=str2fun('gpep_g');
+    fe=@gpep_e;
+    fg=@gpep_g;
     n=length(y);
     opt = scg2_opt;
     opt.tolfun = 1e-3;
@@ -1045,8 +1045,8 @@ for i=1:length(models)
     
     gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
    
-    fe=str2fun('gpla_e');
-    fg=str2fun('gpla_g');
+    fe=@gpla_e;
+    fg=@gpla_g;
     n=length(y);
     opt = scg2_opt;
     opt.tolfun = 1e-3;
@@ -1144,8 +1144,8 @@ for i=1:length(models)
 
     gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
    
-    fe=str2fun('gpep_e');
-    fg=str2fun('gpep_g');
+    fe=@gpep_e;
+    fg=@gpep_g;
     n=length(y);
     opt = scg2_opt;
     opt.tolfun = 1e-3;
@@ -1378,8 +1378,8 @@ for i=1:length(models)
     
     gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'covariance'});
    
-    fe=str2fun('gpla_e');
-    fg=str2fun('gpla_g');
+    fe=@gpla_e;
+    fg=@gpla_g;
     n=length(y);
     opt = scg2_opt;
     opt.tolfun = 1e-3;
@@ -1477,8 +1477,8 @@ for i=1:length(models)
 
     gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
    
-    fe=str2fun('gpep_e');
-    fg=str2fun('gpep_g');
+    fe=@gpep_e;
+    fg=@gpep_g;
     n=length(y);
     opt = scg2_opt;
     opt.tolfun = 1e-3;

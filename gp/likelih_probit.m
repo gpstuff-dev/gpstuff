@@ -16,12 +16,12 @@ function likelih = likelih_probit(do, varargin)
 %	  type                     = 'likelih_probit'
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to the log likelihood
-%         likelih.fh_g             = function handle to the gradient of 
+%         likelih.fh_ll             = function handle to the log likelihood
+%         likelih.fh_llg             = function handle to the gradient of 
 %                                    the log likelihood
-%         likelih.fh_g2            = function handle to the second gradient
+%         likelih.fh_llg2            = function handle to the second gradient
 %                                    of the log likelihood
-%         likelih.fh_g3            = function handle to the third gradient  
+%         likelih.fh_llg3            = function handle to the third gradient  
 %                                    of the log likelihood
 %         likelih.fh_tiltedMoments = function handle to evaluate posterior
 %                                    moments for EP
@@ -53,10 +53,10 @@ function likelih = likelih_probit(do, varargin)
         likelih.fh_pak = @likelih_probit_pak;
         likelih.fh_unpak = @likelih_probit_unpak;
         likelih.fh_permute = @likelih_probit_permute;
-        likelih.fh_e = @likelih_probit_e;
-        likelih.fh_g = @likelih_probit_g;    
-        likelih.fh_g2 = @likelih_probit_g2;
-        likelih.fh_g3 = @likelih_probit_g3;
+        likelih.fh_ll = @likelih_probit_ll;
+        likelih.fh_llg = @likelih_probit_llg;    
+        likelih.fh_llg2 = @likelih_probit_llg2;
+        likelih.fh_llg3 = @likelih_probit_llg3;
         likelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
         likelih.fh_predy = @likelih_probit_predy;
         likelih.fh_recappend = @likelih_probit_recappend;
@@ -130,16 +130,16 @@ function likelih = likelih_probit(do, varargin)
       w=[];
     end
 
-    function logLikelih = likelih_probit_e(likelih, y, f, z)
-    %LIKELIH_PROBIT_E    Log likelihood
+    function logLikelih = likelih_probit_ll(likelih, y, f, z)
+    %LIKELIH_PROBIT_LL    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_PROBIT_E(LIKELIH, Y, F) takes a likelihood
+    %   E = LIKELIH_PROBIT_LL(LIKELIH, Y, F) takes a likelihood
     %   data structure LIKELIH, class labels Y, and latent values
     %   F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
-    %   LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, LIKELIH_PROBIT_G2, GPLA_E
+    %   LIKELIH_PROBIT_LLG, LIKELIH_PROBIT_LLG3, LIKELIH_PROBIT_LLG2, GPLA_E
 
         if ~isempty(find(y~=1 & y~=-1))
             error('likelih_probit: The class labels have to be {-1,1}')
@@ -149,17 +149,17 @@ function likelih = likelih_probit(do, varargin)
     end
 
 
-    function deriv = likelih_probit_g(likelih, y, f, param, z)
-    %LIKELIH_PROBIT_G    Gradient of log likelihood (energy)
+    function deriv = likelih_probit_llg(likelih, y, f, param, z)
+    %LIKELIH_PROBIT_LLG    Gradient of log likelihood (energy)
     %
     %   Description
-    %   G = LIKELIH_PROBIT_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G = LIKELIH_PROBIT_LLG(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, class labels Y, and latent values
     %   F. Returns the gradient of log likelihood with respect to
     %   PARAM. At the moment PARAM can be 'hyper' or 'latent'.
     %
     %   See also
-    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G2, LIKELIH_PROBIT_G3, GPLA_E
+    %   LIKELIH_PROBIT_LL, LIKELIH_PROBIT_LLG2, LIKELIH_PROBIT_LLG3, GPLA_E
 
         if ~isempty(find(y~=1 & y~=-1))
             error('likelih_probit: The class labels have to be {-1,1}')
@@ -172,11 +172,11 @@ function likelih = likelih_probit(do, varargin)
     end
 
 
-    function g2 = likelih_probit_g2(likelih, y, f, param, z)
-    %LIKELIH_PROBIT_G2  Second gradients of log likelihood (energy)
+    function g2 = likelih_probit_llg2(likelih, y, f, param, z)
+    %LIKELIH_PROBIT_LLG2  Second gradients of log likelihood (energy)
     %
     %   Description        
-    %   G2 = LIKELIH_PROBIT_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G2 = LIKELIH_PROBIT_LLG2(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, class labels Y, and latent values
     %   F. Returns the hessian of log likelihood with respect to
     %   PARAM. At the moment PARAM can be only 'latent'. G2 is a
@@ -184,7 +184,7 @@ function likelih = likelih_probit(do, varargin)
     %   diagonals are zero).
     %
     %   See also
-    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_G3, GPLA_E
+    %   LIKELIH_PROBIT_LL, LIKELIH_PROBIT_LLG, LIKELIH_PROBIT_LLG3, GPLA_E
 
         
         if ~isempty(find(y~=1 & y~=-1))
@@ -198,18 +198,18 @@ function likelih = likelih_probit(do, varargin)
         end
     end
     
-    function thir_grad = likelih_probit_g3(likelih, y, f, param, z)
-    %LIKELIH_PROBIT_G3  Third gradients of log likelihood (energy)
+    function thir_grad = likelih_probit_llg3(likelih, y, f, param, z)
+    %LIKELIH_PROBIT_LLG3  Third gradients of log likelihood (energy)
     %
     %   Description
-    %   G3 = LIKELIH_PROBIT_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   G3 = LIKELIH_PROBIT_LLG3(LIKELIH, Y, F, PARAM) takes a likelihood 
     %   data structure LIKELIH, class labels Y, and latent values F
     %   and returns the third gradients of log likelihood with respect
     %   to PARAM. At the moment PARAM can be only 'latent'. G3 is a
     %   vector with third gradients.
     %
     %   See also
-    %   LIKELIH_PROBIT_E, LIKELIH_PROBIT_G, LIKELIH_PROBIT_G2, GPLA_E, GPLA_G
+    %   LIKELIH_PROBIT_LL, LIKELIH_PROBIT_LLG, LIKELIH_PROBIT_LLG2, GPLA_E, GPLA_G
 
         if ~isempty(find(y~=1 & y~=-1))
             error('likelih_probit: The class labels have to be {-1,1}')
@@ -307,10 +307,10 @@ function likelih = likelih_probit(do, varargin)
             reclikelih.fh_pak = @likelih_probit_pak;
             reclikelih.fh_unpak = @likelih_probit_unpak;
             reclikelih.fh_permute = @likelih_probit_permute;
-            reclikelih.fh_e = @likelih_probit_e;
-            reclikelih.fh_g = @likelih_probit_g;    
-            reclikelih.fh_g2 = @likelih_probit_g2;
-            reclikelih.fh_g3 = @likelih_probit_g3;
+            reclikelih.fh_ll = @likelih_probit_ll;
+            reclikelih.fh_llg = @likelih_probit_llg;    
+            reclikelih.fh_llg2 = @likelih_probit_llg2;
+            reclikelih.fh_llg3 = @likelih_probit_llg3;
             reclikelih.fh_tiltedMoments = @likelih_probit_tiltedMoments;
             reclikelih.fh_mcmc = @likelih_probit_mcmc;
             reclikelih.fh_predy = @likelih_probit_predy;

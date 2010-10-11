@@ -119,8 +119,8 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2'
 %
 % --- MAP estimate -----------
 w=gp_pak(gp);           % pack the hyperparameters into one vector
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -198,8 +198,8 @@ gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma
 gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_fic);    % pack the hyperparameters into one vector
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -256,8 +256,8 @@ gp_pic = gp_init('set', gp_pic, 'tr_index', trindex);
 gp_pic = gp_init('set', gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_pic);    % pack the hyperparameters into one vector
-fe=str2fun('gp_e');         % create a function handle to negative log posterior
-fg=str2fun('gp_g');         % create a function handle to gradient of negative log posterior
+fe=@gp_e;         % create a function handle to negative log posterior
+fg=@gp_g;         % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -313,8 +313,8 @@ gp_csfic = gp_init('init', 'CS+FIC', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitte
 gp_csfic = gp_init('set', gp_csfic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_csfic);    % pack the hyperparameters into one vector
-fe=str2fun('gp_e');         % create a function handle to negative log posterior
-fg=str2fun('gp_g');         % create a function handle to gradient of negative log posterior
+fe=@gp_e;         % create a function handle to negative log posterior
+fg=@gp_g;         % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;

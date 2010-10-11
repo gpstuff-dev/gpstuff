@@ -181,8 +181,8 @@ gp1 = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00
 %     (see scg for more details)
 
 w1=gp_pak(gp1, 'hyper');  % pack the hyperparameters into one vector
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options
 opt(1) = 1;

@@ -179,9 +179,9 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
                 Dth = sum(log(2*pi*sigma2)) + sum( (y - Ef).^2./sigma2 );
                 Davg = sum(log(2*pi*sigma2)) + mean(sum( (repmat(y,1,5000) - sampf).^2./repmat(sigma2,1,5000), 1));
             else % non-Gaussian likelihood
-                Dth = -2.*feval(gp.likelih.fh_e, gp.likelih, y, Ef, z);
+                Dth = -2.*feval(gp.likelih.fh_ll, gp.likelih, y, Ef, z);
                 for i1 = 1:size(sampf, 2)
-                    Davg(i1) = feval(gp.likelih.fh_e, gp.likelih, y, sampf(:,i1), z);
+                    Davg(i1) = feval(gp.likelih.fh_ll, gp.likelih, y, sampf(:,i1), z);
                 end
                 Davg = -2.*mean(Davg);
             end
@@ -216,10 +216,10 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
                 Davg = mean(sum(log(2*pi*sigma2),1)) + mean(sum( (repmat(y,1,nsamples) - sampf).^2./sigma2, 1));
             else % non-Gaussian likelihood
                 Gp = gp_unpak(Gp, mean(w,1));
-                Dth = -2.*feval(Gp.likelih.fh_e, Gp.likelih, y, mean(gp.latentValues,1)', z);
+                Dth = -2.*feval(Gp.likelih.fh_ll, Gp.likelih, y, mean(gp.latentValues,1)', z);
                 for i1 = 1:nsamples
                     Gp = take_nth(gp,i1);
-                    Davg(i1) = feval(Gp.likelih.fh_e, Gp.likelih, y, Gp.latentValues', z);
+                    Davg(i1) = feval(Gp.likelih.fh_ll, Gp.likelih, y, Gp.latentValues', z);
                 end
                 Davg = -2.*mean(Davg);
             end
@@ -301,10 +301,10 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             else % non-Gaussian likelihood
                 mw = sum(w.*repmat(weight', 1, size(w,2)), 1);
                 Gp = gp_unpak(Gp, mw);
-                Dth = -2.*feval(Gp.likelih.fh_e, Gp.likelih, y, mEf, z);
+                Dth = -2.*feval(Gp.likelih.fh_ll, Gp.likelih, y, mEf, z);
                 for i1 = 1:nsamples
                     Gp = gp{i1};
-                    Davg(i1) = feval(Gp.likelih.fh_e, Gp.likelih, y, Ef(:,i), z);
+                    Davg(i1) = feval(Gp.likelih.fh_ll, Gp.likelih, y, Ef(:,i), z);
                 end
                 Davg = -2.*sum(Davg.*weight);
             end

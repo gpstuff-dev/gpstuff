@@ -69,8 +69,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1}, {},'jitterSigma2', 0.01);
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 
-fe=str2fun('gpla_e');
-fg=str2fun('gpla_g');
+fe=@gpla_e;
+fg=@gpla_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -121,8 +121,8 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
 w = gp_pak(gp);
-fe=str2fun('gpep_e');
-fg=str2fun('gpep_g');
+fe=@gpep_e;
+fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;

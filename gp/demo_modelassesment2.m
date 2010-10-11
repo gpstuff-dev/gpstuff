@@ -57,8 +57,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01.^2);
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 
-fe=str2fun('gpla_e');
-fg=str2fun('gpla_g');
+fe=@gpla_e;
+fg=@gpla_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -87,8 +87,8 @@ mrmse_cv(1) = cvres.mrmse_cv;
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
 w = gp_pak(gp);
-fe=str2fun('gpep_e');
-fg=str2fun('gpep_g');
+fe=@gpep_e;
+fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -154,8 +154,8 @@ gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
 % Find first the mode
 w = gp_pak(gp);
-fe=str2fun('gpep_e');
-fg=str2fun('gpep_g');
+fe=@gpep_e;
+fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -213,8 +213,8 @@ gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01.^2);
 % Set the approximate inference method
 gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 
-fe=str2fun('gpla_e');
-fg=str2fun('gpla_g');
+fe=@gpla_e;
+fg=@gpla_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -245,8 +245,8 @@ mrmse_cv(5) = cvres.mrmse_cv;
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
 w = gp_pak(gp);
-fe=str2fun('gpep_e');
-fg=str2fun('gpep_g');
+fe=@gpep_e;
+fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -314,8 +314,8 @@ gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 
 % Find first the mode
 w = gp_pak(gp);
-fe=str2fun('gpep_e');
-fg=str2fun('gpep_g');
+fe=@gpep_e;
+fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -465,8 +465,8 @@ S = sprintf([S '\n '])
 % % Set the approximate inference method
 % gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 % 
-% fe=str2fun('gpla_e');
-% fg=str2fun('gpla_g');
+% fe=@gpla_e;
+% fg=@gpla_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -496,8 +496,8 @@ S = sprintf([S '\n '])
 % gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 % 
 % w = gp_pak(gp);
-% fe=str2fun('gpep_e');
-% fg=str2fun('gpep_g');
+% fe=@gpep_e;
+% fg=@gpep_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -554,8 +554,8 @@ S = sprintf([S '\n '])
 % 
 % % Find first the mode
 % w = gp_pak(gp);
-% fe=str2fun('gpep_e');
-% fg=str2fun('gpep_g');
+% fe=@gpep_e;
+% fg=@gpep_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -628,8 +628,8 @@ S = sprintf([S '\n '])
 % % Set the approximate inference method
 % gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 % 
-% fe=str2fun('gpla_e');
-% fg=str2fun('gpla_g');
+% fe=@gpla_e;
+% fg=@gpla_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -659,8 +659,8 @@ S = sprintf([S '\n '])
 % gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
 % 
 % w = gp_pak(gp);
-% fe=str2fun('gpep_e');
-% fg=str2fun('gpep_g');
+% fe=@gpep_e;
+% fg=@gpep_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -717,8 +717,8 @@ S = sprintf([S '\n '])
 % 
 % % Find first the mode
 % w = gp_pak(gp);
-% fe=str2fun('gpep_e');
-% fg=str2fun('gpep_g');
+% fe=@gpep_e;
+% fg=@gpep_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -806,8 +806,8 @@ S = sprintf([S '\n '])
 % % Set the approximate inference method
 % gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
 % 
-% fe=str2fun('gpla_e');
-% fg=str2fun('gpla_g');
+% fe=@gpla_e;
+% fg=@gpla_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -837,8 +837,8 @@ S = sprintf([S '\n '])
 % gp = gp_init('set', gp, 'latent_method', {'EP', x, y, 'covariance'});
 % 
 % w = gp_pak(gp, 'covariance');
-% fe=str2fun('gpep_e');
-% fg=str2fun('gpep_g');
+% fe=@gpep_e;
+% fg=@gpep_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;
@@ -895,8 +895,8 @@ S = sprintf([S '\n '])
 % 
 % % Find first the mode
 % w = gp_pak(gp, 'covariance');
-% fe=str2fun('gpep_e');
-% fg=str2fun('gpep_g');
+% fe=@gpep_e;
+% fg=@gpep_g;
 % n=length(y);
 % opt = scg2_opt;
 % opt.tolfun = 1e-3;

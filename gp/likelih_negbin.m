@@ -28,12 +28,12 @@ function likelih = likelih_negbin(do, varargin)
 %                                    parameter is logunif.
 %         likelih.fh_pak           = function handle to pak
 %         likelih.fh_unpak         = function handle to unpak
-%         likelih.fh_e             = function handle to the log likelihood
-%         likelih.fh_g             = function handle to the gradient of 
+%         likelih.fh_ll             = function handle to the log likelihood
+%         likelih.fh_llg             = function handle to the gradient of 
 %                                    the log likelihood
-%         likelih.fh_g2            = function handle to the second gradient
+%         likelih.fh_llg2            = function handle to the second gradient
 %                                    of the log likelihood
-%         likelih.fh_g3            = function handle to the third gradient  
+%         likelih.fh_llg3            = function handle to the third gradient  
 %                                    of the log likelihood
 %         likelih.fh_tiltedMoments = function handle to evaluate posterior
 %                                    moments for EP
@@ -86,10 +86,10 @@ function likelih = likelih_negbin(do, varargin)
         likelih.fh_unpak = @likelih_negbin_unpak;
         likelih.fh_priore = @likelih_negbin_priore;
         likelih.fh_priorg = @likelih_negbin_priorg;
-        likelih.fh_e = @likelih_negbin_e;
-        likelih.fh_g = @likelih_negbin_g;    
-        likelih.fh_g2 = @likelih_negbin_g2;
-        likelih.fh_g3 = @likelih_negbin_g3;
+        likelih.fh_ll = @likelih_negbin_ll;
+        likelih.fh_llg = @likelih_negbin_llg;    
+        likelih.fh_llg2 = @likelih_negbin_llg2;
+        likelih.fh_llg3 = @likelih_negbin_llg3;
         likelih.fh_tiltedMoments = @likelih_negbin_tiltedMoments;
         likelih.fh_siteDeriv = @likelih_negbin_siteDeriv;
         likelih.fh_mcmc = @likelih_negbin_mcmc;
@@ -184,7 +184,7 @@ function likelih = likelih_negbin(do, varargin)
     %   the hyperparameters.
     %
     %   See also
-    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
+    %   LIKELIH_NEGBIN_LLG, LIKELIH_NEGBIN_LLG3, LIKELIH_NEGBIN_LLG2, GPLA_E
         
 
     % If prior for dispersion parameter, add its contribution
@@ -206,7 +206,7 @@ function likelih = likelih_negbin(do, varargin)
     %   th collects the hyperparameters.
     %
     %   See also
-    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_G
+    %   LIKELIH_NEGBIN_LLG, LIKELIH_NEGBIN_LLG3, LIKELIH_NEGBIN_LLG2, GPLA_G
         
         
         glogPrior=[];
@@ -220,19 +220,19 @@ function likelih = likelih_negbin(do, varargin)
         end
     end  
     
-    function logLikelih = likelih_negbin_e(likelih, y, f, z)
-    %LIKELIH_NEGBIN_E    Log likelihood
+    function logLikelih = likelih_negbin_ll(likelih, y, f, z)
+    %LIKELIH_NEGBIN_LL    Log likelihood
     %
     %   Description
-    %   E = LIKELIH_NEGBIN_E(LIKELIH, Y, F, Z) takes a likelihood
+    %   E = LIKELIH_NEGBIN_LL(LIKELIH, Y, F, Z) takes a likelihood
     %   data structure LIKELIH, incedence counts Y, expected counts Z,
     %   and latent values F. Returns the log likelihood, log p(y|f,z).
     %
     %   See also
-    %   LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, LIKELIH_NEGBIN_G2, GPLA_E
+    %   LIKELIH_NEGBIN_LLG, LIKELIH_NEGBIN_LLG3, LIKELIH_NEGBIN_LLG2, GPLA_E
         
         if isempty(z)
-            error(['likelih_negbin -> likelih_negbin_e: missing z!    '... 
+            error(['likelih_negbin -> likelih_negbin_ll: missing z!    '... 
                    'Negbin likelihood needs the expected number of    '...
                    'occurrences as an extra input z. See, for         '...
                    'example, likelih_negbin and gpla_e.               ']);
@@ -244,21 +244,21 @@ function likelih = likelih_negbin(do, varargin)
         logLikelih = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));
     end
 
-    function g = likelih_negbin_g(likelih, y, f, param, z)
-    %LIKELIH_NEGBIN_G    Gradient of log likelihood (energy)
+    function g = likelih_negbin_llg(likelih, y, f, param, z)
+    %LIKELIH_NEGBIN_LLG    Gradient of log likelihood (energy)
     %
     %   Description 
-    %   G = LIKELIH_NEGBIN_G(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G = LIKELIH_NEGBIN_LLG(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, incedence counts Y, expected counts Z
     %   and latent values F. Returns the gradient of log likelihood 
     %   with respect to PARAM. At the moment PARAM can be 'hyper' or
     %   'latent'.
     %
     %   See also
-    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G2, LIKELIH_NEGBIN_G3, GPLA_E
+    %   LIKELIH_NEGBIN_LL, LIKELIH_NEGBIN_LLG2, LIKELIH_NEGBIN_LLG3, GPLA_E
 
         if isempty(z)
-            error(['likelih_negbin -> likelih_negbin_g: missing z!    '... 
+            error(['likelih_negbin -> likelih_negbin_llg: missing z!    '... 
                    'Negbin likelihood needs the expected number of    '...
                    'occurrences as an extra input z. See, for         '...
                    'example, likelih_negbin and gpla_e.               ']);
@@ -290,11 +290,11 @@ function likelih = likelih_negbin(do, varargin)
         end
     end
 
-    function g2 = likelih_negbin_g2(likelih, y, f, param, z)
-    %LIKELIH_NEGBIN_G2  Second gradients of log likelihood (energy)
+    function g2 = likelih_negbin_llg2(likelih, y, f, param, z)
+    %LIKELIH_NEGBIN_LLG2  Second gradients of log likelihood (energy)
     %
     %   Description        
-    %   G2 = LIKELIH_NEGBIN_G2(LIKELIH, Y, F, PARAM) takes a likelihood
+    %   G2 = LIKELIH_NEGBIN_LLG2(LIKELIH, Y, F, PARAM) takes a likelihood
     %   data structure LIKELIH, incedence counts Y, expected counts Z,
     %   and latent values F. Returns the hessian of log likelihood
     %   with respect to PARAM. At the moment PARAM can be only
@@ -302,10 +302,10 @@ function likelih = likelih_negbin(do, varargin)
     %   matrix (off diagonals are zero).
     %
     %   See also
-    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G3, GPLA_E
+    %   LIKELIH_NEGBIN_LL, LIKELIH_NEGBIN_LLG, LIKELIH_NEGBIN_LLG3, GPLA_E
 
         if isempty(z)
-            error(['likelih_negbin -> likelih_negbin_g2: missing z!   '... 
+            error(['likelih_negbin -> likelih_negbin_llg2: missing z!   '... 
                    'Negbin likelihood needs the expected number of    '...
                    'occurrences as an extra input z. See, for         '...
                    'example, likelih_negbin and gpla_e.               ']);
@@ -327,22 +327,22 @@ function likelih = likelih_negbin(do, varargin)
         end
     end    
     
-    function g3 = likelih_negbin_g3(likelih, y, f, param, z)
-    %LIKELIH_NEGBIN_G3  Third gradients of log likelihood (energy)
+    function g3 = likelih_negbin_llg3(likelih, y, f, param, z)
+    %LIKELIH_NEGBIN_LLG3  Third gradients of log likelihood (energy)
     %
     %   Description
         
-    %   G3 = LIKELIH_NEGBIN_G3(LIKELIH, Y, F, PARAM) takes a likelihood 
+    %   G3 = LIKELIH_NEGBIN_LLG3(LIKELIH, Y, F, PARAM) takes a likelihood 
     %   data structure LIKELIH, incedence counts Y, expected counts Z
     %   and latent values F and returns the third gradients of log
     %   likelihood with respect to PARAM. At the moment PARAM can be
     %   only 'latent'. G3 is a vector with third gradients.
     %
     %   See also
-    %   LIKELIH_NEGBIN_E, LIKELIH_NEGBIN_G, LIKELIH_NEGBIN_G2, GPLA_E, GPLA_G
+    %   LIKELIH_NEGBIN_LL, LIKELIH_NEGBIN_LLG, LIKELIH_NEGBIN_LLG2, GPLA_E, GPLA_G
 
         if isempty(z)
-            error(['likelih_negbin -> likelih_negbin_g3: missing z!   '... 
+            error(['likelih_negbin -> likelih_negbin_llg3: missing z!   '... 
                    'Negbin likelihood needs the expected number of    '...
                    'occurrences as an extra input z. See, for         '...
                    'example, likelih_negbin and gpla_e.               ']);
@@ -675,10 +675,10 @@ function likelih = likelih_negbin(do, varargin)
             % Set the function handles
             reclikelih.fh_pak = @likelih_negbin_pak;
             reclikelih.fh_unpak = @likelih_negbin_unpak;
-            reclikelih.fh_e = @likelih_negbin_e;
-            reclikelih.fh_g = @likelih_negbin_g;    
-            reclikelih.fh_g2 = @likelih_negbin_g2;
-            reclikelih.fh_g3 = @likelih_negbin_g3;
+            reclikelih.fh_ll = @likelih_negbin_ll;
+            reclikelih.fh_llg = @likelih_negbin_llg;    
+            reclikelih.fh_llg2 = @likelih_negbin_llg2;
+            reclikelih.fh_llg3 = @likelih_negbin_llg3;
             reclikelih.fh_tiltedMoments = @likelih_negbin_tiltedMoments;
             reclikelih.fh_mcmc = @likelih_negbin_mcmc;
             reclikelih.fh_predy = @likelih_negbin_predy;

@@ -156,13 +156,13 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
 %                     end
 %                
 %                     if issparse(K)
-%                         fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.likelih.fh_e, gp.likelih, y, f', z));
-%                         fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent', z))';
-%                         fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.likelih)) ; %
+%                         fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.likelih.fh_ll, gp.likelih, y, f', z));
+%                         fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
+%                         fh = @(f, varargin) (-feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.likelih)) ; %
 %                     else
-%                         fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - feval(gp.likelih.fh_e, gp.likelih, y, f', z));
-%                         fg = @(f, varargin) (LD\(LD'\f') - feval(gp.likelih.fh_g, gp.likelih, y, f', 'latent', z))';
-%                         fh = @(f, varargin) (-feval(gp.likelih.fh_g2, gp.likelih, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.likelih)) ; %
+%                         fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - feval(gp.likelih.fh_ll, gp.likelih, y, f', z));
+%                         fg = @(f, varargin) (LD\(LD'\f') - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
+%                         fh = @(f, varargin) (-feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.likelih)) ; %
 %                     end
 %                     
 %                     mydeal = @(varargin)varargin{1:nargout};
@@ -183,11 +183,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
                     nout=size(y,2);
                     f2=reshape(f,n,nout);
                     
-                    %W = -feval(gp.likelih.fh_g2, gp.likelih, y, f2, 'latent', z);
-                    %dlp = feval(gp.likelih.fh_g, gp.likelih, y, f2, 'latent', z);
-                    %lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f2, z);
+                    %W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f2, 'latent', z);
+                    %dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f2, 'latent', z);
+                    %lp_new = feval(gp.likelih.fh_ll, gp.likelih, y, f2, z);
                     
-                    lp_new = feval(gp.likelih.fh_e, gp.likelih, y, f2, z);
+                    lp_new = feval(gp.likelih.fh_ll, gp.likelih, y, f2, z);
                     lp_old = -Inf;
                     
                     Kbb=zeros(n*nout,1);
@@ -229,8 +229,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
                         end
                         
                         b = pi_vec.*f-pipif+y(:)-pi_vec;
-                        % b = -feval(gp.likelih.fh_g2, gp.likelih, y, f2, 'latent', z)*f + ...
-                        %       feval(gp.likelih.fh_g, gp.likelih, y, f2, 'latent', z);
+                        % b = -feval(gp.likelih.fh_llg2, gp.likelih, y, f2, 'latent', z)*f + ...
+                        %       feval(gp.likelih.fh_llg, gp.likelih, y, f2, 'latent', z);
                         
                         for i1=1:nout
                             Kbb((1:n)+(i1-1)*n)=K*b((1:n)+(i1-1)*n);
@@ -249,7 +249,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
                         end
                         f2=reshape(f,n,nout);
                         
-                        lp_new = -a'*f/2 + feval(gp.likelih.fh_e, gp.likelih, y, f2, z);
+                        lp_new = -a'*f/2 + feval(gp.likelih.fh_ll, gp.likelih, y, f2, z);
                         
                         i = 0;
                         while i < 10 && lp_new < lp_old  || isnan(sum(f))
@@ -261,7 +261,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
                             end
                             f2=reshape(f,n,nout);
                             
-                            lp_new = -a'*f/2 + feval(gp.likelih.fh_e, gp.likelih, y, f2, z);
+                            lp_new = -a'*f/2 + feval(gp.likelih.fh_ll, gp.likelih, y, f2, z);
                             i = i+1;
                         end 
                     end
@@ -289,9 +289,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
 %                     Wlim=0;
 %                     
 %                     tol = 1e-10;
-%                     W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-%                     dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
-%                     lp = -(f'*(K\f))/2 +feval(gp.likelih.fh_e, gp.likelih, y, f);
+%                     W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent');
+%                     dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent');
+%                     lp = -(f'*(K\f))/2 +feval(gp.likelih.fh_ll, gp.likelih, y, f);
 %                     lp_old = -Inf;
 %                     f_old = f+1;
 %                     ge = Inf; %max(abs(a-dlp));
@@ -301,8 +301,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
 %                     while lp - lp_old > tol || max(abs(f-f_old)) > tol
 %                       i1=i1+1;
 %                       
-%                       W = -feval(gp.likelih.fh_g2, gp.likelih, y, f, 'latent');
-%                       dlp = feval(gp.likelih.fh_g, gp.likelih, y, f, 'latent');
+%                       W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent');
+%                       dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent');
 %                       
 %                       W(W<Wlim)=Wlim;
 %                       sW = sqrt(W);
@@ -324,7 +324,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
 %                         end
 %                       
 %                       f_new = K*a;
-%                       lp_new = -(a'*f_new)/2 + feval(gp.likelih.fh_e, gp.likelih, y, f_new);
+%                       lp_new = -(a'*f_new)/2 + feval(gp.likelih.fh_ll, gp.likelih, y, f_new);
 %                       ge_new=max(abs(a-dlp));
 %                       
 %                       d=lp_new-lp;
@@ -394,7 +394,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, x, y, vara
                 det_term=sum(log(diag(det_mat)))+det_diag;
                 
                 
-                logZ = a'*f/2 - feval(gp.likelih.fh_e, gp.likelih, y, f2, z) + det_term;
+                logZ = a'*f/2 - feval(gp.likelih.fh_ll, gp.likelih, y, f2, z) + det_term;
                 edata = logZ;
                 
                 % ============================================================

@@ -130,8 +130,8 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2',
 % --- MAP estimate using scaled conjugate gradient method ---
 %     (see scg2 for more details)
 
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -212,8 +212,8 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcfp, gpcf2}, {gpcfn}, 'jitter
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg2 for more details)
 
-fe=str2fun('gp_e');     % create a function handle to negative log posterior
-fg=str2fun('gp_g');     % create a function handle to gradient of negative log posterior
+fe=@gp_e;     % create a function handle to negative log posterior
+fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;
@@ -347,8 +347,8 @@ z=repmat(mean(y),length(y),1);
 gp = gp_init('init', 'FULL', likelih, {gpcf1,gpcfp,gpcf2,gpcfnn}, {}, 'jitterSigma2', 0.001,'infer_params', 'covariance')   
 gp = gp_init('set', gp, 'latent_method', {'EP', x, y,'z',z});
 
-fe=str2fun('gpep_e');     % create a function handle to negative log posterior
-fg=str2fun('gpep_g');     % create a function handle to gradient of negative log posterior
+fe=@gpep_e;     % create a function handle to negative log posterior
+fg=@gpep_g;     % create a function handle to gradient of negative log posterior
 
 % set the options for scg2
 opt = scg2_opt;

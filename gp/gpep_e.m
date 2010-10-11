@@ -163,7 +163,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                     % are left for last
                     if strcmp(gp.likelih.type,'Student-t')
                       f=feval(gp.likelih.fh_optimizef,gp,y,K);
-                      W=-feval(gp.likelih.fh_g2,gp.likelih,y,f,'latent');
+                      W=-feval(gp.likelih.fh_llg2,gp.likelih,y,f,'latent');
                       [foo,I]=sort(W,'descend');
                     else
                       I=1:n;
