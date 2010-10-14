@@ -26,7 +26,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if isfield(gp,'latent_method')
+if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
   % use inference specific methods
   % not the nicest way of doing this, but quick solution
   switch gp.latent_method
