@@ -1,42 +1,59 @@
-function gpcf = gpcf_noise(do, varargin)
-%GPCF_NOISE	Create a noise covariance function for Gaussian Process.
+function gpcf = gpcf_noise(varargin)
+%GPCF_NOISE  Create a uncorrelated noise covariance function for 
+%            Gaussian Process.
 %
-%	Description
-%        GPCF = GPCF_NOISE('init', OPTIONS) Create and initialize
-%        i.i.d. noise covariance function for Gaussian
-%        process. OPTIONS is optional parameter-value pair used as
-%        described below by GPCF_NOISE('set',...
+%  Description
+%    GPCF = GPCF_NOISE(OPTIONS) Create and initialize i.i.d. noise
+%    covariance function for Gaussian process. OPTIONS is optional
+%    parameter-value pair used as described below.
 %
-%        GPCF = GPCF_NOISE('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_NOISE(GPCF, OPTIONS) Set the fields of GPCF as
+%    described by the parameter-value pairs ('FIELD', VALUE) in the
+%    OPTIONS. The fields that can be modified are:
 %
-%             'noiseSigma2'        : Magnitude (squared) for exponential 
-%                                   part. (default 0.1)
-%             'noiseSigma2_prior'  : prior structure for magnSigma2
+%      noiseSigma2        = Magnitude (squared) for exponential part. 
+%                           (default 0.1)
+%      noiseSigma2_prior  = prior structure for magnSigma2
 %
-%       Note! If the prior structure is set to empty matrix
-%       (e.g. 'noiseSigma2_prior', []) then the parameter in question
-%       is considered fixed and it is not handled in optimization,
-%       grid integration, MCMC etc.
+%    Note! If the prior structure is set to empty matrix (e.g. 
+%    'noiseSigma2_prior', []) then the parameter in question is
+%    considered fixed and it is not handled in optimization, grid
+%    integration, MCMC etc.
 %
-%	See also
-%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%  See also
+%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% This software is distributed under the GNU General Public
+% License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_NOISE';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('noiseSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('noiseSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     noiseSigma2=ip.Results.noiseSigma2;
     noiseSigma2_prior=ip.Results.noiseSigma2_prior;
@@ -90,9 +107,9 @@ function gpcf = gpcf_noise(do, varargin)
 
 
     function w = gpcf_noise_pak(gpcf)
-    %GPCF_NOISE_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_NOISE_PAK      Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %  Description
     %   W = GPCF_NOISE_PAK(GPCF) takes a covariance function data
     %   structure GPCF and combines the covariance function parameters
     %   and their hyperparameters into a single row vector W and takes
@@ -100,10 +117,10 @@ function gpcf = gpcf_noise(do, varargin)
     %
     %       w = [ log(gpcf.noiseSigma2)
     %             (hyperparameters of gpcf.magnSigma2)]'
-    %	  
+    %     
     %
-    %	See also
-    %	GPCF_NOISE_UNPAK
+    %  See also
+    %   GPCF_NOISE_UNPAK
 
 
         w = [];    
@@ -119,7 +136,7 @@ function gpcf = gpcf_noise(do, varargin)
     function [gpcf, w] = gpcf_noise_unpak(gpcf, w)
     %GPCF_NOISE_UNPAK  Sets the covariance function parameters pack into the structure
     %
-    %	Description
+    %  Description
     %   [GPCF, W] = GPCF_NOISE_UNPAK(GPCF, W) takes a covariance
     %   function data structure GPCF and a hyper-parameter vector W,
     %   and returns a covariance function data structure identical to
@@ -130,8 +147,8 @@ function gpcf = gpcf_noise(do, varargin)
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.
     %
-    %	See also
-    %	GPCF_NOISE_PAK
+    %  See also
+    %   GPCF_NOISE_PAK
 
     
         if ~isempty(gpcf.p.noiseSigma2)
@@ -148,7 +165,7 @@ function gpcf = gpcf_noise(do, varargin)
     function eprior =gpcf_noise_e(gpcf, p, t)
     %GPCF_NOISE_E     Evaluate the energy of prior of NOISE parameters
     %
-    %	Description
+    %  Description
     %   E = GPCF_NOISE_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -160,8 +177,8 @@ function gpcf = gpcf_noise(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
-    %	GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_G, GP_E
+    %  See also
+    %   GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_G, GP_E
 
         eprior = 0;
 
@@ -176,22 +193,22 @@ function gpcf = gpcf_noise(do, varargin)
     %GPCF_NOISE_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[DKff, GPRIOR] = GPCF_NOISE_GHYPER(GPCF, X) 
+    %  Description
+    %   [DKff, GPRIOR] = GPCF_NOISE_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_NOISE_GHYPER(GPCF, X, X2) 
+    %   [DKff, GPRIOR] = GPCF_NOISE_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_NOISE_GHYPER(GPCF, X, [], MASK) 
+    %   [DKff, GPRIOR] = GPCF_NOISE_GHYPER(GPCF, X, [], MASK) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
@@ -199,7 +216,7 @@ function gpcf = gpcf_noise(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %  See also
     %   GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
 
         D = {};
@@ -222,20 +239,20 @@ function gpcf = gpcf_noise(do, varargin)
     %GPCF_NOISE_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
-    %	DKff = GPCF_NOISE_GHYPER(GPCF, X) 
+    %  Description
+    %   DKff = GPCF_NOISE_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
-    %	DKff = GPCF_NOISE_GHYPER(GPCF, X, X2) 
+    %   DKff = GPCF_NOISE_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %  See also
     %   GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
         
 

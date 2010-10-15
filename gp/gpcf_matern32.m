@@ -1,53 +1,68 @@
-function gpcf = gpcf_matern32(do, varargin)
-%GPCF_MATERN32	Create a squared exponential covariance function
+function gpcf = gpcf_matern32(varargin)
+%GPCF_MATERN32  Create a Matern nu=3/2 covariance function
 %
-%	Description
-%        GPCF = GPCF_MATERN32('init', OPTIONS) Create and initialize
-%        matern nu=3/2 covariance function for Gaussian
-%        process. OPTIONS is optional parameter-value pair used as
-%        described below by GPCF_MATERN32('set',...
+%  Description
+%    GPCF = GPCF_MATERN32(OPTIONS) Create and initialize Matern
+%    nu=3/2 covariance function for Gaussian process. OPTIONS is
+%    optional parameter-value pair used as described below.
 %
-%        GPCF = GPCF_MATERN32('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_MATERN32(GPCF, OPTIONS) Set the fields of GPCF as
+%    described by the parameter-value pairs ('FIELD', VALUE) in the
+%    OPTIONS. The fields that can be modified are:
 %
-%             'magnSigma2'        : Magnitude (squared) for exponential 
-%                                   part. (default 0.1)
-%             'lengthScale'       : Length scale for each input. This 
-%                                   can be either scalar corresponding 
-%                                   to an isotropic function or vector 
-%                                   defining own length-scale for each 
-%                                   input direction. (default 10).
-%             'magnSigma2_prior'  : prior structure for magnSigma2
-%             'lengthScale_prior' : prior structure for lengthScale
-%             'metric'            : metric structure into the 
-%                                   covariance function
+%      magnSigma2        = Magnitude (squared) for exponential part. 
+%                          (default 0.1)
+%      lengthScale       = Length scale for each input. This can be 
+%                          either scalar corresponding to an
+%                          isotropic function or vector defining
+%                          own length-scale for each input
+%                          direction. (default 10).
+%      magnSigma2_prior  = prior structure for magnSigma2
+%      lengthScale_prior = prior structure for lengthScale
+%      metric            = metric structure into the covariance function
 %
-%       Note! If the prior structure is set to empty matrix
-%       (e.g. 'magnSigma2_prior', []) then the parameter in question
-%       is considered fixed and it is not handled in optimization,
-%       grid integration, MCMC etc.
+%    Note! If the prior structure is set to empty matrix
+%    (e.g. 'magnSigma2_prior', []) then the parameter in question
+%    is considered fixed and it is not handled in optimization,
+%    grid integration, MCMC etc.
 %
-%	See also
-%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%  See also
+%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_MATERN32';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('metric',[], @isstruct);
     ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     magnSigma2=ip.Results.magnSigma2;
     lengthScale=ip.Results.lengthScale;
@@ -129,9 +144,9 @@ function gpcf = gpcf_matern32(do, varargin)
 
 
     function w = gpcf_matern32_pak(gpcf, w)
-    %GPCF_MATERN32_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_MATERN32_PAK   Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %  Description
     %   W = GPCF_MATERN32_PAK(GPCF) takes a covariance function data
     %   structure GPCF and combines the covariance function parameters
     %   and their hyperparameters into a single row vector W and takes
@@ -141,10 +156,10 @@ function gpcf = gpcf_matern32(do, varargin)
     %             (hyperparameters of gpcf.magnSigma2) 
     %             log(gpcf.lengthScale(:))
     %             (hyperparameters of gpcf.lengthScale)]'
-    %	  
+    %     
     %
-    %	See also
-    %	GPCF_MATERN32_UNPAK
+    %   See also
+    %   GPCF_MATERN32_UNPAK
 
         i1=0;i2=1;
         ww = []; w = [];
@@ -174,7 +189,7 @@ function gpcf = gpcf_matern32(do, varargin)
     function [gpcf, w] = gpcf_matern32_unpak(gpcf, w)
     %GPCF_MATERN32_UNPAK  Sets the covariance function parameters pack into the structure
     %
-    %	Description
+    %  Description
     %   [GPCF, W] = GPCF_MATERN32_UNPAK(GPCF, W) takes a covariance
     %   function data structure GPCF and a hyper-parameter vector W,
     %   and returns a covariance function data structure identical to
@@ -185,8 +200,8 @@ function gpcf = gpcf_matern32(do, varargin)
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.
     %
-    %	See also
-    %	GPCF_MATERN32_PAK
+    %   See also
+    %   GPCF_MATERN32_PAK
         
         gpp=gpcf.p;
         if ~isempty(gpp.magnSigma2)
@@ -221,7 +236,7 @@ function gpcf = gpcf_matern32(do, varargin)
     function eprior =gpcf_matern32_e(gpcf, x, t)
     %GPCF_MATERN32_E     Evaluate the energy of prior of MATERN32 parameters
     %
-    %	Description
+    %  Description
     %   E = GPCF_MATERN32_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -233,8 +248,8 @@ function gpcf = gpcf_matern32(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
-    %	GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_G, GP_E
+    %   See also
+    %   GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_G, GP_E
     %
 
         eprior = 0;
@@ -269,22 +284,22 @@ function gpcf = gpcf_matern32(do, varargin)
     %GPCF_MATERN32_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X) 
+    %  Description
+    %   [DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X, X2) 
+    %   [DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X, [], MASK) 
+    %   [DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X, [], MASK) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
@@ -292,7 +307,7 @@ function gpcf = gpcf_matern32(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %   See also
     %   GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_E, GP_G
 
         gpp=gpcf.p;
@@ -466,20 +481,20 @@ function gpcf = gpcf_matern32(do, varargin)
     %GPCF_MATERN32_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
-    %	DKff = GPCF_MATERN32_GHYPER(GPCF, X) 
+    %  Description
+    %   DKff = GPCF_MATERN32_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
-    %	DKff = GPCF_MATERN32_GHYPER(GPCF, X, X2) 
+    %   DKff = GPCF_MATERN32_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %   See also
     %   GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_E, GP_G
 
         [n, m] =size(x);

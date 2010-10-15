@@ -1,33 +1,45 @@
-function gpcf = gpcf_prod(do, varargin)
-%GPCF_PROD	Create a product form covariance function for Gaussian Process
+function gpcf = gpcf_prod(varargin)
+%GPCF_PROD  Create a product form covariance function for Gaussian Process
 %
-%	Description
-%
-%	GPCF = GPCF_PROD('INIT', 'functions', {GPCF_1, GPCF_2, ...}) Create and 
-%       initialize product form covariance function for Gaussian process. The covariance 
-%       will be 
+%  Description
+%    GPCF = GPCF_PROD('functions', {GPCF_1, GPCF_2, ...}) 
+%    Create and initialize product form covariance function for
+%    Gaussian process. The covariance will be
 %          GPCF = GPCF_1 .* GPCF_2 .* ... .* GPCF_N
 %
-%	GPCF = GPCF_PROD('SET', GPCF, 'functions', {GPCF_1, GPCF_2, ...}) 
-%       set the covariance functions to be multiplyid.
-
-%
-%	See also
+%  See also
 %       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2009-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_PROD';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('functions',[], @iscell);
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     cfs=ip.Results.functions;
 
@@ -69,16 +81,16 @@ function gpcf = gpcf_prod(do, varargin)
     
     
     function w = gpcf_prod_pak(gpcf)
-    %GPCF_PROD_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_PROD_PAK       Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %  Description
     %   W = GPCF_PROD_PAK(GPCF, W) loops through all the covariance
     %   functions and packs their hyperparameters into one vector as
     %   described in the respective functions.
-    %	  
+    %     
     %
-    %	See also
-    %	GPCF_PROD_UNPAK
+    %  See also
+    %   GPCF_PROD_UNPAK
         
         ncf = length(gpcf.functions);
         w = [];
@@ -95,13 +107,13 @@ function gpcf = gpcf_prod(do, varargin)
     function [gpcf, w] = gpcf_prod_unpak(gpcf, w)
     %GPCF_PROD_UNPAK  Separate covariance function hyper-parameter vector into components.
     %
-    %	Description
+    %  Description
     %   [GPCF, W] = GPCF_PROD_UNPAK(GPCF, W) loops through all the
     %   covariance functions and unpacks their hyperparameters into
     %   one vector as described in the respective functions.
     %
-    %	See also
-    %	GPCF_PROD_PAK
+    %  See also
+    %   GPCF_PROD_PAK
     %
         ncf = length(gpcf.functions);
         
@@ -116,7 +128,7 @@ function gpcf = gpcf_prod(do, varargin)
     function eprior =gpcf_prod_e(gpcf, x, t)
     %GPCF_PROD_E     Evaluate the energy of prior of PROD parameters
     %
-    %	Description
+    %  Description
     %   E = GPCF_PROD_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -128,8 +140,8 @@ function gpcf = gpcf_prod(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
-    %	GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_G, GP_E
+    %  See also
+    %   GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_G, GP_E
         
         eprior = 0;
         ncf = length(gpcf.functions);
@@ -144,22 +156,22 @@ function gpcf = gpcf_prod(do, varargin)
     %GPCF_PROD_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[DKff, GPRIOR] = GPCF_PROD_GHYPER(GPCF, X) 
+    %  Description
+    %   [DKff, GPRIOR] = GPCF_PROD_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_PROD_GHYPER(GPCF, X, X2) 
+    %   [DKff, GPRIOR] = GPCF_PROD_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_PROD_GHYPER(GPCF, X, [], MASK) 
+    %   [DKff, GPRIOR] = GPCF_PROD_GHYPER(GPCF, X, [], MASK) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
@@ -167,7 +179,7 @@ function gpcf = gpcf_prod(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %  See also
     %   GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_E, GP_G
 
         [n, m] =size(x);
@@ -278,20 +290,20 @@ function gpcf = gpcf_prod(do, varargin)
     %GPCF_PROD_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
-    %	DKff = GPCF_PROD_GHYPER(GPCF, X) 
+    %  Description
+    %   DKff = GPCF_PROD_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
-    %	DKff = GPCF_PROD_GHYPER(GPCF, X, X2) 
+    %   DKff = GPCF_PROD_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %  See also
     %   GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_E, GP_G
         
         [n, m] =size(x);

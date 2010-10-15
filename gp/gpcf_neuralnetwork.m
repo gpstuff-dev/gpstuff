@@ -1,54 +1,70 @@
-function gpcf = gpcf_neuralnetwork(do, varargin)
-%GPCF_NEURALNETWORK	Create a squared exponential covariance function
+function gpcf = gpcf_neuralnetwork(varargin)
+%GPCF_NEURALNETWORK  Create a neural network covariance function
 %
-%	Description
-%        GPCF = GPCF_NEURALNETWORK('init', OPTIONS) Create and initialize
-%        squared exponential covariance function for Gaussian
-%        process. OPTIONS is optional parameter-value pair used as
-%        described below by GPCF_NEURALNETWORK('set',...
+%  Description
+%    GPCF = GPCF_NEURALNETWORK(OPTIONS) Create and initialize
+%    squared exponential covariance function for Gaussian process. 
+%    OPTIONS is optional parameter-value pair used as described
+%    below.
 %
-%        GPCF = GPCF_NEURALNETWORK('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_NEURALNETWORK(GPCF, OPTIONS) Set the fields of
+%    GPCF as described by the parameter-value pairs ('FIELD',
+%    VALUE) in the OPTIONS. The fields that can be modified are:
 %
-%             'biasSigma2'         : Magnitude (squared) for exponential 
-%                                   part. (default 0.1)
-%             'weightSigma2'       : Length scale for each input. This 
-%                                   can be either scalar corresponding 
-%                                   to an isotropic function or vector 
-%                                   defining own length-scale for each 
-%                                   input direction. (default 10).
-%             'biasSigma2_prior'   : prior structure for magnSigma2
-%             'weightSigma2_prior' : prior structure for lengthScale
-%             'selectedVariables'  : vector defining which inputs are 
-%                                    active
+%      biasSigma2         = Magnitude (squared) for exponential part.
+%                           (default 0.1)
+%      weightSigma2       = Length scale for each input. This can be 
+%                           either scalar corresponding to an
+%                           isotropic function or vector defining
+%                           own length-scale for each input
+%                           direction. (default 10).
+%      biasSigma2_prior   = prior structure for magnSigma2
+%      weightSigma2_prior = prior structure for lengthScale
+%      selectedVariables  = vector defining which inputs are active
 %
-%       Note! If the prior structure is set to empty matrix
-%       (e.g. 'biasSigma2_prior', []) then the parameter in question
-%       is considered fixed and it is not handled in optimization,
-%       grid integration, MCMC etc.
+%    Note! If the prior structure is set to empty matrix
+%    (e.g. 'biasSigma2_prior', []) then the parameter in question
+%    is considered fixed and it is not handled in optimization,
+%    grid integration, MCMC etc.
 %
-%	See also
+%  See also
 %       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2009 Jaakko Riihimaki
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_NEURALNETWORK';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('biasSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('weightSigma2',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('biasSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('weightSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     biasSigma2=ip.Results.biasSigma2;
     weightSigma2=ip.Results.weightSigma2;
@@ -127,9 +143,9 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
 
 
     function w = gpcf_neuralnetwork_pak(gpcf, w)
-    %GPCF_NEURALNETWORK_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_NEURALNETWORK_PAK      Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %  Description
     %   W = GPCF_NEURALNETWORK_PAK(GPCF) takes a covariance function data
     %   structure GPCF and combines the covariance function parameters
     %   and their hyperparameters into a single row vector W and takes
@@ -139,10 +155,10 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %             (hyperparameters of gpcf.biasSigma2) 
     %             log(gpcf.weightSigma2(:))
     %             (hyperparameters of gpcf.weightSigma2)]'
-    %	  
+    %     
     %
-    %	See also
-    %	GPCF_NEURALNETWORK_UNPAK
+    %  See also
+    %   GPCF_NEURALNETWORK_UNPAK
 
         i1=0;i2=1;
         ww = []; w = [];
@@ -168,7 +184,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     function [gpcf, w] = gpcf_neuralnetwork_unpak(gpcf, w)
     %GPCF_NEURALNETWORK_UNPAK  Sets the covariance function parameters pack into the structure
     %
-    %	Description
+    %  Description
     %   [GPCF, W] = GPCF_NEURALNETWORK_UNPAK(GPCF, W) takes a covariance
     %   function data structure GPCF and a hyper-parameter vector W,
     %   and returns a covariance function data structure identical to
@@ -179,8 +195,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.
     %
-    %	See also
-    %	GPCF_NEURALNETWORK_PAK
+    %  See also
+    %   GPCF_NEURALNETWORK_PAK
         
         gpp=gpcf.p;
         if ~isempty(gpp.biasSigma2)
@@ -210,7 +226,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     function eprior =gpcf_neuralnetwork_e(gpcf, x, t)
     %GPCF_NEURALNETWORK_E     Evaluate the energy of prior of NEURALNETWORK parameters
     %
-    %	Description
+    %  Description
     %   E = GPCF_NEURALNETWORK_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -222,8 +238,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
-    %	GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK, GPCF_NEURALNETWORK_G, GP_E
+    %  See also
+    %   GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK, GPCF_NEURALNETWORK_G, GP_E
 
         [n, m] =size(x);
 
@@ -248,22 +264,22 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %GPCF_NEURALNETWORK_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X) 
+    %  Description
+    %   [DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X, X2) 
+    %   [DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X, [], MASK) 
+    %   [DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X, [], MASK) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
@@ -271,7 +287,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %  See also
     %   GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK, GPCF_NEURALNETWORK_E, GP_G
         
         gpp=gpcf.p;
@@ -485,20 +501,20 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %GPCF_NEURALNETWORK_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
-    %	DKff = GPCF_NEURALNETWORK_GHYPER(GPCF, X) 
+    %  Description
+    %   DKff = GPCF_NEURALNETWORK_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
-    %	DKff = GPCF_NEURALNETWORK_GHYPER(GPCF, X, X2) 
+    %   DKff = GPCF_NEURALNETWORK_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %  See also
     %   GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK, GPCF_NEURALNETWORK_E, GP_G
         
        if isfield(gpcf, 'selectedVariables')
@@ -612,7 +628,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %         GPCF_NEURALNETWORK_TRCOV, GPCF_NEURALNETWORK_TRVAR, GP_COV, GP_TRCOV
         
         if isfield(gpcf, 'selectedVariables')
-        	x1=x1(:,gpcf.selectedVariables); 
+                x1=x1(:,gpcf.selectedVariables); 
             if nargin == 3
                 x2=x2(:,gpcf.selectedVariables); 
             end
@@ -666,7 +682,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %         GPCF_NEURALNETWORK_COV, GPCF_NEURALNETWORK_TRVAR, GP_COV, GP_TRCOV
         
         if isfield(gpcf, 'selectedVariables')
-        	x=x(:,gpcf.selectedVariables); 
+                x=x(:,gpcf.selectedVariables); 
         end
     
         [n,m]=size(x);
@@ -704,8 +720,8 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
     %         See also
     %         GPCF_NEURALNETWORK_COV, GP_COV, GP_TRCOV
         
-    	if isfield(gpcf, 'selectedVariables')
-        	x=x(:,gpcf.selectedVariables); 
+        if isfield(gpcf, 'selectedVariables')
+                x=x(:,gpcf.selectedVariables); 
         end
     
         [n,m]=size(x);
@@ -788,7 +804,7 @@ function gpcf = gpcf_neuralnetwork(do, varargin)
         end
         
         if isfield(gpcf, 'selectedVariables')
-        	reccf.selectedVariables = gpcf.selectedVariables;
+                reccf.selectedVariables = gpcf.selectedVariables;
         end
         
     end

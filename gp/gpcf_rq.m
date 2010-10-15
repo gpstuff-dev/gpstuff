@@ -1,38 +1,35 @@
-function gpcf = gpcf_rq(do, varargin)
-%GPCF_RQ	Create an rational quadratic covariance function for Gaussian Process
+function gpcf = gpcf_rq(varargin)
+%GPCF_RQ Create a rational quadratic covariance function for Gaussian Process
 %
-%	Description
+%  Description
+%    GPCF = GPCF_RQ(OPTIONS) Create and initialize a rational
+%    quaratic covariance function for Gaussian process. OPTIONS is
+%    optional parameter-value pair used as described below.
 %
-%       GPCF = GPCF_RQ('INIT', OPTIONS) Create and initialize rational
-%       quaratic covariance function for Gaussian process. OPTIONS is
-%       optional parameter-value pair used as described below by
-%       GPCF_RQ('set',...
+%    GPCF = GPCF_RQ(GPCF, OPTIONS) Set the fields of GPCF as
+%    described by the parameter-value pairs ('FIELD', VALUE) in the
+%    OPTIONS. The fields that can be modified are:
 %
-%        GPCF = GPCF_RQ('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%      magnSigma2        = Magnitude (squared) for exponential part. 
+%                          (default 0.1)
+%      lengthScale       = Length scale for each input. This can be 
+%                          either scalar corresponding to an
+%                          isotropic function or vector defining
+%                          own length-scale for each input
+%                          direction. (default 10).
+%      alpha             = set the alpha
+%      magnSigma2_prior  = prior structure for magnSigma2
+%      lengthScale_prior = prior structure for lengthScale
+%      metric            = metric structure into the covariance function
+%      alpha_prior       = set the prior structure for alpha
 %
-%             'magnSigma2'        : Magnitude (squared) for exponential 
-%                                   part. (default 0.1)
-%             'lengthScale'       : Length scale for each input. This 
-%                                   can be either scalar corresponding 
-%                                   to an isotropic function or vector 
-%                                   defining own length-scale for each 
-%                                   input direction. (default 10).
-%             'alpha'             : set the alpha
-%             'magnSigma2_prior'  : prior structure for magnSigma2
-%             'lengthScale_prior' : prior structure for lengthScale
-%             'metric'            : metric structure into the 
-%                                   covariance function
-%             'alpha_prior'       : set the prior structure for alpha
+%    Note! If the prior structure is set to empty matrix
+%    (e.g. 'magnSigma2_prior', []) then the parameter in question
+%    is considered fixed and it is not handled in optimization,
+%    grid integration, MCMC etc.
 %
-%       Note! If the prior structure is set to empty matrix
-%       (e.g. 'magnSigma2_prior', []) then the parameter in question
-%       is considered fixed and it is not handled in optimization,
-%       grid integration, MCMC etc.
-%
-%	See also
-%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%  See also
+%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
     
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Tuomas Nikoskinen, Aki Vehtari
@@ -41,9 +38,26 @@ function gpcf = gpcf_rq(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_RQ';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
@@ -52,8 +66,7 @@ function gpcf = gpcf_rq(do, varargin)
     ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('alpha_prior',NaN, @(x) isstruct(x) || isempty(x));
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     magnSigma2=ip.Results.magnSigma2;
     lengthScale=ip.Results.lengthScale;
@@ -163,7 +176,7 @@ function gpcf = gpcf_rq(do, varargin)
     function w = gpcf_rq_pak(gpcf)
     %GPCF_RQ_PAK	 Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %  Description
     %   W = GPCF_RQ_PAK(GPCF) takes a covariance function data
     %   structure GPCF and combines the covariance function parameters
     %   and their hyperparameters into a single row vector W and takes
@@ -177,7 +190,7 @@ function gpcf = gpcf_rq(do, varargin)
     %             (hyperparameters of gpcf.lengthScale)]'
     %	  
     %
-    %	See also
+    %  See also
     %	GPCF_RQ_UNPAK
 
         i1=0;i2=1;
@@ -217,7 +230,7 @@ function gpcf = gpcf_rq(do, varargin)
     function [gpcf, w] = gpcf_rq_unpak(gpcf, w)
     %GPCF_RQ_UNPAK  Sets the covariance function parameters pack into the structure
     %
-    %	Description
+    %  Description
     %   [GPCF, W] = GPCF_RQ_UNPAK(GPCF, W) takes a covariance
     %   function data structure GPCF and a hyper-parameter vector W,
     %   and returns a covariance function data structure identical to
@@ -228,7 +241,7 @@ function gpcf = gpcf_rq(do, varargin)
     %   The covariance function parameters are transformed via exp
     %   (or exp exp) before setting them into the structure.
     %
-    %	See also
+    %  See also
     %	GPCF_RQ_PAK
 
         gpp=gpcf.p;
@@ -277,7 +290,7 @@ function gpcf = gpcf_rq(do, varargin)
     function eprior =gpcf_rq_e(gpcf, x, t)
     %GPCF_RQ_E     Evaluate the energy of prior of RQ parameters
     %
-    %	Description
+    %  Description
     %   E = GPCF_RQ_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -289,7 +302,7 @@ function gpcf = gpcf_rq(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
+    %  See also
     %	GPCF_RQ_PAK, GPCF_RQ_UNPAK, GPCF_RQ_G, GP_E
 
         eprior = 0;
@@ -324,7 +337,7 @@ function gpcf = gpcf_rq(do, varargin)
     %GPCF_RQ_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
+    %  Description
     %	[DKff, GPRIOR] = GPCF_RQ_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
@@ -347,7 +360,7 @@ function gpcf = gpcf_rq(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %  See also
     %   GPCF_RQ_PAK, GPCF_RQ_UNPAK, GPCF_RQ_E, GP_G
         
         gpp=gpcf.p;
@@ -533,7 +546,7 @@ function gpcf = gpcf_rq(do, varargin)
     %GPCF_RQ_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
+    %  Description
     %	DKff = GPCF_RQ_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
@@ -546,7 +559,7 @@ function gpcf = gpcf_rq(do, varargin)
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %  See also
     %   GPCF_RQ_PAK, GPCF_RQ_UNPAK, GPCF_RQ_E, GP_G
 
         

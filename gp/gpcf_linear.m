@@ -1,47 +1,61 @@
-function gpcf = gpcf_linear(do, varargin)
-%GPCF_LINEAR	Create a linear covariance function
+function gpcf = gpcf_linear(varargin)
+%GPCF_LINEAR  Create a linear covariance function
 %
-%	Description
-%        GPCF = GPCF_LINEAR('init', OPTIONS) Create and initialize
-%        linear covariance function for Gaussian process. OPTIONS is
-%        optional parameter-value pair used as described below by
-%        GPCF_LINEAR('set',...
+%  Description
+%    GPCF = GPCF_LINEAR(OPTIONS) Create and initialize linear
+%    covariance function for Gaussian process. OPTIONS is optional
+%    parameter-value pair used as described below.
 %
-%        GPCF = GPCF_LINEAR('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_LINEAR(GPCF, OPTIONS) Set the fields of GPCF as
+%    described by the parameter-value pairs ('FIELD', VALUE) in the
+%    OPTIONS. The fields that can be modified are:
 %
-%             'coeffSigma2'        : variance (squared) for regressor 
-%                                    coefficient (default 10) (can
-%                                    also be vector)
-%             'coeffSigma2_prior'  : prior structure for coeffSigma2
-%             'selectedVariables'  : vector defining which inputs are 
-%                                    active
+%      coeffSigma2        = variance (squared) for regressor coefficient 
+%                           (default 10) (can also be vector)
+%      coeffSigma2_prior  = prior structure for coeffSigma2
+%      selectedVariables  = vector defining which inputs are active
 %
-%       Note! If the prior structure is set to empty matrix
-%       (e.g. 'coeffSigma2_prior', []) then the parameter in question
-%       is considered fixed and it is not handled in optimization,
-%       grid integration, MCMC etc.
+%    Note! If the prior structure is set to empty matrix (e.g. 
+%    'coeffSigma2_prior', []) then the parameter in question is
+%    considered fixed and it is not handled in optimization, grid
+%    integration, MCMC etc.
 %
-%	See also
-%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+% See also
+%   gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihimï¿½ki
+% Copyright (c) 2008-2010 Jaakko Riihimäki
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_LINEAR';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('coeffSigma2',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('coeffSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     coeffSigma2=ip.Results.coeffSigma2;
     coeffSigma2_prior=ip.Results.coeffSigma2_prior;
@@ -102,9 +116,9 @@ function gpcf = gpcf_linear(do, varargin)
     
 
     function w = gpcf_linear_pak(gpcf, w)
-    %GPCF_LINEAR_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_LINEAR_PAK     Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %   Description
     %   W = GPCF_LINEAR_PAK(GPCF) takes a covariance function data
     %   structure GPCF and combines the covariance function parameters
     %   and their hyperparameters into a single row vector W and takes
@@ -112,10 +126,10 @@ function gpcf = gpcf_linear(do, varargin)
     %
     %       w = [ log(gpcf.coeffSigma2)
     %             (hyperparameters of gpcf.coeffSigma2)]'
-    %	  
+    %     
     %
-    %	See also
-    %	GPCF_LINEAR_UNPAK
+    %  See also
+    %   GPCF_LINEAR_UNPAK
         
         w = [];
         if ~isempty(gpcf.p.coeffSigma2)
@@ -129,7 +143,7 @@ function gpcf = gpcf_linear(do, varargin)
     function [gpcf, w] = gpcf_linear_unpak(gpcf, w)
     %GPCF_LINEAR_UNPAK  Sets the covariance function parameters pack into the structure
     %
-    %	Description
+    %   Description
     %   [GPCF, W] = GPCF_LINEAR_UNPAK(GPCF, W) takes a covariance
     %   function data structure GPCF and a hyper-parameter vector W,
     %   and returns a covariance function data structure identical to
@@ -140,8 +154,8 @@ function gpcf = gpcf_linear(do, varargin)
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.
     %
-    %	See also
-    %	GPCF_LINEAR_PAK
+    %  See also
+    %   GPCF_LINEAR_PAK
 
         
         gpp=gpcf.p;
@@ -161,7 +175,7 @@ function gpcf = gpcf_linear(do, varargin)
     function eprior =gpcf_linear_e(gpcf, x, t)
     %GPCF_LINEAR_E     Evaluate the energy of prior of LINEAR parameters
     %
-    %	Description
+    %   Description
     %   E = GPCF_LINEAR_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -173,8 +187,8 @@ function gpcf = gpcf_linear(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
-    %	GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_G, GP_E
+    %  See also
+    %   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_G, GP_E
 
         [n, m] =size(x);
 
@@ -195,22 +209,22 @@ function gpcf = gpcf_linear(do, varargin)
     %GPCF_LINEAR_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X) 
+    %   Description
+    %   [DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X, X2) 
+    %   [DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X, [], MASK) 
+    %   [DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X, [], MASK) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
@@ -218,7 +232,7 @@ function gpcf = gpcf_linear(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %  See also
     %   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_E, GP_G
 
 
@@ -334,20 +348,20 @@ function gpcf = gpcf_linear(do, varargin)
     %GPCF_LINEAR_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
-    %	DKff = GPCF_LINEAR_GHYPER(GPCF, X) 
+    %   Description
+    %   DKff = GPCF_LINEAR_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
-    %	DKff = GPCF_LINEAR_GHYPER(GPCF, X, X2) 
+    %   DKff = GPCF_LINEAR_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %  See also
     %   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_E, GP_G        
         [n, m] =size(x);
         
@@ -574,7 +588,7 @@ function gpcf = gpcf_linear(do, varargin)
         end
         
         if isfield(gpcf, 'selectedVariables')
-        	reccf.selectedVariables = gpcf.selectedVariables;
+                reccf.selectedVariables = gpcf.selectedVariables;
         end
         
     end

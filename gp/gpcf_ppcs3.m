@@ -1,65 +1,79 @@
 function gpcf = gpcf_ppcs3(do, varargin)
 %GPCF_PPCS3     Create a piece wise polynomial (q=3) covariance function 
 %
-%	Description
+%  Description
+%    GPCF = GPCF_PPCS3('nin', NIN, OPTIONS) Create and initialize
+%    piece wise polynomial covariance function for Gaussian process
+%    for input dimension NIN. OPTIONS is optional parameter-value
+%    pair used as described below.
 %
-%       GPCF = GPCF_PPCS3('INIT', 'nin', NIN, OPTIONS) Create and
-%       initialize piece wise polynomial covariance function for
-%       Gaussian process for input dimension NIN. OPTIONS is optional
-%       parameter-value pair used as described below by
-%       GPCF_PPCS3('set',...
+%    GPCF = GPCF_PPCS3(GPCF, OPTIONS) Set the fields of GPCF as
+%    described by the parameter-value pairs ('FIELD', VALUE) in the
+%    OPTIONS. The fields that can be modified are:
 %
-%       GPCF = GPCF_PPCS3('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%      magnSigma2        = Magnitude (squared) for exponential part. 
+%                          (default 0.1)
+%      lengthScale       = Length scale for each input. This can be 
+%                          either scalar corresponding to an
+%                          isotropic function or vector defining
+%                          own length-scale for each input
+%                          direction. (default 10).
+%      l_nin             = set gpcf.l = floor(l_nin/2) + 1. 
+%                          This parameter defines the order of the
+%                          polynomial. Default is floor(nin/2) + 1
+%                          and this can only be increased
+%      magnSigma2_prior  = prior structure for magnSigma2
+%      lengthScale_prior = prior structure for lengthScale
+%      metric            = metric structure into the covariance function
 %
-%             'magnSigma2'        : Magnitude (squared) for exponential 
-%                                   part. (default 0.1)
-%             'lengthScale'       : Length scale for each input. This 
-%                                   can be either scalar corresponding 
-%                                   to an isotropic function or vector 
-%                                   defining own length-scale for each 
-%                                   input direction. (default 10).
-%             'l_nin'             : set gpcf.l = floor(l_nin/2) + 1. 
-%                                   This parameter defines the order 
-%                                   of the polynomial. Default is 
-%                                   floor(nin/2) + 1  and this can 
-%                                   only be increased
-%             'magnSigma2_prior'  : prior structure for magnSigma2
-%             'lengthScale_prior' : prior structure for lengthScale
-%             'metric'            : metric structure into the 
-%                                   covariance function
+%    Note! If the prior structure is set to empty matrix (e.g. 
+%    'magnSigma2_prior', []) then the parameter in question is
+%    considered fixed and it is not handled in optimization, grid
+%    integration, MCMC etc.
 %
-%       Note! If the prior structure is set to empty matrix
-%       (e.g. 'magnSigma2_prior', []) then the parameter in question
-%       is considered fixed and it is not handled in optimization,
-%       grid integration, MCMC etc.
+%    The piecewise polynomial function is the following:
 %
-%       The piecewise polynomial function is the following:
+%      k(x_i, x_j) = ma.*cs.^(l+3).*((l^3 + 9*l^2 + 23*l + 15).*r.^3 + ...
+%                    (6*l^2 + 36*l + 45).*r.^2 + (15*l + 45).*r + 15)/15;
 %
-%           k(x_i, x_j) = ma.*cs.^(l+3).*((l^3 + 9*l^2 + 23*l + 15).*r.^3 + ...
-%                          (6*l^2 + 36*l + 45).*r.^2 + (15*l + 45).*r + 15)/15;
-%
-%       where r = sum( (x_i,d - x_j,d).^2./l^2_d )
-%             l = floor(l_nin/2) + 4     
-%             cs = max(0,1-r);
-%       and l_nin must be greater or equal to gpcf.nin
+%      where r = sum( (x_i,d - x_j,d).^2./l^2_d )
+%            l = floor(l_nin/2) + 4     
+%            cs = max(0,1-r);
+%      and l_nin must be greater or equal to gpcf.nin
 %       
-%       NOTE2! Use of gpcf_ppcs2 requires that you have installed
-%       GPstuff with SuiteSparse.
+%    NOTE2! Use of gpcf_ppcs3 requires that you have installed
+%    GPstuff with SuiteSparse.
 %
-%	See also
-%       gpcf_matern32, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%  See also
+%    gpcf_matern32, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_PPCS3';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
@@ -68,8 +82,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     ip.addParamValue('metric',[], @isstruct);
     ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     nin=ip.Results.nin;
     magnSigma2=ip.Results.magnSigma2;
@@ -78,7 +91,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     metric=ip.Results.metric;
     magnSigma2_prior=ip.Results.magnSigma2_prior;
     lengthScale_prior=ip.Results.lengthScale_prior;
-    
+
     switch do
       case 'init'
         % Initialize the covariance function
@@ -174,9 +187,9 @@ function gpcf = gpcf_ppcs3(do, varargin)
     end
     
     function w = gpcf_ppcs3_pak(gpcf, w)
-    %GPCF_PPCS3_PAK	 Combine GP covariance function hyper-parameters into one vector.
+    %GPCF_PPCS3_PAK      Combine GP covariance function hyper-parameters into one vector.
     %
-    %	Description
+    %  Description
     %   W = GPCF_PPCS3_PAK(GPCF) takes a covariance function data
     %   structure GPCF and combines the covariance function parameters
     %   and their hyperparameters into a single row vector W and takes
@@ -186,10 +199,10 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %             (hyperparameters of gpcf.magnSigma2) 
     %             log(gpcf.lengthScale(:))
     %             (hyperparameters of gpcf.lengthScale)]'
-    %	  
+    %     
     %
-    %	See also
-    %	GPCF_PPCS3_UNPAK
+    %  See also
+    %   GPCF_PPCS3_UNPAK
         
         i1=0;i2=1;
         ww = []; w = [];
@@ -222,7 +235,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     function [gpcf, w] = gpcf_ppcs3_unpak(gpcf, w)
     %GPCF_PPCS3_UNPAK  Sets the covariance function parameters pack into the structure
     %
-    %	Description
+    %  Description
     %   [GPCF, W] = GPCF_PPCS3_UNPAK(GPCF, W) takes a covariance
     %   function data structure GPCF and a hyper-parameter vector W,
     %   and returns a covariance function data structure identical to
@@ -233,8 +246,8 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.
     %
-    %	See also
-    %	GPCF_PPCS3_PAK
+    %  See also
+    %   GPCF_PPCS3_PAK
         
         gpp=gpcf.p;
         if ~isempty(gpp.magnSigma2)
@@ -269,7 +282,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     function eprior =gpcf_ppcs3_e(gpcf, x, t)
     %GPCF_PPCS3_E     Evaluate the energy of prior of PPCS3 parameters
     %
-    %	Description
+    %  Description
     %   E = GPCF_PPCS3_E(GPCF, X, T) takes a covariance function data
     %   structure GPCF together with a matrix X of input vectors and a
     %   vector T of target vectors and evaluates log p(th) x J, where
@@ -281,8 +294,8 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %   function parameters is added to E if hyper-hyperprior is
     %   defined.
     %
-    %	See also
-    %	GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_G, GP_E
+    %  See also
+    %   GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_G, GP_E
 
         eprior = 0;
         gpp=gpcf.p;
@@ -319,22 +332,22 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %GPCF_PPCS3_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
     %                     respect to the hyperparameters.
     %
-    %	Description
-    %	[DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X) 
+    %  Description
+    %   [DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X, X2) 
+    %   [DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
     %   vector of hyperparameters
     %
-    %	[DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X, [], MASK) 
+    %   [DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X, [], MASK) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
@@ -342,7 +355,7 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %   th is the vector of hyperparameters. This is needed for
     %   example with FIC sparse approximation.
     %
-    %	See also
+    %  See also
     %   GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_E, GP_G
         
         gpp=gpcf.p;
@@ -686,20 +699,20 @@ function gpcf = gpcf_ppcs3(do, varargin)
     %GPCF_PPCS3_GINPUT     Evaluate gradient of covariance function with 
     %                     respect to x.
     %
-    %	Description
-    %	DKff = GPCF_PPCS3_GHYPER(GPCF, X) 
+    %  Description
+    %   DKff = GPCF_PPCS3_GHYPER(GPCF, X) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
-    %	DKff = GPCF_PPCS3_GHYPER(GPCF, X, X2) 
+    %   DKff = GPCF_PPCS3_GHYPER(GPCF, X, X2) 
     %   takes a covariance function data structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
     %
-    %	See also
+    %  See also
     %   GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_E, GP_G
 
         

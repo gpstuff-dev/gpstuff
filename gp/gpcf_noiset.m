@@ -1,53 +1,67 @@
-function gpcf = gpcf_noiset(do, varargin)
-%GPCF_NOISET	Create a scale mixture noise covariance function (~Student-t) 
+function gpcf = gpcf_noiset(varargin)
+%GPCF_NOISET    Create a scale mixture noise covariance function (~Student-t) 
 %               for Gaussian Process.
 %
-%	Description
-%        GPCF = GPCF_NOISET('init', 'nin', NIN, OPTIONS) Create and initialize
-%        Student't noise covariance function , with a scale mixture
-%        representation, for Gaussian process with input dimension NIN.
-%        OPTIONS is optional parameter-value pair used as described below by
-%        GPCF_NOISET('set',...
+%  Description
+%    GPCF = GPCF_NOISET('ndata', N, OPTIONS) Create and initialize
+%    Student't noise covariance function, with a scale mixture
+%    representation, for Gaussian process with 'ndata' data points. 
+%    OPTIONS is optional parameter-value pair used as described
+%    below.
 %
-%        GPCF = GPCF_NOISET('SET', GPCF, OPTIONS) Set the fields of GPCF
-%        as described by the parameter-value pairs ('FIELD', VALUE) in
-%        the OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_NOISET(GPCF, OPTIONS) Set the fields of GPCF as
+%    described by the parameter-value pairs ('FIELD', VALUE) in the
+%    OPTIONS. The fields that can be modified are:
 %
-%             'noiseSigmas2'     : set the noiseSigma2
-%             'U'                : set the vector U
-%             'tau2'             : set tau^2
-%             'alpha'            : set alpha
-%             'nu'               : set nu
-%             'fix_nu'           : set fix_nu to 0 or 1
-%             'nu_prior'         : set the prior structure for nu. 
-%                  (nu is the only parameter whose prior we can adjust)
+%      noiseSigmas2     = Magnitude (squared) of the noise
+%      U                = Part of the parameter expansion, see below.
+%      tau2             = Part of the parameter expansion, see below.
+%      alpha            = Part of the parameter expansion, see below.
+%      nu               = The degrees of freedom.
+%      nu_prior         = Prior structure for nu. 
+%                         (nu is the only parameter with adjustable prior)
 %
-%       NOTE!
-%       The Student-t residual model is greated as in Gelman et. al. (2004) page 304-305:
+%    NOTE! The Student-t residual model is greated as in Gelman
+%    et. al. (2004) page 304-305:
 %    
-%          y-E[y] ~ N(0, alpha^2 * U), where U = diag(u_1, u_2, ..., u_n)
-%             u_i ~ Inv-Chi^2(nu, tau^2)
+%      y-E[y] ~ N(0, alpha^2 * U), where U = diag(u_1, u_2, ..., u_n)
+%      u_i ~ Inv-Chi^2(nu, tau^2)
 %       
-%          The degrees of freedom nu are given a 1/nu prior and they are sampled via 
-%          slice sampling.
+%    The degrees of freedom nu are given a 1/nu prior and they are
+%    sampled via slice sampling.
 %
-%	See also
-%	gpcf_noiset, gpcf_noise
-%
-%
+%  See also
+%    gpcf_noise
 
-% Copyright (c) 1998,1999 Aki Vehtari
+% Copyright (c) 1998,1999,2010 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
-% This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% This software is distributed under the GNU General Public
+% License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_NOISET';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
-    ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+    ip.addParamValue('ndata',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
     ip.addParamValue('noiseSigmas2',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('U',[], @isvector);
     ip.addParamValue('tau2',[], @isscalar);
@@ -56,8 +70,7 @@ function gpcf = gpcf_noiset(do, varargin)
     ip.addParamValue('nu',[], @isscalar);
     ip.addParamValue('nu_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('censored',[], @(x) isstruct);
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     noiseSigmas2=ip.Results.noiseSigmas2;
     U=ip.Results.U;
@@ -66,7 +79,7 @@ function gpcf = gpcf_noiset(do, varargin)
     fix_nu=ip.Results.fix_nu;
     nu=ip.Results.nu;
     nu_prior=ip.Results.nu_prior;
-    nin=ip.Results.nin;
+    ndata=ip.Results.ndata;
     censored=ip.Results.censored;
 
     switch do
@@ -74,24 +87,27 @@ function gpcf = gpcf_noiset(do, varargin)
             gpcf.type = 'gpcf_noiset';            
             
             % Initialize parameters
-            gpcf.ndata = nin;
-            gpcf.r = zeros(nin,1);
+            if isempty(ndata)
+              error('NDATA has to be defined')
+            end
+            gpcf.ndata = ndata;
+            gpcf.r = zeros(ndata,1);
             if isempty(U)
-                gpcf.U = ones(nin,1);
+                gpcf.U = ones(ndata,1);
             else
                 if size(U,1) == gpcf.ndata
                     gpcf.U = U;
                 else
-                    error('the size of U has to be NINx1')
+                    error('the size of U has to be NDATAx1')
                 end
             end
             if isempty(noiseSigmas2)
-                gpcf.noiseSigmass2 = 0.1^2.*ones(nin,1);
+                gpcf.noiseSigmass2 = 0.1^2.*ones(ndata,1);
             else
                 if (size(noiseSigmas2,1) == gpcf.ndata && size(noiseSigmas2,2) == 1)
                         gpcf.noiseSigmas2 = noiseSigmas2;
                     else
-                        error('the size of noiseSigmas2 has to be NINx1')
+                        error('the size of noiseSigmas2 has to be NDATAx1')
                 end
             end
             if isempty(tau2)
@@ -118,7 +134,7 @@ function gpcf = gpcf_noiset(do, varargin)
                 gpcf.censored = censored{1};
                 yy = censored{2};
                 if gpcf.censored(1) >= gpcf.censored(2)
-                    error('gpcf_noiset -> if censored model is used the limits have to be given in increasing order.')
+                    error('gpcf_noiset -> if censored model is used, the limits must be given in increasing order.')
                 end
                 
                 imis1 = [];
@@ -164,14 +180,14 @@ function gpcf = gpcf_noiset(do, varargin)
                 if size(U,1) == gpcf.ndata
                     gpcf.U = U;
                 else
-                    error('the size of U has to be NINx1')
+                    error('the size of U has to be NDATAx1')
                 end
             end
             if ~isempty(noiseSigmas2)
                 if (size(noiseSigmas2,1) == gpcf.ndata && size(noiseSigmas2,2) == 1)
                         gpcf.noiseSigmas2 = noiseSigma2;
                     else
-                        error('the size of noiseSigmas2 has to be NINx1')
+                        error('the size of noiseSigmas2 has to be NDATAx1')
                 end
             end
             if ~isempty(tau2)
