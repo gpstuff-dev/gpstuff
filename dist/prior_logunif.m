@@ -2,17 +2,9 @@ function p = prior_logunif(varargin)
 %PRIOR_LOGUNIF  Uniform prior structure for the logarithm of the parameter
 %       
 %  Description
-%    P = PRIOR_LOGUNIF returns a structure that specifies uniform
-%    prior for the logarithm of the parameters.
+%    P = PRIOR_LOGUNIF creates uniform prior structure for the
+%    logarithm of the parameter.
 %    
-%    The fields in P are:
-%      type         = 'Log-uniform'
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
-%
 %  See also
 %    PRIOR_*
 

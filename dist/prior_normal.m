@@ -2,23 +2,20 @@ function p = prior_normal(varargin)
 %PRIOR_NORMAL  Normal prior structure     
 %       
 %  Description
-%    P = PRIOR_NORMAL('FIELD1', VALUE1, 'FIELD2', VALUE2, ...) 
-%    returns a structure that specifies normal prior. 
-%    Fields that can be set: 's2', 'mu', 's2_prior', 'mu_prior'.
+%    P = PRIOR_NORMAL('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates Normal prior structure in which the named
+%    parameters have the specified values. Any unspecified
+%    parameters are set to default values.
 %    
-%    The fields in P are:
-%      type         = 'Normal'
-%      mu           = Location (default 0)
-%      s2           = Scale (default 1)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
+%    P = PRIOR_NORMAL(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
 %
-%    P = PRIOR_NORMAL('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 's2', 'mu', 's2_prior', 'mu_prior'.
+%    Parameters for Normal prior [default]
+%      mu       - location [0]
+%      s2       - scale squared (variance) [1]
+%      mu_prior - prior for mu [prior_fixed]
+%      s2_prior - prior for s2 [prior_fixed]
 %
 %  See also
 %    PRIOR_*

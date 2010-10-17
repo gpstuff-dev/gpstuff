@@ -2,32 +2,26 @@ function p = prior_sqrtt(varargin)
 %PRIOR_SQRTT  Student-t prior structure for the square root of the parameter
 %       
 %  Description
-%    P = PRIOR_SQRTT('FIELD1', VALUE1, 'FIELD2', VALUE2, ...) 
-%    returns a structure that specifies Student's t-distribution
-%    prior for the square root of the parameter. Fields that can be
-%    set: 'mu', 's2', 'nu', 'mu_prior', 's2_prior', 'nu_prior'.
+%    P = PRIOR_SQRTT('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates for quare root of the parameter Student's
+%    t-distribution prior structure in which the named parameters
+%    have the specified values. Any unspecified parameters are set
+%    to default values.
 %
-%    Parameterisation is done as in Bayesian Data Analysis,  
-%    second edition, Gelman et.al 2004.
-%    
-%    The fields in P are:
-%      type         = 'Sqrt-Student-t'
-%      mu           = Location (default 0)
-%      s2           = Scale (default 1)
-%      nu           = Degrees of freedom (default 4)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
+%    P = PRIOR_SQRTT(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
 %
-%    P = PRIOR_SQRTT('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 'mu', 's2', 'nu', 'mu_prior', 's2_prior',
-%    'nu_prior'.
+%    Parameters for Student-t prior [default]
+%      mu       - location [0]
+%      s2       - scale [1]
+%      nu       - degrees of freedom [4]
+%      mu_prior - prior for mu [prior_fixed]
+%      s2_prior - prior for s2 [prior_fixed]
+%      nu_prior - prior for nu [prior_fixed]
 %
 %  See also
-%    PRIOR_T, PRIOR_SQRTUNIF
+%    PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo

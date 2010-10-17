@@ -1,34 +1,30 @@
 function p = prior_sinvchi2(varargin)
-%PRIOR_SINVCHI2  Scaled inverse-chi-square prior structure
+%PRIOR_SINVCHI2  Scaled-Inv-Chi^2 prior structure
 %       
 %  Description
-%    P = PRIOR_SINVCHI2('FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    returns a structure that specifies Scaled inverse-chi-square
-%    prior. Fields that can be set: 's2', 'nu', 's2_prior',
-%    'nu_prior'.
+%    P = PRIOR_SINVCHI2('PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    creates Scaled-Inv-Chi^2 prior structure in which the named
+%    parameters have the specified values. Any unspecified
+%    parameters are set to default values.
 %
+%    P = PRIOR_SINVCHI2(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
+
 %    Parameterisation is done by Bayesian Data Analysis,  
 %    second edition, Gelman et.al 2004.
 %    
-%    The fields in P are:
-%      type         = 'Sinvchi2'
-%      s2           = Scale (default 1)
-%      nu           = Degrees of freedom (default 4)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
-%
-%    P = PRIOR_SINVCHI2('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 's2', 'nu', 's2_prior', 'nu_prior'.
-%
+%    Parameters for Scaled-Inv-Chi^2 [default]
+%      s2       - scale squared (variance) [1]
+%      nu       - degrees of freedom [4]
+%      s2_prior - prior for s2 [prior_fixed]
+%      nu_prior - prior for nu [prior_fixed]
+%  
 %  See also
 %    PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihim√§ki
+% Copyright (c) 2010 Jaakko Riihim‰ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file

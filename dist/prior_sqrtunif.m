@@ -2,20 +2,9 @@ function p = prior_sqrtunif(varargin)
 %PRIOR_SQRTUNIF  Uniform prior structure for the square root of the parameter
 %       
 %  Description
-%    P = PRIOR_SQRTUNIF returns a structure that specifies uniform
-%    prior for the square root of the parameters.
+%    P = PRIOR_SQRTUNIF creates uniform prior structure for the
+%    square root of the parameter.
 %    
-%    The fields in P are:
-%      type         = 'Sqrt-uniform'
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
-%
-%    P = PRIOR_SQRTUNIF('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%
 %  See also
 %    PRIOR_*
   

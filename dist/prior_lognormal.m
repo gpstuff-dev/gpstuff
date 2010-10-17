@@ -1,24 +1,21 @@
 function p = prior_lognormal(varargin)
-%PRIOR_LOGNORMAL  Lognormal prior structure     
+%PRIOR_LOGNORMAL  Log-Normal prior structure     
 %       
 %  Description
-%    P = PRIOR_LOGNORMAL('FIELD1', VALUE1, 'FIELD2', VALUE2, ...) 
-%    returns a structure that specifies lognormal prior.
-%    Fields that can be set: 's2', 'mu', 's2_prior', 'mu_prior'.
+%    P = PRIOR_LOGNORMAL('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates Log-Normal prior structure in which the named
+%    parameters have the specified values. Any unspecified
+%    parameters are set to default values.
 %    
-%    The fields in P are:
-%      type         = 'Log-Normal'
-%      mu           = Location (default 0)
-%      s2           = Scale (default 1)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
+%    P = PRIOR_LOGNORMAL(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
 %
-%    P = PRIOR_LOGNORMAL('SET', P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 's2', 'mu', 's2_prior', 'mu_prior'.
+%    Parameters for Log-Normal prior [default]
+%      mu       - location [0]
+%      s2       - scale squared (variance) [1]
+%      mu_prior - prior for mu [prior_fixed]
+%      s2_prior - prior for s2 [prior_fixed]
 %
 %  See also
 %    PRIOR_*

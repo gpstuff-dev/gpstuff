@@ -1,31 +1,27 @@
 function p = prior_gamma(varargin)
-%PRIOR_GAMMA     Gamma prior structure     
+%PRIOR_GAMMA  Gamma prior structure     
 %
 %  Description
-%    P = PRIOR_GAMMA('FIELD1', VALUE1, 'FIELD2', VALUE2, ...) 
-%    returns a structure that specifies Gamma prior.
-%    Fields that can be set: 'sh', 'is', 'sh_prior', 'is_prior'.
+%    P = PRIOR_GAMMA('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates Gamma prior structure in which the named parameters
+%    have the specified values. Any unspecified parameters are set
+%    to default values.
 %
+%    P = PRIOR_GAMMA(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
+%  
 %    Parameterisation is done by Bayesian Data Analysis,  
 %    second edition, Gelman et.al 2004.
 %
-%    The fields in P are:
-%      type         = 'Gamma'
-%      sh           = Shape (default 4)
-%      is           = Inverse scale (default 1)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
-%
-%    P = PRIOR_T(P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 'sh', 'is', 'sh_prior', 'is_prior'.
+%    Parameters for Gamma prior [default]
+%      sh       - shape [4]
+%      is       - inverse scale [1]
+%      sh_prior - prior for sh [prior_fixed]
+%      is_prior - prior for is [prior_fixed]
 %
 %  See also
 %    PRIOR_*
-
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2010 Jaakko Riihimäki

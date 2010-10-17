@@ -2,24 +2,21 @@ function p = prior_laplace(varargin)
 %PRIOR_LAPLACE  Laplace (double exponential) prior structure     
 %       
 %  Description
-%    P = PRIOR_LAPLACE('FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    returns a structure that specifies Laplace (double exponential) 
-%    prior. Fields that can be set: 's', 'nu', 's_prior', 'mu_prior'.
+%    P = PRIOR_LAPLACE('PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    creates Laplace prior structure in which the named parameters
+%    have the specified values. Any unspecified parameters are set
+%    to default values.
 %    
-%    The fields in P are:
-%      type         = 'Laplace'
-%      mu           = Location (default 0)
-%      s            = Scale (default 1)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
+%    P = PRIOR_LAPLACE(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
 %
-%    P = PRIOR_LAPLACE(P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 's', 'nu', 's_prior', 'mu_prior'.
-%
+%    Parameters for Laplace prior [default]
+%      mu       - location [0]
+%      s        - scale [1]
+%      mu_prior - prior for mu [prior_fixed]
+%      s_prior  - prior for s  [prior_fixed]
+%  
 %  See also
 %    PRIOR_*
 

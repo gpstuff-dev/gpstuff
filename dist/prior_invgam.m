@@ -2,26 +2,23 @@ function p = prior_invgam(varargin)
 %PRIOR_INVGAM  Inverse-gamma prior structure     
 %       
 %  Description
-%    P = PRIOR_INVGAM('FIELD1', VALUE1, 'FIELD2', VALUE2, ...) 
-%    returns a structure that specifies Inverse-gamma prior.
-%    Fields that can be set: 'sh', 's', 'sh_prior', 's_prior'.
+%    P = PRIOR_INVGAMMA('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates Gamma prior structure in which the named parameters
+%    have the specified values. Any unspecified parameters are set
+%    to default values.
 %
+%    P = PRIOR_INVGAMMA(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    modify a prior structure with the named parameters altered
+%    with the specified values.
+%  
 %    Parameterisation is done by Bayesian Data Analysis,  
 %    second edition, Gelman et.al 2004.
 %
-%    The fields in P are:
-%      type         = 'Invgam'
-%      sh           = Shape (default 4)
-%      s            = Scale (default 1)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
-%
-%    P = PRIOR_T(P, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
-%    Set the fields FIELD1... to the values VALUE1... in LIKELIH. 
-%    Fields that can be set: 'sh', 's', 'sh_prior', 's_prior'.
+%    Parameters for Gamma prior [default]
+%      sh       - shape [4]
+%      s        - scale [1]
+%      sh_prior - prior for sh [prior_fixed]
+%      s_prior  - prior for s [prior_fixed]
 %
 %  See also
 %    PRIOR_*

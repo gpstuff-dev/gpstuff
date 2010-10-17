@@ -2,11 +2,12 @@ function p = prior_fixed(varargin)
 %PRIOR_UNIF  Fix parameter to its current value. Do no infer it.
 %       
 %  Description
-%    P = PRIOR_FIXED returns an empty [], which used as a prior 
-%    keeps a parameter fixed to its current value. 
+%    P = PRIOR_FIXED returns an empty [], which used as instead of
+%    a prior structure keeps a parameter fixed to its current
+%    value.
 %    
 %  See also
-%    PRIOR_*
+%    PRIOR_*, GPCF_*, LIKELIH_*
 
 % Copyright (c) 2010 Aki Vehtari
 
