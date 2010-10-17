@@ -1,5 +1,6 @@
 function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
-%GPLA_E Construct Laplace approximation and return marginal log posterior estimate
+%GPLA_E Construct Laplace approximation and return marginal 
+%       log posterior estimate
 %
 %     Description
 %	GP = GPLA_E('init', GP, X, Y, OPTIONS) takes a GP data structure
@@ -55,8 +56,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                  (ischar(x) && strcmp(w, 'init')) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)));
   ip.addRequired('gp',@isstruct);
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('x', @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(w, gp, x, y, varargin{:});
   z=ip.Results.z;
@@ -76,7 +77,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
         a0 = 0;
         p0 = [];
 
-        laplace_algorithm(gp_pak(gp), gp, x, y, z);
+        if ~isempty(y)
+          laplace_algorithm(gp_pak(gp), gp, x, y, z);
+        end
 
         gp.fh_e = @laplace_algorithm;
         e = gp;
@@ -156,13 +159,13 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     end
                
                     if issparse(K)
-                        fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.likelih.fh_ll, gp.likelih, y, f', z));
-                        fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
-                        fh = @(f, varargin) (-feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.likelih)) ; %
+                        fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - feval(gp.lik.fh_ll, gp.lik, y, f', z));
+                        fg = @(f, varargin) (ldlsolve(LD,f') - feval(gp.lik.fh_llg, gp.lik, y, f', 'latent', z))';
+                        fh = @(f, varargin) (-feval(gp.lik.fh_llg2, gp.lik, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.lik)) ; %
                     else
-                        fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - feval(gp.likelih.fh_ll, gp.likelih, y, f', z));
-                        fg = @(f, varargin) (LD\(LD'\f') - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
-                        fh = @(f, varargin) (-feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.likelih)) ; %
+                        fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - feval(gp.lik.fh_ll, gp.lik, y, f', z));
+                        fg = @(f, varargin) (LD\(LD'\f') - feval(gp.lik.fh_llg, gp.lik, y, f', 'latent', z))';
+                        fh = @(f, varargin) (-feval(gp.lik.fh_llg2, gp.lik, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.lik)) ; %
                     end
                     
                     mydeal = @(varargin)varargin{1:nargout};
@@ -179,9 +182,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                   case 'newton'
                     tol = 1e-12;
                     a = f;
-                    W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                    dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                    lp_new = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                    W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                    dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                    lp_new = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                     lp_old = -Inf;
                     
                     while lp_new - lp_old > tol                                
@@ -200,17 +203,17 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             a = b - sW.*(L\(L'\(sW.*(K*b))));
                         end
                         f = K*a;
-                        W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                        dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                        lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                        dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                        lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
                         while i < 10 && lp_new < lp_old  || isnan(sum(f))
                           % reduce step size by half
                             a = (a_old+a)/2;                                  
                             f = K*a;
-                            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                            lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                            W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                            lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
@@ -220,7 +223,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     % This is implemented as suggested by Hannes Nickisch (personal communication)
                   case 'stabilized-newton'
                     % Gaussian initialization
-                    %   sigma=gp.likelih.sigma;
+                    %   sigma=gp.lik.sigma;
                     %   W = ones(n,1)./sigma.^2;
                     %   sW = sqrt(W);
                     %   %B = eye(n) + siV*siV'.*K;
@@ -233,15 +236,15 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     % initialize to observations
                     %f=y;
                     
-                    nu=gp.likelih.nu;
-                    sigma2=gp.likelih.sigma2;
+                    nu=gp.lik.nu;
+                    sigma2=gp.lik.sigma2;
                     Wmax=(nu+1)/nu/sigma2;
                     Wlim=0;
                     
                     tol = 1e-10;
-                    W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent');
-                    dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent');
-                    lp = -(f'*(K\f))/2 +feval(gp.likelih.fh_ll, gp.likelih, y, f);
+                    W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent');
+                    dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent');
+                    lp = -(f'*(K\f))/2 +feval(gp.lik.fh_ll, gp.lik, y, f);
                     lp_old = -Inf;
                     f_old = f+1;
                     ge = Inf; %max(abs(a-dlp));
@@ -251,8 +254,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     while lp - lp_old > tol || max(abs(f-f_old)) > tol
                       i1=i1+1;
                       
-                      W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent');
-                      dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent');
+                      W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent');
+                      dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent');
                       
                       W(W<Wlim)=Wlim;
                       sW = sqrt(W);
@@ -274,7 +277,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         end
                       
                       f_new = K*a;
-                      lp_new = -(a'*f_new)/2 + feval(gp.likelih.fh_ll, gp.likelih, y, f_new);
+                      lp_new = -(a'*f_new)/2 + feval(gp.lik.fh_ll, gp.lik, y, f_new);
                       ge_new=max(abs(a-dlp));
                       
                       d=lp_new-lp;
@@ -302,20 +305,20 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     % --------------------------------------------------------------------------------
                     % find the posterior mode of latent variables with likelihood specific algorithm
                     % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
-                    % likelih_t file.
-                  case 'likelih_specific'
-                    [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K);
+                    % lik_t file.
+                  case 'lik_specific'
+                    [f, a] = feval(gp.lik.fh_optimizef, gp, y, K);
                   otherwise 
                     error('gpla_e: Unknown optimization method ! ')
                 end
                 
                 % evaluate the approximate log marginal likelihood
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                logZ = 0.5 * f'*a - feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                logZ = 0.5 * f'*a - feval(gp.lik.fh_ll, gp.lik, y, f, z);
                 if min(W) >= 0             % This is the usual case where likelihood is log concave
                                            % for example, Poisson and probit
                     if issparse(K)
-                        W = sparse(1:n,1:n, -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z), n,n);
+                        W = sparse(1:n,1:n, -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z), n,n);
                         sqrtW = sqrt(W);
                         B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
                         L = ldlchol(B);
@@ -351,8 +354,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             warning('gpla_e: 1./Sigma(i,i) + W(i) < 0')
                             
                             ind = 1:i-1;
-                            mu = K(i,ind)*feval(gp.likelih.fh_llg, gp.likelih, y(I(ind)), f(I(ind)), 'latent', z);
-                            upfact = feval(gp.likelih.fh_upfact, gp, y(I(i)), mu, ll);
+                            mu = K(i,ind)*feval(gp.lik.fh_llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+                            upfact = feval(gp.lik.fh_upfact, gp, y(I(i)), mu, ll);
                         end
                         if upfact > 0
                             L = cholupdate(L, l.*sqrt(upfact), '-');
@@ -406,9 +409,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         opt = gp.laplace_opt.fminunc_opt;
                     end
 
-                    fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - feval(gp.likelih.fh_ll, gp.likelih, y, f', z));
-                    fg = @(f, varargin) (f'./repmat(Lav,1,size(f',2)) - L*(L'*f') - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
-                    fh = @(f, varargin) (-feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z));
+                    fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - feval(gp.lik.fh_ll, gp.lik, y, f', z));
+                    fg = @(f, varargin) (f'./repmat(Lav,1,size(f',2)) - L*(L'*f') - feval(gp.lik.fh_llg, gp.lik, y, f', 'latent', z))';
+                    fh = @(f, varargin) (-feval(gp.lik.fh_llg2, gp.lik, y, f', 'latent', z));
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
@@ -420,9 +423,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                   case 'newton'
                     tol = 1e-12;
                     a = f;
-                    W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                    dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                    lp_new = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                    W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                    dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                    lp_new = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                     lp_old = -Inf;
                     
                     while lp_new - lp_old > tol
@@ -438,17 +441,17 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         a = b - sW.*(b2./Lah - Lb*(Lb'*b2));
                         
                         f = Lav.*a + B'*(B*a);
-                        W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                        dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                        lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                        dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                        lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
                         while i < 10 && lp_new < lp_old      || isnan(sum(f))
                             % reduce step size by half
                             a = (a_old+a)/2;                                  
                             f = Lav.*a + B'*(B*a);
-                            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                            lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                            W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                            lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
@@ -456,15 +459,15 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     % --------------------------------------------------------------------------------
                     % find the posterior mode of latent variables with likelihood specific algorithm
                     % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
-                    % likelih_t file.
-                  case 'likelih_specific'
-                    [f, a] = feval(gp.likelih.fh_optimizef, gp, y, K_uu, Lav, K_fu);
+                    % lik_t file.
+                  case 'lik_specific'
+                    [f, a] = feval(gp.lik.fh_optimizef, gp, y, K_uu, Lav, K_fu);
                   otherwise 
                     error('gpla_e: Unknown optimization method ! ')
                 end
                                
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                logZ = 0.5*f'*a - feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                logZ = 0.5*f'*a - feval(gp.lik.fh_ll, gp.lik, y, f, z);
                 
                 if W >= 0
                     sqrtW = sqrt(W);
@@ -495,8 +498,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             warning('gpla_e: 1 + W(i).*ll < 0')
                             
                             ind = 1:i-1;
-                            mu = K(i,ind)*feval(gp.likelih.fh_llg, gp.likelih, y(I(ind)), f(I(ind)), 'latent', z);
-                            upfact = feval(gp.likelih.fh_upfact, gp, y(I(i)), mu, ll);
+                            mu = K(i,ind)*feval(gp.lik.fh_llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+                            upfact = feval(gp.lik.fh_upfact, gp, y(I(i)), mu, ll);
                             
     % $$$                                 W2 = -1./(ll+1e-3);
     % $$$                                 upfact = W2./(1 + W2.*ll);
@@ -573,9 +576,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                   case 'newton'
                     tol = 1e-12;
                     a = f;
-                    W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                    dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                    lp_new = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                    W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                    dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                    lp_new = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                     lp_old = -Inf;
                     
                     while lp_new - lp_old > tol
@@ -604,9 +607,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         for i=1:length(ind)
                             f(ind{i}) = Labl{i}*a(ind{i}) + f(ind{i}) ;
                         end
-                        W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                        dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                        lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                        dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                        lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
                         while i < 10 && lp_new < lp_old || isnan(sum(f))
@@ -616,8 +619,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                             for i=1:length(ind)
                                 f(ind{i}) = Labl{i}*a(ind{i}) + f(ind{i}) ;
                             end
-                            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                            lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                            W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                            lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end 
@@ -626,10 +629,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                     error('gpla_e: Unknown optimization method ! ')    
                 end
                 
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                 sqrtW = sqrt(W);
                
-                logZ = 0.5*f'*a - feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                logZ = 0.5*f'*a - feval(gp.lik.fh_ll, gp.lik, y, f, z);
                 
                 WKfu = repmat(sqrtW,1,m).*K_fu;
                 edata = 0;
@@ -738,9 +741,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                   case 'newton'
                     tol = 1e-8;
                     a = f;
-                    W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                    dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                    lp_new = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                    W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                    dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                    lp_new = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                     lp_old = -Inf;
                     I = sparse(1:n,1:n,1,n,n);
                     
@@ -760,16 +763,16 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         a = b - sW.*(ldlsolve(VDh,b2) - Lb*(Lb'*b2) );
 
                         f = La*a + B'*(B*a);
-                        W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                        dlp = feval(gp.likelih.fh_llg, gp.likelih, y, f, 'latent', z);
-                        lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                        dlp = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                        lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                         lp_new = -a'*f/2 + lp;
                         i = 0;
                         while i < 10 && lp_new < lp_old
                             a = (a_old+a)/2;
                             f = La*a + B'*(B*a);
-                            W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
-                            lp = feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                            W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+                            lp = feval(gp.lik.fh_ll, gp.lik, y, f, z);
                             lp_new = -a'*f/2 + lp;
                             i = i+1;
                         end
@@ -779,10 +782,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                 end
                 
                 
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                 sqrtW = sqrt(W);
                 
-                logZ = 0.5*f'*a - feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                logZ = 0.5*f'*a - feval(gp.lik.fh_ll, gp.lik, y, f, z);
                     
                 WKfu = repmat(sqrtW,1,m).*K_fu;
                 sqrtW = sparse(1:n,1:n,sqrtW,n,n);
@@ -841,18 +844,18 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
                         opt = gp.laplace_opt.fminunc_opt;
                     end
 
-                    fe = @(f, varargin) (0.5*f*(f'./repmat(Sv,1,size(f',2)) - L*(L'*f')) - feval(gp.likelih.fh_ll, gp.likelih, y, f', z));
-                    fg = @(f, varargin) (f'./repmat(Sv,1,size(f',2)) - L*(L'*f') - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
-                    fh = @(f, varargin) (-feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z));
+                    fe = @(f, varargin) (0.5*f*(f'./repmat(Sv,1,size(f',2)) - L*(L'*f')) - feval(gp.lik.fh_ll, gp.lik, y, f', z));
+                    fg = @(f, varargin) (f'./repmat(Sv,1,size(f',2)) - L*(L'*f') - feval(gp.lik.fh_llg, gp.lik, y, f', 'latent', z))';
+                    fh = @(f, varargin) (-feval(gp.lik.fh_llg2, gp.lik, y, f', 'latent', z));
                     mydeal = @(varargin)varargin{1:nargout};
                     [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
                     f = f';
 
-                    W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                    W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                     sqrtW = sqrt(W);
 
                     b = L'*f;
-                    logZ = 0.5*(f'*(f./Sv) - b'*b) - feval(gp.likelih.fh_ll, gp.likelih, y, f, z);
+                    logZ = 0.5*(f'*(f./Sv) - b'*b) - feval(gp.lik.fh_ll, gp.lik, y, f, z);
                   case 'Newton'
                     error('The Newton''s method is not implemented for FIC!\n')
                 end
@@ -878,18 +881,18 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
             end
 
             % Evaluate the prior contribution to the error from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    noise = gp.noise{i};
-                    eprior = eprior + feval(noise.fh_e, noise, x, y);
+                    noisef = gp.noisef{i};
+                    eprior = eprior + feval(noisef.fh_e, noisef, x, y);
                 end
             end
             
             % Evaluate the prior contribution to the error from likelihood function
-            if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
-                likelih = gp.likelih;
-                eprior = eprior + feval(likelih.fh_priore, likelih);
+            if isfield(gp, 'lik') && isfield(gp.lik, 'p')
+                lik = gp.lik;
+                eprior = eprior + feval(lik.fh_priore, lik);
             end
 
             e = edata + eprior;
@@ -917,9 +920,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
         %        
         function [e, g, h] = egh(f, varargin)
             ikf = iKf(f');
-            e = 0.5*f*ikf - feval(gp.likelih.fh_ll, gp.likelih, y, f', z);
-            g = (ikf - feval(gp.likelih.fh_llg, gp.likelih, y, f', 'latent', z))';
-            h = -feval(gp.likelih.fh_llg2, gp.likelih, y, f', 'latent', z);
+            e = 0.5*f*ikf - feval(gp.lik.fh_ll, gp.lik, y, f', z);
+            g = (ikf - feval(gp.lik.fh_llg, gp.lik, y, f', 'latent', z))';
+            h = -feval(gp.lik.fh_llg2, gp.lik, y, f', 'latent', z);
         end
         function ikf = iKf(f, varargin)
             

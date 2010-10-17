@@ -2,26 +2,30 @@ function gpcf = gpcf_linear(varargin)
 %GPCF_LINEAR  Create a linear covariance function
 %
 %  Description
-%    GPCF = GPCF_LINEAR(OPTIONS) Create and initialize linear
-%    covariance function for Gaussian process. OPTIONS is optional
-%    parameter-value pair used as described below.
+%    GPCF = GPCF_LINEAR('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates a squared exponential covariance function structure in
+%    which the named parameters have the specified values. Any
+%    unspecified parameters are set to default values.
 %
-%    GPCF = GPCF_LINEAR(GPCF, OPTIONS) Set the fields of GPCF as
-%    described by the parameter-value pairs ('FIELD', VALUE) in the
-%    OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_LINEAR(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
+%  
+%    Parameters for linear covariance function
+%      coeffSigma2       - prior variance for regressor coefficients [10]
+%                          This can be either scalar corresponding
+%                          to a common prior variance or vector
+%                          defining own prior variance for each
+%                          coefficient.
+%      coeffSigma2_prior = prior structure for coeffSigma2 [prior_unif]
+%      selectedVariables = vector defining which inputs are used
 %
-%      coeffSigma2        = variance (squared) for regressor coefficient 
-%                           (default 10) (can also be vector)
-%      coeffSigma2_prior  = prior structure for coeffSigma2
-%      selectedVariables  = vector defining which inputs are active
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
-%    Note! If the prior structure is set to empty matrix (e.g. 
-%    'coeffSigma2_prior', []) then the parameter in question is
-%    considered fixed and it is not handled in optimization, grid
-%    integration, MCMC etc.
-%
-% See also
-%   gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%  See also
+%    GP_SET, GPCF_*, PRIOR_*, MEAN_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008-2010 Jaakko Riihimäki
@@ -81,7 +85,7 @@ function gpcf = gpcf_linear(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(coeffSigma2_prior)&isnan(coeffSigma2_prior)
-                gpcf.p.coeffSigma2=prior_unif('init');
+                gpcf.p.coeffSigma2=prior_unif;
             else
                 gpcf.p.coeffSigma2=coeffSigma2_prior;
             end
@@ -195,7 +199,7 @@ function gpcf = gpcf_linear(varargin)
         % Evaluate the prior contribution to the error. The parameters that
         % are sampled are from space W = log(w) where w is all the "real" samples.
         % On the other hand errors are evaluated in the W-space so we need take
-        % into account also the  Jakobian of transformation W -> w = exp(W).
+        % into account also the  Jacobian of transformation W -> w = exp(W).
         % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         eprior = 0;
         gpp=gpcf.p;
@@ -543,8 +547,8 @@ function gpcf = gpcf_linear(varargin)
     %
     %          Description
     %          RECCF = GPCF_LINEAR_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

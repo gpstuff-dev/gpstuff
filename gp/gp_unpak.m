@@ -46,6 +46,10 @@ function gp = gp_unpak(gp, w, param)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+if isempty(w)
+  return
+end
+
 if nargin < 3
     param = gp.infer_params;
 end
@@ -64,19 +68,19 @@ if ~isempty(strfind(param, 'covariance'))
         gp.cf{i} = gpcf;
     end
     
-    if isfield(gp, 'noise')
-        nn = length(gp.noise);
+    if isfield(gp, 'noisef')
+        nn = length(gp.noisef);
         for i=1:nn
-            noise = gp.noise{i};
-            [noise, w] = feval(noise.fh_unpak, noise, w);
-            gp.noise{i} = noise;
+            noisef = gp.noisef{i};
+            [noisef, w] = feval(noisef.fh_unpak, noisef, w);
+            gp.noisef{i} = noisef;
         end
     end
 end
 
 % Unpack the inducing inputs
 if ~isempty(strfind(param, 'inducing'))
-    if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+    if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
         lu = length(gp.X_u(:));
         gp.X_u = reshape(w(1:lu), size(gp.X_u));
         if lu < length(w)
@@ -87,9 +91,9 @@ end
 
 % Unpack the hyperparameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
-    if isstruct(gp.likelih)
-        [lik w] = feval(gp.likelih.fh_unpak, w, gp.likelih);
-        gp.likelih = lik;
+    if isstruct(gp.lik)
+        [lik w] = feval(gp.lik.fh_unpak, w, gp.lik);
+        gp.lik = lik;
     end
 end
 

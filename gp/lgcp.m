@@ -168,6 +168,7 @@ function [l,lq,xt] = lgcp(x,varargin)
       error('X has to be Nx1 or Nx2')
   end
 
+end
 
 function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
 % Make inference with log Gaussian process and EP or Laplace approximation
@@ -176,34 +177,27 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
   % init gp
   if strfind(func2str(gpcf),'ppcs')
     % ppcs still have nin parameter...
-    gpcf1 = gpcf('init',nin);
+    gpcf1 = gpcf('nin',nin);
   else
-    gpcf1 = gpcf('init');
+    gpcf1 = gpcf();
   end
   % default vague prior
-  pm = prior_t('init', 's2', .1^2, 'nu', 4);
-  pl = prior_t('init', 's2', 2^2, 'nu', 4);
-  pa = prior_t('init', 's2', 10^2, 'nu', 4);
+  pm = prior_t('s2', .1^2, 'nu', 4);
+  pl = prior_t('s2', 2^2, 'nu', 4);
+  pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
-     gpcf1 = gpcf('set', gpcf1, 'magnSigma2', .1, 'magnSigma2_prior', pm);
+     gpcf1 = gpcf(gpcf1, 'magnSigma2', .1, 'magnSigma2_prior', pm);
   end
   if isfield(gpcf1,'lengthScale')
-     gpcf1 = gpcf('set', gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
+     gpcf1 = gpcf(gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
   end
   if isfield(gpcf1,'alpha')
-    gpcf1 = gpcf('set', gpcf1, 'alpha', 20, 'alpha_prior', pa);
+    gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
   end
   
-  % constant term
-  gpcf2 = gpcf_constant('init', 'constSigma2', 1);
-  gpcf2.p.constSigma2 = [];
-
-  % Create the likelihood structure
-  likelih = likelih_poisson('init');
-  
   % Create the GP data structure
-  gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 1e-4);
+  gp = gp_set('lik', lik_poisson, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
   % Prepare to optimize covariance parameters
   opt=optimset('GradObj','on');
@@ -211,45 +205,23 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
   opt=optimset(opt,'LargeScale', 'off');
   opt=optimset(opt,'Display', 'off');
 
+  % Set the approximate inference method
+  gp = gp_set(gp, 'latent_method', latent_method);
+  
+  % Optimize hyperparameters
   w0 = gp_pak(gp);
-  mydeal = @(varargin)varargin{1:nargout};
-  switch latent_method
-    case 'EP'
-      % Set the approximate inference method
-      gp = gp_init('set', gp, 'latent_method', {'EP', xx, yy, 'z', ye});
-     
-      % Optimize hyperparameters
-      w = fminunc(@(ww) mydeal(gpep_e(ww, gp, xx, yy, 'z', ye), ...
-                               gpep_g(ww, gp, xx, yy, 'z', ye)), w0, opt);
-      gp = gp_unpak(gp,w);
+  w = fminunc(@(ww) gp_eg(ww, gp, xx, yy, 'z', ye), w0, opt);
+  gp = gp_unpak(gp,w);
 
-      % Make prediction for the test points
-      if strcmpi(hyperint,'mode')
-        % point estimate for the hyperparameters
-        [Ef,Varf] = ep_pred(gp, xx, yy, xt, 'z', ye);
-      else
-        % integrate over the hyperparameters
-        %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
-        [notused, notused, notused, Ef, Varf]=...
-            gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
-      end
-      
-    case 'Laplace'
-      % Set the approximate inference method
-      gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', ye});
-      % Optimize hyperparameters
-      w = fminunc(@(ww) mydeal(gpla_e(ww, gp, xx, yy, 'z', ye), ...
-                               gpla_g(ww, gp, xx, yy, 'z', ye)), w0, opt);
-      gp = gp_unpak(gp,w);
-      
-      % Make prediction for the test points
-      if strcmpi(hyperint,'mode')
-        % point estimate for the hyperparameters
-        [Ef,Varf] = la_pred(gp, xx, yy, xt, 'z', ye);
-      else
-        % integrate over the hyperparameters
-        %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
-        [notused, notused, notused, Ef, Varf] = ...
-            gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
-      end
+  % Make prediction for the test points
+  if strcmpi(hyperint,'mode')
+    % point estimate for the hyperparameters
+    [Ef,Varf] = gp_pred(gp, xx, yy, xt, 'z', ye);
+  else
+    % integrate over the hyperparameters
+    %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
+    [notused, notused, notused, Ef, Varf]=...
+        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
   end
+  
+end

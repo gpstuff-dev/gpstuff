@@ -192,27 +192,27 @@ switch gp.type
 %         % =================================================================
 %         % Gradient with respect to likelihood function parameters
 %         if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
-%             && ~isempty(gp.likelih.fh_pak(gp.likelih))
+%             && ~isempty(gp.lik.fh_pak(gp.lik))
 %             
 %             gdata_likelih = 0;
-%             likelih = gp.likelih;
+%             lik = gp.lik;
 %             
-%             g_logPrior = feval(likelih.fh_priorg, likelih);
+%             g_logPrior = feval(lik.fh_priorg, lik);
 %             if ~isempty(g_logPrior)
 %             
-%                 DW_sigma = feval(likelih.fh_llg3, likelih, y, f, 'latent2+hyper', z);
-%                 DL_sigma = feval(likelih.fh_llg, likelih, y, f, 'hyper', z);
-%                 b = K * feval(likelih.fh_llg2, likelih, y, f, 'latent+hyper', z);
+%                 DW_sigma = feval(lik.fh_llg3, lik, y, f, 'latent2+hyper', z);
+%                 DL_sigma = feval(lik.fh_llg, lik, y, f, 'hyper', z);
+%                 b = K * feval(lik.fh_llg2, lik, y, f, 'latent+hyper', z);
 %                 s3 = b - K*(R*b);
 %                 nl= size(DW_sigma,2);
 %                 
-%                 gdata_likelih = - DL_sigma - 0.5.*sum(repmat(C2,1,nl).*DW_sigma) - s2'*s3;
+%                 gdata_lik = - DL_sigma - 0.5.*sum(repmat(C2,1,nl).*DW_sigma) - s2'*s3;
 % 
 %                 % set the gradients into vectors that will be returned
-%                 gdata = [gdata gdata_likelih];
+%                 gdata = [gdata gdata_lik];
 %                 gprior = [gprior g_logPrior];
 %                 i1 = length(g_logPrior);
-%                 i2 = length(gdata_likelih);
+%                 i2 = length(gdata_lik);
 %                 if i1  > i2
 %                     gdata = [gdata zeros(1,i1-i2)];
 %                 end

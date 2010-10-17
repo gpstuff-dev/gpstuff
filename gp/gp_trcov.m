@@ -1,12 +1,12 @@
 function [K, C] = gp_trcov(gp, x1, predcf)
-% GP_TRCOV     Evaluate training covariance matrix (gp_cov + noise covariance). 
+%GP_TRCOV Evaluate training covariance matrix (gp_cov + noise covariance). 
 %
 %         Description
 %          K = GP_TRCOV(GP, TX, PREDCF) takes in Gaussian process GP
 %          and matrix TX that contains training input vectors to
 %          GP. Returns noiseless covariance matrix K, which is formed
-%          as a sum of the covarance matrices from covariance
-%          functions in GP.cf array. Every element ij of K contains
+%          as a sum of the covariance matrices from covariance
+%          functions in gp.cf array. Every element ij of K contains
 %          covariance between inputs i and j in TX. PREDCF is an array
 %          specifying the indexes of covariance functions, which are
 %          used for forming the matrix. If not given, the matrix is
@@ -21,6 +21,13 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
+
+% no covariance functions?
+if length(gp.cf)==0
+  K=[];
+  C=[];
+  return
+end
 
 % Are gradient observations available; gradobs=1->yes, gradobs=0->no
 gradobs=isfield(gp,'grad_obs');
@@ -90,14 +97,14 @@ if gradobs==1
     % Add noise to the covariance
     if nargout > 1
         % Add noise to the covariance
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             if nn == 1
                     % same noise for obs and grad obs
-                    noise = gp.noise{1};
-                    Noi=feval(noise.fh_trcov, noise, x1);
+                    noisef = gp.noisef{1};
+                    Noi=feval(noisef.fh_trcov, noisef, x1);
                     x2=repmat(x1,m,1);
-                    Noi2=feval(noise.fh_trcov, noise, x2);
+                    Noi2=feval(noisef.fh_trcov, noisef, x2);
                     Cff = Kff + Noi;
                     Cdd = Kdd + Noi2;
                     C = [Cff Kfd; Kdf Cdd];
@@ -106,9 +113,9 @@ if gradobs==1
                 Cdd=Kdd;
                    x2=repmat(x1,m,1);
                    for i=1:nn
-                       noise = gp.noise{i};
-                       Cff = Cff + feval(noise.fh_trcov, noise, x1);
-                       Cdd = Cdd + feval(noise.fh_trcov, noise, x2);
+                       noisef = gp.noisef{i};
+                       Cff = Cff + feval(noisef.fh_trcov, noisef, x1);
+                       Cdd = Cdd + feval(noisef.fh_trcov, noisef, x2);
                    end
                    C = [Cff Kfd; Kdf Cdd];
             end
@@ -127,7 +134,7 @@ else
         K = sparse(0);
         if nargin < 3 || isempty(predcf)
             predcf = 1:ncf;
-        end      
+        end
         for i=1:length(predcf)
             gpcf = gp.cf{predcf(i)};
             K = K + feval(gpcf.fh_trcov, gpcf, x1);
@@ -143,11 +150,11 @@ else
         if nargout > 1 
             C=K;
             % Add noise to the covariance
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn                
-                    noise = gp.noise{i};
-                    C = C + feval(noise.fh_trcov, noise, x1);
+                    noisef = gp.noisef{i};
+                    C = C + feval(noisef.fh_trcov, noisef, x1);
                 end
             end
         end
@@ -164,11 +171,11 @@ else
         if nargout > 1 
             C=sparse(0);
             % Add noise to the covariance
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    noise = gp.noise{i};
-                    C = C + feval(noise.fh_trcov, noise, x1);
+                    noisef = gp.noisef{i};
+                    C = C + feval(noisef.fh_trcov, noisef, x1);
                 end
             end
         end   

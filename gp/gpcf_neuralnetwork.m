@@ -2,33 +2,32 @@ function gpcf = gpcf_neuralnetwork(varargin)
 %GPCF_NEURALNETWORK  Create a neural network covariance function
 %
 %  Description
-%    GPCF = GPCF_NEURALNETWORK(OPTIONS) Create and initialize
-%    squared exponential covariance function for Gaussian process. 
-%    OPTIONS is optional parameter-value pair used as described
-%    below.
+%    GPCF = GPCF_NEURALNETWORK('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates neural network covariance function structure in which
+%    the named parameters have the specified values. Any
+%    unspecified parameters are set to default values.
 %
-%    GPCF = GPCF_NEURALNETWORK(GPCF, OPTIONS) Set the fields of
-%    GPCF as described by the parameter-value pairs ('FIELD',
-%    VALUE) in the OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_NEURALNETWORK(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
+%  
+%    Parameters for neural network covariance function [default]
+%      biasSigma2         = prior variance for bias in neural network [0.1]
+%      weightSigma2       = prior variance for weights in neural network [10]
+%                           This can be either scalar corresponding
+%                           to a common prior variance or vector
+%                           defining own prior variance for each
+%                           input.
+%      biasSigma2_prior   = prior structure for magnSigma2 [prior_unif]
+%      weightSigma2_prior = prior structure for lengthScale [prior_unif]
+%      selectedVariables  = vector defining which inputs are used
 %
-%      biasSigma2         = Magnitude (squared) for exponential part.
-%                           (default 0.1)
-%      weightSigma2       = Length scale for each input. This can be 
-%                           either scalar corresponding to an
-%                           isotropic function or vector defining
-%                           own length-scale for each input
-%                           direction. (default 10).
-%      biasSigma2_prior   = prior structure for magnSigma2
-%      weightSigma2_prior = prior structure for lengthScale
-%      selectedVariables  = vector defining which inputs are active
-%
-%    Note! If the prior structure is set to empty matrix
-%    (e.g. 'biasSigma2_prior', []) then the parameter in question
-%    is considered fixed and it is not handled in optimization,
-%    grid integration, MCMC etc.
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
 %  See also
-%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%    GP_SET, GPCF_*, PRIOR_*
     
 % Copyright (c) 2007-2009 Jarno Vanhatalo
 % Copyright (c) 2009 Jaakko Riihimaki
@@ -97,12 +96,12 @@ function gpcf = gpcf_neuralnetwork(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(biasSigma2_prior)&isnan(biasSigma2_prior)
-                gpcf.p.biasSigma2=prior_unif('init');
+                gpcf.p.biasSigma2=prior_unif;
             else
                 gpcf.p.biasSigma2=biasSigma2_prior;
             end
             if ~isstruct(weightSigma2_prior)&isnan(weightSigma2_prior)
-                gpcf.p.weightSigma2=prior_unif('init');
+                gpcf.p.weightSigma2=prior_unif;
             else
                 gpcf.p.weightSigma2=weightSigma2_prior;
             end
@@ -246,7 +245,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
         % Evaluate the prior contribution to the error. The parameters that
         % are sampled are from space W = log(w) where w is all the "real" samples.
         % On the other hand errors are evaluated in the W-space so we need take
-        % into account also the  Jakobian of transformation W -> w = exp(W).
+        % into account also the  Jacobian of transformation W -> w = exp(W).
         % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         eprior = 0;
         gpp=gpcf.p;
@@ -746,8 +745,8 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %
     %          Description
     %          RECCF = GPCF_NEURALNETWORK_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

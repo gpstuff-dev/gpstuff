@@ -1,27 +1,26 @@
 function gpcf = gpcf_noise(varargin)
-%GPCF_NOISE  Create a uncorrelated noise covariance function for 
-%            Gaussian Process.
+%GPCF_NOISE  Create a independent noise covariance function
 %
 %  Description
-%    GPCF = GPCF_NOISE(OPTIONS) Create and initialize i.i.d. noise
-%    covariance function for Gaussian process. OPTIONS is optional
-%    parameter-value pair used as described below.
+%    GPCF = GPCF_NOISE('PARAM1',VALUE1,'PARAM2,VALUE2,...) creates
+%    independent noise covariance function structure in which the
+%    named parameters have the specified values. Any unspecified
+%    parameters are set to default values.
 %
-%    GPCF = GPCF_NOISE(GPCF, OPTIONS) Set the fields of GPCF as
-%    described by the parameter-value pairs ('FIELD', VALUE) in the
-%    OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_NOISE(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
 %
-%      noiseSigma2        = Magnitude (squared) for exponential part. 
-%                           (default 0.1)
-%      noiseSigma2_prior  = prior structure for magnSigma2
+%    Parameters for independent noise covariance function [default]
+%      noiseSigma2       - variance of the independent noise [0.1]
+%      noiseSigma2_prior - prior for noiseSigma2 [prior_logunif]
 %
-%    Note! If the prior structure is set to empty matrix (e.g. 
-%    'noiseSigma2_prior', []) then the parameter in question is
-%    considered fixed and it is not handled in optimization, grid
-%    integration, MCMC etc.
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
 %  See also
-%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%    GP_SET, GPCF_*, PRIOR_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
@@ -64,15 +63,15 @@ function gpcf = gpcf_noise(varargin)
 
             % Initialize parameters
             if isempty(noiseSigma2)
-                gpcf.noiseSigma2 = 0.1^2;
+                gpcf.noiseSigma2 = 0.1;
             else
                 gpcf.noiseSigma2 = noiseSigma2;
             end
 
             % Initialize prior structure
             gpcf.p=[];
-            if ~isstruct(noiseSigma2_prior)&isnan(noiseSigma2_prior)
-                gpcf.p.noiseSigma2 = prior_unif('init');
+            if ~isstruct(noiseSigma2_prior)&&isnan(noiseSigma2_prior)
+                gpcf.p.noiseSigma2 = prior_logunif;
             else
                 gpcf.p.noiseSigma2 = noiseSigma2_prior;
             end
@@ -99,8 +98,8 @@ function gpcf = gpcf_noise(varargin)
             if ~isempty(noiseSigma2);
                 gpcf.noiseSigma2=noiseSigma2;
             end
-            noiseSigma2_prior
-            if ~isstruct(noiseSigma2_prior)&isnan(noiseSigma2_prior);else;
+            if ~isstruct(noiseSigma2_prior)&& isnan(noiseSigma2_prior)
+            else
                 gpcf.p.noiseSigma2=noiseSigma2_prior;
             end
     end
@@ -332,8 +331,8 @@ function gpcf = gpcf_noise(varargin)
     %
     %          Description
     %          RECCF = GPCF_NOISE_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

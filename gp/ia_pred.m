@@ -1,80 +1,81 @@
 function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin) 
-%IA_PRED	Prediction with Gaussian Process GP_IA solution.
+%IA_PRED  Prediction with Gaussian Process GP_IA solution.
 %
-%	Description
-%	[Ef, Varf] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) takes a Gaussian 
-%        processes record array RECGP (returned by gp_ia) together
-%        with a matrix XT of input vectors, matrix X of training
-%        inputs and vector Y of training targets. Returns the
-%        predictive mean and variance, Ef and Varf, for test inputs
-%        XT with hyperparameters marginalized out with IA. That is,
+%  Description
+%    [Ef, Varf] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) takes a
+%    Gaussian processes record array RECGP (returned by gp_ia)
+%    together with a matrix XT of input vectors, matrix X of
+%    training inputs and vector Y of training targets. Returns the
+%    predictive mean and variance, Ef and Varf, for test inputs XT
+%    with hyperparameters marginalized out with IA. That is,
 %
-%                    EF = E[f | xt, x, y]
-%                  VARF = Var[f | xt, x, y]
+%        EF = E[f | xt, x, y]
+%      VARF = Var[f | xt, x, y]
 %
-%     OPTIONS is optional parameter-value pair
-%       'predcf' is index vector telling which covariance functions are 
-%                used for prediction. Default is all (1:gpcfn). See 
-%                additional information below.
-%       'tstind' is a vector/cell array defining, which rows of X belong 
-%                to which training block in *IC type sparse models. Deafult 
-%                is []. In case of PIC, a cell array containing index 
-%                vectors specifying the blocking structure for test data.
-%                IN FIC and CS+FIC a vector of length n that points out the 
-%                test inputs that are also in the training set (if none,
-%                set TSTIND = [])
-%       'yt'     is optional observed yt in test points (see below)
-%       'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
-%                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, expected value 
-%                for ith case. 
-%       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, the expected 
-%                value for the ith case. 
+%    OPTIONS is optional parameter-value pair
+%      predcf - index vector telling which covariance functions are 
+%               used for prediction. Default is all (1:gpcfn). See
+%               additional information below.
+%      tstind - a vector/cell array defining, which rows of X belong 
+%               to which training block in *IC type sparse models. 
+%               Deafult is []. In case of PIC, a cell array
+%               containing index vectors specifying the blocking
+%               structure for test data. IN FIC and CS+FIC a vector
+%               of length n that points out the test inputs that
+%               are also in the training set (if none, set TSTIND=[])
+%      yt     - optional observed yt in test points (see below)
+%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case
+%               of Poisson likelihood we have z_i=E_i, that is,
+%               expected value for ith case.
+%      zt     - optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%               Some likelihoods may use this. For example, in case
+%               of Poisson likelihood we have z_i=E_i, that is, the
+%               expected value for the ith case.
 %       
-%       [Ef, Varf, Ey, Vary] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS)
-%        returns also the predictive means and variances for
-%        observations at input locations XT. That is,
+%    [Ef, Varf, Ey, Vary] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS)
+%    returns also the predictive means and variances for
+%    observations at input locations XT. That is,
 %
-%                    Ey() = E[y | xt, x, y]
-%                  Vary() = Var[y | xt, x, y]
+%        Ey() = E[y | xt, x, y]
+%      Vary() = Var[y | xt, x, y]
 %    
-%       [Ef, Varf, Ey, Vary, py] = IA_PRED(GP_ARRAY, X, Y, XT, 'yt', YT, OPTIONS) 
-%        returns also the predictive density py of test outputs YT,
-%        that is py(i) = p(YT_i).
+%    [Ef, Varf, Ey, Vary, py] = IA_PRED(GP_ARRAY, X, Y, XT, 'yt', YT, OPTIONS) 
+%    returns also the predictive density py of test outputs YT.
+%    
 %
-%       [Ef, Varf, Ey, Vary, py, f, ff] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
-%        returns also the numerical representation of the marginal
-%        posterior of latent variables at each XT. f is a vector of
-%        latent values and ff_i = p(f_i) is the posterior density
-%        for f_i.
+%    [Ef, Varf, Ey, Vary, py, f, ff] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%    returns also the numerical representation of the marginal
+%    posterior of latent variables at each XT. f is a vector of
+%    latent values and ff_i = p(f_i) is the posterior density for
+%    f_i.
 %
-%       NOTE! In case of FIC and PIC sparse approximation the
-%       prediction for only some PREDCF covariance functions is
-%       just an approximation since the covariance functions are
-%       coupled in the approximation and are not strictly speaking
-%       additive anymore.
+%    NOTE! In case of FIC and PIC sparse approximation the
+%    prediction for only some PREDCF covariance functions is just
+%    an approximation since the covariance functions are coupled in
+%    the approximation and are not strictly speaking additive
+%    anymore.
 %
-%       For example, if you use covariance such as K = K1 + K2 your
-%       predictions Ef1 = ia_pred(gp_array, X, Y, X, 'predcf', 1) and 
-%       Ef2 = ia_pred(gp_array, x, y, x, 'predcf', 2) should sum up to 
-%       Ef = ia_pred(gp_array, x, y, x). That is Ef = Ef1 + Ef2. With 
-%       FULL model this is true but with FIC and PIC this is true only 
-%       approximately. That is Ef \approx Ef1 + Ef2.
+%    For example, if you use covariance such as K = K1 + K2 your
+%    predictions Ef1 = ia_pred(gp_array, X, Y, X, 'predcf', 1) and
+%    Ef2 = ia_pred(gp_array, x, y, x, 'predcf', 2) should sum up to
+%    Ef = ia_pred(gp_array, x, y, x). That is Ef = Ef1 + Ef2. With
+%    FULL model this is true but with FIC and PIC this is true only
+%    approximately. That is Ef \approx Ef1 + Ef2.
 %
-%       With CS+FIC the predictions are exact if the PREDCF
-%       covariance functions are all in the FIC part or if they are
-%       CS covariances.
+%    With CS+FIC the predictions are exact if the PREDCF covariance
+%    functions are all in the FIC part or if they are CS
+%    covariances.
 %
-%       NOTE! When making predictions with a subset of covariance
-%       functions with FIC approximation the predictive variance
-%       can in some cases be ill-behaved i.e. negative or
-%       unrealistically small. This may happen because of the
-%       approximative nature of the prediction.
+%    NOTE! When making predictions with a subset of covariance
+%    functions with FIC approximation the predictive variance can
+%    in some cases be ill-behaved i.e. negative or unrealistically
+%    small. This may happen because of the approximative nature of
+%    the prediction.
 %
-%	See also
-%	GP, GP_PAK, GP_UNPAK, GP_PRED
+%  See also
+%    GP_PRED, GP_SET, GP_IA
+%
         
 % Copyright (c) 2009 Ville Pietiläinen
 % Copyright (c) 2009-2010 Jarno Vanhatalo    

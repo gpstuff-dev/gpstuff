@@ -2,32 +2,32 @@ function gpcf = gpcf_matern52(varargin)
 %GPCF_MATERN52	Create a  Matern nu=5/2 covariance function
 %
 %  Description
-%    GPCF = GPCF_MATERN52(OPTIONS) Create and initialize Matern
-%    nu=5/2 covariance function for Gaussian process. OPTIONS is
-%    optional parameter-value pair used as described below.
+%    GPCF = GPCF_MATERN52('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates Matern nu=5/2 covariance function structure in which
+%    the named parameters have the specified values. Any
+%    unspecified parameters are set to default values.
 %
-%    GPCF = GPCF_MATERN52(GPCF, OPTIONS) Set the fields of GPCF as
-%    described by the parameter-value pairs ('FIELD', VALUE) in the
-%    OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_MATERN52(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
+%  
+%    Parameters for Matern nu=5/2 covariance function [default]
+%      magnSigma2        - magnitude (squared) [0.1]
+%      lengthScale       - length scale for each input. [10]
+%                          This can be either scalar corresponding
+%                          to an isotropic function or vector
+%                          defining own length-scale for each input
+%                          direction.
+%      magnSigma2_prior  - prior for magnSigma2  [prior_unif]
+%      lengthScale_prior - prior for lengthScale [prior_unif]
+%      metric            - metric structure used by the covariance function []
 %
-%      magnSigma2        = Magnitude (squared) for exponential part. 
-%                          (default 0.1)
-%      lengthScale       = Length scale for each input. This can be 
-%                          either scalar corresponding to an
-%                          isotropic function or vector defining
-%                          own length-scale for each input
-%                          direction. (default 10).
-%      magnSigma2_prior  = prior structure for magnSigma2
-%      lengthScale_prior = prior structure for lengthScale
-%      metric            = metric structure into the covariance function
-%
-%    Note! If the prior structure is set to empty matrix
-%    (e.g. 'magnSigma2_prior', []) then the parameter in question
-%    is considered fixed and it is not handled in optimization,
-%    grid integration, MCMC etc.
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
 %  See also
-%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%    GP_SET, GPCF_*, PRIOR_*, METRIC_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
@@ -89,12 +89,12 @@ function gpcf = gpcf_matern52(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior)
-                gpcf.p.lengthScale=prior_unif('init');
+                gpcf.p.lengthScale=prior_unif;
             else
                 gpcf.p.lengthScale=lengthScale_prior;
             end
             if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-                gpcf.p.magnSigma2=prior_unif('init');
+                gpcf.p.magnSigma2=prior_unif;
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
             end
@@ -709,8 +709,8 @@ function gpcf = gpcf_matern52(varargin)
     %
     %          Description
     %          RECCF = GPCF_MATERN52_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

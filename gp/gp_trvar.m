@@ -46,11 +46,11 @@ if gradobs==1
     if nargout >1
        C=K;
      % Add noise to the covariance
-       if isfield(gp, 'noise')
-          nn = length(gp.noise);
+       if isfield(gp, 'noisef')
+          nn = length(gp.noisef);
           for i=1:nn
-              noise = gp.noise{i};
-              C = C + feval(noise.fh_trvar, noise, x2);
+              noisef = gp.noisef{i};
+              C = C + feval(noisef.fh_trvar, noisef, x2);
           end
        end
        C(C<eps)=0;
@@ -77,11 +77,11 @@ else
       C=K;
 
       % Add noise to the covariance
-      if isfield(gp, 'noise')
-        nn = length(gp.noise);
+      if isfield(gp, 'noisef')
+        nn = length(gp.noisef);
         for i=1:nn
-          noise = gp.noise{i};
-          C = C + feval(noise.fh_trvar, noise, x1);
+          noisef = gp.noisef{i};
+          C = C + feval(noisef.fh_trvar, noisef, x1);
         end
       end
     end

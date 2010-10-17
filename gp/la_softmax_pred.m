@@ -132,9 +132,9 @@ function [mu_star, Sigm_cc, pi_star] = la_softmax_pred(gp, x, y, xt, varargin)
     % ============================================================
 %    if nargout > 2
 %        if isempty(yt)
-%            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
+%            [Ey, Vary] = feval(gp.lik.fh_predy, gp.lik, Ef, Varf, [], zt);
 %        else
-%            [Ey, Vary, Pyt] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
+%            [Ey, Vary, Pyt] = feval(gp.lik.fh_predy, gp.lik, Ef, Varf, yt, zt);
 %        end
 %    end
 end

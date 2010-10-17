@@ -180,11 +180,11 @@ switch gp.type
         end
 
         % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn
-                noise = gp.noise{i};
-                [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
+                noisef = gp.noisef{i};
+                [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
                 if isfield(gp,'mean')
                     if gp.mean.p.vague==0
                         [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
@@ -321,10 +321,10 @@ switch gp.type
         % Gradient with respect to noise function parameters
         
         % Loop over the noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn                
-                gpcf = gp.noise{i};
+                gpcf = gp.noisef{i};
                 
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
@@ -495,10 +495,10 @@ switch gp.type
         % Gradient with respect to noise function parameters
         
         % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn
-                gpcf = gp.noise{i};
+                gpcf = gp.noisef{i};
                 [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
@@ -700,10 +700,10 @@ switch gp.type
         % =================================================================
         % Gradient with respect to noise function parameters
         
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn
-                gpcf = gp.noise{i};       
+                gpcf = gp.noisef{i};       
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
                 [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
@@ -864,10 +864,10 @@ switch gp.type
         end
         
         % Loop over the noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn                
-                gpcf = gp.noise{i};
+                gpcf = gp.noisef{i};
                 
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
@@ -998,10 +998,10 @@ switch gp.type
             end        
         end
         % Loop over the noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn           
-                gpcf = gp.noise{i};
+                gpcf = gp.noisef{i};
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
                 [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);

@@ -2,34 +2,33 @@ function gpcf = gpcf_ppcs1(varargin)
 %GPCF_PPCS1   Create a piece wise polynomial (q=1) covariance function 
 %
 %  Description
-%    GPCF = GPCF_PPCS1('nin', NIN, OPTIONS) Create and initialize
-%    piece wise polynomial covariance function for Gaussian process
-%    for input dimension NIN. OPTIONS is optional parameter-value
-%    pair used as described below.
+%    GPCF = GPCF_PPCS1('nin',nin,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates piece wise polynomial (q=1) covariance function
+%    structure in which the named parameters have the specified
+%    values. Any unspecified parameters are set to default values. 
+%    Obligatory parameter is 'nin', which tells the dimension
+%    of input space.
+%  
+%    GPCF = GPCF_PPCS1(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
 %
-%    GPCF = GPCF_PPCS1(GPCF, OPTIONS) Set the fields of GPCF as
-%    described by the parameter-value pairs ('FIELD', VALUE) in the
-%    OPTIONS. The fields that can be modified are:
+%    Parameters for piece wise polynomial (q=1) covariance function [default]
+%      magnSigma2        = magnitude (squared) [0.1]
+%      lengthScale       - length scale for each input. [10]
+%                          This can be either scalar corresponding
+%                          to an isotropic function or vector
+%                          defining own length-scale for each input
+%                          direction.
+%      l_nin             = order of the polynomial [floor(nin/2) + 1]
+%                          Has to be greater than or equal to default.
+%      magnSigma2_prior  = prior structure for magnSigma2 [prior_unif]
+%      lengthScale_prior = prior structure for lengthScale [prior_unif]
+%      metric            = metric structure into the covariance function []
 %
-%      magnSigma2        = Magnitude (squared) for exponential part. 
-%                          (default 0.1)
-%      lengthScale       = Length scale for each input. This can be 
-%                          either scalar corresponding to an
-%                          isotropic function or vector defining
-%                          own length-scale for each input
-%                          direction. (default 10).
-%      l_nin             = set gpcf.l = floor(l_nin/2) + 1. 
-%                          This parameter defines the order of the
-%                          polynomial. Default is floor(nin/2) + 1
-%                          and this can only be increased
-%      magnSigma2_prior  = prior structure for magnSigma2
-%      lengthScale_prior = prior structure for lengthScale
-%      metric            = metric structure into the covariance function
-%
-%    Note! If the prior structure is set to empty matrix (e.g. 
-%    'magnSigma2_prior', []) then the parameter in question is
-%    considered fixed and it is not handled in optimization, grid
-%    integration, MCMC etc.
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
 %    The piecewise polynomial function is the following:
 %
@@ -40,11 +39,11 @@ function gpcf = gpcf_ppcs1(varargin)
 %            cs = max(0,1-r);
 %      and l_nin must be greater or equal to gpcf.nin
 %       
-%    NOTE2! Use of gpcf_ppcs1 requires that you have installed
+%    NOTE! Use of gpcf_ppcs1 requires that you have installed
 %    GPstuff with SuiteSparse.
 %
 %  See also
-%    gpcf_matern32, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%    GP_SET, GPCF_*, PRIOR_*, METRIC_*
     
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
@@ -133,12 +132,12 @@ function gpcf = gpcf_ppcs1(varargin)
         % Initialize prior structure
         gpcf.p=[];
         if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior)
-            gpcf.p.lengthScale=prior_unif('init');
+            gpcf.p.lengthScale=prior_unif;
         else
             gpcf.p.lengthScale=lengthScale_prior;
         end
         if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-            gpcf.p.magnSigma2=prior_unif('init');
+            gpcf.p.magnSigma2=prior_unif;
         else
             gpcf.p.magnSigma2=magnSigma2_prior;
         end
@@ -1168,8 +1167,8 @@ function gpcf = gpcf_ppcs1(varargin)
     %
     %          Description
     %          RECCF = GPCF_PPCS1_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

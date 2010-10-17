@@ -40,9 +40,9 @@ y = data(:,3);
 
 % ---------------------------
 % --- Construct the model ---
-gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001)
+gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
+gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.0001);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -55,19 +55,15 @@ gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.000
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
 % set the options for scg2
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
-
-% do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y);
-
+% pack the hyperparameters into one vector
+w=gp_pak(gp);  
+% Optimize with scaled conjugate gradient method
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 % Set the optimized hyperparameter values back to the gp structure
 gp=gp_unpak(gp,w);
 
@@ -100,7 +96,7 @@ hmc2('state', sum(100*clock));
 % Do the sampling (this takes few minutes)
 rfull = gp_mc(gp, x, y, opt);
 
-% After sampling we delete the burn-in and thin the sample chain
+% After sampling delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
 % Evaluate the effective number of parameters and DIC. 
@@ -152,29 +148,32 @@ mrmse_cv(3) = cvres.mrmse_cv;
 X_u = [u1(:) u2(:)];
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u)
+gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 
-gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
+% optimize only hyperparameters
+gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           
 
 % set the options
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
 opt.maxiter = 20;
 
-w = gp_pak(gp_fic);          % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_fic, x, y);       % do the optimization
-gp_fic = gp_unpak(gp_fic,w);     % Set the optimized hyperparameter values back to the gp structure
+% pack the hyperparameters into one vector
+w = gp_pak(gp_fic);
+% Optimize with scaled conjugate gradient method
+w=scg2(@gp_e, w, opt, @gp_g, gp_fic, x, y);
+% Set the optimized hyperparameter values back to the gp structure
+gp_fic = gp_unpak(gp_fic,w);
 
-% Evaluate the effective number of parameters and DIC with focus on latent variables. 
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{4} = 'FIC_MAP';
 p_eff_latent(4) = gp_peff(gp_fic, x, y);
 [DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'focus', 'latent');
@@ -263,18 +262,19 @@ for i1=1:4
 end
 
 % Create the PIC GP data structure and set the inducing inputs and block indexes
-gpcf1 = gpcf_sexp('init', 'lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
 
-gp_pic = gp_init('init', 'PIC', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
-gp_pic = gp_init('set', gp_pic, 'tr_index', trindex)
+gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
+gp_pic = gp_set(gp_pic, 'tr_index', trindex)
 
 % -----------------------------
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 
-gp_pic = gp_init('set', gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
+% optimize only hyperparameters
+gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');
 
 % set the options
 opt = scg2_opt;
@@ -283,9 +283,12 @@ opt.tolx = 1e-3;
 opt.display = 1;
 opt.maxiter = 20;
 
-w = gp_pak(gp_pic);          % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_pic, x, y);       % do the optimization
-gp_pic = gp_unpak(gp_pic,w);     % Set the optimized hyperparameter values back to the gp structure
+% Pack the hyperparameters into one vector
+w = gp_pak(gp_pic);          
+% Optimize with scaled conjugate gradient method
+w=scg2(@gp_e, w, opt, @gp_g, gp_pic, x, y);
+% Set the optimized hyperparameter values back to the gp structure
+gp_pic = gp_unpak(gp_pic,w);     
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);

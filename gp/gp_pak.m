@@ -71,26 +71,26 @@ function w = gp_pak(gp, param)
                 w = [w feval(gpcf.fh_pak, gpcf)];
             end
             
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    noise = gp.noise{i};
-                    w = [w feval(noise.fh_pak, noise)];
+                    noisef = gp.noisef{i};
+                    w = [w feval(noisef.fh_pak, noisef)];
                 end
             end
         end
         
         % Pack the inducing inputs
         if ~isempty(strfind(param, 'inducing'))
-            if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+            if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
                 w = [w gp.X_u(:)'];
             end
         end
         
         % Pack the hyperparameters of likelihood function
         if ~isempty(strfind(param, 'likelihood'))
-            if isstruct(gp.likelih)
-                w = [w feval(gp.likelih.fh_pak, gp.likelih)];
+            if isstruct(gp.lik)
+                w = [w feval(gp.lik.fh_pak, gp.lik)];
             end
         end
         

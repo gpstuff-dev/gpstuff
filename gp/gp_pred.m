@@ -71,7 +71,7 @@ function [Ef, Varf, Ey, Vary, py] = gp_pred(gp, x, y, xt, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
+if isfield(gp,'latent_method')
   % use inference specific methods
   % not the nicest way of doing this, but quick solution
   switch gp.latent_method
@@ -79,6 +79,8 @@ if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
       fh_pred=@la_pred;
     case 'EP'
       fh_pred=@ep_pred;
+    case 'MCMC'
+      fh_pred=@mc_pred;
   end
   switch nargout % ugly...
     case 1
@@ -173,7 +175,7 @@ switch gp.type
     if nargout > 2
         % Scale mixture model in gpcf_noiset is a special case 
         % handle it separately
-        if ~strcmp(gp.noise{1}.type, 'gpcf_noiset') % normal case
+        if ~strcmp(gp.noisef{1}.type, 'gpcf_noiset') % normal case
             [V, Cv] = gp_trvar(gp,xt,predcf);
             Ey = Ef;
             Vary = Varf + Cv - V;
@@ -181,8 +183,8 @@ switch gp.type
                 py = norm_pdf(yt, Ey, sqrt(Vary));
             end
         else % scale mixture case
-            nu = gp.noise{1}.nu;
-            sigma2 = gp.noise{1}.tau2.*gp.noise{1}.alpha.^2;
+            nu = gp.noisef{1}.nu;
+            sigma2 = gp.noisef{1}.tau2.*gp.noisef{1}.alpha.^2;
             sigma = sqrt(sigma2);
             
             Ey = Ef;

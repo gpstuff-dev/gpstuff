@@ -153,16 +153,16 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
             
             % Evaluate the gradient from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
                     i1=0;
                     if ~isempty(gprior)
                         i1 = length(gprior);
                     end
                     
-                    noise = gp.noise{i};
-                    [DCff, gprior_cf] = feval(noise.fh_ghyper, noise, x);
+                    noisef = gp.noisef{i};
+                    [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
                     
                     for i2 = 1:length(DCff)
                         i1 = i1+1;
@@ -187,25 +187,25 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         % =================================================================
         % Gradient with respect to likelihood function parameters
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'z', z);
             
             sigm2_i = (Varf.^-1 - tautilde).^-1;
             mu_i = sigm2_i.*(Ef./Varf - nutilde);
             
-            gdata_likelih = 0;
-            likelih = gp.likelih;
+            gdata_lik = 0;
+            lik = gp.lik;
             for k1 = 1:length(y)
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
+                gdata_lik = gdata_lik - feval(lik.fh_siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
             % evaluate prior contribution for the gradient
-            if isfield(gp.likelih, 'p')
-                g_logPrior = feval(likelih.fh_priorg, likelih);
+            if isfield(gp.lik, 'p')
+                g_logPrior = feval(lik.fh_priorg, lik);
             else
-                g_logPrior = zeros(size(gdata_likelih));
+                g_logPrior = zeros(size(gdata_lik));
             end
             % set the gradients into vectors that will be returned
-            gdata = [gdata gdata_likelih];
+            gdata = [gdata gdata_lik];
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
@@ -274,10 +274,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
             
             % Evaluate the gradient from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    gpcf = gp.noise{i};
+                    gpcf = gp.noisef{i};
                     
                     [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
@@ -337,25 +337,25 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         % =================================================================
         % Gradient with respect to a likelihood function parameters        
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
             sigm2_i = (Varf.^-1 - tautilde).^-1;
             mu_i = sigm2_i.*(Ef./Varf - nutilde);
             
-            gdata_likelih = 0;
-            likelih = gp.likelih;
+            gdata_lik = 0;
+            lik = gp.lik;
             for k1 = 1:length(y)
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
+                gdata_lik = gdata_lik - feval(lik.fh_siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
 
             % evaluate prior contribution for the gradient
-            if isfield(gp.likelih, 'p')
-                g_logPrior = feval(likelih.fh_priorg, likelih);
+            if isfield(gp.lik, 'p')
+                g_logPrior = feval(lik.fh_priorg, lik);
             else
-                g_logPrior = zeros(size(gdata_likelih));
+                g_logPrior = zeros(size(gdata_lik));
             end
             % set the gradients into vectors that will be returned
-            gdata = [gdata gdata_likelih];
+            gdata = [gdata gdata_lik];
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
@@ -431,11 +431,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 end
             end
 
-            % Evaluate the gradient from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            % Evaluate the gradient from noisef functions
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    gpcf = gp.noise{i};
+                    gpcf = gp.noisef{i};
                     [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
                         i1 = i1+1;
@@ -502,27 +502,27 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik, 'fh_siteDeriv')
 
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', gp.tr_index, 'z', z);
             
             sigm2_i = (Varf.^-1 - tautilde).^-1;
             mu_i = sigm2_i.*(Ef./Varf - nutilde);
             
-            gdata_likelih = 0;
-            likelih = gp.likelih;
+            gdata_lik = 0;
+            lik = gp.lik;
             for k1 = 1:length(y)
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
+                gdata_lik = gdata_lik - feval(lik.fh_siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
 
             % evaluate prior contribution for the gradient
-            if isfield(gp.likelih, 'p')
-                g_logPrior = feval(likelih.fh_priorg, likelih);
+            if isfield(gp.lik, 'p')
+                g_logPrior = feval(lik.fh_priorg, lik);
             else
-                g_logPrior = zeros(size(gdata_likelih));
+                g_logPrior = zeros(size(gdata_lik));
             end
             % set the gradients into vectors that will be returned
-            gdata = [gdata gdata_likelih];
+            gdata = [gdata gdata_lik];
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
@@ -636,10 +636,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
 
             % Evaluate the gradient from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    gpcf = gp.noise{i};       
+                    gpcf = gp.noisef{i};       
                     % Get the gradients of the covariance matrices 
                     % and gprior from gpcf_* structures
                     [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
@@ -716,24 +716,24 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
             sigm2_i = (Varf.^-1 - tautilde).^-1;
             mu_i = sigm2_i.*(Ef./Varf - nutilde);
             
-            gdata_likelih = 0;
-            likelih = gp.likelih;
+            gdata_lik = 0;
+            lik = gp.lik;
             for k1 = 1:length(y)
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i(k1), mu_i(k1), z);
+                gdata_lik = gdata_lik - feval(lik.fh_siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
             end
             % evaluate prior contribution for the gradient
-            if isfield(gp.likelih, 'p')
-                g_logPrior = feval(likelih.fh_priorg, likelih);
+            if isfield(gp.lik, 'p')
+                g_logPrior = feval(lik.fh_priorg, lik);
             else
-                g_logPrior = zeros(size(gdata_likelih));
+                g_logPrior = zeros(size(gdata_lik));
             end
             % set the gradients into vectors that will be returned
-            gdata = [gdata gdata_likelih];
+            gdata = [gdata gdata_lik];
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
@@ -798,10 +798,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
             
             % Evaluate the gradient from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    gpcf = gp.noise{i};
+                    gpcf = gp.noisef{i};
                     
                     [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
@@ -867,23 +867,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.likelih, 'fh_siteDeriv')
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-            gdata_likelih = 0;
-            likelih = gp.likelih;
+            gdata_lik = 0;
+            lik = gp.lik;
             for k1 = 1:length(y)
                 sigm2_i = Varf(k1) ;
                 myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih - feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
+                gdata_lik = gdata_lik - feval(lik.fh_siteDeriv, lik, y, k1, sigm2_i, myy_i, z);
             end
             % evaluate prior contribution for the gradient
-            if isfield(gp.likelih, 'p')
-                g_logPrior = feval(likelih.fh_priorg, likelih);
+            if isfield(gp.lik, 'p')
+                g_logPrior = feval(lik.fh_priorg, lik);
             else
-                g_logPrior = zeros(size(gdata_likelih));
+                g_logPrior = zeros(size(gdata_lik));
             end
             % set the gradients into vectors that will be returned
-            gdata = [gdata gdata_likelih];
+            gdata = [gdata gdata_lik];
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end
@@ -986,12 +986,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
 
         % Evaluate the gradient from noise functions
-        if isfield(gp, 'noise')
-            nn = length(gp.noise);
+        if isfield(gp, 'noisef')
+            nn = length(gp.noisef);
             for i=1:nn
                 i1 = i1+1;
                 
-                gpcf = gp.noise{i};
+                gpcf = gp.noisef{i};
                 gpcf.GPtype = gp.type;
                 gpcf.X_u = gp.X_u;
                 gpcf.tr_index = gp.tr_index;
@@ -1005,23 +1005,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         % likelihood parameters
         %--------------------------------------
-        if ~isempty(strfind(gp.infer_params, 'likelih')) && isfield(gp.likelih, 'fh_siteDeriv')
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik, 'fh_siteDeriv')
             [Ef, Varf] = ep_pred(gp, x, y, x, param);
-            gdata_likelih = 0;
-            likelih = gp.likelih;
+            gdata_lik = 0;
+            lik = gp.lik;
             for k1 = 1:length(y)
                 sigm2_i = Varf(k1) ;
                 myy_i = Ef(k1);
-                gdata_likelih = gdata_likelih + feval(likelih.fh_siteDeriv, likelih, y, k1, sigm2_i, myy_i, z);
+                gdata_lik = gdata_lik + feval(lik.fh_siteDeriv, lik, y, k1, sigm2_i, myy_i, z);
             end
             % evaluate prior contribution for the gradient
-            if isfield(gp.likelih, 'p')
-                g_logPrior = feval(likelih.fh_priorg, likelih);
+            if isfield(gp.lik, 'p')
+                g_logPrior = feval(lik.fh_priorg, lik);
             else
-                g_logPrior = zeros(size(gdata_likelih));
+                g_logPrior = zeros(size(gdata_lik));
             end
             % set the gradients into vectors that will be returned
-            gdata = [gdata gdata_likelih];
+            gdata = [gdata gdata_lik];
             gprior = [gprior g_logPrior];
             i1 = length(gdata);
         end

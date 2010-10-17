@@ -474,10 +474,10 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
             %Varf(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
             Varf = sum(Phi_a.^2,2) - sum(Phi_a.*((Phi_f'*(repmat(S,1,m).*Phi_f))*Phi_a')',2) + sum((Phi_a*(Phi_f'*L)).^2,2);
             for i1=1:ntest
-                switch gp.likelih.type
-                  case 'probit'
+                switch gp.lik.type
+                  case 'Probit'
                     p1(i1,1)=normcdf(Ef(i1,1)/sqrt(1+Varf(i1))); % Probability p(y_new=1)
-                  case 'poisson'
+                  case 'Poisson'
                     p1 = NaN;
                 end
             end
@@ -490,9 +490,9 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
     % ============================================================    
     if nargout > 2
         if isempty(yt)
-            [Ey, Vary] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, [], zt);
+            [Ey, Vary] = feval(gp.lik.fh_predy, gp.lik, Ef, Varf, [], zt);
         else
-            [Ey, Vary, Py] = feval(gp.likelih.fh_predy, gp.likelih, Ef, Varf, yt, zt);
+            [Ey, Vary, Py] = feval(gp.lik.fh_predy, gp.lik, Ef, Varf, yt, zt);
         end
     end
 end

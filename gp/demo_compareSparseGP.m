@@ -1,7 +1,7 @@
-%DEMO_COMPARESPARSEGP     Regression demo comparing different sparse
-%                         approximations
+%DEMO_COMPARESPARSEGP Regression demo comparing different sparse
+%                     approximations
 %
-%   Description
+%  Description
 %   A regression problem with one input variable and one output
 %   variable with Gaussian noise. The output is assumed to be
 %   realization of additive functions and Gaussian noise.
@@ -22,10 +22,10 @@
 %   We use a simple one dimensional data set to present the three
 %   methods.
 % 
-%   See also DEMO_REGRESSION1, DEMO_REGRESSION2
+%  See also DEMO_REGRESSION1, DEMO_REGRESSION2
 %
 %
-%   References:
+%  References:
 % 
 %    Quinonero-Candela, J. and Rasmussen, C. E. (2005). A Unifying
 %    View of Sparse Approximate Gaussian Process Regression. Journal
@@ -44,8 +44,6 @@
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-
-
 % Start by creating 1D data
 x=linspace(1,10,901);
 
@@ -57,35 +55,31 @@ x1=round(x1*100)-99;
 xt=x(x1)';
 yt=2*sin(4*xt)+0.2*randn(size(xt));
 xstar=[1:0.01:14]';
+[n,nin] = size(xt);
 
 % Initialize full GP with a squared exponential component and set
 % priors for their hyperparameters.
-[n,nin] = size(xt);
-gpcfse = gpcf_sexp('init','lengthScale',1.3,'magnSigma2',5);
-gpcfn = gpcf_noise('init', 'noiseSigma2', 0.3);
+ppl = prior_t('s2', 10, 'nu', 3);
+ppm = prior_sqrtt('s2', 10, 'nu', 3);
+pn = prior_t('s2', 10, 'nu', 4);
 
-ppl = prior_t('init', 's2', 10, 'nu', 3);
-ppm = prior_sqrtt('init', 's2', 10, 'nu', 3);
-pn = prior_t('init', 's2', 10, 'nu', 4);
+gpcfse = gpcf_sexp('lengthScale',1.3,'magnSigma2',5, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm);
+gpcfn = gpcf_noise('noiseSigma2', 0.3, 'noiseSigma2_prior', pn);
 
-gpcfn = gpcf_noise('set', gpcfn, 'noiseSigma2_prior', pn);
-gpcfse = gpcf_periodic('set', gpcfse, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm);
-
-gp = gp_init('init', 'FULL', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','covariance') 
+gp = gp_set('cf', {gpcfse}, 'noisef' ,{gpcfn}, 'jitterSigma2', 0.001,'infer_params','covariance') 
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
 opt=optimset(opt,'TolFun', 1e-5);
 opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'testing');
-% Learn the hyperparameters
-w0 = gp_pak(gp); % pack hyperparameters into a (log) vector for the optimization
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp, xt, yt), gp_g(ww, gp, xt, yt)), w0, opt);
+% Use fminunc to optimize the hyperparameters
+w0 = gp_pak(gp); 
+[w,fval,exitflag] = fminunc(@(ww) gp_eg(ww, gp, xt, yt), w0, opt);
 gp = gp_unpak(gp,w);
 
 [Ef_full, Varf_full] = gp_pred(gp, xt, yt, xstar);
-Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
+Varf_full = Varf_full + gp.noisef{1}.noiseSigma2;
 
 figure;hold on
 % Blue crosses are the initial inducing input locations, red ones are
@@ -106,10 +100,8 @@ w_full=w; % optimized hyperparameters
 % for the FIC model.
 Xu=round(10+90*rand(18,1))/10; % Random placement
 
-gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
-gp_fic.cf{1}.lengthScale=exp(w_full(2));
-gp_fic.cf{1}.magnSigma2=exp(w_full(1));
-gp_fic.noise{1}.noiseSigma2=exp(w_full(end));
+% Change type to FIC, add inducing inputs, and optimize only inducing inputs
+gp_fic = gp_set(gp, 'type','FIC','X_u',Xu,'infer_params','inducing');
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
@@ -118,12 +110,11 @@ opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'testing');
 % Learn the hyperparameters
 w0 = gp_pak(gp_fic);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp_fic, xt, yt), gp_g(ww, gp_fic, xt, yt)), w0, opt);
+[w,fval,exitflag] = fminunc(@(ww) gp_eg(ww, gp_fic, xt, yt), w0, opt);
 gp_fic = gp_unpak(gp_fic,w);
 
-[Ef_full, Varf_full] = gp_pred(gp_fic, xt, yt, xstar);
-Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
+[Ef_fic, Varf_fic] = gp_pred(gp_fic, xt, yt, xstar);
+Varf_fic = Varf_fic + gp.noise{1}.noiseSigma2;
 
 XuSorted=sort(gp_fic.X_u);
 dXuSorted=diff(XuSorted);
@@ -132,9 +123,9 @@ plotbb=bb(1)+(min(XuSorted):0.1:max(XuSorted))*bb(2);
 
 %figure;hold on
 subplot(2,2,2);hold on;
-plot(xstar,Ef_full,'k', 'LineWidth', 2)
-plot(xstar,Ef_full-2.*sqrt(Varf_full),'g--')
-plot(xstar,Ef_full+2.*sqrt(Varf_full),'g--')
+plot(xstar,Ef_fic,'k', 'LineWidth', 2)
+plot(xstar,Ef_fic-2.*sqrt(Varf_fic),'g--')
+plot(xstar,Ef_fic+2.*sqrt(Varf_fic),'g--')
 plot(xt,yt,'.', 'MarkerSize',7)
 plot(XuSorted(1:end-1),dXuSorted,'ko');
 plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')
@@ -150,10 +141,7 @@ title('FIC')
 % the data becomes more sparse), with predictions closely matching the full 
 % GP model. The other two sparse approximations yield less reliable
 % results.
-gp_var = gp_init('init', 'VAR', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
-gp_var.cf{1}.lengthScale=exp(w_full(2));
-gp_var.cf{1}.magnSigma2=exp(w_full(1));
-gp_var.noise{1}.noiseSigma2=exp(w_full(end));
+gp_var = gp_set(gp,'type','VAR','X_u',Xu,'infer_params','inducing');
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
@@ -162,12 +150,11 @@ opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'testing');
 % Learn the hyperparameters
 w0 = gp_pak(gp_var);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp_var, xt, yt), gp_g(ww, gp_var, xt, yt)), w0, opt);
+[w,fval,exitflag] = fminunc(@(ww) gp_eg(ww, gp_var, xt, yt), w0, opt);
 gp_var = gp_unpak(gp_var,w);
 
-[Ef_full, Varf_full] = gp_pred(gp_var, xt, yt, xstar);
-Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
+[Ef_var, Varf_var] = gp_pred(gp_var, xt, yt, xstar);
+Varf_var = Varf_var + gp.noise{1}.noiseSigma2;
 
 XuSorted=sort(gp_var.X_u);
 dXuSorted=diff(XuSorted);
@@ -177,9 +164,9 @@ plotbb=bb(1)+(min(XuSorted):0.1:max(XuSorted))*bb(2);
 
 %figure;hold on
 subplot(2,2,4);hold on
-plot(xstar,Ef_full,'k', 'LineWidth', 2)
-plot(xstar,Ef_full-2.*sqrt(Varf_full),'g--')
-plot(xstar,Ef_full+2.*sqrt(Varf_full),'g--')
+plot(xstar,Ef_var,'k', 'LineWidth', 2)
+plot(xstar,Ef_var-2.*sqrt(Varf_var),'g--')
+plot(xstar,Ef_var+2.*sqrt(Varf_var),'g--')
 plot(xt,yt,'.', 'MarkerSize',7)
 plot(XuSorted(1:end-1),dXuSorted,'ko');
 plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')
@@ -188,13 +175,9 @@ plot(gp_var.X_u, -3, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(Xu, -2.8, 'bx', 'MarkerSize', 5, 'LineWidth', 2)
 title('VAR')
 
-
 % Run the DTC model similarly to the FIC model with the same starting
 % inducing inputs. The difference in the optimized results is notable.
-gp_dtc = gp_init('init', 'DTC', 'gaussian', {gpcfse}, {gpcfn}, 'jitterSigma2', 0.001,'infer_params','inducing','X_u',Xu);
-gp_dtc.cf{1}.lengthScale=exp(w_full(2));
-gp_dtc.cf{1}.magnSigma2=exp(w_full(1));
-gp_dtc.noise{1}.noiseSigma2=exp(w_full(end));
+gp_dtc = gp_set(gp,'type','DTC','X_u',Xu,'infer_params','inducing');
 
 opt=optimset('GradObj','on');
 opt=optimset(opt,'TolX', 1e-5);
@@ -203,12 +186,11 @@ opt=optimset(opt,'LargeScale', 'off');
 opt=optimset(opt,'Display', 'testing');
 % Learn the hyperparameters
 w0 = gp_pak(gp_dtc);
-mydeal = @(varargin)varargin{1:nargout};
-[w,fval,exitflag] = fminunc(@(ww) mydeal(gp_e(ww, gp_dtc, xt, yt), gp_g(ww, gp_dtc, xt, yt)), w0, opt);
+[w,fval,exitflag] = fminunc(@(ww) gp_eg(ww, gp_dtc, xt, yt), w0, opt);
 gp_dtc = gp_unpak(gp_dtc,w);
 
-[Ef_full, Varf_full] = gp_pred(gp_dtc, xt, yt, xstar);
-Varf_full = Varf_full + gp.noise{1}.noiseSigma2;
+[Ef_dtc, Varf_dtc] = gp_pred(gp_dtc, xt, yt, xstar);
+Varf_dtc = Varf_dtc + gp.noise{1}.noiseSigma2;
 
 XuSorted=sort(gp_dtc.X_u);
 dXuSorted=diff(XuSorted);
@@ -218,9 +200,9 @@ plotbb=bb(1)+(min(XuSorted):0.1:max(XuSorted))*bb(2);
 
 %figure;hold on
 subplot(2,2,3);hold on
-plot(xstar,Ef_full,'k', 'LineWidth', 2)
-plot(xstar,Ef_full-2.*sqrt(Varf_full),'g--')
-plot(xstar,Ef_full+2.*sqrt(Varf_full),'g--')
+plot(xstar,Ef_dtc,'k', 'LineWidth', 2)
+plot(xstar,Ef_dtc-2.*sqrt(Varf_dtc),'g--')
+plot(xstar,Ef_dtc+2.*sqrt(Varf_dtc),'g--')
 plot(xt,yt,'.', 'MarkerSize',7)
 plot(XuSorted(1:end-1),dXuSorted,'ko');
 plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')

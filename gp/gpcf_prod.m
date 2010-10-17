@@ -3,12 +3,11 @@ function gpcf = gpcf_prod(varargin)
 %
 %  Description
 %    GPCF = GPCF_PROD('functions', {GPCF_1, GPCF_2, ...}) 
-%    Create and initialize product form covariance function for
-%    Gaussian process. The covariance will be
+%    creates a product form covariance function
 %          GPCF = GPCF_1 .* GPCF_2 .* ... .* GPCF_N
 %
 %  See also
-%       gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%    GP_SET, GPCF_*
     
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
@@ -455,8 +454,8 @@ function gpcf = gpcf_prod(varargin)
     %
     %          Description
     %          RECCF = GPCF_PROD_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

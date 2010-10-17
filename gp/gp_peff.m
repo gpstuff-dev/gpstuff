@@ -64,7 +64,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
   tn = size(x,1);
 
     
-    if ~isstruct(gp.likelih)    % a Gaussian regression model
+    if ~isstruct(gp.lik)    % a Gaussian regression model
         
         switch gp.type
           case 'FULL'
@@ -240,7 +240,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
               case 'Laplace'
                 [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                 
                 % Evaluate the prior variance
                 K = gp_trcov(gp,x);
@@ -292,7 +292,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
               case 'Laplace'
                 [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                 La = W.*Lav;
                 Lahat = 1 + La;
                 sqrtW = sqrt(W);
@@ -353,7 +353,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
 
                 % Evaluate the variance
 
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                 sqrtW = sqrt(W);
                 
                 % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -443,7 +443,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
               case 'Laplace'
                 [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                                 
-                W = -feval(gp.likelih.fh_llg2, gp.likelih, y, f, 'latent', z);
+                W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
                 sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
                 Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
                 B = sqrtW*K_fu;

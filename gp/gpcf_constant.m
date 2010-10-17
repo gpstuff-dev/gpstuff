@@ -1,27 +1,27 @@
 function gpcf = gpcf_constant(varargin)
-%GPCF_CONSTANT  Create a constant covariance function for Gaussian Process
+%GPCF_CONSTANT  Create a constant covariance function
 %
 %  Description
-%    GPCF = GPCF_CONSTANT(OPTIONS) Create and initialize constant
-%    covariance function for Gaussian process. OPTIONS is optional
-%    parameter-value pair used as described below.
+%    GPCF = GPCF_CONSTANT('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates a squared exponential covariance function structure in
+%    which the named parameters have the specified values. Any
+%    unspecified parameters are set to default values.
 %
-%    GPCF = GPCF_CONSTANT(GPCF, OPTIONS) Set the fields of GPCF as
-%    described by the parameter-value pairs ('FIELD', VALUE) in the
-%    OPTIONS. The fields that can be modified are:
+%    GPCF = GPCF_CONSTANT(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
+%  
+%    Parameters for constant covariance function [default]
+%      constSigma2       - magnitude (squared) [0.1]
+%      constSigma2_prior - prior for constSigma2 [prior_unif]
 %
-%      constSigma2       = Magnitude (squared) for exponential 
-%                          part. (default 0.1)
-%      constSigma2_prior = prior structure for magnSigma2
-%
-%    Note! If the prior structure is set to empty matrix (e.g. 
-%    'constSigma2_prior', []) then the parameter in question is
-%    considered fixed and it is not handled in optimization, grid
-%    integration, MCMC etc.
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
 %  See also
-%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
-    
+%    GP_SET, GPCF_*, PRIOR_*, MEAN_*
+
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Jaakko Riihimaki, Aki Vehtari
 
@@ -71,7 +71,7 @@ function gpcf = gpcf_constant(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(constSigma2_prior)&isnan(constSigma2_prior)
-                gpcf.p.constSigma2=prior_unif('init');
+                gpcf.p.constSigma2=prior_unif;
             else
                 gpcf.p.constSigma2=constSigma2_prior;
             end
@@ -176,7 +176,7 @@ function gpcf = gpcf_constant(varargin)
         % Evaluate the prior contribution to the error. The parameters that
         % are sampled are from space W = log(w) where w is all the "real" samples.
         % On the other hand errors are evaluated in the W-space so we need take
-        % into account also the  Jakobian of transformation W -> w = exp(W).
+        % into account also the  Jacobian of transformation W -> w = exp(W).
         % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         eprior = 0;
         gpp=gpcf.p;
@@ -387,8 +387,8 @@ function gpcf = gpcf_constant(varargin)
     %
     %          Description
     %          RECCF = GPCF_CONSTANT_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .

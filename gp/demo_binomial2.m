@@ -102,37 +102,29 @@ f3 = f3(itr,:); f4 = f4(itr,:);
 % between age group and time period (gpcf4).
 
 % First define priors for length scales and magnitudes
-pl = prior_t('init');
-pm = prior_sqrtt('init', 's2', 0.3);
+pl = prior_t;
+pm = prior_sqrtt('s2', 0.3);
 
-gpcf1 = gpcf_sexp('init','magnSigma2', 1, 'magnSigma2_prior',pm);
-metric1 = metric_euclidean('init', {[1]},'lengthScales',[10], 'lengthScales_prior', pl);
-gpcf1 = gpcf_sexp('set', gpcf1, 'metric', metric1);
+metric1 = metric_euclidean('components', {[1]},'lengthScale',[10], 'lengthScale_prior', pl);
+gpcf1 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric1);
 
-gpcf2 = gpcf_sexp('init', 'magnSigma2', 1, 'magnSigma2_prior',pm);
-metric2 = metric_euclidean('init', {[2]},'lengthScales',[10], 'lengthScales_prior', pl);
-gpcf2 = gpcf_sexp('set', gpcf2, 'metric', metric2);
+metric2 = metric_euclidean('components', {[2]},'lengthScale',[10], 'lengthScale_prior', pl);
+gpcf2 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric2);
 
-gpcf3 = gpcf_sexp('init', 'magnSigma2', 1, 'magnSigma2_prior',pm);
-metric3 = metric_euclidean('init',  {[3]},'lengthScales',[4], 'lengthScales_prior', pl);
-gpcf3 = gpcf_sexp('set', gpcf3, 'metric', metric3);
+metric3 = metric_euclidean('components', {[3]},'lengthScale',[4], 'lengthScale_prior', pl);
+gpcf3 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric3);
 
-gpcf4 = gpcf_sexp('init', 'magnSigma2', 1, 'magnSigma2_prior',pm);
-metric4 = metric_euclidean('init',  {[1 2]},'lengthScales',[10 2], 'lengthScales_prior', pl);
-gpcf4 = gpcf_sexp('set', gpcf4, 'metric', metric4);
+metric4 = metric_euclidean('components',  {[1 2]},'lengthScale',[10 2], 'lengthScale_prior', pl);
+gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
 
 % Initialize the likelihood structure
-likelih = likelih_binomial('init', yy, nn);
+lik = lik_binomial;
     
 % Initialize GP structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1,gpcf2,gpcf3,gpcf4}, [],'jitterSigma2',0.01^2);   %{gpcf2}
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2',0.01^2);
     
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', xx, yy, 'z', nn});
-
-% Function handles for optimization
-fe=@gpla_e;
-fg=@gpla_g;
+gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for scaled conjugate optimization
 opt_scg = scg2_opt;
@@ -140,23 +132,23 @@ opt_scg.tolfun = 1e-2;
 opt_scg.tolx = 1e-1;
 opt_scg.display = 1;
 
-% Do scaled conjugate gradient optimization 
+% Optimize with scaled conjugate gradient method
 w=gp_pak(gp);
-[wopt, opt, flog]=scg2(fe, w, opt_scg, fg, gp, xx, yy, 'z',nn);
+[wopt, opt, flog]=scg2(@gp_e, w, opt_scg, @gp_g, gp, xx, yy, 'z',nn);
 gp=gp_unpak(gp, wopt);
 
 % Making predictions
 
 % First with all components
-[Ef,Varf,Ey,Vary,Py] = la_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
+[Ef,Varf,Ey,Vary,Py] = gp_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
 % Age group effect
-[Ef_1,Varf_1] = la_pred(gp,xx,yy,xxo,'predcf',[1],'z',nn,'zt',nno);
+[Ef_1,Varf_1] = gp_pred(gp,xx,yy,xxo,'predcf',[1],'z',nn,'zt',nno);
 % Time period effect
-[Ef_2,Varf_2] = la_pred(gp,xx,yy,xxo,'predcf',[2],'z',nn,'zt',nno);
+[Ef_2,Varf_2] = gp_pred(gp,xx,yy,xxo,'predcf',[2],'z',nn,'zt',nno);
 % Cohort effect
-[Ef_3,Varf_3] = la_pred(gp,xx,yy,xxo,'predcf',[3],'z',nn,'zt',nno);
+[Ef_3,Varf_3] = gp_pred(gp,xx,yy,xxo,'predcf',[3],'z',nn,'zt',nno);
 % Interaction effect between age group and time period
-[Ef_4,Varf_3] = la_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
+[Ef_4,Varf_3] = gp_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
 
 % Plotting predictions
 
@@ -178,6 +170,7 @@ h2=plot(xx1, Ef_1(ind1), 'color', color2, 'linewidth', 3);
 h4=plot(xx1, f1o(ind1), 'color', 'r', 'linewidth', 2); hold off
 title('Age group effect')
 xlabel('Age group'); ylabel('logit(p)')
+legend([h4 h2],'True','Estimated')
 
 % Time period effect
 subplot(3,1,2)
@@ -188,7 +181,8 @@ h2=plot(xx2, Ef_2(ind2), 'color', color2, 'linewidth', 3);
 % true function
 h4=plot(xx2, f2o(ind2), 'color', 'r', 'linewidth', 2);
 title('Time period effect')
-xlabel('Time period'); ylabel('logit(p)')
+xlabel('Time'); ylabel('logit(p)')
+legend([h4 h2],'True','Estimated')
 
 % Cohort effect
 subplot(3,1,3)
@@ -199,7 +193,8 @@ h2=plot(xx3, Ef_3(ind3), 'color', color2, 'linewidth', 3);
 % true function
 h4=plot(xx3, f3o(ind3), 'color', 'r', 'linewidth', 2);
 title('Cohort effect')
-xlabel('Cohort effect'); ylabel('logit(p)')
+xlabel('Cohort'); ylabel('logit(p)')
+legend([h4 h2],'True','Estimated')
 
 % Plotting of interaction effect
 figure; subplot(1,2,1)

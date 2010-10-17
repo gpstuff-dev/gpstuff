@@ -32,12 +32,12 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                   is given the latent variables are sampled with function 
 %                   stored in the gp.fh_mc field in the GP structure. 
 %                   See gp_init. 
-%      'likelih_hmc_opt'   Options structure for HMC sampler (see hmc2_opt). 
-%                          When this is given the hyperparameters of the 
-%                          likelihood are sampled with hmc2.
-%      'likelih_sls_opt'   Options structure for slice sampler (see sls_opt). 
-%                          When this is given the hyperparameters of the 
-%                          likelihood are sampled with hmc2.
+%      'lik_hmc_opt'   Options structure for HMC sampler (see hmc2_opt). 
+%                      When this is given the hyperparameters of the 
+%                      likelihood are sampled with hmc2.
+%      'lik_sls_opt'   Options structure for slice sampler (see sls_opt). 
+%                      When this is given the hyperparameters of the 
+%                      likelihood are sampled with hmc2.
 %      'persistence_reset' Reset the momentum parameter in HMC sampler after 
 %                          every repeat'th iteration, default 0.
 %      'record'      An old record structure from where the sampling is 
@@ -49,7 +49,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %      hyperparameters of the covariance function(s) (if 'hmc_opt',
 %      'sls_opt' or 'gibbs_opt' option is given), and for last the
 %      hyperparameters in the likelihood function (if
-%      'likelih_hmc_opt' or 'likelih_sls_opt' option is given). 
+%      'lik_hmc_opt' or 'lik_sls_opt' option is given). 
 %
 %  See also:
 %  demo_classific1, demo_robustregression
@@ -78,8 +78,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
     ip.addParamValue('gibbs_opt', [], @(x) isstruct(x) || isempty(x));
     ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('likelih_hmc_opt', [], @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('likelih_sls_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lik_hmc_opt', [], @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lik_sls_opt', [], @(x) isstruct(x) || isempty(x));
     ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
     ip.parse(gp, x, y, varargin{:});
     z=ip.Results.z;
@@ -91,8 +91,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     opt.sls_opt = ip.Results.sls_opt;
     opt.gibbs_opt = ip.Results.gibbs_opt;
     opt.latent_opt = ip.Results.latent_opt;
-    opt.likelih_hmc_opt = ip.Results.likelih_hmc_opt;
-    opt.likelih_sls_opt = ip.Results.likelih_sls_opt;
+    opt.lik_hmc_opt = ip.Results.lik_hmc_opt;
+    opt.lik_sls_opt = ip.Results.lik_sls_opt;
     opt.persistence_reset = ip.Results.persistence_reset;
     
     % Check arguments
@@ -106,6 +106,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     me = @gp_e;
     mg = @gp_g;
 
+    % Set latent values
+    if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
+        && isstruct(gp.lik)
+      gp.latentValues=zeros(size(y));
+    end
     % Initialize record
     if isempty(record)
         % No old record
@@ -114,10 +119,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         ri=size(record.etr,1);
     end
 
-    % Set the states of samplers if not given in opt structure
+    % Set the states of samplers
     if ~isempty(opt.latent_opt)
-        % Set latent values
-        f=gp.latentValues';
+        f=gp.latentValues;
         if isfield(opt.latent_opt, 'rstate')
             if ~isempty(opt.latent_opt.rstate)
                 latent_rstate = opt.latent_opt.rstate;
@@ -145,17 +149,17 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             hmc_rstate=hmc2('state');
         end
     end    
-    if ~isempty(opt.likelih_hmc_opt)
-        if isfield(opt.likelih_hmc_opt, 'rstate')
-            if ~isempty(opt.likelih_hmc_opt.rstate)
-                likelih_hmc_rstate = opt.likelih_hmc_opt.rstate;
+    if ~isempty(opt.lik_hmc_opt)
+        if isfield(opt.lik_hmc_opt, 'rstate')
+            if ~isempty(opt.lik_hmc_opt.rstate)
+                lik_hmc_rstate = opt.lik_hmc_opt.rstate;
             else
                 hmc2('state', sum(100*clock))
-                likelih_hmc_rstate=hmc2('state');
+                lik_hmc_rstate=hmc2('state');
             end
         else
             hmc2('state', sum(100*clock))
-            likelih_hmc_rstate=hmc2('state');
+            lik_hmc_rstate=hmc2('state');
         end        
     end
     
@@ -168,7 +172,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         if ~isempty(opt.sls_opt)
             fprintf('slsrej  ');
         end
-        if ~isempty(opt.likelih_hmc_opt)
+        if ~isempty(opt.lik_hmc_opt)
             fprintf('likel.rej  ');
         end
         if ~isempty(opt.latent_opt)
@@ -193,13 +197,13 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                     opt.latent_opt.rstate.mom = [];
                 end
             end
-            if ~isempty(opt.likelih_hmc_opt)
-                likelih_hmc_rstate.mom = [];
+            if ~isempty(opt.lik_hmc_opt)
+                lik_hmc_rstate.mom = [];
             end
         end
         
         hmcrej = 0;
-        likelih_hmcrej = 0;
+        lik_hmcrej = 0;
         lrej=0;
         indrej=0;
         for l=1:opt.repeat
@@ -207,7 +211,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             % ----------- Sample latent Values  ---------------------
             if ~isempty(opt.latent_opt)
                 [f, energ, diagnl] = feval(gp.fh_mc, f, opt.latent_opt, gp, x, y, z);
-                gp.latentValues = f(:)';
+                gp.latentValues = f(:);
                 f = f(:);
                 lrej=lrej+diagnl.rej/opt.repeat;
                 if isfield(diagnl, 'opt')
@@ -260,44 +264,44 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 end
                 
                 % loop over the noise functions                
-                nnf = length(gp.noise);
+                nnf = length(gp.noisef);
                 for i1 = 1:nnf
-                    gpcf = gp.noise{i1};
+                    gpcf = gp.noisef{i1};
                     if isfield(gpcf, 'fh_gibbs')
                         [gpcf, f] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, f);
-                        gp.noise{i1} = gpcf;
+                        gp.noisef{i1} = gpcf;
                     end
                 end
             end
             
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
-            if ~isempty(opt.likelih_sls_opt)
+            if ~isempty(opt.lik_sls_opt)
                 w = gp_pak(gp, 'likelihood');
-                fe = @(w, likelih) (-feval(likelih.fh_ll,feval(likelih.fh_unpak,w,likelih),y,f,z) + feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
-                [w, energies, diagns] = sls(fe, w, opt.likelih_sls_opt, [], gp.likelih);
+                fe = @(w, lik) (-feval(lik.fh_ll,feval(lik.fh_unpak,w,lik),y,f,z) + feval(lik.fh_priore,feval(lik.fh_unpak,w,lik)));
+                [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
                 if isfield(diagns, 'opt')
-                    opt.likelih_sls_opt = diagns.opt;
+                    opt.lik_sls_opt = diagns.opt;
                 end
                 w=w(end,:);
                 gp = gp_unpak(gp, w, 'likelihood');
             end
             
             % ----------- Sample hyperparameters of the likelihood with HMC --------------------- 
-            if ~isempty(opt.likelih_hmc_opt)
+            if ~isempty(opt.lik_hmc_opt)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'likelihood';
                 w = gp_pak(gp);
-                fe = @(w, likelih) (-feval(likelih.fh_ll,feval(likelih.fh_unpak,w,likelih),y,f,z)+feval(likelih.fh_priore,feval(likelih.fh_unpak,w,likelih)));
-                fg = @(w, likelih) (-feval(likelih.fh_llg,feval(likelih.fh_unpak,w,likelih),y,f,'hyper',z)+feval(likelih.fh_priorg,feval(likelih.fh_unpak,w,likelih)));
+                fe = @(w, lik) (-feval(lik.fh_ll,feval(lik.fh_unpak,w,lik),y,f,z)+feval(lik.fh_priore,feval(lik.fh_unpak,w,lik)));
+                fg = @(w, lik) (-feval(lik.fh_llg,feval(lik.fh_unpak,w,lik),y,f,'hyper',z)+feval(lik.fh_priorg,feval(lik.fh_unpak,w,lik)));
                 
-                hmc2('state',likelih_hmc_rstate)              % Set the state
-                [w, energies, diagnh] = hmc2(fe, w, opt.likelih_hmc_opt, fg, gp.likelih);
-                likelih_hmc_rstate=hmc2('state');             % Save the current state
-                likelih_hmcrej=likelih_hmcrej+diagnh.rej/opt.repeat;
+                hmc2('state',lik_hmc_rstate)              % Set the state
+                [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);
+                lik_hmc_rstate=hmc2('state');             % Save the current state
+                lik_hmcrej=lik_hmcrej+diagnh.rej/opt.repeat;
                 if isfield(diagnh, 'opt')
-                    opt.likelih_hmc_opt = diagnh.opt;
+                    opt.lik_hmc_opt = diagnh.opt;
                 end
-                opt.likelih_hmc_opt.rstate = likelih_hmc_rstate;
+                opt.lik_hmc_opt.rstate = lik_hmc_rstate;
                 w=w(end,:);
                 gp = gp_unpak(gp, w);
                 gp.infer_params = infer_params;
@@ -319,8 +323,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             if ~isempty(opt.sls_opt)
                 fprintf('sls  ');
             end
-            if ~isempty(opt.likelih_hmc_opt)
-                fprintf(' %.1e  ',record.likelih_hmcrejects(ri));
+            if ~isempty(opt.lik_hmc_opt)
+                fprintf(' %.1e  ',record.lik_hmcrejects(ri));
             end
             if ~isempty(opt.latent_opt)
                 fprintf('%.1e',record.lrejects(ri));
@@ -344,11 +348,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     %          record fields of:
         
         ncf = length(gp.cf);
-        nn = length(gp.noise);
+        nn = length(gp.noisef);
         
         if nargin == 0   % Initialize record structure
             record.type = gp.type;
-            record.likelih = gp.likelih;
+            record.lik = gp.lik;
             % If sparse model is used save the information about which
             switch gp.type
               case 'FIC'
@@ -386,14 +390,14 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 end
             end
             for i=1:nn
-                noise = gp.noise{i};
-                record.noise{i} = feval(noise.fh_recappend, [], gp.noise{i});
+                noisef = gp.noisef{i};
+                record.noisef{i} = feval(noisef.fh_recappend, [], gp.noisef{i});
             end
             
             % Initialize the recordord for likelihood
-            if isstruct(gp.likelih)
-                likelih = gp.likelih;
-                record.likelih = feval(likelih.fh_recappend, [], gp.likelih);
+            if isstruct(gp.lik)
+                lik = gp.lik;
+                record.lik = feval(lik.fh_recappend, [], gp.lik);
             end
             
             % Set the meanfunctions into record if they exist
@@ -401,7 +405,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                record.mean = gp.mean; 
             end
             
-            record.p = gp.p;
+            if isfield(gp,'p')
+              record.p = gp.p;
+            end
             record.infer_params = gp.infer_params;
             record.e = [];
             record.edata = [];
@@ -411,7 +417,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             lrej = 0;
             indrej = 0;
             hmcrej=0;
-            likelih_hmcrej=0;
+            lik_hmcrej=0;
         end
 
         % Set the record for every covariance function
@@ -426,14 +432,14 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 
         % Set the record for every noise function
         for i=1:nn
-            noise = gp.noise{i};
-            record.noise{i} = feval(noise.fh_recappend, record.noise{i}, ri, noise);
+            noisef = gp.noisef{i};
+            record.noisef{i} = feval(noisef.fh_recappend, record.noisef{i}, ri, noisef);
         end
 
         % Set the record for likelihood
-        if isstruct(gp.likelih)
-            likelih = gp.likelih;
-            record.likelih = feval(likelih.fh_recappend, record.likelih, ri, likelih);
+        if isstruct(gp.lik)
+            lik = gp.lik;
+            record.lik = feval(lik.fh_recappend, record.lik, ri, lik);
         end
 
         % Set jitterSigma2 to record
@@ -443,7 +449,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 
         % Set the latent values to record structure
         if isfield(gp, 'latentValues')
-            record.latentValues(ri,:)=gp.latentValues;
+            record.latentValues(ri,:)=gp.latentValues';
         end
 
         % Set the inducing inputs in the record structure
@@ -454,10 +460,10 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            elikelih = feval(gp.likelih.fh_ll, gp.likelih, y, gp.latentValues', z);
-            [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues');
-            record.etr(ri,:) = record.e(ri,:) - elikelih;   % 
-% $$$             record.edata(ri,:) = elikelih;
+            elik = feval(gp.lik.fh_ll, gp.lik, y, gp.latentValues, z);
+            [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues);
+            record.etr(ri,:) = record.e(ri,:) - elik;   % 
+% $$$             record.edata(ri,:) = elik;
                                            % Set rejects 
             record.lrejects(ri,1)=lrej;
         else
@@ -469,8 +475,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             record.hmcrejects(ri,1)=hmcrej; 
         end
 
-        if ~isempty(opt.likelih_hmc_opt)
-            record.likelih_hmcrejects(ri,1)=likelih_hmcrej; 
+        if ~isempty(opt.lik_hmc_opt)
+            record.lik_hmcrejects(ri,1)=lik_hmcrej; 
         end
 
         % If inputs are sampled set the record which are on at this moment

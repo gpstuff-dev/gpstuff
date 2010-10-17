@@ -60,35 +60,26 @@ Nt=N(1:nt,:); N(1:nt,:)=[];
 % equally spaced test points for visualisation
 xgrid=linspace(min(x(:,1))-0.3,max(x(:,1))+0.3,100)';
 Ntgrid=ones(size(xgrid))*100;
-%-
-
-
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', 'lengthScale', ones(1,nin), 'magnSigma2', 1);
+gpcf1 = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1);
 
 % Set the prior for the parameters of covariance functions 
-pn = prior_normal('init');
-ps2 = prior_sinvchi2('init', 's2', 2.7^2, 'nu', 0.2);
-ppn = prior_normal('init', 'mu', 6, 's2', 9, 'mu_prior', pn, 's2_prior', ps2);
+pn = prior_normal;
+ps2 = prior_sinvchi2('s2', 2.7^2, 'nu', 0.2);
+ppn = prior_normal('mu', 6, 's2', 9, 'mu_prior', pn, 's2_prior', ps2);
 
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', ppn, 'magnSigma2_prior', ps2);
-
-% Create the likelihood structure
-likelih = likelih_binomial('init');
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', ppn, 'magnSigma2_prior', ps2);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [], 'jitterSigma2', 1e-3, 'infer_params', 'covariance');
+gp = gp_set('lik', lik_binomial, 'cf', {gpcf1}, 'jitterSigma2', 1e-3, 'infer_params', 'covariance');
 
 
 % ------- Laplace approximation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, 'z', N});
-
-fe=@gpla_e;
-fg=@gpla_g;
+gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % set the options for scaled conjugate optimization
 opt_scg = scg2_opt;
@@ -98,13 +89,13 @@ opt_scg.display = 1;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp);
-[wopt, opt, flog]=scg2(fe, w, opt_scg, fg, gp, x, y, 'z', N);
+[wopt, opt, flog]=scg2(@gp_e, w, opt_scg, @gp_g, gp, x, y, 'z', N);
 gp=gp_unpak(gp, wopt);
 
 % Make predictions at the grid points
 
 % Set the total number of trials Nt at the grid points xgrid
-[Ef_la, Varf_la, Ey_la, Vary_la] = la_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
+[Ef_la, Varf_la, Ey_la, Vary_la] = gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
 
 % Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on
@@ -124,11 +115,11 @@ title('Gaussian process prediction with a squared exponential covariance functio
 
 % To compute predictive densities at the test points xt, the total number
 % of trials Nt must be set additionally:
-[Ef_la, Varf_la, Ey_la, Vary_la, py_la] = la_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
+[Ef_la, Varf_la, Ey_la, Vary_la, py_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
 
 figure, set(gcf, 'color', 'w'), hold on
 hist(log(py_la), 20)
-title('histogram of log-predictive densities at the test points')
+title('Histogram of log-predictive densities at the test points')
 
 figure, set(gcf, 'color', 'w'), hold on
 plot([min(yt) max(yt)], [min(yt) max(yt)], 'r', 'linewidth', 2)
@@ -137,5 +128,3 @@ axis equal
 xlabel('observed y')
 ylabel('predicted E[y]')
 title('Observations versus predictions E[y]')
-
-

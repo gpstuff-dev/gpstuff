@@ -52,8 +52,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                    (ischar(x) && strcmp(w, 'init')) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)));
     ip.addRequired('gp',@isstruct);
-    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('x', @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
     ip.parse(w, gp, x, y, varargin{:});
     z=ip.Results.z;
@@ -89,8 +89,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             end
         end
         
-        ep_algorithm(gp_pak(gp), gp, x, y, z);
-
+        if ~isempty(y)
+          ep_algorithm(gp_pak(gp), gp, x, y, z);
+        end
+        
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
@@ -120,7 +122,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             ncf = length(gp.cf);
             n = length(x);
 
-            % ep iteration parameters
+            % EP iteration parameters
             iter=1;
             maxiter = gp.ep_opt.maxiter;
             tol = gp.ep_opt.tol;
@@ -128,7 +130,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             tautilde = zeros(size(y));
 %            nutilde = nutilde0;%zeros(size(y));
 %            tautilde = tautilde0;%zeros(size(y));
-            %tautilde = gp.likelih.sigma2^-1 *ones(size(y));
+            %tautilde = gp.lik.sigma2^-1 *ones(size(y));
             logZep_tmp=0; logZep=Inf;
             if ~isfield(gp,'mean')
                 myy = zeros(size(y));
@@ -161,9 +163,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                     % If Student-t likelihood is used sort
                     % the update order so that the problematic updates
                     % are left for last
-                    if strcmp(gp.likelih.type,'Student-t')
-                      f=feval(gp.likelih.fh_optimizef,gp,y,K);
-                      W=-feval(gp.likelih.fh_llg2,gp.likelih,y,f,'latent');
+                    if strcmp(gp.lik.type,'Student-t')
+                      f=feval(gp.lik.fh_optimizef,gp,y,K);
+                      W=-feval(gp.lik.fh_llg2,gp.lik,y,f,'latent');
                       [foo,I]=sort(W,'descend');
                     else
                       I=1:n;
@@ -192,7 +194,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 % $$$                             end
 % $$$                             
 % $$$                             % marginal moments
-% $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+% $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
 % $$$                             
 % $$$                             % update site parameters
 % $$$                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -236,7 +238,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                             sigm2_i=tau_i^-1;
                             
                             % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                             
                             % update site parameters
                             deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
@@ -428,7 +430,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                             sigm2_i=tau_i^-1;
                             
                             % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                             
                             % update site parameters
                             tautilde_old = tautilde(i1);
@@ -554,7 +556,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                         sigm2_i=tau_i^-1;
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                         
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -707,7 +709,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                             sigm2_i=tau_i^-1;
                             
                             % marginal moments
-                            [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                            [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
 
                             % update site parameters
                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -902,7 +904,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                         sigm2_i= tau_i^-1;  % 1./tau_i;  % 
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
 
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1052,7 +1054,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                         sigm2_i=tau_i^-1;
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                         
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1173,7 +1175,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                         sigm2_i=tau_i^-1;
 
                         % marginal moments
-                        [M0(i1), muhati, sigm2hati] = feval(gp.likelih.fh_tiltedMoments, gp.likelih, y, i1, sigm2_i, myy_i, z);
+                        [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                         
                         % update site parameters
                         deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1235,7 +1237,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 %L = iLaKfu;
 
                 temp = Phi*(SsqrtPhi'*(SsqrtPhi*bb'));
-                %                b = Phi*bb' - temp + Phi*(SsqrtPhi'*(SsqrtPhi*(AA'\(AA\temp))));
+                %b = Phi*bb' - temp + Phi*(SsqrtPhi'*(SsqrtPhi*(AA'\(AA\temp))));
                 
                 b = nutilde - bb2'.*Stildesqroot + repmat(tautilde,1,m).*Phi*(AA'\bb3');
                 b = b';
@@ -1247,11 +1249,13 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 error('Unknown type of Gaussian process!')
             end
 
-            % =====================================================================================
-            % Evaluate the prior contribution to the error from covariance functions and likelihood
-            % =====================================================================================
+            % ==================================================
+            % Evaluate the prior contribution to the error from
+            % covariance functions and likelihood
+            % ==================================================
 
-            % Evaluate the prior contribution to the error from covariance functions
+            % Evaluate the prior contribution to the error from covariance
+            % functions
             eprior = 0;
             for i=1:ncf
                 gpcf = gp.cf{i};
@@ -1259,18 +1263,19 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             end
 
             % Evaluate the prior contribution to the error from noise functions
-            if isfield(gp, 'noise')
-                nn = length(gp.noise);
+            if isfield(gp, 'noisef')
+                nn = length(gp.noisef);
                 for i=1:nn
-                    noise = gp.noise{i};
-                    eprior = eprior + feval(noise.fh_e, noise, x, y);
+                    noisef = gp.noisef{i};
+                    eprior = eprior + feval(noisef.fh_e, noisef, x, y);
                 end
             end
             
-            % Evaluate the prior contribution to the error from likelihood functions
-            if isfield(gp, 'likelih') && isfield(gp.likelih, 'p')
-                likelih = gp.likelih;
-                eprior = eprior + feval(likelih.fh_priore, likelih);
+            % Evaluate the prior contribution to the error from likelihood
+            % functions
+            if isfield(gp, 'lik') && isfield(gp.lik, 'p')
+                lik = gp.lik;
+                eprior = eprior + feval(lik.fh_priore, lik);
             end
 
             % The last things to do

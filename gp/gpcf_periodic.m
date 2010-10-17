@@ -2,45 +2,45 @@ function gpcf = gpcf_periodic(varargin)
 %GPCF_PERIODIC  Create a periodic covariance function for Gaussian Process
 %
 %  Description
-%    GPCF = GPCF_PERIODIC(OPTIONS) Create and initialize periodic
-%    covariance function for Gaussian process for input dimension
-%    NIN. OPTIONS is optional parameter-value pair used as
-%    described below.
+%    GPCF = GPCF_PERIODIC('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates periodic covariance function structure in which the
+%    named parameters have the specified values. Any unspecified
+%    parameters are set to default values.
+%  
+%    GPCF = GPCF_PERIODIC(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a covariance function structure with the named
+%    parameters altered with the specified values.
 %
-%    GPCF = GPCF_PERIODIC(GPCF, OPTIONS) Set the fields of GPCF as
-%    described by the parameter-value pairs ('FIELD', VALUE) in the
-%    OPTIONS. The fields that can be modified are:
+%    Periodic covariance function with squared exponential decay
+%    part as in Rasmussen & Williams (2006) Gaussian processes for
+%    Machine Learning.
+%  
+%    Parameters for periodic covariance function [default]
+%      magnSigma2             - magnitude (squared) [0.1] 
+%      lengthScale            - length scale for each input [10]
+%                               This can be either scalar
+%                               corresponding isotropic or vector
+%                               corresponding ARD
+%      period                 - length of the periodic component(s) [1]
+%      lengthScale_sexp       - length scale for the squared exponential 
+%                               component [10] This can be either scalar
+%                               corresponding isotropic or vector
+%                               corresponding ARD. 
+%      decay                  - determines whether the squared exponential 
+%                               decay term is used (1) or not (0). 
+%                               Not a hyperparameter for the function.
+%      magnSigma2_prior       - prior structure for magnSigma2 [prior_unif]
+%      lengthScale_prior      - prior structure for lengthScale [prior_unif]
+%      lengthScale_sexp_prior - prior structure for lengthScale_sexp 
+%                               [prior_fixed]
+%      period_prior           - prior structure for period [prior_fixed]
 %
-%      magnSigma2            = Magnitude (squared) for exponential part. 
-%                              (default 0.1)
-%      lengthScale           = Length scale for each input. This can be 
-%                              either scalar corresponding isotropic or
-%                              vector corresponding ARD. (default 10)
-%      period                = duration of one cycle of the periodic
-%                              component(s) (default 1)
-%      lengthScale_exp       = length scale for the squared exponential 
-%                              component. This can be either scalar
-%                              corresponding isotropic or vector
-%                              corresponding ARD. (10)
-%      decay                 = determines whether the squared exponential 
-%                              decay term is used (1) or not (0). 
-%                              Not a hyperparameter for the
-%                              function.
-%      optimPeriod           = determines whether the period is optimised 
-%                              (1) or kept constant (0). Not a
-%                              hyperparameter for the function.
-%      magnSigma2_prior      = prior structure for magnSigma2
-%      lengthScale_prior     = prior structure for lengthScale
-%      lengthScale_exp_prior = prior structure for lengthScale_exp
-%      period_prior          = prior structure for period 
-%
-%    Note! If the prior structure is set to empty matrix (e.g. 
-%    'magnSigma2_prior', []) then the parameter in question is
-%    considered fixed and it is not handled in optimization, grid
-%    integration, MCMC etc.
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
 %
 %  See also
-%    gpcf_exp, gp_init, gp_e, gp_g, gp_trcov, gp_cov, gp_unpak, gp_pak
+%    GP_SET, GPCF_*, PRIOR_*
     
 % Copyright (c) 2009-2010 Heikki Peura
 % Copyright (c) 2010 Aki Vehtari
@@ -73,12 +73,12 @@ function gpcf = gpcf_periodic(varargin)
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('period',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
-    ip.addParamValue('lengthScale_exp',[], @(x) isvector(x) && all(x>0));
+    ip.addParamValue('lengthScale_sexp',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('optimPeriod',[], @(x) isscalar(x) && (x==0||x==1));
     ip.addParamValue('decay',[], @(x) isscalar(x) && (x==0||x==1));
     ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('lengthScale_exp_prior',NaN, @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('lengthScale_sexp_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.addParamValue('period_prior',NaN, @(x) isstruct(x) || isempty(x));
     ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
@@ -86,11 +86,11 @@ function gpcf = gpcf_periodic(varargin)
     lengthScale=ip.Results.lengthScale;
     period=ip.Results.period;
     optimPeriod=ip.Results.optimPeriod;
-    lengthScale_exp=ip.Results.lengthScale_exp;
+    lengthScale_sexp=ip.Results.lengthScale_sexp;
     decay=ip.Results.decay;
     magnSigma2_prior=ip.Results.magnSigma2_prior;
     lengthScale_prior=ip.Results.lengthScale_prior;
-    lengthScale_exp_prior=ip.Results.lengthScale_exp_prior;
+    lengthScale_sexp_prior=ip.Results.lengthScale_sexp_prior;
     period_prior=ip.Results.period_prior;
     
     switch do
@@ -108,10 +108,10 @@ function gpcf = gpcf_periodic(varargin)
             else
                 gpcf.magnSigma2=magnSigma2;
             end
-            if isempty(lengthScale_exp)
-                gpcf.lengthScale_exp = 10;
+            if isempty(lengthScale_sexp)
+                gpcf.lengthScale_sexp = 10;
             else
-                gpcf.lengthScale_exp=lengthScale_exp;
+                gpcf.lengthScale_sexp=lengthScale_sexp;
             end
             if isempty(period)
                 gpcf.period = 1;
@@ -132,12 +132,12 @@ function gpcf = gpcf_periodic(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior)
-                gpcf.p.lengthScale=prior_unif('init');
+                gpcf.p.lengthScale=prior_unif;
             else
                 gpcf.p.lengthScale=lengthScale_prior;
             end
             if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-                gpcf.p.magnSigma2=prior_unif('init');
+                gpcf.p.magnSigma2=prior_unif;
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
             end
@@ -146,10 +146,10 @@ function gpcf = gpcf_periodic(varargin)
             else
                 gpcf.p.period=period_prior;
             end
-            if isnan(lengthScale_exp_prior)
-                gpcf.p.lengthScale_exp=[];
+            if isnan(lengthScale_sexp_prior)
+                gpcf.p.lengthScale_sexp=[];
             else
-                gpcf.p.lengthScale_exp=lengthScale_exp_prior;
+                gpcf.p.lengthScale_sexp=lengthScale_sexp_prior;
             end
             
             % Set the function handles to the nested functions
@@ -174,10 +174,10 @@ function gpcf = gpcf_periodic(varargin)
             if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
             if ~isempty(period);gpcf.period=period;end
             if ~isempty(optimPeriod);gpcf.optimPeriod=optimPeriod;end
-            if ~isempty(lengthScale_exp);gpcf.lengthScale_exp=lengthScale_exp;end
+            if ~isempty(lengthScale_sexp);gpcf.lengthScale_sexp=lengthScale_sexp;end
             if ~isempty(decay);gpcf.decay=decay;end
             if ~isstruct(period_prior)&isnan(period_prior);else;gpcf.p.period=period_prior;end
-            if ~isstruct(lengthScale_exp_prior)&isnan(lengthScale_exp_prior);else;gpcf.p.lengthScale_exp=lengthScale_exp_prior;end
+            if ~isstruct(lengthScale_sexp_prior)&isnan(lengthScale_sexp_prior);else;gpcf.p.lengthScale_sexp=lengthScale_sexp_prior;end
             if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior);else;gpcf.p.magnSigma2=magnSigma2_prior;end
             if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior);else;gpcf.p.lengthScale=lengthScale_prior;end
     end
@@ -196,8 +196,8 @@ function gpcf = gpcf_periodic(varargin)
     %             (hyperparameters of gpcf.magnSigma2) 
     %             log(gpcf.lengthScale(:))
     %             (hyperparameters of gpcf.lengthScale)
-    %             log(gpcf.lengthScale_exp)
-    %             (hyperparameters of gpcf.lengthScale_exp)
+    %             log(gpcf.lengthScale_sexp)
+    %             (hyperparameters of gpcf.lengthScale_sexp)
     %             log(gpcf.period)
     %             (hyperparameters of gpcf.period)]'
     %     
@@ -227,11 +227,11 @@ function gpcf = gpcf_periodic(varargin)
                 ww = [ww feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
             end
             
-            if ~isempty(gpcf.p.lengthScale_exp)  && gpcf.decay == 1
-                w = [w log(gpcf.lengthScale_exp)];
+            if ~isempty(gpcf.p.lengthScale_sexp)  && gpcf.decay == 1
+                w = [w log(gpcf.lengthScale_sexp)];
                             
-                % Hyperparameters of lengthScale_exp
-                ww = [ww feval(gpcf.p.lengthScale_exp.fh_pak, gpcf.p.lengthScale_exp)];
+                % Hyperparameters of lengthScale_sexp
+                ww = [ww feval(gpcf.p.lengthScale_sexp.fh_pak, gpcf.p.lengthScale_sexp)];
             end
             
             if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
@@ -279,10 +279,10 @@ function gpcf = gpcf_periodic(varargin)
                 gpcf.lengthScale = exp(w(i1:i2));
                 w = w(i2+1:end);
             end
-            if ~isempty(gpp.lengthScale_exp) && gpcf.decay == 1
-                i2=length(gpcf.lengthScale_exp);
+            if ~isempty(gpp.lengthScale_sexp) && gpcf.decay == 1
+                i2=length(gpcf.lengthScale_sexp);
                 i1=1;
-                gpcf.lengthScale_exp = exp(w(i1:i2));
+                gpcf.lengthScale_sexp = exp(w(i1:i2));
                 w = w(i2+1:end);
             end
             if ~isempty(gpp.period) && gpcf.optimPeriod == 1
@@ -300,9 +300,9 @@ function gpcf = gpcf_periodic(varargin)
                 [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
-            if ~isempty(gpp.lengthScale_exp)
-                [p, w] = feval(gpcf.p.lengthScale_exp.fh_unpak, gpcf.p.lengthScale_exp, w);
-                gpcf.p.lengthScale_exp = p;
+            if ~isempty(gpp.lengthScale_sexp)
+                [p, w] = feval(gpcf.p.lengthScale_sexp.fh_unpak, gpcf.p.lengthScale_sexp, w);
+                gpcf.p.lengthScale_sexp = p;
             end
             if ~isempty(gpp.period)  && gpcf.optimPeriod == 1
                 [p, w] = feval(gpcf.p.period.fh_unpak, gpcf.p.period, w);
@@ -341,7 +341,7 @@ function gpcf = gpcf_periodic(varargin)
             % Evaluate the prior contribution to the error. The parameters that
             % are sampled are from space W = log(w) where w is all the "real" samples.
             % On the other hand errors are evaluated in the W-space so we need take
-            % into account also the  Jakobian of transformation W -> w = exp(W).
+            % into account also the  Jacobian of transformation W -> w = exp(W).
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
             
             if ~isempty(gpcf.p.magnSigma2)
@@ -351,8 +351,8 @@ function gpcf = gpcf_periodic(varargin)
                 eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
           
-            if ~isempty(gpp.lengthScale_exp) && gpcf.decay == 1
-                eprior = eprior + feval(gpp.lengthScale_exp.fh_e, gpcf.lengthScale_exp, gpp.lengthScale_exp) - sum(log(gpcf.lengthScale_exp));
+            if ~isempty(gpp.lengthScale_sexp) && gpcf.decay == 1
+                eprior = eprior + feval(gpp.lengthScale_sexp.fh_e, gpcf.lengthScale_sexp, gpp.lengthScale_sexp) - sum(log(gpcf.lengthScale_sexp));
             end
             if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                 eprior = feval(gpp.period.fh_e, gpcf.period, gpp.period) - sum(log(gpcf.period));
@@ -440,9 +440,9 @@ function gpcf = gpcf_periodic(varargin)
                 end
                 
                 if gpcf.decay == 1
-                    if length(gpcf.lengthScale_exp) == 1
+                    if length(gpcf.lengthScale_sexp) == 1
                         % In the case of isotropic PERIODIC
-                        s = 1./gpcf.lengthScale_exp.^2;
+                        s = 1./gpcf.lengthScale_sexp.^2;
                         dist = 0;
                         for i=1:m
                             D = bsxfun(@minus,x(:,i),x(:,i)');
@@ -455,7 +455,7 @@ function gpcf = gpcf_periodic(varargin)
                     else
                         % In the case ARD is used
                         for i=1:m
-                            s = 1./gpcf.lengthScale_exp(i).^2;
+                            s = 1./gpcf.lengthScale_sexp(i).^2;
                             dist = bsxfun(@minus,x(:,i),x(:,i)');
                             D = Cdm.*s.*dist.^2;
                         
@@ -533,10 +533,10 @@ function gpcf = gpcf_periodic(varargin)
                 
                 if gpcf.decay == 1
                     % Evaluate help matrix for calculations of derivatives with
-                    % respect to the lengthScale_exp
-                    if length(gpcf.lengthScale_exp) == 1
+                    % respect to the lengthScale_sexp
+                    if length(gpcf.lengthScale_sexp) == 1
                         % In the case of an isotropic PERIODIC
-                        s = 1./gpcf.lengthScale_exp.^2;
+                        s = 1./gpcf.lengthScale_sexp.^2;
                         dist = 0; dist2 = 0;
                         for i=1:m
                             dist = dist + bsxfun(@minus,x(:,i),x2(:,i)').^2;                        
@@ -548,7 +548,7 @@ function gpcf = gpcf_periodic(varargin)
                     else
                         % In the case ARD is used
                         for i=1:m
-                            s = 1./gpcf.lengthScale_exp(i).^2;        % set the length
+                            s = 1./gpcf.lengthScale_sexp(i).^2;        % set the length
                             dist = bsxfun(@minus,x(:,i),x2(:,i)');
                             DK_l = s.*K.*dist.^2;
                         
@@ -602,9 +602,9 @@ function gpcf = gpcf_periodic(varargin)
                     DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
                 end
                 if gpcf.decay == 1
-                    for i2=1:length(gpcf.lengthScale_exp)
+                    for i2=1:length(gpcf.lengthScale_sexp)
                         ii1 = ii1+1;
-                        DKff{ii1}  = 0;                      % d mask(Kff,I) / d lengthScale_exp
+                        DKff{ii1}  = 0;                      % d mask(Kff,I) / d lengthScale_sexp
                     end
                 end
                 if gpcf.optimPeriod == 1
@@ -633,9 +633,9 @@ function gpcf = gpcf_periodic(varargin)
                 end
                 if gpcf.decay == 1
                     i1=i1+1; 
-                    lll = length(gpcf.lengthScale_exp);
-                    gg = feval(gpp.lengthScale_exp.fh_g, gpcf.lengthScale_exp, gpp.lengthScale_exp);
-                    gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale_exp - 1;
+                    lll = length(gpcf.lengthScale_sexp);
+                    gg = feval(gpp.lengthScale_sexp.fh_g, gpcf.lengthScale_sexp, gpp.lengthScale_sexp);
+                    gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale_sexp - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
                 if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
@@ -681,11 +681,11 @@ function gpcf = gpcf_periodic(varargin)
             s = 1./gpcf.lengthScale.^2;
         end
         if gpcf.decay == 1
-            if length(gpcf.lengthScale_exp) == 1
+            if length(gpcf.lengthScale_sexp) == 1
                 % In the case of an isotropic PERIODIC
-                s_exp = repmat(1./gpcf.lengthScale_exp.^2, 1, m);
+                s_sexp = repmat(1./gpcf.lengthScale_sexp.^2, 1, m);
             else
-                s_exp = 1./gpcf.lengthScale_exp.^2;
+                s_sexp = 1./gpcf.lengthScale_sexp.^2;
             end
         end
 
@@ -701,7 +701,7 @@ function gpcf = gpcf_periodic(varargin)
                         DK = zeros(size(K));
                         DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x(:,i)')./gp_period);
                         if gpcf.decay == 1
-                            DK(j,:) = DK(j,:)-s_exp(i).*bsxfun(@minus,x(j,i),x(:,i)');
+                            DK(j,:) = DK(j,:)-s_sexp(i).*bsxfun(@minus,x(j,i),x(:,i)');
                         end
                         DK = DK + DK';
 
@@ -725,7 +725,7 @@ function gpcf = gpcf_periodic(varargin)
                     for j = 1:n
                         DK= zeros(size(K));
                         if gpcf.decay == 1
-                            DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x2(:,i)')./gp_period)-s_exp(i).*bsxfun(@minus,x(j,i),x2(:,i)');
+                            DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x2(:,i)')./gp_period)-s_sexp(i).*bsxfun(@minus,x(j,i),x2(:,i)');
                         else
                             DK(j,:) = -s(i).*2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(j,i),x2(:,i)')./gp_period);
                         end
@@ -777,13 +777,13 @@ function gpcf = gpcf_periodic(varargin)
             if ~isempty(gpcf.lengthScale)
                 s = 1./gpcf.lengthScale.^2;
                 if gpcf.decay == 1
-                    s_exp = 1./gpcf.lengthScale_exp.^2;
+                    s_sexp = 1./gpcf.lengthScale_sexp.^2;
                 end
                 if m1==1 && m2==1
                     dd = bsxfun(@minus,x1,x2');
                     dist=2.*sin(pi.*dd./gp_period).^2.*s;
                     if gpcf.decay == 1
-                        dist = dist + dd.^2.*s_exp./2;
+                        dist = dist + dd.^2.*s_sexp./2;
                     end
                 else
                     % If ARD is not used make s a vector of
@@ -792,8 +792,8 @@ function gpcf = gpcf_periodic(varargin)
                         s = repmat(s,1,m1);
                     end
                     if gpcf.decay == 1
-                        if size(s_exp)==1
-                            s_exp = repmat(s_exp,1,m1);
+                        if size(s_sexp)==1
+                            s_sexp = repmat(s_sexp,1,m1);
                         end
                     end
 
@@ -802,7 +802,7 @@ function gpcf = gpcf_periodic(varargin)
                         dd = bsxfun(@minus,x1(:,j),x2(:,j)');
                         dist = dist + 2.*sin(pi.*dd./gp_period).^2.*s(:,j);
                         if gpcf.decay == 1
-                            dist = dist +dd.^2.*s_exp(:,j)./2;
+                            dist = dist +dd.^2.*s_sexp(:,j)./2;
                         end
                     end
                 end
@@ -844,10 +844,10 @@ function gpcf = gpcf_periodic(varargin)
                 gp_period = repmat(gp_period,1,m);
             end
             if gpcf.decay == 1
-                s_exp = 1./(gpcf.lengthScale_exp);
-                s_exp2 = s_exp.^2;
-                if size(s_exp)==1
-                    s_exp2 = repmat(s_exp2,1,m);
+                s_sexp = 1./(gpcf.lengthScale_sexp);
+                s_sexp2 = s_sexp.^2;
+                if size(s_sexp)==1
+                    s_sexp2 = repmat(s_sexp2,1,m);
                 end
             end
             
@@ -860,7 +860,7 @@ function gpcf = gpcf_periodic(varargin)
                 for ii2=1:m
                     d = d+2.*s2(ii2).*sin(pi.*(x(col_ind,ii2)-x(ii1,ii2))./gp_period(ii2)).^2;
                     if gpcf.decay == 1
-                        d=d+s_exp2(ii2)./2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+                        d=d+s_sexp2(ii2)./2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
                     end
                 end
                 C(col_ind,ii1) = d;
@@ -897,8 +897,8 @@ function gpcf = gpcf_periodic(varargin)
     %
     %          Description
     %          RECCF = GPCF_PERIODIC_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a likelihood record structure RECCF, record
-    %          index RI and likelihood structure GPCF with the
+    %          takes a covariance function record structure RECCF, record
+    %          index RI and covariance function structure GPCF with the
     %          current MCMC samples of the hyperparameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .
@@ -914,7 +914,7 @@ function gpcf = gpcf_periodic(varargin)
             reccf.lengthScale= [];
             reccf.magnSigma2 = [];
             reccf.optimPeriod=[];
-            reccf.lengthScale_exp = [];
+            reccf.lengthScale_sexp = [];
             reccf.period = [];
            
 
@@ -931,9 +931,9 @@ function gpcf = gpcf_periodic(varargin)
             reccf.p.lengthScale=[];
             reccf.p.magnSigma2=[];
             if gpcf.decay == 1
-                reccf.p.lengthScale_exp=[];
-                if ~isempty(ri.p.lengthScale_exp)
-                reccf.p.lengthScale_exp = ri.p.lengthScale_exp;
+                reccf.p.lengthScale_sexp=[];
+                if ~isempty(ri.p.lengthScale_sexp)
+                reccf.p.lengthScale_sexp = ri.p.lengthScale_sexp;
                 end
             end
             
@@ -969,13 +969,13 @@ function gpcf = gpcf_periodic(varargin)
             reccf.magnSigma2=[];
         end
         
-        % record lengthScale_exp
-        if ~isempty(gpcf.lengthScale_exp) && gpcf.decay == 1
-            reccf.lengthScale_exp(ri,:)=gpcf.lengthScale_exp;
-            reccf.p.lengthScale_exp = feval(gpp.lengthScale_exp.fh_recappend, reccf.p.lengthScale_exp, ri, gpcf.p.lengthScale_exp);
+        % record lengthScale_sexp
+        if ~isempty(gpcf.lengthScale_sexp) && gpcf.decay == 1
+            reccf.lengthScale_sexp(ri,:)=gpcf.lengthScale_sexp;
+            reccf.p.lengthScale_sexp = feval(gpp.lengthScale_sexp.fh_recappend, reccf.p.lengthScale_sexp, ri, gpcf.p.lengthScale_sexp);
 
         elseif ri==1
-            reccf.lengthScale_exp=[];
+            reccf.lengthScale_sexp=[];
         end
         
             % record period

@@ -83,12 +83,12 @@ switch gp.type
     end
 
     % Evaluate the gradient from noise functions
-    if isfield(gp, 'noise')
-        nn = length(gp.noise);
+    if isfield(gp, 'noisef')
+        nn = length(gp.noisef);
         for i=1:nn
-            noise = gp.noise{i};
-            noise.type = gp.type;
-            [DCff,gprior_ncf] = feval(noise.fh_ghyper, noise, x);
+            noisef = gp.noisef{i};
+            noisef.type = gp.type;
+            [DCff,gprior_ncf] = feval(noisef.fh_ghyper, noisef, x);
             %gprior=[gprior gprior_ncf];
             
             for i2 = 1:length(DCff)

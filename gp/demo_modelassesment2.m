@@ -39,26 +39,20 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
+gpcf1 = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
 
 % Set the prior for the parameters of covariance functions 
-pl = prior_logunif('init');
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
-
-% Create the likelihood structure
-likelih = likelih_probit('init');
+pl = prior_logunif();
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01.^2);
-
+gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 0.01.^2);
 
 % ------- Laplace approximation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
+gp = gp_set(gp, 'latent_method', 'Laplace');
 
-fe=@gpla_e;
-fg=@gpla_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -66,12 +60,13 @@ opt.tolx = 1e-3;
 opt.display = 1;
 opt.maxiter = 20;
 
-% do scaled conjugate gradient optimization 
+% Optimize hyperparameters with scaled conjugate gradient method
 w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 gp=gp_unpak(gp,w);
 
-% Evaluate the effective number of parameters and DIC with focus on latent variables.
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{1} = 'pr_Laplace';
 p_eff_latent = gp_peff(gp, x, y);
 [DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'latent');
@@ -84,23 +79,20 @@ mrmse_cv(1) = cvres.mrmse_cv;
 % ------- Expectation propagation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
+gp = gp_set(gp, 'latent_method', 'EP');
 
-w = gp_pak(gp);
-fe=@gpep_e;
-fg=@gpep_g;
-n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
 
-% do scaled conjugate gradient optimization 
+% Optimize hyperparameters with scaled conjugate gradient method
 w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 gp=gp_unpak(gp,w);
 
-% Evaluate the effective number of parameters and DIC with focus on latent variables.
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{2} = 'pr_EP';
 p_eff_latent(2) = gp_peff(gp, x, y) ;
 [DIC_latent(2), p_eff_latent2(2)] = gp_dic(gp, x, y, 'latent');
@@ -112,7 +104,7 @@ mrmse_cv(2) = cvres.mrmse_cv;
 
 % ------- MCMC ---------------
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
+gp = gp_set(gp, 'latent_method', 'MCMC');
 
 % Set the parameters for MCMC...
 clear('opt')
@@ -136,7 +128,8 @@ hmc2('state', sum(100*clock));
 % Sample 
 rgp=gp_mc(gp, x, y, 'record', r, opt);
 
-% Evaluate the effective number of parameters and DIC with focus on latent variables.
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{3} = 'pr_MCMC';
 [DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'hyper');
 [DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'all');
@@ -150,19 +143,17 @@ mrmse_cv(3) = cvres.mrmse_cv;
 % --- Integration approximation approach ---
 
 % Use EP
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
+gp = gp_set(gp, 'latent_method', 'EP');
 
 % Find first the mode
 w = gp_pak(gp);
-fe=@gpep_e;
-fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
 w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 gp=gp_unpak(gp,w);
 
 % now perform the integration
@@ -195,27 +186,24 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
+gpcf1 = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
 
 % Set the prior for the parameters of covariance functions 
-pl = prior_logunif('init');
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+pl = prior_logunif();
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the likelihood structure
-likelih = likelih_logit('init');
+lik = ('init');
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', likelih, {gpcf1}, [],'jitterSigma2', 0.01.^2);
+gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 0.01.^2);
 
 
 % ------- Laplace approximation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y});
+gp = gp_set(gp, 'latent_method', 'Laplace');
 
-fe=@gpla_e;
-fg=@gpla_g;
-n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
@@ -224,7 +212,7 @@ opt.maxiter = 20;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 gp=gp_unpak(gp,w);
 
 % Evaluate the effective number of parameters and DIC with focus on latent variables.
@@ -232,9 +220,10 @@ models{5} = 'lo_Laplace';
 p_eff_latent(5) = gp_peff(gp, x, y);
 [DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'latent');
 
-% Evaluate the 10-fold cross validation results. NOTE! This saves the results in a 
-% folder cv_resultsX (where X is a number) in your current working directory. We save the 
-% results only for this case so that you can study them. The other models are not saved.
+% Evaluate the 10-fold cross validation results. NOTE! This saves
+% the results in a folder cv_resultsX (where X is a number) in your
+% current working directory. We save the results only for this case
+% so that you can study them. The other models are not saved.
 cvres = gp_kfcv(gp, x, y);
 mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
@@ -242,11 +231,8 @@ mrmse_cv(5) = cvres.mrmse_cv;
 % ------- Expectation propagation --------
 
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
+gp = gp_set(gp, 'latent_method', 'EP');
 
-w = gp_pak(gp);
-fe=@gpep_e;
-fg=@gpep_g;
 n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -255,7 +241,7 @@ opt.display = 1;
 
 % do scaled conjugate gradient optimization 
 w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 gp=gp_unpak(gp,w);
 
 % Evaluate the effective number of parameters and DIC with focus on latent variables.
@@ -271,7 +257,7 @@ mrmse_cv(6) = cvres.mrmse_cv;
 
 % ------- MCMC ---------------
 % Set the approximate inference method
-gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', @scaled_mh});
+gp = gp_set(gp, 'latent_method', 'MCMC');
 
 % Set the parameters for MCMC...
 clear('opt')
@@ -306,23 +292,18 @@ cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt);
 mlpd_cv(7) = cvres.mlpd_cv;
 mrmse_cv(7) = cvres.mrmse_cv;
 
-
 % --- Integration approximation approach ---
 
 % Use EP
-gp = gp_init('set', gp, 'latent_method', {'EP', x, y});
+gp = gp_set(gp, 'latent_method', 'EP');
 
 % Find first the mode
-w = gp_pak(gp);
-fe=@gpep_e;
-fg=@gpep_g;
-n=length(y);
 opt = scg2_opt;
 opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
 w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
+w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
 gp=gp_unpak(gp,w);
 
 % now perform the integration
@@ -412,15 +393,6 @@ S = sprintf([S '\n '])
 
 
 
-
-
-
-
-
-
-
-
-
 % 
 % 
 % 
@@ -447,8 +419,8 @@ S = sprintf([S '\n '])
 % gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % 
 % % Create the likelihood structure
-% likelih = likelih_probit('init');
-% %likelih = likelih_logit('init');
+% lik = lik_probit('init');
+% %lik = lik_logit('init');
 % 
 % % Set the inducing inputs
 % [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
@@ -456,7 +428,7 @@ S = sprintf([S '\n '])
 % Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 % 
 % % Create the GP data structure
-% gp = gp_init('init', 'FIC', likelih, {gpcf1}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
+% gp = gp_init('init', 'FIC', lik, {gpcf1}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
 % gp = gp_init('set', gp, 'infer_params', 'covariance');           % optimize only hyperparameters
 % 
@@ -606,8 +578,8 @@ S = sprintf([S '\n '])
 % gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % 
 % % Create the likelihood structure
-% likelih = likelih_probit('init');
-% %likelih = likelih_logit('init', y);
+% lik = lik_probit('init');
+% %lik = lik_logit('init', y);
 % 
 % % Set the inducing inputs
 % [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
@@ -620,7 +592,7 @@ S = sprintf([S '\n '])
 % trindex{2} = [trindex{2} ; trindex{1}]; trindex = {trindex{2:19}};
 % 
 % % Create the GP data structure
-% gp = gp_init('init', 'PIC', likelih, {gpcf1}, [],'jitterSigma2', 0.01);
+% gp = gp_init('init', 'PIC', lik, {gpcf1}, [],'jitterSigma2', 0.01);
 % gp = gp_init('set', gp, 'X_u', Xu, 'blocks', trindex, 'infer_params', 'covariance')
 % 
 % % ------- Laplace approximation --------
@@ -784,8 +756,8 @@ S = sprintf([S '\n '])
 % gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % 
 % % Create the likelihood structure
-% likelih = likelih_probit('init', y);
-% %likelih = likelih_logit('init', y);
+% lik = lik_probit('init', y);
+% %lik = lik_logit('init', y);
 % 
 % % Set the inducing inputs
 % [u1,u2]=meshgrid(linspace(-1.25, 0.9,6),linspace(-0.2, 1.1,6));
@@ -798,7 +770,7 @@ S = sprintf([S '\n '])
 % gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 % 
 % % Create the GP data structure
-% gp = gp_init('init', 'CS+FIC', likelih, {gpcf1, gpcf3}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
+% gp = gp_init('init', 'CS+FIC', lik, {gpcf1, gpcf3}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
 % 
 % % ------- Laplace approximation --------

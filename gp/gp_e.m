@@ -56,7 +56,8 @@ end
 
 ip=inputParser;
 ip.FunctionName = 'GP_E';
-ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+ip.addRequired('w', @(x) isempty(x) || ...
+               isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -94,14 +95,19 @@ switch gp.type
         b = gp.mean.p.b'; 
         Bvec = gp.mean.p.B;  
         B = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));                   
-        if issparse(C)  
+        if isempty(C)  
+          L=1;
+          logK=0;
+          KH=H';
+        elseif issparse(C)  
            L = ldlchol(C);
            logK = 0.5*sum(log(diag(L)));
+           KH = L'\(L\H');
         else
            L = chol(C,'lower');
            logK = sum(log(diag(L)));
+           KH = L'\(L\H');
         end
-        KH = L'\(L\H');
         
         % is prior for mean function weights vague?
         if gp.mean.p.vague==0       % non-vague prior
@@ -112,7 +118,9 @@ switch gp.type
             
             edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
         else                        % vague prior
-            if issparse(C)
+          if isempty(C)  
+            yKy=0;
+          elseif issparse(C)
                 yKy=y'*ldlsolve(L,y);
             else
                 b=L\y;
@@ -120,8 +128,12 @@ switch gp.type
             end
             m=rank(H');
             A = H*KH;
-            C_m = KH*(A\(H*(C\eye(size(C)))));
-            edata = 0.5*yKy - 0.5*y'*C_m*y + logK + 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
+            if isempty(C)
+              edata = 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
+            else
+              C_m = KH*(A\(H*(C\eye(size(C)))));
+              edata = 0.5*yKy - 0.5*y'*C_m*y + logK + 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
+            end
         end
     end
     
@@ -350,16 +362,16 @@ for i=1:ncf
 end
 
 % Evaluate the prior contribution to the error from noise functions
-if isfield(gp, 'noise')
-    nn = length(gp.noise);
+if isfield(gp, 'noisef')
+    nn = length(gp.noisef);
     for i=1:nn
-        noise = gp.noise{i};
-        eprior = eprior + feval(noise.fh_e, noise, x, y);
+        noisef = gp.noisef{i};
+        eprior = eprior + feval(noisef.fh_e, noisef, x, y);
     end
 end
 
 % Evaluate the prior contribution to the error from the inducing inputs
-if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
     for i = 1:size(gp.X_u,1)
         if iscell(gp.p.X_u) % Own prior for each inducing input
             pr = gp.p.X_u{i};

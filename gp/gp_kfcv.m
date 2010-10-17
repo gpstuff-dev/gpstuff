@@ -219,7 +219,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     parent_folder = pwd;
         
     % Check which energy and gradient function
-    if ~isstruct(gp.likelih)   % a Gaussian regression model
+    if ~isstruct(gp.lik)   % a Gaussian regression model
         fe=@gp_e;
         fg=@gp_g;
         switch inf_method
@@ -301,15 +301,17 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp.tr_index = trind;
         end
 
-        if isstruct(gp.likelih)
-            switch gp.latent_method
-              case 'Laplace'
-                gp = gp_init('set', gp, 'latent_method', {'Laplace', xtr, ytr, options_tr});
-              case 'EP'
-                gp = gp_init('set', gp, 'latent_method', {'EP', xtr, ytr, options_tr});
-              case 'MCMC'
-                gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(ytr))', gp_orig.fh_mc});
-            end
+        if isstruct(gp.lik)
+          % resize latent value vector
+          switch gp.latent_method
+            case {'Laplace' 'EP'}
+              % evaluating energy causes update of the latent values
+              gp_e([], gp, xtr, ytr, options_tr);
+            case 'MCMC'
+              % needed?
+              gp.fh_mc=gp_orig.fh_mc;
+              gp.latentValues=zeros(size(ytr));
+          end
         end
                         
         % Conduct inference
@@ -329,12 +331,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             % Scaled mixture noise model is a special case 
             % where we need to modify the noiseSigmas2 vector 
             % to a right length
-            for i2 = 1:length(gp.noise)
-                if strcmp(gp.noise{i2}.type, 'gpcf_noiset')
-                    gp.noise{i2}.noiseSigmas2 = gp_orig.noise{i2}.noiseSigmas2(trindex{i});
-                    gp.noise{i2}.r = gp_orig.noise{i2}.r(trindex{i});
-                    gp.noise{i2}.U = gp_orig.noise{i2}.U(trindex{i});
-                    gp.noise{i2}.ndata = length(trindex{i});
+            for i2 = 1:length(gp.noisef)
+                if strcmp(gp.noisef{i2}.type, 'gpcf_noiset')
+                    gp.noisef{i2}.noiseSigmas2 = gp_orig.noisef{i2}.noiseSigmas2(trindex{i});
+                    gp.noisef{i2}.r = gp_orig.noisef{i2}.r(trindex{i});
+                    gp.noisef{i2}.U = gp_orig.noisef{i2}.U(trindex{i});
+                    gp.noisef{i2}.ndata = length(trindex{i});
                 end
             end
             gp = gp_mc(gp, xtr, ytr, options_tr, opt);
@@ -417,15 +419,18 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         if display
           fprintf('\n Evaluating the training utility \n')
         end
-        if isstruct(gp.likelih)
-            switch gp.latent_method
-              case 'Laplace'
-                gp = gp_init('set', gp, 'latent_method', {'Laplace', x, y, options_tr});
-              case 'EP'
-                gp = gp_init('set', gp, 'latent_method', {'EP', x, y, options_tr});
-              case 'MCMC'
-                gp = gp_init('set', gp, 'latent_method', {'MCMC', zeros(size(y))', gp_orig.fh_mc});
-            end
+        
+        if isstruct(gp.lik)
+          % resize latent value vector
+          switch gp.latent_method
+            case {'Laplace' 'EP'}
+              % evaluating energy causes update of the latent values
+              fe([], gp, xtr, ytr, options_tr);
+            case 'MCMC'
+              % needed?
+              gp.fh_mc=gp_orig.fh_mc;
+              gp.latentValues=zeros(size(ytr));
+          end
         end
         % Conduct inference
         cpu_time = cputime;

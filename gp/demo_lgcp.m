@@ -1,8 +1,7 @@
 % DEMO_LGCP    Demonstration for a log Gaussian Cox process
 %              with inference via EP or Laplace approximation
 %
-%    Description 
-
+%  Description 
 %    Log Gaussian Cox process (LGCP) is a model for non-homogeneous
 %    point-process in which the log intensity is modelled using
 %    Gaussian process. LGCP can be modelled using log GP and
@@ -28,7 +27,7 @@
 %    approximation for p(f| th, data), where th is the maximum a
 %    posterior (MAP) estimate for the hyper-parameters.
 %
-%    See also  LGCP, DEMO_SPATIAL2
+%  See also  LGCP, DEMO_SPATIAL2
 
 % Copyright (c) 2010 Aki Vehtari
 
@@ -68,10 +67,9 @@ set(gca,'xtick',[0:.2:1],'ytick',[0:.2:1])
 title('Redwood data and intensity estimate')
 
 
-ylim([0 5])
-set(gcf,'units','centimeters');
-set(gcf,'pos',[ 9.5742    9.5742    7.8962    5.9222])
-set(gcf,'paperunits',get(gcf,'units'))
-set(gcf,'paperpos',get(gcf,'pos'))
-
-print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_lgcp_fig2.eps
+%%%ylim([0 5])
+%%%set(gcf,'units','centimeters');
+%%%set(gcf,'pos',[ 9.5742    9.5742    7.8962    5.9222])
+%%%set(gcf,'paperunits',get(gcf,'units'))
+%%%set(gcf,'paperpos',get(gcf,'pos'))
+%%%print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_lgcp_fig2.eps
