@@ -29,16 +29,17 @@ function [samples, energies, diagn] = hmc2(f, x, opt, gradf, varargin)
 %       stp
 %        the step size vectors
 %
-%       S = HMC2('STATE') returns a state structure that contains the state of
-%       the two random number generators RAND and RANDN and the momentum of
-%       the dynamic process.  These are contained in fields  randstate,
-%       randnstate and mom respectively.  The momentum state is only used for
-%       a persistent momentum update.
+%       S = HMC2('STATE') returns a state structure that contains
+%       the used random stream and its state and the momentum of
+%       the dynamic process. These are contained in fields stream,
+%       streamstate and mom respectively. The momentum state is
+%       only used for a persistent momentum update.
 %
-%       HMC2('STATE', S) resets the state to S.  If S is an integer, then it
-%       is passed to RAND and RANDN and the momentum variable is randomised.
-%       If S is a structure returned by HMC2('STATE') then it resets the
-%       generator to exactly the same state.
+%       HMC2('STATE', S) resets the state to S. If S is an integer,
+%       then it is used as a seed for the random stream and the
+%       momentum variable is randomised. If S is a structure
+%       returned by HMC2('STATE') then it resets the random stream
+%       to exactly the same state.
 %
 %       See HMC2_OPT for the optional parameters in the OPTIONS structure.
 %
@@ -47,7 +48,7 @@ function [samples, energies, diagn] = hmc2(f, x, opt, gradf, varargin)
 %
 
 %       Copyright (c) 1996-1998 Christopher M Bishop, Ian T Nabney
-%       Copyright (c) 1998-2000 Aki Vehtari
+%       Copyright (c) 1998-2000,2010 Aki Vehtari
 
 %  The portion of the HMC algorithm involving "windows" is derived
 %  from the C code for this function included in the Software for
@@ -327,8 +328,8 @@ function state = get_state(f)
 %                    (including momentum)
 
 global HMC_MOM
-state.randstate = rand('state');
-state.randnstate = randn('state');
+state.stream=RandStream.getDefaultStream;
+state.streamstate = state.stream.State;
 state.mom = HMC_MOM;
 return
 
@@ -341,19 +342,18 @@ function set_state(f, x)
 %          or just set randn and rand with integer argument.
 global HMC_MOM
 if isnumeric(x)
-  rand('state', x);
-  randn('state', x);
-  HMC_MOM = [];
+  s = RandStream('mt19937ar','Seed',x);
+  RandStream.setDefaultStream(s);
 else
   if ~isstruct(x)
     error('Second argument to hmc must be number or state structure');
   end
-  if (~isfield(x, 'randstate') | ~isfield(x, 'randnstate') ...
+  if (~isfield(x, 'stream') | ~isfield(x, 'streamstate') ...
       | ~isfield(x, 'mom'))
     error('Second argument to hmc must contain correct fields')
   end
-  rand('state', x.randstate);
-  randn('state', x.randnstate);
+  RandStream.setDefaultStream(x.stream);
+  x.State=x.streamstate;
   HMC_MOM = x.mom;
 end
 return
