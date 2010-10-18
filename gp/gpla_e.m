@@ -58,12 +58,13 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
   ip.addRequired('w', @(x) ...
                  isempty(x) || ...
                  (ischar(x) && strcmp(w, 'init')) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)));
+                 isvector(x) && isreal(x) && all(isfinite(x)) || ...
+                 isnan(x));
   ip.addRequired('gp',@isstruct);
   ip.addOptional('x', @(x) isreal(x) && all(isfinite(x(:))))
   ip.addOptional('y', @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.parse(w, gp, x, y, varargin{:});
+  ip.parse(w, gp, varargin{:});
   x=ip.Results.x;
   y=ip.Results.y;
   z=ip.Results.z;
@@ -82,10 +83,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
         La20 = [];
         a0 = 0;
         p0 = [];
-
-        if ~isempty(y)
-          laplace_algorithm(gp_pak(gp), gp, x, y, z);
-        end
 
         gp.fh_e = @laplace_algorithm;
         e = gp;

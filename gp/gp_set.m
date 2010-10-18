@@ -21,7 +21,7 @@ function gp = gp_set(varargin)
 %                      'FULL'   full GP
 %                      'FIC'    fully independent conditional sparse
 %                               approximation
-%                      'PIC'    partially independent condional  
+%                      'PIC'    partially independent conditional  
 %                               sparse approximation
 %                      'CS+FIC' compact support + FIC model sparse 
 %                               approximation
