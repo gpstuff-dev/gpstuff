@@ -18,10 +18,10 @@ function [x, fs, ps] = scg2(f, x, opt, gradf, varargin)
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005 Aki Vehtari
 
-% Set empty omptions to default values
+% Set empty options to default values
 opt=scges_opt(opt);
 
-% Refrence to structures is much slower, so...
+% Reference to structures is much slower, so...
 niters = opt.maxiter;
 
 display = opt.display;
