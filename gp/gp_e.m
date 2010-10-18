@@ -44,7 +44,7 @@ if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
       fh_e=@gpep_e;
   end
   switch nargout 
-    case 1
+    case {0 1}
       [e] = fh_e(w, gp, x, y, varargin{:});
     case 2
       [e, edata] = fh_e(w, gp, x, y, varargin{:});

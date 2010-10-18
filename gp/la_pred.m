@@ -1,21 +1,21 @@
-function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
 %LA_PRED	Predictions with Gaussian Process Laplace approximation
 %
 %     Description
-%	[EF, VARF, EY, VARY] = LA_PRED(GP, X, Y, XT, OPTIONS) takes a GP 
-%        data structure GP together with a matrix X of input vectors,
+%	[EFT, VARFT, EYT, VARYT] = LA_PRED(GP, X, Y, XT, OPTIONS) takes a GP 
+%        data structure GP together with a matrix XT of input vectors,
 %        matrix X of training inputs and vector Y of training
 %        targets, and evaluates the predictive distribution at
-%        inputs X. Returns a posterior mean EF and variance VARF of
-%        latent variables and the posterior predictive mean EY and
-%        variance VARY of obervations at input locations X. 
+%        inputs X. Returns a posterior mean EFT and variance VARFT of
+%        latent variables and the posterior predictive mean EYT and
+%        variance VARYT of observations at input locations X. 
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 
 %                used for prediction. Default is all (1:gpcfn). See 
 %                additional information below.
 %       'tstind' is a vector/cell array defining, which rows of X belong 
-%                to which training block in *IC type sparse models. Deafult 
+%                to which training block in *IC type sparse models. Default 
 %                is []. In case of PIC, a cell array containing index 
 %                vectors specifying the blocking structure for test data.
 %                IN FIC and CS+FIC a vector of length n that points out the 
@@ -28,10 +28,10 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 %                for ith case. 
 %       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
 %                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, expected value 
-%                for ith case. 
+%                Poisson likelihood we have z_i=E_i, that is, the expected 
+%                value for the ith case. 
 %
-%	[EF, VARF, EY, VARY, PYT] = LA_PRED(GP, X, Y, XT, 'yt', YT) 
+%	[EFT, VARFT, EYT, VARYT, PYT] = EP_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS) 
 %        returns also the predictive density PYT of the test observations 
 %        YT at input locations XT. This can be used for example in the
 %        cross-validation.
@@ -43,11 +43,11 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 %       additive anymore.
 %
 %       For example, if you use covariance such as K = K1 + K2 your
-%       predictions Ef1 = la_pred(GP, X, Y, X, 'predcf', 1) and 
-%       Ef2 = la_pred(gp, x, y, x, 'predcf', 2) should sum up to 
-%       Ef = la_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With 
+%       predictions Eft1 = ep_pred(GP, X, Y, X, 'predcf', 1) and 
+%       Eft2 = ep_pred(gp, x, y, x, 'predcf', 2) should sum up to 
+%       Eft = ep_pred(gp, x, y, x). That is Eft = Eft1 + Eft2. With 
 %       FULL model this is true but with FIC and PIC this is true only 
-%       approximately. That is Ef \approx Ef1 + Ef2.
+%       approximately. That is Eft \approx Eft1 + Eft2.
 %
 %       With CS+FIC the predictions are exact if the PREDCF
 %       covariance functions are all in the FIC part or if they are
@@ -108,25 +108,25 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                 if issparse(K_nf) && issparse(L)          % If compact support covariance functions are used 
                                                           % the covariance matrix will be sparse
                     deriv = feval(gp.lik.fh_llg, gp.lik, y(p), f, 'latent', z(p));
-                    Ef = K_nf(:,p)*deriv;
+                    Eft = K_nf(:,p)*deriv;
                     sqrtW = sqrt(W);
                     sqrtWKfn = sqrtW*K_nf(:,p)';
                     V = ldlsolve(L,sqrtWKfn);
-                    Varf = kstarstar - sum(sqrtWKfn.*V,1)';
+                    Varft = kstarstar - sum(sqrtWKfn.*V,1)';
                 else
                     deriv = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
-                    Ef = K_nf*deriv;
+                    Eft = K_nf*deriv;
                     W = diag(W);
                     V = L\(sqrt(W)*K_nf');
-                    Varf = kstarstar - sum(V'.*V',2);
+                    Varft = kstarstar - sum(V'.*V',2);
                 end
             else                  % We may end up here if the likelihood is not log concace
                                   % For example Student-t likelihood. 
                 deriv = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
-                Ef = K_nf*deriv;
+                Eft = K_nf*deriv;
                 V = L*diag(W);
                 R = diag(W) - V'*V;
-                Varf = kstarstar - sum(K_nf.*(R*K_nf')',2);
+                Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
             end
         end
         % ============================================================
@@ -156,7 +156,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         ntest=size(xt,1);
 
         K_nu=gp_cov(gp,xt,u,predcf);
-        Ef = K_nu*(Luu'\(Luu\(K_fu'*deriv)));
+        Eft = K_nu*(Luu'\(Luu\(K_fu'*deriv)));
 
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
@@ -166,7 +166,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             %Lav = zeros(size(La));
             %Lav(tstind) = Kv_ff-Qv_ff;
             Lav = Kv_ff-Qv_ff;            
-            Ef(tstind) = Ef(tstind) + Lav.*deriv;
+            Eft(tstind) = Eft(tstind) + Lav.*deriv;
         end
 
         
@@ -191,12 +191,12 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             % Set params for K_nf
             BB=Luu\(B');
             BB2=Luu\(K_nu');
-            Varf = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            Varft = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
             
             % if the prediction is made for training set, evaluate Lav also for prediction points
             if ~isempty(tstind)
                 LavsW = Lav.*sqrt(W);
-                    Varf(tstind) = Varf(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
+                    Varft(tstind) = Varft(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
                            - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu(tstind,:)')',2)...
                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
@@ -228,7 +228,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
         end
 
-        Ef = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
+        Eft = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
 
         % Evaluate the variance
         if nargout > 1
@@ -249,16 +249,16 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
 
             iKuuB = K_uu\B';
             KnfL2 = K_nu*(iKuuB*L2);
-            Varf = zeros(length(xt),1);
+            Varft = zeros(length(xt),1);
             for i=1:length(ind)
                 v_n = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf).*repmat(sqrtW(ind{i},:)',length(tstind{i}),1);              % n x u
                 v_bu = K_nu(tstind{i},:)*iKuuB(:,ind{i});
                 KnfLa = K_nu*(iKuuB(:,ind{i})/chol(Lahat{i}));
                 KnfLa(tstind{i},:) = KnfLa(tstind{i},:) - (v_bu + v_n)/chol(Lahat{i});
-                Varf = Varf + sum((KnfLa).^2,2);
+                Varft = Varft + sum((KnfLa).^2,2);
                 KnfL2(tstind{i},:) = KnfL2(tstind{i},:) - v_bu*L2(ind{i},:) + v_n*L2(ind{i},:);
             end
-            Varf = kstarstar - (Varf - sum((KnfL2).^2,2));
+            Varft = kstarstar - (Varft - sum((KnfL2).^2,2));
         end
         % ============================================================
         % CS+FIC
@@ -336,11 +336,11 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         % Calculate the predictive mean according to the type of
         % covariance functions used for making the prediction
         if ptype == 1
-            Ef = K_nu*(K_uu\(K_fu'*deriv));
+            Eft = K_nu*(K_uu\(K_fu'*deriv));
         elseif ptype == 2
-            Ef = Kcs_nf*deriv;
+            Eft = Kcs_nf*deriv;
         else 
-            Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;        
+            Eft = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;        
         end
 
         % evaluate also Lav if the prediction is made for training set
@@ -349,7 +349,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             Luu = chol(K_uu)';
             B=Luu\(K_fu');
             Qv_ff=sum(B.^2)';
-            %Lav = zeros(size(Ef));
+            %Lav = zeros(size(Eft));
             %Lav(tstind) = Kv_ff-Qv_ff;
             Lav = Kv_ff-Qv_ff;
         end
@@ -357,7 +357,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
         % Add also Lav if the prediction is made for training set
         % and non-CS covariance function is used for prediction
         if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-            Ef(tstind) = Ef(tstind) + Lav.*deriv;
+            Eft(tstind) = Eft(tstind) + Lav.*deriv;
         end
 
         
@@ -384,7 +384,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
             % covariance functions used for making the prediction
             if ptype == 1 || ptype == 3                            
                 % FIC part of the covariance
-                Varf = kstarstar - sum(BB2'.*(BB*(Lahat\BB')*BB2)',2) + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+                Varft = kstarstar - sum(BB2'.*(BB*(Lahat\BB')*BB2)',2) + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
                 % Add Lav to Kcs_nf if the prediction is made for the training set
                 if  ~isempty(tstind)
                     % Non-CS covariance
@@ -395,19 +395,19 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
                         Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav,n2,n);
                     end
                     KcssW = Kcs_nf*sqrtW;                    
-                    Varf = Varf - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2) ...
+                    Varft = Varft - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2) ...
                            - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2) + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
                 % In case of both non-CS and CS prediction covariances add 
                 % only Kcs_nf if the prediction is not done for the training set 
                 elseif ptype == 3
                     KcssW = Kcs_nf*sqrtW;
-                    Varf = Varf - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2) ...
+                    Varft = Varft - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2) ...
                            - 2.*sum((KcssW*(Lahat\B)).*(K_uu\K_nu')',2) + 2.*sum((KcssW*L2).*(L2'*B*(K_uu\K_nu'))' ,2);
                 end
             % Prediction with only CS covariance
             elseif ptype == 2
                 KcssW = Kcs_nf*sqrtW;
-                Varf = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
+                Varft = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
             end
         end
     end
@@ -418,9 +418,9 @@ function [Ef, Varf, Ey, Vary, Pyt] = la_pred(gp, x, y, xt, varargin)
     % ============================================================
     if nargout > 2
         if isempty(yt)
-            [Ey, Vary] = feval(gp.lik.fh_predy, gp.lik, Ef, Varf, [], zt);
+            [Eyt, Varyt] = feval(gp.lik.fh_predy, gp.lik, Eft, Varft, [], zt);
         else
-            [Ey, Vary, Pyt] = feval(gp.lik.fh_predy, gp.lik, Ef, Varf, yt, zt);
+            [Eyt, Varyt, pyt] = feval(gp.lik.fh_predy, gp.lik, Eft, Varft, yt, zt);
         end
     end
 end

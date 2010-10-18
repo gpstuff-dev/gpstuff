@@ -32,7 +32,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         'tstindex'   - k-fold CV test indices. A cell array with k fields 
 %                        each containing index vector for
 %                        respective test set. 
-%         'display'    - defines is messages are displayed. Defailt is 'true'.
+%         'display'    - defines is messages are displayed. Default is 'true'.
 %         'save_results'- defines if results are stored 'false' or 'true'. 
 %                        By default false. If 'true' gp_kfcv stores
 %                        the results in the current working
@@ -58,12 +58,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %         cvpreds       - CV predictions structure including the same fields 
 %                         as trpreds
 %         trpreds       - training predictions structure including 
-%                         the following fields
-%                         Ef
-%                         Varf
-%                         Ey
-%                         Vary
-%                         py
+%                         the following fields:
+%                         Eft
+%                         Varft
+%                         Eyt
+%                         Varyt
+%                         pyt
 %         cvws          - hyperparameter weight vectors for each CV fold
 %         trw           - hyperparameter weight vector for training data
 %
@@ -255,7 +255,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     % loop over the crossvalidation sets
     for i=1:length(trindex)
        
-      if display
+      if (display>=0)
         fprintf('The CV-iteration number: %d \n', i)
       end
         
@@ -347,35 +347,35 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         end
                     
         % make the prediction
-        [Ef, Varf, Ey, Vary, py] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
+        [Eft, Varft, Eyt, Varyt, pyt] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
         if nargout>=6
-          cvtrpreds.Ef([trindex{i} tstindex{i}],i)=Ef([trindex{i} tstindex{i}],:);
-          cvtrpreds.Varf([trindex{i} tstindex{i}],i)=Varf([trindex{i} tstindex{i}],:);
-          cvtrpreds.Ey([trindex{i} tstindex{i}],i)=Ey([trindex{i} tstindex{i}],:);
-          cvtrpreds.Vary([trindex{i} tstindex{i}],i)=Vary([trindex{i} tstindex{i}],:);
-          cvtrpreds.py([trindex{i} tstindex{i}],i)=py([trindex{i} tstindex{i}],:);
+          cvtrpreds.Eft([trindex{i} tstindex{i}],i)=Eft([trindex{i} tstindex{i}],:);
+          cvtrpreds.Varft([trindex{i} tstindex{i}],i)=Varft([trindex{i} tstindex{i}],:);
+          cvtrpreds.Eyt([trindex{i} tstindex{i}],i)=Eyt([trindex{i} tstindex{i}],:);
+          cvtrpreds.Varyt([trindex{i} tstindex{i}],i)=Varyt([trindex{i} tstindex{i}],:);
+          cvtrpreds.pyt([trindex{i} tstindex{i}],i)=pyt([trindex{i} tstindex{i}],:);
         end
         if nargout>=2
-          cvpreds.Ef(tstindex{i},:)=Ef(tstindex{i},:);
-          cvpreds.Varf(tstindex{i},:)=Varf(tstindex{i},:);
-          cvpreds.Ey(tstindex{i},:)=Ey(tstindex{i},:);
-          cvpreds.Vary(tstindex{i},:)=Vary(tstindex{i},:);
-          cvpreds.py(tstindex{i},:)=py(tstindex{i},:);
+          cvpreds.Eft(tstindex{i},:)=Eft(tstindex{i},:);
+          cvpreds.Varft(tstindex{i},:)=Varft(tstindex{i},:);
+          cvpreds.Eyt(tstindex{i},:)=Eyt(tstindex{i},:);
+          cvpreds.Varyt(tstindex{i},:)=Varyt(tstindex{i},:);
+          cvpreds.pyt(tstindex{i},:)=pyt(tstindex{i},:);
         end
                 
         % Evaluate statistics
-        lpd_cv(tstindex{i}) = log(mean(py(tstindex{i},:),2));
-        lpd_cvtr(i) = mean(log(mean(py(trindex{i}),2)));
+        lpd_cv(tstindex{i}) = log(mean(pyt(tstindex{i},:),2));
+        lpd_cvtr(i) = mean(log(mean(pyt(trindex{i}),2)));
        
-        rmse_cv(tstindex{i}) = (mean(Ey(tstindex{i},:),2) - ytst).^2;
-        rmse_cvtr(i) = sqrt(mean((mean(Ey(trindex{i},:),2) - ytr).^2));
+        rmse_cv(tstindex{i}) = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
+        rmse_cvtr(i) = sqrt(mean((mean(Eyt(trindex{i},:),2) - ytr).^2));
         
-        abs_cv(tstindex{i}) = abs(mean(Ey(tstindex{i},:),2) - ytst);
-        abs_cvtr(i) = mean(abs(mean(Ey(trindex{i},:),2) - ytr));
+        abs_cv(tstindex{i}) = abs(mean(Eyt(tstindex{i},:),2) - ytst);
+        abs_cvtr(i) = mean(abs(mean(Eyt(trindex{i},:),2) - ytr));
         
-        lpd_cvm(i) = mean(log(mean(py(tstindex{i},:),2)));
-        rmse_cvm(i) = sqrt(mean((mean(Ey(tstindex{i},:),2) - ytst).^2));
-        abs_cvm(i) = mean(abs(mean(Ey(tstindex{i},:),2) - ytst));
+        lpd_cvm(i) = mean(log(mean(pyt(tstindex{i},:),2)));
+        rmse_cvm(i) = sqrt(mean((mean(Eyt(tstindex{i},:),2) - ytst).^2));
+        abs_cvm(i) = mean(abs(mean(Eyt(tstindex{i},:),2) - ytst));
     end
 
     mlpd_cv = mean(lpd_cv);
@@ -456,18 +456,18 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         cpu_time = cputime - cpu_time;
         
         % make the prediction
-        [Ef, Varf, Ey, Vary, py] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
+        [Eft, Varft, Eyt, Varyt, pyt] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
         if nargout>=4
-          trpreds.Ef=Ef;
-          trpreds.Varf=Varf;
-          trpreds.Ey=Ey;
-          trpreds.Vary=Vary;
-          trpreds.py=py;
+          trpreds.Eft=Eft;
+          trpreds.Varft=Varft;
+          trpreds.Eyt=Eyt;
+          trpreds.Varyt=Varyt;
+          trpreds.pyt=pyt;
         end
         
-        lpd_tr = mean(log(mean(py,2)));
-        rmse_tr = sqrt(mean((mean(Ey,2) - y).^2));
-        abs_tr = mean(abs(mean(Ey,2) - y));
+        lpd_tr = mean(log(mean(pyt,2)));
+        rmse_tr = sqrt(mean((mean(Eyt,2) - y).^2));
+        abs_tr = mean(abs(mean(Eyt,2) - y));
         
         % compute bias corrected results
         mlpd_ccv =  mlpd_cv +  mean(lpd_tr) -  mean(lpd_cvtr);
