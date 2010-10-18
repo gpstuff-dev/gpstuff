@@ -80,12 +80,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
         muvec_i0 = [];
         sigm2vec_i0 = [];
         myy0 = zeros(size(y));
-        if ~isfield(gp,'meanf')
-            myy0 = zeros(size(y));
-        else
-           [H,b_m,B_m]=mean_prep(gp,x,[]);
-            myy0 = H'*b_m;
-        end
         
         % return function handle to the nested function ep_algorithm
         % this way each gp has its own peristent memory for EP
@@ -133,6 +127,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             if ~isfield(gp,'meanf')
                 myy = zeros(size(y));
             else
+                [H,b_m,B_m]=mean_prep(gp,x,[]);
                 myy = H'*b_m;
             end
 

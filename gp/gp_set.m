@@ -265,12 +265,7 @@ function gp = gp_set(varargin)
         gp.ep_opt.maxiter = 20;
         gp.ep_opt.tol = 1e-6;
         % following sets gp.fh_e = @ep_algorithm;
-        if isempty(latent_method_opt)
-            gp = gpep_e('init', gp);
-        else
-           gp = gpep_e('init', gp,latent_method_opt); 
-        end
-        
+        gp = gpep_e('init', gp);
       case 'Laplace'
         gp.latent_method=latent_method;
         gp.laplace_opt.maxiter = 20;
