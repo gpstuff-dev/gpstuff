@@ -36,13 +36,13 @@
  x=t';
 %---------------
  
-gpcf1 = gpcf_sexp('init', 'lengthScale', [0.5], 'magnSigma2', .5);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.4^2);
+gpcf1 = gpcf_sexp('lengthScale', [0.5], 'magnSigma2', .5);
+gpcf2 = gpcf_noise('noiseSigma2', 0.4^2);
 
-pl = prior_logunif('init');               % a prior structure
-pm = prior_sqrtt('init', 's2', 0.3);      % a prior structure
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
+pl = prior_logunif();               % a prior structure
+pm = prior_sqrtt('s2', 0.3);      % a prior structure
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pm);
 
 % Initialize base functions for GP's mean function.
 gpmf1 = gpmf_constant('init','prior_mean',.3,'prior_cov',1, 'constant',2);             % Default value for constant is 1. 
@@ -50,7 +50,7 @@ gpmf2 = gpmf_linear('init','prior_mean',.3,'prior_cov',1, 'selectedVariables',[1
 gpmf3 = gpmf_squared('init','prior_mean',.3,'prior_cov',1);
 
 % initialize gp structure
-gp = gp_set('type', 'FULL','lik','gaussian', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.00001,'meanf',{gpmf1,gpmf2,gpmf3});
+gp = gp_set('cf', {gpcf1}, 'meanf', {gpmf1,gpmf2,gpmf3}, 'noisef', {gpcf2}, 'jitterSigma2', 0.00001);
 
 % Check gradients
 w=gp_pak(gp);
