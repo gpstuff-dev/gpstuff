@@ -77,8 +77,7 @@ pm = prior_logunif('init');               % a prior structure
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00001);
-
+gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 0.00001);
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=@gp_e;     % create a function handle to negative log posterior
@@ -127,7 +126,7 @@ gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm)
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
 % Field grad_obs added to gp_init so that the derivatives are in use
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00001,'grad_obs',1);
+gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 0.00001,'grad_obs',1);
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=@gp_e;     % create a function handle to negative log posterior

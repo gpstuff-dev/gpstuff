@@ -193,11 +193,13 @@ function gp = gp_set(varargin)
   end
   % Mean function(s)
   if init | ~ismember('meanf',ip.UsingDefaults)
-    gp.meanf=ip.Results.meanf;
-    if isstruct(gp.meanf)
-      % store single structure in a cell array, too
-      gp.meanf={gp.meanf};
-    end
+      if ~isempty(ip.Results.meanf)
+        gp.meanf=ip.Results.meanf;
+        if isstruct(gp.meanf)
+          % store single structure in a cell array, too
+          gp.meanf={gp.meanf};
+        end
+      end
   end
   if isempty(gp.cf) && isempty(gp.meanf)
     error('At least one covariance or mean function has to defined')
@@ -220,6 +222,12 @@ function gp = gp_set(varargin)
   % Jitter
   if init | ~ismember('jitterSigma2',ip.UsingDefaults)
     gp.jitterSigma2=ip.Results.jitterSigma2;
+  end
+   % Gradient observation
+  if init | ~ismember('grad_obs',ip.UsingDefaults)
+      if ip.Results.grad_obs == 1
+        gp.grad_obs=1;
+      end
   end
 
   % Inducing inputs
