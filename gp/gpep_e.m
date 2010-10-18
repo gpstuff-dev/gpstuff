@@ -1,43 +1,48 @@
-function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = gpep_e(w, gp, x, y, varargin)
-%GPEP_E     Conduct Expectation propagation and return marginal 
-%           log posterior estimate
+function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = gpep_e(w, gp, varargin)
+%GPEP_E  Do Expectation propagation and return marginal log posterior estimate
 %
-%     Description
-%	GP = GPEP_E('init', GP, X, Y, OPTIONS) takes a GP data structure
-%        GP together with a matrix X of input vectors and a matrix Y
-%        of target vectors, and initializes required fields for the
-%        EP algorithm.
+%  Description
+%    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
+%    together with a matrix X of input vectors and a matrix Y of
+%    target vectors, and finds the EP approximation for the
+%    conditional posterior p(Y | X, th), where th is the
+%    hyperparameters. Returns the energy at th (see below). Each
+%    row of X corresponds to one input vector and each row of Y
+%    corresponds to one target vector.
 %
-%	E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
-%        together with a matrix X of input vectors and a matrix Y of
-%        target vectors, and finds the EP approximation for the
-%        conditional posterior p(Y | X, th), where th is the
-%        hyperparameters. Returns the energy at th (see below).  Each
-%        row of X corresponds to one input vector and each row of Y
-%        corresponds to one target vector.
+%    [E, EDATA, EPRIOR] = GPEP_E(W, GP, X, Y, OPTIONS) returns also
+%    the data and prior components of the total energy.
 %
-%	[E, EDATA, EPRIOR] = GPEP_E(W, GP, X, Y, OPTIONS) returns also 
-%        the data and prior components of the total energy.
+%    The energy is minus log posterior cost function for th:
+%      E = EDATA + EPRIOR 
+%        = - log p(Y|X, th) - log p(th),
+%      where th represents the hyperparameters (lengthScale,
+%      magnSigma2...), X is inputs and Y is observations.
 %
-%       The energy is minus log posterior cost function for th:
-%            E = EDATA + EPRIOR 
-%              = - log p(Y|X, th) - log p(th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...), 
-%       X is inputs and Y is observations.
+%    OPTIONS is optional parameter-value pair
+%      z - optional observed quantity in triplet (x_i,y_i,z_i)
+%          Some likelihoods may use this. For example, in case of
+%          Poisson likelihood we have z_i=E_i, that is, expected
+%          value for ith case.
 %
-%       OPTIONS is optional parameter-value pair
-%        'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
-%               Some likelihoods may use this. For example, in case of 
-%               Poisson likelihood we have z_i=E_i, that is, expected 
-%               value for ith case. 
-%
-%	See also
-%       GPEP_G, EP_PRED, GP_E
+%  See also
+%    GP_SET, GP_E, GPEP_G, EP_PRED
 
-    
-% Copyright (c) 2007           Jaakko Riihimäki
-% Copyright (c) 2007-2010      Jarno Vanhatalo
-% Copyright (c) 2010           Heikki Peura
+%  Description 2
+%    Additional properties meant only for internal use.
+%  
+%    GP = GPEP_E('init', GP) takes a GP data structure GP together
+%    with a matrix X of input vectors and a matrix Y of target
+%    vectors, and initializes required fields for the EP algorithm.
+%
+%    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i]
+%      = gpep_e(w, gp, x, y, options)
+%    returns many useful quantities produced by EP algorithm.
+%
+  
+% Copyright (c) 2007  Jaakko Riihimäki
+% Copyright (c) 2007-2010  Jarno Vanhatalo
+% Copyright (c) 2010 Heikki Peura, Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -52,10 +57,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                    (ischar(x) && strcmp(w, 'init')) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)));
     ip.addRequired('gp',@isstruct);
-    ip.addRequired('x', @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addOptional('x', [], @(x) isreal(x) && all(isfinite(x(:))))
+    ip.addOptional('y', [], @(x) isreal(x) && all(isfinite(x(:))))
     ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.parse(w, gp, x, y, varargin{:});
+    ip.parse(w, gp, varargin{:});
+    x=ip.Results.x;
+    y=ip.Results.y;
     z=ip.Results.z;
     
     if strcmp(w, 'init')
@@ -89,14 +96,14 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             end
         end
         
-        if ~isempty(y)
-          ep_algorithm(gp_pak(gp), gp, x, y, z);
-        end
-        
+        % return function handle to the nested function ep_algorithm
+        % this way each gp has its own peristent memory for EP
         gp.fh_e = @ep_algorithm;
         e = gp;
     else
-        [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = feval(gp.fh_e, w, gp, x, y, z);
+      % call ep_algorithm using the function handle to the nested function
+      % this way each gp has its own peristent memory for EP
+      [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = feval(gp.fh_e, w, gp, x, y, z);
 
     end
 

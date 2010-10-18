@@ -276,7 +276,7 @@ function gp = gp_set(varargin)
         gp.ep_opt.maxiter = 20;
         gp.ep_opt.tol = 1e-6;
         % following sets gp.fh_e = @ep_algorithm;
-        gp = gpep_e('init', gp, [], []);
+        gp = gpep_e('init', gp);
       case 'Laplace'
         gp.latent_method=latent_method;
         gp.laplace_opt.maxiter = 20;
@@ -300,9 +300,9 @@ function gp = gp_set(varargin)
         switch gp.lik.type
           % following sets gp.fh_e = @laplace_algorithm;
           case 'Softmax'
-            gp = gpla_softmax_e('init', gp, [], []);
+            gp = gpla_softmax_e('init', gp);
           otherwise
-            gp = gpla_e('init', gp, [], []);
+            gp = gpla_e('init', gp);
         end
       case 'NA'
         % no latent method set
