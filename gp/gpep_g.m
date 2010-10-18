@@ -117,7 +117,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
                 
                 
-                if ~isfield(gp,'mean')
+                if ~isfield(gp,'meanf')
                     for i2 = 1:length(DKff)
                         i1 = i1+1;                
                         Bdl = b'*(DKff{i2}*b);              
@@ -128,16 +128,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 else
                     i1=0;
                     invKs=eye(size(C))-Stildesqroot*(L'\(L\(Stildesqroot*C)));
-                    if gp.mean.p.vague==0
-                        [dMNM trA]=mean_gf(gp,x,C,invKs,DKff,Stildesqroot,nutilde,'EP');
-                        for i2 = 1:length(DKff)
-                            i1=i1+1;
-                            trK=sum(sum(invC.*DKff{i2}));
-                            gdata(i2)=0.5*(-1*dMNM{i2} + trK + trA{i2});
-                            gprior(i1) = gprior_cf(i2);
-                        end
-                    else
-                        error('Not Done yet, EP with vague prior')
+                    [dMNM trA]=mean_gf(gp,x,C,invKs,DKff,Stildesqroot,nutilde,'EP');
+                    for i2 = 1:length(DKff)
+                        i1=i1+1;
+                        trK=sum(sum(invC.*DKff{i2}));
+                        gdata(i2)=0.5*(-1*dMNM{i2} + trK + trA{i2});
+                        gprior(i1) = gprior_cf(i2);
                     end
                 end
                 
@@ -164,13 +160,17 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     noisef = gp.noisef{i};
                     [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
                     
-                    for i2 = 1:length(DCff)
-                        i1 = i1+1;
-                        
-                        B = trace(invC);
-                        C=b'*b;    
-                        gdata(i1)=0.5.*DCff{i2}.*(B - C); 
-                        gprior(i1) = gprior_cf(i2);
+                    if ~isfield(gp,'meanf')
+                        for i2 = 1:length(DCff)
+                            i1 = i1+1;
+
+                            B = trace(invC);
+                            C=b'*b;    
+                            gdata(i1)=0.5.*DCff{i2}.*(B - C); 
+                            gprior(i1) = gprior_cf(i2);
+                        end
+                    else
+                        error('EP not working with mean func and noise yet')
                     end
                     
                     % Set the gradients of hyper-hyperparameter

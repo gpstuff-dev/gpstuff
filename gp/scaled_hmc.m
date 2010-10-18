@@ -147,11 +147,11 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             f = max(f,mincut);
             gdata = - feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
             
-            if ~isfield(gp,'mean')
+            if ~isfield(gp,'meanf')
                 b=Linv*f;
                 gprior=Linv'*b;
             else
-                b_m=gp.mean.p.b';
+                [H_m,b_m,~]=mean_prep(gp,x,[]);
                 M = (H_m'*b_m-f);
                 b=Linv*M;
                 gprior=-1*Linv'*b;
@@ -210,15 +210,12 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             f = L2*w;        
             f = max(f,mincut);
             
-            if ~isfield(gp,'mean')
+            if ~isfield(gp,'meanf')
                 B=Linv*f;
             else
-                b_m=gp.mean.p.b';
-                if gp.mean.p.vague==0
-                    M=H_m'*b_m-f;
-                else
-                    error('Not done yet')
-                end
+                [H_m,b_m,B_m]=mean_prep(gp,x,[]);
+                M=H_m'*b_m-f;
+                
                 B=Linv*M;
             end
             
@@ -263,19 +260,10 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             % Take advantage of the matrix inversion lemma
             %        L=chol(inv(inv(C) + diag(E)))';
             
-            if isfield(gp,'mean')
-                for i=1:length(gp.mean.meanFuncs)
-                    Hapu{i}=feval(gp.mean.meanFuncs{i},x);
-                end
-                H_m = cat(1,Hapu{1:end});
-                Bvec = gp.mean.p.B;
-                B_m = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));
-                if gp.mean.p.vague==0
-                    N = C + H_m'*B_m*H_m;
-                    Linv = inv(chol(N)');
-                else
-                    error('Not done yet')
-                end
+            if isfield(gp,'meanf')
+                [H_m,b_m,B_m]=mean_prep(gp,x,[]);
+                N = C + H_m'*B_m*H_m;
+                Linv = inv(chol(N)');
             else
                 Linv = inv(chol(C)');
             end

@@ -13,7 +13,7 @@ function gp = gp_set(varargin)
 %    parameters altered with the specified values.
 %
 %    Parameters for Gaussian process [default]
-%      cf           - single covariane structure or cell array of 
+%      cf           - single covariance structure or cell array of 
 %                     covariance function structures created by
 %                     gpcf_* functions [{}]
 %                     This or meanf has to be defined as non-empty. 
@@ -90,20 +90,9 @@ function gp = gp_set(varargin)
 %  
 %     *** TO BE CHANGED ***
 %     The additional fields needed with mean functions
-%      meanFuncs    = mean functions to be used. Has to be a cell array
-%                     with inputs as function handles to mean function 
-%                     used for. ex {@gpmf_squared}. Provide this before
-%                     mean_prior.
-%      mean_prior   = parameters of gaussian prior for weights of mean 
-%                     function's basis functions, {b,B} = N(b,B).
-%                     Default (if not provided) b=0,B=0 so 
-%                     that the prior is vague and b and B 
-%                     values are not needed in the inference. 
-%                     Otherwise b is a row vector(1,n) and 
-%                     B matrix (n,n), 
-%                     where n matches with input dimension 
-%                     and the amount of mean functions used
-%                     for ex. dim(x)=2, meanFuncs=squared+linear->n=4
+%      meanf        - single mean function structure or cell array of 
+%                     mean function structures created by
+%                     gpmf_* functions [{}]
 %
 %     The additional fields needed in sparse approximations are:
 %      X_u          = inducing inputs, no default, has to be set when
@@ -127,7 +116,7 @@ function gp = gp_set(varargin)
 %       GP_PRED, GP_MC, GP_IA, ...
 %
 %   References:
-%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    Quiï¿½onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Research, 6(3):1939-1959.
 %
@@ -276,7 +265,12 @@ function gp = gp_set(varargin)
         gp.ep_opt.maxiter = 20;
         gp.ep_opt.tol = 1e-6;
         % following sets gp.fh_e = @ep_algorithm;
-        gp = gpep_e('init', gp);
+        if isempty(latent_method_opt)
+            gp = gpep_e('init', gp);
+        else
+           gp = gpep_e('init', gp,latent_method_opt); 
+        end
+        
       case 'Laplace'
         gp.latent_method=latent_method;
         gp.laplace_opt.maxiter = 20;

@@ -19,7 +19,7 @@
 %
 %         y = 2 + x + x^2 + 4*cos(x)*sin(x) + epsilon
 %
-%    and we define the basis functions to be:
+%    and we define the base functions to be:
 %
 %       h1(x)=x^2, h2(x)=x, h3(x)=2           
 %
@@ -30,36 +30,34 @@
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % Create the data
-
  t=-2:0.6:2;
  res=4*cos(t).*sin(t)+0.4*randn(size(sin(t)));
  y2= 2 + t' + t'.^2 +res';
  x=t';
+%---------------
  
 gpcf1 = gpcf_sexp('init', 'lengthScale', [0.5], 'magnSigma2', .5);
 gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.4^2);
 
 pl = prior_logunif('init');               % a prior structure
-pm = prior_logunif('init');               % a prior structure
-%pm = prior_sqrtt('init', 's2', 0.3);               % a prior structure
+pm = prior_sqrtt('init', 's2', 0.3);      % a prior structure
 gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
 
-% Set the prior values for basis functions' weigths
-b=[0.3 0.3 0.3];
-B=diag([1;1;1]);
-% Set the constant value of the constant base function to 2. Default value
-% is 1 without any set action.
-gpmf_constant('set',2);                                 
-% Define which basis functions are used
-s={@gpmf_linear,@gpmf_squared,@gpmf_constant};
+% Initialize base functions for GP's mean function.
+gpmf1 = gpmf_constant('init','prior_mean',.3,'prior_cov',1, 'constant',2);             % Default value for constant is 1. 
+gpmf2 = gpmf_linear('init','prior_mean',.3,'prior_cov',1, 'selectedVariables',[1]);    % selectedVariables = which input dimensions (columns) are active
+gpmf3 = gpmf_squared('init','prior_mean',.3,'prior_cov',1);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.00001,'meanFuncs',s,'mean_p',{b,B});
+% initialize gp structure
+gp = gp_set('type', 'FULL','lik','gaussian', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.00001,'meanf',{gpmf1,gpmf2,gpmf3});
+
+% Check gradients
 w=gp_pak(gp);
 gradcheck(w, @gp_e, @gp_g, gp, x, y2);
 
 
-w=gp_pak(gp);  % pack the hyperparameters into one vector
+w=gp_pak(gp);           % pack the hyperparameters into one vector
 fe=@gp_e;     % create a function handle to negative log posterior
 fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
@@ -92,7 +90,7 @@ h=plot(p,2 + p+p.^2+4*cos(p).*sin(p),'b--','lineWidth',2);
 hold on
 mmmean=plot(p,2+p+p.^2,'r--','lineWidth',1);
 legend([m m95 h mmmean hav],'prediction','95%','f(x)','mean function','observations');
-%legend([m.mainLine m.patch h mean hav],'prediction','95%','f(x)','meanfunction','observations');
+%legend([m.mainLine m.patch h mmmean hav],'prediction','95%','f(x)','meanfunction','observations');
 xlabel('input x')
 ylabel('output y')
 title('GP regression with a mean function')

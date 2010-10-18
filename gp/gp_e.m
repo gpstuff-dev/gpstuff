@@ -76,7 +76,7 @@ switch gp.type
     [K, C] = gp_trcov(gp, x);
     
     % Are there specified mean functions
-    if  ~isfield(gp,'mean')       % a zero mean function
+    if  ~isfield(gp,'meanf')       % a zero mean function
         if issparse(C)            % compact support covariances are in use
             LD = ldlchol(C);
             edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
@@ -86,15 +86,7 @@ switch gp.type
             edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
         end
     else
-        Hapu = cell(1,length(gp.mean.meanFuncs));
-        for i=1:length(gp.mean.meanFuncs)
-            Hapu{i}=feval(gp.mean.meanFuncs{i},x);
-        end
-        % Gather mean functions' values in one matrix
-        H = cat(1,Hapu{1:end});
-        b = gp.mean.p.b'; 
-        Bvec = gp.mean.p.B;  
-        B = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));                   
+        [H,b,B]=mean_prep(gp,x,[]);                   
         if isempty(C)  
           L=1;
           logK=0;
@@ -109,32 +101,12 @@ switch gp.type
            KH = L'\(L\H');
         end
         
-        % is prior for mean function weights vague?
-        if gp.mean.p.vague==0       % non-vague prior
-            A = B\eye(size(B)) + H*KH;
-            M = H'*b-y;
-            N = C + H'*B*H;
-            MNM = M'*(N\M);
-            
-            edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
-        else                        % vague prior
-          if isempty(C)  
-            yKy=0;
-          elseif issparse(C)
-                yKy=y'*ldlsolve(L,y);
-            else
-                b=L\y;
-                yKy=b'*b;
-            end
-            m=rank(H');
-            A = H*KH;
-            if isempty(C)
-              edata = 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
-            else
-              C_m = KH*(A\(H*(C\eye(size(C)))));
-              edata = 0.5*yKy - 0.5*y'*C_m*y + logK + 0.5*log(det(A)) + 0.5*(n-m)*log(2*pi);
-            end
-        end
+        A = B\eye(size(B)) + H*KH;
+        M = H'*b-y;
+        N = C + H'*B*H;
+        MNM = M'*(N\M);
+
+        edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
     end
     
     % ============================================================

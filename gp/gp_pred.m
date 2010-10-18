@@ -126,7 +126,7 @@ switch gp.type
     K=gp_cov(gp,x,xt,predcf);
 
     % Are there specified mean functions
-    if  ~isfield(gp,'mean')         % zero mean
+    if  ~isfield(gp,'meanf')         % zero mean
         if issparse(C)
             LD = ldlchol(C);
             Ef = K'*ldlsolve(LD,y);
@@ -148,7 +148,7 @@ switch gp.type
 
     if nargout > 1
         % Are there specified mean functions
-        if  ~isfield(gp,'mean')
+        if  ~isfield(gp,'meanf')
             if issparse(C)
                 V = gp_trvar(gp,xt,predcf);
                 Varf = V - diag(K'*ldlsolve(LD,K));

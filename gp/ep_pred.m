@@ -109,7 +109,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
             sqrttautilde = sqrt(tautilde);
             Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
             
-            if ~isfield(gp,'mean')                
+            if ~isfield(gp,'meanf')                
                 if issparse(L)          % If compact support covariance functions are used 
                                         % the covariance matrix will be sparse
                     z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
@@ -139,7 +139,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_pred(gp, x, y, xt, varargin)
                     V = (L\Stildesqroot)*K_nf';
                     Varf = kstarstar - sum(V.^2)';
                 end
-                if isfield(gp,'mean')
+                if isfield(gp,'meanf')
                      Varf = Varf + RAR;
                 end
             end

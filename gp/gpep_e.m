@@ -40,7 +40,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %    returns many useful quantities produced by EP algorithm.
 %
   
-% Copyright (c) 2007  Jaakko Riihimäki
+% Copyright (c) 2007  Jaakko Riihimï¿½ki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura, Aki Vehtari
 
@@ -79,21 +79,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
         b0 = 0;
         muvec_i0 = [];
         sigm2vec_i0 = [];
-        if ~isfield(gp,'mean')
+        myy0 = zeros(size(y));
+        if ~isfield(gp,'meanf')
             myy0 = zeros(size(y));
         else
-            if gp.mean.p.vague ==0
-                for i=1:length(gp.mean.meanFuncs)
-                    Hapu{i}=feval(gp.mean.meanFuncs{i},x);
-                end
-                H = cat(1,Hapu{1:end});
-                b_m=gp.mean.p.b';
-                Bvec = gp.mean.p.B;
-                B_m = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));
-                myy0 = H'*b_m;
-            else
-                error('EP is not working with vague prior yet')
-            end
+           [H,b_m,B_m]=mean_prep(gp,x,[]);
+            myy0 = H'*b_m;
         end
         
         % return function handle to the nested function ep_algorithm
@@ -139,7 +130,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %            tautilde = tautilde0;%zeros(size(y));
             %tautilde = gp.lik.sigma2^-1 *ones(size(y));
             logZep_tmp=0; logZep=Inf;
-            if ~isfield(gp,'mean')
+            if ~isfield(gp,'meanf')
                 myy = zeros(size(y));
             else
                 myy = H'*b_m;
@@ -159,7 +150,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 % The EP algorithm for full support covariance function
                 %------------------------------------------------------
                 if ~issparse(C)
-                    if ~isfield(gp,'mean')
+                    if ~isfield(gp,'meanf')
                         Sigm = C;
                     else
                         Sigm = C + H'*B_m*H;
@@ -264,7 +255,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                             %Sigm = Sigm - apu;
                             %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
                             
-                            if ~isfield(gp,'mean')
+                            if ~isfield(gp,'meanf')
                                 myy=Sigm*nutilde;
                             else
                                 myy=Sigm*(C\(H'*b_m)+nutilde);
@@ -280,7 +271,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                             Stilde=tautilde;
                             Stildesqroot=diag(sqrt(tautilde));
                             
-                            if ~isfield(gp,'mean')  % zero mean function used
+                            if ~isfield(gp,'meanf')  % zero mean function used
                             
                                 % NOTICE! upper triangle matrix! cf. to                    
                                 % line 13 in the algorithm 3.5, p. 58.
@@ -343,26 +334,21 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                                 Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
                                 L2 = V*(S*H'*b_m-nutilde);
                                 
-                                if gp.mean.p.vague==0
-                                    zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
-                                    Ks  = eye(size(zz)) - zz;               % inv(K + S^-1)*S^-1
-                                    
-                                    % 5. term (1/2 element)   
-                                    term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);                           
-                                    % 2. term 
-                                    term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);                
-                                    % 4. term
-                                    term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));           
-                                    % 1. term
-                                    term1    = -1.*sum(log(diag(L_m)));                       
-                                    % 3. term
-                                    term3    = sum(log(M0));                                   
-                                    % 5. term (2/2 element)
-                                    term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                                zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                                Ks  = eye(size(zz)) - zz;               % inv(K + S^-1)*S^-1
 
-                                else
-                                    error('NOT DONE');
-                                end
+                                % 5. term (1/2 element)   
+                                term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);                           
+                                % 2. term 
+                                term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);                
+                                % 4. term
+                                term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));           
+                                % 1. term
+                                term1    = -1.*sum(log(diag(L_m)));                       
+                                % 3. term
+                                term3    = sum(log(M0));                                   
+                                % 5. term (2/2 element)
+                                term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
 
                                 logZep = -(term4+term1+term5_1+term5+term2+term3);
                                 iter=iter+1;

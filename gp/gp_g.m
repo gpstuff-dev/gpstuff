@@ -134,7 +134,7 @@ switch gp.type
             end
             
             % Are there specified mean functions
-            if  ~isfield(gp,'mean')
+            if  ~isfield(gp,'meanf')
                 % Evaluate the gradient with respect to covariance function parameters
                 for i2 = 1:length(DKff)
                     i1 = i1+1;  
@@ -144,28 +144,12 @@ switch gp.type
                     gprior(i1) = gprior_cf(i2);
                 end
             else 
-                % is prior for weights of mean functions vague
-                if gp.mean.p.vague==0
-                    [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
-                    for i2 = 1:length(DKff)
-                        i1=i1+1;
-                        trK = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
-                        gdata(i1)=0.5*(-1*dMNM{i2} + trK + trA{i2});
-                        gprior(i1) = gprior_cf(i2);
-                    end
-                else
-                    [nouse nouse dyKy dyCy trAv]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
-                    for i2 = 1:length(DKff)
-                        i1 = i1+1;
-                        if size(DKff{i2}) > 1
-                            trK = sum(sum(invC.*DKff{i2})); % help arguments
-                        else 
-                            trK = DCff{i2}.*(trace(invC));
-                        end
-                        trK = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
-                        gdata(i1)=0.5*(trK - dyKy{i2} + trAv{i2} + dyCy{i2});
-                        gprior(i1) = gprior_cf(i2);
-                    end
+                [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
+                for i2 = 1:length(DKff)
+                    i1=i1+1;
+                    trK = sum(sum(invC.*DKff{i2}));       % d log(Ky⁻) / d th
+                    gdata(i1)=0.5*(-1*dMNM{i2} + trK + trA{i2});
+                    gprior(i1) = gprior_cf(i2);
                 end
             end
             
@@ -185,12 +169,8 @@ switch gp.type
             for i=1:nn
                 noisef = gp.noisef{i};
                 [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
-                if isfield(gp,'mean')
-                    if gp.mean.p.vague==0
-                        [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
-                    else
-                        [nouse nouse dyKy dyCy trAv]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
-                    end
+                if isfield(gp,'meanf')
+                    [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
                 end
                 
                 for i2 = 1:length(DCff)
@@ -212,12 +192,7 @@ switch gp.type
                         else 
                             trK = DCff{i2}.*(trace(invC));
                         end
-                        
-                        if gp.mean.p.vague==0
-                            gdata(i1)=0.5*(-1*dMNM{i2} + trA{i2} + trK);
-                        else      
-                            gdata(i1)=0.5*(trK - dyKy{i2} + trAv{i2} + dyCy{i2});
-                        end
+                        gdata(i1)=0.5*(-1*dMNM{i2} + trA{i2} + trK);
                     end
                     gprior(i1) = gprior_cf(i2);
                 end
