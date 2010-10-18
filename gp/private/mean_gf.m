@@ -1,56 +1,67 @@
-function [dMNM trA dyKy dyCy trAv] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
-% MEAN_GF       Calculates help terms needed in gradient calculation with mean function
+function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
+% MEAN_GF      Calculates help terms needed in gradient calculation with mean function
 %
 %     Description
-%	[dMNM trA dyKy dyCy trAv] = MEAN_GF(gp,x,C,invC,DKff,Stildesqroot,y,latent_method) takes in
-%                               following variables:
+%	  [dMNM trA dyKy dyCy trAv] = MEAN_GF(gp,x,C,invC,DKff,Stildesqroot,y,latent_method) takes in
+%                                 following variables:
+%        Gaussian likelihood:
+%        gp              - a gp data structure
+%        x               - training inputs
+%        Ky              - cov. matrix K(x,x) + sigma*I
+%        invKy           - inv(Ky)
+%        DKff            - d Ky / d th, (th = hyperparameters)
+%        Stildesqroot    - [] (empty)
+%        y               - noisy latent values
+%        latent_method   - gaussian
 %
-%        gp      - a gp data structure
-%        x       - training inputs
-%        Ky       - gaussian: K(x,x) + sigmaI
-%        invKy    - gaussian: inv(Ky), EP: inv(Ky + S^-1)*S^-1
-%        DKff    - d Ky / d th
-%        Stildesqroot    - with EP, sqrt( diag(tautilde) )
-%        y       - targets,gaussian: noisy latent values, EP: S*mutilde
-%        latent_method   - which latent method in use ('gaussian','EP','laplace')
-
-
-%        Returns a help terms dMNM and trA with non-vague prior and
-%        dyKy, dyCy and trAv with vague prior. See (Rasmussen and Williams 2006)
-%        and GPstuff doc for further explaining
-
+%        EP:
+%        gp              - a gp data structure
+%        x               - training inputs
+%        Ky              - cov. matrix K(x,x) + sigma*I
+%        invKy           - inv(Ky + S^-1)*S^-1
+%        DKff            - d Ky / d th, (th = hyperparameters)
+%        Stildesqroot    - sqrt( diag(tautilde) )
+%        y               - S*mutilde
+%        latent_method   - EP
+%
+%        Laplace:
+%        NOT IMPLEMENTED YET
+%
+%        Returns the help terms dMNM and trA
+%
 %        dMNM = d M'*inv(N)*M / d th
 %        trA  = d log|A| / dth
 %        dyKy = d y'*Ky*y/ d th
 %        dyCy = d y'*C*y / d th
 %        trAv = d log|Av|/ d th
 
+%        The vague prior functionalities commented. The function should return
+%        help terms  dyKy dyCy trAv with vague prior. Uncommenting vague
+%        prior rows here doesn't make vague prior compatibible with other
+%        functions.
+
+%        See GPstuff doc and (Rasmussen and Williams 2006) for further
+%        explaining.
+
+
+
 
         dMNM = cell(1,length(DKff));
         trA  = cell(1,length(DKff));
-        dyKy = cell(1,length(DKff));
-        dyCy = cell(1,length(DKff));
-        trAv = cell(1,length(DKff));
-        Hapu = cell(1,length(gp.mean.meanFuncs));
-        
-        % Gather the basis functions' values in one matrix H 
-        for i=1:length(gp.mean.meanFuncs)
-            Hapu{i}=feval(gp.mean.meanFuncs{i},x);
-        end
-        H = cat(1,Hapu{1:end});
+%         dyKy = cell(1,length(DKff));
+%         dyCy = cell(1,length(DKff));      % with vauge prior
+%         trAv = cell(1,length(DKff));
         
         % prior assumption for weights, w ~ N(b,B) 
         % b_m = prior mean for weights, B_m prior covariance matrix for weights
-        b_m = gp.mean.p.b';            
-        Bvec = gp.mean.p.B;
-        B_m = reshape(Bvec,sqrt(length(Bvec)),sqrt(length(Bvec)));
+        [H,b_m,B_m]=mean_prep(gp,x,[]);
         
         % help arguments
         HinvC = H*invKy;           
         N = Ky + H'*B_m*H;                                   
         
-        % is prior for weights of mean functions vague
-        if gp.mean.p.vague==0   % non-vague prior
+
+%         if gp.mf{1}.p.vague==0   % non-vague prior
             
             % help arguments that don't depend on DKff; non-vague p
             if isequal(latent_method,'gaussian')
@@ -98,33 +109,33 @@ function [dMNM trA dyKy dyCy trAv] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,l
             end
 
 
-        else  % vague prior
+%         else  % vague prior
             
-            if isequal(latent_method,'gaussian')
-                % help arguments that don't depend on DKff; vague p
-                HKH = HinvC*H';
-                A     = HKH;
-                AH    = A\H;
-                invAt = A\eye(size(A));
-                invAt = invAt';
-                G     = H'*AH*invKy*y;
-                b     = invKy*y;
-
-                for i2 = 1:length(DKff)
-                    % help arguments that depend on DKff; vague p
-                    dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Ky⁻*y / d th
-                    dA  = -1*HinvC*DKff{i2}*HinvC';        % d A / d th  
-                    trAv{i2} = sum(invAt(:).*dA(:));       % d log(|A|)/dth = trace(inv(A) * dA/dth)
-                    P   = invKy*DKff{i2}*invKy;
-
-                    dyCy1 = y'*P*G;           
-                    dyCy3 = -G'*P*G;
-                    dyCy{i2} = 2*dyCy1 + dyCy3;          % d y'*C*y /d th
-                end
-            else
-                error('vague prior only for gaussian latent method at the moment')
-            end
-        end
+%             if isequal(latent_method,'gaussian')
+%                 % help arguments that don't depend on DKff; vague p
+%                 HKH = HinvC*H';
+%                 A     = HKH;
+%                 AH    = A\H;
+%                 invAt = A\eye(size(A));
+%                 invAt = invAt';
+%                 G     = H'*AH*invKy*y;
+%                 b     = invKy*y;
+% 
+%                 for i2 = 1:length(DKff)
+%                     % help arguments that depend on DKff; vague p
+%                     dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Ky⁻*y / d th
+%                     dA  = -1*HinvC*DKff{i2}*HinvC';        % d A / d th  
+%                     trAv{i2} = sum(invAt(:).*dA(:));       % d log(|A|)/dth = trace(inv(A) * dA/dth)
+%                     P   = invKy*DKff{i2}*invKy;
+% 
+%                     dyCy1 = y'*P*G;           
+%                     dyCy3 = -G'*P*G;
+%                     dyCy{i2} = 2*dyCy1 + dyCy3;          % d y'*C*y /d th
+%                 end
+%             else
+%                 error('vague prior only for gaussian latent method at the moment')
+%             end
+%         end
         
         
 end
