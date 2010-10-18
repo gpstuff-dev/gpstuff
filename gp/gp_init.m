@@ -90,7 +90,7 @@ function gp = gp_init(do, varargin)
 %                     are the inputs belonging to the i'th block.
 %
 %     The additional fields when the likelihood is not Gaussian
-%     (likelih ~='gaussian') are:
+%     (lik ~='gaussian') are:
 %       latent_method = Defines a method for marginalizing over 
 %                       latent values. Possible methods are 'MCMC', 
 %                       'Laplace' and 'EP' and they are initialized 
@@ -153,7 +153,25 @@ function gp = gp_init(do, varargin)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-    if nargin < 4
+% allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+
+    if numel(varargin) < 4
         error('Not enough arguments')
     end
 
@@ -162,7 +180,7 @@ function gp = gp_init(do, varargin)
         gp.type = varargin{1};
         
         % Set likelihood. 
-        gp.likelih = varargin{2};   % Remember to set the latent_method.
+        gp.lik = varargin{2};   % Remember to set the latent_method.
 
         % Set covariance functions into gpcf
         gpcf = varargin{3};
@@ -225,14 +243,14 @@ function gp = gp_init(do, varargin)
                     end
                   case 'jitterSigma2'
                     gp.jitterSigma2 = varargin{i+1};
-                  case 'likelih'
-                    gp.likelih = varargin{i+1};
+                  case 'lik'
+                    gp.lik = varargin{i+1};
                   case 'type'
                     gp.type = varargin{i+1};
                   case 'X_u'
                     gp.X_u = varargin{i+1};
                     gp.nind = size(varargin{i+1},1);
-                    gp.p.X_u = prior_unif('init');
+                    gp.p.X_u = prior_unif;
                   case 'Xu_prior'
                     gp.p.X_u = varargin{i+1};                    
                   case 'tr_index'
@@ -272,15 +290,15 @@ function gp = gp_init(do, varargin)
                         % other choices can be used with setting
                         % gp.laplace_opt.optim_method before calling 
                         % gp_init('set', gp, 'latent_method', {'Laplace', ...
-                        switch gp.likelih.type
+                        switch gp.lik.type
                           case 'Student-t'
                             % slower than stabilized-newton but more robust
-                            gp.laplace_opt.optim_method='likelih_specific'; 
+                            gp.laplace_opt.optim_method='lik_specific'; 
                           otherwise
                             gp.laplace_opt.optim_method='newton';
                         end
-                        switch gp.likelih.type
-                          case 'softmax'
+                        switch gp.lik.type
+                          case 'Softmax'
                             gp = gpla_softmax_e('init', gp, varargin{i+1}{2:end});
                             w = gp_pak(gp);
                             [e, edata, eprior, f] = gpla_softmax_e(w, gp, varargin{i+1}{2:end});
@@ -329,13 +347,13 @@ function gp = gp_init(do, varargin)
               case 'jitterSigma2'
                 gp.jitterSigma2 = varargin{i+1};
               case 'likelih'
-                gp.likelih = varargin{i+1};
+                gp.lik = varargin{i+1};
               case 'type'
                 gp.type = varargin{i+1};
               case 'X_u'
                 gp.X_u = varargin{i+1};
                 gp.nind = size(varargin{i+1},1);
-                gp.p.X_u = prior_unif('init');
+                gp.p.X_u = prior_unif;
               case 'Xu_prior'
                 gp.p.X_u = varargin{i+1};                
               case 'tr_index'
@@ -364,16 +382,16 @@ function gp = gp_init(do, varargin)
                         | isempty(gp.laplace_opt.optim_method)
                       % If optim_method is not yet defined, use
                       % default choices for optimisation inside Laplace
-                      switch gp.likelih.type
+                      switch gp.lik.type
                         case 'Student-t'
                           % slower than stabilized-newton but more robust
-                          gp.laplace_opt.optim_method = 'likelih_specific';
+                          gp.laplace_opt.optim_method = 'lik_specific';
                         otherwise
                           gp.laplace_opt.optim_method = 'newton';
                       end
                     end
-                    switch gp.likelih.type
-                      case 'softmax'
+                    switch gp.lik.type
+                      case 'Softmax'
                         gp = gpla_softmax_e('init', gp, varargin{i+1}{2:end});
                         w = gp_pak(gp);
                         [e, edata, eprior, f] = gpla_softmax_e(w, gp, varargin{i+1}{2:end});
