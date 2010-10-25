@@ -102,7 +102,7 @@ f3 = f3(itr,:); f4 = f4(itr,:);
 % between age group and time period (gpcf4).
 
 % First define priors for length scales and magnitudes
-pl = prior_t;
+pl = prior_t();
 pm = prior_sqrtt('s2', 0.3);
 
 metric1 = metric_euclidean('components', {[1]},'lengthScale',[10], 'lengthScale_prior', pl);
@@ -121,7 +121,7 @@ gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
 lik = lik_binomial;
     
 % Initialize GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2',0.01^2);
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2',1e-6);
     
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -140,15 +140,15 @@ gp=gp_unpak(gp, wopt);
 % Making predictions
 
 % First with all components
-[Ef,Varf,Ey,Vary,Py] = gp_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
+[Eft,Varft,Eyt,Varyt,Pyt] = gp_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
 % Age group effect
-[Ef_1,Varf_1] = gp_pred(gp,xx,yy,xxo,'predcf',[1],'z',nn,'zt',nno);
+[Eft_1,Varft_1] = gp_pred(gp,xx,yy,xxo,'predcf',[1],'z',nn,'zt',nno);
 % Time period effect
-[Ef_2,Varf_2] = gp_pred(gp,xx,yy,xxo,'predcf',[2],'z',nn,'zt',nno);
+[Eft_2,Varft_2] = gp_pred(gp,xx,yy,xxo,'predcf',[2],'z',nn,'zt',nno);
 % Cohort effect
-[Ef_3,Varf_3] = gp_pred(gp,xx,yy,xxo,'predcf',[3],'z',nn,'zt',nno);
+[Eft_3,Varft_3] = gp_pred(gp,xx,yy,xxo,'predcf',[3],'z',nn,'zt',nno);
 % Interaction effect between age group and time period
-[Ef_4,Varf_3] = gp_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
+[Eft_4,Varft_3] = gp_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
 
 % Plotting predictions
 
@@ -163,9 +163,9 @@ figure; subplot(3,1,1)
 set(gcf, 'color', 'w'), hold on
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;
 % Estimate
-h1=fill([xx1' fliplr(xx1')], [(Ef_1(ind1)+1.96*sqrt(Varf_1(ind1)))' ...
-    fliplr((Ef_1(ind1)-1.96*sqrt(Varf_1(ind1)))')], color1, 'edgecolor', color1);
-h2=plot(xx1, Ef_1(ind1), 'color', color2, 'linewidth', 3);
+h1=fill([xx1' fliplr(xx1')], [(Eft_1(ind1)+1.96*sqrt(Varft_1(ind1)))' ...
+    fliplr((Eft_1(ind1)-1.96*sqrt(Varft_1(ind1)))')], color1, 'edgecolor', color1);
+h2=plot(xx1, Eft_1(ind1), 'color', color2, 'linewidth', 3);
 % True function
 h4=plot(xx1, f1o(ind1), 'color', 'r', 'linewidth', 2); hold off
 title('Age group effect')
@@ -175,9 +175,9 @@ legend([h4 h2],'True','Estimated')
 % Time period effect
 subplot(3,1,2)
 set(gcf, 'color', 'w'), hold on
-h1=fill([xx2' fliplr(xx2')], [(Ef_2(ind2)+1.96*sqrt(Varf_2(ind2)))' ...
-    fliplr((Ef_2(ind2)-1.96*sqrt(Varf_2(ind2)))')], color1, 'edgecolor', color1);
-h2=plot(xx2, Ef_2(ind2), 'color', color2, 'linewidth', 3);
+h1=fill([xx2' fliplr(xx2')], [(Eft_2(ind2)+1.96*sqrt(Varft_2(ind2)))' ...
+    fliplr((Eft_2(ind2)-1.96*sqrt(Varft_2(ind2)))')], color1, 'edgecolor', color1);
+h2=plot(xx2, Eft_2(ind2), 'color', color2, 'linewidth', 3);
 % true function
 h4=plot(xx2, f2o(ind2), 'color', 'r', 'linewidth', 2);
 title('Time period effect')
@@ -187,9 +187,9 @@ legend([h4 h2],'True','Estimated')
 % Cohort effect
 subplot(3,1,3)
 set(gcf, 'color', 'w'), hold on
-h1=fill([xx3' fliplr(xx3')], [(Ef_3(ind3)+1.96*sqrt(Varf_3(ind3)))' ...
-    fliplr((Ef_3(ind3)-1.96*sqrt(Varf_3(ind3)))')], color1, 'edgecolor', color1);
-h2=plot(xx3, Ef_3(ind3), 'color', color2, 'linewidth', 3);
+h1=fill([xx3' fliplr(xx3')], [(Eft_3(ind3)+1.96*sqrt(Varft_3(ind3)))' ...
+    fliplr((Eft_3(ind3)-1.96*sqrt(Varft_3(ind3)))')], color1, 'edgecolor', color1);
+h2=plot(xx3, Eft_3(ind3), 'color', color2, 'linewidth', 3);
 % true function
 h4=plot(xx3, f3o(ind3), 'color', 'r', 'linewidth', 2);
 title('Cohort effect')
@@ -198,7 +198,7 @@ legend([h4 h2],'True','Estimated')
 
 % Plotting of interaction effect
 figure; subplot(1,2,1)
-imagesc(reshape(Ef_4,81,17)); colorbar;
+imagesc(reshape(Eft_4,81,17)); colorbar;
 title('Estimated interaction effect')
 xlabel('Time period'); ylabel('Age group')
 subplot(1,2,2);

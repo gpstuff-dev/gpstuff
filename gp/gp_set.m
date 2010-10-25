@@ -154,7 +154,7 @@ function gp = gp_set(varargin)
                       'DTC' 'SOR' 'CS+FIC'}));
   ip.addParamValue('lik','gaussian', @(x) strcmp(x, 'gaussian') || isstruct(x));
   ip.addParamValue('noisef',[], @(x) isempty(x) || isstruct(x) || iscell(x));
-  ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>0);
+  ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
   ip.addParamValue('infer_params','covariance+inducing+likelihood', @(x) ischar(x));
   ip.addParamValue('latent_method','NA', @(x) ischar(x) || iscell(x));
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));

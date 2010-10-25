@@ -1,4 +1,3 @@
-function demo_classific
 %DEMO_CLASSIFIC  Classification problem demonstration for 2 classes
 %
 %  Description
@@ -71,15 +70,15 @@ xt=[xt1(:) xt2(:)];
 
 % Create covariance functions
 gpcf1 = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 10);
-%gpcf1 = gpcf_ppcs2('nin', nin, 'lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
-pl = prior_logunif;
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+pl = prior_unif();
+pm = prior_sqrtunif();
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 
 % Create the GP data structure
-gp = gp_set('cf', gpcf1, 'lik', lik_probit, 'jitterSigma2', 0.01);
-%gp = gp_set('cf', gpcf1, 'lik', lik_logit, 'jitterSigma2', 0.01);
+gp = gp_set('cf', gpcf1, 'lik', lik_probit, 'jitterSigma2', 1e-6);
+%gp = gp_set('cf', gpcf1, 'lik', lik_logit, 'jitterSigma2', 1e-6);
 
 % ------- Laplace approximation --------
 
@@ -104,7 +103,7 @@ gp=gp_unpak(gp,w);
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_la,20,20))
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_la,20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -147,7 +146,7 @@ gp=gp_unpak(gp,w);
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_ep,20,20))
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_ep,20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -170,11 +169,12 @@ set(gcf, 'color', 'w'), title('predictive probability contours with EP', 'fontsi
 
 % ------- MCMC ---------------
 % Set the approximate inference method
-gp = gp_set(gp, 'latent_method', 'MCMC');
+% Note that MCMC for latent values requires often more jitter
+gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 
 % Set the parameters for MCMC...
 hmc_opt.steps=10;
-hmc_opt.stepadj=0.1;
+hmc_opt.stepadj=0.05;
 hmc_opt.nsamples=1;
 latent_opt.display=0;
 latent_opt.repeat = 20;
@@ -185,15 +185,14 @@ hmc2('state', sum(100*clock))
 [r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % re-set some of the sampling options
-opt.nsamples=400;
-opt.repeat=1;
-opt.hmc_opt.steps=4;
-opt.hmc_opt.stepadj=0.02;
-opt.latent_opt.repeat = 5;
+hmc_opt.repeat=1;
+hmc_opt.steps=4;
+hmc_opt.stepadj=0.05;
+latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp_mc(gp, x, y, opt, 'record', r);
+[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
 rgp=thin(rgp,102);
 
@@ -206,7 +205,7 @@ Py_mc = mean(Pys_mc,2);
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20))
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -244,7 +243,7 @@ subplot(1,2,1)
 hist(sf1,20);
 h1=get(gca,'Children');
 hold on
-x_in = min(sf)-2:0.1:max(sf)+4;
+x_in = min(sf1)-2:0.1:max(sf1)+4;
 ff = normpdf(x_in, Ef_la(apu1), sqrt(Varf_la(apu1)));
 h2=plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2);
 ff = normpdf(x_in, Ef_ep(apu1), sqrt(Varf_ep(apu1)));
