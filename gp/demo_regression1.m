@@ -1,7 +1,7 @@
-%DEMO_REGRESSION1    Regression problem demonstration for 2-input 
-%                    function with Gaussian process
+%DEMO_REGRESSION1  Regression problem demonstration for 2-input 
+%                  function with Gaussian process
 %
-%    Description
+%  Description
 %    The regression problem consist of a data with two input variables
 %    and one output variable with Gaussian noise. The model
 %    constructed is following:
@@ -56,9 +56,9 @@
 %     2) data analysis with grid integration over the hyperparameters
 %     3) data analysis with MCMC integration over the hyperparameters
 %
-%   See also  DEMO_REGRESSION2
+%  See also DEMO_REGRESSION2
 %
-%   Refernces:
+%  References:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
 %
@@ -93,15 +93,16 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('init', 'lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
-gpcf2 = gpcf_noise('init', 'noiseSigma2', 0.2^2);
+gpcf1 = gpcf_sexp('lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
+gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
 
-pl = prior_t('init');                          % a prior structure
-pm = prior_sqrtt('init', 's2', 0.3);               % a prior structure
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
+pl = prior_t();                          % a prior structure
+pm = prior_sqrtt('s2', 0.3);             % a prior structure
+pn = prior_logunif();
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pn);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1}, {gpcf2}, 'jitterSigma2', 0.0001.^2);
+gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2});
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 
@@ -134,7 +135,6 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=@gp_e;     % create a function handle to negative log posterior
 fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
@@ -145,6 +145,7 @@ opt.tolx = 1e-3;
 opt.display = 1;
 
 % do the optimization
+w=gp_pak(gp);  % pack the hyperparameters into one vector
 w=scg2(fe, w, opt, fg, gp, x, y);
 
 % Set the optimized hyperparameter values back to the gp structure
@@ -158,13 +159,13 @@ gp=gp_unpak(gp,w);
 % For last, make predictions of the underlying function on a dense
 % grid and plot it. Below Ef_map is the predictive mean and Varf_map
 % the predictive variance.
-[p1,p2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
-p=[p1(:) p2(:)];
-[Ef_map, Varf_map] = gp_pred(gp, x, y, p);
+[xt1,xt2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
+xt=[xt1(:) xt2(:)];
+[Ef_map, Varf_map] = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
 figure(1)
-mesh(p1, p2, reshape(Ef_map,37,37));
+mesh(xt1, xt2, reshape(Ef_map,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -173,14 +174,14 @@ title('The predicted underlying function and the data points (MAP solution)');
 
 % --- Grid integration ---
 % Perform the grid integration and make predictions for p
-[gp_array, P_TH, th, Ef_ia, Varf_ia, fx_ia, x_ia] = gp_ia(gp, x, y, p, 'int_method', 'grid');
+[gp_array, P_TH, th, Ef_ia, Varf_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
 % Plot the prediction for few input location
 figure(2)
-subplot(1,2,1)
+subplot(2,1,1)
 plot(x_ia(100,:), fx_ia(100,:))
 title('p(f|D) at input location (-1.6, 0.7)');
-subplot(1,2,2)
+subplot(2,1,2)
 plot(x_ia(400,:), fx_ia(400,:))
 title('p(f|D) at input location (-0.8, 1.1)');
 
@@ -209,23 +210,25 @@ hmc2('state', sum(100*clock));
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
-% Now we make the predictions. 'mc_pred' is a function that returns 
-% the predictive mean of the latent function with every sampled 
-% hyperparameter value. Thus, the returned Ef_mc is a matrix of 
-% size n x (number of samples). By taking the mean over the samples
-% we do the Monte Carlo integration over the hyperparameters.
-[Ef_mc, Varf_mc] = mc_pred(rfull, x, y, p);
+% Now we make the predictions. 'mc_preds' is a function that
+% returns the predictive mean of the latent function with every
+% sampled hyperparameter value. Thus, the returned Ef_mc is a
+% matrix of size n x (number of samples). By taking the mean over
+% the samples we do the Monte Carlo integration over the
+% hyperparameters. (See also mc_pred, which directly returns the
+% expectation of the mean and variance)
+[Ef_mc, Varf_mc] = mc_preds(rfull, x, y, xt);
 
 figure(1)
 clf, subplot(1,2,1)
-mesh(p1, p2, reshape(Ef_map,37,37));
+mesh(xt1, xt2, reshape(Ef_map,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function ';
        'and the data points (MAP solution)']);
 subplot(1,2,2)
-mesh(p1, p2, reshape(mean(Ef_mc'),37,37));
+mesh(xt1, xt2, reshape(mean(Ef_mc'),37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -261,9 +264,9 @@ hold on
 plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('magnitude')
 subplot(1,4,4)
-hist(rfull.noise{1}.noiseSigma2)
+hist(rfull.noisef{1}.noiseSigma2)
 hold on
-plot(gp.noise{1}.noiseSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+plot(gp.noisef{1}.noiseSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Noise variance')
 legend('MCMC samples', 'MAP estimate')
 set(gcf,'pos',[93 511 1098 420])
@@ -369,11 +372,11 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ xlim([0.5 6])
 % $$$ 
 % $$$ subplot(1,4,4)
-% $$$ hist(rfull.noise{1}.noiseSigma2)
+% $$$ hist(rfull.noisef{1}.noiseSigma2)
 % $$$ h = findobj(gca,'Type','patch');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
-% $$$ plot(gp.noise{1}.noiseSigma2, 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
+% $$$ plot(gp.noisef{1}.noiseSigma2, 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
 % $$$ xlabel('Noise variance')
 % $$$ xlim([0.03 0.06])
 % $$$ set(gca, 'Xtick', [0.03 0.06])

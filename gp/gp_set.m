@@ -151,7 +151,7 @@ function gp = gp_set(varargin)
   ip.addParamValue('meanf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
   ip.addParamValue('type','FULL', ...
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
-                      'DTC' 'SOR'}));
+                      'DTC' 'SOR' 'CS+FIC'}));
   ip.addParamValue('lik','gaussian', @(x) strcmp(x, 'gaussian') || isstruct(x));
   ip.addParamValue('noisef',[], @(x) isempty(x) || isstruct(x) || iscell(x));
   ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>0);

@@ -1,7 +1,7 @@
 %DEMO_REGRESSION2    Regression problem demonstration with additive model
 %                    
 %
-%    Description
+%  Description
 %    A regression problem with one input variable and one output
 %    variable with Gaussian noise. The output is assumed to be
 %    realization of two additive functions and Gaussian noise.
@@ -57,10 +57,10 @@
 %   Rasmussen and Williams (2006) and for a detailed discussion on
 %   sparse additive models see Vanhatalo and Vehtari (2008).
 %
-%   See also  DEMO_REGRESSION1, DEMO_SPARSEREGRESION
+% See also  DEMO_REGRESSION1, DEMO_SPARSEREGRESION
 %
 %
-%   References:
+% References:
 %
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
 %    Processes for Machine Learning. The MIT Press.
@@ -103,16 +103,25 @@ xt = [0:0.5:565]';
 % ---------------------------
 % --- Construct the model ---
 % 
-% First create squared exponential and piecewise polynomial 2 covariance functions and 
-% Gaussian noise data structures and set priors for their hyperparameters
-pl = prior_t('init', 's2', 3, 'nu', 4);
-pm = prior_sqrtt('init', 's2', 0.3, 'nu', 4);
-gpcf1 = gpcf_sexp('init', 'lengthScale', 3, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
-gpcfn = gpcf_noise('init', 'noiseSigma2', 1, 'noiseSigma2_prior', pm);
+% First create squared exponential and piecewise polynomial 2
+% covariance functions and Gaussian noise data structures and set
+% priors for their hyperparameters (if SuiteSparse is not
+% installed, use gpcf_sexp instead of gpcf_ppcs2)
+pl1 = prior_t('s2', 500, 'nu', 10);
+pl2 = prior_t('s2', 10, 'nu', 10);
+pm = prior_sqrtunif();
+pn = prior_logunif();
+gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 1, 'lengthScale_prior', pl1, 'magnSigma2_prior', pm);
+if exist('ldlchol')
+  gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+else
+  warning('SuiteSparse is not properly installed. Using gpcf_sexp instead of gpcf_ppcs2');
+  gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+end
+gpcfn = gpcf_noise('noiseSigma2', 0.1, 'noiseSigma2_prior', pn);
 
 % Create the GP data structure
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004.^2) 
+gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004.^2) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -154,9 +163,9 @@ plot(xt,Ey_full,'k', 'LineWidth', 2)
 plot(xt,Ey_full-2.*sqrt(Vary_full),'g--')
 plot(xt,Ey_full+2.*sqrt(Vary_full),'g--')
 axis tight
-caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noise{1}.noiseSigma2);
+caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noisef{1}.noiseSigma2);
 title(caption1)
-legend('Data point', 'predicted mean', '2\sigma error')
+legend('Data point', 'predicted mean', '2\sigma error',4)
 
 subplot(2,1,2)
 [AX, H1, H2] = plotyy(xt, Ef_full2, xt, Ef_full1);
@@ -183,7 +192,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
+gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -194,8 +203,8 @@ gp_fic = gp_init('init', 'FIC', 'gaussian', {gpcf1,gpcf2}, {gpcfn}, 'jitterSigma
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_fic = gp_init('set', gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_fic);    % pack the hyperparameters into one vector
 fe=@gp_e;     % create a function handle to negative log posterior
@@ -224,7 +233,7 @@ plot(xt,Ey_fic-2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 plot(gp_fic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(xt,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
 axis tight
-caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noise{1}.noiseSigma2);
+caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noisef{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
@@ -240,8 +249,8 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_init('init', 'PIC', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
-gp_pic = gp_init('set', gp_pic, 'tr_index', trindex);
+gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
+gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -252,8 +261,8 @@ gp_pic = gp_init('set', gp_pic, 'tr_index', trindex);
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_pic = gp_init('set', gp_pic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_pic = gp_init('set', gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_pic);    % pack the hyperparameters into one vector
 fe=@gp_e;         % create a function handle to negative log posterior
@@ -286,7 +295,7 @@ for i = 1:length(edges)
     plot([edges(i) edges(i)],[-30 35], 'k:')
 end
 axis tight
-caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.noise{1}.noiseSigma2);
+caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.noisef{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
@@ -298,7 +307,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
-gp_csfic = gp_init('init', 'CS+FIC', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
+gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -309,8 +318,8 @@ gp_csfic = gp_init('init', 'CS+FIC', 'gaussian', {gpcf1, gpcf2}, {gpcfn}, 'jitte
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_csfic = gp_init('set', gp_csfic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_csfic = gp_init('set', gp_csfic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
+gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
 w=gp_pak(gp_csfic);    % pack the hyperparameters into one vector
 fe=@gp_e;         % create a function handle to negative log posterior
@@ -339,7 +348,7 @@ plot(x,Ef_csfic-2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
 plot(gp_csfic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(x,Ef_csfic+2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
 axis tight
-caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noise{1}.noiseSigma2);
+caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noisef{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
