@@ -301,19 +301,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp.tr_index = trind;
         end
 
-        if isstruct(gp.lik)
-          % resize latent value vector
-          switch gp.latent_method
-            case {'Laplace' 'EP'}
-              % evaluating energy causes update of the latent values
-              gp_e([], gp, xtr, ytr, options_tr);
-            case 'MCMC'
-              % needed?
-              gp.fh_mc=gp_orig.fh_mc;
-              gp.latentValues=zeros(size(ytr));
-          end
-        end
-                        
         % Conduct inference
         switch inf_method
           case 'MAP_scg2'
@@ -420,18 +407,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           fprintf('\n Evaluating the training utility \n')
         end
         
-        if isstruct(gp.lik)
-          % resize latent value vector
-          switch gp.latent_method
-            case {'Laplace' 'EP'}
-              % evaluating energy causes update of the latent values
-              fe([], gp, xtr, ytr, options_tr);
-            case 'MCMC'
-              % needed?
-              gp.fh_mc=gp_orig.fh_mc;
-              gp.latentValues=zeros(size(ytr));
-          end
-        end
         % Conduct inference
         cpu_time = cputime;
         switch inf_method
