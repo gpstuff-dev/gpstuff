@@ -98,17 +98,18 @@ gp=gp_unpak(gp,w);
 % PLOT THE DATA
 
 figure
-m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
-%m=plot(p,Ef(1:size(p)),'k','lineWidth',2);
+%m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
+m=plot(p,Ef(1:size(p)),'k','lineWidth',2);
 hold on
-%plot(p,Ef(1:size(p))+2*sqrt(Varx(1:size(p))),'k--')
+plot(p,Ef(1:size(p))+2*sqrt(Varx(1:size(p))),'k--')
 hold on
-%m95=plot(p,Ef(1:size(p))-2*sqrt(Varx(1:size(p))),'k--');
+m95=plot(p,Ef(1:size(p))-2*sqrt(Varx(1:size(p))),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on
 h=plot(p,sin(p).*cos(p).^2,'b--','lineWidth',2);
-legend([m.mainLine m.patch h hav],'prediction','95%','f(x)','observations');
+%legend([m.mainLine m.patch h hav],'prediction','95%','f(x)','observations');
+legend([m m95 h hav],'prediction','95%','f(x)','observations');
 title('GP without derivative observations')
 xlabel('input x')
 ylabel('output y')
@@ -132,6 +133,10 @@ w=gp_pak(gp);  % pack the hyperparameters into one vector
 fe=@gp_e;     % create a function handle to negative log posterior
 fg=@gp_g;     % create a function handle to gradient of negative log posterior
 
+
+% Check gradients
+gradcheck(w, fe, fg, gp, x, y2);
+
 % set the options for scg2
 opt = scg2_opt;
 opt.tolfun = 1e-3;
@@ -149,12 +154,12 @@ gp=gp_unpak(gp,w);
 
 
 figure
-m=shadedErrorBar(p,Ef2(1:size(p)),2*sqrt(Varx2(1:size(p))),{'k','lineWidth',2});
-%m=plot(p,Ef2(1:size(p)),'k','lineWidth',2);
+%m=shadedErrorBar(p,Ef2(1:size(p)),2*sqrt(Varx2(1:size(p))),{'k','lineWidth',2});
+m=plot(p,Ef2(1:size(p)),'k','lineWidth',2);
 hold on
-%plot(p,Ef2(1:size(p))+2*sqrt(Varx2(1:size(p))),'k--')
+plot(p,Ef2(1:size(p))+2*sqrt(Varx2(1:size(p))),'k--')
 hold on
-%m95=plot(p,Ef(1:size(p))-2*sqrt(Varx2(1:size(p))),'k--');
+m95=plot(p,Ef(1:size(p))-2*sqrt(Varx2(1:size(p))),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on
@@ -181,6 +186,6 @@ for i=1:2:length(ddx)
 hold on
 dhav=plot(ddx(i:i+1), ddy(i:i+1),'r','lineWidth',2);
 end
-legend([m.mainLine m.patch h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
-
+%legend([m.mainLine m.patch h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
+legend([m m95 h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
 

@@ -175,7 +175,7 @@ switch gp.type
                 
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
-                    if ~isfield(gp,'mean')
+                    if ~isfield(gp,'meanf')
                         if size(DCff{i2}) > 1
                             yKy = b'*(DCff{i2}*b);
                             trK = sum(sum(invC.*DCff{i2})); % help arguments
