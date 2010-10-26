@@ -1,16 +1,16 @@
 %DEMO_DERIVATIVEOBS    Regression problem demonstration with derivative 
 %                      observations
 %
-%    Description
+%  Description
 %    The regression problem consist of a data with one input variable,
 %    two output variables with Gaussian noise; observations and 
 %    derivative observations. The constructed model is full GP with
 %    Gaussian likelihood.
 %
-%    The covariance matrix K includes now also covariances between 
-%    derivative observations and between derivative and latent observations.
-%    With derivative observations, the K matrix is a block matrix with
-%    following blocks:
+%    The covariance matrix K includes now also covariances between
+%    derivative observations and between derivative and latent
+%    observations. With derivative observations, the K matrix is a
+%    block matrix with following blocks:
 %
 %        K = [K_ll K_Dl'; K_Dl K_DD]
 %
@@ -20,7 +20,7 @@
 %       K_DD = d^2 k(x_i, x_j | th) / dx_i dx_j
 %
 %
-%   To include derivative observations in the inference:
+%    To include derivative observations in the inference:
 %
 %       - provide partial derivative observations in the observation vector after
 %         output observations y=[y;dy_1;...;dy_n]; 
@@ -32,13 +32,10 @@
 %     1) data analysis without derivative observations
 %     2) data analysis with derivative observations
 %
-%   See also  DEMO_REGRESSION1
+%  See also  DEMO_REGRESSION1
 %
-%    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global
-%    phenomena with sparse Gaussian processes. Proceedings of the 24th
-%    Conference on Uncertainty in Artificial Intelligence,
 
-% Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -49,11 +46,11 @@
  x=-2:4/tp:2;
  y=sin(x).*cos(x).^2;                   % The underlying process
  dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
- koh=0.06;                              % noise standard deviation
+ ns=0.06;                              % noise standard deviation
  
  % Add noise
- y=y + koh*randn(size(y));
- dy=dy + koh*randn(size(dy));           % derivative obs are also noisy
+ y=y + ns*randn(size(y));
+ dy=dy + ns*randn(size(dy));           % derivative obs are also noisy
  x=x';           
  dy=dy';
  
@@ -69,13 +66,13 @@
 % PART 1 data analysis with full GP model without derivative obs
 %========================================================
  
-gpcf1 = gpcf_sexp('init', 'lengthScale', 0.5, 'magnSigma2', .5);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', koh^2);
+gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
+gpcf2 = gpcf_noise('noiseSigma2', ns^2);
 
-pl = prior_logunif('init');               % a prior structure
-pm = prior_logunif('init');               % a prior structure
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
+pl = prior_logunif();               % a prior structure
+pm = prior_logunif();               % a prior structure
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pm);
 
 gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 0.00001);
 
@@ -99,6 +96,7 @@ gp=gp_unpak(gp,w);
 
 figure
 %m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
+subplot(2,1,1)
 m=plot(p,Ef(1:size(p)),'k','lineWidth',2);
 hold on
 plot(p,Ef(1:size(p))+2*sqrt(Varx(1:size(p))),'k--')
@@ -118,13 +116,13 @@ ylabel('output y')
 % PART 2 data analysis with full GP model with derivative obs
 %========================================================
 
-gpcf1 = gpcf_sexp('init', 'lengthScale', 0.5, 'magnSigma2', .5);
-gpcf2 = gpcf_noise('init', 'noiseSigma2', koh^2);
+gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
+gpcf2 = gpcf_noise('noiseSigma2', ns^2);
 
-pl = prior_logunif('init');               % a prior structure
-pm = prior_logunif('init');               % a prior structure
-gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise('set', gpcf2, 'noiseSigma2_prior', pm);
+pl = prior_logunif();               % a prior structure
+pm = prior_logunif();               % a prior structure
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pm);
 
 % Field grad_obs added to gp_init so that the derivatives are in use
 gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 0.00001,'grad_obs',1);
@@ -152,9 +150,8 @@ gp=gp_unpak(gp,w);
 % PLOT THE DATA
 % plot lines indicating the derivative
 
-
-figure
 %m=shadedErrorBar(p,Ef2(1:size(p)),2*sqrt(Varx2(1:size(p))),{'k','lineWidth',2});
+subplot(2,1,2)
 m=plot(p,Ef2(1:size(p)),'k','lineWidth',2);
 hold on
 plot(p,Ef2(1:size(p))+2*sqrt(Varx2(1:size(p))),'k--')
