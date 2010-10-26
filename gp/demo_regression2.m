@@ -115,7 +115,9 @@ gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 1, 'lengthScale_prior', pl1,
 if exist('ldlchol')
   gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
 else
-  warning('SuiteSparse is not properly installed. Using gpcf_sexp instead of gpcf_ppcs2');
+  warning('GPstuff:SuiteSparseMissing',...
+  ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
+   'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
   gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
 end
 gpcfn = gpcf_noise('noiseSigma2', 0.1, 'noiseSigma2_prior', pn);
@@ -155,7 +157,7 @@ gp=gp_unpak(gp,w);
 [Ef_full2, Varf_full2] = gp_pred(gp, x, y, xt, 'predcf', 2);
 
 % Plot the prediction and data
-figure(1)
+figure
 subplot(2,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
@@ -224,7 +226,7 @@ gp_fic = gp_unpak(gp_fic,w);
 [Ef_fic, Varf_fic, Ey_fic, Vary_fic] = gp_pred(gp_fic, x, y, xt);
 
 % Plot the solution of FIC
-figure(2)
+figure
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
@@ -283,7 +285,7 @@ gp_pic = gp_unpak(gp_pic,w);
 
 
 % Plot the solution of PIC
-figure(3)
+figure
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
@@ -307,6 +309,11 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 % use FIC approximation
 
 % Create the CS+FIC GP data structure
+if ~exist('ldlchol')
+  error('GPstuff:SuiteSparseMissing',...
+        ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
+         'Can not use CS+FIC without SuiteSparse']);
+end
 gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
 
 % -----------------------------
@@ -339,7 +346,7 @@ gp_csfic = gp_unpak(gp_csfic,w);
 [Ef_csfic, Varf_csfic, Ey_csfic, Vary_csfic] = gp_pred(gp_csfic, x, y, x);
 
 % Plot the solution of FIC
-figure(4)
+figure
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
@@ -357,7 +364,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 [Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
 [Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
 
-figure(5)
+figure
 set(gcf,'units','centimeters');
 set(gcf,'DefaultAxesPosition',[0.08  0.13   0.84   0.85]);
 set(gcf,'DefaultAxesFontSize',16)   %6 8

@@ -1,8 +1,8 @@
-%DEMO_REGRESSION_ADDITIVE   Regression demonstration with additive Gaussian
-%                           process using linear, squared exponential and
-%                           neural network covariance fucntions 
+%DEMO_REGRESSION_ADDITIVE  Regression demonstration with additive Gaussian
+%                          process using linear, squared exponential and
+%                          neural network covariance fucntions 
 %
-%    Description
+%  Description
 %    Gaussian process solutions in 2D regression problem using constant, 
 %    linear, squared exponential (sexp) and neural network covariance
 %    functions, and with various additive combinations of these four
@@ -31,13 +31,13 @@
 %
 %    For more detailed discussion of  covariance functions, see e.g.
 %
-%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian Processes for 
-%    Machine Learning. The MIT Press.
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
 %
 %
-%   See also  DEMO_REGRESSION1
+%  See also  DEMO_REGRESSION1
 %
-% Copyright (c) 2010 Jaakko Riihim√§ki
+% Copyright (c) 2010 Jaakko Riihim‰ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -57,15 +57,14 @@ y=y-mean(y);
 p=[p1(:) p2(:)];
 np=size(p1,1);
 
-
 % Assume a Student-t distribution for the GP hyperparameters
-pt = prior_t('init', 'nu', 4, 's2', 10);	% a prior structure
+pt = prior_t('nu', 4, 's2', 10);	% a prior structure
 
 % Create a Gaussian noise model
-gpcf_n = gpcf_noise('init', 'noiseSigma2', 0.2^2, 'noiseSigma2', 0.2^2);
+gpcf_n = gpcf_noise('noiseSigma2', 0.2^2, 'noiseSigma2', 0.2^2);
 
 % Set a small amount of jitter 
-jitter=1e-3;
+jitter=1e-4;
 
 fe=@gp_e;     % create a function handle to negative log posterior
 fg=@gp_g;     % create a function handle to gradient of negative log posterior
@@ -76,19 +75,15 @@ opt.tolfun = 1e-3;
 opt.tolx = 1e-3;
 opt.display = 1;
 
-
-
 % CONSTANT + LINEAR COVARIANCE FUNCTION
 
 % constant covariance function
-gpcf_c = gpcf_constant('init', 'constSigma2', 1);
-gpcf_c = gpcf_constant('set', gpcf_c, 'constSigma2_prior', pt);
+gpcf_c = gpcf_constant('constSigma2', 1, 'constSigma2_prior', pt);
 
 % linear covariance function
-gpcf_l = gpcf_linear('init');
-gpcf_l = gpcf_linear('set', gpcf_l, 'coeffSigma2_prior', pt);
+gpcf_l = gpcf_linear('coeffSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf_c gpcf_l}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_set('cf', {gpcf_c gpcf_l}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 
@@ -113,21 +108,17 @@ xlabel('x_1'), ylabel('x_2')
 title('The predicted underlying function (constant + linear)');
 
 
-
 % CONSTANT + SQUARED EXPONENTIAL COVARIANCE FUNCTION (W.R.T. THE FIRST
 % INPUT DIMENSION) + LINEAR (W.R.T. THE SECOND INPUT DIMENSION) 
 
+% Metric function for the first input variable
+metric1 = metric_euclidean('components', {[1]}, 'lengthScale',[0.5], 'lengthScale_prior', pt);
 % Covariance function for the first input variable
-gpcf_s1 = gpcf_sexp('init', 'magnSigma2', 0.15, 'magnSigma2_prior', pt);
-% create metric structure:
-metric1 = metric_euclidean('init', {[1]},'lengthScales',[0.5], 'lengthScales_prior', pt);
-% set the metric to the covariance function structure:
-gpcf_s1 = gpcf_sexp('set', gpcf_s1, 'metric', metric1);
+gpcf_s1 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric1);
 
-gpcf_l2 = gpcf_linear('init', 'selectedVariables', [2]);
-gpcf_l2 = gpcf_linear('set', gpcf_l2, 'coeffSigma2_prior', pt);
+gpcf_l2 = gpcf_linear('selectedVariables', [2], 'coeffSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf_c gpcf_s1 gpcf_l2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_set('cf', {gpcf_c gpcf_s1 gpcf_l2}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 
@@ -149,17 +140,14 @@ xlabel('x_1'), ylabel('x_2')
 title('The predicted underlying function (sexp for 1. input + linear for 2. input )');
 
 
-
 % ADDITIVE SQUARED EXPONENTIAL COVARIANCE FUNCTION
 
+% Metric function for the second input variable
+metric2 = metric_euclidean('components', {[2]},'lengthScale',[0.5], 'lengthScale_prior', pt);
 % Covariance function for the second input variable
-gpcf_s2 = gpcf_sexp('init', 'magnSigma2', 0.15, 'magnSigma2_prior', pt);
-% create metric structure:
-metric2 = metric_euclidean('init', {[2]},'lengthScales',[0.5], 'lengthScales_prior', pt);
-% set the metric to the covariance function structure:
-gpcf_s2 = gpcf_sexp('set', gpcf_s2, 'metric', metric2);
+gpcf_s2 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric2);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf_s1,gpcf_s2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_set('cf', {gpcf_s1,gpcf_s2}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
 
 w=gp_pak(gp);  % pack the hyperparameters into one vector
 
@@ -184,10 +172,10 @@ title('The predicted underlying function (additive sexp)');
 
 % SQUARED EXPONENTIAL COVARIANCE FUNCTION
 
-gpcf_s = gpcf_sexp('init', 'lengthScale', ones(1,nin), 'magnSigma2', 0.2^2);
-gpcf_s = gpcf_sexp('set', gpcf_s, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
+gpcf_s = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 0.2^2, ...
+                   'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf_s}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_set('cf', {gpcf_s}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -213,13 +201,13 @@ title('The predicted underlying function (sexp)');
 
 % ADDITIVE NEURAL NETWORK COVARIANCE FUNCTION
 
-gpcf_nn1 = gpcf_neuralnetwork('init', 'weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [1]);
-gpcf_nn1 = gpcf_neuralnetwork('set', gpcf_nn1, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
+gpcf_nn1 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [1], ...
+                              'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 
-gpcf_nn2 = gpcf_neuralnetwork('init', 'weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [2]);
-gpcf_nn2 = gpcf_neuralnetwork('set', gpcf_nn2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
+gpcf_nn2 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [2], ...
+                              'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf_nn1,gpcf_nn2}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_set('cf', {gpcf_nn1,gpcf_nn2}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
 
 w=gp_pak(gp);   % pack the hyperparameters into one vector
 
@@ -244,10 +232,10 @@ title('The predicted underlying function (additive neural network)');
 
 % NEURAL NETWORK COVARIANCE FUNCTION
 
-gpcf_nn = gpcf_neuralnetwork('init', 'weightSigma2', ones(1,nin), 'biasSigma2', 1);
-gpcf_nn = gpcf_neuralnetwork('set', gpcf_nn, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
+gpcf_nn = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1, ...
+                             'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 
-gp = gp_init('init', 'FULL', 'gaussian', {gpcf_nn}, {gpcf_n}, 'jitterSigma2', jitter, 'infer_params', 'covariance');
+gp = gp_set('cf', {gpcf_nn}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
 
 w=gp_pak(gp);   % pack the hyperparameters into one vector
 

@@ -1,5 +1,5 @@
-% DEMO_LGCP    Demonstration for a log Gaussian Cox process
-%              with inference via EP or Laplace approximation
+%DEMO_LGCP  Demonstration for a log Gaussian Cox process
+%           with inference via EP or Laplace approximation
 %
 %  Description 
 %    Log Gaussian Cox process (LGCP) is a model for non-homogeneous
@@ -39,7 +39,7 @@
 % =====================================
 % 1D-example
 % =====================================
-figure(1)
+figure
 % Coal disaster data
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/coal.txt');
@@ -55,7 +55,7 @@ ylabel('Intensity')
 % =====================================
 % 2D-example
 % =====================================
-figure(2)
+figure
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/redwoodfull.txt');
 x=load(L);
