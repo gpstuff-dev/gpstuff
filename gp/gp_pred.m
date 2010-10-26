@@ -637,12 +637,12 @@ switch gp.type
         B=Luu\(K_fu');
         B2=Luu\(K_nu');
         
-        Varf = sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        Varfr = sum(B2'.*(B*bsxfun(@ldivide,Lav,B')*B2)',2) - sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
         switch gp.type
           case {'VAR' 'DTC'}
-            Varf = Knn_v - Varf;
+            Varf = Knn_v - Varfr;
           case  'SOR'
-            Varf = sum(B2.^2,1)' - Varf;
+            Varf = sum(B2.^2,1)' - Varfr;
         end
 
     end
