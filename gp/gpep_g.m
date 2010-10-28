@@ -159,6 +159,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                     
                     noisef = gp.noisef{i};
                     [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
+                    if isfield(gp,'meanf')
+                        [dMNM trA]=mean_gf(gp,x,C,invKs,DCff,Stildesqroot,nutilde,'EP');
+                    end
                     
                     if ~isfield(gp,'meanf')
                         for i2 = 1:length(DCff)
@@ -170,7 +173,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                             gprior(i1) = gprior_cf(i2);
                         end
                     else
-                        error('EP not working with mean func and noise yet')
+                        for i2 = 1:length(DCff)
+                            i1=i1+1;
+                            trK=DCff{i2}.*trace(invC);
+                            gdata(i1)=0.5*(-1*dMNM{i2} + trA{i2} + trK);
+                        end
+                    gprior(i1) = gprior_cf(i2);
                     end
                     
                     % Set the gradients of hyper-hyperparameter
