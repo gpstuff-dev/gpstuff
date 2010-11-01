@@ -1,42 +1,45 @@
-%DEMO_BINOMIAL2     Demonstration for modeling age-period-cohort data
+%DEMO_BINOMIAL_APC  Demonstration for modeling age-period-cohort data
 %                   by a binomial model combined with GP prior.
 %
-%      Description
-%      Demonstration of estimating the unknown the population proportion
-%      in binomial model from a sequence of success/failure trials. Data
-%      consists of observations Y describing the number of successes in
-%      a sequence of N iid (Bernoulli) trials, and of explanatory
-%      variables X. The binomial model is 
+%  Description
+%    Demonstration of estimating the unknown the population
+%    proportion in binomial model from a sequence of
+%    success/failure trials. Data consists of observations Y
+%    describing the number of successes in a sequence of N iid
+%    (Bernoulli) trials, and of explanatory variables X. The
+%    binomial model is
 %
 %      Y_i ~ Binomial(Y_i | N_i, p_i),
 %
-%      where the parameter p_i represents the proportion of successes.
-%      The total number of trials N_i is fixed in the model. A
-%      Gaussian process prior is assumed for latent variables f
+%    where the parameter p_i represents the proportion of
+%    successes. The total number of trials N_i is fixed in the
+%    model. A Gaussian process prior is assumed for latent
+%    variables f
 %
 %      f = N(0, K),
 %
-%      which are linked to the p_i parameter using the logistic
-%      transformation:
+%    which are linked to the p_i parameter using the logistic
+%    transformation:
 %       
 %      p_i = logit^-1(f_i) = 1/(1+exp(-f_i)).
 %
-%      The elements of the covariance matrix K are given as 
-%      K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance 
-%      function and th its parameters, hyperparameters.  We place a
-%      hyperprior for hyperparameters, p(th). The inference is done with
-%      Laplace approximation.
+%    The elements of the covariance matrix K are given as K_ij =
+%    k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance
+%    function and th its parameters, hyperparameters. We place a
+%    hyperprior for hyperparameters, p(th). The inference is done
+%    with Laplace approximation.
 %   
-%      In this demonstration X is three dimensional, containing inputs for
-%      age group, time period and cohort group (birth year) for each
-%      data point. Y represents the number of disease cases among N
-%      susceptibles. The data is simulated such that each input have
-%      additionally there is a interaction effect between age group and
-%      time period.
+%    In this demonstration X is three dimensional, containing
+%    inputs for age group, time period and cohort group (birth
+%    year) for each data point. Y represents the number of disease
+%    cases among N susceptibles. The data is simulated such that
+%    each input have additionally there is a interaction effect
+%    between age group and time period.
 %
-%      NOTE! In the prediction, the total number of trials Nt at the
-%      test points Xt must be set additionally in the likelihood structure
-%      when E(Yt), Var(Yt) or predictive densities p(Yt) are computed.
+%    NOTE! In the prediction, the total number of trials Nt at the
+%    test points Xt must be set additionally in the likelihood
+%    structure when E(Yt), Var(Yt) or predictive densities p(Yt)
+%    are computed.
 
 % Copyright (c) 2010 Jaakko Riihimäki, Jouni Hartikainen
 
@@ -53,8 +56,8 @@
 % by a binomial model combined with GP prior.
 
 % First load data
-S = which('demo_binomial2');
-L = strrep(S,'demo_binomial2.m','demos/binodata.txt');
+S = which('demo_binomial_apc');
+L = strrep(S,'demo_binomial_apc.m','demos/binodata.txt');
 binodata=load(L);
 
 f = binodata(:,1);
@@ -121,21 +124,16 @@ gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
 lik = lik_binomial;
     
 % Initialize GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2',1e-6);
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2',1e-4);
     
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for scaled conjugate optimization
-opt_scg = scg2_opt;
-opt_scg.tolfun = 1e-2;
-opt_scg.tolx = 1e-1;
-opt_scg.display = 1;
+opt=optimset('TolFun',5e-2,'TolX',1e-2,'Display','iter');
 
 % Optimize with scaled conjugate gradient method
-w=gp_pak(gp);
-[wopt, opt, flog]=scg2(@gp_e, w, opt_scg, @gp_g, gp, xx, yy, 'z',nn);
-gp=gp_unpak(gp, wopt);
+gp=gp_optim(gp,xx,yy,'z',nn,'optimf',@fminscg,'opt',opt);
 
 % Making predictions
 

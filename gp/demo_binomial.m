@@ -1,36 +1,39 @@
-%DEMO_BINOMIAL    Demonstration of Gaussian process model with binomial
-%                 likelihood
+%DEMO_BINOMIAL1  Demonstration of Gaussian process model with binomial
+%                likelihood
 %
-%      Description
-%      Demonstration of estimating the unknown population proportion
-%      in binomial model from a sequence of success/failure
-%      trials. Data consists of observations Y describing the number
-%      of successes in a sequence of N iid trials, and of explanatory
-%      variables X.  The binomial model is
+%  Description
+%    Demonstration of estimating the unknown population proportion
+%    in binomial model from a sequence of success/failure trials. 
+%    Data consists of observations Y describing the number of
+%    successes in a sequence of N iid trials, and of explanatory
+%    variables X. The binomial model is
 %
 %      Y_i ~ Binomial(Y_i | N_i, p_i),
 %
-%      where the parameter p_i represents the proportion of successes.
-%      The total number of trials N_i is fixed in the model. A
-%      Gaussian process prior is assumed for latent variables f
+%    where the parameter p_i represents the proportion of
+%    successes. The total number of trials N_i is fixed in the
+%    model. A Gaussian process prior is assumed for latent
+%    variables f
 %
 %      f = N(0, K),
 %
-%      which are linked to the p_i parameter using the logistic
-%      transformation:
+%    which are linked to the p_i parameter using the logistic
+%    transformation:
 %       
 %      p_i = logit^-1(f_i) = 1/(1+exp(-f_i)).
 %
-%      The elements of the covariance matrix K are given as K_ij =
-%      k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance
-%      function and th its hyperparameters.  We place a hyperprior for
-%      hyperparameters, p(th). The inference is done with Laplace
-%      approximation.
+%    The elements of the covariance matrix K are given as K_ij =
+%    k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance
+%    function and th its hyperparameters. We place a hyperprior for
+%    hyperparameters, p(th). The inference is done with Laplace
+%    approximation.
 %
-%      NOTE! In the prediction, the total number of trials Nt at the
-%      test points Xt must be set additionally in the likelihood
-%      structure when E(Yt), Var(Yt) or predictive densities p(Yt) are
-%      computed.
+%    NOTE! In the prediction, the total number of trials Nt at the
+%    test points Xt must be set additionally in the likelihood
+%    structure when E(Yt), Var(Yt) or predictive densities p(Yt)
+%    are computed.
+%
+%  See also DEMO_BINOMIAL2
 
 % Copyright (c) 2010 Jaakko Riihimäki
 
@@ -80,21 +83,16 @@ gp = gp_set('lik', lik_binomial, 'cf', {gpcf1}, 'jitterSigma2', 1e-8, 'infer_par
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% set the options for scaled conjugate optimization
-opt_scg = scg2_opt;
-opt_scg.tolfun = 1e-3;
-opt_scg.tolx = 1e-3;
-opt_scg.display = 1;
-
-% do scaled conjugate gradient optimization 
-w=gp_pak(gp);
-[wopt, opt, flog]=scg2(@gp_e, w, opt_scg, @gp_g, gp, x, y, 'z', N);
-gp=gp_unpak(gp, wopt);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'z',N,'optimf',@fminscg,'opt',opt);
 
 % Make predictions at the grid points
 
 % Set the total number of trials Nt at the grid points xgrid
-[Eft_la, Varft_la, Eyt_la, Varyt_la] = gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
+[Eft_la, Varft_la, Eyt_la, Varyt_la] = ...
+    gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
 
 % Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on

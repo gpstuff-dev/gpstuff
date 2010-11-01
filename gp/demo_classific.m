@@ -85,15 +85,10 @@ gp = gp_set('cf', gpcf1, 'lik', lik_probit, 'jitterSigma2', 1e-6);
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Optimize hyperparameters with scaled conjugate gradient method
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-opt.maxiter = 20;
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',20,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Make predictions
 [Ef_la, Varf_la, Ey_la, Vary_la, Py_la] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
@@ -129,14 +124,10 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Optimize hyperparameters with scaled conjugate gradient method
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Make predictions
 [Ef_ep, Varf_ep, Ey_ep, Vary_ep, Py_ep] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );

@@ -1,23 +1,23 @@
-%DEMO_MODELASSESMENT1   Demonstration for model assessment with DIC, number 
-%                       of effective parameters and ten-fold cross validation
+%DEMO_MODELASSESMENT1  Demonstration for model assessment with DIC, number 
+%                      of effective parameters and ten-fold cross validation
 %                       
-%
-%    Description
-%    We will consider the regression problem in demo_regression1. The
-%    analysis is conducted with full Gaussian process, and FIC and PIC
-%    sparse approximations. The performance of these models are
-%    compared by evaluating the DIC statistics, number of efficient
-%    parameters and ten-fold cross validation. The inference will be
-%    conducted using maximum a posterior (MAP) estimate for the
-%    hyperparameters, via full Markov chain Monte Carlo (MCMC) and
-%    with an integration approximation (IA) for the hyperparameters.
+%  Description
+%    We will consider the regression problem in demo_regression1. 
+%    The analysis is conducted with full Gaussian process, and FIC
+%    and PIC sparse approximations. The performance of these models
+%    are compared by evaluating the DIC statistics, number of
+%    efficient parameters and ten-fold cross validation. The
+%    inference will be conducted using maximum a posterior (MAP)
+%    estimate for the hyperparameters, via full Markov chain Monte
+%    Carlo (MCMC) and with an integration approximation (IA) for
+%    the hyperparameters.
 %
 %    This demo is organised in three parts:
 %     1) data analysis with full GP model
 %     2) data analysis with FIC approximation
 %     3) data analysis with PIC approximation
 %
-%   See also  DEMO_REGRESSION1, DEMO_SPARSEREGRESSION
+%  See also DEMO_REGRESSION1, DEMO_SPARSEREGRESSION
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 
@@ -42,7 +42,7 @@ y = data(:,3);
 % --- Construct the model ---
 gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.0001);
+gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-5);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -53,19 +53,12 @@ gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.0001);
 % 
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
+%     (see gp_optim for more details)
 
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-% pack the hyperparameters into one vector
-w=gp_pak(gp);  
-% Optimize with scaled conjugate gradient method
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-% Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -110,16 +103,15 @@ models{2} = 'full_MCMC';
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
-cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt);
+cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'rstream', 1);
 mlpd_cv(2) = cvres.mlpd_cv;
 mrmse_cv(2) = cvres.mrmse_cv;
 
-
 % --- Integration approximation approach ---
-clear('opt')
-opt.opt_scg = scg2_opt;
+clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
+opt.optimf=@fminscg;
 
 gp_array = gp_ia(gp, x, y, opt);
 
@@ -158,19 +150,10 @@ gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2',
 % optimize only hyperparameters
 gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           
 
-% set the options
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-opt.maxiter = 20;
-
-% pack the hyperparameters into one vector
-w = gp_pak(gp_fic);
-% Optimize with scaled conjugate gradient method
-w=scg2(@gp_e, w, opt, @gp_g, gp_fic, x, y);
-% Set the optimized hyperparameter values back to the gp structure
-gp_fic = gp_unpak(gp_fic,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
+% Optimize with the scaled conjugate gradient method
+gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -219,10 +202,10 @@ mrmse_cv(5) = cvres.mrmse_cv;
 
 
 % --- Integration approximation approach ---
-clear('opt')
-opt.opt_scg = scg2_opt;
+clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
+opt.optimf=@fminscg;
 
 gpfic_array = gp_ia(gp_fic, x, y, opt);
 
@@ -253,12 +236,12 @@ b1 = [-1.7 -0.8 0.1 1 1.9];
 mask = zeros(size(x,1),size(x,1));
 trindex={}; 
 for i1=1:4
-    for i2=1:4
-        ind = 1:size(x,1);
-        ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
-        ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));
-        trindex{4*(i1-1)+i2} = ind';
-    end
+  for i2=1:4
+    ind = 1:size(x,1);
+    ind = ind(: , b1(i1)<=x(ind',1) & x(ind',1) < b1(i1+1));
+    ind = ind(: , b1(i2)<=x(ind',2) & x(ind',2) < b1(i2+1));
+    trindex{4*(i1-1)+i2} = ind';
+  end
 end
 
 % Create the PIC GP data structure and set the inducing inputs and block indexes
@@ -276,19 +259,10 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex)
 % optimize only hyperparameters
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');
 
-% set the options
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-opt.maxiter = 20;
-
-% Pack the hyperparameters into one vector
-w = gp_pak(gp_pic);          
-% Optimize with scaled conjugate gradient method
-w=scg2(@gp_e, w, opt, @gp_g, gp_pic, x, y);
-% Set the optimized hyperparameter values back to the gp structure
-gp_pic = gp_unpak(gp_pic,w);     
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
+% Optimize with the scaled conjugate gradient method
+gp_pic=gp_optim(gp_pic,x,y,'optimf',@fminscg,'opt',opt);
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);
@@ -301,7 +275,7 @@ mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 
-clear('opt')
+clear opt
 opt.nsamples= 100;
 opt.repeat=5;
 opt.hmc_opt.steps=3;
@@ -335,12 +309,12 @@ mlpd_cv(8) = cvres.mlpd_cv;
 mrmse_cv(8) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
-clear('opt')
-opt.opt_scg = scg2_opt;
+clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
+opt.optimf=@fminscg;
 
-gppic_array = gp_ia(gp_pic, x, y, [], opt);
+gppic_array = gp_ia(gp_pic, x, y, opt);
 
 models{9} = 'PIC_IA'; 
 [DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'hyper');

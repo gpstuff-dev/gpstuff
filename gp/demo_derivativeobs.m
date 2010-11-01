@@ -1,5 +1,5 @@
-%DEMO_DERIVATIVEOBS    Regression problem demonstration with derivative 
-%                      observations
+%DEMO_DERIVATIVEOBS  Regression problem demonstration with derivative 
+%                    observations
 %
 %  Description
 %    The regression problem consist of a data with one input variable,
@@ -19,14 +19,14 @@
 %       K_Dl = d k(x_i, x_j | th) / dx_i
 %       K_DD = d^2 k(x_i, x_j | th) / dx_i dx_j
 %
-%
 %    To include derivative observations in the inference:
 %
-%       - provide partial derivative observations in the observation vector after
-%         output observations y=[y;dy_1;...;dy_n]; 
-%            for ex. if size(x)=[10 2] -> size(y)=[30 1] 
+%       - provide partial derivative observations in the
+%       observation vector after output observations
+%       y=[y;dy_1;...;dy_n]; for ex. if size(x)=[10 2] ->
+%       size(y)=[30 1]
 %
-%       - after gp_init(...), type: gp.grad_obs=1;
+%       - gp_set(gp, 'derivobs', true)
 %
 %   The demo is organised in two parts:
 %     1) data analysis without derivative observations
@@ -43,24 +43,21 @@
 
  % Create the data
  tp=9;                                  %number of training points -1
- x=-2:4/tp:2;
+ x=[-2:4/tp:2]';
  y=sin(x).*cos(x).^2;                   % The underlying process
  dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
  ns=0.06;                              % noise standard deviation
  
  % Add noise
  y=y + ns*randn(size(y));
- dy=dy + ns*randn(size(dy));           % derivative obs are also noisy
- x=x';           
- dy=dy';
- 
- y=y';          % observation vector without derivative observations
- y2=[y;dy];     % observation vector with derivative observations
+ % derivative observations are also noisy
+ dy=dy + ns*randn(size(dy));           
+ % observation vector with derivative observations
+ y2=[y;dy];
 
  % test points
- p=-3:0.05:3;
- p=p';
- 
+ xt=[-3:0.05:3]';
+ nt=length(xt);
 
 %========================================================
 % PART 1 data analysis with full GP model without derivative obs
@@ -74,38 +71,29 @@ pm = prior_logunif();               % a prior structure
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pm);
 
-gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 0.00001);
+gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 1e-6);
 
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-% do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y);
-% Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w);
-% do the prediction
-[Ef, Varx] = gp_pred(gp, x, y, p);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+% Do the prediction
+[Eft, Varft] = gp_pred(gp, x, y, xt);
 
 % PLOT THE DATA
 
 figure
-%m=shadedErrorBar(p,Ef(1:size(p)),2*sqrt(Varx(1:size(p))),{'k','lineWidth',2});
+%m=shadedErrorBar(p,Eft(1:size(xt)),2*sqrt(Varft(1:size(xt))),{'k','lineWidth',2});
 subplot(2,1,1)
-m=plot(p,Ef(1:size(p)),'k','lineWidth',2);
+m=plot(xt,Eft,'k','lineWidth',2);
 hold on
-plot(p,Ef(1:size(p))+2*sqrt(Varx(1:size(p))),'k--')
+plot(xt,Eft+2*sqrt(Varft),'k--')
 hold on
-m95=plot(p,Ef(1:size(p))-2*sqrt(Varx(1:size(p))),'k--');
+m95=plot(xt,Eft-2*sqrt(Varft),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on
-h=plot(p,sin(p).*cos(p).^2,'b--','lineWidth',2);
+h=plot(xt,sin(xt).*cos(xt).^2,'b--','lineWidth',2);
 %legend([m.mainLine m.patch h hav],'prediction','95%','f(x)','observations');
 legend([m m95 h hav],'prediction','95%','f(x)','observations');
 title('GP without derivative observations')
@@ -116,51 +104,32 @@ ylabel('output y')
 % PART 2 data analysis with full GP model with derivative obs
 %========================================================
 
-gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
-gpcf2 = gpcf_noise('noiseSigma2', ns^2);
+% Option derivobs set so that the derivatives are in use
+gp = gp_set(gp, 'derivobs', 'on');
 
-pl = prior_logunif();               % a prior structure
-pm = prior_logunif();               % a prior structure
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pm);
-
-% Field grad_obs added to gp_init so that the derivatives are in use
-gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 0.00001,'grad_obs',1);
-
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
-
-% Check gradients
-gradcheck(w, fe, fg, gp, x, y2);
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-% do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y2);
-% Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w);
-% do the prediction
-[Ef2, Varx2] = gp_pred(gp, x, y2, p);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','DerivativeCheck','on');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y2,'optimf',@fminscg,'opt',opt);
+% Do the prediction
+[Eft2, Varft2] = gp_pred(gp, x, y2, xt);
+% Use predictions for function values only
+Eft2=Eft2(1:nt);Varft2=Varft2(1:nt);
 
 % PLOT THE DATA
 % plot lines indicating the derivative
 
-%m=shadedErrorBar(p,Ef2(1:size(p)),2*sqrt(Varx2(1:size(p))),{'k','lineWidth',2});
+%m=shadedErrorBar(xt,Eft2(1:size(xt)),2*sqrt(Varft2(1:size(xt))),{'k','lineWidth',2});
 subplot(2,1,2)
-m=plot(p,Ef2(1:size(p)),'k','lineWidth',2);
+m=plot(xt,Eft2,'k','lineWidth',2);
 hold on
-plot(p,Ef2(1:size(p))+2*sqrt(Varx2(1:size(p))),'k--')
+plot(xt,Eft2+2*sqrt(Varft2),'k--')
 hold on
-m95=plot(p,Ef(1:size(p))-2*sqrt(Varx2(1:size(p))),'k--');
+m95=plot(xt,Eft-2*sqrt(Varft2),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on
-h=plot(p,sin(p).*cos(p).^2,'b--','lineWidth',2);
+h=plot(xt,sin(xt).*cos(xt).^2,'b--','lineWidth',2);
 
 xlabel('input x')
 ylabel('output y')

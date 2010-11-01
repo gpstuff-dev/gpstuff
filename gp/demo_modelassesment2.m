@@ -46,7 +46,7 @@ pl = prior_logunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the GP data structure
-gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 0.01.^2);
+gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
 
@@ -54,16 +54,11 @@ gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 0.01.^2);
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 n=length(y);
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-opt.maxiter = 20;
 
-% Optimize hyperparameters with scaled conjugate gradient method
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -81,15 +76,10 @@ mrmse_cv(1) = cvres.mrmse_cv;
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
 
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% Optimize hyperparameters with scaled conjugate gradient method
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -145,24 +135,16 @@ mrmse_cv(3) = cvres.mrmse_cv;
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Find first the mode
-w = gp_pak(gp);
-n=length(y);
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % now perform the integration
-clear('opt')
-opt.opt_scg = scg2_opt;
+clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
-
-gp_array = gp_ia(gp, x, y, [], opt);
+gp_array = gp_ia(gp, x, y, opt);
 
 models{4} = 'pr_IA'; 
 [DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'hyper');
@@ -196,7 +178,7 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 lik = ('init');
 
 % Create the GP data structure
-gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 0.01.^2);
+gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
@@ -204,26 +186,18 @@ gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 0.01.^2);
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-opt.maxiter = 20;
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',20);
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
-% do scaled conjugate gradient optimization 
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
-
-% Evaluate the effective number of parameters and DIC with focus on latent variables.
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{5} = 'lo_Laplace';
 p_eff_latent(5) = gp_peff(gp, x, y);
 [DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'latent');
 
-% Evaluate the 10-fold cross validation results. NOTE! This saves
-% the results in a folder cv_resultsX (where X is a number) in your
-% current working directory. We save the results only for this case
-% so that you can study them. The other models are not saved.
+% Evaluate the 10-fold cross validation results. 
 cvres = gp_kfcv(gp, x, y);
 mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
@@ -233,18 +207,13 @@ mrmse_cv(5) = cvres.mrmse_cv;
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
 
-n=length(y);
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
-% do scaled conjugate gradient optimization 
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
-
-% Evaluate the effective number of parameters and DIC with focus on latent variables.
+% Evaluate the effective number of parameters and DIC with focus on
+% latent variables.
 models{6} = 'lo_EP';
 p_eff_latent(6) = gp_peff(gp, x, y) ;
 [DIC_latent(6), p_eff_latent2(6)] = gp_dic(gp, x, y, 'latent');
@@ -260,7 +229,7 @@ mrmse_cv(6) = cvres.mrmse_cv;
 gp = gp_set(gp, 'latent_method', 'MCMC');
 
 % Set the parameters for MCMC...
-clear('opt')
+clear opt
 opt.hmc_opt.steps=10;
 opt.hmc_opt.stepadj=0.1;
 opt.hmc_opt.nsamples=1;
@@ -297,22 +266,16 @@ mrmse_cv(7) = cvres.mrmse_cv;
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Find first the mode
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-w=gp_pak(gp);
-w=scg2(@gp_e, w, opt, @gp_g, gp, x, y);
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % now perform the integration
-clear('opt')
-opt.opt_scg = scg2_opt;
+clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
-
-gp_array = gp_ia(gp, x, y, [], opt);
+gp_array = gp_ia(gp, x, y, opt);
 
 models{8} = 'lo_IA'; 
 [DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'hyper');

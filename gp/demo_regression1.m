@@ -102,6 +102,9 @@ pn = prior_logunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pn);
 
+% Following lines do the same since default type is FULL and
+% default likelihood is 'gaussian'
+%gp = gp_set('type','FULL','lik','gaussian','cf', {gpcf1}, 'noisef', {gpcf2});
 gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2});
 
 % Demostrate how to evaluate covariance matrices. 
@@ -133,51 +136,34 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
  
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
-
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do the optimization
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp, x, y);
-
-% Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w);
-
-% NOTICE here that when the hyperparameters are packed into vector
-% with 'gp_pak' they are also transformed through logarithm. The
-% reason for this is that they are easier to optimize and sample with
-% MCMC after log transformation.
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % For last, make predictions of the underlying function on a dense
-% grid and plot it. Below Ef_map is the predictive mean and Varf_map
-% the predictive variance.
+% grid and plot it. Below Eft_map is the predictive mean and
+% Varf_map the predictive variance.
 [xt1,xt2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
 xt=[xt1(:) xt2(:)];
-[Ef_map, Varf_map] = gp_pred(gp, x, y, xt);
+[Eft_map, Varft_map] = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
 figure(1)
-mesh(xt1, xt2, reshape(Ef_map,37,37));
+clf
+mesh(xt1, xt2, reshape(Eft_map,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title('The predicted underlying function and the data points (MAP solution)');
 
-
 % --- Grid integration ---
 % Perform the grid integration and make predictions for p
-[gp_array, P_TH, th, Ef_ia, Varf_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xt, 'int_method', 'grid');
+[gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
 % Plot the prediction for few input location
 figure(2)
+clf
 subplot(2,1,1)
 plot(x_ia(100,:), fx_ia(100,:))
 title('p(f|D) at input location (-1.6, 0.7)');
@@ -212,23 +198,24 @@ rfull = thin(rfull, 10, 2);
 
 % Now we make the predictions. 'mc_preds' is a function that
 % returns the predictive mean of the latent function with every
-% sampled hyperparameter value. Thus, the returned Ef_mc is a
+% sampled hyperparameter value. Thus, the returned Eft_mc is a
 % matrix of size n x (number of samples). By taking the mean over
 % the samples we do the Monte Carlo integration over the
 % hyperparameters. (See also mc_pred, which directly returns the
 % expectation of the mean and variance)
-[Ef_mc, Varf_mc] = mc_preds(rfull, x, y, xt);
+[Eft_mc, Varft_mc] = mc_preds(rfull, x, y, xt);
 
 figure(1)
-clf, subplot(1,2,1)
-mesh(xt1, xt2, reshape(Ef_map,37,37));
+clf
+subplot(1,2,1)
+mesh(xt1, xt2, reshape(Eft_map,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
 title(['The predicted underlying function ';
        'and the data points (MAP solution)']);
 subplot(1,2,2)
-mesh(xt1, xt2, reshape(mean(Ef_mc'),37,37));
+mesh(xt1, xt2, reshape(mean(Eft_mc'),37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -239,7 +226,8 @@ set(gcf,'pos',[93 511 1098 420])
 % We can compare the posterior samples of the hyperparameters to the 
 % MAP estimate that we got from optimization
 figure(3)
-clf, subplot(1,2,1)
+clf
+subplot(1,2,1)
 plot(rfull.cf{1}.lengthScale)
 title('The sample chain of length-scales')
 subplot(1,2,2)
@@ -248,7 +236,8 @@ title('The sample chain of magnitude')
 set(gcf,'pos',[93 511 1098 420])
 
 figure(4)
-clf, subplot(1,4,1)
+clf
+subplot(1,4,1)
 hist(rfull.cf{1}.lengthScale(:,1))
 hold on
 plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
@@ -274,8 +263,8 @@ set(gcf,'pos',[93 511 1098 420])
 
 % Sample from two posterior marginals and plot them alongside 
 % with the MAP and grid integration results
-sf = normrnd(Ef_mc(100,:), sqrt(Varf_mc(100,:)));
-sf2 = normrnd(Ef_mc(400,:), sqrt(Varf_mc(400,:)));
+sf = normrnd(Eft_mc(100,:), sqrt(Varft_mc(100,:)));
+sf2 = normrnd(Eft_mc(400,:), sqrt(Varft_mc(400,:)));
 
 figure(2)
 subplot(1,2,1)
@@ -283,7 +272,7 @@ subplot(1,2,1)
 hist(sf)
 hold on
 plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
-ff = normpdf(x_ia(100,:)', Ef_map(100), sqrt(Varf_map(100)));
+ff = normpdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
 plot(x_ia(100,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
 set(gca, 'Ytick', [])
 title('p(f|D) at input location (-1.6, 0.7)');
@@ -294,7 +283,7 @@ subplot(1,2,2)
 hist(sf2)
 hold on
 plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
-ff = normpdf(x_ia(400,:)', Ef_map(400), sqrt(Varf_map(400)));
+ff = normpdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
 plot(x_ia(400,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
 set(gca, 'Ytick', [])
 title('p(f|D) at input location (-0.8, 1.1)');
@@ -306,8 +295,8 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % ========================
 % Print figures for manual
 % ========================
-% $$$ sf = normrnd(Ef_mc(100,:), sqrt(Varf_mc(100,:)));
-% $$$ sf2 = normrnd(Ef_mc(400,:), sqrt(Varf_mc(400,:)));
+% $$$ sf = normrnd(Eft_mc(100,:), sqrt(Varft_mc(100,:)));
+% $$$ sf2 = normrnd(Eft_mc(400,:), sqrt(Varft_mc(400,:)));
 % $$$ 
 % $$$ figure
 % $$$ subplot(1,2,1)
@@ -317,7 +306,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
 % $$$ plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
-% $$$ ff = normpdf(x_ia(100,:)', Ef_map(100), sqrt(Varf_map(100)));
+% $$$ ff = normpdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
 % $$$ plot(x_ia(100,:), max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
 % $$$ set(gca, 'Ytick', [])
 % $$$ xlim([0 1])
@@ -330,7 +319,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
 % $$$ plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
-% $$$ ff = normpdf(x_ia(400,:)', Ef_map(400), sqrt(Varf_map(400)));
+% $$$ ff = normpdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
 % $$$ plot(x_ia(400,:), max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
 % $$$ set(gca, 'Ytick', [])
 % $$$ xlim([-1.2 -0.5])

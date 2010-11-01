@@ -1,5 +1,6 @@
 %DEMO_COMPARESPARSEGP  Regression demo comparing different sparse
-%                      approximations
+%                      approximations with optimasation of inducing
+%                      variables
 %
 %  Description
 %    A regression problem with one input variable and one output
@@ -17,6 +18,7 @@
 %      - FIC, fully independent conditional
 %      - DTC, deterministic training conditional
 %      - VAR, variational approach
+%    and inducing variables are optimised.
 %     
 %    For technical details, see Quinonero-Candela and Rasmussen
 %    (2005) for the FIC and DTC models and Titsias (2009) for the
@@ -46,6 +48,9 @@
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
+
+fprintf(['Note! Since data and initial placement of the inducing points\n'...
+         '      is random, there is variation in the results for each run.\n'])
 
 % Start by creating 1D data
 xx=linspace(1,10,901);

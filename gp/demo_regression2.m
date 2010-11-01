@@ -68,7 +68,7 @@
 %    Vanhatalo, J. and Vehtari, A. (2008). Modelling local and global
 %    phenomena with sparse Gaussian processes. Proceedings of the 24th
 %    Conference on Uncertainty in Artificial Intelligence.
-
+%
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
@@ -129,48 +129,32 @@ gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004.^2)
 % --- Conduct the inference ---
 %
 % --- MAP estimate -----------
-w=gp_pak(gp);           % pack the hyperparameters into one vector
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y);
-
-% Set the optimized hyperparameter values back to the gp structure
-gp=gp_unpak(gp,w);
-
-% NOTICE here that when the hyperparameters are packed into vector
-% with 'gp_pak' they are also transformed through logarithm. The
-% reason for this is that they are easier to optimize after log
-% transformation.
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Make predictions. Below Ef_full is the predictive mean and Varf_full
 % the predictive variance.
-[Ef_full, Varf_full, Ey_full, Vary_full] = gp_pred(gp, x, y, xt);
-[Ef_full1, Varf_full1] = gp_pred(gp, x, y, xt, 'predcf', 1);
-[Ef_full2, Varf_full2] = gp_pred(gp, x, y, xt, 'predcf', 2);
+[Eft_full, Varft_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt);
+[Eft_full1, Varft_full1] = gp_pred(gp, x, y, xt, 'predcf', 1);
+[Eft_full2, Varft_full2] = gp_pred(gp, x, y, xt, 'predcf', 2);
 
 % Plot the prediction and data
 figure
 subplot(2,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(xt,Ey_full,'k', 'LineWidth', 2)
-plot(xt,Ey_full-2.*sqrt(Vary_full),'g--')
-plot(xt,Ey_full+2.*sqrt(Vary_full),'g--')
+plot(xt,Eyt_full,'k', 'LineWidth', 2)
+plot(xt,Eyt_full-2.*sqrt(Varyt_full),'g--')
+plot(xt,Eyt_full+2.*sqrt(Varyt_full),'g--')
 axis tight
 caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noisef{1}.noiseSigma2);
 title(caption1)
 legend('Data point', 'predicted mean', '2\sigma error',4)
 
 subplot(2,1,2)
-[AX, H1, H2] = plotyy(xt, Ef_full2, xt, Ef_full1);
+[AX, H1, H2] = plotyy(xt, Eft_full2, xt, Eft_full1);
 set(H2,'LineStyle','--')
 set(H2, 'LineWidth', 2)
 %set(H1, 'Color', 'k')
@@ -208,32 +192,23 @@ gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSi
 %gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
 gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
-w=gp_pak(gp_fic);    % pack the hyperparameters into one vector
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do the optimization
-w=scg2(fe, w, opt, fg, gp_fic, x, y);
-gp_fic = gp_unpak(gp_fic,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 
 % Make the prediction
-[Ef_fic, Varf_fic, Ey_fic, Vary_fic] = gp_pred(gp_fic, x, y, xt);
+[Eft_fic, Varft_fic, Eyt_fic, Varyt_fic] = gp_pred(gp_fic, x, y, xt);
 
 % Plot the solution of FIC
 figure
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(xt,Ey_fic,'k', 'LineWidth', 2)
-plot(xt,Ey_fic-2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
+plot(xt,Eyt_fic,'k', 'LineWidth', 2)
+plot(xt,Eyt_fic-2.*sqrt(Varyt_fic),'g--', 'LineWidth', 2)
 plot(gp_fic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(xt,Ey_fic+2.*sqrt(Vary_fic),'g--', 'LineWidth', 2)
+plot(xt,Eyt_fic+2.*sqrt(Varyt_fic),'g--', 'LineWidth', 2)
 axis tight
 caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noisef{1}.noiseSigma2);
 title(caption2)
@@ -266,22 +241,13 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 %gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
 
-w=gp_pak(gp_pic);    % pack the hyperparameters into one vector
-fe=@gp_e;         % create a function handle to negative log posterior
-fg=@gp_g;         % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do the optimization
-w=scg2(fe, w, opt, fg, gp_pic, x, y);
-gp_pic = gp_unpak(gp_pic,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp_pic=gp_optim(gp_pic,x,y,'optimf',@fminscg,'opt',opt);
 
 % Make the prediction
-[Ef_pic, Varf_pic, Ey_pic, Vary_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex);
+[Eft_pic, Varft_pic, Eyt_pic, Varyt_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex);
 
 
 % Plot the solution of PIC
@@ -289,10 +255,10 @@ figure
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(x,Ef_pic,'k', 'LineWidth', 2)
-plot(x,Ef_pic-2.*sqrt(Vary_pic),'g--', 'LineWidth', 2)
+plot(x,Eft_pic,'k', 'LineWidth', 2)
+plot(x,Eft_pic-2.*sqrt(Varyt_pic),'g--', 'LineWidth', 2)
 plot(gp_pic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ef_pic+2.*sqrt(Vary_pic),'g--', 'LineWidth', 2)
+plot(x,Eft_pic+2.*sqrt(Varyt_pic),'g--', 'LineWidth', 2)
 for i = 1:length(edges)
     plot([edges(i) edges(i)],[-30 35], 'k:')
 end
@@ -325,44 +291,36 @@ gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jit
 % optimize simultaneously hyperparameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance');           % optimize only hyperparameters
+% optimize hyperparameters and inducing inputs
+%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+inducing');  
+% optimize only hyperparameters
+gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance');           
 
-w=gp_pak(gp_csfic);    % pack the hyperparameters into one vector
-fe=@gp_e;         % create a function handle to negative log posterior
-fg=@gp_g;         % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do the optimization
-w=scg2(fe, w, opt, fg, gp_csfic, x, y);
-gp_csfic = gp_unpak(gp_csfic,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp_csfic=gp_optim(gp_csfic,x,y,'optimf',@fminscg,'opt',opt);
 
 % Make the prediction
-[Ef_csfic, Varf_csfic, Ey_csfic, Vary_csfic] = gp_pred(gp_csfic, x, y, x);
+[Eft_csfic, Varft_csfic, Eyt_csfic, Varyt_csfic] = gp_pred(gp_csfic, x, y, x);
 
 % Plot the solution of FIC
 figure
 %subplot(4,1,1)
 hold on
 plot(x,y,'.', 'MarkerSize',7)
-plot(x,Ef_csfic,'k', 'LineWidth', 2)
-plot(x,Ef_csfic-2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
+plot(x,Eft_csfic,'k', 'LineWidth', 2)
+plot(x,Eft_csfic-2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
 plot(gp_csfic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Ef_csfic+2.*sqrt(Vary_csfic),'g--', 'LineWidth', 1)
+plot(x,Eft_csfic+2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
 axis tight
 caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noisef{1}.noiseSigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
-
-[Ef, Varf, Ey, Vary] = gp_pred(gp_csfic, x, y, x);
-[Ef1, Varf1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
-[Ef2, Varf2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
+[Eft, Varft, Eyt, Varyt] = gp_pred(gp_csfic, x, y, x);
+[Eft1, Varft1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
+[Eft2, Varft2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
 
 figure
 set(gcf,'units','centimeters');
@@ -370,7 +328,7 @@ set(gcf,'DefaultAxesPosition',[0.08  0.13   0.84   0.85]);
 set(gcf,'DefaultAxesFontSize',16)   %6 8
 set(gcf,'DefaultTextFontSize',16)   %6 8
 hold on
-[AX, H1, H2] = plotyy(x, Ef2, x, Ef1+avgy);
+[AX, H1, H2] = plotyy(x, Eft2, x, Eft1+avgy);
 set(H2,'LineStyle','--')
 set(H2, 'LineWidth', 3)
 set(H1,'LineStyle','-')
