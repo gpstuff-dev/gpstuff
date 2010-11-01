@@ -1,29 +1,32 @@
 function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %GP_E  Evaluate the energy function (un-normalized negative marginal
-%      log posterior) in case of Gaussian observation model
+%      log posterior)
 %
-%     Description
-%	E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process
-%        structure GP together with a matrix X of input vectors and
-%        a matrix Y of targets, and evaluates the energy function
-%        E. Each row of X corresponds to one input vector and each
-%        row of Y corresponds to one target vector.
+%  Description
+%    E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process
+%    structure GP together with a matrix X of input vectors and a
+%    matrix Y of targets, and evaluates the energy function E. Each
+%    row of X corresponds to one input vector and each row of Y
+%    corresponds to one target vector.
 %
-%	[E, EDATA, EPRIOR] = GP_E(W, GP, X, Y, OPTIONS) also returns
-%        the data and prior components of the total energy.
+%    [E, EDATA, EPRIOR] = GP_E(W, GP, X, Y, OPTIONS) also returns
+%    the data and prior components of the total energy.
 %
-%       The energy is minus log posterior cost function:
-%            E = EDATA + EPRIOR 
-%              = - log p(Y|X, th) - log p(th),
-%       where th represents the hyperparameters (lengthScale, magnSigma2...),
-%       X is inputs and Y is observations (regression) or latent values
-%       (non-Gaussian likelihood).
+%    The energy is minus log posterior cost function:
+%        E = EDATA + EPRIOR 
+%          = - log p(Y|X, th) - log p(th),
+%    where th represents the hyperparameters (lengthScale,
+%    magnSigma2...), X is inputs and Y is observations (regression)
+%    or latent values (non-Gaussian likelihood).
 %
-%     OPTIONS is optional parameter-value pair
-%       No applicable options
+%    OPTIONS is optional parameter-value pair
+%      z - optional observed quantity in triplet (x_i,y_i,z_i)
+%          Some likelihoods may use this. For example, in case of
+%          Poisson likelihood we have z_i=E_i, that is, expected
+%          value for ith case.
 %
-%	See also
-%	GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
+%  See also
+%    GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
 %
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
@@ -39,7 +42,12 @@ if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
   % not the nicest way of doing this, but quick solution
   switch gp.latent_method
     case 'Laplace'
-      fh_e=@gpla_e;
+      switch gp.lik.type
+        case 'Softmax'
+          fh_e=@gpla_softmax_e;
+        otherwise
+          fh_e=@gpla_e;
+      end
     case 'EP'
       fh_e=@gpep_e;
   end
@@ -61,6 +69,7 @@ ip.addRequired('w', @(x) isempty(x) || ...
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
 
 gp=gp_unpak(gp, w);

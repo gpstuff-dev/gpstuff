@@ -1,22 +1,25 @@
 function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
-%GP_G   Evaluate the gradient of energy (GP_E) for Gaussian Process
+%GP_G  Evaluate the gradient of energy (GP_E) for Gaussian Process
 %
-%	Description
-%	G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
-%        vector W, data structure GP a matrix X of input vectors
-%        and a matrix Y of target vectors, and evaluates the
-%        gradient G of the energy function (gp_e). Each row of X
-%        corresponds to one input vector and each row of Y NOTE! 
-%        This parametrization works only for full GP!
+%  Description
+%    G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
+%    vector W, data structure GP a matrix X of input vectors and a
+%    matrix Y of target vectors, and evaluates the gradient G of
+%    the energy function (gp_e). Each row of X corresponds to one
+%    input vector and each row of Y corresponds to one target
+%    vector.
 %
-%	[G, GDATA, GPRIOR] = GP_G(W, GP, X, Y, OPTIONS) also returns
-%        separately the data and prior contributions to the gradient.
+%    [G, GDATA, GPRIOR] = GP_G(W, GP, X, Y, OPTIONS) also returns
+%    separately the data and prior contributions to the gradient.
 %
-%     OPTIONS is optional parameter-value pair
-%       No applicable options
+%    OPTIONS is optional parameter-value pair
+%      z - optional observed quantity in triplet (x_i,y_i,z_i)
+%          Some likelihoods may use this. For example, in case of
+%          Poisson likelihood we have z_i=E_i, that is, expected
+%          value for ith case.
 %
-%	See also
-%       GP_E, GP_PAK, GP_UNPAK, GPCF_*
+%  See also
+%    GP_E, GP_PAK, GP_UNPAK, GPCF_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
@@ -31,7 +34,12 @@ if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
   % not the nicest way of doing this, but quick solution
   switch gp.latent_method
     case 'Laplace'
-      fh_g=@gpla_g;
+      switch gp.lik.type
+        case 'Softmax'
+          fh_g=@gpla_softmax_e;
+        otherwise
+          fh_g=@gpla_e;
+      end
     case 'EP'
       fh_g=@gpep_g;
   end
@@ -52,6 +60,7 @@ ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
 
 gp=gp_unpak(gp, w);       % unpak the parameters
@@ -90,10 +99,8 @@ switch gp.type
             
             gpcf = gp.cf{i};
             
-            % Are gradient observations available; gradobs=1->yes, gradobs=0->no
-            gradobs=isfield(gp,'grad_obs');
-            
-            if gradobs == 0 
+            if ~(isfield(gp,'derivobs') && gp.derivobs)
+              % No derivative observations
                 [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
             else
                [n m]=size(x);

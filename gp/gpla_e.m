@@ -42,7 +42,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
 %    The Newton's method is implemented as described in Rasmussen
 %    and Williams (2006).
 %
-%    The Stabilized Newton's method is implemented as suggested by
+%    The stabilized Newton's method is implemented as suggested by
 %    Hannes Nickisch (personal communication).
   
 % Copyright (c) 2007-2010 Jarno Vanhatalo
@@ -98,7 +98,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
   end
 
   function [e, edata, eprior, f, L, a, La2, p] = laplace_algorithm(w, gp, x, y, z)
-  % actual code for the Laplace algorithm
+  % code for the Laplace algorithm
     
   % check whether saved values can be used
     if isempty(z)

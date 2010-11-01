@@ -1,25 +1,25 @@
 function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
-%GPEP_G   Evaluate gradient of EP's marginal log posterior estimate (GPEP_E)
+%GPEP_G  Evaluate gradient of EP's marginal log posterior estimate (GPEP_E)
 %
-%	Description
-%	G = GPEP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter 
-%       vector W, data structure GP a matrix X of input vectors and a 
-%       matrix Y of target vectors, and evaluates the gradient G of EP's 
-%       marginal log posterior estimate (gpep_e). Each row of X 
-%       corresponds to one input vector and each row of Y corresponds to 
-%       one target vector. 
+%  Description
+%    G = GPEP_G(W, GP, X, Y, OPTIONS) takes a full GP
+%    hyper-parameter vector W, data structure GP a matrix X of
+%    input vectors and a matrix Y of target vectors, and evaluates
+%    the gradient G of EP's marginal log posterior estimate
+%    (gpep_e). Each row of X corresponds to one input vector and
+%    each row of Y corresponds to one target vector.
 %
-%	[G, GDATA, GPRIOR] = GPEP_G(GP, X, Y, OPTIONS) also returns 
-%	separately the data and prior contributions to the gradient.
+%    [G, GDATA, GPRIOR] = GPEP_G(GP, X, Y, OPTIONS) also returns
+%    separately the data and prior contributions to the gradient.
 %    
-%     OPTIONS is optional parameter-value pair
-%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
-%              Some likelihoods may use this. For example, in case of 
-%              Poisson likelihood we have z_i=E_i, that is, expected 
-%              value for ith case. 
+%    OPTIONS is optional parameter-value pair
+%      z - optional observed quantity in triplet (x_i,y_i,z_i)
+%          Some likelihoods may use this. For example, in case of
+%          Poisson likelihood we have z_i=E_i, that is, expected
+%          value for ith case.
 %
-%	See also   
-%       GPEP_E, EP_PRED
+%  See also
+%    GP_SET, GP_G, GPEP_E, EP_PRED
 
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010       Heikki Peura

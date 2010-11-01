@@ -98,7 +98,7 @@ function gpcf = gpcf_ppcs2(varargin)
       end
       
       % Check that SuiteSparse is available
-      if isempty(which('ldlchol'))
+      if ~exist('ldlchol')
           error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs2 cannot be used!')
       end
       

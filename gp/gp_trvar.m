@@ -27,10 +27,8 @@ function [K, C] = gp_trvar(gp, x1, predcf)
 n1 = n+1;
 ncf = length(gp.cf);
 
-% Are gradient observations available; gradobs=1->yes, gradobs=0->no
-gradobs=isfield(gp,'grad_obs');
-
-if gradobs==1
+if isfield(gp,'derivobs') && gp.derivobs
+  % Derivative observations
     
     % Evaluate the covariance without noise
     K = 0;

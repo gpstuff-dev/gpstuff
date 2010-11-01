@@ -199,19 +199,16 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
   % Create the GP data structure
   gp = gp_set('lik', lik_poisson, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
-  % Prepare to optimize covariance parameters
-  opt=optimset('GradObj','on');
-  opt=optimset(opt,'TolX', 1e-3);
-  opt=optimset(opt,'LargeScale', 'off');
-  opt=optimset(opt,'Display', 'off');
-
   % Set the approximate inference method
   gp = gp_set(gp, 'latent_method', latent_method);
   
   % Optimize hyperparameters
-  w0 = gp_pak(gp);
-  w = fminunc(@(ww) gp_eg(ww, gp, xx, yy, 'z', ye), w0, opt);
-  gp = gp_unpak(gp,w);
+  opt=optimset('TolX', 1e-3, 'Display', 'off');
+  if exist('fminunc')
+    gp = gp_optim(gp, xx, yy, 'z', ye, 'optimf', @fminunc, 'opt', opt);
+  else
+    gp = gp_optim(gp, xx, yy, 'z', ye, 'optimf', @fminscg, 'opt', opt);
+  end
 
   % Make prediction for the test points
   if strcmpi(hyperint,'mode')

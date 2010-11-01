@@ -95,21 +95,21 @@ function gp = gp_set(varargin)
 %                     gpmf_* functions [{}]
 %
 %     The additional fields needed in sparse approximations are:
-%      X_u          = inducing inputs, no default, has to be set when
+%      X_u          - inducing inputs, no default, has to be set when
 %                     FIC, PIC, PIC_BLOCK, VAR, DTC, or SOR is used.
-%      Xu_prior     = prior for inducing inputs [prior_unif]
+%      Xu_prior     - prior for inducing inputs [prior_unif]
 %
 %     The additional field required by PIC sparse approximation is:
-%       tr_index    = The blocks for the PIC model [{}]. The value has to
+%       tr_index    - The blocks for the PIC model [{}]. The value has to
 %                     be a cell array of the index vectors appointing
 %                     the data points into blocks. For example, if x  
 %                     is a matrix of data inputs then x(tr_index{i},:) 
 %                     are the inputs belonging to the i'th block.
 %
 %    The additional fields needed with derivative observations
-%      grad_obs     - A flag variable so that derivative observations are
+%      derivobs     - A flag variable so that derivative observations are
 %                     in use. Provide with some value so that the init
-%                     system doesn't get confused. 'grad_obs',1
+%                     system doesn't get confused. 'derivobs',1
 %
 %       See also
 %       GPCF_*, LIK_*, PRIOR_*, GP_PAK, GP_UNPAK, GP_E, GP_G, GP_EG,
@@ -160,7 +160,8 @@ function gp = gp_set(varargin)
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
   ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
-  ip.addParamValue('grad_obs',false, @(x) islogical(x) || isscalar(x));
+  ip.addParamValue('derivobs',false, @(x) islogical(x) || isscalar(x) || ...
+                   (ischar(x) && ismember(x,{'on' 'off'})));
   ip.parse(varargin{:});
   gp=ip.Results.gp;
 
@@ -224,9 +225,17 @@ function gp = gp_set(varargin)
     gp.jitterSigma2=ip.Results.jitterSigma2;
   end
    % Gradient observation
-  if init | ~ismember('grad_obs',ip.UsingDefaults)
-      if ip.Results.grad_obs == 1
-        gp.grad_obs=1;
+  if init | ~ismember('derivobs',ip.UsingDefaults)
+    derivobs=ip.Results.derivobs;
+      if ischar(derivobs) 
+        switch derivobs
+          case 'on'
+            gp.derivobs=true;
+          case 'off'
+            gp.derivobs=false;
+        end
+      else
+        gp.derivobs=logical(derivobs);
       end
   end
 

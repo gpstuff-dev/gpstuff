@@ -56,9 +56,9 @@ function gp = gp_init(do, varargin)
 %                       in sparse GPs
 %
 %     The additional fields needed with derivative observations
-%      grad_obs     = A flag variable so that derivative observations are
+%      derivobs     = A flag variable so that derivative observations are
 %                     in use. Provide with some value so that the init
-%                     system doesn't get confused. 'grad_obs',1
+%                     system doesn't get confused. 'derivobs',1
 %
 %
 %     The additional fields needed with mean functions
@@ -272,8 +272,8 @@ if strcmp(do, 'init')
                     gp.mean.p.b=varargin{i+1}{1};
                     gp.mean.p.B=varargin{i+1}{2}(:)';
                     gp.mean.p.vague=0;
-                case 'grad_obs'
-                    gp.grad_obs=1;
+                case 'derivobs'
+                    gp.derivobs=1;
                 case 'latent_method'
                     gp.latent_method = varargin{i+1}{1};
                     switch varargin{i+1}{1}

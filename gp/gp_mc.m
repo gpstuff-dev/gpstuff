@@ -114,7 +114,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     % Initialize record
     if isempty(record)
         % No old record
-        record=recappend;
+        record=recappend();
     else
         ri=size(record.etr,1);
     end

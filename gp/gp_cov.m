@@ -17,10 +17,10 @@ function [C, Cinv] = gp_cov(gp, x1, x2, predcf)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-% Are gradient observations available; gradobs=1->yes, gradobs=0->no
-gradobs=isfield(gp,'grad_obs');
+% Are gradient observations available; derivobs=1->yes, derivobs=0->no
 Cinv=[];
-if gradobs==1
+if isfield(gp,'derivobs') && gp.derivobs
+  % Derivative observations
     [n,m]=size(x1);
     [n4,m4]=size(x2);
     gpcf = gp.cf{1};    % Grad obs implemented only to sexp currently

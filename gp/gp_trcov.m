@@ -29,10 +29,8 @@ if length(gp.cf)==0
   return
 end
 
-% Are gradient observations available; gradobs=1->yes, gradobs=0->no
-gradobs=isfield(gp,'grad_obs');
-
-if gradobs==1
+if isfield(gp,'derivobs') && gp.derivobs
+  % Derivative observations
     gpcf = gp.cf{1};            % only for sexp at the moment
     [n,m]=size(x1);
     if m==1          

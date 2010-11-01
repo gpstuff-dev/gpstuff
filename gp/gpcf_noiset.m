@@ -193,9 +193,6 @@ function gpcf = gpcf_noiset(varargin)
             if ~isempty(nu)
                 gpcf.nu = nu;
             end
-            if ~isempty(fix_nu)
-                gpcf.fix_nu=fix_nu;
-            end
             if ~isempty(censored)
                 gpcf.censored = censored{1};
                 yy = censored{2};
@@ -340,7 +337,7 @@ function gpcf = gpcf_noiset(varargin)
 % $$$         alpha2=invgamrand(mean(r.^2./U),n);
         rss2=alpha2.*U;
         % Sample nu
-        if gpcf.fix_nu == 0 && ~isempty(gpcf.p.nu)
+        if ~isempty(gpcf.p.nu)
             pp = gpcf.p.nu;            
             nu=sls1mm( @(nu) (-sum(sinvchi2_lpdf(U,nu,t2))+feval(pp.fh_e, nu, pp)) ,nu,opt ) ;
         end

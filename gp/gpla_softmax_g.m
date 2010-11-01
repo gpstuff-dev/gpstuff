@@ -1,26 +1,26 @@
 function [g, gdata, gprior] = gpla_softmax_g(w, gp, x, y, varargin)
-%GPLA_G   Evaluate gradient of Laplace approximation's marginal
+%GPLA_SOFTMAX_G   Evaluate gradient of Laplace approximation's marginal
 %         log posterior estimate for softmax likelihood (GPLA_SOFTMAX_E)
 %
-%     Description
-%	G = GPLA_SOFTMAX_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
-%        vector W, data structure GP a matrix X of input vectors
-%        and a matrix Y of target vectors, and evaluates the
-%        gradient G of EP's marginal log posterior estimate . Each
-%        row of X corresponds to one input vector and each row of Y
-%        corresponds to one target vector.
+%  Description
+%    G = GPLA_SOFTMAX_G(W, GP, X, Y, OPTIONS) takes a full GP
+%    hyper-parameter vector W, data structure GP a matrix X of
+%    input vectors and a matrix Y of target vectors, and evaluates
+%    the gradient G of EP's marginal log posterior estimate . Each
+%    row of X corresponds to one input vector and each row of Y
+%    corresponds to one target vector.
 %
-%	[G, GDATA, GPRIOR] = GPLA_SOFTMAX_G(W, GP, X, Y, OPTIONS) also returns
-%        the data and prior contributions to the gradient.
+%    [G, GDATA, GPRIOR] = GPLA_SOFTMAX_G(W, GP, X, Y, OPTIONS) also
+%    returns the data and prior contributions to the gradient.
 %
-%     OPTIONS is optional parameter-value pair
-%       'z'    is optional observed quantity in triplet (x_i,y_i,z_i)
-%              Some likelihoods may use this. For example, in case of
-%              Poisson likelihood we have z_i=E_i, that is, expected
-%              value for ith case.
+%    OPTIONS is optional parameter-value pair
+%      z - optional observed quantity in triplet (x_i,y_i,z_i)
+%          Some likelihoods may use this. For example, in case of
+%          Poisson likelihood we have z_i=E_i, that is, expected
+%          value for ith case.
 %
-%	See also
-%       GPLA_SOFTMAX_E, GPLA_E, LA_PRED
+%  See also
+%    GPLA_SOFTMAX_E, GPLA_E, LA_SOFTMAX_PRED
 
 % Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
 

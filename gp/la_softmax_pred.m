@@ -1,16 +1,21 @@
-function [mu_star, Sigm_cc, pi_star] = la_softmax_pred(gp, x, y, xt, varargin)
+function [mu_star, Sigm_cc, Ey, Vary, pi_star] = la_softmax_pred(gp, x, y, xt, varargin)
 %function [Ef, Varf, Ey, Vary, Pyt] = la_softmax_pred(gp, x, y, xt, varargin)
-%LA_PRED	Predictions with Gaussian Process Laplace approximation with
-%           softmax likelihood
+%LA_SOFTMAX_PRED Predictions with Gaussian Process Laplace
+%                approximation with softmax likelihood
 %
-%     Description
-%	[EF, VARF, P] = LA_SOFTMAX_PRED(GP, X, Y, XT, OPTIONS) takes a GP 
-%        data structure GP together with a matrix X of input vectors,
-%        matrix X of training inputs and vector Y of training
-%        targets, and evaluates the predictive distribution at
-%        inputs X. Returns a posterior mean EF and variance VARF of
-%        latent variables and the posterior predictive density P
-%        at input locations X. 
+%  Description
+%    [EFT, VARFT, PYT] = LA_SOFTMAX_PRED(GP, X, Y, XT, OPTIONS)
+%    takes a GP data structure GP together with a matrix XT of input
+%    vectors, matrix X of training inputs and vector Y of training
+%    targets, and evaluates the predictive distribution at inputs
+%    X. Returns a posterior mean EFT and variance VARFT of latent
+%    variables and the posterior predictive density PYT at input
+%    locations XT.
+%
+%    [EF, VARF, PYT] = LA_SOFTMAX_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also the predictive density PYT of the observations YT
+%    at input locations XT. This can be used for example in the
+%    cross-validation. Here Y has to be vector.
 %
 %     OPTIONS is optional parameter-value pair
 %       'predcf' is index vector telling which covariance functions are 
@@ -34,8 +39,8 @@ function [mu_star, Sigm_cc, pi_star] = la_softmax_pred(gp, x, y, xt, varargin)
 %                for ith case. 
 %
 %
-%	See also
-%	GPLA_SOFTMAX_E, GPLA_SOFTMAX_G, GP_PRED, DEMO_MULTICLASS
+%       See also
+%       GPLA_SOFTMAX_E, GPLA_SOFTMAX_G, GP_PRED, DEMO_MULTICLASS
 %
 % Copyright (c) 2010 Jaakko Riihimäki
 
@@ -63,6 +68,9 @@ function [mu_star, Sigm_cc, pi_star] = la_softmax_pred(gp, x, y, xt, varargin)
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
 
+  Ey=[];
+  Vary=[];
+  
     [tn, tnin] = size(x);
     
     switch gp.type

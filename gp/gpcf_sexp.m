@@ -211,6 +211,7 @@ function gpcf = gpcf_sexp(varargin)
         if ~isempty(gpp.magnSigma2)
             i1=1;
             gpcf.magnSigma2 = exp(w(i1));
+            assert(gpcf.magnSigma2>0 && ~isinf(gpcf.magnSigma2))
             w = w(i1+1:end);
         end
 
@@ -222,6 +223,7 @@ function gpcf = gpcf_sexp(varargin)
                 i2=length(gpcf.lengthScale);
                 i1=1;
                 gpcf.lengthScale = exp(w(i1:i2));
+                assert(all(gpcf.lengthScale>0 & isfinite(gpcf.lengthScale)))
                 w = w(i2+1:end);
                                 
                 % Hyperparameters of lengthScale
