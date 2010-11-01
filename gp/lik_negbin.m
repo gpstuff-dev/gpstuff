@@ -1,4 +1,4 @@
-function likelih = lik_negbin(varargin)
+function lik = lik_negbin(varargin)
 %LIK_NEGBIN    Create a Negative-binomial likelihood structure 
 %
 %  Description

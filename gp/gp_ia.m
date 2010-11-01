@@ -2,7 +2,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %GP_IA Integration approximation with grid, Monte Carlo or CCD integration
 %
 %  Description
-%    [GP_ARRAY, P_TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS)
+%    [GP_ARRAY, P_TH, TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS)
 %    takes a GP data structure GP with covariates X and
 %    observations Y and returns an array of GPs GP_ARRAY and
 %    corresponding weights P_TH. If optional test covariates XT is
@@ -138,9 +138,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         fh_g = @gpep_g;
         fh_p = @ep_pred;
       case 'Laplace'
-        fh_e = @gpla_e;
-        fh_g = @gpla_g;
-        fh_p = @la_pred;
+        switch gp.lik.type
+          case 'Softmax'
+            fh_e=@gpla_softmax_e;
+            fh_g=@gpla_softmax_g;
+            fh_p=@gpla_softmax_p;
+          otherwise
+            fh_e = @gpla_e;
+            fh_g = @gpla_g;
+            fh_p = @la_pred;
+        end
     end
   else
     fh_e = @gp_e;

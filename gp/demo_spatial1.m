@@ -62,6 +62,7 @@
 %    Practice)
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -104,7 +105,7 @@ lik = lik_poisson();
 
 % Create the FIC GP data structure so that inducing inputs are not optimized
 gp = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1}, 'X_u', Xu, ...
-            'jitterSigma2', 0.1, 'infer_params', 'covariance');
+            'jitterSigma2', 1e-4, 'infer_params', 'covariance');
 
 % --- MAP estimate with Laplace approximation ---
 
