@@ -59,7 +59,7 @@
 %   for example, Rasmussen and Williams (2006) or Vanhatalo and
 %   Vehtari (2008)
 %
-%   The demo is organised in three parts:
+%   The demo has one part
 %     1) data analysis with MAP estimate for the hyperparameters
 %
 %  References:
