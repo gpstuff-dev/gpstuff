@@ -36,9 +36,9 @@ if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
     case 'Laplace'
       switch gp.lik.type
         case 'Softmax'
-          fh_g=@gpla_softmax_e;
+          fh_g=@gpla_softmax_g;
         otherwise
-          fh_g=@gpla_e;
+          fh_g=@gpla_g;
       end
     case 'EP'
       fh_g=@gpep_g;
