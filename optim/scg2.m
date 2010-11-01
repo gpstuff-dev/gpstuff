@@ -1,19 +1,17 @@
 function [x, fs, ps] = scg2(f, x, opt, gradf, varargin)
-%SCGES	Scaled conjugate gradient optimization with early stopping.
+%SCG2	Scaled conjugate gradient optimization
 %
-%   Description
-%   X = SCG2(F, X, OPT, GRADF, P1,P2,...)
-%   uses a scaled conjugate gradients algorithm to find a local minimum
-%   of the function F(X,P1,P2,...) whose gradient is given by
-%   GRADF(X,P1,P2,...). 
+%  Description
+%    X = SCG2(F, X, OPT, GRADF, P1,P2,...) uses a scaled conjugate
+%    gradients algorithm to find a local minimum of the function
+%    F(X,P1,P2,...) whose gradient is given by GRADF(X,P1,P2,...).
 %
-%   Here X is a row vector and F returns a scalar value. The
-%   point at which F has a local minimum is returned as X.
+%    Here X is a row vector and F returns a scalar value. The point
+%    at which F has a local minimum is returned as X.
 %
-%       See SCG2_OPT for the optional parameters in the
-%       OPT structure.
+%    See SCG2_OPT for the optional parameters in the OPT structure.
 %
-%   See also SCG2_OPT, SCGES
+%  See also SCG2_OPT, SCGES
 
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005 Aki Vehtari
@@ -35,10 +33,8 @@ end
 
 sigma0 = 1.0e-4;
 fold = feval(f, x, varargin{:});	% Initial function value.
-assert(isreal(fold)&&all(isfinite(fold)))
 iter = 0;
 gradnew = feval(gradf, x, varargin{:});% Initial gradient.
-assert(isreal(gradnew)&&all(isfinite(gradnew)))
 gradold = gradnew;
 d = - gradnew;				% Initial search direction.
 success = 1;                            % Force calculation of directional derivs.
@@ -71,7 +67,6 @@ while (j <= niters)
     sigma = sigma0/sqrt(kappa);
     xplus = x + sigma*d;
     gplus = feval(gradf, xplus, varargin{:});
-    assert(isreal(gplus)&&all(isfinite(gplus)))
     gamma = (d*(gplus' - gradnew'))/sigma;
   end
 
@@ -86,7 +81,6 @@ while (j <= niters)
   % Calculate the comparison ratio.
   xnew = x + alpha*d;
   fnew = feval(f, xnew, varargin{:});
-  assert(isreal(fnew)&&all(isfinite(fnew)))
   iter = iter + 1;
   Delta = 2*(fnew - fold)/(alpha*mu);
   if (Delta  >= 0)
@@ -105,15 +99,15 @@ while (j <= niters)
       ps(j,:) = x;	% Current position
     end
   end    
-  if display > 0
-    fprintf(1, 'Cycle %4d  Error %11.6f  Scale %e\n', j, fnow, lambda);
+  if display > 1
+    fprintf(1, 'Cycle %4d  Error %8.4f  Scale %8.4f\n', j, fnow, lambda);
   end
   
   if (success == 1)
     
     % Test for termination
     if (max(abs(alpha*d)) < opt.tolx & max(abs(fnew-fold)) < opt.tolfun)
-      if (display >= 0)
+      if (display > 0)
         disp('Tolx and tolfun reached')
       end
       return;
@@ -123,10 +117,9 @@ while (j <= niters)
       fold = fnew;
       gradold = gradnew;
       gradnew = feval(gradf, x, varargin{:});
-      assert(isreal(gradnew)&&all(isfinite(gradnew)))
       % If the gradient is zero then we are done.
       if (gradnew*gradnew' == 0)
-        if (display >= 0)
+        if (display > 0)
           disp('Gradient zero');
         end
 	return;
@@ -160,6 +153,6 @@ end
 % If we get here, then we haven't terminated in the given number of 
 % iterations.
 
-if (display >= 0)
+if (display > 0)
   disp('Warning: Maximum number of iterations has been exceeded');
 end

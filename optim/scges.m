@@ -1,34 +1,34 @@
 function [x, fs, vs, lambda] = scges(f, x, opt, gradf, varargin)
 %SCGES	Scaled conjugate gradient optimization with early stopping.
 %
-%   Description
-%   X = SCGES(F, X, OPT, GRADF, P1,P2,...,P1',P2',...)
-%   uses a scaled conjugate gradients algorithm to find a local minimum
-%   of the function F(X,P1,P2,...) whose gradient is given by
-%   GRADF(X,P1,P2,...). Search is early stopped if value of 
-%   F(X,P1',P2',...) does not decrease.
+%  Description
+%    X = SCGES(F, X, OPT, GRADF, P1,P2,...,P1',P2',...) uses a
+%    scaled conjugate gradients algorithm to find a local minimum
+%    of the function F(X,P1,P2,...) whose gradient is given by
+%    GRADF(X,P1,P2,...). Search is early stopped if value of
+%    F(X,P1',P2',...) does not decrease.
 %
-%   Here X is a row vector and F returns a scalar value. The
-%   point at which F has a local minimum is returned as X.
+%    Here X is a row vector and F returns a scalar value. The point
+%    at which F has a local minimum is returned as X.
 %
-%       See SCGES_OPT for the optional parameters in the
-%       OPT structure.
+%    See SCGES_OPT for the optional parameters in the OPT
+%    structure.
 %
-%   Reference: Vehtari et al (2000). On MCMC sampling in Bayesian
-%   MLP neural networks, In Shun-Ichi Amari, C. Lee Giles, Marco
-%   Gori, and Vincenzo Piuri, editors, IJCNN'2000: Proceedings of
-%   the 2000 International Joint Conference on Neural Networks,
-%   volume I, pp. 317-322. IEEE. 
+%    Reference: Vehtari et al (2000). On MCMC sampling in Bayesian
+%    MLP neural networks, In Shun-Ichi Amari, C. Lee Giles, Marco
+%    Gori, and Vincenzo Piuri, editors, IJCNN'2000: Proceedings of
+%    the 2000 International Joint Conference on Neural Networks,
+%    volume I, pp. 317-322. IEEE.
 %
-%   See also SCGES_OPT
+%  See also SCGES_OPT
 
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005 Aki Vehtari
 
-% Set empty omptions to default values
+% Set empty options to default values
 opt=scges_opt(opt);
 
-% Refrence to structures is much slower, so...
+% Reference to structures is much slower, so...
 niters = opt.maxiter;
 
 display = opt.display;
@@ -112,8 +112,8 @@ while (j <= niters)
   else
     vfail=vfail+1;
   end
-  if display > 0 & ~rem(j,display)
-    fprintf(1, 'Cycle %4d  Error  %11.2f VError %11.2f \n', ...
+  if display > 1
+    fprintf(1, 'Cycle %4d  Error  %8.4f VError %8.4f \n', ...
             j, fold, vnow);
   end
   fs(j)=fnow;
@@ -129,14 +129,14 @@ while (j <= niters)
     % Test for early stop termination
     if vfail>opt.maxfail
       x=vx;
-      if (display >= 0)
+      if (display > 0)
         disp('Early stopping')
       end
       return;
       
       % Test for normal termination
     elseif (max(abs(alpha*d)) < opt.tolx & max(abs(fnew-fold)) < opt.tolfun)
-      if (display >= 0)
+      if (display > 0)
         disp('Tolx and tolfun reached')
       end
       return;
@@ -148,7 +148,7 @@ while (j <= niters)
       gradnew = feval(gradf, x, varargin1{:});
       % If the gradient is zero then we are done.
       if (gradnew*gradnew' == 0)
-        if (display >= 0)
+        if (display > 0)
           disp('Gradient zero');
         end
 	return;
@@ -181,6 +181,6 @@ end
 
 % If we get here, then we haven't terminated in the given number of 
 % iterations.
-if (display >= 0)
+if (display > 0)
   disp('Warning: Maximum number of iterations has been exceeded');
 end
