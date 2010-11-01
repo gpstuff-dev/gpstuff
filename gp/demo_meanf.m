@@ -47,9 +47,9 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pn);
 
 % Initialize base functions for GP's mean function.
-gpmf1 = gpmf_constant('init','prior_mean',.3,'prior_cov',1, 'constant',2);             % Default value for constant is 1. 
-gpmf2 = gpmf_linear('init','prior_mean',.3,'prior_cov',1, 'selectedVariables',[1]);    % selectedVariables = which input dimensions (columns) are active
-gpmf3 = gpmf_squared('init','prior_mean',.3,'prior_cov',1);
+gpmf1 = gpmf_constant('prior_mean',.3,'prior_cov',1, 'constant',2);             % Default value for constant is 1. 
+gpmf2 = gpmf_linear('prior_mean',.3,'prior_cov',1, 'selectedVariables',[1]);    % selectedVariables = which input dimensions (columns) are active
+gpmf3 = gpmf_squared('prior_mean',.3,'prior_cov',1);
 
 % initialize gp structure
 gp = gp_set('cf', {gpcf1}, 'meanf', {gpmf1,gpmf2,gpmf3}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-6);

@@ -177,15 +177,15 @@ function gp = gp_set(varargin)
   end
 
   % FULL or sparse
-  if init | ~ismember('type',ip.UsingDefaults)
+  if init || ~ismember('type',ip.UsingDefaults)
     gp.type=ip.Results.type;
   end
   % Likelihood
-  if init | ~ismember('lik',ip.UsingDefaults)
+  if init || ~ismember('lik',ip.UsingDefaults)
     gp.lik = ip.Results.lik;
   end
   % Covariance function(s)
-  if init | ~ismember('cf',ip.UsingDefaults)
+  if init || ~ismember('cf',ip.UsingDefaults)
     gp.cf=ip.Results.cf;
     if isstruct(gp.cf)
       % store single structure in a cell array, too
@@ -193,7 +193,7 @@ function gp = gp_set(varargin)
     end
   end
   % Mean function(s)
-  if init | ~ismember('meanf',ip.UsingDefaults)
+  if init || ~ismember('meanf',ip.UsingDefaults)
       if ~isempty(ip.Results.meanf)
         gp.meanf=ip.Results.meanf;
         if isstruct(gp.meanf)
@@ -206,26 +206,26 @@ function gp = gp_set(varargin)
     error('At least one covariance or mean function has to defined')
   end
   % Noise function(s)
-  if init | ~ismember('noisef',ip.UsingDefaults)
+  if init || ~ismember('noisef',ip.UsingDefaults)
     gp.noisef=ip.Results.noisef;
     if isstruct(gp.noisef)
       % store single structure in a cell array, too
       gp.noisef={gp.noisef};
     end
-    if strcmp(gp.lik,'gaussian') & isempty(gp.noisef)
+    if strcmp(gp.lik,'gaussian') && isempty(gp.noisef)
       gp.noisef={gpcf_noise};
     end
   end
   % Inference for which parameters 
-  if init | ~ismember('infer_params',ip.UsingDefaults)
+  if init || ~ismember('infer_params',ip.UsingDefaults)
     gp.infer_params=ip.Results.infer_params;
   end
   % Jitter
-  if init | ~ismember('jitterSigma2',ip.UsingDefaults)
+  if init || ~ismember('jitterSigma2',ip.UsingDefaults)
     gp.jitterSigma2=ip.Results.jitterSigma2;
   end
    % Gradient observation
-  if init | ~ismember('derivobs',ip.UsingDefaults)
+  if init || ~ismember('derivobs',ip.UsingDefaults)
     derivobs=ip.Results.derivobs;
       if ischar(derivobs) 
         switch derivobs
@@ -241,16 +241,16 @@ function gp = gp_set(varargin)
 
   % Inducing inputs
   if ismember(gp.type,{'FIC' 'CS+FIC' 'DTC' 'VAR' 'SOR' 'PIC' 'PIC_BLOCK'})
-    if init | ~ismember('X_u',ip.UsingDefaults)
+    if init || ~ismember('X_u',ip.UsingDefaults)
       gp.X_u = ip.Results.X_u;
       gp.nind = size(gp.X_u,1);
     end
-    if init | ~ismember('Xu_prior',ip.UsingDefaults) | ~isfield(gp,'p')
+    if init || ~ismember('Xu_prior',ip.UsingDefaults) || ~isfield(gp,'p')
       gp.p.X_u = ip.Results.Xu_prior;
     end
     if ismember(gp.type, {'PIC' 'PIC_BLOCK'})
       % + PIC block indexes
-      if init | ~ismember('tr_index',ip.UsingDefaults)
+      if init || ~ismember('tr_index',ip.UsingDefaults)
         gp.tr_index = ip.Results.tr_index;
       end
     end
@@ -260,7 +260,7 @@ function gp = gp_set(varargin)
     error(sprintf('Need to set X_u when using %s',gp.type))
   end
   % Latent method
-  if init | ~ismember('latent_method',ip.UsingDefaults)
+  if init || ~ismember('latent_method',ip.UsingDefaults)
     latent_method=ip.Results.latent_method;
     latent_method_opt={};
     if iscell(latent_method)
@@ -315,6 +315,6 @@ function gp = gp_set(varargin)
       otherwise
         error('Unknown type of latent_method!')
     end % switch latent_method
-  end % if init | ~ismember('latent_method',ip.UsingDefaults)
+  end % if init || ~ismember('latent_method',ip.UsingDefaults)
   
 end
