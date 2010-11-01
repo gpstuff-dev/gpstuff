@@ -76,7 +76,7 @@ pl = prior_unif();
 pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 
-% Create the GP data structure
+% Create the GP data structure (type is by default FULL)
 gp = gp_set('cf', gpcf1, 'lik', lik_probit, 'jitterSigma2', 1e-6);
 %gp = gp_set('cf', gpcf1, 'lik', lik_logit, 'jitterSigma2', 1e-6);
 
