@@ -63,6 +63,9 @@ function  gpmf = gpmf_squared(varargin)
   if init || ~ismember('prior_mean',ip.UsingDefaults)
     gpmf.p.B=ip.Results.prior_cov(:)';
   end
+  if init || ~ismember('selectedVariables',ip.UsingDefaults)
+    gpmf.selectedVariables=ip.Results.selectedVariables;
+  end
   if init
     % Set the function handles to the nested functions
     gpmf.fh.geth = @gpmf_geth;

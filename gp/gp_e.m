@@ -98,6 +98,7 @@ switch gp.type
         [H,b,B]=mean_prep(gp,x,[]);                   
         if isempty(C)  
           L=1;
+          C=0;
           logK=0;
           KH=H';
         elseif issparse(C)  

@@ -142,9 +142,16 @@ switch gp.type
             a = L'\(L\y);
             Eft = K'*a;
         end
-    else                            % non-zero mean
-        L = chol(C)';
-        Kyy = L'\(L\y);                 
+    else
+        if isempty(C)
+            C=0;
+            K=0;
+            L=[];
+            Kyy=zeros(length(y),1);
+        else
+            L = chol(C)';
+            Kyy = L'\(L\y);                 
+        end
         
         [RB RAR] = mean_predf(gp,x,xt,K,L,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
         
