@@ -61,7 +61,7 @@ function gpmf = gpmf_linear(varargin)
   if init || ~ismember('prior_mean',ip.UsingDefaults)
     gpmf.p.B=ip.Results.prior_cov(:)';
   end
-  if init || ~ismember('selectedVariables',ip.UsingDefaults)
+  if ~ismember('selectedVariables',ip.UsingDefaults)
     gpmf.selectedVariables=ip.Results.selectedVariables;
   end
   if init
