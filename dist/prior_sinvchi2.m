@@ -53,11 +53,11 @@ function p = prior_sinvchi2(varargin)
       p.type = 'Sinvchi2';
       
       % set functions
-      p.fh_pak = @prior_sinvchi2_pak;
-      p.fh_unpak = @prior_sinvchi2_unpak;
-      p.fh_e = @prior_sinvchi2_e;
-      p.fh_g = @prior_sinvchi2_g;
-      p.fh_recappend = @prior_sinvchi2_recappend;
+      p.fh.pak = @prior_sinvchi2_pak;
+      p.fh.unpak = @prior_sinvchi2_unpak;
+      p.fh.e = @prior_sinvchi2_e;
+      p.fh.g = @prior_sinvchi2_g;
+      p.fh.recappend = @prior_sinvchi2_recappend;
       
       % set parameters
       p.s2 = 1;
@@ -136,10 +136,10 @@ function p = prior_sinvchi2(varargin)
     e = sum((p.nu./2+1) .* log(x) + (p.s2.*p.nu./2./x) + (p.nu/2) .* log(2./(p.s2.*p.nu)) + gammaln(p.nu/2)) ;
     
     if ~isempty(p.p.s2)
-      e = e + feval(p.p.s2.fh_e, p.s2, p.p.s2) - log(p.s2);
+      e = e + feval(p.p.s2.fh.e, p.s2, p.p.s2) - log(p.s2);
     end
     if ~isempty(p.p.nu)
-      e = e + feval(p.p.nu.fh_e, p.nu, p.p.nu)  - log(p.nu);
+      e = e + feval(p.p.nu.fh.e, p.nu, p.p.nu)  - log(p.nu);
     end
   end
   
@@ -147,11 +147,11 @@ function p = prior_sinvchi2(varargin)
     g = (p.nu/2+1)./x-p.nu.*p.s2./(2*x.^2);
 
     if ~isempty(p.p.s2)
-      gs2 = (sum(p.nu/2.*(1./x-1./p.s2)) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1; 
+      gs2 = (sum(p.nu/2.*(1./x-1./p.s2)) + feval(p.p.s2.fh.g, p.s2, p.p.s2)).*p.s2 - 1; 
       g = [g gs2];
     end
     if ~isempty(p.p.nu)
-      gnu = (sum(0.5*(log(x) + p.s2./x + log(2./p.s2./p.nu) - 1 + digamma1(p.nu/2))) + feval(p.p.nu.fh_g, p.nu, p.p.nu)).*p.nu - 1;
+      gnu = (sum(0.5*(log(x) + p.s2./x + log(2./p.s2./p.nu) - 1 + digamma1(p.nu/2))) + feval(p.p.nu.fh.g, p.nu, p.p.nu)).*p.nu - 1;
       g = [g gnu];
     end
   end

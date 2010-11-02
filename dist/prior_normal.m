@@ -50,11 +50,11 @@ function p = prior_normal(varargin)
       p.type = 'Normal';
       
       % set functions
-      p.fh_pak = @prior_normal_pak;
-      p.fh_unpak = @prior_normal_unpak;
-      p.fh_e = @prior_normal_e;
-      p.fh_g = @prior_normal_g;
-      p.fh_recappend = @prior_normal_recappend;
+      p.fh.pak = @prior_normal_pak;
+      p.fh.unpak = @prior_normal_unpak;
+      p.fh.e = @prior_normal_e;
+      p.fh.g = @prior_normal_g;
+      p.fh.recappend = @prior_normal_recappend;
       
       % set parameters
       p.mu = 0;
@@ -133,10 +133,10 @@ function p = prior_normal(varargin)
     e = 0.5*sum(log(2*pi) + log(p.s2)+ 1./p.s2 .* sum((x-p.mu).^2,1));
     
     if ~isempty(p.p.mu)
-      e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
+      e = e + feval(p.p.mu.fh.e, p.mu, p.p.mu);
     end
     if ~isempty(p.p.s2)
-      e = e + feval(p.p.s2.fh_e, p.s2, p.p.s2)  - log(p.s2);
+      e = e + feval(p.p.s2.fh.e, p.s2, p.p.s2)  - log(p.s2);
     end
   end
   
@@ -145,11 +145,11 @@ function p = prior_normal(varargin)
     g = (1./p.s2).*(x-p.mu);
     
     if ~isempty(p.p.mu)
-      gmu = sum(-(1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
+      gmu = sum(-(1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh.g, p.mu, p.p.mu);
       g = [g gmu];
     end
     if ~isempty(p.p.s2)
-      gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1;
+      gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + feval(p.p.s2.fh.g, p.s2, p.p.s2)).*p.s2 - 1;
       g = [g gs2];
     end
   end

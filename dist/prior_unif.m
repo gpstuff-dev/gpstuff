@@ -37,11 +37,11 @@ function p = prior_unif(varargin)
       p.type = 'Uniform';
       
       % set functions
-      p.fh_pak = @prior_unif_pak;
-      p.fh_unpak = @prior_unif_unpak;
-      p.fh_e = @prior_unif_e;
-      p.fh_g = @prior_unif_g;
-      p.fh_recappend = @prior_unif_recappend;
+      p.fh.pak = @prior_unif_pak;
+      p.fh.unpak = @prior_unif_unpak;
+      p.fh.e = @prior_unif_e;
+      p.fh.g = @prior_unif_g;
+      p.fh.recappend = @prior_unif_recappend;
       
       % No paramaters to init
       if numel(varargin) > 0

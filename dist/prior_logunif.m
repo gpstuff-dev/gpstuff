@@ -39,11 +39,11 @@ function p = prior_logunif(varargin)
       p.type = 'Log-uniform';
       
       % set functions
-      p.fh_pak = @prior_logunif_pak;
-      p.fh_unpak = @prior_logunif_unpak;
-      p.fh_e = @prior_logunif_e;
-      p.fh_g = @prior_logunif_g;
-      p.fh_recappend = @prior_logunif_recappend;
+      p.fh.pak = @prior_logunif_pak;
+      p.fh.unpak = @prior_logunif_unpak;
+      p.fh.e = @prior_logunif_e;
+      p.fh.g = @prior_logunif_g;
+      p.fh.recappend = @prior_logunif_recappend;
       
       % No paramaters to init
       if numel(varargin) > 0

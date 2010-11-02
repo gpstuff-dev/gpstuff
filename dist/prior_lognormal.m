@@ -50,11 +50,11 @@ function p = prior_lognormal(varargin)
       p.type = 'Log-Normal';
       
       % set functions
-      p.fh_pak = @prior_lognormal_pak;
-      p.fh_unpak = @prior_lognormal_unpak;
-      p.fh_e = @prior_lognormal_e;
-      p.fh_g = @prior_lognormal_g;
-      p.fh_recappend = @prior_lognormal_recappend;
+      p.fh.pak = @prior_lognormal_pak;
+      p.fh.unpak = @prior_lognormal_unpak;
+      p.fh.e = @prior_lognormal_e;
+      p.fh.g = @prior_lognormal_g;
+      p.fh.recappend = @prior_lognormal_recappend;
       
       % set parameters
       p.mu = 0;
@@ -133,10 +133,10 @@ function p = prior_lognormal(varargin)
     e = 0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
     
     if ~isempty(p.p.mu)
-      e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
+      e = e + feval(p.p.mu.fh.e, p.mu, p.p.mu);
     end
     if ~isempty(p.p.s2)
-      e = e + feval(p.p.s2.fh_e, p.s2, p.p.s2)  - log(p.s2);
+      e = e + feval(p.p.s2.fh.e, p.s2, p.p.s2)  - log(p.s2);
     end
   end
   
@@ -145,11 +145,11 @@ function p = prior_lognormal(varargin)
     g = (1./(x.*p.s2)).*(log(x)-p.mu+p.s2);
     
     if ~isempty(p.p.mu)
-      gmu = sum(-(1./p.s2).*(log(x)-p.mu)) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
+      gmu = sum(-(1./p.s2).*(log(x)-p.mu)) + feval(p.p.mu.fh.g, p.mu, p.p.mu);
       g = [g gmu];
     end
     if ~isempty(p.p.s2)
-      gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(log(x)-p.mu).^2 )) + feval(p.p.s2.fh_g, p.s2, p.p.s2)).*p.s2 - 1;
+      gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(log(x)-p.mu).^2 )) + feval(p.p.s2.fh.g, p.s2, p.p.s2)).*p.s2 - 1;
       g = [g gs2];
     end
   end

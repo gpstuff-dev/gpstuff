@@ -50,11 +50,11 @@ function p = prior_laplace(varargin)
       p.type = 'Laplace';
       
       % set functions
-      p.fh_pak = @prior_laplace_pak;
-      p.fh_unpak = @prior_laplace_unpak;
-      p.fh_e = @prior_laplace_e;
-      p.fh_g = @prior_laplace_g;
-      p.fh_recappend = @prior_laplace_recappend;
+      p.fh.pak = @prior_laplace_pak;
+      p.fh.unpak = @prior_laplace_unpak;
+      p.fh.e = @prior_laplace_e;
+      p.fh.g = @prior_laplace_g;
+      p.fh.recappend = @prior_laplace_recappend;
       
       % set parameters
       p.mu = 0;
@@ -133,10 +133,10 @@ function p = prior_laplace(varargin)
     e = sum(log(2*p.s) + 1./p.s.* abs(x-p.mu));
     
     if ~isempty(p.p.mu)
-      e = e + feval(p.p.mu.fh_e, p.mu, p.p.mu);
+      e = e + feval(p.p.mu.fh.e, p.mu, p.p.mu);
     end
     if ~isempty(p.p.s)
-      e = e + feval(p.p.s.fh_e, p.s, p.p.s)  - log(p.s);
+      e = e + feval(p.p.s.fh.e, p.s, p.p.s)  - log(p.s);
     end
   end
   
@@ -145,11 +145,11 @@ function p = prior_laplace(varargin)
     g = sign(x-p.mu)./p.s; 
     
     if ~isempty(p.p.mu)
-      gmu = sum(-sign(x-p.mu)./p.s) + feval(p.p.mu.fh_g, p.mu, p.p.mu);
+      gmu = sum(-sign(x-p.mu)./p.s) + feval(p.p.mu.fh.g, p.mu, p.p.mu);
       g = [g gmu];
     end
     if ~isempty(p.p.s)
-      gs = (sum( 1./p.s - 1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh_g, p.s, p.p.s)).*p.s - 1;
+      gs = (sum( 1./p.s - 1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh.g, p.s, p.p.s)).*p.s - 1;
       g = [g gs];
     end
   end

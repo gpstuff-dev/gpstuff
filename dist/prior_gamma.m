@@ -53,11 +53,11 @@ function p = prior_gamma(varargin)
       p.type = 'Gamma';
       
       % set functions
-      p.fh_pak = @prior_gamma_pak;
-      p.fh_unpak = @prior_gamma_unpak;
-      p.fh_e = @prior_gamma_e;
-      p.fh_g = @prior_gamma_g;
-      p.fh_recappend = @prior_gamma_recappend;
+      p.fh.pak = @prior_gamma_pak;
+      p.fh.unpak = @prior_gamma_unpak;
+      p.fh.e = @prior_gamma_e;
+      p.fh.g = @prior_gamma_g;
+      p.fh.recappend = @prior_gamma_recappend;
       
       % set parameters
       p.sh = 4;
@@ -135,10 +135,10 @@ function p = prior_gamma(varargin)
     e = sum(p.is.*x - (p.sh-1).*log(x) -p.sh.*log(p.is)  + gammaln(p.sh));
     
     if ~isempty(p.p.sh)
-      e = e + feval(p.p.sh.fh_e, p.sh, p.p.sh) - log(p.sh);
+      e = e + feval(p.p.sh.fh.e, p.sh, p.p.sh) - log(p.sh);
     end
     if ~isempty(p.p.is)
-      e = e + feval(p.p.is.fh_e, p.is, p.p.is)  - log(p.is);
+      e = e + feval(p.p.is.fh.e, p.is, p.p.is)  - log(p.is);
     end
   end
   
@@ -147,11 +147,11 @@ function p = prior_gamma(varargin)
     g = (1-p.sh)./x + p.is;
     
     if ~isempty(p.p.sh)
-      gsh = (sum(digamma1(p.sh) - log(p.is) - log(x) ) + feval(p.p.sh.fh_g, p.sh, p.p.sh)).*p.sh - 1;
+      gsh = (sum(digamma1(p.sh) - log(p.is) - log(x) ) + feval(p.p.sh.fh.g, p.sh, p.p.sh)).*p.sh - 1;
       g = [g gsh];
     end
     if ~isempty(p.p.is)
-      gis = (sum(-p.sh./p.is+x) + feval(p.p.is.fh_g, p.is, p.p.is)).*p.is - 1;
+      gis = (sum(-p.sh./p.is+x) + feval(p.p.is.fh.g, p.is, p.p.is)).*p.is - 1;
       g = [g gis];
     end
     

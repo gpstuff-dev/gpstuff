@@ -39,11 +39,11 @@ function p = prior_sqrtunif(varargin)
       p.type = 'Sqrt-uniform';
       
       % set functions
-      p.fh_pak = @prior_sqrtunif_pak;
-      p.fh_unpak = @prior_sqrtunif_unpak;
-      p.fh_e = @prior_sqrtunif_e;
-      p.fh_g = @prior_sqrtunif_g;
-      p.fh_recappend = @prior_sqrtunif_recappend;
+      p.fh.pak = @prior_sqrtunif_pak;
+      p.fh.unpak = @prior_sqrtunif_unpak;
+      p.fh.e = @prior_sqrtunif_e;
+      p.fh.g = @prior_sqrtunif_g;
+      p.fh.recappend = @prior_sqrtunif_recappend;
       
       % No paramaters to init
       if numel(varargin) > 0

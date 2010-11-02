@@ -54,11 +54,11 @@ function p = prior_invgam(varargin)
       p.type = 'Invgam';
       
       % set functions
-      p.fh_pak = @prior_invgam_pak;
-      p.fh_unpak = @prior_invgam_unpak;
-      p.fh_e = @prior_invgam_e;
-      p.fh_g = @prior_invgam_g;
-      p.fh_recappend = @prior_invgam_recappend;
+      p.fh.pak = @prior_invgam_pak;
+      p.fh.unpak = @prior_invgam_unpak;
+      p.fh.e = @prior_invgam_e;
+      p.fh.g = @prior_invgam_g;
+      p.fh.recappend = @prior_invgam_recappend;
       
       % set parameters
       p.sh = 4;
@@ -137,10 +137,10 @@ function p = prior_invgam(varargin)
     e = sum(p.s./x + (p.sh+1).*log(x) -p.sh.*log(p.s)  + gammaln(p.sh));
     
     if ~isempty(p.p.sh)
-      e = e + feval(p.p.sh.fh_e, p.sh, p.p.sh) - log(p.sh);
+      e = e + feval(p.p.sh.fh.e, p.sh, p.p.sh) - log(p.sh);
     end
     if ~isempty(p.p.s)
-      e = e + feval(p.p.s.fh_e, p.s, p.p.s)  - log(p.s);
+      e = e + feval(p.p.s.fh.e, p.s, p.p.s)  - log(p.s);
     end
   end
   
@@ -149,11 +149,11 @@ function p = prior_invgam(varargin)
     g = (p.sh+1)./x - p.s./x.^2;
     
     if ~isempty(p.p.sh)
-      gsh = (sum(digamma1(p.sh) - log(p.s) + log(x) ) + feval(p.p.sh.fh_g, p.sh, p.p.sh)).*p.sh - 1;
+      gsh = (sum(digamma1(p.sh) - log(p.s) + log(x) ) + feval(p.p.sh.fh.g, p.sh, p.p.sh)).*p.sh - 1;
       g = [g gsh];
     end
     if ~isempty(p.p.s)
-      gs = (sum(-p.sh./p.s+1./x) + feval(p.p.s.fh_g, p.s, p.p.s)).*p.s - 1;
+      gs = (sum(-p.sh./p.s+1./x) + feval(p.p.s.fh.g, p.s, p.p.s)).*p.s - 1;
       g = [g gs];
     end
     
