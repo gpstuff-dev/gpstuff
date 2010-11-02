@@ -1,17 +1,17 @@
 function gpcf = gpcf_linear(varargin)
-%GPCF_LINEAR  Create a linear covariance function
+%GPCF_LINEAR  Create a linear (dot product) covariance function
 %
 %  Description
-%    GPCF = GPCF_LINEAR('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates a squared exponential covariance function structure in
-%    which the named parameters have the specified values. Any
+%    GPCF = GPCF_LINEAR('PARAM1',VALUE1,'PARAM2,VALUE2,...) creates
+%    a linear (dot product) covariance function structure in which
+%    the named parameters have the specified values. Any
 %    unspecified parameters are set to default values.
 %
 %    GPCF = GPCF_LINEAR(GPCF,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    modify a covariance function structure with the named
 %    parameters altered with the specified values.
 %  
-%    Parameters for linear covariance function
+%    Parameters for linear (dot product) covariance function
 %      coeffSigma2       - prior variance for regressor coefficients [10]
 %                          This can be either scalar corresponding
 %                          to a common prior variance or vector
@@ -153,7 +153,7 @@ function gpcf = gpcf_linear(varargin)
     %   and returns a covariance function data structure identical to
     %   the input, except that the covariance hyper-parameters have
     %   been set to the values in W. Deletes the values set to GPCF
-    %   from W and returns the modeified W.
+    %   from W and returns the modified W.
     %
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.

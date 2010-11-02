@@ -188,7 +188,7 @@ function gpcf = gpcf_exp(varargin)
     %   and returns a covariance function data structure identical to
     %   the input, except that the covariance hyper-parameters have
     %   been set to the values in W. Deletes the values set to GPCF
-    %   from W and returns the modeified W.
+    %   from W and returns the modified W.
     %
     %   The covariance function parameters are transformed via exp
     %   before setting them into the structure.
@@ -273,8 +273,8 @@ function gpcf = gpcf_exp(varargin)
     end
 
     function [DKff, gprior]  = gpcf_exp_ghyper(gpcf, x, x2, mask)
-    %GPCF_EXP_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
-    %                    respect to the hyperparameters.
+    %GPCF_EXP_GHYPER  Evaluate gradient of covariance function and
+    %                 hyper-prior with respect to the hyperparameters.
     %
     %   Description
     %   [DKff, GPRIOR] = GPCF_EXP_GHYPER(GPCF, X) 
@@ -312,8 +312,9 @@ function gpcf = gpcf_exp(varargin)
 
         % Evaluate: DKff{1} = d Kff / d magnSigma2
         %           DKff{2} = d Kff / d lengthScale
-        % NOTE! Here we have already taken into account that the parameters are transformed
-        % through log() and thus dK/dlog(p) = p * dK/dp
+
+        % NOTE! Here we have already taken into account that the parameters
+        % are transformed through log() and thus dK/dlog(p) = p * dK/dp
 
         % evaluate the gradient for training covariance
         if nargin == 2
@@ -325,7 +326,6 @@ function gpcf = gpcf_exp(varargin)
                 ii1 = ii1 +1;
                 DKff{ii1} = Cdm;
             end
-
             
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x);

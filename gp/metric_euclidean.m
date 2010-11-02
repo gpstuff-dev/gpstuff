@@ -148,7 +148,7 @@ function metric = metric_euclidean(varargin)
   %   covariance function data structure identical to the input, except
   %   that the covariance hyper-parameters have been set to the values
   %   in W. Deletes the values set to GPCF from W and returns the
-  %   modeified W.
+  %   modified W.
   %
   %   The covariance function parameters are transformed via exp
   %   before setting them into the structure.
