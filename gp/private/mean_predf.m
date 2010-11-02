@@ -50,8 +50,14 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
     
 
     if isequal(latent_method,'gaussian')
-        KsK = L'\(L\K_nf);                       % inv(C)*K(x,xt)
-        KsH = L'\(L\H');                         % inv(C)*H)
+        if ~isempty(L)
+            KsK = L'\(L\K_nf);                       % inv(C)*K(x,xt)
+            KsH = L'\(L\H');                         % inv(C)*H'
+        else
+            [nh mh]=size(H);
+            KsK=zeros(length(x),length(xt));
+            KsH=zeros(length(x),nh);
+        end
     elseif isequal(latent_method,'EP')
         KsK = L*(S*K_nf);                        % inv(K + S^-1)*S^-1*(S*K(x,xt)) 
         KsH = L*(S*H');                          % inv(K + S^-1)*S^-1*(S*H')
