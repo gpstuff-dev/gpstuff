@@ -3,18 +3,16 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
 %
 %  Description
 %    [EFT, VARFT, EYT, VARYT] = LA_PRED(GP, X, Y, XT, OPTIONS)
-%    takes a GP data structure GP together with a matrix XT of
-%    input vectors, matrix X of training inputs and vector Y of
-%    training targets, and evaluates the predictive distribution at
-%    inputs X. Returns a posterior mean EFT and variance VARFT of
-%    latent variables, the posterior predictive mean EYT and
-%    variance VARYT, and posterior predictive density PYT at input
-%    locations XT.
+%    takes a GP data structure together with matrix X of training
+%    inputs and vector Y of training targets, and evaluates the
+%    predictive distribution at test inputs XT. Returns a posterior
+%    mean EFT and variance VARFT of latent variables and the
+%    posterior predictive mean EYT and variance VARYT.
 %
-%    [EF, VARF, EY, VARY, PYT] = LA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, EYT, VARYT, PYT] = LA_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
-%    at input locations XT. This can be used for example in the
-%    cross-validation. Here Y has to be vector.
+%    at test input locations XT. This can be used for example in
+%    the cross-validation. Here Y has to be vector.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 

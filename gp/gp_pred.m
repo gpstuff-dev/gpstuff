@@ -3,12 +3,11 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 %
 %  Description
 %    [EFT, VARFT, EYT, VARYT] = GP_PRED(GP, X, Y, XT, OPTIONS)
-%    takes a GP data structure together with a matrix XT of test
-%    input vectors, matrix X of training inputs and vector Y of
-%    training targets, and evaluates the predictive distribution at
-%    inputs X. Returns a posterior mean EFT and variance VARFT of
-%    latent variables and the posterior predictive mean EYT and
-%    variance VARYT.
+%    takes a GP data structure together with matrix X of training
+%    inputs and vector Y of training targets, and evaluates the
+%    predictive distribution at test inputs XT. Returns a posterior
+%    mean EFT and variance VARFT of latent variables and the
+%    posterior predictive mean EYT and variance VARYT.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
 %      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
@@ -16,10 +15,10 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EF, VARF, EY, VARY, PYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, EYT, VARYT, PYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
-%    at input locations XT. This can be used for example in the
-%    cross-validation. Here Y has to be vector.
+%    at test input locations XT. This can be used for example in
+%    the cross-validation. Here Y has to be vector.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -70,23 +69,26 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if isfield(gp,'latent_method')
+if isfield(gp,'latent_method') || iscell(gp)
   % use inference specific methods
-  % not the nicest way of doing this, but quick solution
-  switch gp.latent_method
-    case 'Laplace'
-      switch gp.lik.type
-        case 'Softmax'
-          fh_pred=@la_softmax_pred;
-        otherwise
-          fh_pred=@la_pred;
-      end
-    case 'EP'
-      fh_pred=@ep_pred;
-    case 'MCMC'
-      fh_pred=@mc_pred;
+  if isfield(gp,'latent_method')
+    switch gp.latent_method
+      case 'Laplace'
+        switch gp.lik.type
+          case 'Softmax'
+            fh_pred=@la_softmax_pred;
+          otherwise
+            fh_pred=@la_pred;
+        end
+      case 'EP'
+        fh_pred=@ep_pred;
+      case 'MCMC'
+        fh_pred=@mc_pred;
+    end
+  else
+      fh_pred=@ia_pred;
   end
-  switch nargout % ugly...
+  switch nargout
     case 1
       [Eft] = fh_pred(gp, x, y, xt, varargin{:});
     case 2

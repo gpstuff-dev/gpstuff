@@ -18,8 +18,8 @@ function gpcf = gpcf_neuralnetwork(varargin)
 %                           to a common prior variance or vector
 %                           defining own prior variance for each
 %                           input.
-%      biasSigma2_prior   = prior structure for magnSigma2 [prior_unif]
-%      weightSigma2_prior = prior structure for lengthScale [prior_unif]
+%      biasSigma2_prior   = prior structure for magnSigma2 [prior_sqrtunif]
+%      weightSigma2_prior = prior structure for weightSigma2 [prior_sqrtunif]
 %      selectedVariables  = vector defining which inputs are used
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
@@ -96,12 +96,12 @@ function gpcf = gpcf_neuralnetwork(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(biasSigma2_prior)&isnan(biasSigma2_prior)
-                gpcf.p.biasSigma2=prior_unif;
+                gpcf.p.biasSigma2=prior_sqrtunif;
             else
                 gpcf.p.biasSigma2=biasSigma2_prior;
             end
             if ~isstruct(weightSigma2_prior)&isnan(weightSigma2_prior)
-                gpcf.p.weightSigma2=prior_unif;
+                gpcf.p.weightSigma2=prior_sqrtunif;
             else
                 gpcf.p.weightSigma2=weightSigma2_prior;
             end

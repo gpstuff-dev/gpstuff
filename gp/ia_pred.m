@@ -1,16 +1,28 @@
-function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin) 
+function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = ia_pred(gp_array, x, y, xt, varargin) 
 %IA_PRED  Prediction with Gaussian Process GP_IA solution.
 %
 %  Description
-%    [Ef, Varf] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) takes a
-%    Gaussian processes record array RECGP (returned by gp_ia)
-%    together with a matrix XT of input vectors, matrix X of
-%    training inputs and vector Y of training targets. Returns the
-%    predictive mean and variance, Ef and Varf, for test inputs XT
-%    with hyperparameters marginalized out with IA. That is,
+%    [EFT, VARFT, EYT, VARYT] = IA_PRED(GP_ARRAY, X, Y, XT,
+%    OPTIONS) takes a cell array of GP data structures together
+%    with matrix X of training inputs and vector Y of training
+%    targets, and evaluates the predictive distribution at test
+%    inputs XT with hyperparameters marginalized out with IA. 
+%    Returns a posterior mean EFT and variance VARFT of latent
+%    variables and the posterior predictive mean EYT and variance
+%    VARYT.
 %
-%        EF = E[f | xt, x, y]
-%      VARF = Var[f | xt, x, y]
+%    [EFT, VARFT, EYT, VARYT, PYT] = IA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also the predictive density PYT of the observations YT
+%    at test input locations XT with hyperparameters marginalized
+%    out with IA. This can be used for example in the
+%    cross-validation. Here Y has to be vector.
+%
+%    [EFT, VARFT, EYT, VARYT, PYT, FT, PFT] = ...
+%      IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%    returns also the numerical representation of the marginal
+%    posterior of latent variables at each XT. FT is a vector of
+%    latent values and PFT_i = p(FT_i) is the posterior density for
+%    FT_i.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - index vector telling which covariance functions are 
@@ -33,23 +45,6 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
 %       
-%    [Ef, Varf, Ey, Vary] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS)
-%    returns also the predictive means and variances for
-%    observations at input locations XT. That is,
-%
-%        Ey() = E[y | xt, x, y]
-%      Vary() = Var[y | xt, x, y]
-%    
-%    [Ef, Varf, Ey, Vary, py] = IA_PRED(GP_ARRAY, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also the predictive density py of test outputs YT.
-%    
-%
-%    [Ef, Varf, Ey, Vary, py, f, ff] = IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
-%    returns also the numerical representation of the marginal
-%    posterior of latent variables at each XT. f is a vector of
-%    latent values and ff_i = p(f_i) is the posterior density for
-%    f_i.
-%
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just
 %    an approximation since the covariance functions are coupled in
@@ -57,11 +52,11 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
 %    anymore.
 %
 %    For example, if you use covariance such as K = K1 + K2 your
-%    predictions Ef1 = ia_pred(gp_array, X, Y, X, 'predcf', 1) and
-%    Ef2 = ia_pred(gp_array, x, y, x, 'predcf', 2) should sum up to
-%    Ef = ia_pred(gp_array, x, y, x). That is Ef = Ef1 + Ef2. With
+%    predictions Eft1 = ia_pred(gp_array, X, Y, X, 'predcf', 1) and
+%    Eft2 = ia_pred(gp_array, x, y, x, 'predcf', 2) should sum up to
+%    Eft = ia_pred(gp_array, x, y, x). That is Eft = Eft1 + Eft2. With
 %    FULL model this is true but with FIC and PIC this is true only
-%    approximately. That is Ef \approx Ef1 + Ef2.
+%    approximately. That is Eft \approx Eft1 + Eft2.
 %
 %    With CS+FIC the predictions are exact if the PREDCF covariance
 %    functions are all in the FIC part or if they are CS
@@ -114,7 +109,7 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
     if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
     
     if nargout > 4 && isempty(yt)
-        py = NaN;
+      pyt = NaN;
     end
         
     nGP = numel(gp_array);
@@ -148,11 +143,11 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
     % Make predictions with different models in gp_array
     % ==================================================
 
-    for j = 1 : nGP
+    for j = 1:nGP
         if isempty(yt)
-            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
+            [Eft_grid(j,:), Varft_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
         else
-            [Ef_grid(j,:), Varf_grid(j,:), Ey_grid(j,:), Vary_grid(j,:), py_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
+            [Eft_grid(j,:), Varft_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:), pyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
         end
     end
     
@@ -164,36 +159,35 @@ function [Ef, Varf, Ey, Vary, py, f, ff] = ia_pred(gp_array, x, y, xt, varargin)
     % Latent variables f
     % ==============================
     
-    f = zeros(size(Ef_grid,2),501);
-    for j = 1 : size(Ef_grid,2);
-        f(j,:) = Ef_grid(1,j)-10*sqrt(Varf_grid(1,j)) : 20*sqrt(Varf_grid(1,j))/500 : Ef_grid(1,j)+10*sqrt(Varf_grid(1,j));  
+    ft = zeros(size(Eft_grid,2),501);
+    for j = 1 : size(Eft_grid,2);
+        ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));  
     end
     
     % Calculate the density in each grid point by integrating over
     % different models
-    ff = zeros(size(Ef_grid,2),501);
-    for j = 1 : size(Ef_grid,2)
-        ff(j,:) = sum(normpdf(repmat(f(j,:),size(Ef_grid,1),1), repmat(Ef_grid(:,j),1,size(f,2)), repmat(sqrt(Varf_grid(:,j)),1,size(f,2))).*repmat(P_TH,1,size(f,2)),1); 
+    pft = zeros(size(Eft_grid,2),501);
+    for j = 1 : size(Eft_grid,2)
+        pft(j,:) = sum(normpdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
     end
 
     % Normalize distributions
-    ff = ff./repmat(sum(ff,2),1,size(ff,2));
+    pft = bsxfun(@rdivide,pft,sum(pft,2));
 
     % Widths of each grid point
-    df = diff(f,1,2);
-    df(:,end+1)=df(:,end);
+    dft = diff(ft,1,2);
+    dft(:,end+1)=dft(:,end);
 
     % Calculate mean and variance of the distributions
-    Ef = sum(f.*ff,2)./sum(ff,2);
-    Varf = sum(ff.*(repmat(Ef,1,size(f,2))-f).^2,2)./sum(ff,2);
+    Eft = sum(ft.*pft,2)./sum(pft,2);
+    Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
     
-    Ey = sum(Ey_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
-    Vary = sum(Vary_grid.*repmat(P_TH,1,size(Ey_grid,2)),1) + sum( (Ey_grid - repmat(Ey,nGP,1)).^2, 1);
-    Ey=Ey';
-    Vary=Vary';
+    Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
+    Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
+    Eyt=Eyt';
+    Varyt=Varyt';
     
     if ~isempty(yt)
-        py = sum(py_grid.*repmat(P_TH,1,size(Ey_grid,2)),1);
-        py = py';
+      pyt = sum(bsxfun(@times,pyt_grid,P_TH),1)';
     end
     

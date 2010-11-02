@@ -73,11 +73,11 @@ function metric = metric_euclidean(varargin)
   end
   
   % Components
-  if init | ~ismember('components',ip.UsingDefaults)
+  if init || ~ismember('components',ip.UsingDefaults)
     metric.components = ip.Results.components;
   end
   % Deltaflag
-  if init | ~ismember('deltaflag',ip.UsingDefaults)
+  if init || ~ismember('deltaflag',ip.UsingDefaults)
     metric.deltaflag = ip.Results.deltaflag;
   end
   % Components+Deltaflag check and defaults
@@ -89,14 +89,14 @@ function metric = metric_euclidean(varargin)
     metric.deltaflag = false(1,length(metric.components));
   end
   % Lengthscale
-  if init | ~ismember('lengthScale',ip.UsingDefaults)
+  if init || ~ismember('lengthScale',ip.UsingDefaults)
     metric.lengthScale = ip.Results.lengthScale;
     if isempty(metric.lengthScale)
       metric.lengthScale = repmat(1,1,length(metric.components));
     end
   end
   % Prior for lengthscale
-  if init | ~ismember('lengthScale_prior',ip.UsingDefaults)
+  if init || ~ismember('lengthScale_prior',ip.UsingDefaults)
     metric.p=[];
     metric.p.lengthScale = ip.Results.lengthScale_prior;
   end
