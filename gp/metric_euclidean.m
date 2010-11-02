@@ -85,7 +85,7 @@ function metric = metric_euclidean(varargin)
     error('Either ''components'' or ''deltaflag'' has to be specified')
   elseif isempty(metric.components)
     metric.components=num2cell(1:length(metric.components));
-  else
+  elseif isempty(metric.deltaflag)
     metric.deltaflag = false(1,length(metric.components));
   end
   % Lengthscale
