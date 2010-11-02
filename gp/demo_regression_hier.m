@@ -73,16 +73,17 @@ title('Linear model')
 %plot(xx,Eff,'o-')
 
 % 2) Linear model with hierarchical intercept
-cfl=gpcf_linear('coeffSigma2',10,'coeffSigma2_prior',[], ...
-                'selectedVariables',1);
-% gpcf_exp with delta distance, produces hierarchial constant
-% covariance, ie. hierarchical intercept
-cfh=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
-                                       'deltaflag',1, ...
-                                       'lengthScale_prior',prior_t()));
+cfc=gpcf_constant('constSigma2',1);
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+% gpcf_exp with delta distance and length scale very small
+% produces own constant term for each rat
+cfci=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
+                                        'deltaflag',1, ...
+                                        'lengthScale',1e-6,...
+                                        'lengthScale_prior',[]));
 cfn=gpcf_noise('noiseSigma2',.1,...
                'noiseSigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
-gp=gp_set('cf',{cfh cfl},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl},'noisef',{cfn},'jitterSigma2',1e-6);
 gp=gp_optim(gp,xn,yn,'opt',opt);
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -92,20 +93,21 @@ axis([7 37 100 400])
 title('Linear model with random intercept')
 
 % 3) Linear model with hierarchical intercept and slope
-cfl=gpcf_linear('coeffSigma2',10,'coeffSigma2_prior',[], ...
-                'selectedVariables',1);
-% gpcf_exp with delta distance, produces hierarchial constant
-% covariance, ie. hierarchical intercept
-cfh=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
-                                       'deltaflag',1, ...
-                                       'lengthScale_prior',prior_t()));
+cfc=gpcf_constant('constSigma2',1);
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+% gpcf_exp with delta distance and length scale very small
+% produces own constant term for each rat
+cfci=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
+                                        'deltaflag',1, ...
+                                        'lengthScale',1e-6,...
+                                        'lengthScale_prior',[]));
 % gpcf_exp with delta distance times linear covariance produces
-% hierarchial linear covariance
-cfhh=gpcf_exp(cfh,'magnSigma2',1,'magnSigma2_prior',[]);
-cflh=gpcf_prod('functions',{cfl cfhh});
+% linear covariance term for each rat
+cfi=gpcf_exp(cfci,'magnSigma2',1,'magnSigma2_prior',[]);
+cfli=gpcf_prod('functions',{cfl cfi});
 cfn=gpcf_noise('noiseSigma2',.1,...
                'noiseSigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
-gp=gp_set('cf',{cfh cflh},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl cfli},'noisef',{cfn},'jitterSigma2',1e-6);
 gp=gp_optim(gp,xn,yn,'opt',opt);
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -116,19 +118,20 @@ title('Linear model with random intercept and slope')
 
 % 4) Nonlinear model with hierarchical intercept
 % include linear part, too
-cfl=gpcf_linear('coeffSigma2',10,'coeffSigma2_prior',[], ...
-                'selectedVariables',1);
-% gpcf_exp with delta distance, produces hierarchial constant
-% covariance, ie. hierarchical intercept
-cfh=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
-                                       'deltaflag',1, ...
-                                       'lengthScale_prior',prior_t()));
+cfc=gpcf_constant('constSigma2',1);
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+% gpcf_exp with delta distance and length scale very small
+% produces own constant term for each rat
+cfci=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
+                                        'deltaflag',1, ...
+                                        'lengthScale',1e-6,...
+                                        'lengthScale_prior',[]));
 % nonlinear part
 cfs=gpcf_sexp('metric',metric_euclidean('components',{[1]},...
                                         'lengthScale_prior',prior_t()));
 cfn=gpcf_noise('noiseSigma2',.1,...
                'noiseSigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
-gp=gp_set('cf',{cfh cfl cfs},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl cfs},'noisef',{cfn},'jitterSigma2',1e-6);
 gp=gp_optim(gp,xn,yn,'opt',opt);
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -139,27 +142,29 @@ title('Non-linear model with random intercept')
 
 % 5) Nonlinear model with hierarchical intercept and curve
 % include linear part, too
-cfl=gpcf_linear('coeffSigma2',10,'coeffSigma2_prior',[], ...
-                'selectedVariables',1);
+cfc=gpcf_constant('constSigma2',1);
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+% gpcf_exp with delta distance and length scale very small
+% produces own constant term for each rat
+cfci=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
+                                        'deltaflag',1, ...
+                                        'lengthScale',1e-6,...
+                                        'lengthScale_prior',[]));
 % nonlinear part
 cfs=gpcf_sexp('metric',metric_euclidean('components',{[1]},...
                                         'lengthScale_prior',prior_t()));
-% gpcf_exp with delta distance, produces hierarchial constant
-% covariance, ie. hierarchical intercept
-cfh=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
-                                       'deltaflag',1, ...
-                                       'lengthScale_prior',prior_t()));
 % gpcf_exp with delta distance times linear covariance produces
-% hierarchial linear covariance
-cfhh=gpcf_exp(cfh,'magnSigma2',1,'magnSigma2_prior',[]);
-cflh=gpcf_prod('functions',{cfl cfhh});
-% gpcf_exp with delta distance times sexp covariance produces
-% hierarchial sexp covariance
-cfsh=gpcf_prod('functions',{cfs cfhh});
+% linear covariance term for each rat
+cfi=gpcf_exp(cfci,'magnSigma2',1,'magnSigma2_prior',[]);
+cfli=gpcf_prod('functions',{cfl cfi});
+% gpcf_exp with delta distance times linear covariance produces
+% sexp covariance term for each rat
+cfsi=gpcf_prod('functions',{cfs cfi});
 cfn=gpcf_noise('noiseSigma2',.1,...
                'noiseSigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
 % combine hierarchical constant, linear and sexp covariances
-gp=gp_set('cf',{cfh cflh cfsh},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl cfli cfs cfsi},'noisef',{cfn},...
+          'jitterSigma2',1e-6);
 gp=gp_optim(gp,xn,yn,'opt',opt);
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -180,7 +185,7 @@ title('Non-linear hierarchical model 1 with IA')
 
 % 7) Nonlinear model with hierarchical intercept and curve
 %    Same as 5, but with no linear and product covariances
-% nonlinear part with delta distance for ratid
+%    nonlinear part with delta distance for ratid
 cfs=gpcf_sexp('metric',metric_euclidean('components',{[1] [2]},...
                                         'deltaflag', [0 1], ...
                                         'lengthScale_prior',prior_t()));
@@ -212,21 +217,23 @@ axis([7 37 100 400])
 title('Non-linear hierarchical model 2 with IA')
 
 % 9) With neuralnetwork covariance and integration over the hyperparameters
+cfc=gpcf_constant('constSigma2',1);
 cfnn=gpcf_neuralnetwork('selectedVariables',1);
 % gpcf_exp with delta distance, produces hierarchial constant
 % covariance, ie. hierarchical intercept
-cfh=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
-                                       'deltaflag',1, ...
-                                       'lengthScale_prior',prior_t()));
+cfci=gpcf_exp('metric',metric_euclidean('components',{[2]}, ...
+                                        'deltaflag',1, ...
+                                        'lengthScale',1e-6,...
+                                        'lengthScale_prior',[]));
 % gpcf_exp with delta distance times linear covariance produces
 % hierarchial linear covariance
-cfhh=gpcf_exp(cfh,'magnSigma2',1,'magnSigma2_prior',[]);
+cfi=gpcf_exp(cfci,'magnSigma2',1,'magnSigma2_prior',[]);
 % gpcf_exp with delta distance times sexp covariance produces
 % hierarchial sexp covariance
-cfnnh=gpcf_prod('functions',{cfnn cfhh});
+cfnni=gpcf_prod('functions',{cfnn cfi});
 cfn=gpcf_noise('noiseSigma2',.1,...
                'noiseSigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
-gp=gp_set('cf',{cfh cfnnh},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn},'jitterSigma2',1e-6);
 gp=gp_optim(gp,xn,yn);
 gps=gp_ia(gp,xn,yn);
 Ef=gp_pred(gps,xn,yn,xn);
