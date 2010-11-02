@@ -492,9 +492,9 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_pred(gp, x, y, xt, varargin)
     % ============================================================    
     if nargout > 2
         if isempty(yt)
-            [Eyt, Varyt] = feval(gp.lik.fh_predy, gp.lik, Eft, Varft, [], zt);
+            [Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, [], zt);
         else
-            [Eyt, Varyt, pyt] = feval(gp.lik.fh_predy, gp.lik, Eft, Varft, yt, zt);
+            [Eyt, Varyt, pyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
         end
     end
 end

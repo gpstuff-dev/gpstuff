@@ -77,15 +77,15 @@ function gpcf = gpcf_constant(varargin)
             end
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_constant_pak;
-            gpcf.fh_unpak = @gpcf_constant_unpak;
-            gpcf.fh_e = @gpcf_constant_e;
-            gpcf.fh_ghyper = @gpcf_constant_ghyper;
-            gpcf.fh_ginput = @gpcf_constant_ginput;
-            gpcf.fh_cov = @gpcf_constant_cov;
-            gpcf.fh_trcov  = @gpcf_constant_trcov;
-            gpcf.fh_trvar  = @gpcf_constant_trvar;
-            gpcf.fh_recappend = @gpcf_constant_recappend;
+            gpcf.fh.pak = @gpcf_constant_pak;
+            gpcf.fh.unpak = @gpcf_constant_unpak;
+            gpcf.fh.e = @gpcf_constant_e;
+            gpcf.fh.ghyper = @gpcf_constant_ghyper;
+            gpcf.fh.ginput = @gpcf_constant_ginput;
+            gpcf.fh.cov = @gpcf_constant_cov;
+            gpcf.fh.trcov  = @gpcf_constant_trcov;
+            gpcf.fh.trvar  = @gpcf_constant_trvar;
+            gpcf.fh.recappend = @gpcf_constant_recappend;
             
         case 'set'
             % Set the parameter values of covariance function
@@ -123,7 +123,7 @@ function gpcf = gpcf_constant(varargin)
             w = log(gpcf.constSigma2);
             
             % Hyperparameters of constSigma2
-            w = [w feval(gpcf.p.constSigma2.fh_pak, gpcf.p.constSigma2)];
+            w = [w feval(gpcf.p.constSigma2.fh.pak, gpcf.p.constSigma2)];
         end        
      end
 
@@ -150,7 +150,7 @@ function gpcf = gpcf_constant(varargin)
             w = w(2:end);
 
             % Hyperparameters of magnSigma2
-            [p, w] = feval(gpcf.p.constSigma2.fh_unpak, gpcf.p.constSigma2, w);
+            [p, w] = feval(gpcf.p.constSigma2.fh.unpak, gpcf.p.constSigma2, w);
             gpcf.p.constSigma2 = p;
         end
     end
@@ -182,7 +182,7 @@ function gpcf = gpcf_constant(varargin)
         gpp=gpcf.p;
 
         if ~isempty(gpp.constSigma2)
-            eprior = feval(gpp.constSigma2.fh_e, gpcf.constSigma2, gpp.constSigma2) - log(gpcf.constSigma2);
+            eprior = feval(gpp.constSigma2.fh.e, gpcf.constSigma2, gpp.constSigma2) - log(gpcf.constSigma2);
         end
     end
 
@@ -259,7 +259,7 @@ function gpcf = gpcf_constant(varargin)
             ggs = [];
             if ~isempty(gpcf.p.constSigma2)
                 % Evaluate the gprior with respect to magnSigma2
-                ggs = feval(gpp.constSigma2.fh_g, gpcf.constSigma2, gpp.constSigma2);
+                ggs = feval(gpp.constSigma2.fh.g, gpcf.constSigma2, gpp.constSigma2);
                 gprior = ggs(1).*gpcf.constSigma2 - 1;
             end
 
@@ -303,7 +303,7 @@ function gpcf = gpcf_constant(varargin)
             end
             
         elseif nargin == 3
-            %K = feval(gpcf.fh_cov, gpcf, x, x2);
+            %K = feval(gpcf.fh.cov, gpcf, x, x2);
             
             ii1 = 0;
             for i=1:m
@@ -404,14 +404,14 @@ function gpcf = gpcf_constant(varargin)
             reccf.constSigma2 = [];
 
             % Set the function handles
-            reccf.fh_pak = @gpcf_constant_pak;
-            reccf.fh_unpak = @gpcf_constant_unpak;
-            reccf.fh_e = @gpcf_constant_e;
-            reccf.fh_g = @gpcf_constant_g;
-            reccf.fh_cov = @gpcf_constant_cov;
-            reccf.fh_trcov  = @gpcf_constant_trcov;
-            reccf.fh_trvar  = @gpcf_constant_trvar;
-            reccf.fh_recappend = @gpcf_constant_recappend;
+            reccf.fh.pak = @gpcf_constant_pak;
+            reccf.fh.unpak = @gpcf_constant_unpak;
+            reccf.fh.e = @gpcf_constant_e;
+            reccf.fh.g = @gpcf_constant_g;
+            reccf.fh.cov = @gpcf_constant_cov;
+            reccf.fh.trcov  = @gpcf_constant_trcov;
+            reccf.fh.trvar  = @gpcf_constant_trvar;
+            reccf.fh.recappend = @gpcf_constant_recappend;
             gpcf.p=[];
             gpcf.p.constSigma2=[];
             if ~isempty(ri.p.constSigma2)

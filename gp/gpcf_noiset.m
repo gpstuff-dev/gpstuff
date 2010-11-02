@@ -153,16 +153,16 @@ function gpcf = gpcf_noiset(varargin)
             end
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_noiset_pak;
-            gpcf.fh_unpak = @gpcf_noiset_unpak;
-            gpcf.fh_e = @gpcf_noiset_e;
-            gpcf.fh_ghyper = @gpcf_noiset_ghyper;
-            gpcf.fh_cov = @gpcf_noiset_cov;
-            gpcf.fh_trcov  = @gpcf_noiset_trcov;
-            gpcf.fh_trvar  = @gpcf_noiset_trvar;
-            gpcf.fh_gibbs = @gpcf_noiset_gibbs;
+            gpcf.fh.pak = @gpcf_noiset_pak;
+            gpcf.fh.unpak = @gpcf_noiset_unpak;
+            gpcf.fh.e = @gpcf_noiset_e;
+            gpcf.fh.ghyper = @gpcf_noiset_ghyper;
+            gpcf.fh.cov = @gpcf_noiset_cov;
+            gpcf.fh.trcov  = @gpcf_noiset_trcov;
+            gpcf.fh.trvar  = @gpcf_noiset_trvar;
+            gpcf.fh.gibbs = @gpcf_noiset_gibbs;
             % gpcf.sampling_opt = 'noiset_opt';
-            gpcf.fh_recappend = @gpcf_noiset_recappend;
+            gpcf.fh.recappend = @gpcf_noiset_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -339,7 +339,7 @@ function gpcf = gpcf_noiset(varargin)
         % Sample nu
         if ~isempty(gpcf.p.nu)
             pp = gpcf.p.nu;            
-            nu=sls1mm( @(nu) (-sum(sinvchi2_lpdf(U,nu,t2))+feval(pp.fh_e, nu, pp)) ,nu,opt ) ;
+            nu=sls1mm( @(nu) (-sum(sinvchi2_lpdf(U,nu,t2))+feval(pp.fh.e, nu, pp)) ,nu,opt ) ;
         end
         gpcf.noiseSigmas2 = rss2;
         gpcf.U = U;
@@ -387,15 +387,15 @@ function gpcf = gpcf_noiset(varargin)
             reccf.noiseSigmas2 = [];
             
             % Set the function handles
-            reccf.fh_pak = @gpcf_noiset_pak;
-            reccf.fh_unpak = @gpcf_noiset_unpak;
-            reccf.fh_e = @gpcf_noiset_e;
-            reccf.fh_g = @gpcf_noiset_g;
-            reccf.fh_cov = @gpcf_noiset_cov;
-            reccf.fh_trcov  = @gpcf_noiset_trcov;
-            reccf.fh_trvar  = @gpcf_noiset_trvar;
-            reccf.fh_gibbs = @gpcf_noiset_gibbs;
-            reccf.fh_recappend = @gpcf_noiset_recappend;
+            reccf.fh.pak = @gpcf_noiset_pak;
+            reccf.fh.unpak = @gpcf_noiset_unpak;
+            reccf.fh.e = @gpcf_noiset_e;
+            reccf.fh.g = @gpcf_noiset_g;
+            reccf.fh.cov = @gpcf_noiset_cov;
+            reccf.fh.trcov  = @gpcf_noiset_trcov;
+            reccf.fh.trvar  = @gpcf_noiset_trvar;
+            reccf.fh.gibbs = @gpcf_noiset_gibbs;
+            reccf.fh.recappend = @gpcf_noiset_recappend;
             return
         end
         

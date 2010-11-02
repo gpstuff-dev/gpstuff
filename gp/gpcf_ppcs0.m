@@ -149,15 +149,15 @@ function gpcf = gpcf_ppcs0(varargin)
         end
       
         % Set the function handles to the nested functions
-        gpcf.fh_pak = @gpcf_ppcs0_pak;
-        gpcf.fh_unpak = @gpcf_ppcs0_unpak;
-        gpcf.fh_e = @gpcf_ppcs0_e;
-        gpcf.fh_ghyper = @gpcf_ppcs0_ghyper;
-        gpcf.fh_ginput = @gpcf_ppcs0_ginput;
-        gpcf.fh_cov = @gpcf_ppcs0_cov;
-        gpcf.fh_trcov  = @gpcf_ppcs0_trcov;
-        gpcf.fh_trvar  = @gpcf_ppcs0_trvar;
-        gpcf.fh_recappend = @gpcf_ppcs0_recappend;
+        gpcf.fh.pak = @gpcf_ppcs0_pak;
+        gpcf.fh.unpak = @gpcf_ppcs0_unpak;
+        gpcf.fh.e = @gpcf_ppcs0_e;
+        gpcf.fh.ghyper = @gpcf_ppcs0_ghyper;
+        gpcf.fh.ginput = @gpcf_ppcs0_ginput;
+        gpcf.fh.cov = @gpcf_ppcs0_cov;
+        gpcf.fh.trcov  = @gpcf_ppcs0_trcov;
+        gpcf.fh.trvar  = @gpcf_ppcs0_trvar;
+        gpcf.fh.recappend = @gpcf_ppcs0_recappend;
         
       case 'set'
         % Set the parameter values of covariance function
@@ -210,7 +210,7 @@ function gpcf = gpcf_ppcs0(varargin)
             w(i1) = log(gpcf.magnSigma2);
             
             % Hyperparameters of magnSigma2
-            ww = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2);
+            ww = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
         end        
         
         if isfield(gpcf,'metric')
@@ -221,7 +221,7 @@ function gpcf = gpcf_ppcs0(varargin)
                 w = [w log(gpcf.lengthScale)];
                             
                 % Hyperparameters of lengthScale
-                w = [w feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
+                w = [w feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
             end
         end
         w = [w ww];
@@ -266,14 +266,14 @@ function gpcf = gpcf_ppcs0(varargin)
                 w = w(i2+1:end);
                                 
                 % Hyperparameters of lengthScale
-                [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
+                [p, w] = feval(gpcf.p.lengthScale.fh.unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
         end
         
         if ~isempty(gpp.magnSigma2)
             % Hyperparameters of magnSigma2
-            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+            [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
             gpcf.p.magnSigma2 = p;
         end
     end
@@ -319,10 +319,10 @@ function gpcf = gpcf_ppcs0(varargin)
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
 
             if ~isempty(gpcf.p.magnSigma2)
-                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+                eprior = feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
             end
             if ~isempty(gpp.lengthScale)
-                eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
+                eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
         end
     end
@@ -496,7 +496,7 @@ function gpcf = gpcf_ppcs0(varargin)
             end
             
             ii1=0;
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             
             if ~isempty(gpcf.p.magnSigma2)
                 ii1 = ii1 +1;
@@ -614,7 +614,7 @@ function gpcf = gpcf_ppcs0(varargin)
             
             if ~isempty(gpcf.p.magnSigma2)
                 ii1 = ii1+1;
-                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
             end
             
             if isfield(gpcf,'metric')
@@ -638,7 +638,7 @@ function gpcf = gpcf_ppcs0(varargin)
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = 1;
-                ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
+                ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
                 gprior = ggs(i1).*gpcf.magnSigma2 - 1;
             end
             
@@ -652,7 +652,7 @@ function gpcf = gpcf_ppcs0(varargin)
                 if ~isempty(gpcf.p.lengthScale)
                     i1=i1+1; 
                     lll = length(gpcf.lengthScale);
-                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale);
+                    gg = feval(gpp.lengthScale.fh.g, gpcf.lengthScale, gpp.lengthScale);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
@@ -687,7 +687,7 @@ function gpcf = gpcf_ppcs0(varargin)
         ii1 = 0;
         if nargin == 2        
             l = gpcf.l;
-            K = feval(gpcf.fh_trcov, gpcf, x);
+            K = feval(gpcf.fh.trcov, gpcf, x);
             [I,J] = find(K);
             
             if isfield(gpcf,'metric')
@@ -779,7 +779,7 @@ function gpcf = gpcf_ppcs0(varargin)
                 error('gpcf_ppcs -> _ghyper: The number of columns in x and x2 has to be the same. ')
             end
             
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             n2 = size(x2,1);
             
             ii1=0;
@@ -1138,16 +1138,16 @@ function gpcf = gpcf_ppcs0(varargin)
             reccf.magnSigma2 = [];
             
             % Set the function handles
-            reccf.fh_pak = @gpcf_ppcs0_pak;
-            reccf.fh_unpak = @gpcf_ppcs0_unpak;
-            reccf.fh_e = @gpcf_ppcs0_e;
-            reccf.fh_g = @gpcf_ppcs0_g;
-            reccf.fh_cov = @gpcf_ppcs0_cov;
-            reccf.fh_trcov  = @gpcf_ppcs0_trcov;
-            reccf.fh_trvar  = @gpcf_ppcs0_trvar;
-            %  gpcf.fh_sampling = @hmc2;
+            reccf.fh.pak = @gpcf_ppcs0_pak;
+            reccf.fh.unpak = @gpcf_ppcs0_unpak;
+            reccf.fh.e = @gpcf_ppcs0_e;
+            reccf.fh.g = @gpcf_ppcs0_g;
+            reccf.fh.cov = @gpcf_ppcs0_cov;
+            reccf.fh.trcov  = @gpcf_ppcs0_trcov;
+            reccf.fh.trvar  = @gpcf_ppcs0_trvar;
+            %  gpcf.fh.sampling = @hmc2;
             %  reccf.sampling_opt = hmc2_opt;
-            reccf.fh_recappend = @gpcf_ppcs0_recappend;  
+            reccf.fh.recappend = @gpcf_ppcs0_recappend;  
             reccf.p=[];
             reccf.p.lengthScale=[];
             reccf.p.magnSigma2=[];
@@ -1165,7 +1165,7 @@ function gpcf = gpcf_ppcs0(varargin)
         % record lengthScale
         if ~isempty(gpcf.lengthScale)
             reccf.lengthScale(ri,:)=gpcf.lengthScale;
-            reccf.p.lengthScale = feval(gpp.lengthScale.fh_recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+            reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
         elseif ri==1
             reccf.lengthScale=[];
         end

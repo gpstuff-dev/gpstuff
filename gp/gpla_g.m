@@ -76,12 +76,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 sqrtWK = sqrtW*K;
                 C = ldlsolve(L,sqrtWK);
                 C2 = diag(K) - sum(sqrtWK.*C,1)';
-                s2 = 0.5*C2.*feval(gp.lik.fh_llg3, gp.lik, y, f, 'latent', z);
+                s2 = 0.5*C2.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
             else                                         % evaluate with full matrices
                 sqrtW = diag(sqrt(W));
                 R = sqrtW*(L'\(L\sqrtW));
                 C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
-                s2 = 0.5*C2.*feval(gp.lik.fh_llg3, gp.lik, y, f, 'latent', z);
+                s2 = 0.5*C2.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
             end
         else                         % We might end up here if the likelihood is not log concace
                                      % For example Student-t likelihood. 
@@ -89,7 +89,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             V = L*diag(W);
             R = diag(W) - V'*V;
             C2 = sum(C.^2,1)';
-            s2 = 0.5*C2.*feval(gp.lik.fh_llg3, gp.lik, y, f, 'latent', z);
+            s2 = 0.5*C2.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
         end
 
         % =================================================================
@@ -103,8 +103,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 end
             
                 gpcf = gp.cf{i};
-                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-                g1 = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+                [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+                g1 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
                 for i2 = 1:length(DKff)
                     i1 = i1+1;
                     
@@ -138,7 +138,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     i1 = i1+1;
                     
                     noisef = gp.noisef{i};
-                    [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
+                    [DCff, gprior_cf] = feval(noisef.fh.ghyper, noisef, x);
                     
                     for i2 = 1:length(DCff)
                         i1 = i1+1;
@@ -165,17 +165,17 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
-            && ~isempty(gp.lik.fh_pak(gp.lik))
+            && ~isempty(gp.lik.fh.pak(gp.lik))
             
             gdata_lik = 0;
             lik = gp.lik;
             
-            g_logPrior = feval(lik.fh_priorg, lik);
+            g_logPrior = feval(lik.fh.priorg, lik);
             if ~isempty(g_logPrior)
             
-                DW_sigma = feval(lik.fh_llg3, lik, y, f, 'latent2+hyper', z);
-                DL_sigma = feval(lik.fh_llg, lik, y, f, 'hyper', z);
-                b = K * feval(lik.fh_llg2, lik, y, f, 'latent+hyper', z);
+                DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
+                DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
+                b = K * feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
                 s3 = b - K*(R*b);
                 nl= size(DW_sigma,2);
                 
@@ -213,7 +213,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         B=Luu'\(K_fu');       % u x f
         iKuuKuf = Luu\B;
         
-        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
         sqrtW = sqrt(W);
         
         % Components for trace( inv(inv(W) + K) * dK) )
@@ -235,8 +235,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         s2t = s2t - (La1.*iLa2W.*La1 - sum(C2.^2)' + sum(B'.*((B*(repmat(iLa2W,1,m).*B'))*B)',2)...
                     - sum(C1.^2)' + 2*La1.*iLa2W.*BB - 2*La1.*sum(L2.*C1',2));
 
-        s2 = 0.5*s2t.*feval(gp.lik.fh_llg3, gp.lik, y, f, 'latent', z);
-        b3 = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+        s2 = 0.5*s2t.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
+        b3 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
         
         
         % =================================================================
@@ -251,9 +251,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
                 gpcf = gp.cf{i};
-                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
-                DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
-                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x);
+                [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
+                DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
+                DKuf = feval(gpcf.fh.ghyper, gpcf, u, x);
                 
                 for i2 = 1:length(DKuu)
                     i1 = i1+1;
@@ -295,7 +295,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     
                     gpcf = gp.noisef{i};
                     
-                    [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
                         gdata(i1)= -0.5*DCff.*a'*a;
                         gdata(i1)= gdata(i1) + 0.5*sum((1./La-LL).*DCff{i2});
@@ -321,9 +321,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 for i = 1:size(gp.X_u,1)
                     if iscell(gp.p.X_u) % Own prior for each inducing input
                         pr = gp.p.X_u{i};
-                        gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                        gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                     else % One prior for all inducing inputs
-                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                     end
                     i1 = i1 + m;
                 end
@@ -332,8 +332,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     i1=st;
                     
                     gpcf = gp.cf{i};
-                    DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                    DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                    DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                    DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                     
                     for i2 = 1:length(DKuu)
                         i1 = i1+1;
@@ -361,14 +361,14 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh_pak(gp.lik))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
             gdata_lik = 0;
             lik = gp.lik;
 
             
-            DW_sigma = feval(lik.fh_llg3, lik, y, f, 'latent2+hyper', z);
-            DL_sigma = feval(lik.fh_llg, lik, y, f, 'hyper', z);
-            DL_f_sigma = feval(lik.fh_llg2, lik, y, f, 'latent+hyper', z);
+            DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
+            DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
+            DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
             b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
             bb = (iLa2W.*b - L2*(L2'*b));
             s3 = b - (La1.*bb + B'*(B*bb));            
@@ -377,7 +377,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             
             % evaluate prior contribution for the gradient
             if isfield(gp.lik, 'p')
-                g_logPrior = -feval(lik.fh_priorg, lik);
+                g_logPrior = -feval(lik.fh.priorg, lik);
             else
                 g_logPrior = zeros(size(gdata_lik));
             end
@@ -410,7 +410,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         iKuuKuf = Luu\(Luu'\K_fu');
         B=Luu'\(K_fu');       % u x f
 
-        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
         sqrtW = sqrt(W);
         
         % Components for trace( inv(inv(W) + K) * dK) )
@@ -444,8 +444,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         s2t = s2t - (s2t1 - sum(C2.^2)' + sum(B'.*((B*Bt)*B)',2)...
                     - sum(C1.^2)' + 2*sum(s2t2.*B',2) - 2*sum(s2t3.*C1',2));
 
-        s2 = 0.5*s2t.*feval(gp.lik.fh_llg3, gp.lik, y, f, 'latent', z);
-        b3 = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+        s2 = 0.5*s2t.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
+        b3 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
 
         % =================================================================
         % Gradient with respect to covariance function parameters
@@ -459,10 +459,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
                 gpcf = gp.cf{i};
-                [DKuu, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, u); 
-                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+                [DKuu, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, u); 
+                DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
                 for kk = 1:length(ind)
-                    DKff{kk} = feval(gpcf.fh_ghyper, gpcf, x(ind{kk},:));                 
+                    DKff{kk} = feval(gpcf.fh.ghyper, gpcf, x(ind{kk},:));                 
                 end
                 
                 for i2 = 1:length(DKuu)
@@ -516,7 +516,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 nn = length(gp.noisef);
                 for i=1:nn
                     gpcf = gp.noisef{i};
-                    [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
                         i1 = i1+1;
                         gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -548,9 +548,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 for i = 1:size(gp.X_u,1)
                     if iscell(gp.p.X_u) % Own prior for each inducing input
                         pr = gp.p.X_u{i};
-                        gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                        gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                     else % One prior for all inducing inputs
-                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                     end
                     i1 = i1 + m;
                 end
@@ -559,8 +559,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 for i=1:ncf            
                     i1=st;
                     gpcf = gp.cf{i};
-                    DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                    DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                    DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                    DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                     
                     for i2 = 1:length(DKuu)
                         i1 = i1+1;
@@ -599,13 +599,13 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh_pak(gp.lik))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
             gdata_lik = 0;
             lik = gp.lik;
             
-            DW_sigma = feval(lik.fh_llg3, lik, y, f, 'latent2+hyper', z);
-            DL_sigma = feval(lik.fh_llg, lik, y, f, 'hyper', z);
-            DL_f_sigma = feval(lik.fh_llg2, lik, y, f, 'latent+hyper', z);
+            DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
+            DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
+            DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
             b = B'*(B*DL_f_sigma);
             for kk=1:length(ind)
                 b(ind{kk}) = b(ind{kk}) + La1{kk}*DL_f_sigma(ind{kk});
@@ -621,7 +621,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 
             % evaluate prior contribution for the gradient
             if isfield(gp.lik, 'p')
-                g_logPrior = -feval(lik.fh_priorg, lik);
+                g_logPrior = -feval(lik.fh.priorg, lik);
             else
                 g_logPrior = zeros(size(gdata_lik));
             end
@@ -667,7 +667,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
         gp.cf = cf_orig;
         
-        W = -feval(gp.lik.fh_llg2, gp.lik, y, f, 'latent', z);
+        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
         
         % Find fill reducing permutation and permute all the
         % matrices
@@ -716,9 +716,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         s2t = s2t - (diag(La1) - sum(La1*sqrtW.*siLa2',2)./sW - sum(C2.^2)' + sum(B'.*(B*C3*B)',2)...
                     - sum(C1.^2)' + 2*sum((La1*C3).*B',2) - 2*sum(C2'.*C1',2));
         
-        s2 = 0.5*s2t.*feval(gp.lik.fh_llg3, gp.lik, y, f, 'latent', z);
+        s2 = 0.5*s2t.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
         
-        b3 = feval(gp.lik.fh_llg, gp.lik, y, f, 'latent', z);
+        b3 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
         
         % =================================================================
         % Gradient with respect to covariance function parameters
@@ -735,9 +735,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 if ~isfield(gpcf,'cs')
                     % Get the gradients of the covariance matrices 
                     % and gprior from gpcf_* structures
-                    [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
-                    DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
-                    DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+                    [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
+                    DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
+                    DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
                     
                     for i2 = 1:length(DKuu)
                         i1 = i1+1;
@@ -768,7 +768,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 else
                     % Get the gradients of the covariance matrices 
                     % and gprior from gpcf_* structures
-                    [DKff,gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                     
                     for i2 = 1:length(DKff)
                         i1 = i1+1;
@@ -801,7 +801,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     gpcf = gp.noisef{i};       
                     % Get the gradients of the covariance matrices 
                     % and gprior from gpcf_* structures
-                    [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                    [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                     for i2 = 1:length(DCff)
                         i1 = i1+1;
                         gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -836,9 +836,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 for i = 1:size(gp.X_u,1)
                     if iscell(gp.p.X_u) % Own prior for each inducing input
                         pr = gp.p.X_u{i};
-                        gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                        gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                     else % One prior for all inducing inputs
-                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                        gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                     end
                     i1 = i1 + m;
                 end
@@ -847,8 +847,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                     i1=st;
                     gpcf = gp.cf{i};            
                     if ~isfield(gpcf,'cs')
-                        DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                        DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                        DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                        DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                         
                         for i2 = 1:length(DKuu)
                             i1=i1+1;
@@ -878,13 +878,13 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         % =================================================================
         % Gradient with respect to likelihood function parameters
         
-        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh_pak(gp.lik))
+        if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
             gdata_lik = 0;
             lik = gp.lik;
             
-            DW_sigma = feval(lik.fh_llg3, lik, y, f, 'latent2+hyper', z);
-            DL_sigma = feval(lik.fh_llg, lik, y, f, 'hyper', z);
-            DL_f_sigma = feval(lik.fh_llg2, lik, y, f, 'latent+hyper', z);
+            DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
+            DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
+            DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
             b = La1*DL_f_sigma + B'*(B*DL_f_sigma);            
             bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
             s3 = b - (La1*bb + B'*(B*bb));            
@@ -893,7 +893,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             
             % evaluate prior contribution for the gradient
             if isfield(gp.lik, 'p')
-                g_logPrior = -feval(lik.fh_priorg, lik);
+                g_logPrior = -feval(lik.fh.priorg, lik);
             else
                 g_logPrior = zeros(size(gdata_lik));
             end

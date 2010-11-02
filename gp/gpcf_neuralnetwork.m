@@ -107,15 +107,15 @@ function gpcf = gpcf_neuralnetwork(varargin)
             end
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_neuralnetwork_pak;
-            gpcf.fh_unpak = @gpcf_neuralnetwork_unpak;
-            gpcf.fh_e = @gpcf_neuralnetwork_e;
-            gpcf.fh_ghyper = @gpcf_neuralnetwork_ghyper;
-            gpcf.fh_ginput = @gpcf_neuralnetwork_ginput;
-            gpcf.fh_cov = @gpcf_neuralnetwork_cov;
-            gpcf.fh_trcov  = @gpcf_neuralnetwork_trcov;
-            gpcf.fh_trvar  = @gpcf_neuralnetwork_trvar;
-            gpcf.fh_recappend = @gpcf_neuralnetwork_recappend;
+            gpcf.fh.pak = @gpcf_neuralnetwork_pak;
+            gpcf.fh.unpak = @gpcf_neuralnetwork_unpak;
+            gpcf.fh.e = @gpcf_neuralnetwork_e;
+            gpcf.fh.ghyper = @gpcf_neuralnetwork_ghyper;
+            gpcf.fh.ginput = @gpcf_neuralnetwork_ginput;
+            gpcf.fh.cov = @gpcf_neuralnetwork_cov;
+            gpcf.fh.trcov  = @gpcf_neuralnetwork_trcov;
+            gpcf.fh.trvar  = @gpcf_neuralnetwork_trvar;
+            gpcf.fh.recappend = @gpcf_neuralnetwork_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -167,14 +167,14 @@ function gpcf = gpcf_neuralnetwork(varargin)
             w(i1) = log(gpcf.biasSigma2);
             
             % Hyperparameters of magnSigma2
-            ww = feval(gpcf.p.biasSigma2.fh_pak, gpcf.p.biasSigma2);
+            ww = feval(gpcf.p.biasSigma2.fh.pak, gpcf.p.biasSigma2);
         end        
         
         if ~isempty(gpcf.p.weightSigma2)
             w = [w log(gpcf.weightSigma2)];
             
             % Hyperparameters of lengthScale
-            w = [w feval(gpcf.p.weightSigma2.fh_pak, gpcf.p.weightSigma2)];
+            w = [w feval(gpcf.p.weightSigma2.fh.pak, gpcf.p.weightSigma2)];
         end
         w = [w ww];
     end
@@ -211,13 +211,13 @@ function gpcf = gpcf_neuralnetwork(varargin)
             w = w(i2+1:end);
             
             % Hyperparameters of lengthScale
-            [p, w] = feval(gpcf.p.weightSigma2.fh_unpak, gpcf.p.weightSigma2, w);
+            [p, w] = feval(gpcf.p.weightSigma2.fh.unpak, gpcf.p.weightSigma2, w);
             gpcf.p.weightSigma2 = p;
         end
         
         if ~isempty(gpp.biasSigma2)
             % Hyperparameters of magnSigma2
-            [p, w] = feval(gpcf.p.biasSigma2.fh_unpak, gpcf.p.biasSigma2, w);
+            [p, w] = feval(gpcf.p.biasSigma2.fh.unpak, gpcf.p.biasSigma2, w);
             gpcf.p.biasSigma2 = p;
         end
     end
@@ -251,10 +251,10 @@ function gpcf = gpcf_neuralnetwork(varargin)
         gpp=gpcf.p;
 
         if ~isempty(gpp.biasSigma2)
-            eprior = feval(gpp.biasSigma2.fh_e, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
+            eprior = feval(gpp.biasSigma2.fh.e, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
         end
         if ~isempty(gpp.weightSigma2)
-            eprior = eprior + feval(gpp.weightSigma2.fh_e, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
+            eprior = eprior + feval(gpp.weightSigma2.fh.e, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
         end
 
     end
@@ -478,14 +478,14 @@ function gpcf = gpcf_neuralnetwork(varargin)
             if ~isempty(gpcf.p.biasSigma2)
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = 1;
-                ggs = feval(gpp.biasSigma2.fh_g, gpcf.biasSigma2, gpp.biasSigma2);
+                ggs = feval(gpp.biasSigma2.fh.g, gpcf.biasSigma2, gpp.biasSigma2);
                 gprior = ggs(i1).*gpcf.biasSigma2 - 1;
             end
             
             if ~isempty(gpcf.p.weightSigma2)
                 i1=i1+1; 
                 lll = length(gpcf.weightSigma2);
-                gg = feval(gpp.weightSigma2.fh_g, gpcf.weightSigma2, gpp.weightSigma2);
+                gg = feval(gpp.weightSigma2.fh.g, gpcf.weightSigma2, gpp.weightSigma2);
                 gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.weightSigma2 - 1;
                 gprior = [gprior gg(lll+1:end)];
             end
@@ -766,14 +766,14 @@ function gpcf = gpcf_neuralnetwork(varargin)
             reccf.biasSigma2 = [];
 
             % Set the function handles
-            reccf.fh_pak = @gpcf_neuralnetwork_pak;
-            reccf.fh_unpak = @gpcf_neuralnetwork_unpak;
-            reccf.fh_e = @gpcf_neuralnetwork_e;
-            reccf.fh_g = @gpcf_neuralnetwork_g;
-            reccf.fh_cov = @gpcf_neuralnetwork_cov;
-            reccf.fh_trcov  = @gpcf_neuralnetwork_trcov;
-            reccf.fh_trvar  = @gpcf_neuralnetwork_trvar;
-            reccf.fh_recappend = @gpcf_neuralnetwork_recappend;
+            reccf.fh.pak = @gpcf_neuralnetwork_pak;
+            reccf.fh.unpak = @gpcf_neuralnetwork_unpak;
+            reccf.fh.e = @gpcf_neuralnetwork_e;
+            reccf.fh.g = @gpcf_neuralnetwork_g;
+            reccf.fh.cov = @gpcf_neuralnetwork_cov;
+            reccf.fh.trcov  = @gpcf_neuralnetwork_trcov;
+            reccf.fh.trvar  = @gpcf_neuralnetwork_trvar;
+            reccf.fh.recappend = @gpcf_neuralnetwork_recappend;
             reccf.p=[];
             reccf.p.weightSigma2=[];
             reccf.p.biasSigma2=[];
@@ -791,7 +791,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
         % record weightSigma2
         if ~isempty(gpcf.weightSigma2)
             reccf.weightSigma2(ri,:)=gpcf.weightSigma2;
-            reccf.p.weightSigma2 = feval(gpp.weightSigma2.fh_recappend, reccf.p.weightSigma2, ri, gpcf.p.weightSigma2);
+            reccf.p.weightSigma2 = feval(gpp.weightSigma2.fh.recappend, reccf.p.weightSigma2, ri, gpcf.p.weightSigma2);
         elseif ri==1
             reccf.weightSigma2=[];
         end

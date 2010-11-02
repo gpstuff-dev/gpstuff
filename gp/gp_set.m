@@ -276,12 +276,12 @@ function gp = gp_set(varargin)
         ipmc.addParamValue('method',@scaled_mh, @(x) isa(x,'function_handle'));
         ipmc.parse(latent_method_opt{:});
         gp.latentValues = ipmc.Results.f;
-        gp.fh_mc = ipmc.Results.method;
+        gp.fh.mc = ipmc.Results.method;
       case 'EP'
         gp.latent_method=latent_method;
         gp.ep_opt.maxiter = 20;
         gp.ep_opt.tol = 1e-6;
-        % following sets gp.fh_e = @ep_algorithm;
+        % following sets gp.fh.e = @ep_algorithm;
         gp = gpep_e('init', gp);
       case 'Laplace'
         gp.latent_method=latent_method;
@@ -304,7 +304,7 @@ function gp = gp_set(varargin)
           end
         end
         switch gp.lik.type
-          % following sets gp.fh_e = @laplace_algorithm;
+          % following sets gp.fh.e = @laplace_algorithm;
           case 'Softmax'
             gp = gpla_softmax_e('init', gp);
           otherwise

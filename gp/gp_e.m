@@ -339,7 +339,7 @@ end
 eprior = 0;
 for i=1:ncf
     gpcf = gp.cf{i};
-    eprior = eprior + feval(gpcf.fh_e, gpcf, x, y);
+    eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
 end
 
 % Evaluate the prior contribution to the error from noise functions
@@ -347,7 +347,7 @@ if isfield(gp, 'noisef')
     nn = length(gp.noisef);
     for i=1:nn
         noisef = gp.noisef{i};
-        eprior = eprior + feval(noisef.fh_e, noisef, x, y);
+        eprior = eprior + feval(noisef.fh.e, noisef, x, y);
     end
 end
 
@@ -356,9 +356,9 @@ if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
     for i = 1:size(gp.X_u,1)
         if iscell(gp.p.X_u) % Own prior for each inducing input
             pr = gp.p.X_u{i};
-            eprior = eprior + feval(pr.fh_e, gp.X_u(i,:), pr);
+            eprior = eprior + feval(pr.fh.e, gp.X_u(i,:), pr);
         else
-            eprior = eprior + feval(gp.p.X_u.fh_e, gp.X_u(i,:), gp.p.X_u);
+            eprior = eprior + feval(gp.p.X_u.fh.e, gp.X_u(i,:), gp.p.X_u);
         end
     end
 end

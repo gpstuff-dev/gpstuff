@@ -171,9 +171,9 @@ function [Ef, Varf, Ey, Vary, py] = mc_preds(gp, x, y, xt, varargin)
                     warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
                 end
                 if isempty(yt)
-                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh_predy, Gp.lik, Ef(:,i1), Varf(:,i1), [], zt);
+                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), [], zt);
                 else
-                    [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.lik.fh_predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+                    [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
                 end
             else
                 if nargout < 5

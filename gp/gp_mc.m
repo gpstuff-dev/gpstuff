@@ -30,7 +30,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                   to give the options for it.
 %      'latent_opt' Options structure for latent variable sampler. When this 
 %                   is given the latent variables are sampled with function 
-%                   stored in the gp.fh_mc field in the GP structure. 
+%                   stored in the gp.fh.mc field in the GP structure. 
 %                   See gp_init. 
 %      'lik_hmc_opt'   Options structure for HMC sampler (see hmc2_opt). 
 %                      When this is given the hyperparameters of the 
@@ -210,7 +210,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             
             % ----------- Sample latent Values  ---------------------
             if ~isempty(opt.latent_opt)
-                [f, energ, diagnl] = feval(gp.fh_mc, f, opt.latent_opt, gp, x, y, z);
+                [f, energ, diagnl] = feval(gp.fh.mc, f, opt.latent_opt, gp, x, y, z);
                 gp.latentValues = f(:);
                 f = f(:);
                 lrej=lrej+diagnl.rej/opt.repeat;
@@ -258,7 +258,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 for i1 = 1:ncf
                     gpcf = gp.cf{i1};
                     if isfield(gpcf, 'fh_gibbs')
-                        [gpcf, f] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, f);
+                        [gpcf, f] = feval(gpcf.fh.gibbs, gp, gpcf, opt.gibbs_opt, x, f);
                         gp.cf{i1} = gpcf;
                     end
                 end
@@ -268,7 +268,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 for i1 = 1:nnf
                     gpcf = gp.noisef{i1};
                     if isfield(gpcf, 'fh_gibbs')
-                        [gpcf, f] = feval(gpcf.fh_gibbs, gp, gpcf, opt.gibbs_opt, x, f);
+                        [gpcf, f] = feval(gpcf.fh.gibbs, gp, gpcf, opt.gibbs_opt, x, f);
                         gp.noisef{i1} = gpcf;
                     end
                 end
@@ -277,7 +277,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
             if ~isempty(opt.lik_sls_opt)
                 w = gp_pak(gp, 'likelihood');
-                fe = @(w, lik) (-feval(lik.fh_ll,feval(lik.fh_unpak,w,lik),y,f,z) + feval(lik.fh_priore,feval(lik.fh_unpak,w,lik)));
+                fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z) + feval(lik.fh.priore,feval(lik.fh.unpak,w,lik)));
                 [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
                 if isfield(diagns, 'opt')
                     opt.lik_sls_opt = diagns.opt;
@@ -291,8 +291,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 infer_params = gp.infer_params;
                 gp.infer_params = 'likelihood';
                 w = gp_pak(gp);
-                fe = @(w, lik) (-feval(lik.fh_ll,feval(lik.fh_unpak,w,lik),y,f,z)+feval(lik.fh_priore,feval(lik.fh_unpak,w,lik)));
-                fg = @(w, lik) (-feval(lik.fh_llg,feval(lik.fh_unpak,w,lik),y,f,'hyper',z)+feval(lik.fh_priorg,feval(lik.fh_unpak,w,lik)));
+                fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z)+feval(lik.fh.priore,feval(lik.fh.unpak,w,lik)));
+                fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,w,lik),y,f,'hyper',z)+feval(lik.fh.priorg,feval(lik.fh.unpak,w,lik)));
                 
                 hmc2('state',lik_hmc_rstate)              % Set the state
                 [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);
@@ -383,7 +383,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             % Initialize the records of covariance functions
             for i=1:ncf
                 cf = gp.cf{i};
-                record.cf{i} = feval(cf.fh_recappend, [], gp.cf{i});
+                record.cf{i} = feval(cf.fh.recappend, [], gp.cf{i});
                 % Initialize metric structure
                 if isfield(cf,'metric')
                     record.cf{i}.metric = feval(cf.metric.recappend, cf.metric, 1);
@@ -391,13 +391,13 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             end
             for i=1:nn
                 noisef = gp.noisef{i};
-                record.noisef{i} = feval(noisef.fh_recappend, [], gp.noisef{i});
+                record.noisef{i} = feval(noisef.fh.recappend, [], gp.noisef{i});
             end
             
             % Initialize the recordord for likelihood
             if isstruct(gp.lik)
                 lik = gp.lik;
-                record.lik = feval(lik.fh_recappend, [], gp.lik);
+                record.lik = feval(lik.fh.recappend, [], gp.lik);
             end
             
             % Set the meanfunctions into record if they exist
@@ -423,7 +423,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         % Set the record for every covariance function
         for i=1:ncf
             gpcf = gp.cf{i};
-            record.cf{i} = feval(gpcf.fh_recappend, record.cf{i}, ri, gpcf);
+            record.cf{i} = feval(gpcf.fh.recappend, record.cf{i}, ri, gpcf);
             % Record metric structure
             if isfield(gpcf,'metric')
                 record.cf{i}.metric = feval(record.cf{i}.metric.recappend, record.cf{i}.metric, ri, gpcf.metric);
@@ -433,13 +433,13 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         % Set the record for every noise function
         for i=1:nn
             noisef = gp.noisef{i};
-            record.noisef{i} = feval(noisef.fh_recappend, record.noisef{i}, ri, noisef);
+            record.noisef{i} = feval(noisef.fh.recappend, record.noisef{i}, ri, noisef);
         end
 
         % Set the record for likelihood
         if isstruct(gp.lik)
             lik = gp.lik;
-            record.lik = feval(lik.fh_recappend, record.lik, ri, lik);
+            record.lik = feval(lik.fh.recappend, record.lik, ri, lik);
         end
 
         % Set jitterSigma2 to record
@@ -460,7 +460,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 
         % Record training error and rejects
         if isfield(gp,'latentValues')
-            elik = feval(gp.lik.fh_ll, gp.lik, y, gp.latentValues, z);
+            elik = feval(gp.lik.fh.ll, gp.lik, y, gp.latentValues, z);
             [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = feval(me, gp_pak(gp), gp, x, gp.latentValues);
             record.etr(ri,:) = record.e(ri,:) - elik;   % 
 % $$$             record.edata(ri,:) = elik;

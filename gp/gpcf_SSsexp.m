@@ -1,10 +1,10 @@
-function gpcf = gpcf_SSsexp(do, varargin)
-%GPCF_SEXP	Create a squared exponential covariance function for Gaussian Process
+function gpcf = gpcf_SSsexp(varargin)
+%GPCF_SEXP Create a squared exponential covariance function for Gaussian Process
 %
-%	Description
+%  Description
 %
-%	GPCF = GPCF_SEXP('INIT','nin', NIN) Create and initialize squared exponential
-%       covariance function fo Gaussian process
+%	GPCF = GPCF_SEXP('INIT','nin', NIN) Create and initialize 
+%       squared exponential covariance function fo Gaussian process
 %
 %	The fields and (default values) in GPCF_SEXP are:
 %	  type           = 'gpcf_sexp'
@@ -17,31 +17,48 @@ function gpcf = gpcf_SSsexp(do, varargin)
 %     freq           =
 %     nfreq          =
 %
-%	GPCF = GPCF_SEXP('SET', GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	GPCF = GPCF_SEXP(GPCF, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in GPCF.
 %
-%	See also
+%  See also
 %
 %
 %
 
 % Copyright (c) 2008 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % allow use with or without init and set options
+  if nargin<1
+    do='init';
+  elseif ischar(varargin{1})
+    switch varargin{1}
+      case 'init'
+        do='init';varargin(1)=[];
+      case 'set'
+        do='set';varargin(1)=[];
+      otherwise
+        do='init';
+    end
+  elseif isstruct(varargin{1})
+    do='set';
+  else
+    error('Unknown first argument');
+  end
+  
     ip=inputParser;
     ip.FunctionName = 'GPCF_SSSEXP';
-    ip.addRequired('do', @(x) ismember(x, {'init','set'}));
     ip.addOptional('gpcf', [], @isstruct);
     ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
     ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
     ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
     ip.addParamValue('nfreq',[], @isscalar)
     ip.addParamValue('frequency',[], @isvector)
-    ip.parse(do, varargin{:});
-    do=ip.Results.do;
+    ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
     magnSigma2=ip.Results.magnSigma2;
     lengthScale=ip.Results.lengthScale;
@@ -88,16 +105,16 @@ function gpcf = gpcf_SSsexp(do, varargin)
             gpcf.p.magnSigma2=[];
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_SSsexp_pak;
-            gpcf.fh_unpak = @gpcf_SSsexp_unpak;
-            gpcf.fh_e = @gpcf_SSsexp_e;
-            gpcf.fh_ghyper = @gpcf_SSsexp_ghyper;
-            gpcf.fh_gind = @gpcf_SSsexp_gind;
-            gpcf.fh_cov = @gpcf_SSsexp_cov;
-            gpcf.fh_covvec = @gpcf_SSsexp_covvec;
-            gpcf.fh_trcov  = @gpcf_SSsexp_trcov;
-            gpcf.fh_trvar  = @gpcf_SSsexp_trvar;
-            gpcf.fh_recappend = @gpcf_SSsexp_recappend;
+            gpcf.fh.pak = @gpcf_SSsexp_pak;
+            gpcf.fh.unpak = @gpcf_SSsexp_unpak;
+            gpcf.fh.e = @gpcf_SSsexp_e;
+            gpcf.fh.ghyper = @gpcf_SSsexp_ghyper;
+            gpcf.fh.gind = @gpcf_SSsexp_gind;
+            gpcf.fh.cov = @gpcf_SSsexp_cov;
+            gpcf.fh.covvec = @gpcf_SSsexp_covvec;
+            gpcf.fh.trcov  = @gpcf_SSsexp_trcov;
+            gpcf.fh.trvar  = @gpcf_SSsexp_trvar;
+            gpcf.fh.recappend = @gpcf_SSsexp_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -126,14 +143,14 @@ function gpcf = gpcf_SSsexp(do, varargin)
     function w = gpcf_SSsexp_pak(gpcf, w, param)
         %GPcf_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
         %
-        %	Description
+        %  Description
         %	W = GP_SEXP_PAK(GPCF, W) takes a Gaussian Process data structure GP and
         %	combines the hyper-parameters into a single row vector W.
         %
         %	The ordering of the parameters in HP is defined by
         %	  hp = [hyper-params of gp.cf{1}, hyper-params of gp.cf{2}, ...];
         %
-        %	See also
+        %  See also
         %	GPCF_SEXP_UNPAK
         %
 
@@ -188,13 +205,13 @@ function gpcf = gpcf_SSsexp(do, varargin)
     function [gpcf, w] = gpcf_SSsexp_unpak(gpcf, w, param)
         %GPCF_SEXP_UNPAK  Separate GP covariance function hyper-parameter vector into components.
         %
-        %	Description
+        %  Description
         %	GP = GPCF_SEXP_UNPAK(GP, W) takes an Gaussian Process data structure GP
         %	and  a hyper-parameter vector W, and returns a Gaussian Process data
         %	structure  identical to the input model, except that the covariance
         %	hyper-parameters has been set to the of W.
         %
-        %	See also
+        %  See also
         %	GP_PAK
         %
 
@@ -240,14 +257,14 @@ function gpcf = gpcf_SSsexp(do, varargin)
     function eprior =gpcf_SSsexp_e(gpcf, x, t)
         %GPCF_SEXP_E	Evaluate prior contribution of error of covariance function SE.
         %
-        %	Description
+        %  Description
         %	E = GPCF_SEXP_E(W, GP, X, T) takes a gp data structure GPCF together
         %	with a matrix X of input vectors and a matrix T of target vectors,
         %	and evaluates the error function E. Each row of X corresponds
         %	to one input vector and each row of T corresponds to one
         %	target vector.
         %
-        %	See also
+        %  See also
         %	GP2, GP2PAK, GP2UNPAK, GP2FWD, GP2R_G
         %
 
@@ -261,7 +278,7 @@ function gpcf = gpcf_SSsexp(do, varargin)
         % Evaluate the prior contribution to the error. The parameters that
         % are sampled are from space W = log(w) where w is all the "real" samples.
         % On the other hand errors are evaluated in the W-space so we need take
-        % into account also the  Jakobian of transformation W -> w = exp(W).
+        % into account also the  Jacobian of transformation W -> w = exp(W).
         % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         eprior = 0;
         gpp=gpcf.p;
@@ -297,7 +314,7 @@ function gpcf = gpcf_SSsexp(do, varargin)
     %GPCF_SEXP_GHYPER     Evaluate gradient of error for SE covariance function
     %                     with respect to the hyperparameters.
     %
-    %	Descriptioni
+    %  Descriptioni
     %	G = GPCF_SEXP_GHYPER(W, GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) takes a gp
     %   hyper-parameter vector W, data structure GPCF a matrix X of input vectors a
     %   matrix T of target vectors, inverse covariance function ,
@@ -307,7 +324,7 @@ function gpcf = gpcf_SSsexp(do, varargin)
     %	[G, GDATA, GPRIOR] = GPCF_SEXP_GHYPER(GP, P, T) also returns separately  the
     %	data and prior contributions to the gradient.
     %
-    %	See also
+    %  See also
     %
 
     % Copyright (c) 2008      Jarno Vanhatalo
@@ -415,10 +432,10 @@ function gpcf = gpcf_SSsexp(do, varargin)
     %GPCF_SEXP_GIND    Evaluate gradient of error for SE covariance function
     %                  with respect to inducing inputs.
     %
-    %	Descriptioni
+    %  Description
     %	[DKuu_u, DKuf_u] = GPCF_SEXP_GIND(W, GPCF, X, T)
     %
-    %	See also
+    %  See also
         %
 
         % Copyright (c) 2006      Jarno Vanhatalo
@@ -523,14 +540,14 @@ function gpcf = gpcf_SSsexp(do, varargin)
             reccf.magnSigma2 = [];
 
             % Set the function handles
-            reccf.fh_pak = @gpcf_SSsexp_pak;
-            reccf.fh_unpak = @gpcf_SSsexp_unpak;
-            reccf.fh_e = @gpcf_SSsexp_e;
-            reccf.fh_g = @gpcf_SSsexp_g;
-            reccf.fh_cov = @gpcf_SSsexp_cov;
-            reccf.fh_trcov  = @gpcf_SSsexp_trcov;
-            reccf.fh_trvar  = @gpcf_SSsexp_trvar;
-            reccf.fh_recappend = @gpcf_SSsexp_recappend;
+            reccf.fh.pak = @gpcf_SSsexp_pak;
+            reccf.fh.unpak = @gpcf_SSsexp_unpak;
+            reccf.fh.e = @gpcf_SSsexp_e;
+            reccf.fh.g = @gpcf_SSsexp_g;
+            reccf.fh.cov = @gpcf_SSsexp_cov;
+            reccf.fh.trcov  = @gpcf_SSsexp_trcov;
+            reccf.fh.trvar  = @gpcf_SSsexp_trvar;
+            reccf.fh.recappend = @gpcf_SSsexp_recappend;
             return
         end
 

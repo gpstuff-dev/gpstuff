@@ -72,20 +72,20 @@ function lik = lik_t(varargin)
       lik.p.nu = prior_fixed;
       
       % Set the function handles to the nested functions
-      lik.fh_pak = @lik_t_pak;
-      lik.fh_unpak = @lik_t_unpak;
-      lik.fh_priore = @lik_t_priore;
-      lik.fh_priorg = @lik_t_priorg;
-      lik.fh_ll = @lik_t_ll;
-      lik.fh_llg = @lik_t_llg;    
-      lik.fh_llg2 = @lik_t_llg2;
-      lik.fh_llg3 = @lik_t_llg3;
-      lik.fh_tiltedMoments = @lik_t_tiltedMoments;
-      lik.fh_siteDeriv = @lik_t_siteDeriv;
-      lik.fh_optimizef = @lik_t_optimizef;
-      lik.fh_upfact = @lik_t_upfact;
-      lik.fh_predy = @lik_t_predy;
-      lik.fh_recappend = @lik_t_recappend;
+      lik.fh.pak = @lik_t_pak;
+      lik.fh.unpak = @lik_t_unpak;
+      lik.fh.priore = @lik_t_priore;
+      lik.fh.priorg = @lik_t_priorg;
+      lik.fh.ll = @lik_t_ll;
+      lik.fh.llg = @lik_t_llg;    
+      lik.fh.llg2 = @lik_t_llg2;
+      lik.fh.llg3 = @lik_t_llg3;
+      lik.fh.tiltedMoments = @lik_t_tiltedMoments;
+      lik.fh.siteDeriv = @lik_t_siteDeriv;
+      lik.fh.optimizef = @lik_t_optimizef;
+      lik.fh.upfact = @lik_t_upfact;
+      lik.fh.predy = @lik_t_predy;
+      lik.fh.recappend = @lik_t_recappend;
 
       if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
         error('Wrong number of arguments')
@@ -195,10 +195,10 @@ function lik = lik_t(varargin)
     logPrior = 0;
     
     if ~isempty(lik.p.sigma2) 
-      logPrior = logPrior + feval(lik.p.sigma2.fh_e, lik.sigma2, lik.p.sigma2) -log(sigma2);
+      logPrior = logPrior + feval(lik.p.sigma2.fh.e, lik.sigma2, lik.p.sigma2) -log(sigma2);
     end
     if ~isempty(lik.p.nu)
-      logPrior = logPrior + feval(lik.p.nu.fh_e, lik.nu, lik.p.nu)  - log(v) - log(log(v));
+      logPrior = logPrior + feval(lik.p.nu.fh.e, lik.nu, lik.p.nu)  - log(v) - log(log(v));
     end
   end
   
@@ -223,11 +223,11 @@ function lik = lik_t(varargin)
     
     if ~isempty(lik.p.sigma2) 
       i1 = i1+1;
-      glogPrior(i1) = feval(lik.p.sigma2.fh_g, lik.sigma2, lik.p.sigma2).*sigma2 - 1;
+      glogPrior(i1) = feval(lik.p.sigma2.fh.g, lik.sigma2, lik.p.sigma2).*sigma2 - 1;
     end
     if ~isempty(lik.p.nu) 
       i1 = i1+1;
-      glogPrior(i1) = feval(lik.p.nu.fh_g, lik.nu, lik.p.nu).*v.*log(v) - log(v) - 1;
+      glogPrior(i1) = feval(lik.p.nu.fh.g, lik.nu, lik.p.nu).*v.*log(v) - log(v) - 1;
     end    
   end
   
@@ -732,20 +732,20 @@ function lik = lik_t(varargin)
       reclik.sigma2 = [];
 
       % Set the function handles
-      reclik.fh_pak = @lik_t_pak;
-      reclik.fh_unpak = @lik_t_unpak;
-      reclik.fh_priore = @lik_t_priore;
-      reclik.fh_priorg = @lik_t_priorg;
-      reclik.fh_ll = @lik_t_ll;
-      reclik.fh_llg = @lik_t_llg;    
-      reclik.fh_llg2 = @lik_t_llg2;
-      reclik.fh_llg3 = @lik_t_llg3;
-      reclik.fh_tiltedMoments = @lik_t_tiltedMoments;
-      reclik.fh_siteDeriv = @lik_t_siteDeriv;
-      reclik.fh_optimizef = @lik_t_optimizef;
-      reclik.fh_upfact = @lik_t_upfact;
-      reclik.fh_predy = @lik_t_predy;
-      reclik.fh_recappend = @lik_t_recappend;
+      reclik.fh.pak = @lik_t_pak;
+      reclik.fh.unpak = @lik_t_unpak;
+      reclik.fh.priore = @lik_t_priore;
+      reclik.fh.priorg = @lik_t_priorg;
+      reclik.fh.ll = @lik_t_ll;
+      reclik.fh.llg = @lik_t_llg;    
+      reclik.fh.llg2 = @lik_t_llg2;
+      reclik.fh.llg3 = @lik_t_llg3;
+      reclik.fh.tiltedMoments = @lik_t_tiltedMoments;
+      reclik.fh.siteDeriv = @lik_t_siteDeriv;
+      reclik.fh.optimizef = @lik_t_optimizef;
+      reclik.fh.upfact = @lik_t_upfact;
+      reclik.fh.predy = @lik_t_predy;
+      reclik.fh.recappend = @lik_t_recappend;
       return
     end
 

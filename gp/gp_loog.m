@@ -69,7 +69,7 @@ switch gp.type
         
         gpcf = gp.cf{i};
         gpcf.GPtype = gp.type;
-        [DKff,gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+        [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
         %gprior=[gprior gprior_cf];
         
         % Evaluate the gradient with respect to covariance function parameters
@@ -88,7 +88,7 @@ switch gp.type
         for i=1:nn
             noisef = gp.noisef{i};
             noisef.type = gp.type;
-            [DCff,gprior_ncf] = feval(noisef.fh_ghyper, noisef, x);
+            [DCff,gprior_ncf] = feval(noisef.fh.ghyper, noisef, x);
             %gprior=[gprior gprior_ncf];
             
             for i2 = 1:length(DCff)

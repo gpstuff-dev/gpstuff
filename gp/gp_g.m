@@ -101,15 +101,15 @@ switch gp.type
             
             if ~(isfield(gp,'derivobs') && gp.derivobs)
               % No derivative observations
-                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
             else
                [n m]=size(x);
                %Case: input dimension is 1
                if m==1
 
-                   DKdf = feval(gpcf.fh_ghypergrad, gpcf, x);
-                   [DKffa, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-                   DKdd = feval(gpcf.fh_ghypergrad2, gpcf, x);
+                   DKdf = feval(gpcf.fh.ghypergrad, gpcf, x);
+                   [DKffa, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+                   DKdd = feval(gpcf.fh.ghypergrad2, gpcf, x);
 
                    % DKff{1} -- d K / d magnSigma2
                    % DKff{2} -- d K / d lengthScale
@@ -118,9 +118,9 @@ switch gp.type
                    
                %Case: input dimension is >1    
                else
-                   [DKffa, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
-                   DKdf = feval(gpcf.fh_ghypergrad, gpcf, x);
-                   DKdd = feval(gpcf.fh_ghypergrad2, gpcf, x);
+                   [DKffa, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+                   DKdf = feval(gpcf.fh.ghypergrad, gpcf, x);
+                   DKdd = feval(gpcf.fh.ghypergrad2, gpcf, x);
 
                    %Check whether ARD method is in use (with gpcf_sexp)
                    Ard=length(gpcf.lengthScale);
@@ -175,7 +175,7 @@ switch gp.type
             nn = length(gp.noisef);
             for i=1:nn
                 noisef = gp.noisef{i};
-                [DCff, gprior_cf] = feval(noisef.fh_ghyper, noisef, x);
+                [DCff, gprior_cf] = feval(noisef.fh.ghyper, noisef, x);
                 if isfield(gp,'meanf')
                     [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
                 end
@@ -271,9 +271,9 @@ switch gp.type
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
             gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
-            DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
-            DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
+            DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
+            DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
             
             for i2 = 1:length(DKuu)
                 i1 = i1+1;       
@@ -310,7 +310,7 @@ switch gp.type
                 
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
-                [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
                     gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -345,9 +345,9 @@ switch gp.type
             for i = 1:size(gp.X_u,1)
                 if iscell(gp.p.X_u) % Own prior for each inducing input
                     pr = gp.p.X_u{i};
-                    gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                 else % One prior for all inducing inputs
-                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                 end
                 i1 = i1 + m;
             end
@@ -356,8 +356,8 @@ switch gp.type
             for i=1:ncf
                 i1 = st;
                 gpcf = gp.cf{i};
-                DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                 
                 for i2 = 1:length(DKuu)
                     i1=i1+1;
@@ -435,10 +435,10 @@ switch gp.type
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
             gpcf = gp.cf{i};
-            [DKuu, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, u); 
-            DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+            [DKuu, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, u); 
+            DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
             for kk = 1:length(ind)
-                DKff{kk} = feval(gpcf.fh_ghyper, gpcf, x(ind{kk},:));                 
+                DKff{kk} = feval(gpcf.fh.ghyper, gpcf, x(ind{kk},:));                 
             end
             
             for i2 = 1:length(DKuu)
@@ -481,7 +481,7 @@ switch gp.type
             nn = length(gp.noisef);
             for i=1:nn
                 gpcf = gp.noisef{i};
-                [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
                     gdata(i1)= -0.5*DCff{i2}.*b*b';            
@@ -518,9 +518,9 @@ switch gp.type
             for i = 1:size(gp.X_u,1)
                 if iscell(gp.p.X_u) % Own prior for each inducing input
                     pr = gp.p.X_u{i};
-                    gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                 else % One prior for all inducing inputs
-                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                 end
                 i1 = i1 + m;
             end
@@ -529,8 +529,8 @@ switch gp.type
             for i=1:ncf            
                 i1=st;
                 gpcf = gp.cf{i};
-                DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                 
                 for i2 = 1:length(DKuu)
                     i1 = i1+1;
@@ -632,9 +632,9 @@ switch gp.type
             if ~isfield(gpcf,'cs')
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
-                [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
-                DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
-                DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+                [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
+                DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
+                DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
                 
                 
                 for i2 = 1:length(DKuu)
@@ -661,7 +661,7 @@ switch gp.type
             else
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
-                [DKff,gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                 
                 for i2 = 1:length(DKff)
                     i1 = i1+1;
@@ -688,7 +688,7 @@ switch gp.type
                 gpcf = gp.noisef{i};       
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
-                [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
                     gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -724,9 +724,9 @@ switch gp.type
             for i = 1:size(gp.X_u,1)
                 if iscell(gp.p.X_u) % Own prior for each inducing input
                     pr = gp.p.X_u{i};
-                    gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                 else % One prior for all inducing inputs
-                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                 end
                 i1 = i1 + m;
             end
@@ -735,8 +735,8 @@ switch gp.type
                 i1=st;        
                 gpcf = gp.cf{i};            
                 if ~isfield(gpcf,'cs')
-                    DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                    DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                    DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                    DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                     
                     
                     for i2 = 1:length(DKuu)
@@ -816,9 +816,9 @@ switch gp.type
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
             gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x, [], 1); 
-            DKuu = feval(gpcf.fh_ghyper, gpcf, u); 
-            DKuf = feval(gpcf.fh_ghyper, gpcf, u, x); 
+            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
+            DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
+            DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
             
             for i2 = 1:length(DKuu)
                 i1 = i1+1;       
@@ -853,7 +853,7 @@ switch gp.type
                 
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
-                [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
                     gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -889,9 +889,9 @@ switch gp.type
             for i = 1:size(gp.X_u,1)
                 if iscell(gp.p.X_u) % Own prior for each inducing input
                     pr = gp.p.X_u{i};
-                    gprior(i1:i1+m) = feval(pr.fh_g, gp.X_u(i,:), pr);
+                    gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
                 else % One prior for all inducing inputs
-                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh_g, gp.X_u(i,:), gp.p.X_u);
+                    gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
                 end
                 i1 = i1 + m;
             end
@@ -900,8 +900,8 @@ switch gp.type
             for i=1:ncf
                 i1 = st;
                 gpcf = gp.cf{i};
-                DKuu = feval(gpcf.fh_ginput, gpcf, u);
-                DKuf = feval(gpcf.fh_ginput, gpcf, u, x);
+                DKuu = feval(gpcf.fh.ginput, gpcf, u);
+                DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
                 
                 for i2 = 1:length(DKuu)
                     i1=i1+1;
@@ -957,7 +957,7 @@ switch gp.type
             
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x); 
+            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x); 
 
             % Evaluate the gradient with respect to lengthScale
             for i2 = 1:length(DKff)
@@ -986,7 +986,7 @@ switch gp.type
                 gpcf = gp.noisef{i};
                 % Get the gradients of the covariance matrices 
                 % and gprior from gpcf_* structures
-                [DCff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+                [DCff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
                 for i2 = 1:length(DCff)
                     i1 = i1+1;
                     gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -1016,7 +1016,7 @@ switch gp.type
             gpcf = gp.cf{i};
             
             gpcf.GPtype = gp.type;        
-            [gprior_ind, DKuu, DKuf] = feval(gpcf.fh_gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
+            [gprior_ind, DKuu, DKuf] = feval(gpcf.fh.gind, gpcf, x, y, g_ind, gdata_ind, gprior_ind);
             
             for i2 = 1:length(DKuu)
                 KfuiKuuKuu = iKuuKuf'*DKuu{i2};

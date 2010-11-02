@@ -41,15 +41,15 @@ function lik = lik_softmax(varargin)
       lik.type = 'Softmax';
       
       % Set the function handles to the nested functions
-      lik.fh_pak = @lik_softmax_pak;
-      lik.fh_unpak = @lik_softmax_unpak;
-      lik.fh_ll = @lik_softmax_ll;
-      lik.fh_llg = @lik_softmax_llg;    
-      lik.fh_llg2 = @lik_softmax_llg2;
-      lik.fh_llg3 = @lik_softmax_llg3;
-      lik.fh_tiltedMoments = @lik_softmax_tiltedMoments;
-      lik.fh_predy = @lik_softmax_predy;
-      lik.fh_recappend = @lik_softmax_recappend;
+      lik.fh.pak = @lik_softmax_pak;
+      lik.fh.unpak = @lik_softmax_unpak;
+      lik.fh.ll = @lik_softmax_ll;
+      lik.fh.llg = @lik_softmax_llg;    
+      lik.fh.llg2 = @lik_softmax_llg2;
+      lik.fh.llg3 = @lik_softmax_llg3;
+      lik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
+      lik.fh.predy = @lik_softmax_predy;
+      lik.fh.recappend = @lik_softmax_recappend;
 
       % No paramaters to init
       if numel(varargin) > 0
@@ -220,15 +220,15 @@ function lik = lik_softmax(varargin)
       reclik.type = 'softmax';
 
       % Set the function handles
-      reclik.fh_pak = @lik_softmax_pak;
-      reclik.fh_unpak = @lik_softmax_unpak;
-      reclik.fh_ll = @lik_softmax_ll;
-      reclik.fh_llg = @lik_softmax_llg;    
-      reclik.fh_llg2 = @lik_softmax_llg2;
-      reclik.fh_llg3 = @lik_softmax_llg3;
-      reclik.fh_tiltedMoments = @lik_softmax_tiltedMoments;
-      reclik.fh_predy = @lik_softmax_predy;
-      reclik.fh_recappend = @lik_softmax_recappend;
+      reclik.fh.pak = @lik_softmax_pak;
+      reclik.fh.unpak = @lik_softmax_unpak;
+      reclik.fh.ll = @lik_softmax_ll;
+      reclik.fh.llg = @lik_softmax_llg;    
+      reclik.fh.llg2 = @lik_softmax_llg2;
+      reclik.fh.llg3 = @lik_softmax_llg3;
+      reclik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
+      reclik.fh.predy = @lik_softmax_predy;
+      reclik.fh.recappend = @lik_softmax_recappend;
       return
     end
     

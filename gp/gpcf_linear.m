@@ -91,15 +91,15 @@ function gpcf = gpcf_linear(varargin)
             end
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_linear_pak;
-            gpcf.fh_unpak = @gpcf_linear_unpak;
-            gpcf.fh_e = @gpcf_linear_e;
-            gpcf.fh_ghyper = @gpcf_linear_ghyper;
-            gpcf.fh_ginput = @gpcf_linear_ginput;
-            gpcf.fh_cov = @gpcf_linear_cov;
-            gpcf.fh_trcov  = @gpcf_linear_trcov;
-            gpcf.fh_trvar  = @gpcf_linear_trvar;
-            gpcf.fh_recappend = @gpcf_linear_recappend;
+            gpcf.fh.pak = @gpcf_linear_pak;
+            gpcf.fh.unpak = @gpcf_linear_unpak;
+            gpcf.fh.e = @gpcf_linear_e;
+            gpcf.fh.ghyper = @gpcf_linear_ghyper;
+            gpcf.fh.ginput = @gpcf_linear_ginput;
+            gpcf.fh.cov = @gpcf_linear_cov;
+            gpcf.fh.trcov  = @gpcf_linear_trcov;
+            gpcf.fh.trvar  = @gpcf_linear_trvar;
+            gpcf.fh.recappend = @gpcf_linear_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -140,7 +140,7 @@ function gpcf = gpcf_linear(varargin)
             w = log(gpcf.coeffSigma2);
             
             % Hyperparameters of coeffSigma2
-            w = [w feval(gpcf.p.coeffSigma2.fh_pak, gpcf.p.coeffSigma2)];
+            w = [w feval(gpcf.p.coeffSigma2.fh.pak, gpcf.p.coeffSigma2)];
         end
     end
 
@@ -171,7 +171,7 @@ function gpcf = gpcf_linear(varargin)
             w = w(i2+1:end);
             
             % Hyperparameters of coeffSigma2
-            [p, w] = feval(gpcf.p.coeffSigma2.fh_unpak, gpcf.p.coeffSigma2, w);
+            [p, w] = feval(gpcf.p.coeffSigma2.fh.unpak, gpcf.p.coeffSigma2, w);
             gpcf.p.coeffSigma2 = p;
         end
     end
@@ -205,7 +205,7 @@ function gpcf = gpcf_linear(varargin)
         gpp=gpcf.p;
 
         if ~isempty(gpp.coeffSigma2)
-            eprior = feval(gpp.coeffSigma2.fh_e, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
+            eprior = feval(gpp.coeffSigma2.fh.e, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
         end
     end
 
@@ -340,7 +340,7 @@ function gpcf = gpcf_linear(varargin)
             
             if ~isempty(gpcf.p.coeffSigma2)
                 lll = length(gpcf.coeffSigma2);
-                gg = feval(gpp.coeffSigma2.fh_g, gpcf.coeffSigma2, gpp.coeffSigma2);
+                gg = feval(gpp.coeffSigma2.fh.g, gpcf.coeffSigma2, gpp.coeffSigma2);
                 gprior = gg(1:lll).*gpcf.coeffSigma2 - 1;
                 gprior = [gprior gg(lll+1:end)];
             end
@@ -371,7 +371,7 @@ function gpcf = gpcf_linear(varargin)
         
         if nargin == 2
             
-            %K = feval(gpcf.fh_trcov, gpcf, x);
+            %K = feval(gpcf.fh.trcov, gpcf, x);
             
             if length(gpcf.coeffSigma2) == 1
                 % In the case of an isotropic LINEAR
@@ -414,7 +414,7 @@ function gpcf = gpcf_linear(varargin)
             
             
         elseif nargin == 3
-            %K = feval(gpcf.fh_cov, gpcf, x, x2);
+            %K = feval(gpcf.fh.cov, gpcf, x, x2);
             
             if length(gpcf.coeffSigma2) == 1
                 % In the case of an isotropic LINEAR
@@ -565,14 +565,14 @@ function gpcf = gpcf_linear(varargin)
             reccf.coeffSigma2= [];
 
             % Set the function handles
-            reccf.fh_pak = @gpcf_linear_pak;
-            reccf.fh_unpak = @gpcf_linear_unpak;
-            reccf.fh_e = @gpcf_linear_e;
-            reccf.fh_g = @gpcf_linear_g;
-            reccf.fh_cov = @gpcf_linear_cov;
-            reccf.fh_trcov  = @gpcf_linear_trcov;
-            reccf.fh_trvar  = @gpcf_linear_trvar;
-            reccf.fh_recappend = @gpcf_linear_recappend;
+            reccf.fh.pak = @gpcf_linear_pak;
+            reccf.fh.unpak = @gpcf_linear_unpak;
+            reccf.fh.e = @gpcf_linear_e;
+            reccf.fh.g = @gpcf_linear_g;
+            reccf.fh.cov = @gpcf_linear_cov;
+            reccf.fh.trcov  = @gpcf_linear_trcov;
+            reccf.fh.trvar  = @gpcf_linear_trvar;
+            reccf.fh.recappend = @gpcf_linear_recappend;
             gpcf.p=[];
             gpcf.p.coeffSigma2=[];
             if ~isempty(ri.p.coeffSigma2)
@@ -586,7 +586,7 @@ function gpcf = gpcf_linear(varargin)
         % record coeffSigma2
         if ~isempty(gpcf.coeffSigma2)
             reccf.coeffSigma2(ri,:)=gpcf.coeffSigma2;
-            reccf.p.coeffSigma2 = feval(gpp.coeffSigma2.fh_recappend, reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
+            reccf.p.coeffSigma2 = feval(gpp.coeffSigma2.fh.recappend, reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
         elseif ri==1
             reccf.coeffSigma2=[];
         end

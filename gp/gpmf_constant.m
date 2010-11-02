@@ -69,7 +69,7 @@ function gpmf = gpmf_constant(varargin)
   end
   if init
     % Set the function handles to the nested functions
-    gpmf.fh_geth = @gpmf_geth;
+    gpmf.fh.geth = @gpmf_geth;
   end
   
   function h = gpmf_geth(gpmf, x)

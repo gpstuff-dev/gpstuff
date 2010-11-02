@@ -77,17 +77,17 @@ function gpcf = gpcf_noise(varargin)
             end
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_noise_pak;
-            gpcf.fh_unpak = @gpcf_noise_unpak;
-            gpcf.fh_e = @gpcf_noise_e;
-            gpcf.fh_ghyper = @gpcf_noise_ghyper;
-            gpcf.fh_gind = @gpcf_noise_ginput;
-            gpcf.fh_cov = @gpcf_noise_cov;
-            gpcf.fh_trcov  = @gpcf_noise_trcov;
-            gpcf.fh_trvar  = @gpcf_noise_trvar;
-            gpcf.fh_sampling = @hmc2;
+            gpcf.fh.pak = @gpcf_noise_pak;
+            gpcf.fh.unpak = @gpcf_noise_unpak;
+            gpcf.fh.e = @gpcf_noise_e;
+            gpcf.fh.ghyper = @gpcf_noise_ghyper;
+            gpcf.fh.gind = @gpcf_noise_ginput;
+            gpcf.fh.cov = @gpcf_noise_cov;
+            gpcf.fh.trcov  = @gpcf_noise_trcov;
+            gpcf.fh.trvar  = @gpcf_noise_trvar;
+            gpcf.fh.sampling = @hmc2;
             gpcf.sampling_opt = hmc2_opt;
-            gpcf.fh_recappend = @gpcf_noise_recappend;
+            gpcf.fh.recappend = @gpcf_noise_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -127,7 +127,7 @@ function gpcf = gpcf_noise(varargin)
             w(1) = log(gpcf.noiseSigma2);
             
             % Hyperparameters of noiseSigma2
-            w = [w feval(gpcf.p.noiseSigma2.fh_pak, gpcf.p.noiseSigma2)];
+            w = [w feval(gpcf.p.noiseSigma2.fh.pak, gpcf.p.noiseSigma2)];
         end    
 
     end
@@ -155,7 +155,7 @@ function gpcf = gpcf_noise(varargin)
                 w = w(2:end);
                                 
                 % Hyperparameters of lengthScale
-                [p, w] = feval(gpcf.p.noiseSigma2.fh_unpak, gpcf.p.noiseSigma2, w);
+                [p, w] = feval(gpcf.p.noiseSigma2.fh.unpak, gpcf.p.noiseSigma2, w);
                 gpcf.p.noiseSigma2 = p;
         end
     end
@@ -184,7 +184,7 @@ function gpcf = gpcf_noise(varargin)
         if ~isempty(gpcf.p.noiseSigma2)
             % Evaluate the prior contribution to the error.
             gpp=gpcf.p;
-            eprior = feval(gpp.noiseSigma2.fh_e, gpcf.noiseSigma2, gpp.noiseSigma2) - log(gpcf.noiseSigma2);
+            eprior = feval(gpp.noiseSigma2.fh.e, gpcf.noiseSigma2, gpp.noiseSigma2) - log(gpcf.noiseSigma2);
         end
     end
 
@@ -226,7 +226,7 @@ function gpcf = gpcf_noise(varargin)
             
             D{1}=gpcf.noiseSigma2;
             
-            ggs = feval(gpp.noiseSigma2.fh_g, gpcf.noiseSigma2, gpp.noiseSigma2);
+            ggs = feval(gpp.noiseSigma2.fh.g, gpcf.noiseSigma2, gpp.noiseSigma2);
             gprior = ggs(1).*gpcf.noiseSigma2 - 1;
             if length(ggs) > 1
                 gprior = [gprior ggs(2:end)];
@@ -348,16 +348,16 @@ function gpcf = gpcf_noise(varargin)
             reccf.noiseSigma2 = []; 
             
             % Set the function handles
-            reccf.fh_pak = @gpcf_noise_pak;
-            reccf.fh_unpak = @gpcf_noise_unpak;
-            reccf.fh_e = @gpcf_noise_e;
-            reccf.fh_g = @gpcf_noise_g;
-            reccf.fh_cov = @gpcf_noise_cov;
-            reccf.fh_trcov  = @gpcf_noise_trcov;
-            reccf.fh_trvar  = @gpcf_noise_trvar;
-            %  gpcf.fh_sampling = @hmc2;
+            reccf.fh.pak = @gpcf_noise_pak;
+            reccf.fh.unpak = @gpcf_noise_unpak;
+            reccf.fh.e = @gpcf_noise_e;
+            reccf.fh.g = @gpcf_noise_g;
+            reccf.fh.cov = @gpcf_noise_cov;
+            reccf.fh.trcov  = @gpcf_noise_trcov;
+            reccf.fh.trvar  = @gpcf_noise_trvar;
+            %  gpcf.fh.sampling = @hmc2;
             reccf.sampling_opt = hmc2_opt;
-            reccf.fh_recappend = @gpcf_noise_recappend;  
+            reccf.fh.recappend = @gpcf_noise_recappend;  
             reccf.p=[];
             reccf.p.noiseSigma2=[];
             if ~isempty(ri.p.noiseSigma2)
@@ -371,7 +371,7 @@ function gpcf = gpcf_noise(varargin)
         % record noiseSigma
         if ~isempty(gpcf.noiseSigma2)
             reccf.noiseSigma2(ri,:)=gpcf.noiseSigma2;
-            reccf.p.noiseSigma2 = feval(gpp.noiseSigma2.fh_recappend, reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
+            reccf.p.noiseSigma2 = feval(gpp.noiseSigma2.fh.recappend, reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
         elseif ri==1
             reccf.noiseSigma2=[];
         end

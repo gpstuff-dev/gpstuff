@@ -64,7 +64,7 @@ if ~isempty(strfind(param, 'covariance'))
     
     for i=1:ncf
         gpcf = gp.cf{i};
-        [gpcf, w] = feval(gpcf.fh_unpak, gpcf, w);
+        [gpcf, w] = feval(gpcf.fh.unpak, gpcf, w);
         gp.cf{i} = gpcf;
     end
     
@@ -72,7 +72,7 @@ if ~isempty(strfind(param, 'covariance'))
         nn = length(gp.noisef);
         for i=1:nn
             noisef = gp.noisef{i};
-            [noisef, w] = feval(noisef.fh_unpak, noisef, w);
+            [noisef, w] = feval(noisef.fh.unpak, noisef, w);
             gp.noisef{i} = noisef;
         end
     end
@@ -92,7 +92,7 @@ end
 % Unpack the hyperparameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
     if isstruct(gp.lik)
-        [lik w] = feval(gp.lik.fh_unpak, w, gp.lik);
+        [lik w] = feval(gp.lik.fh.unpak, w, gp.lik);
         gp.lik = lik;
     end
 end

@@ -52,15 +52,15 @@ function lik = lik_binomial(varargin)
       lik.type = 'Binomial';
 
       % Set the function handles to the nested functions
-      lik.fh_pak = @lik_binomial_pak;
-      lik.fh_unpak = @lik_binomial_unpak;
-      lik.fh_ll = @lik_binomial_ll;
-      lik.fh_llg = @lik_binomial_llg;    
-      lik.fh_llg2 = @lik_binomial_llg2;
-      lik.fh_llg3 = @lik_binomial_llg3;
-      lik.fh_tiltedMoments = @lik_binomial_tiltedMoments;
-      lik.fh_predy = @lik_binomial_predy;
-      lik.fh_recappend = @lik_binomial_recappend;
+      lik.fh.pak = @lik_binomial_pak;
+      lik.fh.unpak = @lik_binomial_unpak;
+      lik.fh.ll = @lik_binomial_ll;
+      lik.fh.llg = @lik_binomial_llg;    
+      lik.fh.llg2 = @lik_binomial_llg2;
+      lik.fh.llg3 = @lik_binomial_llg3;
+      lik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
+      lik.fh.predy = @lik_binomial_predy;
+      lik.fh.recappend = @lik_binomial_recappend;
 
       % No paramaters to init
       if numel(varargin) > 0
@@ -420,15 +420,15 @@ function lik = lik_binomial(varargin)
       reclik.type = 'Binomial';
 
       % Set the function handles
-      reclik.fh_pak = @lik_binomial_pak;
-      reclik.fh_unpak = @lik_binomial_unpak;
-      reclik.fh_ll = @lik_binomial_ll;
-      reclik.fh_llg = @lik_binomial_llg;    
-      reclik.fh_llg2 = @lik_binomial_llg2;
-      reclik.fh_llg3 = @lik_binomial_llg3;
-      reclik.fh_tiltedMoments = @lik_binomial_tiltedMoments;
-      reclik.fh_predy = @lik_binomial_predy;
-      reclik.fh_recappend = @likelih_binomial_recappend;
+      reclik.fh.pak = @lik_binomial_pak;
+      reclik.fh.unpak = @lik_binomial_unpak;
+      reclik.fh.ll = @lik_binomial_ll;
+      reclik.fh.llg = @lik_binomial_llg;    
+      reclik.fh.llg2 = @lik_binomial_llg2;
+      reclik.fh.llg3 = @lik_binomial_llg3;
+      reclik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
+      reclik.fh.predy = @lik_binomial_predy;
+      reclik.fh.recappend = @likelih_binomial_recappend;
       return
     end
 

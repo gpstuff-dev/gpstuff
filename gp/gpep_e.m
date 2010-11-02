@@ -87,12 +87,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
     
     % return function handle to the nested function ep_algorithm
     % this way each gp has its own peristent memory for EP
-    gp.fh_e = @ep_algorithm;
+    gp.fh.e = @ep_algorithm;
     e = gp;
   else
     % call ep_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for EP
-    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = feval(gp.fh_e, w, gp, x, y, z);
+    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = feval(gp.fh.e, w, gp, x, y, z);
   end
 
   function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i] = ep_algorithm(w, gp, x, y, z)
@@ -168,8 +168,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             % the update order so that the problematic updates
             % are left for last
             if strcmp(gp.lik.type,'Student-t')
-              f=feval(gp.lik.fh_optimizef,gp,y,K);
-              W=-feval(gp.lik.fh_llg2,gp.lik,y,f,'latent');
+              f=feval(gp.lik.fh.optimizef,gp,y,K);
+              W=-feval(gp.lik.fh.llg2,gp.lik,y,f,'latent');
               [foo,I]=sort(W,'descend');
             else
               I=1:n;
@@ -198,7 +198,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
   % $$$                             end
   % $$$                             
   % $$$                             % marginal moments
-  % $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+  % $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
   % $$$                             
   % $$$                             % update site parameters
   % $$$                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -242,7 +242,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 sigm2_i=tau_i^-1;
                 
                 % marginal moments
-                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                 
                 % update site parameters
                 deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
@@ -429,7 +429,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 sigm2_i=tau_i^-1;
                 
                 % marginal moments
-                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                 
                 % update site parameters
                 tautilde_old = tautilde(i1);
@@ -555,7 +555,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
               sigm2_i=tau_i^-1;
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
               
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -708,7 +708,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 sigm2_i=tau_i^-1;
                 
                 % marginal moments
-                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
 
                 % update site parameters
                 deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -903,7 +903,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
               sigm2_i= tau_i^-1;  % 1./tau_i;  % 
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
 
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1053,7 +1053,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
               sigm2_i=tau_i^-1;
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
               
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1174,7 +1174,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
               sigm2_i=tau_i^-1;
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh_tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
               
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1258,7 +1258,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior + feval(gpcf.fh_e, gpcf, x, y);
+        eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
       end
 
       % Evaluate the prior contribution to the error from noise functions
@@ -1266,7 +1266,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
         nn = length(gp.noisef);
         for i=1:nn
           noisef = gp.noisef{i};
-          eprior = eprior + feval(noisef.fh_e, noisef, x, y);
+          eprior = eprior + feval(noisef.fh.e, noisef, x, y);
         end
       end
       
@@ -1274,7 +1274,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       % functions
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior + feval(lik.fh_priore, lik);
+        eprior = eprior + feval(lik.fh.priore, lik);
       end
 
       % The last things to do

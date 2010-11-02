@@ -48,21 +48,21 @@ function [Ef, Varf, Ey, Vary, Py] = ep_loopred(gp, x, y, varargin)
   if isempty(z)
     if nargout > 4
       for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1), Py(cvi,1)] = feval(gp.lik.fh_predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
+        [Ey(cvi,1), Vary(cvi,1), Py(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
       end
     elseif nargout > 2
       for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1)] = feval(gp.lik.fh_predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi));
+        [Ey(cvi,1), Vary(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi));
       end
     end
   else
     if nargout > 4
       for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1), Py(cvi,1)] = feval(gp.lik.fh_predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
+        [Ey(cvi,1), Vary(cvi,1), Py(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
       end
     elseif nargout > 2
       for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1)] = feval(gp.lik.fh_predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
+        [Ey(cvi,1), Vary(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
       end
     end
   end

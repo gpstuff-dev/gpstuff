@@ -34,9 +34,9 @@ if isfield(gp,'derivobs') && gp.derivobs
     gpcf = gp.cf{1};            % only for sexp at the moment
     [n,m]=size(x1);
     if m==1          
-           Kff = feval(gpcf.fh_trcov, gpcf, x1); 
-           Gset = feval(gpcf.fh_ginput4, gpcf, x1);
-           D = feval(gpcf.fh_ginput2, gpcf, x1, x1);
+           Kff = feval(gpcf.fh.trcov, gpcf, x1); 
+           Gset = feval(gpcf.fh.ginput4, gpcf, x1);
+           D = feval(gpcf.fh.ginput2, gpcf, x1, x1);
 
            Kdf=Gset{1};
            Kfd = Kdf';
@@ -48,10 +48,10 @@ if isfield(gp,'derivobs') && gp.derivobs
 
     % MULTIDIMENSIONAL input dim >1
     else
-           Kff = feval(gpcf.fh_trcov, gpcf, x1); 
-           G= feval(gpcf.fh_ginput4, gpcf, x1);
-           D= feval(gpcf.fh_ginput2, gpcf, x1, x1);
-           Kdf2 = feval(gpcf.fh_ginput3, gpcf, x1 ,x1);
+           Kff = feval(gpcf.fh.trcov, gpcf, x1); 
+           G= feval(gpcf.fh.ginput4, gpcf, x1);
+           D= feval(gpcf.fh.ginput2, gpcf, x1, x1);
+           Kdf2 = feval(gpcf.fh.ginput3, gpcf, x1 ,x1);
 
            Kdf=cat(1,G{1:m});
 
@@ -100,9 +100,9 @@ if isfield(gp,'derivobs') && gp.derivobs
             if nn == 1
                     % same noise for obs and grad obs
                     noisef = gp.noisef{1};
-                    Noi=feval(noisef.fh_trcov, noisef, x1);
+                    Noi=feval(noisef.fh.trcov, noisef, x1);
                     x2=repmat(x1,m,1);
-                    Noi2=feval(noisef.fh_trcov, noisef, x2);
+                    Noi2=feval(noisef.fh.trcov, noisef, x2);
                     Cff = Kff + Noi;
                     Cdd = Kdd + Noi2;
                     C = [Cff Kfd; Kdf Cdd];
@@ -112,8 +112,8 @@ if isfield(gp,'derivobs') && gp.derivobs
                    x2=repmat(x1,m,1);
                    for i=1:nn
                        noisef = gp.noisef{i};
-                       Cff = Cff + feval(noisef.fh_trcov, noisef, x1);
-                       Cdd = Cdd + feval(noisef.fh_trcov, noisef, x2);
+                       Cff = Cff + feval(noisef.fh.trcov, noisef, x1);
+                       Cdd = Cdd + feval(noisef.fh.trcov, noisef, x2);
                    end
                    C = [Cff Kfd; Kdf Cdd];
             end
@@ -135,7 +135,7 @@ else
         end
         for i=1:length(predcf)
             gpcf = gp.cf{predcf(i)};
-            K = K + feval(gpcf.fh_trcov, gpcf, x1);
+            K = K + feval(gpcf.fh.trcov, gpcf, x1);
         end
 
         if ~isempty(gp.jitterSigma2)
@@ -152,7 +152,7 @@ else
                 nn = length(gp.noisef);
                 for i=1:nn                
                     noisef = gp.noisef{i};
-                    C = C + feval(noisef.fh_trcov, noisef, x1);
+                    C = C + feval(noisef.fh.trcov, noisef, x1);
                 end
             end
         end
@@ -164,7 +164,7 @@ else
 
         % Evaluate the covariance without noise
         gpcf = gp.cf{1};
-        K = feval(gpcf.fh_trcov, gpcf, x1);
+        K = feval(gpcf.fh.trcov, gpcf, x1);
 
         if nargout > 1 
             C=sparse(0);
@@ -173,7 +173,7 @@ else
                 nn = length(gp.noisef);
                 for i=1:nn
                     noisef = gp.noisef{i};
-                    C = C + feval(noisef.fh_trcov, noisef, x1);
+                    C = C + feval(noisef.fh.trcov, noisef, x1);
                 end
             end
         end   

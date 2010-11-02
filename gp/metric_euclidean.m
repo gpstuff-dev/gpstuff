@@ -133,7 +133,7 @@ function metric = metric_euclidean(varargin)
       w = log(metric.lengthScale);
       
       % Hyperparameters of lengthScale
-      w = [w feval(metric.p.lengthScale.fh_pak, metric.p.lengthScale)];
+      w = [w feval(metric.p.lengthScale.fh.pak, metric.p.lengthScale)];
     else
       w = [];
     end
@@ -164,7 +164,7 @@ function metric = metric_euclidean(varargin)
       w = w(i2+1:end);
       
       % Hyperparameters of lengthScale
-      [p, w] = feval(metric.p.lengthScale.fh_unpak, metric.p.lengthScale, w);
+      [p, w] = feval(metric.p.lengthScale.fh.unpak, metric.p.lengthScale, w);
       metric.p.lengthScale = p;
     end
   end
@@ -194,7 +194,7 @@ function metric = metric_euclidean(varargin)
     % into account also the  Jakobian of transformation W -> w = exp(W).
     % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
     if ~isempty(metric.p.lengthScale)
-      eprior = feval(metric.p.lengthScale.fh_e, metric.lengthScale, metric.p.lengthScale) - sum(log(metric.lengthScale));
+      eprior = feval(metric.p.lengthScale.fh.e, metric.lengthScale, metric.p.lengthScale) - sum(log(metric.lengthScale));
     else
       eprior=0;
     end
@@ -277,7 +277,7 @@ function metric = metric_euclidean(varargin)
       if ~isempty(metric.p.lengthScale)
         i1=1; 
         lll = length(metric.lengthScale);
-        gg = feval(metric.p.lengthScale.fh_g, metric.lengthScale, metric.p.lengthScale);
+        gg = feval(metric.p.lengthScale.fh.g, metric.lengthScale, metric.p.lengthScale);
         gprior(i1:i1-1+lll) = gg(1:lll).*metric.lengthScale - 1;
         gprior = [gprior gg(lll+1:end)];
       end
@@ -422,7 +422,7 @@ function metric = metric_euclidean(varargin)
     % record parameters
     if ~isempty(metric.lengthScale)
       recmetric.lengthScale(ri,:)=metric.lengthScale;
-      recmetric.p.lengthScale = feval(metric.p.lengthScale.fh_recappend, recmetric.p.lengthScale, ri, metric.p.lengthScale);
+      recmetric.p.lengthScale = feval(metric.p.lengthScale.fh.recappend, recmetric.p.lengthScale, ri, metric.p.lengthScale);
     elseif ri==1
       recmetric.lengthScale=[];
     end

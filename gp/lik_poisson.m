@@ -52,15 +52,15 @@ function lik = lik_poisson(varargin)
       lik.type = 'Poisson';
 
       % Set the function handles to the nested functions
-      lik.fh_pak = @lik_poisson_pak;
-      lik.fh_unpak = @lik_poisson_unpak;
-      lik.fh_ll = @lik_poisson_ll;
-      lik.fh_llg = @lik_poisson_llg;    
-      lik.fh_llg2 = @lik_poisson_llg2;
-      lik.fh_llg3 = @lik_poisson_llg3;
-      lik.fh_tiltedMoments = @lik_poisson_tiltedMoments;
-      lik.fh_predy = @lik_poisson_predy;
-      lik.fh_recappend = @lik_poisson_recappend;
+      lik.fh.pak = @lik_poisson_pak;
+      lik.fh.unpak = @lik_poisson_unpak;
+      lik.fh.ll = @lik_poisson_ll;
+      lik.fh.llg = @lik_poisson_llg;    
+      lik.fh.llg2 = @lik_poisson_llg2;
+      lik.fh.llg3 = @lik_poisson_llg3;
+      lik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
+      lik.fh.predy = @lik_poisson_predy;
+      lik.fh.recappend = @lik_poisson_recappend;
 
       % No paramaters to init
       if numel(varargin) > 0
@@ -471,15 +471,15 @@ function lik = lik_poisson(varargin)
       reclik.type = 'Poisson';
 
       % Set the function handles
-      reclik.fh_pak = @lik_poisson_pak;
-      reclik.fh_unpak = @lik_poisson_unpak;
-      reclik.fh_ll = @lik_poisson_ll;
-      reclik.fh_llg = @lik_poisson_llg;    
-      reclik.fh_llg2 = @lik_poisson_llg2;
-      reclik.fh_llg3 = @lik_poisson_llg3;
-      reclik.fh_tiltedMoments = @lik_poisson_tiltedMoments;
-      reclik.fh_predy = @lik_poisson_predy;
-      reclik.fh_recappend = @lik_poisson_recappend;
+      reclik.fh.pak = @lik_poisson_pak;
+      reclik.fh.unpak = @lik_poisson_unpak;
+      reclik.fh.ll = @lik_poisson_ll;
+      reclik.fh.llg = @lik_poisson_llg;    
+      reclik.fh.llg2 = @lik_poisson_llg2;
+      reclik.fh.llg3 = @lik_poisson_llg3;
+      reclik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
+      reclik.fh.predy = @lik_poisson_predy;
+      reclik.fh.recappend = @lik_poisson_recappend;
       return
     end
     

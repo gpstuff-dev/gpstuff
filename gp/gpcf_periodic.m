@@ -153,16 +153,16 @@ function gpcf = gpcf_periodic(varargin)
             end
             
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_periodic_pak;
-            gpcf.fh_unpak = @gpcf_periodic_unpak;
-            gpcf.fh_e = @gpcf_periodic_e;
-            gpcf.fh_ghyper = @gpcf_periodic_ghyper;
-            gpcf.fh_ginput = @gpcf_periodic_ginput;
-            gpcf.fh_cov = @gpcf_periodic_cov;
-            gpcf.fh_covvec = @gpcf_periodic_covvec;
-            gpcf.fh_trcov  = @gpcf_periodic_trcov;
-            gpcf.fh_trvar  = @gpcf_periodic_trvar;
-            gpcf.fh_recappend = @gpcf_periodic_recappend;
+            gpcf.fh.pak = @gpcf_periodic_pak;
+            gpcf.fh.unpak = @gpcf_periodic_unpak;
+            gpcf.fh.e = @gpcf_periodic_e;
+            gpcf.fh.ghyper = @gpcf_periodic_ghyper;
+            gpcf.fh.ginput = @gpcf_periodic_ginput;
+            gpcf.fh.cov = @gpcf_periodic_cov;
+            gpcf.fh.covvec = @gpcf_periodic_covvec;
+            gpcf.fh.trcov  = @gpcf_periodic_trcov;
+            gpcf.fh.trvar  = @gpcf_periodic_trvar;
+            gpcf.fh.recappend = @gpcf_periodic_recappend;
             
         case 'set'
             % Set the parameter values of covariance function
@@ -217,28 +217,28 @@ function gpcf = gpcf_periodic(varargin)
                 w(i1) = log(gpcf.magnSigma2);
                 
                 % Hyperparameters of magnSigma2
-                ww = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2);
+                ww = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
             end
             
             if ~isempty(gpcf.p.lengthScale)
                 w = [w log(gpcf.lengthScale)];
                             
                 % Hyperparameters of lengthScale
-                ww = [ww feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
+                ww = [ww feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
             end
             
             if ~isempty(gpcf.p.lengthScale_sexp)  && gpcf.decay == 1
                 w = [w log(gpcf.lengthScale_sexp)];
                             
                 % Hyperparameters of lengthScale_sexp
-                ww = [ww feval(gpcf.p.lengthScale_sexp.fh_pak, gpcf.p.lengthScale_sexp)];
+                ww = [ww feval(gpcf.p.lengthScale_sexp.fh.pak, gpcf.p.lengthScale_sexp)];
             end
             
             if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                 w = [w log(gpcf.period)];
                 
                 % Hyperparameters of period
-                ww = [ww feval(gpcf.p.period.fh_pak, gpcf.p.period)];
+                ww = [ww feval(gpcf.p.period.fh.pak, gpcf.p.period)];
             end
             w = [w ww];
         end
@@ -293,19 +293,19 @@ function gpcf = gpcf_periodic(varargin)
             end
             % hyperparameters
             if ~isempty(gpp.magnSigma2)
-                [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+                [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
                 gpcf.p.magnSigma2 = p;
             end
             if ~isempty(gpp.lengthScale)
-                [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
+                [p, w] = feval(gpcf.p.lengthScale.fh.unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
             if ~isempty(gpp.lengthScale_sexp)
-                [p, w] = feval(gpcf.p.lengthScale_sexp.fh_unpak, gpcf.p.lengthScale_sexp, w);
+                [p, w] = feval(gpcf.p.lengthScale_sexp.fh.unpak, gpcf.p.lengthScale_sexp, w);
                 gpcf.p.lengthScale_sexp = p;
             end
             if ~isempty(gpp.period)  && gpcf.optimPeriod == 1
-                [p, w] = feval(gpcf.p.period.fh_unpak, gpcf.p.period, w);
+                [p, w] = feval(gpcf.p.period.fh.unpak, gpcf.p.period, w);
                 gpcf.p.period = p;
             end
             
@@ -345,17 +345,17 @@ function gpcf = gpcf_periodic(varargin)
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
             
             if ~isempty(gpcf.p.magnSigma2)
-                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+                eprior = feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
             end
             if ~isempty(gpp.lengthScale)
-                eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
+                eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
           
             if ~isempty(gpp.lengthScale_sexp) && gpcf.decay == 1
-                eprior = eprior + feval(gpp.lengthScale_sexp.fh_e, gpcf.lengthScale_sexp, gpp.lengthScale_sexp) - sum(log(gpcf.lengthScale_sexp));
+                eprior = eprior + feval(gpp.lengthScale_sexp.fh.e, gpcf.lengthScale_sexp, gpp.lengthScale_sexp) - sum(log(gpcf.lengthScale_sexp));
             end
             if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
-                eprior = feval(gpp.period.fh_e, gpcf.period, gpp.period) - sum(log(gpcf.period));
+                eprior = feval(gpp.period.fh.e, gpcf.period, gpp.period) - sum(log(gpcf.period));
             end
         end
 
@@ -501,7 +501,7 @@ function gpcf = gpcf_periodic(varargin)
             end
             
             ii1=1;
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             DKff{ii1} = K;
             
             if isfield(gpcf,'metric')                
@@ -596,7 +596,7 @@ function gpcf = gpcf_periodic(varargin)
                error('Covariance function not compatible with metrics');
             else
                 ii1=1;
-                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
                 for i2=1:length(gpcf.lengthScale)
                     ii1 = ii1+1;
                     DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
@@ -621,27 +621,27 @@ function gpcf = gpcf_periodic(varargin)
                 if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = 1;
-                ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
+                ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
                 gprior = ggs(i1).*gpcf.magnSigma2 - 1;
                 end
                 if ~isempty(gpcf.p.lengthScale)
                     i1=i1+1; 
                     lll = length(gpcf.lengthScale);
-                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale);
+                    gg = feval(gpp.lengthScale.fh.g, gpcf.lengthScale, gpp.lengthScale);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
                 if gpcf.decay == 1
                     i1=i1+1; 
                     lll = length(gpcf.lengthScale_sexp);
-                    gg = feval(gpp.lengthScale_sexp.fh_g, gpcf.lengthScale_sexp, gpp.lengthScale_sexp);
+                    gg = feval(gpp.lengthScale_sexp.fh.g, gpcf.lengthScale_sexp, gpp.lengthScale_sexp);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale_sexp - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
                 if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                     i1=i1+1; 
                     lll = length(gpcf.period);
-                    gg = feval(gpp.period.fh_g, gpcf.period, gpp.period);
+                    gg = feval(gpp.period.fh.g, gpcf.period, gpp.period);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.period - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
@@ -690,7 +690,7 @@ function gpcf = gpcf_periodic(varargin)
         end
 
         if nargin == 2
-            K = feval(gpcf.fh_trcov, gpcf, x);
+            K = feval(gpcf.fh.trcov, gpcf, x);
             if isfield(gpcf,'metric')
                 error('Covariance function not compatible with metrics');
             else
@@ -715,7 +715,7 @@ function gpcf = gpcf_periodic(varargin)
             end
             
         elseif nargin == 3
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
 
             if isfield(gpcf,'metric')
                 error('Covariance function not compatible with metrics');
@@ -919,14 +919,14 @@ function gpcf = gpcf_periodic(varargin)
            
 
             % Set the function handles
-            reccf.fh_pak = @gpcf_periodic_pak;
-            reccf.fh_unpak = @gpcf_periodic_unpak;
-            reccf.fh_e = @gpcf_periodic_e;
-            reccf.fh_g = @gpcf_periodic_g;
-            reccf.fh_cov = @gpcf_periodic_cov;
-            reccf.fh_trcov  = @gpcf_periodic_trcov;
-            reccf.fh_trvar  = @gpcf_periodic_trvar;
-            reccf.fh_recappend = @gpcf_periodic_recappend;
+            reccf.fh.pak = @gpcf_periodic_pak;
+            reccf.fh.unpak = @gpcf_periodic_unpak;
+            reccf.fh.e = @gpcf_periodic_e;
+            reccf.fh.g = @gpcf_periodic_g;
+            reccf.fh.cov = @gpcf_periodic_cov;
+            reccf.fh.trcov  = @gpcf_periodic_trcov;
+            reccf.fh.trvar  = @gpcf_periodic_trvar;
+            reccf.fh.recappend = @gpcf_periodic_recappend;
              reccf.p=[];
             reccf.p.lengthScale=[];
             reccf.p.magnSigma2=[];
@@ -957,7 +957,7 @@ function gpcf = gpcf_periodic(varargin)
         % record lengthScale
             if ~isempty(gpcf.lengthScale)
                 reccf.lengthScale(ri,:)=gpcf.lengthScale;
-                reccf.p.lengthScale = feval(gpp.lengthScale.fh_recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+                reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
             elseif ri==1
                 reccf.lengthScale=[];
             end
@@ -972,7 +972,7 @@ function gpcf = gpcf_periodic(varargin)
         % record lengthScale_sexp
         if ~isempty(gpcf.lengthScale_sexp) && gpcf.decay == 1
             reccf.lengthScale_sexp(ri,:)=gpcf.lengthScale_sexp;
-            reccf.p.lengthScale_sexp = feval(gpp.lengthScale_sexp.fh_recappend, reccf.p.lengthScale_sexp, ri, gpcf.p.lengthScale_sexp);
+            reccf.p.lengthScale_sexp = feval(gpp.lengthScale_sexp.fh.recappend, reccf.p.lengthScale_sexp, ri, gpcf.p.lengthScale_sexp);
 
         elseif ri==1
             reccf.lengthScale_sexp=[];
@@ -981,7 +981,7 @@ function gpcf = gpcf_periodic(varargin)
             % record period
             if ~isempty(gpcf.period)
                 reccf.period(ri,:)=gpcf.period;
-                reccf.p.period = feval(gpp.period.fh_recappend, reccf.p.period, ri, gpcf.p.period);
+                reccf.p.period = feval(gpp.period.fh.recappend, reccf.p.period, ri, gpcf.p.period);
 
             elseif ri==1
                 reccf.period=[];

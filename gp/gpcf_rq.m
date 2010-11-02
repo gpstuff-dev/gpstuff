@@ -127,15 +127,15 @@ function gpcf = gpcf_rq(varargin)
             end     
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_rq_pak;
-            gpcf.fh_unpak = @gpcf_rq_unpak;
-            gpcf.fh_e = @gpcf_rq_e;
-            gpcf.fh_ghyper = @gpcf_rq_ghyper;
-            gpcf.fh_ginput = @gpcf_rq_ginput;
-            gpcf.fh_cov = @gpcf_rq_cov;
-            gpcf.fh_trcov  = @gpcf_rq_trcov;
-            gpcf.fh_trvar  = @gpcf_rq_trvar;
-            gpcf.fh_recappend = @gpcf_rq_recappend;
+            gpcf.fh.pak = @gpcf_rq_pak;
+            gpcf.fh.unpak = @gpcf_rq_unpak;
+            gpcf.fh.e = @gpcf_rq_e;
+            gpcf.fh.ghyper = @gpcf_rq_ghyper;
+            gpcf.fh.ginput = @gpcf_rq_ginput;
+            gpcf.fh.cov = @gpcf_rq_cov;
+            gpcf.fh.trcov  = @gpcf_rq_trcov;
+            gpcf.fh.trvar  = @gpcf_rq_trvar;
+            gpcf.fh.recappend = @gpcf_rq_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -201,7 +201,7 @@ function gpcf = gpcf_rq(varargin)
             w(i1) = log(gpcf.magnSigma2);
             
             % Hyperparameters of magnSigma2
-            ww = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2);
+            ww = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
         end        
 
         if ~isempty(gpcf.p.alpha)
@@ -209,7 +209,7 @@ function gpcf = gpcf_rq(varargin)
             w(i1)= log(log(gpcf.alpha));
 
             % Hyperparameters of alpha
-            ww = [ww feval(gpcf.p.alpha.fh_pak, gpcf.p.alpha)];
+            ww = [ww feval(gpcf.p.alpha.fh.pak, gpcf.p.alpha)];
         end
         
         if isfield(gpcf,'metric')
@@ -220,7 +220,7 @@ function gpcf = gpcf_rq(varargin)
                 w = [w log(gpcf.lengthScale)];
                             
                 % Hyperparameters of lengthScale
-                w = [w feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
+                w = [w feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
             end
         end
         w = [w ww];
@@ -268,20 +268,20 @@ function gpcf = gpcf_rq(varargin)
                 w = w(i2+1:end);
                                 
                 % Hyperparameters of lengthScale
-                [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
+                [p, w] = feval(gpcf.p.lengthScale.fh.unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
         end
         
         if ~isempty(gpp.magnSigma2)
             % Hyperparameters of magnSigma2
-            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+            [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
             gpcf.p.magnSigma2 = p;
         end
 
         if ~isempty(gpp.alpha)
             % Hyperparameters of alpha
-            [p, w] = feval(gpcf.p.alpha.fh_unpak, gpcf.p.alpha, w);
+            [p, w] = feval(gpcf.p.alpha.fh.unpak, gpcf.p.alpha, w);
             gpcf.p.alpha = p;
         end
         
@@ -316,11 +316,11 @@ function gpcf = gpcf_rq(varargin)
         % into account also the  Jacobian of transformation W -> w = exp(W).
         % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
         if ~isempty(gpcf.p.magnSigma2)
-                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+                eprior = feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
         end
         
         if ~isempty(gpcf.p.alpha)
-          eprior = eprior + feval(gpp.alpha.fh_e, gpcf.alpha, gpp.alpha) -log(gpcf.alpha) -log(log(gpcf.alpha));
+          eprior = eprior + feval(gpp.alpha.fh.e, gpcf.alpha, gpp.alpha) -log(gpcf.alpha) -log(log(gpcf.alpha));
         end        
 
         if isfield(gpcf,'metric')
@@ -328,7 +328,7 @@ function gpcf = gpcf_rq(varargin)
         else
 
           if ~isempty(gpp.lengthScale)
-            eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
+            eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
           end
         end
     end
@@ -443,7 +443,7 @@ function gpcf = gpcf_rq(varargin)
             end
             
             ii1=1;
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             DKff{ii1} = K;
             
             if isfield(gpcf,'metric')                
@@ -480,7 +480,7 @@ function gpcf = gpcf_rq(varargin)
         elseif nargin == 4
             if isfield(gpcf,'metric')
                 ii1=1;
-                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
                 
                 dist = 0;
                 [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, [], 1);
@@ -490,7 +490,7 @@ function gpcf = gpcf_rq(varargin)
                 end
             else
                 ii1=1;
-                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
                 for i2=1:length(gpcf.lengthScale)
                     ii1 = ii1+1;
                     DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
@@ -502,7 +502,7 @@ function gpcf = gpcf_rq(varargin)
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = 1;
-                ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
+                ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
                 gprior(i1) = ggs(1).*gpcf.magnSigma2 - 1;
             end
 
@@ -510,7 +510,7 @@ function gpcf = gpcf_rq(varargin)
             if ~isempty(gpcf.p.alpha)
                 % Evaluate the gprior with respect to alpha
                 i1 = i1 + 1;
-                ggs2 = feval(gpp.alpha.fh_g, gpcf.alpha, gpp.alpha);
+                ggs2 = feval(gpp.alpha.fh.g, gpcf.alpha, gpp.alpha);
                 gprior(i1) = ggs2(1).*gpcf.alpha.*log(gpcf.alpha) -log(gpcf.alpha) - 1;
                 %gprior(i1) = ggs2(1).*gpcf.alpha - 1;
             end
@@ -525,7 +525,7 @@ function gpcf = gpcf_rq(varargin)
                 if ~isempty(gpcf.p.lengthScale)
                     i1=i1+1; 
                     lll = length(gpcf.lengthScale);
-                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale);
+                    gg = feval(gpp.lengthScale.fh.g, gpcf.lengthScale, gpp.lengthScale);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
@@ -567,7 +567,7 @@ function gpcf = gpcf_rq(varargin)
         [n, m] =size(x);
                
         if nargin == 2
-            K = feval(gpcf.fh_trcov, gpcf, x);
+            K = feval(gpcf.fh.trcov, gpcf, x);
             ii1 = 0;
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x);
@@ -601,7 +601,7 @@ function gpcf = gpcf_rq(varargin)
             end        
         elseif nargin == 3
             [n2, m2] =size(x2);
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             ii1 = 0;
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
@@ -792,14 +792,14 @@ function gpcf = gpcf_rq(varargin)
             reccf.gpcf.alpha = [];
             
             % Set the function handles
-            reccf.fh_pak = @gpcf_rq_pak;
-            reccf.fh_unpak = @gpcf_rq_unpak;
-            reccf.fh_e = @gpcf_rq_e;
-            reccf.fh_g = @gpcf_rq_g;
-            reccf.fh_cov = @gpcf_rq_cov;
-            reccf.fh_trcov  = @gpcf_rq_trcov;
-            reccf.fh_trvar  = @gpcf_rq_trvar;
-            reccf.fh_recappend = @gpcf_rq_recappend;  
+            reccf.fh.pak = @gpcf_rq_pak;
+            reccf.fh.unpak = @gpcf_rq_unpak;
+            reccf.fh.e = @gpcf_rq_e;
+            reccf.fh.g = @gpcf_rq_g;
+            reccf.fh.cov = @gpcf_rq_cov;
+            reccf.fh.trcov  = @gpcf_rq_trcov;
+            reccf.fh.trvar  = @gpcf_rq_trvar;
+            reccf.fh.recappend = @gpcf_rq_recappend;  
             reccf.p=[];
             reccf.p.lengthScale=[];
             reccf.p.magnSigma2=[];
@@ -822,7 +822,7 @@ function gpcf = gpcf_rq(varargin)
             if ~isempty(gpcf.lengthScale)
                 reccf.lengthScale(ri,:)=gpcf.lengthScale;
                 if ~isempty(ri.p.lengthScale)
-                      reccf.p.lengthScale = feval(gpp.lengthScale.fh_recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+                      reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
                 end
             elseif ri==1
                 reccf.lengthScale=[];
@@ -832,7 +832,7 @@ function gpcf = gpcf_rq(varargin)
         if ~isempty(gpcf.magnSigma2)
             reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
             if ~isempty(ri.p.magnSigma2)
-	          reccf.p.magnSigma2 = feval(gpp.magnSigma2.fh_recappend, reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
+	          reccf.p.magnSigma2 = feval(gpp.magnSigma2.fh.recappend, reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
             end
         elseif ri==1
             reccf.magnSigma2=[];
@@ -842,7 +842,7 @@ function gpcf = gpcf_rq(varargin)
         if ~isempty(gpcf.alpha)
             reccf.alpha(ri,:)=gpcf.alpha;
             if ~isempty(ri.p.alpha)
-		 reccf.p.alpha = feval(gpp.alpha.fh_recappend, reccf.p.alpha, ri, gpcf.p.alpha);
+		 reccf.p.alpha = feval(gpp.alpha.fh.recappend, reccf.p.alpha, ri, gpcf.p.alpha);
             end
         elseif ri==1
             reccf.alpha=[];

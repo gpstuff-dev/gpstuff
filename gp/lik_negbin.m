@@ -76,18 +76,18 @@ function lik = lik_negbin(varargin)
       lik.p.disper = prior_logunif;
 
       % Set the function handles to the nested functions
-      lik.fh_pak = @lik_negbin_pak;
-      lik.fh_unpak = @lik_negbin_unpak;
-      lik.fh_priore = @lik_negbin_priore;
-      lik.fh_priorg = @lik_negbin_priorg;
-      lik.fh_ll = @lik_negbin_ll;
-      lik.fh_llg = @lik_negbin_llg;    
-      lik.fh_llg2 = @lik_negbin_llg2;
-      lik.fh_llg3 = @lik_negbin_llg3;
-      lik.fh_tiltedMoments = @lik_negbin_tiltedMoments;
-      lik.fh_siteDeriv = @lik_negbin_siteDeriv;
-      lik.fh_predy = @lik_negbin_predy;
-      lik.fh_recappend = @lik_negbin_recappend;
+      lik.fh.pak = @lik_negbin_pak;
+      lik.fh.unpak = @lik_negbin_unpak;
+      lik.fh.priore = @lik_negbin_priore;
+      lik.fh.priorg = @lik_negbin_priorg;
+      lik.fh.ll = @lik_negbin_ll;
+      lik.fh.llg = @lik_negbin_llg;    
+      lik.fh.llg2 = @lik_negbin_llg2;
+      lik.fh.llg3 = @lik_negbin_llg3;
+      lik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
+      lik.fh.siteDeriv = @lik_negbin_siteDeriv;
+      lik.fh.predy = @lik_negbin_predy;
+      lik.fh.recappend = @lik_negbin_recappend;
 
       if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
         error('Wrong number of arguments')
@@ -180,7 +180,7 @@ function lik = lik_negbin(varargin)
   % If prior for dispersion parameter, add its contribution
     logPrior=0;
     if ~isempty(lik.p.disper)
-      logPrior = feval(lik.p.disper.fh_e, lik.disper, lik.p.disper) - log(lik.disper);
+      logPrior = feval(lik.p.disper.fh.e, lik.disper, lik.p.disper) - log(lik.disper);
     end
     
   end
@@ -202,7 +202,7 @@ function lik = lik_negbin(varargin)
     glogPrior=[];
     if ~isempty(lik.p.disper)            
       % Evaluate the gprior with respect to magnSigma2
-      ggs = feval(lik.p.disper.fh_g, lik.disper, lik.p.disper);
+      ggs = feval(lik.p.disper.fh.g, lik.disper, lik.p.disper);
       glogPrior = ggs(1).*lik.disper - 1;
       if length(ggs) > 1
         glogPrior = [glogPrior ggs(2:end)];
@@ -663,15 +663,15 @@ function lik = lik_negbin(varargin)
       reclik.disper = [];
 
       % Set the function handles
-      reclik.fh_pak = @lik_negbin_pak;
-      reclik.fh_unpak = @lik_negbin_unpak;
-      reclik.fh_ll = @lik_negbin_ll;
-      reclik.fh_llg = @lik_negbin_llg;    
-      reclik.fh_llg2 = @lik_negbin_llg2;
-      reclik.fh_llg3 = @lik_negbin_llg3;
-      reclik.fh_tiltedMoments = @lik_negbin_tiltedMoments;
-      reclik.fh_predy = @lik_negbin_predy;
-      reclik.fh_recappend = @lik_negbin_recappend;
+      reclik.fh.pak = @lik_negbin_pak;
+      reclik.fh.unpak = @lik_negbin_unpak;
+      reclik.fh.ll = @lik_negbin_ll;
+      reclik.fh.llg = @lik_negbin_llg;    
+      reclik.fh.llg2 = @lik_negbin_llg2;
+      reclik.fh.llg3 = @lik_negbin_llg3;
+      reclik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
+      reclik.fh.predy = @lik_negbin_predy;
+      reclik.fh.recappend = @lik_negbin_recappend;
       return
     end
     

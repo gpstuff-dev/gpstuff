@@ -26,9 +26,9 @@ if isfield(gp,'derivobs') && gp.derivobs
     gpcf = gp.cf{1};    % Grad obs implemented only to sexp currently
     
     if m==1
-           Gset = feval(gpcf.fh_ginput4, gpcf, x1, x2);
-           Kff = feval(gpcf.fh_cov, gpcf, x1, x2);
-           Kdd = feval(gpcf.fh_ginput2, gpcf, x1, x2);
+           Gset = feval(gpcf.fh.ginput4, gpcf, x1, x2);
+           Kff = feval(gpcf.fh.cov, gpcf, x1, x2);
+           Kdd = feval(gpcf.fh.ginput2, gpcf, x1, x2);
 
            Kdf=Gset{1};
            Kfd = -1.*Kdf; 
@@ -39,8 +39,8 @@ if isfield(gp,'derivobs') && gp.derivobs
            [n,m]=size(x1);
            [n2,m2]=size(x2);                  
 
-           Kff = feval(gpcf.fh_cov, gpcf, x1, x2);
-           Gset = feval(gpcf.fh_ginput4, gpcf, x1, x2);
+           Kff = feval(gpcf.fh.cov, gpcf, x1, x2);
+           Gset = feval(gpcf.fh.ginput4, gpcf, x1, x2);
 
            %Gather matrices from Gset (d k(x1,x2) /d x1)
            Kdf=cat(1,Gset{1:m});
@@ -48,9 +48,9 @@ if isfield(gp,'derivobs') && gp.derivobs
            Kfd=-1*Kfd;
 
            % both x derivatives, same dimension (to diagonal blocks)
-           D = feval(gpcf.fh_ginput2, gpcf, x1, x2);
+           D = feval(gpcf.fh.ginput2, gpcf, x1, x2);
            % both x derivatives, different dimension (non-diagonal blocks)
-           Kdf2 = feval(gpcf.fh_ginput3, gpcf, x1 ,x2);
+           Kdf2 = feval(gpcf.fh.ginput3, gpcf, x1 ,x2);
 
            % Now build up Kdd m*n x m*n2 matrix, which contains all the
            % both partial derivative" -matrices
@@ -92,7 +92,7 @@ else
     end      
     for i=1:length(predcf)
       gpcf = gp.cf{predcf(i)};
-      C = C + feval(gpcf.fh_cov, gpcf, x1, x2);
+      C = C + feval(gpcf.fh.cov, gpcf, x1, x2);
     end
 
     % Add jitter if the inputs are equal

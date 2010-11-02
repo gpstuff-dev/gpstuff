@@ -139,7 +139,7 @@ switch gp.type
             
             % Gradients from covariance functions
             gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh_ghyper, gpcf, x);
+            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
             
             for i2 = 1:length(DKff)
                 i1 = i1+1;
@@ -192,17 +192,17 @@ switch gp.type
 %         % =================================================================
 %         % Gradient with respect to likelihood function parameters
 %         if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
-%             && ~isempty(gp.lik.fh_pak(gp.lik))
+%             && ~isempty(gp.lik.fh.pak(gp.lik))
 %             
 %             gdata_likelih = 0;
 %             lik = gp.lik;
 %             
-%             g_logPrior = feval(lik.fh_priorg, lik);
+%             g_logPrior = feval(lik.fh.priorg, lik);
 %             if ~isempty(g_logPrior)
 %             
-%                 DW_sigma = feval(lik.fh_llg3, lik, y, f, 'latent2+hyper', z);
-%                 DL_sigma = feval(lik.fh_llg, lik, y, f, 'hyper', z);
-%                 b = K * feval(lik.fh_llg2, lik, y, f, 'latent+hyper', z);
+%                 DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
+%                 DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
+%                 b = K * feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
 %                 s3 = b - K*(R*b);
 %                 nl= size(DW_sigma,2);
 %                 

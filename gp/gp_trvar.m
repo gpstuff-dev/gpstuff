@@ -35,7 +35,7 @@ if isfield(gp,'derivobs') && gp.derivobs
     gpcf = gp.cf{1};
     %right sized vector for the tr_var
     x2=zeros(m*n+n,1);
-    K = K + feval(gpcf.fh_trvar, gpcf, x2);
+    K = K + feval(gpcf.fh.trvar, gpcf, x2);
 
     if ~isempty(gp.jitterSigma2)
         K = K + gp.jitterSigma2;
@@ -48,7 +48,7 @@ if isfield(gp,'derivobs') && gp.derivobs
           nn = length(gp.noisef);
           for i=1:nn
               noisef = gp.noisef{i};
-              C = C + feval(noisef.fh_trvar, noisef, x2);
+              C = C + feval(noisef.fh.trvar, noisef, x2);
           end
        end
        C(C<eps)=0;
@@ -64,7 +64,7 @@ else
     end      
     for i=1:length(predcf)
         gpcf = gp.cf{predcf(i)};
-        K = K + feval(gpcf.fh_trvar, gpcf, x1);
+        K = K + feval(gpcf.fh.trvar, gpcf, x1);
     end
 
     if ~isempty(gp.jitterSigma2)
@@ -79,7 +79,7 @@ else
         nn = length(gp.noisef);
         for i=1:nn
           noisef = gp.noisef{i};
-          C = C + feval(noisef.fh_trvar, noisef, x1);
+          C = C + feval(noisef.fh.trvar, noisef, x1);
         end
       end
     end

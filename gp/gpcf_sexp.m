@@ -107,20 +107,20 @@ function gpcf = gpcf_sexp(varargin)
             end
 
             % Set the function handles to the nested functions
-            gpcf.fh_pak = @gpcf_sexp_pak;
-            gpcf.fh_unpak = @gpcf_sexp_unpak;
-            gpcf.fh_e = @gpcf_sexp_e;
-            gpcf.fh_ghyper = @gpcf_sexp_ghyper;
-            gpcf.fh_ghypergrad = @gpcf_sexp_ghypergrad;
-            gpcf.fh_ghypergrad2 = @gpcf_sexp_ghypergrad2;
-            gpcf.fh_ginput = @gpcf_sexp_ginput;
-            gpcf.fh_ginput2 = @gpcf_sexp_ginput2;
-            gpcf.fh_ginput3 = @gpcf_sexp_ginput3;
-            gpcf.fh_ginput4 = @gpcf_sexp_ginput4;
-            gpcf.fh_cov = @gpcf_sexp_cov;
-            gpcf.fh_trcov  = @gpcf_sexp_trcov;
-            gpcf.fh_trvar  = @gpcf_sexp_trvar;
-            gpcf.fh_recappend = @gpcf_sexp_recappend;
+            gpcf.fh.pak = @gpcf_sexp_pak;
+            gpcf.fh.unpak = @gpcf_sexp_unpak;
+            gpcf.fh.e = @gpcf_sexp_e;
+            gpcf.fh.ghyper = @gpcf_sexp_ghyper;
+            gpcf.fh.ghypergrad = @gpcf_sexp_ghypergrad;
+            gpcf.fh.ghypergrad2 = @gpcf_sexp_ghypergrad2;
+            gpcf.fh.ginput = @gpcf_sexp_ginput;
+            gpcf.fh.ginput2 = @gpcf_sexp_ginput2;
+            gpcf.fh.ginput3 = @gpcf_sexp_ginput3;
+            gpcf.fh.ginput4 = @gpcf_sexp_ginput4;
+            gpcf.fh.cov = @gpcf_sexp_cov;
+            gpcf.fh.trcov  = @gpcf_sexp_trcov;
+            gpcf.fh.trvar  = @gpcf_sexp_trvar;
+            gpcf.fh.recappend = @gpcf_sexp_recappend;
 
         case 'set'
             % Set the parameter values of covariance function
@@ -167,7 +167,7 @@ function gpcf = gpcf_sexp(varargin)
             w(i1) = log(gpcf.magnSigma2);
             
             % Hyperparameters of magnSigma2
-            ww = feval(gpcf.p.magnSigma2.fh_pak, gpcf.p.magnSigma2);
+            ww = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
         end        
         
         if isfield(gpcf,'metric')
@@ -178,7 +178,7 @@ function gpcf = gpcf_sexp(varargin)
                 w = [w log(gpcf.lengthScale)];
                             
                 % Hyperparameters of lengthScale
-                w = [w feval(gpcf.p.lengthScale.fh_pak, gpcf.p.lengthScale)];
+                w = [w feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
             end
         end
         w = [w ww];
@@ -227,14 +227,14 @@ function gpcf = gpcf_sexp(varargin)
                 w = w(i2+1:end);
                                 
                 % Hyperparameters of lengthScale
-                [p, w] = feval(gpcf.p.lengthScale.fh_unpak, gpcf.p.lengthScale, w);
+                [p, w] = feval(gpcf.p.lengthScale.fh.unpak, gpcf.p.lengthScale, w);
                 gpcf.p.lengthScale = p;
             end
         end
         
         if ~isempty(gpp.magnSigma2)
             % Hyperparameters of magnSigma2
-            [p, w] = feval(gpcf.p.magnSigma2.fh_unpak, gpcf.p.magnSigma2, w);
+            [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
             gpcf.p.magnSigma2 = p;
         end
     end
@@ -262,7 +262,7 @@ function gpcf = gpcf_sexp(varargin)
         
         [n, m] =size(x);
         if ~isempty(gpcf.p.magnSigma2)
-                eprior = feval(gpp.magnSigma2.fh_e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+                eprior = feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
         end
 
         if isfield(gpcf,'metric')
@@ -275,7 +275,7 @@ function gpcf = gpcf_sexp(varargin)
             % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
 
             if ~isempty(gpp.lengthScale)
-                eprior = eprior + feval(gpp.lengthScale.fh_e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
+                eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
             end
         end
     end
@@ -374,7 +374,7 @@ function gpcf = gpcf_sexp(varargin)
             end
             
             ii1=0;
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             
             if ~isempty(gpcf.p.magnSigma2)
                 ii1 = ii1 +1;
@@ -423,7 +423,7 @@ function gpcf = gpcf_sexp(varargin)
             
             if ~isempty(gpcf.p.magnSigma2)
                 ii1 = ii1+1;
-                DKff{ii1} = feval(gpcf.fh_trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+                DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
             end
 
             if isfield(gpcf,'metric')
@@ -449,7 +449,7 @@ function gpcf = gpcf_sexp(varargin)
             if ~isempty(gpcf.p.magnSigma2)            
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = i1+1;
-                ggs = feval(gpp.magnSigma2.fh_g, gpcf.magnSigma2, gpp.magnSigma2);
+                ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
                 gprior = ggs(i1).*gpcf.magnSigma2 - 1;
             end
             
@@ -463,7 +463,7 @@ function gpcf = gpcf_sexp(varargin)
                 if ~isempty(gpcf.p.lengthScale)
                     i1=i1+1; 
                     lll = length(gpcf.lengthScale);
-                    gg = feval(gpp.lengthScale.fh_g, gpcf.lengthScale, gpp.lengthScale);
+                    gg = feval(gpp.lengthScale.fh.g, gpcf.lengthScale, gpp.lengthScale);
                     gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
                     gprior = [gprior gg(lll+1:end)];
                 end
@@ -494,7 +494,7 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
     
         [n, m] =size(x);
         ii1=0;
-        Cdm = feval(gpcf.fh_ginput4, gpcf, x);
+        Cdm = feval(gpcf.fh.ginput4, gpcf, x);
             
         % grad with respect to MAGNSIGMA
         if ~isempty(gpcf.p.magnSigma2)
@@ -586,12 +586,12 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
     
         [n, m] =size(x);
         DKff = {};
-        [DKdd, DKdd3, DKdd4] = feval(gpcf.fh_ginput2, gpcf, x, x);
+        [DKdd, DKdd3, DKdd4] = feval(gpcf.fh.ginput2, gpcf, x, x);
         ii1=0;
 
         if m>1
             % Cross derivative matrices (non-diagonal).
-            DKdda=feval(gpcf.fh_ginput3, gpcf, x,x);
+            DKdda=feval(gpcf.fh.ginput3, gpcf, x,x);
 
             %MAGNSIGMA 
             %add matrices to the diagonal of help matrix, size (m*n,m*n)
@@ -791,7 +791,7 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
         [n, m] =size(x);
         ii1 = 0;
         if nargin == 2
-            K = feval(gpcf.fh_trcov, gpcf, x);
+            K = feval(gpcf.fh.trcov, gpcf, x);
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x);
                 gdist = feval(gpcf.metric.ginput, gpcf.metric, x);
@@ -821,7 +821,7 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
             end
             
         elseif nargin == 3
-            K = feval(gpcf.fh_cov, gpcf, x, x2);
+            K = feval(gpcf.fh.cov, gpcf, x, x2);
             
             if isfield(gpcf,'metric')
                 dist = feval(gpcf.metric.distance, gpcf.metric, x, x2);
@@ -880,9 +880,9 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
         end
    
         if isequal(x,x2)
-           K = feval(gpcf.fh_trcov, gpcf, x); 
+           K = feval(gpcf.fh.trcov, gpcf, x); 
         else
-           K = feval(gpcf.fh_cov, gpcf, x, x2);
+           K = feval(gpcf.fh.cov, gpcf, x, x2);
         end
 
         %metric doesn't work with grad.obs on
@@ -929,9 +929,9 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
         end
 
         if isequal(x,x2)
-           K = feval(gpcf.fh_trcov, gpcf, x); 
+           K = feval(gpcf.fh.trcov, gpcf, x); 
         else
-           K = feval(gpcf.fh_cov, gpcf, x, x2);
+           K = feval(gpcf.fh.cov, gpcf, x, x2);
         end
         
         % Derivative the cov.function with respect to both input variables
@@ -981,10 +981,10 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
         ii1 = 0;
         if nargin==2
            flag=1;
-           K = feval(gpcf.fh_trcov, gpcf, x); 
+           K = feval(gpcf.fh.trcov, gpcf, x); 
         else
            flag=0;
-           K = feval(gpcf.fh_cov, gpcf, x, x2);
+           K = feval(gpcf.fh.cov, gpcf, x, x2);
            if isequal(x,x2)
                error('ginput4 fuktio saa vaaran inputin')
            end
@@ -1171,14 +1171,14 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
             reccf.magnSigma2 = [];
 
             % Set the function handles
-            reccf.fh_pak = @gpcf_sexp_pak;
-            reccf.fh_unpak = @gpcf_sexp_unpak;
-            reccf.fh_e = @gpcf_sexp_e;
-            reccf.fh_g = @gpcf_sexp_g;
-            reccf.fh_cov = @gpcf_sexp_cov;
-            reccf.fh_trcov  = @gpcf_sexp_trcov;
-            reccf.fh_trvar  = @gpcf_sexp_trvar;
-            reccf.fh_recappend = @gpcf_sexp_recappend;
+            reccf.fh.pak = @gpcf_sexp_pak;
+            reccf.fh.unpak = @gpcf_sexp_unpak;
+            reccf.fh.e = @gpcf_sexp_e;
+            reccf.fh.g = @gpcf_sexp_g;
+            reccf.fh.cov = @gpcf_sexp_cov;
+            reccf.fh.trcov  = @gpcf_sexp_trcov;
+            reccf.fh.trvar  = @gpcf_sexp_trvar;
+            reccf.fh.recappend = @gpcf_sexp_recappend;
             reccf.p=[];
             reccf.p.lengthScale=[];
             reccf.p.magnSigma2=[];
@@ -1197,7 +1197,7 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
             % record lengthScale
             if ~isempty(gpcf.lengthScale)
                 reccf.lengthScale(ri,:)=gpcf.lengthScale;
-                reccf.p.lengthScale = feval(gpp.lengthScale.fh_recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+                reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
             elseif ri==1
                 reccf.lengthScale=[];
             end
@@ -1205,7 +1205,7 @@ function DKff  = gpcf_sexp_ghypergrad(gpcf, x)
         % record magnSigma2
         if ~isempty(gpcf.magnSigma2)
             reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
-            reccf.p.magnSigma2 = feval(gpp.magnSigma2.fh_recappend, reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
+            reccf.p.magnSigma2 = feval(gpp.magnSigma2.fh.recappend, reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
         elseif ri==1
             reccf.magnSigma2=[];
         end

@@ -68,14 +68,14 @@ function w = gp_pak(gp, param)
             
             for i=1:ncf
                 gpcf = gp.cf{i};
-                w = [w feval(gpcf.fh_pak, gpcf)];
+                w = [w feval(gpcf.fh.pak, gpcf)];
             end
             
             if isfield(gp, 'noisef')
                 nn = length(gp.noisef);
                 for i=1:nn
                     noisef = gp.noisef{i};
-                    w = [w feval(noisef.fh_pak, noisef)];
+                    w = [w feval(noisef.fh.pak, noisef)];
                 end
             end
         end
@@ -90,7 +90,7 @@ function w = gp_pak(gp, param)
         % Pack the hyperparameters of likelihood function
         if ~isempty(strfind(param, 'likelihood'))
             if isstruct(gp.lik)
-                w = [w feval(gp.lik.fh_pak, gp.lik)];
+                w = [w feval(gp.lik.fh.pak, gp.lik)];
             end
         end
         
