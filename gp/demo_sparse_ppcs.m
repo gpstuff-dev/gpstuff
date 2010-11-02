@@ -82,9 +82,9 @@
 % precipitation
 
 S = which('demo_sparse_ppcs');
-L = strrep(S,'demo_sparse_ppcs.m','demos/USprec1');
+L = strrep(S,'demo_sparse_ppcs.m','demos/USprec1.txt');
 prec = load(L);
-L = strrep(S,'demo_sparse_ppcs.m','demos/USprec2');
+L = strrep(S,'demo_sparse_ppcs.m','demos/USprec2.txt');
 stats = load(L);
 
 y = sum(prec(prec(:,14)==0,2:13),2);
