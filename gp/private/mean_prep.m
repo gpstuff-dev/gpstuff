@@ -18,47 +18,104 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
 % Prepare variables
   Hapu = cell(1,length(gp.meanf));
   dimcount=0;
+  num_mf=length(gp.meanf);          % number of base functions used
+  meanf_dim=zeros(num_mf,2);        % col 1: base func nro i, col 2: amount of relevant input dimensions    
+  [n m]=size(x);
   if ~isempty(xs)
     Hapu2 = cell(1,length(gp.meanf));
   end
-  for i=1:length(gp.meanf)
+  for i=1:num_mf
     gpmf=gp.meanf{i};
     % base functions' values
     Hapu{i}=feval(gpmf.fh.geth,gpmf,x);
     if ~isempty(xs)
       Hapu2{i}=feval(gpmf.fh.geth,gpmf,xs);
     end
-    
-    if i==1
-      b=gpmf.p.b';
-      Bvec=gpmf.p.B;
-    else                        
-      b=cat(1,b,gpmf.p.b');               % gather prior means in one vector
-      if length(gpmf.p.B)>1               % gather prior covariances in one vector
-        Bvec=cat(2,Bvec,gpmf.p.B{:});
-      else
-        Bvec=cat(2,Bvec,gpmf.p.B);
-      end
-    end
     [dim nouse] = size(Hapu{i});
-    dimcount=dimcount+dim;          % amount of input dimensions
+    dimcount=dimcount+dim;          % amount of input dimensions total
+    meanf_dim(i,:)=[i dim];         
+    
+    
+    % Gather prior mean for base functions into one vector
+    if i==1                         % starting round?
+       if dim==1 
+          b=gpmf.p.b; 
+       else
+          if length(gpmf.p.b)==1
+             b=repmat(gpmf.p.b,dim,1);
+          else
+             b=gpmf.p.b'; 
+          end
+       end 
+    else                        
+       if dim==1 
+          b=cat(1,b,gpmf.p.b'); 
+       else
+          if length(gpmf.p.b)==1
+             bvec=repmat(gpmf.p.b,dim,1);
+             b=cat(1,b,bvec);
+          else
+             b=cat(1,b,gpmf.p.b'); 
+          end
+       end
+    end
+
   end
+  
+  [nm mm]=size(meanf_dim);
   % Gather base functions' values in one matrix
   H = cat(1,Hapu{1:end});
   % Gather prior covariances in one matrix B
-  if ~iscell(gp.meanf{1}.p.B)                      
-    if length(gp.meanf{1}.p.B)==1              
-      B=diag(Bvec);                       % scalar values
-    else
-      B=reshape(Bvec,dimcount,dimcount);  % vector values
-    end
-  else
-    if length(gp.meanf{1}.p.B(1))==1
-      B=diag(Bvec);                       % scalar values
-    else
-      B=reshape(Bvec,dimcount,dimcount);  % vector values
-    end
+  B=zeros(dimcount,dimcount);
+  i1=1;
+  for i=1:nm
+      if meanf_dim(i,2)==1
+          if length(gp.meanf{i}.p.B)==1
+              B(i1,i1)=gp.meanf{i}.p.B;
+              i1=i1+1;
+          else
+              B(i1,:)=gp.meanf{i}.p.B;
+              i1=i1+1;
+          end
+      else
+          if length(gp.meanf{i}.p.B)>1 && length(gp.meanf{i}.p.B{i})==1
+              for j=1:meanf_dim(i,2)
+                  B(i1+j-1,i1+j-1)=gp.meanf{i}.p.B(j);
+                  i1=i1+1;
+              end
+          elseif length(gp.meanf{i}.p.B)>1 && length(gp.meanf{i}.p.B{i})>1
+              for j=1:meanf_dim(i,2)
+                  B(i1+j-1,:)=gp.meanf{i}.p.B{i};
+              end
+              i1=i1+meanf_dim(i,2);
+          else
+              for j=1:meanf_dim(i,2)
+                  B(i1+j-1,i1+j-1)=gp.meanf{i}.p.B;
+              end
+              i1=i1+meanf_dim(i,2);
+          end
+      end
   end
+
+  %===
+  
+      % old way
+% %   if ~iscell(gp.meanf{1}.p.B)             % scalars provided          
+% %     if length(gp.meanf{1}.p.B)==1             
+% %       B=diag(Bvec);                       
+% %     else
+% %       B=reshape(Bvec,dimcount,dimcount);  % vector values
+% %     end
+% %   else
+% %     if length(gp.meanf{1}.p.B(1))==1
+% %       B=diag(Bvec);                       % scalar values
+% %     else
+% %       B=reshape(Bvec,dimcount,dimcount);  % vector values
+% %     end
+% %   end
+  
+  
+  
   if ~isempty(xs)
     Hs = cat(1,Hapu2{1:end});
   end
