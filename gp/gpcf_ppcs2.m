@@ -22,7 +22,7 @@ function gpcf = gpcf_ppcs2(varargin)
 %                          direction.
 %      l_nin             = order of the polynomial [floor(nin/2) + 1]
 %                          Has to be greater than or equal to default.
-%      magnSigma2_prior  = prior structure for magnSigma2 [prior_unif]
+%      magnSigma2_prior  = prior structure for magnSigma2 [prior_sqrtunif]
 %      lengthScale_prior = prior structure for lengthScale [prior_unif]
 %      metric            = metric structure into the covariance function []
 %
@@ -137,7 +137,7 @@ function gpcf = gpcf_ppcs2(varargin)
         gpcf.p.lengthScale=lengthScale_prior;
       end
       if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-        gpcf.p.magnSigma2=prior_unif;
+        gpcf.p.magnSigma2=prior_sqrtunif;
       else
         gpcf.p.magnSigma2=magnSigma2_prior;
       end

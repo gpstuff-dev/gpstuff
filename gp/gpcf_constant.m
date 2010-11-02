@@ -13,7 +13,7 @@ function gpcf = gpcf_constant(varargin)
 %  
 %    Parameters for constant covariance function [default]
 %      constSigma2       - magnitude (squared) [0.1]
-%      constSigma2_prior - prior for constSigma2 [prior_unif]
+%      constSigma2_prior - prior for constSigma2 [prior_sqrtunif]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -71,7 +71,7 @@ function gpcf = gpcf_constant(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(constSigma2_prior)&isnan(constSigma2_prior)
-                gpcf.p.constSigma2=prior_unif;
+                gpcf.p.constSigma2=prior_sqrtunif;
             else
                 gpcf.p.constSigma2=constSigma2_prior;
             end

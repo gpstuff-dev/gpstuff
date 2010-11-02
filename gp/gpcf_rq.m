@@ -19,7 +19,7 @@ function gpcf = gpcf_rq(varargin)
 %                          defining own length-scale for each input
 %                          direction.
 %      alpha             - shape parameter [20] 
-%      magnSigma2_prior  - prior for magnSigma2  [prior_unif]
+%      magnSigma2_prior  - prior for magnSigma2  [prior_sqrtunif]
 %      lengthScale_prior - prior for lengthScale [prior_unif]
 %      alpha_prior       - prior for alpha [prior_unif]
 %      metric            - metric structure used by the covariance function []
@@ -105,7 +105,7 @@ function gpcf = gpcf_rq(varargin)
                 gpcf.p.lengthScale=lengthScale_prior;
             end
             if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-                gpcf.p.magnSigma2=prior_unif;
+                gpcf.p.magnSigma2=prior_sqrtunif;
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
             end

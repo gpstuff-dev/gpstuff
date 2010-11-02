@@ -17,7 +17,7 @@ function gpcf = gpcf_linear(varargin)
 %                          to a common prior variance or vector
 %                          defining own prior variance for each
 %                          coefficient.
-%      coeffSigma2_prior = prior structure for coeffSigma2 [prior_unif]
+%      coeffSigma2_prior = prior structure for coeffSigma2 [prior_sqrtunif]
 %      selectedVariables = vector defining which inputs are used
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
@@ -85,7 +85,7 @@ function gpcf = gpcf_linear(varargin)
             % Initialize prior structure
             gpcf.p=[];
             if ~isstruct(coeffSigma2_prior)&isnan(coeffSigma2_prior)
-                gpcf.p.coeffSigma2=prior_unif;
+                gpcf.p.coeffSigma2=prior_sqrtunif;
             else
                 gpcf.p.coeffSigma2=coeffSigma2_prior;
             end

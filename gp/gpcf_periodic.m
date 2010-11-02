@@ -29,7 +29,7 @@ function gpcf = gpcf_periodic(varargin)
 %      decay                  - determines whether the squared exponential 
 %                               decay term is used (1) or not (0). 
 %                               Not a hyperparameter for the function.
-%      magnSigma2_prior       - prior structure for magnSigma2 [prior_unif]
+%      magnSigma2_prior       - prior structure for magnSigma2 [prior_sqrtunif]
 %      lengthScale_prior      - prior structure for lengthScale [prior_unif]
 %      lengthScale_sexp_prior - prior structure for lengthScale_sexp 
 %                               [prior_fixed]
@@ -137,7 +137,7 @@ function gpcf = gpcf_periodic(varargin)
                 gpcf.p.lengthScale=lengthScale_prior;
             end
             if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-                gpcf.p.magnSigma2=prior_unif;
+                gpcf.p.magnSigma2=prior_sqrtunif;
             else
                 gpcf.p.magnSigma2=magnSigma2_prior;
             end
