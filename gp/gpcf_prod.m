@@ -2,7 +2,7 @@ function gpcf = gpcf_prod(varargin)
 %GPCF_PROD  Create a product form covariance function for Gaussian Process
 %
 %  Description
-%    GPCF = GPCF_PROD('functions', {GPCF_1, GPCF_2, ...}) 
+%    GPCF = GPCF_PROD('cf', {GPCF_1, GPCF_2, ...}) 
 %    creates a product form covariance function
 %          GPCF = GPCF_1 .* GPCF_2 .* ... .* GPCF_N
 %
@@ -37,20 +37,20 @@ function gpcf = gpcf_prod(varargin)
     ip=inputParser;
     ip.FunctionName = 'GPCF_PROD';
     ip.addOptional('gpcf', [], @isstruct);
-    ip.addParamValue('functions',[], @iscell);
+    ip.addParamValue('cf',[], @iscell);
     ip.parse(varargin{:});
     gpcf=ip.Results.gpcf;
-    cfs=ip.Results.functions;
+    cfs=ip.Results.cf;
 
     switch do
         case 'init'
             gpcf.type = 'gpcf_prod';
 
             % Initialize parameters
-            gpcf.functions = {};
+            gpcf.cf = {};
             if ~isempty(cfs)
                 for i = 1:length(cfs)
-                    gpcf.functions{i} = cfs{i};
+                    gpcf.cf{i} = cfs{i};
                 end
             end
 
@@ -73,7 +73,7 @@ function gpcf = gpcf_prod(varargin)
             end
             if ~isempty(cfs)
                 for i = 1:length(cfs)
-                    gpcf.functions{i} = cfs{i};
+                    gpcf.cf{i} = cfs{i};
                 end
             end
     end
@@ -91,11 +91,11 @@ function gpcf = gpcf_prod(varargin)
     %  See also
     %   GPCF_PROD_UNPAK
         
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         w = [];
         
         for i=1:ncf
-            cf = gpcf.functions{i};
+            cf = gpcf.cf{i};
             w = [w feval(cf.fh.pak, cf)];
         end
     end
@@ -114,12 +114,12 @@ function gpcf = gpcf_prod(varargin)
     %  See also
     %   GPCF_PROD_PAK
     %
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         
         for i=1:ncf
-            cf = gpcf.functions{i};
+            cf = gpcf.cf{i};
             [cf, w] = feval(cf.fh.unpak, cf, w);
-            gpcf.functions{i} = cf;
+            gpcf.cf{i} = cf;
         end
 
     end
@@ -143,9 +143,9 @@ function gpcf = gpcf_prod(varargin)
     %   GPCF_PROD_PAK, GPCF_PROD_UNPAK, GPCF_PROD_G, GP_E
         
         eprior = 0;
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         for i=1:ncf
-            cf = gpcf.functions{i};
+            cf = gpcf.cf{i};
             eprior = eprior + feval(cf.fh.e, cf, x, t);
         end
         
@@ -193,11 +193,11 @@ function gpcf = gpcf_prod(varargin)
         % evaluate the gradient for training covariance
         if nargin == 2
             
-            ncf = length(gpcf.functions);
+            ncf = length(gpcf.cf);
             
             % evaluate the individual covariance functions
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 C{i} = feval(cf.fh.trcov, cf, x);
             end
             
@@ -205,7 +205,7 @@ function gpcf = gpcf_prod(varargin)
             ind = 1:ncf;
             DKff = {};
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 [DK, gpr] = feval(cf.fh.ghyper, cf, x);
                 gprior = [gprior gpr];
                 
@@ -225,11 +225,11 @@ function gpcf = gpcf_prod(varargin)
                 error('gpcf_prod -> _ghyper: The number of columns in x and x2 has to be the same. ')
             end
             
-            ncf = length(gpcf.functions);
+            ncf = length(gpcf.cf);
             
             % evaluate the individual covariance functions
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 C{i} = feval(cf.fh.cov, cf, x, x2);
             end
             
@@ -237,7 +237,7 @@ function gpcf = gpcf_prod(varargin)
             ind = 1:ncf;
             DKff = {};
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 [DK, gpr] = feval(cf.fh.ghyper, cf, x, x2);
                 gprior = [gprior gpr];
                 
@@ -256,11 +256,11 @@ function gpcf = gpcf_prod(varargin)
             % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
             %           DKff{2...} = d mask(Kff,I) / d lengthScale
         elseif nargin == 4
-            ncf = length(gpcf.functions);
+            ncf = length(gpcf.cf);
             
             % evaluate the individual covariance functions
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 C{i} = feval(cf.fh.trvar, cf, x);
             end
             
@@ -268,7 +268,7 @@ function gpcf = gpcf_prod(varargin)
             ind = 1:ncf;
             DKff = {};
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 [DK, gpr] = feval(cf.fh.ghyper, cf, [], 1);
                 gprior = [gprior gpr;]
                 
@@ -310,18 +310,18 @@ function gpcf = gpcf_prod(varargin)
         % evaluate the gradient for training covariance
         if nargin == 2
             
-            ncf = length(gpcf.functions);
+            ncf = length(gpcf.cf);
             
             % evaluate the individual covariance functions
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 C{i} = feval(cf.fh.trcov, cf, x);
             end
             
             % Evaluate the gradients
             ind = 1:ncf;
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 [DK, gpr] = feval(cf.fh.g, cf, x);
                 
                 CC = 1;
@@ -340,18 +340,18 @@ function gpcf = gpcf_prod(varargin)
                 error('gpcf_prod -> _ghyper: The number of columns in x and x2 has to be the same. ')
             end
             
-            ncf = length(gpcf.functions);
+            ncf = length(gpcf.cf);
             
             % evaluate the individual covariance functions
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 C{i} = feval(cf.fh.cov, cf, x, x2);
             end
             
             % Evaluate the gradients
             ind = 1:ncf;
             for i=1:ncf
-                cf = gpcf.functions{i};
+                cf = gpcf.cf{i};
                 [DK, gpr] = feval(cf.fh.g, cf, x, x2);
                 
                 CC = 1;
@@ -393,12 +393,12 @@ function gpcf = gpcf_prod(varargin)
             error('the number of columns of X1 and X2 has to be same')
         end
 
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         
         % evaluate the individual covariance functions
         C = 1;
         for i=1:ncf
-            cf = gpcf.functions{i};
+            cf = gpcf.cf{i};
             C = C.*feval(cf.fh.cov, cf, x1, x2);
         end        
     end
@@ -415,12 +415,12 @@ function gpcf = gpcf_prod(varargin)
     %
     %         See also
     %         GPCF_PROD_COV, GPCF_PROD_TRVAR, GP_COV, GP_TRCOV
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         
         % evaluate the individual covariance functions
         C = 1;
         for i=1:ncf
-            cf = gpcf.functions{i};
+            cf = gpcf.cf{i};
             C = C.*feval(cf.fh.trcov, cf, x);
         end
     end
@@ -439,12 +439,12 @@ function gpcf = gpcf_prod(varargin)
     %         GPCF_PROD_COV, GP_COV, GP_TRCOV
 
 
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         
         % evaluate the individual covariance functions
         C = 1;
         for i=1:ncf
-            cf = gpcf.functions{i};
+            cf = gpcf.cf{i};
             C = C.*feval(cf.fh.trvar, cf, x);
         end
     end
@@ -468,10 +468,10 @@ function gpcf = gpcf_prod(varargin)
             reccf.type = 'gpcf_prod';
 
             % Initialize parameters
-            ncf = length(ri.functions);
+            ncf = length(ri.cf);
             for i=1:ncf
-                cf = ri.functions{i};
-                reccf.functions{i} = feval(cf.fh.recappend, [], ri.functions{i});
+                cf = ri.cf{i};
+                reccf.cf{i} = feval(cf.fh.recappend, [], ri.cf{i});
             end
             
             % Set the function handles
@@ -487,10 +487,10 @@ function gpcf = gpcf_prod(varargin)
         end
         
         %loop over all of the covariance functions
-        ncf = length(gpcf.functions);
+        ncf = length(gpcf.cf);
         for i=1:ncf
-            cf = gpcf.functions{i};
-            reccf.functions{i} = feval(cf.fh.recappend, reccf.functions{i}, ri, cf);
+            cf = gpcf.cf{i};
+            reccf.cf{i} = feval(cf.fh.recappend, reccf.cf{i}, ri, cf);
         end
     end
 end

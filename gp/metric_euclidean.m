@@ -5,7 +5,7 @@ function metric = metric_euclidean(varargin)
 %    METRIC = METRIC_EUCLIDEAN('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    creates a an euclidean metric function structure in which the
 %    named parameters have the specified values. Either
-%    'components' or 'deltaflag' has to be specified. Any
+%    'components' or 'deltadist' has to be specified. Any
 %    unspecified parameters are set to default values.
 %   
 %    METRIC = METRIC_EUCLIDEAN(METRIC,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
@@ -24,9 +24,9 @@ function metric = metric_euclidean(varargin)
 %                           i, and l_1 and l_2 are lengthscales for
 %                           corresponding component sets. If
 %                           'components' is not specified, but
-%                           'deltaflag' is specified, then default
-%                           is {1 ... length(deltaflag)}
-%       deltaflag         - indicator vector telling which component sets
+%                           'deltadist' is specified, then default
+%                           is {1 ... length(deltadist)}
+%       deltadist         - indicator vector telling which component sets
 %                           are handled using the delta distance 
 %                           (0 if x=x', and 1 otherwise). Default is
 %                           false for all component sets.
@@ -49,7 +49,7 @@ function metric = metric_euclidean(varargin)
   ip.FunctionName = 'METRIC_EUCLIDEAN';
   ip.addOptional('metric', [], @isstruct);
   ip.addParamValue('components',[], @(x) isempty(x) || iscell(x));
-  ip.addParamValue('deltaflag',[], @(x) isvector(x));
+  ip.addParamValue('deltadist',[], @(x) isvector(x));
   ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
   ip.addParamValue('lengthScale_prior',prior_unif, ...
                    @(x) isstruct(x) || isempty(x));
@@ -76,17 +76,17 @@ function metric = metric_euclidean(varargin)
   if init || ~ismember('components',ip.UsingDefaults)
     metric.components = ip.Results.components;
   end
-  % Deltaflag
-  if init || ~ismember('deltaflag',ip.UsingDefaults)
-    metric.deltaflag = ip.Results.deltaflag;
+  % Deltadist
+  if init || ~ismember('deltadist',ip.UsingDefaults)
+    metric.deltadist = ip.Results.deltadist;
   end
-  % Components+Deltaflag check and defaults
-  if isempty(metric.components) && isempty(metric.deltaflag)
-    error('Either ''components'' or ''deltaflag'' has to be specified')
+  % Components+Deltadist check and defaults
+  if isempty(metric.components) && isempty(metric.deltadist)
+    error('Either ''components'' or ''deltadist'' has to be specified')
   elseif isempty(metric.components)
     metric.components=num2cell(1:length(metric.components));
-  elseif isempty(metric.deltaflag)
-    metric.deltaflag = false(1,length(metric.components));
+  elseif isempty(metric.deltadist)
+    metric.deltadist = false(1,length(metric.components));
   end
   % Lengthscale
   if init || ~ismember('lengthScale',ip.UsingDefaults)
@@ -247,7 +247,7 @@ function metric = metric_euclidean(varargin)
           s = 1./metric.lengthScale(i).^2;
           distc{i} = 0;
           for j = 1:length(components{i})
-            if metric.deltaflag(i)
+            if metric.deltadist(i)
               distc{i} = distc{i} + double(bsxfun(@ne,x(:,components{i}(j)),x2(:,components{i}(j))'));
             else
               distc{i} = distc{i} + bsxfun(@minus,x(:,components{i}(j)),x2(:,components{i}(j))').^2;
@@ -319,7 +319,7 @@ function metric = metric_euclidean(varargin)
     for i=1:m
       s = 1./metric.lengthScale(i).^2;
       for j = 1:length(components{i})
-        if metric.deltaflag(i)
+        if metric.deltadist(i)
           dist = dist + s.*double(bsxfun(@ne,x1(:,components{i}(j)),x2(:,components{i}(j))'));
         else
           dist = dist + s.*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
@@ -351,7 +351,7 @@ function metric = metric_euclidean(varargin)
     dist = 0;
     for i=1:length(components)
       for j = 1:length(components{i})
-        if metric.deltaflag(i)
+        if metric.deltadist(i)
           dist = dist + s(i).*double(bsxfun(@ne,x1(:,components{i}(j)),x2(:,components{i}(j))'));
         else
           dist = dist + s(i).*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
@@ -365,7 +365,7 @@ function metric = metric_euclidean(varargin)
         DK = zeros(n1,n2);                
         for k = 1:length(components)
           if ismember(i,components{k})
-            if metric.deltaflag(i)
+            if metric.deltadist(i)
               DK(j,:) = DK(j,:)+s(k).*double(bsxfun(@ne,x1(j,i),x2(:,i)'));
             else
               DK(j,:) = DK(j,:)+s(k).*bsxfun(@minus,x1(j,i),x2(:,i)');
