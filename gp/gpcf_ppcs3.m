@@ -84,11 +84,11 @@ function gpcf = gpcf_ppcs3(varargin)
       error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs2 cannot be used!')
     end
     init=true;
-    if isempty(nin)
+    gpcf.nin=ip.Results.nin;
+    if isempty(gpcf.nin)
       error('nin has to be given for ppcs: gpcf_ppcs2(''nin'',NIN,...)')
     end
     gpcf.type = 'gpcf_ppcs2';
-    gpcf.nin = nin;
     % cf is compactly supported
     gpcf.cs = 1;
   else
@@ -114,7 +114,7 @@ function gpcf = gpcf_ppcs3(varargin)
   if init || ~ismember('l_nin',ip.UsingDefaults)
     gpcf.l=ip.Results.l_nin;
     if isempty(gpcf.l)
-      gpcf.l = floor(gp.nin/2) + 2;
+      gpcf.l = floor(gpcf.nin/2) + 2;
     end
     if gpcf.l < gpcf.nin
       error('The l_nin has to be greater than or equal to the number of inputs!')
