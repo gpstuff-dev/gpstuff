@@ -88,7 +88,6 @@ function gp = gp_set(varargin)
 %                            likelihood we have z_i=E_i, that is, 
 %                            expected  value for ith case. 
 %  
-%     *** TO BE CHANGED ***
 %     The additional fields needed with mean functions
 %      meanf        - single mean function structure or cell array of 
 %                     mean function structures created by

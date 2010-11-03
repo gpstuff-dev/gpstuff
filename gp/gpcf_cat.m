@@ -31,25 +31,29 @@ function gpcf = gpcf_cat(varargin)
   ip=inputParser;
   ip.FunctionName = 'GPCF_CAT';
   ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
+  ip.addParamValue('selectedVariables',[], ...
+                   @(x) isempty(x) || (isvector(x) && all(x>0)));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)
     % Initialize a covariance function structure
     init=true;
+    gpcf.type = 'gpcf_cat';
   else
     % Modify a covariance function structure
     if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_cat')
-      error('First argument does not seem to be a covariance function structure')
+      error('First argument does not seem to be a valid covariance function structure')
     end
     init=false;
   end
   
-  gpcf.type = 'gpcf_cat';
-  
-  if init || ~ismember('selectedVariables',ip.UsingDefaults)
-    gpcf.selectedVariables = ip.Results.selectedVariables;
+  if ~ismember('selectedVariables',ip.UsingDefaults)
+    if ~isempty(ip.Results.selectedVariables)
+      gpcf.selectedVariables = ip.Results.selectedVariables;
+    elseif isfield(gpcf,'selectedVariables')
+      gpcf=rmfield(gpcf,'selectedVariables');
+    end
   end
   if init
     gpcf.fh.pak = @gpcf_cat_pak;

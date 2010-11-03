@@ -61,7 +61,7 @@ function metric = metric_euclidean(varargin)
     init=true;
   else
     % Modify a Gaussian process
-    if ~isfield(metric,'cf')
+    if ~isfield(metric,'type') && isequal(metric.type,'metric_euclidean')
       error('First argument does not seem to be a metric structure')
     end
     init=false;
@@ -103,13 +103,13 @@ function metric = metric_euclidean(varargin)
   
   if init
     % Set the function handles to the nested functions
-    metric.pak        = @metric_euclidean_pak;
-    metric.unpak      = @metric_euclidean_unpak;
-    metric.e          = @metric_euclidean_e;
-    metric.ghyper     = @metric_euclidean_ghyper;
-    metric.ginput     = @metric_euclidean_ginput;
-    metric.distance   = @metric_euclidean_distance;
-    metric.recappend  = @metric_euclidean_recappend;
+    metric.fh.pak        = @metric_euclidean_pak;
+    metric.fh.unpak      = @metric_euclidean_unpak;
+    metric.fh.e          = @metric_euclidean_e;
+    metric.fh.ghyper     = @metric_euclidean_ghyper;
+    metric.fh.ginput     = @metric_euclidean_ginput;
+    metric.fh.distance   = @metric_euclidean_distance;
+    metric.fh.recappend  = @metric_euclidean_recappend;
   end
   
   function w = metric_euclidean_pak(metric)
@@ -408,13 +408,13 @@ function metric = metric_euclidean(varargin)
       recmetric.lengthScale = [];
 
       % Set the function handles
-      recmetric.pak       = @metric_euclidean_pak;
-      recmetric.unpak     = @metric_euclidean_unpak;
-      recmetric.e         = @metric_euclidean_e;
-      recmetric.ghyper    = @metric_euclidean_ghyper;
-      recmetric.ginput    = @metric_euclidean_ginput;            
-      recmetric.distance  = @metric_euclidean_distance;
-      recmetric.recappend = @metric_euclidean_recappend;
+      recmetric.fh.pak       = @metric_euclidean_pak;
+      recmetric.fh.unpak     = @metric_euclidean_unpak;
+      recmetric.fh.e         = @metric_euclidean_e;
+      recmetric.fh.ghyper    = @metric_euclidean_ghyper;
+      recmetric.fh.ginput    = @metric_euclidean_ginput;            
+      recmetric.fh.distance  = @metric_euclidean_distance;
+      recmetric.fh.recappend = @metric_euclidean_recappend;
       return
     end
     mp = metric.p;

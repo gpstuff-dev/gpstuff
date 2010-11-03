@@ -17,8 +17,8 @@ function gpcf = gpcf_linear(varargin)
 %                          to a common prior variance or vector
 %                          defining own prior variance for each
 %                          coefficient.
-%      coeffSigma2_prior = prior structure for coeffSigma2 [prior_sqrtunif]
-%      selectedVariables = vector defining which inputs are used
+%      coeffSigma2_prior - prior structure for coeffSigma2 [prior_sqrtunif]
+%      selectedVariables - vector defining which inputs are used [all]
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in

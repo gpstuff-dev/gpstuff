@@ -113,8 +113,7 @@ cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part
-cfs=gpcf_sexp('metric',metric_euclidean('components',{[1]},...
-                                        'lengthScale_prior',prior_t()));
+cfs=gpcf_sexp('selectedVariables',1,'lengthScale_prior',prior_t());
 % construct GP
 gp=gp_set('cf',{cfc cfci cfl cfs},'noisef',{cfn},'jitterSigma2',1e-6);
 % optimize
@@ -136,8 +135,7 @@ cfci=gpcf_prod('cf',{cfc cc});
 % linear covariance term for each rat
 cfli=gpcf_prod('cf',{cfl cc});
 % nonlinear part
-cfs=gpcf_sexp('metric',metric_euclidean('components',{[1]},...
-                                        'lengthScale_prior',prior_t()));
+cfs=gpcf_sexp('selectedVariables',1,'lengthScale_prior',prior_t());
 % nonlinear covariance term for each rat
 cfsi=gpcf_prod('cf',{cfs cc});
 % construct GP

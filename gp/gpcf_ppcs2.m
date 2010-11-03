@@ -14,17 +14,20 @@ function gpcf = gpcf_ppcs2(varargin)
 %    parameters altered with the specified values.
 %
 %    Parameters for piece wise polynomial (q=2) covariance function [default]
-%      magnSigma2        = magnitude (squared) [0.1]
-%      lengthScale       - length scale for each input. [10]
+%      magnSigma2        - magnitude (squared) [0.1]
+%      lengthScale       - length scale for each input. [1]
 %                          This can be either scalar corresponding
 %                          to an isotropic function or vector
 %                          defining own length-scale for each input
 %                          direction.
-%      l_nin             = order of the polynomial [floor(nin/2) + 1]
+%      l_nin             - order of the polynomial [floor(nin/2) + 1]
 %                          Has to be greater than or equal to default.
-%      magnSigma2_prior  = prior structure for magnSigma2 [prior_sqrtunif]
-%      lengthScale_prior = prior structure for lengthScale [prior_unif]
-%      metric            = metric structure into the covariance function []
+%      magnSigma2_prior  - prior for magnSigma2  [prior_sqrtunif]
+%      lengthScale_prior - prior for lengthScale [prior_unif]
+%      metric            - metric structure used by the covariance function []
+%      selectedVariables - vector defining which inputs are used [all]
+%                          selectedVariables is shorthand for using
+%                          metric_euclidean with corresponding components
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
@@ -32,11 +35,11 @@ function gpcf = gpcf_ppcs2(varargin)
 %
 %    The piecewise polynomial function is the following:
 %
-%      k(x_i, x_j) = ** Jarno, fill this, please ***
+%      k_pp2(x_i, x_j) = ma2*cs^(l+2)*((l^2+4*l+3)*r^2 + (3*l+6)*r +3)
 %
-%      where r = sum( (x_i,d - x_j,d).^2./l^2_d )
+%      where r = sum( (x_i,d - x_j,d)^2/l^2_d )
 %            l = floor(l_nin/2) + 3 
-%            cs = max(0,1-r);
+%            cs = max(0,1-r)
 %      and l_nin must be greater or equal to gpcf.nin
 %       
 %    NOTE! Use of gpcf_ppcs2 requires that you have installed
@@ -44,7 +47,7 @@ function gpcf = gpcf_ppcs2(varargin)
 %
 %  See also
 %    GP_SET, GPCF_*, PRIOR_*, METRIC_*
-    
+  
 % Copyright (c) 2007-2010 Jarno Vanhatalo, Jouni Hartikainen
 % Copyright (c) 2010 Aki Vehtari
 
@@ -52,318 +55,309 @@ function gpcf = gpcf_ppcs2(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  % allow use with or without init and set options
-  if nargin<1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
-  else
-    error('Unknown first argument');
+  if nargin>0 && ischar(varargin{1}) && ismember(varargin{1},{'init' 'set'})
+    % remove init and set
+    varargin(1)=[];
   end
   
   ip=inputParser;
   ip.FunctionName = 'GPCF_PPCS2';
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
-  ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
-  ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
+  ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('lengthScale',1, @(x) isvector(x) && all(x>0));
   ip.addParamValue('l_nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('metric',[], @isstruct);
-  ip.addParamValue('magnSigma2_prior',NaN, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lengthScale_prior',NaN, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('magnSigma2_prior', prior_sqrtunif(), ...
+                   @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('lengthScale_prior',prior_unif(), ...
+                   @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('selectedVariables',[], @(x) isempty(x) || ...
+                   (isvector(x) && all(x>0)));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
-  nin=ip.Results.nin;
-  magnSigma2=ip.Results.magnSigma2;
-  lengthScale=ip.Results.lengthScale;
-  l_nin=ip.Results.l_nin;
-  metric=ip.Results.metric;
-  magnSigma2_prior=ip.Results.magnSigma2_prior;
-  lengthScale_prior=ip.Results.lengthScale_prior;
 
-  switch do
-    case 'init'
-      % Initialize the covariance function
-      if isempty(nin)
-        error('nin has to be given in init: gpcf_ppcs2(''init'',''nin'',NIN,...)')
+  if isempty(gpcf)
+    % Check that SuiteSparse is available
+    if ~exist('ldlchol')
+      error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs2 cannot be used!')
+    end
+    init=true;
+    if isempty(nin)
+      error('nin has to be given for ppcs: gpcf_ppcs2(''nin'',NIN,...)')
+    end
+    gpcf.type = 'gpcf_ppcs2';
+    gpcf.nin = nin;
+    % cf is compactly supported
+    gpcf.cs = 1;
+  else
+    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_ppcs2')
+      error('First argument does not seem to be a valid covariance function structure')
+    end
+    init=false;
+  end
+  if init
+    % Set the function handles to the nested functions
+    gpcf.fh.pak = @gpcf_ppcs2_pak;
+    gpcf.fh.unpak = @gpcf_ppcs2_unpak;
+    gpcf.fh.e = @gpcf_ppcs2_e;
+    gpcf.fh.ghyper = @gpcf_ppcs2_ghyper;
+    gpcf.fh.ginput = @gpcf_ppcs2_ginput;
+    gpcf.fh.cov = @gpcf_ppcs2_cov;
+    gpcf.fh.trcov  = @gpcf_ppcs2_trcov;
+    gpcf.fh.trvar  = @gpcf_ppcs2_trvar;
+    gpcf.fh.recappend = @gpcf_ppcs2_recappend;
+  end
+
+  % Initialize parameters
+  if init || ~ismember('l_nin',ip.UsingDefaults)
+    gpcf.l=ip.Results.l_nin;
+    if isempty(gpcf.l)
+      gpcf.l = floor(gp.nin/2) + 2;
+    end
+    if gpcf.l < gpcf.nin
+      error('The l_nin has to be greater than or equal to the number of inputs!')
+    end
+  end
+  if init || ~ismember('lengthScale',ip.UsingDefaults)
+    gpcf.lengthScale = ip.Results.lengthScale;
+  end
+  if init || ~ismember('magnSigma2',ip.UsingDefaults)
+    gpcf.magnSigma2 = ip.Results.magnSigma2;
+  end
+
+  % Initialize prior structure
+  if init
+    gpcf.p=[];
+  end
+  if init || ~ismember('lengthScale',ip.UsingDefaults)
+    gpcf.p.lengthScale=ip.Results.lengthScale_prior;
+  end
+  if init || ~ismember('magnSigma2_prior',ip.UsingDefaults)
+    gpcf.p.magnSigma2=ip.Results.magnSigma2_prior;
+  end
+
+  %Initialize metric
+  if ~ismember('metric',ip.UsingDefaults)
+    if ~isempty(ip.Results.metric)
+      gpcf.metric = ip.Results.metric;
+      gpcf = rmfield(gpcf, 'lengthScale');
+      gpcf.p = rmfield(gpcf.p, 'lengthScale');
+    elseif isfield(gpcf,'metric')
+      if ~isfield(gpcf,'lengthScale')
+        gpcf.lengthScale = gpcf.metric.lengthScale;
       end
-      
-      % Check that SuiteSparse is available
-      if ~exist('ldlchol')
-          error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs2 cannot be used!')
+      if ~isfield(gpcf.p,'lengthScale')
+        gpcf.p.lengthScale = gpcf.metric.p.lengthScale;
       end
-      
-      gpcf.type = 'gpcf_ppcs2';
-      gpcf.nin = nin;
-      
-      if isempty(l_nin)
-        gpcf.l = floor(nin/2) + 3;
-      else
-        if l_nin < gpcf.nin
-          error('The l_nin has to be greater than or equal to the number of inputs!')
-        end
-        gpcf.l = floor(l_nin/2) + 3;
-      end
-      
-      % cf is compactly supported
-      gpcf.cs = 1;
-      
-      % Initialize parameters
-      if isempty(lengthScale)
-        gpcf.lengthScale = repmat(10, 1, nin); 
-      else
-        gpcf.lengthScale=lengthScale;
-      end
-      if isempty(magnSigma2)
-        gpcf.magnSigma2 = 0.1;
-      else
-        gpcf.magnSigma2=magnSigma2;
-      end
-      
-      % Initialize prior structure
-      gpcf.p=[];
-      if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior)
-        gpcf.p.lengthScale=prior_unif;
-      else
-        gpcf.p.lengthScale=lengthScale_prior;
-      end
-      if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior)
-        gpcf.p.magnSigma2=prior_sqrtunif;
-      else
-        gpcf.p.magnSigma2=magnSigma2_prior;
-      end
-      
-      % Initialize metric
-      if ~isempty(metric)
-        gpcf.metric = metric;
-        gpcf = rmfield(gpcf, 'lengthScale');
-      end
-      
-      % Set the function handles to the nested functions
-      gpcf.fh.pak = @gpcf_ppcs2_pak;
-      gpcf.fh.unpak = @gpcf_ppcs2_unpak;
-      gpcf.fh.e = @gpcf_ppcs2_e;
-      gpcf.fh.ghyper = @gpcf_ppcs2_ghyper;
-      gpcf.fh.ginput = @gpcf_ppcs2_ginput;
-      gpcf.fh.cov = @gpcf_ppcs2_cov;
-      gpcf.fh.trcov  = @gpcf_ppcs2_trcov;
-      gpcf.fh.trvar  = @gpcf_ppcs2_trvar;
-      gpcf.fh.recappend = @gpcf_ppcs2_recappend;
-      
-    case 'set'
-      % Set the parameter values of covariance function
-      % go through all the parameter values that are changed
-      if isempty(gpcf)
-          error('with set option you have to provide the old covariance structure.')
-      end
-      if ~isempty(magnSigma2);gpcf.magnSigma2=magnSigma2;end
-      if ~isempty(lengthScale);gpcf.lengthScale=lengthScale;end
-      if ~isempty(l_nin);          
-        if l_nin < gpcf.nin
-          error('The l_nin has to be greater than egual to the number of inputs!')
-        end
-        gpcf.l=floor(l_nin/2) + 3;
-      end
-      if ~isempty(metric)
-        gpcf.metric=metric;
-        if isfield(gpcf, 'lengthScale')
-          gpcf = rmfield(gpcf, 'lengthScale');
-        end
-      end
-      if ~isstruct(magnSigma2_prior)&isnan(magnSigma2_prior);else;gpcf.p.magnSigma2=magnSigma2_prior;end
-      if ~isstruct(lengthScale_prior)&isnan(lengthScale_prior);else;gpcf.p.lengthScale=lengthScale_prior;end
+      gpcf = rmfield(gpcf, 'metric');
+    end
   end
   
-  function w = gpcf_ppcs2_pak(gpcf, w)
-    %GPCF_PPCS2_PAK      Combine GP covariance function hyper-parameters into one vector.
-    %
-    %  Description
-    %   W = GPCF_PPCS2_PAK(GPCF) takes a covariance function data
-    %   structure GPCF and combines the covariance function parameters
-    %   and their hyperparameters into a single row vector W and takes
-    %   a logarithm of the covariance function parameters.
-    %
-    %       w = [ log(gpcf.magnSigma2)
-    %             (hyperparameters of gpcf.magnSigma2) 
-    %             log(gpcf.lengthScale(:))
-    %             (hyperparameters of gpcf.lengthScale)]'
-    %     
-    %
-    %  See also
-    %   GPCF_PPCS2_UNPAK
+  % selectedVariables options implemented using metric_euclidean
+  if ~ismember('selectedVariables',ip.UsingDefaults)
+    if ~isfield(gpcf,'metric')
+      if ~isempty(ip.Results.selectedVariables)
+        gpcf.metric=metric_euclidean('components',...
+                                     num2cell(ip.Results.selectedVariables),...
+                                     'lengthScale',gpcf.lengthScale,...
+                                     'lengthScale_prior',gpcf.p.lengthScale);
+        gpcf = rmfield(gpcf, 'lengthScale');
+        gpcf.p = rmfield(gpcf.p, 'lengthScale');
+      end
+    elseif isfield(gpcf,'metric') 
+      if ~isempty(ip.Results.selectedVariables)
+        gpcf.metric=metric_euclidean(gpcf.metric,...
+                                     'components',...
+                                     num2cell(ip.Results.selectedVariables));
+        if ~ismember('lengthScale',ip.UsingDefaults)
+          gpcf.metric.lengthScale=ip.Results.lengthScale;
+          gpcf = rmfield(gpcf, 'lengthScale');
+        end
+        if ~ismember('lengthScale_prior',ip.UsingDefaults)
+          gpcf.metric.p.lengthScale=ip.Results.lengthScale_prior;
+          gpcf.p = rmfield(gpcf.p, 'lengthScale');
+        end
+      else
+        if ~isfield(gpcf,'lengthScale')
+          gpcf.lengthScale = gpcf.metric.lengthScale;
+        end
+        if ~isfield(gpcf.p,'lengthScale')
+          gpcf.p.lengthScale = gpcf.metric.p.lengthScale;
+        end
+        gpcf = rmfield(gpcf, 'metric');
+      end
+    end
+  end
   
-    
-    i1=0;i2=1;
-    ww = []; w = [];
+  function w = gpcf_ppcs2_pak(gpcf)
+  %GPCF_PPCS2_PAK  Combine GP covariance function hyper-parameters into
+  %               one vector.
+  %
+  %  Description
+  %    W = GPCF_PPCS2_PAK(GPCF) takes a covariance function data
+  %    structure GPCF and combines the covariance function
+  %    parameters and their hyperparameters into a single row
+  %    vector W and takes a logarithm of the covariance function
+  %    parameters.
+  %
+  %       w = [ log(gpcf.magnSigma2)
+  %             (hyperparameters of gpcf.magnSigma2)
+  %             log(gpcf.lengthScale(:))
+  %             (hyperparameters of gpcf.lengthScale)]'
+  %
+  %  See also
+  %    GPCF_PPCS2_UNPAK
+
+    w = [];
     
     if ~isempty(gpcf.p.magnSigma2)
-      i1 = i1+1;
-      w(i1) = log(gpcf.magnSigma2);
-      
+      w = [w log(gpcf.magnSigma2)];
       % Hyperparameters of magnSigma2
-      ww = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
+      w = [w feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2)];
     end        
-    
+
     if isfield(gpcf,'metric')
-      
-      w = [w feval(gpcf.metric.pak, gpcf.metric)];
+      w = [w feval(gpcf.metric.fh.pak, gpcf.metric)];
     else
       if ~isempty(gpcf.p.lengthScale)
         w = [w log(gpcf.lengthScale)];
-        
         % Hyperparameters of lengthScale
         w = [w feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
       end
     end
-    w = [w ww];
+
   end
 
-
-
-
   function [gpcf, w] = gpcf_ppcs2_unpak(gpcf, w)
-    %GPCF_PPCS2_UNPAK  Sets the covariance function parameters pack into the structure
-    %
-    %  Description
-    %   [GPCF, W] = GPCF_PPCS2_UNPAK(GPCF, W) takes a covariance
-    %   function data structure GPCF and a hyper-parameter vector W,
-    %   and returns a covariance function data structure identical to
-    %   the input, except that the covariance hyper-parameters have
-    %   been set to the values in W. Deletes the values set to GPCF
-    %   from W and returns the modified W.
-    %
-    %   The covariance function parameters are transformed via exp
-    %   before setting them into the structure.
-    %
-    %  See also
-    %   GPCF_PPCS2_PAK
-    
+  %GPCF_PPCS2_UNPAK  Sets the covariance function parameters into
+  %                 the structure
+  %
+  %  Description
+  %    [GPCF, W] = GPCF_PPCS2_UNPAK(GPCF, W) takes a covariance
+  %    function data structure GPCF and a hyper-parameter vector W,
+  %    and returns a covariance function data structure identical
+  %    to the input, except that the covariance hyper-parameters
+  %    have been set to the values in W. Deletes the values set to
+  %    GPCF from W and returns the modified W.
+  %
+  %    Assignment is inverse of  
+  %       w = [ log(gpcf.magnSigma2)
+  %             (hyperparameters of gpcf.magnSigma2)
+  %             log(gpcf.lengthScale(:))
+  %             (hyperparameters of gpcf.lengthScale)]'
+  %
+  %  See also
+  %    GPCF_PPCS2_PAK
+
     gpp=gpcf.p;
     if ~isempty(gpp.magnSigma2)
-      i1=1;
-      gpcf.magnSigma2 = exp(w(i1));
-      w = w(i1+1:end);
+      gpcf.magnSigma2 = exp(w(1));
+      w = w(2:end);
+      % Hyperparameters of magnSigma2
+      [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
+      gpcf.p.magnSigma2 = p;
     end
 
     if isfield(gpcf,'metric')
-      [metric, w] = feval(gpcf.metric.unpak, gpcf.metric, w);
+      [metric, w] = feval(gpcf.metric.fh.unpak, gpcf.metric, w);
       gpcf.metric = metric;
     else            
       if ~isempty(gpp.lengthScale)
-        i2=length(gpcf.lengthScale);
         i1=1;
+        i2=length(gpcf.lengthScale);
         gpcf.lengthScale = exp(w(i1:i2));
         w = w(i2+1:end);
-        
         % Hyperparameters of lengthScale
         [p, w] = feval(gpcf.p.lengthScale.fh.unpak, gpcf.p.lengthScale, w);
         gpcf.p.lengthScale = p;
       end
     end
     
-    if ~isempty(gpp.magnSigma2)
-      % Hyperparameters of magnSigma2
-      [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
-      gpcf.p.magnSigma2 = p;
-    end
   end
-  
-  function eprior =gpcf_ppcs2_e(gpcf, x, t)
-    %GPCF_PPCS2_E     Evaluate the energy of prior of PPCS2 parameters
-    %
-    %  Description
-    %   E = GPCF_PPCS2_E(GPCF, X, T) takes a covariance function data
-    %   structure GPCF together with a matrix X of input vectors and a
-    %   vector T of target vectors and evaluates log p(th) x J, where
-    %   th is a vector of PPCS2 parameters and J is the Jacobian of
-    %   transformation exp(w) = th. (Note that the parameters are log
-    %   transformed, when packed.) 
-    %
-    %   Also the log prior of the hyperparameters of the covariance
-    %   function parameters is added to E if hyper-hyperprior is
-    %   defined.
-    %
-    %  See also
-    %   GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_G, GP_E
 
-    
+  function eprior =gpcf_ppcs2_e(gpcf, x, t)
+  %GPCF_PPCS2_E  Evaluate the energy of prior of PPCS2 parameters
+  %
+  %  Description
+  %    E = GPCF_PPCS2_E(GPCF, X, T) takes a covariance function data
+  %    structure GPCF together with a matrix X of input vectors and
+  %    a vector T of target vectors and evaluates log p(th) x J,
+  %    where th is a vector of PPCS2 parameters and J is the
+  %    Jacobian of transformation exp(w) = th. (Note that the
+  %    parameters are log transformed, when packed.)
+  %
+  %    Also the log prior of the hyperparameters of the covariance
+  %    function parameters is added to E if hyper-hyperprior is
+  %    defined.
+  %
+  %  See also
+  %    GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_G, GP_E
+
+  % Evaluate the prior contribution to the error. The parameters that
+  % are sampled are transformed, e.g., W = log(w) where w is all
+  % the "real" samples. On the other hand errors are evaluated in
+  % the W-space so we need take into account also the Jacobian of
+  % transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
+  % Bayesian data Analysis, second edition, p24.
     eprior = 0;
     gpp=gpcf.p;
     
     [n, m] =size(x);
-
     if ~isempty(gpcf.p.magnSigma2)
-      eprior = feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
+      eprior = eprior + feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, ...
+                              gpp.magnSigma2) - log(gpcf.magnSigma2);
     end
 
     if isfield(gpcf,'metric')
-      eprior = eprior + feval(gpcf.metric.e, gpcf.metric, x, t);
-    else
-      % Evaluate the prior contribution to the error. The parameters that
-      % are sampled are from space W = log(w) where w is all the "real" samples.
-      % On the other hand errors are evaluated in the W-space so we need take
-      % into account also the  Jacobian of transformation W -> w = exp(W).
-      % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
-
-      if ~isempty(gpcf.p.magnSigma2)
-        eprior = feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, gpp.magnSigma2) - log(gpcf.magnSigma2);
-      end
-      if ~isempty(gpp.lengthScale)
-        eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, gpp.lengthScale) - sum(log(gpcf.lengthScale));
-      end
+      eprior = eprior + feval(gpcf.metric.fh.e, gpcf.metric, x, t);
+    elseif ~isempty(gpp.lengthScale)
+      eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, ...
+                              gpp.lengthScale) - sum(log(gpcf.lengthScale));
     end
   end
-  
+
   function [DKff, gprior]  = gpcf_ppcs2_ghyper(gpcf, x, x2, mask)
-    %GPCF_PPCS2_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
-    %                     respect to the hyperparameters.
-    %
-    %  Description
-    %   [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X) 
-    %   takes a covariance function data structure GPCF, a matrix X of
-    %   input vectors and returns DKff, the gradients of covariance
-    %   matrix Kff = k(X,X) with respect to th (cell array with matrix
-    %   elements), and GPRIOR = d log (p(th))/dth, where th is the
-    %   vector of hyperparameters
-    %
-    %   [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X, X2) 
-    %   takes a covariance function data structure GPCF, a matrix X of
-    %   input vectors and returns DKff, the gradients of covariance
-    %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
-    %   elements), and GPRIOR = d log (p(th))/dth, where th is the
-    %   vector of hyperparameters
-    %
-    %   [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X, [], MASK) 
-    %   takes a covariance function data structure GPCF, a matrix X of
-    %   input vectors and returns DKff, the diagonal of gradients of
-    %   covariance matrix Kff = k(X,X2) with respect to th (cell array
-    %   with matrix elements), and GPRIOR = d log (p(th))/dth, where
-    %   th is the vector of hyperparameters. This is needed for
-    %   example with FIC sparse approximation.
-    %
-    %  See also
-    %   GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_E, GP_G
-    
+  %GPCF_PPCS2_GHYPER  Evaluate gradient of covariance function and
+  %                  hyper-prior with respect to the hyperparameters.
+  %
+  %  Description
+  %    [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X) takes a
+  %    covariance function data structure GPCF, a matrix X of input
+  %    vectors and returns DKff, the gradients of covariance matrix
+  %    Kff = k(X,X) with respect to th (cell array with matrix
+  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
+  %    vector of hyperparameters
+  %
+  %    [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X, X2) takes a
+  %    covariance function data structure GPCF, a matrix X of input
+  %    vectors and returns DKff, the gradients of covariance matrix
+  %    Kff = k(X,X2) with respect to th (cell array with matrix
+  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
+  %    vector of hyperparameters
+  %
+  %    [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X, [], MASK) takes a
+  %    covariance function data structure GPCF, a matrix X of input
+  %    vectors and returns DKff, the diagonal of gradients of
+  %    covariance matrix Kff = k(X,X2) with respect to th (cell
+  %    array with matrix elements), and GPRIOR = d log (p(th))/dth,
+  %    where th is the vector of hyperparameters. This is needed
+  %    for example with FIC sparse approximation.
+  %
+  %  See also
+  %   GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_E, GP_G
+
     gpp=gpcf.p;
     [n, m] =size(x);
 
     i1=0;i2=1;
     DKff = {};
     gprior = [];
-    
+
     % Evaluate: DKff{1} = d Kff / d magnSigma2
     %           DKff{2} = d Kff / d lengthScale
-    % NOTE! Here we have already taken into account that the parameters are transformed
-    % through log() and thus dK/dlog(p) = p * dK/dp
+    % NOTE! Here we have already taken into account that the parameters
+    % are transformed through log() and thus dK/dlog(p) = p * dK/dp
 
     % evaluate the gradient for training covariance
     if nargin == 2
@@ -391,9 +385,9 @@ function gpcf = gpcf_ppcs2(varargin)
         for ii=1:n-1
           col_ind = ii + find(Cdm(ii+1:n,ii));
           d = zeros(length(col_ind),1);
-          d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii,:));
+          d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii,:));
           
-          [gd, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x(col_ind,:), x(ii,:));
+          [gd, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x(col_ind,:), x(ii,:));
 
           ntrip_prev = ntriplets;
           ntriplets = ntriplets + length(d);
@@ -423,7 +417,6 @@ function gpcf = gpcf_ppcs2(varargin)
           D = sparse(I,J,D,n,n);
           DKff{ii1} = D + D';
         end
-        
       else
         if ~isempty(gpcf.p.lengthScale)
           % loop over all the lengthScales
@@ -524,8 +517,8 @@ function gpcf = gpcf_ppcs2(varargin)
         ntriplets = 0;
         for ii=1:n2
           d = zeros(n1,1);
-          d = feval(gpcf.metric.distance, gpcf.metric, x, x2(ii,:));
-          [gd, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, x2(ii,:));
+          d = feval(gpcf.metric.fh.distance, gpcf.metric, x, x2(ii,:));
+          [gd, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x, x2(ii,:));
           
           I0t = find(d==0);
           d(d >= 1) = 0;
@@ -578,7 +571,7 @@ function gpcf = gpcf_ppcs2(varargin)
             cs1 = max(1-d1,0);
             const1 = 2.*l^2+8.*l+6;
             const2 = l^2+4.*l+3;
-            
+
             DK_l = -ma2.*cs1.^(l+1).*d1.*(cs1.*(const1.*d1+3.*l+6)-(l+2).*(const2.*dist1+(3.*l+6).*d1+3))/3;
             
             ii1=ii1+1;
@@ -618,14 +611,15 @@ function gpcf = gpcf_ppcs2(varargin)
       %           DKff{2...} = d mask(Kff,I) / d lengthScale
     elseif nargin == 4
       ii1=0;
+
       if ~isempty(gpcf.p.magnSigma2)
         ii1 = ii1+1;
         DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
       end
-      
+
       if isfield(gpcf,'metric')
         dist = 0;
-        [gdist, gprior_dist] = feval(gpcf.metric.ghyper, gpcf.metric, x, [], 1);
+        [gdist, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x, [], 1);
         for i=1:length(gdist)
           ii1 = ii1+1;
           DKff{ii1} = 0;
@@ -634,22 +628,25 @@ function gpcf = gpcf_ppcs2(varargin)
         if ~isempty(gpcf.p.lengthScale)
           for i2=1:length(gpcf.lengthScale)
             ii1 = ii1+1;
-            DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
+            DKff{ii1}  = 0; % d mask(Kff,I) / d lengthScale
           end
         end
       end
     end
-    if nargout > 1            
+
+    if nargout > 1
       ggs = [];
+      i1=0;
       if ~isempty(gpcf.p.magnSigma2)            
         % Evaluate the gprior with respect to magnSigma2
-        i1 = 1;
+        i1 = i1+1;
         ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
         gprior = ggs(i1).*gpcf.magnSigma2 - 1;
       end
       
       if isfield(gpcf,'metric')
-        % Evaluate the data contribution of gradient with respect to lengthScale
+        % Evaluate the data contribution of gradient with respect to
+        % lengthScale
         for i2=1:length(gprior_dist)
           i1 = i1+1;                    
           gprior(i1)=gprior_dist(i2);
@@ -670,30 +667,28 @@ function gpcf = gpcf_ppcs2(varargin)
   end
   
   function DKff  = gpcf_ppcs2_ginput(gpcf, x, x2)
-    %GPCF_PPCS2_GINPUT     Evaluate gradient of covariance function with 
-    %                     respect to x.
-    %
-    %  Description
-    %   DKff = GPCF_PPCS2_GHYPER(GPCF, X) 
-    %   takes a covariance function data structure GPCF, a matrix X of
-    %   input vectors and returns DKff, the gradients of covariance
-    %   matrix Kff = k(X,X) with respect to X (cell array with matrix
-    %   elements)
-    %
-    %   DKff = GPCF_PPCS2_GHYPER(GPCF, X, X2) 
-    %   takes a covariance function data structure GPCF, a matrix X of
-    %   input vectors and returns DKff, the gradients of covariance
-    %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
-    %   elements).
-    %
-    %  See also
-    %   GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_E, GP_G
+  %GPCF_PPCS2_GINPUT  Evaluate gradient of covariance function with 
+  %                   respect to x.
+  %
+  %  Description
+  %    DKff = GPCF_PPCS2_GHYPER(GPCF, X) takes a covariance
+  %    function data structure GPCF, a matrix X of input vectors
+  %    and returns DKff, the gradients of covariance matrix Kff =
+  %    k(X,X) with respect to X (cell array with matrix elements)
+  %
+  %    DKff = GPCF_PPCS2_GHYPER(GPCF, X, X2) takes a covariance
+  %    function data structure GPCF, a matrix X of input vectors
+  %    and returns DKff, the gradients of covariance matrix Kff =
+  %    k(X,X2) with respect to X (cell array with matrix elements).
+  %
+  %  See also
+  %    GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_E, GP_G
 
     [n, m] =size(x);
     ii1=0;
     % evaluate the gradient for training covariance
     if nargin == 2
-      
+
       K = gpcf_ppcs2_trcov(gpcf, x);
       l = gpcf.l;
       [I,J] = find(K);
@@ -711,9 +706,9 @@ function gpcf = gpcf_ppcs2(varargin)
         for ii=1:n-1
           col_ind = ii + find(Cdm(ii+1:n,ii));
           d = zeros(length(col_ind),1);
-          d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii,:));
+          d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii,:));
           
-          [gd, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x(col_ind,:), x(ii,:));
+          [gd, gprior_dist] = feval(gpcf.metric.fh.ginput, gpcf.metric, x(col_ind,:), x(ii,:));
 
           ntrip_prev = ntriplets;
           ntriplets = ntriplets + length(d);
@@ -746,6 +741,7 @@ function gpcf = gpcf_ppcs2(varargin)
         
       else
         if length(gpcf.lengthScale) == 1
+          % In the case of an isotropic
           s2 = repmat(1./gpcf.lengthScale.^2, 1, m);
         else
           s2 = 1./gpcf.lengthScale.^2;
@@ -799,7 +795,6 @@ function gpcf = gpcf_ppcs2(varargin)
       ii1=0;
       K = feval(gpcf.fh.cov, gpcf, x, x2);
       n2 = size(x2,1);
-
       l = gpcf.l;
       
       if isfield(gpcf,'metric')
@@ -821,8 +816,8 @@ function gpcf = gpcf_ppcs2(varargin)
         ntriplets = 0;
         for ii=1:n2
           d = zeros(n1,1);
-          d = feval(gpcf.metric.distance, gpcf.metric, x, x2(ii,:));
-          [gd, gprior_dist] = feval(gpcf.metric.ginput, gpcf.metric, x, x2(ii,:));
+          d = feval(gpcf.metric.fh.distance, gpcf.metric, x, x2(ii,:));
+          [gd, gprior_dist] = feval(gpcf.metric.fh.ginput, gpcf.metric, x, x2(ii,:));
           
           I0t = find(d==0);
           d(d >= 1) = 0;
@@ -860,7 +855,7 @@ function gpcf = gpcf_ppcs2(varargin)
 
       else
         if length(gpcf.lengthScale) == 1
-          % In the case of an isotropic SEXP
+          % In the case of an isotropic PPCS2
           s2 = repmat(1./gpcf.lengthScale.^2, 1, m);
         else
           s2 = 1./gpcf.lengthScale.^2;
@@ -874,7 +869,6 @@ function gpcf = gpcf_ppcs2(varargin)
           d2 = d2 + s2(i).*bsxfun(@minus,x(:,i),x2(:,i)').^2;
         end
         d = sqrt(d2);
-        
         cs = max(1-d,0);
         
         const1 = 2.*l^2+8.*l+6;
@@ -903,25 +897,24 @@ function gpcf = gpcf_ppcs2(varargin)
   
   
   function C = gpcf_ppcs2_cov(gpcf, x1, x2, varargin)
-    % GP_PPCS2_COV     Evaluate covariance matrix between two input vectors.
-    %
-    %         Description         
-    %         C = GP_PPCS2_COV(GP, TX, X) takes in covariance function of a
-    %         Gaussian process GP and two matrixes TX and X that
-    %         contain input vectors to GP. Returns covariance matrix
-    %         C. Every element ij of C contains covariance between
-    %         inputs i in TX and j in X.
-    %
-    %
-    %         See also
-    %         GPCF_PPCS2_TRCOV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
+  %GP_PPCS2_COV  Evaluate covariance matrix between two input vectors.
+  %
+  %  Description         
+  %    C = GP_PPCS2_COV(GP, TX, X) takes in covariance function of
+  %    a Gaussian process GP and two matrixes TX and X that contain
+  %    input vectors to GP. Returns covariance matrix C. Every
+  %    element ij of C contains covariance between inputs i in TX
+  %    and j in X.
+  %
+  %  See also
+  %    GPCF_PPCS2_TRCOV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
 
     if isfield(gpcf,'metric')
       % If other than scaled euclidean metric
       [n1,m1]=size(x1);
       [n2,m2]=size(x2);
       
-      ma = gpcf.magnSigma2;
+      ma2 = gpcf.magnSigma2;
       l = gpcf.l;
       
       % Compute the sparse distance matrix.
@@ -935,7 +928,7 @@ function gpcf = gpcf_ppcs2(varargin)
       nn0=0;
       for ii1=1:n2
         d = zeros(n1,1);
-        d = feval(gpcf.metric.distance, gpcf.metric, x1, x2(ii1,:));
+        d = feval(gpcf.metric.fh.distance, gpcf.metric, x1, x2(ii1,:));
         I0t = find(d==0);
         d(d >= 1) = 0;
         [I2,J2,R2] = find(d);
@@ -953,8 +946,8 @@ function gpcf = gpcf_ppcs2(varargin)
       r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
       [I,J,r] = find(r);
       cs = full(sparse(max(0, 1-r)));
-      C = ma.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3)/3;
-      C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma,n1,n2);
+      C = ma2.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3)/3;
+      C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma2,n1,n2);
     else
       % If scaled euclidean metric
       
@@ -966,7 +959,7 @@ function gpcf = gpcf_ppcs2(varargin)
       if size(s)==1
         s2 = repmat(s2,1,m1);
       end
-      ma = gpcf.magnSigma2;
+      ma2 = gpcf.magnSigma2;
       l = gpcf.l;
       
       % Compute the sparse distance matrix.
@@ -1001,29 +994,27 @@ function gpcf = gpcf_ppcs2(varargin)
       r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
       [I,J,r] = find(r);
       cs = full(sparse(max(0, 1-r)));
-      C = ma.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3)/3;
-      C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma,n1,n2);
+      C = ma2.*cs.^(l+2).*((l^2+4*l+3).*r.^2+(3*l+6).*r+3)/3;
+      C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma2,n1,n2);
     end
   end
-  
+
   function C = gpcf_ppcs2_trcov(gpcf, x)
-    % GP_PPCS2_TRCOV     Evaluate training covariance matrix of inputs.
-    %
-    %         Description
-    %         C = GP_PPCS2_TRCOV(GP, TX) takes in covariance function of a
-    %         Gaussian process GP and matrix TX that contains training
-    %         input vectors. Returns covariance matrix C. Every
-    %         element ij of C contains covariance between inputs i and
-    %         j in TX
-    %
-    %         See also
-    %         GPCF_PPCS2_COV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
-    
+  %GP_PPCS2_TRCOV  Evaluate training covariance matrix of inputs.
+  %
+  %  Description
+  %    C = GP_PPCS2_TRCOV(GP, TX) takes in covariance function of a
+  %    Gaussian process GP and matrix TX that contains training
+  %    input vectors. Returns covariance matrix C. Every element ij
+  %    of C contains covariance between inputs i and j in TX
+  %
+  %  See also
+  %    GPCF_PPCS2_COV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
+
     if isfield(gpcf,'metric')
       % If other than scaled euclidean metric
-      
       [n, m] =size(x);            
-      ma = gpcf.magnSigma2;
+      ma2 = gpcf.magnSigma2;
       l = gpcf.l;
       
       % Compute the sparse distance matrix.
@@ -1035,7 +1026,7 @@ function gpcf = gpcf_ppcs2(varargin)
       for ii1=1:n-1
         d = zeros(n-ii1,1);
         col_ind = ii1+1:n;
-        d = feval(gpcf.metric.distance, gpcf.metric, x(col_ind,:), x(ii1,:));
+        d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii1,:));
         d(d >= 1) = 0;
         [I2,J2,R2] = find(d);
         len = length(R);
@@ -1058,15 +1049,14 @@ function gpcf = gpcf_ppcs2(varargin)
       const1 = l^2+4*l+3;
       const2 = 3*l+6;
       cs = max(0,1-rn);
-      C = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
+      C = ma2.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
       C = sparse(I,J,C,n,n);
-      C = C + C' + sparse(1:n,1:n,ma,n,n);
+      C = C + C' + sparse(1:n,1:n,ma2,n,n);
       
     else
       % If a scaled euclidean metric try first mex-implementation 
       % and if there is not such... 
       C = trcov(gpcf,x);
-      
       % ... evaluate the covariance here.
       if isnan(C)
         [n, m] =size(x);
@@ -1076,7 +1066,7 @@ function gpcf = gpcf_ppcs2(varargin)
         if size(s)==1
           s2 = repmat(s2,1,m);
         end
-        ma = gpcf.magnSigma2;
+        ma2 = gpcf.magnSigma2;
         l = gpcf.l;
         
         % Compute the sparse distance matrix.
@@ -1114,46 +1104,45 @@ function gpcf = gpcf_ppcs2(varargin)
         const1 = l^2+4*l+3;
         const2 = 3*l+6;
         cs = max(0,1-rn);
-        C = ma.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
+        C = ma2.*cs.^(l+2).*(const1.*rn.^2+const2.*rn+3)/3;
         C = sparse(I,J,C,n,n);
-        C = C + C' + sparse(1:n,1:n,ma,n,n);
+        C = C + C' + sparse(1:n,1:n,ma2,n,n);
       end
     end
-  end    
-  
+  end
+
   function C = gpcf_ppcs2_trvar(gpcf, x)
-    % GP_PPCS2_TRVAR     Evaluate training variance vector
-    %
-    %         Description
-    %         C = GP_PPCS2_TRVAR(GPCF, TX) takes in covariance function 
-    %         of a Gaussian process GPCF and matrix TX that contains
-    %         training inputs. Returns variance vector C. Every
-    %         element i of C contains variance of input i in TX
-    %
-    %
-    %         See also
-    %         GPCF_PPCS2_COV, GP_COV, GP_TRCOV
-    
+  %GP_PPCS2_TRVAR  Evaluate training variance vector
+  %
+  %  Description
+  %    C = GP_PPCS2_TRVAR(GPCF, TX) takes in covariance function of
+  %    a Gaussian process GPCF and matrix TX that contains training
+  %    inputs. Returns variance vector C. Every element i of C
+  %    contains variance of input i in TX
+  %
+  %  See also
+  %    GPCF_PPCS2_COV, GP_COV, GP_TRCOV
+
     [n, m] =size(x);
-    
-    C = ones(n,1)*gpcf.magnSigma2;
+
+    C = ones(n,1).*gpcf.magnSigma2;
     C(C<eps)=0;
   end
 
   function reccf = gpcf_ppcs2_recappend(reccf, ri, gpcf)
-    % RECAPPEND - Record append
-    %
-    %          Description
-    %          RECCF = GPCF_PPCS2_RECAPPEND(RECCF, RI, GPCF)
-    %          takes a covariance function record structure RECCF, record
-    %          index RI and covariance function structure GPCF with the
-    %          current MCMC samples of the hyperparameters. Returns
-    %          RECCF which contains all the old samples and the
-    %          current samples from GPCF .
-    %
-    %          See also
-    %          GP_MC and GP_MC -> RECAPPEND
-    
+  %RECAPPEND  Record append
+  %
+  %  Description
+  %    RECCF = GPCF_PPCS2_RECAPPEND(RECCF, RI, GPCF)
+  %    takes a covariance function record structure RECCF, record
+  %    index RI and covariance function structure GPCF with the
+  %    current MCMC samples of the hyperparameters. Returns
+  %    RECCF which contains all the old samples and the
+  %    current samples from GPCF .
+  %
+  %  See also
+  %    GP_MC and GP_MC -> RECAPPEND
+
   % Initialize record
     if nargin == 2
       reccf.type = 'gpcf_ppcs2';
@@ -1166,7 +1155,7 @@ function gpcf = gpcf_ppcs2(varargin)
       % Initialize parameters
       reccf.lengthScale= [];
       reccf.magnSigma2 = [];
-      
+
       % Set the function handles
       reccf.fh.pak = @gpcf_ppcs2_pak;
       reccf.fh.unpak = @gpcf_ppcs2_unpak;
@@ -1175,8 +1164,6 @@ function gpcf = gpcf_ppcs2(varargin)
       reccf.fh.cov = @gpcf_ppcs2_cov;
       reccf.fh.trcov  = @gpcf_ppcs2_trcov;
       reccf.fh.trvar  = @gpcf_ppcs2_trvar;
-      %  gpcf.fh.sampling = @hmc2;
-      %  reccf.sampling_opt = hmc2_opt;
       reccf.fh.recappend = @gpcf_ppcs2_recappend;  
       reccf.p=[];
       reccf.p.lengthScale=[];
@@ -1189,19 +1176,22 @@ function gpcf = gpcf_ppcs2(varargin)
       end
       return
     end
-    
+
     gpp = gpcf.p;
 
-    % record lengthScale
-    if ~isempty(gpcf.lengthScale)
-      reccf.lengthScale(ri,:)=gpcf.lengthScale;
-      reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
-    elseif ri==1
-      reccf.lengthScale=[];
+    if ~isfield(gpcf,'metric')
+      % record lengthScale
+      if ~isempty(gpcf.lengthScale)
+        reccf.lengthScale(ri,:)=gpcf.lengthScale;
+        reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+      elseif ri==1
+        reccf.lengthScale=[];
+      end
     end
     % record magnSigma2
     if ~isempty(gpcf.magnSigma2)
       reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
+      reccf.p.magnSigma2 = feval(gpp.magnSigma2.fh.recappend, reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
     elseif ri==1
       reccf.magnSigma2=[];
     end
