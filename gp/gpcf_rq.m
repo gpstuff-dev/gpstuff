@@ -613,7 +613,7 @@ function gpcf = gpcf_rq(varargin)
   end
 
   function C = gpcf_rq_cov(gpcf, x1, x2)
-   GP_RQ_COV  Evaluate covariance matrix between two input vectors.
+  % GP_RQ_COV  Evaluate covariance matrix between two input vectors.
   %
   %  Description         
   %    C = GP_RQ_COV(GP, TX, X) takes in covariance function of a
