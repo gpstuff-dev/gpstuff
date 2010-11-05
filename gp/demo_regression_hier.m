@@ -113,7 +113,7 @@ cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part
-cfs=gpcf_sexp('selectedVariables',1,'lengthScale_prior',prior_t());
+cfs=gpcf_sexp('selectedVariables',[1],'lengthScale_prior',prior_t());
 % construct GP
 gp=gp_set('cf',{cfc cfci cfl cfs},'noisef',{cfn},'jitterSigma2',1e-6);
 % optimize
@@ -217,3 +217,62 @@ subplot(3,3,9)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 3 with IA')
+
+%*** Missing Data Example ***
+% In the original paper (Gelfand et al, 1990) data was aslo to
+% demonstrate misiing data handling, by removing 1-4 weeks of data
+% for part of the rats. Handling missing data in this case is trivial
+% for GPs, too
+
+S = which('demo_regression_hier');
+L = strrep(S,'demo_regression_hier.m','demos/rats.mat');
+data=load(L);
+xx = data.x;
+yy = data.y;
+yymiss = data.ymiss;
+% Show data : 5 weight measurements per rat for 30 rats
+figure
+plot(xx,yymiss,'o-')
+axis([7 37 100 400])
+title('Data')
+% Reshape data
+ntime = size(xx,2);
+nrats = size(yy,1);
+% All y's to one vector
+y=yymiss(:);
+% Repeat x for each rat
+x=reshape(repmat(xx,nrats,1),ntime*nrats,1);
+% Add ratid
+x=[x repmat([1:nrats]',ntime,1)];
+% Now 'x' consist of the inputs (ratid,time) and 'y' of the output (weight). 
+% Normalize x and y
+[xn,xmean,xstd]=normdata(x);
+[yn,ymean,ystd]=normdata(y);
+% test x is the complete x
+xnt=xn;
+% remove missing data from the training data
+missi=isnan(y);
+yn(missi,:)=[];
+xn(missi,:)=[];
+
+% 10) neuralnetwork covariance, IA and missing data
+cfc=gpcf_constant('constSigma2',1);
+% own constant term for each rat
+cfci=gpcf_prod('cf',{cfc cc});
+% nonlinear part with neuralnetwork covariance
+cfnn=gpcf_neuralnetwork('selectedVariables',1);
+% nonlinear covariance term for each rat
+cfnni=gpcf_prod('cf',{cfnn cc});
+% construct GP
+gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn},'jitterSigma2',1e-6);
+% optimize
+gp=gp_optim(gp,xn,yn);
+% integrate over hyperparameters
+gps=gp_ia(gp,xn,yn);
+% predict and plot
+Ef=gp_pred(gps,xn,yn,xnt);
+Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
+Effc=Eff;Effc(isnan(y))=NaN;
+plot(xx,Effc,'bo-',xx,Eff,'bo--')
+axis([7 37 100 400])
+title('Non-linear hierarchical model 3 with IA and missing data')

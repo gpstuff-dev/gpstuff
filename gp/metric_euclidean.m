@@ -121,8 +121,8 @@ function metric = metric_euclidean(varargin)
   %   and their hyperparameters into a single row vector W and takes
   %   a logarithm of the covariance function parameters.
   %
-  %       w = [ log(gpcf.lengthScale(:))
-  %             (hyperparameters of gpcf.lengthScale)]'
+  %       w = [ log(metric.lengthScale(:))
+  %             (hyperparameters of metric.lengthScale)]'
   %	  
   %
   %	See also
@@ -242,9 +242,12 @@ function metric = metric_euclidean(varargin)
 
         dist  =  0;
         distc = cell(1,m);
+        s=1./metric.lengthScale.^2;
+        if m>numel(s)
+          s=repmat(s,1,m);
+        end
         % Compute the distances for each component set
         for i=1:m
-          s = 1./metric.lengthScale(i).^2;
           distc{i} = 0;
           for j = 1:length(components{i})
             if metric.deltadist(i)
@@ -253,17 +256,24 @@ function metric = metric_euclidean(varargin)
               distc{i} = distc{i} + bsxfun(@minus,x(:,components{i}(j)),x2(:,components{i}(j))').^2;
             end
           end
-          distc{i} = distc{i}.*s;
+          distc{i} = distc{i}.*s(i);
           % Accumulate to the total distance
           dist = dist + distc{i};
         end
         dist = sqrt(dist);
-        % Loop through component sets 
-        for i=1:m
-          D = -distc{i};
+        if length(metric.lengthScale) == 1
+          D = dist;
           D(dist~=0) = D(dist~=0)./dist(dist~=0);
           ii1 = ii1+1;
           gdist{ii1} = D;
+        else
+          % Loop through component sets
+          for i=1:m
+            D = -distc{i};
+            D(dist~=0) = D(dist~=0)./dist(dist~=0);
+            ii1 = ii1+1;
+            gdist{ii1} = D;
+          end
         end
   % $$$         elseif nargin == 3
   % $$$             if size(x,2) ~= size(x2,2)
@@ -316,13 +326,16 @@ function metric = metric_euclidean(varargin)
     m = length(components);
     dist  =  0;        
     
+    s=1./metric.lengthScale.^2;
+    if m>numel(s)
+      s=repmat(s,1,m);
+    end
     for i=1:m
-      s = 1./metric.lengthScale(i).^2;
       for j = 1:length(components{i})
         if metric.deltadist(i)
-          dist = dist + s.*double(bsxfun(@ne,x1(:,components{i}(j)),x2(:,components{i}(j))'));
+          dist = dist + s(i).*double(bsxfun(@ne,x1(:,components{i}(j)),x2(:,components{i}(j))'));
         else
-          dist = dist + s.*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
+          dist = dist + s(i).*bsxfun(@minus,x1(:,components{i}(j)),x2(:,components{i}(j))').^2;
         end
       end
     end
