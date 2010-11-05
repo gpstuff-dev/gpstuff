@@ -12,6 +12,6 @@ function h = hash_sha512(x)
     h=[];
   else
     md=java.security.MessageDigest.getInstance('SHA-512');
-    md.update(x(:));
+    md.update(typecast(x(:),'uint8'));
     h=md.digest;
   end
