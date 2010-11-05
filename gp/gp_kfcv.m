@@ -15,10 +15,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                    'MAP'      hyperparameters optimized to MAP (default)
 %                    'MCMC'     MCMC sampling using GP_MC
 %                    'IA'       integration approximation using GP_IA
-%                    'fixed'    hyperparameters are fixed in GP structure
-%                    'fixed-IA' integration approximation using fixed
-%                               hyperparameters in a GP array, produced,
-%                               for example, by GP_IA
+%                    'fixed'    hyperparameters are fixed, it either use MAP 
+%                               or integration approximation, depending if 
+%                               GP is a single GP structure or a GP array
+%                               (for example from GP_IA)
 %      optimf     - function handle for an optimization function, which is
 %                   assumed to have similar input and output arguments
 %                   as usual fmin*-functions. Default is @fminscg.
@@ -183,7 +183,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('inf_method', 'MAP', @(x) ...
-    ismember(x,{'MAP' 'MCMC' 'IA' 'fixed' 'fixed-IA'}))
+    ismember(x,{'MAP' 'MCMC' 'IA' 'fixed'}))
   ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
   ip.addParamValue('opt', struct(), @isstruct)
   ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
@@ -236,8 +236,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           fp=@gp_pred;
         case 'MCMC'
           fp=@mc_pred;
-        case {'IA' 'fixed-IA'}
-          fp=@ia_pred;
       end
     else
       switch inf_method
@@ -344,7 +342,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         gp = thin(gp,nburnin);
       case 'IA'
         gp = gp_ia(gp, xtr, ytr, options_tr, opt);
-      case {'fixed' 'fixed-IA'}
+      case 'fixed'
         % nothing to do here
     end
 
@@ -445,7 +443,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         gp = thin(gp,nburnin);
       case 'IA'
         gp = gp_ia(gp, x, y, options_tr, opt);
-      case {'fixed' 'fixed-IA'}
+      case 'fixed'
         % nothing to do here
     end
     cpu_time = cputime - cpu_time;
