@@ -236,6 +236,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           fp=@gp_pred;
         case 'MCMC'
           fp=@mc_pred;
+        case 'IA'
+          fp=@ia_pred;
       end
     else
       switch inf_method
@@ -252,6 +254,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           end
         case 'MCMC'
           fp=@mc_pred;
+        case 'IA'
+          fp=@ia_pred;
       end
     end
   end
