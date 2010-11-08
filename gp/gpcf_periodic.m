@@ -183,7 +183,7 @@ function gpcf = gpcf_periodic(varargin)
     end
     
 
-    function w = gpcf_periodic_pak(gpcf)
+    function [w, s] = gpcf_periodic_pak(gpcf)
     %GPCF_PERIODIC_PAK   Combine GP covariance function hyper-parameters into one vector.
     %
     %  Description
@@ -210,37 +210,47 @@ function gpcf = gpcf_periodic(varargin)
            error('Periodic covariance function not compatible with metrics.');
         else
             i1=0;i2=1;
-            ww = []; w = [];
+            w = []; s = {};
             
             if ~isempty(gpcf.p.magnSigma2)
-                i1 = i1+1;
-                w(i1) = log(gpcf.magnSigma2);
+                w = [w log(gpcf.magnSigma2)];
+                s = [s; 'log(periodic.magnSigma2)'];
                 
                 % Hyperparameters of magnSigma2
-                ww = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
+                [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
+                w = [w wh];
+                s = [s; sh];
             end
             
             if ~isempty(gpcf.p.lengthScale)
                 w = [w log(gpcf.lengthScale)];
+                s = [s; 'log(periodic.lengthScale)'];
                             
                 % Hyperparameters of lengthScale
-                ww = [ww feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
+                [wh  sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale);
+                w = [w wh];
+                s = [s; sh];
             end
             
             if ~isempty(gpcf.p.lengthScale_sexp)  && gpcf.decay == 1
                 w = [w log(gpcf.lengthScale_sexp)];
+                s = [s; 'log(periodic.lengthScale_sexp)'];
                             
                 % Hyperparameters of lengthScale_sexp
-                ww = [ww feval(gpcf.p.lengthScale_sexp.fh.pak, gpcf.p.lengthScale_sexp)];
+                [wh sh] = feval(gpcf.p.lengthScale_sexp.fh.pak, gpcf.p.lengthScale_sexp);
+                w = [w wh];
+                s = [s; sh];
             end
             
             if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
                 w = [w log(gpcf.period)];
+                s = [s; 'log(periodic.period)'];
                 
                 % Hyperparameters of period
-                ww = [ww feval(gpcf.p.period.fh.pak, gpcf.p.period)];
+                [wh sh] = feval(gpcf.p.period.fh.pak, gpcf.p.period);
+                w = [w wh];
+                s = [s; sh];
             end
-            w = [w ww];
         end
     end
 

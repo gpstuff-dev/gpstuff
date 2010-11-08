@@ -119,7 +119,7 @@ function gpcf = gpcf_linear(varargin)
     end
     
 
-    function w = gpcf_linear_pak(gpcf, w)
+    function [w,s] = gpcf_linear_pak(gpcf, w)
     %GPCF_LINEAR_PAK     Combine GP covariance function hyper-parameters into one vector.
     %
     %   Description
@@ -135,12 +135,18 @@ function gpcf = gpcf_linear(varargin)
     %  See also
     %   GPCF_LINEAR_UNPAK
         
-        w = [];
+        w = []; s = {};
         if ~isempty(gpcf.p.coeffSigma2)
             w = log(gpcf.coeffSigma2);
-            
+            if numel(gpcf.coeffSigma2)>1
+              s = [s; sprintf('log(linear.coeffSigma2 x %d)',numel(gpcf.coeffSigma2))];
+            else
+              s = [s; 'log(linear.coeffSigma2)'];
+            end
             % Hyperparameters of coeffSigma2
-            w = [w feval(gpcf.p.coeffSigma2.fh.pak, gpcf.p.coeffSigma2)];
+            [wh sh] = feval(gpcf.p.coeffSigma2.fh.pak, gpcf.p.coeffSigma2);
+            w = [w wh];
+            s = [s; sh];
         end
     end
 

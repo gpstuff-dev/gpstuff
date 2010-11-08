@@ -105,7 +105,7 @@ function gpcf = gpcf_noise(varargin)
     end
 
 
-    function w = gpcf_noise_pak(gpcf)
+    function [w s] = gpcf_noise_pak(gpcf)
     %GPCF_NOISE_PAK      Combine GP covariance function hyper-parameters into one vector.
     %
     %  Description
@@ -122,12 +122,14 @@ function gpcf = gpcf_noise(varargin)
     %   GPCF_NOISE_UNPAK
 
 
-        w = [];    
+        w = []; s = {};
         if ~isempty(gpcf.p.noiseSigma2)
             w(1) = log(gpcf.noiseSigma2);
-            
+            s = [s 'log(noise.noiseSigma2)'];
             % Hyperparameters of noiseSigma2
-            w = [w feval(gpcf.p.noiseSigma2.fh.pak, gpcf.p.noiseSigma2)];
+            [wh sh] = feval(gpcf.p.noiseSigma2.fh.pak, gpcf.p.noiseSigma2);
+            w = [w wh];
+            s = [s sh];
         end    
 
     end

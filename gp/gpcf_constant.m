@@ -101,7 +101,7 @@ function gpcf = gpcf_constant(varargin)
             end
     end
 
-    function w = gpcf_constant_pak(gpcf, w)
+    function [w,s] = gpcf_constant_pak(gpcf, w)
     %GPCF_CONSTANT_PAK   Combine GP covariance function hyper-parameters into one vector.
     %
     %   Description
@@ -117,13 +117,15 @@ function gpcf = gpcf_constant(varargin)
     %  See also
     %   GPCF_CONSTANT_UNPAK
                 
-        w = [];
+        w = []; s = {};
         
         if ~isempty(gpcf.p.constSigma2)
             w = log(gpcf.constSigma2);
-            
+            s = [s 'log(constant.constSigma2)'];
             % Hyperparameters of constSigma2
-            w = [w feval(gpcf.p.constSigma2.fh.pak, gpcf.p.constSigma2)];
+            [wh sh] = feval(gpcf.p.constSigma2.fh.pak, gpcf.p.constSigma2);
+            w = [w wh];
+            s = [s sh];
         end        
      end
 

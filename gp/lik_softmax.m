@@ -68,7 +68,7 @@ function lik = lik_softmax(varargin)
   end
 
 
-  function w = lik_softmax_pak(lik)
+  function [w,s] = lik_softmax_pak(lik)
   %LIK_LOGIT_PAK    Combine likelihood parameters into one vector.
   %
   %   Description 
@@ -81,7 +81,7 @@ function lik = lik_softmax(varargin)
   %   See also
   %   LIK_NEGBIN_UNPAK, GP_PAK
     
-    w = [];
+    w = []; s = {};
   end
 
 

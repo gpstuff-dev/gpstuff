@@ -73,7 +73,7 @@ function lik = lik_probit(varargin)
 
   end
 
-  function w = lik_probit_pak(lik)
+  function [w,s] = lik_probit_pak(lik)
   %LIK_PROBIT_PAK    Combine likelihood parameters into one vector.
   %
   %     Description 
@@ -86,7 +86,7 @@ function lik = lik_probit(varargin)
   %     See also
   %     LIK_NEGBIN_UNPAK, GP_PAK
 
-    w = [];
+    w = []; s = {};
   end
 
 

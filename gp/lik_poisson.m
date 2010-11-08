@@ -79,7 +79,7 @@ function lik = lik_poisson(varargin)
   end
 
   
-  function w = lik_poisson_pak(lik)
+  function [w,s] = lik_poisson_pak(lik)
   %LIK_POISSON_PAK    Combine likelihood parameters into one vector.
   %
   %   Description 
@@ -92,7 +92,7 @@ function lik = lik_poisson(varargin)
   %   See also
   %   LIK_NEGBIN_UNPAK, GP_PAK
 
-    w = [];
+    w = []; s = {};
   end
 
 

@@ -190,7 +190,7 @@ function gpcf = gpcf_ppcs2(varargin)
     end
   end
   
-  function w = gpcf_ppcs2_pak(gpcf)
+  function [w,s] = gpcf_ppcs2_pak(gpcf)
   %GPCF_PPCS2_PAK  Combine GP covariance function hyper-parameters into
   %               one vector.
   %
@@ -209,21 +209,33 @@ function gpcf = gpcf_ppcs2(varargin)
   %  See also
   %    GPCF_PPCS2_UNPAK
 
-    w = [];
+    w = []; s = {};
     
     if ~isempty(gpcf.p.magnSigma2)
       w = [w log(gpcf.magnSigma2)];
+      s = [s; 'log(ppcs2.magnSigma2)'];
       % Hyperparameters of magnSigma2
-      w = [w feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2)];
+      [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
+      w = [w wh];
+      s = [s; sh];
     end        
 
     if isfield(gpcf,'metric')
-      w = [w feval(gpcf.metric.fh.pak, gpcf.metric)];
+      [wh sh]=feval(gpcf.metric.fh.pak, gpcf.metric);
+      w = [w wh];
+      s = [s; sh];
     else
       if ~isempty(gpcf.p.lengthScale)
         w = [w log(gpcf.lengthScale)];
+        if numel(gpcf.lengthScale)>1
+          s = [s; sprintf('log(ppcs2.lengthScale x %d)',numel(gpcf.lengthScale))];
+        else
+          s = [s; 'log(ppcs2.lengthScale)'];
+        end
         % Hyperparameters of lengthScale
-        w = [w feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
+        [wh  sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale);
+        w = [w wh];
+        s = [s; sh];
       end
     end
 

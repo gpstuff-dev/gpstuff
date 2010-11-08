@@ -67,7 +67,7 @@ function gpcf = gpcf_cat(varargin)
     gpcf.fh.recappend = @gpcf_cat_recappend;
   end
 
-  function w = gpcf_cat_pak(gpcf, w)
+  function [w,s] = gpcf_cat_pak(gpcf, w)
   %GPCF_CAT_PAK  Combine GP covariance function hyper-parameters into
   %              one vector.
   %
@@ -83,7 +83,7 @@ function gpcf = gpcf_cat(varargin)
   %  See also
   %    GPCF_CAT_UNPAK
     
-    w = [];
+    w = []; s = {};
   end
 
   function [gpcf, w] = gpcf_cat_unpak(gpcf, w)

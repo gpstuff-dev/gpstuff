@@ -141,7 +141,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
     end
 
 
-    function w = gpcf_neuralnetwork_pak(gpcf, w)
+    function [w, s] = gpcf_neuralnetwork_pak(gpcf, w)
     %GPCF_NEURALNETWORK_PAK      Combine GP covariance function hyper-parameters into one vector.
     %
     %  Description
@@ -160,23 +160,32 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %   GPCF_NEURALNETWORK_UNPAK
 
         i1=0;i2=1;
-        ww = []; w = [];
+        w = []; s = {};
         
         if ~isempty(gpcf.p.biasSigma2)
-            i1 = i1+1;
-            w(i1) = log(gpcf.biasSigma2);
+            w = [w log(gpcf.biasSigma2)];
+            s = [s; 'log(neuralnetwork.biasSigma2)'];
             
             % Hyperparameters of magnSigma2
-            ww = feval(gpcf.p.biasSigma2.fh.pak, gpcf.p.biasSigma2);
+            [wh sh] = feval(gpcf.p.biasSigma2.fh.pak, gpcf.p.biasSigma2);
+            w = [w wh];
+            s = [s; sh];
         end        
         
         if ~isempty(gpcf.p.weightSigma2)
             w = [w log(gpcf.weightSigma2)];
+            if numel(gpcf.weightSigma2)>1
+              s = [s; sprintf('log(neuralnetwork.weightSigma2 x %d)',numel(gpcf.lengthScale))];
+            else
+              s = [s; 'log(neuralnetwork.weightSigma2)'];
+            end
             
             % Hyperparameters of lengthScale
-            w = [w feval(gpcf.p.weightSigma2.fh.pak, gpcf.p.weightSigma2)];
+            [wh sh] = feval(gpcf.p.weightSigma2.fh.pak, gpcf.p.weightSigma2);
+            w = [w wh];
+            s = [s; sh];
         end
-        w = [w ww];
+
     end
     
 

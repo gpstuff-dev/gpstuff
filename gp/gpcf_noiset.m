@@ -217,8 +217,8 @@ function gpcf = gpcf_noiset(varargin)
     end
 
 
-    function w = gpcf_noiset_pak(gpcf)
-        w = [];
+    function [w,s] = gpcf_noiset_pak(gpcf)
+        w = []; s = {};
     end
 
 

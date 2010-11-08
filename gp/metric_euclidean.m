@@ -112,7 +112,7 @@ function metric = metric_euclidean(varargin)
     metric.fh.recappend  = @metric_euclidean_recappend;
   end
   
-  function w = metric_euclidean_pak(metric)
+  function [w s] = metric_euclidean_pak(metric)
   %METRIC_EUCLIDEAN_PAK	 Combine GP covariance function hyper-parameters into one vector.
   %
   %	Description
@@ -129,14 +129,16 @@ function metric = metric_euclidean(varargin)
   %	GPCF_SEXP_UNPAK
     
     
+    w = []; s = {};
     if ~isempty(metric.p.lengthScale)
       w = log(metric.lengthScale);
-      
+      s = [s; {'log(metric.lengthScale)'}];
       % Hyperparameters of lengthScale
-      w = [w feval(metric.p.lengthScale.fh.pak, metric.p.lengthScale)];
-    else
-      w = [];
+      [wh sh] = feval(metric.p.lengthScale.fh.pak, metric.p.lengthScale);
+      w = [w wh];
+      s = [s; sh];
     end
+    
   end
 
   function [metric, w] = metric_euclidean_unpak(metric, w)

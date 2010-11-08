@@ -1,4 +1,4 @@
-function w = gp_pak(gp, param)
+function [w, s] = gp_pak(gp, param)
 %GP_PAK  Combine GP hyper-parameters into one vector
 %
 %  Description
@@ -42,7 +42,7 @@ function w = gp_pak(gp, param)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  w = [];
+  w = []; s = {};
 
   if isfield(gp,'etr') && length(gp.etr) > 1
     if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
@@ -52,7 +52,7 @@ function w = gp_pak(gp, param)
     ns = length(gp.etr);
     for i1 = 1:ns
       Gp = take_nth(gp,i1);
-      w(i1,:) = gp_pak(Gp);
+      [w(i1,:) s] = gp_pak(Gp);
     end
   else
     
@@ -66,14 +66,18 @@ function w = gp_pak(gp, param)
       
       for i=1:ncf
         gpcf = gp.cf{i};
-        w = [w feval(gpcf.fh.pak, gpcf)];
+        [wi, si] = feval(gpcf.fh.pak, gpcf);
+        w = [w wi];
+        s = [s; si];
       end
       
       if isfield(gp, 'noisef')
         nn = length(gp.noisef);
         for i=1:nn
           noisef = gp.noisef{i};
-          w = [w feval(noisef.fh.pak, noisef)];
+          [wi si] = feval(noisef.fh.pak, noisef);
+          w = [w wi];
+          s = [s; si];
         end
       end
     end
@@ -81,7 +85,9 @@ function w = gp_pak(gp, param)
     % Pack the hyperparameters of likelihood function
     if ~isempty(strfind(param, 'likelihood'))
       if isstruct(gp.lik)
-        w = [w feval(gp.lik.fh.pak, gp.lik)];
+        [wi si] = feval(gp.lik.fh.pak, gp.lik);
+        w = [w wi];
+        s = [s; si];
       end
     end
     
@@ -89,6 +95,7 @@ function w = gp_pak(gp, param)
     if ~isempty(strfind(param, 'inducing'))
       if isfield(gp,'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
         w = [w gp.X_u(:)'];
+        s = [s; sprintf('inducing x %d',numel(gp.X_u))];
       end
     end
     

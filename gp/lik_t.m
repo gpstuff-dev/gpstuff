@@ -130,27 +130,35 @@ function lik = lik_t(varargin)
   end
   
   
-  function w = lik_t_pak(lik)
+  function [w, s] = lik_t_pak(lik)
   %LIK_T_PAK  Combine likelihood parameters into one vector.
   %
-  %   Description 
-  %   W = LIK_T_PAK(LIK) takes a
-  %   likelihood data structure LIK and combines the parameters
-  %   into a single row vector W.
+  %  Description 
+  %    W = LIK_T_PAK(LIK) takes a likelihood data structure LIK and
+  %    combines the parameters into a single row vector W.
   %     
+  %       w = [ log(lik.sigma2)
+  %             (hyperparameters of lik.sigma2)
+  %             log(log(lik.nu))
+  %             (hyperparameters of lik.nu)]'
   %
-  %   See also
-  %   LIK_T_UNPAK, GP_PAK
+  %  See also
+  %    LIK_T_UNPAK, GP_PAK
     
-    w = [];
-    i1 = 0;
+    w = []; s = {};
     if ~isempty(lik.p.sigma2)
-      i1 = 1;
-      w(i1) = log(lik.sigma2);
+      w = [w log(lik.sigma2)];
+      s = [s; 'log(lik.sigma2)'];
+      [wh sh] = feval(lik.p.sigma2.fh.pak, lik.p.sigma2);
+      w = [w wh];
+      s = [s; sh];
     end
     if ~isempty(lik.p.nu)
-      i1 = i1+1;
-      w(i1) = log(log(lik.nu));
+      w = [w log(log(lik.nu))];
+      s = [s; 'loglog(lik.nu)'];
+      [wh sh] = feval(lik.p.nu.fh.pak, lik.p.nu);
+      w = [w wh];
+      s = [s; sh];
     end        
   end
 
@@ -158,11 +166,16 @@ function lik = lik_t(varargin)
   function [lik, w] = lik_t_unpak(w, lik)
   %LIK_T_UNPAK  Extract likelihood parameters from the vector.
   %
-  %   Description
-  %   W = LIK_T_UNPAK(W, LIK) takes a likelihood data
-  %   structure LIK and extracts the parameters from the vector W
-  %   to the LIK structure.
+  %  Description
+  %    W = LIK_T_UNPAK(W, LIK) takes a likelihood data structure
+  %    LIK and extracts the parameters from the vector W to the LIK
+  %    structure.
   %     
+  %    Assignment is inverse of  
+  %       w = [ log(lik.sigma2)
+  %             (hyperparameters of lik.sigma2)
+  %             log(log(lik.nu))
+  %             (hyperparameters of lik.nu)]'
   %
   %   See also
   %   LIK_T_PAK, GP_UNPAK
@@ -171,10 +184,16 @@ function lik = lik_t(varargin)
     if ~isempty(lik.p.sigma2)
       i1 = 1;
       lik.sigma2 = exp(w(i1));
+      w = w(2:end);
+      [p, w] = feval(lik.p.sigma2.fh.unpak, lik.p.sigma2, w);
+      lik.p.sigma2 = p;
     end
     if ~isempty(lik.p.nu) 
       i1 = i1+1;
       lik.nu = exp(exp(w(i1)));
+      w = w(2:end);
+      [p, w] = feval(lik.p.nu.fh.unpak, lik.p.nu, w);
+      lik.p.nu = p;
     end
   end
 

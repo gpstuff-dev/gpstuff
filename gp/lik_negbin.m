@@ -123,7 +123,7 @@ function lik = lik_negbin(varargin)
       end
   end
 
-  function w = lik_negbin_pak(lik)
+  function [w,s] = lik_negbin_pak(lik)
   %LIK_NEGBIN_PAK  Combine likelihood parameters into one vector.
   %
   %   Description 
@@ -136,9 +136,13 @@ function lik = lik_negbin(varargin)
   %   See also
   %   LIK_NEGBIN_UNPAK, GP_PAK
     
-    w=[];
+    w=[];s={};
     if ~isempty(lik.p.disper)
       w = log(lik.disper);
+      s = [s; 'negbin.disper'];
+      [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
+      w = [w wh];
+      s = [s; sh];
     end
   end
 
@@ -158,9 +162,10 @@ function lik = lik_negbin(varargin)
   %   LIK_NEGBIN_PAK, GP_UNPAK
 
     if ~isempty(lik.p.disper)
-      i1=1;
-      lik.disper = exp(w(i1));
-      w = w(i1+1:end);
+      lik.disper = exp(w(1));
+      w = w(2:end);
+      [p, w] = feval(lik.p.disper.fh.unpak, lik.p.disper, w);
+      lik.p.disper = p;
     end
   end
 

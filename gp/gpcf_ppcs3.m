@@ -62,7 +62,7 @@ function gpcf = gpcf_ppcs3(varargin)
   end
   
   ip=inputParser;
-  ip.FunctionName = 'GPCF_PPCS2';
+  ip.FunctionName = 'GPCF_PPCS3';
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
@@ -81,33 +81,33 @@ function gpcf = gpcf_ppcs3(varargin)
   if isempty(gpcf)
     % Check that SuiteSparse is available
     if ~exist('ldlchol')
-      error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs2 cannot be used!')
+      error('SuiteSparse is not installed (or it is not in the path). gpcf_ppcs3 cannot be used!')
     end
     init=true;
     gpcf.nin=ip.Results.nin;
     if isempty(gpcf.nin)
-      error('nin has to be given for ppcs: gpcf_ppcs2(''nin'',NIN,...)')
+      error('nin has to be given for ppcs: gpcf_ppcs3(''nin'',NIN,...)')
     end
-    gpcf.type = 'gpcf_ppcs2';
+    gpcf.type = 'gpcf_ppcs3';
     % cf is compactly supported
     gpcf.cs = 1;
   else
-    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_ppcs2')
+    if ~isfield(gpcf,'type') && ~isequal(gpcf.type,'gpcf_ppcs3')
       error('First argument does not seem to be a valid covariance function structure')
     end
     init=false;
   end
   if init
     % Set the function handles to the nested functions
-    gpcf.fh.pak = @gpcf_ppcs2_pak;
-    gpcf.fh.unpak = @gpcf_ppcs2_unpak;
-    gpcf.fh.e = @gpcf_ppcs2_e;
-    gpcf.fh.ghyper = @gpcf_ppcs2_ghyper;
-    gpcf.fh.ginput = @gpcf_ppcs2_ginput;
-    gpcf.fh.cov = @gpcf_ppcs2_cov;
-    gpcf.fh.trcov  = @gpcf_ppcs2_trcov;
-    gpcf.fh.trvar  = @gpcf_ppcs2_trvar;
-    gpcf.fh.recappend = @gpcf_ppcs2_recappend;
+    gpcf.fh.pak = @gpcf_ppcs3_pak;
+    gpcf.fh.unpak = @gpcf_ppcs3_unpak;
+    gpcf.fh.e = @gpcf_ppcs3_e;
+    gpcf.fh.ghyper = @gpcf_ppcs3_ghyper;
+    gpcf.fh.ginput = @gpcf_ppcs3_ginput;
+    gpcf.fh.cov = @gpcf_ppcs3_cov;
+    gpcf.fh.trcov  = @gpcf_ppcs3_trcov;
+    gpcf.fh.trvar  = @gpcf_ppcs3_trvar;
+    gpcf.fh.recappend = @gpcf_ppcs3_recappend;
   end
 
   % Initialize parameters
@@ -191,12 +191,12 @@ function gpcf = gpcf_ppcs3(varargin)
     end
   end
   
-  function w = gpcf_ppcs2_pak(gpcf)
-  %GPCF_PPCS2_PAK  Combine GP covariance function hyper-parameters into
+  function [w,s] = gpcf_ppcs3_pak(gpcf)
+  %GPCF_PPCS3_PAK  Combine GP covariance function hyper-parameters into
   %               one vector.
   %
   %  Description
-  %    W = GPCF_PPCS2_PAK(GPCF) takes a covariance function data
+  %    W = GPCF_PPCS3_PAK(GPCF) takes a covariance function data
   %    structure GPCF and combines the covariance function
   %    parameters and their hyperparameters into a single row
   %    vector W and takes a logarithm of the covariance function
@@ -208,34 +208,46 @@ function gpcf = gpcf_ppcs3(varargin)
   %             (hyperparameters of gpcf.lengthScale)]'
   %
   %  See also
-  %    GPCF_PPCS2_UNPAK
+  %    GPCF_PPCS3_UNPAK
 
-    w = [];
+    w = []; s = {};
     
     if ~isempty(gpcf.p.magnSigma2)
       w = [w log(gpcf.magnSigma2)];
+      s = [s; 'log(ppcs3.magnSigma2)'];
       % Hyperparameters of magnSigma2
-      w = [w feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2)];
+      [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
+      w = [w wh];
+      s = [s; sh];
     end        
 
     if isfield(gpcf,'metric')
-      w = [w feval(gpcf.metric.fh.pak, gpcf.metric)];
+      [wh sh]=feval(gpcf.metric.fh.pak, gpcf.metric);
+      w = [w wh];
+      s = [s; sh];
     else
       if ~isempty(gpcf.p.lengthScale)
         w = [w log(gpcf.lengthScale)];
+        if numel(gpcf.lengthScale)>1
+          s = [s; sprintf('log(ppcs3.lengthScale x %d)',numel(gpcf.lengthScale))];
+        else
+          s = [s; 'log(ppcs3.lengthScale)'];
+        end
         % Hyperparameters of lengthScale
-        w = [w feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
+        [wh  sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale);
+        w = [w wh];
+        s = [s; sh];
       end
     end
 
   end
 
-  function [gpcf, w] = gpcf_ppcs2_unpak(gpcf, w)
-  %GPCF_PPCS2_UNPAK  Sets the covariance function parameters into
+  function [gpcf, w] = gpcf_ppcs3_unpak(gpcf, w)
+  %GPCF_PPCS3_UNPAK  Sets the covariance function parameters into
   %                 the structure
   %
   %  Description
-  %    [GPCF, W] = GPCF_PPCS2_UNPAK(GPCF, W) takes a covariance
+  %    [GPCF, W] = GPCF_PPCS3_UNPAK(GPCF, W) takes a covariance
   %    function data structure GPCF and a hyper-parameter vector W,
   %    and returns a covariance function data structure identical
   %    to the input, except that the covariance hyper-parameters
@@ -249,7 +261,7 @@ function gpcf = gpcf_ppcs3(varargin)
   %             (hyperparameters of gpcf.lengthScale)]'
   %
   %  See also
-  %    GPCF_PPCS2_PAK
+  %    GPCF_PPCS3_PAK
 
     gpp=gpcf.p;
     if ~isempty(gpp.magnSigma2)
@@ -277,14 +289,14 @@ function gpcf = gpcf_ppcs3(varargin)
     
   end
 
-  function eprior =gpcf_ppcs2_e(gpcf, x, t)
-  %GPCF_PPCS2_E  Evaluate the energy of prior of PPCS2 parameters
+  function eprior =gpcf_ppcs3_e(gpcf, x, t)
+  %GPCF_PPCS3_E  Evaluate the energy of prior of PPCS3 parameters
   %
   %  Description
-  %    E = GPCF_PPCS2_E(GPCF, X, T) takes a covariance function data
+  %    E = GPCF_PPCS3_E(GPCF, X, T) takes a covariance function data
   %    structure GPCF together with a matrix X of input vectors and
   %    a vector T of target vectors and evaluates log p(th) x J,
-  %    where th is a vector of PPCS2 parameters and J is the
+  %    where th is a vector of PPCS3 parameters and J is the
   %    Jacobian of transformation exp(w) = th. (Note that the
   %    parameters are log transformed, when packed.)
   %
@@ -293,7 +305,7 @@ function gpcf = gpcf_ppcs3(varargin)
   %    defined.
   %
   %  See also
-  %    GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_G, GP_E
+  %    GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_G, GP_E
 
   % Evaluate the prior contribution to the error. The parameters that
   % are sampled are transformed, e.g., W = log(w) where w is all
@@ -318,26 +330,26 @@ function gpcf = gpcf_ppcs3(varargin)
     end
   end
 
-  function [DKff, gprior]  = gpcf_ppcs2_ghyper(gpcf, x, x2, mask)
-  %GPCF_PPCS2_GHYPER  Evaluate gradient of covariance function and
+  function [DKff, gprior]  = gpcf_ppcs3_ghyper(gpcf, x, x2, mask)
+  %GPCF_PPCS3_GHYPER  Evaluate gradient of covariance function and
   %                  hyper-prior with respect to the hyperparameters.
   %
   %  Description
-  %    [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X) takes a
+  %    [DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X) takes a
   %    covariance function data structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
   %    vector of hyperparameters
   %
-  %    [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X, X2) takes a
+  %    [DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X, X2) takes a
   %    covariance function data structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X2) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
   %    vector of hyperparameters
   %
-  %    [DKff, GPRIOR] = GPCF_PPCS2_GHYPER(GPCF, X, [], MASK) takes a
+  %    [DKff, GPRIOR] = GPCF_PPCS3_GHYPER(GPCF, X, [], MASK) takes a
   %    covariance function data structure GPCF, a matrix X of input
   %    vectors and returns DKff, the diagonal of gradients of
   %    covariance matrix Kff = k(X,X2) with respect to th (cell
@@ -346,7 +358,7 @@ function gpcf = gpcf_ppcs3(varargin)
   %    for example with FIC sparse approximation.
   %
   %  See also
-  %   GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_E, GP_G
+  %   GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_E, GP_G
 
     gpp=gpcf.p;
     [n, m] =size(x);
@@ -686,23 +698,23 @@ function gpcf = gpcf_ppcs3(varargin)
     end
   end
   
-  function DKff  = gpcf_ppcs2_ginput(gpcf, x, x2)
-  %GPCF_PPCS2_GINPUT  Evaluate gradient of covariance function with 
+  function DKff  = gpcf_ppcs3_ginput(gpcf, x, x2)
+  %GPCF_PPCS3_GINPUT  Evaluate gradient of covariance function with 
   %                   respect to x.
   %
   %  Description
-  %    DKff = GPCF_PPCS2_GHYPER(GPCF, X) takes a covariance
+  %    DKff = GPCF_PPCS3_GHYPER(GPCF, X) takes a covariance
   %    function data structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X) with respect to X (cell array with matrix elements)
   %
-  %    DKff = GPCF_PPCS2_GHYPER(GPCF, X, X2) takes a covariance
+  %    DKff = GPCF_PPCS3_GHYPER(GPCF, X, X2) takes a covariance
   %    function data structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
   %
   %  See also
-  %    GPCF_PPCS2_PAK, GPCF_PPCS2_UNPAK, GPCF_PPCS2_E, GP_G
+  %    GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_E, GP_G
 
     [n, m] =size(x);
     ii1=0;
@@ -925,18 +937,18 @@ function gpcf = gpcf_ppcs3(varargin)
   end
   
   
-  function C = gpcf_ppcs2_cov(gpcf, x1, x2, varargin)
-  %GP_PPCS2_COV  Evaluate covariance matrix between two input vectors.
+  function C = gpcf_ppcs3_cov(gpcf, x1, x2, varargin)
+  %GP_PPCS3_COV  Evaluate covariance matrix between two input vectors.
   %
   %  Description         
-  %    C = GP_PPCS2_COV(GP, TX, X) takes in covariance function of
+  %    C = GP_PPCS3_COV(GP, TX, X) takes in covariance function of
   %    a Gaussian process GP and two matrixes TX and X that contain
   %    input vectors to GP. Returns covariance matrix C. Every
   %    element ij of C contains covariance between inputs i in TX
   %    and j in X.
   %
   %  See also
-  %    GPCF_PPCS2_TRCOV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
+  %    GPCF_PPCS3_TRCOV, GPCF_PPCS3_TRVAR, GP_COV, GP_TRCOV
 
     if isfield(gpcf,'metric')
       % If other than scaled euclidean metric
@@ -1037,17 +1049,17 @@ function gpcf = gpcf_ppcs3(varargin)
     end
   end
 
-  function C = gpcf_ppcs2_trcov(gpcf, x)
-  %GP_PPCS2_TRCOV  Evaluate training covariance matrix of inputs.
+  function C = gpcf_ppcs3_trcov(gpcf, x)
+  %GP_PPCS3_TRCOV  Evaluate training covariance matrix of inputs.
   %
   %  Description
-  %    C = GP_PPCS2_TRCOV(GP, TX) takes in covariance function of a
+  %    C = GP_PPCS3_TRCOV(GP, TX) takes in covariance function of a
   %    Gaussian process GP and matrix TX that contains training
   %    input vectors. Returns covariance matrix C. Every element ij
   %    of C contains covariance between inputs i and j in TX
   %
   %  See also
-  %    GPCF_PPCS2_COV, GPCF_PPCS2_TRVAR, GP_COV, GP_TRCOV
+  %    GPCF_PPCS3_COV, GPCF_PPCS3_TRVAR, GP_COV, GP_TRCOV
 
     if isfield(gpcf,'metric')
       % If other than scaled euclidean metric
@@ -1151,17 +1163,17 @@ function gpcf = gpcf_ppcs3(varargin)
     end
   end
 
-  function C = gpcf_ppcs2_trvar(gpcf, x)
-  %GP_PPCS2_TRVAR  Evaluate training variance vector
+  function C = gpcf_ppcs3_trvar(gpcf, x)
+  %GP_PPCS3_TRVAR  Evaluate training variance vector
   %
   %  Description
-  %    C = GP_PPCS2_TRVAR(GPCF, TX) takes in covariance function of
+  %    C = GP_PPCS3_TRVAR(GPCF, TX) takes in covariance function of
   %    a Gaussian process GPCF and matrix TX that contains training
   %    inputs. Returns variance vector C. Every element i of C
   %    contains variance of input i in TX
   %
   %  See also
-  %    GPCF_PPCS2_COV, GP_COV, GP_TRCOV
+  %    GPCF_PPCS3_COV, GP_COV, GP_TRCOV
 
     [n, m] =size(x);
 
@@ -1169,11 +1181,11 @@ function gpcf = gpcf_ppcs3(varargin)
     C(C<eps)=0;
   end
 
-  function reccf = gpcf_ppcs2_recappend(reccf, ri, gpcf)
+  function reccf = gpcf_ppcs3_recappend(reccf, ri, gpcf)
   %RECAPPEND  Record append
   %
   %  Description
-  %    RECCF = GPCF_PPCS2_RECAPPEND(RECCF, RI, GPCF)
+  %    RECCF = GPCF_PPCS3_RECAPPEND(RECCF, RI, GPCF)
   %    takes a covariance function record structure RECCF, record
   %    index RI and covariance function structure GPCF with the
   %    current MCMC samples of the hyperparameters. Returns
