@@ -1,4 +1,3 @@
-function demo_multiclass
 %DEMO_MULTICLASS  Classification problem demonstration for 3 classes
 %                 using Gaussian process prior
 %
@@ -35,7 +34,7 @@ function demo_multiclass
 %    Laplace approximation.
 %
 
-% Copyright (c) 2010 Jaakko Riihimäki, Jarno Vanhatalo, Aki Vehtari
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -62,11 +61,12 @@ y=y(1:400,:);
 % Create covariance functions
 gpcf1 = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1);
 % Set the prior for the parameters of covariance functions
-pl = prior_logunif();
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl);
+pl = prior_t('s2',10,'nu',10);
+pm = prior_sqrtt('s2',10,'nu',10);
+gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm);
 
 % Create the GP data structure
-gp = gp_set('lik', lik_softmax, 'cf', {gpcf1}, 'jitterSigma2', 1e-6);
+gp = gp_set('lik', lik_softmax, 'cf', {gpcf1}, 'jitterSigma2', 1e-2);
 
 % ------- Laplace approximation --------
 
@@ -74,7 +74,7 @@ gp = gp_set('lik', lik_softmax, 'cf', {gpcf1}, 'jitterSigma2', 1e-6);
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-2,'TolX',1e-3,'Display','iter','MaxIter',100);
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
@@ -90,7 +90,7 @@ xtg1 = meshgrid(linspace(min(x(:,1))-.1, max(x(:,1))+.1, 30));
 xtg2 = meshgrid(linspace(min(x(:,2))-.1, max(x(:,2))+.1, 30))';
 xtg=[xtg1(:) xtg2(:) repmat(mean(x(:,3:4)), size(xtg1(:),1),1)];
 
-[Eft, Covft, ~, ~, pg] = la_softmax_pred(gp, x, y, xtg);
+[Eft, Covft, ~, ~, pg] = gp_pred(gp, x, y, xtg);
 
 % plot the train data o=0, x=1
 figure, set(gcf, 'color', 'w'), hold on
