@@ -85,6 +85,7 @@ while (j <= niters)
   Delta = 2*(fnew - fold)/(alpha*mu);
   if (Delta  >= 0)
     success = 1;
+    nsuccess = nsuccess + 1;
     x = xnew;
     fnow = fnew;
   else

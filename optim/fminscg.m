@@ -149,7 +149,8 @@ while (j <= maxiter)
 
   % Increase effective curvature and evaluate step size alpha.
   delta = gamma + lambda*kappa;
-  if (delta <= 0) 
+  deltaiter=0;
+  if (delta <= 0)
     delta = lambda*kappa;
     lambda = lambda - gamma/kappa;
   end
@@ -165,6 +166,7 @@ while (j <= maxiter)
   Delta = 2*(fnew - fold)/(alpha*mu);
   if (Delta  >= 0)
     success = 1;
+    nsuccess = nsuccess + 1;
     x = xnew;
     fnow = fnew;
   else
@@ -249,7 +251,6 @@ while (j <= maxiter)
     nsuccess = 0;
   else
     if (success == 1)
-%      beta = (gradold - gradnew)*gradnew'/(gradold*gradold');
       beta = (gradold - gradnew)*gradnew'/(mu);
       d = beta*d - gradnew;
     end
