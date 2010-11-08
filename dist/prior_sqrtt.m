@@ -53,13 +53,6 @@ function p = prior_sqrtt(varargin)
       % Initialize the prior structure
       p.type = 'Sqrt-Student-t';
       
-      % set functions
-      p.fh.pak = @prior_sqrtt_pak;
-      p.fh.unpak = @prior_sqrtt_unpak;
-      p.fh.e = @prior_sqrtt_e;
-      p.fh.g = @prior_sqrtt_g;
-      p.fh.recappend = @prior_sqrtt_recappend;
-      
       % set parameters
       p.mu = 0;
       p.s2 = 1;
@@ -92,6 +85,13 @@ function p = prior_sqrtt(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_sqrtt_pak;
+      p.fh.unpak = @prior_sqrtt_unpak;
+      p.fh.e = @prior_sqrtt_e;
+      p.fh.g = @prior_sqrtt_g;
+      p.fh.recappend = @prior_sqrtt_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -115,17 +115,20 @@ function p = prior_sqrtt(varargin)
   end
 
   
-  function w = prior_sqrtt_pak(p)
+  function [w,s] = prior_sqrtt_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
+      s=[s; 'Sqrt-Student-t.mu'];
     end        
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
+      s=[s; 'log(Sqrt-Student-t.s2)'];
     end
     if ~isempty(p.p.nu)
       w = [w log(p.nu)];
+      s=[s; 'log(Sqrt-Student-t.nu)'];
     end
   end
   

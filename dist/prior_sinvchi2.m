@@ -52,13 +52,6 @@ function p = prior_sinvchi2(varargin)
       % Initialize the prior structure
       p.type = 'Sinvchi2';
       
-      % set functions
-      p.fh.pak = @prior_sinvchi2_pak;
-      p.fh.unpak = @prior_sinvchi2_unpak;
-      p.fh.e = @prior_sinvchi2_e;
-      p.fh.g = @prior_sinvchi2_g;
-      p.fh.recappend = @prior_sinvchi2_recappend;
-      
       % set parameters
       p.s2 = 1;
       p.nu = 4;
@@ -85,6 +78,13 @@ function p = prior_sinvchi2(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_sinvchi2_pak;
+      p.fh.unpak = @prior_sinvchi2_unpak;
+      p.fh.e = @prior_sinvchi2_e;
+      p.fh.g = @prior_sinvchi2_g;
+      p.fh.recappend = @prior_sinvchi2_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -107,14 +107,16 @@ function p = prior_sinvchi2(varargin)
 
   
   
-  function w = prior_sinvchi2_pak(p)
+  function [w,s] = prior_sinvchi2_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.s2)
       w = log(p.s2);
+      s=[s; 'log(Sinvchi2.s2)'];
     end
     if ~isempty(p.p.nu)
       w = [w log(p.nu)];
+      s=[s; 'log(Sinvchi2.nu)'];
     end
   end
   

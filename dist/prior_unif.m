@@ -36,17 +36,17 @@ function p = prior_unif(varargin)
       % Initialize the prior structure
       p.type = 'Uniform';
       
+      % No paramaters to init
+      if numel(varargin) > 0
+        error('Wrong number of arguments')
+      end
+      
       % set functions
       p.fh.pak = @prior_unif_pak;
       p.fh.unpak = @prior_unif_unpak;
       p.fh.e = @prior_unif_e;
       p.fh.g = @prior_unif_g;
       p.fh.recappend = @prior_unif_recappend;
-      
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
 
     case 'set'
       % No paramaters to set
@@ -60,8 +60,8 @@ function p = prior_unif(varargin)
   end
 
   
-  function w = prior_unif_pak(p, w)
-    w = [];
+  function [w,s] = prior_unif_pak(p, w)
+    w=[];s={};
   end
   
   function [p, w] = prior_unif_unpak(p, w)

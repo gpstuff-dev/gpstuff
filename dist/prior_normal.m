@@ -49,13 +49,6 @@ function p = prior_normal(varargin)
       % Initialize the prior structure
       p.type = 'Normal';
       
-      % set functions
-      p.fh.pak = @prior_normal_pak;
-      p.fh.unpak = @prior_normal_unpak;
-      p.fh.e = @prior_normal_e;
-      p.fh.g = @prior_normal_g;
-      p.fh.recappend = @prior_normal_recappend;
-      
       % set parameters
       p.mu = 0;
       p.s2 = 1;
@@ -82,6 +75,13 @@ function p = prior_normal(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_normal_pak;
+      p.fh.unpak = @prior_normal_unpak;
+      p.fh.e = @prior_normal_e;
+      p.fh.g = @prior_normal_g;
+      p.fh.recappend = @prior_normal_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -103,14 +103,16 @@ function p = prior_normal(varargin)
   end
 
   
-  function w = prior_normal_pak(p)
+  function [w,s] = prior_normal_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
+      s=[s; 'Normal.mu'];
     end
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
+      s=[s; 'log(Normal.s2)'];
     end
   end
   

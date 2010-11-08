@@ -49,13 +49,6 @@ function p = prior_lognormal(varargin)
       % Initialize the prior structure
       p.type = 'Log-Normal';
       
-      % set functions
-      p.fh.pak = @prior_lognormal_pak;
-      p.fh.unpak = @prior_lognormal_unpak;
-      p.fh.e = @prior_lognormal_e;
-      p.fh.g = @prior_lognormal_g;
-      p.fh.recappend = @prior_lognormal_recappend;
-      
       % set parameters
       p.mu = 0;
       p.s2 = 1;
@@ -82,7 +75,14 @@ function p = prior_lognormal(varargin)
             error('Wrong parameter name!')
         end
       end
-
+      
+      % set functions
+      p.fh.pak = @prior_lognormal_pak;
+      p.fh.unpak = @prior_lognormal_unpak;
+      p.fh.e = @prior_lognormal_e;
+      p.fh.g = @prior_lognormal_g;
+      p.fh.recappend = @prior_lognormal_recappend;
+      
     case 'set'
       % Set the parameter values of the prior
       if numel(varargin)~=1 & mod(numel(varargin),2) ~=1
@@ -103,14 +103,16 @@ function p = prior_lognormal(varargin)
   end
 
   
-  function w = prior_lognormal_pak(p)
+  function [w,s] = prior_lognormal_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
+      s=[s; 'Log-Normal.mu'];
     end
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
+      s=[s; 'log(Log-Normal.s2)'];
     end
   end
   

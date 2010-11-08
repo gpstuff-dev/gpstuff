@@ -49,13 +49,6 @@ function p = prior_laplace(varargin)
       % Initialize the prior structure
       p.type = 'Laplace';
       
-      % set functions
-      p.fh.pak = @prior_laplace_pak;
-      p.fh.unpak = @prior_laplace_unpak;
-      p.fh.e = @prior_laplace_e;
-      p.fh.g = @prior_laplace_g;
-      p.fh.recappend = @prior_laplace_recappend;
-      
       % set parameters
       p.mu = 0;
       p.s = 1;
@@ -82,6 +75,13 @@ function p = prior_laplace(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_laplace_pak;
+      p.fh.unpak = @prior_laplace_unpak;
+      p.fh.e = @prior_laplace_e;
+      p.fh.g = @prior_laplace_g;
+      p.fh.recappend = @prior_laplace_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -103,14 +103,16 @@ function p = prior_laplace(varargin)
   end
 
   
-  function w = prior_laplace_pak(p)
+  function [w,s] = prior_laplace_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
+      s=[s; 'Laplace.mu'];
     end
     if ~isempty(p.p.s)
       w = [w log(p.s)];
+      s=[s; 'log(Laplace.s)'];
     end
   end
   

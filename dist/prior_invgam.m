@@ -53,13 +53,6 @@ function p = prior_invgam(varargin)
       % Initialize the prior structure
       p.type = 'Invgam';
       
-      % set functions
-      p.fh.pak = @prior_invgam_pak;
-      p.fh.unpak = @prior_invgam_unpak;
-      p.fh.e = @prior_invgam_e;
-      p.fh.g = @prior_invgam_g;
-      p.fh.recappend = @prior_invgam_recappend;
-      
       % set parameters
       p.sh = 4;
       p.s = 1;
@@ -86,6 +79,13 @@ function p = prior_invgam(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_invgam_pak;
+      p.fh.unpak = @prior_invgam_unpak;
+      p.fh.e = @prior_invgam_e;
+      p.fh.g = @prior_invgam_g;
+      p.fh.recappend = @prior_invgam_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -107,14 +107,16 @@ function p = prior_invgam(varargin)
   end
 
   
-  function w = prior_invgam_pak(p)
+  function [w,s] = prior_invgam_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.sh)
       w = log(p.sh);
+      s=[s; 'log(Invgam.sh)'];
     end
     if ~isempty(p.p.s)
       w = [w log(p.s)];
+      s=[s; 'log(Invgam.s)'];
     end
   end
   

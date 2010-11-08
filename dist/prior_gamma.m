@@ -52,13 +52,6 @@ function p = prior_gamma(varargin)
       % Initialize the prior structure
       p.type = 'Gamma';
       
-      % set functions
-      p.fh.pak = @prior_gamma_pak;
-      p.fh.unpak = @prior_gamma_unpak;
-      p.fh.e = @prior_gamma_e;
-      p.fh.g = @prior_gamma_g;
-      p.fh.recappend = @prior_gamma_recappend;
-      
       % set parameters
       p.sh = 4;
       p.is = 1;
@@ -85,6 +78,13 @@ function p = prior_gamma(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_gamma_pak;
+      p.fh.unpak = @prior_gamma_unpak;
+      p.fh.e = @prior_gamma_e;
+      p.fh.g = @prior_gamma_g;
+      p.fh.recappend = @prior_gamma_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -105,14 +105,16 @@ function p = prior_gamma(varargin)
       end
   end
   
-  function w = prior_gamma_pak(p)
+  function [w, s] = prior_gamma_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.sh)
       w = log(p.sh);
+      s=[s; 'log(Gamma.sh)'];
     end
     if ~isempty(p.p.is)
       w = [w log(p.is)];
+      s=[s; 'log(Gamma.is)'];
     end
   end
   

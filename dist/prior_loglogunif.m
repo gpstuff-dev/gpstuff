@@ -37,6 +37,11 @@ function p = prior_loglogunif(varargin)
       % Initialize the prior structure
       p.type = 'Log-log-uniform';
       
+      % No paramaters to init
+      if numel(varargin) > 0
+        error('Wrong number of arguments')
+      end
+
       % set functions
       p.fh.pak = @prior_loglogunif_pak;
       p.fh.unpak = @prior_loglogunif_unpak;
@@ -44,11 +49,6 @@ function p = prior_loglogunif(varargin)
       p.fh.g = @prior_loglogunif_g;
       p.fh.recappend = @prior_loglogunif_recappend;
       
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
-
     case 'set'
       % No paramaters to set
       if numel(varargin)~=1
@@ -60,8 +60,8 @@ function p = prior_loglogunif(varargin)
       
   end
   
-  function w = prior_loglogunif_pak(p, w)
-    w = [];
+  function [w,s] = prior_loglogunif_pak(p, w)
+    w=[];s={};
   end
   
   function [p, w] = prior_loglogunif_unpak(p, w)

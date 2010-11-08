@@ -38,17 +38,17 @@ function p = prior_sqrtunif(varargin)
       % Initialize the prior structure
       p.type = 'Sqrt-uniform';
       
+      % No paramaters to init
+      if numel(varargin) > 0
+        error('Wrong number of arguments')
+      end
+      
       % set functions
       p.fh.pak = @prior_sqrtunif_pak;
       p.fh.unpak = @prior_sqrtunif_unpak;
       p.fh.e = @prior_sqrtunif_e;
       p.fh.g = @prior_sqrtunif_g;
       p.fh.recappend = @prior_sqrtunif_recappend;
-      
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
 
     case 'set'
       % No paramaters to set
@@ -61,8 +61,8 @@ function p = prior_sqrtunif(varargin)
 
   end
 
-  function w = prior_sqrtunif_pak(p)
-    w = [];
+  function [w,s] = prior_sqrtunif_pak(p)
+    w=[];s={};
   end
   
   function [p, w] = prior_sqrtunif_unpak(p, w)

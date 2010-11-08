@@ -66,13 +66,6 @@ function p = prior_t(varargin)
       % Initialize the prior structure
       p.type = 'Student-t';
       
-      % set functions
-      p.fh.pak = @prior_t_pak;
-      p.fh.unpak = @prior_t_unpak;
-      p.fh.e = @prior_t_e;
-      p.fh.g = @prior_t_g;
-      p.fh.recappend = @prior_t_recappend;
-      
       % set parameters
       p.mu = 0;
       p.s2 = 1;
@@ -105,6 +98,13 @@ function p = prior_t(varargin)
             error('Wrong parameter name!')
         end
       end
+      
+      % set functions
+      p.fh.pak = @prior_t_pak;
+      p.fh.unpak = @prior_t_unpak;
+      p.fh.e = @prior_t_e;
+      p.fh.g = @prior_t_g;
+      p.fh.recappend = @prior_t_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -128,17 +128,20 @@ function p = prior_t(varargin)
   end
 
   
-  function w = prior_t_pak(p)
+  function [w,s] = prior_t_pak(p)
     
-    w = [];
+    w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
+      s=[s; 'Student-t.mu'];
     end        
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
+      s=[s; 'log(Student-t.s2)'];
     end
     if ~isempty(p.p.nu)
       w = [w log(p.nu)];
+      s=[s; 'log(Student-t.nu)'];
     end
   end
   
