@@ -93,7 +93,7 @@ function gpcf = gpcf_exp(varargin)
   if init
     gpcf.p=[];
   end
-  if init || ~ismember('lengthScale',ip.UsingDefaults)
+  if init || ~ismember('lengthScale_prior',ip.UsingDefaults)
     gpcf.p.lengthScale=ip.Results.lengthScale_prior;
   end
   if init || ~ismember('magnSigma2_prior',ip.UsingDefaults)
