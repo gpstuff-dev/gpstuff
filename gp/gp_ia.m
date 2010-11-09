@@ -159,14 +159,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   optdefault.LargeScale='off';
   optdefault.Display='off';
   opt_optim=optimset(optdefault,opt_optim);
-  %if isempty(opt_scg) && isempty(opt_fminunc)
-  %    opt_scg = scg2_opt;
-  %    opt_scg.tolfun = 1e-3;
-  %    opt_scg.tolx = 1e-3;
-  %    opt_scg.display = -1;
-  %elseif isempty(opt_scg)
-  %    opt_fminunc=optimset(opt_fminunc,'GradObj','on','LargeScale', 'on','Display','off');
-  %end
 
   % ====================================
   % Find the mode of the hyperparameters
@@ -578,9 +570,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       
     case {'hmc'}
       
-      if isempty('opt_hmc')
-        opt_hmc = hmc2_opt;
-      end
+      opt_hmc = hmc2_opt(opt_hmc);
       
       if isfield(opt_hmc, 'rstate')
         if ~isempty(opt_hmc.rstate)
