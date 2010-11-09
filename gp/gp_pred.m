@@ -69,9 +69,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if isfield(gp,'latent_method') || iscell(gp)
+if numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method') || iscell(gp)
   % use inference specific methods
-  if isfield(gp,'latent_method')
+  if numel(gp.jitterSigma2)>1
+    fh_pred=@mc_pred;
+  elseif iscell(gp)
+    fh_pred=@ia_pred;
+  elseif isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
         switch gp.lik.type
@@ -86,7 +90,7 @@ if isfield(gp,'latent_method') || iscell(gp)
         fh_pred=@mc_pred;
     end
   else
-      fh_pred=@ia_pred;
+    error('Logical error by coder of this function!')
   end
   switch nargout
     case 1

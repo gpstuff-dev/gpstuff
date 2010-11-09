@@ -145,6 +145,9 @@ function [Ef, Varf, Ey, Vary, py] = mc_preds(gp, x, y, xt, varargin)
     % loop over all samples
     for i1=1:nmc
         Gp = take_nth(gp,i1);
+        if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
+          Gp = rmfield(Gp,'latent_method');
+        end
         
         switch gp.type            
           case 'FULL' 

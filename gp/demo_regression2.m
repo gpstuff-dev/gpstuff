@@ -124,7 +124,7 @@ end
 gpcfn = gpcf_noise('noiseSigma2', 0.1, 'noiseSigma2_prior', pn);
 
 % Create the GP data structure
-gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6) 
+gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -179,7 +179,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6, 'X_u', Xu)
+gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -227,7 +227,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6, 'X_u', Xu)
+gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -281,7 +281,7 @@ if ~exist('ldlchol')
         ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
          'Can not use CS+FIC without SuiteSparse']);
 end
-gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6, 'X_u', Xu)
+gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---

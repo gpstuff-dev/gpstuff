@@ -180,17 +180,14 @@ function lik = lik_t(varargin)
   %   See also
   %   LIK_T_PAK, GP_UNPAK
 
-    i1 = 0;
     if ~isempty(lik.p.sigma2)
-      i1 = 1;
-      lik.sigma2 = exp(w(i1));
+      lik.sigma2 = exp(w(1));
       w = w(2:end);
       [p, w] = feval(lik.p.sigma2.fh.unpak, lik.p.sigma2, w);
       lik.p.sigma2 = p;
     end
     if ~isempty(lik.p.nu) 
-      i1 = i1+1;
-      lik.nu = exp(exp(w(i1)));
+      lik.nu = exp(exp(w(1)));
       w = w(2:end);
       [p, w] = feval(lik.p.nu.fh.unpak, lik.p.nu, w);
       lik.p.nu = p;

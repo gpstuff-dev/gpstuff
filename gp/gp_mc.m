@@ -1,58 +1,63 @@
 function [record, gp, opt] = gp_mc(gp, x, y, varargin)
-% GP_MC   Markov chain sampling for Gaussian process models
+%GP_MC  Markov chain Monte Carlo sampling for Gaussian process models
 %
-%   Description
-%   [RECORD, GP, OPT] = GP_MC(GP, X, Y, OPTIONS) Takes the Gaussian 
+%  Description
+%    [RECORD, GP, OPT] = GP_MC(GP, X, Y, OPTIONS) Takes the Gaussian 
 %    process structure GP, inputs X and outputs Y. Returns record 
 %    structure RECORD with parameter samples, the Gaussian process GP
 %    at current state of the sampler and an options structure OPT 
 %    containing all the options in OPTIONS and information of the
 %    current state of the sampler (e.g. the random number seed)
 %
-%     OPTIONS is optional parameter-value pair
-%      'z'          Optional observed quantity in triplet (x_i,y_i,z_i).
-%                   Some likelihoods may use this. For example, in case of
-%                   Poisson likelihood we have z_i=E_i, that is, expected
-%                   value for ith case.
-%      'repeat'     Number of iterations between successive sample saves
-%                   (that is every repeat'th sample is stored), default 1.
-%      'nsamples'   Number of samples to be returned
-%      'display'    Defines if sampling information is printed, 1=yes, 0=no.
-%                   Default 1.
-%      'hmc_opt'    Options structure for HMC sampler (see hmc2_opt). When
-%                   this is given the hyperparameters are sampled with hmc2.
-%      'sls_opt'    Options structure for slice sampler (see sls_opt). When 
-%                   this is given the hyperparameters are sampled with sls.
-%      'gibbs_opt'  Options structure for gibbs sampler. Some covariance
-%                   function parameters need to be sampled with Gibbs sampling
-%                   (such as gpcf_noiset). The gibbs sampler is implemented
-%                   in the respective gpcf_* file and this structure is used 
-%                   to give the options for it.
-%      'latent_opt' Options structure for latent variable sampler. When this 
-%                   is given the latent variables are sampled with function 
-%                   stored in the gp.fh.mc field in the GP structure. 
-%                   See gp_init. 
-%      'lik_hmc_opt'   Options structure for HMC sampler (see hmc2_opt). 
-%                      When this is given the hyperparameters of the 
-%                      likelihood are sampled with hmc2.
-%      'lik_sls_opt'   Options structure for slice sampler (see sls_opt). 
-%                      When this is given the hyperparameters of the 
-%                      likelihood are sampled with hmc2.
-%      'persistence_reset' Reset the momentum parameter in HMC sampler after 
-%                          every repeat'th iteration, default 0.
-%      'record'      An old record structure from where the sampling is 
+%    OPTIONS is optional parameter-value pair
+%      z           - Optional observed quantity in triplet (x_i,y_i,z_i).
+%                    Some likelihoods may use this. For example, in
+%                    case of Poisson likelihood we have z_i=E_i,
+%                    that is, expected value for ith case.
+%      repeat      - Number of iterations between successive sample saves
+%                    (that is every repeat'th sample is stored),
+%                    default 1.
+%      nsamples    - Number of samples to be returned
+%      display     - Defines if sampling information is printed, 1=yes, 0=no.
+%                    Default 1.
+%      hmc_opt     - Options structure for HMC sampler (see hmc2_opt). When
+%                    this is given the hyperparameters are sampled
+%                    with hmc2.
+%      sls_opt     - Options structure for slice sampler (see sls_opt). When 
+%                    this is given the hyperparameters are sampled
+%                    with sls.
+%      gibbs_opt   - Options structure for gibbs sampler. Some covariance
+%                    function parameters need to be sampled with
+%                    Gibbs sampling (such as gpcf_noiset). The
+%                    gibbs sampler is implemented in the respective
+%                    gpcf_* file and this structure is used to give
+%                    the options for it.
+%      latent_opt  - Options structure for latent variable sampler. When this 
+%                    is given the latent variables are sampled with
+%                    function stored in the gp.fh.mc field in the
+%                    GP structure. See gp_init.
+%      lik_hmc_opt - Options structure for HMC sampler (see hmc2_opt). 
+%                    When this is given the hyperparameters of the
+%                    likelihood are sampled with hmc2.
+%      lik_sls_opt - Options structure for slice sampler (see sls_opt). 
+%                    When this is given the hyperparameters of the
+%                    likelihood are sampled with hmc2.
+%      persistence_reset 
+%                  - Reset the momentum parameter in HMC sampler after 
+%                    every repeat'th iteration, default 0.  
+%      record      - An old record structure from where the sampling is 
 %                    continued
 %         
-%      The GP_MC function makes nsamples*repeat iterations and stores
-%      every repeat'th sample. At each iteration it samples first the
-%      latent variables (if 'latent_opt' option is given), then
-%      hyperparameters of the covariance function(s) (if 'hmc_opt',
-%      'sls_opt' or 'gibbs_opt' option is given), and for last the
-%      hyperparameters in the likelihood function (if
-%      'lik_hmc_opt' or 'lik_sls_opt' option is given). 
+%    The GP_MC function makes nsamples*repeat iterations and stores
+%    every repeat'th sample. At each iteration it samples first the
+%    latent variables (if 'latent_opt' option is given), then
+%    hyperparameters of the covariance function(s) (if 'hmc_opt',
+%    'sls_opt' or 'gibbs_opt' option is given), and for last the
+%    hyperparameters in the likelihood function (if 'lik_hmc_opt'
+%    or 'lik_sls_opt' option is given).
 %
 %  See also:
-%  demo_classific1, demo_robustregression
+%    DEMO_CLASSIFIC1, DEMO_ROBUSTREGRESSION
 
 % Copyright (c) 1998-2000 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
@@ -62,7 +67,6 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 % License.txt, included with the software, for details.
 
 %#function gp_e gp_g
-    
 
     ip=inputParser;
     ip.FunctionName = 'GP_MC';
@@ -257,7 +261,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 ncf = length(gp.cf);
                 for i1 = 1:ncf
                     gpcf = gp.cf{i1};
-                    if isfield(gpcf, 'fh_gibbs')
+                    if isfield(gpcf.fh, 'gibbs')
                         [gpcf, f] = feval(gpcf.fh.gibbs, gp, gpcf, opt.gibbs_opt, x, f);
                         gp.cf{i1} = gpcf;
                     end
@@ -267,7 +271,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 nnf = length(gp.noisef);
                 for i1 = 1:nnf
                     gpcf = gp.noisef{i1};
-                    if isfield(gpcf, 'fh_gibbs')
+                    if isfield(gpcf.fh, 'gibbs')
                         [gpcf, f] = feval(gpcf.fh.gibbs, gp, gpcf, opt.gibbs_opt, x, f);
                         gp.noisef{i1} = gpcf;
                     end
@@ -353,6 +357,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         if nargin == 0   % Initialize record structure
             record.type = gp.type;
             record.lik = gp.lik;
+            if isfield(gp,'latent_method')
+              record.latent_method = gp.latent_method;
+            end
             % If sparse model is used save the information about which
             switch gp.type
               case 'FIC'

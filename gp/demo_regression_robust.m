@@ -90,19 +90,22 @@ yt = 0.3+0.4*xt+0.5*sin(2.7*xt)+1.1./(1+xt.^2);
 
 % Construct the priors for the parameters of covariance functions...
 pl = prior_t();
-pm = prior_sqrtt('s2', 0.3);
+pm = prior_sqrtunif();
 pn = prior_logunif();
 
 % create the Gaussian process
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2, 'noiseSigma2_prior', pn);
+gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcfn = gpcf_noise('noiseSigma2', 0.2^2, 'noiseSigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-6)    
+gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn})
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
+disp('Gaussian noise model and MAP for hyperparameters')
+
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
@@ -119,28 +122,31 @@ h1=plot(xt,yt, 'k');
 h2=plot(xt, Eft, xt, Eft-2*std_ft, 'r--', xt, Eft+2*std_ft, 'r--');
 h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
-legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+std(f)','y',4)
+legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
 axis on;
-title('The predictions and the data points (MAP solution and normal noise)');
-S1 = sprintf('length-scale: %.3f, magnSigma2: %.3f  \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+title('The predictions and the data points (Gaussian noise model with MAP for hyperparameters)');
+drawnow
+S1 = sprintf('length-scale: %.3f, magnSigma2: %.3f  \n', ...
+             gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 % ========================================
 % MCMC approach with scale mixture noise model (~=Student-t)
 % Here we sample all the variables 
 %     (lenghtScale, magnSigma, sigma(noise-t) and nu)
 % ========================================
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+disp(['Scale mixture Gaussian (~=Student-t) noise model';...
+      'using MCMC for latent values and hyperparameters'])
+
+pl = prior_t();
+pm = prior_sqrtunif();
+gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Here, set own Sigma2 for every data point
-gpcf2 = gpcf_noiset('ndata', n, 'noiseSigmas2', repmat(1^2,n,1));
-
-% Free nu
-gpcf2 = gpcf_noiset(gpcf2, 'nu_prior', []);
-
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-3)
+gpcfn = gpcf_noiset('ndata', n, 'noiseSigmas2', repmat(1,n,1));
+gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9)
 
 hmc_opt.steps=10;
-hmc_opt.stepadj=0.08;
+hmc_opt.stepadj=0.06;
 hmc_opt.nsamples=1;
 hmc2('state', sum(100*clock));
 hmc_opt.persistence=1;
@@ -152,7 +158,8 @@ gibbs_opt.mmlimits = [0 40];
 gibbs_opt.method = 'minmax';
 
 % Sample 
-[r,g,opt]=gp_mc(gp, x, y, 'nsamples', 300, 'hmc_opt', hmc_opt, 'gibbs_opt', gibbs_opt);
+[r,g,opt]=gp_mc(gp, x, y, 'nsamples', 300, 'hmc_opt', hmc_opt, ...
+                'gibbs_opt', gibbs_opt);
 
 % thin the record
 rr = thin(r,100,2);
@@ -172,9 +179,8 @@ hist(rr.cf{1}.magnSigma2,20)
 title('Mixture model, magnSigma2')
 
 % make predictions for test set
-[Eft_mc, Varft_mc] = mc_preds(rr,x,y,xt);
-Eft = mean(Eft_mc,2);
-std_ft = sqrt(mean(Varft_mc,2) + var(Eft_mc,0,2));
+[Eft, Varft] = gp_pred(rr,x,y,xt);
+std_ft=sqrt(Varft);
 
 % Plot the network outputs as '.', and underlying mean with '--'
 figure
@@ -183,33 +189,38 @@ h1=plot(xt,yt, 'k');
 h2=plot(xt, Eft, xt, Eft-2*std_ft, 'r--', xt, Eft+2*std_ft, 'r--');
 h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
-legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+std(f)','y',4)
+legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
 axis on;
-title('The predictions and the data points (MCMC solution and scale mixture noise)')
-S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
+title('The predictions and the data points (Scale mixture noise model with MCMC)')
+drawnow
+S2 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', ...
+             mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
 
 % ========================================
 % Laplace approximation Student-t likelihood
 %  Here we optimize all the variables 
 %  (lengthScale, magnSigma2, sigma(noise-t) and nu)
 % ========================================
+disp(['Student-t noise model using Laplace for latent values';...
+      'and MAP for hyperparameters                          '])
 
 pl = prior_t();
-pm = prior_sqrtt('s2', 0.3);
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2);
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+pm = prior_sqrtunif();
+gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-pll = prior_logunif();
-lik = lik_t('nu', 4, 'sigma2', 20, 'sigma2_prior', pll, 'nu_prior', []);
+pn = prior_logunif();
+lik = lik_t('nu', 4, 'nu_prior', prior_logunif(), ...
+            'sigma2', 20, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-3, ...
+gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
             'infer_params', 'covariance+likelihood', ...
             'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',20);
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','Maxiter',20);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
@@ -219,33 +230,37 @@ std_ft = sqrt(Varft);
 
 % Plot the prediction and data
 figure
+hold on
 h1=plot(xt,yt, 'k');
 h2=plot(xt, Eft, xt, Eft-2*std_ft, 'r--', xt, Eft+2*std_ft, 'r--');
 h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
-legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+std(f)','y',4)
+legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
 axis on;
-title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma2=%.3f) noise)',gp.lik.nu, gp.lik.sigma2));
-S3 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+title(sprintf('The predictions and the data points (Student-t noise model (nu=%.2f,sigma2=%.3f) noise) with Laplace+MAP, ',gp.lik.nu, gp.lik.sigma2));
+drawnow
+S3 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', ...
+             gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 % ========================================
 % MCMC approach with Student-t likelihood
 %  Here we analyse the model with fixed degrees of freedom
 %   nu = 4 
-%   Notice that the default value for freeze_nu = 1, 
-%   which means that degrees of freedom is not sampled/optimized
 % ========================================
+disp(['Student-t noise model with nu= 4 and using MCMC ';...
+      'for latent values and hyperparameters           '])
+
 pl = prior_t();
-pm = prior_sqrtt('s2', 0.3);
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2);
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+pm = prior_sqrtunif();
+gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-pll = prior_logunif();
-lik = lik_t('nu', 4, 'sigma2', 0.5^2, 'sigma2_prior', pll, 'nu_prior', []);
+pn = prior_logunif();
+lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.5^2, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, ...
+gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
              'latent_method', 'MCMC', ...
              'infer_params' , 'covariance+likelihood');
 
@@ -253,14 +268,14 @@ gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, ...
 clear opt
 opt.hmc_opt = hmc2_opt;
 opt.hmc_opt.steps=5;
-opt.hmc_opt.stepadj=0.02;
+opt.hmc_opt.stepadj=0.03;
 opt.hmc_opt.nsamples=1;
 
 % Latent-options
 opt.latent_opt = hmc2_opt;
 opt.latent_opt.display=0;
-opt.latent_opt.repeat = 10
-opt.latent_opt.sample_latent_scale = 0.05
+opt.latent_opt.repeat = 10;
+opt.latent_opt.sample_latent_scale = 0.05;
 
 % Likelihood-option
 opt.lik_hmc_opt = hmc2_opt;
@@ -273,188 +288,107 @@ opt.lik_hmc_opt.nsamples=1;
 rr = thin(rgp,100,2);
 
 % make predictions for test set
-[Ef_mc, Varf_mc] = mc_preds(rr,x,y,xx');
-Ef = mean(Ef_mc,2);
-std_f = sqrt( var(Ef_mc,0,2) );
+[Eft, Varft] = gp_pred(rr,x,y,xt);
+std_ft = sqrt(Varft);
 
 % Plot the network outputs as '.', and underlying mean with '--'
 figure
-plot(xx,yy,'k')
+plot(xt,yt,'k')
 hold on
-plot(xx,Ef)
-plot(xx, Ef-2*std_f, 'r--')
+plot(xt,Eft)
+plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+std(f)','y')
-plot(xx, Ef+2*std_f, 'r--')
-title('The predictions and the data points (MCMC solution Student-t noise, \nu fixed)')
-S2 = sprintf('lengt-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
+legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+plot(xt, Eft+2*std_ft, 'r--')
+title('The predictions and the data points (Student-t noise model, nu fixed (nu=4), with MCMC)')
+drawnow
+S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
 
 % ========================================
 % Laplace approximation Student-t likelihood
 %  Here we analyse the model with fixed degrees of freedom
 %   nu = 4 
-%   Notice that the default value for fix_nu = 1, 
-%   which means that degrees of freedom is not sampled/optimized
 % ========================================
+disp(['Student-t noise model with nu=4 using Laplace ';...
+      'for latent values and MAP for hyperparameters '])
 
-gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 1);
-
+pl = prior_t();
+pm = prior_sqrtunif();
+gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
-pll = prior_logunif();
-lik = lik_t('nu', 4, 'sigma2', 1, 'sigma2_prior', pll);
+pn = prior_logunif();
+lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.01, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6, ...
+gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
             'latent_method', 'Laplace');
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
 
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=@gpla_e;     % create a function handle to negative log posterior
-fg=@gpla_g;     % create a function handle to gradient of negative log posterior
-
-n=length(y);
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do scaled conjugate gradient optimization 
-w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
-gp =gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Predictions to test points
-[Ef, Varf] = la_pred(gp, x, y, xx');
-std_f = sqrt(Varf);
+[Eft, Varft] = gp_pred(gp, x, y, xt);
+std_ft = sqrt(Varft);
 
 % Plot the prediction and data
 figure
-plot(xx,yy,'k')
+plot(xt,yt,'k')
 hold on
-plot(xx,Ef)
-plot(xx, Ef-2*std_f, 'r--')
+plot(xt,Eft)
+plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+std(f)','y')
-plot(xx, Ef+2*std_f, 'r--')
-title(sprintf('The predictions and the data points (MAP solution, Student-t , \nu fixed (nu=%.2f,sigma=%.3f) noise)',gp.lik.nu, sqrt(gp.lik.sigma2)));
-S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+plot(xt, Eft+2*std_ft, 'r--')
+title(sprintf('The predictions and the data points (Student-t noise model, nu fixed (nu=%.2f,sigma=%.3f) with Laplace+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
+drawnow
+S5 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 
+% ========================================
+% EP approximation Student-t likelihood
+%  Here we analyse the model with fixed degrees of freedom
+%   nu = 4 
+% ========================================
+disp(['Student-t noise model with nu=4 using EP      ';...
+      'for latent values and MAP for hyperparameters '])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%%
-
-gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 1);
-
+pl = prior_t();
+pm = prior_sqrtunif();
+gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
-pll = prior_logunif();
-lik = lik_t('nu', 4, 'sigma2', 1, 'sigma2_prior', pll);
+pn = prior_logunif();
+lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.01, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_init('FULL', lik, {gpcf1}, {}, 'jitterSigma2', 0.001.^2);
-gp = gp_init(gp, 'latent_method', {'EP', x, y});
+gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
+            'latent_method', 'EP');
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
 
-gradcheck(gp_pak(gp), @gpep_e, @gpep_g, gp, x, y)
-gpep_g(w,gp,x,y)
-
-w = [1.5981    0.4444   -4.6361];
-
-[e, edata, eprior, site_tau, site_nu, L]=gpep_e(w,gp,x,y);
-Sigm = L'*L;
-myy = Sigm*site_nu;
-plot(x,myy,'b.',x,y,'ro')
-
-%%
-
-min(gp.site_tau)
-gp = gp_unpak(gp,w);
-[Ef, Varf] = ep_pred(gp, x, y, xx');
-std_f = sqrt(Varf);
-
-% Plot the prediction and data
-figure
-plot(xx,yy,'k')
-hold on
-plot(xx,Ef)
-plot(xx, Ef-2*std_f, 'r--')
-plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+std(f)','y')
-plot(xx, Ef+2*std_f, 'r--')
-title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.lik.nu, sqrt(gp.lik.sigma2)));
-S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
-
-%%
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-fe=@gpep_e;     % create a function handle to negative log posterior
-fg=@gpep_g;     % create a function handle to gradient of negative log posterior
-
-n=length(y);
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 1;
-
-% do scaled conjugate gradient optimization 
-w=gp_pak(gp);
-w=scg2(fe, w, opt, fg, gp, x, y);
-gp =gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Predictions to test points
-[Ef, Varf] = ep_pred(gp, x, y, xx');
-std_f = sqrt(Varf);
+[Eft, Varft] = gp_pred(gp, x, y, xt);
+std_ft = sqrt(Varft);
 
 % Plot the prediction and data
 figure
-plot(xx,yy,'k')
+plot(xt,yt,'k')
 hold on
-plot(xx,Ef)
-plot(xx, Ef-2*std_f, 'r--')
+plot(xt,Eft)
+plot(xt, Eft-2*std_ft, 'r--')
 plot(x,y,'.')
-legend('real f', 'Ef', 'Ef+std(f)','y')
-plot(xx, Ef+2*std_f, 'r--')
-title(sprintf('The predictions and the data points (MAP solution, Student-t (nu=%.2f,sigma=%.3f) noise)',gp.lik.nu, sqrt(gp.lik.sigma2)));
-S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+plot(xt, Eft+2*std_ft, 'r--')
+title(sprintf('The predictions and the data points (Student-t noise model, nu fixed (nu=%.2f,sigma=%.3f) with EP+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
+drawnow
+S6 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
