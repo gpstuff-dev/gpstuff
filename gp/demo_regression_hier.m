@@ -31,6 +31,7 @@ figure
 plot(xx,yy,'o-')
 axis([7 37 100 400])
 title('Data')
+drawnow
 
 % Reshape data
 ntime = size(xx,2);
@@ -47,7 +48,7 @@ x=[x repmat([1:nrats]',ntime,1)];
 [yn,ymean,ystd]=normdata(y);
 
 % optmization options
-opt=optimset('TolFun',1e-5,'TolX',1e-5);
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 
 % common noise term with weakly informative prior
 cfn=gpcf_noise('noiseSigma2',.1,...
@@ -56,10 +57,11 @@ cfn=gpcf_noise('noiseSigma2',.1,...
 cc=gpcf_cat('selectedVariables',2);
 
 % 1) Linear model with intercept and slope wrt time
+disp('1) Linear model with intercept and slope wrt time')
 cfc=gpcf_constant('constSigma2',1);
 cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % construct GP
-gp=gp_set('cf',{cfc cfl},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfl},'noisef',{cfn});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -69,14 +71,16 @@ subplot(3,3,1)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Linear model')
+drawnow
 
 % 2) Linear model with hierarchical intercept
+disp('2) Linear model with hierarchical intercept')
 cfc=gpcf_constant('constSigma2',1);
 cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl},'noisef',{cfn});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -85,9 +89,11 @@ Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
 subplot(3,3,2)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
-title('Linear model with random intercept')
+title('Linear model with hierarchical intercept')
+drawnow
 
 % 3) Linear model with hierarchical intercept and slope
+disp('3) Linear model with hierarchical intercept and slope')
 cfc=gpcf_constant('constSigma2',1);
 cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
@@ -95,7 +101,7 @@ cfci=gpcf_prod('cf',{cfc cc});
 % linear covariance term for each rat
 cfli=gpcf_prod('cf',{cfl cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl cfli},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl cfli},'noisef',{cfn});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -104,18 +110,20 @@ Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
 subplot(3,3,3)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
-title('Linear model with random intercept and slope')
+title('Linear model with hierarchical intercept and slope')
+drawnow
 
 % 4) Nonlinear model with hierarchical intercept
 % include linear part, too
+disp('4) Nonlinear model with hierarchical intercept')
 cfc=gpcf_constant('constSigma2',1);
 cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part
-cfs=gpcf_sexp('selectedVariables',[1],'lengthScale_prior',prior_t());
+cfs=gpcf_sexp('selectedVariables',1);
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl cfs},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfl cfs},'noisef',{cfn});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -124,10 +132,12 @@ Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
 subplot(3,3,4)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
-title('Non-linear model with random intercept')
+title('Non-linear model with hierarchical intercept')
+drawnow
 
 % 5) Nonlinear model with hierarchical intercept and curve
 % include linear part, too
+disp('5) Non-linear hierarchical model 1 with MAP')
 cfc=gpcf_constant('constSigma2',1);
 cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
@@ -140,7 +150,7 @@ cfs=gpcf_sexp('selectedVariables',1,'lengthScale_prior',prior_t());
 cfsi=gpcf_prod('cf',{cfs cc});
 % construct GP
 gp=gp_set('cf',{cfc cfci cfl cfli cfs cfsi},'noisef',{cfn},...
-          'jitterSigma2',1e-6);
+          'jitterSigma2',1e-9);
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -150,10 +160,12 @@ subplot(3,3,5)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 1 with MAP')
+drawnow
 
 % 6) With increasing flexibility of the modeling function
 %    we need to integrate over the hyperparameteres
 % integrate over hyperparameters
+disp('6) Non-linear hierarchical model 1 with IA')
 gps=gp_ia(gp,xn,yn);
 % predict and plot
 Ef=gp_pred(gps,xn,yn,xn);
@@ -162,9 +174,11 @@ subplot(3,3,6)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 1 with IA')
+drawnow
 
 % 7) Nonlinear model with hierarchical intercept and curve
 %    Same as 5, but with no linear and product covariances
+disp('7) Non-linear hierarchical model 2 with MAP')
 cfc=gpcf_constant('constSigma2',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
@@ -173,7 +187,7 @@ cfs=gpcf_sexp('metric',metric_euclidean('components',{[1] [2]},...
                                         'deltadist', [0 1], ...
                                         'lengthScale_prior',prior_t()));
 % construct GP
-gp=gp_set('cf',{cfc cfci cfs},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfs},'noisef',{cfn});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -183,10 +197,12 @@ subplot(3,3,7)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 2 with MAP')
+drawnow
 
 % 8) With increasing flexibility of the modeling function
 %    we need to integrate over the hyperparameteres
 % integrate over hyperparameters
+disp('8) Non-linear hierarchical model 2 with IA')
 gps=gp_ia(gp,xn,yn);
 % predict and plot
 Ef=gp_pred(gps,xn,yn,xn);
@@ -195,8 +211,10 @@ subplot(3,3,8)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 2 with IA')
+drawnow
 
 % 9) With neuralnetwork covariance and integration over the hyperparameters
+disp('9) Non-linear hierarchical model 3 with IA')
 cfc=gpcf_constant('constSigma2',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
@@ -205,7 +223,7 @@ cfnn=gpcf_neuralnetwork('selectedVariables',1);
 % nonlinear covariance term for each rat
 cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn});
 % optimize
 gp=gp_optim(gp,xn,yn);
 % integrate over hyperparameters
@@ -217,6 +235,7 @@ subplot(3,3,9)
 plot(xx,Eff,'o-')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 3 with IA')
+drawnow
 
 %*** Missing Data Example ***
 % In the original paper (Gelfand et al, 1990) data was aslo to
@@ -224,6 +243,7 @@ title('Non-linear hierarchical model 3 with IA')
 % for part of the rats. Handling missing data in this case is trivial
 % for GPs, too
 
+disp('10) Missing data example')
 S = which('demo_regression_hier');
 L = strrep(S,'demo_regression_hier.m','demos/rats.mat');
 data=load(L);
@@ -239,21 +259,21 @@ title('Data')
 ntime = size(xx,2);
 nrats = size(yy,1);
 % All y's to one vector
-y=yymiss(:);
+ym=yymiss(:);
 % Repeat x for each rat
-x=reshape(repmat(xx,nrats,1),ntime*nrats,1);
+xm=reshape(repmat(xx,nrats,1),ntime*nrats,1);
 % Add ratid
-x=[x repmat([1:nrats]',ntime,1)];
+xm=[xm repmat([1:nrats]',ntime,1)];
 % Now 'x' consist of the inputs (ratid,time) and 'y' of the output (weight). 
 % Normalize x and y
-[xn,xmean,xstd]=normdata(x);
-[yn,ymean,ystd]=normdata(y);
+[xmn,xmmean,xmstd]=normdata(xm);
+[ymn,ymmean,ymstd]=normdata(ym);
 % test x is the complete x
-xnt=xn;
+xmnt=xmn;
 % remove missing data from the training data
-missi=isnan(y);
-yn(missi,:)=[];
-xn(missi,:)=[];
+missi=isnan(ym);
+ymn(missi,:)=[];
+xmn(missi,:)=[];
 
 % 10) neuralnetwork covariance, IA and missing data
 cfc=gpcf_constant('constSigma2',1);
@@ -264,15 +284,15 @@ cfnn=gpcf_neuralnetwork('selectedVariables',1);
 % nonlinear covariance term for each rat
 cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn},'jitterSigma2',1e-6);
+gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn});
 % optimize
-gp=gp_optim(gp,xn,yn);
+gp=gp_optim(gp,xmn,ymn);
 % integrate over hyperparameters
-gps=gp_ia(gp,xn,yn);
+gps=gp_ia(gp,xmn,ymn);
 % predict and plot
-Ef=gp_pred(gps,xn,yn,xnt);
-Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
-Effc=Eff;Effc(isnan(y))=NaN;
+Ef=gp_pred(gps,xmn,ymn,xmnt);
+Eff=reshape(denormdata(Ef,ymmean,ymstd),nrats,ntime);
+Effc=Eff;Effc(isnan(ym))=NaN;
 plot(xx,Effc,'bo-',xx,Eff,'bo--')
 axis([7 37 100 400])
 title('Non-linear hierarchical model 3 with IA and missing data')
