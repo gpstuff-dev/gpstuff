@@ -29,6 +29,7 @@
 % =====================================
 % 1) data analysis with probit likelihood
 % =====================================
+disp('Data analysis with probit likelihood')
 
 S = which('demo_classific');
 L = strrep(S,'demo_classific.m','demos/synth.tr');
@@ -49,6 +50,7 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
+disp(' Probit with Laplace for latent values and MAP for hyperparameters')
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -72,6 +74,7 @@ mlpd_cv(1) = cvres.mlpd_cv;
 mrmse_cv(1) = cvres.mrmse_cv;
 
 % ------- Expectation propagation --------
+disp(' Probit with EP for latent values and MAP for hyperparameters')
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -93,13 +96,15 @@ mlpd_cv(2) = cvres.mlpd_cv;
 mrmse_cv(2) = cvres.mrmse_cv;
 
 % ------- MCMC ---------------
+disp(' Probit with MCMC for latent values and hyperparameters')
+
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
 
 % Set the parameters for MCMC...
 clear('opt')
 opt.hmc_opt.steps=10;
-opt.hmc_opt.stepadj=0.1;
+opt.hmc_opt.stepadj=0.02;
 opt.hmc_opt.nsamples=1;
 opt.latent_opt.display=0;
 opt.latent_opt.repeat = 20;
@@ -111,7 +116,7 @@ hmc2('state', sum(100*clock))
 opt.nsamples=200;
 opt.repeat=1;
 opt.hmc_opt.steps=4;
-opt.hmc_opt.stepadj=0.02;
+opt.hmc_opt.stepadj=0.04;
 opt.latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
@@ -131,6 +136,7 @@ mlpd_cv(3) = cvres.mlpd_cv;
 mrmse_cv(3) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
+disp(' Probit with EP for latent values and grid integration for hyperparameters')
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -158,6 +164,7 @@ mrmse_cv(4) = cvres.mrmse_cv;
 % =====================================
 % 2) data analysis with logit likelihood
 % =====================================
+disp('Data analysis with logit likelihood')
 
 S = which('demo_classific');
 L = strrep(S,'demo_classific.m','demos/synth.tr');
@@ -182,6 +189,7 @@ gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
+disp(' Logit with Laplace for latent values and MAP for hyperparameters')
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -203,6 +211,7 @@ mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
 
 % ------- Expectation propagation --------
+disp(' Logit with EP for latent values and MAP for hyperparameters')
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -225,6 +234,8 @@ mrmse_cv(6) = cvres.mrmse_cv;
 
 
 % ------- MCMC ---------------
+disp(' Logit with MCMC for latent values and hyperparameters')
+
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
 
@@ -262,6 +273,7 @@ mlpd_cv(7) = cvres.mlpd_cv;
 mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
+disp(' Logit with EP for latent values and grid integration for hyperparameters')
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -290,6 +302,7 @@ mrmse_cv(8) = cvres.mrmse_cv;
 %========================================================
 % PART 4 Print the results
 %========================================================
+disp('Summary of the results')
 
 S = '       ';
 for i = 1:length(models)

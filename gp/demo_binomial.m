@@ -33,7 +33,7 @@
 %    structure when E(Yt), Var(Yt) or predictive densities p(Yt)
 %    are computed.
 %
-%  See also DEMO_BINOMIAL2
+%  See also DEMO_BINOMIAL_APC
 
 % Copyright (c) 2010 Jaakko Riihimäki
 

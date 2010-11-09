@@ -392,10 +392,10 @@ function lik = lik_poisson(varargin)
     modeld=ld(modef);
     iter=0;
     % check that density at end points is low enough
-    lddiff=25; % min difference in log-density between mode and end-points
+    lddiff=20; % min difference in log-density between mode and end-points
     minld=ld(minf);
     while minld>(modeld-lddiff)
-      minf=minf-modes;
+      minf=minf-(modes-minf);
       minld=ld(minf);
       iter=iter+1;
       if iter>100
@@ -406,7 +406,7 @@ function lik = lik_poisson(varargin)
     end
     maxld=ld(maxf);
     while maxld>(modeld-lddiff)
-      maxf=maxf+modes;
+      maxf=maxf+(maxf-modes);
       maxld=ld(maxf);
       iter=iter+1;
       if iter>100

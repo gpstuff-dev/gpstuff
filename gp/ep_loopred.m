@@ -40,7 +40,7 @@ function [Ef, Varf, Ey, Vary, Py] = ep_loopred(gp, x, y, varargin)
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
 
-  [e, edata, eprior, tautilde, nutilde, L, La, b, muvec_i, sigm2vec_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+  [~,~,~,~,~,~,~,~, muvec_i, sigm2vec_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
   Ef=muvec_i;
   Varf=sigm2vec_i;

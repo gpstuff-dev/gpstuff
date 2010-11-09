@@ -268,6 +268,8 @@ function gp = gp_set(varargin)
     end
     switch latent_method
       case 'MCMC'
+        if isfield(gp,'laplace_opt'); gp=rmfield(gp,'laplace_opt'); end
+        if isfield(gp,'ep_opt'); gp=rmfield(gp,'ep_opt'); end
         gp.latent_method=latent_method;
         ipmc=inputParser;
         ipmc.FunctionName = 'GP_SET - latent method MCMC options';
@@ -277,12 +279,16 @@ function gp = gp_set(varargin)
         gp.latentValues = ipmc.Results.f;
         gp.fh.mc = ipmc.Results.method;
       case 'EP'
+        if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+        if isfield(gp,'laplace_opt'); gp=rmfield(gp,'laplace_opt'); end
         gp.latent_method=latent_method;
         gp.ep_opt.maxiter = 20;
         gp.ep_opt.tol = 1e-6;
         % following sets gp.fh.e = @ep_algorithm;
         gp = gpep_e('init', gp);
       case 'Laplace'
+        if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+        if isfield(gp,'ep_opt'); gp=rmfield(gp,'ep_opt'); end
         gp.latent_method=latent_method;
         gp.laplace_opt.maxiter = 20;
         gp.laplace_opt.tol = 1e-12;

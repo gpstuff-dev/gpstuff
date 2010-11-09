@@ -119,7 +119,7 @@ function lik = lik_probit(varargin)
   %   See also
   %   LIK_PROBIT_LLG, LIK_PROBIT_LLG3, LIK_PROBIT_LLG2, GPLA_E
 
-    if ~isempty(find(y~=1 & y~=-1))
+    if ~isempty(find(abs(y)~=1))
       error('lik_probit: The class labels have to be {-1,1}')
     end
 
@@ -139,7 +139,7 @@ function lik = lik_probit(varargin)
   %   See also
   %   LIK_PROBIT_LL, LIK_PROBIT_LLG2, LIK_PROBIT_LLG3, GPLA_E
 
-    if ~isempty(find(y~=1 & y~=-1))
+    if ~isempty(find(abs(y)~=1))
       error('lik_probit: The class labels have to be {-1,1}')
     end
     
@@ -165,7 +165,7 @@ function lik = lik_probit(varargin)
   %   LIK_PROBIT_LL, LIK_PROBIT_LLG, LIK_PROBIT_LLG3, GPLA_E
 
     
-    if ~isempty(find(y~=1 & y~=-1))
+    if ~isempty(find(abs(y)~=1))
       error('lik_probit: The class labels have to be {-1,1}')
     end
     
@@ -189,7 +189,7 @@ function lik = lik_probit(varargin)
   %   See also
   %   LIK_PROBIT_LL, LIK_PROBIT_LLG, LIK_PROBIT_LLG2, GPLA_E, GPLA_G
 
-    if ~isempty(find(y~=1 & y~=-1))
+    if ~isempty(find(abs(y)~=1))
       error('lik_probit: The class labels have to be {-1,1}')
     end
     
@@ -215,7 +215,7 @@ function lik = lik_probit(varargin)
   %   See also
   %   GPEP_E
     
-    if ~isempty(find(y~=1 & y~=-1))
+    if ~isempty(find(abs(y)~=1))
       error('lik_probit: The class labels have to be {-1,1}')
     end
     
@@ -229,7 +229,7 @@ function lik = lik_probit(varargin)
     m_2 = sigm2hati1;
   end
 
-  function [Ey, Vary, py] = lik_probit_predy(lik, Ef, Varf, y, z)
+  function [Ey, Vary, py] = lik_probit_predy(lik, Ef, Varf, yt, zt)
   %LIK_PROBIT_PREDY    Returns the predictive mean, variance and density of y
   %
   %   Description         
@@ -239,7 +239,7 @@ function lik = lik_probit(varargin)
   %   the posterior predictive mean EY and variance VARY of the
   %   observations related to the latent variables
   %        
-  %   [Ey, Vary, PY] = LIK_PROBIT_PREDY(LIK, EF, VARF YT)
+  %   [Ey, Vary, PY] = LIK_PROBIT_PREDY(LIK, EF, VARF, YT)
   %   Returns also the predictive density of YT, that is 
   %        p(yt | y) = \int p(yt | f) p(f|y) df.
   %   This requires also the class labels YT.
@@ -248,7 +248,7 @@ function lik = lik_probit(varargin)
   %   ep_pred, la_pred, mc_pred
 
     
-    if ~isempty(find(y~=1 & y~=-1))
+    if ~isempty(find(abs(yt)~=1))
       error('lik_probit: The class labels have to be {-1,1}')
     end
 
@@ -258,11 +258,9 @@ function lik = lik_probit(varargin)
     Vary = 1-Ey.^2;
     
     if nargout > 2
-      py = normcdf(Ef.*y./sqrt(1+Varf));    % Probability p(y_new)
+      py = normcdf(Ef.*yt./sqrt(1+Varf));    % Probability p(y_new)
     end
   end
-  
-  
 
   function reclik = lik_probit_recappend(reclik, ri, lik)
   % RECAPPEND  Append the parameters to the record
