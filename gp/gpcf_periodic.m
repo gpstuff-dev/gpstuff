@@ -953,7 +953,7 @@ function gpcf = gpcf_periodic(varargin)
                     reccf.p.period= ri.p.period;
                 end
             end
-            if ~isempty(ri.p.lengthScale)
+            if isfield(ri.p,'lengthScale') && ~isempty(ri.p.lengthScale)
                 reccf.p.lengthScale = ri.p.lengthScale;
             end
             if ~isempty(ri.p.magnSigma2)

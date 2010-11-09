@@ -738,7 +738,7 @@ function gpcf = gpcf_exp(varargin)
       reccf.p=[];
       reccf.p.lengthScale=[];
       reccf.p.magnSigma2=[];
-      if ~isempty(ri.p.lengthScale)
+      if isfield(ri.p,'lengthScale') && ~isempty(ri.p.lengthScale)
         reccf.p.lengthScale = ri.p.lengthScale;
       end
       if ~isempty(ri.p.magnSigma2)
