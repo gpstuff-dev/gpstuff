@@ -1,5 +1,4 @@
-%DEMO_REGRESSION2    Regression problem demonstration with additive model
-%                    
+%DEMO_REGRESSION2  Regression problem demonstration with additive model
 %
 %  Description
 %    A regression problem with one input variable and one output
@@ -28,37 +27,37 @@
 %
 %        p(y|th) = N(0, Kf + Kg + I*s^2).
 %    
-%   By placing a hyperprior for hyperparameters, p(th), we can find
-%   the maximum a posterior (MAP) estimate for them by maximizing
+%    By placing a hyperprior for hyperparameters, p(th), we can
+%    find the maximum a posterior (MAP) estimate for them by
+%    maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
 %
-%   After finding MAP estimate or posterior samples of
-%   hyperparameters, we can use them to make predictions for the
-%   latent functions. For example, the posterior predictive
-%   distribution of f is:
+%    After finding MAP estimate or posterior samples of
+%    hyperparameters, we can use them to make predictions for the
+%    latent functions. For example, the posterior predictive
+%    distribution of f is:
 %
 %       p(f | y, th) = N(m, S),
 %       m = Kf * (Kf + Kg + s^2I)^(-1) * y
 %       S = Kf - Kf * (Kf + Kg + s^2I)^(-1) * Kf
 %
-%   (We could integrate also over the hyperparameters with, for
-%   example, grid integration or MCMC. This is not demonstrated here
-%   but it is done exactly similarly as in the demo_regression1.)
+%    (We could integrate also over the hyperparameters with, for
+%    example, grid integration or MCMC. This is not demonstrated
+%    here but it is done exactly similarly as in the
+%    demo_regression1.)
 %   
-%   The demo is organised in four parts:
-%    1) data analysis with full GP model
-%    2) data analysis with FIC approximation
-%    3) data analysis with PIC approximation
-%    4) data analysis with CS+FIC model
+%    The demo is organised in four parts:
+%     1) data analysis with full GP model
+%     2) data analysis with FIC approximation
+%     3) data analysis with PIC approximation
+%     4) data analysis with CS+FIC model
 %
-%   For more detailed discussion of Gaussian process regression see
-%   Rasmussen and Williams (2006) and for a detailed discussion on
-%   sparse additive models see Vanhatalo and Vehtari (2008).
-%
-% See also  DEMO_REGRESSION1, DEMO_SPARSEREGRESION
-%
+%    For more detailed discussion of Gaussian process regression
+%    see Rasmussen and Williams (2006) and for a detailed
+%    discussion on sparse additive models see Vanhatalo and Vehtari
+%    (2008).
 %
 % References:
 %
@@ -69,13 +68,15 @@
 %    phenomena with sparse Gaussian processes. Proceedings of the 24th
 %    Conference on Uncertainty in Artificial Intelligence.
 %
+% See also 
+%  DEMO_REGRESSION1, DEMO_SPARSEREGRESION
+%
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
 
 %========================================================
 % PART 1 data analysis with full GP model
@@ -109,7 +110,7 @@ xt = [0:0.5:565]';
 % installed, use gpcf_sexp instead of gpcf_ppcs2)
 pl1 = prior_t('s2', 500, 'nu', 10);
 pl2 = prior_t('s2', 10, 'nu', 10);
-pm = prior_sqrtunif();
+pm = prior_sqrtt('s2',50);
 pn = prior_logunif();
 gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 1, 'lengthScale_prior', pl1, 'magnSigma2_prior', pm);
 if exist('ldlchol')
@@ -123,7 +124,7 @@ end
 gpcfn = gpcf_noise('noiseSigma2', 0.1, 'noiseSigma2_prior', pn);
 
 % Create the GP data structure
-gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004.^2) 
+gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -178,7 +179,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
+gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -226,7 +227,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.05, 'X_u', Xu)
+gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6, 'X_u', Xu)
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -280,7 +281,7 @@ if ~exist('ldlchol')
         ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
          'Can not use CS+FIC without SuiteSparse']);
 end
-gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 0.004, 'X_u', Xu)
+gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
