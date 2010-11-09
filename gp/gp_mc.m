@@ -386,7 +386,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
                 record.cf{i} = feval(cf.fh.recappend, [], gp.cf{i});
                 % Initialize metric structure
                 if isfield(cf,'metric')
-                    record.cf{i}.metric = feval(cf.metric.recappend, cf.metric, 1);
+                    record.cf{i}.metric = feval(cf.metric.fh.recappend, cf.metric, 1);
                 end
             end
             for i=1:nn
@@ -426,7 +426,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
             record.cf{i} = feval(gpcf.fh.recappend, record.cf{i}, ri, gpcf);
             % Record metric structure
             if isfield(gpcf,'metric')
-                record.cf{i}.metric = feval(record.cf{i}.metric.recappend, record.cf{i}.metric, ri, gpcf.metric);
+                record.cf{i}.metric = feval(record.cf{i}.metric.fh.recappend, record.cf{i}.metric, ri, gpcf.metric);
             end
         end
 
