@@ -70,7 +70,7 @@ if ~isfield(opt,'decay') | opt.decay < 0 | opt.decay > 1
   opt.decay=0.9;
 end
 if ~isfield(opt,'stepadj')
-  opt.stepadj=0.2;
+  opt.stepadj=0.1;
 end
 if ~isfield(opt,'stepsf')
   opt.stepsf=[];

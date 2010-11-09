@@ -445,7 +445,7 @@ if um % if the user defines the distribution to be unimodal
   if L(j) < mmin(j)
     L(j) = mmin(j);
     if di
-      fprintf('Overflow! (L:%d)\n',j);
+      fprintf('Underflow! (L:%d)\n',j);
     end
   end
   R(j) = L(j) + w(j);
@@ -460,7 +460,7 @@ if um % if the user defines the distribution to be unimodal
     if L(j) < mmin(j)
       L(j) = mmin(j);
       if di
-        fprintf('Overflow! (L:%d)\n',j);
+        fprintf('Underflow! (L:%d)\n',j);
       end
       break;
     end
@@ -481,7 +481,7 @@ else % if the distribution is not defined to be unimodal
   if L(j) < mmin(j)
     L(j) = mmin(j);
     if di
-      fprintf('Overflow! (L:%d)\n',j);
+      fprintf('Underflow! (L:%d)\n',j);
     end
     J = 0;
   end
@@ -499,7 +499,7 @@ else % if the distribution is not defined to be unimodal
     if L(j) < mmin(j)
       L(j) = mmin(j);
       if di
-        fprintf('Overflow! (L:%d)\n',j);
+        fprintf('Underflow! (L:%d)\n',j);
       end
       break;
     end
@@ -532,7 +532,7 @@ if um % if the user defines the distribution to be unimodal
   if L(j) < mmin(j)
     L(j) = mmin(j);
     if di
-      fprintf('Overflow! (L:%d)\n',j);
+      fprintf('Underflow! (L:%d)\n',j);
     end
     Ao = 1;
   else
@@ -556,7 +556,7 @@ if um % if the user defines the distribution to be unimodal
       if L(j) < mmin(j)
         L(j) = mmin(j);
         if di
-          fprintf('Overflow! (L:%d)\n',j);
+          fprintf('Underflow! (L:%d)\n',j);
         end
         Ao = 1;
       else
@@ -582,7 +582,7 @@ else % if the distribution is not defined to be unimodal
   if L(j) < mmin(j)
     L(j) = mmin(j);
     if di
-      fprintf('Overflow! (L:%d)\n',j);
+      fprintf('Underflow! (L:%d)\n',j);
     end
   end
   R(j) = L(j) + w(j);
@@ -601,7 +601,7 @@ else % if the distribution is not defined to be unimodal
       if L(j) < mmin(j)
         L(j) = mmin(j);
         if di
-          fprintf('Overflow! (L:%d)\n',j);
+          fprintf('Underflow! (L:%d)\n',j);
         end
       end
       AL = -feval(f,L,varargin{:});
