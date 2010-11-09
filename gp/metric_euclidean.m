@@ -244,12 +244,13 @@ function metric = metric_euclidean(varargin)
 
         dist  =  0;
         distc = cell(1,m);
-        s=1./metric.lengthScale.^2;
-        if m>numel(s)
-          s=repmat(s,1,m);
-        end
         % Compute the distances for each component set
         for i=1:m
+          if length(metric.lengthScale)==1
+            s=1./metric.lengthScale.^2;
+          else
+            s=1./metric.lengthScale(i).^2;
+          end
           distc{i} = 0;
           for j = 1:length(components{i})
             if metric.deltadist(i)
@@ -258,18 +259,18 @@ function metric = metric_euclidean(varargin)
               distc{i} = distc{i} + bsxfun(@minus,x(:,components{i}(j)),x2(:,components{i}(j))').^2;
             end
           end
-          distc{i} = distc{i}.*s(i);
+          distc{i} = distc{i}.*s;
           % Accumulate to the total distance
           dist = dist + distc{i};
         end
         dist = sqrt(dist);
-        if length(metric.lengthScale) == 1
-          D = dist;
+        % Loop through component sets
+        if length(metric.lengthScale)==1
+          D = -distc{1};
           D(dist~=0) = D(dist~=0)./dist(dist~=0);
           ii1 = ii1+1;
           gdist{ii1} = D;
         else
-          % Loop through component sets
           for i=1:m
             D = -distc{i};
             D(dist~=0) = D(dist~=0)./dist(dist~=0);
