@@ -60,33 +60,24 @@ function gp = gp_set(varargin)
 %    The additional fields when the likelihood is not Gaussian
 %    (lik ~='gaussian') are:
 %      latent_method - Defines a method for marginalizing over 
-%                      latent values. Possible methods are 'MCMC', 
-%                      'Laplace' and 'EP' and they are initialized 
-%                      as following :
-%
-%                 'latent_method', {'MCMC', F, @fh_latentmc}                
-%                       F            - 1xn vector of latent values and 
-%                                      they are set as 
-%                       fh_latentmc  - Function handle to function 
-%                                      which samples the latent values,
-%                                      e.g. @scaled_mh, @scaled_hmc
-%
-%                 'latent_method', {'Laplace', x, y(, z)}
-%                       x  - a matrix of inputs
-%                       y  - nx1 vector of outputs
-%                       z  - optional observed quantity in triplet
-%                            (x_i,y_i,z_i). Some likelihoods may use
-%                            this. For example, in case of Poisson 
-%                            likelihood we have z_i=E_i, that is, 
-%                            expected  value for ith case. 
-%                 'latent_method', {'EP', x, y(, z)}
-%                       x  -  a matrix of inputs
-%                       y  -  nx1 vector of outputs
-%                       z  - optional observed quantity in triplet
-%                            (x_i,y_i,z_i). Some likelihoods may use
-%                            this. For example, in case of Poisson 
-%                            likelihood we have z_i=E_i, that is, 
-%                            expected  value for ith case. 
+%                      latent values. Possible methods are 'MCMC',
+%                      'Laplace' and 'EP'. If just the latent
+%                      method is given, default options values are
+%                      used. Optionally it is possible to give
+%                      latent method options in a cell array, e.g.,
+%                      {'MCMC', 'method', @scaled_hmc}.
+%      The options which can be set for each method are
+%        MCMC:
+%          method    - Function handle to function which samples the
+%                      latent values @scaled_mh (default) or @scaled_hmc
+%          f         - 1xn vector of latent values
+%        Laplace:
+%          method    - String telling which optimization method is used
+%                      for estimating parameters of the Laplace approximation
+%                      'newton' (default except for lik_t)
+%                      'stabilized-newton' or
+%                      'lik_specific' (default for lik_t)
+%        EP: currently no options to set  
 %  
 %     The additional fields needed with mean functions
 %      meanf        - single mean function structure or cell array of 
