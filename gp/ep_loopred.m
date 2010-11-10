@@ -1,14 +1,14 @@
-function [Ef, Varf, Ey, Vary, Py] = ep_loopred(gp, x, y, varargin)
+function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
 %EP_LOOPRED  Leave-one-out predictions with Gaussian Process EP approximation
 %
 %  Description
-%    [EF, VARF, EY, VARY, PYT] = EP_LOOPRED(GP, X, Y, OPTIONS)
+%    [EFT, VARFT, EYT, VARYT, PYT] = EP_LOOPRED(GP, X, Y, OPTIONS)
 %    takes a GP data structure GP together with a matrix XT of
 %    input vectors, matrix X of training inputs and vector Y of
 %    training targets, and evaluates the leave-one-out predictive
-%    distribution at inputs X. Returns a posterior mean EF and
-%    variance VARF of latent variables and the posterior predictive
-%    mean EY and variance VARY of observations at input locations X.
+%    distribution at inputs X. Returns a posterior mean EFT and
+%    variance VARFT of latent variables and the posterior predictive
+%    mean EYT and variance VARYT of observations at input locations X.
 %
 %    Leave-one-out is approximated by leaving-out site-term and
 %    using cavity distribution as leave-one-out posterior for the
@@ -33,36 +33,100 @@ function [Ef, Varf, Ey, Vary, Py] = ep_loopred(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'EP_LOOPRED';
-  ip.addRequired('gp', @isstruct);
+  ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
 
-  [~,~,~,~,~,~,~,~, muvec_i, sigm2vec_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
-
-  Ef=muvec_i;
-  Varf=sigm2vec_i;
-  n=length(y);
-  if isempty(z)
-    if nargout > 4
-      for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1), Py(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
-      end
-    elseif nargout > 2
-      for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi));
+  if iscell(gp)
+    nGP = numel(gp);
+    for j = 1:nGP
+      [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i] = gpep_e(gp_pak(gp{j}), gp{j}, x, y, 'z', z);
+      
+      P_TH(j,:) = gp{j}.ia_weight;
+      Eft_grid(j,:)=muvec_i;
+      Varft_grid(j,:)=sigm2vec_i;
+      n=length(y);
+      if isempty(z)
+        if nargout > 4
+          for cvi=1:n
+            [Eyt_grid(j,cvi), Varyt_grid(j,cvi), pyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
+          end
+        elseif nargout > 2
+          for cvi=1:n
+            [Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi));
+          end
+        end
+      else
+        if nargout > 4
+          for cvi=1:n
+            [Eyt_grid(j,cvi), Varyt_grid(j,cvi), pyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
+          end
+        elseif nargout > 2
+          for cvi=1:n
+            [Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
+          end
+        end
       end
     end
+    
+    ft = zeros(size(Eft_grid,2),501);
+    for j = 1 : size(Eft_grid,2);
+        ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));  
+    end
+    
+    % Calculate the density in each grid point by integrating over
+    % different models
+    pft = zeros(size(Eft_grid,2),501);
+    for j = 1 : size(Eft_grid,2)
+        pft(j,:) = sum(normpdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
+    end
+
+    % Normalize distributions
+    pft = bsxfun(@rdivide,pft,sum(pft,2));
+
+    % Widths of each grid point
+    dft = diff(ft,1,2);
+    dft(:,end+1)=dft(:,end);
+
+    % Calculate mean and variance of the distributions
+    Eft = sum(ft.*pft,2)./sum(pft,2);
+    Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
+    
+    Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
+    Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
+    Eyt=Eyt';
+    Varyt=Varyt';
+    pyt = sum(bsxfun(@times,pyt_grid,P_TH),1)';
+
+    
   else
-    if nargout > 4
-      for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1), Py(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
+    [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+
+    Eft=muvec_i;
+    Varft=sigm2vec_i;
+    n=length(y);
+    if isempty(z)
+      if nargout > 4
+        for cvi=1:n
+          [Eyt(cvi,1), Varyt(cvi,1), pyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
+        end
+      elseif nargout > 2
+        for cvi=1:n
+          [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi));
+        end
       end
-    elseif nargout > 2
-      for cvi=1:n
-        [Ey(cvi,1), Vary(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
+    else
+      if nargout > 4
+        for cvi=1:n
+          [Eyt(cvi,1), Varyt(cvi,1), pyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
+        end
+      elseif nargout > 2
+        for cvi=1:n
+          [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
+        end
       end
     end
   end
