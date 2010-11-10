@@ -67,6 +67,7 @@
 %    Conference on Uncertainty in Artificial Intelligence,
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -75,6 +76,7 @@
 %========================================================
 % PART 1 data analysis with full GP model
 %========================================================
+disp('GP with Gaussian noise model')
 
 % Load the data
 S = which('demo_regression1');
@@ -136,6 +138,7 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
  
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
+disp(' MAP estimate for the hyperparameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
@@ -158,6 +161,7 @@ axis on;
 title('The predicted underlying function and the data points (MAP solution)');
 
 % --- Grid integration ---
+disp(' Grid integration over the hyperparameters')
 % Perform the grid integration and make predictions for p
 [gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
@@ -173,6 +177,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 
 
 % --- MCMC ---
+disp(' MCMC integration over the hyperparameters')
 %  (see gp_mc for details)
 % The hyperparameters are sampled with hybrid Monte Carlo 
 % (see, for example, Neal (1996)). 

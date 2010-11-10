@@ -20,6 +20,7 @@
 %  See also DEMO_REGRESSION1, DEMO_SPARSEREGRESSION
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -29,6 +30,7 @@
 %========================================================
 % PART 1 data analysis with full GP model
 %========================================================
+disp('Full GP model with Gaussian noise model')
 
 % Load the data
 S = which('demo_regression1');
@@ -51,6 +53,7 @@ gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-5);
 % for the hyperparameters via gradient based optimization. After this we will
 % perform an extensive Markov chain Monte Carlo sampling for the hyperparameters.
 % 
+disp(' MAP estimate for the hyperparameters')
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see gp_optim for more details)
@@ -67,11 +70,13 @@ p_eff_latent = gp_peff(gp, x, y);
 [DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent');
 
 % Evaluate the 10-fold cross-validation results.
+disp(' MAP estimate for the hyperparameters - k-fold-CV')
 cvres =  gp_kfcv(gp, x, y);
 mlpd_cv(1) = cvres.mlpd_cv;
 mrmse_cv(1) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
+disp(' MCMC integration over the hyperparameters')
 
 % The sampling options are set to 'opt' structure, which is given to
 % 'gp_mc' sampler
@@ -102,12 +107,14 @@ models{2} = 'full_MCMC';
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
+disp(' MCMC integration over the hyperparameters - k-fold-CV')
 opt.nsamples= 50; 
 cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'rstream', 1);
 mlpd_cv(2) = cvres.mlpd_cv;
 mrmse_cv(2) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
+disp(' Grid integration over the hyperparameters')
 clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
@@ -120,6 +127,7 @@ models{3} = 'full_IA';
 [DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all');
 
 % Then the 10 fold cross-validation.
+disp(' Grid integration over the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
 mlpd_cv(3) = cvres.mlpd_cv;
 mrmse_cv(3) = cvres.mrmse_cv;
@@ -128,6 +136,7 @@ mrmse_cv(3) = cvres.mrmse_cv;
 %========================================================
 % PART 2 data analysis with FIC GP
 %========================================================
+disp('GP with FIC sparse approximation')
 
 % ---------------------------
 % --- Construct the model ---
@@ -146,6 +155,7 @@ gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2',
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
+disp(' MAP estimate for the hyperparameters')
 
 % optimize only hyperparameters
 gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           
@@ -162,12 +172,15 @@ p_eff_latent(4) = gp_peff(gp_fic, x, y);
 [DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'focus', 'latent');
 
 % Evaluate the 10-fold cross validation results. 
+disp(' MAP estimate for the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y);
 mlpd_cv(4) = cvres.mlpd_cv;
 mrmse_cv(4) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 % (the inducing inputs are fixed)
+disp(' MCMC integration over the hyperparameters')
+
 clear('opt')
 opt.nsamples= 100;
 opt.repeat=5;
@@ -195,13 +208,14 @@ models{5} = 'FIC_MCMC';
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
-
+disp(' MCMC integration over the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt);
 mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
 
 
 % --- Integration approximation approach ---
+disp(' Grid integration over the hyperparameters')
 clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
@@ -214,6 +228,7 @@ models{6} = 'FIC_IA';
 [DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
+disp(' Grid integration over the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt);
 mlpd_cv(6) = cvres.mlpd_cv;
 mrmse_cv(6) = cvres.mrmse_cv;
@@ -221,6 +236,7 @@ mrmse_cv(6) = cvres.mrmse_cv;
 %========================================================
 % PART 3 data analysis with PIC approximation
 %========================================================
+disp('GP with PIC sparse approximation')
 
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
@@ -249,12 +265,13 @@ gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
 
 gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
-gp_pic = gp_set(gp_pic, 'tr_index', trindex)
+gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
+disp(' MAP estimate for the hyperparameters')
 
 % optimize only hyperparameters
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');
@@ -269,11 +286,13 @@ p_eff_latent(7) = gp_peff(gp_pic, x, y);
 [DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'latent');
 
 % Evaluate the 10-fold cross validation results. 
+disp(' MAP estimate for the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y);
 mlpd_cv(7) = cvres.mlpd_cv;
 mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
+disp(' MCMC integration over the hyperparameters')
 
 clear opt
 opt.nsamples= 100;
@@ -304,11 +323,13 @@ models{8} = 'PIC_MCMC';
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 opt.nsamples= 50; 
+disp(' MCMC integration over the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt);
 mlpd_cv(8) = cvres.mlpd_cv;
 mrmse_cv(8) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
+disp(' Grid integration over the hyperparameters')
 clear opt
 opt.int_method = 'grid';
 opt.step_size = 2;
@@ -321,6 +342,7 @@ models{9} = 'PIC_IA';
 [DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
+disp(' Grid integration over the hyperparameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt);
 mlpd_cv(9) = cvres.mlpd_cv;
 mrmse_cv(9) = cvres.mrmse_cv;
@@ -330,7 +352,7 @@ mrmse_cv(9) = cvres.mrmse_cv;
 %========================================================
 % PART 4 Print the results
 %========================================================
-
+disp('Summary of the results')
 S = '       ';
 for i = 1:length(models)
     S = [S '  ' models{i}];

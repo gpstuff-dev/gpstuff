@@ -71,6 +71,7 @@
 %    Conference on Uncertainty in Artificial Intelligence,
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -106,7 +107,7 @@ ind = find(min(dist,[],2)<=1);
 xx = xx(ind,:);
 
 % Plot the prediction inputs
-figure(1)
+figure
 plot(xx(:,1),xx(:,2),'k.')
 title('Inputs where to predict')
 
@@ -143,7 +144,7 @@ gp = gp_unpak(gp,w);
 K = gp_trcov(gp,x);
 nnz(K) / prod(size(K))
 
-figure(2)
+figure
 p = amd(K);
 spy(K(p,p), 'k')
 
@@ -151,7 +152,7 @@ spy(K(p,p), 'k')
 % plot figure
 % ------------------------------------
 Ef = gp_pred(gp, x, y, xx);
-figure(3)
+figure
 G=repmat(NaN,size(X1));
 G(ind)=(Ef + avgy)*100;
 pcolor(X1,X2,G),shading flat

@@ -175,7 +175,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
         if ~isempty(gpcf.p.weightSigma2)
             w = [w log(gpcf.weightSigma2)];
             if numel(gpcf.weightSigma2)>1
-              s = [s; sprintf('log(neuralnetwork.weightSigma2 x %d)',numel(gpcf.lengthScale))];
+              s = [s; sprintf('log(neuralnetwork.weightSigma2 x %d)',numel(gpcf.weightSigma2))];
             else
               s = [s; 'log(neuralnetwork.weightSigma2)'];
             end

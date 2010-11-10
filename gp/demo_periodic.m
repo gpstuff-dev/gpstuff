@@ -63,6 +63,7 @@
 %    Processes for Machine Learning. The MIT Press.
 
 % Copyright (c) 2009 Heikki Peura
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

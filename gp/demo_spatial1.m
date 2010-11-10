@@ -96,8 +96,8 @@ dims = [1    60     1    35];
 
 % Create the covariance functions
 gpcf1 = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05);
-pl = prior_t();
-pm = prior_sqrtt('s2', 0.3);
+pl = prior_t('s2',10);
+pm = prior_sqrtunif();
 gpcf1 = gpcf_matern32(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
@@ -152,10 +152,8 @@ axis equal
 axis([0 35 0 60])
 title('Posterior variance of the relative risk, FIC')
 
-% the MAP estimate of the hyperparameters in kilometers. Notice that the 
-% co-ordinates in the data are not in kilometers. x=1 corresponds to 20km 
-% in real life
-S1=sprintf('MAP: length-scale: %.1f, magnSigma: %.3f \n', gp.cf{1}.lengthScale*20, sqrt(gp.cf{1}.magnSigma2))
+% the MAP estimate of the hyperparameters. 
+S1=sprintf('MAP: length-scale: %.1f, magnSigma: %.3f \n', gp.cf{1}.lengthScale, sqrt(gp.cf{1}.magnSigma2))
 
 % --- IA ---
 [gp_array,pth,th,Ef,Varf] = gp_ia(gp, x, y, x, 'z', ye, ...
@@ -182,18 +180,17 @@ axis equal
 axis([0 35 0 60])
 title('Posterior variance of the relative risk, FIC')
 
-% the IA estimate of the hyperparameters in kilometers. Notice that the 
-% co-ordinates in the data are not in kilometers. x=1 corresponds to 20km 
+% the IA estimate of the hyperparameters 
 % in real life
 Elth=sum(bsxfun(@times,pth,th));
 Elth2=sum(bsxfun(@times,pth,th.^2));
 Stdlth = sqrt(Elth2-Elth.^2);
-S2=sprintf('IA-GRID: 90%% CI - length-scale: [%.1f,%.1f], magnSigma: [%.3f,%.3f] \n',exp(Elth(2)-1.645*Stdlth(2))*20,exp(Elth(2)+1.645*Stdlth(2))*20, sqrt(exp(Elth(1)-1.645*Stdlth(1))),sqrt(exp(Elth(1)+1.645*Stdlth(1))))
+S2=sprintf('IA-GRID: 90%% CI - length-scale: [%.1f,%.1f], magnSigma: [%.3f,%.3f] \n',exp(Elth(2)-1.645*Stdlth(2)),exp(Elth(2)+1.645*Stdlth(2)), sqrt(exp(Elth(1)-1.645*Stdlth(1))),sqrt(exp(Elth(1)+1.645*Stdlth(1))))
 
 % --- MCMC ---
 
 % Set the approximate inference method to MCMC
-gp = gp_set(gp, 'latent_method', 'MCMC');
+gp = gp_set(gp, 'latent_method', {'MCMC', 'method', @scaled_hmc});
 
 % Set the sampling options
 
@@ -224,7 +221,7 @@ opt.latent_opt.steps=7;
 opt.latent_opt.window=1;
 opt.latent_opt.stepadj=0.15;
 opt.hmc_opt.persistence=0;
-opt.hmc_opt.stepadj=0.15;
+opt.hmc_opt.stepadj=0.03;
 opt.hmc_opt.steps=2;
 
 opt.display = 1;
@@ -239,12 +236,12 @@ xii=sub2ind([60 35],x(:,2),x(:,1));
 % Inside the loop we sample one sample from the latent values and 
 % hyper-parameters at each iteration. After that we plot the samples 
 % so that we can visually inspect the progress of sampling
-figure(3)
+figure
 % first prepare figures for faster plotting
 clf
 subplot(1,2,1)
-h1=plot(rgp.cf{1}.lengthScale*20, sqrt(rgp.cf{1}.magnSigma2),...
-        rgp.cf{1}.lengthScale(end)*20, sqrt(rgp.cf{1}.magnSigma2(end)),'r*')
+h1=plot(rgp.cf{1}.lengthScale, sqrt(rgp.cf{1}.magnSigma2),...
+        rgp.cf{1}.lengthScale(end), sqrt(rgp.cf{1}.magnSigma2(end)),'r*')
 xlabel('length-scale')
 ylabel('magnitude')
 subplot(1,2,2)
@@ -258,15 +255,15 @@ title('relative risk')
 while length(rgp.edata)<1000 %   1000
   [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt);
   fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
-  set(h1(1),'XData',rgp.cf{1}.lengthScale*20,'YData',sqrt(rgp.cf{1}.magnSigma2));
-  set(h1(2),'XData',rgp.cf{1}.lengthScale(end)*20,'YData',rgp.cf{1}.magnSigma2(end));
+  set(h1(1),'XData',rgp.cf{1}.lengthScale,'YData',sqrt(rgp.cf{1}.magnSigma2));
+  set(h1(2),'XData',rgp.cf{1}.lengthScale(end),'YData',sqrt(rgp.cf{1}.magnSigma2(end)));
   G=repmat(NaN,size(X1));
   G(xii)=exp(gp.latentValues);
   set(h2,'XData',X1,'YData',X2,'CData',G);
   drawnow
 end
 
-figure(3)
+figure
 clf
 G=repmat(NaN,size(X1));
 G(xii)=median(exp(rgp.latentValues));
@@ -288,7 +285,7 @@ axis([0 35 0 60])
 title('Posterior variance of relative risk, FIC GP')
 
 
-S3=sprintf('MCMC: 90%% CI - length-scale: [%.1f,%.1f], magnSigma: [%.3f,%.3f] \n',prctile(rgp.cf{1}.lengthScale(56:end),5)*20,prctile(rgp.cf{1}.lengthScale(56:end),95)*20,prctile(sqrt(rgp.cf{1}.magnSigma2(56:end)),5),prctile(sqrt(rgp.cf{1}.magnSigma2(56:end)),95))
+S3=sprintf('MCMC: 90%% CI - length-scale: [%.1f,%.1f], magnSigma: [%.3f,%.3f] \n',prctile(rgp.cf{1}.lengthScale(56:end),5),prctile(rgp.cf{1}.lengthScale(56:end),95),prctile(sqrt(rgp.cf{1}.magnSigma2(56:end)),5),prctile(sqrt(rgp.cf{1}.magnSigma2(56:end)),95))
 
 disp(S1)
 disp(S2)

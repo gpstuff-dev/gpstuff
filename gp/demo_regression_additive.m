@@ -35,9 +35,10 @@
 %    Processes for Machine Learning. The MIT Press.
 %
 %
-%  See also  DEMO_REGRESSION1
-%
-% Copyright (c) 2010 Jaakko Riihimäki
+%  See also
+%    DEMO_REGRESSION1
+
+% Copyright (c) 2010 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -70,6 +71,7 @@ jitter=1e-4;
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 
 % CONSTANT + LINEAR COVARIANCE FUNCTION
+disp('Constant + linear covariance function')
 % constant covariance function
 gpcf_c = gpcf_constant('constSigma2', 1, 'constSigma2_prior', pt);
 % linear covariance function
@@ -83,7 +85,8 @@ gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 Eft_map = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
-figure, set(gcf, 'color', 'w')
+figure
+set(gcf, 'color', 'w')
 mesh(xt1, xt2, reshape(Eft_map,nxt,nxt));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
@@ -93,6 +96,9 @@ title('The predicted underlying function (constant + linear)');
 % CONSTANT + SQUARED EXPONENTIAL COVARIANCE FUNCTION (W.R.T. THE
 % FIRST INPUT DIMENSION) + LINEAR (W.R.T. THE SECOND INPUT
 % DIMENSION)
+fprintf(['Constant + squared exponential covariance function\n' ...
+         '(w.r.t. the first input dimension) + linear (w.r.t.\n' ...
+         'the second input dimension)\n'])
 
 % Metric function for the first input variable
 metric1 = metric_euclidean('components', {[1]}, 'lengthScale',[0.5], 'lengthScale_prior', pt);
@@ -108,7 +114,8 @@ gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 Eft_map = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
-figure, set(gcf, 'color', 'w')
+figure
+set(gcf, 'color', 'w')
 mesh(xt1, xt2, reshape(Eft_map,nxt,nxt));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
@@ -116,6 +123,7 @@ xlabel('x_1'), ylabel('x_2')
 title('The predicted underlying function (sexp for 1. input + linear for 2. input )');
 
 % ADDITIVE SQUARED EXPONENTIAL COVARIANCE FUNCTION
+disp('Additive squared exponential covariance function')
 
 % Metric function for the second input variable
 metric2 = metric_euclidean('components', {[2]},'lengthScale',[0.5], 'lengthScale_prior', pt);
@@ -130,7 +138,8 @@ gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 Eft_map = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
-figure, set(gcf, 'color', 'w')
+figure
+set(gcf, 'color', 'w')
 mesh(xt1, xt2, reshape(Eft_map,nxt,nxt));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
@@ -138,6 +147,8 @@ xlabel('x_1'), ylabel('x_2')
 title('The predicted underlying function (additive sexp)');
 
 % SQUARED EXPONENTIAL COVARIANCE FUNCTION
+disp('Squared exponential covariance function')
+
 gpcf_s = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 0.2^2, ...
                    'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 gp = gp_set('cf', {gpcf_s}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
@@ -149,7 +160,8 @@ gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 Eft_map = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
-figure, set(gcf, 'color', 'w')
+figure
+set(gcf, 'color', 'w')
 mesh(xt1, xt2, reshape(Eft_map,nxt,nxt));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
@@ -157,6 +169,8 @@ xlabel('x_1'), ylabel('x_2')
 title('The predicted underlying function (sexp)');
 
 % ADDITIVE NEURAL NETWORK COVARIANCE FUNCTION
+disp('Additive neural network covariance function');
+
 gpcf_nn1 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [1], ...
                               'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 gpcf_nn2 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [2], ...
@@ -170,7 +184,8 @@ gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 Eft_map = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
-figure, set(gcf, 'color', 'w')
+figure
+set(gcf, 'color', 'w')
 mesh(xt1, xt2, reshape(Eft_map,nxt,nxt));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
@@ -178,6 +193,8 @@ xlabel('x_1'), ylabel('x_2')
 title('The predicted underlying function (additive neural network)');
 
 % NEURAL NETWORK COVARIANCE FUNCTION
+disp('Neural network covariance function')
+
 gpcf_nn = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1, ...
                              'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 gp = gp_set('cf', {gpcf_nn}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
@@ -189,7 +206,8 @@ gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 Eft_map = gp_pred(gp, x, y, xt);
 
 % Plot the prediction and data
-figure, set(gcf, 'color', 'w')
+figure
+set(gcf, 'color', 'w')
 mesh(xt1, xt2, reshape(Eft_map,nxt,nxt));
 hold on
 plot3(x(:,1), x(:,2), y, '*')

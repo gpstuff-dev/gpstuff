@@ -39,8 +39,8 @@
 % =====================================
 % 1D-example
 % =====================================
-fprintf(['Coal disaster data with EP for latent values and CCD\n' ...
-         'integration over the hyperparameters\n'])
+fprintf(['Coal disaster data with EP integration over the latent\n' ...
+         'values and CCD integration over the hyperparameters\n'])
 figure
 % Coal disaster data
 S = which('demo_lgcp');
@@ -57,8 +57,8 @@ ylabel('Intensity')
 % =====================================
 % 2D-example
 % =====================================
-fprintf(['Redwood data with Laplace for latent values and MAP\n' ...
-         'for the hyperparameters\n'])
+fprintf(['Redwood data with Laplace integration over the latent\n' ...
+         'values and MAP estimate for the hyperparameters\n'])
 figure
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/redwoodfull.txt');

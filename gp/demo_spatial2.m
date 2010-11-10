@@ -39,6 +39,7 @@
 %    DEMO_REGRESSION1, DEMO_CLASSIFIC1, DEMO_SPATIAL1
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -60,6 +61,10 @@ y = data(:,4);
 % x = co-ordinates 
 % y = number of deaths
 % ye = the expexted number of deaths
+
+fprintf(['GP with negative-binomial observation model, Laplace\n' ...
+         'integration over the latent values and MAP estimate\n' ...
+         'for the hyperparameters\n']);
 
 % Create the covariance functions
 gpcf1 = gpcf_ppcs2('nin', 2, 'lengthScale', 5, 'magnSigma2', 0.05);
@@ -84,7 +89,7 @@ gp=gp_optim(gp,x,y,'z',ye,'optimf',@fminscg,'opt',opt);
 % Visualize sparsity pattern
 figure
 C = gp_trcov(gp,x);
-nnz(C) / prod(size(C))
+fprintf('Proportion of non-zeros is %.4f\n',nnz(C) / prod(size(C)))
 p = amd(C);
 spy(C(p,p))
 
@@ -120,6 +125,9 @@ title('Posterior variance of the relative risk (Laplace)')
 % =====================================
 % EP approximation
 % =====================================
+fprintf(['GP with negative-binomial observation model, EP\n' ...
+         'integration over the latent values and MAP estimate\n' ...
+         'for the hyperparameters\n']);
 
 % Set the approximate inference method to EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -132,7 +140,7 @@ gp=gp_optim(gp,x,y,'z',ye,'optimf',@fminscg,'opt',opt);
 % Visualize sparsity pattern
 figure
 C = gp_trcov(gp,x);
-nnz(C) / prod(size(C))
+fprintf('Proportion of non-zeros is %.4f\n',nnz(C) / prod(size(C)))
 p = amd(C);
 spy(C(p,p))
 

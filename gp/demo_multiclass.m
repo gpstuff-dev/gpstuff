@@ -69,6 +69,8 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm);
 gp = gp_set('lik', lik_softmax, 'cf', {gpcf1}, 'jitterSigma2', 1e-2);
 
 % ------- Laplace approximation --------
+fprintf(['Softmax model with Laplace integration over the latent\n' ...
+         'values and MAP estimate for the hyperparameters\n'])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');

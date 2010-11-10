@@ -106,9 +106,8 @@ function gp = gp_set(varargin)
 %                     are the inputs belonging to the i'th block.
 %
 %    The additional fields needed with derivative observations
-%      derivobs     - A flag variable so that derivative observations are
-%                     in use. Provide with some value so that the init
-%                     system doesn't get confused. 'derivobs',1
+%      derivobs     - tells whether derivative observations are
+%                     used: 'on' or 'off' ['off']
 %
 %       See also
 %       GPCF_*, LIK_*, PRIOR_*, GP_PAK, GP_UNPAK, GP_E, GP_G, GP_EG,
@@ -226,16 +225,21 @@ function gp = gp_set(varargin)
    % Gradient observation
   if init || ~ismember('derivobs',ip.UsingDefaults)
     derivobs=ip.Results.derivobs;
-      if ischar(derivobs) 
-        switch derivobs
-          case 'on'
-            gp.derivobs=true;
-          case 'off'
-            gp.derivobs=false;
-        end
+    if ~ischar(derivobs)
+      if derivobs
+        derivobs='on';
       else
-        gp.derivobs=logical(derivobs);
+        derivobs='off';
       end
+      switch derivobs
+        case 'on'
+          gp.derivobs=true;
+        case 'off'
+          if isfield(gp,'derivobs')
+            gp=rmfield(gp,'derivobs')
+          end
+      end
+    end
   end
 
   % Inducing inputs
@@ -263,7 +267,7 @@ function gp = gp_set(varargin)
     latent_method=ip.Results.latent_method;
     latent_method_opt={};
     if iscell(latent_method)
-      latent_method_opt=latent_method{2:end};
+      latent_method_opt=latent_method(2:end);
       latent_method=latent_method{1};
     end
     switch latent_method

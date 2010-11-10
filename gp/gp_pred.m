@@ -69,12 +69,12 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method') || iscell(gp)
+if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   % use inference specific methods
-  if numel(gp.jitterSigma2)>1
-    fh_pred=@mc_pred;
-  elseif iscell(gp)
+  if iscell(gp)
     fh_pred=@ia_pred;
+  elseif numel(gp.jitterSigma2)>1
+    fh_pred=@mc_pred;
   elseif isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'

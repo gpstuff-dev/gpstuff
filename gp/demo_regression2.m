@@ -73,6 +73,7 @@
 %
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

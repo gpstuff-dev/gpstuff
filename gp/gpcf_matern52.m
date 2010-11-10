@@ -176,7 +176,7 @@ function gpcf = gpcf_matern52(varargin)
     
     if ~isempty(gpcf.p.magnSigma2)
       w = [w log(gpcf.magnSigma2)];
-      s = [s; 'log(matern32.magnSigma2)'];
+      s = [s; 'log(matern52.magnSigma2)'];
       % Hyperparameters of magnSigma2
       [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
       w = [w wh];
@@ -191,7 +191,7 @@ function gpcf = gpcf_matern52(varargin)
       if ~isempty(gpcf.p.lengthScale)
         w = [w log(gpcf.lengthScale)];
         if numel(gpcf.lengthScale)>1
-          s = [s; sprintf('log(matern32.lengthScale x %d)',numel(gpcf.lengthScale))];
+          s = [s; sprintf('log(matern52.lengthScale x %d)',numel(gpcf.lengthScale))];
         else
           s = [s; 'log(matern52.lengthScale)'];
         end

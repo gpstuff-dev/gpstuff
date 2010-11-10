@@ -26,7 +26,7 @@
 %       y=[y;dy_1;...;dy_n]; for ex. if size(x)=[10 2] ->
 %       size(y)=[30 1]
 %
-%       - gp_set(gp, 'derivobs', true)
+%       - gp_set(gp, 'derivobs', 'on')
 %
 %   The demo is organised in two parts:
 %     1) data analysis without derivative observations

@@ -1,5 +1,5 @@
-%DEMO_INFNEURALNETWORK  Demonstration of Gaussian process with a neural
-%                       network covariance function
+%DEMO_NEURALNETWORK  Demonstration of Gaussian process with a neural
+%                    network covariance function
 %                    
 %  Description
 %    Infinite neural network solutions in 2D and 1D regression
@@ -33,7 +33,7 @@
 %
 %  See also DEMO_REGRESSION1
 
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimäki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 

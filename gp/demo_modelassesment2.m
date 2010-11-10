@@ -1,25 +1,27 @@
-%DEMO_MODELASSESMENT2    Demonstration for model assessment when the observation 
-%                        model is non-Gaussian
+%DEMO_MODELASSESMENT2  Demonstration for model assessment when the observation 
+%                      model is non-Gaussian
 %
-%    Description
-%    We will consider the classification problem in
-%    demo_classific. The analysis is conducted with full Gaussian
-%    process using both probit and logit likelihood. The performance
-%    of these two models are compared by evaluating the DIC
-%    statistics, number of efficient parameters and ten-fold cross
-%    validation. The inference will be conducted using maximum a
-%    posterior (MAP) estimate for the hyperparameters using EP and
-%    Laplace approximation, via full Markov chain Monte Carlo (MCMC)
-%    and with an integration approximation (IA) for the
+%  Description
+%    We will consider the classification problem in demo_classific. 
+%    The analysis is conducted with full Gaussian process using
+%    both probit and logit likelihood. The performance of these two
+%    models are compared by evaluating the DIC statistics, number
+%    of efficient parameters and ten-fold cross validation. The
+%    inference will be conducted using maximum a posterior (MAP)
+%    estimate for the hyperparameters using EP and Laplace
+%    approximation, via full Markov chain Monte Carlo (MCMC) and
+%    with an integration approximation (IA) for the
 %    hyperparameters.
 %
 %    This demo is organised in two parts:
 %     1) data analysis with with probit likelihood
 %     2) data analysis with with logit likelihood
 %
-%   See also  DEMO_CLASSIFIC1, DEMO_MODELASSESMENT1
+%  See also  
+%    DEMO_CLASSIFIC1, DEMO_MODELASSESMENT1
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
+% Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -50,7 +52,8 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
-disp(' Probit with Laplace for latent values and MAP for hyperparameters')
+disp([' Probit with Laplace integration over the latent values '; ...
+      ' and MAP estimate for the hyperparameters               '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -74,7 +77,8 @@ mlpd_cv(1) = cvres.mlpd_cv;
 mrmse_cv(1) = cvres.mrmse_cv;
 
 % ------- Expectation propagation --------
-disp(' Probit with EP for latent values and MAP for hyperparameters')
+disp([' Probit with EP integration over the latent values and MAP '; ...
+      ' estimate for the hyperparameters                          '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -96,7 +100,8 @@ mlpd_cv(2) = cvres.mlpd_cv;
 mrmse_cv(2) = cvres.mrmse_cv;
 
 % ------- MCMC ---------------
-disp(' Probit with MCMC for latent values and hyperparameters')
+disp([' Probit with MCMC integration over the latent values and '; ...
+      ' the hyperparameters                                     '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
@@ -136,7 +141,8 @@ mlpd_cv(3) = cvres.mlpd_cv;
 mrmse_cv(3) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
-disp(' Probit with EP for latent values and grid integration for hyperparameters')
+disp([' Probit with EP integration over the latent values and '; ...
+      ' grid integration over the hyperparameters             '])
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -189,7 +195,8 @@ gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
-disp(' Logit with Laplace for latent values and MAP for hyperparameters')
+disp([' Logit with Laplace integration over the latent values and '; ...
+      ' MAP estimate for the hyperparameters                      '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -211,7 +218,8 @@ mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
 
 % ------- Expectation propagation --------
-disp(' Logit with EP for latent values and MAP for hyperparameters')
+disp([' Logit with EP integration over the latent values and MAP'; ...
+      ' estimate for the hyperparameters                        '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -234,7 +242,8 @@ mrmse_cv(6) = cvres.mrmse_cv;
 
 
 % ------- MCMC ---------------
-disp(' Logit with MCMC for latent values and hyperparameters')
+disp([' Logit with MCMC integration over the latent values and '; ...
+      ' the hyperparameters                                    '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
@@ -273,7 +282,8 @@ mlpd_cv(7) = cvres.mlpd_cv;
 mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
-disp(' Logit with EP for latent values and grid integration for hyperparameters')
+disp([' Logit with EP integration over the latent values and grid '; ...
+      ' integration over the hyperparameters                      '])
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');

@@ -193,7 +193,7 @@ function gpcf = gpcf_matern32(varargin)
         if numel(gpcf.lengthScale)>1
           s = [s; sprintf('log(matern32.lengthScale x %d)',numel(gpcf.lengthScale))];
         else
-          s = [s; 'log(matern52.lengthScale)'];
+          s = [s; 'log(matern32.lengthScale)'];
         end
         % Hyperparameters of lengthScale
         [wh sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale);
