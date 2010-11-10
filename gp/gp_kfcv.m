@@ -342,7 +342,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           end
         end
         % Pick latentvalues for the training set in this fold
-        gp.latentValues=gp_orig.latentValues(trindex{i});
+        if isfield(gp,'latentValues')
+          gp.latentValues=gp_orig.latentValues(trindex{i});
+        end
         gp = gp_mc(gp, xtr, ytr, options_tr, opt);
         nburnin = floor(length(gp.etr)/3);
         gp = thin(gp,nburnin);

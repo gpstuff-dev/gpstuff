@@ -60,9 +60,10 @@
  nt=length(xt);
 
 %========================================================
-% PART 1 data analysis with full GP model without derivative obs
+% PART 1 GP model without derivative obs
 %========================================================
- 
+disp('GP model without derivative obs')
+
 gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
 gpcf2 = gpcf_noise('noiseSigma2', ns^2);
 
@@ -101,8 +102,9 @@ xlabel('input x')
 ylabel('output y')
 
 %========================================================
-% PART 2 data analysis with full GP model with derivative obs
+% PART 2 GP model with derivative obs
 %========================================================
+disp('GP model with derivative obs')
 
 % Option derivobs set so that the derivatives are in use
 gp = gp_set(gp, 'derivobs', 'on');

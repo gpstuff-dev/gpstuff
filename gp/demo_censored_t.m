@@ -61,10 +61,10 @@ gpcf1.p.magnSigma2 = logunif_p;
 
 % Create the likelihood structure
 %likelih = likelih_t('init', nu, sigma);
-likelih = likelih_cen_t('init', nu, sigma, ylim);
+likelih = likelih_cen_t('init', 'nu', nu, 'sigma', sigma, 'ylim', ylim);
 likelih.p.nu = logunif_p;
 likelih.p.sigma = logunif_p;
-%likelih.freeze_nu=1;
+%likelih.fix_nu=1;
 
 % Laplace approximation Student-t likelihood
 param = 'hyper+likelih';
@@ -95,7 +95,7 @@ fprintf('\nnu=%.3f, sigma=%.3f \nhyper=%s\n',gp_la.likelih.nu,...
 
 figure(2)
 [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp_la,param), gp_la, x, y, param);
-W=-gp_la.likelih.fh_llg2(gp_la.likelih,y,f,'latent');
+W=-gp_la.likelih.fh.llg2(gp_la.likelih,y,f,'latent');
 [foo,ii]=sort(W,'ascend');
 ii=ii(1:5);
 plot(xx(:,1),yy,'k',x(:,1),f,'b.',x(:,1),y,'go',x(ii,1),y(ii),'r.')
@@ -118,20 +118,16 @@ plot(repmat(x(io,1)',2,1),[y(io)'-Hzero; y(io)'+Hzero],'g.-')
 hold off
 legend(h1,'True','Laplace','Data')
 
-
-
-
 % ======================
 % Full MCMC solution
 % ======================
 [n, nin] = size(x);
 gpcf1 = gpcf_sexp('init', 'lengthScale', repmat(1,1,nin), 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noiset('init', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
+gpcf2 = gpcf_noiset('init', 'ndata', n, 'noiseSigmas2', repmat(1^2,n,1));   % Here set own Sigma2 for every data point
 
-% Un-freeze nu
-%gpcf2 = gpcf_noiset('set', gpcf2, 'freeze_nu', 0);
+% Un-fix nu
+%gpcf2 = gpcf_noiset('set', gpcf2, 'fix_nu', 0);
 gpcf2 = gpcf_noiset('set', gpcf2, 'censored', {[-0.4 0.9], y});
-
 
 % Set the prior for the parameters of covariance functions 
 gpcf1.p.lengthScale = gamma_p({3 7 3 7});  
