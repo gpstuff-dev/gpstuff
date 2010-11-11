@@ -117,32 +117,23 @@ pm2 = prior_sqrtt('nu', 1, 's2', 150);
 gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3, ...
                    'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
 pn = prior_t('nu', 4, 's2', 0.3);
-gpcfn = gpcf_noise('noiseSigma2', 1, 'noiseSigma2_prior', pn);
+lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
 
 
 % MAP ESTIMATE
 % ============================================
-gp = gp_set('cf', {gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-6);
+gp = gp_set('lik', lik, 'cf', {gpcf2}, 'jitterSigma2', 1e-6);
 
 % Optimize the hyperparameters
 % ---------------------------------
-w=gp_pak(gp);  
-fe=@gp_e;     
-fg=@gp_g;     
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = 2;
-
-% do the optimization
-w=scg2(fe, w, opt, fg, gp, x, y);
-gp = gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 % Evaluate the sparsity of the covariance function
 K = gp_trcov(gp,x);
-nnz(K) / prod(size(K))
+fprintf('Proportion of non-zeros is %.4f\n',nnz(K) / prod(size(K)))
 
 figure
 p = amd(K);

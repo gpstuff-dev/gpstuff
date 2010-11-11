@@ -1,4 +1,5 @@
-%DEMO_ROBUSTREGRESSION  A regression demo with Student-t distribution as a residual model.
+%DEMO_REGRESSION_ROBUST A regression demo with Student-t
+%                       distribution as a residual model.
 %
 %  Description
 %    The synthetic data used here is the same used by Radford M. 
@@ -86,9 +87,9 @@ yt = 0.3+0.4*xt+0.5*sin(2.7*xt)+1.1./(1+xt.^2);
 
 % We create a Gaussian process and priors for GP parameters. Prior for GP
 % parameters is Gaussian multivariate hierarchical. The residual is given at
-% first Gaussian prior to find good starting value for noiseSigmas..
+% first Gaussian prior to find good starting value for noise variances
 
-% Construct the priors for the parameters of covariance functions...
+% Construct the priors for the parameters of covariance functions
 pl = prior_t();
 pm = prior_sqrtunif();
 pn = prior_logunif();
@@ -96,10 +97,10 @@ pn = prior_logunif();
 % create the Gaussian process
 gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcfn = gpcf_noise('noiseSigma2', 0.2^2, 'noiseSigma2_prior', pn);
+lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn})
+gp = gp_set('lik', lik, 'cf', {gpcf1})
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 disp('Gaussian noise model and MAP estimate for hyperparameters')
@@ -142,7 +143,8 @@ pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Here, set own Sigma2 for every data point
-gpcfn = gpcf_noiset('ndata', n, 'noiseSigmas2', repmat(1,n,1));
+gpcfn = gpcf_noiset('ndata', n, 'noiseSigmas2', repmat(1,n,1), ...
+                    'nu_prior', prior_logunif());
 gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9)
 
 hmc_opt.steps=10;
@@ -152,24 +154,19 @@ hmc2('state', sum(100*clock));
 hmc_opt.persistence=1;
 hmc_opt.decay=0.6;
 
-gibbs_opt = sls1mm_opt;
-gibbs_opt.maxiter = 50;
-gibbs_opt.mmlimits = [0 40];
-gibbs_opt.method = 'minmax';
-
 % Sample 
 [r,g,opt]=gp_mc(gp, x, y, 'nsamples', 300, 'hmc_opt', hmc_opt, ...
-                'gibbs_opt', gibbs_opt);
+                'gibbs_opt', 'on');
 
 % thin the record
 rr = thin(r,100,2);
 
 figure 
 subplot(2,2,1)
-hist(rr.noisef{1}.nu,20)
+hist(rr.lik.nu,20)
 title('Mixture model, \nu')
 subplot(2,2,2)
-hist(sqrt(rr.noisef{1}.tau2).*rr.noisef{1}.alpha,20)
+hist(sqrt(rr.lik.tau2).*rr.lik.alpha,20)
 title('Mixture model, \sigma')
 subplot(2,2,3) 
 hist(rr.cf{1}.lengthScale,20)

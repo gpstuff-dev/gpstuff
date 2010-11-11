@@ -96,7 +96,7 @@ function lik = lik_poisson(varargin)
   end
 
 
-  function [lik, w] = lik_poisson_unpak(w, lik)
+  function [lik, w] = lik_poisson_unpak(lik, w)
   %LIK_POISSON_UNPAK  Extract likelihood parameters from the vector.
   %
   %   Description

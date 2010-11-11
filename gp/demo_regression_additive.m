@@ -62,7 +62,7 @@ nxt=size(xt1,1);
 pt = prior_t('nu', 4, 's2', 10);	% a prior structure
 
 % Create a Gaussian noise model
-gpcf_n = gpcf_noise('noiseSigma2', 0.2^2, 'noiseSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
 
 % Set a small amount of jitter 
 jitter=1e-4;
@@ -76,7 +76,7 @@ disp('Constant + linear covariance function')
 gpcf_c = gpcf_constant('constSigma2', 1, 'constSigma2_prior', pt);
 % linear covariance function
 gpcf_l = gpcf_linear('coeffSigma2_prior', pt);
-gp = gp_set('cf', {gpcf_c gpcf_l}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
+gp = gp_set('lik', lik, 'cf', {gpcf_c gpcf_l}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
@@ -105,7 +105,7 @@ metric1 = metric_euclidean('components', {[1]}, 'lengthScale',[0.5], 'lengthScal
 % Covariance function for the first input variable
 gpcf_s1 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric1);
 gpcf_l2 = gpcf_linear('selectedVariables', [2], 'coeffSigma2_prior', pt);
-gp = gp_set('cf', {gpcf_c gpcf_s1 gpcf_l2}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
+gp = gp_set('lik', lik, 'cf', {gpcf_c gpcf_s1 gpcf_l2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
@@ -129,7 +129,7 @@ disp('Additive squared exponential covariance function')
 metric2 = metric_euclidean('components', {[2]},'lengthScale',[0.5], 'lengthScale_prior', pt);
 % Covariance function for the second input variable
 gpcf_s2 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric2);
-gp = gp_set('cf', {gpcf_s1,gpcf_s2}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
+gp = gp_set('lik', lik, 'cf', {gpcf_s1,gpcf_s2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
@@ -151,7 +151,7 @@ disp('Squared exponential covariance function')
 
 gpcf_s = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 0.2^2, ...
                    'lengthScale_prior', pt, 'magnSigma2_prior', pt);
-gp = gp_set('cf', {gpcf_s}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
+gp = gp_set('lik', lik, 'cf', {gpcf_s}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
@@ -175,7 +175,7 @@ gpcf_nn1 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVaria
                               'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 gpcf_nn2 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVariables', [2], ...
                               'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
-gp = gp_set('cf', {gpcf_nn1,gpcf_nn2}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
+gp = gp_set('lik', lik, 'cf', {gpcf_nn1,gpcf_nn2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
@@ -197,7 +197,7 @@ disp('Neural network covariance function')
 
 gpcf_nn = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1, ...
                              'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
-gp = gp_set('cf', {gpcf_nn}, 'noisef', {gpcf_n}, 'jitterSigma2', jitter);
+gp = gp_set('lik', lik, 'cf', {gpcf_nn}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);

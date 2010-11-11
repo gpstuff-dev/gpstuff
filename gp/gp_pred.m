@@ -190,18 +190,20 @@ switch gp.type
         end
     end
     if nargout > 2
-        % Scale mixture model in gpcf_noiset is a special case 
+        % Scale mixture model in lik_smt is a special case 
         % handle it separately
-        if ~strcmp(gp.noisef{1}.type, 'gpcf_noiset') % normal case
+        if ~strcmp(gp.lik.type, 'lik_smt') 
+          % normal case
             [V, Cv] = gp_trvar(gp,xt,predcf);
             Eyt = Eft;
             Varyt = Varft + Cv - V;
             if nargout > 4
                 pyt = norm_pdf(yt, Eyt, sqrt(Varyt));
             end
-        else % scale mixture case
-            nu = gp.noisef{1}.nu;
-            sigma2 = gp.noisef{1}.tau2.*gp.noisef{1}.alpha.^2;
+        else 
+          % scale mixture case
+            nu = gp.lik.nu;
+            sigma2 = gp.lik.tau2.*gp.lik.alpha.^2;
             sigma = sqrt(sigma2);
             
             Eyt = Eft;

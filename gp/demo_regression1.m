@@ -95,19 +95,19 @@ y = data(:,3);
 % 
 % First create squared exponential covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_sexp('lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
+lik = lik_gaussian('sigma2', 0.2^2);
 
-pl = prior_t();                          % a prior structure
-pm = prior_sqrtt('s2', 0.3);             % a prior structure
+% Set some priors
+pl = prior_unif();
+pm = prior_sqrtunif();
 pn = prior_logunif();
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pn);
+gpcf = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+lik = lik_gaussian(lik,'sigma2_prior', pn);
 
-% Following lines do the same since default type is FULL and
-% default likelihood is 'gaussian'
-%gp = gp_set('type','FULL','lik','gaussian','cf', {gpcf1}, 'noisef', {gpcf2});
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2});
+% Following lines do the same since default type is FULL
+%gp = gp_set('type','FULL','lik',lik,'cf',{gpcf});
+gp = gp_set('lik', lik, 'cf', gpcf);
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 
@@ -118,15 +118,15 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 [K, C] = gp_trcov(gp, example_x)
 
 % What has happend this far is the following
-% - we created data structures 'gpcf1' and 'gpcf2', which describe 
-%   the properties of the covariance function and Gaussian noise (see
-%   gpcf_sexp and gpcf_noise for more details)
+% - we created data structures 'gpcf' and 'lik', which describe 
+%   the properties of the covariance function and Gaussian likelihood (see
+%   gpcf_sexp and lik_gaussian for more details)
 % - we created data structures that describe the prior of the length-scale 
 %   and magnitude of the squared exponential covariance function and
 %   the prior of the noise variance. These structures were set into
-%   'gpcf1' and 'gpcf2' (see prior_t for more details)
+%   'gpcf1' and 'lik' (see prior_* for more details)
 % - we created a GP data structure 'gp', which has among others 'gpcf1' 
-%   and 'gpcf2' data structures.  (see gp_init for more details)
+%   and 'lik' data structures.  (see gp_set for more details)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -195,7 +195,6 @@ hmc2('state', sum(100*clock));
 % Do the sampling (this takes approximately 5-10 minutes)
 % 'rfull'   will contain a record structure with all the sampls
 % 'g'       will contain a GP structure at the current state of the sampler
-% 'rstate1' will contain a structure with information of the state of the sampler
 [rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 400, 'repeat', 5, 'hmc_opt', hmc_opt);
 
 % After sampling we delete the burn-in and thin the sample chain
@@ -258,9 +257,9 @@ hold on
 plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('magnitude')
 subplot(1,4,4)
-hist(rfull.noisef{1}.noiseSigma2)
+hist(rfull.lik.sigma2)
 hold on
-plot(gp.noisef{1}.noiseSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
+plot(gp.lik.sigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Noise variance')
 legend('MCMC samples', 'MAP estimate')
 set(gcf,'pos',[93 511 1098 420])
@@ -366,11 +365,11 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ xlim([0.5 6])
 % $$$ 
 % $$$ subplot(1,4,4)
-% $$$ hist(rfull.noisef{1}.noiseSigma2)
+% $$$ hist(rfull.lik.sigma2)
 % $$$ h = findobj(gca,'Type','patch');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
-% $$$ plot(gp.noisef{1}.noiseSigma2, 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
+% $$$ plot(gp.lik.sigma2, 0, 'kx', 'MarkerSize', 11, 'LineWidth', 2)
 % $$$ xlabel('Noise variance')
 % $$$ xlim([0.03 0.06])
 % $$$ set(gca, 'Xtick', [0.03 0.06])

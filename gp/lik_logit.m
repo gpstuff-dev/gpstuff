@@ -90,7 +90,7 @@ function lik = lik_logit(varargin)
   end
 
 
-  function [lik, w] = lik_logit_unpak(w, lik)
+  function [lik, w] = lik_logit_unpak(lik, w)
   %LIK_LOGIT_UNPAK  Extract likelihood parameters from the vector.
   %
   %   Description

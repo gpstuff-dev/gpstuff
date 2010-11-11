@@ -446,15 +446,6 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
         eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
       end
 
-      % Evaluate the prior contribution to the error from noise functions
-      if isfield(gp, 'noisef')
-        nn = length(gp.noisef);
-        for i=1:nn
-          noisef = gp.noisef{i};
-          eprior = eprior + feval(noisef.fh.e, noisef, x, y);
-        end
-      end
-      
       % Evaluate the prior contribution to the error from likelihood function
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;

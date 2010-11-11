@@ -85,7 +85,7 @@ function lik = lik_softmax(varargin)
   end
 
 
-  function [lik, w] = lik_softmax_unpak(w, lik)
+  function [lik, w] = lik_softmax_unpak(lik, w)
   %LIK_LOGIT_UNPAK  Extract likelihood parameters from the vector.
   %
   %   Description

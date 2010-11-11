@@ -108,19 +108,16 @@ y = y-avgy;
 % Gaussian noise data structures...
 gpcf1 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 3);
 gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1);
-gpcfn = gpcf_noise('noiseSigma2', 1);
+lik = lik_gaussian();
 
 % ... Then set the prior for the parameters of covariance functions...
 pl = prior_t('s2', 3);
-pm = prior_sqrtt('s2', 0.3);
-pn = prior_logunif();
-
+pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcfn = gpcf_noise(gpcfn, 'noiseSigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-4)    
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2})
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -147,7 +144,7 @@ plot(xt,Eyt_full,'k', 'LineWidth', 2)
 plot(xt,Eyt_full-2.*sqrt(Varyt_full),'k--')
 plot(xt,Eyt_full+2.*sqrt(Varyt_full),'k--')
 axis tight
-caption1 = sprintf('GP with sexp+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noisef{1}.noiseSigma2);
+caption1 = sprintf('GP with sexp+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.lik.sigma2);
 title(caption1)
 legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 
@@ -168,7 +165,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 gpcf1 = gpcf_sexp('lengthScale', 67*12, 'magnSigma2', 66*66);
 gpcfp = gpcf_periodic('lengthScale', 1.3, 'magnSigma2', 2.4*2.4);
 gpcfp = gpcf_periodic(gpcfp, 'period', 12,'optimPeriod',1,'lengthScale_sexp', 90*12, 'decay', 1);
-gpcfn = gpcf_noise('noiseSigma2', 0.3);
+lik = lik_gaussian('sigma2', 0.3);
 gpcf2 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -179,10 +176,10 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcfp = gpcf_periodic(gpcfp, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcfp = gpcf_periodic(gpcfp, 'lengthScale_sexp_prior', pl, 'period_prior', pn);
-gpcfn = gpcf_noise(gpcfn, 'noiseSigma2_prior', pn);
+lik = lik_gaussian(lik, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('cf', {gpcf1, gpcfp, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-3) 
+gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2}) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -209,7 +206,7 @@ plot(xt,Eyt_full-2.*sqrt(Varyt_full),'k--')
 plot(xt,Eyt_full+2.*sqrt(Varyt_full),'k--')
 plot(x,y,'.', 'MarkerSize',7)
 axis tight
-caption1 = sprintf('GP sexp+periodic+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f, p=%.2f, s_sexp^2 = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n l_4= %.2f, s^2_4 = %.2f, \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.cf{2}.period, gp.cf{2}.lengthScale_sexp, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.noisef{1}.noiseSigma2);
+caption1 = sprintf('GP sexp+periodic+sexp+noise:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f, p=%.2f, s_sexp^2 = %.2f, \n l_3= %.2f, s^2_3 = %.2f, \n l_4= %.2f, s^2_4 = %.2f, \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.cf{2}.period, gp.cf{2}.lengthScale_sexp, gp.cf{3}.lengthScale, gp.cf{3}.magnSigma2, gp.lik.sigma2);
 title(caption1)
 legend('Data point', 'predicted mean', '2\sigma error','Location','NorthWest')
 
@@ -274,7 +271,7 @@ x = [1:length(y)]';
 gpcf1 = gpcf_sexp('lengthScale', [67], 'magnSigma2', 1);
 gpcfp = gpcf_periodic('lengthScale', [1.3], 'magnSigma2', 2.4*2.4,...
     'period', 12,'optimPeriod',0, 'lengthScale_sexp', 50, 'decay', 1);
-gpcfnn=gpcf_neuralnetwork('biasSigma2',10,'weightSigma2',3);
+likn=gpcf_neuralnetwork('biasSigma2',10,'weightSigma2',3);
 gpcf2 = gpcf_sexp('lengthScale', [2], 'magnSigma2', 2);
 
 % ... Then set the prior for the parameters of covariance functions...
@@ -289,14 +286,14 @@ ppp = prior_t('s2', 100, 'nu', 4);
 
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
-gpcfnn = gpcf_neuralnetwork(gpcfnn, 'biasSigma2_prior', pn, 'weightSigma2_prior', ppp);
+likn = gpcf_neuralnetwork(likn, 'biasSigma2_prior', pn, 'weightSigma2_prior', ppp);
 gpcfp = gpcf_periodic(gpcfp, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm,  'lengthScale_sexp_prior', pl);
-gpcfn = gpcf_noise(gpcfn, 'noiseSigma2_prior', pn);
+lik = lik_gaussian(lik, 'sigma2_prior', pn);
 
 % ... Create the GP data structure, Poisson likelihood with
 % Expectation Propagation as approximation method
 z=repmat(mean(y),length(y),1);
-gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1,gpcfp,gpcf2,gpcfnn}, 'jitterSigma2', 1e-3)   
+gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1,gpcfp,gpcf2,likn})   
 gp = gp_set(gp, 'latent_method', 'EP');
 
 % Set the options for the scaled conjugate optimization

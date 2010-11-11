@@ -228,7 +228,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   if iscell(gp)
     fp=@ia_pred;
   else
-    if ~isstruct(gp.lik)   % a Gaussian regression model
+    if isfield(gp.lik.fh,'trcov')
+      % a Gaussian likelihood
       fe=@gp_e;
       fg=@gp_g;
       switch inf_method
@@ -333,13 +334,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         % Scaled mixture noise model is a special case
         % where we need to modify the noiseSigmas2 vector
         % to a right length
-        for i2 = 1:length(gp.noisef)
-          if strcmp(gp.noisef{i2}.type, 'gpcf_noiset')
-            gp.noisef{i2}.noiseSigmas2 = gp_orig.noisef{i2}.noiseSigmas2(trindex{i});
-            gp.noisef{i2}.r = gp_orig.noisef{i2}.r(trindex{i});
-            gp.noisef{i2}.U = gp_orig.noisef{i2}.U(trindex{i});
-            gp.noisef{i2}.ndata = length(trindex{i});
-          end
+        if isequal(gp.lik.type, 'lik_smt')
+            gp.lik.noiseSigmas2 = gp_orig.lik.noiseSigmas2(trindex{i});
+            gp.lik.r = gp_orig.lik.r(trindex{i});
+            gp.lik.U = gp_orig.lik.U(trindex{i});
+            gp.lik.ndata = length(trindex{i});
         end
         % Pick latentvalues for the training set in this fold
         if isfield(gp,'latentValues')

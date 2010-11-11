@@ -122,10 +122,10 @@ else
    'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
   gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
 end
-gpcfn = gpcf_noise('noiseSigma2', 0.1, 'noiseSigma2_prior', pn);
+lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
 % Create the GP data structure
-gp = gp_set('cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9) 
+gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9) 
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -151,7 +151,7 @@ plot(xt,Eyt_full,'k', 'LineWidth', 2)
 plot(xt,Eyt_full-2.*sqrt(Varyt_full),'g--')
 plot(xt,Eyt_full+2.*sqrt(Varyt_full),'g--')
 axis tight
-caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.noisef{1}.noiseSigma2);
+caption1 = sprintf('Full GP:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2, gp.cf{2}.lengthScale, gp.cf{2}.magnSigma2, gp.lik.sigma2);
 title(caption1)
 legend('Data point', 'predicted mean', '2\sigma error',4)
 
@@ -180,7 +180,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP data structure
-gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1,gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9, 'X_u', Xu)
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -212,7 +212,7 @@ plot(xt,Eyt_fic-2.*sqrt(Varyt_fic),'g--', 'LineWidth', 2)
 plot(gp_fic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(xt,Eyt_fic+2.*sqrt(Varyt_fic),'g--', 'LineWidth', 2)
 axis tight
-caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.noisef{1}.noiseSigma2);
+caption2 = sprintf('FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_fic.cf{1}.lengthScale, gp_fic.cf{1}.magnSigma2, gp_fic.cf{2}.lengthScale, gp_fic.cf{2}.magnSigma2, gp_fic.lik.sigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
@@ -228,7 +228,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP data structure
-gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9, 'X_u', Xu)
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -265,7 +265,7 @@ for i = 1:length(edges)
     plot([edges(i) edges(i)],[-30 35], 'k:')
 end
 axis tight
-caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.noisef{1}.noiseSigma2);
+caption2 = sprintf('PIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_pic.cf{1}.lengthScale, gp_pic.cf{1}.magnSigma2, gp_pic.cf{2}.lengthScale, gp_pic.cf{2}.magnSigma2, gp_pic.lik.sigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
@@ -282,7 +282,7 @@ if ~exist('ldlchol')
         ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
          'Can not use CS+FIC without SuiteSparse']);
 end
-gp_csfic = gp_set('type','CS+FIC', 'cf', {gpcf1, gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9, 'X_u', Xu)
+gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -316,7 +316,7 @@ plot(x,Eft_csfic-2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
 plot(gp_csfic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
 plot(x,Eft_csfic+2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
 axis tight
-caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.noisef{1}.noiseSigma2);
+caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.lik.sigma2);
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 

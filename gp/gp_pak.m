@@ -70,25 +70,13 @@ function [w, s] = gp_pak(gp, param)
         w = [w wi];
         s = [s; si];
       end
-      
-      if isfield(gp, 'noisef')
-        nn = length(gp.noisef);
-        for i=1:nn
-          noisef = gp.noisef{i};
-          [wi si] = feval(noisef.fh.pak, noisef);
-          w = [w wi];
-          s = [s; si];
-        end
-      end
     end
     
     % Pack the hyperparameters of likelihood function
     if ~isempty(strfind(param, 'likelihood'))
-      if isstruct(gp.lik)
-        [wi si] = feval(gp.lik.fh.pak, gp.lik);
-        w = [w wi];
-        s = [s; si];
-      end
+      [wi si] = feval(gp.lik.fh.pak, gp.lik);
+      w = [w wi];
+      s = [s; si];
     end
     
     % Pack the inducing inputs

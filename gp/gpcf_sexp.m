@@ -234,7 +234,6 @@ function gpcf = gpcf_sexp(varargin)
     gpp=gpcf.p;
     if ~isempty(gpp.magnSigma2)
       gpcf.magnSigma2 = exp(w(1));
-      assert(gpcf.magnSigma2>0 && ~isinf(gpcf.magnSigma2))
       w = w(2:end);
       % Hyperparameters of magnSigma2
       [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);

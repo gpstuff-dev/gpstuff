@@ -31,14 +31,13 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %  Description 2
 %    Additional properties meant only for internal use.
 %  
-%    GP = GPEP_E('init', GP) takes a GP data structure GP together
-%    with a matrix X of input vectors and a matrix Y of target
-%    vectors, and initializes required fields for the EP algorithm.
+%    GP = GPEP_E('init', GP) takes a GP data structure GP and
+%    initializes required fields for the EP algorithm.
 %
 %    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
 %  
 %    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i]
-%      = gpep_e(w, gp, x, y, options)
+%      = GPEP_E(w, gp, x, y, options)
 %    returns many useful quantities produced by EP algorithm.
 %
   
@@ -127,8 +126,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 
       % EP iteration parameters
       iter=1;
-      maxiter = gp.ep_opt.maxiter;
-      tol = gp.ep_opt.tol;
+      maxiter = gp.latent_opt.maxiter;
+      tol = gp.latent_opt.tol;
       nutilde = zeros(size(y));
       tautilde = zeros(size(y));
       %            nutilde = nutilde0;%zeros(size(y));
@@ -164,9 +163,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
             Ls = chol(Sigm);
             Stildesqroot=zeros(n);
             
-            % If Student-t likelihood is used sort
-            % the update order so that the problematic updates
-            % are left for last
+            % If Student-t likelihood is used, sort the update order so that
+            % the problematic updates are left for last
             if strcmp(gp.lik.type,'Student-t')
               f=feval(gp.lik.fh.optimizef,gp,y,K);
               W=-feval(gp.lik.fh.llg2,gp.lik,y,f,'latent');
@@ -271,8 +269,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 sigm2vec_i(i1,1)=sigm2_i;
               end
               % Recompute the approximate posterior parameters
-              if tautilde > 0             % This is the usual case where likelihood is log concave
-                                          % for example, Poisson and probit 
+              if tautilde > 0             
+                % This is the usual case where likelihood is log concave
+                % for example, Poisson and probit 
                 
                 Stilde=tautilde;
                 Stildesqroot=diag(sqrt(tautilde));
@@ -362,9 +361,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 
                 %==============================
                 
-              else                         % We might end up here if the likelihood is not log concace
-                                           % For example Student-t likelihood. 
-                                           % NOTE! This does not work reliably yet
+              else                         
+                % We might end up here if the likelihood is not log concace
+                % For example Student-t likelihood. 
+                % NOTE! This does not work reliably yet
               Stilde=tautilde;
               Ls = chol(Sigm);
               myy=Sigm*nutilde;
@@ -1261,24 +1261,15 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
         eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
       end
 
-      % Evaluate the prior contribution to the error from noise functions
-      if isfield(gp, 'noisef')
-        nn = length(gp.noisef);
-        for i=1:nn
-          noisef = gp.noisef{i};
-          eprior = eprior + feval(noisef.fh.e, noisef, x, y);
-        end
-      end
-      
       % Evaluate the prior contribution to the error from likelihood
       % functions
-      if isfield(gp, 'lik') && isfield(gp.lik, 'p')
+      if isfield(gp.lik, 'p')
         lik = gp.lik;
         eprior = eprior + feval(lik.fh.priore, lik);
       end
 
       % The last things to do
-      if isfield(gp.ep_opt, 'display') && gp.ep_opt.display == 1
+      if isfield(gp.latent_opt, 'display') && gp.latent_opt.display
         fprintf('   Number of iterations in EP: %d \n', iter-1)
       end
 

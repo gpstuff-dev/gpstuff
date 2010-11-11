@@ -72,26 +72,17 @@ pm = prior_sqrtt('s2', 10, 'nu', 4);
 pn = prior_logunif();
 
 gpcfse = gpcf_sexp('lengthScale',5,'magnSigma2',10, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcfn = gpcf_noise('noiseSigma2', 0.1, 'noiseSigma2_prior', pn);
+lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
-gp = gp_set('cf', {gpcfse}, 'noisef' ,{gpcfn}, 'jitterSigma2', 1e-4,'infer_params','covariance');
+gp = gp_set('lik', lik, 'cf', {gpcfse}, 'jitterSigma2', 1e-6,'infer_params','covariance');
 
-fe=@gp_e;     % create a function handle to negative log posterior
-fg=@gp_g;     % create a function handle to gradient of negative log posterior
-
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = -1;
-% do the optimization
-w=gp_pak(gp);  % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp, x, y);
-% set the optimized hyperparameter values back to the GP structure
-gp=gp_unpak(gp,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
 [Eft_full, Varft_full] = gp_pred(gp, x, y, xt);
-Varft_full = Varft_full + gp.noisef{1}.noiseSigma2;
+Varft_full = Varft_full + gp.lik.sigma2;
 
 figure
 % Blue crosses are the initial inducing input locations, red ones are
@@ -115,19 +106,13 @@ Xu=round(10+90*rand(18,1))/10; % Random placement
 % Change type to FIC, add inducing inputs, and optimize only inducing inputs
 gp_fic = gp_set(gp, 'type','FIC','X_u',Xu,'infer_params','inducing');
 
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = -1;
-% do the optimization
-w=gp_pak(gp_fic);  % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_fic, x, y);
-% set the optimized hyperparameter values back to the GP structure
-gp_fic=gp_unpak(gp_fic,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 
 [Eft_fic, Varft_fic] = gp_pred(gp_fic, x, y, xt);
-Varft_fic = Varft_fic + gp_fic.noisef{1}.noiseSigma2;
+Varft_fic = Varft_fic + gp_fic.lik.sigma2;
 
 
 subplot(2,2,2);hold on;
@@ -156,19 +141,13 @@ title('FIC')
 % sparse approximations yield less reliable results.
 gp_var = gp_set(gp,'type','VAR','X_u',Xu,'infer_params','inducing');
 
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = -1;
-% do the optimization
-w=gp_pak(gp_var);  % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_var, x, y);
-% set the optimized hyperparameter values back to the GP structure
-gp_var=gp_unpak(gp_var,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
 
 [Eft_var, Varft_var] = gp_pred(gp_var, x, y, xt);
-Varft_var = Varft_var + gp_var.noisef{1}.noiseSigma2;
+Varft_var = Varft_var + gp_var.lik.sigma2;
 
 
 
@@ -193,19 +172,13 @@ title('VAR')
 % inducing inputs. The difference in the optimized results is notable.
 gp_dtc = gp_set(gp,'type','DTC','X_u',Xu,'infer_params','inducing');
 
-% set the options for scg2
-opt = scg2_opt;
-opt.tolfun = 1e-3;
-opt.tolx = 1e-3;
-opt.display = -1;
-% do the optimization
-w=gp_pak(gp_dtc);  % pack the hyperparameters into one vector
-w=scg2(fe, w, opt, fg, gp_dtc, x, y);
-% set the optimized hyperparameter values back to the GP structure
-gp_dtc=gp_unpak(gp_dtc,w);
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
 
 [Eft_dtc, Varft_dtc] = gp_pred(gp_dtc, x, y, xt);
-Varft_dtc = Varft_dtc + gp_dtc.noisef{1}.noiseSigma2;
+Varft_dtc = Varft_dtc + gp_dtc.lik.sigma2;
 
 subplot(2,2,3);hold on
 plot(xt,Eft_dtc,'k', 'LineWidth', 2)

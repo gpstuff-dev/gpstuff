@@ -59,11 +59,11 @@ nsamp=ip.Results.nsamp;
 
 tn = size(x,1);
 
-% ===================================
-% Regression model
-% ===================================
 
-if ~isstruct(gp.lik)
+if isfield(gp.lik.fh,'trcov')
+  % ===================================
+  % Gaussian likelihood
+  % ===================================
     % Evaluate this if sparse model is used
     switch gp.type
       case 'FULL'
@@ -510,11 +510,11 @@ if ~isstruct(gp.lik)
         end
     end
     
-    % ===================================
-    % non-Gaussian likelihood
-    % ===================================
 
 else
+  % ===================================
+  % non-Gaussian likelihood
+  % ===================================
     switch gp.type
         % ---------------------------
       case 'FULL'

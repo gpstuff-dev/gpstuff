@@ -120,16 +120,15 @@ y = data(:,3);
 % 
 % First create a piece wise polynomial covariance function with ARD and 
 % Gaussian noise data structures...
-gpcf1 = gpcf_ppcs2('nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
+gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
 
 pl = prior_t('s2', 0.5);               % a prior structure
 pm = prior_sqrtt('s2', 0.3);               % a prior structure
 pn = prior_logunif();
-gpcf1 = gpcf_ppcs2(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pn);
+gpcf = gpcf_ppcs2(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-8);
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-8);
 
 % We have now constructed a GP model with gpcf_ppcs2 covariance
 % function. This is a compact support function which produces
@@ -178,15 +177,15 @@ title('The predicted underlying function and the data points (MAP solution)');
 % First we create the GP data structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
-gpcf3 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Next we initialize the inducing inputs and set them in GP
 % structure. We have to give a prior for the inducing inputs also,
 % if we want to optimize them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_fic = gp_set('type', 'FIC', 'cf', {gpcf3}, 'noisef', {gpcf2}, ...
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, ...
                 'jitterSigma2', 1e-4, 'X_u', X_u)
 
 % -----------------------------
@@ -288,10 +287,10 @@ for i1=1:4
 end
 
 % Create the PIC GP data structure and set the inducing inputs and block indeces
-gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
 
-gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, ...
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf}, ...
                 'X_u', X_u, 'tr_index', trindex, 'jitterSigma2', 1e-4);
 
 % -----------------------------
@@ -349,15 +348,15 @@ xlim([-2 2]), ylim([-2 2])
 % First we create the GP data structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
-gpcf3 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Next we initialize the inducing inputs and set them in GP
 % structure. We have to give a prior for the inducing inputs also,
 % if we want to optimize them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_var = gp_set('type', 'VAR', 'cf', {gpcf3}, 'noisef', {gpcf2}, ...
+gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', {gpcf}, ...
                 'jitterSigma2', 1e-4, 'X_u', X_u);
 
 % -----------------------------
@@ -431,15 +430,15 @@ xlim([-2 2]), ylim([-2 2])
 % First we create the GP data structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
-gpcf3 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
 % Next we initialize the inducing inputs and set them in GP structure. 
 % We have to give a prior for the inducing inputs also, if we want to optimize 
 % them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_dtc = gp_set('type', 'DTC', 'cf', {gpcf3}, 'noisef', {gpcf2}, ...
+gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
                 'jitterSigma2', 0.001, 'X_u', X_u);
 
 % -----------------------------

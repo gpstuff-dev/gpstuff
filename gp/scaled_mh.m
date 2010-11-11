@@ -1,5 +1,5 @@
 function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
-%SCALED_MH  A scaled Metropolis Hastings samping for latent values
+%SCALED_MH  A scaled Metropolis-Hastings sampling for latent values
 %
 %  Description
 %    [F, ENERG, DIAG] = SCALED_MH(F, OPT, GP, X, Y) takes the

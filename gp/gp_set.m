@@ -30,20 +30,13 @@ function gp = gp_set(varargin)
 %                      'SOR'    subset of regressors sparse
 %                               approximation
 %                      'VAR'    variational sparse approximation
-%      lik          - likelihood ['gaussian']. 
-%                     If Gaussian likelihood is used this is string
-%                     'gaussian', otherwise this is structure
-%                     created by one of the likelihood functions lik_*.
-%                     See latent_method below.  
-%      noisef       - single noise covariance or cell array of
-%                     noise covariance function structures such as
-%                     gpcf_noise or gpcf_noiset. 
-%                     If lik=='gaussian'  [{gpcf_noise}]
-%                     If lik~='gaussian'  [{}]
+%      lik          - likelihood structure created by one of the 
+%                     likelihood functions lik_* ['lik_gaussian']
+%                     If non-Gaussian, see latent_method below.  
 %      jitterSigma2 - positive jitter to be added in the diagonal of 
 %                     covariance matrix [0]
 %      infer_params - String defining which hyperparameters are inferred.
-%                     ['covariance+inducing+likelihood']  
+%                     ['covariance+likelihood']  
 %                      'covariance'     = infer hyperparameters of 
 %                                         covariance function
 %                      'likelihood'     = infer parameters of likelihood
@@ -51,14 +44,14 @@ function gp = gp_set(varargin)
 %                                         approximations): W = gp.X_u(:)    
 %                       By combining the strings one can infer more than 
 %                       one group of parameters. For example:
+%                      'covariance+likelih' = infer covariance function
+%                                             and likelihood parameters
 %                      'covariance+inducing' = infer covariance function
 %                                              parameters and inducing 
 %                                              inputs
-%                      'covariance+likelih' = infer covariance function
-%                                              and likelihood parameters
 %
 %    The additional fields when the likelihood is not Gaussian
-%    (lik ~='gaussian') are:
+%    (lik ~=lik_gaussian or lik_smt) are:
 %      latent_method - Defines a method for marginalizing over 
 %                      latent values. Possible methods are 'MCMC',
 %                      'Laplace' and 'EP'. If just the latent
@@ -72,11 +65,11 @@ function gp = gp_set(varargin)
 %                      latent values @scaled_mh (default) or @scaled_hmc
 %          f         - 1xn vector of latent values
 %        Laplace:
-%          method    - String telling which optimization method is used
+%          optim_method    - String telling which optimization method is used
 %                      for estimating parameters of the Laplace approximation
 %                      'newton' (default except for lik_t)
-%                      'stabilized-newton' or
-%                      'lik_specific' (default for lik_t)
+%                      'stabilized-newton', 'fminuc_large', or
+%                      'lik_specific' (applicable and default for lik_t)
 %        EP: currently no options to set  
 %  
 %     The additional fields needed with mean functions
@@ -141,10 +134,9 @@ function gp = gp_set(varargin)
   ip.addParamValue('type','FULL', ...
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
                       'DTC' 'SOR' 'CS+FIC'}));
-  ip.addParamValue('lik','gaussian', @(x) strcmp(x, 'gaussian') || isstruct(x));
-  ip.addParamValue('noisef',[], @(x) isempty(x) || isstruct(x) || iscell(x));
+  ip.addParamValue('lik',lik_gaussian(), @(x) isstruct(x));
   ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
-  ip.addParamValue('infer_params','covariance+inducing+likelihood', @(x) ischar(x));
+  ip.addParamValue('infer_params','covariance+likelihood', @(x) ischar(x));
   ip.addParamValue('latent_method','NA', @(x) ischar(x) || iscell(x));
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
   ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
@@ -193,17 +185,6 @@ function gp = gp_set(varargin)
   end
   if isempty(gp.cf) && isempty(gp.meanf)
     error('At least one covariance or mean function has to defined')
-  end
-  % Noise function(s)
-  if init || ~ismember('noisef',ip.UsingDefaults)
-    gp.noisef=ip.Results.noisef;
-    if isstruct(gp.noisef)
-      % store single structure in a cell array, too
-      gp.noisef={gp.noisef};
-    end
-    if strcmp(gp.lik,'gaussian') && isempty(gp.noisef)
-      gp.noisef={gpcf_noise};
-    end
   end
   % Inference for which parameters 
   if init || ~ismember('infer_params',ip.UsingDefaults)
@@ -261,10 +242,11 @@ function gp = gp_set(varargin)
       latent_method_opt=latent_method(2:end);
       latent_method=latent_method{1};
     end
+    if isempty(latent_method)
+      latent_method='NA'
+    end
     switch latent_method
       case 'MCMC'
-        if isfield(gp,'laplace_opt'); gp=rmfield(gp,'laplace_opt'); end
-        if isfield(gp,'ep_opt'); gp=rmfield(gp,'ep_opt'); end
         gp.latent_method=latent_method;
         ipmc=inputParser;
         ipmc.FunctionName = 'GP_SET - latent method MCMC options';
@@ -272,35 +254,32 @@ function gp = gp_set(varargin)
         ipmc.addParamValue('method',@scaled_mh, @(x) isa(x,'function_handle'));
         ipmc.parse(latent_method_opt{:});
         gp.latentValues = ipmc.Results.f;
-        gp.fh.mc = ipmc.Results.method;
       case 'EP'
         if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
-        if isfield(gp,'laplace_opt'); gp=rmfield(gp,'laplace_opt'); end
         gp.latent_method=latent_method;
-        gp.ep_opt.maxiter = 20;
-        gp.ep_opt.tol = 1e-6;
+        gp.latent_opt.maxiter = 20;
+        gp.latent_opt.tol = 1e-6;
         % following sets gp.fh.e = @ep_algorithm;
         gp = gpep_e('init', gp);
       case 'Laplace'
         if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
-        if isfield(gp,'ep_opt'); gp=rmfield(gp,'ep_opt'); end
         gp.latent_method=latent_method;
-        gp.laplace_opt.maxiter = 20;
-        gp.laplace_opt.tol = 1e-12;
+        gp.latent_opt.maxiter = 20;
+        gp.latent_opt.tol = 1e-12;
         ipla=inputParser;
         ipla.FunctionName = 'GP_SET - latent method Laplace options';
         ipla.addParamValue('method',[], @(x) ischar(x));
         ipla.parse(latent_method_opt{:});
         method=ipla.Results.method;
         if ~isempty(method)
-          gp.laplace_opt.optim_method;
+          gp.latent_opt.optim_method;
         else
           switch gp.lik.type
             case 'Student-t'
               % slower than newton but more robust
-              gp.laplace_opt.optim_method='lik_specific'; 
+              gp.latent_opt.optim_method='lik_specific'; 
             otherwise
-              gp.laplace_opt.optim_method='newton';
+              gp.latent_opt.optim_method='newton';
           end
         end
         switch gp.lik.type
@@ -312,6 +291,8 @@ function gp = gp_set(varargin)
         end
       case 'NA'
         % no latent method set
+        if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end
+        if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
       otherwise
         error('Unknown type of latent_method!')
     end % switch latent_method

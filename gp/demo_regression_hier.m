@@ -50,9 +50,9 @@ x=[x repmat([1:nrats]',ntime,1)];
 % optmization options
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 
-% common noise term with weakly informative prior
-cfn=gpcf_noise('noiseSigma2',.1,...
-               'noiseSigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
+% common Gaussian likelihood with weakly informative prior for variance
+lik=lik_gaussian('sigma2',.1,...
+                 'sigma2_prior',prior_sinvchi2('s2',0.01,'nu',1));
 % common categorical covariance term
 cc=gpcf_cat('selectedVariables',2);
 
@@ -61,7 +61,7 @@ disp('1) Linear model with intercept and slope wrt time')
 cfc=gpcf_constant('constSigma2',1);
 cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % construct GP
-gp=gp_set('cf',{cfc cfl},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfl});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -80,7 +80,7 @@ cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfci cfl});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -101,7 +101,7 @@ cfci=gpcf_prod('cf',{cfc cc});
 % linear covariance term for each rat
 cfli=gpcf_prod('cf',{cfl cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl cfli},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfli});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -123,7 +123,7 @@ cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part
 cfs=gpcf_sexp('selectedVariables',1);
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl cfs},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfs});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -149,7 +149,7 @@ cfs=gpcf_sexp('selectedVariables',1,'lengthScale_prior',prior_t());
 % nonlinear covariance term for each rat
 cfsi=gpcf_prod('cf',{cfs cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfl cfli cfs cfsi},'noisef',{cfn},...
+gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfli cfs cfsi},...
           'jitterSigma2',1e-9);
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
@@ -187,7 +187,7 @@ cfs=gpcf_sexp('metric',metric_euclidean('components',{[1] [2]},...
                                         'deltadist', [0 1], ...
                                         'lengthScale_prior',prior_t()));
 % construct GP
-gp=gp_set('cf',{cfc cfci cfs},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfci cfs});
 % optimize
 gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
@@ -223,7 +223,7 @@ cfnn=gpcf_neuralnetwork('selectedVariables',1);
 % nonlinear covariance term for each rat
 cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
 gp=gp_optim(gp,xn,yn);
 % integrate over hyperparameters
@@ -284,7 +284,7 @@ cfnn=gpcf_neuralnetwork('selectedVariables',1);
 % nonlinear covariance term for each rat
 cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
-gp=gp_set('cf',{cfc cfci cfnn cfnni},'noisef',{cfn});
+gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
 gp=gp_optim(gp,xmn,ymn);
 % integrate over hyperparameters

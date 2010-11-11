@@ -1,23 +1,24 @@
 function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
-%scaled_hmc        A scaled hybric Monte Carlo samping for latent values
+%SCALED_HMC  A scaled hybrid Monte Carlo sampling for latent values
 %
 %   Description
-%   [F, ENERG, DIAG] = SCALED_HMC(F, OPT, GP, X, Y) takes the current
-%   latent values F, options structure OPT, Gaussian process data
-%   structure GP, inputs X and outputs Y. Samples new latent values
-%   and returns also energies ENERG and diagnostics DIAG. The latent
-%   values are sampled from their conditional posterior p(f|y,th).
+%    [F, ENERG, DIAG] = SCALED_HMC(F, OPT, GP, X, Y) takes the
+%    current latent values F, options structure OPT, Gaussian
+%    process data structure GP, inputs X and outputs Y. Samples new
+%    latent values and returns also energies ENERG and diagnostics
+%    DIAG. The latent values are sampled from their conditional
+%    posterior p(f|y,th).
 %
-%   The latent values are whitened with an approximate posterior
-%   covariance before the sampling. This reduces the autocorrelation
-%   and speeds up the mixing of the sampler. See Vanhatalo and Vehtari
-%   (2007) for details on implementation.
+%    The latent values are whitened with an approximate posterior
+%    covariance before the sampling. This reduces the
+%    autocorrelation and speeds up the mixing of the sampler. See
+%    Vanhatalo and Vehtari (2007) for details on implementation.
 %
-%   The options structure needs to be similar than with Hybrid Monte
-%   Carlo, hmc2. See hmc2 and hmc2_opt for details.
+%    The options structure needs to be similar to hybrid
+%    Monte Carlo, HMC2. See HMC2 and HMC2_OPT for details.
 %
-%   See also
-%   GP_MC, HMC2, HMC2_OPT
+%  See also
+%    GP_MC, HMC2, HMC2_OPT
  
 % Copyright (c) 2006 Aki Vehtari
 % Copyright (c) 2006-2010 Jarno Vanhatalo

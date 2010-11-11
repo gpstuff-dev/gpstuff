@@ -42,9 +42,9 @@ y = data(:,3);
 
 % ---------------------------
 % --- Construct the model ---
-gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 1e-5);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -149,16 +149,13 @@ disp('GP with FIC sparse approximation')
 X_u = [u1(:) u2(:)];
 
 % Create the FIC GP data structure
-gp_fic = gp_set('type', 'FIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.0001, 'X_u', X_u)
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 disp(' MAP estimate for the hyperparameters')
-
-% optimize only hyperparameters
-gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
@@ -261,10 +258,10 @@ for i1=1:4
 end
 
 % Create the PIC GP data structure and set the inducing inputs and block indexes
-gpcf1 = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
-gpcf2 = gpcf_noise('noiseSigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
 
-gp_pic = gp_set('type', 'PIC', 'cf', {gpcf1}, 'noisef', {gpcf2}, 'jitterSigma2', 0.001, 'X_u', X_u);
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, 'X_u', X_u);
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -272,9 +269,6 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 disp(' MAP estimate for the hyperparameters')
-
-% optimize only hyperparameters
-gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);

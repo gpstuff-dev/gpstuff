@@ -64,7 +64,8 @@ function p_eff = gp_peff(gp, x, y, varargin);
   tn = size(x,1);
 
     
-    if ~isstruct(gp.lik)    % a Gaussian regression model
+    if isfield(gp.lik.fh,'trcov')
+      % a Gaussian likelihood
         
         switch gp.type
           case 'FULL'
@@ -207,10 +208,10 @@ function p_eff = gp_peff(gp, x, y, varargin);
 % $$$             p_eff = trace( L\(L'\K) );
         end    
         
-        % ============================
-        % A non Gaussian observation model
-        % ============================
     else
+      % ============================
+      % A non Gaussian likelihood
+      % ============================
         
         switch gp.type
           case 'FULL'

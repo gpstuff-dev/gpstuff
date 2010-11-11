@@ -147,7 +147,7 @@ function lik = lik_negbin(varargin)
   end
 
 
-  function [lik, w] = lik_negbin_unpak(w, lik)
+  function [lik, w] = lik_negbin_unpak(lik, w)
   %LIK_NEGBIN_UNPAK  Extract likelihood parameters from the vector.
   %
   %   Description

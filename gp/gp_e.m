@@ -78,45 +78,45 @@ n=length(x);
 
 % First Evaluate the data contribution to the error
 switch gp.type
-    % ============================================================
-    % FULL GP (and compact support GP)
-    % ============================================================
+  % ============================================================
+  % FULL GP (and compact support GP)
+  % ============================================================
   case 'FULL'   % A full GP
     [K, C] = gp_trcov(gp, x);
     
     % Are there specified mean functions
     if  ~isfield(gp,'meanf')       % a zero mean function
-        if issparse(C)            % compact support covariances are in use
-            LD = ldlchol(C);
-            edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
-        else
-            L = chol(C,'lower');
-            b=L\y;
-            edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
-        end
+      if issparse(C)            % compact support covariances are in use
+        LD = ldlchol(C);
+        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
+      else
+        L = chol(C,'lower');
+        b=L\y;
+        edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+      end
     else
-        [H,b,B]=mean_prep(gp,x,[]);                   
-        if isempty(C)  
-          L=1;
-          C=0;
-          logK=0;
-          KH=H';
-        elseif issparse(C)  
-           L = ldlchol(C);
-           logK = 0.5*sum(log(diag(L)));
-           KH = L'\(L\H');
-        else
-           L = chol(C,'lower');
-           logK = sum(log(diag(L)));
-           KH = L'\(L\H');
-        end
-        
-        A = B\eye(size(B)) + H*KH;
-        M = H'*b-y;
-        N = C + H'*B*H;
-        MNM = M'*(N\M);
+      [H,b,B]=mean_prep(gp,x,[]);                   
+      if isempty(C)  
+        L=1;
+        C=0;
+        logK=0;
+        KH=H';
+      elseif issparse(C)  
+        L = ldlchol(C);
+        logK = 0.5*sum(log(diag(L)));
+        KH = L'\(L\H');
+      else
+        L = chol(C,'lower');
+        logK = sum(log(diag(L)));
+        KH = L'\(L\H');
+      end
+      
+      A = B\eye(size(B)) + H*KH;
+      M = H'*b-y;
+      N = C + H'*B*H;
+      MNM = M'*(N\M);
 
-        edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+      edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
     end
     
     % ============================================================
@@ -143,7 +143,7 @@ switch gp.type
                          % iLaKfu = diag(iLav)*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
     for i=1:n
-        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+      iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
     % The data contribution to the error is
     % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)*y
@@ -180,11 +180,11 @@ switch gp.type
     iLaKfu = zeros(size(K_fu));  % f x u
     edata = 0;
     for i=1:length(ind)        
-        Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-        [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-        Labl{i} = Cbl_ff - Qbl_ff;
-        iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
-        edata = edata + 2*sum(log(diag(chol(Labl{i},'upper')))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
+      Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+      [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+      Labl{i} = Cbl_ff - Qbl_ff;
+      iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
+      edata = edata + 2*sum(log(diag(chol(Labl{i},'upper')))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
     end
     % The data contribution to the error is
     % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)y
@@ -213,13 +213,13 @@ switch gp.type
     j = 1;
     k = 1;
     for i = 1:ncf
-        if ~isfield(gp.cf{i},'cs')
-            cf1{j} = gp.cf{i};
-            j = j + 1;
-        else
-            cf2{k} = gp.cf{i};
-            k = k + 1;
-        end
+      if ~isfield(gp.cf{i},'cs')
+        cf1{j} = gp.cf{i};
+        j = j + 1;
+      else
+        cf2{k} = gp.cf{i};
+        k = k + 1;
+      end
     end
     gp.cf = cf1;
 
@@ -264,7 +264,7 @@ switch gp.type
     % ============================================================
     % DTC/VAR
     % ============================================================
- case {'DTC' 'VAR' 'SOR'}
+  case {'DTC' 'VAR' 'SOR'}
     % Implementation of DTC varies only slightly from FIC: essentially, only
     % Lav is defined differently. For equations, see e.g. Quinonero-Candela
     % and Rasmussen. For VAR, a trace term is added to the DTC model, see 
@@ -287,7 +287,7 @@ switch gp.type
                          % iLaKfu = diag(iLav)*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
     for i=1:n
-        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+      iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
     % The data contribution to the error is
     % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*t'inv(Q_ff+La)*t
@@ -305,7 +305,7 @@ switch gp.type
     edata = sum(log(Lav)) + y'./Lav'*y - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A))) - b*b';
     edata = 0.5*(edata + n*log(2*pi));
     if strcmp(gp.type, 'VAR')
-        edata = edata + 0.5*sum((Kv_ff-Qv_ff)./Lav);
+      edata = edata + 0.5*sum((Kv_ff-Qv_ff)./Lav);
     end
     %edata = edata - 0.5*sum((Kv_ff-Qv_ff)./Lav);% - sum(diag(B'*B),1)); %sum(B.^2,1)'
     %sum(Qv_ff)
@@ -338,32 +338,37 @@ end
 % Evaluate the prior contribution to the error from covariance functions
 % ============================================================
 eprior = 0;
-for i=1:ncf
+if ~isempty(strfind(gp.infer_params, 'covariance'))
+  for i=1:ncf
     gpcf = gp.cf{i};
     eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
+  end
 end
 
-% Evaluate the prior contribution to the error from noise functions
-if isfield(gp, 'noisef')
-    nn = length(gp.noisef);
-    for i=1:nn
-        noisef = gp.noisef{i};
-        eprior = eprior + feval(noisef.fh.e, noisef, x, y);
-    end
+% ============================================================
+% Evaluate the prior contribution to the error from likelihood function
+% ============================================================
+if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && isfield(gp.lik, 'p')
+  % a Gaussian likelihood
+  lik = gp.lik;
+  eprior = eprior + feval(lik.fh.priore, lik);
 end
 
+
+% ============================================================
 % Evaluate the prior contribution to the error from the inducing inputs
-if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+% ============================================================
+if ~isempty(strfind(gp.infer_params, 'inducing'))
+  if isfield(gp, 'p') && isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
     for i = 1:size(gp.X_u,1)
-        if iscell(gp.p.X_u) % Own prior for each inducing input
-            pr = gp.p.X_u{i};
-            eprior = eprior + feval(pr.fh.e, gp.X_u(i,:), pr);
-        else
-            eprior = eprior + feval(gp.p.X_u.fh.e, gp.X_u(i,:), gp.p.X_u);
-        end
+      if iscell(gp.p.X_u) % Own prior for each inducing input
+        pr = gp.p.X_u{i};
+        eprior = eprior + feval(pr.fh.e, gp.X_u(i,:), pr);
+      else
+        eprior = eprior + feval(gp.p.X_u.fh.e, gp.X_u(i,:), gp.p.X_u);
+      end
     end
+  end
 end
 
 e = edata + eprior;
-
-end

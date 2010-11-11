@@ -42,84 +42,76 @@ end
 g = [];
 gloo = [];
 
-% ============================================================
-% FULL
-% ============================================================
 switch gp.type
-  case 'FULL'   % A full GP
-                % Evaluate covariance
+  case 'FULL'
+    % ============================================================
+    % FULL
+    % ============================================================
+    % Evaluate covariance
     [K, C] = gp_trcov(gp,x);
     
     if issparse(C)
-        invC = spinv(C);       % evaluate the sparse inverse
-        LD = ldlchol(C);
-        b = ldlsolve(LD,y);
+      % evaluate the sparse inverse
+      invC = spinv(C);
+      LD = ldlchol(C);
+      b = ldlsolve(LD,y);
     else
-        invC = inv(C);        % evaluate the full inverse
-        b = C\y;
+      % evaluate the full inverse
+      invC = inv(C);        
+      b = C\y;
     end
 
     % Get the gradients of the covariance matrices and gprior
     % from gpcf_* structures and evaluate the gradients
     for i=1:ncf
-        i1=0;
-        if ~isempty(gprior)
-            i1 = length(gprior);
-        end
-        
-        gpcf = gp.cf{i};
-        gpcf.GPtype = gp.type;
-        [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
-        %gprior=[gprior gprior_cf];
-        
-        % Evaluate the gradient with respect to covariance function parameters
-        for i2 = 1:length(DKff)
-            i1 = i1+1;  
-            Z = invC*DKff{i2};
-            Zb = Z*b;            
-            gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
-        end
-        
+      i1=0;
+      if ~isempty(gprior)
+        i1 = length(gprior);
+      end
+      
+      gpcf = gp.cf{i};
+      gpcf.GPtype = gp.type;
+      [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+      
+      % Evaluate the gradient with respect to covariance function parameters
+      for i2 = 1:length(DKff)
+        i1 = i1+1;  
+        Z = invC*DKff{i2};
+        Zb = Z*b;            
+        gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
+      end
+      
     end
 
-    % Evaluate the gradient from noise functions
-    if isfield(gp, 'noisef')
-        nn = length(gp.noisef);
-        for i=1:nn
-            noisef = gp.noisef{i};
-            noisef.type = gp.type;
-            [DCff,gprior_ncf] = feval(noisef.fh.ghyper, noisef, x);
-            %gprior=[gprior gprior_ncf];
-            
-            for i2 = 1:length(DCff)
-                i1 = i1+1;
-                Z = invC*eye(n,n).*DCff{i2};
-                Zb = Z*b;            
-                gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
-            end
-        end
+    % Evaluate the gradient from Gaussian likelihood function
+    if isfield(gp.lik.fh,'trcov')
+      [DCff, gprior_cf] = feval(lik.fh.ghyper, lik, x);
+      for i2 = 1:length(DCff)
+        i1 = i1+1;
+        Z = invC*eye(n,n).*DCff{i2};
+        Zb = Z*b;            
+        gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
+      end
     end
 
+  case 'FIC'
     % ============================================================
     % FIC
     % ============================================================
-  case 'FIC'
     
+  case {'PIC' 'PIC_BLOCK'}
     % ============================================================
     % PIC
     % ============================================================
-  case {'PIC' 'PIC_BLOCK'}
     
+  case 'CS+FIC'
     % ============================================================
     % CS+FIC
     % ============================================================
-  case 'CS+FIC'
     
+  case 'SSGP'
     % ============================================================
     % SSGP
     % ============================================================
-  case 'SSGP'
-
-end
 
 end

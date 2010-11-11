@@ -40,38 +40,46 @@ function lik = lik_t(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-% allow use with or without init and set options
-  if nargin<1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'LIK_T';
+  ip.addOptional('lik', [], @isstruct);
+  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
+  ip.addParamValue('nu_prior',prior_fixed, @(x) isstruct(x) || isempty(x));
+  ip.parse(varargin{:});
+  lik=ip.Results.lik;
+  
+  if isempty(lik)
+    init=true;
+    lik.type = 'Gaussian';
   else
-    error('Unknown first argument');
+    if ~isfield(lik,'type') && ~isequal(lik.type,'Gaussian')
+      error('First argument does not seem to be a valid likelihood function structure')
+    end
+    init=false;
   end
 
-  switch do
-    case 'init'
-      % Initialize the likelihood structure
-      lik.type = 'Student-t';
-      
-      % Default parameter values
-      lik.nu = 4;
-      lik.sigma2 = 1;
-      
-      % Default priors
-      lik.p.sigma2 = prior_logunif;
-      lik.p.nu = prior_fixed;
-      
-      % Set the function handles to the nested functions
+  % Initialize parameters
+  if init || ~ismember('sigma2',ip.UsingDefaults)
+    lik.sigma2 = ip.Results.sigma2;
+  end
+  if init || ~ismember('nu',ip.UsingDefaults)
+    lik.nu = ip.Results.nu;
+  end
+  % Initialize prior structure
+  if init
+    lik.p=[];
+  end
+  if init || ~ismember('sigma2_prior',ip.UsingDefaults)
+    lik.p.sigma2=ip.Results.sigma2_prior;
+  end
+  if init || ~ismember('nu_prior',ip.UsingDefaults)
+    lik.p.nu=ip.Results.nu_prior;
+  end
+  
+  if init      
+    % Set the function handles to the nested functions
       lik.fh.pak = @lik_t_pak;
       lik.fh.unpak = @lik_t_unpak;
       lik.fh.priore = @lik_t_priore;
@@ -86,49 +94,7 @@ function lik = lik_t(varargin)
       lik.fh.upfact = @lik_t_upfact;
       lik.fh.predy = @lik_t_predy;
       lik.fh.recappend = @lik_t_recappend;
-
-      if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
-        error('Wrong number of arguments')
-      end
-      % Loop through all the parameter values that are changed
-      for i=1:2:length(varargin)-1
-        switch varargin{i}
-          case 'nu'
-            lik.nu = varargin{i+1};
-          case 'sigma2'
-            lik.sigma2 = varargin{i+1};
-          case 'sigma2_prior'
-            lik.p.sigma2 = varargin{i+1}; 
-          case 'nu_prior'
-            lik.p.nu = varargin{i+1}; 
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-
-    case 'set'
-      % Set the parameter values of covariance function
-      if numel(varargin)~=1 & mod(numel(varargin),2) ~=1
-        error('Wrong number of arguments')
-      end
-      lik = varargin{1};
-      % Loop through all the parameter values that are changed
-      for i=2:2:length(varargin)-1
-        switch varargin{i}
-          case 'nu'
-            lik.nu = varargin{i+1};
-          case 'sigma2'
-            lik.sigma2 = varargin{i+1};
-          case 'sigma2_prior'
-            lik.p.sigma2 = varargin{i+1}; 
-          case 'nu_prior'
-            lik.p.nu = varargin{i+1}; 
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
   end
-  
   
   function [w, s] = lik_t_pak(lik)
   %LIK_T_PAK  Combine likelihood parameters into one vector.
@@ -163,7 +129,7 @@ function lik = lik_t(varargin)
   end
 
 
-  function [lik, w] = lik_t_unpak(w, lik)
+  function [lik, w] = lik_t_unpak(lik, w)
   %LIK_T_UNPAK  Extract likelihood parameters from the vector.
   %
   %  Description
@@ -198,13 +164,13 @@ function lik = lik_t(varargin)
   function logPrior = lik_t_priore(lik)
   %LIK_T_PRIORE  log(prior) of the likelihood hyperparameters
   %
-  %   Description
-  %   E = LIK_T_PRIORE(LIK) takes a likelihood data 
-  %   structure LIK and returns log(p(th)), where th collects 
-  %   the hyperparameters.
+  %  Description
+  %    E = LIK_T_PRIORE(LIK) takes a likelihood data structure LIK
+  %    and returns log(p(th)), where th collects the
+  %    hyperparameters.
   %
-  %   See also
-  %   LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
+  %  See also
+  %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
     
     v = lik.nu;
     sigma2 = lik.sigma2;
@@ -219,16 +185,16 @@ function lik = lik_t(varargin)
   end
   
   function glogPrior = lik_t_priorg(lik)
-  %LIK_T_PRIORG    d log(prior)/dth of the likelihood 
-  %                         hyperparameters th
+  %LIK_T_PRIORG  d log(prior)/dth of the likelihood 
+  %              hyperparameters th
   %
-  %   Description
-  %   E = LIK_T_PRIORG(LIK, Y, F) takes a likelihood 
-  %   data structure LIK and returns d log(p(th))/dth, where 
-  %   th collects the hyperparameters.
+  %  Description
+  %    E = LIK_T_PRIORG(LIK, Y, F) takes a likelihood data
+  %    structure LIK and returns d log(p(th))/dth, where th
+  %    collects the hyperparameters.
   %
-  %   See also
-  %   LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_G
+  %  See also
+  %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_G
     
   % Evaluate the gradients of log(prior)
 
@@ -248,15 +214,15 @@ function lik = lik_t(varargin)
   end
   
   function logLik = lik_t_ll(lik, y, f, z)
-  %LIK_T_LL    Log likelihood
+  %LIK_T_LL  Log likelihood
   %
-  %   Description
-  %   E = LIK_T_LL(LIK, Y, F) takes a likelihood
-  %   data structure LIK, observations Y, and latent values
-  %   F. Returns the log likelihood, log p(y|f,z).
+  %  Description
+  %    E = LIK_T_LL(LIK, Y, F) takes a likelihood data structure
+  %    LIK, observations Y, and latent values F. Returns the log
+  %    likelihood, log p(y|f,z).
   %
-  %   See also
-  %   LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
+  %  See also
+  %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
 
     r = y-f;
     v = lik.nu;
@@ -269,16 +235,16 @@ function lik = lik_t(varargin)
 
   
   function deriv = lik_t_llg(lik, y, f, param, z)
-  %LIK_T_LLG    Gradient of log likelihood (energy)
+  %LIK_T_LLG  Gradient of log likelihood
   %
-  %   Description
-  %   G = LIK_T_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, observations Y, and latent values
-  %   F. Returns the gradient of log likelihood with respect to
-  %   PARAM. At the moment PARAM can be 'hyper' or 'latent'.
+  %  Description
+  %    G = LIK_T_LLG(LIK, Y, F, PARAM) takes a likelihood data
+  %    structure LIK, observations Y, and latent values F. Returns
+  %    the gradient of log likelihood with respect to PARAM. At the
+  %    moment PARAM can be 'hyper' or 'latent'.
   %
-  %   See also
-  %   LIK_T_LL, LIK_T_LLG2, LIK_T_LLG3, GPLA_E
+  %  See also
+  %    LIK_T_LL, LIK_T_LLG2, LIK_T_LLG3, GPLA_E
     
     r = y-f;
     v = lik.nu;
@@ -308,18 +274,18 @@ function lik = lik_t(varargin)
 
 
   function g2 = lik_t_llg2(lik, y, f, param, z)
-  %LIK_T_LLG2  Second gradients of log likelihood (energy)
+  %LIK_T_LLG2  Second gradients of log likelihood
   %
-  %   Description        
-  %   G2 = LIK_T_LLG2(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, observations Y, and latent values
-  %   F. Returns the hessian of log likelihood with respect to
-  %   PARAM. At the moment PARAM can be only 'latent'. G2 is a
-  %   vector with diagonal elements of the hessian matrix (off
-  %   diagonals are zero).
+  %  Description        
+  %    G2 = LIK_T_LLG2(LIK, Y, F, PARAM) takes a likelihood data
+  %    structure LIK, observations Y, and latent values F. Returns
+  %    the hessian of log likelihood with respect to PARAM. At the
+  %    moment PARAM can be only 'latent'. G2 is a vector with
+  %    diagonal elements of the hessian matrix (off diagonals are
+  %    zero).
   %
-  %   See also
-  %   LIK_T_LL, LIK_T_LLG, LIK_T_LLG3, GPLA_E
+  %  See also
+  %    LIK_T_LL, LIK_T_LLG, LIK_T_LLG3, GPLA_E
 
     r = y-f;
     v = lik.nu;
@@ -350,15 +316,15 @@ function lik = lik_t(varargin)
   function third_grad = lik_t_llg3(lik, y, f, param, z)
   %LIK_T_LLG3  Third gradients of log likelihood (energy)
   %
-  %   Description
-  %   G3 = LIK_T_LLG3(LIK, Y, F, PARAM) takes a likelihood 
-  %   data structure LIK, observations Y and latent values F and
-  %   returns the third gradients of log likelihood with respect to
-  %   PARAM. At the moment PARAM can be only 'latent'. G3 is a
-  %   vector with third gradients.
+  %  Description
+  %    G3 = LIK_T_LLG3(LIK, Y, F, PARAM) takes a likelihood data
+  %    structure LIK, observations Y and latent values F and
+  %    returns the third gradients of log likelihood with respect
+  %    to PARAM. At the moment PARAM can be only 'latent'. G3 is a
+  %    vector with third gradients.
   %
-  %   See also
-  %   LIK_T_LL, LIK_T_LLG, LIK_T_LLG2, GPLA_E, GPLA_G
+  %  See also
+  %    LIK_T_LL, LIK_T_LLG, LIK_T_LLG2, GPLA_E, GPLA_G
 
     r = y-f;
     v = lik.nu;
@@ -384,18 +350,18 @@ function lik = lik_t(varargin)
 
 
   function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_T_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+  %LIK_T_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
   %
-  %   Description
-  %   [M_0, M_1, M2] = LIK_T_TILTEDMOMENTS(LIK, Y, I, S2, MYY, Z) 
-  %   takes a likelihood data structure LIK, incedence counts Y, 
-  %   expected counts Z, index I and cavity variance S2 and mean
-  %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
-  %   of the posterior marginal (see Rasmussen and Williams (2006):
-  %   Gaussian processes for Machine Learning, page 55).
+  %  Description
+  %    [M_0, M_1, M2] = LIK_T_TILTEDMOMENTS(LIK, Y, I, S2, MYY, Z)
+  %    takes a likelihood data structure LIK, incedence counts Y,
+  %    expected counts Z, index I and cavity variance S2 and mean
+  %    MYY. Returns the zeroth moment M_0, mean M_1 and variance
+  %    M_2 of the posterior marginal (see Rasmussen and Williams
+  %    (2006): Gaussian processes for Machine Learning, page 55).
   %
-  %   See also
-  %   GPEP_E
+  %  See also
+  %    GPEP_E
 
     
     zm = @zeroth_moment;
@@ -468,23 +434,23 @@ function lik = lik_t(varargin)
   
   
   function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_T_SITEDERIV   Evaluate the expectation of the gradient
-  %                           of the log likelihood term with respect
-  %                           to the likelihood parameters for EP 
+  %LIK_T_SITEDERIV  Evaluate the expectation of the gradient
+  %                 of the log likelihood term with respect
+  %                 to the likelihood parameters for EP 
   %
-  %   Description
-  %   [M_0, M_1, M2] = LIK_T_TILTEDMOMENTS(LIK, Y, I, S2, MYY)         
-  %   takes a likelihood data structure LIK, observations Y, index I
-  %   and cavity variance S2 and mean MYY. Returns E_f [d log
-  %   p(y_i|f_i) /d a], where a is the likelihood parameter and the
-  %   expectation is over the marginal posterior. This term is
-  %   needed when evaluating the gradients of the marginal
-  %   likelihood estimate Z_EP with respect to the likelihood
-  %   parameters (see Seeger (2008): Expectation propagation for
-  %   exponential families)
+  %  Description
+  %    [M_0, M_1, M2] = LIK_T_TILTEDMOMENTS(LIK, Y, I, S2, MYY)
+  %    takes a likelihood data structure LIK, observations Y, index
+  %    I and cavity variance S2 and mean MYY. Returns E_f [d log
+  %    p(y_i|f_i) /d a], where a is the likelihood parameter and
+  %    the expectation is over the marginal posterior. This term is
+  %    needed when evaluating the gradients of the marginal
+  %    likelihood estimate Z_EP with respect to the likelihood
+  %    parameters (see Seeger (2008): Expectation propagation for
+  %    exponential families)
   %
-  %   See also
-  %   GPEP_G
+  %  See also
+  %    GPEP_G
 
     zm = @zeroth_moment;
     znu = @deriv_nu;
@@ -575,23 +541,23 @@ function lik = lik_t(varargin)
   end
 
   function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
-  %LIK_T_OPTIMIZEF   function to optimize the latent variables
-  %                      with EM algorithm
-
-  % Description:
-  % [F, A] = LIK_T_OPTIMIZEF(GP, Y, K, Lav, K_fu) Takes Gaussian
-  % process data structure GP, observations Y and the covariance
-  % matrix K. Solves the posterior mode of F using EM algorithm and
-  % evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu are
-  % needed for sparse approximations. For details, see Vanhatalo,
-  % Jylï¿½nki and Vehtari (2009): Gaussian process regression with
-  % Student-t likelihood.      
+  %LIK_T_OPTIMIZEF  function to optimize the latent variables
+  %                 with EM algorithm
+  %
+  %  Description:
+  %    [F, A] = LIK_T_OPTIMIZEF(GP, Y, K, Lav, K_fu) Takes Gaussian
+  %    process data structure GP, observations Y and the covariance
+  %    matrix K. Solves the posterior mode of F using EM algorithm
+  %    and evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu
+  %    are needed for sparse approximations. For details, see
+  %    Vanhatalo, Jylänki and Vehtari (2009): Gaussian process
+  %    regression with Student-t likelihood.
+  %
     
     iter = 1;
     sigma2 = gp.lik.sigma2;
     nu = gp.lik.nu;
     n = length(y);
-
     
     switch gp.type
       case 'FULL'            
@@ -671,31 +637,25 @@ function lik = lik_t(varargin)
   function [Ey, Vary, Py] = lik_t_predy(lik, Ef, Varf, y, z)
   %LIK_T_PREDY    Returns the predictive mean, variance and density of y
   %
-  %   Description         
-  %   [EY, VARY] = LIK_T_PREDY(LIK, EF, VARF)
-  %   takes a likelihood data structure LIK, posterior mean EF
-  %   and posterior Variance VARF of the latent variable and returns
-  %   the posterior predictive mean EY and variance VARY of the
-  %   observations related to the latent variables
+  %  Description         
+  %    [EY, VARY] = LIK_T_PREDY(LIK, EF, VARF) takes a likelihood
+  %    data structure LIK, posterior mean EF and posterior Variance
+  %    VARF of the latent variable and returns the posterior
+  %    predictive mean EY and variance VARY of the observations
+  %    related to the latent variables
   %        
-  %   [Ey, Vary, PY] = LIK_T_PREDY(LIK, EF, VARF YT)
-  %   Returns also the predictive density of YT, that is 
+  %  [Ey, Vary, PY] = LIK_T_PREDY(LIK, EF, VARF YT)
+  %    Returns also the predictive density of YT, that is 
   %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-  %   This requires also the observations YT.
+  %    This requires also the observations YT.
   %
-  % See also:
-  % la_pred, ep_pred, mc_pred
+  %  See also
+  %    LA_PRED, EP_PRED, MC_PRED
 
     nu = lik.nu;
     sigma2 = lik.sigma2;
     sigma = sqrt(sigma2);
     
-  % $$$         sampf = gp_rnd(gp, tx, ty, x, [], [], 400);
-  % $$$         r = trand(nu,size(sampf));
-  % $$$         r = sampf + sqrt(sigma).*r;
-  % $$$         
-  % $$$         Ey = mean(r);
-  % $$$         Vary = var(r, 0, 2);
     Ey = zeros(size(Ef));
     EVary = zeros(size(Ef));
     VarEy = zeros(size(Ef)); 
@@ -729,15 +689,11 @@ function lik = lik_t(varargin)
 
   
   function reclik = lik_t_recappend(reclik, ri, lik)
-  % RECAPPEND - Record append
-  %          Description
-  %          RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old covariance
-  %          function record RECCF, record index RI, RECAPPEND returns a
-  %          structure RECCF containing following record fields:
-  %          lengthHyper    =
-  %          lengthHyperNu  =
-  %          lengthScale    =
-  %          magnSigma2     =
+  %RECAPPEND  Record append
+  %  Description
+  %    RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old
+  %    covariance function record RECCF, record index RI, RECAPPEND
+  %    returns a structure RECCF.
 
   % Initialize record
     if nargin == 2

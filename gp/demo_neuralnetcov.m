@@ -55,16 +55,15 @@ gpcf1 = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1);
 % neural network covariance function
 gpcf2 = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1);
 % Gaussian noise data structures
-gpcfn = gpcf_noise('noiseSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2);
 
 % a prior structure for GP hyperparameters
 pt = prior_t('s2', 4);
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 gpcf2 = gpcf_neuralnetwork(gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
-gpcfn = gpcf_noise(gpcfn, 'noiseSigma2_prior', pt);
 
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-5);
-gp2 = gp_set('cf', {gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-5);
+gp = gp_set('lik', lik, 'cf', {gpcf1});
+gp2 = gp_set('lik', lik, 'cf', {gpcf2});
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -109,10 +108,10 @@ gpcf2 = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1);
 
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 gpcf2 = gpcf_neuralnetwork(gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
-gpcfn = gpcf_noise(gpcfn, 'noiseSigma2_prior', pt);
+lik = lik_gaussian();
 
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-5);
-gp2 = gp_set('cf', {gpcf2}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-5);
+gp = gp_set('lik', lik, 'cf', {gpcf1});
+gp2 = gp_set('lik', lik, 'cf', {gpcf2});
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)

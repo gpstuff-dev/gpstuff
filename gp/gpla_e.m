@@ -31,12 +31,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
 %  Description 2
 %    Additional properties meant only for internal use.
 %  
-%    GP = GPLA_E('init', GP, X, Y, OPTIONS) takes a GP data
-%    structure GP together with a matrix X of input vectors and a
-%    matrix Y of target vectors, and initializes required fields
-%    for the Laplace approximation.
+%    GP = GPLA_E('init', GP) takes a GP data structure GP and
+%    initializes required fields for the Laplace approximation.
 %
-%    [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, x, y, varargin)
+%    [e, edata, eprior, f, L, a, La2, p] = GPLA_E(w, gp, x, y, varargin)
 %    returns many useful quantities produced by EP algorithm.
 %
 %    The Newton's method is implemented as described in Rasmussen
@@ -153,25 +151,20 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             LD = chol(K);
           end
           
-          switch gp.laplace_opt.optim_method
+          switch gp.latent_opt.optim_method
             % --------------------------------------------------------------------------------
-            % find the posterior mode of latent variables by fminunc large scale method
+            % find the posterior mode of latent variables by fminunc
             case 'fminunc_large'
-              if ~isfield(gp.laplace_opt, 'fminunc_opt')
-                opt=optimset('GradObj','on');
-                opt=optimset(opt,'Hessian','on');
-                if issparse(K)
-                  fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
-                else
-                  fhm = @(W, f, varargin) (LD\(LD'\f) + repmat(W,1,size(f,2)).*f);  % W*f; %
-                end                            
-                opt=optimset(opt,'HessMult', fhm);
-                opt=optimset(opt,'TolX', 1e-12);
-                opt=optimset(opt,'TolFun', 1e-12);
-                opt=optimset(opt,'LargeScale', 'on');
-                opt=optimset(opt,'Display', 'off'); % 'iter'
+              if issparse(K)
+                fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
               else
-                opt = gp.laplace_opt.fminunc_opt;
+                fhm = @(W, f, varargin) (LD\(LD'\f) + repmat(W,1,size(f,2)).*f);  % W*f; %
+              end                            
+              defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-12,'TolFun', 1e-12,'LargeScale', 'on','Display', 'off');
+              if ~isfield(gp.latent_opt, 'fminunc_opt')
+                opt = optimset(defopts);
+              else
+                opt = optimset(defopts,gp.latent_opt.fminunc_opt);
               end
               
               if issparse(K)
@@ -408,21 +401,16 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           A = chol(A);
           L = iLaKfu/A;
           
-          switch gp.laplace_opt.optim_method
+          switch gp.latent_opt.optim_method
             % --------------------------------------------------------------------------------
             % find the posterior mode of latent variables by fminunc large scale method
             case 'fminunc_large'
-              if ~isfield(gp.laplace_opt, 'fminunc_opt')
-                opt=optimset('GradObj','on');
-                opt=optimset(opt,'Hessian','on');
-                fhm = @(W, f, varargin) (f./repmat(Lav,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % hessian*f; %
-                opt=optimset(opt,'HessMult', fhm);
-                opt=optimset(opt,'TolX', 1e-8);
-                opt=optimset(opt,'TolFun', 1e-8);
-                opt=optimset(opt,'LargeScale', 'on');
-                opt=optimset(opt,'Display', 'off');   % 'iter'
+              fhm = @(W, f, varargin) (f./repmat(Lav,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % hessian*f; %
+              defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-8,'TolFun', 1e-8,'LargeScale', 'on','Display', 'off');
+              if ~isfield(gp.latent_opt, 'fminunc_opt')
+                opt = optimset(defopts);
               else
-                opt = gp.laplace_opt.fminunc_opt;
+                opt = optimset(defopts,gp.latent_opt.fminunc_opt);
               end
 
               fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - feval(gp.lik.fh.ll, gp.lik, y, f', z));
@@ -565,21 +553,16 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           A = chol(A);
           L = iLaKfu/A;
           % Begin optimization
-          switch gp.laplace_opt.optim_method
+          switch gp.latent_opt.optim_method
             % --------------------------------------------------------------------------------
             % find the posterior mode of latent variables by fminunc large scale method
             case 'fminunc_large'
-              if ~isfield(gp.laplace_opt, 'fminunc_opt')
-                opt=optimset('GradObj','on');
-                opt=optimset(opt,'Hessian','on');
-                fhm = @(W, f, varargin) (iKf(f)  + repmat(W,1,size(f,2)).*f);
-                opt=optimset(opt,'HessMult', fhm);
-                opt=optimset(opt,'TolX', 1e-8);
-                opt=optimset(opt,'TolFun', 1e-8);
-                opt=optimset(opt,'LargeScale', 'on');
-                opt=optimset(opt,'Display', 'off');   % 'iter'
+              fhm = @(W, f, varargin) (iKf(f)  + repmat(W,1,size(f,2)).*f);
+              defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-8,'TolFun', 1e-8,'LargeScale', 'on','Display', 'off');
+              if ~isfield(gp.latent_opt, 'fminunc_opt')
+                opt = optimset(defopts);
               else
-                opt = gp.laplace_opt.fminunc_opt;
+                opt = optimset(defopts,gp.latent_opt.fminunc_opt);
               end
 
               [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
@@ -728,23 +711,17 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           A = chol(A);
           L = iLaKfu/A;
           % Begin optimization
-          switch gp.laplace_opt.optim_method
+          switch gp.latent_opt.optim_method
 
             % --------------------------------------------------------------------------------
             % find the posterior mode of latent variables by fminunc large scale method
             case 'fminunc_large'
-              if ~isfield(gp.laplace_opt, 'fminunc_opt')
-                opt=optimset('GradObj','on');
-                opt=optimset(opt,'Hessian','on');
-                fhm = @(W, f, varargin) (ldlsolve(VD,f) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; % La\f
-                                                                                                  %fhm = @(W, f, ikf) (W{1}  + repmat(W{2},1,size(f,2)).*f);  % Hessian*f; % La\f
-                opt=optimset(opt,'HessMult', fhm);
-                opt=optimset(opt,'TolX', 1e-8);
-                opt=optimset(opt,'TolFun', 1e-8);
-                opt=optimset(opt,'LargeScale', 'on');
-                opt=optimset(opt,'Display', 'off');   % 'iter'
+              fhm = @(W, f, varargin) (ldlsolve(VD,f) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; % La\f
+              defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-8,'TolFun', 1e-8,'LargeScale', 'on','Display', 'off');
+              if ~isfield(gp.latent_opt, 'fminunc_opt')
+                opt = optimset(defopts);
               else
-                opt = gp.laplace_opt.fminunc_opt;
+                opt = optimset(defopts,gp.latent_opt.fminunc_opt);
               end
               
               [f,fval,exitflag,output] = fminunc(@(ww) egh(ww), f', opt);
@@ -844,20 +821,15 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           A = chol(A)';
           L = (S\Phi)/A';
           
-          switch gp.laplace_opt.optim_method
+          switch gp.latent_opt.optim_method
             % find the mode by fminunc large scale method
             case 'fminunc_large'
-              if ~isfield(gp.laplace_opt, 'fminunc_opt')
-                opt=optimset('GradObj','on');
-                opt=optimset(opt,'Hessian','on');
-                fhm = @(W, f, varargin) (f./repmat(Sv,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; %
-                opt=optimset(opt,'HessMult', fhm);
-                opt=optimset(opt,'TolX', 1e-8);
-                opt=optimset(opt,'TolFun', 1e-8);
-                opt=optimset(opt,'LargeScale', 'on');
-                opt=optimset(opt,'Display', 'off');   % 'iter'
+              fhm = @(W, f, varargin) (f./repmat(Sv,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; %
+              defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-8,'TolFun', 1e-8,'LargeScale', 'on','Display', 'off');
+              if ~isfield(gp.latent_opt, 'fminunc_opt')
+                opt=optimset(defopts);
               else
-                opt = gp.laplace_opt.fminunc_opt;
+                opt = optimset(defopts,gp.latent_opt.fminunc_opt);
               end
 
               fe = @(f, varargin) (0.5*f*(f'./repmat(Sv,1,size(f',2)) - L*(L'*f')) - feval(gp.lik.fh.ll, gp.lik, y, f', z));
@@ -896,16 +868,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
         eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
       end
 
-      % Evaluate the prior contribution to the error from noise functions
-      if isfield(gp, 'noisef')
-        nn = length(gp.noisef);
-        for i=1:nn
-          noisef = gp.noisef{i};
-          eprior = eprior + feval(noisef.fh.e, noisef, x, y);
-        end
-      end
-      
+      % ======================================================================
       % Evaluate the prior contribution to the error from likelihood function
+      % ======================================================================
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
         eprior = eprior + feval(lik.fh.priore, lik);

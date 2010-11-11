@@ -91,10 +91,10 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
     [tn, tnin] = size(x);
     
     switch gp.type
+      case 'FULL'
         % ============================================================
         % FULL
         % ============================================================
-      case 'FULL'
         [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
         ntest=size(xt,1);
@@ -135,10 +135,12 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
             Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
           end
         end
+        
+      case 'FIC'        
         % ============================================================
         % FIC
         % ============================================================    
-      case 'FIC'        % Predictions with FIC sparse approximation for GP
+        % Predictions with FIC sparse approximation for GP
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
             if ~isempty(tstind) && length(tstind) ~= size(x,1)
@@ -207,10 +209,12 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
             end
         end
+        
+      case {'PIC' 'PIC_BLOCK'}        
         % ============================================================
         % PIC
         % ============================================================
-      case {'PIC' 'PIC_BLOCK'}        % Predictions with PIC sparse approximation for GP
+        % Predictions with PIC sparse approximation for GP
         u = gp.X_u;
         K_fu = gp_cov(gp, x, u, predcf);         % f x u
         K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
@@ -266,10 +270,12 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
             end
             Varft = kstarstar - (Varft - sum((KnfL2).^2,2));
         end
+        
+      case 'CS+FIC'        
         % ============================================================
         % CS+FIC
         % ============================================================
-      case 'CS+FIC'        % Predictions with CS+FIC sparse approximation for GP
+        % Predictions with CS+FIC sparse approximation for GP
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 6
             if ~isempty(tstind) && length(tstind) ~= size(x,1)
@@ -365,7 +371,6 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
         if ~isempty(tstind) && (ptype == 1 || ptype == 3)
             Eft(tstind) = Eft(tstind) + Lav.*deriv;
         end
-
         
         % Evaluate the variance
         if nargout > 1
@@ -418,15 +423,15 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
         end
     end
     
-    
-    % ============================================================
-    % Evaluate also the predictive mean and variance of new observation(s)
-    % ============================================================
     if nargout > 2
-        if isempty(yt)
-            [Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, [], zt);
-        else
-            [Eyt, Varyt, pyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
-        end
+      % ============================================================
+      % Evaluate also the predictive mean and variance of new observation(s)
+      % ============================================================
+      if isempty(yt)
+        [Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, [], zt);
+      else
+        [Eyt, Varyt, pyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+      end
     end
+    
 end

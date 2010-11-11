@@ -64,18 +64,12 @@
 %========================================================
 disp('GP model without derivative obs')
 
-gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
-gpcf2 = gpcf_noise('noiseSigma2', ns^2);
-
-pl = prior_logunif();               % a prior structure
-pm = prior_logunif();               % a prior structure
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_noise(gpcf2, 'noiseSigma2_prior', pm);
-
-gp = gp_set('cf', {gpcf1},'noisef', {gpcf2}, 'jitterSigma2', 1e-6);
+% Use default likelihood (Gaussian) and default priors
+gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
+gp = gp_set('cf', gpcf1, 'jitterSigma2', 1e-6);
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 % Do the prediction
