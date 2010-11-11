@@ -99,35 +99,41 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
 
         ntest=size(xt,1);
         K_nf = gp_cov(gp,xt,x,predcf);
+        
+        % Evaluate the mean
+        if issparse(K_nf) && issparse(L)        
+          deriv = feval(gp.lik.fh.llg, gp.lik, y(p), f, 'latent', z(p));
+          Eft = K_nf(:,p)*deriv;
+        else
+          deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+          Eft = K_nf*deriv;
+        end
 
-        % Evaluate the variance
         if nargout > 1
-            kstarstar = gp_trvar(gp,xt,predcf);
-            if W >= 0             % This is the usual case where likelihood is log concave
-                                  % for example, Poisson and probit
-                if issparse(K_nf) && issparse(L)          % If compact support covariance functions are used 
-                                                          % the covariance matrix will be sparse
-                    deriv = feval(gp.lik.fh.llg, gp.lik, y(p), f, 'latent', z(p));
-                    Eft = K_nf(:,p)*deriv;
-                    sqrtW = sqrt(W);
-                    sqrtWKfn = sqrtW*K_nf(:,p)';
-                    V = ldlsolve(L,sqrtWKfn);
-                    Varft = kstarstar - sum(sqrtWKfn.*V,1)';
-                else
-                    deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
-                    Eft = K_nf*deriv;
-                    W = diag(W);
-                    V = L\(sqrt(W)*K_nf');
-                    Varft = kstarstar - sum(V'.*V',2);
-                end
-            else                  % We may end up here if the likelihood is not log concace
-                                  % For example Student-t likelihood. 
-                deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
-                Eft = K_nf*deriv;
-                V = L*diag(W);
-                R = diag(W) - V'*V;
-                Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
+          % Evaluate the variance
+          kstarstar = gp_trvar(gp,xt,predcf);
+          if W >= 0
+            % This is the usual case where likelihood is log concave
+            % for example, Poisson and probit
+            if issparse(K_nf) && issparse(L)
+              % If compact support covariance functions are used 
+              % the covariance matrix will be sparse
+              sqrtW = sqrt(W);
+              sqrtWKfn = sqrtW*K_nf(:,p)';
+              V = ldlsolve(L,sqrtWKfn);
+              Varft = kstarstar - sum(sqrtWKfn.*V,1)';
+            else
+              W = diag(W);
+              V = L\(sqrt(W)*K_nf');
+              Varft = kstarstar - sum(V'.*V',2);
             end
+          else                  
+            % We may end up here if the likelihood is not log concace
+            % For example Student-t likelihood
+            V = L*diag(W);
+            R = diag(W) - V'*V;
+            Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
+          end
         end
         % ============================================================
         % FIC
