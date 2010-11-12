@@ -13,12 +13,12 @@ function gp = gp_set(varargin)
 %    parameters altered with the specified values.
 %
 %    Parameters for Gaussian process [default]
-%      cf           - single covariance structure or cell array of 
+%      cf           - Single covariance structure or cell array of 
 %                     covariance function structures created by
-%                     gpcf_* functions [{}]
+%                     gpcf_* functions. The defeault is [].
 %                     This or meanf has to be defined as non-empty. 
-%      type         - type of Gaussian process ['FULL']
-%                      'FULL'   full GP
+%      type         - Type of Gaussian process
+%                      'FULL'   full GP (default)
 %                      'FIC'    fully independent conditional sparse
 %                               approximation
 %                      'PIC'    partially independent conditional  
@@ -30,13 +30,14 @@ function gp = gp_set(varargin)
 %                      'SOR'    subset of regressors sparse
 %                               approximation
 %                      'VAR'    variational sparse approximation
-%      lik          - likelihood structure created by one of the 
-%                     likelihood functions lik_* ['lik_gaussian']
-%                     If non-Gaussian, see latent_method below.  
-%      jitterSigma2 - positive jitter to be added in the diagonal of 
-%                     covariance matrix [0]
+%      lik          - Likelihood structure created by one of the 
+%                     likelihood functions lik_*. The default is
+%                     created by lik_gaussian(). If likelihood is
+%                     non-Gaussian, see latent_method below.
+%      jitterSigma2 - Positive jitter to be added in the diagonal of 
+%                     covariance matrix. The default is 0.
 %      infer_params - String defining which hyperparameters are inferred.
-%                     ['covariance+likelihood']  
+%                     The default is 'covariance+likelihood'.
 %                      'covariance'     = infer hyperparameters of 
 %                                         covariance function
 %                      'likelihood'     = infer parameters of likelihood
@@ -51,53 +52,53 @@ function gp = gp_set(varargin)
 %                                              inputs
 %
 %    The additional fields when the likelihood is not Gaussian
-%    (lik ~=lik_gaussian or lik_smt) are:
-%      latent_method - Defines a method for marginalizing over 
-%                      latent values. Possible methods are 'MCMC',
-%                      'Laplace' and 'EP'. If just the latent
-%                      method is given, default options values are
-%                      used. Optionally it is possible to give
-%                      latent method options in a cell array, e.g.,
-%                      {'MCMC', 'method', @scaled_hmc}.
-%      The options which can be set for each method are
-%        MCMC:
-%          method    - Function handle to function which samples the
-%                      latent values @scaled_mh (default) or @scaled_hmc
-%          f         - 1xn vector of latent values
-%        Laplace:
-%          optim_method    - String telling which optimization method is used
-%                      for estimating parameters of the Laplace approximation
+%    (lik is not lik_gaussian or lik_gaussian_sm) are:
+%      latent_method - Method for marginalizing over latent
+%                      values. Possible methods are 
+%                      'Laplace' (default), 'EP' and 'MCMC'.
+%      latent_opt    - Additional option structure for the chosen
+%                      latent method. See default values for
+%                      options below.
+%    The options which can be set for each latent method are
+%      MCMC:
+%        method - Function handle to function which samples the
+%                 latent values @scaled_mh (default) or @scaled_hmc
+%        f      - 1xn vector of latent values. The default is [].
+%      Laplace:
+%        optim_method - Method to find the posterior mode
 %                      'newton' (default except for lik_t)
 %                      'stabilized-newton', 'fminuc_large', or
 %                      'lik_specific' (applicable and default for lik_t)
-%        EP: currently no options to set  
-%  
+%      EP: 
+%        maxiter      - Maximum number of EP iterations. The default is 20.
+%        tol          - Termination tolerance on logZ. The default is 1e-6.
+%        
 %     The additional fields needed with mean functions
-%      meanf        - single mean function structure or cell array of 
+%      meanf        - Single mean function structure or cell array of 
 %                     mean function structures created by
-%                     gpmf_* functions [{}]
+%                     gpmf_* functions. The default is {}.
 %
 %     The additional fields needed in sparse approximations are:
-%      X_u          - inducing inputs, no default, has to be set when
+%      X_u          - Inducing inputs, no default, has to be set when
 %                     FIC, PIC, PIC_BLOCK, VAR, DTC, or SOR is used.
-%      Xu_prior     - prior for inducing inputs [prior_unif]
+%      Xu_prior     - Prior for inducing inputs. The default is prior_unif.
 %
 %     The additional field required by PIC sparse approximation is:
-%       tr_index    - The blocks for the PIC model [{}]. The value has to
+%       tr_index    - The blocks for the PIC model. The value has to
 %                     be a cell array of the index vectors appointing
 %                     the data points into blocks. For example, if x  
 %                     is a matrix of data inputs then x(tr_index{i},:) 
 %                     are the inputs belonging to the i'th block.
 %
 %    The additional fields needed with derivative observations
-%      derivobs     - tells whether derivative observations are
-%                     used: 'on' or 'off' ['off']
+%      derivobs     - Tells whether derivative observations are
+%                     used: 'on' or 'off' (default).
 %
-%       See also
-%       GPCF_*, LIK_*, PRIOR_*, GP_PAK, GP_UNPAK, GP_E, GP_G, GP_EG,
-%       GP_PRED, GP_MC, GP_IA, ...
+%  See also
+%    GPCF_*, LIK_*, PRIOR_*, GP_PAK, GP_UNPAK, GP_E, GP_G, GP_EG,
+%    GP_PRED, GP_MC, GP_IA, ...
 %
-%   References:
+%  References:
 %    Qui�onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Research, 6(3):1939-1959.
@@ -137,11 +138,12 @@ function gp = gp_set(varargin)
   ip.addParamValue('lik',lik_gaussian(), @(x) isstruct(x));
   ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
   ip.addParamValue('infer_params','covariance+likelihood', @(x) ischar(x));
-  ip.addParamValue('latent_method','NA', @(x) ischar(x) || iscell(x));
+  ip.addParamValue('latent_method','Laplace', @(x) ischar(x) || iscell(x));
+  ip.addParamValue('latent_opt',struct(), @isstruct);
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
   ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
-  ip.addParamValue('derivobs',false, @(x) islogical(x) || isscalar(x) || ...
+  ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
   ip.parse(varargin{:});
   gp=ip.Results.gp;
@@ -175,13 +177,13 @@ function gp = gp_set(varargin)
   end
   % Mean function(s)
   if init || ~ismember('meanf',ip.UsingDefaults)
-      if ~isempty(ip.Results.meanf)
-        gp.meanf=ip.Results.meanf;
-        if isstruct(gp.meanf)
-          % store single structure in a cell array, too
-          gp.meanf={gp.meanf};
-        end
+    if ~isempty(ip.Results.meanf)
+      gp.meanf=ip.Results.meanf;
+      if isstruct(gp.meanf)
+        % store single structure in a cell array, too
+        gp.meanf={gp.meanf};
       end
+    end
   end
   if isempty(gp.cf) && isempty(gp.meanf)
     error('At least one covariance or mean function has to defined')
@@ -194,8 +196,8 @@ function gp = gp_set(varargin)
   if init || ~ismember('jitterSigma2',ip.UsingDefaults)
     gp.jitterSigma2=ip.Results.jitterSigma2;
   end
-   % Gradient observation
-  if init || ~ismember('derivobs',ip.UsingDefaults)
+  % Gradient observation
+  if init || ~ismember('derivobs',ip.UsingDefaults) || ~isfield(gp,'derivobs')
     derivobs=ip.Results.derivobs;
     if ~ischar(derivobs)
       if derivobs
@@ -203,14 +205,14 @@ function gp = gp_set(varargin)
       else
         derivobs='off';
       end
-      switch derivobs
-        case 'on'
-          gp.derivobs=true;
-        case 'off'
-          if isfield(gp,'derivobs')
-            gp=rmfield(gp,'derivobs')
-          end
-      end
+    end
+    switch derivobs
+      case 'on'
+        gp.derivobs=true;
+      case 'off'
+        if isfield(gp,'derivobs')
+          gp=rmfield(gp,'derivobs')
+        end
     end
   end
 
@@ -235,67 +237,102 @@ function gp = gp_set(varargin)
     error(sprintf('Need to set X_u when using %s',gp.type))
   end
   % Latent method
-  if init || ~ismember('latent_method',ip.UsingDefaults)
-    latent_method=ip.Results.latent_method;
-    latent_method_opt={};
-    if iscell(latent_method)
-      latent_method_opt=latent_method(2:end);
-      latent_method=latent_method{1};
+  if isfield(gp.lik.fh,'trcov')
+    % Gaussian likelihood
+    if ~ismember('latent_method',ip.UsingDefaults)
+      error('No latent method needed with a Gaussian likelihood')
     end
-    if isempty(latent_method)
-      latent_method='NA'
+    if isfield(gp,'latent_method')
+      gp=rmfield(gp,'latent_method')
     end
-    switch latent_method
-      case 'MCMC'
-        gp.latent_method=latent_method;
-        ipmc=inputParser;
-        ipmc.FunctionName = 'GP_SET - latent method MCMC options';
-        ipmc.addParamValue('f',[],  @(x) isreal(x) && all(isfinite(x(:))));
-        ipmc.addParamValue('method',@scaled_mh, @(x) isa(x,'function_handle'));
-        ipmc.parse(latent_method_opt{:});
-        gp.latentValues = ipmc.Results.f;
-      case 'EP'
-        if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
-        gp.latent_method=latent_method;
-        gp.latent_opt.maxiter = 20;
-        gp.latent_opt.tol = 1e-6;
-        % following sets gp.fh.e = @ep_algorithm;
-        gp = gpep_e('init', gp);
-      case 'Laplace'
-        if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
-        gp.latent_method=latent_method;
-        gp.latent_opt.maxiter = 20;
-        gp.latent_opt.tol = 1e-12;
-        ipla=inputParser;
-        ipla.FunctionName = 'GP_SET - latent method Laplace options';
-        ipla.addParamValue('method',[], @(x) ischar(x));
-        ipla.parse(latent_method_opt{:});
-        method=ipla.Results.method;
-        if ~isempty(method)
-          gp.latent_opt.optim_method;
-        else
-          switch gp.lik.type
-            case 'Student-t'
-              % slower than newton but more robust
-              gp.latent_opt.optim_method='lik_specific'; 
-            otherwise
-              gp.latent_opt.optim_method='newton';
+  else
+    latent_opt=ip.Results.latent_opt;
+    if init || ~ismember('latent_method',ip.UsingDefaults) || ~isfield(gp,'latent_method')
+      latent_method=ip.Results.latent_method;
+      switch latent_method
+        case 'MCMC'
+          % Remove traces of other latent methods
+          if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
+          if isfield(gp.fh,'e'); gp.fh=rmfield(gp.fh,'e'); end
+          % Set latent method
+          gp.latent_method=latent_method;
+          % Handle latent_opt
+          ipmc=inputParser;
+          ipmc.FunctionName = 'GP_SET - latent method MCMC options';
+          ipmc.addParamValue('method',@scaled_mh, @(x) isa(x,'function_handle'));
+          ipmc.addParamValue('f',[],  @(x) isreal(x) && all(isfinite(x(:))));
+          ipmc.parse(latent_opt);
+          if init || ~ismember('method',ipmc.UsingDefaults) || ~isfield(gp.fh,'mc')
+            gp.fh.mc = ipmc.Results.method;
           end
-        end
-        switch gp.lik.type
-          % following sets gp.fh.e = @laplace_algorithm;
-          case 'Softmax'
-            gp = gpla_softmax_e('init', gp);
-          otherwise
-            gp = gpla_e('init', gp);
-        end
-      case 'NA'
-        % no latent method set
-        if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end
-        if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
-      otherwise
-        error('Unknown type of latent_method!')
-    end % switch latent_method
-  end % if init || ~ismember('latent_method',ip.UsingDefaults)
+          if init || ~ismember('f',ipmc.UsingDefaults) || ~isfield(gp,'latentValues')
+            gp.latentValues = ipmc.Results.f;
+          end
+        case 'EP'
+          % Remove traces of other latent methods
+          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
+            gp=rmfield(gp,'latent_opt');
+          end
+          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+          % Set latent method
+          gp.latent_method=latent_method;
+          % Handle latent_opt
+          ipep=inputParser;
+          ipep.FunctionName = 'GP_SET - latent method MCMC options';
+          ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipep.parse(latent_opt);
+          if init || ~ismember('maxiter',ipep.UsingDefaults) || ~isfield(gp,'latent_opt')
+            gp.latent_opt.maxiter = ipep.Results.maxiter;
+          end
+          if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
+            gp.latent_opt.tol = ipep.Results.tol;
+          end
+          % following sets gp.fh.e = @ep_algorithm;
+          gp = gpep_e('init', gp);
+        case 'Laplace'
+          % Remove traces of other latent methods
+          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
+            gp=rmfield(gp,'latent_opt');
+          end
+          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+          % Set latent method
+          gp.latent_method=latent_method;
+          % these options not yet used
+          %gp.latent_opt.maxiter = 20;
+          %gp.latent_opt.tol = 1e-10;
+          % Handle latent_opt
+          ipla=inputParser;
+          ipla.FunctionName = 'GP_SET - latent method Laplace options';
+          ipla.addParamValue('optim_method',[], @(x) ischar(x));
+          ipla.parse(latent_opt);
+          optim_method=ipla.Results.optim_method;
+          if ~isempty(optim_method)
+            gp.latent_opt.optim_method=optim_method;
+          else
+            switch gp.lik.type
+              case 'Student-t'
+                % slower than newton but more robust
+                gp.latent_opt.optim_method='lik_specific'; 
+              otherwise
+                gp.latent_opt.optim_method='newton';
+            end
+          end
+          switch gp.lik.type
+            % following sets gp.fh.e = @laplace_algorithm;
+            case 'Softmax'
+              gp = gpla_softmax_e('init', gp);
+            otherwise
+              gp = gpla_e('init', gp);
+          end
+        case 'NA'
+          % no latent method set
+          if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end
+          if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
+        otherwise
+          error('Unknown type of latent_method!')
+      end % switch latent_method
+    end % if init || ~ismember('latent_method',ip.UsingDefaults)
+  end
   
 end

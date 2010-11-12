@@ -124,7 +124,7 @@ gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
 lik = lik_binomial;
     
 % Initialize GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2',1e-4);
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2', 1e-6);
     
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');

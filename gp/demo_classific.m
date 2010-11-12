@@ -77,14 +77,15 @@ pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 
 % Create the GP data structure (type is by default FULL)
-gp = gp_set('cf', gpcf1, 'lik', lik_probit(), 'jitterSigma2', 1e-6);
-%gp = gp_set('cf', gpcf1, 'lik', lik_logit(), 'jitterSigma2', 1e-6);
+gp = gp_set('cf', gpcf1, 'lik', lik_probit(), 'jitterSigma2', 1e-9);
+%gp = gp_set('cf', gpcf1, 'lik', lik_logit(), 'jitterSigma2', 1e-9);
 
 % ------- Laplace approximation --------
 fprintf(['%s model with Laplace integration over the latent values and\n' ...
          'MAP estimate for the hyperparameters\n'],gp.lik.type)
 
-% Set the approximate inference method
+% Set the approximate inference method 
+% (Laplace is default, so this could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization

@@ -72,8 +72,6 @@ function lik = lik_gaussian(varargin)
     lik.fh.cov = @lik_gaussian_cov;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
-    lik.fh.sampling = @hmc2;
-    lik.sampling_opt = hmc2_opt;
     lik.fh.recappend = @lik_gaussian_recappend;
   end
   

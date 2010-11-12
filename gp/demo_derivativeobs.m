@@ -41,32 +41,36 @@
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
- % Create the data
- tp=9;                                  %number of training points -1
- x=[-2:4/tp:2]';
- y=sin(x).*cos(x).^2;                   % The underlying process
- dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
- ns=0.06;                              % noise standard deviation
- 
- % Add noise
- y=y + ns*randn(size(y));
- % derivative observations are also noisy
- dy=dy + ns*randn(size(dy));           
- % observation vector with derivative observations
- y2=[y;dy];
+% Create the data
+tp=9;                                  %number of training points -1
+x=[-2:4/tp:2]';
+y=sin(x).*cos(x).^2;                   % The underlying process
+dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
+ns=0.06;                              % noise standard deviation
 
- % test points
- xt=[-3:0.05:3]';
- nt=length(xt);
+% Add noise
+y=y + ns*randn(size(y));
+% derivative observations are also noisy
+dy=dy + ns*randn(size(dy));           
+% observation vector with derivative observations
+y2=[y;dy];
+
+% test points
+xt=[-3:0.05:3]';
+nt=length(xt);
 
 %========================================================
 % PART 1 GP model without derivative obs
 %========================================================
 disp('GP model without derivative obs')
 
-% Use default likelihood (Gaussian) and default priors
-gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5);
-gp = gp_set('cf', gpcf1, 'jitterSigma2', 1e-6);
+% Covariance function
+pl = prior_t();
+pm = prior_sqrtt();
+gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5, ...
+                 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+% Use default Gaussian likelihood
+gp = gp_set('cf', gpcf);
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
@@ -136,17 +140,17 @@ a=0.1;
 ddx=zeros(2*length(x),1);
 ddy=zeros(2*length(x),1);
 for i=1:length(x)
-    i1=i1+1;
-    ddx(i1)=x(i)-a;
-    ddy(i1)=y(i)-a*dy(i);
-    i1=i1+1;
-    ddx(i1)=x(i)+a;
-    ddy(i1)=y(i)+a*dy(i);
+  i1=i1+1;
+  ddx(i1)=x(i)-a;
+  ddy(i1)=y(i)-a*dy(i);
+  i1=i1+1;
+  ddx(i1)=x(i)+a;
+  ddy(i1)=y(i)+a*dy(i);
 end
 
 for i=1:2:length(ddx)
-hold on
-dhav=plot(ddx(i:i+1), ddy(i:i+1),'r','lineWidth',2);
+  hold on
+  dhav=plot(ddx(i:i+1), ddy(i:i+1),'r','lineWidth',2);
 end
 %legend([m.mainLine m.patch h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
 legend([m m95 h hav dhav],'prediction','95%','f(x)','observations','der. obs.');

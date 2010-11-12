@@ -46,7 +46,6 @@
 % data analysis with full GP model
 %========================================================
 
-
 %- generate some toy data
 x=rand(450,1)*2-1; f = -1.5.*x.^3+0.5*x.^2+0.75*x;
 % number of trials
@@ -65,22 +64,19 @@ xgrid=linspace(min(x(:,1))-0.3,max(x(:,1))+0.3,100)';
 Ntgrid=ones(size(xgrid))*100;
 [n, nin] = size(x);
 
-% Create covariance functions
-gpcf1 = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1);
-
-% Set the prior for the parameters of covariance functions 
-pn = prior_normal();
+% Set priors
 ps2 = prior_sinvchi2('s2', 2.7^2, 'nu', 0.2);
-ppn = prior_normal('mu', 6, 's2', 9, 'mu_prior', pn, 's2_prior', ps2);
-
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', ppn, 'magnSigma2_prior', ps2);
+pl = prior_logunif();
+% Create covariance function
+gpcf = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', ps2);
 
 % Create the GP data structure
-gp = gp_set('lik', lik_binomial, 'cf', {gpcf1}, 'jitterSigma2', 1e-8, 'infer_params', 'covariance');
+gp = gp_set('lik', lik_binomial(), 'cf', {gpcf}, 'jitterSigma2', 1e-8);
 
 % ------- Laplace approximation --------
 
-% Set the approximate inference method
+% Set the approximate inference method (Laplace is default, so this could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
