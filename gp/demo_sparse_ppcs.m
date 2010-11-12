@@ -1,5 +1,6 @@
-%DEMO_PPCSCOV  Regression problem demonstration for 2-input 
-%              function with Gaussian process using CS covariance
+%DEMO_REGRESSION_PPCS  Regression problem demonstration for 2-input 
+%                      function with Gaussian process using CS
+%                      covariance
 %
 %  Description
 %    We will analyze a US annual precipitation data from year 1995,
