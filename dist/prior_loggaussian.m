@@ -1,17 +1,17 @@
-function p = prior_lognormal(varargin)
-%PRIOR_LOGNORMAL  Log-Normal prior structure     
+function p = prior_loggaussian(varargin)
+%PRIOR_LOGGAUSSIAN  Log-Gaussian prior structure     
 %       
 %  Description
-%    P = PRIOR_LOGNORMAL('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
-%    creates Log-Normal prior structure in which the named
+%    P = PRIOR_LOGGAUSSIAN('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates Log-Gaussian prior structure in which the named
 %    parameters have the specified values. Any unspecified
 %    parameters are set to default values.
 %    
-%    P = PRIOR_LOGNORMAL(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    P = PRIOR_LOGGAUSSIAN(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%    Parameters for Log-Normal prior [default]
+%    Parameters for Log-Gaussian prior [default]
 %      mu       - location [0]
 %      s2       - scale squared (variance) [1]
 %      mu_prior - prior for mu [prior_fixed]
@@ -47,7 +47,7 @@ function p = prior_lognormal(varargin)
   switch do 
     case 'init'
       % Initialize the prior structure
-      p.type = 'Log-Normal';
+      p.type = 'Log-Gaussian';
       
       % set parameters
       p.mu = 0;
@@ -77,11 +77,11 @@ function p = prior_lognormal(varargin)
       end
       
       % set functions
-      p.fh.pak = @prior_lognormal_pak;
-      p.fh.unpak = @prior_lognormal_unpak;
-      p.fh.e = @prior_lognormal_e;
-      p.fh.g = @prior_lognormal_g;
-      p.fh.recappend = @prior_lognormal_recappend;
+      p.fh.pak = @prior_loggaussian_pak;
+      p.fh.unpak = @prior_loggaussian_unpak;
+      p.fh.e = @prior_loggaussian_e;
+      p.fh.g = @prior_loggaussian_g;
+      p.fh.recappend = @prior_loggaussian_recappend;
       
     case 'set'
       % Set the parameter values of the prior
@@ -103,20 +103,20 @@ function p = prior_lognormal(varargin)
   end
 
   
-  function [w,s] = prior_lognormal_pak(p)
+  function [w,s] = prior_loggaussian_pak(p)
     
     w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
-      s=[s; 'Log-Normal.mu'];
+      s=[s; 'Log-Gaussian.mu'];
     end
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
-      s=[s; 'log(Log-Normal.s2)'];
+      s=[s; 'log(Log-Gaussian.s2)'];
     end
   end
   
-  function [p, w] = prior_lognormal_unpak(p, w)
+  function [p, w] = prior_loggaussian_unpak(p, w)
 
     if ~isempty(p.p.mu)
       i1=1;
@@ -130,7 +130,7 @@ function p = prior_lognormal(varargin)
     end
   end
   
-  function e = prior_lognormal_e(x, p)
+  function e = prior_loggaussian_e(x, p)
     
     e = 0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
     
@@ -142,7 +142,7 @@ function p = prior_lognormal(varargin)
     end
   end
   
-  function g = prior_lognormal_g(x, p)
+  function g = prior_loggaussian_g(x, p)
     
     g = (1./(x.*p.s2)).*(log(x)-p.mu+p.s2);
     
@@ -156,7 +156,7 @@ function p = prior_lognormal(varargin)
     end
   end
   
-  function rec = prior_lognormal_recappend(rec, ri, p)
+  function rec = prior_loggaussian_recappend(rec, ri, p)
   % The parameters are not sampled in any case.
     rec = rec;
     if ~isempty(p.p.mu)

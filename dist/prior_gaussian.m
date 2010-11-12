@@ -1,17 +1,17 @@
-function p = prior_normal(varargin)
-%PRIOR_NORMAL  Normal prior structure     
+function p = prior_gaussian(varargin)
+%PRIOR_GAUSSIAN  Gaussian prior structure     
 %       
 %  Description
-%    P = PRIOR_NORMAL('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
-%    creates Normal prior structure in which the named
+%    P = PRIOR_GAUSSIAN('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates Gaussian prior structure in which the named
 %    parameters have the specified values. Any unspecified
 %    parameters are set to default values.
 %    
-%    P = PRIOR_NORMAL(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    P = PRIOR_GAUSSIAN(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%    Parameters for Normal prior [default]
+%    Parameters for Gaussian prior [default]
 %      mu       - location [0]
 %      s2       - scale squared (variance) [1]
 %      mu_prior - prior for mu [prior_fixed]
@@ -47,7 +47,7 @@ function p = prior_normal(varargin)
   switch do 
     case 'init'
       % Initialize the prior structure
-      p.type = 'Normal';
+      p.type = 'Gaussian';
       
       % set parameters
       p.mu = 0;
@@ -77,11 +77,11 @@ function p = prior_normal(varargin)
       end
       
       % set functions
-      p.fh.pak = @prior_normal_pak;
-      p.fh.unpak = @prior_normal_unpak;
-      p.fh.e = @prior_normal_e;
-      p.fh.g = @prior_normal_g;
-      p.fh.recappend = @prior_normal_recappend;
+      p.fh.pak = @prior_gaussian_pak;
+      p.fh.unpak = @prior_gaussian_unpak;
+      p.fh.e = @prior_gaussian_e;
+      p.fh.g = @prior_gaussian_g;
+      p.fh.recappend = @prior_gaussian_recappend;
 
     case 'set'
       % Set the parameter values of the prior
@@ -103,20 +103,20 @@ function p = prior_normal(varargin)
   end
 
   
-  function [w,s] = prior_normal_pak(p)
+  function [w,s] = prior_gaussian_pak(p)
     
     w=[];s={};
     if ~isempty(p.p.mu)
       w = p.mu;
-      s=[s; 'Normal.mu'];
+      s=[s; 'Gaussian.mu'];
     end
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
-      s=[s; 'log(Normal.s2)'];
+      s=[s; 'log(Gaussian.s2)'];
     end
   end
   
-  function [p, w] = prior_normal_unpak(p, w)
+  function [p, w] = prior_gaussian_unpak(p, w)
 
     if ~isempty(p.p.mu)
       i1=1;
@@ -130,7 +130,7 @@ function p = prior_normal(varargin)
     end
   end
   
-  function e = prior_normal_e(x, p)
+  function e = prior_gaussian_e(x, p)
     
     e = 0.5*sum(log(2*pi) + log(p.s2)+ 1./p.s2 .* sum((x-p.mu).^2,1));
     
@@ -142,7 +142,7 @@ function p = prior_normal(varargin)
     end
   end
   
-  function g = prior_normal_g(x, p)
+  function g = prior_gaussian_g(x, p)
     
     g = (1./p.s2).*(x-p.mu);
     
@@ -156,7 +156,7 @@ function p = prior_normal(varargin)
     end
   end
   
-  function rec = prior_normal_recappend(rec, ri, p)
+  function rec = prior_gaussian_recappend(rec, ri, p)
   % The parameters are not sampled in any case.
     rec = rec;
     if ~isempty(p.p.mu)
