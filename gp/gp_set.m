@@ -1,5 +1,5 @@
 function gp = gp_set(varargin)
-%GP_INIT  Create a Gaussian process model data structure. 
+%GP_SET  Create a Gaussian process model data structure. 
 %
 %  Description
 %    GP = GP_SET('PARAM1',VALUE1,'PARAM2',VALUE2,...)
@@ -12,10 +12,10 @@ function gp = gp_set(varargin)
 %    modify a Gaussian process structure with the named
 %    parameters altered with the specified values.
 %
-%    Parameters for Gaussian process [default]
+%    Parameters for Gaussian process
 %      cf           - Single covariance structure or cell array of 
 %                     covariance function structures created by
-%                     gpcf_* functions. The defeault is [].
+%                     gpcf_* functions. The default is [].
 %                     This or meanf has to be defined as non-empty. 
 %      type         - Type of Gaussian process
 %                      'FULL'   full GP (default)
@@ -52,7 +52,7 @@ function gp = gp_set(varargin)
 %                                              inputs
 %
 %    The additional fields when the likelihood is not Gaussian
-%    (lik is not lik_gaussian or lik_gaussian_sm) are:
+%    (lik is not lik_gaussian or lik_gaussiansm) are:
 %      latent_method - Method for marginalizing over latent
 %                      values. Possible methods are 
 %                      'Laplace' (default), 'EP' and 'MCMC'.
@@ -73,18 +73,18 @@ function gp = gp_set(varargin)
 %        maxiter      - Maximum number of EP iterations. The default is 20.
 %        tol          - Termination tolerance on logZ. The default is 1e-6.
 %        
-%     The additional fields needed with mean functions
+%    The additional fields needed with mean functions
 %      meanf        - Single mean function structure or cell array of 
 %                     mean function structures created by
 %                     gpmf_* functions. The default is {}.
 %
-%     The additional fields needed in sparse approximations are:
+%    The additional fields needed in sparse approximations are:
 %      X_u          - Inducing inputs, no default, has to be set when
 %                     FIC, PIC, PIC_BLOCK, VAR, DTC, or SOR is used.
 %      Xu_prior     - Prior for inducing inputs. The default is prior_unif.
 %
-%     The additional field required by PIC sparse approximation is:
-%       tr_index    - The blocks for the PIC model. The value has to
+%    The additional field required by PIC sparse approximation is:
+%      tr_index     - The blocks for the PIC model. The value has to
 %                     be a cell array of the index vectors appointing
 %                     the data points into blocks. For example, if x  
 %                     is a matrix of data inputs then x(tr_index{i},:) 

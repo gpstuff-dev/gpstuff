@@ -141,7 +141,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         
-        g_logPrior = feval(lik.fh.priorg, lik);
+        g_logPrior = feval(lik.fh.gprior, lik);
         if ~isempty(g_logPrior)
           
           DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
@@ -331,7 +331,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.priorg, lik);
+          g_logPrior = -feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -555,7 +555,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.priorg, lik);
+          g_logPrior = -feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -802,7 +802,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.priorg, lik);
+          g_logPrior = -feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end

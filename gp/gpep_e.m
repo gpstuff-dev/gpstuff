@@ -1265,7 +1265,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       % functions
       if isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior + feval(lik.fh.priore, lik);
+        eprior = eprior + feval(lik.fh.eprior, lik);
       end
 
       % The last things to do

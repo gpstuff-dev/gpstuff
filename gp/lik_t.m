@@ -52,9 +52,9 @@ function lik = lik_t(varargin)
   
   if isempty(lik)
     init=true;
-    lik.type = 'Gaussian';
+    lik.type = 'Students-t';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Gaussian')
+    if ~isfield(lik,'type') && ~isequal(lik.type,'Students-t')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -82,8 +82,8 @@ function lik = lik_t(varargin)
     % Set the function handles to the nested functions
       lik.fh.pak = @lik_t_pak;
       lik.fh.unpak = @lik_t_unpak;
-      lik.fh.priore = @lik_t_priore;
-      lik.fh.priorg = @lik_t_priorg;
+      lik.fh.eprior = @lik_t_eprior;
+      lik.fh.gprior = @lik_t_gprior;
       lik.fh.ll = @lik_t_ll;
       lik.fh.llg = @lik_t_llg;    
       lik.fh.llg2 = @lik_t_llg2;
@@ -161,11 +161,11 @@ function lik = lik_t(varargin)
   end
 
 
-  function logPrior = lik_t_priore(lik)
-  %LIK_T_PRIORE  log(prior) of the likelihood hyperparameters
+  function logPrior = lik_t_eprior(lik)
+  %LIK_T_EPRIOR  log(prior) of the likelihood hyperparameters
   %
   %  Description
-  %    E = LIK_T_PRIORE(LIK) takes a likelihood data structure LIK
+  %    E = LIK_T_EPRIOR(LIK) takes a likelihood data structure LIK
   %    and returns log(p(th)), where th collects the
   %    hyperparameters.
   %
@@ -184,12 +184,12 @@ function lik = lik_t(varargin)
     end
   end
   
-  function glogPrior = lik_t_priorg(lik)
-  %LIK_T_PRIORG  d log(prior)/dth of the likelihood 
+  function glogPrior = lik_t_gprior(lik)
+  %LIK_T_GPRIOR  d log(prior)/dth of the likelihood 
   %              hyperparameters th
   %
   %  Description
-  %    E = LIK_T_PRIORG(LIK, Y, F) takes a likelihood data
+  %    E = LIK_T_GPRIOR(LIK, Y, F) takes a likelihood data
   %    structure LIK and returns d log(p(th))/dth, where th
   %    collects the hyperparameters.
   %
@@ -706,8 +706,8 @@ function lik = lik_t(varargin)
       % Set the function handles
       reclik.fh.pak = @lik_t_pak;
       reclik.fh.unpak = @lik_t_unpak;
-      reclik.fh.priore = @lik_t_priore;
-      reclik.fh.priorg = @lik_t_priorg;
+      reclik.fh.eprior = @lik_t_eprior;
+      reclik.fh.gprior = @lik_t_gprior;
       reclik.fh.ll = @lik_t_ll;
       reclik.fh.llg = @lik_t_llg;    
       reclik.fh.llg2 = @lik_t_llg2;

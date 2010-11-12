@@ -150,11 +150,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             % LD = chol(K);
           end
           
-          switch gp.laplace_opt.optim_method
+          switch gp.latent_opt.optim_method
             % --------------------------------------------------------------------------------
             % find the posterior mode of latent variables by fminunc large scale method
             %                   case 'fminunc_large'
-            %                     if ~isfield(gp.laplace_opt, 'fminunc_opt')
+            %                     if ~isfield(gp.latent_opt, 'fminunc_opt')
             %                         opt=optimset('GradObj','on');
             %                         opt=optimset(opt,'Hessian','on');
             %                         if issparse(K)
@@ -168,7 +168,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             %                         opt=optimset(opt,'LargeScale', 'on');
             %                         opt=optimset(opt,'Display', 'off'); % 'iter'
             %                     else
-            %                         opt = gp.laplace_opt.fminunc_opt;
+            %                         opt = gp.latent_opt.fminunc_opt;
             %                     end
             %                
             %                     if issparse(K)
@@ -449,7 +449,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
       % Evaluate the prior contribution to the error from likelihood function
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior + feval(lik.fh.priore, lik);
+        eprior = eprior + feval(lik.fh.eprior, lik);
       end
 
       e = edata + eprior;

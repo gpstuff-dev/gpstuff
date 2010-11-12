@@ -78,8 +78,8 @@ function lik = lik_negbin(varargin)
       % Set the function handles to the nested functions
       lik.fh.pak = @lik_negbin_pak;
       lik.fh.unpak = @lik_negbin_unpak;
-      lik.fh.priore = @lik_negbin_priore;
-      lik.fh.priorg = @lik_negbin_priorg;
+      lik.fh.eprior = @lik_negbin_eprior;
+      lik.fh.gprior = @lik_negbin_gprior;
       lik.fh.ll = @lik_negbin_ll;
       lik.fh.llg = @lik_negbin_llg;    
       lik.fh.llg2 = @lik_negbin_llg2;
@@ -170,11 +170,11 @@ function lik = lik_negbin(varargin)
   end
 
 
-  function logPrior = lik_negbin_priore(lik, varargin)
-  %LIK_NEGBIN_PRIORE  log(prior) of the likelihood hyperparameters
+  function logPrior = lik_negbin_eprior(lik, varargin)
+  %LIK_NEGBIN_EPRIOR  log(prior) of the likelihood hyperparameters
   %
   %   Description
-  %   E = LIK_NEGBIN_PRIORE(LIK) takes a likelihood data 
+  %   E = LIK_NEGBIN_EPRIOR(LIK) takes a likelihood data 
   %   structure LIK and returns log(p(th)), where th collects 
   %   the hyperparameters.
   %
@@ -191,12 +191,12 @@ function lik = lik_negbin(varargin)
   end
 
   
-  function glogPrior = lik_negbin_priorg(lik, varargin)
-  %LIK_NEGBIN_PRIORG    d log(prior)/dth of the likelihood 
+  function glogPrior = lik_negbin_gprior(lik, varargin)
+  %LIK_NEGBIN_GPRIOR    d log(prior)/dth of the likelihood 
   %                         hyperparameters th
   %
   %   Description
-  %   E = LIK_NEGBIN_PRIORG(LIK, Y, F) takes a likelihood 
+  %   E = LIK_NEGBIN_GPRIOR(LIK, Y, F) takes a likelihood 
   %   data structure LIK and returns d log(p(th))/dth, where 
   %   th collects the hyperparameters.
   %

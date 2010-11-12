@@ -351,7 +351,7 @@ end
 if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && isfield(gp.lik, 'p')
   % a Gaussian likelihood
   lik = gp.lik;
-  eprior = eprior + feval(lik.fh.priore, lik);
+  eprior = eprior + feval(lik.fh.eprior, lik);
 end
 
 

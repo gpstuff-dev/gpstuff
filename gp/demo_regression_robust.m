@@ -143,9 +143,9 @@ pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Here, set own Sigma2 for every data point
-gpcfn = gpcf_noiset('ndata', n, 'noiseSigmas2', repmat(1,n,1), ...
-                    'nu_prior', prior_logunif());
-gp = gp_set('cf', {gpcf1}, 'noisef', {gpcfn}, 'jitterSigma2', 1e-9)
+lik = lik_gaussiansmt('ndata', n, 'sigma2', repmat(1,n,1), ...
+                      'nu_prior', prior_logunif());
+gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9)
 
 hmc_opt.steps=10;
 hmc_opt.stepadj=0.06;
@@ -155,8 +155,7 @@ hmc_opt.persistence=1;
 hmc_opt.decay=0.6;
 
 % Sample 
-[r,g,opt]=gp_mc(gp, x, y, 'nsamples', 300, 'hmc_opt', hmc_opt, ...
-                'gibbs_opt', 'on');
+[r,g,opt]=gp_mc(gp, x, y, 'nsamples', 300, 'hmc_opt', hmc_opt);
 
 % thin the record
 rr = thin(r,100,2);
@@ -209,10 +208,10 @@ gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 % Create the likelihood structure
 pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', prior_logunif(), ...
-            'sigma2', 20, 'sigma2_prior', pn);
+            'sigma2', 2, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
+gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6, ...
             'infer_params', 'covariance+likelihood', ...
             'latent_method', 'Laplace');
 

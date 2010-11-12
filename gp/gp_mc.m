@@ -183,7 +183,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   end
 
 
-  % -------------- Start sampling ----------------------------
+  % --- Start sampling ------------
   for k=1:opt.nsamples
     
     if opt.persistence_reset
@@ -206,7 +206,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     indrej=0;
     for l=1:opt.repeat
       
-      % ----------- Sample latent Values  ---------------------
+      % --- Sample latent Values  -------------
       if ~isempty(opt.latent_opt)
         [f, energ, diagnl] = feval(gp.fh.mc, f, opt.latent_opt, gp, x, y, z);
         gp.latentValues = f(:);
@@ -217,7 +217,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
       
-      % ----------- Sample hyperparameters with HMC --------------------- 
+      % --- Sample hyperparameters with HMC ------------- 
       if ~isempty(opt.hmc_opt)
         if isfield(opt.hmc_opt,'infer_params')
           infer_params = gp.infer_params;
@@ -239,7 +239,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
       
-      % ----------- Sample hyperparameters with SLS --------------------- 
+      % --- Sample hyperparameters with SLS ------------- 
       if ~isempty(opt.sls_opt)
         if isfield(opt.sls_opt,'infer_params')
           infer_params = gp.infer_params;
@@ -257,15 +257,15 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
 
-      % ----------- Sample hyperparameters of the likelihood with Gibbs --------------------- 
-      if ~isempty(opt.lik_gibbs_opt)
-        [gp.lik, f] = feval(gp.lik.fh.gibbs, gp, gp.lik, opt.lik_gibbs_opt, x, f);
+      % --- Sample hyperparameters of the likelihood with Gibbs ------------- 
+      if isfield(gp.lik,'gibbs') && isequal(gp.lik.gibbs,'on')
+        [gp.lik, f] = feval(gp.lik.fh.gibbs, gp, gp.lik, x, f);
       end
       
-      % ----------- Sample hyperparameters of the likelihood with SLS --------------------- 
+      % --- Sample hyperparameters of the likelihood with SLS ------------- 
       if ~isempty(opt.lik_sls_opt)
         w = gp_pak(gp, 'likelihood');
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z) + feval(lik.fh.priore,feval(lik.fh.unpak,w,lik)));
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z) + feval(lik.fh.eprior,feval(lik.fh.unpak,w,lik)));
         [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
         if isfield(diagns, 'opt')
           opt.lik_sls_opt = diagns.opt;
@@ -274,13 +274,13 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         gp = gp_unpak(gp, w, 'likelihood');
       end
       
-      % ----------- Sample hyperparameters of the likelihood with HMC --------------------- 
+      % --- Sample hyperparameters of the likelihood with HMC ------------- 
       if ~isempty(opt.lik_hmc_opt)
         infer_params = gp.infer_params;
         gp.infer_params = 'likelihood';
         w = gp_pak(gp);
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z)+feval(lik.fh.priore,feval(lik.fh.unpak,w,lik)));
-        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,w,lik),y,f,'hyper',z)+feval(lik.fh.priorg,feval(lik.fh.unpak,w,lik)));
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z)+feval(lik.fh.eprior,feval(lik.fh.unpak,w,lik)));
+        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,w,lik),y,f,'hyper',z)+feval(lik.fh.gprior,feval(lik.fh.unpak,w,lik)));
         
         hmc2('state',lik_hmc_rstate)              % Set the state
         [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);
@@ -296,9 +296,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       end        
       
       
-    end % ------------- for l=1:opt.repeat -------------------------  
+    end % ----- for l=1:opt.repeat ---------  
     
-    % ----------- Set record -----------------------    
+    % --- Set record -------    
     ri=ri+1;
     record=recappend(record);
     
@@ -325,7 +325,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     end
   end
   
-%------------------------------------------------------------------------
+%------------------------
 function record = recappend(record)
 % RECAPPEND - Record append
 %          Description
@@ -360,7 +360,6 @@ function record = recappend(record)
       record.lrejects = 0;
     end
     record.jitterSigma2 = [];
-    record.hmcrejects = 0;
     
     if isfield(gp, 'site_tau')
       record.site_tau = [];
@@ -397,6 +396,7 @@ function record = recappend(record)
     record.edata = [];
     record.eprior = [];
     record.etr = [];
+    record.hmcrejects = 0;
     ri = 1;
     lrej = 0;
     indrej = 0;

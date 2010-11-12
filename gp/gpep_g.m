@@ -164,7 +164,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.priorg, lik);
+          g_logPrior = feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -299,7 +299,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.priorg, lik);
+          g_logPrior = feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -451,7 +451,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.priorg, lik);
+          g_logPrior = feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -636,7 +636,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.priorg, lik);
+          g_logPrior = feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -768,7 +768,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.priorg, lik);
+          g_logPrior = feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -887,7 +887,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.priorg, lik);
+          g_logPrior = feval(lik.fh.gprior, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end

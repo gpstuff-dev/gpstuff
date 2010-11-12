@@ -197,7 +197,7 @@ switch gp.type
 %             gdata_likelih = 0;
 %             lik = gp.lik;
 %             
-%             g_logPrior = feval(lik.fh.priorg, lik);
+%             g_logPrior = feval(lik.fh.gprior, lik);
 %             if ~isempty(g_logPrior)
 %             
 %                 DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);

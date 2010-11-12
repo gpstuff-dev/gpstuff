@@ -1,5 +1,5 @@
 function lik = lik_gaussian(varargin)
-%LIK_GAUSSIAN  Create a Gaussian likelihood
+%LIK_GAUSSIAN  Create a Gaussian likelihood structure
 %
 %  Description
 %    LIK = LIK_GAUSSIAN('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
@@ -20,7 +20,7 @@ function lik = lik_gaussian(varargin)
 %    optimization, grid integration, MCMC etc.
 %
 %  See also
-%    GP_SET, PRIOR_*
+%    GP_SET, PRIOR_*, LIK_*
 
 % Internal note: Because Gaussian noise can be combined
 % analytically to the covariance matrix, lik_gaussian is internally
@@ -62,12 +62,11 @@ function lik = lik_gaussian(varargin)
   if init || ~ismember('sigma2_prior',ip.UsingDefaults)
     lik.p.sigma2=ip.Results.sigma2_prior;
   end
-
   if init
     % Set the function handles to the nested functions
     lik.fh.pak = @lik_gaussian_pak;
     lik.fh.unpak = @lik_gaussian_unpak;
-    lik.fh.priore = @lik_gaussian_priore;
+    lik.fh.eprior = @lik_gaussian_eprior;
     lik.fh.ghyper = @lik_gaussian_ghyper;
     lik.fh.cov = @lik_gaussian_cov;
     lik.fh.trcov  = @lik_gaussian_trcov;
@@ -76,7 +75,8 @@ function lik = lik_gaussian(varargin)
   end
   
   function [w s] = lik_gaussian_pak(lik)
-  %LIK_GAUSSIAN_PAK  Combine GP covariance function hyper-parameters into one vector.
+  %LIK_GAUSSIAN_PAK  Combine GP covariance function hyper-parameters
+  %                  into one vector.
   %
   %  Description
   %    W = LIK_GAUSSIAN_PAK(LIK) takes a likelihood function data
@@ -104,7 +104,8 @@ function lik = lik_gaussian(varargin)
   end
 
   function [lik, w] = lik_gaussian_unpak(lik, w)
-  %LIK_GAUSSIAN_UNPAK  Sets the likelihood function parameters pack into the structure
+  %LIK_GAUSSIAN_UNPAK  Sets the likelihood function parameters pack
+  %                    into the structure
   %
   %  Description
   %    [LIK, W] = LIK_GAUSSIAN_UNPAK(LIK, W) takes a likelihood
@@ -133,11 +134,11 @@ function lik = lik_gaussian(varargin)
   end
 
 
-  function eprior = lik_gaussian_priore(lik)
-  %LIK_GAUSSIAN_PRIORE  Evaluate the energy of prior of likelihood parameters
+  function eprior = lik_gaussian_eprior(lik)
+  %LIK_GAUSSIAN_EPRIOR  Evaluate the energy of prior of likelihood parameters
   %
   %  Description
-  %    E = LIK_T_PRIORE(LIK) takes a likelihood data structure LIK
+  %    E = LIK_T_EPRIOR(LIK) takes a likelihood data structure LIK
   %    and returns log(p(th)), where th collects the
   %    hyperparameters.
   %
@@ -251,11 +252,11 @@ function lik = lik_gaussian(varargin)
   %LIK_GAUSSIAN_TRCOV  Evaluate training covariance matrix
   %                    corresponding to Gaussian noise
   %  Description
-  %    C = LIK_GAUSSIAN_TRCOV(GP, TX) takes in covariance function of a
-  %    Gaussian process GP and matrix TX that contains training
-  %    input vectors. Returns covariance matrix C. Every
-  %    element ij of C contains covariance between inputs i and
-  %    j in TX
+  %    C = LIK_GAUSSIAN_TRCOV(GP, TX) takes in covariance function
+  %    of a Gaussian process GP and matrix TX that contains
+  %    training input vectors. Returns covariance matrix C. Every
+  %    element ij of C contains covariance between inputs i and j
+  %    in TX
   %
   %  See also
   %    LIK_GAUSSIAN_COV, LIK_GAUSSIAN_TRVAR, GP_COV, GP_TRCOV
@@ -283,7 +284,7 @@ function lik = lik_gaussian(varargin)
   %    LIK_GAUSSIAN_COV, GP_COV, GP_TRCOV
 
     [n, m] =size(x);
-    C=ones(n,1)*lik.sigma2;
+    C=repmat(lik.sigma2,n,1);
 
   end
 

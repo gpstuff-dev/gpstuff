@@ -873,7 +873,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       % ======================================================================
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior + feval(lik.fh.priore, lik);
+        eprior = eprior + feval(lik.fh.eprior, lik);
       end
 
       e = edata + eprior;
