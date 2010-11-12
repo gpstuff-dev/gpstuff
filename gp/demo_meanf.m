@@ -1,5 +1,5 @@
-%DEMO_MEANF  Regression problem demonstration for GP model with a
-%            mean function
+%DEMO_REGRESSION_MEANF  Regression problem demonstration for GP model with a
+%                       mean function
 %
 %  Description
 %    The regression problem consist of a data with one input
