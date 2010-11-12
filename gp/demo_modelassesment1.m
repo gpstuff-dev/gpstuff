@@ -17,7 +17,7 @@
 %     2) data analysis with FIC approximation
 %     3) data analysis with PIC approximation
 %
-%  See also DEMO_REGRESSION1, DEMO_SPARSEREGRESSION
+%  See also DEMO_REGRESSION1, DEMO_SPARSERE1
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari

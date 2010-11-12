@@ -1,6 +1,6 @@
-%DEMO_COMPARESPARSEGP  Regression demo comparing different sparse
-%                      approximations with optimasation of inducing
-%                      variables
+%DEMO_REGRESSION_SPARSE2  Regression demo comparing different sparse
+%                         approximations with optimasation of inducing
+%                         variables
 %
 %  Description
 %    A regression problem with one input variable and one output
@@ -27,7 +27,7 @@
 %    We use a simple one dimensional data set to present the three
 %    methods.
 % 
-%  See also DEMO_REGRESSION1, DEMO_REGRESSION2
+%  See also DEMO_REGRESSION1, DEMO_REGRESSION2, DEMO_REGRESSION_SPARSE1
 %
 %
 %  References:
@@ -95,7 +95,6 @@ plot(xt,Eft_full-2.*sqrt(Varft_full),'--','Color',[0 0.5 0])
 plot(xt,Eft_full+2.*sqrt(Varft_full),'--','Color',[0 0.5 0])
 plot(x,y,'.', 'MarkerSize',7)
 title('FULL GP')
-w_full=w; % optimized hyperparameters
 
 % Run FIC approximation for the same data: choose the inducing inputs Xu,
 % then proceed with the inference with the optimized hyperparameters from

@@ -1,5 +1,5 @@
-%DEMO_MEANFUNC  Regression problem demonstration for GP model with a
-%               mean function
+%DEMO_MEANF  Regression problem demonstration for GP model with a
+%            mean function
 %
 %  Description
 %    The regression problem consist of a data with one input
@@ -37,8 +37,8 @@
  y= 2 + x + x.^2 + res;
 %---------------
  
-gpcf1 = gpcf_sexp('lengthScale', [0.5], 'magnSigma2', .5);
-gpcf2 = gpcf_noise('sigma2', 0.4^2);
+gpcf = gpcf_sexp('lengthScale', [0.5], 'magnSigma2', .5);
+lik = lik_gaussian('sigma2', 0.4^2);
 
 % Initialize base functions for GP's mean function.
 gpmf1 = gpmf_constant('prior_mean',.3,'prior_cov',1);
@@ -46,7 +46,7 @@ gpmf2 = gpmf_linear('prior_mean',.3,'prior_cov',1);
 gpmf3 = gpmf_squared('prior_mean',.3,'prior_cov',1);
 
 % Initialize gp structure
-gp = gp_set('cf', {gpcf1}, 'meanf', {gpmf1,gpmf2,gpmf3});
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'meanf', {gpmf1,gpmf2,gpmf3});
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');

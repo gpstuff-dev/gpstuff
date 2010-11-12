@@ -1,5 +1,5 @@
-%DEMO_SPARSEREGRESSION  Regression problem demonstration for 2-input 
-%                       function with sparse Gaussian processes
+%DEMO_REGRESSION_SPARSE1  Regression problem demonstration for 2-input 
+%                         function with sparse Gaussian processes
 %
 %  Description
 %    The problem is the same as in demo_regression1 but now we use
@@ -90,7 +90,8 @@
 %    of the 24th Conference on Uncertainty in Artificial
 %    Intelligence, pp. 571-578, AUAI Press.
 %
-%   See also  DEMO_REGRESSION1
+%  See also  
+%    DEMO_REGRESSION1, DEMO_REGRESSION2, DEMO_REGRESSION_SPARSE2
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari

@@ -190,7 +190,7 @@ S2=sprintf('IA-GRID: 90%% CI - length-scale: [%.1f,%.1f], magnSigma: [%.3f,%.3f]
 % --- MCMC ---
 
 % Set the approximate inference method to MCMC
-gp = gp_set(gp, 'latent_method', {'MCMC', 'method', @scaled_hmc});
+gp = gp_set(gp, 'latent_method', 'MCMC', 'latent_opt', struct('method',@scaled_hmc));
 
 % Set the sampling options
 
