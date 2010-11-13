@@ -176,7 +176,7 @@ function gpcf = gpcf_exp(varargin)
     
     if ~isempty(gpcf.p.magnSigma2)
       w = [w log(gpcf.magnSigma2)];
-      s = [s; 'log(exp.magnSigma2)']
+      s = [s; 'log(exp.magnSigma2)'];
       % Hyperparameters of magnSigma2
       [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
       w = [w wh];
