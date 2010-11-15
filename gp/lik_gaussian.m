@@ -68,7 +68,6 @@ function lik = lik_gaussian(varargin)
     lik.fh.unpak = @lik_gaussian_unpak;
     lik.fh.eprior = @lik_gaussian_eprior;
     lik.fh.ghyper = @lik_gaussian_ghyper;
-    lik.fh.cov = @lik_gaussian_cov;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
     lik.fh.recappend = @lik_gaussian_recappend;
@@ -221,33 +220,6 @@ function lik = lik_gaussian(varargin)
 
   end
 
-  function C = lik_gaussian_cov(lik, x1, x2)
-  %LIK_GAUSSIAN_COV  Evaluate covariance matrix corresponding to
-  %                  Gaussian noise
-  %
-  %  Description         
-  %    C = LIK_GAUSSIAN_COV(LIK, TX, X) takes in likelihood
-  %    function of a two matrixes TX and X that contain input
-  %    vectors to GP. Returns noise covariance matrix C. Every
-  %    element ij of C contains covariance between inputs i in TX
-  %    and j in X.
-  %
-  %  See also
-  %    LIK_GAUSSIAN_TRCOV, LIK_GAUSSIAN_TRVAR, GP_COV, GP_TRCOV
-
-    if isempty(x2)
-      x2=x1;
-    end
-    [n1,m1]=size(x1);
-    [n2,m2]=size(x2);
-
-    if m1~=m2
-      error('the number of columns of X1 and X2 has to be same')
-    end
-
-    C = sparse([],[],[],n1,n2,0);
-  end
-
   function C = lik_gaussian_trcov(lik, x)
   %LIK_GAUSSIAN_TRCOV  Evaluate training covariance matrix
   %                    corresponding to Gaussian noise
@@ -311,12 +283,10 @@ function lik = lik_gaussian(varargin)
       % Set the function handles
       reccf.fh.pak = @lik_gaussian_pak;
       reccf.fh.unpak = @lik_gaussian_unpak;
-      reccf.fh.e = @lik_gaussian_e;
-      reccf.fh.g = @lik_gaussian_g;
-      reccf.fh.cov = @lik_gaussian_cov;
+      reccf.fh.eprior = @lik_gaussian_eprior;
+      reccf.fh.ghyper = @lik_gaussian_ghyper;
       reccf.fh.trcov  = @lik_gaussian_trcov;
       reccf.fh.trvar  = @lik_gaussian_trvar;
-      reccf.sampling_opt = hmc2_opt;
       reccf.fh.recappend = @lik_gaussian_recappend;  
       reccf.p=[];
       reccf.p.sigma2=[];

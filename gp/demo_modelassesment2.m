@@ -42,14 +42,14 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
+gpcf = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
 
 % Set the prior for the parameters of covariance functions 
 pl = prior_logunif();
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the GP data structure
-gp = gp_set('lik', lik_probit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+gp = gp_set('lik', lik_probit, 'cf', {gpcf}, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
 disp([' Probit with Laplace integration over the latent values '; ...
@@ -181,17 +181,17 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Create covariance functions
-gpcf1 = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
+gpcf = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
 
 % Set the prior for the parameters of covariance functions 
 pl = prior_logunif();
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the likelihood structure
 lik = ('init');
 
 % Create the GP data structure
-gp = gp_set('lik', lik_logit, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+gp = gp_set('lik', lik_logit, 'cf', {gpcf}, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
@@ -398,11 +398,11 @@ S = sprintf([S '\n '])
 % [n, nin] = size(x);
 % 
 % % Create covariance functions
-% gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
+% gpcf = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
 % 
 % % Set the prior for the parameters of covariance functions 
 % pl = prior_logunif('init');
-% gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+% gpcf = gpcf_sexp('set', gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % 
 % % Create the likelihood structure
 % lik = lik_probit('init');
@@ -414,7 +414,7 @@ S = sprintf([S '\n '])
 % Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 % 
 % % Create the GP data structure
-% gp = gp_init('init', 'FIC', lik, {gpcf1}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
+% gp = gp_init('init', 'FIC', lik, {gpcf}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
 % gp = gp_init('set', gp, 'infer_params', 'covariance');           % optimize only hyperparameters
 % 
@@ -557,11 +557,11 @@ S = sprintf([S '\n '])
 % [n, nin] = size(x);
 % 
 % % Create covariance functions
-% gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
+% gpcf = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
 % 
 % % Set the prior for the parameters of covariance functions 
 % pl = prior_logunif('init');
-% gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+% gpcf = gpcf_sexp('set', gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % 
 % % Create the likelihood structure
 % lik = lik_probit('init');
@@ -578,7 +578,7 @@ S = sprintf([S '\n '])
 % trindex{2} = [trindex{2} ; trindex{1}]; trindex = {trindex{2:19}};
 % 
 % % Create the GP data structure
-% gp = gp_init('init', 'PIC', lik, {gpcf1}, [],'jitterSigma2', 0.01);
+% gp = gp_init('init', 'PIC', lik, {gpcf}, [],'jitterSigma2', 0.01);
 % gp = gp_init('set', gp, 'X_u', Xu, 'blocks', trindex, 'infer_params', 'covariance')
 % 
 % % ------- Laplace approximation --------
@@ -735,11 +735,11 @@ S = sprintf([S '\n '])
 % [n, nin] = size(x);
 % 
 % % Create covariance functions
-% gpcf1 = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
+% gpcf = gpcf_sexp('init', 'lengthScale', [0.9 0.9], 'magnSigma2', 2);
 % 
 % % Set the prior for the parameters of covariance functions 
 % pl = prior_logunif('init');
-% gpcf1 = gpcf_sexp('set', gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
+% gpcf = gpcf_sexp('set', gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % 
 % % Create the likelihood structure
 % lik = lik_probit('init', y);
@@ -752,11 +752,11 @@ S = sprintf([S '\n '])
 % 
 % pl = prior_t('init', 's2', 3, 'nu', 4);
 % pm = prior_sqrtt('init', 's2', 0.3, 'nu', 4);
-% gpcf1 = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+% gpcf = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 % 
 % % Create the GP data structure
-% gp = gp_init('init', 'CS+FIC', lik, {gpcf1, gpcf3}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
+% gp = gp_init('init', 'CS+FIC', lik, {gpcf, gpcf3}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
 % 
 % % ------- Laplace approximation --------

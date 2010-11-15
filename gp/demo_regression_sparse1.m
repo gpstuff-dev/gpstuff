@@ -105,8 +105,8 @@
 %========================================================
 
 % Load the data
-S = which('demo_regression1');
-L = strrep(S,'demo_regression1.m','demos/dat.1');
+S = which('demo_regression_sparse1');
+L = strrep(S,'demo_regression_sparse1.m','demos/dat.1');
 data=load(L);
 x = [data(:,1) data(:,2)];
 y = data(:,3);
@@ -207,9 +207,9 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, ...
 % logarithm when packed
 
 % optimize hyperparameters and inducing inputs
-gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+inducing');  
+gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');  
 % optimize only hyperparameters
-%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           
+%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
@@ -223,7 +223,7 @@ gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 % $$$ while iter < 100 & abs(e_old-e) > 1e-3
 % $$$     e_old = e;
 % $$$     
-% $$$     gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');  % optimize hyperparameters and inducing inputs
+% $$$     gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');  % optimize hyperparameters and inducing inputs
 % $$$     gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     
 % $$$     gp_fic = gp_set(gp_fic, 'infer_params', 'inducing');  % optimize hyperparameters and inducing inputs
@@ -308,7 +308,7 @@ gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf}, ...
 % optimize hyperparameters and inducing inputs
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  
 % optimize only hyperparameters
-%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           
+%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
@@ -368,7 +368,7 @@ gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', {gpcf}, ...
 % inducing inputs, or iii) only the inducing inputs. Which option
 % is used is defined by a string that is given to the gp_pak,
 % gp_unpak, gp_e and gp_g functions. The strings for the different
-% options are: 'covariance' (i), 'covariance+inducing' (ii),
+% options are: 'covariance+likelihood' (i), 'covariance+inducing' (ii),
 % 'inducing' (iii).
 %
 
@@ -380,7 +380,7 @@ gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', {gpcf}, ...
 % optimize hyperparameters and inducing inputs
 gp_var = gp_set(gp_var, 'infer_params', 'covariance+inducing');  
 % optimize only hyperparameters
-%gp_var = gp_set(gp_var, 'infer_params', 'covariance');           
+%gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
@@ -394,7 +394,7 @@ gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
 % $$$ while iter < 100 & abs(e_old-e) > 1e-3
 % $$$     e_old = e;
 % $$$     
-% $$$     gp_var = gp_set(gp_var, 'infer_params', 'covariance');  % optimize hyperparameters and inducing inputs
+% $$$     gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');  % optimize hyperparameters and inducing inputs
 % $$$     gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     gp_var = gp_set(gp_var, 'infer_params', 'inducing');  % optimize hyperparameters and inducing inputs
 % $$$     gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
@@ -450,7 +450,7 @@ gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
 % inducing inputs, or iii) only the inducing inputs. Which option
 % is used is defined by a string that is given to the gp_pak,
 % gp_unpak, gp_e and gp_g functions. The strings for the different
-% options are: 'covariance' (i), 'covariance+inducing' (ii),
+% options are: 'covariance+likelihood' (i), 'covariance+inducing' (ii),
 % 'inducing' (iii).
 %
 
@@ -462,7 +462,7 @@ gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
 % optimize hyperparameters and inducing inputs
 gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+inducing');  
 % optimize only hyperparameters
-%gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance');           
+%gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
@@ -476,7 +476,7 @@ gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
 % $$$ while iter < 100 & abs(e_old-e) > 1e-3
 % $$$     e_old = e;
 % $$$     
-% $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance');  % optimize hyperparameters and inducing inputs
+% $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');  % optimize hyperparameters and inducing inputs
 % $$$     gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'inducing');  % optimize hyperparameters and inducing inputs
 % $$$     gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);

@@ -71,6 +71,7 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
+z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
@@ -346,7 +347,7 @@ if ~isempty(strfind(gp.infer_params, 'covariance'))
 end
 
 % ============================================================
-% Evaluate the prior contribution to the error from likelihood function
+% Evaluate the prior contribution to the error from Gaussian likelihood
 % ============================================================
 if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && isfield(gp.lik, 'p')
   % a Gaussian likelihood
@@ -354,6 +355,14 @@ if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov'
   eprior = eprior + feval(lik.fh.eprior, lik);
 end
 
+% ============================================================
+% Evaluate the contribution to the error from non-Gaussian likelihood
+% ============================================================
+%if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
+%  lik=gp.lik;
+%  edata=edata -feval(lik.fh.ll,lik,y,gp.latentValues,z);
+%  eprior=eprior +feval(lik.fh.eprior,lik);
+%end
 
 % ============================================================
 % Evaluate the prior contribution to the error from the inducing inputs

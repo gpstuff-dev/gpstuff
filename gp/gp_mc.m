@@ -219,10 +219,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       
       % --- Sample hyperparameters with HMC ------------- 
       if ~isempty(opt.hmc_opt)
-        if isfield(opt.hmc_opt,'infer_params')
+        %if isfield(opt.hmc_opt,'infer_params')
           infer_params = gp.infer_params;
-          gp.infer_params = opt.hmc_opt.infer_params;
-        end
+          %gp.infer_params = opt.hmc_opt.infer_params;
+          gp.infer_params = 'covariance';
+        %end
         w = gp_pak(gp);
         hmc2('state',hmc_rstate)              % Set the state
         [w, energies, diagnh] = hmc2(@gp_e, w, opt.hmc_opt, @gp_g, gp, x, f);                
@@ -234,17 +235,18 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         opt.hmc_opt.rstate = hmc_rstate;
         w=w(end,:);
         gp = gp_unpak(gp, w);
-        if isfield(opt.hmc_opt,'infer_params')
+        %if isfield(opt.hmc_opt,'infer_params')
           gp.infer_params = infer_params;
-        end
+        %end
       end
       
       % --- Sample hyperparameters with SLS ------------- 
       if ~isempty(opt.sls_opt)
-        if isfield(opt.sls_opt,'infer_params')
+        %if isfield(opt.sls_opt,'infer_params')
           infer_params = gp.infer_params;
-          gp.infer_params = opt.sls_opt.infer_params;
-        end
+          %gp.infer_params = opt.sls_opt.infer_params;
+          gp.infer_params = 'covariance';
+        %end
         w = gp_pak(gp);
         [w, energies, diagns] = sls(@gp_e, w, opt.sls_opt, @gp_g, gp, x, f);
         if isfield(diagns, 'opt')
@@ -252,9 +254,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
         w=w(end,:);
         gp = gp_unpak(gp, w);
-        if isfield(opt.sls_opt,'infer_params')
+        %if isfield(opt.sls_opt,'infer_params')
           gp.infer_params = infer_params;
-        end
+        %end
       end
 
       % --- Sample hyperparameters of the likelihood with Gibbs ------------- 
@@ -265,7 +267,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       % --- Sample hyperparameters of the likelihood with SLS ------------- 
       if ~isempty(opt.lik_sls_opt)
         w = gp_pak(gp, 'likelihood');
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z) + feval(lik.fh.eprior,feval(lik.fh.unpak,w,lik)));
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) + feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
         [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
         if isfield(diagns, 'opt')
           opt.lik_sls_opt = diagns.opt;
@@ -279,8 +281,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         infer_params = gp.infer_params;
         gp.infer_params = 'likelihood';
         w = gp_pak(gp);
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,w,lik),y,f,z)+feval(lik.fh.eprior,feval(lik.fh.unpak,w,lik)));
-        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,w,lik),y,f,'hyper',z)+feval(lik.fh.gprior,feval(lik.fh.unpak,w,lik)));
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z)+feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
+        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,lik,w),y,f,'hyper',z)+feval(lik.fh.gprior,feval(lik.fh.unpak,lik,w)));
         
         hmc2('state',lik_hmc_rstate)              % Set the state
         [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);

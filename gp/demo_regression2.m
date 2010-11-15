@@ -294,9 +294,9 @@ gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigm
 % the inducing inputs are not transformed through logarithm when packed
 
 % optimize hyperparameters and inducing inputs
-%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+inducing');  
-% optimize only hyperparameters
-gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance');           
+%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood+inducing');  
+% optimize only parameters (default)
+%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');

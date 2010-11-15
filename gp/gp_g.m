@@ -62,6 +62,7 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
+z=ip.Results.z;
 
 % unpak the parameters
 gp=gp_unpak(gp, w);
@@ -216,6 +217,14 @@ switch gp.type
         end
       end
     end
+    
+    % =================================================================
+    % Gradient with respect to non-Gaussian likelihood function parameters
+%    if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
+%      lik=gp.lik;
+%      gdata=[gdata -feval(lik.fh.llg,lik,y,gp.latentValues,'hyper',z)];
+%      gprior=[gprior feval(lik.fh.gprior,lik)];
+%    end
     
     g = gdata + gprior;
     

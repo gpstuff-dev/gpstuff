@@ -74,7 +74,7 @@ pn = prior_logunif();
 gpcfse = gpcf_sexp('lengthScale',5,'magnSigma2',10, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
-gp = gp_set('lik', lik, 'cf', {gpcfse}, 'jitterSigma2', 1e-6,'infer_params','covariance');
+gp = gp_set('lik', lik, 'cf', {gpcfse}, 'jitterSigma2', 1e-6,'infer_params','covariance+likelihood');
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');

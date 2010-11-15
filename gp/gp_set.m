@@ -253,7 +253,9 @@ function gp = gp_set(varargin)
         case 'MCMC'
           % Remove traces of other latent methods
           if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
-          if isfield(gp.fh,'e'); gp.fh=rmfield(gp.fh,'e'); end
+          if isfield(gp,'fh') && isfield(gp.fh,'e')
+            gp.fh=rmfield(gp.fh,'e'); 
+          end
           % Set latent method
           gp.latent_method=latent_method;
           % Handle latent_opt

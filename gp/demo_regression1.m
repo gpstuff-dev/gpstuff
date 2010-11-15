@@ -93,17 +93,17 @@ y = data(:,3);
 % ---------------------------
 % --- Construct the model ---
 % 
-% First create squared exponential covariance function with ARD and 
-% Gaussian noise data structures...
-gpcf = gpcf_sexp('lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
+% First create structures for Gaussian likelihood and squared
+% exponential covariance function with ARD
 lik = lik_gaussian('sigma2', 0.2^2);
+gpcf = gpcf_sexp('lengthScale', [1.1 1.2], 'magnSigma2', 0.2^2)
 
 % Set some priors
+pn = prior_logunif();
+lik = lik_gaussian(lik,'sigma2_prior', pn);
 pl = prior_unif();
 pm = prior_sqrtunif();
-pn = prior_logunif();
-gpcf = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-lik = lik_gaussian(lik,'sigma2_prior', pn);
+gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Following lines do the same since default type is FULL
 %gp = gp_set('type','FULL','lik',lik,'cf',{gpcf});
@@ -124,8 +124,8 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 % - we created data structures that describe the prior of the length-scale 
 %   and magnitude of the squared exponential covariance function and
 %   the prior of the noise variance. These structures were set into
-%   'gpcf1' and 'lik' (see prior_* for more details)
-% - we created a GP data structure 'gp', which has among others 'gpcf1' 
+%   'gpcf' and 'lik' (see prior_* for more details)
+% - we created a GP data structure 'gp', which has among others 'gpcf' 
 %   and 'lik' data structures.  (see gp_set for more details)
 
 % -----------------------------
@@ -143,6 +143,11 @@ disp(' MAP estimate for the hyperparameters')
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+
+% get optimized parameter values for display
+[w,s]=gp_pak(gp);
+% display exp(w) and labels
+disp(s), disp(exp(w))
 
 % For last, make predictions of the underlying function on a dense
 % grid and plot it. Below Eft_map is the predictive mean and

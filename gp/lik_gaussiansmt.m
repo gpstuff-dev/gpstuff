@@ -157,7 +157,6 @@ function lik = lik_gaussiansmt(varargin)
     lik.fh.unpak = @lik_gaussiansmt_unpak;
     lik.fh.eprior = @lik_gaussiansmt_eprior;
     lik.fh.ghyper = @lik_gaussiansmt_ghyper;
-    lik.fh.cov = @lik_gaussiansmt_cov;
     lik.fh.trcov  = @lik_gaussiansmt_trcov;
     lik.fh.trvar  = @lik_gaussiansmt_trvar;
     lik.fh.gibbs = @lik_gaussiansmt_gibbs;
@@ -182,24 +181,6 @@ function lik = lik_gaussiansmt(varargin)
     DCff = [];
     gprior = [];
   end
-
-  function C = lik_gaussiansmt_cov(lik, x1, x2)
-  %LIK_GAUSSIANSMT_COV  Evaluate covariance matrix corresponding to
-  %                     Gaussian noise
-  %
-  %  Description         
-  %    C = LIK_GAUSSIANSMT_COV(LIK, TX, X) takes in likelihood
-  %    function of a two matrixes TX and X that contain input
-  %    vectors to GP. Returns noise covariance matrix C. Every
-  %    element ij of C contains covariance between inputs i in TX
-  %    and j in X.
-  %
-  %  See also
-  %    LIK_GAUSSIANSMT_TRCOV, LIK_GAUSSIANSMT_TRVAR, GP_COV, GP_TRCOV
-
-    C = 0;
-  end
-
 
   function C = lik_gaussiansmt_trcov(lik, x)
   %LIK_GAUSSIANSMT_TRCOV  Evaluate training covariance matrix
