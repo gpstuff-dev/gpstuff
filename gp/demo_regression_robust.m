@@ -95,12 +95,12 @@ pm = prior_sqrtunif();
 pn = prior_logunif();
 
 % create the Gaussian process
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1})
+gp = gp_set('lik', lik, 'cf', {gpcf})
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 disp('Gaussian noise model and MAP estimate for hyperparameters')
@@ -140,12 +140,12 @@ disp(['Scale mixture Gaussian (~=Student-t) noise model                ';...
 
 pl = prior_t();
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Here, set own Sigma2 for every data point
 lik = lik_gaussiansmt('ndata', n, 'sigma2', repmat(1,n,1), ...
                       'nu_prior', prior_logunif());
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9)
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9)
 
 hmc_opt.steps=10;
 hmc_opt.stepadj=0.06;
@@ -202,7 +202,7 @@ disp(['Student-t noise model using Laplace integration over the '; ...
 
 pl = prior_t();
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
@@ -211,7 +211,7 @@ lik = lik_t('nu', 4, 'nu_prior', prior_logunif(), ...
             'sigma2', 10, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6, ...
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, ...
             'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
@@ -247,22 +247,24 @@ disp(['Student-t noise model with nu= 4 and using MCMC integration';...
 
 pl = prior_t();
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 pn = prior_logunif();
-lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.5^2, 'sigma2_prior', pn);
+lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 10, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
              'latent_method', 'MCMC');
+f=gp_pred(gp,x,y,x);
+gp=gp_set(gp, 'latent_opt', struct('f', f));
 
 % Set the parameters for MCMC...
 clear opt
 opt.hmc_opt = hmc2_opt;
 opt.hmc_opt.steps=5;
-opt.hmc_opt.stepadj=0.03;
+opt.hmc_opt.stepadj=0.05;
 opt.hmc_opt.nsamples=1;
 
 % Latent-options
@@ -270,12 +272,6 @@ opt.latent_opt = hmc2_opt;
 opt.latent_opt.display=0;
 opt.latent_opt.repeat = 10;
 opt.latent_opt.sample_latent_scale = 0.05;
-
-% Likelihood-option
-opt.lik_hmc_opt = hmc2_opt;
-opt.lik_hmc_opt.steps=10;
-opt.lik_hmc_opt.stepadj=0.1;
-opt.lik_hmc_opt.nsamples=1;
 
 % Sample 
 [rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, opt);
@@ -308,20 +304,21 @@ disp(['Student-t noise model with nu=4 using Laplace integration over';...
 
 pl = prior_t();
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
 pn = prior_logunif();
-lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.01, 'sigma2_prior', pn);
+lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 10, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
             'latent_method', 'Laplace');
+e = gp_e(gp_pak(gp), gp, x, y);
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','Maxiter',20);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 
@@ -353,14 +350,14 @@ disp(['Student-t noise model with nu=4 using EP integration over';...
 
 pl = prior_t();
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
 pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.01, 'sigma2_prior', pn);
 
 % ... Finally create the GP data structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-9, ...
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
             'latent_method', 'EP');
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---

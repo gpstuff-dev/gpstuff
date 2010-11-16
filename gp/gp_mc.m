@@ -15,31 +15,36 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                    case of Poisson likelihood we have z_i=E_i,
 %                    that is, expected value for ith case.
 %      repeat      - Number of iterations between successive sample saves
-%                    (that is every repeat'th sample is stored),
-%                    default 1.
+%                    (that is every repeat'th sample is stored). Default 1.
 %      nsamples    - Number of samples to be returned
 %      display     - Defines if sampling information is printed, 1=yes, 0=no.
 %                    Default 1.
-%      hmc_opt     - Options structure for HMC sampler (see hmc2_opt). When
-%                    this is given the hyperparameters are sampled
-%                    with hmc2.
-%      sls_opt     - Options structure for slice sampler (see sls_opt). When 
-%                    this is given the hyperparameters are sampled
-%                    with sls.
+%      hmc_opt     - Options structure for HMC sampler (see hmc2_opt). 
+%                    When this is given the covariance function and
+%                    likelihood parameters are sampled with hmc2
+%                    (respecting infer_params option).
+%      sls_opt     - Options structure for slice sampler (see sls_opt). 
+%                    When this is given the covariance function and
+%                    likelihood parameters are sampled with sls
+%                    (respecting infer_params option).
 %      latent_opt  - Options structure for latent variable sampler. When this 
 %                    is given the latent variables are sampled with
 %                    function stored in the gp.fh.mc field in the
 %                    GP structure. See gp_set.
 %      lik_hmc_opt - Options structure for HMC sampler (see hmc2_opt). 
-%                    When this is given the hyperparameters of the
-%                    likelihood are sampled with hmc2.
+%                    When this is given the parameters of the
+%                    likelihood are sampled with hmc2. This can be
+%                    used to have different hmc options for
+%                    covariance and likelihood parameters.
 %      lik_sls_opt - Options structure for slice sampler (see sls_opt). 
-%                    When this is given the hyperparameters of the
-%                    likelihood are sampled with hmc2.
+%                    When this is given the parameters of the
+%                    likelihood are sampled with hmc2. This can be
+%                    used to have different hmc options for
+%                    covariance and likelihood parameters.
 %      lik_gibbs_opt
-%                  - Options structure for gibbs sampler. Some likelihood
+%                  - Options structure for Gibbs sampler. Some likelihood
 %                    function parameters need to be sampled with
-%                    Gibbs sampling (such as lik_smt). The gibbs
+%                    Gibbs sampling (such as lik_smt). The Gibbs
 %                    sampler is implemented in the respective lik_*
 %                    file.
 %      persistence_reset 
@@ -50,16 +55,16 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %         
 %    The GP_MC function makes nsamples*repeat iterations and stores
 %    every repeat'th sample. At each iteration it samples first the
-%    latent variables (if 'latent_opt' option is given), then
-%    hyperparameters of the covariance function(s) (if 'hmc_opt',
-%    'sls_opt' or 'gibbs_opt' option is given), and for last the
-%    hyperparameters in the likelihood function (if 'lik_hmc_opt'
-%    or 'lik_sls_opt' option is given).
+%    latent variables (if 'latent_opt' option is given), then the
+%    covariance and likelihood parameters (if 'hmc_opt', 'sls_opt'
+%    or 'gibbs_opt' option is given and respecting infer_params
+%    option), and for last the the likelihood parameters (if
+%    'lik_hmc_opt' or 'lik_sls_opt' option is given).
 %
 %  See also:
 %    DEMO_CLASSIFIC1, DEMO_ROBUSTREGRESSION
 
-% Copyright (c) 1998-2000 Aki Vehtari
+% Copyright (c) 1998-2000,2010 Aki Vehtari
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
@@ -219,15 +224,17 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       
       % --- Sample hyperparameters with HMC ------------- 
       if ~isempty(opt.hmc_opt)
-        %if isfield(opt.hmc_opt,'infer_params')
+        if isfield(opt.hmc_opt,'infer_params')
           infer_params = gp.infer_params;
-          %gp.infer_params = opt.hmc_opt.infer_params;
-          gp.infer_params = 'covariance';
-        %end
+          gp.infer_params = opt.hmc_opt.infer_params;
+        end
         w = gp_pak(gp);
-        hmc2('state',hmc_rstate)              % Set the state
-        [w, energies, diagnh] = hmc2(@gp_e, w, opt.hmc_opt, @gp_g, gp, x, f);                
-        hmc_rstate=hmc2('state');             % Save the current state
+        % Set the state
+        hmc2('state',hmc_rstate);
+        % sample (y is passed as z, to allow sampling of likelihood parameters)
+        [w, energies, diagnh] = hmc2(@gpmc_e, w, opt.hmc_opt, @gpmc_g, gp, x, y, f, z);
+        % Save the current state
+        hmc_rstate=hmc2('state');
         hmcrej=hmcrej+diagnh.rej/opt.repeat;
         if isfield(diagnh, 'opt')
           opt.hmc_opt = diagnh.opt;
@@ -235,58 +242,46 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         opt.hmc_opt.rstate = hmc_rstate;
         w=w(end,:);
         gp = gp_unpak(gp, w);
-        %if isfield(opt.hmc_opt,'infer_params')
+        if isfield(opt.hmc_opt,'infer_params')
           gp.infer_params = infer_params;
-        %end
+        end
       end
       
       % --- Sample hyperparameters with SLS ------------- 
       if ~isempty(opt.sls_opt)
-        %if isfield(opt.sls_opt,'infer_params')
+        if isfield(opt.sls_opt,'infer_params')
           infer_params = gp.infer_params;
-          %gp.infer_params = opt.sls_opt.infer_params;
-          gp.infer_params = 'covariance';
-        %end
+          gp.infer_params = opt.sls_opt.infer_params;
+        end
         w = gp_pak(gp);
-        [w, energies, diagns] = sls(@gp_e, w, opt.sls_opt, @gp_g, gp, x, f);
+        [w, energies, diagns] = sls(@gpmc_e, w, opt.sls_opt, @gpmc_g, gp, x, f, 'z', z);
         if isfield(diagns, 'opt')
           opt.sls_opt = diagns.opt;
         end
         w=w(end,:);
         gp = gp_unpak(gp, w);
-        %if isfield(opt.sls_opt,'infer_params')
+        if isfield(opt.sls_opt,'infer_params')
           gp.infer_params = infer_params;
-        %end
+        end
       end
 
-      % --- Sample hyperparameters of the likelihood with Gibbs ------------- 
+      % --- Sample the likelihood parameters with Gibbs ------------- 
       if isfield(gp.lik,'gibbs') && isequal(gp.lik.gibbs,'on')
         [gp.lik, f] = feval(gp.lik.fh.gibbs, gp, gp.lik, x, f);
       end
       
-      % --- Sample hyperparameters of the likelihood with SLS ------------- 
-      if ~isempty(opt.lik_sls_opt)
-        w = gp_pak(gp, 'likelihood');
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) + feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
-        [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
-        if isfield(diagns, 'opt')
-          opt.lik_sls_opt = diagns.opt;
-        end
-        w=w(end,:);
-        gp = gp_unpak(gp, w, 'likelihood');
-      end
-      
-      % --- Sample hyperparameters of the likelihood with HMC ------------- 
+      % --- Sample the likelihood parameters with HMC ------------- 
       if ~isempty(opt.lik_hmc_opt)
         infer_params = gp.infer_params;
         gp.infer_params = 'likelihood';
         w = gp_pak(gp);
         fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z)+feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
         fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,lik,w),y,f,'hyper',z)+feval(lik.fh.gprior,feval(lik.fh.unpak,lik,w)));
-        
-        hmc2('state',lik_hmc_rstate)              % Set the state
+        % Set the state
+        hmc2('state',lik_hmc_rstate);
         [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);
-        lik_hmc_rstate=hmc2('state');             % Save the current state
+        % Save the current state
+        lik_hmc_rstate=hmc2('state');
         lik_hmcrej=lik_hmcrej+diagnh.rej/opt.repeat;
         if isfield(diagnh, 'opt')
           opt.lik_hmc_opt = diagnh.opt;
@@ -297,6 +292,17 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         gp.infer_params = infer_params;
       end        
       
+      % --- Sample the likelihood parameters with SLS ------------- 
+      if ~isempty(opt.lik_sls_opt)
+        w = gp_pak(gp, 'likelihood');
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) + feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
+        [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
+        if isfield(diagns, 'opt')
+          opt.lik_sls_opt = diagns.opt;
+        end
+        w=w(end,:);
+        gp = gp_unpak(gp, w, 'likelihood');
+      end
       
     end % ----- for l=1:opt.repeat ---------  
     
@@ -460,5 +466,35 @@ function record = recappend(record)
   if isfield(gp,'inputii')
     record.inputii(ri,:)=gp.inputii;
   end
+end
+
+function e = gpmc_e(w, gp, x, y, f, z)
+
+  e=0;
+  if ~isempty(strfind(gp.infer_params, 'covariance'))
+    e=e+gp_e(w, gp, x, f, 'z', z);
+  end
+  if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
+    % Evaluate the contribution to the error from non-Gaussian likelihood
+    gp=gp_unpak(gp,w);
+    lik=gp.lik;
+    e=e-feval(lik.fh.ll,lik,y,f,z)+feval(lik.fh.eprior,lik);
+  end
+ 
+end
+
+function g = gpmc_g(w, gp, x, y, f, z)
+
+  g=[];
+  if ~isempty(strfind(gp.infer_params, 'covariance'))
+    g=[g gp_g(w, gp, x, f, 'z', z)];
+  end
+  if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
+    % Evaluate the contribution to the gradient from non-Gaussian likelihood
+    gp=gp_unpak(gp,w);
+    lik=gp.lik;
+    g=[g -feval(lik.fh.llg,lik,y,f,'hyper',z)+feval(lik.fh.gprior,lik)];
+  end
+
 end
 end

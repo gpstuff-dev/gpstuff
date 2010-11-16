@@ -246,7 +246,6 @@ function gp = gp_set(varargin)
       gp=rmfield(gp,'latent_method')
     end
   else
-    latent_opt=ip.Results.latent_opt;
     if init || ~ismember('latent_method',ip.UsingDefaults) || ~isfield(gp,'latent_method')
       latent_method=ip.Results.latent_method;
       switch latent_method
@@ -258,6 +257,43 @@ function gp = gp_set(varargin)
           end
           % Set latent method
           gp.latent_method=latent_method;
+        case 'EP'
+          % Remove traces of other latent methods
+          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
+            gp=rmfield(gp,'latent_opt');
+          end
+          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+          % Set latent method
+          gp.latent_method=latent_method;
+          % following sets gp.fh.e = @ep_algorithm;
+          gp = gpep_e('init', gp);
+        case 'Laplace'
+          % Remove traces of other latent methods
+          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
+            gp=rmfield(gp,'latent_opt');
+          end
+          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
+          % Set latent method
+          gp.latent_method=latent_method;
+          % following sets gp.fh.e = @laplace_algorithm;
+          switch gp.lik.type
+            case 'Softmax'
+              gp = gpla_softmax_e('init', gp);
+            otherwise
+              gp = gpla_e('init', gp);
+          end
+        case 'NA'
+          % no latent method set
+          if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end
+          if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
+        otherwise
+          error('Unknown type of latent_method!')
+      end % switch latent_method
+    end % if init || ~ismember('latent_method',ip.UsingDefaults)
+    if init || ~ismember('latent_opt',ip.UsingDefaults) || ~isfield(gp,'latent_opt')
+      latent_opt=ip.Results.latent_opt;
+      switch gp.latent_method
+        case 'MCMC'
           % Handle latent_opt
           ipmc=inputParser;
           ipmc.FunctionName = 'GP_SET - latent method MCMC options';
@@ -271,13 +307,6 @@ function gp = gp_set(varargin)
             gp.latentValues = ipmc.Results.f;
           end
         case 'EP'
-          % Remove traces of other latent methods
-          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
-            gp=rmfield(gp,'latent_opt');
-          end
-          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
-          % Set latent method
-          gp.latent_method=latent_method;
           % Handle latent_opt
           ipep=inputParser;
           ipep.FunctionName = 'GP_SET - latent method MCMC options';
@@ -290,16 +319,7 @@ function gp = gp_set(varargin)
           if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
             gp.latent_opt.tol = ipep.Results.tol;
           end
-          % following sets gp.fh.e = @ep_algorithm;
-          gp = gpep_e('init', gp);
         case 'Laplace'
-          % Remove traces of other latent methods
-          if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
-            gp=rmfield(gp,'latent_opt');
-          end
-          if isfield(gp,'latentValues'); gp=rmfield(gp,'latentValues'); end
-          % Set latent method
-          gp.latent_method=latent_method;
           % these options not yet used
           %gp.latent_opt.maxiter = 20;
           %gp.latent_opt.tol = 1e-10;
@@ -320,17 +340,6 @@ function gp = gp_set(varargin)
                 gp.latent_opt.optim_method='newton';
             end
           end
-          switch gp.lik.type
-            % following sets gp.fh.e = @laplace_algorithm;
-            case 'Softmax'
-              gp = gpla_softmax_e('init', gp);
-            otherwise
-              gp = gpla_e('init', gp);
-          end
-        case 'NA'
-          % no latent method set
-          if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end
-          if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
         otherwise
           error('Unknown type of latent_method!')
       end % switch latent_method

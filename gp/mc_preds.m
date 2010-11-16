@@ -127,11 +127,11 @@ function [Ef, Varf, Ey, Vary, py] = mc_preds(gp, x, y, xt, varargin)
             
     nin  = size(x,2);
     nout = 1;
-    nmc=size(gp.etr,1);
+    nmc=size(gp.jitterSigma2,1);
     
     % Non-Gaussian likelihood. Thus latent variables should be used in
     % place of observations
-    if isfield(gp, 'latentValues')
+    if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
         y = gp.latentValues';
     else 
         y = repmat(y,1,nmc);

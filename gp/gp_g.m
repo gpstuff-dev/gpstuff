@@ -218,14 +218,6 @@ switch gp.type
       end
     end
     
-    % =================================================================
-    % Gradient with respect to non-Gaussian likelihood function parameters
-%    if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
-%      lik=gp.lik;
-%      gdata=[gdata -feval(lik.fh.llg,lik,y,gp.latentValues,'hyper',z)];
-%      gprior=[gprior feval(lik.fh.gprior,lik)];
-%    end
-    
     g = gdata + gprior;
     
   case 'FIC'

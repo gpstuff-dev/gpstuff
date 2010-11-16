@@ -37,7 +37,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-if isfield(gp,'latent_method') & ~strcmp(gp.latent_method,'MCMC')
+if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % use inference specific methods
   % not the nicest way of doing this, but quick solution
   switch gp.latent_method
@@ -354,15 +354,6 @@ if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov'
   lik = gp.lik;
   eprior = eprior + feval(lik.fh.eprior, lik);
 end
-
-% ============================================================
-% Evaluate the contribution to the error from non-Gaussian likelihood
-% ============================================================
-%if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
-%  lik=gp.lik;
-%  edata=edata -feval(lik.fh.ll,lik,y,gp.latentValues,z);
-%  eprior=eprior +feval(lik.fh.eprior,lik);
-%end
 
 % ============================================================
 % Evaluate the prior contribution to the error from the inducing inputs
