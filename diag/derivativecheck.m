@@ -26,14 +26,14 @@ function delta  = derivativecheck(w, fun)
 % License.txt, included with the software, for details.
 
 % Reasonable value for step size
-epsilon = 1.0e-6;
+epsilon = 1.0e-5;
 
 % Treat
 nparams = length(w);
 deltaf = zeros(1, nparams);
 step0 = zeros(1, nparams);
 
-parfor i = 1:nparams
+for i = 1:nparams
   % Move a small way in the ith coordinate of w
   step = step0;
   step(i) = 1;

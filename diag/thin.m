@@ -1,12 +1,13 @@
 function x = thin(x,nburn,nthin,nlast)
-%THIN    Delete burn-in and thin in MCMC-chains
+%THIN  Delete burn-in and thin in MCMC-chains
 %
-%   x = thin(x,nburn,nthin,nlast) returns chain containing only
-%   every nthin:th simulation sample starting from sample number
-%   nburn+1 and continuing to sample number nlast.
+%  Description
+%    X = THIN(X,NBURN,NTHIN,NLAST) returns chain containing only
+%    every NTHIN:th simulation sample starting from sample number
+%    NBURN+1 and continuing to sample number NLAST.
 %
-%   See also
-%     JOIN
+%  See also
+%    JOIN
 
 % Copyright (c) 1999 Simo Särkkä
 % Copyright (c) 2000 Aki Vehtari
@@ -41,7 +42,7 @@ if isstruct(x)
     names = fieldnames(x);
     for i=1:size(names,1)
       value = getfield(x,names{i});
-      if length(value) > 1
+      if ~ischar(value) && (length(value) > 1 || isstruct(value))
 	x = setfield(x,names{i},thin(value,nburn,nthin,nlast));
       elseif iscell(value)
 	x = setfield(x,names{i},{thin(value{1},nburn,nthin,nlast)});
