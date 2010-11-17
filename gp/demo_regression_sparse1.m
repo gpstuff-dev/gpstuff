@@ -21,15 +21,15 @@
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters.
+%    covariance function and th its parameters.
 %
 %    Since both likelihood and prior are Gaussian, we obtain a
 %    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, K + I*s^2).
 %    
-%   By placing a hyperprior for hyperparameters, p(th), we can find
-%   the maximum a posterior (MAP) estimate for them by maximizing
+%   By placing a prior for parameters, p(th), we can find the
+%   maximum a posterior (MAP) estimate for them by maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
@@ -67,7 +67,7 @@
 %    5) data analysis with DTC sparse approximation
 %
 %
-%    (We could integrate also over the hyperparameters with, for
+%    (We could integrate also over the parameters with, for
 %    example, grid integration or MCMC. This is not demonstrated
 %    here but it is done exactly the similar way as in
 %    demo_regression1.)
@@ -120,7 +120,7 @@ y = data(:,3);
 % --- Construct the model ---
 % 
 % First create a piece wise polynomial covariance function with ARD and 
-% Gaussian noise data structures...
+% Gaussian noise structures...
 gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
 lik = lik_gaussian('sigma2', 0.2^2);
 
@@ -143,7 +143,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-8);
 % -----------------------------
 % --- Conduct the inference ---
 
-% MAP estimate for the hyperparameters using scaled conjugate
+% MAP estimate for the parameters using scaled conjugate
 % gradient algorithm
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
@@ -175,7 +175,7 @@ title('The predicted underlying function and the data points (MAP solution)');
 % that we have to define the type of the GP structure differently
 % and set the inducing inputs in it.
 
-% First we create the GP data structure. Notice here that if we do
+% First we create the GP structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
 lik = lik_gaussian('sigma2', 0.2^2);
@@ -193,45 +193,39 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, ...
 % --- Conduct the inference ---
 
 % Then we can conduct the inference. We can now optimize i) only
-% the hyperparameters, ii) both the hyperparameters and the
-% inducing inputs, or iii) only the inducing inputs. Which option
-% is used is defined by a string that is given to the gp_pak,
-% gp_unpak, gp_e and gp_g functions. The strings for the different
-% options are: 'covariance' (i), 'covariance+inducing' (ii),
-% 'inducing' (iii).
+% the parameters, ii) both the parameters and the inducing inputs,
+% or iii) only the inducing inputs. Which option is used is defined
+% by a string that is given to the gp_pak, gp_unpak, gp_e and gp_g
+% functions. The strings for the different options are:
+% 'covariance' (i), 'covariance+inducing' (ii), 'inducing' (iii).
 %
 
-% Now you can choose, if you want to optimize only hyperparameters
-% or optimize simultaneously hyperparameters and inducing inputs. 
+% Now you can choose, if you want to optimize only parameters
+% or optimize simultaneously parameters and inducing inputs. 
 % Note that the inducing inputs are not transformed through
 % logarithm when packed
 
-% optimize hyperparameters and inducing inputs
+% optimize parameters and inducing inputs
 gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');  
-% optimize only hyperparameters
+% optimize only parameters
 %gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
 gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 
-% To optimize the hyperparameters and inducing inputs sequentially uncomment the below lines
-% $$$ iter = 1
-% $$$ e = gp_e(w,gp_fic,x,y)
-% $$$ e_old = inf;
-% $$$ while iter < 100 & abs(e_old-e) > 1e-3
-% $$$     e_old = e;
-% $$$     
-% $$$     gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');  % optimize hyperparameters and inducing inputs
-% $$$     gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
-% $$$     
-% $$$     gp_fic = gp_set(gp_fic, 'infer_params', 'inducing');  % optimize hyperparameters and inducing inputs
-% $$$     gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
-% $$$     e = gp_e(w,gp_fic,x,y);
-% $$$     iter = iter +1;
-% $$$     [iter e]
-% $$$ end
+% To optimize the parameters and inducing inputs sequentially
+% uncomment the below lines $$$ iter = 1 $$$ e = gp_e(w,gp_fic,x,y)
+% $$$ e_old = inf; $$$ while iter < 100 & abs(e_old-e) > 1e-3 $$$
+% e_old = e; $$$ $$$ gp_fic = gp_set(gp_fic, 'infer_params',
+% 'covariance+likelihood'); % optimize parameters and inducing
+% inputs $$$
+% gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt); $$$ $$$
+% gp_fic = gp_set(gp_fic, 'infer_params', 'inducing'); % optimize
+% parameters and inducing inputs $$$
+% gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt); $$$ e =
+% gp_e(w,gp_fic,x,y); $$$ iter = iter +1; $$$ [iter e] $$$ end
 
 % Make the prediction
 [xt1,xt2]=meshgrid(-1.8:0.1:1.8,-1.8:0.1:1.8);
@@ -287,7 +281,7 @@ for i1=1:4
     end
 end
 
-% Create the PIC GP data structure and set the inducing inputs and block indeces
+% Create the PIC GP structure and set the inducing inputs and block indeces
 gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 lik = lik_gaussian('sigma2', 0.2^2);
 
@@ -297,21 +291,21 @@ gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf}, ...
 % -----------------------------
 % --- Conduct the inference ---
 
-% MAP estimate for the hyperparameters and inducing inputs using
-% scaled conjugate gradient algorithm
+% MAP estimate for the parameters and inducing inputs using scaled
+% conjugate gradient algorithm
 
-% Now you can choose, if you want to optimize only hyperparameters
-% or optimize simultaneously hyperparameters and inducing inputs. 
-% Note that the inducing inputs are not transformed through
-% logarithm when packed
+% Now you can choose, if you want to optimize only parameters or
+% optimize simultaneously parameters and inducing inputs. Note that
+% the inducing inputs are not transformed through logarithm when
+% packed
 
-% optimize hyperparameters and inducing inputs
+% optimize parameters and inducing inputs
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  
-% optimize only hyperparameters
+% optimize only parameters
 %gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
 gp_pic=gp_optim(gp_pic,x,y,'optimf',@fminscg,'opt',opt);
 
@@ -346,7 +340,7 @@ xlim([-2 2]), ylim([-2 2])
 
 % Now we will use the variational sparse approximation.
 
-% First we create the GP data structure. Notice here that if we do
+% First we create the GP structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
 lik = lik_gaussian('sigma2', 0.2^2);
@@ -364,39 +358,39 @@ gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', {gpcf}, ...
 % --- Conduct the inference ---
 
 % Then we can conduct the inference. We can now optimize i) only
-% the hyperparameters, ii) both the hyperparameters and the
-% inducing inputs, or iii) only the inducing inputs. Which option
-% is used is defined by a string that is given to the gp_pak,
-% gp_unpak, gp_e and gp_g functions. The strings for the different
-% options are: 'covariance+likelihood' (i), 'covariance+inducing' (ii),
+% the parameters, ii) both the parameters and the inducing inputs,
+% or iii) only the inducing inputs. Which option is used is defined
+% by a string that is given to the gp_pak, gp_unpak, gp_e and gp_g
+% functions. The strings for the different options are:
+% 'covariance+likelihood' (i), 'covariance+inducing' (ii),
 % 'inducing' (iii).
 %
 
-% Now you can choose, if you want to optimize only hyperparameters
-% or optimize simultaneously hyperparameters and inducing inputs. 
-% Note that the inducing inputs are not transformed through
-% logarithm when packed
+% Now you can choose, if you want to optimize only parameters or
+% optimize simultaneously parameters and inducing inputs. Note that
+% the inducing inputs are not transformed through logarithm when
+% packed
 
-% optimize hyperparameters and inducing inputs
+% optimize parameters and inducing inputs
 gp_var = gp_set(gp_var, 'infer_params', 'covariance+inducing');  
-% optimize only hyperparameters
+% optimize only parameters
 %gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
 gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
 
-% To optimize the hyperparameters and inducing inputs sequentially uncomment the below lines
+% To optimize the parameters and inducing inputs sequentially uncomment the below lines
 % $$$ iter = 1
 % $$$ e = gp_e(w,gp_var,x,y)
 % $$$ e_old = inf;
 % $$$ while iter < 100 & abs(e_old-e) > 1e-3
 % $$$     e_old = e;
 % $$$     
-% $$$     gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');  % optimize hyperparameters and inducing inputs
+% $$$     gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');  % optimize parameters and inducing inputs
 % $$$     gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
-% $$$     gp_var = gp_set(gp_var, 'infer_params', 'inducing');  % optimize hyperparameters and inducing inputs
+% $$$     gp_var = gp_set(gp_var, 'infer_params', 'inducing');  % optimize parameters and inducing inputs
 % $$$     gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     e = gp_e(w,gp_var,x,y);
 % $$$     iter = iter +1;
@@ -428,15 +422,15 @@ xlim([-2 2]), ylim([-2 2])
 
 % Now we will use the DTC sparse approximation.
 
-% First we create the GP data structure. Notice here that if we do
+% First we create the GP structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
 lik = lik_gaussian('sigma2', 0.2^2);
 gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 
-% Next we initialize the inducing inputs and set them in GP structure. 
-% We have to give a prior for the inducing inputs also, if we want to optimize 
-% them
+% Next we initialize the inducing inputs and set them in GP
+% structure. We have to give a prior for the inducing inputs also,
+% if we want to optimize them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
@@ -446,39 +440,39 @@ gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
 % --- Conduct the inference ---
 
 % Then we can conduct the inference. We can now optimize i) only
-% the hyperparameters, ii) both the hyperparameters and the
-% inducing inputs, or iii) only the inducing inputs. Which option
-% is used is defined by a string that is given to the gp_pak,
-% gp_unpak, gp_e and gp_g functions. The strings for the different
-% options are: 'covariance+likelihood' (i), 'covariance+inducing' (ii),
+% the parameters, ii) both the parameters and the inducing inputs,
+% or iii) only the inducing inputs. Which option is used is defined
+% by a string that is given to the gp_pak, gp_unpak, gp_e and gp_g
+% functions. The strings for the different options are:
+% 'covariance+likelihood' (i), 'covariance+inducing' (ii),
 % 'inducing' (iii).
 %
 
-% Now you can choose, if you want to optimize only hyperparameters
-% or optimize simultaneously hyperparameters and inducing inputs. 
-% Note that the inducing inputs are not transformed through
-% logarithm when packed
+% Now you can choose, if you want to optimize only parameters or
+% optimize simultaneously parameters and inducing inputs. Note that
+% the inducing inputs are not transformed through logarithm when
+% packed
 
-% optimize hyperparameters and inducing inputs
+% optimize parameters and inducing inputs
 gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+inducing');  
-% optimize only hyperparameters
+% optimize only parameters
 %gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');           
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',50);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
 gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
 
-% To optimize the hyperparameters and inducing inputs sequentially uncomment the below lines
+% To optimize the parameters and inducing inputs sequentially uncomment the below lines
 % $$$ iter = 1
 % $$$ e = gp_e(w,gp_dtc,x,y)
 % $$$ e_old = inf;
 % $$$ while iter < 100 & abs(e_old-e) > 1e-3
 % $$$     e_old = e;
 % $$$     
-% $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');  % optimize hyperparameters and inducing inputs
+% $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');  % optimize parameters and inducing inputs
 % $$$     gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
-% $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'inducing');  % optimize hyperparameters and inducing inputs
+% $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'inducing');  % optimize parameters and inducing inputs
 % $$$     gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     e = gp_e(w,gp_dtc,x,y);
 % $$$     iter = iter +1;

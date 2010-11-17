@@ -66,7 +66,7 @@ xt=[1:0.01:14]';
 [n,nin] = size(x);
 
 % Initialize full GP with a squared exponential component and set
-% priors for their hyperparameters.
+% priors for their parameters.
 pl = prior_t('s2', 5, 'nu', 4);
 pm = prior_sqrtt('s2', 10, 'nu', 4);
 pn = prior_logunif();
@@ -96,10 +96,10 @@ plot(xt,Eft_full+2.*sqrt(Varft_full),'--','Color',[0 0.5 0])
 plot(x,y,'.', 'MarkerSize',7)
 title('FULL GP')
 
-% Run FIC approximation for the same data: choose the inducing inputs Xu,
-% then proceed with the inference with the optimized hyperparameters from
-% the full GP: here, we optimize only the locations of the inducing inputs
-% for the FIC model.
+% Run FIC approximation for the same data: choose the inducing
+% inputs Xu, then proceed with the inference with the optimized
+% parameters from the full GP: here, we optimize only the locations
+% of the inducing inputs for the FIC model.
 Xu=round(10+90*rand(18,1))/10; % Random placement
 
 % Change type to FIC, add inducing inputs, and optimize only inducing inputs

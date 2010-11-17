@@ -5,7 +5,7 @@ function [mu_star, Sigm_cc, Ey, Vary, pi_star] = la_softmax_pred(gp, x, y, xt, v
 %
 %  Description
 %    [EFT, VARFT, PYT] = LA_SOFTMAX_PRED(GP, X, Y, XT, OPTIONS)
-%    takes a GP data structure GP together with a matrix XT of input
+%    takes a GP structure GP together with a matrix XT of input
 %    vectors, matrix X of training inputs and vector Y of training
 %    targets, and evaluates the predictive distribution at inputs
 %    X. Returns a posterior mean EFT and variance VARFT of latent

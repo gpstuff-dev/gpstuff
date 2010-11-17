@@ -12,10 +12,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                   case of Poisson likelihood we have z_i=E_i,
 %                   that is, expected value for ith case.
 %      inf_method - inference method. Possible methods are
-%                    'MAP'      hyperparameters optimized to MAP (default)
+%                    'MAP'      parameters optimized to MAP (default)
 %                    'MCMC'     MCMC sampling using GP_MC
 %                    'IA'       integration approximation using GP_IA
-%                    'fixed'    hyperparameters are fixed, it either use MAP 
+%                    'fixed'    parameters are fixed, it either use MAP 
 %                               or integration approximation, depending if 
 %                               GP is a single GP structure or a GP array
 %                               (for example from GP_IA)
@@ -69,8 +69,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                     Eyt
 %                     Varyt
 %                     pyt
-%       cvws      - hyperparameter weight vectors for each CV fold
-%       trw       - hyperparameter weight vector for training data
+%       cvws      - parameter weight vectors for each CV fold
+%       trw       - parameter weight vector for training data
 %
 %     The K-fold cross validation is performed as follows: The data
 %     are divided into k groups D_k. For each group, we evaluate

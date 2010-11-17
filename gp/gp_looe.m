@@ -3,12 +3,12 @@ function eloo = gp_looe(w, gp, x, y, varargin)
 %         density, assuming Gaussian observation model.
 %
 %   Description
-%     LOOE = GP_LOOE(W, GP, X, Y, PARAM) takes a hyper-parameter vector
+%     LOOE = GP_LOOE(W, GP, X, Y, PARAM) takes a parameter vector
 %     W, Gaussian process structure GP, a matrix X of input vectors and
 %     a matrix Y of targets, and evaluates the mean negative log 
 %     leave-one-out predictive density
 %       LOOE  = - 1/n sum log p(Y_i | X, Y_{\i}, th)
-%     where th represents the hyperparameters (lengthScale, magnSigma2...), 
+%     where th represents the parameters (lengthScale, magnSigma2...), 
 %     X is inputs and Y is observations. 
 %
 %   References:

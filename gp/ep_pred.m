@@ -3,7 +3,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_pred(gp, x, y, xt, varargin)
 %
 %  Description
 %    [EFT, VARFT, EYT, VARYT] = EP_PRED(GP, X, Y, XT, OPTIONS)
-%    takes a GP data structure together with matrix X of training
+%    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
 %    mean EFT and variance VARFT of latent variables and the

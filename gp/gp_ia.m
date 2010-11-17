@@ -3,7 +3,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %
 %  Description
 %    [GP_ARRAY, P_TH, TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS)
-%    takes a GP data structure GP with covariates X and
+%    takes a GP structure GP with covariates X and
 %    observations Y and returns an array of GPs GP_ARRAY and
 %    corresponding weights P_TH. If optional test covariates XT is
 %    included, GP_IA also returns corresponding mean EF, variance
@@ -161,7 +161,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   opt_optim=optimset(optdefault,opt_optim);
 
   % ====================================
-  % Find the mode of the hyperparameters
+  % Find the mode of the parameters
   % ====================================
   w = gp_pak(gp);
   w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
@@ -170,11 +170,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   % Number of parameters
   nParam = length(w);
 
-  gp_array={}; % Array of gp-models with different hyperparameters
-  Ef_grid = []; % Predicted means with different hyperparameters
-  Varf_grid = []; % Variance of predictions with different hyperparameters
-  p_th=[]; % List of the weights of different hyperparameters (un-normalized)
-  th=[]; % List of hyperparameters
+  gp_array={}; % Array of gp-models with different parameters
+  Ef_grid = []; % Predicted means with different parameters
+  Varf_grid = []; % Variance of predictions with different parameters
+  p_th=[]; % List of the weights of different parameters (un-normalized)
+  th=[]; % List of parameters
 
   switch int_method
     case {'grid', 'CCD'}
@@ -204,7 +204,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       z = (V*sqrt(D))'.*opt.step_size;
       
       % =======================================
-      % Exploration of possible hyperparameters
+      % Exploration of possible parameters
       % =======================================
       
       checked = zeros(1,nParam); % List of locations already visited
@@ -225,7 +225,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           gp_array{end+1} = gp;
           
           while ~isempty(candidates)
-            % Repeat until there are no hyperparameters with high enough
+            % Repeat until there are no parameters with high enough
             % density that are not checked yet
             % Loop through the dimensions
             for i1 = 1 : nParam
@@ -362,7 +362,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             points = f0*sd.*points;
           end
           
-          % Put the points into hyperparameter-space
+          % Put the points into parameter-space
           th = points*z+repmat(w,size(points,1),1);
           
           p_th=[]; gp_array={};
@@ -602,7 +602,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         hmcrej = 0;
         for l=1:opt.repeat
           
-          % ----------- Sample hyperparameters with HMC ---------------------
+          % ----------- Sample parameters with HMC ---------------------
           ww = gp_pak(gp);
           hmc2('state',hmc_rstate)              % Set the state
           [ww, energies, diagnh] = hmc2(fh_e, ww, opt_hmc, fh_g, gp, x, y, options);
@@ -680,7 +680,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   % ====================================================================
   % If validation of the approximation is used perform tests
   % ====================================================================
-  % - validate the integration over hyperparameters
+  % - validate the integration over parameters
   % - Check the number of effective parameters in GP:s
   % - Check the normal approximations if Laplace approximation or EP
   % has been used
@@ -702,7 +702,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fprintf('\n \n')
           fprintf('The effective number of importance samples is %.2f out of total %.2f samples \n', meff, length(P_TH))
         end
-% $$$                 fprintf('Validating the integration over hyperparameters...  \n')
+% $$$                 fprintf('Validating the integration over parameters...  \n')
 % $$$
 % $$$                 Ef2(:,1) = Ef;
 % $$$                 Varf2(:,1) = Varf;
@@ -741,9 +741,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 % $$$                 end
 % $$$                             figure
 % $$$             plot(size(Ef_grid,1)-size(KL,2)+1:size(Ef_grid,1), sum(KL))
-% $$$             title('The convergence of the integration over hyperparameters')
+% $$$             title('The convergence of the integration over parameters')
 % $$$             ylabel('\Sigma_{i=1}^n KL(q_m(f_i)||q_{m-1}(f_i))')
-% $$$             xlabel('m, the number of integration points in hyperparam. space')
+% $$$             xlabel('m, the number of integration points in param. space')
     end
     
     % Evaluate the number of effective latent variables in GPs
@@ -756,7 +756,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       plot(p_eff./size(x,1))
       title('The number of effective latent variables vs. number of latent variables')
       ylabel('p_{eff} / size(f,1)')
-      xlabel('m, the index of integration point in hyperparam. space')
+      xlabel('m, the index of integration point in param. space')
       
       fprintf('\n \n')
     end

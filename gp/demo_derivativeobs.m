@@ -73,7 +73,7 @@ gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5, ...
 gp = gp_set('cf', gpcf);
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
 % Do the prediction
@@ -125,7 +125,7 @@ m=plot(xt,Eft2,'k','lineWidth',2);
 hold on
 plot(xt,Eft2+2*sqrt(Varft2),'k--')
 hold on
-m95=plot(xt,Eft-2*sqrt(Varft2),'k--');
+m95=plot(xt,Eft2-2*sqrt(Varft2),'k--');
 hold on
 hav=plot(x, y(1:length(x)), 'ro','markerSize',7,'MarkerFaceColor','r');
 hold on

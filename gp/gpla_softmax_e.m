@@ -7,7 +7,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
 %    structure GP together with a matrix X of input vectors and a
 %    matrix Y of target vectors, and finds the Laplace
 %    approximation for the conditional posterior p(Y | X, th),
-%    where th is the hyperparameters. Returns the energy at th (see
+%    where th is the parameters. Returns the energy at th (see
 %    below). Each row of X corresponds to one input vector and each
 %    row of Y corresponds to one target vector.
 %
@@ -18,7 +18,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
 %    The energy is minus log posterior cost function for th:
 %      E = EDATA + EPRIOR 
 %        = - log p(Y|X, th) - log p(th),
-%      where th represents the hyperparameters (lengthScale,
+%      where th represents the parameters (lengthScale,
 %      magnSigma2...), X is inputs and Y is observations.
 %
 %    OPTIONS is optional parameter-value pair
@@ -116,7 +116,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
       a = a0;
       p = p0;
     else
-      % The hyperparameters or data have changed since
+      % The parameters or data have changed since
       % the last call for gpla_e. In this case we need to
       % re-evaluate the Laplace approximation
       gp=gp_unpak(gp, w);
@@ -449,7 +449,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
       % Evaluate the prior contribution to the error from likelihood function
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior + feval(lik.fh.eprior, lik);
+        eprior = eprior -feval(lik.fh.lp, lik);
       end
 
       e = edata + eprior;

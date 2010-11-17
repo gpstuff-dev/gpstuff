@@ -27,26 +27,26 @@
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters.
+%    covariance function and th its parameters.
 %
 %    Since both likelihood and prior are Gaussian, we obtain a
 %    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, K + I*s^2).
 %    
-%   By placing a hyperprior for hyperparameters, p(th), we can find
-%   the maximum a posterior (MAP) estimate for them by maximizing
+%   By placing a prior for parameters, p(th), we can find the
+%   maximum a posterior (MAP) estimate for them by maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
 %   
-%   An approximation for the posterior of the hyperparameters, can be
+%   An approximation for the posterior of the parameters, can be
 %   found using Markov chain Monte Carlo (MCMC) methods. We can
-%   integrate over the hyperparameters also with other integration
+%   integrate over the parameters also with other integration
 %   approximations such as grid integration.
 %
-%   After finding MAP estimate or posterior samples of
-%   hyperparameters, we can use them to make predictions for f_new:
+%   After finding MAP estimate or posterior samples of parameters,
+%   we can use them to make predictions for f_new:
 %
 %       p(f_new | y, th) = N(m, S),
 %
@@ -61,7 +61,7 @@
 %   Vehtari (2008)
 %
 %   The demo has one part
-%     1) data analysis with MAP estimate for the hyperparameters
+%     1) data analysis with MAP estimate for the parameters
 %
 %  References:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
@@ -125,7 +125,7 @@ lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
 % ============================================
 gp = gp_set('lik', lik, 'cf', {gpcf2}, 'jitterSigma2', 1e-6);
 
-% Optimize the hyperparameters
+% Optimize the parameters
 % ---------------------------------
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');

@@ -12,7 +12,7 @@ function [e, g] = gp_eg(w, gp, x, y, varargin)
 %    The energy is minus log posterior cost function:
 %        E = EDATA + EPRIOR 
 %          = - log p(Y|X, th) - log p(th),
-%    where th represents the hyperparameters (lengthScale,
+%    where th represents the parameters (lengthScale,
 %    magnSigma2...), X is inputs and Y is observations (regression)
 %    or latent values (non-Gaussian likelihood).
 %

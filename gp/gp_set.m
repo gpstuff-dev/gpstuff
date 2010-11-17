@@ -1,5 +1,5 @@
 function gp = gp_set(varargin)
-%GP_SET  Create a Gaussian process model data structure. 
+%GP_SET  Create a Gaussian process model structure. 
 %
 %  Description
 %    GP = GP_SET('PARAM1',VALUE1,'PARAM2',VALUE2,...)
@@ -36,11 +36,11 @@ function gp = gp_set(varargin)
 %                     non-Gaussian, see latent_method below.
 %      jitterSigma2 - Positive jitter to be added in the diagonal of 
 %                     covariance matrix. The default is 0.
-%      infer_params - String defining which hyperparameters are inferred.
+%      infer_params - String defining which parameters are inferred.
 %                     The default is 'covariance+likelihood'.
-%                      'covariance'     = infer hyperparameters of 
-%                                         covariance function
-%                      'likelihood'     = infer parameters of likelihood
+%                      'covariance'     = infer parameters of the
+%                                         covariance functions
+%                      'likelihood'     = infer parameters of the likelihood
 %                      'inducing'       = infer inducing inputs (in sparse
 %                                         approximations): W = gp.X_u(:)    
 %                       By combining the strings one can infer more than 

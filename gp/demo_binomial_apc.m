@@ -25,9 +25,9 @@
 %
 %    The elements of the covariance matrix K are given as K_ij =
 %    k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance
-%    function and th its parameters, hyperparameters. We place a
-%    hyperprior for hyperparameters, p(th). The inference is done
-%    with Laplace approximation.
+%    function and th its parameters. We place a prior for
+%    parameters, p(th). The inference is done with Laplace
+%    approximation.
 %   
 %    In this demonstration X is three dimensional, containing
 %    inputs for age group, time period and cohort group (birth

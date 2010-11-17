@@ -3,7 +3,7 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 %
 %  Description
 %    GP = GP_OPTIM(GP, X, Y, OPTIONS) optimises the parameters of a
-%    GP data structure given matrix X of training inputs and vector
+%    GP structure given matrix X of training inputs and vector
 %    Y of training targets.
 %
 %    [GP, OUTPUT1, OUTPUT2, ...] = GP_OPTIM(GP, X, Y, OPTIONS)

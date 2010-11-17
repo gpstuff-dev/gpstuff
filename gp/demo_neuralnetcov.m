@@ -16,9 +16,9 @@
 %
 %    where K is the covariance matrix whose elements are given by
 %    neural network (or squared exponential) covariance function. A
-%    hyperprior is assumed for hyperparameters of the covariance
-%    functions, and the inference is done with a MAP estimate for
-%    hyperparameter values.
+%    prior is assumed for parameters of the covariance functions,
+%    and the inference is done with a MAP estimate for parameter
+%    values.
 %
 %    For more detailed discussion of infinite neural networks, see
 %    e.g.
@@ -54,10 +54,10 @@ y=y+0.1*randn(size(y));
 gpcf1 = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1);
 % neural network covariance function
 gpcf2 = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1);
-% Gaussian noise data structures
+% Gaussian noise structures
 lik = lik_gaussian('sigma2', 0.2^2);
 
-% a prior structure for GP hyperparameters
+% a prior structure for GP parameters
 pt = prior_t('s2', 4);
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 gpcf2 = gpcf_neuralnetwork(gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);

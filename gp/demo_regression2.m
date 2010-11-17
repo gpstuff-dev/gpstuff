@@ -11,39 +11,37 @@
 %
 %         y = f + g + e,    where e ~ N(0, s^2).
 %
-%    f and g are underlying latent functions, which we are interested
-%    in. We place a zero mean Gaussian process prior for them, which
-%    implies that at the observed input locations latent values have
-%    prior
+%    f and g are underlying latent functions, which we are
+%    interested in. We place a zero mean Gaussian process prior for
+%    them, which implies that at the observed input locations
+%    latent values have prior
 %
 %         f ~ N(0, Kf) and g ~ N(0,Kg)
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters.
+%    covariance function and th its parameters.
 %
 %    Since both likelihoods and prior are Gaussian, we obtain a
 %    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, Kf + Kg + I*s^2).
 %    
-%    By placing a hyperprior for hyperparameters, p(th), we can
-%    find the maximum a posterior (MAP) estimate for them by
-%    maximizing
+%    By placing a prior for parameters, p(th), we can find the
+%    maximum a posterior (MAP) estimate for them by maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
 %
-%    After finding MAP estimate or posterior samples of
-%    hyperparameters, we can use them to make predictions for the
-%    latent functions. For example, the posterior predictive
-%    distribution of f is:
+%    After finding MAP estimate or posterior samples of parameters,
+%    we can use them to make predictions for the latent functions. 
+%    For example, the posterior predictive distribution of f is:
 %
 %       p(f | y, th) = N(m, S),
 %       m = Kf * (Kf + Kg + s^2I)^(-1) * y
 %       S = Kf - Kf * (Kf + Kg + s^2I)^(-1) * Kf
 %
-%    (We could integrate also over the hyperparameters with, for
+%    (We could integrate also over the parameters with, for
 %    example, grid integration or MCMC. This is not demonstrated
 %    here but it is done exactly similarly as in the
 %    demo_regression1.)
@@ -106,8 +104,8 @@ xt = [0:0.5:565]';
 % --- Construct the model ---
 % 
 % First create squared exponential and piecewise polynomial 2
-% covariance functions and Gaussian noise data structures and set
-% priors for their hyperparameters (if SuiteSparse is not
+% covariance functions and Gaussian noise structures and set
+% priors for their parameters (if SuiteSparse is not
 % installed, use gpcf_sexp instead of gpcf_ppcs2)
 pl1 = prior_t('s2', 500, 'nu', 10);
 pl2 = prior_t('s2', 10, 'nu', 10);
@@ -124,7 +122,7 @@ else
 end
 lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
-% Create the GP data structure
+% Create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9) 
 
 % -----------------------------
@@ -179,7 +177,7 @@ title('The long and short term trend')
 % Place inducing inputs evenly
 Xu = [min(x):24:max(x)+10]';
 
-% Create the FIC GP data structure
+% Create the FIC GP structure
 gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 
 % -----------------------------
@@ -187,12 +185,12 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 
 
 % --- MAP estimate using modified Newton algorithm ---
 
-% Now you can choose, if you want to optimize only hyperparameters or 
-% optimize simultaneously hyperparameters and inducing inputs. Note that 
+% Now you can choose, if you want to optimize only parameters or 
+% optimize simultaneously parameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+inducing');  % optimize parameters and inducing inputs
+gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           % optimize only parameters
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
@@ -227,7 +225,7 @@ tot=0;
 for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
-% Create the FIC GP data structure
+% Create the FIC GP structure
 gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
@@ -236,12 +234,12 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % --- MAP estimate using modified Newton algorithm ---
 
-% Now you can choose, if you want to optimize only hyperparameters or 
-% optimize simultaneously hyperparameters and inducing inputs. Note that 
+% Now you can choose, if you want to optimize only parameters or 
+% optimize simultaneously parameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  % optimize hyperparameters and inducing inputs
-gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           % optimize only hyperparameters
+%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  % optimize parameters and inducing inputs
+gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           % optimize only parameters
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
@@ -276,7 +274,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 % Here we conduct the same analysis as in part 1, but this time we 
 % use FIC approximation
 
-% Create the CS+FIC GP data structure
+% Create the CS+FIC GP structure
 if ~exist('ldlchol')
   error('GPstuff:SuiteSparseMissing',...
         ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
@@ -289,11 +287,12 @@ gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigm
 
 % --- MAP estimate using modified Newton algorithm ---
 
-% Now you can choose, if you want to optimize only hyperparameters or 
-% optimize simultaneously hyperparameters and inducing inputs. Note that 
-% the inducing inputs are not transformed through logarithm when packed
+% Now you can choose, if you want to optimize only parameters or
+% optimize simultaneously parameters and inducing inputs. Note that
+% the inducing inputs are not transformed through logarithm when
+% packed
 
-% optimize hyperparameters and inducing inputs
+% optimize parameters and inducing inputs
 %gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood+inducing');  
 % optimize only parameters (default)
 %gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood');           

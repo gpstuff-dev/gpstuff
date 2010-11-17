@@ -66,23 +66,20 @@ function lik = lik_gaussian(varargin)
     % Set the function handles to the nested functions
     lik.fh.pak = @lik_gaussian_pak;
     lik.fh.unpak = @lik_gaussian_unpak;
-    lik.fh.eprior = @lik_gaussian_eprior;
-    lik.fh.ghyper = @lik_gaussian_ghyper;
+    lik.fh.lp = @lik_gaussian_lp;
+    lik.fh.lpg = @lik_gaussian_lpg;
+    lik.fh.llg = @lik_gaussian_llg;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
     lik.fh.recappend = @lik_gaussian_recappend;
   end
   
   function [w s] = lik_gaussian_pak(lik)
-  %LIK_GAUSSIAN_PAK  Combine GP covariance function hyper-parameters
-  %                  into one vector.
+  %LIK_GAUSSIAN_PAK  Combine likelihood parameters into one vector.
   %
   %  Description
-  %    W = LIK_GAUSSIAN_PAK(LIK) takes a likelihood function data
-  %    structure LIK and combines the likelihood function
-  %    parameters and their hyperparameters into a single row
-  %    vector W and takes a logarithm of the covariance function
-  %    parameters.
+  %    W = LIK_GAUSSIAN_PAK(LIK) takes a likelihood structure LIK
+  %    and combines the parameters into a single row vector W.
   %
   %       w = [ log(lik.sigma2)
   %             (hyperparameters of lik.magnSigma2)]'
@@ -93,7 +90,7 @@ function lik = lik_gaussian(varargin)
     w = []; s = {};
     if ~isempty(lik.p.sigma2)
       w = [w log(lik.sigma2)];
-      s = [s 'log(noise.sigma2)'];
+      s = [s 'log(gaussian.sigma2)'];
       % Hyperparameters of sigma2
       [wh sh] = feval(lik.p.sigma2.fh.pak, lik.p.sigma2);
       w = [w wh];
@@ -103,24 +100,19 @@ function lik = lik_gaussian(varargin)
   end
 
   function [lik, w] = lik_gaussian_unpak(lik, w)
-  %LIK_GAUSSIAN_UNPAK  Sets the likelihood function parameters pack
-  %                    into the structure
+  %LIK_GAUSSIAN_UNPAK  Extract likelihood parameters from the vector.
   %
   %  Description
-  %    [LIK, W] = LIK_GAUSSIAN_UNPAK(LIK, W) takes a likelihood
-  %    function data structure LIK and a hyper-parameter vector W,
-  %    and returns a likelihood function data structure identical
-  %    to the input, except that the likelihood hyper-parameters
-  %    have been set to the values in W. Deletes the values set to
-  %    LIK from W and returns the modified W.
+  %    W = LIK_GAUSSIAN_UNPAK(W, LIK) takes a likelihood structure
+  %    LIK and extracts the parameters from the vector W to the LIK
+  %    structure.
   %
   %    Assignment is inverse of  
   %       w = [ log(lik.sigma2)
   %             (hyperparameters of lik.magnSigma2)]'
   %
   %  See also
-  %   LIK_GAUSSIAN_PAK
-
+  %    LIK_GAUSSIAN_PAK
     
     if ~isempty(lik.p.sigma2)
       lik.sigma2 = exp(w(1));
@@ -132,88 +124,94 @@ function lik = lik_gaussian(varargin)
     end
   end
 
-
-  function eprior = lik_gaussian_eprior(lik)
-  %LIK_GAUSSIAN_EPRIOR  Evaluate the energy of prior of likelihood parameters
+  function lp = lik_gaussian_lp(lik)
+  %LIK_GAUSSIAN_LP  Evaluate the log prior of likelihood parameters
   %
   %  Description
-  %    E = LIK_T_EPRIOR(LIK) takes a likelihood data structure LIK
-  %    and returns log(p(th)), where th collects the
-  %    hyperparameters.
+  %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
+  %    returns log(p(th)), where th collects the parameters.
   %
   %  See also
   %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_G, GP_E
 
-    eprior = 0;
+    lp = 0;
 
     if ~isempty(lik.p.sigma2)
       likp=lik.p;
-      eprior = feval(likp.sigma2.fh.e, lik.sigma2, likp.sigma2) - log(lik.sigma2);
+      lp = feval(likp.sigma2.fh.lp, lik.sigma2, likp.sigma2) + log(lik.sigma2);
     end
   end
 
-  function [D,gprior]  = lik_gaussian_ghyper(lik, x, x2)
-  %LIK_GAUSSIAN_GHYPER  Evaluate gradient of likelihood function and
-  %                     hyper-prior with respect to the hyperparameters.
+  function lpg = lik_gaussian_lpg(lik)
+  %LIK_GAUSSIAN_LPG  Evaluate gradient of the log prior with respect
+  %                  to the parameters.
   %
   %  Description
-  %    [DKff, GPRIOR] = LIK_GAUSSIAN_GHYPER(LIK, X) 
-  %    takes a likelihood function data structure LIK, a matrix X of
-  %    input vectors and returns DKff, the gradients of likelihood
-  %    matrix Kff = k(X,X) with respect to th (cell array with matrix
-  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
-  %
-  %    [DKff, GPRIOR] = LIK_GAUSSIAN_GHYPER(LIK, X, X2) 
-  %    takes a likelihood function data structure LIK, a matrix X of
-  %    input vectors and returns DKff, the gradients of likelihood
-  %    matrix Kff = k(X,X2) with respect to th (cell array with matrix
-  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
-  %
-  %    [DKff, GPRIOR] = LIK_GAUSSIAN_GHYPER(LIK, X, [], MASK) 
-  %    takes a likelihood function data structure LIK, a matrix X of
-  %    input vectors and returns DKff, the diagonal of gradients of
-  %    likelihood matrix Kff = k(X,X2) with respect to th (cell array
-  %    with matrix elements), and GPRIOR = d log (p(th))/dth, where
-  %    th is the vector of hyperparameters. This is needed for
-  %    example with FIC sparse approximation.
+  %    LPG = LIK_GAUSSIAN_LPG(LIK) takes a Gaussian likelihood
+  %    function structure LIK and returns LPG = d log (p(th))/dth,
+  %    where th is the vector of parameters.
   %
   %  See also
   %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
 
-    D = {};
-    gprior = [];
+    lpg = [];
 
     if ~isempty(lik.p.sigma2)
       likp=lik.p;
       
       D{1}=lik.sigma2;
       
-      ggs = feval(likp.sigma2.fh.g, lik.sigma2, likp.sigma2);
-      gprior = ggs(1).*lik.sigma2 - 1;
+      ggs = feval(likp.sigma2.fh.lpg, lik.sigma2, likp.sigma2);
+      lpg = ggs(1).*lik.sigma2 + 1;
       if length(ggs) > 1
-        gprior = [gprior ggs(2:end)];
+        lpg = [lpg ggs(2:end)];
       end            
     end
   end
 
+  function DKff = lik_gaussian_llg(lik, x, x2)
+  %LIK_GAUSSIAN_LLG  Evaluate gradient of the log likelihood
+  %
+  %  Description
+  %    Gaussian likelihood is a special case since it can be
+  %    analytically combined with covariance functions and thus in
+  %    gradient computation we need to take this into account.
+  %
+  %    DKff = LIK_GAUSSIAN_LLG(LIK, X) takes a Gaussian likelihood
+  %    function structure LIK, a matrix X of input vectors and
+  %    returns DKff, the gradients of Gaussian likelihood induced
+  %    covariance matrix Kff = k(X,X) with respect to th (cell
+  %    array with matrix elements).
+  %
+  %    DKff = LIK_GAUSSIAN_LLG(LIK, X, X2) takes a Gaussian
+  %    likelihood function structure LIK, a matrix X of input
+  %    vectors and returns DKff, the gradients of Gaussian
+  %    likelihood induced covariance matrix Kff = k(X,X2) with
+  %    respect to th (cell array with matrix elements).
+  %
+  %  See also
+  %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
+
+    DKff = {};
+    if ~isempty(lik.p.sigma2)
+      DKff{1}=lik.sigma2;
+    end
+  end
+  
   function DKff  = lik_gaussian_ginput(lik, x, t, g_ind, gdata_ind, gprior_ind, varargin)
   %LIK_GAUSSIAN_GINPUT  Evaluate gradient of likelihood function with 
   %                     respect to x.
   %
   %  Description
-  %    DKff = LIK_GAUSSIAN_GHYPER(LIK, X) 
-  %    takes a likelihood function data structure LIK, a matrix X of
-  %    input vectors and returns DKff, the gradients of likelihood
-  %    matrix Kff = k(X,X) with respect to X (cell array with matrix
-  %    elements)
+  %    DKff = LIK_GAUSSIAN_GINPUT(LIK, X) takes a likelihood
+  %    function structure LIK, a matrix X of input vectors and
+  %    returns DKff, the gradients of likelihood matrix Kff =
+  %    k(X,X) with respect to X (cell array with matrix elements)
   %
-  %    DKff = LIK_GAUSSIAN_GHYPER(LIK, X, X2) 
-  %    takes a likelihood function data structure LIK, a matrix X of
-  %    input vectors and returns DKff, the gradients of likelihood
-  %    matrix Kff = k(X,X2) with respect to X (cell array with matrix
-  %    elements).
+  %    DKff = LIK_GAUSSIAN_GINPUT(LIK, X, X2) takes a likelihood
+  %    function structure LIK, a matrix X of input vectors and
+  %    returns DKff, the gradients of likelihood matrix Kff =
+  %    k(X,X2) with respect to X (cell array with matrix elements).
   %
   %  See also
   %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
@@ -246,10 +244,10 @@ function lik = lik_gaussian(varargin)
   %                    corresponding to Gaussian noise
   %
   %  Description
-  %    C = LIK_GAUSSIAN_TRVAR(LIK, TX) takes in covariance function 
+  %    C = LIK_GAUSSIAN_TRVAR(LIK, TX) takes in covariance function
   %    of a Gaussian process LIK and matrix TX that contains
-  %    training inputs. Returns variance vector C. Every
-  %    element i of C contains variance of input i in TX
+  %    training inputs. Returns variance vector C. Every element i
+  %    of C contains variance of input i in TX
   %
   %
   %  See also
@@ -267,8 +265,8 @@ function lik = lik_gaussian(varargin)
   %    RECCF = LIK_GAUSSIAN_RECAPPEND(RECCF, RI, LIK) takes a
   %    likelihood function record structure RECCF, record index RI
   %    and likelihood function structure LIK with the current MCMC
-  %    samples of the hyperparameters. Returns RECCF which contains
-  %    all the old samples and the current samples from LIK .
+  %    samples of the parameters. Returns RECCF which contains all
+  %    the old samples and the current samples from LIK .
   %
   %  See also
   %    GP_MC and GP_MC -> RECAPPEND
@@ -283,8 +281,9 @@ function lik = lik_gaussian(varargin)
       % Set the function handles
       reccf.fh.pak = @lik_gaussian_pak;
       reccf.fh.unpak = @lik_gaussian_unpak;
-      reccf.fh.eprior = @lik_gaussian_eprior;
-      reccf.fh.ghyper = @lik_gaussian_ghyper;
+      reccf.fh.lp = @lik_gaussian_lp;
+      reccf.fh.lpg = @lik_gaussian_lpg;
+      reccf.fh.llg = @lik_gaussian_llg;
       reccf.fh.trcov  = @lik_gaussian_trcov;
       reccf.fh.trvar  = @lik_gaussian_trvar;
       reccf.fh.recappend = @lik_gaussian_recappend;  

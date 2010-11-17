@@ -28,8 +28,8 @@
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters. We
-%    place a hyperprior for hyperparameters, p(th).
+%    covariance function and th its parameters. We place a prior
+%    for parameters, p(th).
 %
 %    The inference is conducted first with Laplace approximation
 %    and then with EP. We use compactly supported covariance
@@ -64,7 +64,7 @@ y = data(:,4);
 
 fprintf(['GP with negative-binomial observation model, Laplace\n' ...
          'integration over the latent values and MAP estimate\n' ...
-         'for the hyperparameters\n']);
+         'for the parameters\n']);
 
 % Create the covariance functions
 gpcf1 = gpcf_ppcs2('nin', 2, 'lengthScale', 5, 'magnSigma2', 0.05);
@@ -75,7 +75,7 @@ gpcf1 = gpcf_ppcs2(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
 lik = lik_negbin();
 
-% Create the GP data structure
+% Create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4); 
 
 % Set the approximate inference method to Laplace
@@ -127,7 +127,7 @@ title('Posterior variance of the relative risk (Laplace)')
 % =====================================
 fprintf(['GP with negative-binomial observation model, EP\n' ...
          'integration over the latent values and MAP estimate\n' ...
-         'for the hyperparameters\n']);
+         'for the parameters\n']);
 
 % Set the approximate inference method to EP
 gp = gp_set(gp, 'latent_method', 'EP');

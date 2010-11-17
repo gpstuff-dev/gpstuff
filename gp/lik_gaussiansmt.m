@@ -155,8 +155,9 @@ function lik = lik_gaussiansmt(varargin)
     % Set the function handles to the nested functions
     lik.fh.pak = @lik_gaussiansmt_pak;
     lik.fh.unpak = @lik_gaussiansmt_unpak;
-    lik.fh.eprior = @lik_gaussiansmt_eprior;
-    lik.fh.ghyper = @lik_gaussiansmt_ghyper;
+    lik.fh.lp = @lik_gaussiansmt_lp;
+    lik.fh.lpg = @lik_gaussiansmt_lpg;
+    lik.fh.llg = @lik_gaussiansmt_llg;
     lik.fh.trcov  = @lik_gaussiansmt_trcov;
     lik.fh.trvar  = @lik_gaussiansmt_trvar;
     lik.fh.gibbs = @lik_gaussiansmt_gibbs;
@@ -171,17 +172,18 @@ function lik = lik_gaussiansmt(varargin)
 
   end
 
-  function eprior =lik_gaussiansmt_eprior(lik, p, t)
-
-    eprior = 0;
+  function lp =lik_gaussiansmt_lp(lik)
+    lp = 0;
   end
 
-  function [DCff, gprior]  = lik_gaussiansmt_ghyper(lik, p, t, g, gdata, gprior, invC, varargin)
-    
-    DCff = [];
-    gprior = [];
+  function lpg  = lik_gaussiansmt_lpg(lik)
+    lpg = [];
   end
 
+  function DKff  = lik_gaussiansmt_llg(lik, x, x2)
+    DKff = [];
+  end
+  
   function C = lik_gaussiansmt_trcov(lik, x)
   %LIK_GAUSSIANSMT_TRCOV  Evaluate training covariance matrix
   %                    corresponding to Gaussian noise
@@ -269,7 +271,7 @@ function lik = lik_gaussiansmt(varargin)
       pp = lik.p.nu;
       opt=struct('nomit',4,'display',0,'method','doubling', ...
                  'wsize',4,'plimit',5,'unimodal',1,'mmlimits',[0; 128]);
-      nu=sls(@(nu) (-sum(sinvchi2_lpdf(U,nu,t2))+feval(pp.fh.e, nu, pp)),nu,opt);
+      nu=sls(@(nu) (-sum(sinvchi2_lpdf(U,nu,t2))-feval(pp.fh.lp, nu, pp)),nu,opt);
     end
     lik.sigma2 = rss2;
     lik.U = U;
@@ -300,7 +302,7 @@ function lik = lik_gaussiansmt(varargin)
   %    RECCF = LIK_GAUSSIANSMT_RECAPPEND(RECCF, RI, LIK)
   %    takes a likelihood record structure RECCF, record
   %    index RI and likelihood structure LIK with the
-  %    current MCMC samples of the hyperparameters. Returns
+  %    current MCMC samples of the parameters. Returns
   %    RECCF which contains all the old samples and the
   %    current samples from LIK .
   %
@@ -319,8 +321,9 @@ function lik = lik_gaussiansmt(varargin)
       % Set the function handles
       reccf.fh.pak = @lik_gaussiansmt_pak;
       reccf.fh.unpak = @lik_gaussiansmt_unpak;
-      reccf.fh.eprior = @lik_gaussiansmt_eprior;
-      reccf.fh.ghyper = @lik_gaussiansmt_ghyper;
+      reccf.fh.lp = @lik_gaussiansmt_lp;
+      reccf.fh.lpg = @lik_gaussiansmt_lpg;
+      reccf.fh.llg = @lik_gaussiansmt_llg;
       reccf.fh.cov = @lik_gaussiansmt_cov;
       reccf.fh.trcov  = @lik_gaussiansmt_trcov;
       reccf.fh.trvar  = @lik_gaussiansmt_trvar;

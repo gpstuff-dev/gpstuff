@@ -1,15 +1,15 @@
 function [w, s] = gp_pak(gp, param)
-%GP_PAK  Combine GP hyper-parameters into one vector
+%GP_PAK  Combine GP parameters into one vector
 %
 %  Description
-%    W = GP_PAK(GP, PARAM) takes a Gaussian Process data structure
+%    W = GP_PAK(GP, PARAM) takes a Gaussian Process structure
 %    GP and string PARAM defining, which parameters are packed and
 %    combines the parameters into a single row vector W. If PARAM
 %    is not given the function packs all parameters.
 %
 %    Each of the following strings in PARAM defines one group of
 %    parameters to pack:
-%      covariance  - pack hyperparameters of covariance function
+%      covariance  - pack parameters of covariance function
 %      likelihood  - pack parameters of likelihood
 %      inducing    - pack inducing inputs (in sparse approximations): 
 %                    W = gp.X_u(:)
@@ -60,7 +60,7 @@ function [w, s] = gp_pak(gp, param)
       param = gp.infer_params;
     end
     
-    % Pack the hyperparameters of covariance functions
+    % Pack the parameters of covariance functions
     if ~isempty(strfind(param, 'covariance'))
       ncf = length(gp.cf);
       
@@ -72,7 +72,7 @@ function [w, s] = gp_pak(gp, param)
       end
     end
     
-    % Pack the hyperparameters of likelihood function
+    % Pack the parameters of likelihood function
     if ~isempty(strfind(param, 'likelihood'))
       [wi si] = feval(gp.lik.fh.pak, gp.lik);
       w = [w wi];

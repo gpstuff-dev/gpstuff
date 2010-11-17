@@ -40,7 +40,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %        Ey(:,i) = E[y | xt, x, y]
 %      Vary(:,i) = Var[y | xt, x, y]
 %
-%    where the latent variables and hyperparameters have been
+%    where the latent variables and parameters have been
 %    marginalized out.
 %
 %    [EF, VARF, EY, VARY, PY] =

@@ -1,15 +1,16 @@
 % THE GP TOOLS (/in the GP/ folder):
 % 
 %  Gaussian process utilities:
-%   GP_SET    Create and modify a Gaussian Process data structure. 
-%   GP_PAK    Combine GP hyper-parameters into one vector.
-%   GP_UNPAK  Set GP hyper-parameters from vector to structure
+%   GP_SET    Create and modify a Gaussian Process structure. 
+%   GP_PAK    Combine GP parameters into one vector.
+%   GP_UNPAK  Set GP parameters from vector to structure
 %   GP_COV    Evaluate covariance matrix between two input vectors. 
 %   GP_TRCOV  Evaluate training covariance matrix (gp_cov + noise covariance). 
 %   GP_TRVAR  Evaluate training variance vector. 
 %   GP_RND    Random draws from the postrior Gaussian process
 %
 %  Covariance functions:
+%   GPCF_CAT           Create a categorigal covariance function
 %   GPCF_CONSTANT      Create a constant covariance function 
 %   GPCF_EXP           Create a squared exponential covariance function
 %   GPCF_LINEAR        Create a linear covariance function
@@ -25,18 +26,15 @@
 %   GPCF_RQ            Create an rational quadratic covariance function 
 %   GPCF_SEXP          Create a squared exponential covariance function
 %
-%  Noise covariance functions:
-%   GPCF_NOISE         Create a noise covariance function 
-%   GPCF_NOISET        Create a scale mixture noise covariance function (~Student-t) 
-%
 %  Likelihood functions:
-%   LIK_GAUSSIAN   Return string 'gaussian'
-%   LIK_BINOMIAL   Create a binomial likelihood structure 
-%   LIK_LOGIT      Create a Logit likelihood structure 
-%   LIK_NEGBIN     Create a Negbin likelihood structure 
-%   LIK_POISSON    Create a Poisson likelihood structure 
-%   LIK_PROBIT     Create a Probit likelihood structure 
-%   LIK_T          Create a Student-t likelihood structure 
+%   LIK_GAUSSIAN    Create a Gaussian likelihood structure
+%   LIK_GAUSSIANSMT Create a Gaussian scale mixture approximating t
+%   LIK_BINOMIAL    Create a binomial likelihood structure 
+%   LIK_LOGIT       Create a Logit likelihood structure 
+%   LIK_NEGBIN      Create a Negbin likelihood structure 
+%   LIK_POISSON     Create a Poisson likelihood structure 
+%   LIK_PROBIT      Create a Probit likelihood structure 
+%   LIK_T           Create a Student-t likelihood structure 
 %
 % Inference utilities:
 %   GP_E          Evaluate energy function (un-normalized negative marginal 
@@ -79,7 +77,6 @@
 %
 %  Metrics:
 %   METRIC_EUCLIDEAN   An Euclidean distance for Gaussian process models.
-%   METRIC_DISTMATRIX  Use pre-computed distance matrix
 %  
 %  Misc:
 %    LDLROWMODIFY  Function to modify the sparse cholesky factorization 
@@ -92,36 +89,37 @@
 %                  GPstuff/gp folder.
 %
 %  Demonstration programs:
-%   DEMO_BINOMIAL          Demonstration of Gaussian process model with binomial
-%                          likelihood
-%   DEMO_BINOMIAL2         Demonstration for modeling age-period-cohort data
-%                          by a binomial model combined with GP prior.
-%   DEMO_CLAASIFIC         Classification problem demonstration for 2 classes 
-%   DEMO_COMPARESPARSEGP   Regression demo comparing different sparse
-%                          approximations
-%   DEMO_LGCP              Demonstration for a log Gaussian Cox process
-%                          with inference via EP or Laplace approximation
-%   DEMO_MODELASSESMENT1   Demonstration for model assesment with DIC, number 
-%                          of effective parameters and ten-fold cross validation
-%   DEMO_MODELASSESMENT2   Demonstration for model assesment when the observation 
-%                          model is non-Gaussian
-%   DEMO_INFNEURALNETWORK  Demonstration of Gaussian process with a neural
-%                          network covariance function
-%   DEMO_PERIODICCOV       Regression problem demonstration for periodic data
-%   DEMO_PPCSCOV           Regression problem demonstration for 2-input 
-%                          function with Gaussian process using CS covariance
-%   DEMO_REGRESSION1       Regression problem demonstration for 2-input 
-%                          function with Gaussian process
-%   DEMO_REGRESSION2       Regression problem demonstration with additive model
-%   DEMO_REGRESSION_ADDITIVE Regression demonstration with additive Gaussian
-%                          process using linear, squared exponential and
-%                          neural network covariance fucntions 
-%   DEMO_ROBUSTREGRESSION  A regression demo with Student-t distribution as a 
-%                          residual model.
-%   DEMO_SPARSEREGRESSION  Regression problem demonstration for 2-input 
-%                          function with sparse Gaussian processes
-%   DEMO_SPATIAL1          Demonstration for a disease mapping problem
-%                          with Gaussian process prior and Poisson likelihood
-%   DEMO_SPATIAL2          Demonstration for a disease mapping problem with 
-%                          Gaussian process prior and negative binomial 
-%                          observation model
+%   DEMO_BINOMIAL1          Demonstration of Gaussian process model with binomial
+%                           likelihood
+%   DEMO_BINOMIAL_APC       Demonstration for modeling age-period-cohort data
+%                           by a binomial model combined with GP prior.
+%   DEMO_CLASSIFIC          Classification problem demonstration for 2 classes 
+%   DEMO_LGCP               Demonstration for a log Gaussian Cox process
+%                           with inference via EP or Laplace approximation
+%   DEMO_MODELASSESMENT1    Demonstration for model assesment with DIC, number 
+%                           of effective parameters and ten-fold cross validation
+%   DEMO_MODELASSESMENT2    Demonstration for model assesment when the observation 
+%                           model is non-Gaussian
+%   DEMO_NEURALNETWORKCOV   Demonstration of Gaussian process with a neural
+%                           network covariance function
+%   DEMO_PERIODIC           Regression problem demonstration for periodic data
+%   DEMO_REGRESSION1        Regression problem demonstration for 2-input 
+%                           function with Gaussian process
+%   DEMO_REGRESSION_PPCS    Regression problem demonstration for 2-input 
+%                           function with Gaussian process using CS covariance
+%   DEMO_REGRESSION_ADDITIVE1 Regression problem demonstration with additive model
+%   DEMO_REGRESSION_ADDITIVE2 Regression demonstration with additive Gaussian
+%                           process using linear, squared exponential and
+%                           neural network covariance fucntions 
+%   DEMO_REGRESSION_HIER    Hierarchical regression demonstration
+%   DEMO_REGRESSION_ROBUST  A regression demo with Student-t distribution as a 
+%                           residual model.
+%   DEMO_REGRESSION_SPARSE1 Regression problem demonstration for 2-input 
+%                           function with sparse Gaussian processes
+%   DEMO_REGRESSION_SPARSE2 Regression demo comparing different sparse
+%                           approximations
+%   DEMO_SPATIAL1           Demonstration for a disease mapping problem
+%                           with Gaussian process prior and Poisson likelihood
+%   DEMO_SPATIAL2           Demonstration for a disease mapping problem with 
+%                           Gaussian process prior and negative binomial 
+%                           observation model

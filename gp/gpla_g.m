@@ -3,12 +3,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %         log posterior estimate (GPLA_E)
 %
 %  Description
-%    G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP
-%    hyper-parameter vector W, data structure GP a matrix X of
-%    input vectors and a matrix Y of target vectors, and evaluates
-%    the gradient G of EP's marginal log posterior estimate . Each
-%    row of X corresponds to one input vector and each row of Y
-%    corresponds to one target vector.
+%    G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP parameter
+%    vector W, structure GP a matrix X of input vectors and a
+%    matrix Y of target vectors, and evaluates the gradient G of
+%    EP's marginal log posterior estimate . Each row of X
+%    corresponds to one input vector and each row of Y corresponds
+%    to one target vector.
 %
 %    [G, GDATA, GPRIOR] = GPLA_G(W, GP, X, Y, OPTIONS) also returns
 %    the data and prior contributions to the gradient.
@@ -121,7 +121,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             gprior(i1) = gprior_cf(i2);
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -141,12 +141,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         
-        g_logPrior = feval(lik.fh.gprior, lik);
+        g_logPrior = -feval(lik.fh.lpg, lik);
         if ~isempty(g_logPrior)
           
-          DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
-          DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
-          b = K * feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
+          DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+param', z);
+          DL_sigma = feval(lik.fh.llg, lik, y, f, 'param', z);
+          b = K * feval(lik.fh.llg2, lik, y, f, 'latent+param', z);
           s3 = b - K*(R*b);
           nl= size(DW_sigma,2);
           
@@ -247,7 +247,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             gprior(i1) = gprior_cf(i2);
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -320,9 +320,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         lik = gp.lik;
 
         
-        DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
-        DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
-        DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
+        DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+param', z);
+        DL_sigma = feval(lik.fh.llg, lik, y, f, 'param', z);
+        DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+param', z);
         b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
         bb = (iLa2W.*b - L2*(L2'*b));
         s3 = b - (La1.*bb + B'*(B*bb));            
@@ -331,7 +331,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lgp, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -453,7 +453,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             gprior(i1) = gprior_cf(i2);
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKuu)
             for i2=length(DKuu)+1:length(gprior_cf)
               i1 = i1+1;
@@ -537,9 +537,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         
-        DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
-        DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
-        DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
+        DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+param', z);
+        DL_sigma = feval(lik.fh.llg, lik, y, f, 'param', z);
+        DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+param', z);
         b = B'*(B*DL_f_sigma);
         for kk=1:length(ind)
           b(ind{kk}) = b(ind{kk}) + La1{kk}*DL_f_sigma(ind{kk});
@@ -555,7 +555,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -718,7 +718,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             end
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -791,9 +791,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         
-        DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+hyper', z);
-        DL_sigma = feval(lik.fh.llg, lik, y, f, 'hyper', z);
-        DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+hyper', z);
+        DW_sigma = feval(lik.fh.llg3, lik, y, f, 'latent2+param', z);
+        DL_sigma = feval(lik.fh.llg, lik, y, f, 'param', z);
+        DL_f_sigma = feval(lik.fh.llg2, lik, y, f, 'latent+param', z);
         b = La1*DL_f_sigma + B'*(B*DL_f_sigma);            
         bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
         s3 = b - (La1*bb + B'*(B*bb));            
@@ -802,7 +802,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end

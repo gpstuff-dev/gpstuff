@@ -54,7 +54,7 @@ function lik = lik_t(varargin)
     init=true;
     lik.type = 'Student-t';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Students-t')
+    if ~isfield(lik,'type') && ~isequal(lik.type,'Student-t')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -82,8 +82,8 @@ function lik = lik_t(varargin)
     % Set the function handles to the nested functions
       lik.fh.pak = @lik_t_pak;
       lik.fh.unpak = @lik_t_unpak;
-      lik.fh.eprior = @lik_t_eprior;
-      lik.fh.gprior = @lik_t_gprior;
+      lik.fh.lp = @lik_t_lp;
+      lik.fh.lpg = @lik_t_lpg;
       lik.fh.ll = @lik_t_ll;
       lik.fh.llg = @lik_t_llg;    
       lik.fh.llg2 = @lik_t_llg2;
@@ -100,7 +100,7 @@ function lik = lik_t(varargin)
   %LIK_T_PAK  Combine likelihood parameters into one vector.
   %
   %  Description 
-  %    W = LIK_T_PAK(LIK) takes a likelihood data structure LIK and
+  %    W = LIK_T_PAK(LIK) takes a likelihood structure LIK and
   %    combines the parameters into a single row vector W.
   %     
   %       w = [ log(lik.sigma2)
@@ -128,13 +128,12 @@ function lik = lik_t(varargin)
     end        
   end
 
-
   function [lik, w] = lik_t_unpak(lik, w)
   %LIK_T_UNPAK  Extract likelihood parameters from the vector.
   %
   %  Description
-  %    W = LIK_T_UNPAK(W, LIK) takes a likelihood data structure
-  %    LIK and extracts the parameters from the vector W to the LIK
+  %    W = LIK_T_UNPAK(W, LIK) takes a likelihood structure LIK and
+  %    extracts the parameters from the vector W to the LIK
   %    structure.
   %     
   %    Assignment is inverse of  
@@ -160,38 +159,35 @@ function lik = lik_t(varargin)
     end
   end
 
-
-  function logPrior = lik_t_eprior(lik)
-  %LIK_T_EPRIOR  log(prior) of the likelihood hyperparameters
+  function lp = lik_t_lp(lik)
+  %LIK_T_LP  log(prior) of the likelihood parameters
   %
   %  Description
-  %    E = LIK_T_EPRIOR(LIK) takes a likelihood data structure LIK
-  %    and returns log(p(th)), where th collects the
-  %    hyperparameters.
+  %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
+  %    returns log(p(th)), where th collects the parameters.
   %
   %  See also
   %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
     
     v = lik.nu;
     sigma2 = lik.sigma2;
-    logPrior = 0;
+    lp = 0;
     
     if ~isempty(lik.p.sigma2) 
-      logPrior = logPrior + feval(lik.p.sigma2.fh.e, lik.sigma2, lik.p.sigma2) -log(sigma2);
+      lp = lp + feval(lik.p.sigma2.fh.lp, lik.sigma2, lik.p.sigma2) +log(sigma2);
     end
     if ~isempty(lik.p.nu)
-      logPrior = logPrior + feval(lik.p.nu.fh.e, lik.nu, lik.p.nu)  - log(v) - log(log(v));
+      lp = lp + feval(lik.p.nu.fh.lp, lik.nu, lik.p.nu)  +log(v) +log(log(v));
     end
   end
   
-  function glogPrior = lik_t_gprior(lik)
-  %LIK_T_GPRIOR  d log(prior)/dth of the likelihood 
-  %              hyperparameters th
+  function lpg = lik_t_lpg(lik)
+  %LIK_T_LPG  d log(prior)/dth of the likelihood parameters th
   %
   %  Description
-  %    E = LIK_T_GPRIOR(LIK, Y, F) takes a likelihood data
-  %    structure LIK and returns d log(p(th))/dth, where th
-  %    collects the hyperparameters.
+  %    LPG = LIK_T_LPG(LIK) takes a likelihood structure LIK
+  %    and returns d log(p(th))/dth, where th collects the
+  %    parameters.
   %
   %  See also
   %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_G
@@ -200,25 +196,25 @@ function lik = lik_t(varargin)
 
     v = lik.nu;
     sigma2 = lik.sigma2;
-    glogPrior = [];
+    lpg = [];
     i1 = 0;
     
     if ~isempty(lik.p.sigma2) 
       i1 = i1+1;
-      glogPrior(i1) = feval(lik.p.sigma2.fh.g, lik.sigma2, lik.p.sigma2).*sigma2 - 1;
+      lpg(i1) = feval(lik.p.sigma2.fh.lpg, lik.sigma2, lik.p.sigma2).*sigma2 + 1;
     end
     if ~isempty(lik.p.nu) 
       i1 = i1+1;
-      glogPrior(i1) = feval(lik.p.nu.fh.g, lik.nu, lik.p.nu).*v.*log(v) - log(v) - 1;
+      lpg(i1) = feval(lik.p.nu.fh.lpg, lik.nu, lik.p.nu).*v.*log(v) +log(v) + 1;
     end    
   end
   
-  function logLik = lik_t_ll(lik, y, f, z)
+  function ll = lik_t_ll(lik, y, f, z)
   %LIK_T_LL  Log likelihood
   %
   %  Description
-  %    E = LIK_T_LL(LIK, Y, F) takes a likelihood data structure
-  %    LIK, observations Y, and latent values F. Returns the log
+  %    LL = LIK_T_LL(LIK, Y, F) takes a likelihood structure LIK,
+  %    observations Y, and latent values F. Returns the log
   %    likelihood, log p(y|f,z).
   %
   %  See also
@@ -229,19 +225,19 @@ function lik = lik_t(varargin)
     sigma2 = lik.sigma2;
 
     term = gammaln((v + 1) / 2) - gammaln(v/2) -log(v.*pi.*sigma2)/2;
-    logLik = term + log(1 + (r.^2)./v./sigma2) .* (-(v+1)/2);
-    logLik = sum(logLik);
+    ll = term + log(1 + (r.^2)./v./sigma2) .* (-(v+1)/2);
+    ll = sum(ll);
   end
 
   
-  function deriv = lik_t_llg(lik, y, f, param, z)
-  %LIK_T_LLG  Gradient of log likelihood
+  function llg = lik_t_llg(lik, y, f, param, z)
+  %LIK_T_LLG  Gradient of the log likelihood
   %
   %  Description
-  %    G = LIK_T_LLG(LIK, Y, F, PARAM) takes a likelihood data
+  %    LOKLIKG = LIK_T_LLG(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, observations Y, and latent values F. Returns
   %    the gradient of log likelihood with respect to PARAM. At the
-  %    moment PARAM can be 'hyper' or 'latent'.
+  %    moment PARAM can be 'param' or 'latent'.
   %
   %  See also
   %    LIK_T_LL, LIK_T_LLG2, LIK_T_LLG3, GPLA_E
@@ -251,36 +247,36 @@ function lik = lik_t(varargin)
     sigma2 = lik.sigma2;
     
     switch param
-      case 'hyper'
+      case 'param'
         n = length(y);
 
         % Derivative with respect to sigma2
-        deriv(1) = -n./sigma2/2 + (v+1)./2.*sum(r.^2./(v.*sigma2.^2+r.^2*sigma2));
+        llg(1) = -n./sigma2/2 + (v+1)./2.*sum(r.^2./(v.*sigma2.^2+r.^2*sigma2));
         
         % correction for the log transformation
-        deriv(1) = deriv(1).*sigma2;
+        llg(1) = llg(1).*sigma2;
         if ~isempty(lik.p.nu)
           % Derivative with respect to nu
-          deriv(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma2)) + (v+1).*r.^2./(v.^2.*sigma2 + v.*r.^2));
+          llg(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma2)) + (v+1).*r.^2./(v.^2.*sigma2 + v.*r.^2));
           
           % correction for the log transformation
-          deriv(2) = deriv(2).*v.*log(v);
+          llg(2) = llg(2).*v.*log(v);
         end
       case 'latent'
-        deriv  = (v+1).*r ./ (v.*sigma2 + r.^2);            
+        llg  = (v+1).*r ./ (v.*sigma2 + r.^2);            
     end
     
   end
 
 
-  function g2 = lik_t_llg2(lik, y, f, param, z)
+  function llg2 = lik_t_llg2(lik, y, f, param, z)
   %LIK_T_LLG2  Second gradients of log likelihood
   %
   %  Description        
-  %    G2 = LIK_T_LLG2(LIK, Y, F, PARAM) takes a likelihood data
+  %    LLG2 = LIK_T_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, observations Y, and latent values F. Returns
   %    the hessian of log likelihood with respect to PARAM. At the
-  %    moment PARAM can be only 'latent'. G2 is a vector with
+  %    moment PARAM can be only 'latent'. LLG2 is a vector with
   %    diagonal elements of the hessian matrix (off diagonals are
   %    zero).
   %
@@ -292,32 +288,32 @@ function lik = lik_t(varargin)
     sigma2 = lik.sigma2;
 
     switch param
-      case 'hyper'
+      case 'param'
         
       case 'latent'
         % The Hessian d^2 /(dfdf)
-        g2 =  (v+1).*(r.^2 - v.*sigma2) ./ (v.*sigma2 + r.^2).^2;
-      case 'latent+hyper'
+        llg2 =  (v+1).*(r.^2 - v.*sigma2) ./ (v.*sigma2 + r.^2).^2;
+      case 'latent+param'
         % gradient d^2 / (dfds2)
-        g2 = -v.*(v+1).*r ./ (v.*sigma2 + r.^2).^2;
+        llg2 = -v.*(v+1).*r ./ (v.*sigma2 + r.^2).^2;
         
         % Correction for the log transformation
-        g2 = g2.*sigma2;
+        llg2 = llg2.*sigma2;
         if ~isempty(lik.p.nu)
           % gradient d^2 / (dfdnu)
-          g2(:,2) = r./(v.*sigma2 + r.^2) - sigma2.*(v+1).*r./(v.*sigma2 + r.^2).^2;
+          llg2(:,2) = r./(v.*sigma2 + r.^2) - sigma2.*(v+1).*r./(v.*sigma2 + r.^2).^2;
 
           % Correction for the log transformation
-          g2(:,2) = g2(:,2).*v.*log(v);
+          llg2(:,2) = llg2(:,2).*v.*log(v);
         end
     end
   end    
   
-  function third_grad = lik_t_llg3(lik, y, f, param, z)
+  function llg3 = lik_t_llg3(lik, y, f, param, z)
   %LIK_T_LLG3  Third gradients of log likelihood (energy)
   %
   %  Description
-  %    G3 = LIK_T_LLG3(LIK, Y, F, PARAM) takes a likelihood data
+  %    LLG3 = LIK_T_LLG3(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, observations Y and latent values F and
   %    returns the third gradients of log likelihood with respect
   %    to PARAM. At the moment PARAM can be only 'latent'. G3 is a
@@ -331,19 +327,20 @@ function lik = lik_t(varargin)
     sigma2 = lik.sigma2;
     
     switch param
-      case 'hyper'
+      case 'param'
         
       case 'latent'
         % Return the diagonal of W differentiated with respect to latent values / dfdfdf
-        third_grad = (v+1).*(2.*r.^3 - 6.*v.*sigma2.*r) ./ (v.*sigma2 + r.^2).^3;
-      case 'latent2+hyper'
-        % Return the diagonal of W differentiated with respect to likelihood parameters / dfdfds2
-        third_grad = (v+1).*v.*( v.*sigma2 - 3.*r.^2) ./ (v.*sigma2 + r.^2).^3;
-        third_grad = third_grad.*sigma2;
+        llg3 = (v+1).*(2.*r.^3 - 6.*v.*sigma2.*r) ./ (v.*sigma2 + r.^2).^3;
+      case 'latent2+param'
+        % Return the diagonal of W differentiated with respect to
+        % likelihood parameters / dfdfds2
+        llg3 = (v+1).*v.*( v.*sigma2 - 3.*r.^2) ./ (v.*sigma2 + r.^2).^3;
+        llg3 = llg3.*sigma2;
         if ~isempty(lik.p.nu)
           % dfdfdnu
-          third_grad(:,2) = (r.^2-2.*v.*sigma2-sigma2)./(v.*sigma2 + r.^2).^2 - 2.*sigma2.*(r.^2-v.*sigma2).*(v+1)./(v.*sigma2 + r.^2).^3;
-          third_grad(:,2) = third_grad(:,2).*v.*log(v);
+          llg3(:,2) = (r.^2-2.*v.*sigma2-sigma2)./(v.*sigma2 + r.^2).^2 - 2.*sigma2.*(r.^2-v.*sigma2).*(v+1)./(v.*sigma2 + r.^2).^3;
+          llg3(:,2) = llg3(:,2).*v.*log(v);
         end
     end
   end
@@ -354,7 +351,7 @@ function lik = lik_t(varargin)
   %
   %  Description
   %    [M_0, M_1, M2] = LIK_T_TILTEDMOMENTS(LIK, Y, I, S2, MYY, Z)
-  %    takes a likelihood data structure LIK, incedence counts Y,
+  %    takes a likelihood structure LIK, incedence counts Y,
   %    expected counts Z, index I and cavity variance S2 and mean
   %    MYY. Returns the zeroth moment M_0, mean M_1 and variance
   %    M_2 of the posterior marginal (see Rasmussen and Williams
@@ -440,8 +437,8 @@ function lik = lik_t(varargin)
   %
   %  Description
   %    [M_0, M_1, M2] = LIK_T_TILTEDMOMENTS(LIK, Y, I, S2, MYY)
-  %    takes a likelihood data structure LIK, observations Y, index
-  %    I and cavity variance S2 and mean MYY. Returns E_f [d log
+  %    takes a likelihood structure LIK, observations Y, index I
+  %    and cavity variance S2 and mean MYY. Returns E_f [d log
   %    p(y_i|f_i) /d a], where a is the likelihood parameter and
   %    the expectation is over the marginal posterior. This term is
   %    needed when evaluating the gradients of the marginal
@@ -546,7 +543,7 @@ function lik = lik_t(varargin)
   %
   %  Description:
   %    [F, A] = LIK_T_OPTIMIZEF(GP, Y, K, Lav, K_fu) Takes Gaussian
-  %    process data structure GP, observations Y and the covariance
+  %    process structure GP, observations Y and the covariance
   %    matrix K. Solves the posterior mode of F using EM algorithm
   %    and evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu
   %    are needed for sparse approximations. For details, see
@@ -639,7 +636,7 @@ function lik = lik_t(varargin)
   %
   %  Description         
   %    [EY, VARY] = LIK_T_PREDY(LIK, EF, VARF) takes a likelihood
-  %    data structure LIK, posterior mean EF and posterior Variance
+  %    structure LIK, posterior mean EF and posterior Variance
   %    VARF of the latent variable and returns the posterior
   %    predictive mean EY and variance VARY of the observations
   %    related to the latent variables
@@ -686,7 +683,6 @@ function lik = lik_t(varargin)
     end
     
   end
-
   
   function reclik = lik_t_recappend(reclik, ri, lik)
   %RECAPPEND  Record append
@@ -706,8 +702,8 @@ function lik = lik_t(varargin)
       % Set the function handles
       reclik.fh.pak = @lik_t_pak;
       reclik.fh.unpak = @lik_t_unpak;
-      reclik.fh.eprior = @lik_t_eprior;
-      reclik.fh.gprior = @lik_t_gprior;
+      reclik.fh.lp = @lik_t_lp;
+      reclik.fh.lpg = @lik_t_lpg;
       reclik.fh.ll = @lik_t_ll;
       reclik.fh.llg = @lik_t_llg;    
       reclik.fh.llg2 = @lik_t_llg2;

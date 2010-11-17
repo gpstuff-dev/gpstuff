@@ -2,42 +2,43 @@
 %                  function with Gaussian process
 %
 %  Description
-%    The regression problem consist of a data with two input variables
-%    and one output variable with Gaussian noise. The model
-%    constructed is following:
+%    The regression problem consist of a data with two input
+%    variables and one output variable with Gaussian noise. The
+%    model constructed is following:
 %
 %    The observations y are assumed to satisfy
 %
 %         y = f + e,    where e ~ N(0, s^2)
 %
-%    where f is an underlying function, which we are interested in. We
-%    place a zero mean Gaussian process prior for f, which implies
-%    that at the observed input locations latent values have prior
+%    where f is an underlying function, which we are interested in. 
+%    We place a zero mean Gaussian process prior for f, which
+%    implies that at the observed input locations latent values
+%    have prior
 %
 %         f ~ N(0, K),
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters.
+%    covariance function and th its parameters.
 %
 %    Since both likelihood and prior are Gaussian, we obtain a
 %    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, K + I*s^2).
 %    
-%   By placing a hyperprior for hyperparameters, p(th), we can find
+%   By placing a prior for parameters, p(th), we can find
 %   the maximum a posterior (MAP) estimate for them by maximizing
 %
 %       argmax   log p(y|th) + log p(th).
 %         th
 %   
-%   An approximation for the posterior of the hyperparameters, can be
+%   An approximation for the posterior of the parameters, can be
 %   found using Markov chain Monte Carlo (MCMC) methods. We can
-%   integrate over the hyperparameters also with other integration
+%   integrate over the parameters also with other integration
 %   approximations such as grid integration.
 %
 %   After finding MAP estimate or posterior samples of
-%   hyperparameters, we can use them to make predictions for f_new:
+%   parameters, we can use them to make predictions for f_new:
 %
 %       p(f_new | y, th) = N(m, S),
 %
@@ -52,9 +53,9 @@
 %   Vehtari (2008)
 %
 %   The demo is organised in three parts:
-%     1) data analysis with MAP estimate for the hyperparameters
-%     2) data analysis with grid integration over the hyperparameters
-%     3) data analysis with MCMC integration over the hyperparameters
+%     1) data analysis with MAP estimate for the parameters
+%     2) data analysis with grid integration over the parameters
+%     3) data analysis with MCMC integration over the parameters
 %
 %  See also DEMO_REGRESSION2
 %
@@ -118,27 +119,27 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 [K, C] = gp_trcov(gp, example_x)
 
 % What has happend this far is the following
-% - we created data structures 'gpcf' and 'lik', which describe 
+% - we created structures 'gpcf' and 'lik', which describe 
 %   the properties of the covariance function and Gaussian likelihood (see
 %   gpcf_sexp and lik_gaussian for more details)
-% - we created data structures that describe the prior of the length-scale 
+% - we created structures that describe the prior of the length-scale 
 %   and magnitude of the squared exponential covariance function and
 %   the prior of the noise variance. These structures were set into
 %   'gpcf' and 'lik' (see prior_* for more details)
-% - we created a GP data structure 'gp', which has among others 'gpcf' 
-%   and 'lik' data structures.  (see gp_set for more details)
+% - we created a GP structure 'gp', which has among others 'gpcf' 
+%   and 'lik' structures.  (see gp_set for more details)
 
 % -----------------------------
 % --- Conduct the inference ---
 %
 % We will make the inference first by finding a maximum a posterior
-% estimate for the hyperparameters via gradient based
-% optimization. After this we will use grid integration and Markov
-% chain Monte Carlo sampling to integrate over the hyperparameters.
+% estimate for the parameters via gradient based optimization. 
+% After this we will use grid integration and Markov chain Monte
+% Carlo sampling to integrate over the parameters.
  
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-disp(' MAP estimate for the hyperparameters')
+disp(' MAP estimate for the parameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
@@ -166,7 +167,7 @@ axis on;
 title('The predicted underlying function and the data points (MAP solution)');
 
 % --- Grid integration ---
-disp(' Grid integration over the hyperparameters')
+disp(' Grid integration over the parameters')
 % Perform the grid integration and make predictions for p
 [gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
@@ -182,9 +183,9 @@ title('p(f|D) at input location (-0.8, 1.1)');
 
 
 % --- MCMC ---
-disp(' MCMC integration over the hyperparameters')
+disp(' MCMC integration over the parameters')
 %  (see gp_mc for details)
-% The hyperparameters are sampled with hybrid Monte Carlo 
+% The parameters are sampled with hybrid Monte Carlo 
 % (see, for example, Neal (1996)). 
 
 % The HMC sampling options are set to 'hmc_opt' structure, which is
@@ -207,10 +208,10 @@ rfull = thin(rfull, 10, 2);
 
 % Now we make the predictions. 'mc_preds' is a function that
 % returns the predictive mean of the latent function with every
-% sampled hyperparameter value. Thus, the returned Eft_mc is a
+% sampled parameter value. Thus, the returned Eft_mc is a
 % matrix of size n x (number of samples). By taking the mean over
 % the samples we do the Monte Carlo integration over the
-% hyperparameters. (See also mc_pred, which directly returns the
+% parameters. (See also mc_pred, which directly returns the
 % expectation of the mean and variance)
 [Eft_mc, Varft_mc] = mc_preds(rfull, x, y, xt);
 
@@ -232,8 +233,8 @@ title(['The predicted underlying function  ';
        'and the data points (MCMC solution)']);
 set(gcf,'pos',[93 511 1098 420])
 
-% We can compare the posterior samples of the hyperparameters to the 
-% MAP estimate that we got from optimization
+% We can compare the posterior samples of the parameters to the MAP
+% estimate that we got from optimization
 figure(3)
 clf
 subplot(1,2,1)

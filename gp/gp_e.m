@@ -15,7 +15,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %    The energy is minus log posterior cost function:
 %        E = EDATA + EPRIOR 
 %          = - log p(Y|X, th) - log p(th),
-%    where th represents the hyperparameters (lengthScale,
+%    where th represents the parameters (lengthScale,
 %    magnSigma2...), X is inputs and Y is observations (regression)
 %    or latent values (non-Gaussian likelihood).
 %
@@ -352,7 +352,7 @@ end
 if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && isfield(gp.lik, 'p')
   % a Gaussian likelihood
   lik = gp.lik;
-  eprior = eprior + feval(lik.fh.eprior, lik);
+  eprior = eprior -feval(lik.fh.lp, lik);
 end
 
 % ============================================================
@@ -363,9 +363,9 @@ if ~isempty(strfind(gp.infer_params, 'inducing'))
     for i = 1:size(gp.X_u,1)
       if iscell(gp.p.X_u) % Own prior for each inducing input
         pr = gp.p.X_u{i};
-        eprior = eprior + feval(pr.fh.e, gp.X_u(i,:), pr);
+        eprior = eprior -feval(pr.fh.lp, gp.X_u(i,:), pr);
       else
-        eprior = eprior + feval(gp.p.X_u.fh.e, gp.X_u(i,:), gp.p.X_u);
+        eprior = eprior -feval(gp.p.X_u.fh.lp, gp.X_u(i,:), gp.p.X_u);
       end
     end
   end

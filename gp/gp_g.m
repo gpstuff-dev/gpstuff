@@ -2,8 +2,8 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 %GP_G  Evaluate the gradient of energy (GP_E) for Gaussian Process
 %
 %  Description
-%    G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP hyper-parameter
-%    vector W, data structure GP a matrix X of input vectors and a
+%    G = GP_G(W, GP, X, Y, OPTIONS) takes a full GP parameter
+%    vector W, GP structure GP, a matrix X of input vectors and a
 %    matrix Y of target vectors, and evaluates the gradient G of
 %    the energy function (gp_e). Each row of X corresponds to one
 %    input vector and each row of Y corresponds to one target
@@ -146,7 +146,8 @@ switch gp.type
         
         % Are there specified mean functions
         if  ~isfield(gp,'meanf')
-          % Evaluate the gradient with respect to covariance function parameters
+          % Evaluate the gradient with respect to covariance function
+          % parameters
           for i2 = 1:length(DKff)
             i1 = i1+1;  
             Bdl = b'*(DKff{i2}*b);
@@ -164,7 +165,7 @@ switch gp.type
           end
         end
         
-        % Set the gradients of hyper-hyperparameter
+        % Set the gradients of hyperparameter
         if length(gprior_cf) > length(DKff)
           for i2=length(DKff)+1:length(gprior_cf)
             i1 = i1+1;
@@ -179,7 +180,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      [DCff, gprior_cf] = feval(gp.lik.fh.ghyper, gp.lik, x);
+      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       if isfield(gp,'meanf')
         [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
       end
@@ -205,15 +207,15 @@ switch gp.type
           end
           gdata(i1)=0.5*(-1*dMNM{i2} + trA{i2} + trK);
         end
-        gprior(i1) = gprior_cf(i2);
+        gprior(i1) = gprior_lik(i2);
       end
       
-      % Set the gradients of hyper-hyperparameter
-      if length(gprior_cf) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_cf)
+      % Set the gradients of hyperparameter
+      if length(gprior_lik) > length(DCff)
+        for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_cf(i2);
+          gprior(i1) = gprior_lik(i2);
         end
       end
     end
@@ -292,7 +294,7 @@ switch gp.type
           gprior(i1) = gprior_cf(i2);
         end
         
-        % Set the gradients of hyper-hyperparameter
+        % Set the gradients of hyperparameter
         if length(gprior_cf) > length(DKff)
           for i2=length(DKff)+1:length(gprior_cf)
             i1 = i1+1;
@@ -307,19 +309,20 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      [DCff, gprior_cf] = feval(gp.lik.fh.ghyper, gp.lik, x);
+      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(DCff{i2}./La-sum(L.*L,2).*DCff{i2});
-        gprior(i1) = gprior_cf(i2);
+        gprior(i1) = gprior_lik(i2);
       end
-      % Set the gradients of hyper-hyperparameter
-      if length(gprior_cf) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_cf)
+      % Set the gradients of hyperparameter
+      if length(gprior_lik) > length(DCff)
+        for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_cf(i2);
+          gprior(i1) = gprior_lik(i2);
         end
       end               
     end
@@ -339,9 +342,9 @@ switch gp.type
         for i = 1:size(gp.X_u,1)
           if iscell(gp.p.X_u) % Own prior for each inducing input
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+            gprior(i1:i1+m) = -feval(pr.fh.lpg, gp.X_u(i,:), pr);
           else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+            gprior(i1:i1+m-1) = -feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
           end
           i1 = i1 + m;
         end
@@ -456,7 +459,7 @@ switch gp.type
           gprior(i1) = gprior_cf(i2);
         end
         
-        % Set the gradients of hyper-hyperparameter
+        % Set the gradients of hyperparameter
         if length(gprior_cf) > length(DKuu)
           for i2=length(DKuu)+1:length(gprior_cf)
             i1 = i1+1;
@@ -471,21 +474,22 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      [DCff, gprior_cf] = feval(gp.lik.fh.ghyper, gp.lik, x);
+      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';            
         for kk=1:length(ind)
           gdata(i1)= gdata(i1) + 0.5*trace((inv(La{kk})-L(ind{kk},:)*L(ind{kk},:)')).*DCff{i2};
         end
-        gprior(i1) = gprior_cf(i2);
+        gprior(i1) = gprior_lik(i2);
       end
-      % Set the gradients of hyper-hyperparameter
-      if length(gprior_cf) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_cf)
+      % Set the gradients of hyperparameter
+      if length(gprior_lik) > length(DCff)
+        for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_cf(i2);
+          gprior(i1) = gprior_lik(i2);
         end
       end
     end            
@@ -506,9 +510,9 @@ switch gp.type
         for i = 1:size(gp.X_u,1)
           if iscell(gp.p.X_u) % Own prior for each inducing input
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+            gprior(i1:i1+m) = -feval(pr.fh.lpg, gp.X_u(i,:), pr);
           else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+            gprior(i1:i1+m-1) = -feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
           end
           i1 = i1 + m;
         end
@@ -657,7 +661,7 @@ switch gp.type
             gprior(i1) = gprior_cf(i2);
           end
         end
-        % Set the gradients of hyper-hyperparameter
+        % Set the gradients of hyperparameter
         if length(gprior_cf) > length(DKff)
           for i2=length(DKff)+1:length(gprior_cf)
             i1 = i1+1;
@@ -672,20 +676,21 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      [DCff, gprior_cf] = feval(gp.lik.fh.ghyper, gp.lik, x);
+      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(idiagLa-LL).*DCff{i2};
-        gprior(i1) = gprior_cf(i2);
+        gprior(i1) = gprior_lik(i2);
       end
       
-      % Set the gradients of hyper-hyperparameter
-      if length(gprior_cf) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_cf)
+      % Set the gradients of hyperparameter
+      if length(gprior_lik) > length(DCff)
+        for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_cf(i2);
+          gprior(i1) = gprior_lik(i2);
         end
       end
     end
@@ -705,9 +710,9 @@ switch gp.type
         for i = 1:size(gp.X_u,1)
           if iscell(gp.p.X_u) % Own prior for each inducing input
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+            gprior(i1:i1+m) = -feval(pr.fh.lpg, gp.X_u(i,:), pr);
           else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+            gprior(i1:i1+m-1) = -feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
           end
           i1 = i1 + m;
         end
@@ -816,7 +821,7 @@ switch gp.type
           gprior(i1) = gprior_cf(i2);
         end
         
-        % Set the gradients of hyper-hyperparameter
+        % Set the gradients of hyperparameter
         if length(gprior_cf) > length(DKff)
           for i2=length(DKff)+1:length(gprior_cf)
             i1 = i1+1;
@@ -831,7 +836,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      [DCff, gprior_cf] = feval(gp.lik.fh.ghyper, gp.lik, x);
+      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -840,14 +846,14 @@ switch gp.type
           gdata(i1)= gdata(i1) + 0.5*(sum((Kv_ff-Qv_ff)./La));
         end
         
-        gprior(i1) = gprior_cf(i2);                        
+        gprior(i1) = gprior_lik(i2);                        
       end
-      % Set the gradients of hyper-hyperparameter
-      if length(gprior_cf) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_cf)
+      % Set the gradients of hyperparameter
+      if length(gprior_lik) > length(DCff)
+        for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_cf(i2);
+          gprior(i1) = gprior_lik(i2);
         end
       end               
     end        
@@ -867,9 +873,9 @@ switch gp.type
         for i = 1:size(gp.X_u,1)
           if iscell(gp.p.X_u) % Own prior for each inducing input
             pr = gp.p.X_u{i};
-            gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+            gprior(i1:i1+m) = -feval(pr.fh.lpg, gp.X_u(i,:), pr);
           else % One prior for all inducing inputs
-            gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+            gprior(i1:i1+m-1) = -feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
           end
           i1 = i1 + m;
         end
@@ -950,7 +956,7 @@ switch gp.type
           gprior(i1) = gprior_cf(i2);
         end
 
-        % Set the gradients of hyper-hyperparameter
+        % Set the gradients of hyperparameter
         if length(gprior_cf) > length(DKff)
           for i2=length(DKff)+1:length(gprior_cf)
             i1 = i1+1;
@@ -965,20 +971,21 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      [DCff, gprior_cf] = feval(gp.lik.fh.ghyper, gp.lik, x);
+      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
         gdata(i1)= gdata(i1) + 0.5*sum(1./Sv-sum(L.*L,2)).*DCff{i2};
-        gprior(i1) = gprior_cf(i2);
+        gprior(i1) = gprior_lik(i2);
       end
       
-      % Set the gradients of hyper-hyperparameter                                
-      if length(gprior_cf) > length(DCff)
-        for i2=length(DCff)+1:length(gprior_cf)
+      % Set the gradients of hyperparameter                                
+      if length(gprior_lik) > length(DCff)
+        for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
-          gprior(i1) = gprior_cf(i2);
+          gprior(i1) = gprior_lik(i2);
         end
       end                
     end

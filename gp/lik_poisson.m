@@ -28,69 +28,46 @@ function lik = lik_poisson(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-% allow use with or without init and set options
-  if nargin<1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'LIK_POISSON';
+  ip.addOptional('lik', [], @isstruct);
+  ip.parse(varargin{:});
+  lik=ip.Results.lik;
+
+  if isempty(lik)
+    init=true;
+    lik.type = 'Poisson';
   else
-    error('Unknown first argument');
+    if ~isfield(lik,'type') && ~isequal(lik.type,'Poisson')
+      error('First argument does not seem to be a valid likelihood function structure')
+    end
+    init=false;
   end
 
-  switch do
-    case 'init'
-      % Initialize the likelihood structure
-      lik.type = 'Poisson';
-
-      % Set the function handles to the nested functions
-      lik.fh.pak = @lik_poisson_pak;
-      lik.fh.unpak = @lik_poisson_unpak;
-      lik.fh.ll = @lik_poisson_ll;
-      lik.fh.llg = @lik_poisson_llg;    
-      lik.fh.llg2 = @lik_poisson_llg2;
-      lik.fh.llg3 = @lik_poisson_llg3;
-      lik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
-      lik.fh.predy = @lik_poisson_predy;
-      lik.fh.recappend = @lik_poisson_recappend;
-
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
-      
-    case 'set'
-      % No paramaters to set
-      if numel(varargin)~=1
-        error('Wrong number of arguments')
-      end
-      
-      % Pass the likelihood
-      lik = varargin{1};
-      
+  if init
+    % Set the function handles to the nested functions
+    lik.fh.pak = @lik_poisson_pak;
+    lik.fh.unpak = @lik_poisson_unpak;
+    lik.fh.ll = @lik_poisson_ll;
+    lik.fh.llg = @lik_poisson_llg;    
+    lik.fh.llg2 = @lik_poisson_llg2;
+    lik.fh.llg3 = @lik_poisson_llg3;
+    lik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
+    lik.fh.predy = @lik_poisson_predy;
+    lik.fh.recappend = @lik_poisson_recappend;
   end
-
   
   function [w,s] = lik_poisson_pak(lik)
-  %LIK_POISSON_PAK    Combine likelihood parameters into one vector.
+  %LIK_POISSON_PAK  Combine likelihood parameters into one vector.
   %
-  %   Description 
-  %   W = LIK_POISSON_PAK(LIK) takes a likelihood data
-  %   structure LIK and returns an empty verctor W. If Poisson
-  %   likelihood had hyperparameters this would combine them into a
-  %   single row vector W (see e.g. lik_negbin).
+  %  Description 
+  %    W = LIK_POISSON_PAK(LIK) takes a likelihood structure LIK
+  %    and returns an empty verctor W. If Poisson likelihood had
+  %    parameters this would combine them into a single row vector
+  %    W (see e.g. lik_negbin).
   %     
-  %
-  %   See also
-  %   LIK_NEGBIN_UNPAK, GP_PAK
+  %  See also
+  %    LIK_NEGBIN_UNPAK, GP_PAK
 
     w = []; s = {};
   end
@@ -99,15 +76,15 @@ function lik = lik_poisson(varargin)
   function [lik, w] = lik_poisson_unpak(lik, w)
   %LIK_POISSON_UNPAK  Extract likelihood parameters from the vector.
   %
-  %   Description
-  %   W = LIK_POISSON_UNPAK(W, LIK) Doesn't do anything.
-  % 
-  %   If Poisson likelihood had hyperparameters this would extracts
-  %   them parameters from the vector W to the LIK structure.
+  %  Description
+  %    W = LIK_POISSON_UNPAK(W, LIK) Doesn't do anything.
+  %
+  %    If Poisson likelihood had parameters this would extract them
+  %    parameters from the vector W to the LIK structure.
   %     
   %
-  %   See also
-  %   LIK_POISSON_PAK, GP_UNPAK
+  %  See also
+  %    LIK_POISSON_PAK, GP_UNPAK
 
     lik=lik;
     w=w;
@@ -118,13 +95,13 @@ function lik = lik_poisson(varargin)
   function logLik = lik_poisson_ll(lik, y, f, z)
   %LIK_POISSON_LL    Log likelihood
   %
-  %   Description
-  %   E = LIK_POISSON_LL(LIK, Y, F, Z) takes a likelihood
-  %   data structure LIK, incedence counts Y, expected counts Z,
-  %   and latent values F. Returns the log likelihood, log p(y|f,z).
+  %  Description
+  %    E = LIK_POISSON_LL(LIK, Y, F, Z) takes a likelihood data
+  %    structure LIK, incedence counts Y, expected counts Z, and
+  %    latent values F. Returns the log likelihood, log p(y|f,z).
   %
-  %   See also
-  %   LIK_POISSON_LLG, LIK_POISSON_LLG3, LIK_POISSON_LLG2, GPLA_E
+  %  See also
+  %    LIK_POISSON_LLG, LIK_POISSON_LLG3, LIK_POISSON_LLG2, GPLA_E
 
     
     if isempty(z)
@@ -141,17 +118,17 @@ function lik = lik_poisson(varargin)
 
 
   function deriv = lik_poisson_llg(lik, y, f, param, z)
-  %LIK_POISSON_LLG    Gradient of log likelihood (energy)
+  %LIK_POISSON_LLG    Gradient of the log likelihood
   %
-  %   Description 
-  %   G = LIK_POISSON_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, incedence counts Y, expected counts Z
-  %   and latent values F. Returns the gradient of log likelihood 
-  %   with respect to PARAM. At the moment PARAM can be 'hyper' or
-  %   'latent'.
+  %  Description 
+  %    G = LIK_POISSON_LLG(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, incedence counts Y, expected counts Z
+  %    and latent values F. Returns the gradient of the log
+  %    likelihood with respect to PARAM. At the moment PARAM can be
+  %    'param' or 'latent'.
   %
-  %   See also
-  %   LIK_POISSON_LL, LIK_POISSON_LLG2, LIK_POISSON_LLG3, GPLA_E
+  %  See also
+  %    LIK_POISSON_LL, LIK_POISSON_LLG2, LIK_POISSON_LLG3, GPLA_E
     
     if isempty(z)
       error(['lik_poisson -> lik_poisson_llg: missing z!'... 
@@ -168,18 +145,18 @@ function lik = lik_poisson(varargin)
 
 
   function g2 = lik_poisson_llg2(lik, y, f, param, z)
-  %LIK_POISSON_LLG2  Second gradients of log likelihood (energy)
+  %LIK_POISSON_LLG2  Second gradients of the log likelihood
   %
-  %   Description        
-  %   G2 = LIK_POISSON_LLG2(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, incedence counts Y, expected counts Z,
-  %   and latent values F. Returns the hessian of log likelihood
-  %   with respect to PARAM. At the moment PARAM can be only
-  %   'latent'. G2 is a vector with diagonal elements of the hessian
-  %   matrix (off diagonals are zero).
+  %  Description        
+  %    G2 = LIK_POISSON_LLG2(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, incedence counts Y, expected counts Z,
+  %    and latent values F. Returns the hessian of the log
+  %    likelihood with respect to PARAM. At the moment PARAM can be
+  %    only 'latent'. G2 is a vector with diagonal elements of the
+  %    hessian matrix (off diagonals are zero).
   %
-  %   See also
-  %   LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG3, GPLA_E
+  %  See also
+  %    LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG3, GPLA_E
 
     if isempty(z)
       error(['lik_poisson -> lik_poisson_llg2: missing z!'... 
@@ -195,18 +172,17 @@ function lik = lik_poisson(varargin)
   end    
   
   function third_grad = lik_poisson_llg3(lik, y, f, param, z)
-  %LIK_POISSON_LLG3  Third gradients of log likelihood (energy)
+  %LIK_POISSON_LLG3  Third gradients of the log likelihood
   %
-  %   Description
-    
-  %   G3 = LIK_POISSON_LLG3(LIK, Y, F, PARAM) takes a likelihood 
-  %   data structure LIK, incedence counts Y, expected counts Z
-  %   and latent values F and returns the third gradients of log
-  %   likelihood with respect to PARAM. At the moment PARAM can be
-  %   only 'latent'. G3 is a vector with third gradients.
+  %  Description
+  %    G3 = LIK_POISSON_LLG3(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, incedence counts Y, expected counts Z
+  %    and latent values F and returns the third gradients of the
+  %    log likelihood with respect to PARAM. At the moment PARAM
+  %    can be only 'latent'. G3 is a vector with third gradients.
   %
-  %   See also
-  %   LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG2, GPLA_E, GPLA_G
+  %  See also
+  %    LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG2, GPLA_E, GPLA_G
     
     if isempty(z)
       error(['lik_poisson -> lik_poisson_llg3: missing z!'... 
@@ -222,18 +198,19 @@ function lik = lik_poisson(varargin)
   end
 
   function [m_0, m_1, sigm2hati1] = lik_poisson_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_POISSON_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+  %LIK_POISSON_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
   %
-  %   Description
-  %   [M_0, M_1, M2] = LIK_POISSON_TILTEDMOMENTS(LIK, Y, I, S2, MYY, Z) 
-  %   takes a likelihood data structure LIK, incedence counts Y, 
-  %   expected counts Z, index I and cavity variance S2 and mean
-  %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
-  %   of the posterior marginal (see Rasmussen and Williams (2006):
-  %   Gaussian processes for Machine Learning, page 55).
+  %  Description
+  %    [M_0, M_1, M2] = LIK_POISSON_TILTEDMOMENTS(LIK, Y, I, S2,
+  %    MYY, Z) takes a likelihood structure LIK, incedence counts
+  %    Y, expected counts Z, index I and cavity variance S2 and
+  %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+  %    variance M_2 of the posterior marginal (see Rasmussen and
+  %    Williams (2006): Gaussian processes for Machine Learning,
+  %    page 55).
   %
-  %   See also
-  %   GPEP_E
+  %  See also
+  %    GPEP_E
 
     
     if isempty(z)
@@ -275,20 +252,20 @@ function lik = lik_poisson(varargin)
   function [Ey, Vary, Py] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
   %LIK_POISSON_PREDY    Returns the predictive mean, variance and density of y
   %
-  %   Description         
-  %   [EY, VARY] = LIK_POISSON_PREDY(LIK, EF, VARF)
-  %   takes a likelihood data structure LIK, posterior mean EF
-  %   and posterior Variance VARF of the latent variable and returns
-  %   the posterior predictive mean EY and variance VARY of the
-  %   observations related to the latent variables
+  %  Description         
+  %    [EY, VARY] = LIK_POISSON_PREDY(LIK, EF, VARF) takes a
+  %    likelihood structure LIK, posterior mean EF and posterior
+  %    Variance VARF of the latent variable and returns the
+  %    posterior predictive mean EY and variance VARY of the
+  %    observations related to the latent variables
   %        
-  %   [Ey, Vary, PY] = LIK_POISSON_PREDY(LIK, EF, VARF YT, ZT)
-  %   Returns also the predictive density of YT, that is 
+  %    [Ey, Vary, PY] = LIK_POISSON_PREDY(LIK, EF, VARF YT, ZT)
+  %    Returns also the predictive density of YT, that is 
   %        p(yt | y,zt) = \int p(yt | f, zt) p(f|y) df.
-  %   This requires also the incedence counts YT, expected counts ZT.
+  %    This requires also the incedence counts YT, expected counts ZT.
   %
-  %   See also 
-  %   LA_PRED, EP_PRED, MC_PRED
+  %  See also 
+  %    LA_PRED, EP_PRED, MC_PRED
 
     if isempty(zt)
       error(['lik_poisson -> lik_poisson_predy: missing zt!'... 
@@ -338,15 +315,14 @@ function lik = lik_poisson(varargin)
   function [df,minf,maxf] = init_poisson_norm(yy,myy_i,sigm2_i,avgE)
   %INIT_POISSON_NORM
   %
-  %   Description
-  %    Return function handle to a function evaluating
-  %    Poisson * Gaussian which is used for evaluating  
-  %    (likelihood * cavity) or (likelihood * posterior) 
-  %    Return also useful limits for integration.
-  %    This is private function for lik_poisson.
+  %  Description
+  %    Return function handle to a function evaluating Poisson *
+  %    Gaussian which is used for evaluating (likelihood * cavity)
+  %    or (likelihood * posterior) Return also useful limits for
+  %    integration. This is private function for lik_poisson.
   %  
-  %   See also
-  %   LIK_POISSON_TILTEDMOMENTS, LIK_POISSON_PREDY
+  %  See also
+  %    LIK_POISSON_TILTEDMOMENTS, LIK_POISSON_PREDY
     
   % avoid repetitive evaluation of constant part
     ldconst = -gammaln(yy+1) - log(sigm2_i)/2 - log(2*pi)/2;
@@ -454,18 +430,17 @@ function lik = lik_poisson(varargin)
   end
   
   function reclik = lik_poisson_recappend(reclik, ri, lik)
-  % RECAPPEND  Append the parameters to the record
+  %RECAPPEND  Append the parameters to the record
   %
-  %          Description 
-  %          RECLIK = LIK_POISSON_RECAPPEND(RECLIK, RI, LIK)
-  %          takes a likelihood record structure RECLIK, record
-  %          index RI and likelihood structure LIK with the
-  %          current MCMC samples of the hyperparameters. Returns
-  %          RECLIK which contains all the old samples and the
-  %          current samples from LIK.
+  %  Description 
+  %    RECLIK = LIK_POISSON_RECAPPEND(RECLIK, RI, LIK) takes a
+  %    likelihood record structure RECLIK, record index RI and
+  %    likelihood structure LIK with the current MCMC samples of
+  %    the parameters. Returns RECLIK which contains all the old
+  %    samples and the current samples from LIK.
   % 
-  %  See also:
-  %  gp_mc
+  %  See also
+  %    GP_MC
 
     if nargin == 2
       reclik.type = 'Poisson';

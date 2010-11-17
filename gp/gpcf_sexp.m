@@ -39,11 +39,6 @@ function gpcf = gpcf_sexp(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin>0 && ischar(varargin{1}) && ismember(varargin{1},{'init' 'set'})
-    % remove init and set
-    varargin(1)=[];
-  end
-  
   ip=inputParser;
   ip.FunctionName = 'GPCF_SEXP';
   ip.addOptional('gpcf', [], @isstruct);
@@ -160,15 +155,14 @@ function gpcf = gpcf_sexp(varargin)
   end
 
   function [w,s] = gpcf_sexp_pak(gpcf)
-  %GPCF_SEXP_PAK  Combine GP covariance function hyper-parameters into
+  %GPCF_SEXP_PAK  Combine GP covariance function parameters into
   %               one vector.
   %
   %  Description
-  %    W = GPCF_SEXP_PAK(GPCF) takes a covariance function data
+  %    W = GPCF_SEXP_PAK(GPCF) takes a covariance function
   %    structure GPCF and combines the covariance function
   %    parameters and their hyperparameters into a single row
-  %    vector W and takes a logarithm of the covariance function
-  %    parameters.
+  %    vector W.
   %
   %       w = [ log(gpcf.magnSigma2)
   %             (hyperparameters of gpcf.magnSigma2)
@@ -216,11 +210,11 @@ function gpcf = gpcf_sexp(varargin)
   %
   %  Description
   %    [GPCF, W] = GPCF_SEXP_UNPAK(GPCF, W) takes a covariance
-  %    function data structure GPCF and a hyper-parameter vector W,
-  %    and returns a covariance function data structure identical
-  %    to the input, except that the covariance hyper-parameters
-  %    have been set to the values in W. Deletes the values set to
-  %    GPCF from W and returns the modified W.
+  %    function structure GPCF and a parameter vector W, and
+  %    returns a covariance function structure identical to the
+  %    input, except that the covariance parameters have been set
+  %    to the values in W. Deletes the values set to GPCF from W
+  %    and returns the modified W.
   %
   %    Assignment is inverse of  
   %       w = [ log(gpcf.magnSigma2)
@@ -269,9 +263,8 @@ function gpcf = gpcf_sexp(varargin)
   %    Jacobian of transformation exp(w) = th. (Note that the
   %    parameters are log transformed, when packed.)
   %
-  %    Also the log prior of the hyperparameters of the covariance
-  %    function parameters is added to E if hyper-hyperprior is
-  %    defined.
+  %    Also the -log prior of the hyperparameters of the covariance
+  %    function parameters is added to E if prior is defined.
   %
   %  See also
   %    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_G, GP_E
@@ -287,14 +280,14 @@ function gpcf = gpcf_sexp(varargin)
     
     [n, m] =size(x);
     if ~isempty(gpcf.p.magnSigma2)
-      eprior = eprior + feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, ...
+      eprior = eprior -feval(gpp.magnSigma2.fh.lp, gpcf.magnSigma2, ...
                               gpp.magnSigma2) - log(gpcf.magnSigma2);
     end
 
     if isfield(gpcf,'metric')
-      eprior = eprior + feval(gpcf.metric.fh.e, gpcf.metric, x, t);
+      eprior = eprior -feval(gpcf.metric.fh.lp, gpcf.metric);
     elseif ~isempty(gpp.lengthScale)
-      eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, ...
+      eprior = eprior -feval(gpp.lengthScale.fh.lp, gpcf.lengthScale, ...
                               gpp.lengthScale) - sum(log(gpcf.lengthScale));
     end
   end
@@ -305,26 +298,26 @@ function gpcf = gpcf_sexp(varargin)
   %
   %  Description
   %    [DKff, GPRIOR] = GPCF_SEXP_GHYPER(GPCF, X) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
+  %    vector of parameters
   %
   %    [DKff, GPRIOR] = GPCF_SEXP_GHYPER(GPCF, X, X2) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X2) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
+  %    vector of parameters
   %
   %    [DKff, GPRIOR] = GPCF_SEXP_GHYPER(GPCF, X, [], MASK) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the diagonal of gradients of
   %    covariance matrix Kff = k(X,X2) with respect to th (cell
   %    array with matrix elements), and GPRIOR = d log (p(th))/dth,
-  %    where th is the vector of hyperparameters. This is needed
-  %    for example with FIC sparse approximation.
+  %    where th is the vector of parameters. This is needed for
+  %    example with FIC sparse approximation.
   %
   %  See also
   %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_E, GP_G
@@ -352,11 +345,12 @@ function gpcf = gpcf_sexp(varargin)
       end
 
       if isfield(gpcf,'metric')
-        dist = feval(gpcf.metric.fh.distance, gpcf.metric, x);
-        [gdist, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x);
-        for i=1:length(gdist)
+        dist = feval(gpcf.metric.fh.dist, gpcf.metric, x);
+        distg = feval(gpcf.metric.fh.distg, gpcf.metric, x);
+        gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric);
+        for i=1:length(distg)
           ii1 = ii1+1;
-          DKff{ii1} = -Cdm.*dist.*gdist{i};
+          DKff{ii1} = -Cdm.*dist.*distg{i};
         end
       else
         if ~isempty(gpcf.p.lengthScale)
@@ -401,11 +395,12 @@ function gpcf = gpcf_sexp(varargin)
       end
       
       if isfield(gpcf,'metric')                
-        dist = feval(gpcf.metric.fh.distance, gpcf.metric, x, x2);
-        [gdist, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x, x2);
-        for i=1:length(gdist)
+        dist = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2);
+        distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, x2);
+        gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric);
+        for i=1:length(distg)
           ii1 = ii1+1;                    
-          DKff{ii1} = -K.*dist.*gdist{i};                    
+          DKff{ii1} = -K.*dist.*distg{i};                    
         end
       else
         if ~isempty(gpcf.p.lengthScale)
@@ -447,8 +442,9 @@ function gpcf = gpcf_sexp(varargin)
 
       if isfield(gpcf,'metric')
         dist = 0;
-        [gdist, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x, [], 1);
-        for i=1:length(gdist)
+        distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, [], 1);
+        gprior = -feval(gpcf.metric.fh.lpg, gpcf.metric, x);
+        for i=1:length(distg)
           ii1 = ii1+1;
           DKff{ii1} = 0;
         end
@@ -468,7 +464,7 @@ function gpcf = gpcf_sexp(varargin)
       if ~isempty(gpcf.p.magnSigma2)            
         % Evaluate the gprior with respect to magnSigma2
         i1 = i1+1;
-        ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
+        ggs = -feval(gpp.magnSigma2.fh.lpg, gpcf.magnSigma2, gpp.magnSigma2);
         gprior = ggs(i1).*gpcf.magnSigma2 - 1;
       end
       
@@ -483,7 +479,7 @@ function gpcf = gpcf_sexp(varargin)
         if ~isempty(gpcf.p.lengthScale)
           i1=i1+1; 
           lll = length(gpcf.lengthScale);
-          gg = feval(gpp.lengthScale.fh.g, gpcf.lengthScale, gpp.lengthScale);
+          gg = -feval(gpp.lengthScale.fh.lpg, gpcf.lengthScale, gpp.lengthScale);
           gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
           gprior = [gprior gg(lll+1:end)];
         end
@@ -498,14 +494,14 @@ function gpcf = gpcf_sexp(varargin)
   %GPCF_SEXP_GHYPERGRAD  Evaluate gradient of covariance function, of
   %                      which has been taken partial derivative with
   %                      respect to x, with respect to
-  %                      hyperparameters.
+  %                      parameters.
   %
   %  Description
   %    DKff = GPCF_SEXP_GHYPERGRAD(GPCF, X) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of derivatived covariance
-  %    matrix dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to
-  %    the hyperparameters
+  %    function structure GPCF, a matrix X of input vectors and
+  %    returns DKff, the gradients of derivatived covariance matrix
+  %    dK(df,f)/dhyp = d(d k(X,X)/dx)/dhyp, with respect to the
+  %    parameters
   %
   %    Evaluate: DKff{1:m} = d Kff / d magnSigma2
   %              DKff{m+1:2m} = d Kff / d lengthScale_m
@@ -593,13 +589,13 @@ function gpcf = gpcf_sexp(varargin)
   %GPCF_SEXP_GHYPERGRAD2  Evaluate gradient of covariance function, of
   %                       which has been taken partial derivatives
   %                       with respect to both input variables x,
-  %                       with respect to hyperparameters.
+  %                       with respect to parameters.
   %  Description
   %    DKff = GPCF_SEXP_GHYPERGRAD2(GPCF, X) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of derivatived covariance
-  %    matrix dK(df,df)/dhyp = d(d^2 k(X1,X2)/dX1dX2)/dhyp with
-  %    respect to the hyperparameters
+  %    function structure GPCF, a matrix X of input vectors and
+  %    returns DKff, the gradients of derivative covariance matrix
+  %    dK(df,df)/dhyp = d(d^2 k(X1,X2)/dX1dX2)/dhyp with respect to
+  %    the parameters
   %
   %    Evaluate: DKff{1-m} = d Kff / d magnSigma2
   %              DKff{m+1-2m} = d Kff / d lengthScale_m
@@ -799,13 +795,13 @@ function gpcf = gpcf_sexp(varargin)
   %
   %  Description
   %    DKff = GPCF_SEXP_GHYPER(GPCF, X) takes a covariance function
-  %    data structure GPCF, a matrix X of input vectors and returns
+  %    structure GPCF, a matrix X of input vectors and returns
   %    DKff, the gradients of covariance matrix Kff = k(X,X) with
   %    respect to X (cell array with matrix elements)
   %
   %    DKff = GPCF_SEXP_GHYPER(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of covariance matrix Kff =
+  %    function structure GPCF, a matrix X of input vectors and
+  %    returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
   %
   %  See also
@@ -816,7 +812,7 @@ function gpcf = gpcf_sexp(varargin)
     if nargin == 2
       K = feval(gpcf.fh.trcov, gpcf, x);
       if isfield(gpcf,'metric')
-        dist = feval(gpcf.metric.fh.distance, gpcf.metric, x);
+        dist = feval(gpcf.metric.fh.dist, gpcf.metric, x);
         gdist = feval(gpcf.metric.fh.ginput, gpcf.metric, x);
         for i=1:length(gdist)
           ii1 = ii1+1;
@@ -847,7 +843,7 @@ function gpcf = gpcf_sexp(varargin)
       K = feval(gpcf.fh.cov, gpcf, x, x2);
 
       if isfield(gpcf,'metric')
-        dist = feval(gpcf.metric.fh.distance, gpcf.metric, x, x2);
+        dist = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2);
         gdist = feval(gpcf.metric.fh.ginput, gpcf.metric, x, x2);
         for i=1:length(gdist)
           ii1 = ii1+1;
@@ -883,13 +879,13 @@ function gpcf = gpcf_sexp(varargin)
   %
   %  Description
   %    DKff = GPCF_SEXP_GINPUT2(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of twice derivatived
-  %    covariance matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array
-  %    with matrix elements). Input variable's dimensions are
-  %    expected to be same. The function returns also DKff1 and
-  %    DKff2 which are parts of DKff and needed with GHYPERGRAD2. 
-  %    DKff = DKff1 - DKff2.
+  %    function structure GPCF, a matrix X of input vectors and
+  %    returns DKff, the gradients of twice derivatived covariance
+  %    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+  %    elements). Input variable's dimensions are expected to be
+  %    same. The function returns also DKff1 and DKff2 which are
+  %    parts of DKff and needed with GHYPERGRAD2. DKff = DKff1 -
+  %    DKff2.
   %   
   %  See also
   %    GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_GHYPERGRAD2 
@@ -936,12 +932,12 @@ function gpcf = gpcf_sexp(varargin)
   %
   %  Description
   %    DKff = GPCF_SEXP_GINPUT3(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of twice derivatived
-  %    covariance matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array
-  %    with matrix elements). The derivative is calculated in
-  %    multidimensional problem between input's observation
-  %    dimensions which are not same .
+  %    function structure GPCF, a matrix X of input vectors and
+  %    returns DKff, the gradients of twice derivatived covariance
+  %    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
+  %    elements). The derivative is calculated in multidimensional
+  %    problem between input's observation dimensions which are not
+  %    same .
   %   
   %  See also
   %    GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_GHYPERGRAD2 
@@ -990,13 +986,13 @@ function gpcf = gpcf_sexp(varargin)
   %
   %  Description
   %    DKff = GPCF_SEXP_GHYPER(GPCF, X) takes a covariance function
-  %    data structure GPCF, a matrix X of input vectors and returns
+  %    structure GPCF, a matrix X of input vectors and returns
   %    DKff, the gradients of covariance matrix Kff = k(X,X) with
   %    respect to X (whole matrix)
   %
   %    DKff = GPCF_SEXP_GHYPER(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of covariance matrix Kff =
+  %    function structure GPCF, a matrix X of input vectors and
+  %    returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (whole matrix).
   %
   %  See also
@@ -1062,7 +1058,7 @@ function gpcf = gpcf_sexp(varargin)
     end
 
     if isfield(gpcf,'metric')
-      dist = feval(gpcf.metric.fh.distance, gpcf.metric, x1, x2).^2;
+      dist = feval(gpcf.metric.fh.dist, gpcf.metric, x1, x2).^2;
       dist(dist<eps) = 0;
       C = gpcf.magnSigma2.*exp(-dist./2);            
     else
@@ -1114,7 +1110,7 @@ function gpcf = gpcf_sexp(varargin)
       for ii1=1:n-1
         d = zeros(n-ii1,1);
         col_ind = ii1+1:n;
-        d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
+        d = feval(gpcf.metric.fh.dist, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
         C(col_ind,ii1) = d./2;
       end
       C(C<eps) = 0;
@@ -1173,12 +1169,11 @@ function gpcf = gpcf_sexp(varargin)
   %RECAPPEND  Record append
   %
   %  Description
-  %    RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF)
-  %    takes a covariance function record structure RECCF, record
-  %    index RI and covariance function structure GPCF with the
-  %    current MCMC samples of the hyperparameters. Returns
-  %    RECCF which contains all the old samples and the
-  %    current samples from GPCF .
+  %    RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes a
+  %    covariance function record structure RECCF, record index RI
+  %    and covariance function structure GPCF with the current MCMC
+  %    samples of the parameters. Returns RECCF which contains all
+  %    the old samples and the current samples from GPCF .
   %
   %  See also
   %    GP_MC and GP_MC -> RECAPPEND

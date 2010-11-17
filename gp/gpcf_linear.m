@@ -155,8 +155,8 @@ function gpcf = gpcf_linear(varargin)
     %
     %   Description
     %   [GPCF, W] = GPCF_LINEAR_UNPAK(GPCF, W) takes a covariance
-    %   function data structure GPCF and a hyper-parameter vector W,
-    %   and returns a covariance function data structure identical to
+    %   function structure GPCF and a hyper-parameter vector W,
+    %   and returns a covariance function structure identical to
     %   the input, except that the covariance hyper-parameters have
     %   been set to the values in W. Deletes the values set to GPCF
     %   from W and returns the modified W.
@@ -194,7 +194,7 @@ function gpcf = gpcf_linear(varargin)
     %   transformed, when packed.) 
     %
     %   Also the log prior of the hyperparameters of the covariance
-    %   function parameters is added to E if hyper-hyperprior is
+    %   function parameters is added to E if hyperprior is
     %   defined.
     %
     %  See also
@@ -211,35 +211,35 @@ function gpcf = gpcf_linear(varargin)
         gpp=gpcf.p;
 
         if ~isempty(gpp.coeffSigma2)
-            eprior = feval(gpp.coeffSigma2.fh.e, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
+            eprior = -feval(gpp.coeffSigma2.fh.lp, gpcf.coeffSigma2, gpp.coeffSigma2) - sum(log(gpcf.coeffSigma2));
         end
     end
 
     function [DKff, gprior]  = gpcf_linear_ghyper(gpcf, x, x2, mask)  % , t, g, gdata, gprior, varargin
     %GPCF_LINEAR_GHYPER     Evaluate gradient of covariance function and hyper-prior with 
-    %                     respect to the hyperparameters.
+    %                     respect to the parameters.
     %
     %   Description
     %   [DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
-    %   vector of hyperparameters
+    %   vector of parameters.
     %
     %   [DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X, X2) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
-    %   vector of hyperparameters
+    %   vector of parameters.
     %
     %   [DKff, GPRIOR] = GPCF_LINEAR_GHYPER(GPCF, X, [], MASK) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
     %   with matrix elements), and GPRIOR = d log (p(th))/dth, where
-    %   th is the vector of hyperparameters. This is needed for
+    %   th is the vector of parameters. This is needed for
     %   example with FIC sparse approximation.
     %
     %  See also
@@ -346,7 +346,7 @@ function gpcf = gpcf_linear(varargin)
             
             if ~isempty(gpcf.p.coeffSigma2)
                 lll = length(gpcf.coeffSigma2);
-                gg = feval(gpp.coeffSigma2.fh.g, gpcf.coeffSigma2, gpp.coeffSigma2);
+                gg = -feval(gpp.coeffSigma2.fh.lpg, gpcf.coeffSigma2, gpp.coeffSigma2);
                 gprior = gg(1:lll).*gpcf.coeffSigma2 - 1;
                 gprior = [gprior gg(lll+1:end)];
             end
@@ -360,13 +360,13 @@ function gpcf = gpcf_linear(varargin)
     %
     %   Description
     %   DKff = GPCF_LINEAR_GHYPER(GPCF, X) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
     %   DKff = GPCF_LINEAR_GHYPER(GPCF, X, X2) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
@@ -555,7 +555,7 @@ function gpcf = gpcf_linear(varargin)
     %          RECCF = GPCF_LINEAR_RECAPPEND(RECCF, RI, GPCF)
     %          takes a covariance function record structure RECCF, record
     %          index RI and covariance function structure GPCF with the
-    %          current MCMC samples of the hyperparameters. Returns
+    %          current MCMC samples of the parameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .
     %

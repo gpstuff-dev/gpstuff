@@ -4,16 +4,15 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %  Description
 %   [DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
 %   number of parameters as defined by Spiegelhalter et al (2002). 
-%   The statistics are evaluated with focus on hyperparameters or
-%   latent variables depending on the input GP (See Spiegelhalter
-%   et al (2002) for discussion on the parameters in focus in
-%   Bayesian model). X contains training inputs and Y training
-%   outputs.
+%   The statistics are evaluated with focus on parameters or latent
+%   variables depending on the input GP (See Spiegelhalter et al
+%   (2002) for discussion on the parameters in focus in Bayesian
+%   model). X contains training inputs and Y training outputs.
 %
 %   DIC and p_eff are evaluated as follows:
 %     1) GP is a record structure from gp_mc or an array of GPs from gp_ia, 
 %
-%        In this case the focus is in the hyperparameters (the
+%        In this case the focus is in the parameters (the
 %        parameters of the covariance function and the likelihood). 
 %        The DIC and the effective number of parameters are
 %        evaluated as described in equation (6.10) of Bayesian Data
@@ -32,20 +31,20 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %        Laplace approximation, depending which has been used in
 %        gp_ia.
 %
-%     2) GP is Gaussian process data structure
+%     2) GP is Gaussian process structure
 %
 %        In this case the focus is in the latent variables and the
-%        hyperparameters are considered fixed. The mean of the
+%        parameters are considered fixed. The mean of the
 %        deviance is now evaluated as
 %               E[D(y, f)|y] = -2 \int log(p(y|f) p(f|th) df
 %
 %     3) GP is a record structure from gp_mc or an array of GPs from 
 %        gp_ia, but the focus is defined to be both latent-variables 
-%        and hyperparameters, 
+%        and parameters, 
 %               [DIC, P_EFF] = GP_DIC(GP, X, Y, 'focus', 'all')
 %
 %        In this case the focus will be the latent variables and
-%        hyperparameters. Thus now we will use the posterior p(f,
+%        parameters. Thus now we will use the posterior p(f,
 %        th|y) instead of the conditional posterior p(f|th,y) or
 %        posterior marginal p(th|y). The DIC and the effective
 %        number of parameters are evaluated as described in
@@ -57,17 +56,17 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %
 %        where all the expectations are taken over p(f,th|y).
 %       
-%       See also
-%            GP_PEFF, DEMO_MODELASSESMENT1
-%   
-%       References: 
+%  See also
+%    GP_PEFF, DEMO_MODELASSESMENT1
 %
-%         Spiegelhalter, Best, Carlin and van der Linde (2002). 
-%         Bayesian measures of model complexity and fit. J. R. 
-%         Statist. Soc. B, 64, 583-639.
+%  References: 
+%
+%    Spiegelhalter, Best, Carlin and van der Linde (2002). Bayesian
+%    measures of model complexity and fit. J. R. Statist. Soc. B,
+%    64, 583-639.
 %         
-%         Gelman, Carlin, Stern and Rubin (2004) Bayesian Data
-%         Analysis, second edition. Chapman & Hall / CRC.
+%    Gelman, Carlin, Stern and Rubin (2004) Bayesian Data Analysis,
+%    second edition. Chapman & Hall / CRC.
 %   
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
@@ -81,7 +80,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
   ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('focus', 'hyper', @(x) ismember(x,{'hyper','latent','all'}))
+  ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
@@ -109,7 +108,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     if isfield(gp, 'etr')
       % MCMC solution
       if nargin < 4 || isempty(focus)
-        focus = 'hyper';
+        focus = 'param';
       end
     else
       % A single GP
@@ -132,10 +131,10 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     
     switch focus
       
-      case 'hyper'
-        % An MCMC solution and focus in hyperparameters
+      case 'param'
+        % An MCMC solution and focus in parameters
         
-        % evaluate the mean of the hyperparameters
+        % evaluate the mean of the parameters
         if strcmp(gp.type, 'PIC')
           tr_index = gp.tr_index;
           gp = rmfield(gp, 'tr_index');
@@ -247,11 +246,11 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
   elseif iscell(gp)
     % gp_ia solution
     if nargin < 4 || isempty(focus)
-      focus = 'hyper';
+      focus = 'param';
     end
     if strcmp(focus, 'latent')
       error(['gp_dic: The focus can be ''latent'' only if single GP structure is given. '...
-             'With IA cell array possible options are ''hyper'' and ''all''.            ']);
+             'With IA cell array possible options are ''param'' and ''all''.            ']);
     end
     
     switch gp{1}.type
@@ -280,8 +279,8 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     
     switch focus
       
-      case 'hyper'
-        % An IA solution and focus in hyperparameters
+      case 'param'
+        % An IA solution and focus in parameters
         
         for i = 1:length(gp)
           Gp = gp{i};

@@ -2,12 +2,12 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %GPEP_E  Do Expectation propagation and return marginal log posterior estimate
 %
 %  Description
-%    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
+%    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP structure GP
 %    together with a matrix X of input vectors and a matrix Y of
 %    target vectors, and finds the EP approximation for the
 %    conditional posterior p(Y | X, th), where th is the
-%    hyperparameters. Returns the energy at th (see below). Each
-%    row of X corresponds to one input vector and each row of Y
+%    parameters. Returns the energy at th (see below). Each row of
+%    X corresponds to one input vector and each row of Y
 %    corresponds to one target vector.
 %
 %    [E, EDATA, EPRIOR] = GPEP_E(W, GP, X, Y, OPTIONS) returns also
@@ -16,7 +16,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %    The energy is minus log posterior cost function for th:
 %      E = EDATA + EPRIOR 
 %        = - log p(Y|X, th) - log p(th),
-%      where th represents the hyperparameters (lengthScale,
+%      where th represents the parameters (lengthScale,
 %      magnSigma2...), X is inputs and Y is observations.
 %
 %    OPTIONS is optional parameter-value pair
@@ -31,10 +31,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %  Description 2
 %    Additional properties meant only for internal use.
 %  
-%    GP = GPEP_E('init', GP) takes a GP data structure GP and
+%    GP = GPEP_E('init', GP) takes a GP structure GP and
 %    initializes required fields for the EP algorithm.
 %
-%    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP data structure GP
+%    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP structure GP
 %  
 %    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i]
 %      = GPEP_E(w, gp, x, y, options)
@@ -117,7 +117,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       muvec_i = muvec_i0;
       sigm2vec_i = sigm2vec_i0;
     else
-      % The hyperparameters or data have changed since
+      % The parameters or data have changed since
       % the last call for gpep_e. In this case we need to
       % re-evaluate the EP approximation
       gp=gp_unpak(gp, w);
@@ -1265,7 +1265,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       % functions
       if isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior + feval(lik.fh.eprior, lik);
+        eprior = eprior -feval(lik.fh.lp, lik);
       end
 
       % The last things to do

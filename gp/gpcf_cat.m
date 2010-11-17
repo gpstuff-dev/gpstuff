@@ -68,7 +68,7 @@ function gpcf = gpcf_cat(varargin)
   end
 
   function [w,s] = gpcf_cat_pak(gpcf, w)
-  %GPCF_CAT_PAK  Combine GP covariance function hyper-parameters into
+  %GPCF_CAT_PAK  Combine GP covariance function parameters into
   %              one vector.
   %
   %  Description
@@ -92,9 +92,9 @@ function gpcf = gpcf_cat(varargin)
   %
   %  Description
   %    [GPCF, W] = GPCF_CAT_UNPAK(GPCF, W) takes a covariance
-  %    function data structure GPCF and a hyper-parameter vector W,
-  %    and returns a covariance function data structure identical
-  %    to the input, except that the covariance hyper-parameters
+  %    function structure GPCF and a parameter vector W,
+  %    and returns a covariance function structure identical
+  %    to the input, except that the covariance parameters
   %    have been set to the values in W. Deletes the values set to
   %    GPCF from W and returns the modified W.
   %
@@ -114,8 +114,7 @@ function gpcf = gpcf_cat(varargin)
   %    is the Jacobian of transformation g(w) = th.
   %
   %    Also the log prior of the hyperparameters of the covariance
-  %    function parameters is added to E if hyper-hyperprior is
-  %    defined.
+  %    function parameters is added to E if hyperprior is defined.
   %
   %  See also
   %    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_G, GP_E
@@ -126,29 +125,29 @@ function gpcf = gpcf_cat(varargin)
 
   function [DKff, gprior]  = gpcf_cat_ghyper(gpcf, x, x2, mask)
   %GPCF_CAT_GHYPER  Evaluate gradient of covariance function and
-  %                 hyper-prior with respect to the hyperparameters.
+  %                 prior with respect to the parameters.
   %
   %  Description
   %    [DKff, GPRIOR] = GPCF_CAT_GHYPER(GPCF, X) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
+  %    function structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X) with respect to th (cell array with matrix elements),
   %    and GPRIOR = d log (p(th))/dth, where th is the vector of
-  %    hyperparameters
+  %    parameters.
   %
   %    [DKff, GPRIOR] = GPCF_CAT_GHYPER(GPCF, X, X2) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X2) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
+  %    vector of parameters.
   %
   %    [DKff, GPRIOR] = GPCF_CAT_GHYPER(GPCF, X, [], MASK) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the diagonal of gradients of
   %    covariance matrix Kff = k(X,X2) with respect to th (cell
   %    array with matrix elements), and GPRIOR = d log (p(th))/dth,
-  %    where th is the vector of hyperparameters. This is needed
+  %    where th is the vector of parameters. This is needed
   %    for example with FIC sparse approximation.
   %
   %  See also
@@ -165,12 +164,12 @@ function gpcf = gpcf_cat(varargin)
   %
   %  Description
   %    DKff = GPCF_CAT_GHYPER(GPCF, X) takes a covariance function
-  %    data structure GPCF, a matrix X of input vectors and returns
+  %    structure GPCF, a matrix X of input vectors and returns
   %    DKff, the gradients of covariance matrix Kff = k(X,X) with
   %    respect to X (cell array with matrix elements)
   %
   %    DKff = GPCF_CAT_GHYPER(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
+  %    function structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
   %
@@ -291,7 +290,7 @@ function gpcf = gpcf_cat(varargin)
   %    RECCF = GPCF_CAT_RECAPPEND(RECCF, RI, GPCF) takes a
   %    covariance function record structure RECCF, record index RI
   %    and covariance function structure GPCF with the current MCMC
-  %    samples of the hyperparameters. Returns RECCF which contains
+  %    samples of the parameters. Returns RECCF which contains
   %    all the old samples and the current samples from GPCF .
   %
   %  See also

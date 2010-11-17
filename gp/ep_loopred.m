@@ -3,7 +3,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
 %
 %  Description
 %    [EFT, VARFT, EYT, VARYT, PYT] = EP_LOOPRED(GP, X, Y, OPTIONS)
-%    takes a GP data structure GP together with a matrix XT of
+%    takes a GP structure GP together with a matrix XT of
 %    input vectors, matrix X of training inputs and vector Y of
 %    training targets, and evaluates the leave-one-out predictive
 %    distribution at inputs X. Returns a posterior mean EFT and

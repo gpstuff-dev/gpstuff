@@ -23,14 +23,14 @@
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters.
+%    covariance function and th its parameters.
 %
 %    Since both the likelihood and prior are Gaussian, we obtain a
 %    Gaussian marginal likelihood
 %
 %        p(y|th) = N(0, Kf + Kg + I*s^2).
 %    
-%    By placing a hyperprior for hyperparameters, p(th), we can
+%    By placing a prior for parameters, p(th), we can
 %    find the maximum a posterior (MAP) estimate for them by
 %    maximizing
 %
@@ -38,11 +38,11 @@
 %         th
 %   
 %    If we want to find an approximation for the posterior of the
-%    hyperparameters, we can sample them using Markov chain Monte
+%    parameters, we can sample them using Markov chain Monte
 %    Carlo (MCMC) methods.
 %
 %    After finding MAP estimate or posterior samples of
-%    hyperparameters, we can use them to make predictions for f.
+%    parameters, we can use them to make predictions for f.
 %
 %    For more detailed discussion of Gaussian process regression
 %    see, for example, Rasmussen and Williams (2006).
@@ -105,7 +105,7 @@ y = y-avgy;
 % --- Construct the model ---
 % 
 % First create squared exponential covariance function with ARD and 
-% Gaussian noise data structures...
+% Gaussian noise structures...
 gpcf1 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 3);
 gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1);
 lik = lik_gaussian();
@@ -116,14 +116,14 @@ pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2})
 
 % -----------------------------
 % --- Conduct the inference ---
 %
 % We will make the inference first by finding a maximum a posterior estimate 
-% for the hyperparameters via gradient based optimization.  
+% for the parameters via gradient based optimization.  
 
 % --- MAP estimate using scaled conjugate gradient method ---
 % Set the options for the scaled conjugate optimization
@@ -151,7 +151,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 % -------------------------------------------
 % INFERENCE WITH PERIODIC COVARIANCE FUNCTION
 
-% With the increasing number of hyperparameters, the optimisation takes
+% With the increasing number of parameters, the optimisation takes
 % longer, especially with period length optimisation included. The results
 % are however significantly better. Both models fit the data well, yet only
 % the one with the periodic component has real predictive power.
@@ -178,14 +178,14 @@ gpcfp = gpcf_periodic(gpcfp, 'lengthScale_prior', pl, 'magnSigma2_prior', pl);
 gpcfp = gpcf_periodic(gpcfp, 'lengthScale_sexp_prior', pl, 'period_prior', pn);
 lik = lik_gaussian(lik, 'sigma2_prior', pn);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2}) 
 
 % -----------------------------
 % --- Conduct the inference ---
 %
-% We will make the inference first by finding a maximum a posterior estimate 
-% for the hyperparameters via gradient based optimization.  
+% We will make the inference first by finding a maximum a posterior
+% estimate for the parameters via gradient based optimization.
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 % Set the options for the scaled conjugate optimization
@@ -290,7 +290,7 @@ likn = gpcf_neuralnetwork(likn, 'biasSigma2_prior', pn, 'weightSigma2_prior', pp
 gpcfp = gpcf_periodic(gpcfp, 'lengthScale_prior', ppl, 'magnSigma2_prior', ppm,  'lengthScale_sexp_prior', pl);
 lik = lik_gaussian(lik, 'sigma2_prior', pn);
 
-% ... Create the GP data structure, Poisson likelihood with
+% ... Create the GP structure, Poisson likelihood with
 % Expectation Propagation as approximation method
 z=repmat(mean(y),length(y),1);
 gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1,gpcfp,gpcf2,likn})   

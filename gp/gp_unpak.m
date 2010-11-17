@@ -1,17 +1,17 @@
 function gp = gp_unpak(gp, w, param)
-%GP_UNPAK  Set GP hyper-parameters from vector to structure
+%GP_UNPAK  Set GP parameters from vector to structure
 %
 %  Description
 %    GP = GP_UNPAK(GP, W, PARAM) takes an Gaussian Process data
 %    structure GP and a parameter vector W, and returns a Gaussian
-%    Process data structure identical to the input, except that the
+%    Process structure identical to the input, except that the
 %    parameters has been set to the ones in W. PARAM defines which
 %    parameters are present in the W vector. If PARAM is not given
 %    the function unpacks all parameters.
 %
 %    Each of the following strings in PARAM defines one group of
 %    parameters to unpack:
-%      covariance  - unpack hyperparameters of covariance function
+%      covariance  - unpack parameters of covariance function
 %      likelihood  - unpack parameters of likelihood
 %      inducing    - unpack inducing inputs (in sparse approximations): 
 %                    W = gp.X_u(:)
@@ -57,7 +57,7 @@ if size(w,1) > 1
   error(' The vector to be packed has to be row vector! \n')
 end
 
-% Unpack the hyperparameters of covariance functions
+% Unpack the parameters of covariance functions
 if ~isempty(strfind(param, 'covariance'))
   ncf = length(gp.cf);
   
@@ -69,7 +69,7 @@ if ~isempty(strfind(param, 'covariance'))
   
 end
 
-% Unpack the hyperparameters of likelihood function
+% Unpack the parameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
   [gp.lik w] = feval(gp.lik.fh.unpak, gp.lik, w);
 end

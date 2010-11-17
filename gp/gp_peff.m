@@ -4,13 +4,13 @@ function p_eff = gp_peff(gp, x, y, varargin);
 %
 %	Description
 %        P_EFF = EP_PEFF(GP, X, Y) Takes the Gaussian process
-%        data structure GP, training inputs X and training outputs
+%        structure GP, training inputs X and training outputs
 %        and returns the effective number of parameters as defined
 %        by Spiegelhalter et al  (2002).
 %
 %       NOTE!
 %        The effective number of parameters is evaluated with focus
-%        on latent variable f. This means that the hyperparameters
+%        on latent variable f. This means that the parameters
 %        th (parameters of covariance function and likelihood) are
 %        considered fixed. (See Spiegelhalter et al (2002) for
 %        discussion on the parameters in focus in Bayesian model). 
@@ -21,7 +21,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
 %        for discussion).
 %
 %        If you want to evaluate the effective number of
-%        hyperparameters see GP_DIC.
+%        parameters see GP_DIC.
 %
 %        The effective number of parameters is approximated as follows:
 %

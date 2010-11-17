@@ -194,8 +194,8 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %
     %  Description
     %   [GPCF, W] = GPCF_NEURALNETWORK_UNPAK(GPCF, W) takes a covariance
-    %   function data structure GPCF and a hyper-parameter vector W,
-    %   and returns a covariance function data structure identical to
+    %   function structure GPCF and a hyper-parameter vector W,
+    %   and returns a covariance function structure identical to
     %   the input, except that the covariance hyper-parameters have
     %   been set to the values in W. Deletes the values set to GPCF
     %   from W and returns the modified W.
@@ -243,7 +243,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %   transformed, when packed.) 
     %
     %   Also the log prior of the hyperparameters of the covariance
-    %   function parameters is added to E if hyper-hyperprior is
+    %   function parameters is added to E if hyperprior is
     %   defined.
     %
     %  See also
@@ -260,10 +260,10 @@ function gpcf = gpcf_neuralnetwork(varargin)
         gpp=gpcf.p;
 
         if ~isempty(gpp.biasSigma2)
-            eprior = feval(gpp.biasSigma2.fh.e, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
+            eprior = -feval(gpp.biasSigma2.fh.lp, gpcf.biasSigma2, gpp.biasSigma2) - log(gpcf.biasSigma2);
         end
         if ~isempty(gpp.weightSigma2)
-            eprior = eprior + feval(gpp.weightSigma2.fh.e, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
+            eprior = eprior -feval(gpp.weightSigma2.fh.lp, gpcf.weightSigma2, gpp.weightSigma2) - sum(log(gpcf.weightSigma2));
         end
 
     end
@@ -274,25 +274,25 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %
     %  Description
     %   [DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
-    %   vector of hyperparameters
+    %   vector of parameters.
     %
     %   [DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X, X2) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to th (cell array with matrix
     %   elements), and GPRIOR = d log (p(th))/dth, where th is the
-    %   vector of hyperparameters
+    %   vector of parameters.
     %
     %   [DKff, GPRIOR] = GPCF_NEURALNETWORK_GHYPER(GPCF, X, [], MASK) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the diagonal of gradients of
     %   covariance matrix Kff = k(X,X2) with respect to th (cell array
     %   with matrix elements), and GPRIOR = d log (p(th))/dth, where
-    %   th is the vector of hyperparameters. This is needed for
+    %   th is the vector of parameters.. This is needed for
     %   example with FIC sparse approximation.
     %
     %  See also
@@ -487,14 +487,14 @@ function gpcf = gpcf_neuralnetwork(varargin)
             if ~isempty(gpcf.p.biasSigma2)
                 % Evaluate the gprior with respect to magnSigma2
                 i1 = 1;
-                ggs = feval(gpp.biasSigma2.fh.g, gpcf.biasSigma2, gpp.biasSigma2);
+                ggs = -feval(gpp.biasSigma2.fh.lpg, gpcf.biasSigma2, gpp.biasSigma2);
                 gprior = ggs(i1).*gpcf.biasSigma2 - 1;
             end
             
             if ~isempty(gpcf.p.weightSigma2)
                 i1=i1+1; 
                 lll = length(gpcf.weightSigma2);
-                gg = feval(gpp.weightSigma2.fh.g, gpcf.weightSigma2, gpp.weightSigma2);
+                gg = -feval(gpp.weightSigma2.fh.lpg, gpcf.weightSigma2, gpp.weightSigma2);
                 gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.weightSigma2 - 1;
                 gprior = [gprior gg(lll+1:end)];
             end
@@ -511,13 +511,13 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %
     %  Description
     %   DKff = GPCF_NEURALNETWORK_GHYPER(GPCF, X) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X) with respect to X (cell array with matrix
     %   elements)
     %
     %   DKff = GPCF_NEURALNETWORK_GHYPER(GPCF, X, X2) 
-    %   takes a covariance function data structure GPCF, a matrix X of
+    %   takes a covariance function structure GPCF, a matrix X of
     %   input vectors and returns DKff, the gradients of covariance
     %   matrix Kff = k(X,X2) with respect to X (cell array with matrix
     %   elements).
@@ -756,7 +756,7 @@ function gpcf = gpcf_neuralnetwork(varargin)
     %          RECCF = GPCF_NEURALNETWORK_RECAPPEND(RECCF, RI, GPCF)
     %          takes a covariance function record structure RECCF, record
     %          index RI and covariance function structure GPCF with the
-    %          current MCMC samples of the hyperparameters. Returns
+    %          current MCMC samples of the parameters. Returns
     %          RECCF which contains all the old samples and the
     %          current samples from GPCF .
     %

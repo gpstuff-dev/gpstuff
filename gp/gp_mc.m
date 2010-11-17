@@ -222,7 +222,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
       
-      % --- Sample hyperparameters with HMC ------------- 
+      % --- Sample parameters with HMC ------------- 
       if ~isempty(opt.hmc_opt)
         if isfield(opt.hmc_opt,'infer_params')
           infer_params = gp.infer_params;
@@ -247,7 +247,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
       
-      % --- Sample hyperparameters with SLS ------------- 
+      % --- Sample parameters with SLS ------------- 
       if ~isempty(opt.sls_opt)
         if isfield(opt.sls_opt,'infer_params')
           infer_params = gp.infer_params;
@@ -275,8 +275,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         infer_params = gp.infer_params;
         gp.infer_params = 'likelihood';
         w = gp_pak(gp);
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z)+feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
-        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,lik,w),y,f,'hyper',z)+feval(lik.fh.gprior,feval(lik.fh.unpak,lik,w)));
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z)-feval(lik.fh.lp,feval(lik.fh.unpak,lik,w)));
+        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,lik,w),y,f,'param',z)-feval(lik.fh.lpg,feval(lik.fh.unpak,lik,w)));
         % Set the state
         hmc2('state',lik_hmc_rstate);
         [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);
@@ -295,7 +295,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       % --- Sample the likelihood parameters with SLS ------------- 
       if ~isempty(opt.lik_sls_opt)
         w = gp_pak(gp, 'likelihood');
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) + feval(lik.fh.eprior,feval(lik.fh.unpak,lik,w)));
+        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) -feval(lik.fh.lp,feval(lik.fh.unpak,lik,w)));
         [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
         if isfield(diagns, 'opt')
           opt.lik_sls_opt = diagns.opt;
@@ -474,11 +474,13 @@ function e = gpmc_e(w, gp, x, y, f, z)
   if ~isempty(strfind(gp.infer_params, 'covariance'))
     e=e+gp_e(w, gp, x, f, 'z', z);
   end
-  if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
+  if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
+      && ~isfield(gp.lik.fh,'trcov') ...
+      && isfield(gp.lik.fh,'lp')
     % Evaluate the contribution to the error from non-Gaussian likelihood
     gp=gp_unpak(gp,w);
     lik=gp.lik;
-    e=e-feval(lik.fh.ll,lik,y,f,z)+feval(lik.fh.eprior,lik);
+    e=e-feval(lik.fh.ll,lik,y,f,z)-feval(lik.fh.lp,lik);
   end
  
 end
@@ -489,11 +491,13 @@ function g = gpmc_g(w, gp, x, y, f, z)
   if ~isempty(strfind(gp.infer_params, 'covariance'))
     g=[g gp_g(w, gp, x, f, 'z', z)];
   end
-  if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isfield(gp.lik.fh,'trcov')
+  if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
+      && ~isfield(gp.lik.fh,'trcov') ...
+      && isfield(gp.lik.fh,'lp')
     % Evaluate the contribution to the gradient from non-Gaussian likelihood
     gp=gp_unpak(gp,w);
     lik=gp.lik;
-    g=[g -feval(lik.fh.llg,lik,y,f,'hyper',z)+feval(lik.fh.gprior,lik)];
+    g=[g -feval(lik.fh.llg,lik,y,f,'param',z)-feval(lik.fh.lpg,lik)];
   end
 
 end

@@ -28,69 +28,46 @@ function lik = lik_binomial(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-% allow use with or without init and set options
-  if nargin<1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'LIK_BINOMIAL';
+  ip.addOptional('lik', [], @isstruct);
+  ip.parse(varargin{:});
+  lik=ip.Results.lik;
+
+  if isempty(lik)
+    init=true;
+    lik.type = 'Binomial';
   else
-    error('Unknown first argument');
+    if ~isfield(lik,'type') && ~isequal(lik.type,'Binomial')
+      error('First argument does not seem to be a valid likelihood function structure')
+    end
+    init=false;
   end
 
-  switch do
-    case 'init'
-      % Initialize the likelihood structure
-      lik.type = 'Binomial';
-
-      % Set the function handles to the nested functions
-      lik.fh.pak = @lik_binomial_pak;
-      lik.fh.unpak = @lik_binomial_unpak;
-      lik.fh.ll = @lik_binomial_ll;
-      lik.fh.llg = @lik_binomial_llg;    
-      lik.fh.llg2 = @lik_binomial_llg2;
-      lik.fh.llg3 = @lik_binomial_llg3;
-      lik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
-      lik.fh.predy = @lik_binomial_predy;
-      lik.fh.recappend = @lik_binomial_recappend;
-
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
-
-    case 'set'
-      % No paramaters to set
-      if numel(varargin)~=1
-        error('Wrong number of arguments')
-      end
-      
-      % Pass the likelihood
-      lik = varargin{1};
-
+  if init
+    % Set the function handles to the nested functions
+    lik.fh.pak = @lik_binomial_pak;
+    lik.fh.unpak = @lik_binomial_unpak;
+    lik.fh.ll = @lik_binomial_ll;
+    lik.fh.llg = @lik_binomial_llg;    
+    lik.fh.llg2 = @lik_binomial_llg2;
+    lik.fh.llg3 = @lik_binomial_llg3;
+    lik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
+    lik.fh.predy = @lik_binomial_predy;
+    lik.fh.recappend = @lik_binomial_recappend;
   end
-
 
   function [w,s] = lik_binomial_pak(lik)
-  %LIK_BINOMIAL_PAK    Combine likelihood parameters into one vector.
+  %LIK_BINOMIAL_PAK  Combine likelihood parameters into one vector.
   %
-  %     Description 
-  %   W = LIK_BINOMIAL_PAK(LIK) takes a likelihood data
-  %   structure LIK and returns an empty verctor W. If Binomial
-  %   likelihood had hyperparameters this would combine them into a
-  %   single row vector W (see e.g. likelih_negbin).
-  %       
+  %  Description 
+  %    W = LIK_BINOMIAL_PAK(LIK) takes a likelihood structure LIK
+  %    and returns an empty verctor W. If Binomial likelihood had
+  %    parameters this would combine them into a single row vector
+  %    W (see e.g. likelih_negbin).
   %
-  %     See also
-  %     LIK_NEGBIN_UNPAK, GP_PAK
+  %  See also
+  %    LIK_NEGBIN_UNPAK, GP_PAK
 
     w = []; s = {};
   end
@@ -99,15 +76,14 @@ function lik = lik_binomial(varargin)
   function [lik, w] = lik_binomial_unpak(lik, w)
   %LIK_BINOMIAL_UNPAK  Extract likelihood parameters from the vector.
   %
-  %     Description
-  %   W = LIK_BINOMIAL_UNPAK(W, LIK) Doesn't do anything.
+  %  Description
+  %    W = LIK_BINOMIAL_UNPAK(W, LIK) Doesn't do anything.
   % 
-  %   If Binomial likelihood had hyperparameters this would extracts
-  %   them parameters from the vector W to the LIK structure.
-  %       
+  %    If Binomial likelihood had parameters this would extracts
+  %    them parameters from the vector W to the LIK structure.
   %
-  %     See also
-  %     LIK_BINOMIAL_PAK, GP_UNPAK
+  %  See also
+  %    LIK_BINOMIAL_PAK, GP_UNPAK
 
     lik=lik;
     w=w;
@@ -116,16 +92,16 @@ function lik = lik_binomial(varargin)
 
 
 
-  function logLik = lik_binomial_ll(lik, y, f, z)
-  %LIK_BINOMIAL_LL    Log likelihood
+  function ll = lik_binomial_ll(lik, y, f, z)
+  %LIK_BINOMIAL_LL  Log likelihood
   %
-  %   Description
-  %   E = LIK_BINOMIAL_LL(LIK, Y, F, Z) takes a likelihood
-  %   data structure LIK, succes counts Y, numbers of trials Z,
-  %   and latent values F. Returns the log likelihood, log p(y|f,z).
+  %  Description
+  %    LL = LIK_BINOMIAL_LL(LIK, Y, F, Z) takes a likelihood
+  %    structure LIK, succes counts Y, numbers of trials Z, and
+  %    latent values F. Returns the log likelihood, log p(y|f,z).
   %
-  %   See also
-  %   LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, LIK_BINOMIAL_LLG2, GPLA_E
+  %  See also
+  %    LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, LIK_BINOMIAL_LLG2, GPLA_E
     
     if isempty(z)
       error(['lik_binomial -> lik_binomial_ll: missing z!'... 
@@ -133,27 +109,26 @@ function lik = lik_binomial(varargin)
              'occurrences as an extra input z. See, for         '...
              'example, lik_binomial and gpla_e.             ']);
     end
-
     
     expf = exp(f);
     p = expf ./ (1+expf);
     N = z;
-    logLik =  sum(gammaln(N+1)-gammaln(y+1)-gammaln(N-y+1)+y.*log(p)+(N-y).*log(1-p));
+    ll =  sum(gammaln(N+1)-gammaln(y+1)-gammaln(N-y+1)+y.*log(p)+(N-y).*log(1-p));
   end
 
 
-  function g = lik_binomial_llg(lik, y, f, param, z)
-  %LIK_BINOMIAL_LLG    Gradient of log likelihood (energy)
+  function llg = lik_binomial_llg(lik, y, f, param, z)
+  %LIK_BINOMIAL_LLG    Gradient of the log likelihood
   %
-  %   Description 
-  %   G = LIK_BINOMIAL_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, succes counts Y, numbers of trials Z
-  %   and latent values F. Returns the gradient of log likelihood 
-  %   with respect to PARAM. At the moment PARAM can be 'hyper' or
-  %   'latent'.
+  %  Description 
+  %    LLG = LIK_BINOMIAL_LLG(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, succes counts Y, numbers of trials Z and
+  %    latent values F. Returns the gradient of the log likelihood
+  %    with respect to PARAM. At the moment PARAM can be 'param' or
+  %    'latent'.
   %
-  %   See also
-  %   LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG2, LIK_BINOMIAL_LLG3, GPLA_E
+  %  See also
+  %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG2, LIK_BINOMIAL_LLG3, GPLA_E
 
     if isempty(z)
       error(['lik_binomial -> lik_binomial_llg: missing z!'... 
@@ -161,32 +136,30 @@ function lik = lik_binomial(varargin)
              'occurrences as an extra input z. See, for         '...
              'example, lik_binomial and gpla_e.             ']);
     end
-
-    
     
     switch param
       case 'latent'
         expf = exp(f);
         N = z;
         
-        g = y./(1+expf) - (N-y).*expf./(1+expf);
+        llg = y./(1+expf) - (N-y).*expf./(1+expf);
     end
   end
   
 
-  function g2 = lik_binomial_llg2(lik, y, f, param, z)
-  %LIK_BINOMIAL_LLG2  Second gradients of log likelihood (energy)
+  function llg2 = lik_binomial_llg2(lik, y, f, param, z)
+  %LIK_BINOMIAL_LLG2  Second gradients of the log likelihood
   %
-  %   Description        
-  %   G2 = LIK_BINOMIAL_LLG2(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, succes counts Y, numbers of trials Z,
-  %   and latent values F. Returns the hessian of log likelihood
-  %   with respect to PARAM. At the moment PARAM can be only
-  %   'latent'. G2 is a vector with diagonal elements of the hessian
-  %   matrix (off diagonals are zero).
+  %  Description        
+  %    LLG2 = LIK_BINOMIAL_LLG2(LIK, Y, F, PARAM) takes a
+  %    likelihood structure LIK, succes counts Y, numbers of trials
+  %    Z, and latent values F. Returns the hessian of the log
+  %    likelihood with respect to PARAM. At the moment PARAM can be
+  %    only 'latent'. G2 is a vector with diagonal elements of the
+  %    hessian matrix (off diagonals are zero).
   %
-  %   See also
-  %   LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, GPLA_E
+  %  See also
+  %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, GPLA_E
 
     if isempty(z)
       error(['lik_binomial -> lik_binomial_llg2: missing z!'... 
@@ -195,30 +168,28 @@ function lik = lik_binomial(varargin)
              'example, lik_binomial and gpla_e.              ']);
     end
     
-    
     switch param
       case 'latent'
         expf = exp(f);
         N = z;
 
-        g2 = -N.*expf./(1+expf).^2;
+        llg2 = -N.*expf./(1+expf).^2;
     end
   end
   
   
-  function g3 = lik_binomial_llg3(lik, y, f, param, z)
-  %LIK_BINOMIAL_LLG3  Third gradients of log likelihood (energy)
+  function llg3 = lik_binomial_llg3(lik, y, f, param, z)
+  %LIK_BINOMIAL_LLG3  Third gradients of the log likelihood
   %
-  %   Description
-    
-  %   G3 = LIK_BINOMIAL_LLG3(LIK, Y, F, PARAM) takes a likelihood 
-  %   data structure LIK, succes counts Y, numbers of trials Z
-  %   and latent values F and returns the third gradients of log
-  %   likelihood with respect to PARAM. At the moment PARAM can be
-  %   only 'latent'. G3 is a vector with third gradients.
+  %  Description
+  %    LLG3 = LIK_BINOMIAL_LLG3(LIK, Y, F, PARAM) takes a
+  %    likelihood structure LIK, succes counts Y, numbers of trials
+  %    Z and latent values F and returns the third gradients of the
+  %    log likelihood with respect to PARAM. At the moment PARAM
+  %    can be only 'latent'. G3 is a vector with third gradients.
   %
-  %   See also
-  %   LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG2, GPLA_E, GPLA_G
+  %  See also
+  %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG2, GPLA_E, GPLA_G
     
     if isempty(z)
       error(['lik_binomial -> lik_binomial_llg3: missing z!'... 
@@ -226,30 +197,28 @@ function lik = lik_binomial(varargin)
              'occurrences as an extra input z. See, for          '...
              'example, lik_binomial and gpla_e.              ']);
     end
-
     
     switch param
       case 'latent'
         expf = exp(f);
         N = z;
-        g3 = N.*(expf.*(expf-1))./(1+expf).^3;
+        llg3 = N.*(expf.*(expf-1))./(1+expf).^3;
     end
   end
 
   function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_BINOMIAL_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+  %LIK_BINOMIAL_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
   %
-  %   Description
-  %   [M_0, M_1, M2] = LIK_BINOMIAL_TILTEDMOMENTS(LIK, Y, I, S2, MYY, Z) 
-  %   takes a likelihood data structure LIK, succes counts Y, 
-  %   numbers of trials Z, index I and cavity variance S2 and mean
-  %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
-  %   of the posterior marginal (see Rasmussen and Williams (2006):
-  %   Gaussian processes for Machine Learning, page 55).
+  %  Description
+  %    [M_0, M_1, M2] = LIK_BINOMIAL_TILTEDMOMENTS(LIK, Y, I, S2,
+  %    MYY, Z) takes a likelihood structure LIK, succes counts Y,
+  %    numbers of trials Z, index I and cavity variance S2 and mean
+  %    MYY. Returns the zeroth moment M_0, mean M_1 and variance
+  %    M_2 of the posterior marginal (see Rasmussen and Williams
+  %    (2006): Gaussian processes for Machine Learning, page 55).
   %
-  %   See also
-  %   GPEP_E
-
+  %  See also
+  %    GPEP_E
     
     if isempty(z)
       error(['lik_binomial -> lik_binomial_tiltedMoments: missing z!'... 
@@ -257,13 +226,12 @@ function lik = lik_binomial(varargin)
              'occurrences as an extra input z. See, for                     '...
              'example, lik_binomial and gpla_e.                         ']);
     end
-
     
     yy = y(i1);
     N = z(i1);
     
-    
-    % Create function handle for the function to be integrated (likelihood * cavity). 
+    % Create function handle for the function to be integrated
+    % (likelihood * cavity).
     logbincoef=gammaln(N+1)-gammaln(yy+1)-gammaln(N-yy+1);
     zm = @(f)exp( logbincoef + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f))) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
     
@@ -344,23 +312,22 @@ function lik = lik_binomial(varargin)
 
   
   function [Ey, Vary, Py] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
-  %LIK_BINOMIAL_PREDY    Returns the predictive mean, variance and density of y
+  %LIK_BINOMIAL_PREDY  Returns the predictive mean, variance and density of y
   %
-  %   Description         
-  %   [EY, VARY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF)
-  %   takes a likelihood data structure LIK, posterior mean EF
-  %   and posterior Variance VARF of the latent variable and returns
-  %   the posterior predictive mean EY and variance VARY of the
-  %   observations related to the latent variables
+  %  Description         
+  %    [EY, VARY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF) takes a
+  %    likelihood structure LIK, posterior mean EF and posterior
+  %    Variance VARF of the latent variable and returns the
+  %    posterior predictive mean EY and variance VARY of the
+  %    observations related to the latent variables
   %        
-  %   [Ey, Vary, PY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF YT, ZT)
-  %   Returns also the predictive density of YT, that is 
+  %    [Ey, Vary, PY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF YT, ZT)
+  %    Returns also the predictive density of YT, that is 
   %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
-  %   This requires also the succes counts YT, numbers of trials ZT.
+  %    This requires also the succes counts YT, numbers of trials ZT.
   %
-  %   See also 
-  %   ep_pred, la_pred, mc_pred
-
+  %  See also 
+  %    EP_PRED, LA_PRED, MC_PRED
 
     if isempty(zt)
       error(['lik_binomial -> lik_binomial_predy: missing z!'... 
@@ -368,7 +335,6 @@ function lik = lik_binomial(varargin)
              'occurrences as an extra input z. See, for             '...
              'example, lik_binomial and gpla_e.                 ']);
     end
-
     
     nt=length(Ef);
     Ey=zeros(nt,1);
@@ -400,21 +366,18 @@ function lik = lik_binomial(varargin)
     Vary = EVary+VarEy;
   end
   
-  
   function reclik = lik_binomial_recappend(reclik, ri, lik)
-  % RECAPPEND  Append the parameters to the record
+  %RECAPPEND  Append the parameters to the record
   %
-  %          Description 
-  %          RECLIK = GPCF_BINOMIAL_RECAPPEND(RECLIK, RI, LIK)
-  %          takes a likelihood record structure RECLIK, record
-  %          index RI and likelihood structure LIK with the
-  %          current MCMC samples of the hyperparameters. Returns
-  %          RECLIK which contains all the old samples and the
-  %          current samples from LIK.
+  %  Description 
+  %    RECLIK = GPCF_BINOMIAL_RECAPPEND(RECLIK, RI, LIK) takes a
+  %    likelihood record structure RECLIK, record index RI and
+  %    likelihood structure LIK with the current MCMC samples of
+  %    the parameters. Returns RECLIK which contains all the old
+  %    samples and the current samples from LIK.
   % 
-  %  See also:
-  %  gp_mc
-    
+  %  See also
+  %    GP_MC
     
     if nargin == 2
       reclik.type = 'Binomial';
@@ -434,4 +397,3 @@ function lik = lik_binomial(varargin)
 
   end
 end
-

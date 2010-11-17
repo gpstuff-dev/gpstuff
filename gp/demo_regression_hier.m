@@ -163,8 +163,8 @@ title('Non-linear hierarchical model 1 with MAP')
 drawnow
 
 % 6) With increasing flexibility of the modeling function
-%    we need to integrate over the hyperparameteres
-% integrate over hyperparameters
+%    we need to integrate over the parameteres
+% integrate over parameters
 disp('6) Non-linear hierarchical model 1 with IA')
 gps=gp_ia(gp,xn,yn);
 % predict and plot
@@ -200,8 +200,8 @@ title('Non-linear hierarchical model 2 with MAP')
 drawnow
 
 % 8) With increasing flexibility of the modeling function
-%    we need to integrate over the hyperparameteres
-% integrate over hyperparameters
+%    we need to integrate over the parameteres
+% integrate over parameters
 disp('8) Non-linear hierarchical model 2 with IA')
 gps=gp_ia(gp,xn,yn);
 % predict and plot
@@ -213,7 +213,7 @@ axis([7 37 100 400])
 title('Non-linear hierarchical model 2 with IA')
 drawnow
 
-% 9) With neuralnetwork covariance and integration over the hyperparameters
+% 9) With neuralnetwork covariance and integration over the parameters
 disp('9) Non-linear hierarchical model 3 with IA')
 cfc=gpcf_constant('constSigma2',1);
 % own constant term for each rat
@@ -226,7 +226,7 @@ cfnni=gpcf_prod('cf',{cfnn cc});
 gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
 gp=gp_optim(gp,xn,yn);
-% integrate over hyperparameters
+% integrate over parameters
 gps=gp_ia(gp,xn,yn);
 % predict and plot
 Ef=gp_pred(gps,xn,yn,xn);
@@ -287,7 +287,7 @@ cfnni=gpcf_prod('cf',{cfnn cc});
 gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
 gp=gp_optim(gp,xmn,ymn);
-% integrate over hyperparameters
+% integrate over parameters
 gps=gp_ia(gp,xmn,ymn);
 % predict and plot
 Ef=gp_pred(gps,xmn,ymn,xmnt);

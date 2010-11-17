@@ -20,13 +20,13 @@
 %
 %      f ~ N(0, K),
 %
-%      where K is the covariance matrix, whose elements are given
-%      as K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%      covariance function and th its parameters, hyperparameters.
+%    where K is the covariance matrix, whose elements are given as
+%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
+%    covariance function and th its parameters.
 % 
 %    Here we demonstarte use of Laplace, EP and MCMC methods to
-%    find the posterior of the latent values and hyperparameters. 
-%    With these we can make predictions on the class probability of
+%    find the posterior of the latent values and parameters. With
+%    these we can make predictions on the class probability of
 %    future observations. See Rasmussen & Willimas (2006) for the
 %    detailed treatment of Laplace and EP for probit and logit
 %    models and Neal (1998) for MCMC approach for probit and logit
@@ -76,13 +76,13 @@ pl = prior_unif();
 pm = prior_sqrtunif();
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 
-% Create the GP data structure (type is by default FULL)
+% Create the GP structure (type is by default FULL)
 gp = gp_set('cf', gpcf1, 'lik', lik_probit(), 'jitterSigma2', 1e-9);
 %gp = gp_set('cf', gpcf1, 'lik', lik_logit(), 'jitterSigma2', 1e-9);
 
 % ------- Laplace approximation --------
 fprintf(['%s model with Laplace integration over the latent values and\n' ...
-         'MAP estimate for the hyperparameters\n'],gp.lik.type)
+         'MAP estimate for the parameters\n'],gp.lik.type)
 
 % Set the approximate inference method 
 % (Laplace is default, so this could be skipped)
@@ -124,7 +124,7 @@ set(gcf, 'color', 'w'), title('predictive probability contours with Laplace', 'f
 
 % ------- Expectation propagation --------
 fprintf(['%s model with EP integration over the latent values and\n' ...
-         'MAP estimate for the hyperparameters\n'],gp.lik.type)
+         'MAP estimate for the parameters\n'],gp.lik.type)
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -165,7 +165,7 @@ set(gcf, 'color', 'w'), title('predictive probability contours with EP', 'fontsi
 
 % ------- MCMC ---------------
 fprintf(['%s model with MCMC integration over the latent values and\n' ...
-         'the hyperparameters\n'],gp.lik.type)
+         'the parameters\n'],gp.lik.type)
 
 % Set the approximate inference method
 % Note that MCMC for latent values requires often more jitter
@@ -228,9 +228,9 @@ set(gcf, 'color', 'w'), title('predictive probability contours with MCMC', 'font
 disp('Compare MCMC, Laplace and EP results for two latent variables')
 
 % compare MCMC, Laplace and EP results for two latent variables
-% here MCMC result includes uncertainty related to hyperparameters,
-% while Laplace and EP results use MAP value for hyperparameters
-% see GP_IA for integrating over hyperparameters when using Laplace
+% here MCMC result includes uncertainty related to parameters,
+% while Laplace and EP results use MAP value for parameters
+% see GP_IA for integrating over parameters when using Laplace
 % or EP for latent values
 apu1 = 123; apu2 = 340;
 sf1 = randn(size(Efs_mc(apu1,:))).*sqrt(Varfs_mc(apu1,:))+Efs_mc(apu1,:);

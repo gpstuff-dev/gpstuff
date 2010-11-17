@@ -247,8 +247,8 @@ function gpcf = gpcf_ppcs0(varargin)
   %
   %  Description
   %    [GPCF, W] = GPCF_PPCS0_UNPAK(GPCF, W) takes a covariance
-  %    function data structure GPCF and a hyper-parameter vector W,
-  %    and returns a covariance function data structure identical
+  %    function structure GPCF and a hyper-parameter vector W,
+  %    and returns a covariance function structure identical
   %    to the input, except that the covariance hyper-parameters
   %    have been set to the values in W. Deletes the values set to
   %    GPCF from W and returns the modified W.
@@ -300,7 +300,7 @@ function gpcf = gpcf_ppcs0(varargin)
   %    parameters are log transformed, when packed.)
   %
   %    Also the log prior of the hyperparameters of the covariance
-  %    function parameters is added to E if hyper-hyperprior is
+  %    function parameters is added to E if hyperprior is
   %    defined.
   %
   %  See also
@@ -317,14 +317,14 @@ function gpcf = gpcf_ppcs0(varargin)
     
     [n, m] =size(x);
     if ~isempty(gpcf.p.magnSigma2)
-      eprior = eprior + feval(gpp.magnSigma2.fh.e, gpcf.magnSigma2, ...
+      eprior = eprior -feval(gpp.magnSigma2.fh.lp, gpcf.magnSigma2, ...
                               gpp.magnSigma2) - log(gpcf.magnSigma2);
     end
 
     if isfield(gpcf,'metric')
-      eprior = eprior + feval(gpcf.metric.fh.e, gpcf.metric, x, t);
+      eprior = eprior -feval(gpcf.metric.fh.lp, gpcf.metric);
     elseif ~isempty(gpp.lengthScale)
-      eprior = eprior + feval(gpp.lengthScale.fh.e, gpcf.lengthScale, ...
+      eprior = eprior -feval(gpp.lengthScale.fh.lp, gpcf.lengthScale, ...
                               gpp.lengthScale) - sum(log(gpcf.lengthScale));
     end
   end
@@ -335,25 +335,25 @@ function gpcf = gpcf_ppcs0(varargin)
   %
   %  Description
   %    [DKff, GPRIOR] = GPCF_PPCS0_GHYPER(GPCF, X) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
+  %    vector of parameters.
   %
   %    [DKff, GPRIOR] = GPCF_PPCS0_GHYPER(GPCF, X, X2) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X2) with respect to th (cell array with matrix
   %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of hyperparameters
+  %    vector of parameters.
   %
   %    [DKff, GPRIOR] = GPCF_PPCS0_GHYPER(GPCF, X, [], MASK) takes a
-  %    covariance function data structure GPCF, a matrix X of input
+  %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the diagonal of gradients of
   %    covariance matrix Kff = k(X,X2) with respect to th (cell
   %    array with matrix elements), and GPRIOR = d log (p(th))/dth,
-  %    where th is the vector of hyperparameters. This is needed
+  %    where th is the vector of parameters.. This is needed
   %    for example with FIC sparse approximation.
   %
   %  See also
@@ -397,9 +397,10 @@ function gpcf = gpcf_ppcs0(varargin)
         for ii=1:n-1
           col_ind = ii + find(Cdm(ii+1:n,ii));
           d = zeros(length(col_ind),1);
-          d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii,:));
+          d = feval(gpcf.metric.fh.dist, gpcf.metric, x(col_ind,:), x(ii,:));
           
-          [gd, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x(col_ind,:), x(ii,:));
+          gd = feval(gpcf.metric.fh.distg, gpcf.metric, x(col_ind,:), x(ii,:));
+          gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric, x(col_ind,:), x(ii,:));
 
           ntrip_prev = ntriplets;
           ntriplets = ntriplets + length(d);
@@ -522,8 +523,9 @@ function gpcf = gpcf_ppcs0(varargin)
         ntriplets = 0;
         for ii=1:n2
           d = zeros(n1,1);
-          d = feval(gpcf.metric.fh.distance, gpcf.metric, x, x2(ii,:));
-          [gd, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x, x2(ii,:));
+          d = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2(ii,:));
+          gd = feval(gpcf.metric.fh.distg, gpcf.metric, x, x2(ii,:));
+          gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric, x, x2(ii,:));
           
           I0t = find(d==0);
           d(d >= 1) = 0;
@@ -617,8 +619,9 @@ function gpcf = gpcf_ppcs0(varargin)
 
       if isfield(gpcf,'metric')
         dist = 0;
-        [gdist, gprior_dist] = feval(gpcf.metric.fh.ghyper, gpcf.metric, x, [], 1);
-        for i=1:length(gdist)
+        distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, [], 1);
+        gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric);
+        for i=1:length(distg)
           ii1 = ii1+1;
           DKff{ii1} = 0;
         end
@@ -638,7 +641,7 @@ function gpcf = gpcf_ppcs0(varargin)
       if ~isempty(gpcf.p.magnSigma2)            
         % Evaluate the gprior with respect to magnSigma2
         i1 = i1+1;
-        ggs = feval(gpp.magnSigma2.fh.g, gpcf.magnSigma2, gpp.magnSigma2);
+        ggs = -feval(gpp.magnSigma2.fh.lpg, gpcf.magnSigma2, gpp.magnSigma2);
         gprior = ggs(i1).*gpcf.magnSigma2 - 1;
       end
       
@@ -653,7 +656,7 @@ function gpcf = gpcf_ppcs0(varargin)
         if ~isempty(gpcf.p.lengthScale)
           i1=i1+1; 
           lll = length(gpcf.lengthScale);
-          gg = feval(gpp.lengthScale.fh.g, gpcf.lengthScale, gpp.lengthScale);
+          gg = -feval(gpp.lengthScale.fh.lpg, gpcf.lengthScale, gpp.lengthScale);
           gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
           gprior = [gprior gg(lll+1:end)];
         end
@@ -670,12 +673,12 @@ function gpcf = gpcf_ppcs0(varargin)
   %
   %  Description
   %    DKff = GPCF_PPCS0_GHYPER(GPCF, X) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
+  %    function structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X) with respect to X (cell array with matrix elements)
   %
   %    DKff = GPCF_PPCS0_GHYPER(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
+  %    function structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
   %
@@ -702,7 +705,7 @@ function gpcf = gpcf_ppcs0(varargin)
         for ii=1:n-1
           col_ind = ii + find(Cdm(ii+1:n,ii));
           d = zeros(length(col_ind),1);
-          d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii,:));
+          d = feval(gpcf.metric.fh.dist, gpcf.metric, x(col_ind,:), x(ii,:));
           
           [gd, gprior_dist] = feval(gpcf.metric.fh.ginput, gpcf.metric, x(col_ind,:), x(ii,:));
 
@@ -805,7 +808,7 @@ function gpcf = gpcf_ppcs0(varargin)
         ntriplets = 0;
         for ii=1:n2
           d = zeros(n1,1);
-          d = feval(gpcf.metric.fh.distance, gpcf.metric, x, x2(ii,:));
+          d = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2(ii,:));
           [gd, gprior_dist] = feval(gpcf.metric.fh.ginput, gpcf.metric, x, x2(ii,:));
           
           I0t = find(d==0);
@@ -908,7 +911,7 @@ function gpcf = gpcf_ppcs0(varargin)
       nn0=0;
       for ii1=1:n2
         d = zeros(n1,1);
-        d = feval(gpcf.metric.fh.distance, gpcf.metric, x1, x2(ii1,:));
+        d = feval(gpcf.metric.fh.dist, gpcf.metric, x1, x2(ii1,:));
         I0t = find(d==0);
         d(d >= 1) = 0;
         [I2,J2,R2] = find(d);
@@ -1007,7 +1010,7 @@ function gpcf = gpcf_ppcs0(varargin)
       for ii1=1:n-1
         d = zeros(n-ii1,1);
         col_ind = ii1+1:n;
-        d = feval(gpcf.metric.fh.distance, gpcf.metric, x(col_ind,:), x(ii1,:));
+        d = feval(gpcf.metric.fh.dist, gpcf.metric, x(col_ind,:), x(ii1,:));
         d(d >= 1) = 0;
         [I2,J2,R2] = find(d);
         len = length(R);
@@ -1113,7 +1116,7 @@ function gpcf = gpcf_ppcs0(varargin)
   %    RECCF = GPCF_PPCS0_RECAPPEND(RECCF, RI, GPCF)
   %    takes a covariance function record structure RECCF, record
   %    index RI and covariance function structure GPCF with the
-  %    current MCMC samples of the hyperparameters. Returns
+  %    current MCMC samples of the parameters. Returns
   %    RECCF which contains all the old samples and the
   %    current samples from GPCF .
   %

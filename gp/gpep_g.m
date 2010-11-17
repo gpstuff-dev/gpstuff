@@ -2,12 +2,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %GPEP_G  Evaluate gradient of EP's marginal log posterior estimate (GPEP_E)
 %
 %  Description
-%    G = GPEP_G(W, GP, X, Y, OPTIONS) takes a full GP
-%    hyper-parameter vector W, data structure GP a matrix X of
-%    input vectors and a matrix Y of target vectors, and evaluates
-%    the gradient G of EP's marginal log posterior estimate
-%    (gpep_e). Each row of X corresponds to one input vector and
-%    each row of Y corresponds to one target vector.
+%    G = GPEP_G(W, GP, X, Y, OPTIONS) takes a full GP parameter
+%    vector W, structure GP, a matrix X of input vectors and a
+%    matrix Y of target vectors, and evaluates the gradient G of
+%    EP's marginal log posterior estimate (gpep_e). Each row of X
+%    corresponds to one input vector and each row of Y corresponds
+%    to one target vector.
 %
 %    [G, GDATA, GPRIOR] = GPEP_G(GP, X, Y, OPTIONS) also returns
 %    separately the data and prior contributions to the gradient.
@@ -138,7 +138,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           end
           
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -164,7 +164,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -227,7 +227,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             gprior(i1) = gprior_cf(i2);
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -299,7 +299,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -371,7 +371,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             gprior(i1) = gprior_cf(i2);
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKuu)
             for i2=length(DKuu)+1:length(gprior_cf)
               i1 = i1+1;
@@ -451,7 +451,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -558,7 +558,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -636,7 +636,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -695,7 +695,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             gprior(i1) = gprior_cf(i2);
           end
           
-          % Set the gradients of hyper-hyperparameter
+          % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)
               i1 = i1+1;
@@ -768,7 +768,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -838,7 +838,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
         gpcf = gp.cf{i};
         gpcf.GPtype = gp.type;
-        % Covariance function hyperparameters
+        % Covariance function parameters
         %--------------------------------------
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           % Get the gradients of the covariance matrices 
@@ -887,7 +887,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = feval(lik.fh.gprior, lik);
+          g_logPrior = -feval(lik.fh.lpg, lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end

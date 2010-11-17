@@ -13,7 +13,7 @@ function metric = metric_euclidean(varargin)
 %    altered with the specified values.
 %
 %    Parameters for Euclidean metric function [default]
-%	components        - cell array of vectors specifying which 
+%       components        - cell array of vectors specifying which 
 %                           inputs are grouped together with a same
 %                           scaling parameter. For example, the
 %                           component specification {[1 2] [3]}
@@ -103,31 +103,32 @@ function metric = metric_euclidean(varargin)
   
   if init
     % Set the function handles to the nested functions
-    metric.fh.pak        = @metric_euclidean_pak;
-    metric.fh.unpak      = @metric_euclidean_unpak;
-    metric.fh.e          = @metric_euclidean_e;
-    metric.fh.ghyper     = @metric_euclidean_ghyper;
-    metric.fh.ginput     = @metric_euclidean_ginput;
-    metric.fh.distance   = @metric_euclidean_distance;
-    metric.fh.recappend  = @metric_euclidean_recappend;
+    metric.fh.pak       = @metric_euclidean_pak;
+    metric.fh.unpak     = @metric_euclidean_unpak;
+    metric.fh.lp        = @metric_euclidean_lp;
+    metric.fh.lpg       = @metric_euclidean_lpg;
+    metric.fh.dist      = @metric_euclidean_dist;
+    metric.fh.distg     = @metric_euclidean_distg;
+    metric.fh.ginput    = @metric_euclidean_ginput;
+    metric.fh.recappend = @metric_euclidean_recappend;
   end
   
   function [w s] = metric_euclidean_pak(metric)
-  %METRIC_EUCLIDEAN_PAK	 Combine GP covariance function hyper-parameters into one vector.
+  %METRIC_EUCLIDEAN_PAK  Combine GP covariance function
+  %                      parameters into one vector.
   %
-  %	Description
-  %   W = METRIC_EUCLIDEAN_PAK(GPCF) takes a covariance function data
-  %   structure GPCF and combines the covariance function parameters
-  %   and their hyperparameters into a single row vector W and takes
-  %   a logarithm of the covariance function parameters.
+  %  Description
+  %    W = METRIC_EUCLIDEAN_PAK(GPCF) takes a covariance function
+  %    structure GPCF and combines the covariance function
+  %    parameters and their hyperparameters into a single row
+  %    vector W and takes a logarithm of the covariance function
+  %    parameters.
   %
   %       w = [ log(metric.lengthScale(:))
   %             (hyperparameters of metric.lengthScale)]'
-  %	  
-  %
-  %	See also
-  %	GPCF_SEXP_UNPAK
-    
+  %       
+  %  See also
+  %    METRIC_EUCLIDEAN_UNPAK
     
     w = []; s = {};
     if ~isempty(metric.p.lengthScale)
@@ -142,21 +143,21 @@ function metric = metric_euclidean(varargin)
   end
 
   function [metric, w] = metric_euclidean_unpak(metric, w)
-  %METRIC_EUCLIDEAN_UNPAK  Separate metric parameter vector into components.
+  %METRIC_EUCLIDEAN_UNPAK  Separate metric parameter vector into components
   %
-  %   Description
-  %   METRIC, W] = METRIC_EUCLIDEAN_UNPAK(METRIC, W) takes a metric data
-  %   structure GPCF and a hyper-parameter vector W, and returns a
-  %   covariance function data structure identical to the input, except
-  %   that the covariance hyper-parameters have been set to the values
-  %   in W. Deletes the values set to GPCF from W and returns the
-  %   modified W.
+  %  Description
+  %    METRIC, W] = METRIC_EUCLIDEAN_UNPAK(METRIC, W) takes a
+  %    metric structure GPCF and a parameter vector W, and returns
+  %    a covariance function structure identical to the input,
+  %    except that the covariance parameters have been set to the
+  %    values in W. Deletes the values set to GPCF from W and
+  %    returns the modified W.
   %
-  %   The covariance function parameters are transformed via exp
-  %   before setting them into the structure.
+  %    The covariance function parameters are transformed via exp
+  %    before setting them into the structure.
   %
-  %	See also
-  %	METRIC_EUCLIDEAN_PAK
+  %  See also
+  %    METRIC_EUCLIDEAN_PAK
   %
     
     if ~isempty(metric.p.lengthScale)
@@ -171,61 +172,74 @@ function metric = metric_euclidean(varargin)
     end
   end
 
-  function eprior = metric_euclidean_e(metric, x, t)
-  %METRIC_EUCLIDEAN_E     Evaluate the energy of prior of metric parameters
+  function lp = metric_euclidean_lp(metric)
+  %METRIC_EUCLIDEAN_LP  Evaluate the log prior of metric parameters
   %
-  %   Description
-  %   E = METRIC_EUCLIDEAN_E(METRIC, X, T) takes a metric data structure
-  %   GPCF together with a matrix X of input vectors and a vector T of
-  %   target vectors and evaluates log p(th) x J, where th is a vector
-  %   of SEXP parameters and J is the Jacobian of transformation exp(w)
-  %   = th. (Note that the parameters are log transformed, when packed.)
+  %  Description
+  %    LP = METRIC_EUCLIDEAN_LP(METRIC) takes a metric structure
+  %    METRIC and returns log(p(th)), where th collects the
+  %    parameters.
   %
-  %   Also the log prior of the hyperparameters of the covariance
-  %   function parameters is added to E if hyper-hyperprior is
-  %   defined.
+  %  See also
+  %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
   %
-  %   See also
-  %   METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
-  %
-    [n, m] = size(x);
-
-    % Evaluate the prior contribution to the error. The parameters that
-    % are sampled are from space W = log(w) where w is all the "real" samples.
-    % On the other hand errors are evaluated in the W-space so we need take
-    % into account also the  Jakobian of transformation W -> w = exp(W).
-    % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
+    
+  % Evaluate the prior contribution to the error. The parameters that
+  % are sampled are from space W = log(w) where w is all the "real" samples.
+  % On the other hand errors are evaluated in the W-space so we need take
+  % into account also the  Jakobian of transformation W -> w = exp(W).
+  % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
     if ~isempty(metric.p.lengthScale)
-      eprior = feval(metric.p.lengthScale.fh.e, metric.lengthScale, metric.p.lengthScale) - sum(log(metric.lengthScale));
+      lp = feval(metric.p.lengthScale.fh.lp, metric.lengthScale, metric.p.lengthScale) + sum(log(metric.lengthScale));
     else
-      eprior=0;
+      lp=0;
     end
     
   end
 
-  function [gdist, gprior]  = metric_euclidean_ghyper(metric, x, x2, mask) 
-  %METRIC_EUCLIDEAN_GHYPER Evaluate the gradient of the metric function
-  %                    and hyperprior w.r.t to it's hyperparameters.
+  function lpg = metric_euclidean_lpg(metric) 
+  %METRIC_EUCLIDEAN_LPG  d log(prior)/dth of the metric parameters th
   %
-  %    Description
-  %     [GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X) takes a
-  %     metric data structure METRIC together with a matrix X of
-  %     input vectors and return the gradient matrices GDIST and
-  %     GPRIOR_DIST for each hyperparameter.
+  %  Description
+  %    LPG = METRIC_EUCLIDEAN_LPG(METRIC) takes a likelihood
+  %    structure METRIC and returns d log(p(th))/dth, where th
+  %    collects the parameters.
   %
-  %     [GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2)
-  %     forms the gradient matrices between two input vectors X and
-  %     X2.
-  %     
-  %     [GDIST, GPRIOR_DIST] = METRIC_EUCLIDEAN_GHYPER(METRIC, X, X2,
-  %     MASK) forms the gradients for masked covariances matrices
-  %     used in sparse approximations.
-  %
-  %	See also
-  %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
+  %  See also
+  %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
   %
 
-    gdist=[];gprior=[];
+  % Evaluate the prior contribution of gradient with respect to lengthScale
+    if ~isempty(metric.p.lengthScale)
+      i1=1; 
+      lll = length(metric.lengthScale);
+      lpgs = feval(metric.p.lengthScale.fh.lpg, metric.lengthScale, metric.p.lengthScale);
+      lpg(i1:i1-1+lll) = lpgs(1:lll).*metric.lengthScale + 1;
+      lpg = [lpg lpgs(lll+1:end)];
+    end
+  end
+
+  function gdist  = metric_euclidean_distg(metric, x, x2, mask) 
+  %METRIC_EUCLIDEAN_DISTG  Evaluate the gradient of the metric function
+  %
+  %  Description
+  %    DISTG = METRIC_EUCLIDEAN_DISTG(METRIC, X) takes a metric
+  %    structure METRIC together with a matrix X of input
+  %    vectors and return the gradient matrices GDIST and
+  %    GPRIOR_DIST for each parameter.
+  %
+  %    DISTG = METRIC_EUCLIDEAN_DISTG(METRIC, X, X2) forms the
+  %    gradient matrices between two input vectors X and X2.
+  %     
+  %    DISTG = METRIC_EUCLIDEAN_DISTG(METRIC, X, X2, MASK) forms
+  %    the gradients for masked covariances matrices used in sparse
+  %    approximations.
+  %
+  %  See also
+  %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
+  %
+
+    gdist=[];
     components = metric.components;
     
     n = size(x,1);
@@ -290,29 +304,29 @@ function metric = metric_euclidean(varargin)
       if ~isempty(metric.p.lengthScale)
         i1=1; 
         lll = length(metric.lengthScale);
-        gg = feval(metric.p.lengthScale.fh.g, metric.lengthScale, metric.p.lengthScale);
+        gg = -feval(metric.p.lengthScale.fh.lpg, metric.lengthScale, metric.p.lengthScale);
         gprior(i1:i1-1+lll) = gg(1:lll).*metric.lengthScale - 1;
         gprior = [gprior gg(lll+1:end)];
       end
     end
   end
 
-
-  function [dist]  = metric_euclidean_distance(metric, x1, x2)         
-  %METRIC_EUCLIDEAN_DISTANCE   Compute the euclidean distence between
-  %                            one or two matrices.
+  function dist = metric_euclidean_dist(metric, x1, x2)         
+  %METRIC_EUCLIDEAN_DIST  Compute the euclidean distence between
+  %                       one or two matrices.
   %
-  %	Description
-  %	[DIST] = METRIC_EUCLIDEAN_DISTANCE(METRIC, X) takes a metric data
-  %   structure METRIC together with a matrix X of input vectors and 
-  %   calculates the euclidean distance matrix DIST.
+  %  Description
+  %    DIST = METRIC_EUCLIDEAN_DIST(METRIC, X) takes a metric
+  %    structure METRIC together with a matrix X of input
+  %    vectors and calculates the euclidean distance matrix DIST.
   %
-  %	[DIST] = METRIC_EUCLIDEAN_DISTANCE(METRIC, X1, X2) takes a metric data
-  %   structure METRIC together with a matrices X1 and X2 of input vectors and 
-  %   calculates the euclidean distance matrix DIST.
+  %    DIST = METRIC_EUCLIDEAN_DIST(METRIC, X1, X2) takes a
+  %    metric structure METRIC together with a matrices X1 and
+  %    X2 of input vectors and calculates the euclidean distance
+  %    matrix DIST.
   %
-  %	See also
-  %	METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
+  %  See also
+  %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
   %
     if nargin == 2 || isempty(x2)
       x2=x1;
@@ -346,9 +360,10 @@ function metric = metric_euclidean(varargin)
     
   end
 
-  function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)         
+  function [ginput, gprior_input]  = metric_euclidean_ginput(metric, x1, x2)
   %METRIC_EUCLIDEAN_GINPUT  Compute the gradient of the
-  %  euclidean distance function with respect to input. [n, m]=size(x);
+  %                         euclidean distance function with
+  %                         respect to input. [n, m]=size(x);
     ii1 = 0;
     components = metric.components;
     
@@ -405,15 +420,16 @@ function metric = metric_euclidean(varargin)
 
 
   function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
-  % RECAPPEND - Record append
-  %   Description
-  %     RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI, METRIC)
-  %     takes old metric function record RECMETRIC, record index
-  %     RI and metric function structure. Appends the parameters
-  %     of METRIC to the RECMETRIC in the ri'th place.
+  %RECAPPEND  Record append
   %
-  %          See also
-  %          GP_MC and GP_MC -> RECAPPEND
+  %  Description
+  %    RECMETRIC = METRIC_EUCLIDEAN_RECAPPEND(RECMETRIC, RI,
+  %    METRIC) takes old metric function record RECMETRIC, record
+  %    index RI and metric function structure. Appends the
+  %    parameters of METRIC to the RECMETRIC in the ri'th place.
+  %
+  %  See also
+  %    GP_MC and GP_MC -> RECAPPEND
 
   % Initialize record
     if nargin == 2
@@ -426,10 +442,11 @@ function metric = metric_euclidean(varargin)
       % Set the function handles
       recmetric.fh.pak       = @metric_euclidean_pak;
       recmetric.fh.unpak     = @metric_euclidean_unpak;
-      recmetric.fh.e         = @metric_euclidean_e;
-      recmetric.fh.ghyper    = @metric_euclidean_ghyper;
+      recmetric.fh.lp        = @metric_euclidean_lp;
+      recmetric.fh.lpg       = @metric_euclidean_lpg;
+      recmetric.fh.dist      = @metric_euclidean_dist;
+      recmetric.fh.distg     = @metric_euclidean_distg;
       recmetric.fh.ginput    = @metric_euclidean_ginput;            
-      recmetric.fh.distance  = @metric_euclidean_distance;
       recmetric.fh.recappend = @metric_euclidean_recappend;
       return
     end

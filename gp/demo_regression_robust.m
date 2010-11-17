@@ -99,11 +99,11 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf})
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-disp('Gaussian noise model and MAP estimate for hyperparameters')
+disp('Gaussian noise model and MAP estimate for parameters')
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
@@ -125,7 +125,7 @@ h3=plot(x,y,'b.');
 %plot(xt,yt,'r.')
 legend([h1 h2(1) h2(3) h3],'real f', 'Ef', 'Ef+-2*std(f)','y',4)
 axis on;
-title('The predictions and the data points (Gaussian noise model with MAP estimate for hyperparameters)');
+title('The predictions and the data points (Gaussian noise model with MAP estimate for parameters)');
 drawnow
 S1 = sprintf('length-scale: %.3f, magnSigma2: %.3f  \n', ...
              gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
@@ -136,7 +136,7 @@ S1 = sprintf('length-scale: %.3f, magnSigma2: %.3f  \n', ...
 %     (lenghtScale, magnSigma, sigma(noise-t) and nu)
 % ========================================
 disp(['Scale mixture Gaussian (~=Student-t) noise model                ';...
-      'using MCMCintegration over the latent values and hyperparameters'])
+      'using MCMC integration over the latent values and parameters    '])
 
 pl = prior_t();
 pm = prior_sqrtunif();
@@ -198,7 +198,7 @@ S2 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', ...
 %  (lengthScale, magnSigma2, sigma(noise-t) and nu)
 % ========================================
 disp(['Student-t noise model using Laplace integration over the '; ...
-      'latent values and MAP estimate for the hyperparameters   '])
+      'latent values and MAP estimate for the parameters        '])
 
 pl = prior_t();
 pm = prior_sqrtunif();
@@ -210,7 +210,7 @@ pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', prior_logunif(), ...
             'sigma2', 10, 'sigma2_prior', pn);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, ...
             'latent_method', 'Laplace');
 
@@ -243,7 +243,7 @@ S3 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', ...
 %   nu = 4 
 % ========================================
 disp(['Student-t noise model with nu= 4 and using MCMC integration';...
-      'over the latent values and hyperparameters                 '])
+      'over the latent values and parameters                      '])
 
 pl = prior_t();
 pm = prior_sqrtunif();
@@ -254,7 +254,7 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 10, 'sigma2_prior', pn);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
              'latent_method', 'MCMC');
 f=gp_pred(gp,x,y,x);
@@ -300,7 +300,7 @@ S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScal
 %   nu = 4 
 % ========================================
 disp(['Student-t noise model with nu=4 using Laplace integration over';...
-      'the latent values and MAP estimate for the hyperparameters    '])
+      'the latent values and MAP estimate for the parameters         '])
 
 pl = prior_t();
 pm = prior_sqrtunif();
@@ -310,7 +310,7 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 10, 'sigma2_prior', pn);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
             'latent_method', 'Laplace');
 e = gp_e(gp_pak(gp), gp, x, y);
@@ -346,7 +346,7 @@ S5 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp
 %   nu = 4 
 % ========================================
 disp(['Student-t noise model with nu=4 using EP integration over';...
-      'the latent values and MAP estimate for hyperparameters   '])
+      'the latent values and MAP estimate for parameters        '])
 
 pl = prior_t();
 pm = prior_sqrtunif();
@@ -356,7 +356,7 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.01, 'sigma2_prior', pn);
 
-% ... Finally create the GP data structure
+% ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
             'latent_method', 'EP');
 

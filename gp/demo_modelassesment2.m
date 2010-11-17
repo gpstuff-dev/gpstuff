@@ -8,10 +8,9 @@
 %    models are compared by evaluating the DIC statistics, number
 %    of efficient parameters and ten-fold cross validation. The
 %    inference will be conducted using maximum a posterior (MAP)
-%    estimate for the hyperparameters using EP and Laplace
+%    estimate for the parameters using EP and Laplace
 %    approximation, via full Markov chain Monte Carlo (MCMC) and
-%    with an integration approximation (IA) for the
-%    hyperparameters.
+%    with an integration approximation (IA) for the parameters.
 %
 %    This demo is organised in two parts:
 %     1) data analysis with with probit likelihood
@@ -48,12 +47,12 @@ gpcf = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 2);
 pl = prior_logunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
-% Create the GP data structure
+% Create the GP structure
 gp = gp_set('lik', lik_probit, 'cf', {gpcf}, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
 disp([' Probit with Laplace integration over the latent values '; ...
-      ' and MAP estimate for the hyperparameters               '])
+      ' and MAP estimate for the parameters                    '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -78,7 +77,7 @@ mrmse_cv(1) = cvres.mrmse_cv;
 
 % ------- Expectation propagation --------
 disp([' Probit with EP integration over the latent values and MAP '; ...
-      ' estimate for the hyperparameters                          '])
+      ' estimate for the parameters                               '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -101,7 +100,7 @@ mrmse_cv(2) = cvres.mrmse_cv;
 
 % ------- MCMC ---------------
 disp([' Probit with MCMC integration over the latent values and '; ...
-      ' the hyperparameters                                     '])
+      ' the parameters                                          '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
@@ -131,7 +130,7 @@ rgp=gp_mc(gp, x, y, 'record', r, opt);
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
 models{3} = 'pr_MCMC';
-[DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'hyper');
+[DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'param');
 [DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'all');
 
 % Evaluate the 10-fold cross validation results. 
@@ -142,7 +141,7 @@ mrmse_cv(3) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 disp([' Probit with EP integration over the latent values and '; ...
-      ' grid integration over the hyperparameters             '])
+      ' grid integration over the parameters                  '])
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -159,7 +158,7 @@ opt.step_size = 2;
 gp_array = gp_ia(gp, x, y, opt);
 
 models{4} = 'pr_IA'; 
-[DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'hyper');
+[DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'param');
 [DIC2(4), p_eff2(4)] =  gp_dic(gp_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
@@ -190,13 +189,13 @@ gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 % Create the likelihood structure
 lik = ('init');
 
-% Create the GP data structure
+% Create the GP structure
 gp = gp_set('lik', lik_logit, 'cf', {gpcf}, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
 disp([' Logit with Laplace integration over the latent values and '; ...
-      ' MAP estimate for the hyperparameters                      '])
+      ' MAP estimate for the parameters                           '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -219,7 +218,7 @@ mrmse_cv(5) = cvres.mrmse_cv;
 
 % ------- Expectation propagation --------
 disp([' Logit with EP integration over the latent values and MAP'; ...
-      ' estimate for the hyperparameters                        '])
+      ' estimate for the parameters                             '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -243,7 +242,7 @@ mrmse_cv(6) = cvres.mrmse_cv;
 
 % ------- MCMC ---------------
 disp([' Logit with MCMC integration over the latent values and '; ...
-      ' the hyperparameters                                    '])
+      ' the parameters                                         '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
@@ -272,7 +271,7 @@ rgp = gp_mc(gp, x, y, 'record', r, opt);
 
 % Evaluate the effective number of parameters and DIC with focus on latent variables.
 models{7} = 'lo_MCMC';
-[DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'hyper');
+[DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'param');
 [DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'all');
 
 % Evaluate the 10-fold cross validation results. 
@@ -283,7 +282,7 @@ mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 disp([' Logit with EP integration over the latent values and grid '; ...
-      ' integration over the hyperparameters                      '])
+      ' integration over the parameters                           '])
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -300,7 +299,7 @@ opt.step_size = 2;
 gp_array = gp_ia(gp, x, y, opt);
 
 models{8} = 'lo_IA'; 
-[DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'hyper');
+[DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'param');
 [DIC2(8), p_eff2(8)] =  gp_dic(gp_array, x, y, 'all');
 
 % Then the 10 fold cross-validation.
@@ -333,11 +332,11 @@ S = sprintf([S '\n ']);
 S = sprintf([S '\n The notation is as follows:']);
 S = sprintf([S '\n pr_*    = probit likelihood and inference method']);
 S = sprintf([S '\n lo_*    = logit likelihood and inference method']);
-S = sprintf([S '\n DIC_h   = DIC with focus on hyperparameters. ']);
-S = sprintf([S '\n DIC_a   = DIC with focus on hyperparameters and laten variables (all). ']);
+S = sprintf([S '\n DIC_h   = DIC with focus on parameters. ']);
+S = sprintf([S '\n DIC_a   = DIC with focus on parameters and laten variables (all). ']);
 S = sprintf([S '\n DIC_l   = DIC with focus on latent variables. ']);
-S = sprintf([S '\n peff_h  = effective number of hyperparameters (latent variables marginalized). ']);
-S = sprintf([S '\n peff_a  = effective number of hyperparameters and latent variables. ']);
+S = sprintf([S '\n peff_h  = effective number of parameters (latent variables marginalized). ']);
+S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
 S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
 S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
 S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
@@ -413,10 +412,10 @@ S = sprintf([S '\n '])
 % Xu=[u1(:) u2(:)];
 % Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 % 
-% % Create the GP data structure
+% % Create the GP structure
 % gp = gp_init('init', 'FIC', lik, {gpcf}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
-% gp = gp_init('set', gp, 'infer_params', 'covariance');           % optimize only hyperparameters
+% gp = gp_init('set', gp, 'infer_params', 'covariance');           % optimize only parameters
 % 
 % % ------- Laplace approximation --------
 % 
@@ -497,7 +496,7 @@ S = sprintf([S '\n '])
 % 
 % % Evaluate the effective number of parameters and DIC with focus on latent variables.
 % models{7} = 'FIC_MCMC';
-% [DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'hyper');
+% [DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'param');
 % [DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'all');
 % 
 % % Evaluate the 10-fold cross validation results. 
@@ -577,7 +576,7 @@ S = sprintf([S '\n '])
 % [trindex] = set_PIC(xtmp, [1 max(xtmp(:,2))+.01 1 max(xtmp(:,1))+.01], 0.3, 'corners', 0);
 % trindex{2} = [trindex{2} ; trindex{1}]; trindex = {trindex{2:19}};
 % 
-% % Create the GP data structure
+% % Create the GP structure
 % gp = gp_init('init', 'PIC', lik, {gpcf}, [],'jitterSigma2', 0.01);
 % gp = gp_init('set', gp, 'X_u', Xu, 'blocks', trindex, 'infer_params', 'covariance')
 % 
@@ -755,7 +754,7 @@ S = sprintf([S '\n '])
 % gpcf = gpcf_sexp('init', 'lengthScale', 5, 'magnSigma2', 3, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % gpcf3 = gpcf_ppcs2('init', 'nin', nin, 'lengthScale', 2, 'magnSigma2', 3, 'lengthScale_prior', pm, 'magnSigma2_prior', pm);
 % 
-% % Create the GP data structure
+% % Create the GP structure
 % gp = gp_init('init', 'CS+FIC', lik, {gpcf, gpcf3}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
 % 

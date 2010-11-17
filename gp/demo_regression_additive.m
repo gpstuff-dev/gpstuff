@@ -3,10 +3,11 @@
 %                          neural network covariance fucntions 
 %
 %  Description
-%    Gaussian process solutions in 2D regression problem using constant, 
-%    linear, squared exponential (sexp) and neural network covariance
-%    functions, and with various additive combinations of these four
-%    covariance functions. The noisy observations y are assumed to satisfy
+%    Gaussian process solutions in 2D regression problem using
+%    constant, linear, squared exponential (sexp) and neural
+%    network covariance functions, and with various additive
+%    combinations of these four covariance functions. The noisy
+%    observations y are assumed to satisfy
 %
 %         y = f + e,    where e ~ N(0, s^2)
 %
@@ -25,9 +26,9 @@
 %    - neural network for 1. input + neural network for 2. input
 %    - neural network
 %
-%    A hyperprior is assumed for hyperparameters of the covariance
-%    functions, and the inference is done with a MAP estimate for
-%    hyperparameter values.
+%    A prior is assumed for parameters of the covariance functions,
+%    and the inference is done with a MAP estimate for parameter
+%    values.
 %
 %    For more detailed discussion of  covariance functions, see e.g.
 %
@@ -58,7 +59,7 @@ y=y-mean(y);
 xt=[xt1(:) xt2(:)];
 nxt=size(xt1,1);
 
-% Assume a Student-t distribution for the GP hyperparameters
+% Assume a Student-t distribution for the GP parameters
 pt = prior_t('nu', 4, 's2', 10);	% a prior structure
 
 % Create a Gaussian noise model

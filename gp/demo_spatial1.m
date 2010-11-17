@@ -28,8 +28,8 @@
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters. We
-%    place a hyperprior for hyperparameters, p(th).
+%    covariance function and th its parameters. We place a prior
+%    for parameters, p(th).
 %
 %    Since the data set used in this demo is rather large we use
 %    FIC sparse approximation for the GP prior.
@@ -103,7 +103,7 @@ gpcf1 = gpcf_matern32(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
 lik = lik_poisson();
 
-% Create the FIC GP data structure so that inducing inputs are not optimized
+% Create the FIC GP structure so that inducing inputs are not optimized
 gp = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1}, 'X_u', Xu, ...
             'jitterSigma2', 1e-4, 'infer_params', 'covariance');
 
@@ -152,7 +152,7 @@ axis equal
 axis([0 35 0 60])
 title('Posterior variance of the relative risk, FIC')
 
-% the MAP estimate of the hyperparameters. 
+% the MAP estimate of the parameters. 
 S1=sprintf('MAP: length-scale: %.1f, magnSigma: %.3f \n', gp.cf{1}.lengthScale, sqrt(gp.cf{1}.magnSigma2))
 
 % --- IA ---
@@ -180,7 +180,7 @@ axis equal
 axis([0 35 0 60])
 title('Posterior variance of the relative risk, FIC')
 
-% the IA estimate of the hyperparameters 
+% the IA estimate of the parameters 
 % in real life
 Elth=sum(bsxfun(@times,pth,th));
 Elth2=sum(bsxfun(@times,pth,th.^2));
@@ -194,7 +194,7 @@ gp = gp_set(gp, 'latent_method', 'MCMC', 'latent_opt', struct('method',@scaled_h
 
 % Set the sampling options
 
-% HMC-hyper
+% HMC-param
 hmc_opt.steps=3;
 hmc_opt.stepadj=0.01;
 hmc_opt.nsamples=1;
@@ -233,9 +233,9 @@ xii=sub2ind([60 35],x(:,2),x(:,1));
 [X1,X2]=meshgrid(1:35,1:60);
 
 % Conduct the actual sampling.
-% Inside the loop we sample one sample from the latent values and 
-% hyper-parameters at each iteration. After that we plot the samples 
-% so that we can visually inspect the progress of sampling
+% Inside the loop we sample one sample from the latent values and
+% parameters at each iteration. After that we plot the samples so
+% that we can visually inspect the progress of sampling
 figure
 % first prepare figures for faster plotting
 clf

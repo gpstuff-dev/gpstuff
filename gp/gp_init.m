@@ -1,5 +1,5 @@
 function gp = gp_init(do, varargin)
-%GP_INIT	Create a Gaussian Process data structure.
+%GP_INIT	Create a Gaussian Process structure.
 %
 %    Description
 %     GP = GP_INIT('init', TYPE, 'LIKELIH', GPCF, NOISE, OPTIONS)

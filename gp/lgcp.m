@@ -15,7 +15,7 @@ function [l,lq,xt] = lgcp(x,varargin)
 %       'gpcf' is optional function handle of a GPstuff covariance function 
 %         (default is @gpcf_sexp)
 %       'latent_method' is optional 'EP' (default) or 'Laplace'
-%       'hyperint' is optional 'mode' (default), 'CCD' or 'grid'
+%       'int_method' is optional 'mode' (default), 'CCD' or 'grid'
 % 
 %     P is the estimated intensity  
 %     PQ is the 5% and 95% percentiles of the intensity estimate
@@ -35,7 +35,7 @@ function [l,lq,xt] = lgcp(x,varargin)
   ip.addParamValue('range',[], @(x) isreal(x)&&(length(x)==2||length(x)==4));
   ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
   ip.addParamValue('latent_method','EP', @(x) ismember(x,{'EP' 'Laplace'}))
-  ip.addParamValue('hyperint','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
+  ip.addParamValue('int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
   ip.addParamValue('normalize',false, @islogical);
   
   ip.parse(x,varargin{:});
@@ -45,7 +45,7 @@ function [l,lq,xt] = lgcp(x,varargin)
   xrange=ip.Results.range;
   gpcf=ip.Results.gpcf;
   latent_method=ip.Results.latent_method;
-  hyperint=ip.Results.hyperint;
+  int_method=ip.Results.int_method;
   normalize=ip.Results.normalize;
   
   [n,m]=size(x);
@@ -74,7 +74,7 @@ function [l,lq,xt] = lgcp(x,varargin)
       xxn=(xx-mean(xx))./std(xx);
       xtn=(xt-mean(xx))./std(xx);
       % smooth...
-      [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,hyperint);
+      [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
       
       % compute mean and quantiles
       A=range(xx);
@@ -141,7 +141,7 @@ function [l,lq,xt] = lgcp(x,varargin)
       xxn=bsxfun(@rdivide,bsxfun(@minus,xx,mean(xx,1)),std(xx,1));
       xtn=bsxfun(@rdivide,bsxfun(@minus,xt,mean(xx,1)),std(xx,1));
       % smooth...
-      [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,hyperint);
+      [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
       % compute mean
       A = range(xx(:,1)).*range(xx(:,2));
       lm=exp(Ef+Varf/2)./A.*n;
@@ -170,7 +170,7 @@ function [l,lq,xt] = lgcp(x,varargin)
 
 end
 
-function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
+function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
   nin = size(xx,2);
@@ -196,7 +196,7 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
   end
   
-  % Create the GP data structure
+  % Create the GP structure
   gp = gp_set('lik', lik_poisson, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
   % Set the approximate inference method
@@ -211,14 +211,14 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,hyperint)
   end
 
   % Make prediction for the test points
-  if strcmpi(hyperint,'mode')
+  if strcmpi(int_method,'mode')
     % point estimate for the hyperparameters
     [Ef,Varf] = gp_pred(gp, xx, yy, xt, 'z', ye);
   else
     % integrate over the hyperparameters
     %[~, ~, ~, Ef, Varf] = gp_ia(opt, gp, xx, yy, xt, param);
     [notused, notused, notused, Ef, Varf]=...
-        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', hyperint);
+        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', int_method);
   end
   
 end

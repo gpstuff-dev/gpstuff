@@ -21,70 +21,46 @@ function lik = lik_logit(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-% allow use with or without init and set options
-  if nargin<1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'LIK_LOGIT';
+  ip.addOptional('lik', [], @isstruct);
+  ip.parse(varargin{:});
+  lik=ip.Results.lik;
+
+  if isempty(lik)
+    init=true;
+    lik.type = 'Logit';
   else
-    error('Unknown first argument');
+    if ~isfield(lik,'type') && ~isequal(lik.type,'Logit')
+      error('First argument does not seem to be a valid likelihood function structure')
+    end
+    init=false;
   end
 
-  switch do
-    case 'init'
-      % Initialize the likelihood structure
-      lik.type = 'Logit';
-      
-      % Set the function handles to the nested functions
-      lik.fh.pak = @lik_logit_pak;
-      lik.fh.unpak = @lik_logit_unpak;
-      lik.fh.ll = @lik_logit_ll;
-      lik.fh.llg = @lik_logit_llg;    
-      lik.fh.llg2 = @lik_logit_llg2;
-      lik.fh.llg3 = @lik_logit_llg3;
-      lik.fh.tiltedMoments = @lik_logit_tiltedMoments;
-      lik.fh.predy = @lik_logit_predy;
-      lik.fh.recappend = @lik_logit_recappend;
-
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
-
-    case 'set'
-      % No paramaters to set
-      if numel(varargin)~=1
-        error('Wrong number of arguments')
-      end
-      
-      % Pass the likelihood
-      lik = varargin{1};
-
+  if init
+    % Set the function handles to the nested functions
+    lik.fh.pak = @lik_logit_pak;
+    lik.fh.unpak = @lik_logit_unpak;
+    lik.fh.ll = @lik_logit_ll;
+    lik.fh.llg = @lik_logit_llg;    
+    lik.fh.llg2 = @lik_logit_llg2;
+    lik.fh.llg3 = @lik_logit_llg3;
+    lik.fh.tiltedMoments = @lik_logit_tiltedMoments;
+    lik.fh.predy = @lik_logit_predy;
+    lik.fh.recappend = @lik_logit_recappend;
   end
-
-
 
   function [w,s] = lik_logit_pak(lik)
-  %LIK_LOGIT_PAK    Combine likelihood parameters into one vector.
+  %LIK_LOGIT_PAK  Combine likelihood parameters into one vector.
   %
-  %   Description 
-  %   W = LIK_LOGIT_PAK(LIK) takes a likelihood data
-  %   structure LIK and returns an empty verctor W. If Logit
-  %   likelihood had hyperparameters this would combine them into a
-  %   single row vector W (see e.g. lik_negbin).
+  %  Description 
+  %    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
+  %    returns an empty verctor W. If Logit likelihood had
+  %    parameters this would combine them into a single row vector
+  %    W (see e.g. lik_negbin).
   %       
-  %
-  %     See also
-  %     LIK_NEGBIN_UNPAK, GP_PAK
+  %  See also
+  %    LIK_NEGBIN_UNPAK, GP_PAK
 
     w = []; s = {};
   end
@@ -93,53 +69,50 @@ function lik = lik_logit(varargin)
   function [lik, w] = lik_logit_unpak(lik, w)
   %LIK_LOGIT_UNPAK  Extract likelihood parameters from the vector.
   %
-  %   Description
-  %   W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
+  %  Description
+  %    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
   % 
-  %   If Logit likelihood had hyperparameters this would extracts
-  %   them parameters from the vector W to the LIK structure.
+  %    If Logit likelihood had parameters this would extracts them
+  %    parameters from the vector W to the LIK structure.
   %       
-  %
-  %     See also
-  %     LIK_LOGIT_PAK, GP_UNPAK
+  %  See also
+  %    LIK_LOGIT_PAK, GP_UNPAK
 
     lik=lik;
     w=w;
     
   end
 
-
-
-  function logLik = lik_logit_ll(lik, y, f, z)
-  %LIK_LOGIT_LL    Log likelihood
+  function ll = lik_logit_ll(lik, y, f, z)
+  %LIK_LOGIT_LL  Log likelihood
   %
-  %   Description
-  %   E = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood
-  %   data structure LIK, class labels Y, and latent values
-  %   F. Returns the log likelihood, log p(y|f,z).
+  %  Description
+  %    E = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
+  %    LIK, class labels Y, and latent values F. Returns the log
+  %    likelihood, log p(y|f,z).
   %
-  %   See also
-  %   LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
+  %  See also
+  %    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
 
     if ~isempty(find(abs(y)~=1))
       error('lik_logit: The class labels have to be {-1,1}')
     end
     
-    logLik = sum(-log(1+exp(-y.*f)));
+    ll = sum(-log(1+exp(-y.*f)));
   end
 
 
-  function deriv = lik_logit_llg(lik, y, f, param, z)
-  %LIK_LOGIT_LLG    Gradient of log likelihood (energy)
+  function llg = lik_logit_llg(lik, y, f, param, z)
+  %LIK_LOGIT_LLG  Gradient of the log likelihood
   %
-  %   Description
-  %   G = LIK_LOGIT_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, class labels Y, and latent values
-  %   F. Returns the gradient of log likelihood with respect to
-  %   PARAM. At the moment PARAM can be 'hyper' or 'latent'.
+  %  Description
+  %    G = LIK_LOGIT_LLG(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, class labels Y, and latent values F. Returns
+  %    the gradient of the log likelihood with respect to PARAM. At the
+  %    moment PARAM can be 'param' or 'latent'.
   %
-  %   See also
-  %   LIK_LOGIT_LL, LIK_LOGIT_LLG2, LIK_LOGIT_LLG3, GPLA_E
+  %  See also
+  %    LIK_LOGIT_LL, LIK_LOGIT_LLG2, LIK_LOGIT_LLG3, GPLA_E
     
     if ~isempty(find(abs(y)~=1))
       error('lik_logit: The class labels have to be {-1,1}')
@@ -148,41 +121,41 @@ function lik = lik_logit(varargin)
     
     t  = (y+1)/2;
     PI = 1./(1+exp(-f));
-    deriv = t - PI;
-    %deriv = (y+1)/2 - 1./(1+exp(-f));      
+    llg = t - PI;
+    %llg = (y+1)/2 - 1./(1+exp(-f));      
   end
 
 
-  function g2 = lik_logit_llg2(lik, y, f, param, z)
-  %LIK_LOGIT_LLG2  Second gradients of log likelihood (energy)
+  function llg2 = lik_logit_llg2(lik, y, f, param, z)
+  %LIK_LOGIT_LLG2  Second gradients of the log likelihood
   %
-  %   Description        
-  %   G2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
-  %   data structure LIK, class labels Y, and latent values
-  %   F. Returns the hessian of log likelihood with respect to
-  %   PARAM. At the moment PARAM can be only 'latent'. G2 is a
-  %   vector with diagonal elements of the hessian matrix (off
-  %   diagonals are zero).
+  %  Description        
+  %    LLG2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, class labels Y, and latent values F. Returns
+  %    the hessian of the log likelihood with respect to PARAM. At
+  %    the moment PARAM can be only 'latent'. LLG2 is a vector with
+  %    diagonal elements of the hessian matrix (off diagonals are
+  %    zero).
   %
   %   See also
   %   LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
 
     PI = 1./(1+exp(-f));
-    g2 = -PI.*(1-PI);        
+    llg2 = -PI.*(1-PI);        
   end    
   
-  function third_grad = lik_logit_llg3(lik, y, f, param, z)
-  %LIK_LOGIT_LLG3  Third gradients of log likelihood (energy)
+  function llg3 = lik_logit_llg3(lik, y, f, param, z)
+  %LIK_LOGIT_LLG3  Third gradients of the log likelihood
   %
-  %   Description
-  %   G3 = LIK_LOGIT_LLG3(LIK, Y, F, PARAM) takes a likelihood 
-  %   data structure LIK, class labels Y, and latent values F
-  %   and returns the third gradients of log likelihood with respect
-  %   to PARAM. At the moment PARAM can be only 'latent'. G3 is a
-  %   vector with third gradients.
+  %  Description
+  %    LLG3 = LIK_LOGIT_LLG3(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, class labels Y, and latent values F and
+  %    returns the third gradients of the log likelihood with
+  %    respect to PARAM. At the moment PARAM can be only 'latent'. 
+  %    LLG3 is a vector with third gradients.
   %
-  %   See also
-  %   LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
+  %  See also
+  %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
     
     if ~isempty(find(abs(y)~=1))
       error('lik_logit: The class labels have to be {-1,1}')
@@ -190,23 +163,23 @@ function lik = lik_logit(varargin)
 
     t  = (y+1)/2;
     PI = 1./(1+exp(-f));
-    third_grad = -PI.*(1-PI).*(1-2*PI);        
+    llg3 = -PI.*(1-PI).*(1-2*PI);        
   end
 
 
   function [m_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
   %LIK_LOGIT_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
   %
-  %   Description
-  %   [M_0, M_1, M2] = LIK_LOGIT_TILTEDMOMENTS(LIK, Y, I, S2, MYY) 
-  %   takes a likelihood data structure LIK, class labels Y,
-  %   index I and cavity variance S2 and mean MYY. Returns the
-  %   zeroth moment M_0, mean M_1 and variance M_2 of the posterior
-  %   marginal (see Rasmussen and Williams (2006): Gaussian
-  %   processes for Machine Learning, page 55).
+  %  Description
+  %    [M_0, M_1, M2] = LIK_LOGIT_TILTEDMOMENTS(LIK, Y, I, S2, MYY)
+  %    takes a likelihood structure LIK, class labels Y, index I
+  %    and cavity variance S2 and mean MYY. Returns the zeroth
+  %    moment M_0, mean M_1 and variance M_2 of the posterior
+  %    marginal (see Rasmussen and Williams (2006): Gaussian
+  %    processes for Machine Learning, page 55).
   %
-  %   See also
-  %   GPEP_E
+  %  See also
+  %    GPEP_E
     
     if ~isempty(find(abs(y)~=1))
       error('lik_logit: The class labels have to be {-1,1}')
@@ -244,22 +217,22 @@ function lik = lik_logit(varargin)
   end
   
   function [Ey, Vary, Py] = lik_logit_predy(lik, Ef, Varf, yt, zt)
-  %LIK_LOGIT_PREDY    Returns the predictive mean, variance and density of y
+  %LIK_LOGIT_PREDY  Returns the predictive mean, variance and density of y
   %
-  %   Description         
-  %   [EY, VARY] = LIK_LOGIT_PREDY(LIK, EF, VARF)
-  %   takes a likelihood data structure LIK, posterior mean EF
-  %   and posterior Variance VARF of the latent variable and returns
-  %   the posterior predictive mean EY and variance VARY of the
-  %   observations related to the latent variables
+  %  Description         
+  %    [EY, VARY] = LIK_LOGIT_PREDY(LIK, EF, VARF) takes a
+  %    likelihood structure LIK, posterior mean EF and posterior
+  %    Variance VARF of the latent variable and returns the
+  %    posterior predictive mean EY and variance VARY of the
+  %    observations related to the latent variables
   %        
-  %   [EY, VARY, PY] = LIK_LOGIT_PREDY(LIK, EF, VARF, YT)
-  %   Returns also the predictive density of YT, that is 
+  %    [EY, VARY, PY] = LIK_LOGIT_PREDY(LIK, EF, VARF, YT)
+  %    Returns also the predictive density of YT, that is 
   %        p(yt | y) = \int p(yt | f) p(f|y) df.
-  %   This requires also the class labels YT.
+  %    This requires also the class labels YT.
   %
-  %   See also 
-  %   LA_PRED, EP_PRED, MC_PRED
+  %  See also 
+  %    LA_PRED, EP_PRED, MC_PRED
     
     if ~isempty(find(abs(yt)~=1))
       error('lik_logit: The class labels have to be {-1,1}')
@@ -295,14 +268,13 @@ function lik = lik_logit(varargin)
   function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
   %INIT_LOGIT_NORM
   %
-  %   Description
-  %    Return function handle to a function evaluating
-  %    Logit * Gaussian which is used for evaluating  
-  %    (likelihood * cavity) or (likelihood * posterior) 
-  %    Return also useful limits for integration.
-  %    This is private function for lik_logit.
+  %  Description
+  %    Return function handle to a function evaluating Logit *
+  %    Gaussian which is used for evaluating (likelihood * cavity)
+  %    or (likelihood * posterior) Return also useful limits for
+  %    integration. This is private function for lik_logit.
   %  
-  %   See also
+  % See also
   %   LIK_LOGIT_TILTEDMOMENTS, LIK_LOGIT_PREDY
     
   % avoid repetitive evaluation of constant part
@@ -321,10 +293,10 @@ function lik = lik_logit(varargin)
     
     % approximate guess for the location of the mode
     if sign(myy_i)==sign(yy)
-      % the log-likelihood is flat on this side
+      % the log likelihood is flat on this side
       modef = myy_i;
     else
-      % log-likelihood is approximately yy*f on this side
+      % the log likelihood is approximately yy*f on this side
       modef=sign(myy_i)*max(abs(myy_i)-sigm2_i,0);
     end
     % find the mode of the integrand using Newton iterations
@@ -406,18 +378,17 @@ function lik = lik_logit(varargin)
   end
 
   function reclik = lik_logit_recappend(reclik, ri, lik)
-  % RECAPPEND  Append the parameters to the record
+  %RECAPPEND  Append the parameters to the record
   %
-  %          Description 
-  %          RECLIK = GPCF_LOGIT_RECAPPEND(RECLIK, RI, LIK)
-  %          takes a likelihood record structure RECLIK, record
-  %          index RI and likelihood structure LIK with the
-  %          current MCMC samples of the hyperparameters. Returns
-  %          RECLIK which contains all the old samples and the
-  %          current samples from LIK.
+  %  Description 
+  %    RECLIK = GPCF_LOGIT_RECAPPEND(RECLIK, RI, LIK) takes a
+  %    likelihood record structure RECLIK, record index RI and
+  %    likelihood structure LIK with the current MCMC samples of
+  %    the parameters. Returns RECLIK which contains all the old
+  %    samples and the current samples from LIK.
   % 
-  %  See also:
-  %  gp_mc
+  %  See also
+  %    GP_MC
 
     if nargin == 2
       reclik.type = 'Logit';

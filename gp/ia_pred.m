@@ -3,17 +3,17 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = ia_pred(gp_array, x, y, xt, va
 %
 %  Description
 %    [EFT, VARFT, EYT, VARYT] = IA_PRED(GP_ARRAY, X, Y, XT,
-%    OPTIONS) takes a cell array of GP data structures together
+%    OPTIONS) takes a cell array of GP structures together
 %    with matrix X of training inputs and vector Y of training
 %    targets, and evaluates the predictive distribution at test
-%    inputs XT with hyperparameters marginalized out with IA. 
+%    inputs XT with parameters marginalized out with IA. 
 %    Returns a posterior mean EFT and variance VARFT of latent
 %    variables and the posterior predictive mean EYT and variance
 %    VARYT.
 %
 %    [EFT, VARFT, EYT, VARYT, PYT] = IA_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
-%    at test input locations XT with hyperparameters marginalized
+%    at test input locations XT with parameters marginalized
 %    out with IA. This can be used for example in the
 %    cross-validation. Here Y has to be vector.
 %

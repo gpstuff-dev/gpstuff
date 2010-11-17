@@ -20,12 +20,12 @@
 %
 %    where K is the covariance matrix, whose elements are given as
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters. We
-%    place a hyperprior for hyperparameters, p(th).
+%    covariance function and th its parameters. We place a
+%    prior for parameters, p(th).
 %
-%    The inference is conducted via EP or Laplace, where we find Gaussian
-%    approximation for p(f| th, data), where th is the maximum a
-%    posterior (MAP) estimate for the hyper-parameters.
+%    The inference is conducted via EP or Laplace, where we find
+%    Gaussian approximation for p(f| th, data), where th is the
+%    maximum a posterior (MAP) estimate for the parameters.
 %
 %  See also  LGCP, DEMO_SPATIAL2
 
@@ -40,13 +40,13 @@
 % 1D-example
 % =====================================
 fprintf(['Coal disaster data with EP integration over the latent\n' ...
-         'values and CCD integration over the hyperparameters\n'])
+         'values and CCD integration over the parameters\n'])
 figure
 % Coal disaster data
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/coal.txt');
 x=load(L);
-lgcp(x,'hyperint','CCD')
+lgcp(x,'int_method','CCD')
 line([x x],[4.7 5],'color','k')
 line(xlim,[4.85 4.85],'color','k')
 xlim([1850 1963])
@@ -58,7 +58,7 @@ ylabel('Intensity')
 % 2D-example
 % =====================================
 fprintf(['Redwood data with Laplace integration over the latent\n' ...
-         'values and MAP estimate for the hyperparameters\n'])
+         'values and MAP estimate for the parameters\n'])
 figure
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/redwoodfull.txt');

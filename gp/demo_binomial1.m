@@ -24,8 +24,8 @@
 %
 %    The elements of the covariance matrix K are given as K_ij =
 %    k(x_i, x_j | th). The function k(x_i, x_j | th) is covariance
-%    function and th its hyperparameters. We place a hyperprior for
-%    hyperparameters, p(th). The inference is done with Laplace
+%    function and th its parameters. We place a prior for
+%    parameters, p(th). The inference is done with Laplace
 %    approximation.
 %
 %    NOTE! In the prediction, the total number of trials Nt at the
@@ -71,7 +71,7 @@ pl = prior_logunif();
 gpcf = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', ps2);
 
-% Create the GP data structure
+% Create the GP structure
 gp = gp_set('lik', lik_binomial(), 'cf', {gpcf}, 'jitterSigma2', 1e-8);
 
 % ------- Laplace approximation --------

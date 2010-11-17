@@ -4,7 +4,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %  Description
 %    [F, ENERG, DIAG] = SCALED_MH(F, OPT, GP, X, Y) takes the
 %    current latent values F, options structure OPT, Gaussian
-%    process data structure GP, inputs X and outputs Y. Samples new
+%    process structure GP, inputs X and outputs Y. Samples new
 %    latent values and returns also energies ENERG and diagnostics
 %    DIAG. The latent values are sampled from their conditional
 %    posterior p(f|y,th).

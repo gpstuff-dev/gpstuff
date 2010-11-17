@@ -4,7 +4,7 @@ function gloo = gp_loog(w, gp, x, y, varargin)
 %         observation model
 %
 %   Description
-%     LOOG = GP_LOOG(W, GP, X, Y, PARAM) takes a hyper-parameter vector
+%     LOOG = GP_LOOG(W, GP, X, Y, PARAM) takes a parameter vector
 %     W, Gaussian process structure GP, a matrix X of input vectors and
 %     a matrix Y of targets, and evaluates the gradient of the mean 
 %     negative log leave-one-out predictive density (see GP_LOOE).
@@ -71,7 +71,7 @@ switch gp.type
       
       gpcf = gp.cf{i};
       gpcf.GPtype = gp.type;
-      [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+      DKff = feval(gpcf.fh.ghyper, gpcf, x);
       
       % Evaluate the gradient with respect to covariance function parameters
       for i2 = 1:length(DKff)
@@ -85,7 +85,7 @@ switch gp.type
 
     % Evaluate the gradient from Gaussian likelihood function
     if isfield(gp.lik.fh,'trcov')
-      [DCff, gprior_cf] = feval(lik.fh.ghyper, lik, x);
+      DCff = feval(lik.fh.llg, lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         Z = invC*eye(n,n).*DCff{i2};

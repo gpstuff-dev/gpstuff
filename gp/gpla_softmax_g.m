@@ -4,7 +4,7 @@ function [g, gdata, gprior] = gpla_softmax_g(w, gp, x, y, varargin)
 %
 %  Description
 %    G = GPLA_SOFTMAX_G(W, GP, X, Y, OPTIONS) takes a full GP
-%    hyper-parameter vector W, data structure GP a matrix X of
+%    hyper-parameter vector W, structure GP a matrix X of
 %    input vectors and a matrix Y of target vectors, and evaluates
 %    the gradient G of EP's marginal log posterior estimate . Each
 %    row of X corresponds to one input vector and each row of Y
