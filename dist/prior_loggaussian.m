@@ -27,85 +27,57 @@ function p = prior_loggaussian(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin < 1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
-  else
-    error('Unknown first argument');
-  end
-
-  switch do 
-    case 'init'
-      % Initialize the prior structure
-      p.type = 'Log-Gaussian';
-      
-      % set parameters
-      p.mu = 0;
-      p.s2 = 1;
-      
-      % set parameter priors
-      p.p.mu = [];
-      p.p.s2 = [];
-      
-      if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
-        error('Wrong number of arguments')
-      end
-      % Loop through all the parameter values that are changed
-      for i=1:2:numel(varargin)-1
-        switch varargin{i}
-          case 'mu'
-            p.mu = varargin{i+1};
-          case 's2'
-            p.s2 = varargin{i+1};
-          case 'mu_prior'
-            p.p.mu = varargin{i+1};
-          case 's2_prior'
-            p.p.s2 = varargin{i+1};                    
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-      
-      % set functions
-      p.fh.pak = @prior_loggaussian_pak;
-      p.fh.unpak = @prior_loggaussian_unpak;
-      p.fh.e = @prior_loggaussian_e;
-      p.fh.g = @prior_loggaussian_g;
-      p.fh.recappend = @prior_loggaussian_recappend;
-      
-    case 'set'
-      % Set the parameter values of the prior
-      if numel(varargin)~=1 & mod(numel(varargin),2) ~=1
-        error('Wrong number of arguments')
-      end
-      p = varargin{1};
-      % Loop through all the parameter values that are changed
-      for i=2:2:numel(varargin)-1
-        switch varargin{i}
-          case 'mu'
-            p.mu = varargin{i+1};
-          case 's2'
-            p.s2 = varargin{i+1};
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-  end
-
+  ip=inputParser;
+  ip.FunctionName = 'PRIOR_LOGGAUSSIAN';
+  ip.addOptional('p', [], @isstruct);
+  ip.addParamValue('mu',0, @(x) isscalar(x) && x>0);
+  ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.parse(varargin{:});
+  p=ip.Results.p;
   
-  function [w,s] = prior_loggaussian_pak(p)
+  if isempty(p)
+    init=true;
+    p.type = 'Log-Gaussian';
+  else
+    if ~isfield(p,'type') && ~isequal(p.type,'Log-Gaussian')
+      error('First argument does not seem to be a valid prior structure')
+    end
+    init=false;
+  end
+
+  % Initialize parameters
+  if init || ~ismember('mu',ip.UsingDefaults)
+    p.mu = ip.Results.mu;
+  end
+  if init || ~ismember('s2',ip.UsingDefaults)
+    p.s2 = ip.Results.s2;
+  end
+  % Initialize prior structure
+  if init
+    p.p=[];
+  end
+  if init || ~ismember('mu_prior',ip.UsingDefaults)
+    p.p.mu=ip.Results.mu_prior;
+  end
+  if init || ~ismember('s2_prior',ip.UsingDefaults)
+    p.p.s2=ip.Results.s2_prior;
+  end
+
+  if init
+    % set functions
+    p.fh.pak = @prior_loggaussian_pak;
+    p.fh.unpak = @prior_loggaussian_unpak;
+    p.fh.lp = @prior_loggaussian_lp;
+    p.fh.lpg = @prior_loggaussian_lpg;
+    p.fh.recappend = @prior_loggaussian_recappend;
+  end
+  
+  function [w, s] = prior_loggaussian_pak(p)
     
-    w=[];s={};
+    w=[];
+    s={};
     if ~isempty(p.p.mu)
       w = p.mu;
       s=[s; 'Log-Gaussian.mu'];
@@ -130,29 +102,29 @@ function p = prior_loggaussian(varargin)
     end
   end
   
-  function e = prior_loggaussian_e(x, p)
+  function lp = prior_loggaussian_lp(x, p)
     
-    e = 0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
+    lp = -0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
     
     if ~isempty(p.p.mu)
-      e = e + feval(p.p.mu.fh.e, p.mu, p.p.mu);
+      lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
     end
     if ~isempty(p.p.s2)
-      e = e + feval(p.p.s2.fh.e, p.s2, p.p.s2)  - log(p.s2);
+      lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
     end
   end
   
-  function g = prior_loggaussian_g(x, p)
+  function lpg = prior_loggaussian_lpg(x, p)
     
-    g = (1./(x.*p.s2)).*(log(x)-p.mu+p.s2);
+    lpg = -(1./(x.*p.s2)).*(log(x)-p.mu+p.s2);
     
     if ~isempty(p.p.mu)
-      gmu = sum(-(1./p.s2).*(log(x)-p.mu)) + feval(p.p.mu.fh.g, p.mu, p.p.mu);
-      g = [g gmu];
+      lpgmu = sum((1./p.s2).*(log(x)-p.mu)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+      lpg = [lpg lpgmu];
     end
     if ~isempty(p.p.s2)
-      gs2 = (sum( 0.5*(1./p.s2-1./p.s2.^2.*(log(x)-p.mu).^2 )) + feval(p.p.s2.fh.g, p.s2, p.p.s2)).*p.s2 - 1;
-      g = [g gs2];
+      lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(log(x)-p.mu).^2 )) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
+      lpg = [lpg lpgs2];
     end
   end
   

@@ -30,86 +30,57 @@ function p = prior_sinvchi2(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin < 1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'PRIOR_SINVCHI2';
+  ip.addOptional('p', [], @isstruct);
+  ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
+  ip.addParamValue('nu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.parse(varargin{:});
+  p=ip.Results.p;
+  
+  if isempty(p)
+    init=true;
+    p.type = 'S-Inv-Chi2';
   else
-    error('Unknown first argument');
+    if ~isfield(p,'type') && ~isequal(p.type,'S-Inv-Chi2')
+      error('First argument does not seem to be a valid prior structure')
+    end
+    init=false;
   end
 
-  switch do 
-    case 'init'
-      % Initialize the prior structure
-      p.type = 'Sinvchi2';
-      
-      % set parameters
-      p.s2 = 1;
-      p.nu = 4;
-      
-      % set parameter priors
-      p.p.s2 = [];
-      p.p.nu = [];
-      
-      if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
-        error('Wrong number of arguments')
-      end
-      % Loop through all the parameter values that are changed
-      for i=1:2:numel(varargin)-1
-        switch varargin{i}
-          case 's2'
-            p.s2 = varargin{i+1};
-          case 'nu'
-            p.nu = varargin{i+1};
-          case 's2_prior'
-            p.p.s2 = varargin{i+1};
-          case 'nu_prior'
-            p.p.nu = varargin{i+1};
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-      
-      % set functions
-      p.fh.pak = @prior_sinvchi2_pak;
-      p.fh.unpak = @prior_sinvchi2_unpak;
-      p.fh.e = @prior_sinvchi2_e;
-      p.fh.g = @prior_sinvchi2_g;
-      p.fh.recappend = @prior_sinvchi2_recappend;
-
-    case 'set'
-      % Set the parameter values of the prior
-      if numel(varargin)~=1 & mod(numel(varargin),2) ~=1
-        error('Wrong number of arguments')
-      end
-      p = varargin{1};
-      % Loop through all the parameter values that are changed
-      for i=2:2:numel(varargin)-1
-        switch varargin{i}
-          case 's2'
-            p.s2 = varargin{i+1};
-          case 'nu'
-            p.nu = varargin{i+1};
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
+  % Initialize parameters
+  if init || ~ismember('s2',ip.UsingDefaults)
+    p.s2 = ip.Results.s2;
+  end
+  if init || ~ismember('nu',ip.UsingDefaults)
+    p.nu = ip.Results.nu;
+  end
+  % Initialize prior structure
+  if init
+    p.p=[];
+  end
+  if init || ~ismember('s2_prior',ip.UsingDefaults)
+    p.p.s2=ip.Results.s2_prior;
+  end
+  if init || ~ismember('nu_prior',ip.UsingDefaults)
+    p.p.nu=ip.Results.nu_prior;
   end
 
+  if init
+    % set functions
+    p.fh.pak = @prior_sinvchi2_pak;
+    p.fh.unpak = @prior_sinvchi2_unpak;
+    p.fh.lp = @prior_sinvchi2_lp;
+    p.fh.lpg = @prior_sinvchi2_lpg;
+    p.fh.recappend = @prior_sinvchi2_recappend;
+  end
   
-  
-  function [w,s] = prior_sinvchi2_pak(p)
+  function [w, s] = prior_sinvchi2_pak(p)
     
-    w=[];s={};
+    w=[];
+    s={};
     if ~isempty(p.p.s2)
       w = log(p.s2);
       s=[s; 'log(Sinvchi2.s2)'];
@@ -134,27 +105,27 @@ function p = prior_sinvchi2(varargin)
     end
   end
 
-  function e = prior_sinvchi2_e(x, p)
-    e = sum((p.nu./2+1) .* log(x) + (p.s2.*p.nu./2./x) + (p.nu/2) .* log(2./(p.s2.*p.nu)) + gammaln(p.nu/2)) ;
+  function lp = prior_sinvchi2_lp(x, p)
+    lp = -sum((p.nu./2+1) .* log(x) + (p.s2.*p.nu./2./x) + (p.nu/2) .* log(2./(p.s2.*p.nu)) + gammaln(p.nu/2)) ;
     
     if ~isempty(p.p.s2)
-      e = e + feval(p.p.s2.fh.e, p.s2, p.p.s2) - log(p.s2);
+      lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
     end
     if ~isempty(p.p.nu)
-      e = e + feval(p.p.nu.fh.e, p.nu, p.p.nu)  - log(p.nu);
+      lp = lp + feval(p.p.nu.fh.lp, p.nu, p.p.nu) + log(p.nu);
     end
   end
   
-  function g = prior_sinvchi2_g(x, p)
-    g = (p.nu/2+1)./x-p.nu.*p.s2./(2*x.^2);
+  function lpg = prior_sinvchi2_lpg(x, p)
+    lpg = -(p.nu/2+1)./x +p.nu.*p.s2./(2*x.^2);
 
     if ~isempty(p.p.s2)
-      gs2 = (sum(p.nu/2.*(1./x-1./p.s2)) + feval(p.p.s2.fh.g, p.s2, p.p.s2)).*p.s2 - 1; 
-      g = [g gs2];
+      lpgs2 = (-sum(p.nu/2.*(1./x-1./p.s2)) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1; 
+      lpg = [lpg lpgs2];
     end
     if ~isempty(p.p.nu)
-      gnu = (sum(0.5*(log(x) + p.s2./x + log(2./p.s2./p.nu) - 1 + digamma1(p.nu/2))) + feval(p.p.nu.fh.g, p.nu, p.p.nu)).*p.nu - 1;
-      g = [g gnu];
+      lpgnu = (-sum(0.5*(log(x) + p.s2./x + log(2./p.s2./p.nu) - 1 + digamma1(p.nu/2))) + feval(p.p.nu.fh.lpg, p.nu, p.p.nu)).*p.nu + 1;
+      lpg = [lpg lpgnu];
     end
   end
   

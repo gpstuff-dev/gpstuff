@@ -16,53 +16,34 @@ function p = prior_sqrtunif(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin < 1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'PRIOR_SQRTUNIFORM';
+  ip.addOptional('p', [], @isstruct);
+  ip.parse(varargin{:});
+  p=ip.Results.p;
+  
+  if isempty(p)
+    init=true;
+    p.type = 'Sqrt-Uniform';
   else
-    error('Unknown first argument');
+    if ~isfield(p,'type') && ~isequal(p.type,'Sqrt-Uniform')
+      error('First argument does not seem to be a valid prior structure')
+    end
+    init=false;
+  end
+  
+  if init
+    % set functions
+    p.fh.pak = @prior_sqrtunif_pak;
+    p.fh.unpak = @prior_sqrtunif_unpak;
+    p.fh.lp = @prior_sqrtunif_lp;
+    p.fh.lpg = @prior_sqrtunif_lpg;
+    p.fh.recappend = @prior_sqrtunif_recappend;
   end
 
-  switch do 
-    case 'init'
-      % Initialize the prior structure
-      p.type = 'Sqrt-uniform';
-      
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
-      
-      % set functions
-      p.fh.pak = @prior_sqrtunif_pak;
-      p.fh.unpak = @prior_sqrtunif_unpak;
-      p.fh.e = @prior_sqrtunif_e;
-      p.fh.g = @prior_sqrtunif_g;
-      p.fh.recappend = @prior_sqrtunif_recappend;
-
-    case 'set'
-      % No paramaters to set
-      if numel(varargin)~=1
-        error('Wrong number of arguments')
-      end
-      
-      % Set the parameter values of the prior
-      p = varargin{1};
-
-  end
-
-  function [w,s] = prior_sqrtunif_pak(p)
-    w=[];s={};
+  function [w, s] = prior_sqrtunif_pak(p)
+    w=[];
+    s={};
   end
   
   function [p, w] = prior_sqrtunif_unpak(p, w)
@@ -70,14 +51,12 @@ function p = prior_sqrtunif(varargin)
     p = p;
   end
   
-  function e = prior_sqrtunif_e(x, p)
-    e = sum(2*sqrt(x));% = -log(1/(2*sqrt(x)))
-                       % where the -log comes from the definition of 
-                       % energy as -log( p(x) )
+  function lp = prior_sqrtunif_lp(x, p)
+    lp = -sum(2*sqrt(x));% = log(1/(2*sqrt(x)))
   end
   
-  function g = prior_sqrtunif_g(x, p)
-    g = 1./sqrt(x);
+  function lpg = prior_sqrtunif_lpg(x, p)
+    lpg = -1./sqrt(x);
   end
   
   function rec = prior_sqrtunif_recappend(rec, ri, p)

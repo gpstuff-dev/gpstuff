@@ -15,53 +15,34 @@ function p = prior_loglogunif(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin < 1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
+  ip=inputParser;
+  ip.FunctionName = 'PRIOR_LOGLOGUNIFORM';
+  ip.addOptional('p', [], @isstruct);
+  ip.parse(varargin{:});
+  p=ip.Results.p;
+  
+  if isempty(p)
+    init=true;
+    p.type = 'Loglog-Uniform';
   else
-    error('Unknown first argument');
-  end
-
-  switch do 
-    case 'init'
-      % Initialize the prior structure
-      p.type = 'Log-log-uniform';
-      
-      % No paramaters to init
-      if numel(varargin) > 0
-        error('Wrong number of arguments')
-      end
-
-      % set functions
-      p.fh.pak = @prior_loglogunif_pak;
-      p.fh.unpak = @prior_loglogunif_unpak;
-      p.fh.e = @prior_loglogunif_e;
-      p.fh.g = @prior_loglogunif_g;
-      p.fh.recappend = @prior_loglogunif_recappend;
-      
-    case 'set'
-      % No paramaters to set
-      if numel(varargin)~=1
-        error('Wrong number of arguments')
-      end
-      
-      % Set the parameter values of the prior
-      p = varargin{1};
-      
+    if ~isfield(p,'type') && ~isequal(p.type,'Loglog-Uniform')
+      error('First argument does not seem to be a valid prior structure')
+    end
+    init=false;
   end
   
-  function [w,s] = prior_loglogunif_pak(p, w)
-    w=[];s={};
+  if init
+    % set functions
+    p.fh.pak = @prior_loglogunif_pak;
+    p.fh.unpak = @prior_loglogunif_unpak;
+    p.fh.lp = @prior_loglogunif_lp;
+    p.fh.lpg = @prior_loglogunif_lpg;
+    p.fh.recappend = @prior_loglogunif_recappend;
+  end
+  
+  function [w, s] = prior_loglogunif_pak(p, w)
+    w=[];
+    s={};
   end
   
   function [p, w] = prior_loglogunif_unpak(p, w)
@@ -69,12 +50,12 @@ function p = prior_loglogunif(varargin)
     p = p;
   end
   
-  function e = prior_loglogunif_e(x, p)
-    e = sum(log(log(x)) + log(x));     % = - log( 1./log(x) * 1./x)
+  function lp = prior_loglogunif_lp(x, p)
+    lp = -sum(log(log(x)) + log(x));     % = log( 1./log(x) * 1./x)
   end
   
-  function g = prior_loglogunif_g(x, p)
-    g = 1./log(x)./x + 1./x;
+  function lpg = prior_loglogunif_lpg(x, p)
+    lpg = -1./log(x)./x - 1./x;
   end
   
   function rec = prior_loglogunif_recappend(rec, ri, p)

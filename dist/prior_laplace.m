@@ -27,85 +27,57 @@ function p = prior_laplace(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-  if nargin < 1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
-  else
-    error('Unknown first argument');
-  end
-
-  switch do 
-    case 'init'
-      % Initialize the prior structure
-      p.type = 'Laplace';
-      
-      % set parameters
-      p.mu = 0;
-      p.s = 1;
-      
-      % set parameter priors
-      p.p.mu = [];
-      p.p.s = [];
-      
-      if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
-        error('Wrong number of arguments')
-      end
-      % Loop through all the parameter values that are changed
-      for i=1:2:numel(varargin)-1
-        switch varargin{i}
-          case 'mu'
-            p.mu = varargin{i+1};
-          case 's'
-            p.s = varargin{i+1};
-          case 'mu_prior'
-            p.p.mu = varargin{i+1};
-          case 's_prior'
-            p.p.s = varargin{i+1};                    
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-      
-      % set functions
-      p.fh.pak = @prior_laplace_pak;
-      p.fh.unpak = @prior_laplace_unpak;
-      p.fh.e = @prior_laplace_e;
-      p.fh.g = @prior_laplace_g;
-      p.fh.recappend = @prior_laplace_recappend;
-
-    case 'set'
-      % Set the parameter values of the prior
-      if numel(varargin)~=1 & mod(numel(varargin),2) ~=1
-        error('Wrong number of arguments')
-      end
-      p = varargin{1};
-      % Loop through all the parameter values that are changed
-      for i=2:2:numel(varargin)-1
-        switch varargin{i}
-          case 'mu'
-            p.mu = varargin{i+1};
-          case 's'
-            p.s = varargin{i+1};
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-  end
-
+  ip=inputParser;
+  ip.FunctionName = 'PRIOR_LAPLACE';
+  ip.addOptional('p', [], @isstruct);
+  ip.addParamValue('mu',0, @(x) isscalar(x) && x>0);
+  ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('s',1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('s_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.parse(varargin{:});
+  p=ip.Results.p;
   
-  function [w,s] = prior_laplace_pak(p)
+  if isempty(p)
+    init=true;
+    p.type = 'Laplace';
+  else
+    if ~isfield(p,'type') && ~isequal(p.type,'Laplace')
+      error('First argument does not seem to be a valid prior structure')
+    end
+    init=false;
+  end
+
+  % Initialize parameters
+  if init || ~ismember('mu',ip.UsingDefaults)
+    p.mu = ip.Results.mu;
+  end
+  if init || ~ismember('s',ip.UsingDefaults)
+    p.s = ip.Results.s;
+  end
+  % Initialize prior structure
+  if init
+    p.p=[];
+  end
+  if init || ~ismember('mu_prior',ip.UsingDefaults)
+    p.p.mu=ip.Results.mu_prior;
+  end
+  if init || ~ismember('s_prior',ip.UsingDefaults)
+    p.p.s=ip.Results.s_prior;
+  end
+
+  if init
+    % set functions
+    p.fh.pak = @prior_laplace_pak;
+    p.fh.unpak = @prior_laplace_unpak;
+    p.fh.lp = @prior_laplace_lp;
+    p.fh.lpg = @prior_laplace_lpg;
+    p.fh.recappend = @prior_laplace_recappend;
+  end
+  
+  function [w, s] = prior_laplace_pak(p)
     
-    w=[];s={};
+    w=[];
+    s={};
     if ~isempty(p.p.mu)
       w = p.mu;
       s=[s; 'Laplace.mu'];
@@ -130,29 +102,29 @@ function p = prior_laplace(varargin)
     end
   end
   
-  function e = prior_laplace_e(x, p)
+  function lp = prior_laplace_lp(x, p)
     
-    e = sum(log(2*p.s) + 1./p.s.* abs(x-p.mu));
+    lp = sum(-log(2*p.s) - 1./p.s.* abs(x-p.mu));
     
     if ~isempty(p.p.mu)
-      e = e + feval(p.p.mu.fh.e, p.mu, p.p.mu);
+      lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
     end
     if ~isempty(p.p.s)
-      e = e + feval(p.p.s.fh.e, p.s, p.p.s)  - log(p.s);
+      lp = lp + feval(p.p.s.fh.lp, p.s, p.p.s) + log(p.s);
     end
   end
   
-  function g = prior_laplace_g(x, p)
+  function lpg = prior_laplace_lpg(x, p)
 
-    g = sign(x-p.mu)./p.s; 
+    lpg = -sign(x-p.mu)./p.s; 
     
     if ~isempty(p.p.mu)
-      gmu = sum(-sign(x-p.mu)./p.s) + feval(p.p.mu.fh.g, p.mu, p.p.mu);
-      g = [g gmu];
+      lpgmu = sum(sign(x-p.mu)./p.s) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+      lpg = [lpg lpgmu];
     end
     if ~isempty(p.p.s)
-      gs = (sum( 1./p.s - 1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh.g, p.s, p.p.s)).*p.s - 1;
-      g = [g gs];
+      lpgs = (sum(-1./p.s +1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh.lpg, p.s, p.p.s)).*p.s + 1;
+      lpg = [lpg lpgs];
     end
   end
   

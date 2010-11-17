@@ -33,115 +33,76 @@ function p = prior_t(varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-%    The fields in P are:
-%      type         = 'Student-t'
-%      mu           = Location (default 0)
-%      s2           = Scale (default 1)
-%      nu           = Degrees of freedom (default 4)
-%      fh_pak       = Function handle to parameter packing routine
-%      fh_unpak     = Function handle to parameter unpacking routine
-%      fh_e         = Function handle to energy evaluation routine
-%      fh_g         = Function handle to gradient of energy evaluation routine
-%      fh_recappend = Function handle to MCMC record appending routine
-%
-  if nargin < 1
-    do='init';
-  elseif ischar(varargin{1})
-    switch varargin{1}
-      case 'init'
-        do='init';varargin(1)=[];
-      case 'set'
-        do='set';varargin(1)=[];
-      otherwise
-        do='init';
-    end
-  elseif isstruct(varargin{1})
-    do='set';
-  else
-    error('Unknown first argument');
-  end
-
-  switch do 
-    case 'init'
-      % Initialize the prior structure
-      p.type = 'Student-t';
-      
-      % set parameters
-      p.mu = 0;
-      p.s2 = 1;
-      p.nu = 4;
-      
-      % set parameter priors
-      p.p.mu = [];
-      p.p.s2 = [];
-      p.p.nu = [];
-      
-      if numel(varargin) > 0 & mod(numel(varargin),2) ~=0
-        error('Wrong number of arguments')
-      end
-      % Loop through all the parameter values that are changed
-      for i=1:2:numel(varargin)-1
-        switch varargin{i}
-          case 'mu'
-            p.mu = varargin{i+1};
-          case 's2'
-            p.s2 = varargin{i+1};
-          case 'nu'
-            p.nu = varargin{i+1};
-          case 'mu_prior'
-            p.p.mu = varargin{i+1};
-          case 's2_prior'
-            p.p.s2 = varargin{i+1};
-          case 'nu_prior'
-            p.p.nu = varargin{i+1};                    
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-      
-      % set functions
-      p.fh.pak = @prior_t_pak;
-      p.fh.unpak = @prior_t_unpak;
-      p.fh.e = @prior_t_e;
-      p.fh.g = @prior_t_g;
-      p.fh.recappend = @prior_t_recappend;
-
-    case 'set'
-      % Set the parameter values of the prior
-      if numel(varargin)~=1 & mod(numel(varargin),2) ~=1
-        error('Wrong number of arguments')
-      end
-      p = varargin{1};
-      % Loop through all the parameter values that are changed
-      for i=2:2:numel(varargin)-1
-        switch varargin{i}
-          case 'mu'
-            p.mu = varargin{i+1};
-          case 's2'
-            p.s2 = varargin{i+1};
-          case 'nu'
-            p.nu = varargin{i+1};
-          otherwise
-            error('Wrong parameter name!')
-        end
-      end
-  end
-
+  ip=inputParser;
+  ip.FunctionName = 'PRIOR_T';
+  ip.addOptional('p', [], @isstruct);
+  ip.addParamValue('mu',0, @(x) isscalar(x) && x>0);
+  ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
+  ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
+  ip.addParamValue('nu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.parse(varargin{:});
+  p=ip.Results.p;
   
-  function [w,s] = prior_t_pak(p)
+  if isempty(p)
+    init=true;
+    p.type = 't';
+  else
+    if ~isfield(p,'type') && ~isequal(p.type,'t')
+      error('First argument does not seem to be a valid prior structure')
+    end
+    init=false;
+  end
+
+  % Initialize parameters
+  if init || ~ismember('mu',ip.UsingDefaults)
+    p.mu = ip.Results.mu;
+  end
+  if init || ~ismember('s2',ip.UsingDefaults)
+    p.s2 = ip.Results.s2;
+  end
+  if init || ~ismember('nu',ip.UsingDefaults)
+    p.nu = ip.Results.nu;
+  end
+  % Initialize prior structure
+  if init
+    p.p=[];
+  end
+  if init || ~ismember('mu_prior',ip.UsingDefaults)
+    p.p.mu=ip.Results.mu_prior;
+  end
+  if init || ~ismember('s2_prior',ip.UsingDefaults)
+    p.p.s2=ip.Results.s2_prior;
+  end
+  if init || ~ismember('nu_prior',ip.UsingDefaults)
+    p.p.nu=ip.Results.nu_prior;
+  end
+
+  if init
+    % set functions
+    p.fh.pak = @prior_t_pak;
+    p.fh.unpak = @prior_t_unpak;
+    p.fh.lp = @prior_t_lp;
+    p.fh.lpg = @prior_t_lpg;
+    p.fh.recappend = @prior_t_recappend;
+  end
+  
+  function [w, s] = prior_t_pak(p)
     
-    w=[];s={};
+    w=[];
+    s={};
     if ~isempty(p.p.mu)
       w = p.mu;
-      s=[s; 'Student-t.mu'];
+      s=[s; 't.mu'];
     end        
     if ~isempty(p.p.s2)
       w = [w log(p.s2)];
-      s=[s; 'log(Student-t.s2)'];
+      s=[s; 'log(t.s2)'];
     end
     if ~isempty(p.p.nu)
       w = [w log(p.nu)];
-      s=[s; 'log(Student-t.nu)'];
+      s=[s; 'log(t.nu)'];
     end
   end
   
@@ -164,37 +125,37 @@ function p = prior_t(varargin)
     end
   end
   
-  function e = prior_t_e(x, p)
+  function lp = prior_t_lp(x, p)
     
-    e=sum(-gammaln((p.nu+1)./2) + gammaln(p.nu./2) + 0.5*log(p.nu.*pi.*p.s2) + (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2));
+    lp=sum(gammaln((p.nu+1)./2) -gammaln(p.nu./2) -0.5*log(p.nu.*pi.*p.s2) -(p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2));
     
     if ~isempty(p.p.mu)
-      e = e + feval(p.p.mu.fh.e, p.mu, p.p.mu);
+      lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
     end
     if ~isempty(p.p.s2)
-      e = e + feval(p.p.s2.fh.e, p.s2, p.p.s2) - log(p.s2);
+      lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) +log(p.s2);
     end
     if ~isempty(p.p.nu)
-      e = e + feval(p.p.nu.fh.e, p.nu, p.p.nu) - log(p.nu);
+      lp = lp + feval(p.p.nu.fh.lp, p.nu, p.p.nu) +log(p.nu);
     end
   end
   
-  function g = prior_t_g(x, p)
+  function lpg = prior_t_lpg(x, p)
 
-  %g=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
-    g=(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2);
+  %lpg=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
+    lpg=-(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2);
     
     if ~isempty(p.p.mu)
-      gmu = sum( -(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2) ) + feval(p.p.mu.fh.g, p.mu, p.p.mu);
-      g = [g gmu];
+      lpgmu = sum( (p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2) ) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+      lpg = [lpg lpgmu];
     end
     if ~isempty(p.p.s2)
-      gs2 = (sum( 1./(2.*p.s2) -((p.nu + 1)*(p.mu - x)^2)/(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + feval(p.p.s2.fh.g, p.s2, p.p.s2)).*p.s2 - 1;
-      g = [g gs2];
+      lpgs2 = (sum( -1./(2.*p.s2) +((p.nu + 1)*(p.mu - x)^2)./(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
+      lpg = [lpg lpgs2];
     end
     if ~isempty(p.p.nu)
-      gnu = (0.5*sum( -digamma1((p.nu+1)./2)+digamma1(p.nu./2)+1./p.nu+log(1+(x-p.mu).^2./p.nu./p.s2)-(p.nu+1)./(1+(x-p.mu).^2./p.nu./p.s2).*(x-p.mu).^2./p.s2./p.nu.^2) + feval(p.p.nu.fh.g, p.nu, p.p.nu)).*p.nu - 1;
-      g = [g gnu];
+      lpgnu = (0.5*sum( digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(x-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(x-p.mu).^2./p.nu./p.s2).*(x-p.mu).^2./p.s2./p.nu.^2) + feval(p.p.nu.fh.lpg, p.nu, p.p.nu)).*p.nu + 1;
+      lpg = [lpg lpgnu];
     end
   end
   
