@@ -140,7 +140,7 @@ function p = prior_sqrtt(varargin)
   
   function lpg = prior_sqrtt_lpg(x, p)
 
-    lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1/sqrt(x);
+    lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1./sqrt(x);
     
     if ~isempty(p.p.mu)
       lpgmu = sum((p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
