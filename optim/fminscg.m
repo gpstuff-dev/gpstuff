@@ -179,7 +179,7 @@ while (j <= maxiter)
     output.x(j,:) = x;      % Current position
   end    
   if display >= 3
-    fprintf(1, 'Cycle %4d  Error %11.6f  Scale %e\n', j, fnow, lambda);
+    fprintf(1, 'Iter %4d  f(x) %10.5f  Scale %1.1e\n', j, fnow, lambda);
   end
   
   if (success == 1)
