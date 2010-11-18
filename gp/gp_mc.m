@@ -266,12 +266,14 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       end
 
       % --- Sample the likelihood parameters with Gibbs ------------- 
-      if isfield(gp.lik,'gibbs') && isequal(gp.lik.gibbs,'on')
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
+          isfield(gp.lik,'gibbs') && isequal(gp.lik.gibbs,'on')
         [gp.lik, f] = feval(gp.lik.fh.gibbs, gp, gp.lik, x, f);
       end
       
       % --- Sample the likelihood parameters with HMC ------------- 
-      if ~isempty(opt.lik_hmc_opt)
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
+          ~isempty(opt.lik_hmc_opt)
         infer_params = gp.infer_params;
         gp.infer_params = 'likelihood';
         w = gp_pak(gp);
@@ -293,7 +295,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       end        
       
       % --- Sample the likelihood parameters with SLS ------------- 
-      if ~isempty(opt.lik_sls_opt)
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
+          ~isempty(opt.lik_sls_opt)
         w = gp_pak(gp, 'likelihood');
         fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) -feval(lik.fh.lp,feval(lik.fh.unpak,lik,w)));
         [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);

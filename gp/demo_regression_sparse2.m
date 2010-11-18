@@ -67,19 +67,19 @@ xt=[1:0.01:14]';
 
 % Initialize full GP with a squared exponential component and set
 % priors for their parameters.
-pl = prior_t('s2', 5, 'nu', 4);
-pm = prior_sqrtt('s2', 10, 'nu', 4);
+pl = prior_t('s2', 2);
+pm = prior_sqrtt();
 pn = prior_logunif();
 
 gpcfse = gpcf_sexp('lengthScale',5,'magnSigma2',10, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
-gp = gp_set('lik', lik, 'cf', {gpcfse}, 'jitterSigma2', 1e-6,'infer_params','covariance+likelihood');
+gp = gp_set('lik', lik, 'cf', {gpcfse}, 'jitterSigma2', 1e-6);
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 [Eft_full, Varft_full] = gp_pred(gp, x, y, xt);
 Varft_full = Varft_full + gp.lik.sigma2;
@@ -108,7 +108,7 @@ gp_fic = gp_set(gp, 'type','FIC','X_u',Xu,'infer_params','inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
+gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
 [Eft_fic, Varft_fic] = gp_pred(gp_fic, x, y, xt);
 Varft_fic = Varft_fic + gp_fic.lik.sigma2;
@@ -143,7 +143,7 @@ gp_var = gp_set(gp,'type','VAR','X_u',Xu,'infer_params','inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
+gp_var=gp_optim(gp_var,x,y,'opt',opt);
 
 [Eft_var, Varft_var] = gp_pred(gp_var, x, y, xt);
 Varft_var = Varft_var + gp_var.lik.sigma2;
@@ -174,7 +174,7 @@ gp_dtc = gp_set(gp,'type','DTC','X_u',Xu,'infer_params','inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
+gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 
 [Eft_dtc, Varft_dtc] = gp_pred(gp_dtc, x, y, xt);
 Varft_dtc = Varft_dtc + gp_dtc.lik.sigma2;

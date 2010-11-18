@@ -157,7 +157,7 @@ function lik = lik_gaussiansmt(varargin)
     lik.fh.unpak = @lik_gaussiansmt_unpak;
     lik.fh.lp = @lik_gaussiansmt_lp;
     lik.fh.lpg = @lik_gaussiansmt_lpg;
-    lik.fh.llg = @lik_gaussiansmt_llg;
+    lik.fh.cfg = @lik_gaussiansmt_cfg;
     lik.fh.trcov  = @lik_gaussiansmt_trcov;
     lik.fh.trvar  = @lik_gaussiansmt_trvar;
     lik.fh.gibbs = @lik_gaussiansmt_gibbs;
@@ -180,7 +180,7 @@ function lik = lik_gaussiansmt(varargin)
     lpg = [];
   end
 
-  function DKff  = lik_gaussiansmt_llg(lik, x, x2)
+  function DKff  = lik_gaussiansmt_cfg(lik, x, x2)
     DKff = [];
   end
   
@@ -323,7 +323,7 @@ function lik = lik_gaussiansmt(varargin)
       reccf.fh.unpak = @lik_gaussiansmt_unpak;
       reccf.fh.lp = @lik_gaussiansmt_lp;
       reccf.fh.lpg = @lik_gaussiansmt_lpg;
-      reccf.fh.llg = @lik_gaussiansmt_llg;
+      reccf.fh.cfg = @lik_gaussiansmt_cfg;
       reccf.fh.cov = @lik_gaussiansmt_cov;
       reccf.fh.trcov  = @lik_gaussiansmt_trcov;
       reccf.fh.trvar  = @lik_gaussiansmt_trvar;

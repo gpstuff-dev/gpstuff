@@ -129,7 +129,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2})
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions. Below Eyt_full is the predictive mean and
 % Varyt_full the predictive variance.
@@ -191,7 +191,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2})
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions. Below Eft_full is the predictive mean and
 % Varft_full the predictive variance.
@@ -299,7 +299,7 @@ gp = gp_set(gp, 'latent_method', 'EP');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'z', z,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'z', z,'opt',opt);
 
 % Predictions
 xt=[1:96]';

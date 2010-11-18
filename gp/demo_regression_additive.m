@@ -80,7 +80,7 @@ gpcf_l = gpcf_linear('coeffSigma2_prior', pt);
 gp = gp_set('lik', lik, 'cf', {gpcf_c gpcf_l}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Compute predictions in a grid using the MAP estimate
 Eft_map = gp_pred(gp, x, y, xt);
@@ -101,15 +101,21 @@ fprintf(['Constant + squared exponential covariance function\n' ...
          '(w.r.t. the first input dimension) + linear (w.r.t.\n' ...
          'the second input dimension)\n'])
 
-% Metric function for the first input variable
-metric1 = metric_euclidean('components', {[1]}, 'lengthScale',[0.5], 'lengthScale_prior', pt);
-% Covariance function for the first input variable
-gpcf_s1 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric1);
+%Covariance function for the first input variable
+gpcf_s1 = gpcf_sexp('selectedVariables', 1, 'lengthScale',0.5, ...
+                    'lengthScale_prior', pt, 'magnSigma2', 0.15, ...
+                    'magnSigma2_prior', pt);
+% gpcf_s1 can be construted also as
+%metric1 = metric_euclidean('components', {[1]}, 'lengthScale',[0.5], ...
+%                           'lengthScale_prior', pt);
+%gpcf_s1 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, ...
+%                    'metric', metric1);
+%Covariance function for the second input variable
 gpcf_l2 = gpcf_linear('selectedVariables', [2], 'coeffSigma2_prior', pt);
 gp = gp_set('lik', lik, 'cf', {gpcf_c gpcf_s1 gpcf_l2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Compute predictions in a grid using the MAP estimate
 Eft_map = gp_pred(gp, x, y, xt);
@@ -126,14 +132,17 @@ title('The predicted underlying function (sexp for 1. input + linear for 2. inpu
 % ADDITIVE SQUARED EXPONENTIAL COVARIANCE FUNCTION
 disp('Additive squared exponential covariance function')
 
-% Metric function for the second input variable
-metric2 = metric_euclidean('components', {[2]},'lengthScale',[0.5], 'lengthScale_prior', pt);
 % Covariance function for the second input variable
-gpcf_s2 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric2);
+gpcf_s2 = gpcf_sexp('selectedVariables', 2,'lengthScale',0.5, ...
+                    'lengthScale_prior', pt, 'magnSigma2', 0.15, ...
+                    'magnSigma2_prior', pt);
+% gpcf_s2 can be construted also as
+%metric2 = metric_euclidean('components', {[2]},'lengthScale',[0.5], 'lengthScale_prior', pt);
+%gpcf_s2 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, 'metric', metric2);
 gp = gp_set('lik', lik, 'cf', {gpcf_s1,gpcf_s2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Compute predictions in a grid using the MAP estimate
 Eft_map = gp_pred(gp, x, y, xt);
@@ -155,7 +164,7 @@ gpcf_s = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 0.2^2, ...
 gp = gp_set('lik', lik, 'cf', {gpcf_s}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Compute predictions in a grid using the MAP estimate
 Eft_map = gp_pred(gp, x, y, xt);
@@ -179,7 +188,7 @@ gpcf_nn2 = gpcf_neuralnetwork('weightSigma2', 1, 'biasSigma2', 1, 'selectedVaria
 gp = gp_set('lik', lik, 'cf', {gpcf_nn1,gpcf_nn2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Compute predictions in a grid using the MAP estimate
 Eft_map = gp_pred(gp, x, y, xt);
@@ -201,7 +210,7 @@ gpcf_nn = gpcf_neuralnetwork('weightSigma2', ones(1,nin), 'biasSigma2', 1, ...
 gp = gp_set('lik', lik, 'cf', {gpcf_nn}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Compute predictions in a grid using the MAP estimate
 Eft_map = gp_pred(gp, x, y, xt);

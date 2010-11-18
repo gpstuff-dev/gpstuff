@@ -46,7 +46,7 @@ tp=9;                                  %number of training points -1
 x=[-2:4/tp:2]';
 y=sin(x).*cos(x).^2;                   % The underlying process
 dy=cos(x).^3 - 2*sin(x).^2.*cos(x);    % Derivative of the process
-ns=0.06;                              % noise standard deviation
+ns=0.06;                               % noise standard deviation
 
 % Add noise
 y=y + ns*randn(size(y));
@@ -75,7 +75,7 @@ gp = gp_set('cf', gpcf);
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 % Do the prediction
 [Eft, Varft] = gp_pred(gp, x, y, xt);
 
@@ -105,12 +105,12 @@ ylabel('output y')
 disp('GP model with derivative obs')
 
 % Option derivobs set so that the derivatives are in use
-gp = gp_set(gp, 'derivobs', 'on');
+gp = gp_set('cf', gpcf, 'derivobs', 'on');
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','DerivativeCheck','on');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y2,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y2,'opt',opt);
 % Do the prediction
 [Eft2, Varft2] = gp_pred(gp, x, y2, xt);
 % Use predictions for function values only

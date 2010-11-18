@@ -22,7 +22,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %    GP_SET, GP_G, GPEP_E, EP_PRED
 
 % Copyright (c) 2007-2010  Jarno Vanhatalo
-% Copyright (c) 2010       Heikki Peura
+% Copyright (c) 2010       Heikki Peura, Aki Vehtari
   
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -114,8 +114,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             i1 = length(gprior);
           end
           gpcf = gp.cf{i};
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
-          
+          DKff = feval(gpcf.fh.cfg, gpcf, x);
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           if ~isfield(gp,'meanf')
             for i2 = 1:length(DKff)
@@ -208,9 +208,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-          DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-          DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+          DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+          DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -255,9 +256,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -343,11 +344,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          [DKuu, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, u); 
-          DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+          DKuu = feval(gpcf.fh.cfg, gpcf, u);
+          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
           for kk = 1:length(ind)
-            DKff{kk} = feval(gpcf.fh.ghyper, gpcf, x(ind{kk},:));                 
+            DKff{kk} = feval(gpcf.fh.cfg, gpcf, x(ind{kk},:));
           end
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -401,9 +403,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -523,9 +525,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           if ~isfield(gpcf,'cs')
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-            DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-            DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+            DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+            DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+            DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
 
             for i2 = 1:length(DKuu)
               i1 = i1+1;
@@ -549,8 +552,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           else
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
-            
+            DKff = feval(gpcf.fh.cfg, gpcf, x);
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
             for i2 = 1:length(DKff)
               i1 = i1+1;
               gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
@@ -586,9 +589,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -598,8 +601,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             
             gpcf = gp.cf{i};            
             if ~isfield(gpcf,'cs')
-              [DKuu, gprior_ind] = feval(gpcf.fh.ginput, gpcf, u);
-              [DKuf] = feval(gpcf.fh.ginput, gpcf, u, x);
+              DKuu = feval(gpcf.fh.ginput, gpcf, u);
+              DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
               
               for i2 = 1:length(DKuu)
                 i1 = i1 + 1;
@@ -681,9 +684,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-          DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-          DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+          DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+          DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -723,9 +727,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.g, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.g, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -843,7 +847,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
-          [gprior, DKff] = feval(gpcf.fh.ghyper, gpcf, x, y, g, gdata, gprior); 
+          DKff = feval(gpcf.fh.cfg, gpcf, x);
+          gprior = -feval(gpcf.fh.lpg, gpcf);
           i1 = i1+1;
           i2 = 1;
           

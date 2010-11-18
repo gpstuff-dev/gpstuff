@@ -68,7 +68,7 @@ function lik = lik_gaussian(varargin)
     lik.fh.unpak = @lik_gaussian_unpak;
     lik.fh.lp = @lik_gaussian_lp;
     lik.fh.lpg = @lik_gaussian_lpg;
-    lik.fh.llg = @lik_gaussian_llg;
+    lik.fh.cfg = @lik_gaussian_cfg;
     lik.fh.trcov  = @lik_gaussian_trcov;
     lik.fh.trvar  = @lik_gaussian_trvar;
     lik.fh.recappend = @lik_gaussian_recappend;
@@ -161,33 +161,34 @@ function lik = lik_gaussian(varargin)
       
       D{1}=lik.sigma2;
       
-      ggs = feval(likp.sigma2.fh.lpg, lik.sigma2, likp.sigma2);
-      lpg = ggs(1).*lik.sigma2 + 1;
-      if length(ggs) > 1
-        lpg = [lpg ggs(2:end)];
+      lpgs = feval(likp.sigma2.fh.lpg, lik.sigma2, likp.sigma2);
+      lpg = lpgs(1).*lik.sigma2 + 1;
+      if length(lpgs) > 1
+        lpg = [lpg lpgs(2:end)];
       end            
     end
   end
 
-  function DKff = lik_gaussian_llg(lik, x, x2)
-  %LIK_GAUSSIAN_LLG  Evaluate gradient of the log likelihood
+  function DKff = lik_gaussian_cfg(lik, x, x2)
+  %LIK_GAUSSIAN_CFG  Evaluate gradient of covariance with respect to
+  %                 Gaussian noise
   %
   %  Description
   %    Gaussian likelihood is a special case since it can be
-  %    analytically combined with covariance functions and thus in
-  %    gradient computation we need to take this into account.
+  %    analytically combined with covariance functions and thus we
+  %    compute gradient of covariance instead of gradient of likelihood.
   %
-  %    DKff = LIK_GAUSSIAN_LLG(LIK, X) takes a Gaussian likelihood
+  %    DKff = LIK_GAUSSIAN_CFG(LIK, X) takes a Gaussian likelihood
   %    function structure LIK, a matrix X of input vectors and
-  %    returns DKff, the gradients of Gaussian likelihood induced
+  %    returns DKff, the gradients of Gaussian noise covariance
+  %    matrix Kff = k(X,X) with respect to th (cell array with
+  %    matrix elements).
+  %
+  %    DKff = LIK_GAUSSIAN_CFG(LIK, X, X2) takes a Gaussian
+  %    likelihood function structure LIK, a matrix X of input
+  %    vectors and returns DKff, the gradients of Gaussian noise
   %    covariance matrix Kff = k(X,X) with respect to th (cell
   %    array with matrix elements).
-  %
-  %    DKff = LIK_GAUSSIAN_LLG(LIK, X, X2) takes a Gaussian
-  %    likelihood function structure LIK, a matrix X of input
-  %    vectors and returns DKff, the gradients of Gaussian
-  %    likelihood induced covariance matrix Kff = k(X,X2) with
-  %    respect to th (cell array with matrix elements).
   %
   %  See also
   %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
@@ -283,7 +284,7 @@ function lik = lik_gaussian(varargin)
       reccf.fh.unpak = @lik_gaussian_unpak;
       reccf.fh.lp = @lik_gaussian_lp;
       reccf.fh.lpg = @lik_gaussian_lpg;
-      reccf.fh.llg = @lik_gaussian_llg;
+      reccf.fh.cfg = @lik_gaussian_cfg;
       reccf.fh.trcov  = @lik_gaussian_trcov;
       reccf.fh.trvar  = @lik_gaussian_trvar;
       reccf.fh.recappend = @lik_gaussian_recappend;  

@@ -115,7 +115,7 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'z',ye,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
 % make prediction to the data points
 [Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye, 'tstind', [1:n]);

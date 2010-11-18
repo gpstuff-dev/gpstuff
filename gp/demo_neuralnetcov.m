@@ -71,8 +71,8 @@ gp2 = gp_set('lik', lik, 'cf', {gpcf2});
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
-gp2=gp_optim(gp2,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
+gp2=gp_optim(gp2,x,y,'opt',opt);
 
 % create points where predictions are made
 [xt1,xt2]=meshgrid(-1.5:0.05:1.5,-1.5:0.05:1.5);
@@ -119,8 +119,8 @@ gp2 = gp_set('lik', lik, 'cf', {gpcf2});
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
-gp2=gp_optim(gp2,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
+gp2=gp_optim(gp2,x,y,'opt',opt);
 
 % create points where predictions are made
 xgrid=linspace(min(x)-1.5,max(x)+1.5,200)';

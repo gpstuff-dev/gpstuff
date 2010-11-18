@@ -75,9 +75,9 @@ function  gpmf = gpmf_squared(varargin)
   %GPMF_GETH  Calculate the base function values for given input.
   %
   %  Description
-  %    H = GPMF_GETH(GPMF,X) takes in a mean function data
-  %    structure GPMF and inputs X. The function returns the
-  %    squared base function values H in the given input points. If
+  %    H = GPMF_GETH(GPMF,X) takes in a mean function structure
+  %    GPMF and inputs X. The function returns the squared base
+  %    function values H in the given input points. If
   %    selectedVariables is used the function returns only the
   %    values corresponding active inputs. The base function values
   %    are returned as a matrix in which each row corresponds to

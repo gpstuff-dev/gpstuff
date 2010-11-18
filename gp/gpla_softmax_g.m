@@ -139,7 +139,8 @@ switch gp.type
             
             % Gradients from covariance functions
             gpcf = gp.cf{i};
-            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+            DKff = feval(gpcf.fh.cfg, gpcf, x);
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
             
             for i2 = 1:length(DKff)
                 i1 = i1+1;

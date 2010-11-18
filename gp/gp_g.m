@@ -105,15 +105,17 @@ switch gp.type
         
         if ~(isfield(gp,'derivobs') && gp.derivobs)
           % No derivative observations
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+          DKff = feval(gpcf.fh.cfg, gpcf, x);
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
         else
           [n m]=size(x);
           %Case: input dimension is 1
           if m==1
 
-            DKdf = feval(gpcf.fh.ghypergrad, gpcf, x);
-            [DKffa, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
-            DKdd = feval(gpcf.fh.ghypergrad2, gpcf, x);
+            DKffa = feval(gpcf.fh.cfg, gpcf, x);
+            DKdf = feval(gpcf.fh.cfdg, gpcf, x);
+            DKdd = feval(gpcf.fh.cfdg2, gpcf, x);
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
 
             % DKff{1} -- d K / d magnSigma2
             % DKff{2} -- d K / d lengthScale
@@ -122,9 +124,10 @@ switch gp.type
             
             %Case: input dimension is >1    
           else
-            [DKffa, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
-            DKdf = feval(gpcf.fh.ghypergrad, gpcf, x);
-            DKdd = feval(gpcf.fh.ghypergrad2, gpcf, x);
+            DKffa = feval(gpcf.fh.cfg, gpcf, x);
+            DKdf = feval(gpcf.fh.cfdg, gpcf, x);
+            DKdd = feval(gpcf.fh.cfdg2, gpcf, x);
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
 
             %Check whether ARD method is in use (with gpcf_sexp)
             Ard=length(gpcf.lengthScale);
@@ -180,8 +183,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       if isfield(gp,'meanf')
         [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
       end
@@ -276,9 +279,10 @@ switch gp.type
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
         gpcf = gp.cf{i};
-        [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-        DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-        DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+        DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+        DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+        DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+        gprior_cf = -feval(gpcf.fh.lpg, gpcf);
         
         for i2 = 1:length(DKuu)
           i1 = i1+1;       
@@ -309,8 +313,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -432,11 +436,12 @@ switch gp.type
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
         gpcf = gp.cf{i};
-        [DKuu, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, u); 
-        DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+        DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+        DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
         for kk = 1:length(ind)
-          DKff{kk} = feval(gpcf.fh.ghyper, gpcf, x(ind{kk},:));                 
+          DKff{kk} = feval(gpcf.fh.cfg, gpcf, x(ind{kk},:));
         end
+        gprior_cf = -feval(gpcf.fh.lpg, gpcf); 
         
         for i2 = 1:length(DKuu)
           i1 = i1+1;
@@ -474,8 +479,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';            
@@ -624,9 +629,10 @@ switch gp.type
         if ~isfield(gpcf,'cs')
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-          DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-          DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+          DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+          DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           
           for i2 = 1:length(DKuu)
@@ -653,7 +659,8 @@ switch gp.type
         else
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
-          [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+          DKff = feval(gpcf.fh.cfg, gpcf, x);
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           for i2 = 1:length(DKff)
             i1 = i1+1;
@@ -676,8 +683,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -802,9 +809,10 @@ switch gp.type
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
         gpcf = gp.cf{i};
-        [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-        DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-        DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+        DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+        DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+        DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+        gprior_cf = -feval(gpcf.fh.lpg, gpcf);
         
         for i2 = 1:length(DKuu)
           i1 = i1+1;       
@@ -836,8 +844,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';
@@ -943,7 +951,8 @@ switch gp.type
         
         % Get the gradients of the covariance matrices 
         % and gprior from gpcf_* structures
-        [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x); 
+        DKff = feval(gpcf.fh.cfg, gpcf, x);
+        gprior_cf = -feval(gpcf.fh.lpg, gpcf);
 
         % Evaluate the gradient with respect to lengthScale
         for i2 = 1:length(DKff)
@@ -971,8 +980,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      DCff = feval(gp.lik.fh.llg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         gdata(i1)= -0.5*DCff{i2}.*b*b';

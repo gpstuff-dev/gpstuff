@@ -76,10 +76,10 @@ function gpmf = gpmf_constant(varargin)
   %GPMF_GETH  Calculate the base function values for a given input.
   %
   %  Description
-  %    H = GPMF_GETH(GPMF,X) takes in a mean function data
-  %    structure GPMF and inputs X. The function returns a row
-  %    vector of length(X) containing the constant value which is
-  %    by default 1.
+  %    H = GPMF_GETH(GPMF,X) takes in a mean function structure
+  %    GPMF and inputs X. The function returns a row vector of
+  %    length(X) containing the constant value which is by default
+  %    1.
     
     constant=gpmf.constant;
     h = repmat(constant,1,length(x(:,1)));

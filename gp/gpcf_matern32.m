@@ -72,8 +72,9 @@ function gpcf = gpcf_matern32(varargin)
       % Set the function handles to the nested functions
       gpcf.fh.pak = @gpcf_matern32_pak;
       gpcf.fh.unpak = @gpcf_matern32_unpak;
-      gpcf.fh.e = @gpcf_matern32_e;
-      gpcf.fh.ghyper = @gpcf_matern32_ghyper;
+      gpcf.fh.lp = @gpcf_matern32_lp;
+      gpcf.fh.lpg = @gpcf_matern32_lpg;
+gpcf.fh.cfg = @gpcf_matern32_cfg;
       gpcf.fh.ginput = @gpcf_matern32_ginput;
       gpcf.fh.cov = @gpcf_matern32_cov;
       gpcf.fh.trcov  = @gpcf_matern32_trcov;
@@ -158,11 +159,10 @@ function gpcf = gpcf_matern32(varargin)
   %                   into one vector.
   %
   %  Description
-  %    W = GPCF_MATERN32_PAK(GPCF) takes a covariance function data
+  %    W = GPCF_MATERN32_PAK(GPCF) takes a covariance function
   %    structure GPCF and combines the covariance function
   %    parameters and their hyperparameters into a single row
-  %    vector W and takes a logarithm of the covariance function
-  %    parameters.
+  %    vector W.
   %
   %       w = [ log(gpcf.magnSigma2)
   %             (hyperparameters of gpcf.magnSigma2) 
@@ -251,23 +251,19 @@ function gpcf = gpcf_matern32(varargin)
     
   end
   
-  function eprior =gpcf_matern32_e(gpcf, x, t)
-  %GPCF_MATERN32_E  Evaluate the energy of prior of MATERN32 parameters
+  function lp = gpcf_matern32_lp(gpcf)
+  %GPCF_MATERN32_LP  Evaluate the log prior of covariance function parameters
   %
   %  Description
-  %    E = GPCF_MATERN32_E(GPCF, X, T) takes a covariance function
+  %    LP = GPCF_MATERN32_LP(GPCF, X, T) takes a covariance function
   %    structure GPCF together with a matrix X of input
   %    vectors and a vector T of target vectors and evaluates log
   %    p(th) x J, where th is a vector of MATERN32 parameters and J
   %    is the Jacobian of transformation exp(w) = th. (Note that
   %    the parameters are log transformed, when packed.)
   %
-  %    Also the log prior of the hyperparameters of the covariance
-  %    function parameters is added to E if hyperprior is
-  %    defined.
-  %
   %  See also
-  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_G, GP_E
+  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LPG, GP_E
   %
 
   % Evaluate the prior contribution to the error. The parameters that
@@ -276,53 +272,80 @@ function gpcf = gpcf_matern32(varargin)
   % the W-space so we need take into account also the Jacobian of
   % transformation, e.g., W -> w = exp(W). See Gelman et.al., 2004,
   % Bayesian data Analysis, second edition, p24.
-    eprior = 0;
+    lp = 0;
     gpp=gpcf.p;
     
-    [n, m] =size(x);
-
     if ~isempty(gpcf.p.magnSigma2)
-      eprior = eprior -feval(gpp.magnSigma2.fh.lp, gpcf.magnSigma2, ...
-                              gpp.magnSigma2) - log(gpcf.magnSigma2);
+      lp = lp +feval(gpp.magnSigma2.fh.lp, gpcf.magnSigma2, ...
+                              gpp.magnSigma2) +log(gpcf.magnSigma2);
     end
     
     if isfield(gpcf,'metric')            
-      eprior = eprior -feval(gpcf.metric.fh.lp, gpcf.metric);
+      lp = lp +feval(gpcf.metric.fh.lp, gpcf.metric);
     elseif ~isempty(gpp.lengthScale)
-      eprior = eprior -feval(gpp.lengthScale.fh.lp, gpcf.lengthScale, ...
-                              gpp.lengthScale) - sum(log(gpcf.lengthScale));
+      lp = lp +feval(gpp.lengthScale.fh.lp, gpcf.lengthScale, ...
+                              gpp.lengthScale) +sum(log(gpcf.lengthScale));
     end
   end
   
-  function [DKff, gprior]  = gpcf_matern32_ghyper(gpcf, x, x2, mask)
-  %GPCF_MATERN32_GHYPER  Evaluate gradient of covariance function and 
+  function lpg = gpcf_matern32_lpg(gpcf)
+  %GPCF_MATERN32_LPG  Evaluate gradient of the log prior with respect
+  %                   to the parameters.
+  %
+  %  Description
+  %    LPG = GPCF_MATERN32_LPG(GPCF) takes a covariance function
+  %    structure GPCF and returns LPG = d log (p(th))/dth, where th
+  %    is the vector of parameters.
+  %
+  %  See also
+  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LP, GP_G
+
+    lpg = [];
+    gpp=gpcf.p;
+    
+    if ~isempty(gpcf.p.magnSigma2)            
+      lpgs = feval(gpp.magnSigma2.fh.lpg, gpcf.magnSigma2, gpp.magnSigma2);
+      lpg = [lpg lpgs(1).*gpcf.magnSigma2+1 lpgs(2:end)];
+    end
+    
+    if isfield(gpcf,'metric')
+      lpg_dist = feval(gpcf.metric.fh.lpg, gpcf.metric);
+      lpg=[lpg lpg_dist];
+    else
+      if ~isempty(gpcf.p.lengthScale)
+        lll = length(gpcf.lengthScale);
+        lpgs = feval(gpp.lengthScale.fh.lpg, gpcf.lengthScale, gpp.lengthScale);
+        lpg = [lpg lpgs(1:lll).*gpcf.lengthScale+1 lpgs(lll+1:end)];
+      end
+    end
+  end
+  
+  function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask)
+  %GPCF_MATERN32_CFG  Evaluate gradient of covariance function 
   %                      hyper-prior with respect to the parameters.
   %
   %  Description
-  %    [DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X) takes a
+  %    DKff = GPCF_MATERN32_CFG(GPCF, X) takes a
   %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X) with respect to th (cell array with matrix
-  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of parameters.
+  %    elements).
   %
-  %    [DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X, X2) takes a
+  %    DKff = GPCF_MATERN32_CFG(GPCF, X, X2) takes a
   %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X2) with respect to th (cell array with matrix
-  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of parameters.
+  %    elements).
   %
-  %    [DKff, GPRIOR] = GPCF_MATERN32_GHYPER(GPCF, X, [], MASK)
+  %    DKff = GPCF_MATERN32_CFG(GPCF, X, [], MASK)
   %    takes a covariance function structure GPCF, a matrix X
   %    of input vectors and returns DKff, the diagonal of gradients
   %    of covariance matrix Kff = k(X,X2) with respect to th (cell
-  %    array with matrix elements), and GPRIOR = d log (p(th))/dth,
-  %    where th is the vector of parameters. This is needed
+  %    array with matrix elements). This is needed
   %    for example with FIC sparse approximation.
   %
   %  See also
-  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_E, GP_G
+  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LP, GP_G
 
     gpp=gpcf.p;
     [n, m] =size(x);
@@ -348,7 +371,7 @@ function gpcf = gpcf_matern32(varargin)
       if isfield(gpcf,'metric')
         dist = feval(gpcf.metric.fh.dist, gpcf.metric, x);
         distg = feval(gpcf.metric.fh.distg, gpcf.metric, x);
-        gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric);
+        gprior_dist = feval(gpcf.metric.fh.lpg, gpcf.metric);
         for i=1:length(distg)
           ii1 = ii1+1;
           DKff{ii1} = -gpcf.magnSigma2.*3.*dist.*distg{i}.*exp(-sqrt(3).*dist);
@@ -400,7 +423,7 @@ function gpcf = gpcf_matern32(varargin)
       if isfield(gpcf,'metric')                
         dist = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2);
         distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, x2);
-        gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric);
+        gprior_dist = feval(gpcf.metric.fh.lpg, gpcf.metric);
         for i=1:length(distg)
           ii1 = ii1+1;
           DKff{ii1} = -gpcf.magnSigma2.*3.*dist.*distg{i}.*exp(-sqrt(3).*dist);
@@ -448,7 +471,7 @@ function gpcf = gpcf_matern32(varargin)
       if isfield(gpcf,'metric')
         dist = 0;
         distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, [], 1);
-        gprior_dist = -feval(gpcf.metric.fh.lpg, gpcf.metric);
+        gprior_dist = feval(gpcf.metric.fh.lpg, gpcf.metric);
         for i=1:length(distg)
           ii1 = ii1+1;
           DKff{ii1} = 0;
@@ -462,56 +485,25 @@ function gpcf = gpcf_matern32(varargin)
         end
       end
     end
-
-    if nargout > 1
-      ggs = [];
-      i1=0;
-      if ~isempty(gpcf.p.magnSigma2)            
-        % Evaluate the gprior with respect to magnSigma2
-        i1 = i1+1;
-        ggs = -feval(gpp.magnSigma2.fh.lpg, gpcf.magnSigma2, gpp.magnSigma2);
-        gprior = ggs(i1).*gpcf.magnSigma2 - 1;
-      end
-      
-      if isfield(gpcf,'metric')
-        % Evaluate the data contribution of gradient with respect to
-        % lengthScale
-        for i2=1:length(gprior_dist)
-          i1 = i1+1;                    
-          gprior(i1)=gprior_dist(i2);
-        end
-      else
-        if ~isempty(gpcf.p.lengthScale)
-          i1=i1+1; 
-          lll = length(gpcf.lengthScale);
-          gg = -feval(gpp.lengthScale.fh.lpg, gpcf.lengthScale, gpp.lengthScale);
-          gprior(i1:i1-1+lll) = gg(1:lll).*gpcf.lengthScale - 1;
-          gprior = [gprior gg(lll+1:end)];
-        end
-      end
-      if length(ggs) > 1
-        gprior = [gprior ggs(2:end)];
-      end
-    end
   end
   
-  function [DKff, gprior]  = gpcf_matern32_ginput(gpcf, x, x2)
+  function DKff = gpcf_matern32_ginput(gpcf, x, x2)
   %GPCF_MATERN32_GINPUT  Evaluate gradient of covariance function with 
   %                      respect to x.
   %
   %  Description
-  %    DKff = GPCF_MATERN32_GHYPER(GPCF, X) takes a covariance
+  %    DKff = GPCF_MATERN32_GINPUT(GPCF, X) takes a covariance
   %    function structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
-  %    k(X,X) with respect to X (cell array with matrix elements)
+  %    k(X,X) with respect to X (cell array with matrix elements).
   %
-  %    DKff = GPCF_MATERN32_GHYPER(GPCF, X, X2) takes a covariance
+  %    DKff = GPCF_MATERN32_GINPUT(GPCF, X, X2) takes a covariance
   %    function structure GPCF, a matrix X of input vectors
   %    and returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
   %
   %  See also
-  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_E, GP_G
+  %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LP, GP_G
 
     [n, m] =size(x);
     ma2 = gpcf.magnSigma2;
@@ -583,7 +575,7 @@ function gpcf = gpcf_matern32(varargin)
   end
 
   function C = gpcf_matern32_cov(gpcf, x1, x2)
-  %GP_MATERN32_COV  Evaluate covariance matrix between two input vectors.
+  %GP_MATERN32_COV  Evaluate covariance matrix between two input vectors
   %
   %  Description
   %    C = GP_MATERN32_COV(GP, TX, X) takes in covariance function
@@ -634,7 +626,7 @@ function gpcf = gpcf_matern32(varargin)
   end
 
   function C = gpcf_matern32_trcov(gpcf, x)
-  %GP_MATERN32_TRCOV  Evaluate training covariance matrix of inputs.
+  %GP_MATERN32_TRCOV  Evaluate training covariance matrix of inputs
   %
   %  Description
   %    C = GP_MATERN32_TRCOV(GP, TX) takes in covariance function
@@ -725,8 +717,9 @@ function gpcf = gpcf_matern32(varargin)
       % Set the function handles
       reccf.fh.pak = @gpcf_matern32_pak;
       reccf.fh.unpak = @gpcf_matern32_unpak;
-      reccf.fh.e = @gpcf_matern32_e;
-      reccf.fh.g = @gpcf_matern32_g;
+      reccf.fh.e = @gpcf_matern32_lp;
+      reccf.fh.lpg = @gpcf_matern32_lpg;
+      reccf.fh.cfg = @gpcf_matern32_cfg;
       reccf.fh.cov = @gpcf_matern32_cov;
       reccf.fh.trcov  = @gpcf_matern32_trcov;
       reccf.fh.trvar  = @gpcf_matern32_trvar;

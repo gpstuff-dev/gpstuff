@@ -342,7 +342,7 @@ eprior = 0;
 if ~isempty(strfind(gp.infer_params, 'covariance'))
   for i=1:ncf
     gpcf = gp.cf{i};
-    eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
+    eprior = eprior -feval(gpcf.fh.lp, gpcf);
   end
 end
 

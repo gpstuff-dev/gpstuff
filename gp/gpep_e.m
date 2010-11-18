@@ -1258,7 +1258,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
+        eprior = eprior -feval(gpcf.fh.lp, gpcf);
       end
 
       % Evaluate the prior contribution to the error from likelihood

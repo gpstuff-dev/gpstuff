@@ -84,7 +84,7 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'z',ye,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
 % Visualize sparsity pattern
 figure
@@ -135,7 +135,7 @@ gp = gp_set(gp, 'latent_method', 'EP');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'z',ye,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
 % Visualize sparsity pattern
 figure
@@ -160,7 +160,7 @@ colormap(mapcolor(G)),colorbar
 set(gca, 'Clim', [0.2    1.5])
 axis equal
 axis([0 70 0 120])
-title('Posterior median of the relative risk (Laplace)')
+title('Posterior median of the relative risk (EP)')
 
 figure
 G=repmat(NaN,size(X1));
@@ -170,4 +170,4 @@ colormap(mapcolor(G)),colorbar
 %set(gca, 'Clim', [0.005    0.03])
 axis equal
 axis([0 70 0 120])
-title('Posterior variance of the relative risk (Laplace)')
+title('Posterior variance of the relative risk (EP)')

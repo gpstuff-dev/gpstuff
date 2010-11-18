@@ -130,7 +130,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf2}, 'jitterSigma2', 1e-6);
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Evaluate the sparsity of the covariance function
 K = gp_trcov(gp,x);

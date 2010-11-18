@@ -61,7 +61,7 @@ disp(' MAP estimate for the parameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -160,7 +160,7 @@ disp(' MAP estimate for the parameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
 % Optimize with the scaled conjugate gradient method
-gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
+gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -273,7 +273,7 @@ disp(' MAP estimate for the parameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
 % Optimize with the scaled conjugate gradient method
-gp_pic=gp_optim(gp_pic,x,y,'optimf',@fminscg,'opt',opt);
+gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);

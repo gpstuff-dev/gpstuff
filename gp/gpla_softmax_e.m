@@ -443,7 +443,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
+        eprior = eprior -feval(gpcf.fh.lp, gpcf);
       end
 
       % Evaluate the prior contribution to the error from likelihood function

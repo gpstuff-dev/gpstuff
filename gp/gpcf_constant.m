@@ -47,21 +47,26 @@ function gpcf = gpcf_constant(varargin)
     init=false;
   end
   
+  % Initialize parameter
   if init || ~ismember('constSigma2',ip.UsingDefaults)
     gpcf.constSigma2=ip.Results.constSigma2;
   end
+
+  % Initialize prior structure
   if init
     gpcf.p=[];
   end
   if init || ~ismember('constSigma2_prior',ip.UsingDefaults)
     gpcf.p.constSigma2=ip.Results.constSigma2_prior;
   end
+  
   if init
     % Set the function handles to the nested functions
     gpcf.fh.pak = @gpcf_constant_pak;
     gpcf.fh.unpak = @gpcf_constant_unpak;
-    gpcf.fh.e = @gpcf_constant_e;
-    gpcf.fh.ghyper = @gpcf_constant_ghyper;
+    gpcf.fh.lp = @gpcf_constant_lp;
+    gpcf.fh.lpg = @gpcf_constant_lpg;
+gpcf.fh.cfg = @gpcf_constant_cfg;
     gpcf.fh.ginput = @gpcf_constant_ginput;
     gpcf.fh.cov = @gpcf_constant_cov;
     gpcf.fh.trcov  = @gpcf_constant_trcov;
@@ -98,7 +103,7 @@ function gpcf = gpcf_constant(varargin)
   end
 
   function [gpcf, w] = gpcf_constant_unpak(gpcf, w)
-  %GPCF_CONSTANT_UNPAK  Sets the covariance function parameters pack
+  %GPCF_CONSTANT_UNPAK  Sets the covariance function parameters
   %                     into the structure
   %
   %  Description
@@ -120,81 +125,89 @@ function gpcf = gpcf_constant(varargin)
     if ~isempty(gpp.constSigma2)
       gpcf.constSigma2 = exp(w(1));
       w = w(2:end);
-
       % Hyperparameters of magnSigma2
       [p, w] = feval(gpcf.p.constSigma2.fh.unpak, gpcf.p.constSigma2, w);
       gpcf.p.constSigma2 = p;
     end
   end
 
-  function eprior =gpcf_constant_e(gpcf, x, t)
-  %GPCF_CONSTANT_E  Evaluate the energy of prior of CONSTANT parameters
+  function lp = gpcf_constant_lp(gpcf)
+  %GPCF_CONSTANT_LP  Evaluate the log prior of covariance function parameters
   %
   %  Description
-  %    E = GPCF_CONSTANT_E(GPCF, X, T) takes a covariance function
-  %    structure GPCF together with a matrix X of input
-  %    vectors and a vector T of target vectors and evaluates log
-  %    p(th) x J, where th is a vector of CONSTANT parameters and J
-  %    is the Jacobian of transformation exp(w) = th. (Note that
-  %    the parameters are log transformed, when packed.)
-  %
-  %    Also the log prior of the hyperparameters of the covariance
-  %    function parameters is added to E if hyperprior is defined.
+  %    LP = GPCF_CONSTANT_LP(GPCF) takes a covariance function
+  %    structure GPCF and returns log(p(th)), where th collects the
+  %    parameters.
   %
   %  See also
-  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_G, GP_E
+  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LPG, GP_E
 
   % Evaluate the prior contribution to the error. The parameters that
   % are sampled are from space W = log(w) where w is all the
   % "real" samples. On the other hand errors are evaluated in the
   % W-space so we need take into account also the Jacobian of
-  % transformation W -> w = exp(W). See Gelman et.all., 2004,
+  % transformation W -> w = exp(W). See Gelman et.al., 2004,
   % Bayesian data Analysis, second edition, p24.
     
-    eprior = 0;
+    lp = 0;
     gpp=gpcf.p;
-
     if ~isempty(gpp.constSigma2)
-      eprior = -feval(gpp.constSigma2.fh.lp, gpcf.constSigma2, gpp.constSigma2) - log(gpcf.constSigma2);
+      lp = feval(gpp.constSigma2.fh.lp, gpcf.constSigma2, gpp.constSigma2) +log(gpcf.constSigma2);
     end
   end
 
-  function [DKff, gprior]  = gpcf_constant_ghyper(gpcf, x, x2, mask)  
-  %GPCF_CONSTANT_GHYPER  Evaluate gradient of covariance function and
-  %                      hyper-prior with respect to the parameters.
+  function lpg = gpcf_constant_lpg(gpcf)
+  %GPCF_CONSTANT_LPG  Evaluate gradient of the log prior with respect
+  %               to the parameters.
   %
   %  Description
-  %    [DKff, GPRIOR] = GPCF_CONSTANT_GHYPER(GPCF, X) takes a
+  %    LPG = GPCF_CONSTANT_LPG(GPCF) takes a covariance function
+  %    structure GPCF and returns LPG = d log (p(th))/dth, where th
+  %    is the vector of parameters.
+  %
+  %  See also
+  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
+
+    lpg = [];
+    gpp=gpcf.p;
+    
+    if ~isempty(gpcf.p.constSigma2)            
+      lpgs = feval(gpp.constSigma2.fh.lpg, gpcf.constSigma2, gpp.constSigma2);
+      lpg = [lpg lpgs(1).*gpcf.constSigma2+1 lpgs(2:end)];
+    end
+  end
+  
+  function DKff = gpcf_constant_cfg(gpcf, x, x2, mask)  
+  %GPCF_CONSTANT_CFG  Evaluate gradient of covariance function
+  %                   with respect to the parameters
+  %
+  %  Description
+  %    DKff = GPCF_CONSTANT_CFG(GPCF, X) takes a
   %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X) with respect to th (cell array with matrix
-  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of parameters.
+  %    elements).
   %
-  %    [DKff, GPRIOR] = GPCF_CONSTANT_GHYPER(GPCF, X, X2) takes a
+  %    DKff = GPCF_CONSTANT_CFG(GPCF, X, X2) takes a
   %    covariance function structure GPCF, a matrix X of input
   %    vectors and returns DKff, the gradients of covariance matrix
   %    Kff = k(X,X2) with respect to th (cell array with matrix
-  %    elements), and GPRIOR = d log (p(th))/dth, where th is the
-  %    vector of parameters.
+  %    elements).
   %
-  %    [DKff, GPRIOR] = GPCF_CONSTANT_GHYPER(GPCF, X, [], MASK)
+  %    DKff = GPCF_CONSTANT_CFG(GPCF, X, [], MASK)
   %    takes a covariance function structure GPCF, a matrix X of
   %    input vectors and returns DKff, the diagonal of gradients of
   %    covariance matrix Kff = k(X,X2) with respect to th (cell
-  %    array with matrix elements), and GPRIOR = d log (p(th))/dth,
-  %    where th is the vector of parameters. This is needed for
+  %    array with matrix elements). This is needed for
   %    example with FIC sparse approximation.
   %
   %  See also
-  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_E, GP_G
+  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
 
-    gpp=gpcf.p;
     [n, m] =size(x);
 
     i1=0;
     DKff = {};
-    gprior = [];
     
     % Evaluate: DKff{1} = d Kff / d constSigma2
     %           DKff{2} = d Kff / d coeffSigma2
@@ -227,38 +240,26 @@ function gpcf = gpcf_constant(varargin)
       end
     end
 
-    if nargout > 1
-      ggs = [];
-      if ~isempty(gpcf.p.constSigma2)
-        % Evaluate the gprior with respect to magnSigma2
-        ggs = -feval(gpp.constSigma2.fh.lp, gpcf.constSigma2, gpp.constSigma2);
-        gprior = ggs(1).*gpcf.constSigma2 - 1;
-      end
-
-      if length(ggs) > 1
-        gprior = [gprior ggs(2:end)];
-      end
-    end
   end
 
 
-  function [DKff, gprior]  = gpcf_constant_ginput(gpcf, x, x2)
+  function DKff = gpcf_constant_ginput(gpcf, x, x2)
   %GPCF_CONSTANT_GINPUT  Evaluate gradient of covariance function with 
   %                      respect to x.
   %
   %  Description
-  %    DKff = GPCF_CONSTANT_GHYPER(GPCF, X) takes a covariance
+  %    DKff = GPCF_CONSTANT_GINPUT(GPCF, X) takes a covariance
   %    function structure GPCF, a matrix X of input vectors and
   %    returns DKff, the gradients of covariance matrix Kff =
-  %    k(X,X) with respect to X (cell array with matrix elements)
+  %    k(X,X) with respect to X (cell array with matrix elements).
   %
-  %    DKff = GPCF_CONSTANT_GHYPER(GPCF, X, X2) takes a covariance
+  %    DKff = GPCF_CONSTANT_GINPUT(GPCF, X, X2) takes a covariance
   %    function structure GPCF, a matrix X of input vectors and
   %    returns DKff, the gradients of covariance matrix Kff =
   %    k(X,X2) with respect to X (cell array with matrix elements).
   %
   %  See also
-  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_E, GP_G
+  %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
     
     [n, m] =size(x);
     
@@ -268,7 +269,6 @@ function gpcf = gpcf_constant(varargin)
         for j = 1:n
           ii1 = ii1 + 1;
           DKff{ii1} = zeros(n);
-          gprior(ii1) = 0;
         end
       end
       
@@ -288,7 +288,7 @@ function gpcf = gpcf_constant(varargin)
 
 
   function C = gpcf_constant_cov(gpcf, x1, x2, varargin)
-  %GP_CONSTANT_COV  Evaluate covariance matrix between two input vectors.
+  %GP_CONSTANT_COV  Evaluate covariance matrix between two input vectors
   %
   %  Description         
   %    C = GP_CONSTANT_COV(GP, TX, X) takes in covariance function
@@ -314,7 +314,7 @@ function gpcf = gpcf_constant(varargin)
   end
 
   function C = gpcf_constant_trcov(gpcf, x)
-  %GP_CONSTANT_TRCOV  Evaluate training covariance matrix of inputs.
+  %GP_CONSTANT_TRCOV  Evaluate training covariance matrix of inputs
   %
   %  Description
   %    C = GP_CONSTANT_TRCOV(GP, TX) takes in covariance function
@@ -372,8 +372,9 @@ function gpcf = gpcf_constant(varargin)
       % Set the function handles
       reccf.fh.pak = @gpcf_constant_pak;
       reccf.fh.unpak = @gpcf_constant_unpak;
-      reccf.fh.e = @gpcf_constant_e;
-      reccf.fh.g = @gpcf_constant_g;
+      reccf.fh.e = @gpcf_constant_lp;
+      reccf.fh.lpg = @gpcf_constant_lpg;
+      reccf.fh.cfg = @gpcf_constant_cfg;
       reccf.fh.cov = @gpcf_constant_cov;
       reccf.fh.trcov  = @gpcf_constant_trcov;
       reccf.fh.trvar  = @gpcf_constant_trvar;

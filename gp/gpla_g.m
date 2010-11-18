@@ -103,7 +103,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           end
           
           gpcf = gp.cf{i};
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+          DKff = feval(gpcf.fh.cfg, gpcf, x);
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+
           g1 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
           for i2 = 1:length(DKff)
             i1 = i1+1;
@@ -222,9 +224,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-          DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-          DKuf = feval(gpcf.fh.ghyper, gpcf, u, x);
+          DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+          DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+          DKuf = feval(gpcf.fh.cfg, gpcf, u, x);
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -413,11 +416,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          [DKuu, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, u); 
-          DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+          DKuu = feval(gpcf.fh.cfg, gpcf, u);
+          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
           for kk = 1:length(ind)
-            DKff{kk} = feval(gpcf.fh.ghyper, gpcf, x(ind{kk},:));                 
+            DKff{kk} = feval(gpcf.fh.cfg, gpcf, x(ind{kk},:));                 
           end
+          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -669,9 +673,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           if ~isfield(gpcf,'cs')
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            [DKff, gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x, [], 1); 
-            DKuu = feval(gpcf.fh.ghyper, gpcf, u); 
-            DKuf = feval(gpcf.fh.ghyper, gpcf, u, x); 
+            DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
+            DKuu = feval(gpcf.fh.cfg, gpcf, u); 
+            DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
             
             for i2 = 1:length(DKuu)
               i1 = i1+1;
@@ -702,7 +707,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           else
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            [DKff,gprior_cf] = feval(gpcf.fh.ghyper, gpcf, x);
+            DKff = feval(gpcf.fh.cfg, gpcf, x);
+            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
             
             for i2 = 1:length(DKff)
               i1 = i1+1;

@@ -148,7 +148,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-8);
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % for the last make prections of the underlying function on a dense
 % grid and plot it. Below Ef_full is the predictive mean and
@@ -213,7 +213,7 @@ gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
-gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
+gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
 % To optimize the parameters and inducing inputs sequentially
 % uncomment the below lines $$$ iter = 1 $$$ e = gp_e(w,gp_fic,x,y)
@@ -221,10 +221,10 @@ gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
 % e_old = e; $$$ $$$ gp_fic = gp_set(gp_fic, 'infer_params',
 % 'covariance+likelihood'); % optimize parameters and inducing
 % inputs $$$
-% gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt); $$$ $$$
+% gp_fic=gp_optim(gp_fic,x,y,'opt',opt); $$$ $$$
 % gp_fic = gp_set(gp_fic, 'infer_params', 'inducing'); % optimize
 % parameters and inducing inputs $$$
-% gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt); $$$ e =
+% gp_fic=gp_optim(gp_fic,x,y,'opt',opt); $$$ e =
 % gp_e(w,gp_fic,x,y); $$$ iter = iter +1; $$$ [iter e] $$$ end
 
 % Make the prediction
@@ -307,7 +307,7 @@ gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
-gp_pic=gp_optim(gp_pic,x,y,'optimf',@fminscg,'opt',opt);
+gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
 % Make the prediction. 
 % Here it should be noticed that since we are using PIC we have to
@@ -379,7 +379,7 @@ gp_var = gp_set(gp_var, 'infer_params', 'covariance+inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
-gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
+gp_var=gp_optim(gp_var,x,y,'opt',opt);
 
 % To optimize the parameters and inducing inputs sequentially uncomment the below lines
 % $$$ iter = 1
@@ -389,9 +389,9 @@ gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     e_old = e;
 % $$$     
 % $$$     gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');  % optimize parameters and inducing inputs
-% $$$     gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
+% $$$     gp_var=gp_optim(gp_var,x,y,'opt',opt);
 % $$$     gp_var = gp_set(gp_var, 'infer_params', 'inducing');  % optimize parameters and inducing inputs
-% $$$     gp_var=gp_optim(gp_var,x,y,'optimf',@fminscg,'opt',opt);
+% $$$     gp_var=gp_optim(gp_var,x,y,'opt',opt);
 % $$$     e = gp_e(w,gp_var,x,y);
 % $$$     iter = iter +1;
 % $$$     [iter e]
@@ -461,7 +461,7 @@ gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+inducing');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
 % Optimize with the scaled conjugate gradient method
-gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
+gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 
 % To optimize the parameters and inducing inputs sequentially uncomment the below lines
 % $$$ iter = 1
@@ -471,9 +471,9 @@ gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
 % $$$     e_old = e;
 % $$$     
 % $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');  % optimize parameters and inducing inputs
-% $$$     gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
+% $$$     gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 % $$$     gp_dtc = gp_set(gp_dtc, 'infer_params', 'inducing');  % optimize parameters and inducing inputs
-% $$$     gp_dtc=gp_optim(gp_dtc,x,y,'optimf',@fminscg,'opt',opt);
+% $$$     gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 % $$$     e = gp_e(w,gp_dtc,x,y);
 % $$$     iter = iter +1;
 % $$$     [iter e]

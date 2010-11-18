@@ -197,14 +197,14 @@ rgp=thin(rgp,102);
 
 % Make predictions
 [Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = mc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-Py_mc = mean(Pys_mc,2);
+Pyt_mc = mean(Pys_mc,2);
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -214,7 +214,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with MC
 
 % Visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
@@ -310,9 +310,9 @@ xlim([-2 10])
 % $$$ print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_classific1_figEP.eps
 % $$$ 
 % $$$ figure, hold on
-% $$$ [cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20),[0.75 0.975], 'linewidth', 1, 'color', 'k', 'lineStyle', '--');
-% $$$ [cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20),[0.5], 'linewidth', 2.5, 'color', 'k', 'lineStyle', '-');
-% $$$ [cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_mc,20,20),[0.025 0.25], 'linewidth', 1, 'color', 'k', 'lineStyle', '--');
+% $$$ [cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20),[0.75 0.975], 'linewidth', 1, 'color', 'k', 'lineStyle', '--');
+% $$$ [cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20),[0.5], 'linewidth', 2.5, 'color', 'k', 'lineStyle', '-');
+% $$$ [cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20),[0.025 0.25], 'linewidth', 1, 'color', 'k', 'lineStyle', '--');
 % $$$ plot(x(y==1,1), x(y==1,2), 'kx', 'markersize', 4, 'linewidth', 1),
 % $$$ plot(x(y==-1,1), x(y==-1,2), 'ko', 'markersize', 2, 'linewidth', 1)
 % $$$ %plot(xt(:,1), xt(:,2), 'k.'), axis([-inf inf -inf inf]), %axis off

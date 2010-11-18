@@ -132,7 +132,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9)
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions. Below Ef_full is the predictive mean and Varf_full
 % the predictive variance.
@@ -195,7 +195,7 @@ gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           % optimize only
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp_fic=gp_optim(gp_fic,x,y,'optimf',@fminscg,'opt',opt);
+gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
 % Make the prediction
 [Eft_fic, Varft_fic, Eyt_fic, Varyt_fic] = gp_pred(gp_fic, x, y, xt);
@@ -244,7 +244,7 @@ gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           % optimize only
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp_pic=gp_optim(gp_pic,x,y,'optimf',@fminscg,'opt',opt);
+gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
 % Make the prediction
 [Eft_pic, Varft_pic, Eyt_pic, Varyt_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex);
@@ -300,7 +300,7 @@ gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigm
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp_csfic=gp_optim(gp_csfic,x,y,'optimf',@fminscg,'opt',opt);
+gp_csfic=gp_optim(gp_csfic,x,y,'opt',opt);
 
 % Make the prediction
 [Eft_csfic, Varft_csfic, Eyt_csfic, Varyt_csfic] = gp_pred(gp_csfic, x, y, x);

@@ -865,7 +865,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior + feval(gpcf.fh.e, gpcf, x, y);
+        eprior = eprior -feval(gpcf.fh.lp, gpcf);
       end
 
       % ======================================================================

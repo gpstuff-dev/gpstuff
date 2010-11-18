@@ -108,7 +108,7 @@ disp('Gaussian noise model and MAP estimate for parameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Prediction
 [Eft, Varft, Eyt, Varyt] = gp_pred(gp, x, y, xt);
@@ -217,7 +217,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, ...
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','Maxiter',20);
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Predictions to test points
 [Eft, Varft] = gp_pred(gp, x, y, xt);
@@ -320,7 +320,7 @@ e = gp_e(gp_pak(gp), gp, x, y);
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','Maxiter',20);
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Predictions to test points
 [Eft, Varft] = gp_pred(gp, x, y, xt);
@@ -365,7 +365,7 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Predictions to test points
 [Eft, Varft] = gp_pred(gp, x, y, xt);

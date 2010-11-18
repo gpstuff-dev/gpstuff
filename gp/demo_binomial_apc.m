@@ -107,24 +107,42 @@ f3 = f3(itr,:); f4 = f4(itr,:);
 % First define priors for length scales and magnitudes
 pl = prior_t();
 pm = prior_sqrtt('s2', 0.3);
+% covariance functions
+gpcf1 = gpcf_sexp('selectedVariables', 1,'lengthScale',[10], ...
+                  'lengthScale_prior', pl, 'magnSigma2', 1, ...
+                  'magnSigma2_prior', pm);
+gpcf2 = gpcf_sexp('selectedVariables', 2,'lengthScale',[10], ...
+                  'lengthScale_prior', pl, 'magnSigma2', 1, ...
+                  'magnSigma2_prior', pm);
+gpcf3 = gpcf_sexp('selectedVariables', 3,'lengthScale',[4], ...
+                  'lengthScale_prior', pl, 'magnSigma2', 1, ...
+                  'magnSigma2_prior', pm);
+gpcf4 = gpcf_sexp('selectedVariables', [1 2],'lengthScale',[10 2], ...
+                  'lengthScale_prior', pl, 'magnSigma2', 1, ...
+                  'magnSigma2_prior', pm);
+% Internally selectedVariables feature has been implemented using
+% euclidean metric function and following lines would produce same model
+% Note that lengthScales are now stored in metric structure
+%metric1 = metric_euclidean('components', 1,'lengthScale',[10], ...
+%                           'lengthScale_prior', pl);
+%gpcf1 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric1);
+%metric2 = metric_euclidean('components', 2,'lengthScale',[10], ...
+%                           'lengthScale_prior', pl);
+%gpcf2 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric2);
 
-metric1 = metric_euclidean('components', {[1]},'lengthScale',[10], 'lengthScale_prior', pl);
-gpcf1 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric1);
+%metric3 = metric_euclidean('components', 3,'lengthScale',[4], ...
+%                           'lengthScale_prior', pl);
+%gpcf3 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric3);
 
-metric2 = metric_euclidean('components', {[2]},'lengthScale',[10], 'lengthScale_prior', pl);
-gpcf2 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric2);
-
-metric3 = metric_euclidean('components', {[3]},'lengthScale',[4], 'lengthScale_prior', pl);
-gpcf3 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric3);
-
-metric4 = metric_euclidean('components',  {[1 2]},'lengthScale',[10 2], 'lengthScale_prior', pl);
-gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
+%metric4 = metric_euclidean('components',  [1 2],'lengthScale',[10  2], ...
+%                           'lengthScale_prior', pl);
+%gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
 
 % Initialize the likelihood structure
 lik = lik_binomial;
     
 % Initialize GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2', 1e-6);
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2', 1e-5);
     
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -133,7 +151,7 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 opt=optimset('TolFun',5e-2,'TolX',1e-2,'Display','iter');
 
 % Optimize with scaled conjugate gradient method
-gp=gp_optim(gp,xx,yy,'z',nn,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,xx,yy,'z',nn,'opt',opt);
 
 % Making predictions
 
