@@ -10,7 +10,7 @@ function x = thin(x,nburn,nthin,nlast)
 %    JOIN
 
 % Copyright (c) 1999 Simo Särkkä
-% Copyright (c) 2000 Aki Vehtari
+% Copyright (c) 2000,2010 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -72,4 +72,6 @@ elseif m > 1
     error('Illegal last index');
   end
   x = x((nburn+1):nthin:nlast,:);
+end
+
 end
