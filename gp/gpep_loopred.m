@@ -3,12 +3,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
 %
 %  Description
 %    [EFT, VARFT, EYT, VARYT, PYT] = EP_LOOPRED(GP, X, Y, OPTIONS)
-%    takes a GP structure GP together with a matrix XT of
-%    input vectors, matrix X of training inputs and vector Y of
-%    training targets, and evaluates the leave-one-out predictive
+%    takes a GP structure GP together with a matrix XT of input
+%    vectors, matrix X of training inputs and vector Y of training
+%    targets, and evaluates the leave-one-out predictive
 %    distribution at inputs X. Returns a posterior mean EFT and
-%    variance VARFT of latent variables and the posterior predictive
-%    mean EYT and variance VARYT of observations at input locations X.
+%    variance VARFT of latent variables and the posterior
+%    predictive mean EYT and variance VARYT of observations at
+%    input locations X.
 %
 %    Leave-one-out is approximated by leaving-out site-term and
 %    using cavity distribution as leave-one-out posterior for the
@@ -18,12 +19,12 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
 %
 %    OPTIONS is optional parameter-value pair
 %      z  - optional observed quantity in triplet (x_i,y_i,z_i)
-%           Some likelihoods may use this. For example, in case of 
-%           Poisson likelihood we have z_i=E_i, that is, expected value 
-%           for ith case. 
+%           Some likelihoods may use this. For example, in case of
+%           Poisson likelihood we have z_i=E_i, that is, expected
+%           value for ith case.
 %
-%       See also
-%       GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
+%  See also
+%    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
   
 % Copyright (c) 2010  Aki Vehtari
 
