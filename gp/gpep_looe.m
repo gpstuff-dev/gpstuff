@@ -35,7 +35,7 @@ gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 n=length(x);
 
-[Ef, Varf, Ey, Vary, Py] = gpep_loopred(gp, x, y, varargin{:});
-eloo=-mean(log(Py));
+[Ef, Varf, Ey, Vary, py] = gpep_loopred(gp, x, y, varargin{:});
+eloo=-mean(log(py));
 
 end

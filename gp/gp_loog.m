@@ -39,6 +39,8 @@ if isfield(gp,'mean') & ~isempty(gp.mean.meanFuncs)
 end
 
 gp=gp_unpak(gp, w);
+ncf = length(gp.cf);
+n=length(x);
 
 g = [];
 gloo = [];
@@ -64,11 +66,8 @@ switch gp.type
 
     % Get the gradients of the covariance matrices and gprior
     % from gpcf_* structures and evaluate the gradients
+    i1=0;
     for i=1:ncf
-      i1=0;
-      if ~isempty(gprior)
-        i1 = length(gprior);
-      end
       
       gpcf = gp.cf{i};
       gpcf.GPtype = gp.type;
@@ -86,7 +85,7 @@ switch gp.type
 
     % Evaluate the gradient from Gaussian likelihood function
     if isfield(gp.lik.fh,'trcov')
-      DCff = feval(lik.fh.cfg, lik, x);
+      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         Z = invC*eye(n,n).*DCff{i2};
