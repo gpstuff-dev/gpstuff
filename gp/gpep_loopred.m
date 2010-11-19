@@ -1,15 +1,15 @@
 function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
-%GPEP_LOOPRED  Leave-one-out predictions with Gaussian Process EP approximation
+%GPEP_LOOPRED  Leave-one-out predictions with EP approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPEP_LOOPRED(GP, X, Y, OPTIONS)
-%    takes a GP structure GP together with a matrix XT of input
-%    vectors, matrix X of training inputs and vector Y of training
-%    targets, and evaluates the leave-one-out predictive
-%    distribution at inputs X. Returns a posterior mean EFT and
-%    variance VARFT of latent variables and the posterior
-%    predictive mean EYT and variance VARYT of observations at
-%    input locations X.
+%    [EFT, VARFT, EYT, VARYT, PYT] = GPEP_LOOPRED(GP, X, Y,
+%    OPTIONS) takes a Gaussian process structure GP together with a
+%    matrix XT of input vectors, matrix X of training inputs and
+%    vector Y of training targets, and evaluates the leave-one-out
+%    predictive distribution at inputs X. Returns a posterior mean
+%    EFT and variance VARFT of latent variables, the posterior
+%    predictive mean EYT and variance VARYT of observations, and
+%    posterior predictive density PYT at input locations X.
 %
 %    EP leave-one-out is approximated by leaving-out site-term and
 %    using cavity distribution as leave-one-out posterior for the

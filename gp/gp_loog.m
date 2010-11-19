@@ -4,10 +4,11 @@ function gloo = gp_loog(w, gp, x, y, varargin)
 %         observation model
 %
 %   Description
-%     LOOG = GP_LOOG(W, GP, X, Y, PARAM) takes a parameter vector
-%     W, Gaussian process structure GP, a matrix X of input vectors and
-%     a matrix Y of targets, and evaluates the gradient of the mean 
-%     negative log leave-one-out predictive density (see GP_LOOE).
+%     LOOG = GP_LOOG(W, GP, X, Y) takes a parameter vector W,
+%     Gaussian process structure GP, a matrix X of input vectors
+%     and a matrix Y of targets, and evaluates the gradient of the
+%     mean negative log leave-one-out predictive density (see
+%     GP_LOOE).
 %
 %   References:
 %     S. Sundararajan and S. S. Keerthi (2001). Predictive
@@ -15,7 +16,8 @@ function gloo = gp_loog(w, gp, x, y, varargin)
 %     Neural Computation 13:1103-1118.
 %
 %  See also
-%    GP_LOOE, GP_PAK, GP_UNPAK, GPCF_*
+%    GP_LOOE, GP_SET, GP_PAK, GP_UNPAK
+%
 
 % Copyright (c) 2008 Jarno Vanhatalo
 
@@ -23,21 +25,20 @@ function gloo = gp_loog(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+% Nothing to parse, but check the arguments anyway
 ip=inputParser;
-ip.FunctionName = 'GP_LOOE';
+ip.FunctionName = 'GP_LOOG';
 ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.parse(w, gp, x, y, varargin{:});
-
-gp=gp_unpak(gp, w);       % unpak the parameters
-ncf = length(gp.cf);
-n=size(x,1);
+ip.parse(w, gp, x, y);
 
 if isfield(gp,'mean') & ~isempty(gp.mean.meanFuncs)
   error('GP_LOOE: Mean functions not yet supported');
 end
+
+gp=gp_unpak(gp, w);
 
 g = [];
 gloo = [];
