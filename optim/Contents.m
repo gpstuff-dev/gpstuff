@@ -9,3 +9,6 @@
 %    SCGES         - Scaled conjugate gradient optimization with early stopping (new options structure).
 %    SCG2          - Scaled conjugate gradient optimization
 %    SCG2_OPT      - Default options for scaled conjugate gradient optimization (scg2) (new options structure).
+%    FMINSCG       - Scaled conjugate gradient optimization
+%    FMINLBFGS     - (Limited memory) Quasi Newton
+%                    Broyden-Fletcher-Goldfarb-Shanno (BFGS)
