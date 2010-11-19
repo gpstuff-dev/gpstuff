@@ -38,4 +38,7 @@
 % Misc:
 %   CUSTATS   - Calculate cumulative statistics of data
 %   BBPRCTILE - Bayesian bootstrap percentile
-%   GRADCHEK  - Checks a user-defined gradient function using finite differences.
+%   GRADCHEK  - Checks a user-defined gradient function using finite
+%               differences.
+%   DERIVATIVECHECK - Compare user-supplied derivatives to
+%                     finite-differencing derivatives.
