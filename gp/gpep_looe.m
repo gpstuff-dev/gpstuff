@@ -2,21 +2,27 @@ function eloo = gpep_looe(w, gp, x, y, varargin)
 % GPEP_LOOE Evaluate the mean negative log leave-one-out predictive 
 %           density, assuming Gaussian observation model.
 %
-%   Description
-%     LOOE = GPEP_LOOE(W, GP, X, Y, PARAM) takes a parameter vector
-%     W, Gaussian process structure GP, a matrix X of input vectors
-%     and a matrix Y of targets, and evaluates the mean negative
-%     log leave-one-out predictive density LOOE = - 1/n sum log
-%     p(Y_i | X, Y_{\i}, th) where th represents the parameters
-%     (lengthScale, magnSigma2...), X is inputs and Y is
-%     observations.
+%  Description
+%    LOOE = GPEP_LOOE(W, GP, X, Y, OPTIONS) takes a parameter
+%    vector W, Gaussian process structure GP, a matrix X of input
+%    vectors and a matrix Y of targets, and evaluates the mean
+%    negative log leave-one-out predictive density
+%      LOOE = - 1/n sum log p(Y_i | X, Y_{\i}, th) 
+%    where th represents the parameters (lengthScale,
+%    magnSigma2...), X is inputs and Y is observations.
 %
-%     EP-Leave-one-out is approximated by leaving-out site-term and
-%     using cavity distribution as leave-one-out posterior for
-%     the ith latent value.
+%    EP leave-one-out is approximated by leaving-out site-term and
+%    using cavity distribution as leave-one-out posterior for the
+%    ith latent value.
 %
-%	See also
-%	GP_LOOE, EP_LOORPED, GPEP_E
+%    OPTIONS is optional parameter-value pair
+%      z - optional observed quantity in triplet (x_i,y_i,z_i)
+%          Some likelihoods may use this. For example, in case of
+%          Poisson likelihood we have z_i=E_i, that is, expected
+%          value for ith case.
+%
+%  See also
+%    GP_LOOE, GPEP_LOOPRED, GPEP_E
 %
 
 % Copyright (c) 2010 Aki Vehtari
@@ -29,7 +35,7 @@ gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 n=length(x);
 
-[Ef, Varf, Ey, Vary, Py] = ep_loopred(gp, x, y, varargin{:});
+[Ef, Varf, Ey, Vary, Py] = gpep_loopred(gp, x, y, varargin{:});
 eloo=-mean(log(Py));
 
 end

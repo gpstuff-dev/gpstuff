@@ -206,14 +206,14 @@ hmc2('state', sum(100*clock));
 % After sampling we delete the burn-in and thin the sample chain
 rfull = thin(rfull, 10, 2);
 
-% Now we make the predictions. 'mc_preds' is a function that
+% Now we make the predictions. 'gpmc_preds' is a function that
 % returns the predictive mean of the latent function with every
-% sampled parameter value. Thus, the returned Eft_mc is a
-% matrix of size n x (number of samples). By taking the mean over
-% the samples we do the Monte Carlo integration over the
-% parameters. (See also mc_pred, which directly returns the
-% expectation of the mean and variance)
-[Eft_mc, Varft_mc] = mc_preds(rfull, x, y, xt);
+% sampled parameter value. Thus, the returned Eft_mc is a matrix of
+% size n x (number of samples). By taking the mean over the samples
+% we do the Monte Carlo integration over the parameters. (See also
+% gpmc_pred, which directly returns the expectation of the mean and
+% variance)
+[Eft_mc, Varft_mc] = gpmc_preds(rfull, x, y, xt);
 
 figure(1)
 clf

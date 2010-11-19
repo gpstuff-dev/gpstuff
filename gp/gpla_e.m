@@ -26,7 +26,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
 %          value for ith case.
 %
 %  See also
-%    GP_SET, GP_E, GPLA_G, LA_PRED
+%    GP_SET, GP_E, GPLA_G, GPLA_PRED
 
 %  Description 2
 %    Additional properties meant only for internal use.

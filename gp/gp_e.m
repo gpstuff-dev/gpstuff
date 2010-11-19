@@ -26,7 +26,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %          value for ith case.
 %
 %  See also
-%    GP_G, GPCF_*, GP_INIT, GP_PAK, GP_UNPAK, GP_FWD
+%    GP_G, GPCF_*, GP_SET, GP_PAK, GP_UNPAK
 %
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo

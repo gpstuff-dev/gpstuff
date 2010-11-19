@@ -1,5 +1,5 @@
 function lik = lik_t(varargin)
-%LIK_T Create a Student-t likelihood structure 
+%LIK_T  Create a Student-t likelihood structure 
 %
 %  Description
 %    LIK = LIK_T('PARAM1',VALUE1,'PARAM2,VALUE2,...)
@@ -647,7 +647,7 @@ function lik = lik_t(varargin)
   %    This requires also the observations YT.
   %
   %  See also
-  %    LA_PRED, EP_PRED, MC_PRED
+  %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
     nu = lik.nu;
     sigma2 = lik.sigma2;

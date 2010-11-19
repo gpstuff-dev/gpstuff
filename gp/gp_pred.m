@@ -72,22 +72,22 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   % use inference specific methods
   if iscell(gp)
-    fh_pred=@ia_pred;
+    fh_pred=@gpia_pred;
   elseif numel(gp.jitterSigma2)>1
-    fh_pred=@mc_pred;
+    fh_pred=@gpmc_pred;
   elseif isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
         switch gp.lik.type
           case 'Softmax'
-            fh_pred=@la_softmax_pred;
+            fh_pred=@gpla_softmax_pred;
           otherwise
-            fh_pred=@la_pred;
+            fh_pred=@gpla_pred;
         end
       case 'EP'
-        fh_pred=@ep_pred;
+        fh_pred=@gpep_pred;
       case 'MCMC'
-        fh_pred=@mc_pred;
+        fh_pred=@gpmc_pred;
     end
   else
     error('Logical error by coder of this function!')

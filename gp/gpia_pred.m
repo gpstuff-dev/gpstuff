@@ -1,24 +1,23 @@
-function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = ia_pred(gp_array, x, y, xt, varargin) 
-%IA_PRED  Prediction with Gaussian Process GP_IA solution.
+function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = gpia_pred(gp_array, x, y, xt, varargin) 
+%GPIA_PRED  Prediction with Gaussian Process GP_IA solution.
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = IA_PRED(GP_ARRAY, X, Y, XT,
-%    OPTIONS) takes a cell array of GP structures together
-%    with matrix X of training inputs and vector Y of training
-%    targets, and evaluates the predictive distribution at test
-%    inputs XT with parameters marginalized out with IA. 
-%    Returns a posterior mean EFT and variance VARFT of latent
-%    variables and the posterior predictive mean EYT and variance
-%    VARYT.
+%    [EFT, VARFT, EYT, VARYT] = GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%    takes a cell array of GP structures together with matrix X of
+%    training inputs and vector Y of training targets, and
+%    evaluates the predictive distribution at test inputs XT with
+%    parameters marginalized out with IA. Returns a posterior mean
+%    EFT and variance VARFT of latent variables and the posterior
+%    predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = IA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, EYT, VARYT, PYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
-%    at test input locations XT with parameters marginalized
-%    out with IA. This can be used for example in the
-%    cross-validation. Here Y has to be vector.
+%    at test input locations XT with parameters marginalized out
+%    with IA. This can be used for example in the cross-validation. 
+%    Here Y has to be vector.
 %
 %    [EFT, VARFT, EYT, VARYT, PYT, FT, PFT] = ...
-%      IA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%      GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
 %    returns also the numerical representation of the marginal
 %    posterior of latent variables at each XT. FT is a vector of
 %    latent values and PFT_i = p(FT_i) is the posterior density for
@@ -52,9 +51,9 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = ia_pred(gp_array, x, y, xt, va
 %    anymore.
 %
 %    For example, if you use covariance such as K = K1 + K2 your
-%    predictions Eft1 = ia_pred(gp_array, X, Y, X, 'predcf', 1) and
-%    Eft2 = ia_pred(gp_array, x, y, x, 'predcf', 2) should sum up to
-%    Eft = ia_pred(gp_array, x, y, x). That is Eft = Eft1 + Eft2. With
+%    predictions Eft1 = gpia_pred(gp_array, X, Y, X, 'predcf', 1) and
+%    Eft2 = gpia_pred(gp_array, x, y, x, 'predcf', 2) should sum up to
+%    Eft = gpia_pred(gp_array, x, y, x). That is Eft = Eft1 + Eft2. With
 %    FULL model this is true but with FIC and PIC this is true only
 %    approximately. That is Eft \approx Eft1 + Eft2.
 %
@@ -81,7 +80,7 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = ia_pred(gp_array, x, y, xt, va
 
     
     ip=inputParser;
-    ip.FunctionName = 'IA_PRED';
+    ip.FunctionName = 'GPIA_PRED';
     ip.addRequired('gp_array', @iscell);
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -127,11 +126,11 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = ia_pred(gp_array, x, y, xt, va
           case 'EP'
             fh_e = @gpep_e;
             fh_g = @gpep_g;
-            fh_p = @ep_pred;
+            fh_p = @gpep_pred;
           case 'Laplace'
             fh_e = @gpla_e;
             fh_g = @gpla_g;
-            fh_p = @la_pred;
+            fh_p = @gpla_pred;
         end
     else 
         fh_e = @gp_e;

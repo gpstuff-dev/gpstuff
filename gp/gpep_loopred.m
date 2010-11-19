@@ -1,8 +1,8 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
-%EP_LOOPRED  Leave-one-out predictions with Gaussian Process EP approximation
+function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
+%GPEP_LOOPRED  Leave-one-out predictions with Gaussian Process EP approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT, PYT] = EP_LOOPRED(GP, X, Y, OPTIONS)
+%    [EFT, VARFT, EYT, VARYT, PYT] = GPEP_LOOPRED(GP, X, Y, OPTIONS)
 %    takes a GP structure GP together with a matrix XT of input
 %    vectors, matrix X of training inputs and vector Y of training
 %    targets, and evaluates the leave-one-out predictive
@@ -11,7 +11,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
 %    predictive mean EYT and variance VARYT of observations at
 %    input locations X.
 %
-%    Leave-one-out is approximated by leaving-out site-term and
+%    EP leave-one-out is approximated by leaving-out site-term and
 %    using cavity distribution as leave-one-out posterior for the
 %    ith latent value. Since the ith likelihood has influenced
 %    other site terms through the prior, this estimate can be
@@ -33,7 +33,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_loopred(gp, x, y, varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'EP_LOOPRED';
+  ip.FunctionName = 'GPEP_LOOPRED';
   ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

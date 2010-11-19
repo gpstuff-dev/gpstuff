@@ -17,8 +17,8 @@ function lik = lik_poisson(varargin)
 %    For example, you should call gpla_e as follows 
 %    gpla_e(w, gp, x, y, 'z', z)
 %
-%       See also
-%       GP_SET, LIK_*
+%  See also
+%    GP_SET, LIK_*
 %
   
 % Copyright (c) 2006-2010 Jarno Vanhatalo
@@ -265,7 +265,7 @@ function lik = lik_poisson(varargin)
   %    This requires also the incedence counts YT, expected counts ZT.
   %
   %  See also 
-  %    LA_PRED, EP_PRED, MC_PRED
+  %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
     if isempty(zt)
       error(['lik_poisson -> lik_poisson_predy: missing zt!'... 

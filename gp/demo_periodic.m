@@ -53,8 +53,8 @@
 %    Propagation as the latent optimisation method.
 %
 %    For details on the implementation see GP_E, GP_G, GP_PRED for
-%    the standard regression and GPEP_E, GPEP_G AND EP_PRED for the
-%    expectation propagation.
+%    the standard regression and GPEP_E, GPEP_G AND GPEP_PRED for
+%    the expectation propagation.
 %
 %  See also  DEMO_REGRESSION2, DEMO_SPATIAL1
 %

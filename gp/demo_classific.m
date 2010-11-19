@@ -196,7 +196,7 @@ hmc2('state', sum(100*clock));
 rgp=thin(rgp,102);
 
 % Make predictions
-[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = mc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
 Pyt_mc = mean(Pys_mc,2);
 
 % Plot some nice figures that show results

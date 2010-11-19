@@ -7,8 +7,8 @@ function lik = lik_softmax(varargin)
 %    classes is given as 1xC vector where C-1 entries are 0 and the
 %    observed class label is 1.
 %
-%       See also
-%       GP_SET, LIK_*
+%  See also
+%    GP_SET, LIK_*
 
 % Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
 % Copyright (c) 2010 Aki Vehtari

@@ -1,8 +1,8 @@
-function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
-%MC_PRED  Predictions with Gaussian Process MCMC approximation.
+function [Ef, Varf, Ey, Vary, py] = gpmc_pred(gp, x, y, xt, varargin)
+%GPMC_PRED  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
-%    [EF, VARF] = MC_PRED(RECGP, X, Y, XT, OPTIONS) takes a
+%    [EF, VARF] = GPMC_PRED(RECGP, X, Y, XT, OPTIONS) takes a
 %    Gaussian processes record structure RECGP (returned by gp_mc)
 %    together with a matrix XT of input vectors, matrix X of
 %    training inputs and vector Y of training targets. Returns
@@ -57,9 +57,9 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %     anymore.
 %
 %     For example, if you use covariance such as K = K1 + K2 your
-%     predictions Ef1 = mc_pred(GP, X, Y, X, 'predcf', 1) and Ef2 =
-%     mc_pred(gp, x, y, x, 'predcf', 2) should sum up to Ef =
-%     mc_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With FULL model
+%     predictions Ef1 = gpmc_pred(GP, X, Y, X, 'predcf', 1) and Ef2 =
+%     gpmc_pred(gp, x, y, x, 'predcf', 2) should sum up to Ef =
+%     gpmc_pred(gp, x, y, x). That is Ef = Ef1 + Ef2. With FULL model
 %     this is true but with FIC and PIC this is true only
 %     approximately. That is Ef \approx Ef1 + Ef2.
 %
@@ -74,7 +74,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
 %     the prediction.
 %
 %  See also
-%    MC_PREDS, GP_PRED, GP_SET, GP_MC
+%    GPMC_PREDS, GP_PRED, GP_SET, GP_MC
 %
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
@@ -86,25 +86,25 @@ function [Ef, Varf, Ey, Vary, py] = mc_pred(gp, x, y, xt, varargin)
   
   switch nargout % ugly...
     case 1
-      [Efs] = mc_preds(gp, x, y, xt, varargin{:});
+      [Efs] = gpmc_preds(gp, x, y, xt, varargin{:});
       Ef=mean(Efs,2);
     case 2
-      [Efs, Varfs] = mc_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs] = gpmc_preds(gp, x, y, xt, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
     case 3
-      [Efs, Varfs, Eys] = mc_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs, Eys] = gpmc_preds(gp, x, y, xt, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
       Ey=mean(Eys,2);
     case 4
-      [Efs, Varfs, Eys, Varys] = mc_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs, Eys, Varys] = gpmc_preds(gp, x, y, xt, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
       Ey=mean(Eys,2);
       Vary=mean(Varys,2) + var(Eys,0,2);
     case 5
-      [Efs, Varfs, Eys, Varys, pys] = mc_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs, Eys, Varys, pys] = gpmc_preds(gp, x, y, xt, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
       Ey=mean(Eys,2);

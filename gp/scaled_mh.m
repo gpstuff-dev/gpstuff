@@ -19,7 +19,6 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %                            returning single sample
 %      sample_latent_scale - the scale for the MH-step
 %
-%
 %  See also
 %    GP_MC
   

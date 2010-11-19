@@ -1,23 +1,23 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = ep_pred(gp, x, y, xt, varargin)
-%EP_PRED  Predictions with Gaussian Process EP approximation
+function [Eft, Varft, Eyt, Varyt, pyt] = gpep_pred(gp, x, y, xt, varargin)
+%GPEP_PRED  Predictions with Gaussian Process EP approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = EP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT, EYT, VARYT] = GPEP_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
 %    mean EFT and variance VARFT of latent variables and the
 %    posterior predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = EP_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, EYT, VARYT, PYT] = GPEP_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
-%                 used for prediction. Default is all (1:gpcfn). 
-%                 See additional information below.
+%               used for prediction. Default is all (1:gpcfn). 
+%               See additional information below.
 %      tstind - a vector/cell array defining, which rows of X belong 
 %               to which training block in *IC type sparse models. 
 %               Default is []. In case of PIC, a cell array
@@ -43,9 +43,9 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_pred(gp, x, y, xt, varargin)
 %    anymore.
 %
 %    For example, if you use covariance such as K = K1 + K2 your
-%    predictions Eft1 = ep_pred(GP, X, Y, X, 'predcf', 1) and 
-%    Eft2 = ep_pred(gp, x, y, x, 'predcf', 2) should sum up to 
-%    Eft = ep_pred(gp, x, y, x). That is Eft = Eft1 + Eft2. With 
+%    predictions Eft1 = gpep_pred(GP, X, Y, X, 'predcf', 1) and 
+%    Eft2 = gpep_pred(gp, x, y, x, 'predcf', 2) should sum up to 
+%    Eft = gpep_pred(gp, x, y, x). That is Eft = Eft1 + Eft2. With 
 %    FULL model this is true but with FIC and PIC this is true only 
 %    approximately. That is Eft \approx Eft1 + Eft2.
 %
@@ -70,7 +70,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = ep_pred(gp, x, y, xt, varargin)
 % License.txt, included with the software, for details.
 
     ip=inputParser;
-    ip.FunctionName = 'EP_PRED';
+    ip.FunctionName = 'GPEP_PRED';
     ip.addRequired('gp', @isstruct);
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

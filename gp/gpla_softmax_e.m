@@ -28,15 +28,13 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
 %          value for ith case.
 %
 %  See also
-%    GP_SET, GP_E, GPLA_SOFTMAX_G, LA_SOFTMAX_PRED
+%    GP_SET, GP_E, GPLA_SOFTMAX_G, GPLA_SOFTMAX_PRED
 
 %  Description 2
 %    Additional properties meant only for internal use.
 %  
-%    GP = GPLA_SOFTMAX_E('init', GP, X, Y, OPTIONS) takes a GP data
-%    structure GP together with a matrix X of input vectors and a
-%    matrix Y of target vectors, and initializes required fiels for
-%    the Laplace approximation.
+%    GP = GPLA_SOFTMAX_E('init', GP) takes a GP structure GP and
+%    initializes required fields for the Laplace approximation.
 %
 %    [e, edata, eprior, f, L, a, La2, p]
 %       = gpla_softmax_e(w, gp, x, y, varargin)

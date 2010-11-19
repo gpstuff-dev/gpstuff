@@ -133,7 +133,11 @@ function metric = metric_euclidean(varargin)
     w = []; s = {};
     if ~isempty(metric.p.lengthScale)
       w = log(metric.lengthScale);
-      s = [s; {'log(metric.lengthScale)'}];
+      if numel(metric.lengthScale)>1
+        s = [s; sprintf('log(metric.lengthScale x %d)',numel(metric.lengthScale))];
+      else
+        s = [s; 'log(metric.lengthScale)'];
+      end
       % Hyperparameters of lengthScale
       [wh sh] = feval(metric.p.lengthScale.fh.pak, metric.p.lengthScale);
       w = [w wh];

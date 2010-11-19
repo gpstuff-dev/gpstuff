@@ -1,23 +1,23 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
-%LA_PRED  Predictions with Gaussian Process Laplace approximation
+function [Eft, Varft, Eyt, Varyt, pyt] = gpla_pred(gp, x, y, xt, varargin)
+%GPLA_PRED  Predictions with Gaussian Process Laplace approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = LA_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT, EYT, VARYT] = GPLA_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
 %    mean EFT and variance VARFT of latent variables and the
 %    posterior predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = LA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, EYT, VARYT, PYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
-%                 used for prediction. Default is all (1:gpcfn). 
-%                 See additional information below.
+%               used for prediction. Default is all (1:gpcfn). 
+%               See additional information below.
 %      tstind - a vector/cell array defining, which rows of X belong 
 %               to which training block in *IC type sparse models. 
 %               Default is []. In case of PIC, a cell array
@@ -69,7 +69,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = la_pred(gp, x, y, xt, varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'LA_PRED';
+  ip.FunctionName = 'GPLA_PRED';
   ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

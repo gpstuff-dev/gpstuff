@@ -1,8 +1,8 @@
-function [Ef, Varf, Ey, Vary, py] = mc_preds(gp, x, y, xt, varargin)
-%MC_PREDS  Predictions with Gaussian Process MCMC approximation.
+function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
+%GPMC_PREDS  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
-%    [EFS, VARFS] = MC_PREDS(RECGP, X, Y, XT, OPTIONS) takes a
+%    [EFS, VARFS] = GPMC_PREDS(RECGP, X, Y, XT, OPTIONS) takes a
 %    Gaussian processes record structure RECGP (returned by gp_mc)
 %    together with a matrix XT of input vectors, matrix X of
 %    training inputs and vector Y of training targets. Returns
@@ -97,7 +97,7 @@ function [Ef, Varf, Ey, Vary, py] = mc_preds(gp, x, y, xt, varargin)
 
     
     ip=inputParser;
-    ip.FunctionName = 'MC_PREDS';
+    ip.FunctionName = 'GPMC_PREDS';
     ip.addRequired('gp',@isstruct);
     ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
     ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

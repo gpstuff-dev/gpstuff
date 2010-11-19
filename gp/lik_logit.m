@@ -10,8 +10,8 @@ function lik = lik_logit(varargin)
 %      p(y|f) = || i=1 1/(1 + exp(-y_i*f_i) )
 %    where f is the latent value vector.
 %  
-%       See also
-%       GP_SET, LIK_*
+%  See also
+%    GP_SET, LIK_*
 %
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
@@ -232,7 +232,7 @@ function lik = lik_logit(varargin)
   %    This requires also the class labels YT.
   %
   %  See also 
-  %    LA_PRED, EP_PRED, MC_PRED
+  %    GPLA_PRED, GPEP_PRED, GPMC_PRED
     
     if ~isempty(find(abs(yt)~=1))
       error('lik_logit: The class labels have to be {-1,1}')

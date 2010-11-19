@@ -6,7 +6,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %    G = GPLA_G(W, GP, X, Y, OPTIONS) takes a full GP parameter
 %    vector W, structure GP a matrix X of input vectors and a
 %    matrix Y of target vectors, and evaluates the gradient G of
-%    EP's marginal log posterior estimate . Each row of X
+%    EP's marginal log posterior estimate. Each row of X
 %    corresponds to one input vector and each row of Y corresponds
 %    to one target vector.
 %
@@ -20,7 +20,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 %          value for ith case.
 %  
 %  See also
-%    GP_SET, GP_G, GPLA_E, LA_PRED
+%    GP_SET, GP_G, GPLA_E, GPLA_PRED
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari

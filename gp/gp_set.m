@@ -45,8 +45,8 @@ function gp = gp_set(varargin)
 %                                         approximations): W = gp.X_u(:)    
 %                       By combining the strings one can infer more than 
 %                       one group of parameters. For example:
-%                      'covariance+likelih' = infer covariance function
-%                                             and likelihood parameters
+%                      'covariance+likelihood' = infer covariance function
+%                                                and likelihood parameters
 %                      'covariance+inducing' = infer covariance function
 %                                              parameters and inducing 
 %                                              inputs
@@ -99,7 +99,7 @@ function gp = gp_set(varargin)
 %    GP_PRED, GP_MC, GP_IA, ...
 %
 %  References:
-%    Quiï¿½onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Research, 6(3):1939-1959.
 %

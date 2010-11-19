@@ -1,51 +1,50 @@
 function p_eff = gp_peff(gp, x, y, varargin);
 %GP_PEFF  The effective number of parameters in GP model with focus 
-%         on latent variables.
+%         on latent variables
 %
-%	Description
-%        P_EFF = EP_PEFF(GP, X, Y) Takes the Gaussian process
-%        structure GP, training inputs X and training outputs
-%        and returns the effective number of parameters as defined
-%        by Spiegelhalter et al  (2002).
+%  Description
+%    P_EFF = EP_PEFF(GP, X, Y) Takes the Gaussian process structure
+%    GP, training inputs X and training outputs and returns the
+%    effective number of parameters as defined by Spiegelhalter et
+%    al. (2002).
 %
-%       NOTE!
-%        The effective number of parameters is evaluated with focus
-%        on latent variable f. This means that the parameters
-%        th (parameters of covariance function and likelihood) are
-%        considered fixed. (See Spiegelhalter et al (2002) for
-%        discussion on the parameters in focus in Bayesian model). 
-%        Thus, the returned p_eff tells the effective number of
-%        latent variables. This statistics is important for example
-%        when assessing the goodness of Laplace or EP approximation
-%        in case of non-Gaussian likelihood (See Vanhatalo et al 
-%        for discussion).
+%    NOTE! The effective number of parameters is evaluated with
+%    focus on latent variable f. This means that the parameters th
+%    (parameters of covariance function and likelihood) are
+%    considered fixed. (See Spiegelhalter et al (2002) for
+%    discussion on the parameters in focus in Bayesian model). 
+%    Thus, the returned p_eff tells the effective number of latent
+%    variables. This statistics is important for example when
+%    assessing the goodness of Laplace or EP approximation in case
+%    of non-Gaussian likelihood (See Vanhatalo et al for
+%    discussion).
 %
-%        If you want to evaluate the effective number of
-%        parameters see GP_DIC.
+%    If you want to evaluate the effective number of parameters
+%    with focus on parameters, see GP_DIC.
 %
-%        The effective number of parameters is approximated as follows:
+%    The effective number of parameters is approximated as follows:
+%        p_eff = n - trace( K\C ),
 %
-%               p_eff = n - trace( K\C ),
+%    where K is the prior covariance matrix and C the posterior
+%    covariance matrix. This approximation is introduced by
+%    Spiegelhalter et al. (2002) in equation (16). If the
+%    likelihood is non-Gaussian and gp.latent_method is either
+%    Laplace or EP, then C is the Laplace or EP approximation for
+%    the posterior covariance.
 %
-%        where K is the prior covariance matrix and C the posterior
-%        covariance matrix. This approximation is introduced by
-%        Spiegelhalter et al. (2002) in equation (16). If the
-%        likelihood is non-Gaussian and gp.latent_method is either
-%        Laplace or EP, then C is the Laplace or EP approximation
-%        for the posterior covariance.
-%
-%	See also
-%         GP_DIC, DEMO_MODELASSESMENT1
-%   
-%       References: 
-%         Spiegelhalter, Best, Carlin and van der Linde (2002). 
-%         Bayesian measures of model complexity and fit. J. R. 
-%         Statist. Soc. B, 64(4):583-639.
+%  References: 
+%    Spiegelhalter, Best, Carlin and van der Linde (2002). 
+%    Bayesian measures of model complexity and fit. J. R. 
+%    Statist. Soc. B, 64(4):583-639.
 %         
-%         Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). 
-%         Approximate inference for disease mapping with sparse
-%         Gaussian processes. Statistics in Medicine, 29(15):1580-1607.
+%    Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). 
+%    Approximate inference for disease mapping with sparse
+%    Gaussian processes. Statistics in Medicine, 29(15):1580-1607.
 %   
+%  See also
+%    GP_DIC, DEMO_MODELASSESMENT1
+%   
+
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 

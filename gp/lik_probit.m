@@ -1,5 +1,5 @@
 function lik = lik_probit(varargin)
-%LIK_PROBIT   Create a Probit likelihood structure 
+%LIK_PROBIT  Create a Probit likelihood structure 
 %
 %  Description
 %    LIK = LIK_PROBIT creates Probit likelihood for classification
@@ -11,8 +11,8 @@ function lik = lik_probit(varargin)
 %    
 %      where f is the latent value vector.
 %
-%       See also
-%       GP_SET, LIK_*
+%  See also
+%    GP_SET, LIK_*
 %
 
 % Copyright (c) 2007      Jaakko Riihimäki
@@ -221,7 +221,7 @@ function lik = lik_probit(varargin)
   %    This requires also the class labels YT.
   %
   %  See also 
-  %    EP_PRED, LA_PRED, MC_PRED
+  %    GPEP_PRED, GPLA_PRED, GPMC_PRED
 
     
     if ~isempty(find(abs(yt)~=1))

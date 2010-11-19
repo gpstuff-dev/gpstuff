@@ -1,33 +1,34 @@
-function [sampf, sampy] = gp_rnd(gp, x, y, xt, varargin)
-%GP_RND    Random draws from the postrior Gaussian process
+function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
+%GP_RND  Random draws from the postrior Gaussian process
 %
-%	Description
-%	[SAMPF, SAMPY] = GP_RND(GP, X, Y, XT, OPTIONS) takes a gp data 
-%       structure GP together with a matrix XT of input vectors,
-%       Matrix X of training inputs and vector Y of training targets,
-%       and returns a random sample SAMPF and SAMPY from the posterior
-%       distribution p(f|y) and the predictive distribution p(y_new|y)
-%       at locations XT. Each row of XT corresponds to one input
-%       vector and each row of Y corresponds to one output vector.
+%  Description
+%    [SAMPFT, SAMPYT] = GP_RND(GP, X, Y, XT, OPTIONS) takes a
+%    Gaussian process structure GP together with a matrix XT of
+%    input vectors, matrix X of training inputs and vector Y of
+%    training targets, and returns a random sample SAMPFT and
+%    SAMPYT from the posterior distribution p(ft|x,y,xt) and the
+%    predictive distribution p(yt|x,y,xt) at locations XT.
 %
-%     OPTIONS is optional parameter-value pair
-%       'predcf' is index vector telling which covariance functions are 
-%                used for prediction. Default is all (1:gpcfn)
-%       'tstind' is a vector defining, which rows of X belong to which 
-%                training block in *IC type sparse models. Default is [].
-%       'nsamp'  determines the number of samples (default = 1).
+%    OPTIONS is optional parameter-value pair
+%      predcf - index vector telling which covariance functions are 
+%               used for prediction. Default is all (1:gpcfn)
+%      tstind - a vector defining, which rows of X belong to which 
+%               training block in *IC type sparse models. Default is [].
+%      nsamp  - determines the number of samples (default = 1).
 %
-%       If likelihood is non-Gaussian and gp.laten_method is either Laplace or EP, the samples 
-%       are drawn from the Gaussian posterior approximation obtained from gpla_e or gpep_e.
+%    If likelihood is non-Gaussian and gp.laten_method is either
+%    Laplace or EP, the samples are drawn from the Gaussian
+%    posterior approximation obtained from gpla_e or gpep_e.
 %
-%	See also
-%	GP_PREDS, GP_PAK, GP_UNPAK
-%
-%       Bugs:
-%         - sampling with FIC, PIC and CS+FIC forms full nxn matrix and works only when 
-%           sampling for the training inputs. 
-%         - The code is not optimizes otherways either
-%         - The reason for these is that the function is used with sparse GPs only in gp_dic 
+%  See also
+%    GP_PRED, GP_PAK, GP_UNPAK
+
+%  Internal description
+%    - sampling with FIC, PIC and CS+FIC forms full nxn matrix and
+%       works only when sampling for the training inputs.
+%    - The code is not optimized
+%    - The reason for these is that the function is used with
+%      sparse GPs only in gp_dic
 
 % Copyright (c) 2008      Jouni Hartikainen
 % Copyright (c) 2007-2010 Jarno Vanhatalo
@@ -56,9 +57,7 @@ predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 nsamp=ip.Results.nsamp;
 
-
 tn = size(x,1);
-
 
 if isfield(gp.lik.fh,'trcov')
   % ===================================
@@ -75,10 +74,10 @@ if isfield(gp.lik.fh,'trcov')
             LD = ldlchol(C);
             Ef = repmat( K'*ldlsolve(LD,y), 1, nsamp) ;
             predcov = chol(K2 - K'*ldlsolve(LD,K))';
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
             if nargout > 1
                 predcov = chol(C2 - K'*ldlsolve(LD,K))';            
-                sampy = Ef + predcov*randn(size(Ef));
+                sampyt = Ef + predcov*randn(size(Ef));
             end        
         else
             L = chol(C)';
@@ -88,10 +87,10 @@ if isfield(gp.lik.fh,'trcov')
             v = L\K;
 
             predcov = chol(K2-v'*v)';
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
             if nargout > 1
                 predcov = chol(C2-v'*v)';
-                sampy = Ef + predcov*randn(size(Ef));
+                sampyt = Ef + predcov*randn(size(Ef));
             end
         end   
         
@@ -171,7 +170,7 @@ if isfield(gp.lik.fh,'trcov')
         BL = B*L;
 
         Sigm_mm = eye(size(K_uu)) - B*(repmat(Lav,1,m).\B') + BL*BL';
-        sampf = Ef + B2'*(chol(Sigm_mm)'*randn(m,nsamp)) + randn(size(Ef)).*sqrt(repmat(Lav_n,1,nsamp));
+        sampft = Ef + B2'*(chol(Sigm_mm)'*randn(m,nsamp)) + randn(size(Ef)).*sqrt(repmat(Lav_n,1,nsamp));
 
         if ~isempty(tstind)
             K = B'*B2 + diag(Lav_n);
@@ -185,12 +184,12 @@ if isfield(gp.lik.fh,'trcov')
             v = L\K;
             
             predcov = chol(K2-v'*v)';
-            sampf = Ef + predcov*randn(size(Ef));        
+            sampft = Ef + predcov*randn(size(Ef));        
         end
 
         if nargout > 1
             sigma = sqrt(Cnn_v-Knn_v);
-            sampy = sampf + sigma*randn(size(sampf));
+            sampyt = sampft + sigma*randn(size(sampft));
         end
         
       case {'PIC' 'PIC_BLOCK'}
@@ -258,14 +257,14 @@ if isfield(gp.lik.fh,'trcov')
         % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
         %            = B'*(I-B*La_f^(-1)*B' + B*L*L'*B')*B + La_n
         BL = B*L;
-        sampf = randn(size(Ef));
+        sampft = randn(size(Ef));
         for i=1:length(ind)
             iLaB(ind{i},:) = La{i}\B(:,ind{i})';
-            sampf(ind{i},:) = chol(La2{i})'*sampf(ind{i},:);
+            sampft(ind{i},:) = chol(La2{i})'*sampft(ind{i},:);
         end
         Sigm_mm = eye(size(K_uu)) - B*iLaB + BL*BL';
         
-        sampf = Ef + B2'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + sampf;
+        sampft = Ef + B2'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + sampft;
         
         if ~isempty(tstind)
             K = B'*B2;
@@ -284,12 +283,12 @@ if isfield(gp.lik.fh,'trcov')
             v = L\K;
             
             predcov = chol(K2-v'*v)';
-            sampf = Ef + predcov*randn(size(Ef));        
+            sampft = Ef + predcov*randn(size(Ef));        
         end
 
         if nargout > 1
             sigma = sqrt(Cnn_v-Knn_v);
-            sampy = sampf + sigma*randn(size(sampf));
+            sampyt = sampft + sigma*randn(size(sampft));
         end
 
         
@@ -464,11 +463,11 @@ if isfield(gp.lik.fh,'trcov')
         
         Ef = repmat(Ef, 1, nsamp);
         predcov = chol(Varf)';
-        sampf = Ef + predcov*randn(size(Ef));
+        sampft = Ef + predcov*randn(size(Ef));
         
         if nargout > 1
             sigma = sqrt(Cnn_v-Knn_v);
-            sampy = sampf + sigma*randn(size(sampf));
+            sampyt = sampft + sigma*randn(size(sampft));
         end
         
 % $$$     % Check results with full matrices    
@@ -485,7 +484,7 @@ if isfield(gp.lik.fh,'trcov')
 % $$$     v = L\K;
 % $$$     
 % $$$     predcov = chol(K2-v'*v)';
-% $$$     sampf = Ef + predcov*randn(size(Ef));
+% $$$     sampft = Ef + predcov*randn(size(Ef));
         
       case 'SSGP'
         if nargin > 4
@@ -593,7 +592,7 @@ else
         
         predcov = chol(Varf)';
         Ef = repmat(Ef,1,nsamp);
-        sampf = Ef + predcov*randn(size(Ef));
+        sampft = Ef + predcov*randn(size(Ef));
         
         % ---------------------------
       case 'FIC'
@@ -676,7 +675,7 @@ else
             
             predcov = chol(Varf)';
             Ef = repmat(Ef,1,nsamp);
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
           
           case 'EP'
             [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y);
@@ -736,7 +735,7 @@ else
             
             predcov = chol(Varf)';
             Ef = repmat(Ef,1,nsamp);
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
             
         end        
 
@@ -809,7 +808,7 @@ else
             
             predcov = chol(Varf)';
             Ef = repmat(Ef,1,nsamp);
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
 
         
           case 'EP'
@@ -849,7 +848,7 @@ else
             
             predcov = chol(Varf)';
             Ef = repmat(Ef,1,nsamp);
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
         end
         
         % ---------------------------
@@ -986,7 +985,7 @@ else
             
             predcov = chol(Varf)';
             Ef = repmat(Ef,1,nsamp);
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
             
           case 'EP'
             
@@ -1037,7 +1036,7 @@ else
             
             predcov = chol(Varf)';
             Ef = repmat(Ef,1,nsamp);
-            sampf = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*randn(size(Ef));
             
         end
     end

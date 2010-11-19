@@ -26,7 +26,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %          value for ith case.
 %
 %  See also
-%    GP_SET, GP_E, GPEP_G, EP_PRED
+%    GP_SET, GP_E, GPEP_G, GPEP_PRED
 
 %  Description 2
 %    Additional properties meant only for internal use.
@@ -34,8 +34,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %    GP = GPEP_E('init', GP) takes a GP structure GP and
 %    initializes required fields for the EP algorithm.
 %
-%    E = GPEP_E(W, GP, X, Y, OPTIONS) takes a GP structure GP
-%  
 %    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i]
 %      = GPEP_E(w, gp, x, y, options)
 %    returns many useful quantities produced by EP algorithm.

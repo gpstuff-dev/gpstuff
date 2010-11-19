@@ -18,10 +18,10 @@ function gp = gp_unpak(gp, w, param)
 %
 %    By combining the strings one can unpack more than one group of
 %    parameters. For example:
-%      covariance+inducing  - unpack covariance function parameters
-%                             and inducing inputs
-%      covariance+likelih   - unpack covariance function parameters
-%                             and likelihood parameters
+%      covariance+inducing   - unpack covariance function parameters
+%                              and inducing inputs
+%      covariance+likelihood - unpack covariance function parameters
+%                              and likelihood parameters
 %
 %    Inside each group (such as covariance functions) the
 %    parameters to be unpacked is defined by the existence of a

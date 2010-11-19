@@ -119,9 +119,9 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     if ~isfield(gp.lik.fh,'trcov') && isfield(gp, 'latent_method')
       switch gp.latent_method
         case 'Laplace'
-          fh_pred = @la_pred;
+          fh_pred = @gpla_pred;
         case 'EP'
-          fh_pred = @ep_pred;
+          fh_pred = @gpep_pred;
       end
     else
       fh_pred = @gp_pred;
@@ -266,10 +266,10 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     if isstruct(gp{1}.lik) && isfield(gp{1}, 'latent_method')
       switch gp{1}.latent_method
         case 'Laplace'
-          fh_pred = @la_pred;
+          fh_pred = @gpla_pred;
           fh_e = @gpla_e;
         case 'EP'
-          fh_pred = @ep_pred;
+          fh_pred = @gpep_pred;
           fh_e = @gpep_e;
       end
     else

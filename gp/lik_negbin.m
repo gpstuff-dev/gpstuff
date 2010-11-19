@@ -443,7 +443,7 @@ function lik = lik_negbin(varargin)
   %    This requires also the incedence counts YT, expected counts ZT.
   %
   %  See also
-  %    LA_PRED, EP_PRED, MC_PRED
+  %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
     if isempty(zt)
       error(['lik_negbin -> lik_negbin_predy: missing zt!'... 

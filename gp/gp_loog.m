@@ -1,5 +1,5 @@
 function gloo = gp_loog(w, gp, x, y, varargin)
-% GP_LOOG Evaluate the gradient of the mean negative log 
+%GP_LOOG  Evaluate the gradient of the mean negative log 
 %         leave-one-out predictive density, assuming Gaussian 
 %         observation model
 %
@@ -14,8 +14,8 @@ function gloo = gp_loog(w, gp, x, y, varargin)
 %     Approaches for Choosing Hyperparameters in Gaussian Processes. 
 %     Neural Computation 13:1103-1118.
 %
-%	See also
-%       GP_LOOE, GP_PAK, GP_UNPAK, GPCF_*
+%  See also
+%    GP_LOOE, GP_PAK, GP_UNPAK, GPCF_*
 
 % Copyright (c) 2008 Jarno Vanhatalo
 

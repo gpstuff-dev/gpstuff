@@ -76,7 +76,8 @@ gp = gp_set('lik', lik_binomial(), 'cf', {gpcf}, 'jitterSigma2', 1e-8);
 
 % ------- Laplace approximation --------
 
-% Set the approximate inference method (Laplace is default, so this could be skipped)
+% Set the approximate inference method (Laplace is default, so this
+% could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization

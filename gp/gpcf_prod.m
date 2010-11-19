@@ -1,5 +1,5 @@
 function gpcf = gpcf_prod(varargin)
-%GPCF_PROD  Create a product form covariance function for Gaussian Process
+%GPCF_PROD  Create a product form covariance function
 %
 %  Description
 %    GPCF = GPCF_PROD('cf', {GPCF_1, GPCF_2, ...}) 

@@ -3,11 +3,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %
 %  Description
 %    [GP_ARRAY, P_TH, TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS)
-%    takes a GP structure GP with covariates X and
-%    observations Y and returns an array of GPs GP_ARRAY and
-%    corresponding weights P_TH. If optional test covariates XT is
-%    included, GP_IA also returns corresponding mean EF, variance
-%    VARF and density PF evaluated at points FF.
+%    takes a GP structure GP with covariates X and observations Y
+%    and returns an array of GPs GP_ARRAY and corresponding weights
+%    P_TH. If optional test covariates XT is included, GP_IA also
+%    returns corresponding mean EF, variance VARF and density PF
+%    evaluated at points FF.
 %
 %    OPTIONS is optional parameter-value pair
 %      int_method - the method used for integration
@@ -136,17 +136,17 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       case 'EP'
         fh_e = @gpep_e;
         fh_g = @gpep_g;
-        fh_p = @ep_pred;
+        fh_p = @gpep_pred;
       case 'Laplace'
         switch gp.lik.type
           case 'Softmax'
             fh_e=@gpla_softmax_e;
             fh_g=@gpla_softmax_g;
-            fh_p=@gpla_softmax_p;
+            fh_p=@gpla_softmax_pred;
           otherwise
             fh_e = @gpla_e;
             fh_g = @gpla_g;
-            fh_p = @la_pred;
+            fh_p = @gpla_pred;
         end
     end
   else

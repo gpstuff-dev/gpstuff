@@ -32,6 +32,10 @@ function [w, s] = gp_pak(gp, param)
 %    parameters are optimized with GP_OPTIM or sampled with GP_MC.
 %    See GP_SET and option 'infer_params'.
 %
+%    [W, WS] = GP_PAK(GP, PARAM) returns also cell array of string
+%    labels for the weight vector elements, which makes diagnostics
+%    easier.
+%
 %  See also
 %    GP_UNPAK, GP_SET
 %

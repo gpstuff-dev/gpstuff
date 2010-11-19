@@ -12,15 +12,15 @@ function gpcf = gpcf_neuralnetwork(varargin)
 %    parameters altered with the specified values.
 %  
 %    Parameters for neural network covariance function [default]
-%      biasSigma2         = prior variance for bias in neural network [0.1]
-%      weightSigma2       = prior variance for weights in neural network [10]
+%      biasSigma2         - prior variance for bias in neural network [0.1]
+%      weightSigma2       - prior variance for weights in neural network [10]
 %                           This can be either scalar corresponding
 %                           to a common prior variance or vector
 %                           defining own prior variance for each
 %                           input.
-%      biasSigma2_prior   = prior structure for magnSigma2 [prior_sqrtunif]
-%      weightSigma2_prior = prior structure for weightSigma2 [prior_sqrtunif]
-%      selectedVariables  = vector defining which inputs are used
+%      biasSigma2_prior   - prior structure for magnSigma2 [prior_sqrtunif]
+%      weightSigma2_prior - prior structure for weightSigma2 [prior_sqrtunif]
+%      selectedVariables  - vector defining which inputs are used
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in

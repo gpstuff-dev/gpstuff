@@ -105,8 +105,8 @@ f3 = f3(itr,:); f4 = f4(itr,:);
 % between age group and time period (gpcf4).
 
 % First define priors for length scales and magnitudes
-pl = prior_t();
-pm = prior_sqrtt('s2', 0.3);
+pl = prior_t('s2',10);
+pm = prior_sqrtt();
 % covariance functions
 gpcf1 = gpcf_sexp('selectedVariables', 1,'lengthScale',[10], ...
                   'lengthScale_prior', pl, 'magnSigma2', 1, ...
@@ -142,7 +142,7 @@ gpcf4 = gpcf_sexp('selectedVariables', [1 2],'lengthScale',[10 2], ...
 lik = lik_binomial;
     
 % Initialize GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2', 1e-5);
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2', 1e-6);
     
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');

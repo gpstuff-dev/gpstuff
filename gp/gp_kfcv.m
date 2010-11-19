@@ -226,7 +226,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
   % Check which energy and gradient function
   if iscell(gp)
-    fp=@ia_pred;
+    fp=@gpia_pred;
   else
     if isfield(gp.lik.fh,'trcov')
       % a Gaussian likelihood
@@ -236,9 +236,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         case {'MAP' 'fixed'}
           fp=@gp_pred;
         case 'MCMC'
-          fp=@mc_pred;
+          fp=@gpmc_pred;
         case 'IA'
-          fp=@ia_pred;
+          fp=@gpia_pred;
       end
     else
       switch inf_method
@@ -247,16 +247,16 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             case 'Laplace'
               fe=@gpla_e;
               fg=@gpla_g;
-              fp=@la_pred;
+              fp=@gpla_pred;
             case 'EP'
               fe=@gpep_e;
               fg=@gpep_g;
-              fp=@ep_pred;
+              fp=@gpep_pred;
           end
         case 'MCMC'
-          fp=@mc_pred;
+          fp=@gpmc_pred;
         case 'IA'
-          fp=@ia_pred;
+          fp=@gpia_pred;
       end
     end
   end

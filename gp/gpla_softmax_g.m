@@ -20,9 +20,9 @@ function [g, gdata, gprior] = gpla_softmax_g(w, gp, x, y, varargin)
 %          value for ith case.
 %
 %  See also
-%    GPLA_SOFTMAX_E, GPLA_E, LA_SOFTMAX_PRED
+%    GPLA_SOFTMAX_E, GPLA_E, GPLA_SOFTMAX_PRED
 
-% Copyright (c) 2010 Jaakko Riihim√§ki, Pasi Jyl√§nki
+% Copyright (c) 2010 Jaakko Riihim‰ki, Pasi Jyl‰nki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file

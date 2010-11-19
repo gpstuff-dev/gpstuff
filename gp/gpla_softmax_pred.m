@@ -1,55 +1,52 @@
-function [mu_star, Sigm_cc, Ey, Vary, pi_star] = la_softmax_pred(gp, x, y, xt, varargin)
-%function [Ef, Varf, Ey, Vary, Pyt] = la_softmax_pred(gp, x, y, xt, varargin)
-%LA_SOFTMAX_PRED Predictions with Gaussian Process Laplace
+function [mu_star, Sigm_cc, Ey, Vary, pi_star] = gpla_softmax_pred(gp, x, y, xt, varargin)
+%function [Ef, Varf, Ey, Vary, Pyt] = gpla_softmax_pred(gp, x, y, xt, varargin)
+%GPLA_SOFTMAX_PRED Predictions with Gaussian Process Laplace
 %                approximation with softmax likelihood
 %
 %  Description
-%    [EFT, VARFT, PYT] = LA_SOFTMAX_PRED(GP, X, Y, XT, OPTIONS)
-%    takes a GP structure GP together with a matrix XT of input
-%    vectors, matrix X of training inputs and vector Y of training
-%    targets, and evaluates the predictive distribution at inputs
-%    X. Returns a posterior mean EFT and variance VARFT of latent
-%    variables and the posterior predictive density PYT at input
-%    locations XT.
+%    [EFT, VARFT] = GPLA_SOFTMAX_PRED(GP, X, Y, XT, OPTIONS) takes
+%    a GP structure GP together with a matrix XT of input vectors,
+%    matrix X of training inputs and vector Y of training targets,
+%    and evaluates the predictive distribution at inputs XT. Returns
+%    a posterior mean EFT and variance VARFT of latent variables.
 %
-%    [EF, VARF, PYT] = LA_SOFTMAX_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EF, VARF, ~, ~, PYT] = GPLA_SOFTMAX_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the predictive density PYT of the observations YT
 %    at input locations XT. This can be used for example in the
 %    cross-validation. Here Y has to be vector.
 %
 %     OPTIONS is optional parameter-value pair
-%       'predcf' is index vector telling which covariance functions are 
+%       predcf - is index vector telling which covariance functions are 
 %                used for prediction. Default is all (1:gpcfn). See 
 %                additional information below.
-%       'tstind' is a vector/cell array defining, which rows of X belong 
+%       tstind - is a vector/cell array defining, which rows of X belong 
 %                to which training block in *IC type sparse models. Deafult 
 %                is []. In case of PIC, a cell array containing index 
 %                vectors specifying the blocking structure for test data.
 %                IN FIC and CS+FIC a vector of length n that points out the 
 %                test inputs that are also in the training set (if none,
 %                set TSTIND = []).
-%       'yt'     is optional observed yt in test points (see below)
-%       'z'      is optional observed quantity in triplet (x_i,y_i,z_i)
-%                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, expected value 
-%                for ith case. 
-%       'zt'     is optional observed quantity in triplet (xt_i,yt_i,zt_i)
-%                Some likelihoods may use this. For example, in case of 
-%                Poisson likelihood we have z_i=E_i, that is, expected value 
-%                for ith case. 
+%       yt     - is optional observed yt in test points
+%       z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%                Some likelihoods may use this. For example, in
+%                case of Poisson likelihood we have z_i=E_i, that
+%                is, expected value for ith case.
+%       zt     - optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%                Some likelihoods may use this. For example, in
+%                case of Poisson likelihood we have zt_i=Et_i, that
+%                is, expected value for ith case.
 %
+%  See also
+%    GPLA_SOFTMAX_E, GPLA_SOFTMAX_G, GP_PRED, DEMO_MULTICLASS
 %
-%       See also
-%       GPLA_SOFTMAX_E, GPLA_SOFTMAX_G, GP_PRED, DEMO_MULTICLASS
-%
-% Copyright (c) 2010 Jaakko Riihim√§ki
+% Copyright (c) 2010 Jaakko Riihim‰ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'LA_SOFTMAX_PRED';
+  ip.FunctionName = 'GPLA_SOFTMAX_PRED';
   ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
