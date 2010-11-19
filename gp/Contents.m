@@ -46,19 +46,19 @@
 %                 log posterior estimate
 %   GPEP_G        Evaluate gradient of EP's negative marginal log posterior 
 %                 estimate
-%   EP_PRED       Predictions with Gaussian Process EP approximation
+%   GPEP_PRED     Predictions with Gaussian Process EP approximation
 %   GPLA_E        Construct Laplace approximation and return negative marginal 
 %                 log posterior estimate
 %   GPLA_G        Evaluate gradient of Laplace approximation's marginal 
 %                 log posterior estimate
-%   LA_PRED       Predictions with Gaussian Process Laplace approximation
+%   GPLA_PRED     Predictions with Gaussian Process Laplace approximation
 %   GP_MC         Markov chain sampling for Gaussian process models
-%   MC_PRED       Predictions with Gaussian Process MCMC approximation.
-%   MC_PREDS      Conditional predictions with Gaussian Process MCMC
+%   GPMC_PRED     Predictions with Gaussian Process MCMC approximation.
+%   GPMC_PREDS    Conditional predictions with Gaussian Process MCMC
 %                 approximation.
 %   GP_IA         Integration approximation with grid, Monte Carlo or
 %                 CCD integration
-%   IA_PRED       Prediction with Gaussian Process GP_IA solution.
+%   GPIA_PRED     Prediction with Gaussian Process GP_IA solution.
 %   LGCP          Log Gaussian Cox Process intensity estimate for 1D and 
 %                 2D data
 %
