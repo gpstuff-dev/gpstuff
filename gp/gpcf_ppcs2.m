@@ -420,7 +420,6 @@ gpcf.fh.cfg = @gpcf_ppcs2_cfg;
           d = feval(gpcf.metric.fh.dist, gpcf.metric, x(col_ind,:), x(ii,:));
           
           gd = feval(gpcf.metric.fh.distg, gpcf.metric, x(col_ind,:), x(ii,:));
-          gprior_dist = feval(gpcf.metric.fh.lpg, gpcf.metric, x(col_ind,:), x(ii,:));
 
           ntrip_prev = ntriplets;
           ntriplets = ntriplets + length(d);
