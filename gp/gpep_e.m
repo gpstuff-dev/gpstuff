@@ -39,7 +39,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
 %    returns many useful quantities produced by EP algorithm.
 %
   
-% Copyright (c) 2007  Jaakko Riihimäki
+% Copyright (c) 2007  Jaakko Riihimï¿½ki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura, Aki Vehtari
 
@@ -53,7 +53,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
   ip.addRequired('w', @(x) ...
                  isempty(x) || ...
                  (ischar(x) && strcmp(w, 'init')) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)) || ...
+                 (isvector(x) && isreal(x) && all(isfinite(x))) || ...
                  isnan(x));
   ip.addRequired('gp',@isstruct);
   ip.addOptional('x', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -232,7 +232,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                   tau_i=Sigm(i1,i1)^-1-tautilde(i1);
                   vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
                   
-                  disp(sprintf('negative cavity at site %d', i1))
+                    if isfield(gp.latent_opt, 'display') && gp.latent_opt.display
+                      fprintf('negative cavity at site %d \n', i1)
+                    end
                 end
                 myy_i=vee_i/tau_i;
                 sigm2_i=tau_i^-1;
