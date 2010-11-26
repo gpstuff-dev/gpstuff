@@ -59,7 +59,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   Default 1.
 %       
 
-% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -193,7 +193,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           jitter = jitter + eye(size(H,1))*0.01;
           Sigma = Sigma + jitter;
         end
-        warning(sprintf('gp_ia -> singular Hessian. Jitter of %.4f added.', jitter))
+        warning(sprintf('gp_ia -> singular Hessian. Jitter of %.4f added.\n', jitter))
       end
       
       if ~opt.rotate
