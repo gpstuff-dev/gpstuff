@@ -545,7 +545,9 @@ function gpcf = gpcf_linear(varargin)
     % record coeffSigma2
     if ~isempty(gpcf.coeffSigma2)
       reccf.coeffSigma2(ri,:)=gpcf.coeffSigma2;
-      reccf.p.coeffSigma2 = feval(gpp.coeffSigma2.fh.recappend, reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
+      if ~isempty(gpp.coeffSigma2)
+          reccf.p.coeffSigma2 = feval(gpp.coeffSigma2.fh.recappend, reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
+      end
     elseif ri==1
       reccf.coeffSigma2=[];
     end

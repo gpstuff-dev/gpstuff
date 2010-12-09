@@ -379,8 +379,8 @@ gpcf.fh.cfg = @gpcf_constant_cfg;
       reccf.fh.trcov  = @gpcf_constant_trcov;
       reccf.fh.trvar  = @gpcf_constant_trvar;
       reccf.fh.recappend = @gpcf_constant_recappend;
-      gpcf.p=[];
-      gpcf.p.constSigma2=[];
+      reccf.p=[];
+      reccf.p.constSigma2=[];
       if ~isempty(ri.p.constSigma2)
         reccf.p.constSigma2 = ri.p.constSigma2;
       end
