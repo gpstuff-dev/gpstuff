@@ -146,7 +146,7 @@ else
         elseif (v < 7.5)
             lapack = 'libmwlapack.lib' ;
         else
-            lapack = 'libmwlapack.lib libmwblas.lib' ;
+            %lapack = 'libmwlapack.lib libmwblas.lib' ;
         end
     else
         if (v < 7.5)

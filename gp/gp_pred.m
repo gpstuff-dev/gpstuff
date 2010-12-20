@@ -81,13 +81,20 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
         switch gp.lik.type
           case 'Softmax'
             fh_pred=@gpla_softmax_pred;
+          case {'Multinom' 'Softmax2'}
+            fh_pred=@gpla_mo_pred;
           otherwise
             fh_pred=@gpla_pred;
         end
       case 'EP'
         fh_pred=@gpep_pred;
       case 'MCMC'
-        fh_pred=@gpmc_pred;
+        switch gp.lik.type
+          case {'Multinom' 'Softmax2'}
+            fh_pred=@gpmc_mo_pred;
+          otherwise
+            fh_pred=@gpmc_pred;
+        end        
     end
   else
     error('Logical error by coder of this function!')
@@ -175,7 +182,7 @@ switch gp.type
                 % Vector of diagonal elements of covariance matrix
                 % b = L\K;
                 % Varft = V - sum(b.^2)';
-                Varft = V - diag(v'*v);
+                Varft = V - sum(v'.*v',2);
             end
         else
             V = gp_trvar(gp,xt,predcf);

@@ -532,8 +532,8 @@ function gpcf = gpcf_linear(varargin)
       reccf.fh.trcov  = @gpcf_linear_trcov;
       reccf.fh.trvar  = @gpcf_linear_trvar;
       reccf.fh.recappend = @gpcf_linear_recappend;
-      gpcf.p=[];
-      gpcf.p.coeffSigma2=[];
+      reccf.p=[];
+      reccf.p.coeffSigma2=[];
       if ~isempty(ri.p.coeffSigma2)
         reccf.p.coeffSigma2 = ri.p.coeffSigma2;
       end

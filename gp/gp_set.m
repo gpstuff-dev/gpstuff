@@ -279,6 +279,8 @@ function gp = gp_set(varargin)
           switch gp.lik.type
             case 'Softmax'
               gp = gpla_softmax_e('init', gp);
+            case {'Softmax2' 'Multinom'}
+              gp = gpla_mo_e('init', gp);
             otherwise
               gp = gpla_e('init', gp);
           end

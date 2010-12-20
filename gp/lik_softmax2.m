@@ -18,14 +18,14 @@ function lik = lik_softmax(varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'LIK_SOFTMAX';
+  ip.FunctionName = 'LIK_SOFTMAX2';
   ip.addOptional('lik', [], @isstruct);
   ip.parse(varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
     init=true;
-    lik.type = 'Softmax';
+    lik.type = 'Softmax2';
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Softmax')
       error('First argument does not seem to be a valid likelihood function structure')
@@ -127,7 +127,7 @@ function lik = lik_softmax(varargin)
   end
 
 
-  function llg2 = lik_softmax_llg2(lik, y, f2, param, z)
+  function [pi_vec, pi_mat] = lik_softmax_llg2(lik, y, f2, param, z)
   %LIK_LOGIT_LLG2  Second gradients of the log likelihood
   %
   %  Description        
@@ -150,12 +150,12 @@ function lik = lik_softmax(varargin)
     for i1=1:nout
       pi_mat((1+(i1-1)*n):(nout*n+1):end)=pi2(:,i1);
     end
-    D=diag(pi_vec);
-    llg2=-D+pi_mat*pi_mat';
+%     D=diag(pi_vec);
+%     llg2=-D+pi_mat*pi_mat';
     
   end    
   
-  function llg3 = lik_softmax_llg3(lik, y, f, param, z)
+  function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
   %LIK_LOGIT_LLG3  Third gradients of the log likelihood
   %
   %  Description
@@ -172,12 +172,100 @@ function lik = lik_softmax(varargin)
       error('lik_softmax: The class labels have to be {0,1}')
     end
     
+    [n,nout] = size(y);
+    f2 = reshape(f,n,nout);
+    
+    expf2 = exp(f2);
+    pi2 = expf2./(sum(expf2, 2)*ones(1,nout));
+    pi_vec=pi2(:);
+    
+    dw_mat=zeros(nout,nout,nout,n);
+    
+    for cc3=1:nout
+        for ii1=1:n
+            
+            pic=pi_vec(ii1:n:(nout*n));
+            for cc1=1:nout
+                for cc2=1:nout
+                    
+                    % multinom third derivatives
+                    cc_sum_tmp=0;
+                    if cc1==cc2 && cc1==cc3 && cc2==cc3
+                        cc_sum_tmp=cc_sum_tmp+pic(cc1);
+                    end
+                    if cc1==cc2
+                        cc_sum_tmp=cc_sum_tmp-pic(cc1)*pic(cc3);
+                    end
+                    if cc2==cc3
+                        cc_sum_tmp=cc_sum_tmp-pic(cc1)*pic(cc2);
+                    end
+                    if cc1==cc3
+                        cc_sum_tmp=cc_sum_tmp-pic(cc1)*pic(cc2);
+                    end
+                    cc_sum_tmp=cc_sum_tmp+2*pic(cc1)*pic(cc2)*pic(cc3);
+                    
+                    dw_mat(cc1,cc2,cc3,ii1)=cc_sum_tmp;
+                end
+            end
+        end
+    end
   end
 
   function [m_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
   end
   
-  function [Ey, Vary, py] = lik_softmax_predy(lik, Ef, Varf, y, z)
+  function [Ey, Vary, py] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
+  %LIK_SOFTMAX_PREDY  Returns the predictive mean, variance and density of
+  %y
+  %
+  %  Description         
+  %    [EY, VARY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF) takes a
+  %    likelihood structure LIK, posterior mean EF and posterior
+  %    Variance VARF of the latent variable and returns the
+  %    posterior predictive mean EY and variance VARY of the
+  %    observations related to the latent variables
+  %        
+  %    [Ey, Vary, PY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF YT, ZT)
+  %    Returns also the predictive density of YT, that is 
+  %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
+  %    This requires also the succes counts YT, numbers of trials ZT.
+  %
+  %  See also 
+  %    GPEP_PRED, GPLA_PRED, GPMC_PRED
+            
+  
+      if ~isempty(find(yt~=1 & yt~=0))
+          error('lik_softmax: The class labels have to be {0,1}')
+      end
+    
+      S=10000;
+      [ntest,nout]=size(yt);
+      pi=zeros(ntest,nout);
+      py=zeros(ntest,nout);
+      [~,~,c] =size(Varf);
+      if c>1
+          mcmc=false;
+      else
+          mcmc=true;
+      end
+      for i1=1:ntest
+          if mcmc
+            Sigm_tmp = diag(Varf(i1,:));
+          else
+            Sigm_tmp=(Varf(:,:,i1)'+Varf(:,:,i1))./2;
+          end
+          f_star=mvnrnd(Ef(i1,:), Sigm_tmp, S);
+          
+          tmp = exp(f_star);
+          tmp = tmp./(sum(tmp, 2)*ones(1,size(tmp,2)));
+          pi(i1,:)=mean(tmp);
+          if nargout > 2
+              ytmp = repmat(yt(i1,:),S,1);
+              py(i1,:) = mean(tmp.^(ytmp).*(1-tmp).^(1-ytmp));
+          end
+      end
+      Ey = 2*pi-1;
+      Vary = 1-(2*pi-1).^2;
   end
 
   function reclik = lik_softmax_recappend(reclik, ri, lik)

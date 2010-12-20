@@ -37,6 +37,8 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
       switch gp.lik.type
         case 'Softmax'
           fh_g=@gpla_softmax_g;
+        case {'Softmax2' 'Multinom'}
+          fh_g=@gpla_mo_g;
         otherwise
           fh_g=@gpla_g;
       end
@@ -162,7 +164,7 @@ switch gp.type
           [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
           for i2 = 1:length(DKff)
             i1=i1+1;
-            trK = sum(sum(invC.*DKff{i2}));       % d log(Ky‚Åª) / d th
+            trK = sum(sum(invC.*DKff{i2}));       % d log(Ky‚?ª) / d th
             gdata(i1)=0.5*(-1*dMNM{i2} + trK + trA{i2});
             gprior(i1) = gprior_cf(i2);
           end
