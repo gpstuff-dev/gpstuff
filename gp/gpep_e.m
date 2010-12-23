@@ -1,4 +1,4 @@
-function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = gpep_e(w, gp, varargin)
+function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z_i] = gpep_e(w, gp, varargin)
 %GPEP_E  Do Expectation propagation and return marginal log posterior estimate
 %
 %  Description
@@ -77,6 +77,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
     n0 = size(x,1);
     La20 = [];
     b0 = 0;
+    Z_i0 = [];
     muvec_i0 = [];
     sigm2vec_i0 = [];
     myy0 = zeros(size(y));
@@ -89,10 +90,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
   else
     % call ep_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for EP
-    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] = feval(gp.fh.e, w, gp, x, y, z);
+    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z_i] = feval(gp.fh.e, w, gp, x, y, z);
   end
 
-  function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i] = ep_algorithm(w, gp, x, y, z)
+  function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i] = ep_algorithm(w, gp, x, y, z)
 
   % check whether saved values can be used
     if isempty(z)
@@ -112,6 +113,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       L = L0;
       La2 = La20;
       b = b0;
+      Z_i = Z_i0;
       muvec_i = muvec_i0;
       sigm2vec_i = sigm2vec_i0;
     else
@@ -258,7 +260,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
                 %Sigm = Sigm - apu;
                 %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
-                
                 if ~isfield(gp,'meanf')
                   myy=Sigm*nutilde;
                 else
@@ -317,46 +318,50 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                   logZep = -(term41+term52+term5+term3);
                   iter=iter+1;
                   
-                else                % mean function used
-                                    % help variables
-                hBh = H'*B_m*H;
-                C_t = C + hBh;
-                CHb  = C\H'*b_m;
-                S   = Stildesqroot.^2; 
-                B = eye(n)+Stildesqroot*C*Stildesqroot;
-                B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
-                L=chol(B,'lower');                      % L to return, without the hBh term
-                L_m=chol(B_h,'lower');                  % L for the calculation with mean term
+                else                
+                  % mean function used
+                  % help variables
+                  hBh = H'*B_m*H;
+                  C_t = C + hBh;
+                  CHb  = C\H'*b_m;
+                  S   = Stildesqroot.^2; 
+                  B = eye(n)+Stildesqroot*C*Stildesqroot;
+                  B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
+                  % L to return, without the hBh term
+                  L=chol(B,'lower');
+                  % L for the calculation with mean term
+                  L_m=chol(B_h,'lower');                  
 
-                % Recompute the approximate posterior
-                % parameters
-                V=(L_m\Stildesqroot)*C_t;
-                Sigm=C_t-V'*V; myy=Sigm*(CHb+nutilde);
-                
-                
-                Ls = chol(Sigm);
-                T=1./sigm2vec_i;
-                Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
-                L2 = V*(S*H'*b_m-nutilde);
-                
-                zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
-                Ks  = eye(size(zz)) - zz;               % inv(K + S^-1)*S^-1
+                  % Recompute the approximate posterior
+                  % parameters
+                  V=(L_m\Stildesqroot)*C_t;
+                  Sigm=C_t-V'*V; myy=Sigm*(CHb+nutilde);
+                  
+                  
+                  Ls = chol(Sigm);
+                  T=1./sigm2vec_i;
+                  Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
+                  L2 = V*(S*H'*b_m-nutilde);
+                  
+                  zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                  % inv(K + S^-1)*S^-1
+                  Ks  = eye(size(zz)) - zz;               
 
-                % 5. term (1/2 element)   
-                term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);                           
-                % 2. term 
-                term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);                
-                % 4. term
-                term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));           
-                % 1. term
-                term1    = -1.*sum(log(diag(L_m)));                       
-                % 3. term
-                term3    = sum(log(M0));                                   
-                % 5. term (2/2 element)
-                term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                  % 5. term (1/2 element)   
+                  term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);                           
+                  % 2. term 
+                  term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);                
+                  % 4. term
+                  term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));           
+                  % 1. term
+                  term1    = -1.*sum(log(diag(L_m)));                       
+                  % 3. term
+                  term3    = sum(log(M0));                                   
+                  % 5. term (2/2 element)
+                  term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
 
-                logZep = -(term4+term1+term5_1+term5+term2+term3);
-                iter=iter+1;
+                  logZep = -(term4+term1+term5_1+term5+term2+term3);
+                  iter=iter+1;
                 end
                 
                 %==============================
@@ -365,33 +370,34 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
                 % We might end up here if the likelihood is not log concace
                 % For example Student-t likelihood. 
                 % NOTE! This does not work reliably yet
-              Stilde=tautilde;
-              Ls = chol(Sigm);
-              myy=Sigm*nutilde;
-              
-              % Compute the marginal likelihood
-              % 4. term & 1. term
-              term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
-              
-              % 5. term (1/2 element) & 2. term
-              T=1./sigm2vec_i;
-              term52 = nutilde'*(Ls'*(Ls*nutilde)) - (nutilde'./(T+Stilde)')*nutilde;
-              term52 = term52.*0.5;
-              
-              % 5. term (2/2 element)
-              term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-              
-              % 3. term
-              term3 = sum(log(M0));
-              
-              logZep = -(term41+term52+term5+term3);
-              iter=iter+1;
-              B=Ls;
-              L=Ls;                            
+                Stilde=tautilde;
+                Ls = chol(Sigm);
+                myy=Sigm*nutilde;
+                
+                % Compute the marginal likelihood
+                % 4. term & 1. term
+                term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
+                
+                % 5. term (1/2 element) & 2. term
+                T=1./sigm2vec_i;
+                term52 = nutilde'*(Ls'*(Ls*nutilde)) - (nutilde'./(T+Stilde)')*nutilde;
+                term52 = term52.*0.5;
+                
+                % 5. term (2/2 element)
+                term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                
+                % 3. term
+                term3 = sum(log(M0));
+                
+                logZep = -(term41+term52+term5+term3);
+                iter=iter+1;
+                B=Ls;
+                L=Ls;                            
               end
             end
-            % EP algorithm for compactly supported covariance function (that is C is sparse)
-            %---------------------------------------------------------------------------
+            % EP algorithm for compactly supported covariance function (that is
+            % C is sparse)
+            %------------------------------------------------------------------
           else
             p = analyze(K);
             r(p) = 1:n;
@@ -1286,6 +1292,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i] =
       n0 = size(x,1);
       La20 = La2;
       b0 = b;
+      Z_i = M0;
+      Z_i0 = Z_i;
       muvec_i0 = muvec_i;
       sigm2vec_i0 = sigm2vec_i;
       datahash0=datahash;

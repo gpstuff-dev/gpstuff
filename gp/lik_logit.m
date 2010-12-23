@@ -234,10 +234,6 @@ function lik = lik_logit(varargin)
   %  See also 
   %    GPLA_PRED, GPEP_PRED, GPMC_PRED
     
-    if ~isempty(find(abs(yt)~=1))
-      error('lik_logit: The class labels have to be {-1,1}')
-    end
-
     py1 = zeros(length(Ef),1);
     for i1=1:length(Ef)
       myy_i = Ef(i1);
@@ -251,6 +247,9 @@ function lik = lik_logit(varargin)
     Vary = 1-(2*py1-1).^2;
     
     if nargout > 2
+      if ~isempty(find(abs(yt)~=1))
+        error('lik_logit: The class labels have to be {-1,1}')
+      end
       % Quadrature integration                                    
       Py = zeros(length(Ef),1);
       for i1 = 1:length(Ef)

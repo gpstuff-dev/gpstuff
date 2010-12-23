@@ -35,7 +35,16 @@ gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 n=length(x);
 
-[Ef, Varf, Ey, Vary, py] = gpep_loopred(gp, x, y, varargin{:});
-eloo=-mean(log(py));
+ip=inputParser;
+ip.FunctionName = 'GPEP_LOOE';
+ip.addRequired('w', @(x) isempty(x) || ...
+               isvector(x) && isreal(x) && all(isfinite(x)));
+ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.parse(w, gp, x, y, varargin{:});
+z=ip.Results.z;
 
-end
+[~,~,~,~,~,~,~,~,~,~,Z_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+eloo=-mean(log(Z_i));

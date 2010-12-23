@@ -54,15 +54,15 @@ switch gp.type
       iC = spinv(C); % evaluate the sparse inverse
       LD = ldlchol(C);
       b = ldlsolve(LD,y);
-      myy = y - b./full(diag(iC));
-      sigma2 = 1./full(diag(iC));
+      myy_i = y - b./full(diag(iC));
+      sigma2_i = 1./full(diag(iC));
     else
       iC= inv(C);    % evaluate the full inverse
       b=C\y;
-      myy = y - b./diag(iC);
-      sigma2 = 1./diag(iC);
+      myy_i = y - b./diag(iC);
+      sigma2_i = 1./diag(iC);
     end
-    eloo = 0.5 * (log(2*pi) + sum(log(sigma2) + (y-myy).^2./sigma2)./n );
+    eloo = 0.5 * (log(2*pi) + sum(log(sigma2_i) + (y-myy_i).^2./sigma2_i)./n);
     
     % ============================================================
     % FIC

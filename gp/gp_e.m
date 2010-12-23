@@ -1,6 +1,6 @@
 function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
-%GP_E  Evaluate the energy function (un-normalized negative marginal
-%      log posterior)
+%GP_E  Evaluate the energy function (un-normalized negative 
+%      log marginal posterior)
 %
 %  Description
 %    E = GP_E(W, GP, X, Y, OPTIONS) takes a Gaussian process

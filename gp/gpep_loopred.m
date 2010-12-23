@@ -41,34 +41,39 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
 
-  if iscell(gp)
+  if ~iscell(gp)
+    % Single GP
+    [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i,Z_i] = gpep_e(gp_pak(gp), ...
+                                                      gp, x, y, 'z', z);
+
+    Eft=muvec_i;
+    Varft=sigm2vec_i;
+    pyt=Z_i;
+    n=length(y);
+    if nargout > 2
+      for cvi=1:n
+        [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, ...
+                                           muvec_i(cvi), sigm2vec_i(cvi));
+      end
+    end
+    
+  else
+    % Cell array of GPs
     nGP = numel(gp);
     for j = 1:nGP
-      [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i] = gpep_e(gp_pak(gp{j}), gp{j}, x, y, 'z', z);
+      [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i,Z_i] = gpep_e(gp_pak(gp{j}), ...
+                                                        gp{j}, x, y, 'z', z);
       
       P_TH(j,:) = gp{j}.ia_weight;
       Eft_grid(j,:)=muvec_i;
       Varft_grid(j,:)=sigm2vec_i;
+      pyt_grid(j,:)=Z_i;
       n=length(y);
-      if isempty(z)
-        if nargout > 4
-          for cvi=1:n
-            [Eyt_grid(j,cvi), Varyt_grid(j,cvi), pyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
-          end
-        elseif nargout > 2
-          for cvi=1:n
-            [Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi));
-          end
-        end
-      else
-        if nargout > 4
-          for cvi=1:n
-            [Eyt_grid(j,cvi), Varyt_grid(j,cvi), pyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
-          end
-        elseif nargout > 2
-          for cvi=1:n
-            [Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
-          end
+      if nargout > 2
+        for cvi=1:n
+          [Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = ...
+              feval(gp{j}.lik.fh.predy, gp{j}.lik, muvec_i(cvi), ...
+                    sigm2vec_i(cvi), [], z(cvi));
         end
       end
     end
@@ -96,39 +101,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
     Eft = sum(ft.*pft,2)./sum(pft,2);
     Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
     
-    Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
-    Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
-    Eyt=Eyt';
-    Varyt=Varyt';
+    if nargout > 2
+      Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
+      Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
+      Eyt=Eyt';
+      Varyt=Varyt';
+    end
     pyt = sum(bsxfun(@times,pyt_grid,P_TH),1)';
 
-    
-  else
-    [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
-
-    Eft=muvec_i;
-    Varft=sigm2vec_i;
-    n=length(y);
-    if isempty(z)
-      if nargout > 4
-        for cvi=1:n
-          [Eyt(cvi,1), Varyt(cvi,1), pyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi));
-        end
-      elseif nargout > 2
-        for cvi=1:n
-          [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi));
-        end
-      end
-    else
-      if nargout > 4
-        for cvi=1:n
-          [Eyt(cvi,1), Varyt(cvi,1), pyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), y(cvi), z(cvi));
-        end
-      elseif nargout > 2
-        for cvi=1:n
-          [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, muvec_i(cvi), sigm2vec_i(cvi), [], z(cvi));
-        end
-      end
-    end
   end
 end

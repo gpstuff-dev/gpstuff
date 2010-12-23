@@ -56,52 +56,40 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   % Calculate covariance matrix and the site parameters
       [K, C] = gp_trcov(gp,x);
       
-      if issparse(C)          % If compact support covariance functions are used 
-                              % the covariance matrix will be sparse
-        [e, edata, eprior, tautilde, nutilde, LD, La2, b] = gpep_e(w, gp, x, y, 'z', z);
+      if issparse(C)          
+        % If compact support covariance functions are used 
+        % the covariance matrix will be sparse
+        [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, 'z', z);
         Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
         
         b = nutilde - Stildesqroot*ldlsolve(LD,Stildesqroot*(C*nutilde));
-        invC = spinv(LD,1);       % evaluate the sparse inverse
+        % evaluate the sparse inverse
+        invC = spinv(LD,1);       
         invC = Stildesqroot*invC*Stildesqroot;
       else
-        [e, edata, eprior, tautilde, nutilde, L, La2, b] = gpep_e(w, gp, x, y, 'z', z);
+        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, 'z', z);
         
-        
-        if tautilde > 0             % This is the usual case where likelihood is log concave
-                                    % for example, Poisson and probit
-                                    % Stildesqroot=diag(sqrt(tautilde));
-                                    % logZep; nutilde; tautilde;
-                                    % b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-                                    % invC = Stildesqroot*(L'\(L\Stildesqroot));
+        if tautilde > 0
+          % This is the usual case where likelihood is log concave
+          % for example, Poisson and probit
+          % Stildesqroot=diag(sqrt(tautilde));
+          % logZep; nutilde; tautilde;
+          % b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+          % invC = Stildesqroot*(L'\(L\Stildesqroot));
           Stildesqroot=sqrt(tautilde);
           temp=L\diag(Stildesqroot);
           invC = temp'*temp;
           b=nutilde-Stildesqroot.*(L'\(L\(Stildesqroot.*(C*nutilde))));
-        else                         % We might end up here if the likelihood is not log concace
-                                     % For example Student-t likelihood.
-                                     % NOTE! This does not work reliably yet
-        S = diag(tautilde);
-        b = nutilde - tautilde.*(L'*L*(nutilde));
-        invC = S*L';
-        invC = S - invC*invC';
+        else                         
+          % We might end up here if the likelihood is not log concace
+          % For example Student-t likelihood.
+          % NOTE! This does not work reliably yet
+          S = diag(tautilde);
+          b = nutilde - tautilde.*(L'*L*(nutilde));
+          invC = S*L';
+          invC = S - invC*invC';
         end           
         
-        if tautilde > 0             % This is the usual case where likelihood is log concave
-                                    % for example, Poisson and probit
-          Stildesqroot=diag(sqrt(tautilde));
-          
-          % logZep; nutilde; tautilde;
-          b=nutilde-Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-          invC = Stildesqroot*(L'\(L\Stildesqroot));
-        else                         % We might end up here if the likelihood is not log concace
-                                     % For example Student-t likelihood. 
-                                     % NOTE! This does not work reliably yet
-        S = diag(tautilde);
-        b = nutilde - tautilde.*(L'*L*(nutilde));
-        invC = S*L';
-        invC = S - invC*invC';
-        end
       end
 
       % =================================================================
@@ -136,7 +124,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
               gprior(i1) = gprior_cf(i2);
             end
           end
-          
           
           % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)

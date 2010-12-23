@@ -117,9 +117,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       a = a0;
       p = p0;
     else
-      % The parameters or data have changed since
-      % the last call for gpla_e. In this case we need to
-      % re-evaluate the Laplace approximation
+      % The parameters or data have changed since the last call for
+      % gpla_e. In this case we need to re-evaluate the Laplace
+      % approximation
       gp=gp_unpak(gp, w);
       ncf = length(gp.cf);
       n = length(x);

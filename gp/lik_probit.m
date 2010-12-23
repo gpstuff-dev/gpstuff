@@ -223,17 +223,15 @@ function lik = lik_probit(varargin)
   %  See also 
   %    GPEP_PRED, GPLA_PRED, GPMC_PRED
 
-    
-    if ~isempty(find(abs(yt)~=1))
-      error('lik_probit: The class labels have to be {-1,1}')
-    end
-
     py1 = normcdf(Ef./sqrt(1+Varf));
     Ey = 2*py1 - 1;
 
     Vary = 1-Ey.^2;
     
     if nargout > 2
+      if ~isempty(find(abs(yt)~=1))
+        error('lik_probit: The class labels have to be {-1,1}')
+      end
       py = normcdf(Ef.*yt./sqrt(1+Varf));    % Probability p(y_new)
     end
   end
