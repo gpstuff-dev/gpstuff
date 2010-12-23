@@ -99,6 +99,12 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpla_pred(gp, x, y, xt, varargin)
 
         ntest=size(xt,1);
         K_nf = gp_cov(gp,xt,x,predcf);
+        if isfield(gp,'meanf')
+            [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
+            K_nf=K_nf + Hs'*B_m*H;
+            K = gp_trcov(gp, x);
+            K = K+H'*B_m*H;
+        end
         
         % Evaluate the mean
         if issparse(K_nf) && issparse(L)        
@@ -107,11 +113,17 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpla_pred(gp, x, y, xt, varargin)
         else
           deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
           Eft = K_nf*deriv;
+          if isfield(gp,'meanf')
+              Eft=Eft + K_nf*(K\Hs'*b_m);
+          end
         end
 
         if nargout > 1
           % Evaluate the variance
           kstarstar = gp_trvar(gp,xt,predcf);
+          if isfield(gp,'meanf')
+             kstarstar= kstarstar + diag(Hs'*B_m*Hs);
+          end
           if W >= 0
             % This is the usual case where likelihood is log concave
             % for example, Poisson and probit

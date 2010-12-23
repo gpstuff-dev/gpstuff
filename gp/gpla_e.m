@@ -45,7 +45,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
   
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2010 Pasi Jylänki
+% Copyright (c) 2010 Pasi Jylï¿½nki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -117,9 +117,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       a = a0;
       p = p0;
     else
-      % The parameters or data have changed since the last call for
-      % gpla_e. In this case we need to re-evaluate the Laplace
-      % approximation
+      % The parameters or data have changed since
+      % the last call for gpla_e. In this case we need to
+      % re-evaluate the Laplace approximation
       gp=gp_unpak(gp, w);
       ncf = length(gp.cf);
       n = length(x);
@@ -127,7 +127,13 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
 
       % Initialize latent values
       % zero seems to be a robust choice (Jarno)
-      f = zeros(size(y));
+      % with mean functions, initialize to mean function values
+      if ~isfield(gp,'meanf')
+        f = zeros(size(y));
+      else
+        [H,b_m,B_m]=mean_prep(gp,x,[]);
+        f = H'*b_m;
+      end
 
       % =================================================
       % First Evaluate the data contribution to the error
@@ -137,6 +143,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
         % ============================================================
         case 'FULL'
           K = gp_trcov(gp, x);
+          if isfield(gp,'meanf')
+              K=K+H'*B_m*H;  
+          end
 
           % If K is sparse, permute all the inputs so that evaluations are more efficient
           if issparse(K)         % Check if compact support covariance is used
@@ -191,12 +200,15 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             case 'newton'
               tol = 1e-12;
               a = f;
+              if isfield(gp,'meanf')
+                a = a-H'*b_m;  
+              end
               W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
               dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
               lp_new = feval(gp.lik.fh.ll, gp.lik, y, f, z);
               lp_old = -Inf;
               
-              while lp_new - lp_old > tol                                
+              while abs(lp_new - lp_old) > tol
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);    
                 if issparse(K)
@@ -205,7 +217,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 else
                   L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                 end
-                b = W.*f+dlp;
+                if ~isfield(gp,'meanf')                   
+                  b = W.*f+dlp;
+                else
+                  b = W.*f+K\(H'*b_m)+dlp;
+                end
                 if issparse(K)
                   a = b - sW*ldlsolve(L,sW*(K*b));
                 else
@@ -215,7 +231,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
                 dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
                 lp = feval(gp.lik.fh.ll, gp.lik, y, f, z);
-                lp_new = -a'*f/2 + lp;
+                if ~isfield(gp,'meanf')
+                  lp_new = -a'*f/2 + lp;
+                else
+                  lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp; %f^=f-H'*b_m,
+                end
                 i = 0;
                 while i < 10 && lp_new < lp_old  || isnan(sum(f))
                   % reduce step size by half
@@ -223,7 +243,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   f = K*a;
                   W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
                   lp = feval(gp.lik.fh.ll, gp.lik, y, f, z);
-                  lp_new = -a'*f/2 + lp;
+                  if ~isfield(gp,'meanf')
+                      lp_new = -a'*f/2 + lp;
+                  else
+                      lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp;
+                  end
                   i = i+1;
                 end 
               end
@@ -323,7 +347,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           
           % evaluate the approximate log marginal likelihood
           W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-          logZ = 0.5 * f'*a - feval(gp.lik.fh.ll, gp.lik, y, f, z);
+          if ~isfield(gp,'meanf')
+              logZ = 0.5 *f'*a - feval(gp.lik.fh.ll, gp.lik, y, f, z);
+          else
+              logZ = 0.5 *((f-H'*b_m)'*(a-K\(H'*b_m))) - feval(gp.lik.fh.ll, gp.lik, y, f, z);
+          end
           if min(W) >= 0             % This is the usual case where likelihood is log concave
                                      % for example, Poisson and probit
             if issparse(K)

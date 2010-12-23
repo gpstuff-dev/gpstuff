@@ -55,6 +55,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
     % ============================================================
     % Calculate covariance matrix and the site parameters
       K = gp_trcov(gp,x);
+      if isfield(gp,'meanf')
+        [H,b_m,B_m]=mean_prep(gp,x,[]);
+        K=K+H'*B_m*H;  
+      end
       
       [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
       
@@ -109,8 +113,11 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           g1 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
           for i2 = 1:length(DKff)
             i1 = i1+1;
-            
-            s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
+            if ~isfield(gp,'meanf')
+                s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
+            else
+                s1 = 0.5 * (a-K\(H'*b_m))'*DKff{i2}*(a-K\(H'*b_m)) - 0.5*sum(sum(R.*DKff{i2}));
+            end
             b = DKff{i2} * g1;
             if issparse(K)
               s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
