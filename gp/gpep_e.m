@@ -249,21 +249,27 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
                 tautilde(i1)=tautilde(i1)+deltatautilde;
                 nutilde(i1)=sigm2hati^-1*muhati-vee_i;
                 
-                apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
-                Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
+                % Update mean and variance after each site update (standard EP)
+                if isequal(gp.latent_opt.parallel,'off')
+                    apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
+                    Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
 
-                
-                % The below is how Rasmussen and Williams
-                % (2006) do the update. The above version is
-                % more robust.
-                %apu = deltatautilde^-1+Sigm(i1,i1);
-                %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
-                %Sigm = Sigm - apu;
-                %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
-                if ~isfield(gp,'meanf')
-                  myy=Sigm*nutilde;
+                    % The below is how Rasmussen and Williams
+                    % (2006) do the update. The above version is
+                    % more robust.
+                    %apu = deltatautilde^-1+Sigm(i1,i1);
+                    %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
+                    %Sigm = Sigm - apu;
+                    %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                    if ~isfield(gp,'meanf')
+                      myy=Sigm*nutilde;
+                    else
+                      myy=Sigm*(C\(H'*b_m)+nutilde);
+                    end
                 else
-                  myy=Sigm*(C\(H'*b_m)+nutilde);
+                    % Parallel EP
+                    % Update myy & Sigm after all site parameters are
+                    % calculated
                 end
                 
                 muvec_i(i1,1)=myy_i;
@@ -284,7 +290,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
 
                   B=eye(n)+Stildesqroot*C*Stildesqroot;
                   L=chol(B,'lower');
-
+                 
                   V=(L\Stildesqroot)*C;
                   Sigm=C-V'*V; myy=Sigm*nutilde;
                   Ls = chol(Sigm);
@@ -568,27 +574,33 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
               tautilde(i1) = tautilde(i1)+deltatautilde;
               deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
               nutilde(i1) = sigm2hati^-1*muhati-vee_i;
-
-              % Update the parameters
-              dn = D_vec(i1);
-              D_vec(i1) = D_vec(i1) - deltatautilde.*D_vec(i1).^2 ./ (1+deltatautilde.*D_vec(i1));
-              P(i1,:) = pn' - (deltatautilde.*dn ./ (1+deltatautilde.*dn)).*pn';
-              updfact = deltatautilde./(1 + deltatautilde.*Ann);
-              if updfact > 0
-                RtRpnU = R'*(R*pn).*sqrt(updfact);
-                R = cholupdate(R, RtRpnU, '-');
-              elseif updfact < 0
-                RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
-                R = cholupdate(R, RtRpnU, '+');
+              
+              % Standard EP
+              if isequal(gp.latent_opt.parallel,'off')
+                  % Update the parameters
+                  dn = D_vec(i1);
+                  D_vec(i1) = D_vec(i1) - deltatautilde.*D_vec(i1).^2 ./ (1+deltatautilde.*D_vec(i1));
+                  P(i1,:) = pn' - (deltatautilde.*dn ./ (1+deltatautilde.*dn)).*pn';
+                  updfact = deltatautilde./(1 + deltatautilde.*Ann);
+                  if updfact > 0
+                    RtRpnU = R'*(R*pn).*sqrt(updfact);
+                    R = cholupdate(R, RtRpnU, '-');
+                  elseif updfact < 0
+                    RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
+                    R = cholupdate(R, RtRpnU, '+');
+                  end
+                  eta(i1) = eta(i1) + (deltanutilde - deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
+                  gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
+                  %                            myy = eta + P*gamma;
+              else
+                  % Parallel EP
               end
-              eta(i1) = eta(i1) + (deltanutilde - deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
-              gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
-              %                            myy = eta + P*gamma;
-
-              % Store cavity parameters
+              
+            % Store cavity parameters
               muvec_i(i1,1)=myy_i;
               sigm2vec_i(i1,1)=sigm2_i;
             end
+            
 
             % Re-evaluate the parameters
             temp1 = (1+Lav.*tautilde).^(-1);
@@ -695,7 +707,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           D = Labl;
           Ann=0;
 
-          while iter<=maxiter && abs(logZep_tmp-logZep)>tol
+          while iter<=maxiter && abs(logZep_tmp-logZep)>tol 
 
             logZep_tmp=logZep;
             muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
@@ -721,25 +733,29 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
                 tautilde(i1) = tautilde(i1)+deltatautilde;
                 deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
                 nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                
+                if isequal(gp.latent_opt.parallel,'off')
+                    % Update the parameters
+                    Dblin = Dbl(:,in);
+                    Dbl = Dbl - deltatautilde ./ (1+deltatautilde.*dn) * Dblin*Dblin';
+                    %Dbl = inv(inv(Dbl) + diag(tautilde(bl_ind)));
+                    P(bl_ind,:) = P(bl_ind,:) - ((deltatautilde ./ (1+deltatautilde.*dn)).* Dblin)*pn';
+                    updfact = deltatautilde./(1 + deltatautilde.*Ann);
+                    if updfact > 0
+                      RtRpnU = R'*(R*pn).*sqrt(updfact);
+                      R = cholupdate(R, RtRpnU, '-');
+                    elseif updfact < 0
+                      RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
+                      R = cholupdate(R, RtRpnU, '+');
+                    end
+                    eta(bl_ind) = eta(bl_ind) + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dblin;
+                    gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
+                    %myy = eta + P*gamma;
 
-                % Update the parameters
-                Dblin = Dbl(:,in);
-                Dbl = Dbl - deltatautilde ./ (1+deltatautilde.*dn) * Dblin*Dblin';
-                %Dbl = inv(inv(Dbl) + diag(tautilde(bl_ind)));
-                P(bl_ind,:) = P(bl_ind,:) - ((deltatautilde ./ (1+deltatautilde.*dn)).* Dblin)*pn';
-                updfact = deltatautilde./(1 + deltatautilde.*Ann);
-                if updfact > 0
-                  RtRpnU = R'*(R*pn).*sqrt(updfact);
-                  R = cholupdate(R, RtRpnU, '-');
-                elseif updfact < 0
-                  RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
-                  R = cholupdate(R, RtRpnU, '+');
+                    D{bl} = Dbl;
+                else
+                    % Parallel EP
                 end
-                eta(bl_ind) = eta(bl_ind) + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dblin;
-                gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
-                %myy = eta + P*gamma;
-
-                D{bl} = Dbl;
                 % Store cavity parameters
                 muvec_i(i1,1)=myy_i;
                 sigm2vec_i(i1,1)=sigm2_i;                                
@@ -917,34 +933,42 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
               deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
               nutilde(i1) = sigm2hati^-1*muhati-vee_i;
               
-              % Update the parameters
-              P = P - ((deltatautilde ./ (1+deltatautilde.*dn)).* Di1)*pn';
-              updfact = deltatautilde./(1 + deltatautilde.*Ann);
-              if updfact > 0
-                RtRpnU = R'*(R*pn).*sqrt(updfact);
-                R = cholupdate(R, RtRpnU, '-');
-              elseif updfact < 0
-                RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
-                R = cholupdate(R, RtRpnU, '+');
-              end
-              eta = eta + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Di1;
-              gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
+              % Standard EP
+              if isequal(gp.latent_opt.parallel,'off')
+                  % Update the parameters
+                  P = P - ((deltatautilde ./ (1+deltatautilde.*dn)).* Di1)*pn';
+                  updfact = deltatautilde./(1 + deltatautilde.*Ann);
+                  if updfact > 0
+                    RtRpnU = R'*(R*pn).*sqrt(updfact);
+                    R = cholupdate(R, RtRpnU, '-');
+                  elseif updfact < 0
+                    RtRpnU = R'*(R*pn).*sqrt(abs(updfact));
+                    R = cholupdate(R, RtRpnU, '+');
+                  end
+                  eta = eta + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Di1;
+                  gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
 
-              % Store cavity parameters
-              muvec_i(i1,1)=myy_i;
-              sigm2vec_i(i1,1)=sigm2_i;
-              
-              D2_o = ssmult(sqrtS,LasqrtS(:,i1)) + Inn(:,i1);
-              sqrtS(i1,i1) = sqrt(tautilde(i1));
-              LasqrtS(:,i1) = La(:,i1).*sqrtS(i1,i1);
-              D2_n = ssmult(sqrtS,LasqrtS(:,i1)) + Inn(:,i1);
-              
-              if tautilde(i1) - deltatautilde == 0
-                VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
-                VD = ldlrowupdate(i1,VD,D2_n,'+');
+                  % Store cavity parameters
+                  muvec_i(i1,1)=myy_i;
+                  sigm2vec_i(i1,1)=sigm2_i;
+                  
+                  D2_o = ssmult(sqrtS,LasqrtS(:,i1)) + Inn(:,i1);
+                  sqrtS(i1,i1) = sqrt(tautilde(i1));
+                  LasqrtS(:,i1) = La(:,i1).*sqrtS(i1,i1);
+                  D2_n = ssmult(sqrtS,LasqrtS(:,i1)) + Inn(:,i1);
+
+                  if tautilde(i1) - deltatautilde == 0
+                    VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
+                    VD = ldlrowupdate(i1,VD,D2_n,'+');
+                  else
+                    VD = ldlrowmodify(VD, D2_n, i1);
+                  end
               else
-                VD = ldlrowmodify(VD, D2_n, i1);
+                   % Parallel EP
+                   error('This is not implemented yet')
               end
+              
+
             end
             % Re-evaluate the parameters
             sqrtS = sparse(1:n,1:n,sqrt(tautilde),n,n);
@@ -1066,18 +1090,23 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
               tautilde(i1) = tautilde(i1)+deltatautilde;
               deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
               nutilde(i1) = sigm2hati^-1*muhati-vee_i;
-
-              % Update the parameters
-              lnn = sum((R*phi).^2);
-              updfact = deltatautilde/(1 + deltatautilde*lnn);
-              if updfact > 0
-                RtLphiU = R'*(R*phi).*sqrt(updfact);
-                R = cholupdate(R, RtLphiU, '-');
-              elseif updfact < 0
-                RtLphiU = R'*(R*phi).*sqrt(updfact);
-                R = cholupdate(R, RtLphiU, '+');
+              
+              % Standard EP
+              if isequal(gp.latent_opt.parallel,'off')
+                  % Update the parameters
+                  lnn = sum((R*phi).^2);
+                  updfact = deltatautilde/(1 + deltatautilde*lnn);
+                  if updfact > 0
+                    RtLphiU = R'*(R*phi).*sqrt(updfact);
+                    R = cholupdate(R, RtLphiU, '-');
+                  elseif updfact < 0
+                    RtLphiU = R'*(R*phi).*sqrt(updfact);
+                    R = cholupdate(R, RtLphiU, '+');
+                  end
+                  gamma = gamma - R'*(R*phi)*(deltatautilde*myy(i1)-deltanutilde);
+              else
+                  % Parallel EP
               end
-              gamma = gamma - R'*(R*phi)*(deltatautilde*myy(i1)-deltanutilde);
               
               % Store cavity parameters
               muvec_i(i1,1)=myy_i;
@@ -1297,6 +1326,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
       muvec_i0 = muvec_i;
       sigm2vec_i0 = sigm2vec_i;
       datahash0=datahash;
+      
+      global iter_lkm 
+      iter_lkm=iter;
     end
   end
 end

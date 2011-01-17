@@ -72,6 +72,8 @@ function gp = gp_set(varargin)
 %      EP: 
 %        maxiter      - Maximum number of EP iterations. The default is 20.
 %        tol          - Termination tolerance on logZ. The default is 1e-6.
+%        parallel     - use parallel updating of site parameters: 
+%                       'on' or 'off' (default) 
 %        
 %    The additional fields needed with mean functions
 %      meanf        - Single mean function structure or cell array of 
@@ -99,7 +101,7 @@ function gp = gp_set(varargin)
 %    GP_PRED, GP_MC, GP_IA, ...
 %
 %  References:
-%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    Quiï¿½onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Research, 6(3):1939-1959.
 %
@@ -314,12 +316,16 @@ function gp = gp_set(varargin)
           ipep.FunctionName = 'GP_SET - latent method MCMC options';
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipep.addParamValue('parallel','off', @(x) ischar(x));    % default 0 (no use)
           ipep.parse(latent_opt);
           if init || ~ismember('maxiter',ipep.UsingDefaults) || ~isfield(gp,'latent_opt')
             gp.latent_opt.maxiter = ipep.Results.maxiter;
           end
           if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
             gp.latent_opt.tol = ipep.Results.tol;
+          end
+          if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
+            gp.latent_opt.parallel = ipep.Results.parallel;
           end
         case 'Laplace'
           % these options not yet used
