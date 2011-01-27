@@ -107,7 +107,7 @@ function lik = lik_negbin(varargin)
     w=[];s={};
     if ~isempty(lik.p.disper)
       w = log(lik.disper);
-      s = [s; 'negbin.disper'];
+      s = [s; 'log(negbin.disper)'];
       [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
       w = [w wh];
       s = [s; sh];
@@ -171,9 +171,9 @@ function lik = lik_negbin(varargin)
     
     lpg=[];
     if ~isempty(lik.p.disper)            
-      % Evaluate the gprior with respect to magnSigma2
+      % Evaluate the gprior with respect to disper
       ggs = feval(lik.p.disper.fh.lpg, lik.disper, lik.p.disper);
-      lpg = ggs(1).*lik.disper - 1;
+      lpg = ggs(1).*lik.disper + 1;
       if length(ggs) > 1
         lpg = [lpg ggs(2:end)];
       end
