@@ -43,6 +43,8 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
 %        See GPstuff doc and (Rasmussen and Williams 2006) for further
 %        explaining.
 
+% Copyright (c) 2010 Tuomas Nikoskinen
+% Copyright (c) 2011 Jarno Vanhatalo
 
 
 
@@ -57,9 +59,13 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
         [H,b_m,B_m]=mean_prep(gp,x,[]);
         
         % help arguments
-        HinvC = H*invKy;           
-        N = Ky + H'*B_m*H;                                   
-        
+        if issparse(Ky)
+            KH = ldlsolve(invKy, H');   % in case of CS covariance function invKy contains the LDL Cholesky decomposition of the covariance function
+            HinvC = KH';
+        else
+            HinvC = H*invKy;
+            N = Ky + H'*B_m*H;
+        end
 
 %         if gp.mf{1}.p.vague==0   % non-vague prior
             
@@ -67,17 +73,26 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
             if isequal(latent_method,'gaussian')
                 % help arguments with gaussian latent method
                 M = H'*b_m-y;
-                invN = N\eye(size(N));
-                HKH = HinvC*H';
-                A = B_m\eye(size(B_m)) + HKH;
-                invAt=A\eye(size(A));
-                invAt=invAt';
+                
+                LB = chol(B_m);
+                LA = chol(LB\(LB'\eye(size(B_m))) + HinvC*H');
+                invAt=LA\(LA'\eye(size(LA)));
+
+                if issparse(Ky)
+                    invNM = ldlsolve(invKy, M) - KH*(LA\(LA'\(KH'*M)));
+                else
+                    invN = N\eye(size(N));
+                end
                 
                 % Calculate the arguments which are to be returned
                 for i2 = 1:length(DKff)
                     dA = -1*HinvC*DKff{i2}*HinvC';                  % d A / d th
-                    trA{i2} = sum(invAt(:).*dA(:));                 % d log(|A|) / dth 
-                    dMNM{i2} = M'*(invN*DKff{i2}*invN*M);           % d M'*N*M / d th   
+                    trA{i2} = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
+                    if issparse(Ky)
+                        dMNM{i2} = invNM'*(DKff{i2}*invNM);           % d M'*N*M / d th
+                    else
+                        dMNM{i2} = M'*(invN*DKff{i2}*invN*M);           % d M'*N*M / d th
+                    end
                 end
                 
                 
@@ -123,7 +138,7 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
 % 
 %                 for i2 = 1:length(DKff)
 %                     % help arguments that depend on DKff; vague p
-%                     dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Ky‚Åª*y / d th
+%                     dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Ky‚?ª*y / d th
 %                     dA  = -1*HinvC*DKff{i2}*HinvC';        % d A / d th  
 %                     trAv{i2} = sum(invAt(:).*dA(:));       % d log(|A|)/dth = trace(inv(A) * dA/dth)
 %                     P   = invKy*DKff{i2}*invKy;

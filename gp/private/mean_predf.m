@@ -42,17 +42,22 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
 %        See GPstuff doc and (Rasmussen and Williams 2006) page 28 for further
 %        explaining.
 
-
+% Copyright (c) 2010 Tuomas Nikoskinen
+% Copyright (c) 2011 Jarno Vanhatalo
 
     % prior assumption for weights, w ~ N(b,B) 
     % b_m = prior mean for weights, B_m prior covariance matrix for weights
     [H,b,B,Hs]=mean_prep(gp,x,xt);
     
-
     if isequal(latent_method,'gaussian')
         if ~isempty(L)
-            KsK = L'\(L\K_nf);                       % inv(C)*K(x,xt)
-            KsH = L'\(L\H');                         % inv(C)*H'
+            if issparse(L)
+                KsK = ldlsolve(L,K_nf);                  % inv(C)*K(x,xt)
+                KsH = ldlsolve(L,H');                    % inv(C)*H'
+            else
+                KsK = L'\(L\K_nf);                       % inv(C)*K(x,xt)
+                KsH = L'\(L\H');                         % inv(C)*H'
+            end
         else
             [nh mh]=size(H);
             KsK=zeros(length(x),length(xt));

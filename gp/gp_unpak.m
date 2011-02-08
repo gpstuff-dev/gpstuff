@@ -84,3 +84,15 @@ if ~isempty(strfind(param, 'inducing'))
     end
   end
 end
+
+% Unpack the covariance function parameters
+if ~isempty(strfind(param, 'mean'))
+  nmf = length(gp.meanf);
+  
+  for i=1:nmf
+    gpmf = gp.meanf{i};
+    [gpmf, w] = feval(gpmf.fh.unpak, gpmf, w);
+    gp.meanf{i} = gpmf;
+  end
+  
+end

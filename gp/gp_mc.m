@@ -254,7 +254,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
           gp.infer_params = opt.sls_opt.infer_params;
         end
         w = gp_pak(gp);
-        [w, energies, diagns] = sls(@gpmc_e, w, opt.sls_opt, @gpmc_g, gp, x, f, 'z', z);
+        [w, energies, diagns] = sls(@gpmc_e, w, opt.sls_opt, @gpmc_g, gp, x, y, f, z);
         if isfield(diagns, 'opt')
           opt.sls_opt = diagns.opt;
         end
@@ -468,6 +468,14 @@ function record = recappend(record)
   % If inputs are sampled set the record which are on at this moment
   if isfield(gp,'inputii')
     record.inputii(ri,:)=gp.inputii;
+  end
+  
+  if isfield(gp, 'meanf')
+      nmf = numel(gp.meanf);
+      for i=1:nmf
+          gpmf = gp.meanf{i};
+          record.meanf{i} = feval(gpmf.fh.recappend, record.meanf{i}, ri, gpmf);
+      end
   end
 end
 

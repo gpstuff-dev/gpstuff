@@ -159,8 +159,6 @@ function lik = lik_gaussian(varargin)
     if ~isempty(lik.p.sigma2)
       likp=lik.p;
       
-      D{1}=lik.sigma2;
-      
       lpgs = feval(likp.sigma2.fh.lpg, lik.sigma2, likp.sigma2);
       lpg = lpgs(1).*lik.sigma2 + 1;
       if length(lpgs) > 1
@@ -301,7 +299,9 @@ function lik = lik_gaussian(varargin)
     % record sigma
     if ~isempty(lik.sigma2)
       reccf.sigma2(ri,:)=lik.sigma2;
-      reccf.p.sigma2 = feval(likp.sigma2.fh.recappend, reccf.p.sigma2, ri, likp.sigma2);
+      if ~isempty(lik.p.sigma2)
+          reccf.p.sigma2 = feval(likp.sigma2.fh.recappend, reccf.p.sigma2, ri, likp.sigma2);
+      end
     elseif ri==1
       reccf.sigma2=[];
     end

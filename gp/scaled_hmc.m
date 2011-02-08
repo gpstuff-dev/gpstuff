@@ -208,7 +208,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
         w=w(:);
         switch gp.type
           case 'FULL'
-            f = L2*w;        
+            f = L2*w;
             f = max(f,mincut);
             
             if ~isfield(gp,'meanf')
@@ -270,7 +270,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             end
             
             L2 = C/chol(diag(1./E) + C);
-            L2 = chol(C - L2*L2')';                    
+            L2 = chol(C - L2*L2')';
           case 'FIC'
             [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
             K_fu = gp_cov(gp, x, u);           % f x u

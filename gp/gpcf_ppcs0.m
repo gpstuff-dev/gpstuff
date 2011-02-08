@@ -102,7 +102,7 @@ function gpcf = gpcf_ppcs0(varargin)
     gpcf.fh.unpak = @gpcf_ppcs0_unpak;
     gpcf.fh.lp = @gpcf_ppcs0_lp;
     gpcf.fh.lpg = @gpcf_ppcs0_lpg;
-gpcf.fh.cfg = @gpcf_ppcs0_cfg;
+    gpcf.fh.cfg = @gpcf_ppcs0_cfg;
     gpcf.fh.ginput = @gpcf_ppcs0_ginput;
     gpcf.fh.cov = @gpcf_ppcs0_cov;
     gpcf.fh.trcov  = @gpcf_ppcs0_trcov;
@@ -114,7 +114,7 @@ gpcf.fh.cfg = @gpcf_ppcs0_cfg;
   if init || ~ismember('l_nin',ip.UsingDefaults)
     gpcf.l=ip.Results.l_nin;
     if isempty(gpcf.l)
-      gpcf.l = floor(gpcf.nin/2) + 2;
+      gpcf.l = floor(gpcf.nin/2) + 1;
     end
     if gpcf.l < gpcf.nin
       error('The l_nin has to be greater than or equal to the number of inputs!')

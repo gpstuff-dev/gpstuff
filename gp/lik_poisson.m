@@ -232,6 +232,8 @@ function lik = lik_poisson(varargin)
     RTOL = 1.e-6;
     ATOL = 1.e-10;
     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    [m_02, m_12, m_22] = quad_moments2(tf, minf, maxf, RTOL, ATOL);
+    [m_0-m_02 m_1-m_12 m_2-m_22]
     sigm2hati1 = m_2 - m_1.^2;
     
     % If the second central moment is less than cavity variance

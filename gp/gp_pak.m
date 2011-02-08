@@ -91,6 +91,18 @@ function [w, s] = gp_pak(gp, param)
       end
     end
     
+    % Pack the prior weights and variances of mean functions
+    if ~isempty(strfind(param, 'mean'))
+      mf = length(gp.meanf);
+      
+      for i=1:mf
+        gpmf = gp.meanf{i};
+        [wi, si] = feval(gpmf.fh.pak, gpmf);
+        w = [w wi];
+        s = [s; si];
+      end
+    end
+    
   end
 
 end

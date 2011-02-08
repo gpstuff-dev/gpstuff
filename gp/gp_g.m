@@ -22,7 +22,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 %    GP_E, GP_PAK, GP_UNPAK, GPCF_*
 %
 
-% Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2007-2011 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura
 
@@ -87,11 +87,15 @@ switch gp.type
       % evaluate the sparse inverse
       invC = spinv(C);       
       LD = ldlchol(C);
-      b = ldlsolve(LD,y);
+      if  ~isfield(gp,'meanf')
+          b = ldlsolve(LD,y);
+      end
     else
       % evaluate the full inverse
       invC = inv(C);        
-      b = C\y;
+      if  ~isfield(gp,'meanf')
+          b = C\y;
+      end
     end
 
     % =================================================================
@@ -161,7 +165,11 @@ switch gp.type
             gprior(i1) = gprior_cf(i2);
           end
         else 
-          [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
+            if issparse(C)
+                [dMNM trA]=mean_gf(gp,x,C,LD,DKff,[],y,'gaussian');
+            else
+                [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
+            end
           for i2 = 1:length(DKff)
             i1=i1+1;
             trK = sum(sum(invC.*DKff{i2}));       % d log(Kyâ?») / d th
@@ -188,7 +196,11 @@ switch gp.type
       DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
       if isfield(gp,'meanf')
-        [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
+          if issparse(C)
+            [dMNM trA]=mean_gf(gp,x,C,LD,DCff,[],y,'gaussian');
+        else
+            [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
+        end
       end
       
       for i2 = 1:length(DCff)
@@ -223,6 +235,50 @@ switch gp.type
           gprior(i1) = gprior_lik(i2);
         end
       end
+    end
+    
+    
+    if ~isempty(strfind(gp.infer_params, 'mean')) && isfield(gp,'meanf')
+        
+        nmf=numel(gp.meanf);
+        [H,b,B]=mean_prep(gp,x,[]);
+        M = H'*b-y;
+        
+        if issparse(C)
+            LD = ldlchol(C);
+            KH = ldlsolve(LD, H');
+            LB = chol(B);
+            A = LB\(LB'\eye(size(B))) + H*KH;
+            LA = chol(A);
+            
+            a = ldlsolve(LD, M) - KH*(LA\(LA'\(KH'*M)));
+            iNH = ldlsolve(LD, H') - KH*(LA\(LA'\(KH'*H')));
+        else
+            N = C + H'*B*H;
+            LN = chol(N);
+            a = LN\(LN'\M);
+            iNH = LN\(LN'\H');
+        end
+        Ha=H*a;
+        
+        g_bb = (-H*a)';     % b and B parameters are log transformed in packing 
+        indB = find(B>0);
+        for i=1:length(indB)
+            Bt = zeros(size(B)); Bt(indB(i))=1;
+            BH = Bt*H;
+            g_B(i) = 0.5* ( Ha'*Bt*Ha - sum(sum(iNH.*(BH'))) );
+        end
+        g_BB = g_B.*B(indB)';
+        for i=1:nmf
+            gpmf = gp.meanf{i};
+            [lpg_b, lpg_B] = feval(gpmf.fh.lpg, gpmf);
+            ll=length(lpg_b);
+            gdata = [gdata -g_bb((i-1)*ll+1:i*ll)];
+            gprior = [gprior -lpg_b];
+            ll=length(lpg_B);
+            gdata = [gdata -g_B((i-1)*ll+1:i*ll)];
+            gprior = [gprior -lpg_B];
+        end
     end
     
     g = gdata + gprior;

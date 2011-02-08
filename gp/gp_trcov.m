@@ -84,7 +84,7 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
         C=sparse(0);
         if isfield(gp.lik.fh,'trcov')
           % Add Gaussian noise to the covariance
-          C = C + feval(gp.lik.fh.trcov, lik, x1);
+          C = C + feval(gp.lik.fh.trcov, gp.lik, x1);
         end
       end   
   end

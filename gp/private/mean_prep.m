@@ -39,23 +39,23 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
     % Gather prior mean for base functions into one vector
     if i==1                         % starting round?
        if dim==1 
-          b=gpmf.p.b; 
+          b=gpmf.b; 
        else
-          if length(gpmf.p.b)==1
-             b=repmat(gpmf.p.b,dim,1);
+          if length(gpmf.b)==1
+             b=repmat(gpmf.b,dim,1);
           else
-             b=gpmf.p.b'; 
+             b=gpmf.b'; 
           end
        end 
     else                        
        if dim==1 
-          b=cat(1,b,gpmf.p.b'); 
+          b=cat(1,b,gpmf.b'); 
        else
-          if length(gpmf.p.b)==1
-             bvec=repmat(gpmf.p.b,dim,1);
+          if length(gpmf.b)==1
+             bvec=repmat(gpmf.b,dim,1);
              b=cat(1,b,bvec);
           else
-             b=cat(1,b,gpmf.p.b'); 
+             b=cat(1,b,gpmf.b'); 
           end
        end
     end
@@ -70,27 +70,27 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
   i1=1;
   for i=1:nm
       if meanf_dim(i,2)==1
-          if length(gp.meanf{i}.p.B)==1
-              B(i1,i1)=gp.meanf{i}.p.B;
+          if length(gp.meanf{i}.B)==1
+              B(i1,i1)=gp.meanf{i}.B;
               i1=i1+1;
           else
-              B(i1,:)=gp.meanf{i}.p.B;
+              B(i1,:)=gp.meanf{i}.B;
               i1=i1+1;
           end
       else
-          if length(gp.meanf{i}.p.B)>1 && length(gp.meanf{i}.p.B{i})==1
+          if length(gp.meanf{i}.B)>1 && length(gp.meanf{i}.B{i})==1
               for j=1:meanf_dim(i,2)
-                  B(i1+j-1,i1+j-1)=gp.meanf{i}.p.B(j);
+                  B(i1+j-1,i1+j-1)=gp.meanf{i}.B(j);
                   i1=i1+1;
               end
-          elseif length(gp.meanf{i}.p.B)>1 && length(gp.meanf{i}.p.B{i})>1
+          elseif length(gp.meanf{i}.B)>1 && length(gp.meanf{i}.B{i})>1
               for j=1:meanf_dim(i,2)
-                  B(i1+j-1,:)=gp.meanf{i}.p.B{i};
+                  B(i1+j-1,:)=gp.meanf{i}.B{i};
               end
               i1=i1+meanf_dim(i,2);
           else
               for j=1:meanf_dim(i,2)
-                  B(i1+j-1,i1+j-1)=gp.meanf{i}.p.B;
+                  B(i1+j-1,i1+j-1)=gp.meanf{i}.B;
               end
               i1=i1+meanf_dim(i,2);
           end

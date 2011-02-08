@@ -441,7 +441,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     switch inf_method
       case 'MAP'
         w=gp_pak(gp);
-        w = optimf(@(ww) gp_eg(ww, gp, xtr, ytr, options_tr), w, opt);
+        w = optimf(@(ww) gp_eg(ww, gp, x, y, options_tr), w, opt);
         gp=gp_unpak(gp,w);
         trw=w;
       case 'MCMC'
@@ -512,7 +512,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
     save([folder '/cv_results.mat'], 'lpd_cv', 'rmse_cv', 'abs_cv', 'mlpd_cv', 'mrmse_cv',...
       'mabs_cv','Var_lpd_cv', 'Var_rmse_cv', 'Var_abs_cv', 'trindex', 'tstindex', 'lpd_cvtr', 'rmse_cvtr',...
-      'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'mlpd_ccv', 'mrmse_ccv', 'mabs_ccv', 'cpu_time');
+      'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'mlpd_ccv', 'mrmse_ccv', 'mabs_ccv', 'cpu_time', 'cvpreds');
 
     if display
       fprintf('The results have been saved in the folder:\n %s/%s \n', parent_folder, folder);
@@ -549,6 +549,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     fprintf(f,'rmse_ccv    = root mean squared error with corrected cross validation \n');
     fprintf(f,'abs_ccv     = absolute error with corrected cross validation \n');
     fprintf(f,'cpu_time    = The cpu time used for inferring the full data set \n');
+    fprintf(f,'cvpreds     = CV predictions structure  \n');
     fclose(f);
   end
 end

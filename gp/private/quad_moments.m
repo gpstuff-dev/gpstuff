@@ -1,4 +1,4 @@
-function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol, minsubs)
+function [m_0, m_1, m_2] = quad_moments2(fun, a, b, rtol, atol, minsubs)
 % QUAD_MOMENTS Calculate the 0th, 1st and 2nd moment of a given
 %              (unnormalized) probability distribution
 %
@@ -30,9 +30,7 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol, minsubs)
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-% Set integration parameters.
-    
-    maxint = 650;
+    maxsubs = 650;
     
     if nargin < 4
         rtol = 1.e-6;
@@ -43,110 +41,92 @@ function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol, minsubs)
     if nargin < 6
         minsubs = 10;
     end
-
-    % nodes and weights
-    pnodes = [ ...
-        0.2077849550078985; 0.4058451513773972; 0.5860872354676911; ...
+    
+    rtol = max(rtol,100*eps);
+    atol = max(atol,0);
+    minsubs = max(minsubs,2); % At least two subintervals are needed
+    
+    % points and weights
+    points15 = [0.2077849550078985; 0.4058451513773972; 0.5860872354676911; ...
         0.7415311855993944; 0.8648644233597691; 0.9491079123427585; ...
         0.9914553711208126];
-    pwt = [ ...
-        0.2044329400752989, 0.1903505780647854, 0.1690047266392679, ...
+    points = [-points15(end:-1:1); 0; points15];
+    
+    w15 = [0.2044329400752989, 0.1903505780647854, 0.1690047266392679, ...
         0.1406532597155259, 0.1047900103222502, 0.06309209262997855, ...
         0.02293532201052922];
-    pwt7 = [0,0.3818300505051189,0,0.2797053914892767,0,0.1294849661688697,0];
-    nodes = [-pnodes(end:-1:1); 0; pnodes];
-    wt = [pwt(end:-1:1), 0.2094821410847278, pwt];
-    ewt = wt - [pwt7(end:-1:1), 0.4179591836734694, pwt7];
+    w = [w15(end:-1:1), 0.2094821410847278, w15];
     
-    % Integration interval
-    tinterval = [a,b];
+    w7 = [0,0.3818300505051189,0,0.2797053914892767,0,0.1294849661688697,0];
+    ew = w - [w7(end:-1:1), 0.4179591836734694, w7];
+        
+    samples = numel(w);
     
-    % Compute the path length and split tinterval.
-    pathlen = abs(b-a);
-    if pathlen == 0
+    % split the interval.
+    if b-a <= 0
         error('The integration interval has to be greater than zero.')
     end
-    nnew = ceil(pathlen*minsubs/pathlen) - 1;
-    idxnew = find(nnew > 0);
-    nnew = nnew(idxnew);
-    for j = numel(idxnew):-1:1
-        k = idxnew(j);
-        nnj = nnew(j);
-        newpts = tinterval(k) + (1:nnj)./(nnj+1)*(tinterval(k+1)-tinterval(k));
-        tinterval = [tinterval(1:k),newpts,tinterval(k+1:end)];
-    end
-    
-    % Remove useless subintervals.
-    tinterval(abs(diff(tinterval))==0) = [];
-    
-    % Initialize array of subintervals of [a,b].
-    subs = [tinterval(1:end-1);tinterval(2:end)];
+    apu = a + (1:(minsubs-1))./minsubs*(b-a);
+    apu = [a,apu,b];
+    subs = [apu(1:end-1);apu(2:end)];
+        
     % Initialize partial sums.
-    q_ok = 0;
-    q1_ok = 0;
-    q2_ok = 0;
-    err_ok = 0;
+    Ifx_ok = 0;
+    Ifx1_ok = 0;
+    Ifx2_ok = 0;
     % The main loop
     while true
-        % SUBS contains subintervals of [a,b] where the integral is not
-        % sufficiently accurate. The first row of SUBS holds the left end
-        % points and the second row, the corresponding right endpoints.
-        midpt = sum(subs)/2;   % midpoints of the subintervals
-        halfh = diff(subs)/2;  % half the lengths of the subintervals            
-        x = bsxfun(@plus,nodes*halfh,midpt);
-        x = reshape(x,1,[]);   % function f expects a row vector
+        % subintervals and their midpoints
+        midpoints = sum(subs)/2;   
+        halfh = diff(subs)/2;  
+        x = bsxfun(@plus,points*halfh,midpoints);
+        x = reshape(x,1,[]);
+        
         fx = fun(x);
         fx1 = fx.*x;
         fx2 = fx.*x.^2;
         
-        fx = reshape(fx,numel(wt),[]);
-        fx1 = reshape(fx1,numel(wt),[]);
-        fx2 = reshape(fx2,numel(wt),[]);
+        fx = reshape(fx,samples,[]);
+        fx1 = reshape(fx1,samples,[]);
+        fx2 = reshape(fx2,samples,[]);
         
-        % Quantities for subintervals.
-        qsubs = (wt*fx) .* halfh;
-        errsubs = (ewt*fx) .* halfh;
-        qsubs1 = (wt*fx1) .* halfh;
-        qsubs2 = (wt*fx2) .* halfh;
+        % Subintegrals.
+        Ifxsubs = (w*fx) .* halfh;
+        errsubs = (ew*fx) .* halfh;
+        Ifxsubs1 = (w*fx1) .* halfh;
+        Ifxsubs2 = (w*fx2) .* halfh;
 
-        % Calculate current values of q and tol.
-        q = sum(qsubs) + q_ok;
-        q1 = sum(qsubs1) + q1_ok;
-        q2 = sum(qsubs2) + q2_ok;
-        tol = max(atol,rtol*abs(q));
+        % Ifx and tol.
+        Ifx = sum(Ifxsubs) + Ifx_ok;
+        Ifx1 = sum(Ifxsubs1) + Ifx1_ok;
+        Ifx2 = sum(Ifxsubs2) + Ifx2_ok;
+        tol = max(atol,rtol*abs(Ifx));
         
-        % Locate subintervals where the approximate integrals are
-        % sufficiently accurate and use them to update the partial
-        % error sum.
-        ndx = find(abs(errsubs) <= (2*tol/pathlen)*halfh);
-        err_ok = err_ok + sum(errsubs(ndx));
-        
-        % Remove errsubs entries for subintervals with accurate
-        % approximations.
-        errsubs(ndx) = [];
-        
-        % Remove subintervals with accurate approximations.
+        % determine the indices ndx of Ifxsubs for which the
+        % errors are acceptable and remove those from subs
+        ndx = find(abs(errsubs) <= (2/(b-a)*halfh*tol));
         subs(:,ndx) = [];
         if isempty(subs)
             break
         end
-        % Update the partial sum for the integral.
-        q_ok = q_ok + sum(qsubs(ndx));
-        q1_ok = q1_ok + sum(qsubs1(ndx));
-        q2_ok = q2_ok + sum(qsubs2(ndx));
-        % Split the remaining subintervals in half. Quit if splitting
-        % results in too many subintervals.
+        
+        % Update the integral.
+        Ifx_ok = Ifx_ok + sum(Ifxsubs(ndx));
+        Ifx1_ok = Ifx1_ok + sum(Ifxsubs1(ndx));
+        Ifx2_ok = Ifx2_ok + sum(Ifxsubs2(ndx));
+        
+        % Quit if too many subintervals.
         nsubs = 2*size(subs,2);
-        if nsubs > maxint
+        if nsubs > maxsubs
             warning('quad_moments: Reached the limit on the maximum number of intervals in use.');
             break
         end
-        midpt(ndx) = []; % Remove unneeded midpoints.
-        subs = reshape([subs(1,:); midpt; midpt; subs(2,:)],2,[]);
+        midpoints(ndx) = []; 
+        subs = reshape([subs(1,:); midpoints; midpoints; subs(2,:)],2,[]); % Divide the remaining subintervals in half
     end
     
     % Scale moments
-    m_0 = q;
-    m_1 = q1./q;
-    m_2 = q2./q;
-end 
+    m_0 = Ifx;
+    m_1 = Ifx1./Ifx;
+    m_2 = Ifx2./Ifx;
+end

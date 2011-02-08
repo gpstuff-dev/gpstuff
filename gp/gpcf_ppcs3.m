@@ -20,7 +20,7 @@ function gpcf = gpcf_ppcs3(varargin)
 %                          to an isotropic function or vector
 %                          defining own length-scale for each input
 %                          direction.
-%      l_nin             - order of the polynomial [floor(nin/2) + 1]
+%      l_nin             - order of the polynomial [floor(nin/2) + 4]
 %                          Has to be greater than or equal to default.
 %      magnSigma2_prior  - prior for magnSigma2  [prior_sqrtunif]
 %      lengthScale_prior - prior for lengthScale [prior_unif]
@@ -115,7 +115,7 @@ function gpcf = gpcf_ppcs3(varargin)
   if init || ~ismember('l_nin',ip.UsingDefaults)
     gpcf.l=ip.Results.l_nin;
     if isempty(gpcf.l)
-      gpcf.l = floor(gpcf.nin/2) + 2;
+      gpcf.l = floor(gpcf.nin/2) + 4;
     end
     if gpcf.l < gpcf.nin
       error('The l_nin has to be greater than or equal to the number of inputs!')

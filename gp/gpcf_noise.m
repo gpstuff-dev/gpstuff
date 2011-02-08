@@ -162,7 +162,7 @@ gpcf.fh.cfg = @gpcf_noise_cfg;
     end
   end
 
-  function lpg = gpcf_constant_lpg(gpcf)
+  function lpg = gpcf_noise_lpg(gpcf)
   %GPCF_NOISE_LPG  Evaluate gradient of the log prior with respect
   %                to the parameters.
   %
@@ -209,11 +209,11 @@ gpcf.fh.cfg = @gpcf_noise_cfg;
   %  See also
   %    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
 
-    D = {};
+    DKff = {};
 
     if ~isempty(gpcf.p.noiseSigma2)
       gpp=gpcf.p;
-      D{1}=gpcf.noiseSigma2;
+      DKff{1}=gpcf.noiseSigma2;
     end
     
   end
@@ -328,9 +328,9 @@ gpcf.fh.cfg = @gpcf_noise_cfg;
       % Set the function handles
       reccf.fh.pak = @gpcf_noise_pak;
       reccf.fh.unpak = @gpcf_noise_unpak;
-      reccf.fh.e = @gpcf_linear_lp;
-      reccf.fh.lpg = @gpcf_linear_lpg;
-      reccf.fh.cfg = @gpcf_linear_cfg;
+      reccf.fh.e = @gpcf_noise_lp;
+      reccf.fh.lpg = @gpcf_noise_lpg;
+      reccf.fh.cfg = @gpcf_noise_cfg;
       reccf.fh.cov = @gpcf_noise_cov;
       reccf.fh.trcov  = @gpcf_noise_trcov;
       reccf.fh.trvar  = @gpcf_noise_trvar;

@@ -160,11 +160,20 @@ switch gp.type
             L=[];
             Kyy=zeros(length(y),1);
         else
-            L = chol(C)';
-            Kyy = L'\(L\y);                 
+            if issparse(C)
+                LD = ldlchol(C);
+                Kyy = ldlsolve(LD,y);
+            else
+                L = chol(C)';
+                Kyy = L'\(L\y);
+            end
         end
         
-        [RB RAR] = mean_predf(gp,x,xt,K,L,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
+        if issparse(C)
+            [RB RAR] = mean_predf(gp,x,xt,K,LD,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
+        else
+            [RB RAR] = mean_predf(gp,x,xt,K,L,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
+        end
         
         Eft_zm = K'*Kyy;                       % mean with zero mean -prior
         Eft = Eft_zm + RB;
