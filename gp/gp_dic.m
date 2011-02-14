@@ -20,7 +20,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %          p_eff = E[D(y, th)|y] - D(y, E[th|y])
 %          DIC   = E[D(y, th)|y] + p_eff
 %        where all the expectations are taken over p(th|y) and 
-%          D(y, th) = -2log(p(y|th). 
+%          D(y, th) = -2log(p(y|th)). 
 %        Now in this formulation we first marginalize over the
 %        latent variables to obtain 
 %          p(y|th) = \int p(y|f)(p(f|th) df. 
