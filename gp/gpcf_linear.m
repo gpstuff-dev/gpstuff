@@ -190,8 +190,9 @@ function gpcf = gpcf_linear(varargin)
     gpp=gpcf.p;
     
     if ~isempty(gpcf.p.coeffSigma2)            
+      lll=length(gpcf.coeffSigma2);
       lpgs = feval(gpp.coeffSigma2.fh.lpg, gpcf.coeffSigma2, gpp.coeffSigma2);
-      lpg = [lpg lpgs(1).*gpcf.coeffSigma2+1 lpgs(length(gpcf.coeffSigma2)+1:end)];
+      lpg = [lpg lpgs(1:lll).*gpcf.coeffSigma2+1 lpgs(lll+1:end)];
     end
   end
   
