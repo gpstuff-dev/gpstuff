@@ -170,7 +170,7 @@ function gpcf = gpcf_linear(varargin)
     gpp=gpcf.p;
 
     if ~isempty(gpp.coeffSigma2)
-      lp = sum(feval(gpp.coeffSigma2.fh.lp, gpcf.coeffSigma2, gpp.coeffSigma2) + log(gpcf.coeffSigma2));
+      lp = feval(gpp.coeffSigma2.fh.lp, gpcf.coeffSigma2, gpp.coeffSigma2) + sum(log(gpcf.coeffSigma2));
     end
   end
 

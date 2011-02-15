@@ -1,5 +1,5 @@
 function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
-%GP_RND  Random draws from the postrior Gaussian process
+%GP_RND  Random draws from the posterior Gaussian process
 %
 %  Description
 %    [SAMPFT, SAMPYT] = GP_RND(GP, X, Y, XT, OPTIONS) takes a
@@ -16,7 +16,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %               training block in *IC type sparse models. Default is [].
 %      nsamp  - determines the number of samples (default = 1).
 %
-%    If likelihood is non-Gaussian and gp.laten_method is either
+%    If likelihood is non-Gaussian and gp.latent_method is either
 %    Laplace or EP, the samples are drawn from the Gaussian
 %    posterior approximation obtained from gpla_e or gpep_e.
 %
