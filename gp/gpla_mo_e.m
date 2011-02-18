@@ -56,9 +56,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                  (ischar(x) && strcmp(w, 'init')) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)));
   ip.addRequired('gp',@isstruct);
-  ip.addOptional('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('x', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('y', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
   ip.parse(w, gp, varargin{:});
   x=ip.Results.x;
   y=ip.Results.y;

@@ -29,8 +29,8 @@ function [l,lq,xt] = lgcp(x,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LGCP';
-  ip.addRequired('x', @(x) size(x,2)==1 || size(x,2)==2);
-  ip.addOptional('xt',NaN, @(x) size(x,2)==1 || size(x,2)==2);
+  ip.addRequired('x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip.addOptional('xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip.addParamValue('gridn',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('range',[], @(x) isreal(x)&&(length(x)==2||length(x)==4));
   ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
