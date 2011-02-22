@@ -139,72 +139,55 @@ end
 % Evaluate this if sparse model is used
 switch gp.type
   case 'FULL'
-    [c, C]=gp_trcov(gp,x);
+      
+      %evaluate a = C\y;
+      % -------------------
+      [c, C]=gp_trcov(gp,x);
+      
+      if issparse(C)
+          LD = ldlchol(C);
+          a = ldlsolve(LD,y);
+      elseif isempty(C)
+          C=0;
+          L=[];
+          a = zeros(length(y),1);
+      else
+          L = chol(C)';
+          a = L'\(L\y);
+      end
+
+    % evaluate K*a
+    % -------------------
     K=gp_cov(gp,x,xt,predcf);
-
-    % Are there specified mean functions
-    if  ~isfield(gp,'meanf')         % zero mean
+    Eft = K'*a;
+    
+    if  isfield(gp,'meanf')
         if issparse(C)
-            LD = ldlchol(C);
-            Eft = K'*ldlsolve(LD,y);
+            [RB RAR] = mean_predf(gp,x,xt,K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
         else
-            L = chol(C)';
-            %    y=K'*(C\y);
-            a = L'\(L\y);
-            Eft = K'*a;
+            [RB RAR] = mean_predf(gp,x,xt,K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
         end
-    else
-        if isempty(C)
-            C=0;
-            K=0;
-            L=[];
-            Kyy=zeros(length(y),1);
-        else
-            if issparse(C)
-                LD = ldlchol(C);
-                Kyy = ldlsolve(LD,y);
-            else
-                L = chol(C)';
-                Kyy = L'\(L\y);
-            end
-        end
-        
-        if issparse(C)
-            [RB RAR] = mean_predf(gp,x,xt,K,LD,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
-        else
-            [RB RAR] = mean_predf(gp,x,xt,K,L,Kyy,'gaussian',[]);    % terms with non-zero mean -prior
-        end
-        
-        Eft_zm = K'*Kyy;                       % mean with zero mean -prior
-        Eft = Eft_zm + RB;
+        Eft = Eft + RB;
     end
-
+    
+    % Evaluate variance
+    % Vector of diagonal elements of covariance matrix
     if nargout > 1
-        % Are there specified mean functions
-        if  ~isfield(gp,'meanf')
-            if issparse(C)
-                V = gp_trvar(gp,xt,predcf);
-                Varft = V - diag(K'*ldlsolve(LD,K));
-            else
-                v = L\K;
-                V = gp_trvar(gp,xt,predcf);
-                % Vector of diagonal elements of covariance matrix
-                % b = L\K;
-                % Varft = V - sum(b.^2)';
-                Varft = V - sum(v'.*v',2);
-            end
+
+        V = gp_trvar(gp,xt,predcf);
+        if issparse(C)
+            Varft = V - diag(K'*ldlsolve(LD,K));
         else
-            V = gp_trvar(gp,xt,predcf);
-            if issparse(C)
-                Varft_zm = V - diag(K'*ldlsolve(LD,K)); 
-            else
-                v = L\K;
-                Varft_zm= V - diag(v'*v);
-            end
-           
-            Varft = Varft_zm + RAR; 
+            v = L\K;
+            Varft = V - sum(v'.*v',2);
         end
-    end
+            
+        % If there are specified mean functions
+        if  isfield(gp,'meanf')           
+            Varft = Varft + RAR; 
+        end
+    end     
+    
     if nargout > 2
         % Scale mixture model in lik_smt is a special case 
         % handle it separately

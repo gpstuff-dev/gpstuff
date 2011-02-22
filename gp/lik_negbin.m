@@ -554,7 +554,7 @@ function lik = lik_negbin(varargin)
     lddiff=20; % min difference in log-density between mode and end-points
     minld=ld(minf);
     while minld>(modeld-lddiff)
-      minf=minf-(modes-minf);
+      minf=minf-modes;
       minld=ld(minf);
       iter=iter+1;
       if iter>100
@@ -565,7 +565,7 @@ function lik = lik_negbin(varargin)
     end
     maxld=ld(maxf);
     while maxld>(modeld-lddiff)
-      maxf=maxf+(maxf-modes);
+      maxf=maxf+modes;
       maxld=ld(maxf);
       iter=iter+1;
       if iter>100
@@ -644,10 +644,18 @@ function lik = lik_negbin(varargin)
       reclik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
       reclik.fh.predy = @lik_negbin_predy;
       reclik.fh.recappend = @lik_negbin_recappend;
+      reclik.p=[];
+      reclik.p.disper=[];
+      if ~isempty(ri.p.disper)
+        reclik.p.disper = ri.p.disper;
+      end
       return
     end
     
     reclik.disper(ri,:)=lik.disper;
+    if ~isempty(ri.p.disper)
+        reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.magnSigma2);
+    end
   end
 end
 

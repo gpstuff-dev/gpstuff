@@ -232,8 +232,6 @@ function lik = lik_poisson(varargin)
     RTOL = 1.e-6;
     ATOL = 1.e-10;
     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    [m_02, m_12, m_22] = quad_moments2(tf, minf, maxf, RTOL, ATOL);
-    [m_0-m_02 m_1-m_12 m_2-m_22]
     sigm2hati1 = m_2 - m_1.^2;
     
     % If the second central moment is less than cavity variance
@@ -373,7 +371,7 @@ function lik = lik_poisson(varargin)
     lddiff=20; % min difference in log-density between mode and end-points
     minld=ld(minf);
     while minld>(modeld-lddiff)
-      minf=minf-(modes-minf);
+      minf=minf-modes;
       minld=ld(minf);
       iter=iter+1;
       if iter>100
@@ -384,7 +382,7 @@ function lik = lik_poisson(varargin)
     end
     maxld=ld(maxf);
     while maxld>(modeld-lddiff)
-      maxf=maxf+(maxf-modes);
+      maxf=maxf+modes;
       maxld=ld(maxf);
       iter=iter+1;
       if iter>100
@@ -394,7 +392,7 @@ function lik = lik_poisson(varargin)
       end
       
     end
-    
+        
     function integrand = poisson_norm(f)
     % Poisson * Gaussian
       mu = avgE.*exp(f);
