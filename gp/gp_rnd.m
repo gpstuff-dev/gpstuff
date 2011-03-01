@@ -15,6 +15,10 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %      tstind - a vector defining, which rows of X belong to which 
 %               training block in *IC type sparse models. Default is [].
 %      nsamp  - determines the number of samples (default = 1).
+%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, expected value 
+%               for ith case. 
 %
 %    If likelihood is non-Gaussian and gp.latent_method is either
 %    Laplace or EP, the samples are drawn from the Gaussian
@@ -520,7 +524,7 @@ else
 
         switch gp.latent_method
           case 'Laplace'
-            [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
             W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
             deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
@@ -551,7 +555,7 @@ else
             end
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         
             [K, C]=gp_trcov(gp,x);
             K = gp_trcov(gp, xt, predcf);
@@ -616,7 +620,7 @@ else
             
             m = size(u,1);
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
             deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
             ntest=size(xt,1);
@@ -678,7 +682,7 @@ else
             sampft = Ef + predcov*randn(size(Ef));
           
           case 'EP'
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
@@ -758,7 +762,7 @@ else
         switch gp.latent_method
           case 'Laplace'
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
             deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
             
@@ -813,7 +817,7 @@ else
         
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         
             p = b';
 
@@ -914,7 +918,7 @@ else
           case 'Laplace'
            
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
 
             deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
@@ -989,7 +993,7 @@ else
             
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y);
+            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
             p = b';
             ntest=size(xt,1);
