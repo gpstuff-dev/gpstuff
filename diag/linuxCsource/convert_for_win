@@ -1,5 +1,5 @@
 #
-
+mkdir ../winCsource
 cp *.c ../winCsource
 cd ../winCsource
 
