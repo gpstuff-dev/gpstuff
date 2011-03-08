@@ -1,18 +1,17 @@
-#
+#!/bin/bash
 
 mkdir ../winCsource
 cp *.c ../winCsource
 cp *.h ../winCsource
 cd ../winCsource
 
-set baddies=`grep -l '_(' *.c`
+baddies=`grep -l '_(' *.c`
 
 echo "$baddies"
-foreach i ($baddies)
+for i in $baddies;do
   ed -s $i << EOF_INPUT
 1,\$s/_(/(/g
 w
 q
 EOF_INPUT
-end
-
+done
