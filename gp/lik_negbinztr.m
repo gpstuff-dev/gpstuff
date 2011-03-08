@@ -1,5 +1,5 @@
 function lik = lik_negbinztr(varargin)
-%LIK_NEGBINZTR  Create a zero-truncated Negative-binomial likelihood structure 
+%LIK_NEGBINZTR  Create a zero-truncated Negative-binomial likelihood structure
 %
 %  Description
 %    LIK = LIK_NEGBINZTR('PARAM1',VALUE1,'PARAM2,VALUE2,...) 

@@ -14,16 +14,16 @@
 %   GPCF_CONSTANT      Create a constant covariance function 
 %   GPCF_EXP           Create a squared exponential covariance function
 %   GPCF_LINEAR        Create a linear covariance function
-%   GPCF_MATERN32      Create a squared exponential covariance function
-%   GPCF_MATERN52      Create a squared exponential covariance function
-%   GPCF_NEURALNETWORK Create a squared exponential covariance function
+%   GPCF_MATERN32      Create a Matern nu=3/2 covariance function
+%   GPCF_MATERN52      Create a Matern nu=5/2 covariance function
+%   GPCF_NEURALNETWORK Create a neural network covariance function
 %   GPCF_PERIODIC      Create a periodic covariance function
 %   GPCF_PPCS0         Create a piece wise polynomial (q=0) covariance function 
 %   GPCF_PPCS1         Create a piece wise polynomial (q=1) covariance function 
 %   GPCF_PPCS2         Create a piece wise polynomial (q=2) covariance function 
 %   GPCF_PPCS3         Create a piece wise polynomial (q=3) covariance function 
 %   GPCF_PROD          Create a product form covariance function 
-%   GPCF_RQ            Create an rational quadratic covariance function 
+%   GPCF_RQ            Create a rational quadratic covariance function 
 %   GPCF_SEXP          Create a squared exponential covariance function
 %
 %  Likelihood functions:
