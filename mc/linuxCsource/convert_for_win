@@ -1,5 +1,6 @@
 #
 
+mkdir ../winCsource
 cp *.c ../winCsource
 cp *.h ../winCsource
 cd ../winCsource
