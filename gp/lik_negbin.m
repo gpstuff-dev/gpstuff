@@ -553,10 +553,12 @@ function lik = lik_negbin(varargin)
     % check that density at end points is low enough
     lddiff=20; % min difference in log-density between mode and end-points
     minld=ld(minf);
+    step=1;
     while minld>(modeld-lddiff)
-      minf=minf-modes;
+      minf=minf-step*modes;
       minld=ld(minf);
       iter=iter+1;
+      step=step*2;
       if iter>100
         error(['lik_negbin -> init_negbin_norm: ' ...
                'integration interval minimun not found ' ...
@@ -564,17 +566,41 @@ function lik = lik_negbin(varargin)
       end
     end
     maxld=ld(maxf);
+    step=1;
     while maxld>(modeld-lddiff)
-      maxf=maxf+modes;
+      maxf=maxf+step*modes;
       maxld=ld(maxf);
       iter=iter+1;
+      step=step*2;
       if iter>100
         error(['lik_negbin -> init_negbin_norm: ' ...
-               'integration interval maximum not found ' ...
+               'integration interval maximun not found ' ...
                'even after looking hard!'])
       end
-      
     end
+    
+%     while minld>(modeld-lddiff)
+%       minf=minf-modes;
+%       minld=ld(minf);
+%       iter=iter+1;
+%       if iter>100
+%         error(['lik_negbin -> init_negbin_norm: ' ...
+%                'integration interval minimun not found ' ...
+%                'even after looking hard!'])
+%       end
+%     end
+%     maxld=ld(maxf);
+%     while maxld>(modeld-lddiff)
+%       maxf=maxf+modes;
+%       maxld=ld(maxf);
+%       iter=iter+1;
+%       if iter>100
+%         error(['lik_negbin -> init_negbin_norm: ' ...
+%                'integration interval maximum not found ' ...
+%                'even after looking hard!'])
+%       end
+%       
+%     end
     
     function integrand = negbin_norm(f)
     % Negative-binomial * Gaussian
@@ -653,8 +679,8 @@ function lik = lik_negbin(varargin)
     end
     
     reclik.disper(ri,:)=lik.disper;
-    if ~isempty(ri.p.disper)
-        reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.magnSigma2);
+    if ~isempty(lik.p)
+        reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.disper);
     end
   end
 end

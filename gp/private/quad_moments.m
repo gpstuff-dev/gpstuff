@@ -64,7 +64,8 @@ function [m_0, m_1, m_2] = quad_moments2(fun, a, b, rtol, atol, minsubs)
     
     % split the interval.
     if b-a <= 0
-        error('The integration interval has to be greater than zero.')
+        c = a; a = b; b=c;
+        warning('The start of the integration interval was less than the end of it.')
     end
     apu = a + (1:(minsubs-1))./minsubs*(b-a);
     apu = [a,apu,b];
