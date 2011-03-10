@@ -53,7 +53,8 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
     if nargout > 2
       for cvi=1:n
         [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, ...
-                                           muvec_i(cvi), sigm2vec_i(cvi));
+                                           muvec_i(cvi), sigm2vec_i(cvi), ...
+                                           [], z);
       end
     end
     

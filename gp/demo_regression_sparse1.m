@@ -187,7 +187,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, ...
-                'jitterSigma2', 1e-4, 'X_u', X_u)
+                'X_u', X_u, 'jitterSigma2', 1e-4)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -352,7 +352,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', {gpcf}, ...
-                'jitterSigma2', 1e-4, 'X_u', X_u);
+                'X_u', X_u, 'jitterSigma2', 1e-4);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -434,7 +434,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
-                'jitterSigma2', 0.001, 'X_u', X_u);
+                'X_u', X_u, 'jitterSigma2', 0.001);
 
 % -----------------------------
 % --- Conduct the inference ---

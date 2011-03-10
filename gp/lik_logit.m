@@ -320,10 +320,12 @@ function lik = lik_logit(varargin)
     % check that density at end points is low enough
     lddiff=20; % min difference in log-density between mode and end-points
     minld=ld(minf);
+    step=1;
     while minld>(modeld-lddiff)
-      minf=minf-(modes-minf);
+      minf=minf-step*modes;
       minld=ld(minf);
       iter=iter+1;
+      step=step*2;
       if iter>100
         error(['lik_logit -> init_logit_norm: ' ...
                'integration interval minimun not found ' ...
@@ -331,16 +333,17 @@ function lik = lik_logit(varargin)
       end
     end
     maxld=ld(maxf);
+    step=1;
     while maxld>(modeld-lddiff)
-      maxf=maxf+(maxf-modes);
+      maxf=maxf+step*modes;
       maxld=ld(maxf);
       iter=iter+1;
+      step=step*2;
       if iter>100
         error(['lik_logit -> init_logit_norm: ' ...
                'integration interval maximum not found ' ...
                'even after looking hard!'])
       end
-      
     end
     
     function integrand = logit_norm(f)

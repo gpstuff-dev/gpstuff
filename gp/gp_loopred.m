@@ -62,7 +62,7 @@ switch gp.type
     Varft = sigma2-gp.lik.sigma2;
     Eyt = myy;
     Varyt = sigma2;
-    pyt = -0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2);
+    pyt = exp(-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
     
     % ============================================================
     % FIC

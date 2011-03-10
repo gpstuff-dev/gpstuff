@@ -68,40 +68,43 @@ xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xt=[xt1(:) xt2(:)];
 
+% Create likelihood function
+lik = lik_probit();
+%lik = lik_logit();
+
 % Create covariance functions
-gpcf1 = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 10);
+gpcf = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
 pl = prior_unif();
 pm = prior_sqrtunif();
-gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
+gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 
 % Create the GP structure (type is by default FULL)
-gp = gp_set('cf', gpcf1, 'lik', lik_probit(), 'jitterSigma2', 1e-9);
-%gp = gp_set('cf', gpcf1, 'lik', lik_logit(), 'jitterSigma2', 1e-9);
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9);
 
 % ------- Laplace approximation --------
 fprintf(['%s model with Laplace integration over the latent values and\n' ...
          'MAP estimate for the parameters\n'],gp.lik.type)
 
 % Set the approximate inference method 
-% (Laplace is default, so this could be skipped)
+% (Laplace is the default, so this could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',20,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
-[Ef_la, Varf_la, Ey_la, Vary_la, Py_la] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Eft_la, Varft_la, Eyt_la, Varyt_la, Pyt_la] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_la,20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_la,20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -111,7 +114,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with La
 
 % Visualise predictive probability p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_la,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_la,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
@@ -132,17 +135,17 @@ gp = gp_set(gp, 'latent_method', 'EP');
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
-[Ef_ep, Varf_ep, Ey_ep, Vary_ep, Py_ep] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Eft_ep, Varft_ep, Eyt_ep, Varyt_ep, Pyt_ep] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_ep,20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_ep,20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -152,7 +155,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with EP
 
 % Visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Py_ep,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_ep,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
@@ -171,7 +174,9 @@ fprintf(['%s model with MCMC integration over the latent values and\n' ...
 % Note that MCMC for latent values requires often more jitter
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 
-% Set the parameters for MCMC...
+% Set the parameters for MCMC
+% Here we use two stage sampling to get faster convergence
+hmc_opt=hmc2_opt;
 hmc_opt.steps=10;
 hmc_opt.stepadj=0.05;
 hmc_opt.nsamples=1;
@@ -180,17 +185,17 @@ latent_opt.repeat = 20;
 latent_opt.sample_latent_scale = 0.5;
 hmc2('state', sum(100*clock))
 
-% Sample
+% The first stage sampling
 [r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % re-set some of the sampling options
-hmc_opt.repeat=1;
 hmc_opt.steps=4;
 hmc_opt.stepadj=0.05;
 latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
-% Sample 
+% The second stage sampling
+% Notice that previous record r is given as an argument
 [rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
 rgp=thin(rgp,102);
@@ -244,9 +249,9 @@ hist(sf1,20);
 h1=get(gca,'Children');
 hold on
 x_in = min(sf1)-2:0.1:max(sf1)+4;
-ff = normpdf(x_in, Ef_la(apu1), sqrt(Varf_la(apu1)));
+ff = normpdf(x_in, Eft_la(apu1), sqrt(Varft_la(apu1)));
 h2=plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2);
-ff = normpdf(x_in, Ef_ep(apu1), sqrt(Varf_ep(apu1)));
+ff = normpdf(x_in, Eft_ep(apu1), sqrt(Varft_ep(apu1)));
 h3=plot(x_in, max(N)/max(ff)*ff, 'r', 'lineWidth', 2);
 set(gca, 'Ytick', [])
 legend([h1 h2 h3],'MCMC','Laplace','EP')
@@ -259,9 +264,9 @@ hist(sf2,20)
 h1=get(gca,'Children');
 hold on
 x_in = min(sf2)-2:0.1:max(sf2)+2;
-ff = normpdf(x_in, Ef_la(apu2), sqrt(Varf_la(apu2)));
+ff = normpdf(x_in, Eft_la(apu2), sqrt(Varft_la(apu2)));
 h2=plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2);
-ff = normpdf(x_in, Ef_ep(apu2), sqrt(Varf_ep(apu2)));
+ff = normpdf(x_in, Eft_ep(apu2), sqrt(Varft_ep(apu2)));
 h3=plot(x_in, max(N)/max(ff)*ff, 'r', 'lineWidth', 2);
 set(gca, 'Ytick', [])
 legend([h1 h2 h3],'MCMC','Laplace','EP')

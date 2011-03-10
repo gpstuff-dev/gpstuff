@@ -130,8 +130,8 @@ rgp=gp_mc(gp, x, y, 'record', r, opt);
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
 models{3} = 'pr_MCMC';
-[DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'param');
-[DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'all');
+[DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'focus', 'param');
+[DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'focus', 'all');
 
 % Evaluate the 10-fold cross validation results. 
 opt.nsamples=50;
@@ -209,7 +209,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % latent variables.
 models{5} = 'lo_Laplace';
 p_eff_latent(5) = gp_peff(gp, x, y);
-[DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'latent');
+[DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'focus', 'latent');
 
 % Evaluate the 10-fold cross validation results. 
 cvres = gp_kfcv(gp, x, y);

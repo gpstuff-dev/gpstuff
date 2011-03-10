@@ -113,12 +113,12 @@ plot(xx(:,1),xx(:,2),'k.')
 title('Inputs where to predict')
 
 % Create covariance function
+pn = prior_t('nu', 4, 's2', 0.3);
+lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
 pl2 = prior_gamma('sh', 5, 'is', 1);
 pm2 = prior_sqrtt('nu', 1, 's2', 150);
 gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3, ...
                    'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
-pn = prior_t('nu', 4, 's2', 0.3);
-lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
 
 
 % MAP ESTIMATE
