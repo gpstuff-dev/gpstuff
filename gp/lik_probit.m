@@ -15,7 +15,7 @@ function lik = lik_probit(varargin)
 %    GP_SET, LIK_*
 %
 
-% Copyright (c) 2007      Jaakko Riihimäki
+% Copyright (c) 2007      Jaakko Riihimï¿½ki
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
@@ -49,6 +49,7 @@ function lik = lik_probit(varargin)
     lik.fh.llg3 = @lik_probit_llg3;
     lik.fh.tiltedMoments = @lik_probit_tiltedMoments;
     lik.fh.predy = @lik_probit_predy;
+    lik.fh.invlink = @lik_probit_invlink;
     lik.fh.recappend = @lik_probit_recappend;
   end
 
@@ -236,6 +237,25 @@ function lik = lik_probit(varargin)
     end
   end
 
+  function [p] = lik_probit_invlink(lik, f, z)
+  %LIK_PROBIT_INVLINK  Returns values of inverse link function
+  %             
+  %  Description 
+  %    P = LIK_PROBIT_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values of inverse link function P.
+  %
+  %     See also
+  %     LIK_PROBIT_LL, LIK_PROBIT_PREDY
+  
+    p = normcdf(f);
+  end
+
+  %    LLG = LIK_PROBIT_LLG(LIK, Y, F, PARAM) takes a likelihood
+  %    structure LIK, class labels Y, and latent values F. 
+  %    Returns the gradient of the log likelihood with respect to
+  %    PARAM. At the moment PARAM can be 'param' or 'latent'.
+
+
   function reclik = lik_probit_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
   %
@@ -261,6 +281,7 @@ function lik = lik_probit(varargin)
       reclik.fh.llg3 = @lik_probit_llg3;
       reclik.fh.tiltedMoments = @lik_probit_tiltedMoments;
       reclik.fh.predy = @lik_probit_predy;
+      reclik.fh.invlink = @lik_probit_invlink;
       reclik.fh.recappend = @lik_probit_recappend;
       return
     end
