@@ -250,12 +250,6 @@ function lik = lik_probit(varargin)
     p = normcdf(f);
   end
 
-  %    LLG = LIK_PROBIT_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, class labels Y, and latent values F. 
-  %    Returns the gradient of the log likelihood with respect to
-  %    PARAM. At the moment PARAM can be 'param' or 'latent'.
-
-
   function reclik = lik_probit_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
   %
