@@ -158,6 +158,9 @@ while (j <= maxiter)
   % Calculate the comparison ratio.
   xnew = x + alpha*d;
   fnew = feval(fun, xnew);
+  if isinf(fnew) || isnan(fnew)
+    warning('Function value at xnew not finite or a number')
+  end
   if nargin>4
     output.funcCount=output.funcCount+1;
   end
@@ -236,7 +239,7 @@ while (j <= maxiter)
   end
 
   % Adjust lambda according to comparison ratio.
-  if (Delta < 0.25)
+  if (Delta < 0.25) || isnan(Delta)
     lambda = min(4.0*lambda, lambdamax);
   end
   if (Delta > 0.75)
