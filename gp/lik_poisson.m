@@ -54,6 +54,7 @@ function lik = lik_poisson(varargin)
     lik.fh.llg3 = @lik_poisson_llg3;
     lik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
     lik.fh.predy = @lik_poisson_predy;
+    lik.fh.invlink = @lik_poisson_invlink;
     lik.fh.recappend = @lik_poisson_recappend;
   end
   
@@ -150,10 +151,10 @@ function lik = lik_poisson(varargin)
   %  Description        
   %    G2 = LIK_POISSON_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, incedence counts Y, expected counts Z,
-  %    and latent values F. Returns the hessian of the log
+  %    and latent values F. Returns the Hessian of the log
   %    likelihood with respect to PARAM. At the moment PARAM can be
   %    only 'latent'. G2 is a vector with diagonal elements of the
-  %    hessian matrix (off diagonals are zero).
+  %    Hessian matrix (off diagonals are zero).
   %
   %  See also
   %    LIK_POISSON_LL, LIK_POISSON_LLG, LIK_POISSON_LLG3, GPLA_E
@@ -453,6 +454,19 @@ function lik = lik_poisson(varargin)
     
   end
   
+  function p = lik_poisson_invlink(lik, f, z)
+  %LIK_POISSON_INVLINK  Returns values of inverse link function
+  %             
+  %  Description 
+  %    P = LIK_POISSON_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values of inverse link function P.
+  %
+  %     See also
+  %     LIK_POISSON_LL, LIK_POISSON_PREDY
+  
+    p = exp(f);
+  end
+  
   function reclik = lik_poisson_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
   %
@@ -478,6 +492,7 @@ function lik = lik_poisson(varargin)
       reclik.fh.llg3 = @lik_poisson_llg3;
       reclik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
       reclik.fh.predy = @lik_poisson_predy;
+      reclik.fh.invlink = @lik_poisson_invlink;
       reclik.fh.recappend = @lik_poisson_recappend;
       return
     end

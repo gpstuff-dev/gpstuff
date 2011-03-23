@@ -133,9 +133,9 @@ function lik = lik_probit(varargin)
   %  Description        
   %    LLG2 = LIK_PROBIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, class labels Y, and latent values F. 
-  %    Returns the hessian of the log likelihood with respect to
+  %    Returns the Hessian of the log likelihood with respect to
   %    PARAM. At the moment PARAM can be only 'latent'. LLG2 is a
-  %    vector with diagonal elements of the hessian matrix (off
+  %    vector with diagonal elements of the Hessian matrix (off
   %    diagonals are zero).
   %
   %  See also
@@ -237,7 +237,7 @@ function lik = lik_probit(varargin)
     end
   end
 
-  function [p] = lik_probit_invlink(lik, f, z)
+  function p = lik_probit_invlink(lik, f, z)
   %LIK_PROBIT_INVLINK  Returns values of inverse link function
   %             
   %  Description 

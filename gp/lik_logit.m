@@ -47,6 +47,7 @@ function lik = lik_logit(varargin)
     lik.fh.llg3 = @lik_logit_llg3;
     lik.fh.tiltedMoments = @lik_logit_tiltedMoments;
     lik.fh.predy = @lik_logit_predy;
+    lik.fh.invlink = @lik_logit_invlink;
     lik.fh.recappend = @lik_logit_recappend;
   end
 
@@ -132,9 +133,9 @@ function lik = lik_logit(varargin)
   %  Description        
   %    LLG2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, class labels Y, and latent values F. Returns
-  %    the hessian of the log likelihood with respect to PARAM. At
+  %    the Hessian of the log likelihood with respect to PARAM. At
   %    the moment PARAM can be only 'latent'. LLG2 is a vector with
-  %    diagonal elements of the hessian matrix (off diagonals are
+  %    diagonal elements of the Hessian matrix (off diagonals are
   %    zero).
   %
   %   See also
@@ -379,6 +380,19 @@ function lik = lik_logit(varargin)
     
   end
 
+  function p = lik_logit_invlink(lik, f, z)
+  %LIK_LOGIT_INVLINK  Returns values of inverse link function
+  %             
+  %  Description 
+  %    P = LIK_LOGIT_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values of inverse link function P.
+  %
+  %     See also
+  %     LIK_LOGIT_LL, LIK_LOGIT_PREDY
+  
+    p = logitinv(f);
+  end
+  
   function reclik = lik_logit_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
   %
@@ -404,6 +418,7 @@ function lik = lik_logit(varargin)
       reclik.fh.llg3 = @lik_logit_llg3;
       reclik.fh.tiltedMoments = @lik_logit_tiltedMoments;
       reclik.fh.predy = @lik_logit_predy;
+      reclik.fh.invlink = @lik_logit_invlink;
       reclik.fh.recappend = @lik_logit_recappend;
       return
     end

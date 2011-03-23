@@ -228,8 +228,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   a = b - sW.*(L\(L'\(sW.*(K*b))));
                 end
                 f = K*a;
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
                 lp = feval(gp.lik.fh.ll, gp.lik, y, f, z);
                 if ~isfield(gp,'meanf')
                   lp_new = -a'*f/2 + lp;
@@ -241,7 +239,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   % reduce step size by half
                   a = (a_old+a)/2;                                  
                   f = K*a;
-                  W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
                   lp = feval(gp.lik.fh.ll, gp.lik, y, f, z);
                   if ~isfield(gp,'meanf')
                       lp_new = -a'*f/2 + lp;
@@ -250,6 +247,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   end
                   i = i+1;
                 end 
+                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
               end
               % --------------------------------------------------------------------------------
               % find the posterior mode of latent variables by stabilized Newton method.

@@ -89,6 +89,7 @@ function lik = lik_negbin(varargin)
     lik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
     lik.fh.siteDeriv = @lik_negbin_siteDeriv;
     lik.fh.predy = @lik_negbin_predy;
+    lik.fh.invlink = @lik_negbin_invlink;
     lik.fh.recappend = @lik_negbin_recappend;
   end
 
@@ -256,7 +257,7 @@ function lik = lik_negbin(varargin)
   %  Description        
   %    LLG2 = LIK_NEGBIN_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, incedence counts Y, expected counts Z, and
-  %    latent values F. Returns the hessian of the log likelihood
+  %    latent values F. Returns the Hessian of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be only
   %    'latent'. LLG2 is a vector with diagonal elements of the
   %    Hessian matrix (off diagonals are zero).
@@ -638,6 +639,19 @@ function lik = lik_negbin(varargin)
     
   end
 
+  function p = lik_negbin_invlink(lik, f, z)
+  %LIK_NEGBIN_INVLINK  Returns values of inverse link function
+  %             
+  %  Description 
+  %    P = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values of inverse link function P.
+  %
+  %     See also
+  %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
+  
+    p = exp(f);
+  end
+  
   function reclik = lik_negbin_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
   %
@@ -661,14 +675,15 @@ function lik = lik_negbin(varargin)
       % Set the function handles
       reclik.fh.pak = @lik_negbin_pak;
       reclik.fh.unpak = @lik_negbin_unpak;
-      reclik.fh.lp = @lik_t_lp;
-      reclik.fh.lpg = @lik_t_lpg;
+      reclik.fh.lp = @lik_negbin_lp;
+      reclik.fh.lpg = @lik_negbin_lpg;
       reclik.fh.ll = @lik_negbin_ll;
       reclik.fh.llg = @lik_negbin_llg;    
       reclik.fh.llg2 = @lik_negbin_llg2;
       reclik.fh.llg3 = @lik_negbin_llg3;
       reclik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
       reclik.fh.predy = @lik_negbin_predy;
+      reclik.fh.invlink = @lik_negbin_invlink;
       reclik.fh.recappend = @lik_negbin_recappend;
       reclik.p=[];
       reclik.p.disper=[];
