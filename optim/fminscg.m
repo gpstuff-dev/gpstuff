@@ -239,7 +239,8 @@ while (j <= maxiter)
   end
 
   % Adjust lambda according to comparison ratio.
-  if (Delta < 0.25) || isnan(Delta)
+  % Adjust also, if fnew is not a number or finite
+  if (Delta < 0.25) || isnan(fnew) || isinf(fnew)
     lambda = min(4.0*lambda, lambdamax);
   end
   if (Delta > 0.75)
