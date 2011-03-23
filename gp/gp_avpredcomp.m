@@ -1,16 +1,18 @@
-function [apc_prcs, apc_mean, apcf_prcs, apcf_mean]=gp_avpredcomp(gp, x, y, varargin)
+function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
 %GP_AVPREDCOMP  Average predictive comparison for Gaussian process model
 %
 %  Description
-%    [APC_PRCS, APC_MEAN, APCF_PRCS, APCF_MEAN]=GP_AVPREDCOMP(GP, X, Y, OPTIONS)
+%    [PS, FM, FPRCS, M, PRCS]=GP_AVPREDCOMP(GP, X, Y, OPTIONS)
 %    Takes a Gaussian process structure GP together with a matrix X of
 %    training inputs and vector Y of training targets, and returns average
-%    predictive comparison estimates for each input. APC_PRCS and APC_MEAN
-%    are estimated predictive relevances for percentiles and means for each
-%    input variable when latent outcome variable is squashed through the
-%    inverse link function. APCF_PRCS and APCF_MEAN are estimated
-%    predictive relevances for percentiles and mean values for each input
-%    variable when outcome variable is the latent variable. 
+%    predictive comparison estimates for each input. PS is the average
+%    probability of knowing the sign of the change in the latent outcome
+%    for each input variable. FM and FPRCS are estimated predictive
+%    relevances for means and percentiles for each input variable when
+%    latent outcome variable is computed through the inverse link function.
+%    M and PRCS are estimated predictive relevances for mean and
+%    percentiles for each input variable when outcome variable is the
+%    latent variable. 
 %
 %    OPTIONS is optional parameter-value pair
 %      z         - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -20,8 +22,6 @@ function [apc_prcs, apc_mean, apcf_prcs, apcf_mean]=gp_avpredcomp(gp, x, y, vara
 %      nsamp     - determines the number of samples used (default=500).
 %      prctiles  - determines percentiles that are computed from 0 to 100
 %                  (default=[2.5 97.5]).
-%      absvalues - makes average predictive comparison using absolute
-%                  values ('on') of differences in outcomes (default='off')
 %
 %  See also
 %    GP_PRED
@@ -41,20 +41,19 @@ ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('nsamp', 500, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('prctiles', [2.5 97.5], @(x) isreal(x) && isvector(x) && all(x>=0) && all(x<=100))
-ip.addParamValue('absvalues', 'off', @(x) isempty(x) || (ischar(x) && strcmp(x, 'off')) || (ischar(x) && strcmp(x, 'on')))
 
 ip.parse(gp, x, y, varargin{:});
 z=ip.Results.z;
 nsamp=ip.Results.nsamp;
 prctiles=ip.Results.prctiles;
-absvalues=ip.Results.absvalues;
 
 [n, nin]=size(x);
 
-apc_prcs=zeros(nin,length(prctiles));
-apc_mean=zeros(nin,1);
-apcf_prcs=zeros(nin,length(prctiles));
-apcf_mean=zeros(nin,1);
+ps=zeros(nin,1);
+fm=zeros(nin,1);
+fprcs=zeros(nin,length(prctiles));
+m=zeros(nin,1);
+prcs=zeros(nin,length(prctiles));
 
 covx=cov(x);
 
@@ -78,54 +77,62 @@ for k1=1:nin
     
     rsubstream=round(rand*10e9);
     
-    
     num=zeros(1,nsamp); den=0;
-    numf=zeros(1,nsamp);
+    numf=zeros(1,nsamp); pp=0;
     for i1=1:n
         % inputs of interest
         ui=x(i1, k1);
         ujs=x(:, k1);
         
         % replicate same values for other inputs
-        x_irepj=repmat(x(i1,:),n,1); x_irepj(:,k1)=ujs;
+        xrep=repmat(x(i1,:),n,1); xrep(:,k1)=ujs;
         
-        % 
-        Udiff=[ujs-ui];
+        Udiff=ujs-ui;
         Usign=sign(Udiff);
         stream.Substream = rsubstream;
-        fs = gp_rnd(gp, x, y, x_irepj,'nsamp',nsamp);
+        % draw random samples from posterior
+        fs = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp);
         
-        % squashe latent values through the inverse link function
-        ilfs = feval(gp.lik.fh.invlink, gp.lik, fs, z);
-        
-        Wrep=repmat(W(:,i1),1,nsamp);
-        Usignrep=repmat(Usign,1,nsamp);
-        
-        if strcmp(absvalues, 'on')
-            % average absolute change in outcome
-            num=num+sum(Wrep.*abs((ilfs-repmat(ilfs(i1,:),n,1)).*Usignrep));
-            % average absolute change in latent outcome
-            numf=numf+sum(Wrep.*abs((fs-repmat(fs(i1,:),n,1)).*Usignrep));            
-        else
+        % compute latent values through the inverse link function
+        if isfield(gp.lik.fh, 'invlink')
+            ilfs = feval(gp.lik.fh.invlink, gp.lik, fs, z);
             % average change in outcome
-            num=num+sum(Wrep.*(ilfs-repmat(ilfs(i1,:),n,1)).*Usignrep);
-            % average change in latent outcome
-            numf=numf+sum(Wrep.*(fs-repmat(fs(i1,:),n,1)).*Usignrep);
+            num=num+sum(bsxfun(@times,W(:,i1).*Usign,bsxfun(@minus,ilfs,ilfs(i1,:))));
         end
+        
+        % average change in latent outcome
+        numf=numf+sum(bsxfun(@times,W(:,i1).*Usign,bsxfun(@minus,fs,fs(i1,:))));
+
         % average change in input
         den=den+sum(W(:,i1).*Udiff.*Usign);
+        
+        % average probability of knowing the sign of the change in latent function
+        Wtmp=W(:,i1); Wtmp(i1)=0;
+        ppi1=mean(bsxfun(@times,bsxfun(@minus,fs,fs(i1,:)),Usign)>0,2);
+        ppi1(ppi1<0.5)=1-ppi1(ppi1<0.5);
+        pp=pp+sum(Wtmp.*ppi1)./sum(Wtmp);
     end
     
-    % percentiles and mean values when outcome is computed through the inverse
+    % normalize average probability of knowing the sign of the change in
+    % latent function 
+    ps(k1,1)=pp/n;
+    
+    % means and percentiles when outcome is the latent function
+    numfden=numf./den;
+    fm(k1,1)=mean(numfden);
+    fprcs(k1,:)=prctile(numfden,prctiles);
+    
+    % means and percentiles when outcome is computed through the inverse
     % link function
-    apc_prcs(k1,:)=prctile(num./den,prctiles);
-    apc_mean(k1,:)=mean(num./den);    
-
-    % percentiles and mean values when outcome is the latent function
-    apcf_prcs(k1,:)=prctile(numf./den,prctiles);
-    apcf_mean(k1,:)=mean(numf./den);
+    numden=num./den;
+    m(k1,1)=mean(numden);
+    prcs(k1,:)=prctile(numden,prctiles);
 
 end
 
-RandStream.setDefaultStream(prevstream);
+if ~isfield(gp.lik.fh, 'invlink')
+    m=fm;
+    prcs=fprcs;
+end
 
+RandStream.setDefaultStream(prevstream);
