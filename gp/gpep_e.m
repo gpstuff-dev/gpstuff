@@ -1321,7 +1321,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
       n0 = size(x,1);
       La20 = La2;
       b0 = b;
-      Z_i = M0;
+      Z_i = M0(:);
       Z_i0 = Z_i;
       muvec_i0 = muvec_i;
       sigm2vec_i0 = sigm2vec_i;

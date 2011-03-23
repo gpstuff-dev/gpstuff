@@ -420,11 +420,14 @@ function lik = lik_negbin(varargin)
 
     function g = deriv(f)
       mu = avgE.*exp(f);
-      g = 0;
-      g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
-      for i2 = 0:yy-1
-        g = g + 1 ./ (i2 + r);
-      end
+      % Derivative using the psi function
+      g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
+%      % Derivative using the sum formulation
+%      g = 0;
+%      g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
+%      for i2 = 0:yy-1
+%        g = g + 1 ./ (i2 + r);
+%      end
     end
   end
 
@@ -579,29 +582,6 @@ function lik = lik_negbin(varargin)
                'even after looking hard!'])
       end
     end
-    
-%     while minld>(modeld-lddiff)
-%       minf=minf-modes;
-%       minld=ld(minf);
-%       iter=iter+1;
-%       if iter>100
-%         error(['lik_negbin -> init_negbin_norm: ' ...
-%                'integration interval minimun not found ' ...
-%                'even after looking hard!'])
-%       end
-%     end
-%     maxld=ld(maxf);
-%     while maxld>(modeld-lddiff)
-%       maxf=maxf+modes;
-%       maxld=ld(maxf);
-%       iter=iter+1;
-%       if iter>100
-%         error(['lik_negbin -> init_negbin_norm: ' ...
-%                'integration interval maximum not found ' ...
-%                'even after looking hard!'])
-%       end
-%       
-%     end
     
     function integrand = negbin_norm(f)
     % Negative-binomial * Gaussian
