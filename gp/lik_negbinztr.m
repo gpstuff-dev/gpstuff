@@ -92,6 +92,7 @@ function lik = lik_negbinztr(varargin)
     lik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
     lik.fh.siteDeriv = @lik_negbinztr_siteDeriv;
     lik.fh.predy = @lik_negbinztr_predy;
+    lik.fh.invlink = @lik_negbinztr_invlink;
     lik.fh.recappend = @lik_negbinztr_recappend;
   end
 
@@ -265,7 +266,7 @@ function lik = lik_negbinztr(varargin)
   %  Description        
   %    LLG2 = LIK_NEGBINZTR_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, incedence counts Y, expected counts Z, and
-  %    latent values F. Returns the hessian of the log likelihood
+  %    latent values F. Returns the Hessian of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be only
   %    'latent'. LLG2 is a vector with diagonal elements of the
   %    Hessian matrix (off diagonals are zero).
@@ -445,18 +446,10 @@ function lik = lik_negbinztr(varargin)
 
     function g = deriv(f)
       mu = avgE.*exp(f);
-%      % Derivative using the psi function
+      % Derivative using the psi function
       g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
       lp0=r.*(log(r) - log(r+mu));
       g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
-%      % Derivative using sum formulation
-%      g = 0;
-%      g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
-%      for i2 = 0:yy-1
-%        g = g + 1 ./ (i2 + r);
-%      end
-%      g
-%      keyboard
     end
   end
 
@@ -587,6 +580,11 @@ function lik = lik_negbinztr(varargin)
     lddiff=20; % min difference in log-density between mode and end-points
     minld=ld(minf);
     step=1;
+    while minld<(modeld-lddiff) && minf<modef;
+      % sometimes minf is too small
+      minf=minf+step*modes;
+      minld=ld(minf);
+    end
     while minld>(modeld-lddiff)
       minf=minf-step*modes;
       minld=ld(minf);
@@ -616,10 +614,21 @@ function lik = lik_negbinztr(varargin)
     % Negative-binomial * Gaussian
       mu = avgE.*exp(f);
       lp0=r.*(log(r) - log(r+mu));
-      integrand = exp(ldconst ...
-                      +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
-                      -0.5*(f-myy_i).^2./sigm2_i ...
-                      -log(1-exp(lp0)));
+      if lp0==0
+        % exp(lp0)->1, that is, almost all the mass is in the zero part
+        % approximate if yy=1, and give up if yy>1
+        if yy==1
+          integrand = exp(log(avgE)+f...
+                          -0.5*(f-myy_i).^2./sigm2_i -log(sigm2_i)/2 -log(2*pi)/2);
+        else
+          integrand = 0;
+        end
+      else
+        integrand = exp(ldconst ...
+                        +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
+                        -0.5*(f-myy_i).^2./sigm2_i ...
+                        -log(1-exp(lp0)));
+      end
     end
     
     function log_int = log_negbinztr_norm(f)
@@ -628,10 +637,21 @@ function lik = lik_negbinztr(varargin)
     % integration interval
       mu = avgE.*exp(f);
       lp0=r.*(log(r) - log(r+mu));
-      log_int = ldconst...
-                +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
-                -0.5*(f-myy_i).^2./sigm2_i...
-                -log(1-exp(lp0));
+      if lp0==0
+        % exp(lp0)->1, that is, almost all the mass is in the zero part
+        % approximate if yy=1, and give up if yy>1
+        if yy==1
+          log_int = log(avgE)+f ...
+                    -0.5*(f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2;
+        else
+          log_int=-Inf;
+        end
+      else
+        log_int = ldconst...
+                  +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) -gammaln(r)-gammaln(yy+1)+gammaln(r+yy) ...
+                  -0.5*(f-myy_i).^2./sigm2_i ...
+                  -log(1-exp(lp0));
+      end
     end
     
     function g = log_negbinztr_norm_g(f)
@@ -639,9 +659,15 @@ function lik = lik_negbinztr(varargin)
     % derivative of log_negbinztr_norm
       mu = avgE.*exp(f);
       lp0=r.*(log(r) - log(r+mu));
-      g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
-          + (myy_i - f)./sigm2_i ...
-          -1/(1 - exp(-lp0))*-r/(mu + r)*mu;
+      if lp0==0
+        % exp(lp0)->1, that is, almost all the mass is in the zero part
+        % approximate if yy=1, and give up if yy>1
+        g = 1+(myy_i - f)./sigm2_i;
+      else
+        g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
+            + (myy_i - f)./sigm2_i ...
+            -1/(1 - exp(-lp0))*-r/(mu + r)*mu;
+      end
     end
     
     function g2 = log_negbinztr_norm_g2(f)
@@ -649,13 +675,32 @@ function lik = lik_negbinztr(varargin)
     % second derivate of log_negbinztr_norm
       mu = avgE.*exp(f);
       lp0=r.*(log(r) - log(r+mu));
-      g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
-           -1/sigm2_i ...
-           + (r^2 + r^2*exp(-lp0)*(mu - 1))/((mu + r)^2*(exp(-lp0) - 1)^2)*mu;
+      if lp0==0
+        % exp(lp0)->1, that is, almost all the mass is in the zero part
+        % approximate if yy=1, and give up if yy>1
+        g2 = -1/sigm2_i;
+      else
+        g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
+             -1/sigm2_i ...
+             + (r^2 + r^2*exp(-lp0)*(mu - 1))/((mu + r)^2*(exp(-lp0) - 1)^2)*mu;
+      end
     end
     
   end
 
+  function p = lik_negbinztr_invlink(lik, f, z)
+  %LIK_NEGBINZTR_INVLINK  Returns values of inverse link function
+  %             
+  %  Description 
+  %    P = LIK_NEGBINZTR_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values of inverse link function P.
+  %
+  %     See also
+  %     LIK_NEGBINZTR_LL, LIK_NEGBINZTR_PREDY
+  
+    p = exp(f);
+  end
+  
   function reclik = lik_negbinztr_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
   %
@@ -679,19 +724,28 @@ function lik = lik_negbinztr(varargin)
       % Set the function handles
       reclik.fh.pak = @lik_negbinztr_pak;
       reclik.fh.unpak = @lik_negbinztr_unpak;
-      reclik.fh.lp = @lik_t_lp;
-      reclik.fh.lpg = @lik_t_lpg;
+      reclik.fh.lp = @lik_negbinztr_lp;
+      reclik.fh.lpg = @lik_negbinztr_lpg;
       reclik.fh.ll = @lik_negbinztr_ll;
       reclik.fh.llg = @lik_negbinztr_llg;    
       reclik.fh.llg2 = @lik_negbinztr_llg2;
       reclik.fh.llg3 = @lik_negbinztr_llg3;
       reclik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
       reclik.fh.predy = @lik_negbinztr_predy;
+      reclik.fh.invlink = @lik_negbinztr_invlink;
       reclik.fh.recappend = @lik_negbinztr_recappend;
+      reclik.p=[];
+      reclik.p.disper=[];
+      if ~isempty(ri.p.disper)
+        reclik.p.disper = ri.p.disper;
+      end
       return
     end
     
     reclik.disper(ri,:)=lik.disper;
+    if ~isempty(lik.p)
+        reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.disper);
+    end
   end
 end
 
