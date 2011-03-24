@@ -433,7 +433,7 @@ if isfield(gp.lik.fh,'trcov')
         if ptype == 1 || ptype == 3                            
             % FIC part of the covariance
             tmpmatr = (K_nu*(K_uu\(K_fu'*L)));
-            Varf = B2'*B2 + Kcs_nn + sparse(1:n2,1:n2,Knn_v - sum(B2.^2)',n2,n2) - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
+            Covf = B2'*B2 + Kcs_nn + sparse(1:n2,1:n2,Knn_v - sum(B2.^2)',n2,n2) - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
             
             % Add Lav2 if the prediction is made for the training set
             if  ~isempty(tstind)
@@ -446,27 +446,27 @@ if isfield(gp.lik.fh,'trcov')
                 end
                 % Add Lav2 and possibly Kcs_nf
                 tmpmatr = Kcs_nf/chol(La);
-                Varf = Varf - tmpmatr*tmpmatr';
+                Covf = Covf - tmpmatr*tmpmatr';
                 tmpmatr = Kcs_nf*L;
-                Varf = Varf + tmpmatr*tmpmatr';
-                Varf = Varf - 2.*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+                Covf = Covf + tmpmatr*tmpmatr';
+                Covf = Covf - 2.*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
 
                 % In case of both non-CS and CS prediction covariances add 
                 % only Kcs_nf if the prediction is not done for the training set 
             elseif ptype == 3
                 tmpmatr = Kcs_nf/chol(La);
-                Varf = Varf - tmpmatr*tmpmatr';
+                Covf = Covf - tmpmatr*tmpmatr';
                 tmpmatr = Kcs_nf*L;
-                Varf = Varf + tmpmatr*tmpmatr';
-                Varf = Varf - 2*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+                Covf = Covf + tmpmatr*tmpmatr';
+                Covf = Covf - 2*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
             end
             % Prediction with only CS covariance
         elseif ptype == 2
-            Varf = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
+            Covf = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
         end        
         
         Ef = repmat(Ef, 1, nsamp);
-        predcov = chol(Varf)';
+        predcov = chol(Covf)';
         sampft = Ef + predcov*randn(size(Ef));
         
         if nargout > 1
@@ -506,7 +506,7 @@ if isfield(gp.lik.fh,'trcov')
 
         
         if nargout > 1
-            Varf = sum(Phi_a/L',2)*S(1,1);
+            Covf = sum(Phi_a/L',2)*S(1,1);
         end
         if nargout > 2
             error('gp_pred with three output arguments is not implemented for SSGP!')
@@ -542,16 +542,16 @@ else
                     sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
                     sqrtWKfn = sqrtW*K_nf';
                     V = ldlsolve(L,sqrtWKfn);
-                    Varf = K - sqrtWKfn'*V;
+                    Covf = K - sqrtWKfn'*V;
                 else
                     W = diag(W);
                     V = L\(sqrt(W)*K_nf');
-                    Varf = K - V'*V;
+                    Covf = K - V'*V;
                 end
             else
                 V = L*diag(W);
                 R = diag(W) - V'*V;
-                Varf = K - K_nf*(R*K_nf');
+                Covf = K - K_nf*(R*K_nf');
             end
           case 'EP'
             
@@ -577,10 +577,10 @@ else
                 % Compute variance
                 if issparse(L)
                     V = ldlsolve(L, Stildesqroot*K_nf');
-                    Varf = K - K_nf*(Stildesqroot*V);
+                    Covf = K - K_nf*(Stildesqroot*V);
                 else
                     V = (L\Stildesqroot)*K_nf';
-                    Varf = K - V'*V;
+                    Covf = K - V'*V;
                 end
             else
                 z=tautilde.*(L'*(L*nutilde));
@@ -589,12 +589,12 @@ else
                 if nargout > 1
                     S = diag(tautilde);
                     V = K_nf*S*L';
-                    Varf = K - (K_nf*S)*K_nf' + V*V';
+                    Covf = K - (K_nf*S)*K_nf' + V*V';
                 end
             end
         end
         
-        predcov = chol(Varf)';
+        predcov = chol(Covf)';
         Ef = repmat(Ef,1,nsamp);
         sampft = Ef + predcov*randn(size(Ef));
         
@@ -675,9 +675,9 @@ else
             L = chol(B)';
             
             V = L\(sqrt(W)*K_nf');
-            Varf = K - V'*V;
+            Covf = K - V'*V;
             
-            predcov = chol(Varf)';
+            predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
           
@@ -735,9 +735,9 @@ else
                 Knf(tstind,:) = Knf(tstind,:) + diag(kstarstar(tstind) - sum(B.^2)');
             end
                 
-            Varf = Knn - Knf * ( diag(1./La) - L*L' ) * Knf';
+            Covf = Knn - Knf * ( diag(1./La) - L*L' ) * Knf';
             
-            predcov = chol(Varf)';
+            predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             
@@ -808,9 +808,9 @@ else
             end
             C = diag(sqrtW)*C*diag(sqrtW);
             
-            Varf = Knn - Knf * C * Knf';
+            Covf = Knn - Knf * C * Knf';
             
-            predcov = chol(Varf)';
+            predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
 
@@ -848,9 +848,9 @@ else
                 C(ind{i},ind{i}) = C(ind{i},ind{i}) + inv(La{i});
             end
                 
-            Varf = Knn - Knf * C * Knf';
+            Covf = Knn - Knf * C * Knf';
             
-            predcov = chol(Varf)';
+            predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
         end
@@ -985,9 +985,9 @@ else
             L = chol(B)';
             
             V = L\(sqrt(W)*K_nf');
-            Varf = K - V'*V;
+            Covf = K - V'*V;
             
-            predcov = chol(Varf)';
+            predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             
@@ -1036,9 +1036,9 @@ else
                 Knf(tstind,:) = Knf(tstind,:) + diag(k(tstind) - sum(B.^2)');
             end
             
-            Varf = Knn - Knf * ( inv(La) - L*L' ) * Knf';
+            Covf = Knn - Knf * ( inv(La) - L*L' ) * Knf';
             
-            predcov = chol(Varf)';
+            predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             
