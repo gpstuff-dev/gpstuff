@@ -3,20 +3,20 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %
 %  Description
 %   [DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
-%   number of parameters as defined by Spiegelhalter et al (2002). 
-%   The statistics are evaluated with focus on parameters or latent
-%   variables depending on the input GP (See Spiegelhalter et al
-%   (2002) for discussion on the parameters in focus in Bayesian
-%   model). X contains training inputs and Y training outputs.
+%     number of parameters as defined by Spiegelhalter et al
+%     (2002). The statistics are evaluated with focus on parameters
+%     or latent variables depending on the input GP (See
+%     Spiegelhalter et al (2002) for discussion on the parameters
+%     in focus in Bayesian model). X contains training inputs and Y
+%     training outputs.
 %
 %   DIC and p_eff are evaluated as follows:
-%     1) GP is a record structure from gp_mc or an array of GPs from gp_ia, 
-%
-%        In this case the focus is in the parameters (the
-%        parameters of the covariance function and the likelihood). 
-%        The DIC and the effective number of parameters are
-%        evaluated as described in equation (6.10) of Bayesian Data
-%        Analysis, second edition (Gelman et al):
+%     1) GP is a record structure from gp_mc or an array of GPs
+%        from gp_ia. In this case the focus is in the parameters
+%        (the parameters of the covariance function and the
+%        likelihood). The DIC and the effective number of
+%        parameters are evaluated as described in equation (6.10)
+%        of Bayesian Data Analysis, second edition (Gelman et al):
 %          p_eff = E[D(y, th)|y] - D(y, E[th|y])
 %          DIC   = E[D(y, th)|y] + p_eff
 %        where all the expectations are taken over p(th|y) and 
@@ -36,24 +36,21 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %        In this case the focus is in the latent variables and the
 %        parameters are considered fixed. The mean of the
 %        deviance is now evaluated as
-%               E[D(y, f)|y] = -2 \int log(p(y|f) p(f|th) df
+%               E[D(y, f)|y] = -2 \int log[p(y|f)] p(f|th) df
 %
 %     3) GP is a record structure from gp_mc or an array of GPs from 
 %        gp_ia, but the focus is defined to be both latent-variables 
 %        and parameters, 
 %               [DIC, P_EFF] = GP_DIC(GP, X, Y, 'focus', 'all')
-%
 %        In this case the focus will be the latent variables and
-%        parameters. Thus now we will use the posterior p(f,
-%        th|y) instead of the conditional posterior p(f|th,y) or
+%        parameters. Thus now we will use the posterior p(f, th|y)
+%        instead of the conditional posterior p(f|th,y) or
 %        posterior marginal p(th|y). The DIC and the effective
 %        number of parameters are evaluated as described in
 %        equation (6.10) of Bayesian Data Analysis, second edition
 %        (Gelman et al):
-%
 %               p_eff = E[D(y, f, th)|y] - D(y, E[f, th|y])
 %               DIC   = E[D(y, f, th)|y] + p_eff
-%
 %        where all the expectations are taken over p(f,th|y).
 %       
 %  See also
@@ -236,11 +233,6 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
           Davg = -2.*mean(Davg);
         end
     end       
-    
-    
-    
-    
-    
 
     % ====================================================
   elseif iscell(gp)
@@ -337,4 +329,3 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
   p_eff = Davg - Dth;
   
 end
-
