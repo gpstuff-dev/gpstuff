@@ -619,17 +619,17 @@ function lik = lik_negbin(varargin)
     
   end
 
-  function p = lik_negbin_invlink(lik, f, z)
+  function mu = lik_negbin_invlink(lik, f, z)
   %LIK_NEGBIN_INVLINK  Returns values of inverse link function
   %             
   %  Description 
-  %    P = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
-  %    latent values F and returns the values of inverse link function P.
+  %    MU = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values MU of inverse link function.
   %
   %     See also
   %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
   
-    p = exp(f);
+    mu = z.*exp(f);
   end
   
   function reclik = lik_negbin_recappend(reclik, ri, lik)

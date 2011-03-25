@@ -454,17 +454,17 @@ function lik = lik_poisson(varargin)
     
   end
   
-  function p = lik_poisson_invlink(lik, f, z)
+  function mu = lik_poisson_invlink(lik, f, z)
   %LIK_POISSON_INVLINK  Returns values of inverse link function
   %             
   %  Description 
   %    P = LIK_POISSON_INVLINK(LIK, F) takes a likelihood structure LIK and
-  %    latent values F and returns the values of inverse link function P.
+  %    latent values F and returns the values MU of inverse link function.
   %
   %     See also
   %     LIK_POISSON_LL, LIK_POISSON_PREDY
   
-    p = exp(f);
+    mu = z.*exp(f);
   end
   
   function reclik = lik_poisson_recappend(reclik, ri, lik)
