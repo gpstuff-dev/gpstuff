@@ -396,7 +396,7 @@ function lik = lik_negbinztr(varargin)
       sigm2hati1 = m_2 - m_1.^2;
       if sigm2hati1 >= sigm2_i
         warning('lik_negbinztr_tilted_moments: sigm2hati1 >= sigm2_i');
-        sigm2hati1=sigm2_i-1e-9;
+        %sigm2hati1=sigm2_i-1e-9;
       end
     end
     
