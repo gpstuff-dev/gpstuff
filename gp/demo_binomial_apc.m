@@ -164,7 +164,7 @@ gp=gp_optim(gp,xx,yy,'z',nn,'opt',opt);
 % Cohort effect
 [Eft_3,Varft_3] = gp_pred(gp,xx,yy,xxo,'predcf',[3],'z',nn,'zt',nno);
 % Interaction effect between age group and time period
-[Eft_4,Varft_3] = gp_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
+[Eft_4,Varft_4] = gp_pred(gp,xx,yy,xxo,'predcf',[4],'z',nn,'zt',nno);
 
 % Plotting predictions
 
