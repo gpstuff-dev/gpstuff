@@ -1,13 +1,14 @@
 function r = catrand(p, m, n);
 %CATRAND Random matrices from categorical distribution.
 %
-%   Description
-%   R = CATRAND(P) returns a matrix of random numbers chosen   
-%   from the categorical distribution with parameter P.
-%   P is array of probabilities, which are not necessarily
-%   normalized, though they must be non-negative, and not all zero
-%   The size of R is the size of P. Alternatively,
-%   R = CATRAND(P,M,N) returns an M by N matrix.
+%  Description
+%    R = CATRAND(P) returns a matrix of random numbers chosen from
+%      the categorical distribution with parameter P. P is array of
+%      probabilities, which are not necessarily normalized, though
+%      they must be non-negative, and not all zero. The size of R
+%      is the size of P.
+%
+%    R = CATRAND(P,M,N) returns an M by N matrix.
 
 % Copyright (c) 1999-2004 Aki Vehtari
 
