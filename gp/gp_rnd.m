@@ -43,7 +43,7 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_RND';
-ip.addRequired('gp',@isstruct);
+ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -63,10 +63,11 @@ nsamp=ip.Results.nsamp;
 
 tn = size(x,1);
 
-if isfield(gp.lik.fh,'trcov')
-  % ===================================
-  % Gaussian likelihood
-  % ===================================
+if isstruct(gp)     % Single GP or MCMC solution
+  if isfield(gp.lik.fh,'trcov')
+    % ===================================
+    % Gaussian likelihood
+    % ===================================
     % Evaluate this if sparse model is used
     switch gp.type
       case 'FULL'
@@ -75,44 +76,44 @@ if isfield(gp.lik.fh,'trcov')
         [K2, C2] = gp_trcov(gp,xt,predcf);
         
         if issparse(C)
-            LD = ldlchol(C);
-            Ef = repmat( K'*ldlsolve(LD,y), 1, nsamp) ;
-            predcov = chol(K2 - K'*ldlsolve(LD,K))';
-            sampft = Ef + predcov*randn(size(Ef));
-            if nargout > 1
-                predcov = chol(C2 - K'*ldlsolve(LD,K))';            
-                sampyt = Ef + predcov*randn(size(Ef));
-            end        
+          LD = ldlchol(C);
+          Ef = repmat( K'*ldlsolve(LD,y), 1, nsamp) ;
+          predcov = chol(K2 - K'*ldlsolve(LD,K))';
+          sampft = Ef + predcov*randn(size(Ef));
+          if nargout > 1
+            predcov = chol(C2 - K'*ldlsolve(LD,K))';            
+            sampyt = Ef + predcov*randn(size(Ef));
+          end        
         else
-            L = chol(C)';
-            %    y=K'*(C\y);
-            a = L'\(L\y);
-            Ef = repmat( K'*a, 1, nsamp);
-            v = L\K;
+          L = chol(C)';
+          %    y=K'*(C\y);
+          a = L'\(L\y);
+          Ef = repmat( K'*a, 1, nsamp);
+          v = L\K;
 
-            predcov = chol(K2-v'*v)';
-            sampft = Ef + predcov*randn(size(Ef));
-            if nargout > 1
-                predcov = chol(C2-v'*v)';
-                sampyt = Ef + predcov*randn(size(Ef));
-            end
+          predcov = chol(K2-v'*v)';
+          sampft = Ef + predcov*randn(size(Ef));
+          if nargout > 1
+            predcov = chol(C2-v'*v)';
+            sampyt = Ef + predcov*randn(size(Ef));
+          end
         end   
         
       case 'FIC'    
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 5
-            if length(tstind) ~= size(x,1) && ~isempty(tstind)
-                error('tstind (if provided) has to be of same lenght as x.')
-            end
+          if length(tstind) ~= size(x,1) && ~isempty(tstind)
+            error('tstind (if provided) has to be of same lenght as x.')
+          end
         else
-            tstind = [];
+          tstind = [];
         end
         
         u = gp.X_u;
         m = size(u,1);
         % Turn the inducing vector on right direction
         if size(u,2) ~= size(x,2)
-            u=u';
+          u=u';
         end
         % Calculate some help matrices
         [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
@@ -130,7 +131,7 @@ if isfield(gp.lik.fh,'trcov')
                              % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
         iLaKfu = zeros(size(K_fu));  % f x u,
         for i=1:length(x)
-            iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+          iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
         end
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;
@@ -140,21 +141,21 @@ if isfield(gp.lik.fh,'trcov')
 
         % Prediction matrices formed with only subset of cf's.
         if ~isempty(predcf)            
-            K_fu = gp_cov(gp, x, u, predcf);   % f x u
-            K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
-            K_nu = gp_cov(gp,xt,u,predcf);       % n x u
+          K_fu = gp_cov(gp, x, u, predcf);   % f x u
+          K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
+          K_nu = gp_cov(gp,xt,u,predcf);       % n x u
         end
         Ef = K_nu*(K_uu\(K_fu'*p)) ;
 
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
-            [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-            Luu = chol(K_uu)';
-            B=Luu\(K_fu');
-            Qv_ff=sum(B.^2)';
-            Lav2 = zeros(size(Ef));
-            Lav2(tstind) = Kv_ff-Qv_ff;
-            Ef(tstind) = Ef(tstind) + Lav2(tstind).*p;
+          [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+          Luu = chol(K_uu)';
+          B=Luu\(K_fu');
+          Qv_ff=sum(B.^2)';
+          Lav2 = zeros(size(Ef));
+          Lav2(tstind) = Kv_ff-Qv_ff;
+          Ef(tstind) = Ef(tstind) + Lav2(tstind).*p;
         end
         
         % Sigma_post = Qnn + La_n - Qnf*(Qff+La_f)^(-1)*Qfn
@@ -177,30 +178,30 @@ if isfield(gp.lik.fh,'trcov')
         sampft = Ef + B2'*(chol(Sigm_mm)'*randn(m,nsamp)) + randn(size(Ef)).*sqrt(repmat(Lav_n,1,nsamp));
 
         if ~isempty(tstind)
-            K = B'*B2 + diag(Lav_n);
-            K2 = B2'*B2 + diag(Lav_n);
-            C = B'*B + diag(Lav);
-            
-            L = chol(C)';
-            %    y=K'*(C\y);
-            a = L'\(L\y);
-            Ef = repmat( K'*a, 1, nsamp);
-            v = L\K;
-            
-            predcov = chol(K2-v'*v)';
-            sampft = Ef + predcov*randn(size(Ef));        
+          K = B'*B2 + diag(Lav_n);
+          K2 = B2'*B2 + diag(Lav_n);
+          C = B'*B + diag(Lav);
+          
+          L = chol(C)';
+          %    y=K'*(C\y);
+          a = L'\(L\y);
+          Ef = repmat( K'*a, 1, nsamp);
+          v = L\K;
+          
+          predcov = chol(K2-v'*v)';
+          sampft = Ef + predcov*randn(size(Ef));        
         end
 
         if nargout > 1
-            sigma = sqrt(Cnn_v-Knn_v);
-            sampyt = sampft + sigma*randn(size(sampft));
+          sigma = sqrt(Cnn_v-Knn_v);
+          sampyt = sampft + sigma*randn(size(sampft));
         end
         
       case {'PIC' 'PIC_BLOCK'}
         u = gp.X_u;
         ind = gp.tr_index;
         if size(u,2) ~= size(x,2)
-            u=u';
+          u=u';
         end
 
         % Calculate some help matrices
@@ -216,10 +217,10 @@ if isfield(gp.lik.fh,'trcov')
         B=Luu\K_fu';
         iLaKfu = zeros(size(K_fu));  % f x u
         for i=1:length(ind)
-            Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-            [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-            La{i} = Cbl_ff - Qbl_ff;
-            iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
+          Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+          [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+          La{i} = Cbl_ff - Qbl_ff;
+          iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
         end
         A = K_uu+K_fu'*iLaKfu;
         A = (A+A')./2;            % Ensure symmetry
@@ -230,15 +231,15 @@ if isfield(gp.lik.fh,'trcov')
         % See Snelson and Ghahramani (2007) for details
         p=iLaKfu*(A\(iLaKfu'*tyy));
         for i=1:length(ind)
-            p2(ind{i},:) = La{i}\tyy(ind{i},:);
+          p2(ind{i},:) = La{i}\tyy(ind{i},:);
         end
         p = p2-p;
         
         % Prediction matrices formed with only subsetof cf's.
         if ~isempty(predcf)
-            K_fu = gp_cov(gp, x, u, predcf);        % f x u
-            K_nu = gp_cov(gp, xt, u, predcf);         % n x u
-            K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
+          K_fu = gp_cov(gp, x, u, predcf);        % f x u
+          K_nu = gp_cov(gp, xt, u, predcf);         % n x u
+          K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
         end
         
         iKuuKuf = K_uu\K_fu';    
@@ -246,14 +247,14 @@ if isfield(gp.lik.fh,'trcov')
         w_n=zeros(length(xt),1);
         B2 = Luu\(K_nu');
         for i=1:length(ind)
-            w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
-            K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf);              % n x u
-            w_n(tstind{i},:) = K_nf*p(ind{i},:);
-            
-            Qbl_ff = B2(:,tstind{i})'*B2(:,tstind{i});
-            [Kbl_ff, Cbl_ff] = gp_trcov(gp, xt(tstind{i},:));
-            La2{i} = Kbl_ff - Qbl_ff;
-            La22{i} = Cbl_ff - Qbl_ff;
+          w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
+          K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf);              % n x u
+          w_n(tstind{i},:) = K_nf*p(ind{i},:);
+          
+          Qbl_ff = B2(:,tstind{i})'*B2(:,tstind{i});
+          [Kbl_ff, Cbl_ff] = gp_trcov(gp, xt(tstind{i},:));
+          La2{i} = Kbl_ff - Qbl_ff;
+          La22{i} = Cbl_ff - Qbl_ff;
         end
         
         Ef = repmat(K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n, 1, nsamp);
@@ -263,36 +264,36 @@ if isfield(gp.lik.fh,'trcov')
         BL = B*L;
         sampft = randn(size(Ef));
         for i=1:length(ind)
-            iLaB(ind{i},:) = La{i}\B(:,ind{i})';
-            sampft(ind{i},:) = chol(La2{i})'*sampft(ind{i},:);
+          iLaB(ind{i},:) = La{i}\B(:,ind{i})';
+          sampft(ind{i},:) = chol(La2{i})'*sampft(ind{i},:);
         end
         Sigm_mm = eye(size(K_uu)) - B*iLaB + BL*BL';
         
         sampft = Ef + B2'*(chol(Sigm_mm)'*randn(size(K_uu,1),nsamp)) + sampft;
         
         if ~isempty(tstind)
-            K = B'*B2;
-            K2 = B2'*B2;
-            C = B'*B;
-            
-            for i = 1:length(ind)
-                K(ind{i},tstind{i}) = K(ind{i},tstind{i}) + La2{i};
-                K2(tstind{i},tstind{i}) = K2(tstind{i},tstind{i}) + La2{i};
-                C(tstind{i},tstind{i}) = C(ind{i},ind{i}) + La{i};
-            end
-            L = chol(C)';
-            %    y=K'*(C\y);
-            a = L'\(L\y);
-            Ef = repmat( K'*a, 1, nsamp);
-            v = L\K;
-            
-            predcov = chol(K2-v'*v)';
-            sampft = Ef + predcov*randn(size(Ef));        
+          K = B'*B2;
+          K2 = B2'*B2;
+          C = B'*B;
+          
+          for i = 1:length(ind)
+            K(ind{i},tstind{i}) = K(ind{i},tstind{i}) + La2{i};
+            K2(tstind{i},tstind{i}) = K2(tstind{i},tstind{i}) + La2{i};
+            C(tstind{i},tstind{i}) = C(ind{i},ind{i}) + La{i};
+          end
+          L = chol(C)';
+          %    y=K'*(C\y);
+          a = L'\(L\y);
+          Ef = repmat( K'*a, 1, nsamp);
+          v = L\K;
+          
+          predcov = chol(K2-v'*v)';
+          sampft = Ef + predcov*randn(size(Ef));        
         end
 
         if nargout > 1
-            sigma = sqrt(Cnn_v-Knn_v);
-            sampyt = sampft + sigma*randn(size(sampft));
+          sigma = sqrt(Cnn_v-Knn_v);
+          sampyt = sampft + sigma*randn(size(sampft));
         end
 
         
@@ -300,11 +301,11 @@ if isfield(gp.lik.fh,'trcov')
         
         % Here tstind = 1 if the prediction is made for the training set 
         if nargin > 5
-            if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                error('tstind (if provided) has to be of same lenght as x.')
-            end
+          if ~isempty(tstind) && length(tstind) ~= size(x,1)
+            error('tstind (if provided) has to be of same lenght as x.')
+          end
         else
-            tstind = [];
+          tstind = [];
         end
         
         n = size(x,1);
@@ -323,37 +324,37 @@ if isfield(gp.lik.fh,'trcov')
 
         % Loop through all covariance functions
         for i = 1:ncf        
-            % Non-CS covariances
-            if ~isfield(gp.cf{i},'cs') 
-                cf1 = [cf1 i];
-                % If used for prediction
-                if ~isempty(find(predcf==i))
-                    predcf1 = [predcf1 i]; 
-                end
-                % CS-covariances
-            else
-                cf2 = [cf2 i];           
-                % If used for prediction
-                if ~isempty(find(predcf==i))
-                    predcf2 = [predcf2 i]; 
-                end
+          % Non-CS covariances
+          if ~isfield(gp.cf{i},'cs') 
+            cf1 = [cf1 i];
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+              predcf1 = [predcf1 i]; 
             end
+            % CS-covariances
+          else
+            cf2 = [cf2 i];           
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+              predcf2 = [predcf2 i]; 
+            end
+          end
         end
         if isempty(predcf1) && isempty(predcf2)
-            predcf1 = cf1;
-            predcf2 = cf2;
+          predcf1 = cf1;
+          predcf2 = cf2;
         end
         
         % Determine the types of the covariance functions used
         % in making the prediction.
         if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
-            ptype = 1;
-            predcf2 = cf2;
+          ptype = 1;
+          predcf2 = cf2;
         elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
-            ptype = 2;
-            predcf1 = cf1;
+          ptype = 2;
+          predcf1 = cf1;
         else                                           % Both non-CS and CS covariances
-            ptype = 3;
+          ptype = 3;
         end
         
         % First evaluate needed covariance matrices
@@ -395,27 +396,27 @@ if isfield(gp.lik.fh,'trcov')
         % Calculate the predictive mean according to the type of
         % covariance functions used for making the prediction
         if ptype == 1
-            Ef = K_nu*(K_uu\(K_fu'*p));
+          Ef = K_nu*(K_uu\(K_fu'*p));
         elseif ptype == 2
-            Ef = Kcs_nf*p;
+          Ef = Kcs_nf*p;
         else 
-            Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;        
+          Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;        
         end
         
         % evaluate also Lav2 if the prediction is made for training set
         if ~isempty(tstind)
-            [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
-            Luu = chol(K_uu)';
-            B=Luu\(K_fu');
-            Qv_ff=sum(B.^2)';
-            Lav2 = zeros(size(Ef));
-            Lav2(tstind) = Kv_ff-Qv_ff;
+          [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
+          Luu = chol(K_uu)';
+          B=Luu\(K_fu');
+          Qv_ff=sum(B.^2)';
+          Lav2 = zeros(size(Ef));
+          Lav2(tstind) = Kv_ff-Qv_ff;
         end  
 
         % Add also Lav2 if the prediction is made for training set
         % and non-CS covariance function is used for prediction
         if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-            Ef(tstind) = Ef(tstind) + Lav2(tstind).*p(tstind);
+          Ef(tstind) = Ef(tstind) + Lav2(tstind).*p(tstind);
         end
 
         
@@ -431,38 +432,38 @@ if isfield(gp.lik.fh,'trcov')
         % NOTE! We form full matrices below. Needs to be rewritten so that at most nxm matrices are formed
         
         if ptype == 1 || ptype == 3                            
-            % FIC part of the covariance
-            tmpmatr = (K_nu*(K_uu\(K_fu'*L)));
-            Covf = B2'*B2 + Kcs_nn + sparse(1:n2,1:n2,Knn_v - sum(B2.^2)',n2,n2) - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
-            
-            % Add Lav2 if the prediction is made for the training set
-            if  ~isempty(tstind)
-                % Non-CS covariance
-                if ptype == 1
-                    Kcs_nf = sparse(tstind,1:n,Lav2(tstind),n2,n);
-                    % Non-CS and CS covariances
-                else
-                    Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2(tstind),n2,n);
-                end
-                % Add Lav2 and possibly Kcs_nf
-                tmpmatr = Kcs_nf/chol(La);
-                Covf = Covf - tmpmatr*tmpmatr';
-                tmpmatr = Kcs_nf*L;
-                Covf = Covf + tmpmatr*tmpmatr';
-                Covf = Covf - 2.*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
-
-                % In case of both non-CS and CS prediction covariances add 
-                % only Kcs_nf if the prediction is not done for the training set 
-            elseif ptype == 3
-                tmpmatr = Kcs_nf/chol(La);
-                Covf = Covf - tmpmatr*tmpmatr';
-                tmpmatr = Kcs_nf*L;
-                Covf = Covf + tmpmatr*tmpmatr';
-                Covf = Covf - 2*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+          % FIC part of the covariance
+          tmpmatr = (K_nu*(K_uu\(K_fu'*L)));
+          Covf = B2'*B2 + Kcs_nn + sparse(1:n2,1:n2,Knn_v - sum(B2.^2)',n2,n2) - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
+          
+          % Add Lav2 if the prediction is made for the training set
+          if  ~isempty(tstind)
+            % Non-CS covariance
+            if ptype == 1
+              Kcs_nf = sparse(tstind,1:n,Lav2(tstind),n2,n);
+              % Non-CS and CS covariances
+            else
+              Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2(tstind),n2,n);
             end
-            % Prediction with only CS covariance
+            % Add Lav2 and possibly Kcs_nf
+            tmpmatr = Kcs_nf/chol(La);
+            Covf = Covf - tmpmatr*tmpmatr';
+            tmpmatr = Kcs_nf*L;
+            Covf = Covf + tmpmatr*tmpmatr';
+            Covf = Covf - 2.*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+
+            % In case of both non-CS and CS prediction covariances add 
+            % only Kcs_nf if the prediction is not done for the training set 
+          elseif ptype == 3
+            tmpmatr = Kcs_nf/chol(La);
+            Covf = Covf - tmpmatr*tmpmatr';
+            tmpmatr = Kcs_nf*L;
+            Covf = Covf + tmpmatr*tmpmatr';
+            Covf = Covf - 2*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+          end
+          % Prediction with only CS covariance
         elseif ptype == 2
-            Covf = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
+          Covf = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
         end        
         
         Ef = repmat(Ef, 1, nsamp);
@@ -470,8 +471,8 @@ if isfield(gp.lik.fh,'trcov')
         sampft = Ef + predcov*randn(size(Ef));
         
         if nargout > 1
-            sigma = sqrt(Cnn_v-Knn_v);
-            sampyt = sampft + sigma*randn(size(sampft));
+          sigma = sqrt(Cnn_v-Knn_v);
+          sampyt = sampft + sigma*randn(size(sampft));
         end
         
 % $$$     % Check results with full matrices    
@@ -492,8 +493,8 @@ if isfield(gp.lik.fh,'trcov')
         
       case 'SSGP'
         if nargin > 4
-            error(['Prediction with a subset of original ' ...
-                   'covariance functions not currently implemented with SSGP']);
+          error(['Prediction with a subset of original ' ...
+                 'covariance functions not currently implemented with SSGP']);
         end
 
         [Phi_f, S] = gp_trcov(gp, x);
@@ -506,20 +507,20 @@ if isfield(gp.lik.fh,'trcov')
 
         
         if nargout > 1
-            Covf = sum(Phi_a/L',2)*S(1,1);
+          Covf = sum(Phi_a/L',2)*S(1,1);
         end
         if nargout > 2
-            error('gp_pred with three output arguments is not implemented for SSGP!')
+          error('gp_pred with three output arguments is not implemented for SSGP!')
         end
     end
     
 
-else
-  % ===================================
-  % non-Gaussian likelihood
-  % ===================================
+  else
+    % ===================================
+    % non-Gaussian likelihood
+    % ===================================
     switch gp.type
-        % ---------------------------
+      % ---------------------------
       case 'FULL'
 
         switch gp.latent_method
@@ -537,26 +538,26 @@ else
             % Evaluate the variance
             K = gp_trcov(gp,xt,predcf);
             if W >= 0
-                if issparse(K_nf) && issparse(L)
-                    K = gp_trcov(gp, x);
-                    sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
-                    sqrtWKfn = sqrtW*K_nf';
-                    V = ldlsolve(L,sqrtWKfn);
-                    Covf = K - sqrtWKfn'*V;
-                else
-                    W = diag(W);
-                    V = L\(sqrt(W)*K_nf');
-                    Covf = K - V'*V;
-                end
+              if issparse(K_nf) && issparse(L)
+                K = gp_trcov(gp, x);
+                sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
+                sqrtWKfn = sqrtW*K_nf';
+                V = ldlsolve(L,sqrtWKfn);
+                Covf = K - sqrtWKfn'*V;
+              else
+                W = diag(W);
+                V = L\(sqrt(W)*K_nf');
+                Covf = K - V'*V;
+              end
             else
-                V = L*diag(W);
-                R = diag(W) - V'*V;
-                Covf = K - K_nf*(R*K_nf');
+              V = L*diag(W);
+              R = diag(W) - V'*V;
+              Covf = K - K_nf*(R*K_nf');
             end
           case 'EP'
             
             [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
-        
+            
             [K, C]=gp_trcov(gp,x);
             K = gp_trcov(gp, xt, predcf);
             ntest=size(xt,1);
@@ -564,33 +565,33 @@ else
             [n,nin] = size(x);
             
             if tautilde > 0
-                sqrttautilde = sqrt(tautilde);
-                Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
-                
-                if issparse(L)
-                    z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
-                else
-                    z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
-                end
-                Ef=K_nf*(nutilde-z);
+              sqrttautilde = sqrt(tautilde);
+              Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
+              
+              if issparse(L)
+                z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+              else
+                z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+              end
+              Ef=K_nf*(nutilde-z);
 
-                % Compute variance
-                if issparse(L)
-                    V = ldlsolve(L, Stildesqroot*K_nf');
-                    Covf = K - K_nf*(Stildesqroot*V);
-                else
-                    V = (L\Stildesqroot)*K_nf';
-                    Covf = K - V'*V;
-                end
+              % Compute variance
+              if issparse(L)
+                V = ldlsolve(L, Stildesqroot*K_nf');
+                Covf = K - K_nf*(Stildesqroot*V);
+              else
+                V = (L\Stildesqroot)*K_nf';
+                Covf = K - V'*V;
+              end
             else
-                z=tautilde.*(L'*(L*nutilde));
-                Ef=K_nf*(nutilde-z);
-                
-                if nargout > 1
-                    S = diag(tautilde);
-                    V = K_nf*S*L';
-                    Covf = K - (K_nf*S)*K_nf' + V*V';
-                end
+              z=tautilde.*(L'*(L*nutilde));
+              Ef=K_nf*(nutilde-z);
+              
+              if nargout > 1
+                S = diag(tautilde);
+                V = K_nf*S*L';
+                Covf = K - (K_nf*S)*K_nf' + V*V';
+              end
             end
         end
         
@@ -605,11 +606,11 @@ else
           case 'Laplace'
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
-                if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                    error('tstind (if provided) has to be of same lenght as x.')
-                end
+              if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
+              end
             else
-                tstind = [];
+              tstind = [];
             end
 
             u = gp.X_u;
@@ -630,16 +631,16 @@ else
             
             % if the prediction is made for training set, evaluate Lav also for prediction points
             if ~isempty(tstind)
-                [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-                K_fu = gp_cov(gp, x, u);
-                B=Luu\(K_fu');
-                Qv_ff=sum(B.^2)';
-                %Lav = zeros(size(La));
-                %Lav(tstind) = Kv_ff-Qv_ff;
-                Lav = Kv_ff-Qv_ff;            
-                Ef(tstind) = Ef(tstind) + Lav.*deriv;
+              [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+              K_fu = gp_cov(gp, x, u);
+              B=Luu\(K_fu');
+              Qv_ff=sum(B.^2)';
+              %Lav = zeros(size(La));
+              %Lav(tstind) = Kv_ff-Qv_ff;
+              Lav = Kv_ff-Qv_ff;            
+              Ef(tstind) = Ef(tstind) + Lav.*deriv;
             end
-       
+            
             % re-evaluate matrices with training components
             Kfu_tr = gp_cov(gp, x, u);
             Kuu_tr = gp_trcov(gp, u);
@@ -656,7 +657,7 @@ else
             A2 = Kuu_tr + B'*B2; A2=(A2+A2)/2;
             L2 = B2/chol(A2);
 
-                        
+            
             % NOTE!
             % This is done with full matrices at the moment. 
             % Needs to be rewritten.
@@ -666,7 +667,7 @@ else
             B2 = Luu\(K_nu');
             Lav_n = Knn_v - sum(B2.^2)';
             BL = B*L;
-                        
+            
             K_nf = B2'*B + diag(Lav);
             K = B2'*B2 + diag(Lav_n);
             C = B'*B + diag(Lav);
@@ -680,19 +681,19 @@ else
             predcov = chol(Covf)';
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
-          
+            
           case 'EP'
             [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
-                if ~isempty(tstind) && length(tstind) ~= size(x,1)
-                    error('tstind (if provided) has to be of same lenght as x.')
-                end
+              if ~isempty(tstind) && length(tstind) ~= size(x,1)
+                error('tstind (if provided) has to be of same lenght as x.')
+              end
             else
-                tstind = [];
+              tstind = [];
             end
-        
+            
             u = gp.X_u;
             m = size(u,1);
             
@@ -714,12 +715,12 @@ else
             
             % if the prediction is made for training set, evaluate Lav also for prediction points
             if ~isempty(tstind)
-                [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-                Luu = chol(K_uu)';
-                B=Luu\(K_fu');
-                Qv_ff=sum(B.^2)';
-                Lav = Kv_ff-Qv_ff;
-                Ef(tstind) = Ef(tstind) + Lav.*p;
+              [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+              Luu = chol(K_uu)';
+              B=Luu\(K_fu');
+              Qv_ff=sum(B.^2)';
+              Lav = Kv_ff-Qv_ff;
+              Ef(tstind) = Ef(tstind) + Lav.*p;
             end
             
             % NOTE!
@@ -732,9 +733,9 @@ else
             Knf = B2'*B;
             Knn = B2'*B2 + diag(kstarstar - sum(B2.^2)');
             if ~isempty(tstind)
-                Knf(tstind,:) = Knf(tstind,:) + diag(kstarstar(tstind) - sum(B.^2)');
+              Knf(tstind,:) = Knf(tstind,:) + diag(kstarstar(tstind) - sum(B.^2)');
             end
-                
+            
             Covf = Knn - Knf * ( diag(1./La) - L*L' ) * Knf';
             
             predcov = chol(Covf)';
@@ -770,9 +771,9 @@ else
             w_bu=zeros(length(xt),length(u));
             w_n=zeros(length(xt),1);
             for i=1:length(ind)
-                w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
-                K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
-                w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
+              w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*deriv(ind{i},:))', length(tstind{i}),1);
+              K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
+              w_n(tstind{i},:) = K_nf*deriv(ind{i},:);
             end
             
             Ef = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
@@ -783,12 +784,12 @@ else
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
             for i=1:length(ind)
-                La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
-                Lahat{i} = eye(size(La{i})) + La{i};
+              La{i} = diag(sqrtW(ind{i}))*La2{i}*diag(sqrtW(ind{i}));
+              Lahat{i} = eye(size(La{i})) + La{i};
             end
             sKfu = (repmat(sqrt(W),1,m).*K_fu);
             for i=1:length(ind)
-                iLasKfu(ind{i},:) = Lahat{i}\sKfu(ind{i},:);
+              iLasKfu(ind{i},:) = Lahat{i}\sKfu(ind{i},:);
             end
             A2 = K_uu + sKfu'*iLasKfu; A2=(A2+A2)/2;
             L2 = iLasKfu/chol(A2);
@@ -800,11 +801,11 @@ else
             Knf = B2'*B;
             C = -L2*L2';
             for i=1:length(ind)
-                La = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
-                Knn(ind{i},ind{i}) =  Knn(ind{i},ind{i}) + La;
-                Laa = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf) - B2(:,tstind{i})'*B(:,ind{i});
-                Knf(tstind{i},ind{i}) =  Knf(tstind{i},ind{i}) + Laa;
-                C(ind{i},ind{i}) =  C(ind{i},ind{i}) + inv(Lahat{i});
+              La = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
+              Knn(ind{i},ind{i}) =  Knn(ind{i},ind{i}) + La;
+              Laa = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf) - B2(:,tstind{i})'*B(:,ind{i});
+              Knf(tstind{i},ind{i}) =  Knf(tstind{i},ind{i}) + Laa;
+              C(ind{i},ind{i}) =  C(ind{i},ind{i}) + inv(Lahat{i});
             end
             C = diag(sqrtW)*C*diag(sqrtW);
             
@@ -814,11 +815,11 @@ else
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
 
-        
+            
           case 'EP'
             
             [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
-        
+            
             p = b';
 
             iKuuKuf = K_uu\K_fu';
@@ -826,14 +827,14 @@ else
             w_bu=zeros(length(xt),length(u));
             w_n=zeros(length(xt),1);
             for i=1:length(ind)
-                w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
-                K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
-                w_n(tstind{i},:) = K_nf*p(ind{i},:);
+              w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
+              K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);              % n x u
+              w_n(tstind{i},:) = K_nf*p(ind{i},:);
             end
             
             Ef = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
 
-        
+            
             % NOTE!
             % This is done with full matrices at the moment. 
             % Needs to be rewritten.
@@ -841,13 +842,13 @@ else
             Knf = B2'*B;
             C = -L*L';
             for i=1:length(ind)
-                La2 = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
-                Knn(ind{i},ind{i}) =  Knn(ind{i},ind{i}) + La2;
-                Laa = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf) - B2(:,tstind{i})'*B(:,ind{i});
-                Knf(tstind{i},ind{i}) =  Knf(tstind{i},ind{i}) + Laa;
-                C(ind{i},ind{i}) = C(ind{i},ind{i}) + inv(La{i});
+              La2 = gp_trcov(gp, xt(tstind{i},:), predcf) - B2(:,tstind{i})'*B2(:,tstind{i});
+              Knn(ind{i},ind{i}) =  Knn(ind{i},ind{i}) + La2;
+              Laa = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf) - B2(:,tstind{i})'*B(:,ind{i});
+              Knf(tstind{i},ind{i}) =  Knf(tstind{i},ind{i}) + Laa;
+              C(ind{i},ind{i}) = C(ind{i},ind{i}) + inv(La{i});
             end
-                
+            
             Covf = Knn - Knf * C * Knf';
             
             predcov = chol(Covf)';
@@ -872,37 +873,37 @@ else
         ncf = length(gp.cf);
         % Loop through all covariance functions
         for i = 1:ncf        
-            % Non-CS covariances
-            if ~isfield(gp.cf{i},'cs') 
-                cf1 = [cf1 i];
-                % If used for prediction
-                if ~isempty(find(predcf==i))
-                    predcf1 = [predcf1 i]; 
-                end
-                % CS-covariances
-            else
-                cf2 = [cf2 i];           
-                % If used for prediction
-                if ~isempty(find(predcf==i))
-                    predcf2 = [predcf2 i]; 
-                end
+          % Non-CS covariances
+          if ~isfield(gp.cf{i},'cs') 
+            cf1 = [cf1 i];
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+              predcf1 = [predcf1 i]; 
             end
+            % CS-covariances
+          else
+            cf2 = [cf2 i];           
+            % If used for prediction
+            if ~isempty(find(predcf==i))
+              predcf2 = [predcf2 i]; 
+            end
+          end
         end
         if isempty(predcf1) && isempty(predcf2)
-            predcf1 = cf1;
-            predcf2 = cf2;
+          predcf1 = cf1;
+          predcf2 = cf2;
         end
         
         % Determine the types of the covariance functions used
         % in making the prediction.
         if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
-            ptype = 1;
-            predcf2 = cf2;
+          ptype = 1;
+          predcf2 = cf2;
         elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
-            ptype = 2;
-            predcf1 = cf1;
+          ptype = 2;
+          predcf1 = cf1;
         else                                           % Both non-CS and CS covariances
-            ptype = 3;
+          ptype = 3;
         end
         
         K_fu = gp_cov(gp,x,u,predcf1);
@@ -916,7 +917,7 @@ else
         
         switch gp.latent_method
           case 'Laplace'
-           
+            
             
             [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
@@ -927,26 +928,26 @@ else
             % Calculate the predictive mean according to the type of
             % covariance functions used for making the prediction
             if ptype == 1
-                Ef = K_nu*(K_uu\(K_fu'*deriv));
+              Ef = K_nu*(K_uu\(K_fu'*deriv));
             elseif ptype == 2
-                Ef = Kcs_nf*deriv;
+              Ef = Kcs_nf*deriv;
             else 
-                Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;        
+              Ef = K_nu*(K_uu\(K_fu'*deriv)) + Kcs_nf*deriv;        
             end
             
             % evaluate also Lav if the prediction is made for training set
             if ~isempty(tstind)
-                [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
-                Luu = chol(K_uu)';
-                B=Luu\(K_fu');
-                Qv_ff=sum(B.^2)';
-                Lav = Kv_ff-Qv_ff;
+              [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
+              Luu = chol(K_uu)';
+              B=Luu\(K_fu');
+              Qv_ff=sum(B.^2)';
+              Lav = Kv_ff-Qv_ff;
             end
             
             % Add also Lav if the prediction is made for training set
             % and non-CS covariance function is used for prediction
             if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-                Ef(tstind) = Ef(tstind) + Lav.*deriv;
+              Ef(tstind) = Ef(tstind) + Lav.*deriv;
             end
             
             W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
@@ -970,7 +971,7 @@ else
             % of covariance functions used for making the prediction
             
             % NOTE! We form full matrices below. Needs to be rewritten so that at most nxm matrices are formed
-          
+            
             % Check results with full matrices    
             Lav_pr = Kv_ff-Qv_ff;
             B=Luu\(K_fu');
@@ -997,30 +998,30 @@ else
 
             p = b';
             ntest=size(xt,1);
-                
+            
             % Calculate the predictive mean according to the type of
             % covariance functions used for making the prediction
             if ptype == 1
-                Ef = K_nu*(K_uu\(K_fu'*p));
+              Ef = K_nu*(K_uu\(K_fu'*p));
             elseif ptype == 2
-                Ef = Kcs_nf*p;
+              Ef = Kcs_nf*p;
             else 
-                Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;        
+              Ef = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;        
             end
 
             % evaluate also Lav if the prediction is made for training set
             if ~isempty(tstind)
-                [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
-                Luu = chol(K_uu)';
-                B=Luu\(K_fu');
-                Qv_ff=sum(B.^2)';
-                Lav = Kv_ff-Qv_ff;
+              [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
+              Luu = chol(K_uu)';
+              B=Luu\(K_fu');
+              Qv_ff=sum(B.^2)';
+              Lav = Kv_ff-Qv_ff;
             end
-        
+            
             % Add also Lav if the prediction is made for training set
             % and non-CS covariance function is used for prediction
             if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-                Ef(tstind) = Ef(tstind) + Lav.*p;
+              Ef(tstind) = Ef(tstind) + Lav.*p;
             end
             
             
@@ -1033,7 +1034,7 @@ else
             k = gp_trvar(gp,xt,predcf1);
             Knn = B2'*B2 + diag(k - sum(B2.^2)') + Kcs_nn;
             if ~isempty(tstind)
-                Knf(tstind,:) = Knf(tstind,:) + diag(k(tstind) - sum(B.^2)');
+              Knf(tstind,:) = Knf(tstind,:) + diag(k(tstind) - sum(B.^2)');
             end
             
             Covf = Knn - Knf * ( inv(La) - L*L' ) * Knf';
@@ -1044,4 +1045,32 @@ else
             
         end
     end
+  end
+elseif iscell(gp)
+  % gp_ia or MCMC 
+  ngp=length(gp);
+  if isfield(gp{1},'ia_weight')
+    for i=1:length(gp)
+      gw(i)=gp{i}.ia_weight;
+    end
+  else
+    gw=ones(ngp,1);
+  end
+  gi=resampstr(gw,nsamp,1);
+  sampft=[];sampyt=[];
+  for i = 1:ngp
+    nsampi=sum(gi==i);
+    if nsampi>0
+      if nargout<2
+        tsampft = gp_rnd(gp{i}, x, y, xt, 'nsamp', nsampi, ...
+                         'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
+        sampft=[sampft tsampft];
+      else
+        [tsampft, tsampyt] = gp_rnd(gp{i}, x, y, xt, 'nsamp', nsampi, ...
+                                    'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
+        sampft=[sampft tsampft];
+        sampyt=[sampyt tsampyt];
+      end
+    end
+  end
 end
