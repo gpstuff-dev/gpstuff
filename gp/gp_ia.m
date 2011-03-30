@@ -228,61 +228,70 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             % Repeat until there are no parameters with high enough
             % density that are not checked yet
             % Loop through the dimensions
-            for i1 = 1 : nParam
+            for i1 = 1:nParam
               % One step to the positive direction of dimension i1
               pos = zeros(1,nParam); pos(i1)=1;
-              
-              % Check if the neighbour in the direction of pos is
+              % Check if the neighbour in the positive direction is
               % already checked
               if ~any(sum(abs(repmat(candidates(1,:)+pos,size(checked,1),1)-checked),2)==0)
                 % The parameters in the neighbour
-                % p_th(end+1) = -feval(fh_e,w_p,gp,x,y);
                 w_p = w + candidates(1,:)*z + z(i1,:);
-                th(end+1,:) = w_p;
                 
+                % log density
                 gp = gp_unpak(gp,w_p);
-                gp_array{end+1} = gp;
-                
-                % density
-                p_th(end+1) = -feval(fh_e,w_p,gp,x,y,options);
-                if ~isempty(xt)
-                  % predictions if needed
-                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
-                      feval(fh_p,gp,x,y,xt,options);
-                end
-                
-                % If the density is high enough, put the location in to the
-                % candidates list. The neighbours of that
-                % location will be studied lated
-                if (p_th(1)-p_th(end))<opt.threshold
-                  candidates(end+1,:) = candidates(1,:)+pos;
+                ptest = -feval(fh_e,w_p,gp,x,y,options);
+                if ~isnan(ptest)
+                  % use value only if not NaN
+                  p_th(end+1) = ptest;
+                  th(end+1,:) = w_p;
+                  gp_array{end+1} = gp;
+                  if ~isempty(xt)
+                    % predictions if needed
+                    [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
+                        feval(fh_p,gp,x,y,xt,options);
+                  end
+                  % If the density is high enough, put the location in to the
+                  % candidates list. The neighbours of that
+                  % location will be studied later
+                  if (p_th(1)-p_th(end))<opt.threshold
+                    candidates(end+1,:) = candidates(1,:)+pos;
+                  end
                 end
                 
                 % Put the recently studied point to the checked list
                 checked(end+1,:) = candidates(1,:)+pos;
               end
               
+              % One step to the negative direction of dimension i1
               neg = zeros(1,nParam); neg(i1)=-1;
+              % Check if the neighbour in the negative direction is
+              % already checked
               if ~any(sum(abs(repmat(candidates(1,:)+neg,size(checked,1),1)-checked),2)==0)
+                % The parameters in the neighbour
                 w_n = w + candidates(1,:)*z - z(i1,:);
-                th(end+1,:) = w_n;
                 
+                % log density
                 gp = gp_unpak(gp,w_n);
-                gp_array{end+1} = gp;
+                ptest = -feval(fh_e,w_n,gp,x,y,options);
+                if ~isnan(ptest)
+                  % use value only if not NaN
+                  p_th(end+1) = ptest;
+                  th(end+1,:) = w_n;
+                  gp_array{end+1} = gp;
+                  if ~isempty(xt)
+                    % predictions if needed
+                    [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
+                        feval(fh_p,gp,x,y,xt,options);
+                  end
                 
-                % density
-                p_th(end+1) = -feval(fh_e,w_n,gp,x,y,options);
-                if ~isempty(xt)
-                  % predictions if needed
-                  [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
-                      feval(fh_p,gp,x,y,xt,options);
+                  if (p_th(1)-p_th(end))<opt.threshold
+                    candidates(end+1,:) = candidates(1,:)+neg;
+                  end
                 end
-                
-                if (p_th(1)-p_th(end))<opt.threshold
-                  candidates(end+1,:) = candidates(1,:)+neg;
-                end
-                checked(end+1,:) = candidates(1,:)+neg;
               end
+              
+              % Put the recently studied point to the checked list
+              checked(end+1,:) = candidates(1,:)+neg;
             end
             candidates(1,:)=[];
           end

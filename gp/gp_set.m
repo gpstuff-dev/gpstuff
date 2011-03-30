@@ -73,7 +73,7 @@ function gp = gp_set(varargin)
 %        maxiter      - Maximum number of EP iterations. The default is 20.
 %        tol          - Termination tolerance on logZ. The default is 1e-6.
 %        parallel     - use parallel updating of site parameters: 
-%                       'on' (default) or 'off'
+%                       'on' or 'off' (default) 
 %        
 %    The additional fields needed with mean functions
 %      meanf        - Single mean function structure or cell array of 
@@ -316,7 +316,7 @@ function gp = gp_set(varargin)
           ipep.FunctionName = 'GP_SET - latent method MCMC options';
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep.addParamValue('parallel','on', @(x) ischar(x));    % default on
+          ipep.addParamValue('parallel','off', @(x) ischar(x));    % default off
           ipep.parse(latent_opt);
           if init || ~ismember('maxiter',ipep.UsingDefaults) || ~isfield(gp,'latent_opt')
             gp.latent_opt.maxiter = ipep.Results.maxiter;

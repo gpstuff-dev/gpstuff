@@ -27,15 +27,14 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %  See also
 %    GP_PRED, GP_PAK, GP_UNPAK
 
-%  Internal description
+%  Internal comments
 %    - sampling with FIC, PIC and CS+FIC forms full nxn matrix and
-%       works only when sampling for the training inputs.
+%       works only when sampling for the training inputs
 %    - The code is not optimized
-%    - The reason for these is that the function is used with
-%      sparse GPs only in gp_dic
 
-% Copyright (c) 2008      Jouni Hartikainen
 % Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2008      Jouni Hartikainen
+% Copyright (c) 2011      Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
