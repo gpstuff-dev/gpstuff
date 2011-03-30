@@ -354,11 +354,11 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
 pn = prior_logunif();
-lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.01, 'sigma2_prior', pn);
+lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.1, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
-            'latent_method', 'EP');
+            'latent_method', 'EP','latent_opt',struct('parallel','off'));
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 
