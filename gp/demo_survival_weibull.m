@@ -19,10 +19,12 @@
 %    The inference is conducted via EP or Laplace, where we find
 %    Gaussian approximation for p(f| th, data), where th is the
 %    maximum a posterior (MAP) estimate for the parameters.
+%    
 %    Example data set is leukemia survival data in Northwest England
 %    presented in (Henderson, R., Shimakura, S., and Gorst, D. (2002).
 %    Modeling spatial variation in leukemia survival data. Journal of the
-%    American Statistical Association, 97:965–972).
+%    American Statistical Association, 97:965–972). Data set was downloaded
+%    from http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
 %
 %  See also  DEMO_SPATIAL1
 
