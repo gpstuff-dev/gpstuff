@@ -34,6 +34,9 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
 %    GP = GPEP_E('init', GP) takes a GP structure GP and
 %    initializes required fields for the EP algorithm.
 %
+%    GP = GPEP_E('clearcache', GP) takes a GP structure GP and
+%    cleares the internal cache stored in the nested function workspace
+%
 %    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i]
 %      = GPEP_E(w, gp, x, y, options)
 %    returns many useful quantities produced by EP algorithm.
@@ -41,7 +44,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
   
 % Copyright (c) 2007  Jaakko Riihim�ki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
-% Copyright (c) 2010 Heikki Peura, Aki Vehtari
+% Copyright (c) 2010 Heikki Peura
+% Copyright (c) 2010-2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -65,28 +69,18 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
   z=ip.Results.z;
   
   if strcmp(w, 'init')
-    % intialize saved values
-    w0 = NaN;
-    e0=[];
-    edata0= inf;
-    eprior0=[];
-    nutilde0 = zeros(size(y));
-    tautilde0 = zeros(size(y));
-    L0 = [];
-    myy=zeros(size(y));
-    n0 = size(x,1);
-    La20 = [];
-    b0 = 0;
-    Z_i0 = [];
-    muvec_i0 = [];
-    sigm2vec_i0 = [];
-    myy0 = zeros(size(y));
-    datahash0=0;
+    % intialize cache
+    ch = [];
     
     % return function handle to the nested function ep_algorithm
     % this way each gp has its own peristent memory for EP
     gp.fh.e = @ep_algorithm;
     e = gp;
+    % remove clutter from the nested workspace
+    clear w gp varargin ip x y z
+  elseif strcmp(w, 'clearcache')
+    % clear the cache
+    feval(gp.fh.e, 'clearcache');
   else
     % call ep_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for EP
@@ -95,27 +89,31 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
 
   function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i] = ep_algorithm(w, gp, x, y, z)
 
+  if strcmp(w, 'clearcache')
+    ch=[];
+    return
+  end
   % check whether saved values can be used
     if isempty(z)
       datahash=hash_sha512([x y]);
     else
       datahash=hash_sha512([x y z]);
     end
-    if all(size(w)==size(w0)) && all(abs(w-w0)<1e-8) && isequal(datahash,datahash0)
+    if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
       % The covariance function parameters or data haven't changed
       % so we can return the energy and the site parameters that are saved
-      e = e0;
-      edata = edata0;
-      eprior = eprior0;
-      nutilde = nutilde0;
-      myy = myy0;
-      tautilde = tautilde0;
-      L = L0;
-      La2 = La20;
-      b = b0;
-      Z_i = Z_i0;
-      muvec_i = muvec_i0;
-      sigm2vec_i = sigm2vec_i0;
+      qq=functions(gp.fh.e);qqq=qq.workspace{:};
+      e = ch.e;
+      edata = ch.edata;
+      eprior = ch.eprior;
+      tautilde = ch.tautilde;
+      nutilde = ch.nutilde;
+      L = ch.L;
+      La2 = ch.La2;
+      b = ch.b;
+      muvec_i = ch.muvec_i;
+      sigm2vec_i = ch.sigm2vec_i;
+      Z_i = ch.Z_i;
     else
       % The parameters or data have changed since
       % the last call for gpep_e. In this case we need to
@@ -1309,23 +1307,22 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
       end
 
       e = edata + eprior;
-
-      w0 = w;
-      e0 = e;
-      edata0 = edata;
-      eprior0 = eprior;
-      nutilde0 = nutilde;
-      tautilde0 = tautilde;
-      myy0 = myy;
-      L0 = L;
-      n0 = size(x,1);
-      La20 = La2;
-      b0 = b;
       Z_i = M0(:);
-      Z_i0 = Z_i;
-      muvec_i0 = muvec_i;
-      sigm2vec_i0 = sigm2vec_i;
-      datahash0=datahash;
+
+      % store values to the cache
+      ch.w = w;
+      ch.e = e;
+      ch.edata = edata;
+      ch.eprior = eprior;
+      ch.tautilde = tautilde;
+      ch.nutilde = nutilde;
+      ch.L = L;
+      ch.La2 = La2;
+      ch.b = b;
+      ch.muvec_i = muvec_i;
+      ch.sigm2vec_i = sigm2vec_i;
+      ch.Z_i = Z_i;
+      ch.datahash=datahash;
       
       global iter_lkm 
       iter_lkm=iter;
