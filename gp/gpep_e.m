@@ -102,7 +102,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
     if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
       % The covariance function parameters or data haven't changed
       % so we can return the energy and the site parameters that are saved
-      qq=functions(gp.fh.e);qqq=qq.workspace{:};
       e = ch.e;
       edata = ch.edata;
       eprior = ch.eprior;
