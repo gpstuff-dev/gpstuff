@@ -62,11 +62,13 @@ nsamp=ip.Results.nsamp;
 
 tn = size(x,1);
 
-if isstruct(gp)     % Single GP or MCMC solution
-  if isfield(gp.lik.fh,'trcov')
+if isstruct(gp) && numel(gp.jitterSigma2)==1
+  % Single GP
+  if isfield(gp.lik.fh,'trcov') || isfield(gp, 'latentValues')
     % ===================================
-    % Gaussian likelihood
+    % Gaussian likelihood or MCMC with latent values
     % ===================================
+    
     % Evaluate this if sparse model is used
     switch gp.type
       case 'FULL'
@@ -586,11 +588,9 @@ if isstruct(gp)     % Single GP or MCMC solution
               z=tautilde.*(L'*(L*nutilde));
               Ef=K_nf*(nutilde-z);
               
-              if nargout > 1
-                S = diag(tautilde);
-                V = K_nf*S*L';
-                Covf = K - (K_nf*S)*K_nf' + V*V';
-              end
+              S = diag(tautilde);
+              V = K_nf*S*L';
+              Covf = K - (K_nf*S)*K_nf' + V*V';
             end
         end
         
@@ -1045,27 +1045,62 @@ if isstruct(gp)     % Single GP or MCMC solution
         end
     end
   end
+elseif isstruct(gp) && numel(gp.jitterSigma2)>1
+  % MCMC
+  nmc=size(gp.jitterSigma2,1);
+  % resample nsamp cases from nmc samples
+  gi=resampstr(ones(nmc,1),nsamp,1);
+  sampft=[];sampyt=[];
+  for i1=1:nmc
+    nsampi=sum(gi==i1);
+    if nsampi>0
+      Gp = take_nth(gp,i1);
+      if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
+        Gp = rmfield(Gp,'latent_method');
+      end
+      if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
+        % Non-Gaussian likelihood. The latent variables should be used in
+        % place of observations
+        y = gp.latentValues';
+      else 
+        % Use repmat'ed observations for symmetry
+        y = repmat(y,1,nmc);
+      end
+      if nargout<2
+        tsampft = gp_rnd(Gp, x, y(:,i1), xt, 'nsamp', nsampi, ...
+                         'z', z, 'zt', zt, 'predcf', predcf, ...
+                         'tstind', tstind);
+        sampft=[sampft tsampft];
+      else
+        [tsampft, tsampyt] = gp_rnd(Gp, x, y(:,i1), xt, 'nsamp', ...
+                                    nsampi, 'z', z, 'zt', zt, ...
+                                    'predcf', predcf, 'tstind', tstind);
+        sampft=[sampft tsampft];
+        sampyt=[sampyt tsampyt];
+      end
+    end
+  end
 elseif iscell(gp)
-  % gp_ia or MCMC 
+  % gp_ia
   ngp=length(gp);
   if isfield(gp{1},'ia_weight')
-    for i=1:length(gp)
-      gw(i)=gp{i}.ia_weight;
+    for i1=1:length(gp)
+      gw(i1)=gp{i1}.ia_weight;
     end
   else
     gw=ones(ngp,1);
   end
   gi=resampstr(gw,nsamp,1);
   sampft=[];sampyt=[];
-  for i = 1:ngp
-    nsampi=sum(gi==i);
+  for i1 = 1:ngp
+    nsampi=sum(gi==i1);
     if nsampi>0
       if nargout<2
-        tsampft = gp_rnd(gp{i}, x, y, xt, 'nsamp', nsampi, ...
+        tsampft = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
                          'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
         sampft=[sampft tsampft];
       else
-        [tsampft, tsampyt] = gp_rnd(gp{i}, x, y, xt, 'nsamp', nsampi, ...
+        [tsampft, tsampyt] = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
                                     'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
         sampft=[sampft tsampft];
         sampyt=[sampyt tsampyt];

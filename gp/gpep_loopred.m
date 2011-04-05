@@ -94,7 +94,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
     % different models
     pft = zeros(size(Eft_grid,2),501);
     for j = 1 : size(Eft_grid,2)
-        pft(j,:) = sum(normpdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
+        pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
     end
 
     % Normalize distributions

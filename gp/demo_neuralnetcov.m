@@ -100,7 +100,7 @@ title('GP (neural network) predictions and the data points');
 
 % create a 1D toy data
 x=rand(100,1)*4-2;
-y=normpdf(4*x)+0.05*randn(size(x));
+y=norm_pdf(4*x)+0.05*randn(size(x));
 [n, nin] = size(x);
 
 gpcf1 = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1);
@@ -136,7 +136,7 @@ h2=plot(xgrid, Eyt_map, 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 % true function
-h4=plot(xgrid, normpdf(4*xgrid), 'color', 'r', 'linewidth', 2);
+h4=plot(xgrid, norm_pdf(4*xgrid), 'color', 'r', 'linewidth', 2);
 legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
 title('GP (squared exponential) predictions and the data points');
 
@@ -147,7 +147,7 @@ h2=plot(xgrid, Eyt_map2, 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 % true function
-h4=plot(xgrid, normpdf(4*xgrid), 'color', 'r', 'linewidth', 2);
+h4=plot(xgrid, norm_pdf(4*xgrid), 'color', 'r', 'linewidth', 2);
 legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
 title('GP (neural network) predictions and the data points');
 

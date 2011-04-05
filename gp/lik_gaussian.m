@@ -8,7 +8,7 @@ function lik = lik_gaussian(varargin)
 %    parameters are set to default values.
 %
 %    LIK = LIK_GAUSSIAN(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    modify a likelihhod function structure with the named
+%    modify a likelihood function structure with the named
 %    parameters altered with the specified values.
 %
 %    Parameters for Gaussian likelihood function [default]
@@ -220,6 +220,7 @@ function lik = lik_gaussian(varargin)
   function C = lik_gaussian_trcov(lik, x)
   %LIK_GAUSSIAN_TRCOV  Evaluate training covariance matrix
   %                    corresponding to Gaussian noise
+  %
   %  Description
   %    C = LIK_GAUSSIAN_TRCOV(GP, TX) takes in covariance function
   %    of a Gaussian process GP and matrix TX that contains

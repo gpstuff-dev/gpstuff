@@ -100,7 +100,7 @@ function lik = lik_probit(varargin)
       error('lik_probit: The class labels have to be {-1,1}')
     end
 
-    ll = sum(log(normcdf(y.*f)));
+    ll = sum(log(norm_cdf(y.*f)));
   end
 
 
@@ -122,7 +122,7 @@ function lik = lik_probit(varargin)
     
     switch param
       case 'latent'
-        llg = y.*normpdf(f)./normcdf(y.*f);
+        llg = y.*norm_pdf(f)./norm_cdf(y.*f);
     end
   end
 
@@ -149,7 +149,8 @@ function lik = lik_probit(varargin)
     switch param
       case 'latent'
         z = y.*f;
-        llg2 = -(normpdf(f)./normcdf(z)).^2 - z.*normpdf(f)./normcdf(z);
+        z2 = norm_pdf(f)./norm_cdf(z);
+        llg2 = -z2.^2 - z.*z2;
     end
   end
   
@@ -172,7 +173,7 @@ function lik = lik_probit(varargin)
     
     switch param
       case 'latent'
-        z2 = normpdf(f)./normcdf(y.*f);
+        z2 = norm_pdf(f)./norm_cdf(y.*f);
         llg3 = 2.*y.*z2.^3 + 3.*f.*z2.^2 - z2.*(y-y.*f.^2);
     end
   end
@@ -196,10 +197,10 @@ function lik = lik_probit(varargin)
       error('lik_probit: The class labels have to be {-1,1}')
     end
     
-    m_0 = normcdf(y(i1).*myy_i./sqrt(1+sigm2_i));
-    zi=y(i1)*myy_i/sqrt(1+sigm2_i);
-    normp_zi = normpdf(zi);
-    normc_zi = normcdf(zi);
+    zi=y(i1).*myy_i./sqrt(1+sigm2_i);
+    m_0 = norm_cdf(zi);
+    normp_zi = norm_pdf(zi);
+    normc_zi = m_0;
     muhati1=myy_i+(y(i1)*sigm2_i*normp_zi)/(normc_zi*sqrt(1+sigm2_i));
     sigm2hati1=sigm2_i-(sigm2_i^2*normp_zi)/((1+sigm2_i)*normc_zi)*(zi+normp_zi/normc_zi);
     m_1 = muhati1;
@@ -224,7 +225,7 @@ function lik = lik_probit(varargin)
   %  See also 
   %    GPEP_PRED, GPLA_PRED, GPMC_PRED
 
-    py1 = normcdf(Ef./sqrt(1+Varf));
+    py1 = norm_cdf(Ef./sqrt(1+Varf));
     Ey = 2*py1 - 1;
 
     Vary = 1-Ey.^2;
@@ -233,7 +234,7 @@ function lik = lik_probit(varargin)
       if ~isempty(find(abs(yt)~=1))
         error('lik_probit: The class labels have to be {-1,1}')
       end
-      py = normcdf(Ef.*yt./sqrt(1+Varf));    % Probability p(y_new)
+      py = norm_cdf(Ef.*yt./sqrt(1+Varf));    % Probability p(y_new)
     end
   end
 
@@ -247,7 +248,7 @@ function lik = lik_probit(varargin)
   %     See also
   %     LIK_PROBIT_LL, LIK_PROBIT_PREDY
   
-    p = normcdf(f);
+    p = norm_cdf(f);
   end
 
   function reclik = lik_probit_recappend(reclik, ri, lik)

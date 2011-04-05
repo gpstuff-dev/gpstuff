@@ -275,9 +275,9 @@ function lik = lik_t(varargin)
   %  Description        
   %    LLG2 = LIK_T_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, observations Y, and latent values F. Returns
-  %    the hessian of log likelihood with respect to PARAM. At the
+  %    the Hessian of log likelihood with respect to PARAM. At the
   %    moment PARAM can be only 'latent'. LLG2 is a vector with
-  %    diagonal elements of the hessian matrix (off diagonals are
+  %    diagonal elements of the Hessian matrix (off diagonals are
   %    zero).
   %
   %  See also
@@ -661,13 +661,13 @@ function lik = lik_t(varargin)
       %%% With quadrature
       ci = sqrt(Varf(i1));
 
-      F = @(x) x.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+      F = @(x) x.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
       Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
       
-      F2 = @(x) (nu./(nu-2).*sigma2).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+      F2 = @(x) (nu./(nu-2).*sigma2).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
       EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
       
-      F3 = @(x) x.^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+      F3 = @(x) x.^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
       VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
     end
     Vary = EVary + VarEy;

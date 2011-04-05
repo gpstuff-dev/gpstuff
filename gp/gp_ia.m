@@ -671,7 +671,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     % different models
     pf = zeros(size(Ef_grid,2),501);
     for j = 1 : size(Ef_grid,2)
-      pf(j,:) = sum(normpdf(repmat(ff(j,:),size(Ef_grid,1),1), repmat(Ef_grid(:,j),1,size(ff,2)), repmat(sqrt(Varf_grid(:,j)),1,size(ff,2))).*repmat(P_TH,1,size(ff,2)));
+      pf(j,:) = sum(norm_pdf(repmat(ff(j,:),size(Ef_grid,1),1), repmat(Ef_grid(:,j),1,size(ff,2)), repmat(sqrt(Varf_grid(:,j)),1,size(ff,2))).*repmat(P_TH,1,size(ff,2)));
     end
     
     % Normalize distributions
@@ -719,7 +719,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 % $$$                 for i3 = 1:floor(size(Ef_grid,1)./2)
 % $$$                     pf2 = zeros(size(Ef_grid,2),501);
 % $$$                     for j = 1 : size(Ef_grid,2)
-% $$$                         pf2(j,:) = sum(normpdf(repmat(ff(j,:),size(Ef_grid,1)-i3,1), repmat(Ef_grid(1:end-i3,j),1,size(ff,2)), repmat(sqrt(Varf_grid(1:end-i3,j)),1,size(ff,2))).*repmat(P_TH(1:end-i3)./sum(P_TH(1:end-i3)),1,size(ff,2)));
+% $$$                         pf2(j,:) = sum(norm_pdf(repmat(ff(j,:),size(Ef_grid,1)-i3,1), repmat(Ef_grid(1:end-i3,j),1,size(ff,2)), repmat(sqrt(Varf_grid(1:end-i3,j)),1,size(ff,2))).*repmat(P_TH(1:end-i3)./sum(P_TH(1:end-i3)),1,size(ff,2)));
 % $$$                     end
 % $$$
 % $$$

@@ -38,7 +38,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %      tstindex   - k-fold CV test indices. A cell array with k
 %                   fields each containing index vector for
 %                   respective test set.
-%      display    - defines if messages are displayed. Default is 'true'.
+%      display    - defines if messages are displayed. 
+%                   - 'off' displays no output
+%                   - 'on' (default) gives some output  
+%                   - 'iter' displays output at each iteration
 %      save_results
 %                 - defines if detailed results are stored 'false'
 %                   (default) or 'true'. If 'true' gp_kfcv stores the
@@ -188,9 +191,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   ip.addParamValue('opt', struct(), @isstruct)
   ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
   ip.addParamValue('rstream', 1, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-  ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))
-  ip.addParamValue('tstindex', [], @(x) ~isempty(x) || iscell(x))
-  ip.addParamValue('display', true)
+  ip.addParamValue('trindex', [], @(x) isempty(x) || iscell(x))
+  ip.addParamValue('tstindex', [], @(x) isempty(x) || iscell(x))
+  ip.addParamValue('display', 'on', @(x) islogical(x) || ...
+                   ismember(x,{'on' 'off' 'iter'}))
   ip.addParamValue('save_results', false, @(x) islogical(x))
   ip.addParamValue('folder', [], @(x) ischar(x) )
   ip.parse(gp, x, y, varargin{:});
@@ -264,9 +268,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   cvws=[];
   trw=[];
   % loop over the crossvalidation sets
+  if ismember(display,{'on','fold'})
+    fprintf('\n Evaluating the CV utility\n')
+  end
   for i=1:length(trindex)
 
-    if (display>=0)
+    if isequal(display,'fold')
       fprintf('The CV-iteration number: %d \n', i)
     end
 
@@ -432,7 +439,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
 
     % Evaluate the training utility
-    if display
+    if ismember(display,{'on','fold'})
       fprintf('\n Evaluating the training utility \n')
     end
 
@@ -514,7 +521,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       'mabs_cv','Var_lpd_cv', 'Var_rmse_cv', 'Var_abs_cv', 'trindex', 'tstindex', 'lpd_cvtr', 'rmse_cvtr',...
       'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'mlpd_ccv', 'mrmse_ccv', 'mabs_ccv', 'cpu_time', 'cvpreds');
 
-    if display
+    if ismember(display,{'on','fold'})
       fprintf('The results have been saved in the folder:\n %s/%s \n', parent_folder, folder);
     end
 

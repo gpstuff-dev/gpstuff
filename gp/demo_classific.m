@@ -249,9 +249,9 @@ hist(sf1,20);
 h1=get(gca,'Children');
 hold on
 x_in = min(sf1)-2:0.1:max(sf1)+4;
-ff = normpdf(x_in, Eft_la(apu1), sqrt(Varft_la(apu1)));
+ff = norm_pdf(x_in, Eft_la(apu1), sqrt(Varft_la(apu1)));
 h2=plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2);
-ff = normpdf(x_in, Eft_ep(apu1), sqrt(Varft_ep(apu1)));
+ff = norm_pdf(x_in, Eft_ep(apu1), sqrt(Varft_ep(apu1)));
 h3=plot(x_in, max(N)/max(ff)*ff, 'r', 'lineWidth', 2);
 set(gca, 'Ytick', [])
 legend([h1 h2 h3],'MCMC','Laplace','EP')
@@ -264,9 +264,9 @@ hist(sf2,20)
 h1=get(gca,'Children');
 hold on
 x_in = min(sf2)-2:0.1:max(sf2)+2;
-ff = normpdf(x_in, Eft_la(apu2), sqrt(Varft_la(apu2)));
+ff = norm_pdf(x_in, Eft_la(apu2), sqrt(Varft_la(apu2)));
 h2=plot(x_in, max(N)/max(ff)*ff, 'g', 'lineWidth', 2);
-ff = normpdf(x_in, Eft_ep(apu2), sqrt(Varft_ep(apu2)));
+ff = norm_pdf(x_in, Eft_ep(apu2), sqrt(Varft_ep(apu2)));
 h3=plot(x_in, max(N)/max(ff)*ff, 'r', 'lineWidth', 2);
 set(gca, 'Ytick', [])
 legend([h1 h2 h3],'MCMC','Laplace','EP')
@@ -346,9 +346,9 @@ xlim([-2 10])
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
 % $$$ x_in = min(sf)-2:0.1:max(sf)+4;
-% $$$ ff = normpdf(x_in, Ef_la(apu1), sqrt(Varf_la(apu1)));
+% $$$ ff = norm_pdf(x_in, Ef_la(apu1), sqrt(Varf_la(apu1)));
 % $$$ plot(x_in, max(N)/max(ff)*ff, 'k--', 'lineWidth', 2)
-% $$$ ff = normpdf(x_in, Ef_ep(apu1), sqrt(Varf_ep(apu1)));
+% $$$ ff = norm_pdf(x_in, Ef_ep(apu1), sqrt(Varf_ep(apu1)));
 % $$$ plot(x_in, max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
 % $$$ %ylim([0 105])
 % $$$ set(gca, 'Ytick', [])
@@ -361,9 +361,9 @@ xlim([-2 10])
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
 % $$$ x_in = min(sf2)-2:0.1:max(sf2)+2;
-% $$$ ff = normpdf(x_in, Ef_la(apu2), sqrt(Varf_la(apu2)));
+% $$$ ff = norm_pdf(x_in, Ef_la(apu2), sqrt(Varf_la(apu2)));
 % $$$ plot(x_in, max(N)/max(ff)*ff, 'k--', 'lineWidth', 2)
-% $$$ ff = normpdf(x_in, Ef_ep(apu2), sqrt(Varf_ep(apu2)));
+% $$$ ff = norm_pdf(x_in, Ef_ep(apu2), sqrt(Varf_ep(apu2)));
 % $$$ plot(x_in, max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
 % $$$ %ylim([0 105])
 % $$$ set(gca, 'Ytick', [])

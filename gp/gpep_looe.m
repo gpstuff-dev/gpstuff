@@ -31,9 +31,6 @@ function eloo = gpep_looe(w, gp, x, y, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-gp=gp_unpak(gp, w);
-ncf = length(gp.cf);
-n=length(x);
 
 ip=inputParser;
 ip.FunctionName = 'GPEP_LOOE';
@@ -46,5 +43,6 @@ ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
 
-[~,~,~,~,~,~,~,~,~,~,Z_i] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+gp=gp_unpak(gp, w);
+[~,~,~,~,~,~,~,~,~,~,Z_i] = gpep_e(w, gp, x, y, 'z', z);
 eloo=-mean(log(Z_i));

@@ -131,9 +131,9 @@ function lik = lik_multinom(varargin)
   %  Description        
   %    LLG2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
   %    structure LIK, class labels Y, and latent values F. Returns
-  %    the hessian of the log likelihood with respect to PARAM. At
+  %    the Hessian of the log likelihood with respect to PARAM. At
   %    the moment PARAM can be only 'latent'. LLG2 is a vector with
-  %    diagonal elements of the hessian matrix (off diagonals are
+  %    diagonal elements of the Hessian matrix (off diagonals are
   %    zero).
   %
   %  See also

@@ -476,7 +476,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_pred(gp, x, y, xt, varargin)
             for i1=1:ntest
                 switch gp.lik.type
                   case 'Probit'
-                    p1(i1,1)=normcdf(Eft(i1,1)/sqrt(1+Varft(i1))); % Probability p(y_new=1)
+                    p1(i1,1)=norm_cdf(Eft(i1,1)/sqrt(1+Varft(i1))); % Probability p(y_new=1)
                   case 'Poisson'
                     p1 = NaN;
                 end

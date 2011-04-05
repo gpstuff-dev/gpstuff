@@ -54,6 +54,7 @@ function lik = lik_binomial(varargin)
     lik.fh.llg3 = @lik_binomial_llg3;
     lik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
     lik.fh.predy = @lik_binomial_predy;
+    lik.fh.invlink = @lik_binomial_invlink;
     lik.fh.recappend = @lik_binomial_recappend;
   end
 
@@ -153,10 +154,10 @@ function lik = lik_binomial(varargin)
   %  Description        
   %    LLG2 = LIK_BINOMIAL_LLG2(LIK, Y, F, PARAM) takes a
   %    likelihood structure LIK, succes counts Y, numbers of trials
-  %    Z, and latent values F. Returns the hessian of the log
+  %    Z, and latent values F. Returns the Hessian of the log
   %    likelihood with respect to PARAM. At the moment PARAM can be
   %    only 'latent'. G2 is a vector with diagonal elements of the
-  %    hessian matrix (off diagonals are zero).
+  %    Hessian matrix (off diagonals are zero).
   %
   %  See also
   %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, GPLA_E
@@ -347,23 +348,36 @@ function lik = lik_binomial(varargin)
     
     for i1=1:nt
       ci = sqrt(Varf(i1));
-      F  = @(x)zt(i1)./(1+exp(-x)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+      F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
       Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
       
-      F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+      F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
       EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
       
-      F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+      F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
       VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
       
       if nargout > 2
         %bin_cc=exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1));
-        %F  = @(x)bin_cc.*(1./(1+exp(-x))).^yt(i1).*(1-(1./(1+exp(-x)))).^(zt(i1)-yt(i1)).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
-        F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*normpdf(x,Ef(i1),sqrt(Varf(i1)));
+        %F  = @(x)bin_cc.*(1./(1+exp(-x))).^yt(i1).*(1-(1./(1+exp(-x)))).^(zt(i1)-yt(i1)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
         Py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
       end
     end
     Vary = EVary+VarEy;
+  end
+  
+  function p = lik_binomial_invlink(lik, f, z)
+  %LIK_BINOMIAL_INVLINK  Returns values of inverse link function
+  %             
+  %  Description 
+  %    P = LIK_BINOMIAL_INVLINK(LIK, F) takes a likelihood structure LIK and
+  %    latent values F and returns the values of inverse link function P.
+  %
+  %     See also
+  %     LIK_BINOMIAL_LL, LIK_BINOMIAL_PREDY
+  
+    p = logitinv(f).*z;
   end
   
   function reclik = lik_binomial_recappend(reclik, ri, lik)

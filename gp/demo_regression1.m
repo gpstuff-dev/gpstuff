@@ -282,7 +282,7 @@ subplot(1,2,1)
 hist(sf)
 hold on
 plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
-ff = normpdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
+ff = norm_pdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
 plot(x_ia(100,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
 set(gca, 'Ytick', [])
 title('p(f|D) at input location (-1.6, 0.7)');
@@ -293,7 +293,7 @@ subplot(1,2,2)
 hist(sf2)
 hold on
 plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
-ff = normpdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
+ff = norm_pdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
 plot(x_ia(400,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
 set(gca, 'Ytick', [])
 title('p(f|D) at input location (-0.8, 1.1)');
@@ -316,7 +316,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
 % $$$ plot(x_ia(100,:), max(N)/max(fx_ia(100,:))*fx_ia(100,:), 'k')
-% $$$ ff = normpdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
+% $$$ ff = norm_pdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
 % $$$ plot(x_ia(100,:), max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
 % $$$ set(gca, 'Ytick', [])
 % $$$ xlim([0 1])
@@ -329,7 +329,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
 % $$$ plot(x_ia(400,:), max(N)/max(fx_ia(400,:))*fx_ia(400,:), 'k')
-% $$$ ff = normpdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
+% $$$ ff = norm_pdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
 % $$$ plot(x_ia(400,:), max(N)/max(ff)*ff, 'k', 'lineWidth', 2)
 % $$$ set(gca, 'Ytick', [])
 % $$$ xlim([-1.2 -0.5])

@@ -122,16 +122,16 @@ function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
     end
 
     if nargout > 4 && isempty(yt)
-        error('mc_pred -> If py is wanted you must provide the vector y as 7''th input.')
+        error('mc_pred -> If py is wanted you must provide the vector yt as an optional input.')
     end
             
     nin  = size(x,2);
     nout = 1;
     nmc=size(gp.jitterSigma2,1);
     
-    % Non-Gaussian likelihood. Thus latent variables should be used in
-    % place of observations
     if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
+      % Non-Gaussian likelihood. The latent variables should be used in
+      % place of observations
         y = gp.latentValues';
     else 
         y = repmat(y,1,nmc);

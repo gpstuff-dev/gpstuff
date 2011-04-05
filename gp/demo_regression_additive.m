@@ -49,7 +49,7 @@
 % REGRESSION TOY DATA
 % Create an example regression data
 x=rand(225,2)*2-1;
-y=3*normcdf(2*x(:,2))+2*normcdf(4*x(:,1));
+y=3*norm_cdf(2*x(:,2))+2*norm_cdf(4*x(:,1));
 % add some noise
 y=y+randn(size(y))*0.25;
 y=y-mean(y);
