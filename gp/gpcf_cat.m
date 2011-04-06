@@ -67,267 +67,268 @@ function gpcf = gpcf_cat(varargin)
     gpcf.fh.trvar  = @gpcf_cat_trvar;
     gpcf.fh.recappend = @gpcf_cat_recappend;
   end
+  
+end
 
-  function [w,s] = gpcf_cat_pak(gpcf, w)
-  %GPCF_CAT_PAK  Combine GP covariance function parameters into
-  %              one vector.
-  %
-  %  Description
-  %    W = GPCF_CAT_PAK(GPCF) takes a covariance function
-  %    structure GPCF and combines the covariance function
-  %    parameters and their hyperparameters into a single row
-  %    vector W.
-  %
-  %       w = []
-  %
-  %  See also
-  %    GPCF_CAT_UNPAK
-    
-    w = []; s = {};
+function [w,s] = gpcf_cat_pak(gpcf, w)
+%GPCF_CAT_PAK  Combine GP covariance function parameters into
+%              one vector.
+%
+%  Description
+%    W = GPCF_CAT_PAK(GPCF) takes a covariance function
+%    structure GPCF and combines the covariance function
+%    parameters and their hyperparameters into a single row
+%    vector W.
+%
+%       w = []
+%
+%  See also
+%    GPCF_CAT_UNPAK
+  
+  w = []; s = {};
+end
+
+function [gpcf, w] = gpcf_cat_unpak(gpcf, w)
+%GPCF_CAT_UNPAK  Sets the covariance function parameters into
+%                the structure
+%
+%  Description
+%    [GPCF, W] = GPCF_CAT_UNPAK(GPCF, W) takes a covariance
+%    function structure GPCF and a parameter vector W, and
+%    returns a covariance function structure identical to the
+%    input, except that the covariance parameters have been set
+%    to the values in W. Deletes the values set to GPCF from W
+%    and returns the modified W.
+%
+%    Assignment is inverse of  
+%       w = []
+%
+%  See also
+%   GPCF_CAT_PAK
+  
+end
+
+function lp = gpcf_cat_lp(gpcf)
+%GPCF_CAT_LP  Evaluate the energy of prior of covariance function parameters
+%
+%  Description
+%    LP = GPCF_CAT_LP(GPCF) takes a covariance function
+%    structure GPCF and returns log(p(th)), where th collects the
+%    parameters.
+%
+%  See also
+%    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LPG, GP_E
+
+  lp = 0;
+  
+end
+
+function lpg = gpcf_cat_lpg(gpcf)
+%GPCF_CAT_LPG  Evaluate gradient of the log prior with respect
+%               to the parameters.
+%
+%  Description
+%    LPG = GPCF_CAT_LPG(GPCF) takes a covariance function
+%    structure GPCF and returns LPG = d log (p(th))/dth, where th
+%    is the vector of parameters.
+%
+%  See also
+%    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
+  
+  lpg = [];
+
+end
+
+function DKff = gpcf_cat_cfg(gpcf, x, x2, mask)
+%GPCF_CAT_CFG  Evaluate gradient of covariance function
+%              with respect to the parameters.
+%
+%  Description
+%    DKff = GPCF_CAT_CFG(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to th (cell array with matrix elements).
+%
+%    DKff = GPCF_CAT_CFG(GPCF, X, X2) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X2) with
+%    respect to th (cell array with matrix elements).
+%
+%    DKff = GPCF_CAT_CFG(GPCF, X, [], MASK) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the diagonal of gradients of covariance matrix
+%    Kff = k(X,X2) with respect to th (cell array with matrix
+%    elements). This is needed for example with FIC sparse
+%    approximation.
+%
+%  See also
+%    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
+
+  DKff = {};
+  
+end
+
+function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2)
+%GPCF_CAT_GINPUT  Evaluate gradient of covariance function with 
+%                 respect to x.
+%
+%  Description
+%    DKff = GPCF_CAT_GINPUT(GPCF, X) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to X (cell array with matrix elements)
+%
+%    DKff = GPCF_CAT_GINPUT(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to X (cell array with matrix elements).
+%
+%  See also
+%   GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
+  
+  [n, m] =size(x);
+  
+  if nargin == 2
+    ii1 = 0;
+    for i=1:m
+      for j = 1:n
+        ii1 = ii1 + 1;
+        DKff{ii1} = zeros(n);
+        lpg(ii1) = 0;
+      end
+    end
+  elseif nargin == 3
+    ii1 = 0;
+    for i=1:m
+      for j = 1:n
+        ii1 = ii1 + 1;
+        DKff{ii1} = zeros(n, size(x2,1));
+        lpg(ii1) = 0; 
+      end
+    end
+  end
+end
+
+function C = gpcf_cat_cov(gpcf, x1, x2, varargin)
+%GP_CAT_COV  Evaluate covariance matrix between two input vectors
+%
+%  Description         
+%    C = GP_CAT_COV(GP, TX, X) takes in covariance function of a
+%    Gaussian process GP and two matrixes TX and X that contain
+%    input vectors to GP. Returns covariance matrix C. Every
+%    element ij of C contains covariance between inputs i in TX
+%    and j in X.
+%
+%  See also
+%    GPCF_CAT_TRCOV, GPCF_CAT_TRVAR, GP_COV, GP_TRCOV
+  
+  if isempty(x2)
+    x2=x1;
+  end
+  [n1,m1]=size(x1);
+  [n2,m2]=size(x2);
+  
+  if m1~=m2
+    error('the number of columns of X1 and X2 has to be same')
   end
 
-  function [gpcf, w] = gpcf_cat_unpak(gpcf, w)
-  %GPCF_CAT_UNPAK  Sets the covariance function parameters into
-  %                the structure
-  %
-  %  Description
-  %    [GPCF, W] = GPCF_CAT_UNPAK(GPCF, W) takes a covariance
-  %    function structure GPCF and a parameter vector W, and
-  %    returns a covariance function structure identical to the
-  %    input, except that the covariance parameters have been set
-  %    to the values in W. Deletes the values set to GPCF from W
-  %    and returns the modified W.
-  %
-  %    Assignment is inverse of  
-  %       w = []
-  %
-  %  See also
-  %   GPCF_CAT_PAK
-    
+  C=repmat(true,n1,n2);
+  if isfield(gpcf, 'selectedVariables')
+    for j = 1:length(gpcf.selectedVariables)
+      jj=gpcf.selectedVariables(j);
+      C = C & bsxfun(@eq,x1(:,jj),x2(:,jj)');
+    end
+  else
+    for j = 1:m1
+      C = C & bsxfun(@eq,x1(:,j),x2(:,j)');
+    end
+  end
+  C=double(C);
+  
+end
+
+function C = gpcf_cat_trcov(gpcf, x)
+%GP_CAT_TRCOV  Evaluate training covariance matrix of inputs
+%
+%  Description
+%    C = GP_CAT_TRCOV(GP, TX) takes in covariance function of a
+%    Gaussian process GP and matrix TX that contains training
+%    input vectors. Returns covariance matrix C. Every element ij
+%    of C contains covariance between inputs i and j in TX.
+%
+%  See also
+%    GPCF_CAT_COV, GPCF_CAT_TRVAR, GP_COV, GP_TRCOV
+
+  [n,m]=size(x);
+
+  C=repmat(true,n,n);
+  if isfield(gpcf, 'selectedVariables')
+    for j = 1:length(gpcf.selectedVariables)
+      jj=gpcf.selectedVariables(j);
+      C = C & bsxfun(@eq,x(:,jj),x(:,jj)');
+    end
+  else
+    for j = 1:m
+      C = C & bsxfun(@eq,x(:,j),x(:,j)');
+    end
+  end
+  C=double(C);
+  
+end
+
+function C = gpcf_cat_trvar(gpcf, x)
+%GP_CAT_TRVAR  Evaluate training variance vector
+%
+%  Description
+%    C = GP_CAT_TRVAR(GPCF, TX) takes in covariance function of a
+%    Gaussian process GPCF and matrix TX that contains training
+%    inputs. Returns variance vector C. Every element i of C
+%    contains variance of input i in TX.
+%
+%  See also
+%    GPCF_CAT_COV, GP_COV, GP_TRCOV
+
+  [n,m]=size(x);
+  C=ones(n,1);
+  
+end
+
+function reccf = gpcf_cat_recappend(reccf, ri, gpcf)
+%RECAPPEND  Record append
+%
+%  Description
+%    RECCF = GPCF_CAT_RECAPPEND(RECCF, RI, GPCF) takes a
+%    covariance function record structure RECCF, record index RI
+%    and covariance function structure GPCF with the current MCMC
+%    samples of the parameters. Returns RECCF which contains
+%    all the old samples and the current samples from GPCF .
+%
+%  See also
+%    GP_MC and GP_MC -> RECAPPEND
+
+% Initialize record
+  if nargin == 2
+    reccf.type = 'gpcf_cat';
+
+    % Initialize parameters
+    reccf.coeffSigma2= [];
+
+    % Set the function handles
+    reccf.fh.pak = @gpcf_cat_pak;
+    reccf.fh.unpak = @gpcf_cat_unpak;
+    reccf.fh.lp = @gpcf_cat_lp;
+    reccf.fh.lpg = @gpcf_cat_lpg;
+    reccf.fh.cfg = @gpcf_cat_cfg;
+    reccf.fh.cov = @gpcf_cat_cov;
+    reccf.fh.trcov  = @gpcf_cat_trcov;
+    reccf.fh.trvar  = @gpcf_cat_trvar;
+    reccf.fh.recappend = @gpcf_cat_recappend;
+
+    return
   end
 
-  function lp = gpcf_cat_lp(gpcf)
-  %GPCF_CAT_LP  Evaluate the energy of prior of covariance function parameters
-  %
-  %  Description
-  %    LP = GPCF_CAT_LP(GPCF) takes a covariance function
-  %    structure GPCF and returns log(p(th)), where th collects the
-  %    parameters.
-  %
-  %  See also
-  %    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LPG, GP_E
-
-    lp = 0;
-    
-  end
-
-  function lpg = gpcf_cat_lpg(lik)
-  %GPCF_CAT_LPG  Evaluate gradient of the log prior with respect
-  %               to the parameters.
-  %
-  %  Description
-  %    LPG = GPCF_CAT_LPG(GPCF) takes a covariance function
-  %    structure GPCF and returns LPG = d log (p(th))/dth, where th
-  %    is the vector of parameters.
-  %
-  %  See also
-  %    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
-    
-    lpg = [];
-
+  if isfield(gpcf, 'selectedVariables')
+    reccf.selectedVariables = gpcf.selectedVariables;
   end
   
-  function DKff = gpcf_cat_cfg(gpcf, x, x2, mask)
-  %GPCF_CAT_CFG  Evaluate gradient of covariance function
-  %              with respect to the parameters.
-  %
-  %  Description
-  %    DKff = GPCF_CAT_CFG(GPCF, X) takes a covariance function
-  %    structure GPCF, a matrix X of input vectors and returns
-  %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-  %    respect to th (cell array with matrix elements).
-  %
-  %    DKff = GPCF_CAT_CFG(GPCF, X, X2) takes a covariance function
-  %    structure GPCF, a matrix X of input vectors and returns
-  %    DKff, the gradients of covariance matrix Kff = k(X,X2) with
-  %    respect to th (cell array with matrix elements).
-  %
-  %    DKff = GPCF_CAT_CFG(GPCF, X, [], MASK) takes a covariance
-  %    function structure GPCF, a matrix X of input vectors and
-  %    returns DKff, the diagonal of gradients of covariance matrix
-  %    Kff = k(X,X2) with respect to th (cell array with matrix
-  %    elements). This is needed for example with FIC sparse
-  %    approximation.
-  %
-  %  See also
-  %    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
-
-    DKff = {};
-    
-  end
-
-  function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2)
-  %GPCF_CAT_GINPUT  Evaluate gradient of covariance function with 
-  %                 respect to x.
-  %
-  %  Description
-  %    DKff = GPCF_CAT_GINPUT(GPCF, X) takes a covariance function
-  %    structure GPCF, a matrix X of input vectors and returns
-  %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-  %    respect to X (cell array with matrix elements)
-  %
-  %    DKff = GPCF_CAT_GINPUT(GPCF, X, X2) takes a covariance
-  %    function structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of covariance matrix Kff =
-  %    k(X,X2) with respect to X (cell array with matrix elements).
-  %
-  %  See also
-  %   GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
-    
-    [n, m] =size(x);
-    
-    if nargin == 2
-      ii1 = 0;
-      for i=1:m
-        for j = 1:n
-          ii1 = ii1 + 1;
-          DKff{ii1} = zeros(n);
-          lpg(ii1) = 0;
-        end
-      end
-    elseif nargin == 3
-      ii1 = 0;
-      for i=1:m
-        for j = 1:n
-          ii1 = ii1 + 1;
-          DKff{ii1} = zeros(n, size(x2,1));
-          lpg(ii1) = 0; 
-        end
-      end
-    end
-  end
-
-  function C = gpcf_cat_cov(gpcf, x1, x2, varargin)
-  %GP_CAT_COV  Evaluate covariance matrix between two input vectors
-  %
-  %  Description         
-  %    C = GP_CAT_COV(GP, TX, X) takes in covariance function of a
-  %    Gaussian process GP and two matrixes TX and X that contain
-  %    input vectors to GP. Returns covariance matrix C. Every
-  %    element ij of C contains covariance between inputs i in TX
-  %    and j in X.
-  %
-  %  See also
-  %    GPCF_CAT_TRCOV, GPCF_CAT_TRVAR, GP_COV, GP_TRCOV
-    
-    if isempty(x2)
-      x2=x1;
-    end
-    [n1,m1]=size(x1);
-    [n2,m2]=size(x2);
-    
-    if m1~=m2
-      error('the number of columns of X1 and X2 has to be same')
-    end
-
-    C=repmat(true,n1,n2);
-    if isfield(gpcf, 'selectedVariables')
-      for j = 1:length(gpcf.selectedVariables)
-        jj=gpcf.selectedVariables(j);
-        C = C & bsxfun(@eq,x1(:,jj),x2(:,jj)');
-      end
-    else
-      for j = 1:m1
-        C = C & bsxfun(@eq,x1(:,j),x2(:,j)');
-      end
-    end
-    C=double(C);
-    
-  end
-
-  function C = gpcf_cat_trcov(gpcf, x)
-  %GP_CAT_TRCOV  Evaluate training covariance matrix of inputs
-  %
-  %  Description
-  %    C = GP_CAT_TRCOV(GP, TX) takes in covariance function of a
-  %    Gaussian process GP and matrix TX that contains training
-  %    input vectors. Returns covariance matrix C. Every element ij
-  %    of C contains covariance between inputs i and j in TX.
-  %
-  %  See also
-  %    GPCF_CAT_COV, GPCF_CAT_TRVAR, GP_COV, GP_TRCOV
-
-    [n,m]=size(x);
-
-    C=repmat(true,n,n);
-    if isfield(gpcf, 'selectedVariables')
-      for j = 1:length(gpcf.selectedVariables)
-        jj=gpcf.selectedVariables(j);
-        C = C & bsxfun(@eq,x(:,jj),x(:,jj)');
-      end
-    else
-      for j = 1:m
-        C = C & bsxfun(@eq,x(:,j),x(:,j)');
-      end
-    end
-    C=double(C);
-    
-  end
-
-  function C = gpcf_cat_trvar(gpcf, x)
-  %GP_CAT_TRVAR  Evaluate training variance vector
-  %
-  %  Description
-  %    C = GP_CAT_TRVAR(GPCF, TX) takes in covariance function of a
-  %    Gaussian process GPCF and matrix TX that contains training
-  %    inputs. Returns variance vector C. Every element i of C
-  %    contains variance of input i in TX.
-  %
-  %  See also
-  %    GPCF_CAT_COV, GP_COV, GP_TRCOV
-
-    [n,m]=size(x);
-    C=ones(n,1);
-    
-  end
-
-  function reccf = gpcf_cat_recappend(reccf, ri, gpcf)
-  %RECAPPEND  Record append
-  %
-  %  Description
-  %    RECCF = GPCF_CAT_RECAPPEND(RECCF, RI, GPCF) takes a
-  %    covariance function record structure RECCF, record index RI
-  %    and covariance function structure GPCF with the current MCMC
-  %    samples of the parameters. Returns RECCF which contains
-  %    all the old samples and the current samples from GPCF .
-  %
-  %  See also
-  %    GP_MC and GP_MC -> RECAPPEND
-
-  % Initialize record
-    if nargin == 2
-      reccf.type = 'gpcf_cat';
-
-      % Initialize parameters
-      reccf.coeffSigma2= [];
-
-      % Set the function handles
-      reccf.fh.pak = @gpcf_cat_pak;
-      reccf.fh.unpak = @gpcf_cat_unpak;
-      reccf.fh.lp = @gpcf_cat_lp;
-      reccf.fh.lpg = @gpcf_cat_lpg;
-      reccf.fh.cfg = @gpcf_cat_cfg;
-      reccf.fh.cov = @gpcf_cat_cov;
-      reccf.fh.trcov  = @gpcf_cat_trcov;
-      reccf.fh.trvar  = @gpcf_cat_trvar;
-      reccf.fh.recappend = @gpcf_cat_recappend;
-
-      return
-    end
-
-    if isfield(gpcf, 'selectedVariables')
-      reccf.selectedVariables = gpcf.selectedVariables;
-    end
-    
-  end
 end
