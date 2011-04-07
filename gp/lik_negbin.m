@@ -77,7 +77,7 @@ function lik = lik_negbin(varargin)
   end
   
   if init
-    % Set the function handles to the nested functions
+    % Set the function handles to the subfunctions
     lik.fh.pak = @lik_negbin_pak;
     lik.fh.unpak = @lik_negbin_unpak;
     lik.fh.lp = @lik_negbin_lp;
@@ -93,591 +93,590 @@ function lik = lik_negbin(varargin)
     lik.fh.recappend = @lik_negbin_recappend;
   end
 
-  function [w,s] = lik_negbin_pak(lik)
-  %LIK_NEGBIN_PAK  Combine likelihood parameters into one vector.
-  %
-  %  Description 
-  %    W = LIK_NEGBIN_PAK(LIK) takes a likelihood structure LIK and
-  %    combines the parameters into a single row vector W.
-  %     
-  %       w = log(lik.disper)
-  %
-  %   See also
-  %   LIK_NEGBIN_UNPAK, GP_PAK
-    
-    w=[];s={};
-    if ~isempty(lik.p.disper)
-      w = log(lik.disper);
-      s = [s; 'log(negbin.disper)'];
-      [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
-      w = [w wh];
-      s = [s; sh];
-    end
-  end
+end
 
-
-  function [lik, w] = lik_negbin_unpak(lik, w)
-  %LIK_NEGBIN_UNPAK  Extract likelihood parameters from the vector.
-  %
-  %  Description
-  %    [LIK, W] = LIK_NEGBIN_UNPAK(W, LIK) takes a likelihood
-  %    structure LIK and extracts the parameters from the vector W
-  %    to the LIK structure.
-  %     
-  %   Assignment is inverse of  
-  %       w = log(lik.disper)
-  %
-  %   See also
-  %   LIK_NEGBIN_PAK, GP_UNPAK
-
-    if ~isempty(lik.p.disper)
-      lik.disper = exp(w(1));
-      w = w(2:end);
-      [p, w] = feval(lik.p.disper.fh.unpak, lik.p.disper, w);
-      lik.p.disper = p;
-    end
-  end
-
-
-  function lp = lik_negbin_lp(lik, varargin)
-  %LIK_NEGBIN_LP  log(prior) of the likelihood parameters
-  %
-  %  Description
-  %    LP = LIK_NEGBIN_LP(LIK) takes a likelihood structure LIK and
-  %    returns log(p(th)), where th collects the parameters.
-  %
-  %  See also
-  %    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_E
-    
-
-  % If prior for dispersion parameter, add its contribution
-    lp=0;
-    if ~isempty(lik.p.disper)
-      lp = feval(lik.p.disper.fh.lp, lik.disper, lik.p.disper) +log(lik.disper);
-    end
-    
-  end
-
+function [w,s] = lik_negbin_pak(lik)
+%LIK_NEGBIN_PAK  Combine likelihood parameters into one vector.
+%
+%  Description 
+%    W = LIK_NEGBIN_PAK(LIK) takes a likelihood structure LIK and
+%    combines the parameters into a single row vector W.
+%     
+%       w = log(lik.disper)
+%
+%   See also
+%   LIK_NEGBIN_UNPAK, GP_PAK
   
-  function lpg = lik_negbin_lpg(lik)
-  %LIK_NEGBIN_LPG  d log(prior)/dth of the likelihood 
-  %                parameters th
-  %
-  %  Description
-  %    E = LIK_NEGBIN_LPG(LIK) takes a likelihood structure LIK and
-  %    returns d log(p(th))/dth, where th collects the parameters.
-  %
-  %  See also
-  %    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_G
-    
-    lpg=[];
-    if ~isempty(lik.p.disper)            
-      % Evaluate the gprior with respect to disper
-      ggs = feval(lik.p.disper.fh.lpg, lik.disper, lik.p.disper);
-      lpg = ggs(1).*lik.disper + 1;
-      if length(ggs) > 1
-        lpg = [lpg ggs(2:end)];
-      end
-    end
-  end  
-  
-  function ll = lik_negbin_ll(lik, y, f, z)
-  %LIK_NEGBIN_LL  Log likelihood
-  %
-  %  Description
-  %    LL = LIK_NEGBIN_LL(LIK, Y, F, Z) takes a likelihood
-  %    structure LIK, incedence counts Y, expected counts Z, and
-  %    latent values F. Returns the log likelihood, log p(y|f,z).
-  %
-  %  See also
-  %    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_E
-    
-    if isempty(z)
-      error(['lik_negbin -> lik_negbin_ll: missing z!    '... 
-             'Negbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_negbin and gpla_e.               ']);
-    end
-
-    
-    r = lik.disper;
-    mu = exp(f).*z;
-    ll = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));
-  end
-
-  function llg = lik_negbin_llg(lik, y, f, param, z)
-  %LIK_NEGBIN_LLG  Gradient of the log likelihood
-  %
-  %  Description 
-  %    LLG = LIK_NEGBIN_LLG(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, incedence counts Y, expected counts Z and
-  %    latent values F. Returns the gradient of the log likelihood
-  %    with respect to PARAM. At the moment PARAM can be 'param' or
-  %    'latent'.
-  %
-  %  See also
-  %    LIK_NEGBIN_LL, LIK_NEGBIN_LLG2, LIK_NEGBIN_LLG3, GPLA_E
-
-    if isempty(z)
-      error(['lik_negbin -> lik_negbin_llg: missing z!    '... 
-             'Negbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_negbin and gpla_e.               ']);
-    end
-
-    
-    mu = exp(f).*z;
-    r = lik.disper;
-    switch param
-      case 'param'      
-        % Derivative using the psi function
-        llg = sum(1 + log(r./(r+mu)) - (r+y)./(r+mu) + psi(r + y) - psi(r));
-        
-        % correction for the log transformation
-        llg = llg.*lik.disper;
-        
-  % $$$             % Derivative using sum formulation
-  % $$$             llg = 0;
-  % $$$             for i1 = 1:length(y)
-  % $$$                 llg = llg + log(r/(r+mu(i1))) + 1 - (r+y(i1))/(r+mu(i1));
-  % $$$                 for i2 = 0:y(i1)-1
-  % $$$                     llg = llg + 1 / (i2 + r);
-  % $$$                 end
-  % $$$             end
-  % $$$             % correction for the log transformation
-  % $$$             llg = llg.*lik.disper;
-      case 'latent'
-        llg = y - (r+y).*mu./(r+mu);
-    end
-  end
-
-  function llg2 = lik_negbin_llg2(lik, y, f, param, z)
-  %LIK_NEGBIN_LLG2  Second gradients of the log likelihood
-  %
-  %  Description        
-  %    LLG2 = LIK_NEGBIN_LLG2(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, incedence counts Y, expected counts Z, and
-  %    latent values F. Returns the Hessian of the log likelihood
-  %    with respect to PARAM. At the moment PARAM can be only
-  %    'latent'. LLG2 is a vector with diagonal elements of the
-  %    Hessian matrix (off diagonals are zero).
-  %
-  %  See also
-  %    LIK_NEGBIN_LL, LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, GPLA_E
-
-    if isempty(z)
-      error(['lik_negbin -> lik_negbin_llg2: missing z!   '... 
-             'Negbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_negbin and gpla_e.               ']);
-    end
-
-    
-    mu = exp(f).*z;
-    r = lik.disper;
-    switch param
-      case 'param'
-        
-      case 'latent'
-        llg2 = - mu.*(r.^2 + y.*r)./(r+mu).^2;
-      case 'latent+param'
-        llg2 = (y.*mu - mu.^2)./(r+mu).^2;
-        
-        % correction due to the log transformation
-        llg2 = llg2.*lik.disper;
-    end
-  end    
-  
-  function llg3 = lik_negbin_llg3(lik, y, f, param, z)
-  %LIK_NEGBIN_LLG3  Third gradients of the log likelihood
-  %
-  %  Description
-  %    LLG3 = LIK_NEGBIN_LLG3(LIK, Y, F, PARAM) takes a likelihood
-  %    structure LIK, incedence counts Y, expected counts Z and
-  %    latent values F and returns the third gradients of the log
-  %    likelihood with respect to PARAM. At the moment PARAM can be
-  %    only 'latent'. LLG3 is a vector with third gradients.
-  %
-  %  See also
-  %    LIK_NEGBIN_LL, LIK_NEGBIN_LLG, LIK_NEGBIN_LLG2, GPLA_E, GPLA_G
-
-    if isempty(z)
-      error(['lik_negbin -> lik_negbin_llg3: missing z!   '... 
-             'Negbin likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_negbin and gpla_e.               ']);
-    end
-
-    
-    mu = exp(f).*z;
-    r = lik.disper;
-    switch param
-      case 'param'
-        
-      case 'latent'
-        llg3 = - mu.*(r.^2 + y.*r)./(r + mu).^2 + 2.*mu.^2.*(r.^2 + y.*r)./(r + mu).^3;
-      case 'latent2+param'
-        llg3 = mu.*(y.*r - 2.*r.*mu - mu.*y)./(r+mu).^3;
-        
-        % correction due to the log transformation
-        llg3 = llg3.*lik.disper;
-    end
-  end
-  
-  function [m_0, m_1, sigm2hati1] = lik_negbin_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_NEGBIN_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
-  %
-  %  Description
-  %    [M_0, M_1, M2] = LIK_NEGBIN_TILTEDMOMENTS(LIK, Y, I, S2,
-  %    MYY, Z) takes a likelihood structure LIK, incedence counts
-  %    Y, expected counts Z, index I and cavity variance S2 and
-  %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
-  %    variance M_2 of the posterior marginal (see Rasmussen and
-  %    Williams (2006): Gaussian processes for Machine Learning,
-  %    page 55).
-  %
-  %  See also
-  %    GPEP_E
-    
-    if isempty(z)
-      error(['lik_negbin -> lik_negbin_tiltedMoments: missing z!'... 
-             'Negbin likelihood needs the expected number of            '...
-             'occurrences as an extra input z. See, for                 '...
-             'example, lik_negbin and gpep_e.                       ']);
-    end
-    
-    yy = y(i1);
-    avgE = z(i1);
-    r = lik.disper;
-    
-    % get a function handle of an unnormalized tilted distribution 
-    % (likelihood * cavity = Negative-binomial * Gaussian)
-    % and useful integration limits
-    [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
-    
-    % Integrate with quadrature
-    RTOL = 1.e-6;
-    ATOL = 1.e-10;
-    [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    sigm2hati1 = m_2 - m_1.^2;
-    
-    % If the second central moment is less than cavity variance
-    % integrate more precisely. Theoretically for log-concave
-    % likelihood should be sigm2hati1 < sigm2_i.
-    if sigm2hati1 >= sigm2_i
-      ATOL = ATOL.^2;
-      RTOL = RTOL.^2;
-      [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-      sigm2hati1 = m_2 - m_1.^2;
-      if sigm2hati1 >= sigm2_i
-        error('lik_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
-      end
-    end
-    
-  end
-  
-  function [g_i] = lik_negbin_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_NEGBIN_SITEDERIV  Evaluate the expectation of the gradient
-  %                      of the log likelihood term with respect
-  %                      to the likelihood parameters for EP 
-  %
-  %  Description [M_0, M_1, M2] =
-  %    LIK_NEGBIN_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
-  %    likelihood structure LIK, incedence counts Y, expected
-  %    counts Z, index I and cavity variance S2 and mean MYY. 
-  %    Returns E_f [d log p(y_i|f_i) /d a], where a is the
-  %    likelihood parameter and the expectation is over the
-  %    marginal posterior. This term is needed when evaluating the
-  %    gradients of the marginal likelihood estimate Z_EP with
-  %    respect to the likelihood parameters (see Seeger (2008):
-  %    Expectation propagation for exponential families)
-  %
-  %  See also
-  %    GPEP_G
-
-    if isempty(z)
-      error(['lik_negbin -> lik_negbin_siteDeriv: missing z!'... 
-             'Negbin likelihood needs the expected number of        '...
-             'occurrences as an extra input z. See, for             '...
-             'example, lik_negbin and gpla_e.                   ']);
-    end
-
-    yy = y(i1);
-    avgE = z(i1);
-    r = lik.disper;
-    
-    % get a function handle of an unnormalized tilted distribution 
-    % (likelihood * cavity = Negative-binomial * Gaussian)
-    % and useful integration limits
-    [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
-    % additionally get function handle for the derivative
-    td = @deriv;
-    
-    % Integrate with quadgk
-    [m_0, fhncnt] = quadgk(tf, minf, maxf);
-    [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
-    g_i = g_i.*r;
-
-    function g = deriv(f)
-      mu = avgE.*exp(f);
-      % Derivative using the psi function
-      g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
-%      % Derivative using the sum formulation
-%      g = 0;
-%      g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
-%      for i2 = 0:yy-1
-%        g = g + 1 ./ (i2 + r);
-%      end
-    end
-  end
-
-  function [Ey, Vary, Py] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
-  %LIK_NEGBIN_PREDY  Returns the predictive mean, variance and density of y
-  %
-  %  Description         
-  %    [EY, VARY] = LIK_NEGBIN_PREDY(LIK, EF, VARF) takes a
-  %    likelihood structure LIK, posterior mean EF and posterior
-  %    Variance VARF of the latent variable and returns the
-  %    posterior predictive mean EY and variance VARY of the
-  %    observations related to the latent variables
-  %        
-  %    [Ey, Vary, PY] = LIK_NEGBIN_PREDY(LIK, EF, VARF YT, ZT)
-  %    Returns also the predictive density of YT, that is 
-  %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-  %    This requires also the incedence counts YT, expected counts ZT.
-  %
-  %  See also
-  %    GPLA_PRED, GPEP_PRED, GPMC_PRED
-
-    if isempty(zt)
-      error(['lik_negbin -> lik_negbin_predy: missing zt!'... 
-             'Negbin likelihood needs the expected number of    '...
-             'occurrences as an extra input zt. See, for         '...
-             'example, lik_negbin and gpla_e.               ']);
-    end
-
-    avgE = zt;
-    r = lik.disper;
-    
-    Py = zeros(size(Ef));
-    Ey = zeros(size(Ef));
-    EVary = zeros(size(Ef));
-    VarEy = zeros(size(Ef)); 
-    
-    % Evaluate Ey and Vary 
-    for i1=1:length(Ef)
-      %%% With quadrature
-      myy_i = Ef(i1);
-      sigm_i = sqrt(Varf(i1));
-      minf=myy_i-6*sigm_i;
-      maxf=myy_i+6*sigm_i;
-
-      F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-      Ey(i1) = quadgk(F,minf,maxf);
-      
-      F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-      EVary(i1) = quadgk(F2,minf,maxf);
-      
-      F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-      VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
-    end
-    Vary = EVary + VarEy;
-
-    % Evaluate the posterior predictive densities of the given observations
-    if nargout > 2
-      for i1=1:length(Ef)
-        % get a function handle of the likelihood times posterior
-        % (likelihood * posterior = Negative-binomial * Gaussian)
-        % and useful integration limits
-        [pdf,minf,maxf]=init_negbin_norm(...
-          yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
-        % integrate over the f to get posterior predictive distribution
-        Py(i1) = quadgk(pdf, minf, maxf);
-      end
-    end
-  end
-
-  function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
-  %INIT_NEGBIN_NORM
-  %
-  %  Description
-  %    Return function handle to a function evaluating
-  %    Negative-Binomial * Gaussian which is used for evaluating
-  %    (likelihood * cavity) or (likelihood * posterior) Return
-  %    also useful limits for integration. This is private function
-  %    for lik_negbin.
-  %  
-  %  See also
-  %    LIK_NEGBIN_TILTEDMOMENTS, LIK_NEGBIN_SITEDERIV,
-  %    LIK_NEGBIN_PREDY
-    
-  % avoid repetitive evaluation of constant part
-    ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
-              - log(sigm2_i)/2 - log(2*pi)/2;
-    % Create function handle for the function to be integrated
-    df = @negbin_norm;
-    % use log to avoid underflow, and derivates for faster search
-    ld = @log_negbin_norm;
-    ldg = @log_negbin_norm_g;
-    ldg2 = @log_negbin_norm_g2;
-
-    % Set the limits for integration
-    % Negative-binomial likelihood is log-concave so the negbin_norm
-    % function is unimodal, which makes things easier
-    if yy==0
-      % with yy==0, the mode of the likelihood is not defined
-      % use the mode of the Gaussian (cavity or posterior) as a first guess
-      modef = myy_i;
-    else
-      % use precision weighted mean of the Gaussian approximation
-      % of the Negative-Binomial likelihood and Gaussian
-      mu=log(yy/avgE);
-      s2=(yy+r)./(yy.*r);
-      modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
-    end
-    % find the mode of the integrand using Newton iterations
-    % few iterations is enough, since the first guess in the right direction
-    niter=4;       % number of Newton iterations
-    mindelta=1e-6; % tolerance in stopping Newton iterations
-    for ni=1:niter
-      g=ldg(modef);
-      h=ldg2(modef);
-      delta=-g/h;
-      modef=modef+delta;
-      if abs(delta)<mindelta
-        break
-      end
-    end
-    % integrand limits based on Gaussian approximation at mode
-    modes=sqrt(-1/h);
-    minf=modef-8*modes;
-    maxf=modef+8*modes;
-    modeld=ld(modef);
-    iter=0;
-    % check that density at end points is low enough
-    lddiff=20; % min difference in log-density between mode and end-points
-    minld=ld(minf);
-    step=1;
-    while minld>(modeld-lddiff)
-      minf=minf-step*modes;
-      minld=ld(minf);
-      iter=iter+1;
-      step=step*2;
-      if iter>100
-        error(['lik_negbin -> init_negbin_norm: ' ...
-               'integration interval minimun not found ' ...
-               'even after looking hard!'])
-      end
-    end
-    maxld=ld(maxf);
-    step=1;
-    while maxld>(modeld-lddiff)
-      maxf=maxf+step*modes;
-      maxld=ld(maxf);
-      iter=iter+1;
-      step=step*2;
-      if iter>100
-        error(['lik_negbin -> init_negbin_norm: ' ...
-               'integration interval maximun not found ' ...
-               'even after looking hard!'])
-      end
-    end
-    
-    function integrand = negbin_norm(f)
-    % Negative-binomial * Gaussian
-      mu = avgE.*exp(f);
-      integrand = exp(ldconst ...
-                      +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
-                      -0.5*(f-myy_i).^2./sigm2_i);
-    end
-    
-    function log_int = log_negbin_norm(f)
-    % log(Negative-binomial * Gaussian)
-    % log_negbin_norm is used to avoid underflow when searching
-    % integration interval
-      mu = avgE.*exp(f);
-      log_int = ldconst...
-                +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
-                -0.5*(f-myy_i).^2./sigm2_i;
-    end
-    
-    function g = log_negbin_norm_g(f)
-    % d/df log(Negative-binomial * Gaussian)
-    % derivative of log_negbin_norm
-      mu = avgE.*exp(f);
-      g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
-          + (myy_i - f)./sigm2_i;
-    end
-    
-    function g2 = log_negbin_norm_g2(f)
-    % d^2/df^2 log(Negative-binomial * Gaussian)
-    % second derivate of log_negbin_norm
-      mu = avgE.*exp(f);
-      g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
-           -1/sigm2_i;
-    end
-    
-  end
-
-  function mu = lik_negbin_invlink(lik, f, z)
-  %LIK_NEGBIN_INVLINK  Returns values of inverse link function
-  %             
-  %  Description 
-  %    MU = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
-  %    latent values F and returns the values MU of inverse link function.
-  %
-  %     See also
-  %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
-  
-    mu = z.*exp(f);
-  end
-  
-  function reclik = lik_negbin_recappend(reclik, ri, lik)
-  %RECAPPEND  Append the parameters to the record
-  %
-  %  Description 
-  %    RECLIK = GPCF_NEGBIN_RECAPPEND(RECLIK, RI, LIK) takes a
-  %    likelihood record structure RECLIK, record index RI and
-  %    likelihood structure LIK with the current MCMC samples of
-  %    the parameters. Returns RECLIK which contains all the old
-  %    samples and the current samples from LIK.
-  % 
-  %  See also
-  %    GP_MC
-
-  % Initialize record
-    if nargin == 2
-      reclik.type = 'Negbin';
-
-      % Initialize parameter
-      reclik.disper = [];
-
-      % Set the function handles
-      reclik.fh.pak = @lik_negbin_pak;
-      reclik.fh.unpak = @lik_negbin_unpak;
-      reclik.fh.lp = @lik_negbin_lp;
-      reclik.fh.lpg = @lik_negbin_lpg;
-      reclik.fh.ll = @lik_negbin_ll;
-      reclik.fh.llg = @lik_negbin_llg;    
-      reclik.fh.llg2 = @lik_negbin_llg2;
-      reclik.fh.llg3 = @lik_negbin_llg3;
-      reclik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
-      reclik.fh.predy = @lik_negbin_predy;
-      reclik.fh.invlink = @lik_negbin_invlink;
-      reclik.fh.recappend = @lik_negbin_recappend;
-      reclik.p=[];
-      reclik.p.disper=[];
-      if ~isempty(ri.p.disper)
-        reclik.p.disper = ri.p.disper;
-      end
-      return
-    end
-    
-    reclik.disper(ri,:)=lik.disper;
-    if ~isempty(lik.p)
-        reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.disper);
-    end
+  w=[];s={};
+  if ~isempty(lik.p.disper)
+    w = log(lik.disper);
+    s = [s; 'log(negbin.disper)'];
+    [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
+    w = [w wh];
+    s = [s; sh];
   end
 end
 
 
+function [lik, w] = lik_negbin_unpak(lik, w)
+%LIK_NEGBIN_UNPAK  Extract likelihood parameters from the vector.
+%
+%  Description
+%    [LIK, W] = LIK_NEGBIN_UNPAK(W, LIK) takes a likelihood
+%    structure LIK and extracts the parameters from the vector W
+%    to the LIK structure.
+%     
+%   Assignment is inverse of  
+%       w = log(lik.disper)
+%
+%   See also
+%   LIK_NEGBIN_PAK, GP_UNPAK
+
+  if ~isempty(lik.p.disper)
+    lik.disper = exp(w(1));
+    w = w(2:end);
+    [p, w] = feval(lik.p.disper.fh.unpak, lik.p.disper, w);
+    lik.p.disper = p;
+  end
+end
+
+
+function lp = lik_negbin_lp(lik, varargin)
+%LIK_NEGBIN_LP  log(prior) of the likelihood parameters
+%
+%  Description
+%    LP = LIK_NEGBIN_LP(LIK) takes a likelihood structure LIK and
+%    returns log(p(th)), where th collects the parameters.
+%
+%  See also
+%    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_E
+  
+
+% If prior for dispersion parameter, add its contribution
+  lp=0;
+  if ~isempty(lik.p.disper)
+    lp = feval(lik.p.disper.fh.lp, lik.disper, lik.p.disper) +log(lik.disper);
+  end
+  
+end
+
+
+function lpg = lik_negbin_lpg(lik)
+%LIK_NEGBIN_LPG  d log(prior)/dth of the likelihood 
+%                parameters th
+%
+%  Description
+%    E = LIK_NEGBIN_LPG(LIK) takes a likelihood structure LIK and
+%    returns d log(p(th))/dth, where th collects the parameters.
+%
+%  See also
+%    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_G
+  
+  lpg=[];
+  if ~isempty(lik.p.disper)            
+    % Evaluate the gprior with respect to disper
+    ggs = feval(lik.p.disper.fh.lpg, lik.disper, lik.p.disper);
+    lpg = ggs(1).*lik.disper + 1;
+    if length(ggs) > 1
+      lpg = [lpg ggs(2:end)];
+    end
+  end
+end  
+
+function ll = lik_negbin_ll(lik, y, f, z)
+%LIK_NEGBIN_LL  Log likelihood
+%
+%  Description
+%    LL = LIK_NEGBIN_LL(LIK, Y, F, Z) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z, and
+%    latent values F. Returns the log likelihood, log p(y|f,z).
+%
+%  See also
+%    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_E
+  
+  if isempty(z)
+    error(['lik_negbin -> lik_negbin_ll: missing z!    '... 
+           'Negbin likelihood needs the expected number of    '...
+           'occurrences as an extra input z. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+
+  
+  r = lik.disper;
+  mu = exp(f).*z;
+  ll = sum(r.*(log(r) - log(r+mu)) + gammaln(r+y) - gammaln(r) - gammaln(y+1) + y.*(log(mu) - log(r+mu)));
+end
+
+function llg = lik_negbin_llg(lik, y, f, param, z)
+%LIK_NEGBIN_LLG  Gradient of the log likelihood
+%
+%  Description 
+%    LLG = LIK_NEGBIN_LLG(LIK, Y, F, PARAM) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z and
+%    latent values F. Returns the gradient of the log likelihood
+%    with respect to PARAM. At the moment PARAM can be 'param' or
+%    'latent'.
+%
+%  See also
+%    LIK_NEGBIN_LL, LIK_NEGBIN_LLG2, LIK_NEGBIN_LLG3, GPLA_E
+
+  if isempty(z)
+    error(['lik_negbin -> lik_negbin_llg: missing z!    '... 
+           'Negbin likelihood needs the expected number of    '...
+           'occurrences as an extra input z. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+
+  
+  mu = exp(f).*z;
+  r = lik.disper;
+  switch param
+    case 'param'      
+      % Derivative using the psi function
+      llg = sum(1 + log(r./(r+mu)) - (r+y)./(r+mu) + psi(r + y) - psi(r));
+      
+      % correction for the log transformation
+      llg = llg.*lik.disper;
+      
+% $$$             % Derivative using sum formulation
+% $$$             llg = 0;
+% $$$             for i1 = 1:length(y)
+% $$$                 llg = llg + log(r/(r+mu(i1))) + 1 - (r+y(i1))/(r+mu(i1));
+% $$$                 for i2 = 0:y(i1)-1
+% $$$                     llg = llg + 1 / (i2 + r);
+% $$$                 end
+% $$$             end
+% $$$             % correction for the log transformation
+% $$$             llg = llg.*lik.disper;
+    case 'latent'
+      llg = y - (r+y).*mu./(r+mu);
+  end
+end
+
+function llg2 = lik_negbin_llg2(lik, y, f, param, z)
+%LIK_NEGBIN_LLG2  Second gradients of the log likelihood
+%
+%  Description        
+%    LLG2 = LIK_NEGBIN_LLG2(LIK, Y, F, PARAM) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z, and
+%    latent values F. Returns the Hessian of the log likelihood
+%    with respect to PARAM. At the moment PARAM can be only
+%    'latent'. LLG2 is a vector with diagonal elements of the
+%    Hessian matrix (off diagonals are zero).
+%
+%  See also
+%    LIK_NEGBIN_LL, LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, GPLA_E
+
+  if isempty(z)
+    error(['lik_negbin -> lik_negbin_llg2: missing z!   '... 
+           'Negbin likelihood needs the expected number of    '...
+           'occurrences as an extra input z. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+
+  
+  mu = exp(f).*z;
+  r = lik.disper;
+  switch param
+    case 'param'
+      
+    case 'latent'
+      llg2 = - mu.*(r.^2 + y.*r)./(r+mu).^2;
+    case 'latent+param'
+      llg2 = (y.*mu - mu.^2)./(r+mu).^2;
+      
+      % correction due to the log transformation
+      llg2 = llg2.*lik.disper;
+  end
+end    
+
+function llg3 = lik_negbin_llg3(lik, y, f, param, z)
+%LIK_NEGBIN_LLG3  Third gradients of the log likelihood
+%
+%  Description
+%    LLG3 = LIK_NEGBIN_LLG3(LIK, Y, F, PARAM) takes a likelihood
+%    structure LIK, incedence counts Y, expected counts Z and
+%    latent values F and returns the third gradients of the log
+%    likelihood with respect to PARAM. At the moment PARAM can be
+%    only 'latent'. LLG3 is a vector with third gradients.
+%
+%  See also
+%    LIK_NEGBIN_LL, LIK_NEGBIN_LLG, LIK_NEGBIN_LLG2, GPLA_E, GPLA_G
+
+  if isempty(z)
+    error(['lik_negbin -> lik_negbin_llg3: missing z!   '... 
+           'Negbin likelihood needs the expected number of    '...
+           'occurrences as an extra input z. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+
+  
+  mu = exp(f).*z;
+  r = lik.disper;
+  switch param
+    case 'param'
+      
+    case 'latent'
+      llg3 = - mu.*(r.^2 + y.*r)./(r + mu).^2 + 2.*mu.^2.*(r.^2 + y.*r)./(r + mu).^3;
+    case 'latent2+param'
+      llg3 = mu.*(y.*r - 2.*r.*mu - mu.*y)./(r+mu).^3;
+      
+      % correction due to the log transformation
+      llg3 = llg3.*lik.disper;
+  end
+end
+
+function [m_0, m_1, sigm2hati1] = lik_negbin_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_NEGBIN_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%
+%  Description
+%    [M_0, M_1, M2] = LIK_NEGBIN_TILTEDMOMENTS(LIK, Y, I, S2,
+%    MYY, Z) takes a likelihood structure LIK, incedence counts
+%    Y, expected counts Z, index I and cavity variance S2 and
+%    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+%    variance M_2 of the posterior marginal (see Rasmussen and
+%    Williams (2006): Gaussian processes for Machine Learning,
+%    page 55).
+%
+%  See also
+%    GPEP_E
+  
+  if isempty(z)
+    error(['lik_negbin -> lik_negbin_tiltedMoments: missing z!'... 
+           'Negbin likelihood needs the expected number of            '...
+           'occurrences as an extra input z. See, for                 '...
+           'example, lik_negbin and gpep_e.                       ']);
+  end
+  
+  yy = y(i1);
+  avgE = z(i1);
+  r = lik.disper;
+  
+  % get a function handle of an unnormalized tilted distribution 
+  % (likelihood * cavity = Negative-binomial * Gaussian)
+  % and useful integration limits
+  [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
+  
+  % Integrate with quadrature
+  RTOL = 1.e-6;
+  ATOL = 1.e-10;
+  [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+  sigm2hati1 = m_2 - m_1.^2;
+  
+  % If the second central moment is less than cavity variance
+  % integrate more precisely. Theoretically for log-concave
+  % likelihood should be sigm2hati1 < sigm2_i.
+  if sigm2hati1 >= sigm2_i
+    ATOL = ATOL.^2;
+    RTOL = RTOL.^2;
+    [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    sigm2hati1 = m_2 - m_1.^2;
+    if sigm2hati1 >= sigm2_i
+      error('lik_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
+    end
+  end
+  
+end
+
+function [g_i] = lik_negbin_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_NEGBIN_SITEDERIV  Evaluate the expectation of the gradient
+%                      of the log likelihood term with respect
+%                      to the likelihood parameters for EP 
+%
+%  Description [M_0, M_1, M2] =
+%    LIK_NEGBIN_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
+%    likelihood structure LIK, incedence counts Y, expected
+%    counts Z, index I and cavity variance S2 and mean MYY. 
+%    Returns E_f [d log p(y_i|f_i) /d a], where a is the
+%    likelihood parameter and the expectation is over the
+%    marginal posterior. This term is needed when evaluating the
+%    gradients of the marginal likelihood estimate Z_EP with
+%    respect to the likelihood parameters (see Seeger (2008):
+%    Expectation propagation for exponential families)
+%
+%  See also
+%    GPEP_G
+
+  if isempty(z)
+    error(['lik_negbin -> lik_negbin_siteDeriv: missing z!'... 
+           'Negbin likelihood needs the expected number of        '...
+           'occurrences as an extra input z. See, for             '...
+           'example, lik_negbin and gpla_e.                   ']);
+  end
+
+  yy = y(i1);
+  avgE = z(i1);
+  r = lik.disper;
+  
+  % get a function handle of an unnormalized tilted distribution 
+  % (likelihood * cavity = Negative-binomial * Gaussian)
+  % and useful integration limits
+  [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
+  % additionally get function handle for the derivative
+  td = @deriv;
+  
+  % Integrate with quadgk
+  [m_0, fhncnt] = quadgk(tf, minf, maxf);
+  [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
+  g_i = g_i.*r;
+
+  function g = deriv(f)
+    mu = avgE.*exp(f);
+    % Derivative using the psi function
+    g = 1 + log(r./(r+mu)) - (r+yy)./(r+mu) + psi(r + yy) - psi(r);
+    %      % Derivative using the sum formulation
+    %      g = 0;
+    %      g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
+    %      for i2 = 0:yy-1
+    %        g = g + 1 ./ (i2 + r);
+    %      end
+  end
+end
+
+function [Ey, Vary, Py] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
+%LIK_NEGBIN_PREDY  Returns the predictive mean, variance and density of y
+%
+%  Description         
+%    [EY, VARY] = LIK_NEGBIN_PREDY(LIK, EF, VARF) takes a
+%    likelihood structure LIK, posterior mean EF and posterior
+%    Variance VARF of the latent variable and returns the
+%    posterior predictive mean EY and variance VARY of the
+%    observations related to the latent variables
+%        
+%    [Ey, Vary, PY] = LIK_NEGBIN_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns also the predictive density of YT, that is 
+%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the incedence counts YT, expected counts ZT.
+%
+%  See also
+%    GPLA_PRED, GPEP_PRED, GPMC_PRED
+
+  if isempty(zt)
+    error(['lik_negbin -> lik_negbin_predy: missing zt!'... 
+           'Negbin likelihood needs the expected number of    '...
+           'occurrences as an extra input zt. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+
+  avgE = zt;
+  r = lik.disper;
+  
+  Py = zeros(size(Ef));
+  Ey = zeros(size(Ef));
+  EVary = zeros(size(Ef));
+  VarEy = zeros(size(Ef)); 
+  
+  % Evaluate Ey and Vary 
+  for i1=1:length(Ef)
+    %%% With quadrature
+    myy_i = Ef(i1);
+    sigm_i = sqrt(Varf(i1));
+    minf=myy_i-6*sigm_i;
+    maxf=myy_i+6*sigm_i;
+
+    F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+    Ey(i1) = quadgk(F,minf,maxf);
+    
+    F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
+    EVary(i1) = quadgk(F2,minf,maxf);
+    
+    F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+    VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+  end
+  Vary = EVary + VarEy;
+
+  % Evaluate the posterior predictive densities of the given observations
+  if nargout > 2
+    for i1=1:length(Ef)
+      % get a function handle of the likelihood times posterior
+      % (likelihood * posterior = Negative-binomial * Gaussian)
+      % and useful integration limits
+      [pdf,minf,maxf]=init_negbin_norm(...
+        yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
+      % integrate over the f to get posterior predictive distribution
+      Py(i1) = quadgk(pdf, minf, maxf);
+    end
+  end
+end
+
+function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
+%INIT_NEGBIN_NORM
+%
+%  Description
+%    Return function handle to a function evaluating
+%    Negative-Binomial * Gaussian which is used for evaluating
+%    (likelihood * cavity) or (likelihood * posterior) Return
+%    also useful limits for integration. This is private function
+%    for lik_negbin.
+%  
+%  See also
+%    LIK_NEGBIN_TILTEDMOMENTS, LIK_NEGBIN_SITEDERIV,
+%    LIK_NEGBIN_PREDY
+  
+% avoid repetitive evaluation of constant part
+  ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
+            - log(sigm2_i)/2 - log(2*pi)/2;
+  % Create function handle for the function to be integrated
+  df = @negbin_norm;
+  % use log to avoid underflow, and derivates for faster search
+  ld = @log_negbin_norm;
+  ldg = @log_negbin_norm_g;
+  ldg2 = @log_negbin_norm_g2;
+
+  % Set the limits for integration
+  % Negative-binomial likelihood is log-concave so the negbin_norm
+  % function is unimodal, which makes things easier
+  if yy==0
+    % with yy==0, the mode of the likelihood is not defined
+    % use the mode of the Gaussian (cavity or posterior) as a first guess
+    modef = myy_i;
+  else
+    % use precision weighted mean of the Gaussian approximation
+    % of the Negative-Binomial likelihood and Gaussian
+    mu=log(yy/avgE);
+    s2=(yy+r)./(yy.*r);
+    modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
+  end
+  % find the mode of the integrand using Newton iterations
+  % few iterations is enough, since the first guess in the right direction
+  niter=4;       % number of Newton iterations
+  mindelta=1e-6; % tolerance in stopping Newton iterations
+  for ni=1:niter
+    g=ldg(modef);
+    h=ldg2(modef);
+    delta=-g/h;
+    modef=modef+delta;
+    if abs(delta)<mindelta
+      break
+    end
+  end
+  % integrand limits based on Gaussian approximation at mode
+  modes=sqrt(-1/h);
+  minf=modef-8*modes;
+  maxf=modef+8*modes;
+  modeld=ld(modef);
+  iter=0;
+  % check that density at end points is low enough
+  lddiff=20; % min difference in log-density between mode and end-points
+  minld=ld(minf);
+  step=1;
+  while minld>(modeld-lddiff)
+    minf=minf-step*modes;
+    minld=ld(minf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_negbin -> init_negbin_norm: ' ...
+             'integration interval minimun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  maxld=ld(maxf);
+  step=1;
+  while maxld>(modeld-lddiff)
+    maxf=maxf+step*modes;
+    maxld=ld(maxf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_negbin -> init_negbin_norm: ' ...
+             'integration interval maximun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  
+  function integrand = negbin_norm(f)
+  % Negative-binomial * Gaussian
+    mu = avgE.*exp(f);
+    integrand = exp(ldconst ...
+                    +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
+                    -0.5*(f-myy_i).^2./sigm2_i);
+  end
+  
+  function log_int = log_negbin_norm(f)
+  % log(Negative-binomial * Gaussian)
+  % log_negbin_norm is used to avoid underflow when searching
+  % integration interval
+    mu = avgE.*exp(f);
+    log_int = ldconst...
+              +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
+              -0.5*(f-myy_i).^2./sigm2_i;
+  end
+  
+  function g = log_negbin_norm_g(f)
+  % d/df log(Negative-binomial * Gaussian)
+  % derivative of log_negbin_norm
+    mu = avgE.*exp(f);
+    g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
+        + (myy_i - f)./sigm2_i;
+  end
+  
+  function g2 = log_negbin_norm_g2(f)
+  % d^2/df^2 log(Negative-binomial * Gaussian)
+  % second derivate of log_negbin_norm
+    mu = avgE.*exp(f);
+    g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
+         -1/sigm2_i;
+  end
+  
+end
+
+function mu = lik_negbin_invlink(lik, f, z)
+%LIK_NEGBIN_INVLINK  Returns values of inverse link function
+%             
+%  Description 
+%    MU = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values MU of inverse link function.
+%
+%     See also
+%     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
+  
+  mu = z.*exp(f);
+end
+
+function reclik = lik_negbin_recappend(reclik, ri, lik)
+%RECAPPEND  Append the parameters to the record
+%
+%  Description 
+%    RECLIK = GPCF_NEGBIN_RECAPPEND(RECLIK, RI, LIK) takes a
+%    likelihood record structure RECLIK, record index RI and
+%    likelihood structure LIK with the current MCMC samples of
+%    the parameters. Returns RECLIK which contains all the old
+%    samples and the current samples from LIK.
+% 
+%  See also
+%    GP_MC
+
+% Initialize record
+  if nargin == 2
+    reclik.type = 'Negbin';
+
+    % Initialize parameter
+    reclik.disper = [];
+
+    % Set the function handles
+    reclik.fh.pak = @lik_negbin_pak;
+    reclik.fh.unpak = @lik_negbin_unpak;
+    reclik.fh.lp = @lik_negbin_lp;
+    reclik.fh.lpg = @lik_negbin_lpg;
+    reclik.fh.ll = @lik_negbin_ll;
+    reclik.fh.llg = @lik_negbin_llg;    
+    reclik.fh.llg2 = @lik_negbin_llg2;
+    reclik.fh.llg3 = @lik_negbin_llg3;
+    reclik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
+    reclik.fh.predy = @lik_negbin_predy;
+    reclik.fh.invlink = @lik_negbin_invlink;
+    reclik.fh.recappend = @lik_negbin_recappend;
+    reclik.p=[];
+    reclik.p.disper=[];
+    if ~isempty(ri.p.disper)
+      reclik.p.disper = ri.p.disper;
+    end
+    return
+  end
+  
+  reclik.disper(ri,:)=lik.disper;
+  if ~isempty(lik.p)
+    reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.disper);
+  end
+end

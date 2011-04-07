@@ -61,12 +61,12 @@ function gpcf = gpcf_noise(varargin)
   end
   
   if init
-    % Set the function handles to the nested functions
+    % Set the function handles to the subfunctions
     gpcf.fh.pak = @gpcf_noise_pak;
     gpcf.fh.unpak = @gpcf_noise_unpak;
     gpcf.fh.lp = @gpcf_noise_lp;
     gpcf.fh.lpg = @gpcf_noise_lpg;
-gpcf.fh.cfg = @gpcf_noise_cfg;
+    gpcf.fh.cfg = @gpcf_noise_cfg;
     gpcf.fh.ginput = @gpcf_noise_ginput;
     gpcf.fh.cov = @gpcf_noise_cov;
     gpcf.fh.trcov  = @gpcf_noise_trcov;
@@ -74,286 +74,286 @@ gpcf.fh.cfg = @gpcf_noise_cfg;
     gpcf.fh.recappend = @gpcf_noise_recappend;
   end        
 
-  function [w, s] = gpcf_noise_pak(gpcf)
-  %GPCF_NOISE_PAK  Combine GP covariance function parameters into
-  %                one vector.
-  %
-  %  Description
-  %    W = GPCF_NOISE_PAK(GPCF) takes a covariance function data
-  %    structure GPCF and combines the covariance function
-  %    parameters and their hyperparameters into a single row
-  %    vector W.
-  %
-  %       w = [ log(gpcf.noiseSigma2)
-  %             (hyperparameters of gpcf.magnSigma2)]'
-  %     
-  %
-  %  See also
-  %    GPCF_NOISE_UNPAK
+end
+
+function [w, s] = gpcf_noise_pak(gpcf)
+%GPCF_NOISE_PAK  Combine GP covariance function parameters into
+%                one vector.
+%
+%  Description
+%    W = GPCF_NOISE_PAK(GPCF) takes a covariance function data
+%    structure GPCF and combines the covariance function
+%    parameters and their hyperparameters into a single row
+%    vector W.
+%
+%       w = [ log(gpcf.noiseSigma2)
+%             (hyperparameters of gpcf.magnSigma2)]'
+%     
+%
+%  See also
+%    GPCF_NOISE_UNPAK
 
 
-    w = []; s = {};
-    if ~isempty(gpcf.p.noiseSigma2)
-      w(1) = log(gpcf.noiseSigma2);
-      s = [s 'log(noise.noiseSigma2)'];
-      % Hyperparameters of noiseSigma2
-      [wh sh] = feval(gpcf.p.noiseSigma2.fh.pak, gpcf.p.noiseSigma2);
-      w = [w wh];
-      s = [s sh];
-    end    
+  w = []; s = {};
+  if ~isempty(gpcf.p.noiseSigma2)
+    w(1) = log(gpcf.noiseSigma2);
+    s = [s 'log(noise.noiseSigma2)'];
+    % Hyperparameters of noiseSigma2
+    [wh sh] = feval(gpcf.p.noiseSigma2.fh.pak, gpcf.p.noiseSigma2);
+    w = [w wh];
+    s = [s sh];
+  end    
 
-  end
+end
 
-  function [gpcf, w] = gpcf_noise_unpak(gpcf, w)
-  %GPCF_NOISE_UNPAK  Sets the covariance function parameters
-  %                     into the structure
-  %
-  %  Description
-  %    [GPCF, W] = GPCF_NOISE_UNPAK(GPCF, W) takes a covariance
-  %    function data structure GPCF and a hyper-parameter vector W,
-  %    and returns a covariance function data structure identical
-  %    to the input, except that the covariance hyper-parameters
-  %    have been set to the values in W. Deletes the values set to
-  %    GPCF from W and returns the modified W.
-  %
-  %    Assignment is inverse of  
-  %       w = [ log(gpcf.noiseSigma2)
-  %             (hyperparameters of gpcf.magnSigma2)]'
-  %
-  %  See also
-  %    GPCF_NOISE_PAK
+function [gpcf, w] = gpcf_noise_unpak(gpcf, w)
+%GPCF_NOISE_UNPAK  Sets the covariance function parameters
+%                     into the structure
+%
+%  Description
+%    [GPCF, W] = GPCF_NOISE_UNPAK(GPCF, W) takes a covariance
+%    function data structure GPCF and a hyper-parameter vector W,
+%    and returns a covariance function data structure identical
+%    to the input, except that the covariance hyper-parameters
+%    have been set to the values in W. Deletes the values set to
+%    GPCF from W and returns the modified W.
+%
+%    Assignment is inverse of  
+%       w = [ log(gpcf.noiseSigma2)
+%             (hyperparameters of gpcf.magnSigma2)]'
+%
+%  See also
+%    GPCF_NOISE_PAK
 
+  
+  if ~isempty(gpcf.p.noiseSigma2)
+    gpcf.noiseSigma2 = exp(w(1));
+    w = w(2:end);
     
-    if ~isempty(gpcf.p.noiseSigma2)
-      gpcf.noiseSigma2 = exp(w(1));
-      w = w(2:end);
-      
-      % Hyperparameters of lengthScale
-      [p, w] = feval(gpcf.p.noiseSigma2.fh.unpak, gpcf.p.noiseSigma2, w);
-      gpcf.p.noiseSigma2 = p;
-    end
+    % Hyperparameters of lengthScale
+    [p, w] = feval(gpcf.p.noiseSigma2.fh.unpak, gpcf.p.noiseSigma2, w);
+    gpcf.p.noiseSigma2 = p;
   end
+end
 
 
-  function lp = gpcf_noise_lp(gpcf)
-  %GPCF_NOISE_LP  Evaluate the log prior of covariance function parameters
-  %
-  %  Description
-  %    LP = GPCF_NOISE_LP(GPCF) takes a covariance function
-  %    structure GPCF and returns log(p(th)), where th collects the
-  %    parameters.
-  %
-  %  See also
-  %   GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_G, GP_E
+function lp = gpcf_noise_lp(gpcf)
+%GPCF_NOISE_LP  Evaluate the log prior of covariance function parameters
+%
+%  Description
+%    LP = GPCF_NOISE_LP(GPCF) takes a covariance function
+%    structure GPCF and returns log(p(th)), where th collects the
+%    parameters.
+%
+%  See also
+%   GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_G, GP_E
 
-  % Evaluate the prior contribution to the error. The parameters that
-  % are sampled are from space W = log(w) where w is all the
-  % "real" samples. On the other hand errors are evaluated in the
-  % W-space so we need take into account also the Jacobian of
-  % transformation W -> w = exp(W). See Gelman et.al., 2004,
-  % Bayesian data Analysis, second edition, p24.
-    
-    lp = 0;
+% Evaluate the prior contribution to the error. The parameters that
+% are sampled are from space W = log(w) where w is all the
+% "real" samples. On the other hand errors are evaluated in the
+% W-space so we need take into account also the Jacobian of
+% transformation W -> w = exp(W). See Gelman et.al., 2004,
+% Bayesian data Analysis, second edition, p24.
+  
+  lp = 0;
+  gpp=gpcf.p;
+
+  if ~isempty(gpcf.p.noiseSigma2)
+    % Evaluate the prior contribution to the error.
+    lp = feval(gpp.noiseSigma2.fh.lp, gpcf.noiseSigma2, gpp.noiseSigma2) +log(gpcf.noiseSigma2);
+  end
+end
+
+function lpg = gpcf_noise_lpg(gpcf)
+%GPCF_NOISE_LPG  Evaluate gradient of the log prior with respect
+%                to the parameters.
+%
+%  Description
+%    LPG = GPCF_NOISE_LPG(GPCF) takes a covariance function
+%    structure GPCF and returns LPG = d log (p(th))/dth, where th
+%    is the vector of parameters.
+%
+%  See also
+%    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_LP, GP_G
+
+  lpg = [];
+  gpp=gpcf.p;
+  
+  if ~isempty(gpcf.p.noiseSigma2)            
+    lpgs = feval(gpp.noiseSigma2.fh.lpg, gpcf.noiseSigma2, gpp.noiseSigma2);
+    lpg = [lpg lpgs(1).*gpcf.noiseSigma2+1 lpgs(2:end)];
+  end
+end
+
+function DKff = gpcf_noise_cfg(gpcf, x, x2, mask)
+%GPCF_NOISE_CFG  Evaluate gradient of covariance function
+%                with respect to the parameters
+%
+%  Description
+%    DKff = GPCF_NOISE_CFG(GPCF, X) takes a covariance function
+%    data structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X) with
+%    respect to th (cell array with matrix elements).
+%
+%    DKff = GPCF_NOISE_CFG(GPCF, X, X2) takes a covariance
+%    function data structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to th (cell array with matrix
+%    elements).
+%
+%    DKff = GPCF_NOISE_CFG(GPCF, X, [], MASK) takes a covariance
+%    function data structure GPCF, a matrix X of input vectors
+%    and returns DKff, the diagonal of gradients of covariance
+%    matrix Kff = k(X,X2) with respect to th (cell array with
+%    matrix elements). This is needed for example with FIC sparse
+%    approximation.
+%
+%  See also
+%    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
+
+  DKff = {};
+
+  if ~isempty(gpcf.p.noiseSigma2)
     gpp=gpcf.p;
-
-    if ~isempty(gpcf.p.noiseSigma2)
-      % Evaluate the prior contribution to the error.
-      lp = feval(gpp.noiseSigma2.fh.lp, gpcf.noiseSigma2, gpp.noiseSigma2) +log(gpcf.noiseSigma2);
-    end
-  end
-
-  function lpg = gpcf_noise_lpg(gpcf)
-  %GPCF_NOISE_LPG  Evaluate gradient of the log prior with respect
-  %                to the parameters.
-  %
-  %  Description
-  %    LPG = GPCF_NOISE_LPG(GPCF) takes a covariance function
-  %    structure GPCF and returns LPG = d log (p(th))/dth, where th
-  %    is the vector of parameters.
-  %
-  %  See also
-  %    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_LP, GP_G
-
-    lpg = [];
-    gpp=gpcf.p;
-    
-    if ~isempty(gpcf.p.noiseSigma2)            
-      lpgs = feval(gpp.noiseSigma2.fh.lpg, gpcf.noiseSigma2, gpp.noiseSigma2);
-      lpg = [lpg lpgs(1).*gpcf.noiseSigma2+1 lpgs(2:end)];
-    end
+    DKff{1}=gpcf.noiseSigma2;
   end
   
-  function DKff = gpcf_noise_cfg(gpcf, x, x2, mask)
-  %GPCF_NOISE_CFG  Evaluate gradient of covariance function
-  %                with respect to the parameters
-  %
-  %  Description
-  %    DKff = GPCF_NOISE_CFG(GPCF, X) takes a covariance function
-  %    data structure GPCF, a matrix X of input vectors and returns
-  %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-  %    respect to th (cell array with matrix elements).
-  %
-  %    DKff = GPCF_NOISE_CFG(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of covariance matrix Kff =
-  %    k(X,X2) with respect to th (cell array with matrix
-  %    elements).
-  %
-  %    DKff = GPCF_NOISE_CFG(GPCF, X, [], MASK) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the diagonal of gradients of covariance
-  %    matrix Kff = k(X,X2) with respect to th (cell array with
-  %    matrix elements). This is needed for example with FIC sparse
-  %    approximation.
-  %
-  %  See also
-  %    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
+end
 
-    DKff = {};
+function DKff = gpcf_noise_ginput(gpcf, x, t)
+%GPCF_NOISE_GINPUT  Evaluate gradient of covariance function with 
+%                   respect to x
+%
+%  Description
+%    DKff = GPCF_NOISE_GINPUT(GPCF, X) takes a covariance
+%    function data structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X) with respect to X (cell array with matrix elements).
+%
+%    DKff = GPCF_NOISE_GINPUT(GPCF, X, X2) takes a covariance
+%    function data structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to X (cell array with matrix elements).
+%
+%  See also
+%    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
 
-    if ~isempty(gpcf.p.noiseSigma2)
-      gpp=gpcf.p;
-      DKff{1}=gpcf.noiseSigma2;
-    end
+end
+
+function C = gpcf_noise_cov(gpcf, x1, x2)
+% GP_NOISE_COV     Evaluate covariance matrix between two input vectors
+%
+%  Description
+%    C = GP_NOISE_COV(GP, TX, X) takes in covariance function of
+%    a Gaussian process GP and two matrixes TX and X that contain
+%    input vectors to GP. Returns covariance matrix C. Every
+%    element ij of C contains covariance between inputs i in TX
+%    and j in X.
+%
+%  See also
+%    GPCF_NOISE_TRCOV, GPCF_NOISE_TRVAR, GP_COV, GP_TRCOV
+
+
+  if isempty(x2)
+    x2=x1;
+  end
+  [n1,m1]=size(x1);
+  [n2,m2]=size(x2);
+
+  if m1~=m2
+    error('the number of columns of X1 and X2 has to be same')
+  end
+
+  C = sparse([],[],[],n1,n2,0);
+end
+
+function C = gpcf_noise_trcov(gpcf, x)
+%GP_NOISE_TRCOV  Evaluate training covariance matrix of inputs
+%
+%  Description
+%    C = GP_NOISE_TRCOV(GP, TX) takes in covariance function of a
+%    Gaussian process GP and matrix TX that contains training
+%    input vectors. Returns covariance matrix C. Every element ij
+%    of C contains covariance between inputs i and j in TX.
+%
+%  See also
+%    GPCF_NOISE_COV, GPCF_NOISE_TRVAR, GP_COV, GP_TRCOV
+
+  [n, m] =size(x);
+  n1=n+1;
+
+  C = sparse([],[],[],n,n,0);
+  C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigma2;
+
+end
+
+function C = gpcf_noise_trvar(gpcf, x)
+% GP_NOISE_TRVAR     Evaluate training variance vector
+%
+%    Description
+%    C = GP_NOISE_TRVAR(GPCF, TX) takes in covariance function 
+%    of a Gaussian process GPCF and matrix TX that contains
+%    training inputs. Returns variance vector C. Every
+%    element i of C contains variance of input i in TX
+%
+%
+%    See also
+%    GPCF_NOISE_COV, GP_COV, GP_TRCOV
+
+
+
+  [n, m] =size(x);
+  C=ones(n,1)*gpcf.noiseSigma2;
+
+end
+
+function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
+%RECAPPEND Record append
+%
+%  Description
+%    RECCF = GPCF_NOISE_RECAPPEND(RECCF, RI, GPCF) takes a
+%    covariance function record structure RECCF, record index RI
+%    and covariance function structure GPCF with the current MCMC
+%    samples of the hyperparameters. Returns RECCF which contains
+%    all the old samples and the current samples from GPCF .
+%
+%  See also
+%    GP_MC and GP_MC -> RECAPPEND
+
+% Initialize record
+  if nargin == 2
+    reccf.type = 'gpcf_noise';
     
-  end
-
-  function DKff = gpcf_noise_ginput(gpcf, x, t)
-  %GPCF_NOISE_GINPUT  Evaluate gradient of covariance function with 
-  %                   respect to x
-  %
-  %  Description
-  %    DKff = GPCF_NOISE_GINPUT(GPCF, X) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of covariance matrix Kff =
-  %    k(X,X) with respect to X (cell array with matrix elements).
-  %
-  %    DKff = GPCF_NOISE_GINPUT(GPCF, X, X2) takes a covariance
-  %    function data structure GPCF, a matrix X of input vectors
-  %    and returns DKff, the gradients of covariance matrix Kff =
-  %    k(X,X2) with respect to X (cell array with matrix elements).
-  %
-  %  See also
-  %    GPCF_NOISE_PAK, GPCF_NOISE_UNPAK, GPCF_NOISE_E, GP_G
-
-  end
-
-  function C = gpcf_noise_cov(gpcf, x1, x2)
-  % GP_NOISE_COV     Evaluate covariance matrix between two input vectors
-  %
-  %  Description
-  %    C = GP_NOISE_COV(GP, TX, X) takes in covariance function of
-  %    a Gaussian process GP and two matrixes TX and X that contain
-  %    input vectors to GP. Returns covariance matrix C. Every
-  %    element ij of C contains covariance between inputs i in TX
-  %    and j in X.
-  %
-  %  See also
-  %    GPCF_NOISE_TRCOV, GPCF_NOISE_TRVAR, GP_COV, GP_TRCOV
-
-
-    if isempty(x2)
-      x2=x1;
+    % Initialize parameters
+    reccf.noiseSigma2 = []; 
+    
+    % Set the function handles
+    reccf.fh.pak = @gpcf_noise_pak;
+    reccf.fh.unpak = @gpcf_noise_unpak;
+    reccf.fh.e = @gpcf_noise_lp;
+    reccf.fh.lpg = @gpcf_noise_lpg;
+    reccf.fh.cfg = @gpcf_noise_cfg;
+    reccf.fh.cov = @gpcf_noise_cov;
+    reccf.fh.trcov  = @gpcf_noise_trcov;
+    reccf.fh.trvar  = @gpcf_noise_trvar;
+    %  gpcf.fh.sampling = @hmc2;
+    reccf.sampling_opt = hmc2_opt;
+    reccf.fh.recappend = @gpcf_noise_recappend;  
+    reccf.p=[];
+    reccf.p.noiseSigma2=[];
+    if ~isempty(ri.p.noiseSigma2)
+      reccf.p.noiseSigma2 = ri.p.noiseSigma2;
     end
-    [n1,m1]=size(x1);
-    [n2,m2]=size(x2);
-
-    if m1~=m2
-      error('the number of columns of X1 and X2 has to be same')
-    end
-
-    C = sparse([],[],[],n1,n2,0);
+    return
   end
 
-  function C = gpcf_noise_trcov(gpcf, x)
-  %GP_NOISE_TRCOV  Evaluate training covariance matrix of inputs
-  %
-  %  Description
-  %    C = GP_NOISE_TRCOV(GP, TX) takes in covariance function of a
-  %    Gaussian process GP and matrix TX that contains training
-  %    input vectors. Returns covariance matrix C. Every element ij
-  %    of C contains covariance between inputs i and j in TX.
-  %
-  %  See also
-  %    GPCF_NOISE_COV, GPCF_NOISE_TRVAR, GP_COV, GP_TRCOV
+  gpp = gpcf.p;
 
-    [n, m] =size(x);
-    n1=n+1;
-
-    C = sparse([],[],[],n,n,0);
-    C(1:n1:end)=C(1:n1:end)+gpcf.noiseSigma2;
-
+  % record noiseSigma
+  if ~isempty(gpcf.noiseSigma2)
+    reccf.noiseSigma2(ri,:)=gpcf.noiseSigma2;
+    reccf.p.noiseSigma2 = feval(gpp.noiseSigma2.fh.recappend, reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
+  elseif ri==1
+    reccf.noiseSigma2=[];
   end
-
-  function C = gpcf_noise_trvar(gpcf, x)
-  % GP_NOISE_TRVAR     Evaluate training variance vector
-  %
-  %    Description
-  %    C = GP_NOISE_TRVAR(GPCF, TX) takes in covariance function 
-  %    of a Gaussian process GPCF and matrix TX that contains
-  %    training inputs. Returns variance vector C. Every
-  %    element i of C contains variance of input i in TX
-  %
-  %
-  %    See also
-  %    GPCF_NOISE_COV, GP_COV, GP_TRCOV
-
-
-
-    [n, m] =size(x);
-    C=ones(n,1)*gpcf.noiseSigma2;
-
-  end
-
-  function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
-  %RECAPPEND Record append
-  %
-  %  Description
-  %    RECCF = GPCF_NOISE_RECAPPEND(RECCF, RI, GPCF) takes a
-  %    covariance function record structure RECCF, record index RI
-  %    and covariance function structure GPCF with the current MCMC
-  %    samples of the hyperparameters. Returns RECCF which contains
-  %    all the old samples and the current samples from GPCF .
-  %
-  %  See also
-  %    GP_MC and GP_MC -> RECAPPEND
-
-  % Initialize record
-    if nargin == 2
-      reccf.type = 'gpcf_noise';
-      
-      % Initialize parameters
-      reccf.noiseSigma2 = []; 
-      
-      % Set the function handles
-      reccf.fh.pak = @gpcf_noise_pak;
-      reccf.fh.unpak = @gpcf_noise_unpak;
-      reccf.fh.e = @gpcf_noise_lp;
-      reccf.fh.lpg = @gpcf_noise_lpg;
-      reccf.fh.cfg = @gpcf_noise_cfg;
-      reccf.fh.cov = @gpcf_noise_cov;
-      reccf.fh.trcov  = @gpcf_noise_trcov;
-      reccf.fh.trvar  = @gpcf_noise_trvar;
-      %  gpcf.fh.sampling = @hmc2;
-      reccf.sampling_opt = hmc2_opt;
-      reccf.fh.recappend = @gpcf_noise_recappend;  
-      reccf.p=[];
-      reccf.p.noiseSigma2=[];
-      if ~isempty(ri.p.noiseSigma2)
-        reccf.p.noiseSigma2 = ri.p.noiseSigma2;
-      end
-      return
-    end
-
-    gpp = gpcf.p;
-
-    % record noiseSigma
-    if ~isempty(gpcf.noiseSigma2)
-      reccf.noiseSigma2(ri,:)=gpcf.noiseSigma2;
-      reccf.p.noiseSigma2 = feval(gpp.noiseSigma2.fh.recappend, reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
-    elseif ri==1
-      reccf.noiseSigma2=[];
-    end
-  end
-
 end

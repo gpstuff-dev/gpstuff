@@ -128,7 +128,7 @@ function lik = lik_gaussiansmt(varargin)
       if lik.censored(1) >= lik.censored(2)
         error('lik_gaussiansmt -> if censored model is used, the limits must be given in increasing order.')
       end
-        
+      
       imis1 = [];
       imis2 = [];
       if lik.censored(1) > -inf
@@ -152,7 +152,7 @@ function lik = lik_gaussiansmt(varargin)
     lik.gibbs = ip.Results.gibbs;
   end
   if init
-    % Set the function handles to the nested functions
+    % Set the function handles to the subfunctions
     lik.fh.pak = @lik_gaussiansmt_pak;
     lik.fh.unpak = @lik_gaussiansmt_unpak;
     lik.fh.lp = @lik_gaussiansmt_lp;
@@ -164,196 +164,197 @@ function lik = lik_gaussiansmt(varargin)
     lik.fh.recappend = @lik_gaussiansmt_recappend;
   end
 
-  function [w,s] = lik_gaussiansmt_pak(lik)
-    w = []; s = {};
-  end
+end
 
-  function [lik, w] = lik_gaussiansmt_unpak(lik, w)
+function [w,s] = lik_gaussiansmt_pak(lik)
+  w = []; s = {};
+end
 
-  end
+function [lik, w] = lik_gaussiansmt_unpak(lik, w)
 
-  function lp =lik_gaussiansmt_lp(lik)
-    lp = 0;
-  end
+end
 
-  function lpg  = lik_gaussiansmt_lpg(lik)
-    lpg = [];
-  end
+function lp =lik_gaussiansmt_lp(lik)
+  lp = 0;
+end
 
-  function DKff  = lik_gaussiansmt_cfg(lik, x, x2)
-    DKff = [];
+function lpg  = lik_gaussiansmt_lpg(lik)
+  lpg = [];
+end
+
+function DKff  = lik_gaussiansmt_cfg(lik, x, x2)
+  DKff = [];
+end
+
+function C = lik_gaussiansmt_trcov(lik, x)
+%LIK_GAUSSIANSMT_TRCOV  Evaluate training covariance matrix
+%                    corresponding to Gaussian noise
+%  Description
+%    C = LIK_GAUSSIANSMT_TRCOV(GP, TX) takes in covariance function
+%    of a Gaussian process GP and matrix TX that contains
+%    training input vectors. Returns covariance matrix C. Every
+%    element ij of C contains covariance between inputs i and j
+%    in TX
+%
+%  See also
+%    LIK_GAUSSIANSMT_COV, LIK_GAUSSIANSMT_TRVAR, GP_COV, GP_TRCOV
+
+  [n, m] =size(x);
+  n1=n+1;
+  
+  if n ~= lik.ndata
+    error(['lik_gaussiansmt -> _trvar: The training variance can be evaluated'... 
+           '      only for training data.                                 '])
   end
   
-  function C = lik_gaussiansmt_trcov(lik, x)
-  %LIK_GAUSSIANSMT_TRCOV  Evaluate training covariance matrix
-  %                    corresponding to Gaussian noise
-  %  Description
-  %    C = LIK_GAUSSIANSMT_TRCOV(GP, TX) takes in covariance function
-  %    of a Gaussian process GP and matrix TX that contains
-  %    training input vectors. Returns covariance matrix C. Every
-  %    element ij of C contains covariance between inputs i and j
-  %    in TX
-  %
-  %  See also
-  %    LIK_GAUSSIANSMT_COV, LIK_GAUSSIANSMT_TRVAR, GP_COV, GP_TRCOV
+  C = sparse(1:n, 1:n, lik.sigma2, n, n);
+end
 
-    [n, m] =size(x);
-    n1=n+1;
-    
-    if n ~= lik.ndata
-      error(['lik_gaussiansmt -> _trvar: The training variance can be evaluated'... 
-             '      only for training data.                                 '])
-    end
-    
-    C = sparse(1:n, 1:n, lik.sigma2, n, n);
+function C = lik_gaussiansmt_trvar(lik, x)
+%LIK_GAUSSIANSMT_TRVAR  Evaluate training variance vector
+%                    corresponding to Gaussian noise
+%
+%  Description
+%    C = LIK_GAUSSIANSMT_TRVAR(LIK, TX) takes in covariance function 
+%    of a Gaussian process LIK and matrix TX that contains
+%    training inputs. Returns variance vector C. Every
+%    element i of C contains variance of input i in TX
+%
+%
+%  See also
+%    LIK_GAUSSIANSMT_COV, GP_COV, GP_TRCOV
+  
+  [n, m] =size(x);
+  if n ~= lik.ndata
+    error(['lik_gaussiansmt -> _trvar: The training variance can be evaluated'... 
+           '      only for training data.                                 '])
   end
+  C = lik.sigma2;
+  
+end
 
-  function C = lik_gaussiansmt_trvar(lik, x)
-  %LIK_GAUSSIANSMT_TRVAR  Evaluate training variance vector
-  %                    corresponding to Gaussian noise
-  %
-  %  Description
-  %    C = LIK_GAUSSIANSMT_TRVAR(LIK, TX) takes in covariance function 
-  %    of a Gaussian process LIK and matrix TX that contains
-  %    training inputs. Returns variance vector C. Every
-  %    element i of C contains variance of input i in TX
-  %
-  %
-  %  See also
-  %    LIK_GAUSSIANSMT_COV, GP_COV, GP_TRCOV
-    
-    [n, m] =size(x);
-    if n ~= lik.ndata
-      error(['lik_gaussiansmt -> _trvar: The training variance can be evaluated'... 
-             '      only for training data.                                 '])
+function [lik, y] = lik_gaussiansmt_gibbs(gp, lik, x, y)
+%LIK_GAUSSIANSMT_GIBBS  Function for sampling the sigma2's
+%
+%  Description
+%    Perform Gibbs sampling for the scale mixture variances
+
+  [n,m] = size(x);
+  
+  % Draw a sample of the mean of y. Its distribution is
+  % f ~ N(K*inv(C)*y, K - K*inv(C)*K')
+  switch gp.type
+    case 'FULL'
+      sampy = gp_rnd(gp, x, y, x);
+    case 'FIC'
+      sampy = gp_rnd(gp, x, y, x, 'tstind', 1:n);
+    case {'PIC' 'PIC_BLOCK'}
+      sampy = gp_rnd(gp, x, y, x, 'tstind', gp.tr_index);
+  end
+  % Calculate the residual
+  r = y-sampy;
+  
+  U = lik.U;
+  t2 = lik.tau2;
+  alpha = lik.alpha;
+  nu = lik.nu;
+  rss2=alpha.^2.*U;
+  
+  % Perform the gibbs sampling (Gelman et.al. (2004) page 304-305)
+  % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al.
+  U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));        
+  shape = n*nu./2;                               % These are parameters...
+  invscale = nu.*sum(1./U)./2;                   % used in Gelman et al
+  t2=gamrnd(shape, 1./invscale);                 % Notice! The matlab parameterization is different
+  alpha2=sinvchi2rand(n,mean(r.^2./U));
+  rss2=alpha2.*U;
+  if ~isempty(lik.p.nu)
+    % Sample nu using Gibbs sampling
+    pp = lik.p.nu;
+    opt=struct('nomit',4,'display',0,'method','doubling', ...
+               'wsize',4,'plimit',5,'unimodal',1,'mmlimits',[0; 128]);
+    nu=sls(@(nu) (-sum(sinvchi2_lpdf(U,nu,t2))-feval(pp.fh.lp, nu, pp)),nu,opt);
+  end
+  lik.sigma2 = rss2;
+  lik.U = U;
+  lik.tau2 = t2;
+  lik.alpha = sqrt(alpha2);
+  lik.nu = nu;
+  lik.r = r;
+  if isfield(lik, 'censored')   
+    imis1 = [];
+    imis2 = [];
+    if lik.censored(1) > -inf
+      imis1 = find(y<=lik.censored(1));
+      y(imis1)=normrtrand(sampy(imis1),alpha2*U(imis1),lik.censored(1));
     end
-    C = lik.sigma2;
     
+    if lik.censored(1) < inf
+      imis2 = find(y>=lik.censored(2));
+      y(imis2)=normltrand(sampy(imis2),alpha2*U(imis2),lik.censored(2));
+    end
+    lik.cy = y([imis1 ; imis2]);
+  end
+end
+
+function reccf = lik_gaussiansmt_recappend(reccf, ri, lik)
+%RECAPPEND  Record append
+%
+%  Description
+%    RECCF = LIK_GAUSSIANSMT_RECAPPEND(RECCF, RI, LIK)
+%    takes a likelihood record structure RECCF, record
+%    index RI and likelihood structure LIK with the
+%    current MCMC samples of the parameters. Returns
+%    RECCF which contains all the old samples and the
+%    current samples from LIK .
+%
+%  See also
+%    GP_MC and GP_MC -> RECAPPEND
+  
+  
+  if nargin == 2
+    % Initialize record
+    reccf.type = 'Gaussian-smt';
+    lik.ndata = [];
+    
+    % Initialize parameters
+    reccf.sigma2 = [];
+    
+    % Set the function handles
+    reccf.fh.pak = @lik_gaussiansmt_pak;
+    reccf.fh.unpak = @lik_gaussiansmt_unpak;
+    reccf.fh.lp = @lik_gaussiansmt_lp;
+    reccf.fh.lpg = @lik_gaussiansmt_lpg;
+    reccf.fh.cfg = @lik_gaussiansmt_cfg;
+    reccf.fh.cov = @lik_gaussiansmt_cov;
+    reccf.fh.trcov  = @lik_gaussiansmt_trcov;
+    reccf.fh.trvar  = @lik_gaussiansmt_trvar;
+    reccf.fh.gibbs = @lik_gaussiansmt_gibbs;
+    reccf.fh.recappend = @lik_gaussiansmt_recappend;
+    return
   end
   
-  function [lik, y] = lik_gaussiansmt_gibbs(gp, lik, x, y)
-  %LIK_GAUSSIANSMT_GIBBS  Function for sampling the sigma2's
-  %
-  %  Description
-  %    Perform Gibbs sampling for the scale mixture variances
-
-    [n,m] = size(x);
-    
-    % Draw a sample of the mean of y. Its distribution is
-    % f ~ N(K*inv(C)*y, K - K*inv(C)*K')
-    switch gp.type
-      case 'FULL'
-        sampy = gp_rnd(gp, x, y, x);
-      case 'FIC'
-        sampy = gp_rnd(gp, x, y, x, 'tstind', 1:n);
-      case {'PIC' 'PIC_BLOCK'}
-        sampy = gp_rnd(gp, x, y, x, 'tstind', gp.tr_index);
-    end
-    % Calculate the residual
-    r = y-sampy;
-    
-    U = lik.U;
-    t2 = lik.tau2;
-    alpha = lik.alpha;
-    nu = lik.nu;
-    rss2=alpha.^2.*U;
-    
-    % Perform the gibbs sampling (Gelman et.al. (2004) page 304-305)
-    % Notice that 'sinvchi2rand' is parameterized as in Gelman et. al.
-    U=sinvchi2rand(nu+1, (nu.*t2+(r./alpha).^2)./(nu+1));        
-    shape = n*nu./2;                               % These are parameters...
-    invscale = nu.*sum(1./U)./2;                   % used in Gelman et al
-    t2=gamrnd(shape, 1./invscale);                 % Notice! The matlab parameterization is different
-    alpha2=sinvchi2rand(n,mean(r.^2./U));
-    rss2=alpha2.*U;
-    if ~isempty(lik.p.nu)
-      % Sample nu using Gibbs sampling
-      pp = lik.p.nu;
-      opt=struct('nomit',4,'display',0,'method','doubling', ...
-                 'wsize',4,'plimit',5,'unimodal',1,'mmlimits',[0; 128]);
-      nu=sls(@(nu) (-sum(sinvchi2_lpdf(U,nu,t2))-feval(pp.fh.lp, nu, pp)),nu,opt);
-    end
-    lik.sigma2 = rss2;
-    lik.U = U;
-    lik.tau2 = t2;
-    lik.alpha = sqrt(alpha2);
-    lik.nu = nu;
-    lik.r = r;
-    if isfield(lik, 'censored')   
-      imis1 = [];
-      imis2 = [];
-      if lik.censored(1) > -inf
-        imis1 = find(y<=lik.censored(1));
-        y(imis1)=normrtrand(sampy(imis1),alpha2*U(imis1),lik.censored(1));
-      end
-      
-      if lik.censored(1) < inf
-        imis2 = find(y>=lik.censored(2));
-        y(imis2)=normltrand(sampy(imis2),alpha2*U(imis2),lik.censored(2));
-      end
-      lik.cy = y([imis1 ; imis2]);
-    end
+  reccf.ndata = lik.ndata;
+  gpp = lik.p;
+  
+  % record noiseSigma
+  if ~isempty(lik.sigma2)
+    reccf.sigma2(ri,:)=lik.sigma2;
+  elseif ri==1
+    reccf.sigma2=[];
   end
-
-  function reccf = lik_gaussiansmt_recappend(reccf, ri, lik)
-  %RECAPPEND  Record append
-  %
-  %  Description
-  %    RECCF = LIK_GAUSSIANSMT_RECAPPEND(RECCF, RI, LIK)
-  %    takes a likelihood record structure RECCF, record
-  %    index RI and likelihood structure LIK with the
-  %    current MCMC samples of the parameters. Returns
-  %    RECCF which contains all the old samples and the
-  %    current samples from LIK .
-  %
-  %  See also
-  %    GP_MC and GP_MC -> RECAPPEND
-    
-    
-    if nargin == 2
-      % Initialize record
-      reccf.type = 'Gaussian-smt';
-      lik.ndata = [];
-      
-      % Initialize parameters
-      reccf.sigma2 = [];
-      
-      % Set the function handles
-      reccf.fh.pak = @lik_gaussiansmt_pak;
-      reccf.fh.unpak = @lik_gaussiansmt_unpak;
-      reccf.fh.lp = @lik_gaussiansmt_lp;
-      reccf.fh.lpg = @lik_gaussiansmt_lpg;
-      reccf.fh.cfg = @lik_gaussiansmt_cfg;
-      reccf.fh.cov = @lik_gaussiansmt_cov;
-      reccf.fh.trcov  = @lik_gaussiansmt_trcov;
-      reccf.fh.trvar  = @lik_gaussiansmt_trvar;
-      reccf.fh.gibbs = @lik_gaussiansmt_gibbs;
-      reccf.fh.recappend = @lik_gaussiansmt_recappend;
-      return
-    end
-    
-    reccf.ndata = lik.ndata;
-    gpp = lik.p;
-    
-    % record noiseSigma
-    if ~isempty(lik.sigma2)
-      reccf.sigma2(ri,:)=lik.sigma2;
-    elseif ri==1
-      reccf.sigma2=[];
-    end
-    if ~isempty(lik.nu)
-      reccf.nu(ri,:)=lik.nu;
-      reccf.U(ri,:) = lik.U;
-      reccf.tau2(ri,:) = lik.tau2;
-      reccf.alpha(ri,:) = lik.alpha;
-      reccf.r(ri,:) = lik.r;
-    elseif ri==1
-      reccf.sigma2=[];
-    end
-    if isfield(lik, 'censored')
-      reccf.cy(ri,:) = lik.cy';
-    end
-    
+  if ~isempty(lik.nu)
+    reccf.nu(ri,:)=lik.nu;
+    reccf.U(ri,:) = lik.U;
+    reccf.tau2(ri,:) = lik.tau2;
+    reccf.alpha(ri,:) = lik.alpha;
+    reccf.r(ri,:) = lik.r;
+  elseif ri==1
+    reccf.sigma2=[];
   end
+  if isfield(lik, 'censored')
+    reccf.cy(ri,:) = lik.cy';
+  end
+  
 end
 
