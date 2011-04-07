@@ -73,69 +73,69 @@ function p = prior_gaussian(varargin)
     p.fh.lpg = @prior_gaussian_lpg;
     p.fh.recappend = @prior_gaussian_recappend;
   end
-  
-  function [w, s] = prior_gaussian_pak(p)
-    
-    w=[];
-    s={};
-    if ~isempty(p.p.mu)
-      w = p.mu;
-      s=[s; 'Gaussian.mu'];
-    end
-    if ~isempty(p.p.s2)
-      w = [w log(p.s2)];
-      s=[s; 'log(Gaussian.s2)'];
-    end
-  end
-  
-  function [p, w] = prior_gaussian_unpak(p, w)
-
-    if ~isempty(p.p.mu)
-      i1=1;
-      p.mu = w(i1);
-      w = w(i1+1:end);
-    end
-    if ~isempty(p.p.s2)
-      i1=1;
-      p.s2 = exp(w(i1));
-      w = w(i1+1:end);
-    end
-  end
-  
-  function lp = prior_gaussian_lp(x, p)
-    
-    lp = 0.5*sum(-log(2*pi) -log(p.s2)- 1./p.s2 .* sum((x-p.mu).^2,1));
-    
-    if ~isempty(p.p.mu)
-      lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
-    end
-    if ~isempty(p.p.s2)
-      lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
-    end
-  end
-  
-  function lpg = prior_gaussian_lpg(x, p)
-    
-    lpg = (1./p.s2).*(p.mu-x);
-    
-    if ~isempty(p.p.mu)
-      lpgmu = sum((1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
-      lpg = [lpg lpgmu];
-    end
-    if ~isempty(p.p.s2)
-      lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
-      lpg = [lpg lpgs2];
-    end
-  end
-  
-  function rec = prior_gaussian_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-    if ~isempty(p.p.mu)
-      rec.mu(ri) = p.mu;
-    end
-    if ~isempty(p.p.s2)
-      rec.s2(ri) = p.s2;
-    end
-  end    
 end
+
+function [w, s] = prior_gaussian_pak(p)
+  
+  w=[];
+  s={};
+  if ~isempty(p.p.mu)
+    w = p.mu;
+    s=[s; 'Gaussian.mu'];
+  end
+  if ~isempty(p.p.s2)
+    w = [w log(p.s2)];
+    s=[s; 'log(Gaussian.s2)'];
+  end
+end
+
+function [p, w] = prior_gaussian_unpak(p, w)
+
+  if ~isempty(p.p.mu)
+    i1=1;
+    p.mu = w(i1);
+    w = w(i1+1:end);
+  end
+  if ~isempty(p.p.s2)
+    i1=1;
+    p.s2 = exp(w(i1));
+    w = w(i1+1:end);
+  end
+end
+
+function lp = prior_gaussian_lp(x, p)
+  
+  lp = 0.5*sum(-log(2*pi) -log(p.s2)- 1./p.s2 .* sum((x-p.mu).^2,1));
+  
+  if ~isempty(p.p.mu)
+    lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
+  end
+  if ~isempty(p.p.s2)
+    lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
+  end
+end
+
+function lpg = prior_gaussian_lpg(x, p)
+  
+  lpg = (1./p.s2).*(p.mu-x);
+  
+  if ~isempty(p.p.mu)
+    lpgmu = sum((1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+    lpg = [lpg lpgmu];
+  end
+  if ~isempty(p.p.s2)
+    lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
+    lpg = [lpg lpgs2];
+  end
+end
+
+function rec = prior_gaussian_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
+  if ~isempty(p.p.mu)
+    rec.mu(ri) = p.mu;
+  end
+  if ~isempty(p.p.s2)
+    rec.s2(ri) = p.s2;
+  end
+end    

@@ -76,70 +76,71 @@ function p = prior_gamma(varargin)
     p.fh.lpg = @prior_gamma_lpg;
     p.fh.recappend = @prior_gamma_recappend;
   end
-  
-  function [w, s] = prior_gamma_pak(p)
-    
-    w=[];
-    s={};
-    if ~isempty(p.p.sh)
-      w = log(p.sh);
-      s=[s; 'log(Gamma.sh)'];
-    end
-    if ~isempty(p.p.is)
-      w = [w log(p.is)];
-      s=[s; 'log(Gamma.is)'];
-    end
-  end
-  
-  function [p, w] = prior_gamma_unpak(p, w)
 
-    if ~isempty(p.p.sh)
-      i1=1;
-      p.sh = exp(w(i1));
-      w = w(i1+1:end);
-    end
-    if ~isempty(p.p.is)
-      i1=1;
-      p.is = exp(w(i1));
-      w = w(i1+1:end);
-    end
-  end
-  
-  function lp = prior_gamma_lp(x, p)
-    
-    lp = sum(-p.is.*x + (p.sh-1).*log(x) +p.sh.*log(p.is)  -gammaln(p.sh));
-    
-    if ~isempty(p.p.sh)
-      lp = lp + feval(p.p.sh.fh.lp, p.sh, p.p.sh) + log(p.sh);
-    end
-    if ~isempty(p.p.is)
-      lp = lp + feval(p.p.is.fh.lp, p.is, p.p.is) + log(p.is);
-    end
-  end
-  
-  function lpg = prior_gamma_lpg(x, p)
-    
-    lpg = (p.sh-1)./x - p.is;
-    
-    if ~isempty(p.p.sh)
-      lpgsh = (sum(-digamma1(p.sh) + log(p.is) + log(x)) + feval(p.p.sh.fh.lpg, p.sh, p.p.sh)).*p.sh + 1;
-      lpg = [lpg lpgsh];
-    end
-    if ~isempty(p.p.is)
-      lpgis = (sum(p.sh./p.is+x) + feval(p.p.is.fh.lpg, p.is, p.p.is)).*p.is + 1;
-      lpg = [lpg lpgis];
-    end
-    
-  end
-  
-  function rec = prior_gamma_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-    if ~isempty(p.p.sh)
-      rec.sh(ri) = p.sh;
-    end
-    if ~isempty(p.p.is)
-      rec.is(ri) = p.is;
-    end
-  end    
 end
+
+function [w, s] = prior_gamma_pak(p)
+  
+  w=[];
+  s={};
+  if ~isempty(p.p.sh)
+    w = log(p.sh);
+    s=[s; 'log(Gamma.sh)'];
+  end
+  if ~isempty(p.p.is)
+    w = [w log(p.is)];
+    s=[s; 'log(Gamma.is)'];
+  end
+end
+
+function [p, w] = prior_gamma_unpak(p, w)
+
+  if ~isempty(p.p.sh)
+    i1=1;
+    p.sh = exp(w(i1));
+    w = w(i1+1:end);
+  end
+  if ~isempty(p.p.is)
+    i1=1;
+    p.is = exp(w(i1));
+    w = w(i1+1:end);
+  end
+end
+
+function lp = prior_gamma_lp(x, p)
+  
+  lp = sum(-p.is.*x + (p.sh-1).*log(x) +p.sh.*log(p.is)  -gammaln(p.sh));
+  
+  if ~isempty(p.p.sh)
+    lp = lp + feval(p.p.sh.fh.lp, p.sh, p.p.sh) + log(p.sh);
+  end
+  if ~isempty(p.p.is)
+    lp = lp + feval(p.p.is.fh.lp, p.is, p.p.is) + log(p.is);
+  end
+end
+
+function lpg = prior_gamma_lpg(x, p)
+  
+  lpg = (p.sh-1)./x - p.is;
+  
+  if ~isempty(p.p.sh)
+    lpgsh = (sum(-digamma1(p.sh) + log(p.is) + log(x)) + feval(p.p.sh.fh.lpg, p.sh, p.p.sh)).*p.sh + 1;
+    lpg = [lpg lpgsh];
+  end
+  if ~isempty(p.p.is)
+    lpgis = (sum(p.sh./p.is+x) + feval(p.p.is.fh.lpg, p.is, p.p.is)).*p.is + 1;
+    lpg = [lpg lpgis];
+  end
+  
+end
+
+function rec = prior_gamma_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
+  if ~isempty(p.p.sh)
+    rec.sh(ri) = p.sh;
+  end
+  if ~isempty(p.p.is)
+    rec.is(ri) = p.is;
+  end
+end    

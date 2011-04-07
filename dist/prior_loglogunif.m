@@ -39,28 +39,28 @@ function p = prior_loglogunif(varargin)
     p.fh.lpg = @prior_loglogunif_lpg;
     p.fh.recappend = @prior_loglogunif_recappend;
   end
-  
-  function [w, s] = prior_loglogunif_pak(p, w)
-    w=[];
-    s={};
-  end
-  
-  function [p, w] = prior_loglogunif_unpak(p, w)
-    w = w;
-    p = p;
-  end
-  
-  function lp = prior_loglogunif_lp(x, p)
-    lp = -sum(log(log(x)) + log(x));     % = log( 1./log(x) * 1./x)
-  end
-  
-  function lpg = prior_loglogunif_lpg(x, p)
-    lpg = -1./log(x)./x - 1./x;
-  end
-  
-  function rec = prior_loglogunif_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-  end
-  
+
+end
+
+function [w, s] = prior_loglogunif_pak(p, w)
+  w=[];
+  s={};
+end
+
+function [p, w] = prior_loglogunif_unpak(p, w)
+  w = w;
+  p = p;
+end
+
+function lp = prior_loglogunif_lp(x, p)
+  lp = -sum(log(log(x)) + log(x));     % = log( 1./log(x) * 1./x)
+end
+
+function lpg = prior_loglogunif_lpg(x, p)
+  lpg = -1./log(x)./x - 1./x;
+end
+
+function rec = prior_loglogunif_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
 end

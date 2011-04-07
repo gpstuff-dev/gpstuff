@@ -73,69 +73,70 @@ function p = prior_laplace(varargin)
     p.fh.lpg = @prior_laplace_lpg;
     p.fh.recappend = @prior_laplace_recappend;
   end
-  
-  function [w, s] = prior_laplace_pak(p)
-    
-    w=[];
-    s={};
-    if ~isempty(p.p.mu)
-      w = p.mu;
-      s=[s; 'Laplace.mu'];
-    end
-    if ~isempty(p.p.s)
-      w = [w log(p.s)];
-      s=[s; 'log(Laplace.s)'];
-    end
-  end
-  
-  function [p, w] = prior_laplace_unpak(p, w)
-    
-    if ~isempty(p.p.mu)
-      i1=1;
-      p.mu = w(i1);
-      w = w(i1+1:end);
-    end
-    if ~isempty(p.p.s)
-      i1=1;
-      p.s = exp(w(i1));
-      w = w(i1+1:end);
-    end
-  end
-  
-  function lp = prior_laplace_lp(x, p)
-    
-    lp = sum(-log(2*p.s) - 1./p.s.* abs(x-p.mu));
-    
-    if ~isempty(p.p.mu)
-      lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
-    end
-    if ~isempty(p.p.s)
-      lp = lp + feval(p.p.s.fh.lp, p.s, p.p.s) + log(p.s);
-    end
-  end
-  
-  function lpg = prior_laplace_lpg(x, p)
 
-    lpg = -sign(x-p.mu)./p.s; 
-    
-    if ~isempty(p.p.mu)
-      lpgmu = sum(sign(x-p.mu)./p.s) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
-      lpg = [lpg lpgmu];
-    end
-    if ~isempty(p.p.s)
-      lpgs = (sum(-1./p.s +1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh.lpg, p.s, p.p.s)).*p.s + 1;
-      lpg = [lpg lpgs];
-    end
-  end
-  
-  function rec = prior_laplace_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-    if ~isempty(p.p.mu)
-      rec.mu(ri) = p.mu;
-    end
-    if ~isempty(p.p.s)
-      rec.s(ri) = p.s;
-    end
-  end    
 end
+
+function [w, s] = prior_laplace_pak(p)
+  
+  w=[];
+  s={};
+  if ~isempty(p.p.mu)
+    w = p.mu;
+    s=[s; 'Laplace.mu'];
+  end
+  if ~isempty(p.p.s)
+    w = [w log(p.s)];
+    s=[s; 'log(Laplace.s)'];
+  end
+end
+
+function [p, w] = prior_laplace_unpak(p, w)
+  
+  if ~isempty(p.p.mu)
+    i1=1;
+    p.mu = w(i1);
+    w = w(i1+1:end);
+  end
+  if ~isempty(p.p.s)
+    i1=1;
+    p.s = exp(w(i1));
+    w = w(i1+1:end);
+  end
+end
+
+function lp = prior_laplace_lp(x, p)
+  
+  lp = sum(-log(2*p.s) - 1./p.s.* abs(x-p.mu));
+  
+  if ~isempty(p.p.mu)
+    lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
+  end
+  if ~isempty(p.p.s)
+    lp = lp + feval(p.p.s.fh.lp, p.s, p.p.s) + log(p.s);
+  end
+end
+
+function lpg = prior_laplace_lpg(x, p)
+
+  lpg = -sign(x-p.mu)./p.s; 
+  
+  if ~isempty(p.p.mu)
+    lpgmu = sum(sign(x-p.mu)./p.s) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+    lpg = [lpg lpgmu];
+  end
+  if ~isempty(p.p.s)
+    lpgs = (sum(-1./p.s +1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh.lpg, p.s, p.p.s)).*p.s + 1;
+    lpg = [lpg lpgs];
+  end
+end
+
+function rec = prior_laplace_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
+  if ~isempty(p.p.mu)
+    rec.mu(ri) = p.mu;
+  end
+  if ~isempty(p.p.s)
+    rec.s(ri) = p.s;
+  end
+end    

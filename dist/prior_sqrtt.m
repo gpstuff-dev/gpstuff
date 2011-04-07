@@ -86,87 +86,88 @@ function p = prior_sqrtt(varargin)
     p.fh.recappend = @prior_sqrtt_recappend;
   end
 
-  function [w, s] = prior_sqrtt_pak(p)
-    
-    w=[];
-    s={};
-    if ~isempty(p.p.mu)
-      w = p.mu;
-      s=[s; 'Sqrt-Student-t.mu'];
-    end        
-    if ~isempty(p.p.s2)
-      w = [w log(p.s2)];
-      s=[s; 'log(Sqrt-Student-t.s2)'];
-    end
-    if ~isempty(p.p.nu)
-      w = [w log(p.nu)];
-      s=[s; 'log(Sqrt-Student-t.nu)'];
-    end
-  end
-  
-  function [p, w] = prior_sqrtt_unpak(p, w)
-    
-    if ~isempty(p.p.mu)
-      i1=1;
-      p.mu = w(i1);
-      w = w(i1+1:end);
-    end
-    if ~isempty(p.p.s2)
-      i1=1;
-      p.s2 = exp(w(i1));
-      w = w(i1+1:end);
-    end
-    if ~isempty(p.p.nu)
-      i1=1;
-      p.nu = exp(w(i1));
-      w = w(i1+1:end);
-    end
-  end
-  
-  function lp = prior_sqrtt_lp(x, p)
-    
-    lp=sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) - 2*sqrt(x));
-    
-    if ~isempty(p.p.mu)
-      lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
-    end
-    if ~isempty(p.p.s2)
-      lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
-    end
-    if ~isempty(p.p.nu)
-      lp = lp + feval(p.p.nu.fh.lp, p.nu, p.p.nu) + log(p.nu);
-    end
-  end
-  
-  function lpg = prior_sqrtt_lpg(x, p)
+end
 
-    lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1./sqrt(x);
-    
-    if ~isempty(p.p.mu)
-      lpgmu = sum((p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
-      lpg = [lpg lpgmu];
-    end
-    if ~isempty(p.p.s2)
-      lpgs2 = (sum(-1./(2.*p.s2)+((p.nu + 1)*(p.mu - x)^2)./(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
-      lpg = [lpg lpgs2];
-    end
-    if ~isempty(p.p.nu)
-      lpgnu = (0.5*sum(digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(x-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(x-p.mu).^2./p.nu./p.s2).*(x-p.mu).^2./p.s2./p.nu.^2) + feval(p.p.nu.fh.lpg, p.nu, p.p.nu)).*p.nu + 1;
-      lpg = [lpg lpgnu];
-    end
-  end
+function [w, s] = prior_sqrtt_pak(p)
   
-  function rec = prior_sqrtt_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-    if ~isempty(p.p.mu)
-      rec.mu(ri) = p.mu;
-    end        
-    if ~isempty(p.p.s2)
-      rec.s2(ri) = p.s2;
-    end
-    if ~isempty(p.p.nu)
-      rec.nu(ri) = p.nu;
-    end
+  w=[];
+  s={};
+  if ~isempty(p.p.mu)
+    w = p.mu;
+    s=[s; 'Sqrt-Student-t.mu'];
+  end        
+  if ~isempty(p.p.s2)
+    w = [w log(p.s2)];
+    s=[s; 'log(Sqrt-Student-t.s2)'];
+  end
+  if ~isempty(p.p.nu)
+    w = [w log(p.nu)];
+    s=[s; 'log(Sqrt-Student-t.nu)'];
+  end
+end
+
+function [p, w] = prior_sqrtt_unpak(p, w)
+  
+  if ~isempty(p.p.mu)
+    i1=1;
+    p.mu = w(i1);
+    w = w(i1+1:end);
+  end
+  if ~isempty(p.p.s2)
+    i1=1;
+    p.s2 = exp(w(i1));
+    w = w(i1+1:end);
+  end
+  if ~isempty(p.p.nu)
+    i1=1;
+    p.nu = exp(w(i1));
+    w = w(i1+1:end);
+  end
+end
+
+function lp = prior_sqrtt_lp(x, p)
+  
+  lp=sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) - 2*sqrt(x));
+  
+  if ~isempty(p.p.mu)
+    lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
+  end
+  if ~isempty(p.p.s2)
+    lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
+  end
+  if ~isempty(p.p.nu)
+    lp = lp + feval(p.p.nu.fh.lp, p.nu, p.p.nu) + log(p.nu);
+  end
+end
+
+function lpg = prior_sqrtt_lpg(x, p)
+
+  lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1./sqrt(x);
+  
+  if ~isempty(p.p.mu)
+    lpgmu = sum((p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+    lpg = [lpg lpgmu];
+  end
+  if ~isempty(p.p.s2)
+    lpgs2 = (sum(-1./(2.*p.s2)+((p.nu + 1)*(p.mu - x)^2)./(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
+    lpg = [lpg lpgs2];
+  end
+  if ~isempty(p.p.nu)
+    lpgnu = (0.5*sum(digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(x-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(x-p.mu).^2./p.nu./p.s2).*(x-p.mu).^2./p.s2./p.nu.^2) + feval(p.p.nu.fh.lpg, p.nu, p.p.nu)).*p.nu + 1;
+    lpg = [lpg lpgnu];
+  end
+end
+
+function rec = prior_sqrtt_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
+  if ~isempty(p.p.mu)
+    rec.mu(ri) = p.mu;
+  end        
+  if ~isempty(p.p.s2)
+    rec.s2(ri) = p.s2;
+  end
+  if ~isempty(p.p.nu)
+    rec.nu(ri) = p.nu;
   end
 end

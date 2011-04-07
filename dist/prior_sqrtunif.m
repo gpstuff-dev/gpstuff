@@ -41,27 +41,27 @@ function p = prior_sqrtunif(varargin)
     p.fh.recappend = @prior_sqrtunif_recappend;
   end
 
-  function [w, s] = prior_sqrtunif_pak(p)
-    w=[];
-    s={};
-  end
-  
-  function [p, w] = prior_sqrtunif_unpak(p, w)
-    w = w;
-    p = p;
-  end
-  
-  function lp = prior_sqrtunif_lp(x, p)
-    lp = -sum(2*sqrt(x));% = log(1/(2*sqrt(x)))
-  end
-  
-  function lpg = prior_sqrtunif_lpg(x, p)
-    lpg = -1./sqrt(x);
-  end
-  
-  function rec = prior_sqrtunif_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-  end
-  
+end
+
+function [w, s] = prior_sqrtunif_pak(p)
+  w=[];
+  s={};
+end
+
+function [p, w] = prior_sqrtunif_unpak(p, w)
+  w = w;
+  p = p;
+end
+
+function lp = prior_sqrtunif_lp(x, p)
+  lp = -sum(2*sqrt(x));% = log(1/(2*sqrt(x)))
+end
+
+function lpg = prior_sqrtunif_lpg(x, p)
+  lpg = -1./sqrt(x);
+end
+
+function rec = prior_sqrtunif_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
 end

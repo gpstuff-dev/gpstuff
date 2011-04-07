@@ -39,27 +39,28 @@ function p = prior_unif(varargin)
     p.fh.recappend = @prior_unif_recappend;
   end
   
-  function [w, s] = prior_unif_pak(p, w)
-    w=[];
-    s={};
-  end
-  
-  function [p, w] = prior_unif_unpak(p, w)
-    w = w;
-    p = p;
-  end
-  
-  function lp = prior_unif_lp(x, p)
-    lp = 0;
-  end
-  
-  function lpg = prior_unif_lpg(x, p)
-    lpg = zeros(size(x));
-  end
-  
-  function rec = prior_unif_recappend(rec, ri, p)
-  % The parameters are not sampled in any case.
-    rec = rec;
-  end
-  
 end
+
+function [w, s] = prior_unif_pak(p, w)
+  w=[];
+  s={};
+end
+
+function [p, w] = prior_unif_unpak(p, w)
+  w = w;
+  p = p;
+end
+
+function lp = prior_unif_lp(x, p)
+  lp = 0;
+end
+
+function lpg = prior_unif_lpg(x, p)
+  lpg = zeros(size(x));
+end
+
+function rec = prior_unif_recappend(rec, ri, p)
+% The parameters are not sampled in any case.
+  rec = rec;
+end
+
