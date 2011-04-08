@@ -30,7 +30,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010-2011 Aki Vehtari
 % Copyright (c) 2010 Heikki Peura
 
 % This software is distributed under the GNU General Public
@@ -88,36 +88,56 @@ switch gp.type
     % Are there specified mean functions
     if  ~isfield(gp,'meanf')       % a zero mean function
       if issparse(C)            % compact support covariances are in use
-        LD = ldlchol(C);
-        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
+        [LD,notpositivedefinite] = ldlchol(C);
+        if notpositivedefinite
+          % instead of stopping to chol error, return NaN
+          edata = NaN;
+        else
+          edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
+        end
       else
-        L = chol(C,'lower');
-        b=L\y;
-        edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+        [L,notpositivedefinite] = chol(C,'lower');
+        if notpositivedefinite
+          % instead of stopping to chol error, return NaN
+          edata = NaN;
+        else
+          b=L\y;
+          edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+        end
       end
     else
       [H,b,B]=mean_prep(gp,x,[]);                   
       if isempty(C)  
+        notpositivedefinite=0;
         L=1;
         C=0;
         logK=0;
         KH=H';
       elseif issparse(C)  
-        L = ldlchol(C);
-        logK = 0.5*sum(log(diag(L)));
-        KH = L'\(L\H');
+        [L,notpositivedefinite] = ldlchol(C);
+        if ~notpositivedefinite
+          logK = 0.5*sum(log(diag(L)));
+          KH = L'\(L\H');
+        end
       else
-        L = chol(C,'lower');
-        logK = sum(log(diag(L)));
-        KH = L'\(L\H');
+        [L,notpositivedefinite] = chol(C,'lower');
+        if ~notpositivedefinite
+          L = chol(C,'lower');
+          logK = sum(log(diag(L)));
+          KH = L'\(L\H');
+        end
       end
       
-      A = B\eye(size(B)) + H*KH;
-      M = H'*b-y;
-      N = C + H'*B*H;
-      MNM = M'*(N\M);
+      if notpositivedefinite
+        edata=NaN;
+      else
+        A = B\eye(size(B)) + H*KH;
+        M = H'*b-y;
+        N = C + H'*B*H;
+        MNM = M'*(N\M);
 
-      edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+        edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+      end
     end
     
     % ============================================================
