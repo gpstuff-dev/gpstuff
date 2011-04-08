@@ -36,6 +36,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
 %    GP = GPLA_SOFTMAX_E('init', GP) takes a GP structure GP and
 %    initializes required fields for the Laplace approximation.
 %
+%    GP = GPLA_SOFTMAX_E('clearcache', GP) takes a GP structure GP and
+%    cleares the internal cache stored in the nested function workspace
+%
 %    [e, edata, eprior, f, L, a, La2, p]
 %       = gpla_softmax_e(w, gp, x, y, varargin)
 %    returns many useful quantities produced by EP algorithm.
@@ -43,7 +46,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
 % The Newton's method is implemented as described in
 % Rasmussen and Williams (2006).
 
-% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki, 
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Pasi Jylï¿½nki, 
 %                    Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -65,29 +68,18 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
   z=ip.Results.z;
   
   if strcmp(w, 'init')
-    % intialize saved values
-    w0 = NaN;
-    e0=[];
-    edata0= inf;
-    eprior0=[];
-    W = zeros(size(y(:)));
-    W0 = W;
-    f0 = zeros(size(y(:)));
-    L0 = [];
-    E0=[];
-    M0=[];
-    
-    f = zeros(size(y(:)));
-    n0 = size(x,1);
-    %La20 = [];
-    a0 = 0;
-    p0 = [];
-    datahash0=0;
+    % initialize cache
+    ch = [];
 
     % return function handle to the nested function ep_algorithm
     % this way each gp has its own peristent memory for EP
     gp.fh.e = @laplace_algorithm;
     e = gp;
+    % remove clutter from the nested workspace
+    clear w gp varargin ip x y z
+  elseif strcmp(w, 'clearcache')
+    % clear the cache
+    feval(gp.fh.e, 'clearcache');    
   else
     % call laplace_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for Laplace
@@ -95,24 +87,29 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
   end
 
   function [e, edata, eprior, f, L, a, E, M, p] = laplace_algorithm(w, gp, x, y, z)
+      
+  if strcmp(w, 'clearcache')
+    ch=[];
+    return
+  end      
   % code for the Laplace algorithm
     
   % check whether saved values can be used
     datahash=hash_sha512([x y]);
-    if all(size(w)==size(w0)) && all(abs(w-w0)<1e-8) && isequal(datahash,datahash0)
+    if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
       % The covariance function parameters or data haven't changed
       % so we can return the energy and the site parameters that are saved
-      e = e0;
-      edata = edata0;
-      eprior = eprior0;
-      f = f0;
-      L = L0;
+      e = ch.e;
+      edata = ch.edata;
+      eprior = ch.eprior;
+      f = ch.f;
+      L = ch.L;
       %La2 = La20;
-      E = E0;
-      M = M0;
-      W = W0;
-      a = a0;
-      p = p0;
+      E = ch.E;
+      M = ch.M;
+      W = ch.W;
+      a = ch.a;
+      p = ch.p;
     else
       % The parameters or data have changed since
       % the last call for gpla_e. In this case we need to
@@ -452,19 +449,20 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
 
       e = edata + eprior;
       
-      w0 = w;
-      e0 = e;
-      edata0 = edata;
-      eprior0 = eprior;
-      f0 = f;
-      L0 = L;
-      M0 = M;
-      E0 = E;
-      W0 = W;
-      n0 = size(x,1);
+      % store values to the cache
+      ch.w = w;
+      ch.e = e;
+      ch.edata = edata;
+      ch.eprior = eprior;
+      ch.f = f;
+      ch.L = L;
+      ch.M = M;
+      ch.E = E;
+      ch.W = W;
+      ch.n = size(x,1);
       %La20 = La2;
-      a0 = a;
-      p0=p;
+      ch.a = a;
+      ch.p=p;
     end
     
     assert(isreal(edata))
