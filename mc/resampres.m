@@ -1,4 +1,4 @@
-function s = resampres(p);
+function s = resampres(p,m,n);
 %RESAMPRES Residual resampling
 %
 %   Description:
@@ -6,6 +6,10 @@ function s = resampres(p);
 %   the probabilities P. P is array of probabilities, which are
 %   not necessarily normalized, though they must be non-negative,
 %   and not all zero. The size of S is the size of P.
+%
+%   S = RESAMPRES(P,M,N) return M by N matrix.
+%
+%   S = RESAMPRES(P,M) returns M by M matrix.
 %
 %   Note that stratified and deterministic resampling have smaller
 %   variance.
@@ -25,13 +29,18 @@ function s = resampres(p);
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-n=numel(p);
+if nargin<2
+    [m,n] = size(p);
+elseif nargin==2
+    n = m;
+end
+nin=m.*n;
 p=p(:);
-pn=p./sum(p).*n;
+pn=p./sum(p).*nin;
 fpn=floor(pn);
-s=zeros(size(p));
+s=zeros(m,n);
 k=0;
-for i=1:n
+for i=1:numel(pn)
   if pn(i)>=1
     a=fpn(i);
     pn(i)=pn(i)-a;
@@ -39,6 +48,6 @@ for i=1:n
     k=k+a;
   end
 end
-pc=cumsum(pn./(n-k));
+pc=cumsum(pn./(nin-k));
 pc(end)=1;
-s((k+1):n)=binsgeq(pc,rand(1,n-k));
+s((k+1):nin)=binsgeq(pc,rand(1,nin-k));

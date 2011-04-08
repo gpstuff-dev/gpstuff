@@ -1,4 +1,4 @@
-function s = resampdet(p);
+function s = resampdet(p,m,n);
 %RESAMPDET Deterministic resampling
 %
 %   Description
@@ -6,6 +6,10 @@ function s = resampdet(p);
 %   probabilities P. P is array of probabilities, which are not
 %   necessarily normalized, though they must be non-negative, and
 %   not all zero. The size of S is the size of P. 
+%
+%   S = RESAMPDET(P,M,N) returns M by N matrix.
+%
+%   S = RESAMPDET(P,M) returns M by M matrix.
 %
 %   Default is to use no-sort resampling. For sorted resampling use
 %    [PS,PI]=SORT(P);
@@ -32,14 +36,18 @@ function s = resampdet(p);
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-[m,n]=size(p);
+if nargin<2
+    [m,n]=size(p);
+elseif nargin==2
+    n=m;
+end
 mn=m.*n;
 pn=p./sum(p(:)).*mn;
 fpn=floor(pn);
 s=zeros(m,n);
 k=0;
 c=0.5;
-for i=1:mn
+for i=1:numel(p)
   if pn(i)>=1
     a=fpn(i);
     pn(i)=pn(i)-a;

@@ -1,4 +1,4 @@
-function s = resampsim(p);
+function s = resampsim(p,m,n)
 %RESAMPSIM Simple random resampling
 %
 %   Description:
@@ -6,6 +6,10 @@ function s = resampsim(p);
 %   the probabilities P. P is array of probabilities, which are
 %   not necessarily normalized, though they must be non-negative,
 %   and not all zero. The size of S is the size of P.
+%
+%   S = RESAMPSIM(P,M,N) returns M by N matrix.
+%
+%   S = RESAMPSIM(P,M) returns M by M matrix.
 %
 %   Note that residual, stratified and deterministic resampling all
 %   have smaller variance.
@@ -22,6 +26,11 @@ function s = resampsim(p);
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+if nargin<2
+    [m,n] = size(p);
+elseif nargin==2
+    n = m;
+end
 pc=cumsum(p(:));
 pc=pc./pc(end);
-s=binsgeq(pc,rand(size(p)));
+s=binsgeq(pc,rand([m,n]));

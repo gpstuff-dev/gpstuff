@@ -7,6 +7,10 @@
  *  necessarily normalized, though they must be non-negative, and
  *  not all zero. The size of S is the size of P. 
  *
+ *  S = RESAMPDET(P,M,N) returns M by N matrix.
+ *
+ *  S = RESAMPDET(P,M) returns M by M matrix.
+ *
  *  Default is to use no-sort resampling. For sorted resampling use
  *   [PS,PI]=SORT(P);
  *   S=PI(RESAMPDET(PS));
@@ -47,27 +51,48 @@ void mexFunction(int nlhs, mxArray *plhs[],
   if (nlhs > 1 ) 
     mexErrMsgTxt( "Too many output arguments." );
   
-  if (nrhs != 1)
+  if (nrhs < 1 || nrhs > 3)
     mexErrMsgTxt( "Wrong number of input arguments." );
 
   {
     double *p, *q, *s, sum=0, b, c=0.5; 
     const int *dims;
-    int i, len, a;
+    int i, len, a, n, m, mn;
 
     dims = mxGetDimensions(prhs[0]);
     len = dims[0]*dims[1];
     p = mxGetPr(prhs[0]);
     q = mxMalloc(len*sizeof(double));
 
-    plhs[0]=mxCreateDoubleMatrix(dims[0],dims[1],mxREAL);
+    if (nrhs==1) {
+      m = dims[0];
+      n = dims[1];
+    }
+    else { /* nrhs > 1 */
+      dims = mxGetDimensions(prhs[1]);
+      if (dims[0]>1 || dims[1]>1)
+	    mexErrMsgTxt("M must be a scalar.");
+        m = mxGetScalar(prhs[1]);
+        if (nrhs==2) {
+	      n = m;
+        }	
+        else {
+	      dims = mxGetDimensions(prhs[2]);
+	      if (dims[0]>1 || dims[1]>1)
+	        mexErrMsgTxt("M must be a scalar.");
+	        n = mxGetScalar(prhs[2]);
+        }
+    }
+    mn = m*n;
+    
+    plhs[0]=mxCreateDoubleMatrix(m,n,mxREAL);
     s = mxGetPr(plhs[0]);
 
     /* integer part */
     for (i = 0; i < len; i++)
       sum+=p[i];
     for (i = 0; i < len; i++) {
-      q[i]=p[i]/sum*len;
+      q[i]=p[i]/sum*mn;
       if (q[i]>=1.0) {
 	a=(int)(q[i]);
 	q[i]-=a;
