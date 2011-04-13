@@ -1,4 +1,4 @@
-% MISCELLANEOUS FUNCTIONS (contents of the /misc-folder):)
+% MISCELLANEOUS FUNCTIONS (in the misc-folder)
 %
 %    CVIT         - Create itr and itst indeces for k-fold-cv
 %    CVITR        - Create itr and itst indeces for k-fold-cv with ranndom 
