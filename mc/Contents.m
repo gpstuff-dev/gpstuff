@@ -1,4 +1,4 @@
-% MCMC FUNCTIONS (contents of the /mc-folder):
+% MCMC FUNCTIONS (in the mc-folder):
 %
 %    BBMEAN        - Bayesian bootstrap mean
 %    GIBBS         - Gibbs sampling
