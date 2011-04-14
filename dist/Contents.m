@@ -1,4 +1,4 @@
-% PROBABILITY DISTRIBUTION FUNCTIONS (contents of the dist-folder):
+% PROBABILITY DISTRIBUTION FUNCTIONS (in the dist-folder):
 %
 % Priors 
 %  PRIOR_FIXED       Fix parameter to its current value
