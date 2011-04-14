@@ -1,4 +1,4 @@
-% OPTIMIZATION FUNCTIONS (contents of the /optim-folder):
+% OPTIMIZATION FUNCTIONS (in the optim-folder)
 %
 %    BSEARCH       - Finds the minimum of a combinatorial function using backward search
 %    BSEARCH_OPT   - Default options for backward search

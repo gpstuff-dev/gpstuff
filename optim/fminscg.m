@@ -227,7 +227,7 @@ while (j <= maxiter)
         output.funcCount=output.funcCount+1;
       end
       % If the gradient is zero then we are done.
-      if (gradnew*gradnew' < eps)
+      if (gradnew*gradnew' < eps) && all(isreal(gradnew))
         if (display >= 2)
           disp('Gradient smaller than eps');
         end
@@ -267,6 +267,9 @@ end
 exitflag=0;
 if (display >= 1)
   disp('Warning: Maximum number of iterations has been exceeded');
+  if lambda>1e5
+    warning('Scale > 1e5: Check that the analytic gradients are correct!')
+  end
 end
 grad=gradnew;
 fval=fnew;
