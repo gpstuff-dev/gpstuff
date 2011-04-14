@@ -30,7 +30,7 @@ epsilon = 1.0e-5;
 
 % Treat
 nparams = length(w);
-deltaf = zeros(1, nparams);
+%deltaf = zeros(1, nparams);
 step0 = zeros(1, nparams);
 
 for i = 1:nparams
@@ -40,9 +40,16 @@ for i = 1:nparams
   fplus  = fun(w+epsilon.*step);
   fminus = fun(w-epsilon.*step);
   % Use central difference formula for approximation
-  deltaf(i) = 0.5*(fplus - fminus)/epsilon;
+  if nparams>1 && numel(fplus)==1
+    deltaf(1,i) = 0.5*(fplus - fminus)/epsilon;
+  elseif nparams>1 && numel(fplus)>1
+    deltaf(:,i) = 0.5*(fplus(i)' - fminus(i)')/epsilon;
+  else
+    deltaf(i,:) = 0.5*(fplus(:)' - fminus(:)')/epsilon;
+  end
 end
 [~,gradient] = fun(w);
+gradient=gradient(:)';
 fprintf(1, 'Checking gradient ...\n\n');
 fprintf(1, '   analytic   diffs     delta\n\n');
 disp([gradient', deltaf', gradient' - deltaf'])

@@ -1,4 +1,4 @@
-% THE DIAGNOSTIC TOOLS (/in the diag/ folder):
+% THE DIAGNOSTIC TOOLS (in the diag-folder):
 %
 % Covergence diagnostics
 %   PSRF     - Potential Scale Reduction Factor
