@@ -95,7 +95,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
   % code for the Laplace algorithm
 
   % check whether saved values can be used
-    datahash=hash_sha512([x y]);
+    if isempty(z)
+      datahash=hash_sha512([x y]);
+    else
+      datahash=hash_sha512([x y z]);
+    end
     if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
       % The covariance function parameters or data haven't changed
       % so we can return the energy and the site parameters that are saved
@@ -104,10 +108,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
       eprior = ch.eprior;
       f = ch.f;
       L = ch.L;
-      %La2 = La20;
       E = ch.E;
       M = ch.M;
-      W = ch.W;
       a = ch.a;
       p = ch.p;
     else
@@ -319,6 +321,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
       %La20 = La2;
       ch.a = a;
       ch.p=p;
+      ch.datahash=datahash;
     end
     
     assert(isreal(edata))
