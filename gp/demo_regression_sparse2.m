@@ -1,5 +1,5 @@
 %DEMO_REGRESSION_SPARSE2  Regression demo comparing different sparse
-%                         approximations with optimasation of inducing
+%                         approximations with optimization of inducing
 %                         variables
 %
 %  Description

@@ -1,4 +1,4 @@
-% THE GP TOOLS (/in the GP/ folder):
+% THE GP TOOLS (in the gp-folder):
 % 
 %  Gaussian process utilities:
 %   GP_SET    Create and modify a Gaussian Process structure. 

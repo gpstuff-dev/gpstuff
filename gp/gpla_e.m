@@ -104,7 +104,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
     else
       datahash=hash_sha512([x y z]);
     end
-    if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
+    if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && ...
+          isequal(datahash,ch.datahash)
       % The covariance function parameters or data haven't changed
       % so we can return the energy and the site parameters that are saved
       e = ch.e;
@@ -156,8 +157,34 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               z = z(p,:);
             end
             LD = ldlchol(K);
+            [LD,notpositivedefinite] = ldlchol(K);
           else
-            LD = chol(K);
+            [LD,notpositivedefinite] = chol(K);
+          end
+          
+          if notpositivedefinite
+            edata=NaN;
+            e=NaN;
+            edata=NaN;
+            eprior=NaN;
+            f=NaN;
+            L=NaN;
+            a=NaN;
+            La2=NaN;
+            p=NaN;
+            ch.w = w;
+            ch.e = e;
+            ch.edata = edata;
+            ch.eprior = eprior;
+            ch.f = f;
+            ch.L = L;
+            ch.W = W;
+            ch.n = size(x,1);
+            ch.La2 = La2;
+            ch.a = a;
+            ch.p=p;
+            ch.datahash=datahash;
+            return
           end
           
           switch gp.latent_opt.optim_method
