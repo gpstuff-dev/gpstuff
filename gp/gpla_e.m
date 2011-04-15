@@ -114,7 +114,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       f = ch.f;
       L = ch.L;
       La2 = ch.La2;
-      W = ch.W;
       a = ch.a;
       p = ch.p;
     else
@@ -178,7 +177,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             ch.eprior = eprior;
             ch.f = f;
             ch.L = L;
-            ch.W = W;
             ch.n = size(x,1);
             ch.La2 = La2;
             ch.a = a;
