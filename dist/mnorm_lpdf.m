@@ -29,7 +29,7 @@ end
 xmu=x-repmat(mu,n,1);  
 % Use Cholesky decomposition, since it is faster and
 % numerically more stable.
-L=chol(S)';
+L=chol(S,'lower');
 y=zeros(n,1);
 for i1=1:n
   b=L\xmu(i1,:)';
