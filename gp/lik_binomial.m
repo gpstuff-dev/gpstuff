@@ -21,7 +21,7 @@ function lik = lik_binomial(varargin)
 %    GP_SET, LIK_*
 %
 
-% Copyright (c) 2009-2010  Jaakko Riihimäki & Jarno Vanhatalo
+% Copyright (c) 2009-2010  Jaakko Riihimï¿½ki & Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -235,68 +235,69 @@ function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i
   
   % Create function handle for the function to be integrated
   % (likelihood * cavity).
-  logbincoef=gammaln(N+1)-gammaln(yy+1)-gammaln(N-yy+1);
-  zm = @(f)exp( logbincoef + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f))) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
+%   logbincoef=gammaln(N+1)-gammaln(yy+1)-gammaln(N-yy+1);
+%   zm = @(f)exp( logbincoef + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f))) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
   
   % Set the integration limits (in this case based only on the prior).
-  if yy > 0 && yy<N
-    mean_app = log(yy./(N-yy));
-    ld0=1/(1+exp(-mean_app));
-    ld1=(1-ld0)*ld0;
-    ld2=ld0-3*ld0^2+2*ld0^3;
-    var_app=inv(-( yy*(ld2*ld0-ld1^2)/ld0^2 + (N-yy)*(ld2*(ld0-1)-ld1^2)/(ld0-1)^2 ));
-    
-    mean_app = (myy_i/sigm2_i + mean_app/var_app)/(1/sigm2_i + 1/var_app);
-    sigm_app = sqrt((1/sigm2_i + 1/var_app)^-1);
-  else
-    mean_app = myy_i;
-    sigm_app = sqrt(sigm2_i);                    
-  end
-  
-  lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-  test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-  test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-  testiter = 1;
-  if test1 == 0 
-    lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-    test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-    if test1 == 0
-      go=true;
-      while testiter<10 & go
-        lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-        lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        if test1==1&test2==1
-          go=false;
-        end
-        testiter=testiter+1;
-      end
-    end
-    mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-  elseif test2 == 0
-    lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-    test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-    if test2 == 0
-      go=true;
-      while testiter<10 & go
-        lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-        lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-        test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-        test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-        if test1==1&test2==1
-          go=false;
-        end
-        testiter=testiter+1;
-      end
-    end
-    mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-  end
+%   if yy > 0 && yy<N
+%     mean_app = log(yy./(N-yy));
+%     ld0=1/(1+exp(-mean_app));
+%     ld1=(1-ld0)*ld0;
+%     ld2=ld0-3*ld0^2+2*ld0^3;
+%     var_app=inv(-( yy*(ld2*ld0-ld1^2)/ld0^2 + (N-yy)*(ld2*(ld0-1)-ld1^2)/(ld0-1)^2 ));
+%     
+%     mean_app = (myy_i/sigm2_i + mean_app/var_app)/(1/sigm2_i + 1/var_app);
+%     sigm_app = sqrt((1/sigm2_i + 1/var_app)^-1);
+%   else
+%     mean_app = myy_i;
+%     sigm_app = sqrt(sigm2_i);                    
+%   end
+%   
+%   lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
+%   test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+%   test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+%   testiter = 1;
+%   if test1 == 0 
+%     lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
+%     test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+%     if test1 == 0
+%       go=true;
+%       while testiter<10 & go
+%         lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
+%         lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
+%         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+%         test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+%         if test1==1&test2==1
+%           go=false;
+%         end
+%         testiter=testiter+1;
+%       end
+%     end
+%     mean_app = (lambdaconf(2)+lambdaconf(1))/2;
+%   elseif test2 == 0
+%     lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
+%     test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+%     if test2 == 0
+%       go=true;
+%       while testiter<10 & go
+%         lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
+%         lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
+%         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
+%         test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
+%         if test1==1&test2==1
+%           go=false;
+%         end
+%         testiter=testiter+1;
+%       end
+%     end
+%     mean_app = (lambdaconf(2)+lambdaconf(1))/2;
+%   end
+  [tf,minf,maxf]=init_binomial_norm(yy,myy_i,sigm2_i,N);
   RTOL = 1.e-6;
   ATOL = 1.e-10;
   
   % Integrate with quadrature
-  [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
+  [m_0, m_1, m_2] = quad_moments(tf,minf, maxf, RTOL, ATOL);        
   
   sigm2hati1 = m_2 - m_1.^2;
   
@@ -305,7 +306,7 @@ function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i
   if sigm2hati1 >= sigm2_i
     ATOL = ATOL.^2;
     RTOL = RTOL.^2;
-    [m_0, m_1, m_2] = quad_moments(zm, lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+    [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
     sigm2hati1 = m_2 - m_1.^2;
     if sigm2hati1 >= sigm2_i
       error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
@@ -367,6 +368,138 @@ function [Ey, Vary, Py] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
     end
   end
   Vary = EVary+VarEy;
+end
+
+function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
+%INIT_LOGIT_NORM
+%
+%  Description
+%    Return function handle to a function evaluating Binomial *
+%    Gaussian which is used for evaluating (likelihood * cavity)
+%    or (likelihood * posterior) Return also useful limits for
+%    integration. This is private function for lik_binomial.
+%  
+% See also
+%   LIK_BINOMIAL_TILTEDMOMENTS, LIK_BINOMIAL_PREDY
+  
+% avoid repetitive evaluation of constant part
+  ldconst = gammaln(N+1)-gammaln(yy+1)-gammaln(N-yy+1) - log(sigm2_i)/2 - log(2*pi)/2;
+%   ldconst = log(factorial(N)/(factorial(yy)*factorial(N-yy))-log(sigm2_i)/2 -log(2*pi)/2;
+  
+ % Create function handle for the function to be integrated
+  df = @binomial_norm;
+ % use log to avoid underflow, and derivates for faster search
+  ld = @log_binomial_norm;
+  ldg = @log_binomial_norm_g;
+  ldg2 = @log_binomial_norm_g2;
+  
+  % Set the limits for integration
+  % Binomial likelihood is log-concave so the binomial_norm
+  % function is unimodal, which makes things easier
+  if yy==0 || yy==N
+    % with yy==0 or yy==N the mode of the likelihood is not defined
+    % use the mode of the Gaussian (cavity or posterior) as a first guess
+    modef = myy_i;
+  else
+    % use precision weighted mean of the Gaussian approximation of the
+    % binomial likelihood and Gaussian
+    mean_app = log(yy./(N-yy));
+    ld0=1/(1+exp(-mean_app));
+    ld1=(1-ld0)*ld0;
+    ld2=ld0-3*ld0^2+2*ld0^3;
+    var_app=inv(-( yy*(ld2*ld0-ld1^2)/ld0^2 + (N-yy)*(ld2*(ld0-1)-ld1^2)/(ld0-1)^2 ));
+    
+    modef = (myy_i/sigm2_i + mean_app/var_app)/(1/sigm2_i + 1/var_app);
+%     sigm_app = sqrt((1/sigm2_i + 1/var_app)^-1);
+  end
+  % find the mode of the integrand using Newton iterations
+  % few iterations is enough, since the first guess in the right direction
+  niter=3;       % number of Newton iterations
+  mindelta=1e-6; % tolerance in stopping Newton iterations
+  for ni=1:niter
+      g = ldg(modef);
+      h = ldg2(modef);
+      delta=-g/h;
+      modef=modef+delta;
+      if abs(delta)<mindelta
+          break
+      end
+  end
+  % integrand limits based on Gaussian approximation at mode
+  modes=sqrt(-1/h);
+  minf=modef-8*modes;
+  maxf=modef+8*modes;
+  modeld=ld(modef);
+  iter=0;
+  % check that density at end points is low enough
+  lddiff=20; % min difference in log-density between mode and end-points
+  minld=ld(minf);
+  step=1;
+  while minld>(modeld-lddiff)
+    minf=minf-step*modes;
+    minld=ld(minf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_negbin -> init_negbin_norm: ' ...
+             'integration interval minimun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  maxld=ld(maxf);
+  step=1;
+  while maxld>(modeld-lddiff)
+    maxf=maxf+step*modes;
+    maxld=ld(maxf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_negbin -> init_negbin_norm: ' ...
+             'integration interval maximun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  
+  
+  function integrand = binomial_norm(f)
+  % Logit * Gaussian
+    integrand = exp(ldconst + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f)))...
+                   - 0.5 * (f-myy_i).^2./sigm2_i);
+%     integrand = exp(ldconst ...
+%                     +yy*log(x)+(N-yy)*log(1-x) ...
+%                     -0.5*(f-myy_i).^2./sigm2_i);
+  end
+  
+  function log_int = log_binomial_norm(f)
+  % log(Binomial * Gaussian)
+  % log_binomial_norm is used to avoid underflow when searching
+  % integration interval
+  
+    log_int = ldconst + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f)))...
+                   - 0.5 * (f-myy_i).^2./sigm2_i;
+%     log_int = ldconst ...
+%               -log(1+exp(-yy.*f)) ...
+%               -0.5*(f-myy_i).^2./sigm2_i;
+  end
+  
+  function g = log_binomial_norm_g(f)
+  % d/df log(Binomial * Gaussian)
+  % derivative of log_logit_norm
+    g = -(f-myy_i)./sigm2_i - exp(-f).*(N-yy)./((1+exp(-f)).^2.*(1-1./(1+exp(-f)))) ...
+        + exp(-f).*yy./(1+exp(-f));
+%     g = yy./(exp(f*yy)+1)...
+%         + (myy_i - f)./sigm2_i;
+  end
+  
+  function g2 = log_binomial_norm_g2(f)
+  % d^2/df^2 log(Binomial * Gaussian)
+  % second derivate of log_logit_norm
+    g2 = - (1+exp(2.*f)+exp(f).*(2+N*sigm2_i)./((1+exp(f))^2*sigm2_i));
+%     a=exp(f*yy);
+%     g2 = -a*(yy./(a+1)).^2 ...
+%          -1/sigm2_i;
+  end
+  
 end
 
 function p = lik_binomial_invlink(lik, f, z)
