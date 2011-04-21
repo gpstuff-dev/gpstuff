@@ -1,0 +1,27 @@
+function test_suite = testSurvival_weibull
+initTestSuite;
+
+
+% Set random number stream so that failing isn't because randomness. Run
+% demo & save test values.
+
+function testDemo
+stream0 = RandStream('mt19937ar','Seed',0);
+prevstream = RandStream.setDefaultStream(stream0);
+disp('Running: demo_survival_weibull')
+demo_survival_weibull;
+path = which('testSurvival_weibull.m');
+path = strrep(path,'testSurvival_weibull.m', 'testValues/testSurvival_weibull');
+save(path, 'Ef1', 'Ef2', 'Varf1', 'Varf2');
+RandStream.setDefaultStream(prevstream);
+drawnow;clear;close all
+
+% Compare test values to real values.
+
+function testPredictionsWeibull
+values.real = load('realValuesSurvival_weibull', 'Ef1', 'Varf1', 'Ef2', 'Varf2');
+values.test = load('testValues/testSurvival_weibull', 'Ef1', 'Varf1', 'Ef2', 'Varf2');
+assertElementsAlmostEqual(values.real.Ef1, values.test.Ef1, 'relative', 0.05);
+assertElementsAlmostEqual(values.real.Ef2, values.test.Ef2, 'relative', 0.05);
+assertElementsAlmostEqual(values.real.Varf1, values.test.Varf1, 'relative', 0.05);
+assertElementsAlmostEqual(values.real.Varf2, values.test.Varf2, 'relative', 0.05);
