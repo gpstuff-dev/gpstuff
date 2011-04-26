@@ -1,4 +1,4 @@
-function test_suite = testSurvival_weibull
+function test_suite = test_survival_weibull
 initTestSuite;
 
 
@@ -10,8 +10,8 @@ stream0 = RandStream('mt19937ar','Seed',0);
 prevstream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_survival_weibull')
 demo_survival_weibull;
-path = which('testSurvival_weibull.m');
-path = strrep(path,'testSurvival_weibull.m', 'testValues/testSurvival_weibull');
+path = which('test_survival_weibull.m');
+path = strrep(path,'test_survival_weibull.m', 'testValues/testSurvival_weibull');
 save(path, 'Ef1', 'Ef2', 'Varf1', 'Varf2');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

@@ -1,4 +1,4 @@
-function test_suite = testBinomial_apc
+function test_suite = test_binomial_apc
 initTestSuite;
 
 % Set random number stream so that the test failing isn't because
@@ -9,8 +9,8 @@ initTestSuite;
         prevstream = RandStream.setDefaultStream(stream0);
         disp('Running: demo_binomial_apc')
         demo_binomial_apc
-        path = which('testBinomial_apc');
-        path = strrep(path,'testBinomial_apc.m', 'testValues/testBinomial_apc');
+        path = which('test_binomial_apc.m');
+        path = strrep(path,'test_binomial_apc.m', 'testValues/testBinomial_apc');
         save(path, 'Eft', 'Varft', 'Eft_3', 'Varft_3');
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all

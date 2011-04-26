@@ -1,4 +1,4 @@
-function test_suite = testModelAssesment1
+function test_suite = test_modelassesment1
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -9,8 +9,8 @@ initTestSuite;
         prevstream = RandStream.setDefaultStream(stream0);
         disp('Running: demo_modelassesment1')
         demo_modelassesment1
-        path = which('testModelAssesment1.m');
-        path = strrep(path,'testModelAssesment1.m', 'testValues/testModelAssesment1');
+        path = which('test_modelassesment1.m');
+        path = strrep(path,'test_modelassesment1.m', 'testValues/testModelAssesment1');
         save(path, 'DIC', 'DIC2', 'DIC_latent', ...
             'p_eff', 'p_eff2', 'p_eff_latent', 'p_eff_latent2', 'mlpd_cv', 'mrmse_cv');
         RandStream.setDefaultStream(prevstream);

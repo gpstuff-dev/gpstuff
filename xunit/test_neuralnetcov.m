@@ -1,4 +1,4 @@
-function test_suite = testNeuralnetcov
+function test_suite = test_neuralnetcov
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -9,8 +9,8 @@ stream0 = RandStream('mt19937ar','Seed',0);
 RandStream.setDefaultStream(stream0)
 disp('Running: demo_neuralnetcov')
 demo_neuralnetcov
-path = which('testNeuralnetcov.m');
-path = strrep(path,'testNeuralnetcov.m', 'testValues/testNeuralnetcov');
+path = which('test_neuralnetcov.m');
+path = strrep(path,'test_neuralnetcov.m', 'testValues/testNeuralnetcov');
 save(path,  'Eft_map', 'Varft_map', 'Eft_map2', 'Varft_map2');
 drawnow;clear;close all
 

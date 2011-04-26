@@ -1,4 +1,4 @@
-function test_suite = testRegression_sparse1
+function test_suite = test_regression_sparse1
 initTestSuite;
 
 
@@ -10,8 +10,8 @@ stream0 = RandStream('mt19937ar','Seed',0);
 prevstream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_regression_sparse1')
 demo_regression_sparse1
-path = which('testRegression_sparse1');
-path = strrep(path,'testRegression_sparse1.m', 'testValues/testRegression_sparse1');
+path = which('test_regression_sparse1');
+path = strrep(path,'test_regression_sparse1.m', 'testValues/testRegression_sparse1');
 save(path, 'Eft_fic', 'Eft_pic', 'Eft_var', 'Eft_dtc', 'Eft_cs');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

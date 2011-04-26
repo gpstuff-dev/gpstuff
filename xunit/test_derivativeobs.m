@@ -1,4 +1,4 @@
-function test_suite = testDerivativeobs
+function test_suite = test_derivativeobs
 initTestSuite;
 
 % Set random number stream so test failing isn't because randomness. Run
@@ -9,8 +9,8 @@ initTestSuite;
         prevstream = RandStream.setDefaultStream(stream0);
         disp('Running: demo_derivativeobs')
         demo_derivativeobs
-        path = which('testDerivativeobs.m');
-        path = strrep(path,'testDerivativeobs.m', 'testValues/testDerivativeobs');
+        path = which('test_derivativeobs.m');
+        path = strrep(path,'test_derivativeobs.m', 'testValues/testDerivativeobs');
         save(path);
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all

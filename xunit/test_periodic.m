@@ -1,4 +1,4 @@
-function test_suite = testPeriodic
+function test_suite = test_periodic
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -9,8 +9,8 @@ stream0 = RandStream('mt19937ar','Seed',0);
 RandStream.setDefaultStream(stream0)
 disp('Running: demo_periodic')
 demo_periodic
-path = which('testPeriodic.m');
-path = strrep(path,'testPeriodic.m', 'testValues/testPeriodic');
+path = which('test_periodic.m');
+path = strrep(path,'test_periodic.m', 'testValues/testPeriodic');
 save(path, 'Eft_full1', 'Varft_full1', 'Eft_full2', 'Varft_full2', ...
      'Eft_full', 'Varft_full');
 drawnow;clear;close all

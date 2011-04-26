@@ -1,4 +1,4 @@
-function test_suite = testRegression1
+function test_suite = test_regression1
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -15,8 +15,8 @@ initTestSuite;
         Varft_ia = Varft_ia(1:50);
         Eft_mc = Eft_mc(1:50, 1:50);
         Varft_mc = Varft_mc(1:50, 1:50);
-        path = which('testRegression1.m');
-        path = strrep(path,'testRegression1.m', 'testValues/testRegression1');
+        path = which('test_regression1.m');
+        path = strrep(path,'test_regression1.m', 'testValues/testRegression1');
         save(path, 'K', 'C', 'w', 'Eft_map', 'Varft_map', ...
              'Eft_ia', 'Varft_ia', 'Eft_mc', 'Varft_mc');
         drawnow;clear;close all

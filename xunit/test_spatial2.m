@@ -1,4 +1,4 @@
-function test_suite = testSpatial2
+function test_suite = test_spatial2
 initTestSuite;
 
 
@@ -13,8 +13,8 @@ demo_spatial2
 Ef = Ef(1:100);
 Varf = Varf(1:100);
 C = C(1:50, 1:50);
-path = which('testSpatial2.m');
-path = strrep(path,'testSpatial2.m', 'testValues/testSpatial2');
+path = which('test_spatial2.m');
+path = strrep(path,'test_spatial2.m', 'testValues/testSpatial2');
 save(path, 'Ef', 'Varf', 'C');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

@@ -9,8 +9,8 @@ stream0 = RandStream('mt19937ar','Seed',0);
 stream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_regression_meanf')
 demo_regression_meanf
-path = which('testRegression_meanf.m');
-path = strrep(path,'testRegression_meanf.m', 'testValues/testRegression_meanf');
+path = which('test_regression_meanf.m');
+path = strrep(path,'test_regression_meanf.m', 'testValues/testRegression_meanf');
 save(path, 'Eft', 'Varft');
 RandStream.setDefaultStream(stream);
 drawnow;clear;close all

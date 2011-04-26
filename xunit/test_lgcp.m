@@ -1,4 +1,4 @@
-function test_suite = testLgcp
+function test_suite = test_lgcp
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -9,8 +9,8 @@ initTestSuite;
         prevstream = RandStream.setDefaultStream(stream0);
         disp('Running: demo_lgcp')
         demo_lgcp
-        path = which('testLgcp.m');
-        path = strrep(path,'testLgcp.m', 'testValues/testLgcp');
+        path = which('test_lgcp.m');
+        path = strrep(path,'test_lgcp.m', 'testValues/testLgcp');
         save(path)
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all

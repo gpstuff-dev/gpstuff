@@ -1,4 +1,4 @@
-function test_suite = testRegression_ppcs
+function test_suite = test_regression_ppcs
 initTestSuite;
 
 % Set random number stream so that failing isn't because randomness. Run
@@ -11,8 +11,8 @@ disp('Running: demo_regression_ppcs')
 demo_regression_ppcs
 K = K(1:50, 1:50);
 Ef = Ef(1:100);
-path = which('testRegression_ppcs.m');
-path = strrep(path,'testRegression_ppcs.m', 'testValues/testRegression_ppcs');
+path = which('test_regression_ppcs.m');
+path = strrep(path,'test_regression_ppcs.m', 'testValues/testRegression_ppcs');
 save(path, 'K', 'Ef')
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

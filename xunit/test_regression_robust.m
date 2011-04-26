@@ -1,4 +1,4 @@
-function test_suite = testRegression_robust
+function test_suite = test_regression_robust
 initTestSuite;
 
 % Set random number stream so that failing isn't because randomness. Run
@@ -9,8 +9,8 @@ stream0 = RandStream('mt19937ar','Seed',0);
 prevstream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_regression_robust')
 demo_regression_robust
-path = which('testRegression_robust.m');
-path = strrep(path,'testRegression_robust.m', 'testValues/testRegression_robust');
+path = which('test_regression_robust.m');
+path = strrep(path,'test_regression_robust.m', 'testValues/testRegression_robust');
 save(path, 'Eft', 'Varft')
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

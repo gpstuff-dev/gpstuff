@@ -1,4 +1,4 @@
-function test_suite = testRegression_sparse2
+function test_suite = test_regression_sparse2
 initTestSuite;
 
 
@@ -14,8 +14,8 @@ Eft_full = Eft_full(1:100);
 Eft_var = Eft_var(1:100);
 Varft_full = Varft_full(1:100);
 Varft_var = Varft_var(1:100);
-path = which('testRegression_sparse2.m');
-path = strrep(path,'testRegression_sparse2.m', 'testValues/testRegression_sparse2');
+path = which('test_regression_sparse2.m');
+path = strrep(path,'test_regression_sparse2.m', 'testValues/testRegression_sparse2');
 save(path, 'Eft_full', 'Eft_var', 'Varft_full', 'Varft_var');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

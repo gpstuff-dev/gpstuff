@@ -1,4 +1,4 @@
-function test_suite = testRegression2
+function test_suite = test_regression2
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -9,8 +9,8 @@ function testDemo
     RandStream.setDefaultStream(stream0);
     disp('Running: demo_regression2')
     demo_regression2
-    path = which('testRegression2.m');
-    path = strrep(path,'testRegression2.m', 'testValues/testRegression2');
+    path = which('test_regression2.m');
+    path = strrep(path,'test_regression2.m', 'testValues/testRegression2');
     save(path, 'Eft_fic', 'Varft_fic', 'Eft_pic', 'Varft_pic', ...
          'Eft_csfic', 'Varft_csfic');
     drawnow;clear;close all

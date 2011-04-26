@@ -1,4 +1,4 @@
-function test_suite = testClassific
+function test_suite = test_classific
 initTestSuite;
 
 
@@ -16,8 +16,8 @@ initTestSuite;
         Varft_la = Varft_la(1:100);
         Varft_ep = Varft_ep(1:100);
         Varfs_mc = Varfs_mc(1:50,1:50);
-        path = which('testClassific.m');
-        path = strrep(path,'testClassific.m', 'testValues/testClassific');
+        path = which('test_classific.m');
+        path = strrep(path,'test_classific.m', 'testValues/testClassific');
         save(path, 'Eft_la', 'Varft_la', 'Eft_ep', 'Varft_ep', 'Efs_mc', 'Varfs_mc');
 %         save('testValues/testClassific', 'Eft_la', 'Varft_la', 'Eft_ep', 'Varft_ep', 'Efs_mc', 'Varfs_mc');
         RandStream.setDefaultStream(prevstream);

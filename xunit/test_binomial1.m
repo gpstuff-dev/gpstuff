@@ -1,4 +1,4 @@
-function test_suite = testBinomial1
+function test_suite = test_binomial1
 initTestSuite;
 
 % Set random number stream so that the test failing isn't because
@@ -9,8 +9,8 @@ initTestSuite;
         prevstream = RandStream.setDefaultStream(stream0);
         disp('Running: demo_binomial1')
         demo_binomial1
-        path = which('testBinomial1');
-        path = strrep(path,'testBinomial1.m', 'testValues/testBinomial1');
+        path = which('test_binomial1');
+        path = strrep(path,'test_binomial1.m', 'testValues/testBinomial1');
         save(path, 'Eyt_la', 'Varyt_la', 'pyt_la');
 %         save('testValues/testBinomial1', 'Eyt_la', 'Varyt_la', 'pyt_la');
         RandStream.setDefaultStream(prevstream);

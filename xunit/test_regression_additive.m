@@ -1,4 +1,4 @@
-function test_suite = testRegression_additive
+function test_suite = test_regression_additive
 initTestSuite;
 
 
@@ -10,8 +10,8 @@ function testDemo
     RandStream.setDefaultStream(stream0);
     disp('Running: demo_regression_additive')
     demo_regression_additive
-    path = which('testRegression_additive.m');
-    path = strrep(path,'testRegression_additive.m', 'testValues/testRegression_additive');
+    path = which('test_regression_additive.m');
+    path = strrep(path,'test_regression_additive.m', 'testValues/testRegression_additive');
     save(path, 'Eft_map');
     drawnow;clear;close all
     
