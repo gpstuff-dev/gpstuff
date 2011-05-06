@@ -107,7 +107,7 @@ pm = prior_sqrtunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Following lines do the same since the default type is FULL
-gp = gp_set('type','FULL','lik',lik,'cf',{gpcf});
+gp = gp_set('type','FULL','lik',lik,'cf',{gpcf},'jitterSigma2',1e-9);
 %gp = gp_set('lik', lik, 'cf', gpcf);
 
 % Demostrate how to evaluate covariance matrices. 

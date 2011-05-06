@@ -79,10 +79,10 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         if issparse(C)
           LD = ldlchol(C);
           Ef = repmat( K'*ldlsolve(LD,y), 1, nsamp) ;
-          predcov = chol(K2 - K'*ldlsolve(LD,K))';
+          predcov = chol(K2 - K'*ldlsolve(LD,K),'lower');
           sampft = Ef + predcov*randn(size(Ef));
           if nargout > 1
-            predcov = chol(C2 - K'*ldlsolve(LD,K))';            
+            predcov = chol(C2 - K'*ldlsolve(LD,K),'lower');            
             sampyt = Ef + predcov*randn(size(Ef));
           end        
         else
@@ -92,10 +92,10 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           Ef = repmat( K'*a, 1, nsamp);
           v = L\K;
 
-          predcov = chol(K2-v'*v)';
+          predcov = chol(K2-v'*v,'lower');
           sampft = Ef + predcov*randn(size(Ef));
           if nargout > 1
-            predcov = chol(C2-v'*v)';
+            predcov = chol(C2-v'*v,'lower');
             sampyt = Ef + predcov*randn(size(Ef));
           end
         end   
@@ -121,7 +121,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         K_fu = gp_cov(gp, x, u);   % f x u
         K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
         K_nu = gp_cov(gp,xt,u);       % n x u
-        Luu = chol(K_uu)';
+        Luu = chol(K_uu,'lower');
         
         % Evaluate the Lambda (La) for specific model
         % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -151,7 +151,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         % if the prediction is made for training set, evaluate Lav also for prediction points
         if ~isempty(tstind)
           [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-          Luu = chol(K_uu)';
+          Luu = chol(K_uu,'lower');
           B=Luu\(K_fu');
           Qv_ff=sum(B.^2)';
           Lav2 = zeros(size(Ef));
@@ -169,7 +169,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         Ef = repmat(Ef , 1, nsamp);
         
         [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-        Luu = chol(K_uu)';
+        Luu = chol(K_uu,'lower');
         B=Luu\(K_fu');
         B2 = Luu\(K_nu');
         Lav_n = Knn_v - sum(B2.^2)';
@@ -183,13 +183,13 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           K2 = B2'*B2 + diag(Lav_n);
           C = B'*B + diag(Lav);
           
-          L = chol(C)';
+          L = chol(C,'lower');
           %    y=K'*(C\y);
           a = L'\(L\y);
           Ef = repmat( K'*a, 1, nsamp);
           v = L\K;
           
-          predcov = chol(K2-v'*v)';
+          predcov = chol(K2-v'*v,'lower');
           sampft = Ef + predcov*randn(size(Ef));        
         end
 
@@ -288,7 +288,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           Ef = repmat( K'*a, 1, nsamp);
           v = L\K;
           
-          predcov = chol(K2-v'*v)';
+          predcov = chol(K2-v'*v, 'lower');
           sampft = Ef + predcov*randn(size(Ef));        
         end
 
@@ -503,7 +503,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         m = size(Phi_f,2);
         ns = eye(m,m)*S(1,1);
         
-        L = chol(Phi_f'*Phi_f + ns)';
+        L = chol(Phi_f'*Phi_f + ns,'lower');
         Ef = Phi_a*(L'\(L\(Phi_f'*y)));
 
         

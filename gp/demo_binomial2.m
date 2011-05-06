@@ -43,7 +43,7 @@
 %
 %  See also DEMO_BINOMIAL1, DEMO_BINOMIAL_APC
 
-% Copyright (c) 2010-2011 Jaakko Riihimäki, Aki Vehtari
+% Copyright (c) 2010-2011 Jaakko Riihimï¿½ki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -103,7 +103,7 @@ ld50s=-a(b>0)./b(b>0);
 
 % Visualise the predictions
 figure(1)
-a4r
+% a4r
 set(gcf,'DefaultAxesPosition',[0.07 0.07 0.88 0.88])
 set(gcf, 'color', 'w')
 color1=[0.9 0.9 1]; color2=[0 0 0.9];

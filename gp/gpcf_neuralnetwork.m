@@ -334,7 +334,8 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
         for d1=1:m
           wnom_g=2*x(:,d1)*x(:,d1)';
           tmp_g=2*x(:,d1).^2;
-          wden_g=0.5./S_den.*(tmp_g*S_den_tmp'+S_den_tmp*tmp_g');
+          tmp=tmp_g*S_den_tmp';
+          wden_g=0.5./S_den.*(tmp+tmp');
           wg=s(d1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
           
           ii1 = ii1+1;
