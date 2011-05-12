@@ -142,7 +142,7 @@ switch gp.type
       
       %evaluate a = C\y;
       % -------------------
-      [c, C]=gp_trcov(gp,x);
+      [~, C]=gp_trcov(gp,x);
       
       if issparse(C)
           LD = ldlchol(C);
@@ -158,35 +158,43 @@ switch gp.type
 
     % evaluate K*a
     % -------------------
-    K=gp_cov(gp,x,xt,predcf);
-    Eft = K'*a;
-    
-    if  isfield(gp,'meanf')
-        if issparse(C)
-            [RB RAR] = mean_predf(gp,x,xt,K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
-        else
-            [RB RAR] = mean_predf(gp,x,xt,K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
+    nxt = size(xt,1); nblock=10000;
+    ind = ceil(nxt./nblock);
+    Eft = zeros(nxt,1);    % Mean
+    Varft = zeros(nxt,1);    % Variance
+    % Do the prediction in blocks to save memory
+    for i1=1:ind
+        xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
+        K=gp_cov(gp,x,xt(xtind,:),predcf);
+        Eft(xtind) = K'*a;
+        
+        if  isfield(gp,'meanf')
+            if issparse(C)
+                [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
+            else
+                [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
+            end
+            Eft(xtind) = Eft(xtind) + RB;
         end
-        Eft = Eft + RB;
-    end
-    
-    % Evaluate variance
-    % Vector of diagonal elements of covariance matrix
-    if nargout > 1
-
-        V = gp_trvar(gp,xt,predcf);
-        if issparse(C)
-            Varft = V - diag(K'*ldlsolve(LD,K));
-        else
-            v = L\K;
-            Varft = V - sum(v'.*v',2);
-        end
+        
+        % Evaluate variance
+        % Vector of diagonal elements of covariance matrix
+        if nargout > 1
             
-        % If there are specified mean functions
-        if  isfield(gp,'meanf')           
-            Varft = Varft + RAR; 
+            V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+            if issparse(C)
+                Varft = V - diag(K'*ldlsolve(LD,K));
+            else
+                v = L\K;
+                Varft((i1-1)*nblock+1:min(i1*nblock,nxt)) = V - sum(v'.*v',2);
+            end
+            
+            % If there are specified mean functions
+            if  isfield(gp,'meanf')
+                Varft(xtind) = Varft(xtind) + RAR;
+            end
         end
-    end     
+    end
     
     if nargout > 2
         % Scale mixture model in lik_smt is a special case 

@@ -14,10 +14,23 @@ function lik = lik_gaussian(varargin)
 %    Parameters for Gaussian likelihood function [default]
 %      sigma2       - variance [0.1]
 %      sigma2_prior - prior for sigma2 [prior_logunif]
+%      n            - number of observations per input (See using average
+%                     observations below)
 %
 %    Note! If the prior is 'prior_fixed' then the parameter in
 %    question is considered fixed and it is not handled in
 %    optimization, grid integration, MCMC etc.
+%
+%    Using average observations
+%    The lik_gaussian can be used to model data where each input vector is
+%    attached to an average of varying number of observations. That is, we
+%    have input vectors x_i, average observations y_i and sample sizes n_i.
+%    Each observation is distributed  
+%
+%        y_i ~ N(f(x_i), sigma2/n_i)
+%
+%    The model is constructed as lik_gaussian('n', n), where n is the same
+%    length as y and collects the sample sizes. 
 %
 %  See also
 %    GP_SET, PRIOR_*, LIK_*
@@ -38,6 +51,7 @@ function lik = lik_gaussian(varargin)
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
   ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('n',[], @(x) isreal(x) && all(x>0));
   ip.parse(varargin{:});
   lik=ip.Results.lik;
 
@@ -54,6 +68,9 @@ function lik = lik_gaussian(varargin)
   % Initialize parameters
   if init || ~ismember('sigma2',ip.UsingDefaults)
     lik.sigma2 = ip.Results.sigma2;
+  end
+  if init || ~ismember('n',ip.UsingDefaults)
+    lik.n = ip.Results.n;
   end
   % Initialize prior structure
   if init
@@ -195,7 +212,12 @@ function DKff = lik_gaussian_cfg(lik, x, x2)
 
   DKff = {};
   if ~isempty(lik.p.sigma2)
-    DKff{1}=lik.sigma2;
+      if isempty(lik.n)
+          DKff{1}=lik.sigma2;
+      else
+          n = length(x);
+          DKff{1} = sparse(1:n, 1:n, lik.sigma2./lik.n, n, n);
+      end
   end
 end
 
@@ -236,8 +258,11 @@ function C = lik_gaussian_trcov(lik, x)
   [n, m] =size(x);
   n1=n+1;
 
-  C = sparse([],[],[],n,n,0);
-  C(1:n1:end)=C(1:n1:end)+lik.sigma2;
+  if isempty(lik.n)
+      C = sparse(1:n,1:n,ones(n,1).*lik.sigma2,n,n);
+  else  
+      C = sparse(1:n, 1:n, lik.sigma2./lik.n, n, n);
+  end
 
 end
 
@@ -256,7 +281,11 @@ function C = lik_gaussian_trvar(lik, x)
 %    LIK_GAUSSIAN_COV, GP_COV, GP_TRCOV
 
   [n, m] =size(x);
-  C=repmat(lik.sigma2,n,1);
+  if isempty(lik.n)
+      C=repmat(lik.sigma2,n,1);
+  else
+      C=lik.sigma2./lik.n(:);
+  end
 
 end
 
@@ -279,6 +308,7 @@ function reccf = lik_gaussian_recappend(reccf, ri, lik)
     
     % Initialize parameters
     reccf.sigma2 = []; 
+    reccf.n = []; 
     
     % Set the function handles
     reccf.fh.pak = @lik_gaussian_pak;
@@ -307,5 +337,8 @@ function reccf = lik_gaussian_recappend(reccf, ri, lik)
     end
   elseif ri==1
     reccf.sigma2=[];
+  end
+  if ~isempty(lik.n)
+    reccf.n(ri,:)=lik.n(:)';
   end
 end
