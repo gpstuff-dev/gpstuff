@@ -1,18 +1,21 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = gpla_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 %GPLA_PRED  Predictions with Gaussian Process Laplace approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GPLA_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GPLA_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
 %    mean EFT and variance VARFT of latent variables and the
 %    posterior predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EFT, VARFT, LPYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
+%
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also the posterior predictive mean EYT and variance VARYT.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -434,16 +437,17 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpla_pred(gp, x, y, xt, varargin)
             end
         end
     end
-    
-    if nargout > 2
-      % ============================================================
-      % Evaluate also the predictive mean and variance of new observation(s)
-      % ============================================================
-      if isempty(yt)
-        [Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, [], zt);
-      else
-        [Eyt, Varyt, pyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
-      end
+        
+    % ============================================================
+    % Evaluate also the predictive mean and variance of new observation(s)
+    % ============================================================
+    if nargout > 2 && isempty(yt)
+        error('yt has to be providedw to get lpyt.')
+    end
+    if nargout > 3
+        [lpyt, Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+    elseif nargout > 2
+        lpyt = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
     end
     
 end

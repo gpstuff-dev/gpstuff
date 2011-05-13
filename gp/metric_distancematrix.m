@@ -1,4 +1,4 @@
-function metric = metric_distancematrix(do, varargin)
+function metric = metric_distancematrix(varargin)
 %METRIC_distancematrix An Euclidean distance metric for Gaussian process models.
 %
 %	Description
@@ -22,10 +22,10 @@ function metric = metric_distancematrix(do, varargin)
 %                       where l_1 and l_2 are lengthscales for corresponding component sets.
 %    lengthScales      = Hyperparameters of the metric, which in this case are 
 %                       lengthscales for each input component set.
-%    Kstarstar   = complete precalculated distance matrix for training&test
-%                  data, from which smaller parts are chosen via indices.
-%                  NEEDS to be preset!
-%    p           = Prior structure for metric parameters. 
+%    Kstarstar         = complete precalculated distance matrix for training&test
+%                        data, from which smaller parts are chosen via indices.
+%                        NEEDS to be preset!
+%    lengthScales_prior  = Prior structure for metric parameters. 
 %                       (e.g. p.params.)
 %    pak         = function handle to pack function
 %                       (@metric_distancematrix_pak)
@@ -52,112 +52,99 @@ function metric = metric_distancematrix(do, varargin)
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    if nargin < 2
-        error('Not enough arguments')
+    ip=inputParser;
+    ip.FunctionName = 'METRIC_DISTANCEMATRIX';
+    ip.addOptional('metric', [], @isstruct);
+    ip.addParamValue('nin', [], @(x) isreal(x));
+    ip.addParamValue('components',[], @(x) isempty(x) || iscell(x));
+    ip.addParamValue('lengthScales',[] , @(x) isvector(x));
+    ip.addParamValue('Kstarstar',[], @(x) ismatrix(x) && all(x>0));
+    ip.addParamValue('lengthScales_prior',prior_unif, ...
+                   @(x) isstruct(x) || isempty(x));
+    ip.addParamValue('Kff', [], @(x) ismatrix(x));
+    ip.addParamValue('Kfu', [], @(x) ismatrix(x));
+    ip.addParamValue('Kffstar', [], @(x) ismatrix(x));
+    ip.addParamValue('Kfstaru', [], @(x) ismatrix(x));
+    ip.addParamValue('X_u', [], @(x) ismatrix(x));
+    ip.parse(varargin{:});
+    metric=ip.Results.metric;
+    
+    if isempty(metric)
+        % Initialize a Gaussian process
+        init=true;
+    else
+        % Modify a Gaussian process
+        if ~isfield(metric,'type') && isequal(metric.type,'metric_distancematrix')
+         error('First argument does not seem to be a metric structure')
+        end
+        init=false;
     end
-
-    if strcmp(do, 'init')
+    
+    if init
+        % Type
         metric.type = 'metric_distancematrix';
-        metric.nin = varargin{1};
-        metric.components = varargin{2};
-%        metric.x1x2matrix=[];
-        
-%        metric.x1matrix=[];
-%        metric.x2matrix=[];
-%         metric.x1=[];
-%         metric.x2=[];
-%        metric.n1=[];
-%        metric.n2=[];
-%        metric.gdist=[];
-        metric.lengthScales = repmat(1,1,length(metric.components));
-        metric.Kff=[];
-        %metric.Kuu=[];
-        %metric.Kfu=[];
-        metric.Kffstar=[];
-        %metric.Kfstaru=[];
+    end
+    
+    if init || ~ismember('nin', ip.UsingDefaults)
+        metric.nin = ip.Results.nin;
+    end
+    
+    if init || ~ismember('components', ip.UsingDefaults)
+        metric.components = ip.Results.components;
+    end
+    
+    if init || ~ismember('lengthScales', ip.UsingDefaults)
+        metric.lengthScales = ones(1,length(metric.components));
+    end
+    
+    if init || ~ismember('Kff', ip.UsingDefaults)
+        metric.Kff = ip.Results.Kff;
+    end
+    
+    if init || ~ismember('Kffstar', ip.UsingDefaults)
+        metric.Kffstar=ip.Results.Kffstar;
+    end
+    
+    if init || ~ismember('Kstarstar', ip.UsingDefaults)
         metric.Kstarstar=[];
-        metric.X_u=[];
+    end
+    
+    if init || ~ismember('X_u', ip.UsingDefaults)
+        metric.X_u=ip.Results.X_u;
+    end
+    
+    if init || ~ismember('Kfu', ip.UsingDefaults)
+        metric.Kfu=ip.Results.Kfu;
+    end
+    
+    if init || ~ismember('Kfstaru', ip.UsingDefaults)
+        metric.Kfstaru=ip.Results.Kfstaru;
+    end
+    
+    if init || ~ismember('lengthScales', ip.UsingDefaults)
+%         if size(metric.lengthScales) ~= size(ip.Results.lengthScales)
+%             error('Incorrect number of parameters given')
+%         end
+        metric.lengthScales=ip.Results.lengthScales;
+    end
         
+    if init || ~ismember('lengthScales_prior', ip.UsingDefaults)
         % Initialize prior structure
         metric.p=[];
-        metric.p.lengthScales=prior_unif('init');
+        metric.p.lengthScales=ip.Results.lengthScales_prior;
+    end
         
+    if init
         % Set the function handles to the nested functions
-        metric.pak        = @metric_distancematrix_pak;
-        metric.unpak      = @metric_distancematrix_unpak;
-        metric.e          = @metric_distancematrix_e;
-        metric.ghyper     = @metric_distancematrix_ghyper;
-        metric.ginput     = @metric_distancematrix_ginput;
-        metric.distance   = @metric_distancematrix_distance;
-        metric.recappend  = @metric_distancematrix_recappend;
+        metric.fh.pak        = @metric_distancematrix_pak;
+        metric.fh.unpak      = @metric_distancematrix_unpak;
+        metric.fh.e          = @metric_distancematrix_e;
+        metric.fh.ghyper     = @metric_distancematrix_ghyper;
+        metric.fh.ginput     = @metric_distancematrix_ginput;
+        metric.fh.dist       = @metric_distancematrix_distance;
+        metric.fh.recappend  = @metric_distancematrix_recappend;
         %metric.matrix     = @metric_distancematrix_matrix;
         %metric.initmatrices = @metric_distancematrix_initmatrices;
-        
-        if length(varargin) > 2
-            if mod(nargin,2) ~=1
-                error('Wrong number of arguments')
-            end
-            % Loop through all the parameter values that are changed
-            for i=3:2:length(varargin)-1
-                switch varargin{i}
-                  case 'lengthScales'
-                    if size(varargin{i+1}) ~= size(metric.lengthScales)
-                        error('Incorrect number of parameters given.');
-                    end
-                    metric.lengthScales = varargin{i+1};
-                  case 'lengthScales_prior'
-                    metric.p.lengthScales = varargin{i+1};
-                  case 'Kff'
-                    metric.Kff=varargin{i+1};
-                  case 'Kfu'
-                    metric.Kfu=varargin{i+1};
-                  case 'Kffstar'
-                    metric.Kffstar=varargin{i+1};
-                  case 'Kfstaru'
-                    metric.Kfstaru=varargin{i+1};
-                  case 'X_u'
-                    metric.X_u=varargin{i+1};
-                  case 'Kstarstar'
-                    metric.Kstarstar=varargin{i+1};
-                  otherwise
-                    error('Wrong parameter name!')
-                end
-            end
-        end
-    end
-
-    % Set the parameter values of covariance function
-    if strcmp(do, 'set')
-        if mod(nargin,2) ~=0
-            error('Wrong number of arguments')
-        end
-        metric = varargin{1};
-        % Loop through all the parameter values that are changed
-        for i=2:2:length(varargin)-1
-            switch varargin{i}
-                case 'params'
-                    if size(varargin{i+1}) ~= size(metric.lengthScales)
-                        error('Incorrect number of parameters given.');
-                    end
-                    metric.lengthScales = varargin{i+1};
-                case 'lengthScales_prior'
-                    metric.p.lengthScales = varargin{i+1};
-                case 'Kff'
-                    metric.Kff=varargin{i+1};
-                case 'Kfu'
-                    metric.Kfu=varargin{i+1};
-                case 'Kffstar'
-                    metric.Kffstar=varargin{i+1};
-                case 'Kfstaru'
-                    metric.Kfstaru=varargin{i+1};
-                case 'X_u'
-                    metric.X_u=varargin{i+1};
-                case 'Kstarstar'
-                    metric.Kstarstar=varargin{i+1};
-                otherwise
-                    error('Wrong parameter name!')
-            end
-        end
     end
     end
 
@@ -683,7 +670,7 @@ function metric = metric_distancematrix(do, varargin)
             recmetric.e         = @metric_distancematrix_e;
             recmetric.ghyper    = @metric_distancematrix_ghyper;
             recmetric.ginput    = @metric_distancematrix_ginput;            
-            recmetric.distance  = @metric_distancematrix_distance;
+            recmetric.dist      = @metric_distancematrix_distance;
             recmetric.recappend = @metric_distancematrix_recappend;
             %recmetric.matrix    = @metric_distancematrix_matrix;
             return

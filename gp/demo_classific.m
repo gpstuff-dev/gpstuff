@@ -97,14 +97,14 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',20,'Display','iter');
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
-[Eft_la, Varft_la, Eyt_la, Varyt_la, Pyt_la] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_la,20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_la),20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -114,7 +114,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with La
 
 % Visualise predictive probability p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_la,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_la),20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
@@ -138,14 +138,14 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
-[Eft_ep, Varft_ep, Eyt_ep, Varyt_ep, Pyt_ep] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Eft_ep, Varft_ep, lpyt_ep, Eyt_ep, Varyt_ep] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_ep,20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_ep),20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -155,7 +155,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with EP
 
 % Visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_ep,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_ep),20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
@@ -201,15 +201,15 @@ hmc2('state', sum(100*clock));
 rgp=thin(rgp,102);
 
 % Make predictions
-[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-Pyt_mc = mean(Pys_mc,2);
+[Efs_mc, Varfs_mc, lpys_mc, Eys_mc, Varys_mc] = gpmc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
+lpyt_mc = mean(lpys_mc,2);
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_mc),20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -219,7 +219,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with MC
 
 % Visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(Pyt_mc,20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_mc),20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];

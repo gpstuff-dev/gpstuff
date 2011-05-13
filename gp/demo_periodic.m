@@ -135,7 +135,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % Varyt_full the predictive variance.
 xt=[1:800]';
 
-[Eft_full, Varft_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt);
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(800,1));
 
 % Plot the prediction and data
 figure;hold on
@@ -197,7 +197,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % Varft_full the predictive variance.
 xt=[1:800]';
 
-[Eft_full, Varft_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt);
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(800,1));
 
 % Plot the prediction and data
 figure;hold on

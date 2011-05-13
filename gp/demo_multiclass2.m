@@ -74,7 +74,7 @@ fprintf(['Softmax model with Laplace integration over the latent\n' ...
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
-[Eft, Varft, ~, ~, pyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
+[Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
 
 % gp2 = gp_set('lik', lik_softmax2, 'cf', {gpcf1 gpcf1 gpcf1}, 'jitterSigma2', 1e-2);
 % gp2 = gp_set(gp2, 'latent_method', 'Laplace');
@@ -87,10 +87,10 @@ opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativ
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % make the prediction for test points
-[Eft, Varft, ~, ~, pyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
+[Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
 
 % calculate the percentage of misclassified points
-tt = pyt==repmat(max(pyt,[],2),1,size(pyt,2));
+tt = exp(lpyt)==repmat(max(exp(lpyt),[],2),1,size(exp(pyt),2));
 missed = (sum(sum(abs(tt-yt)))/2)/size(yt,1)
 
 % grid for making prediction
@@ -98,7 +98,7 @@ xtg1 = meshgrid(linspace(min(x(:,1))-.1, max(x(:,1))+.1, 30));
 xtg2 = meshgrid(linspace(min(x(:,2))-.1, max(x(:,2))+.1, 30))';
 xtg=[xtg1(:) xtg2(:) repmat(mean(x(:,3:4)), size(xtg1(:),1),1)];
 
-[Eft, Covft, ~, ~, pg] = gp_pred(gp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Eft, Covft, pg] = gp_pred(gp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 % plot the train data o=0, x=1
 figure, set(gcf, 'color', 'w'), hold on
@@ -106,9 +106,9 @@ plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);
 plot(x(y(:,2)==1,1),x(y(:,2)==1,2),'x', 'linewidth', 2);
 plot(x(y(:,3)==1,1),x(y(:,3)==1,2),'kd', 'linewidth', 2);
 axis([-0.4 1.4 -0.4 1.4])
-contour(xtg1, xtg2, reshape(pg(:,1),30,30),'r', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg(:,2),30,30),'b', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg(:,3),30,30),'k', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(pg(:,1)),30,30),'r', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(pg(:,2)),30,30),'b', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(pg(:,3)),30,30),'k', 'linewidth', 2)
 
 % MCMC approach
 
@@ -149,10 +149,10 @@ rgp=thin(rgp,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, ~, ~, pgs_mc] = gpmc_mo_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, pgs_mc] = gpmc_mo_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
-pg_mc = reshape(mean(pgs_mc,2),900,3);
+pg_mc = reshape(mean(exp(pgs_mc),2),900,3);
 
 figure, set(gcf, 'color', 'w'), hold on
 plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);

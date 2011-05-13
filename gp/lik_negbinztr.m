@@ -455,20 +455,22 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   end
 end
 
-function [Ey, Vary, Py] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)
 %LIK_NEGBINZTR_PREDY  Returns the predictive mean, variance and density of y
 %
-%  Description         
-%    [EY, VARY] = LIK_NEGBINZTR_PREDY(LIK, EF, VARF) takes a
+%  Description      
+%    LPY = LIK_NEGBINZTR_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the incedence counts YT, expected counts ZT.
+%
+%    [LPY, EY, VARY] = LIK_NEGBINZTR_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables
 %        
-%    [Ey, Vary, PY] = LIK_NEGBINZTR_PREDY(LIK, EF, VARF YT, ZT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the incedence counts YT, expected counts ZT.
+
 %
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -483,41 +485,42 @@ function [Ey, Vary, Py] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)
   avgE = zt;
   r = lik.disper;
   
-  Py = zeros(size(Ef));
+  lpy = zeros(size(Ef));
   Ey = zeros(size(Ef));
   EVary = zeros(size(Ef));
   VarEy = zeros(size(Ef)); 
   
-  % Evaluate Ey and Vary 
-  for i1=1:length(Ef)
-    %%% With quadrature
-    myy_i = Ef(i1);
-    sigm_i = sqrt(Varf(i1));
-    minf=myy_i-6*sigm_i;
-    maxf=myy_i+6*sigm_i;
+  if nargout > 1
+      % Evaluate Ey and Vary 
+      for i1=1:length(Ef)
+        %%% With quadrature
+        myy_i = Ef(i1);
+        sigm_i = sqrt(Varf(i1));
+        minf=myy_i-6*sigm_i;
+        maxf=myy_i+6*sigm_i;
 
-    F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-    Ey(i1) = quadgk(F,minf,maxf);
-    
-    F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-    EVary(i1) = quadgk(F2,minf,maxf);
-    
-    F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-    VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+        F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+        Ey(i1) = quadgk(F,minf,maxf);
+
+        F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
+        EVary(i1) = quadgk(F2,minf,maxf);
+
+        F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+        VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+      end
+      Vary = EVary + VarEy;
   end
-  Vary = EVary + VarEy;
 
   % Evaluate the posterior predictive densities of the given observations
-  if nargout > 2
-    for i1=1:length(Ef)
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Negative-binomial * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_negbinztr_norm(...
-        yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
-      % integrate over the f to get posterior predictive distribution
-      Py(i1) = quadgk(pdf, minf, maxf);
-    end
+  
+  for i1=1:length(Ef)
+    % get a function handle of the likelihood times posterior
+    % (likelihood * posterior = Negative-binomial * Gaussian)
+    % and useful integration limits
+    [pdf,minf,maxf]=init_negbinztr_norm(...
+      yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
+    % integrate over the f to get posterior predictive distribution
+    lpy(i1) = log(quadgk(pdf, minf, maxf));
   end
 end
 

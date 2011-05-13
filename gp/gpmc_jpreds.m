@@ -1,4 +1,4 @@
-function [Ef, Varf, Ey, Vary, jpy, ljpy] = gpmc_jpreds(gp, x, y, xt, varargin)
+function [Ef, Varf, ljpy, Ey, Vary] = gpmc_jpreds(gp, x, y, xt, varargin)
 %GPMC_PREDS  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
@@ -47,26 +47,20 @@ function [Ef, Varf, Ey, Vary, jpy, ljpy] = gpmc_jpreds(gp, x, y, xt, varargin)
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
 %       
-%    [EFS, VARFS, EYS, VARYS] = GP_PREDS(RECGP, X, Y, XT, OPTIONS) 
-%    returns also the predictive means and covariances for test
-%    observations at input locations XT given RECGP
-%
-%        Eys(:,i) = E[y | xt, x, y, th_i]
-%      Varys(:,i) = Cov[y | xt, x, y, th_i]
-%
-%    where the latent variables have been marginalized out.
-%
-%    [EFS, VARFS, EYS, VARYS, JPYS] = 
-%      GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also the predictive joint density JPYS of the observations YT
-%    at input locations XT given RECGP
-%
-%    [EFS, VARFS, EYS, VARYS, PYS, LPYS] = 
-%      GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also the log predictive joint density LJPYS of the observations YT
-%    at input locations XT given RECGP
-%
+%    [EFS, VARFS, LJPYS] = GP_PREDS(RECGP, X, Y, XT, OPTIONS) 
+%    returns also the logarithm of the predictive joint density JPYS.
+% 
 %        Pys(:,i) = p(yt | xt, x, y, th_i)
+%
+%    [EFS, VARFS, LJPYS, EYS, VARYS] = 
+%      GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
+%    returns also the posterior predictive means and covariances.
+%
+%      Eys(:,i) = E[y | xt, x, y, th_i]
+%      Varys(:,i) = Cov[y | xt, x, y, th_i]
+% 
+%    where the latent variables have been marginalized out.
+% 
 %
 %     NOTE! In case of FIC and PIC sparse approximation the
 %     prediction for only some PREDCF covariance functions is just
@@ -126,7 +120,7 @@ function [Ef, Varf, Ey, Vary, jpy, ljpy] = gpmc_jpreds(gp, x, y, xt, varargin)
         error('Requires at least 4 arguments');
     end
 
-    if nargout > 4 && isempty(yt)
+    if nargout > 2 && isempty(yt)
         error('mc_pred -> If py is wanted you must provide the vector yt as an optional input.')
     end
             
@@ -173,11 +167,9 @@ function [Ef, Varf, Ey, Vary, jpy, ljpy] = gpmc_jpreds(gp, x, y, xt, varargin)
             [Ef(:,i1), Varf(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
         else 
             if isfield(gp, 'latentValues')
-                if isempty(yt)
-                    [Ef(:,i1), Varf(:,:,i1), Ey(:,i1), Vary(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-                else
-                    [Ef(:,i1), Varf(:,:,i1), Ey(:,i1), Vary(:,:,i1), jpy(i1), ljpy(i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
-                end
+                
+                [Ef(:,i1), Varf(:,:,i1), ljpy(i1), Ey(:,i1), Vary(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+                
                 if any(diag(Varf(:,:,i1))<=0)
                     nzero = find(Varf(:,:,i1)<=0);
                     if ~isempty(nzero)
@@ -190,12 +182,10 @@ function [Ef, Varf, Ey, Vary, jpy, ljpy] = gpmc_jpreds(gp, x, y, xt, varargin)
                 end
                 
             else
-                if nargout < 5
-                    [Ef(:,i1), Varf(:,:,i1), Ey(:,i1), Vary(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-                elseif nargout < 6
-                    [Ef(:,i1), Varf(:,:,i1), Ey(:,i1), Vary(:,:,i1), jpy(i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+                if nargout < 3
+                    [Ef(:,i1), Varf(:,:,i1), ljpy(i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
                 else
-                    [Ef(:,i1), Varf(:,:,i1), Ey(:,i1), Vary(:,:,i1), jpy(i1), ljpyt(i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+                    [Ef(:,i1), Varf(:,:,i1), ljpy(i1), Ey(:,i1), Vary(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
                 end
             end            
         end

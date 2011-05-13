@@ -361,25 +361,25 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
 
     % make the prediction
-    [Eft, Varft, Eyt, Varyt, pyt] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
+    [Eft, Varft, lpyt, Eyt, Varyt] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
     if nargout>=6
       cvtrpreds.Eft([trindex{i} tstindex{i}],i)=Eft([trindex{i} tstindex{i}],:);
       cvtrpreds.Varft([trindex{i} tstindex{i}],i)=Varft([trindex{i} tstindex{i}],:);
+      cvtrpreds.lpyt([trindex{i} tstindex{i}],i)=lpyt([trindex{i} tstindex{i}],:);      
       cvtrpreds.Eyt([trindex{i} tstindex{i}],i)=Eyt([trindex{i} tstindex{i}],:);
       cvtrpreds.Varyt([trindex{i} tstindex{i}],i)=Varyt([trindex{i} tstindex{i}],:);
-      cvtrpreds.pyt([trindex{i} tstindex{i}],i)=pyt([trindex{i} tstindex{i}],:);
     end
     if nargout>=2
       cvpreds.Eft(tstindex{i},:)=Eft(tstindex{i},:);
       cvpreds.Varft(tstindex{i},:)=Varft(tstindex{i},:);
+      cvpreds.lpyt(tstindex{i},:)=lpyt(tstindex{i},:);      
       cvpreds.Eyt(tstindex{i},:)=Eyt(tstindex{i},:);
       cvpreds.Varyt(tstindex{i},:)=Varyt(tstindex{i},:);
-      cvpreds.pyt(tstindex{i},:)=pyt(tstindex{i},:);
     end
 
     % Evaluate statistics
-    lpd_cv(tstindex{i}) = log(mean(pyt(tstindex{i},:),2));
-    lpd_cvtr(i) = mean(log(mean(pyt(trindex{i}),2)));
+    lpd_cv(tstindex{i}) = log(mean(exp(lpyt(tstindex{i},:)),2));
+    lpd_cvtr(i) = mean(log(mean(exp(lpyt(trindex{i})),2)));
 
     rmse_cv(tstindex{i}) = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
     rmse_cvtr(i) = sqrt(mean((mean(Eyt(trindex{i},:),2) - ytr).^2));
@@ -387,7 +387,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     abs_cv(tstindex{i}) = abs(mean(Eyt(tstindex{i},:),2) - ytst);
     abs_cvtr(i) = mean(abs(mean(Eyt(trindex{i},:),2) - ytr));
 
-    lpd_cvm(i) = mean(log(mean(pyt(tstindex{i},:),2)));
+    lpd_cvm(i) = mean(log(mean(exp(lpyt(tstindex{i},:)),2)));
     rmse_cvm(i) = sqrt(mean((mean(Eyt(tstindex{i},:),2) - ytst).^2));
     abs_cvm(i) = mean(abs(mean(Eyt(tstindex{i},:),2) - ytst));
   end
@@ -463,16 +463,16 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     cpu_time = cputime - cpu_time;
 
     % make the prediction
-    [Eft, Varft, Eyt, Varyt, pyt] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
+    [Eft, Varft, lpyt, Eyt, Varyt] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
     if nargout>=4
       trpreds.Eft=Eft;
       trpreds.Varft=Varft;
+      trpreds.lpyt=lpyt;      
       trpreds.Eyt=Eyt;
       trpreds.Varyt=Varyt;
-      trpreds.pyt=pyt;
     end
 
-    lpd_tr = mean(log(mean(pyt,2)));
+    lpd_tr = mean(log(mean(exp(lpyt,2))));
     rmse_tr = sqrt(mean((mean(Eyt,2) - y).^2));
     abs_tr = mean(abs(mean(Eyt,2) - y));
 

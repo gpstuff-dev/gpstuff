@@ -549,7 +549,7 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
 %    matrix K. Solves the posterior mode of F using EM algorithm
 %    and evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu
 %    are needed for sparse approximations. For details, see
-%    Vanhatalo, Jylänki and Vehtari (2009): Gaussian process
+%    Vanhatalo, Jylï¿½nki and Vehtari (2009): Gaussian process
 %    regression with Student-t likelihood.
 %
   
@@ -633,20 +633,22 @@ function upfact = lik_t_upfact(gp, y, mu, ll)
   upfact = -(Varp - ll)./ll^2;
 end
 
-function [Ey, Vary, Py] = lik_t_predy(lik, Ef, Varf, y, z)
+function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
 %LIK_T_PREDY    Returns the predictive mean, variance and density of y
 %
-%  Description         
-%    [EY, VARY] = LIK_T_PREDY(LIK, EF, VARF) takes a likelihood
+%  Description      
+%    LPY = LIK_T_PREDY(LIK, EF, VARF YT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%       p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the observations YT.
+%
+%    [LPY, EY, VARY] = LIK_T_PREDY(LIK, EF, VARF) takes a likelihood
 %    structure LIK, posterior mean EF and posterior Variance
 %    VARF of the latent variable and returns the posterior
 %    predictive mean EY and variance VARY of the observations
 %    related to the latent variables
 %        
-%  [Ey, Vary, PY] = LIK_T_PREDY(LIK, EF, VARF YT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the observations YT.
+
 %
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -658,31 +660,33 @@ function [Ey, Vary, Py] = lik_t_predy(lik, Ef, Varf, y, z)
   Ey = zeros(size(Ef));
   EVary = zeros(size(Ef));
   VarEy = zeros(size(Ef)); 
-  Py = zeros(size(Ef));
-  for i1=1:length(Ef)
-    %%% With quadrature
-    ci = sqrt(Varf(i1));
+  lpy = zeros(size(Ef));
+  if nargout > 1
+      for i1=1:length(Ef)
+        %%% With quadrature
+        ci = sqrt(Varf(i1));
 
-    F = @(x) x.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
-    
-    F2 = @(x) (nu./(nu-2).*sigma2).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
-    
-    F3 = @(x) x.^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+        F = @(x) x.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+
+        F2 = @(x) (nu./(nu-2).*sigma2).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+
+        F3 = @(x) x.^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+      end
+      Vary = EVary + VarEy;
   end
-  Vary = EVary + VarEy;
   
-  if nargout > 2
-    for i2 = 1:length(Ef)
-      mean_app = Ef(i2);
-      sigm_app = sqrt(Varf(i2));
-      
-      pd = @(f) t_pdf(y(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
-      Py(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
-    end
+
+  for i2 = 1:length(Ef)
+    mean_app = Ef(i2);
+    sigm_app = sqrt(Varf(i2));
+    
+    pd = @(f) t_pdf(y(i2), nu, f, sigma).*norm_pdf(f,Ef(i2),sqrt(Varf(i2)));
+    lpy(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
   end
+
   
 end
 

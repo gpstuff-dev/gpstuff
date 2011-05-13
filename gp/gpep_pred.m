@@ -1,18 +1,18 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = gpep_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
 %GPEP_PRED  Predictions with Gaussian Process EP approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GPEP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GPEP_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and variance VARFT of latent variables and the
-%    posterior predictive mean EYT and variance VARYT.
+%    mean EFT and variance VARFT of latent variables.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPEP_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPEP_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
+%    the cross-validation. Here Y has to be vector. Returns also posterior
+%    predictive mean EYT and variance VARYT.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -488,12 +488,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_pred(gp, x, y, xt, varargin)
     % ============================================================
     % Evaluate also the predictive mean and variance of new observation(s)
     % ============================================================    
-    if nargout > 2
-        if isempty(yt)
-            [Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, [], zt);
-        else
-            [Eyt, Varyt, pyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
-        end
+    if nargout > 2 && isempty(yt)
+        error('yt has to be provided to get lpyt.')
+    end
+    if nargout > 3
+        [lpyt, Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+    elseif nargout > 2
+        lpyt =  feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
     end
 end
 

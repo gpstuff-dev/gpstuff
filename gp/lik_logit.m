@@ -219,42 +219,46 @@ function [m_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i, m
   end
 end
 
-function [Ey, Vary, Py] = lik_logit_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_logit_predy(lik, Ef, Varf, yt, zt)
 %LIK_LOGIT_PREDY  Returns the predictive mean, variance and density of y
 %
 %  Description         
-%    [EY, VARY] = LIK_LOGIT_PREDY(LIK, EF, VARF) takes a
+%    LPY = LIK_LOGIT_PREDY(LIK, EF, VARF, YT)
+%    Returns logarithm of the predictive density of YT, that is 
+%        p(yt | y) = \int p(yt | f) p(f|y) df.
+%    This requires also the class labels YT.
+%
+%    [LPY, EY, VARY] = LIK_LOGIT_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
-%    Variance VARF of the latent variable and returns the
+%    Variance VARF of the latent variable and returns also the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables
 %        
-%    [EY, VARY, PY] = LIK_LOGIT_PREDY(LIK, EF, VARF, YT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | y) = \int p(yt | f) p(f|y) df.
-%    This requires also the class labels YT.
+
 %
 %  See also 
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
   
-  py1 = zeros(length(Ef),1);
-  for i1=1:length(Ef)
-    myy_i = Ef(i1);
-    sigm_i = sqrt(Varf(i1));
-    minf=myy_i-6*sigm_i;
-    maxf=myy_i+6*sigm_i;
-    F  = @(f)1./(1+exp(-f)).*norm_pdf(f,myy_i,sigm_i);
-    py1(i1) = quadgk(F,minf,maxf);
-  end
-  Ey = 2*py1-1;
-  Vary = 1-(2*py1-1).^2;
+    if nargout > 1
+      py1 = zeros(length(Ef),1);
+      for i1=1:length(Ef)
+        myy_i = Ef(i1);
+        sigm_i = sqrt(Varf(i1));
+        minf=myy_i-6*sigm_i;
+        maxf=myy_i+6*sigm_i;
+        F  = @(f)1./(1+exp(-f)).*norm_pdf(f,myy_i,sigm_i);
+        py1(i1) = quadgk(F,minf,maxf);
+      end
+      Ey = 2*py1-1;
+      Vary = 1-(2*py1-1).^2;
+    end
   
-  if nargout > 2
+
     if ~isempty(find(abs(yt)~=1))
       error('lik_logit: The class labels have to be {-1,1}')
     end
     % Quadrature integration                                    
-    Py = zeros(length(Ef),1);
+    lpy = zeros(length(Ef),1);
     for i1 = 1:length(Ef)
       % get a function handle of the likelihood times posterior
       % (likelihood * posterior = Poisson * Gaussian)
@@ -262,9 +266,9 @@ function [Ey, Vary, Py] = lik_logit_predy(lik, Ef, Varf, yt, zt)
       [pdf,minf,maxf]=init_logit_norm(...
         yt(i1),Ef(i1),Varf(i1));
       % integrate over the f to get posterior predictive distribution
-      Py(i1) = quadgk(pdf, minf, maxf);
+      lpy(i1) = log(quadgk(pdf, minf, maxf));
     end
-  end
+
 end
 
 function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)

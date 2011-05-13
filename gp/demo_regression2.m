@@ -136,7 +136,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions. Below Ef_full is the predictive mean and Varf_full
 % the predictive variance.
-[Eft_full, Varft_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt);
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt)));
 [Eft_full1, Varft_full1] = gp_pred(gp, x, y, xt, 'predcf', 1);
 [Eft_full2, Varft_full2] = gp_pred(gp, x, y, xt, 'predcf', 2);
 
@@ -198,7 +198,7 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
 % Make the prediction
-[Eft_fic, Varft_fic, Eyt_fic, Varyt_fic] = gp_pred(gp_fic, x, y, xt);
+[Eft_fic, Varft_fic, lpyt_fic, Eyt_fic, Varyt_fic] = gp_pred(gp_fic, x, y, xt, 'yt', ones(size(xt)));
 
 % Plot the solution of FIC
 figure
@@ -247,7 +247,7 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
 % Make the prediction
-[Eft_pic, Varft_pic, Eyt_pic, Varyt_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex);
+[Eft_pic, Varft_pic, lpyt_pic, Eyt_pic, Varyt_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex, 'yt', y);
 
 
 % Plot the solution of PIC
@@ -303,7 +303,7 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 gp_csfic=gp_optim(gp_csfic,x,y,'opt',opt);
 
 % Make the prediction
-[Eft_csfic, Varft_csfic, Eyt_csfic, Varyt_csfic] = gp_pred(gp_csfic, x, y, x);
+[Eft_csfic, Varft_csfic, lpyt_csfic, Eyt_csfic, Varyt_csfic] = gp_pred(gp_csfic, x, y, x, 'yt', y);
 
 % Plot the solution of FIC
 figure
@@ -319,7 +319,7 @@ caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f
 title(caption2)
 legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
 
-[Eft, Varft, Eyt, Varyt] = gp_pred(gp_csfic, x, y, x);
+[Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp_csfic, x, y, x, 'yt', y);
 [Eft1, Varft1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
 [Eft2, Varft2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
 

@@ -1,19 +1,22 @@
-function [Ef, Varf, Ey, Vary, Pyt] = gpla_mo_pred(gp, x, y, xt, varargin)
+function [Ef, Varf, lpyt, Ey, Vary] = gpla_mo_pred(gp, x, y, xt, varargin)
 %function [Ef, Varf, Ey, Vary, Pyt] = gpla_multinom_pred(gp, x, y, xt, varargin)
-%GPLA_multinom_PRED Predictions with Gaussian Process Laplace
+%GPLA_MO_PRED Predictions with Gaussian Process Laplace
 %                approximation with multinom likelihood
 %
 %  Description
-%    [EFT, VARFT] = GPLA_multinom_PRED(GP, X, Y, XT, OPTIONS) takes
+%    [EFT, VARFT] = GPLA_MO_PRED(GP, X, Y, XT, OPTIONS) takes
 %    a GP structure GP together with a matrix XT of input vectors,
 %    matrix X of training inputs and vector Y of training targets,
 %    and evaluates the predictive distribution at inputs XT. Returns
 %    a posterior mean EFT and variance VARFT of latent variables.
 %
-%    [EF, VARF, ~, ~, PYT] = GPLA_multinom_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EF, VARF, LPYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at input locations XT. This can be used for example in the
 %    cross-validation. Here Y has to be vector.
+%
+%    [EF, VARF, LPYT, EYT, VARYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also the posterior predictive mean EYT and variance VARYT.
 %
 %     OPTIONS is optional parameter-value pair
 %       predcf - is index vector telling which covariance functions are 
@@ -37,9 +40,9 @@ function [Ef, Varf, Ey, Vary, Pyt] = gpla_mo_pred(gp, x, y, xt, varargin)
 %                is, expected value for ith case.
 %
 %  See also
-%    GPLA_multinom_E, GPLA_multinom_G, GP_PRED, DEMO_MULTICLASS
+%    GPLA_MO_E, GPLA_MO_G, GP_PRED, DEMO_MULTICLASS
 %
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -74,7 +77,7 @@ function [Ef, Varf, Ey, Vary, Pyt] = gpla_mo_pred(gp, x, y, xt, varargin)
         % FULL
         % ============================================================
       case 'FULL'
-        [e, edata, eprior, f, L, a, E, M, p] = gpla_multinom_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(gp_pak(gp), gp, x, y, 'z', z);
         
         if isfield(gp, 'comp_cf')  % own covariance for each ouput component
             multicf = true;
@@ -157,11 +160,12 @@ function [Ef, Varf, Ey, Vary, Pyt] = gpla_mo_pred(gp, x, y, xt, varargin)
     % ============================================================
     % Evaluate also the predictive mean and variance of new observation(s)
     % ============================================================
-   if nargout > 2
-       if isempty(yt)
-           [Ey, Vary] = feval(gp.lik.fh.predy, gp.lik, Ef, Varf, [], zt);
-       else
-           [Ey, Vary, Pyt] = feval(gp.lik.fh.predy, gp.lik, Ef, Varf, yt, zt);
-       end
+   if nargout > 2 && isempty(yt)
+       error('yt has to be provided to get lpyt.')
+   end
+   if nargout > 3
+       [lpyt, Ey, Vary] = feval(gp.lik.fh.predy, gp.lik, Ef, Varf, [], zt);
+   elseif nargout > 2
+       lpyt = feval(gp.lik.fh.predy, gp.lik, Ef, Varf, yt, zt);
    end
 end

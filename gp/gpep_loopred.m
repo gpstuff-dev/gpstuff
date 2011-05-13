@@ -1,15 +1,15 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 %GPEP_LOOPRED  Leave-one-out predictions with EP approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPEP_LOOPRED(GP, X, Y,
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPEP_LOOPRED(GP, X, Y,
 %    OPTIONS) takes a Gaussian process structure GP together with a
 %    matrix XT of input vectors, matrix X of training inputs and
 %    vector Y of training targets, and evaluates the leave-one-out
 %    predictive distribution at inputs X. Returns a posterior mean
 %    EFT and variance VARFT of latent variables, the posterior
-%    predictive mean EYT and variance VARYT of observations, and
-%    posterior predictive density PYT at input locations X.
+%    predictive mean EYT and variance VARYT of observations, and logarithm
+%    of posterior predictive density PYT at input locations X.
 %
 %    EP leave-one-out is approximated by leaving-out site-term and
 %    using cavity distribution as leave-one-out posterior for the
@@ -48,9 +48,9 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
 
     Eft=muvec_i;
     Varft=sigm2vec_i;
-    pyt=Z_i;
+    lpyt=Z_i;
     n=length(y);
-    if nargout > 2
+    if nargout > 3
       for cvi=1:n
         [Eyt(cvi,1), Varyt(cvi,1)] = feval(gp.lik.fh.predy, gp.lik, ...
                                            muvec_i(cvi), sigm2vec_i(cvi), ...
@@ -70,7 +70,7 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
       Varft_grid(j,:)=sigm2vec_i;
       pyt_grid(j,:)=Z_i;
       n=length(y);
-      if nargout > 2
+      if nargout > 3
         for cvi=1:n
           if isempty(z)
             [Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = ...
@@ -108,13 +108,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gpep_loopred(gp, x, y, varargin)
     Eft = sum(ft.*pft,2)./sum(pft,2);
     Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
     
-    if nargout > 2
+    if nargout > 3
       Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
       Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
       Eyt=Eyt';
       Varyt=Varyt';
     end
-    pyt = sum(bsxfun(@times,pyt_grid,P_TH),1)';
+    lpyt = log(sum(bsxfun(@times,pyt_grid,P_TH),1)');
 
   end
 end

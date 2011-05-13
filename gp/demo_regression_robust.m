@@ -111,7 +111,7 @@ opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Prediction
-[Eft, Varft, Eyt, Varyt] = gp_pred(gp, x, y, xt);
+[Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt)));
 std_ft = sqrt(Varft);
 
 % Plot the prediction and data

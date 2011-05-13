@@ -1,22 +1,24 @@
-function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = gpia_pred(gp_array, x, y, xt, varargin) 
+function [Eft, Varft, lpyt, Eyt, Varyt, ft, pft] = gpia_pred(gp_array, x, y, xt, varargin) 
 %GPIA_PRED  Prediction with Gaussian Process GP_IA solution.
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%    [EFT, VARFT] = GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
 %    takes a cell array of GP structures together with matrix X of
 %    training inputs and vector Y of training targets, and
 %    evaluates the predictive distribution at test inputs XT with
 %    parameters marginalized out with IA. Returns a posterior mean
-%    EFT and variance VARFT of latent variables and the posterior
-%    predictive mean EYT and variance VARYT.
+%    EFT and variance VARFT of latent variables.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EFT, VARFT, LPYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at test input locations XT with parameters marginalized out
 %    with IA. This can be used for example in the cross-validation. 
 %    Here Y has to be vector.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT, FT, PFT] = ...
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    Returns also posterior predictive mean EYT and variance VARYT.
+%
+%    [EFT, VARFT, LPYT, EYT, VARYT, FT, PFT] = ...
 %      GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
 %    returns also the numerical representation of the marginal
 %    posterior of latent variables at each XT. FT is a vector of
@@ -71,7 +73,7 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = gpia_pred(gp_array, x, y, xt, 
 %    GP_PRED, GP_SET, GP_IA
 %
         
-% Copyright (c) 2009 Ville Pietiläinen
+% Copyright (c) 2009 Ville Pietilï¿½inen
 % Copyright (c) 2009-2010 Jarno Vanhatalo    
 
 % This software is distributed under the GNU General Public 
@@ -107,8 +109,8 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = gpia_pred(gp_array, x, y, xt, 
     if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
     if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
     
-    if nargout > 4 && isempty(yt)
-      pyt = NaN;
+    if nargout > 2 && isempty(yt)
+      lpyt = NaN;
     end
         
     nGP = numel(gp_array);
@@ -144,9 +146,13 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = gpia_pred(gp_array, x, y, xt, 
 
     for j = 1:nGP
         if isempty(yt)
-            [Eft_grid(j,:), Varft_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
+            [Eft_grid(j,:), Varft_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
         else
-            [Eft_grid(j,:), Varft_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:), pyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
+            if nargout > 3
+                [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
+            else
+                [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options); 
+            end
         end
     end
     
@@ -181,12 +187,14 @@ function [Eft, Varft, Eyt, Varyt, pyt, ft, pft] = gpia_pred(gp_array, x, y, xt, 
     Eft = sum(ft.*pft,2)./sum(pft,2);
     Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
     
-    Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
-    Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
-    Eyt=Eyt';
-    Varyt=Varyt';
+    if nargout > 3
+        Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
+        Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
+        Eyt=Eyt';
+        Varyt=Varyt';
+    end
     
     if ~isempty(yt)
-      pyt = sum(bsxfun(@times,pyt_grid,P_TH),1)';
+      lpyt = sum(bsxfun(@times,lpyt_grid,P_TH),1)';
     end
     

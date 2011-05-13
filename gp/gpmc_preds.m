@@ -1,4 +1,4 @@
-function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
+function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, xt, varargin)
 %GPMC_PREDS  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
@@ -47,7 +47,13 @@ function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
 %       
-%    [EFS, VARFS, EYS, VARYS] = GP_PREDS(RECGP, X, Y, XT, OPTIONS) 
+%    [EFS, VARFS, LPYS] = GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
+%    returns also logarithm of the predictive density PYS of the observations YT
+%    at input locations XT given RECGP
+%
+%        Pys(:,i) = p(yt | xt, x, y, th_i)
+%
+%    [EFS, VARFS, LPYS, EYS, VARYS] = GP_PREDS(RECGP, X, Y, XT, OPTIONS) 
 %    returns also the predictive means and variances for test
 %    observations at input locations XT given RECGP
 %
@@ -56,12 +62,6 @@ function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
 %
 %    where the latent variables have been marginalized out.
 %
-%    [EFS, VARFS, EYS, VARYS, PYS] = 
-%      GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also the predictive density PYS of the observations YT
-%    at input locations XT given RECGP
-%
-%        Pys(:,i) = p(yt | xt, x, y, th_i)
 %
 %     NOTE! In case of FIC and PIC sparse approximation the
 %     prediction for only some PREDCF covariance functions is just
@@ -121,8 +121,8 @@ function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
         error('Requires at least 4 arguments');
     end
 
-    if nargout > 4 && isempty(yt)
-        error('mc_pred -> If py is wanted you must provide the vector yt as an optional input.')
+    if nargout > 2 && isempty(yt)
+        error('mc_pred -> If lpy is wanted you must provide the vector yt as an optional input.')
     end
             
     nin  = size(x,2);
@@ -173,16 +173,18 @@ function [Ef, Varf, Ey, Vary, py] = gpmc_preds(gp, x, y, xt, varargin)
                     Varf(Varf<=0) = 1e-12; % Ensure positiviness, which may be a problem with FIC
                     warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
                 end
-                if isempty(yt)
-                    [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), [], zt);
+%                 if isempty(yt)
+%                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), [], zt);
+                if nargout > 3
+                    [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
                 else
-                    [Ey(:,i1), Vary(:,i1), py(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+                    lpy(:,i1) = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
                 end
             else
-                if nargout < 5
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
+                if nargout < 4
+                    [Ef(:,i1), Varf(:,i1), lpy(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
                 else
-                    [Ef(:,i1), Varf(:,i1), Ey(:,i1), Vary(:,i1), py(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
+                    [Ef(:,i1), Varf(:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
                 end
             end            
         end

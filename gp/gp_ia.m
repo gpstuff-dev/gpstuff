@@ -434,10 +434,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           
           if opt.qmc
             th  = repmat(w,N,1)+(chol(Sigma)'*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
-            p_th_appr = mvnpdf(th, w, Sigma);
+            p_th_appr = mnorm_pdf(th, w, Sigma);
           else
-            th = mvnrnd(w,Sigma,N);
-            p_th_appr = mvnpdf(th, w, Sigma);
+%             th = mvnrnd(w,Sigma,N);
+            th = repmat(w,N,length(w)) + randn(N, length(w))*chol(Sigma);
+            p_th_appr = mnorm_pdf(th, w, Sigma);
           end
           
           

@@ -156,7 +156,7 @@ gp=gp_optim(gp,xx,yy,'z',nn,'opt',opt);
 % Making predictions
 
 % First with all components
-[Eft,Varft,Eyt,Varyt,Pyt] = gp_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
+[Eft,Varft,lpyt,Eyt,Varyt] = gp_pred(gp,xx,yy,xt,'z',nn,'zt',nt,'yt',yt);
 % Age group effect
 [Eft_1,Varft_1] = gp_pred(gp,xx,yy,xxo,'predcf',[1],'z',nn,'zt',nno);
 % Time period effect

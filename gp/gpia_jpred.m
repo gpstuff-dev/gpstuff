@@ -1,27 +1,23 @@
-function [Eft, Varft, Eyt, Varyt, jpyt, ljpyt, ft, pft] = gpia_jpred(gp_array, x, y, xt, varargin) 
+function [Eft, Varft, ljpyt, Eyt, Varyt, ft, pft] = gpia_jpred(gp_array, x, y, xt, varargin) 
 %GPIA_PRED  Prediction with Gaussian Process GP_IA solution.
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
+%    [EFT, VARFT] = GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
 %    takes a cell array of GP structures together with matrix X of
 %    training inputs and vector Y of training targets, and
 %    evaluates the predictive distribution at test inputs XT with
 %    parameters marginalized out with IA. Returns a posterior mean
-%    EFT and covariance VARFT of latent variables and the posterior
-%    predictive mean EYT and covariance VARYT.
+%    EFT and covariance VARFT of latent variables.
 %
-%    [EFT, VARFT, EYT, VARYT, JPYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive joint density PYT of the observations YT
-%    at test input locations XT with parameters marginalized out
-%    with IA. This can be used for example in the cross-validation. 
-%    Here Y has to be vector.
-% 
-%    [EFT, VARFT, EYT, VARYT, JPYT, LJPYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, JPYT, EYT, VARYT] = GPIA_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also logarithm of the predictive joint density PYT of the observations YT
 %    at test input locations XT with parameters marginalized out
-%    with IA.
+%    with IA. This can be used for example in the cross-validation. 
+%    Here Y has to be vector. Returns also posterior predictive mean EYT
+%    and covariance VARYT.
+% 
 %
-%    [EFT, VARFT, EYT, VARYT, JPYT, LJPYT, FT, PFT] = ...
+%    [EFT, VARFT, LJPYT, EYT, VARYT, FT, PFT] = ...
 %      GPIA_PRED(GP_ARRAY, X, Y, XT, OPTIONS) 
 %    returns also the numerical representation of the marginal
 %    posterior of latent variables at each XT. FT is a vector of
@@ -112,7 +108,7 @@ function [Eft, Varft, Eyt, Varyt, jpyt, ljpyt, ft, pft] = gpia_jpred(gp_array, x
     if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
     if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
     
-    if nargout > 4 && isempty(yt)
+    if nargout > 2 && isempty(yt)
       pyt = NaN;
     end
         
@@ -150,9 +146,9 @@ function [Eft, Varft, Eyt, Varyt, jpyt, ljpyt, ft, pft] = gpia_jpred(gp_array, x
     for j = 1:nGP
         if isempty(yt)
 %             [Eft_grid(j,:), Varft_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
-            [Eft_grid(j,:), Varft_grid(:,:,j), Eyt_grid(j,:), Varyt_grid(:,:,j)]=feval(fh_p,gp_array{j},x,y,xt,options);            
+            [Eft_grid(j,:), Varft_grid(:,:,j)]=feval(fh_p,gp_array{j},x,y,xt,options);            
         else
-            [Eft_grid(j,:), Varft_grid(:,:,j), Eyt_grid(j,:), Varyt_grid(:,:,j), jpyt_grid(j), ljpyt_grid(j)]=feval(fh_p,gp_array{j},x,y,xt, options);
+            [Eft_grid(j,:), Varft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Varyt_grid(:,:,j)]=feval(fh_p,gp_array{j},x,y,xt, options);
         end
     end
     
@@ -164,17 +160,10 @@ function [Eft, Varft, Eyt, Varyt, jpyt, ljpyt, ft, pft] = gpia_jpred(gp_array, x
     % Latent variables f
     % ==============================
     
-%     ft = zeros(size(Eft_grid,2),501);
-%     for j = 1 : size(Eft_grid,2);
-% %         ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));  
-%         ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid{1}(j,j)) : 20*sqrt(Varft_grid{1}(j,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid{1}(j,j));      
-%     end
 
-    % Calculate grid points ft with quasi monte carlo approximation. Calculate
-    % posterior density pft at the same time.
+    % Calculate grid points ft with quasi monte carlo approximation.
 
-    N = 100;             % Sample size in quasi monte carlo approximation. (sqrt(2).*erfinv(2.*hammersley(size(Varft_grid(:,:,j),1),N) - 1))
-%     ft = zeros(N*size(Eft_grid,1), size(Eft_grid,2));
+    N = 100;             % Sample size in quasi monte carlo approximation.
     pft = zeros(N*size(Eft_grid,1), 1);
     ft = [];
     for j = 1 : size(Eft_grid,1)
@@ -182,36 +171,23 @@ function [Eft, Varft, Eyt, Varyt, jpyt, ljpyt, ft, pft] = gpia_jpred(gp_array, x
         ft = [ft; ftt];
     end
     
-    
-%     % Calculate the density in each grid point by integrating over
-%     % different models
-%     pft = zeros(size(Eft_grid,2),501);
-%     for j = 1 : size(Eft_grid,2)
-%         for i=1:length(Varft_grid)
-%             Varft = Varft_grid{i}(j,j);
-%         end
-%         pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
-% %         pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
-%     end
-
-    
-
-%     % Widths of each grid point
-%     dft = diff(ft,1,1);
-%     dft(:,end+1)=dft(:,end);
 
     % Calculate mean and variance of the distributions
     
     Eft = mean(ft)';
     Varft = cov(ft);
-%     Varft = shrinkcov(ft);
-
-%     Eft = sum(ft.*pft,2)./sum(pft,2);
-%     Varft = [];
-%     Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
     
+    % Calculate jpyt with weight given in P_TH.
     
     if nargout > 2
+        if ~isempty(yt)
+            ljpyt = sum(ljpyt_grid'.*P_TH);
+        else
+            error('yt must be provided to get ljpyt');
+        end
+    end
+        
+    if nargout > 3
         Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
         Varyt = zeros(size(Varyt_grid));
         for i = 1:size(Varyt_grid,3)
@@ -220,18 +196,7 @@ function [Eft, Varft, Eyt, Varyt, jpyt, ljpyt, ft, pft] = gpia_jpred(gp_array, x
         Varyt = sum(Varyt,3);
     end
     
-    if nargout > 4
-        if ~isempty(yt)
-            jpyt = sum(jpyt_grid'.*P_TH);
-%             jpyt = sum(bsxfun(@times,jpyt_grid,P_TH),1);
-%             ljpyt = sum(bsxfun(@times,ljpyt_grid,P_TH),1);
-            ljpyt = sum(ljpyt_grid'.*P_TH);
-        else
-            error('yt must be provided to get jpyt');
-        end
-    end
-        
-    if nargout > 7
+    if nargout > 6
         for j=1:size(Eft_grid,1)
             for i=1:N
                 index = N*(j-1)+i;

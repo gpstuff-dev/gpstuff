@@ -81,10 +81,10 @@ opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativ
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % make the prediction for test points
-[Eft, Varft, ~, ~, pyt] = gp_pred(gp, x, y, xt);
+[Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', yt);
 
 % calculate the percentage of misclassified points
-tt = pyt==repmat(max(pyt,[],2),1,size(pyt,2));
+tt = lpyt==repmat(max(lpyt,[],2),1,size(lpyt,2));
 missed = (sum(sum(abs(tt-yt)))/2)/size(yt,1)
 
 % grid for making prediction
@@ -92,7 +92,7 @@ xtg1 = meshgrid(linspace(min(x(:,1))-.1, max(x(:,1))+.1, 30));
 xtg2 = meshgrid(linspace(min(x(:,2))-.1, max(x(:,2))+.1, 30))';
 xtg=[xtg1(:) xtg2(:) repmat(mean(x(:,3:4)), size(xtg1(:),1),1)];
 
-[Eft, Covft, ~, ~, pg] = gp_pred(gp, x, y, xtg);
+[Eft, Covft, pg] = gp_pred(gp, x, y, xtg);
 
 % plot the train data o=0, x=1
 figure, set(gcf, 'color', 'w'), hold on

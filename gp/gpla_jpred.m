@@ -1,22 +1,26 @@
-function [Eft, Varft, Eyt, Varyt, jpyt, jlpyt] = gpla_jpred(gp, x, y, xt, varargin)
+function [Eft, Varft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
 %GPLA_PRED  Predictions with Gaussian Process Laplace approximation
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GPLA_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GPLA_JPRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and covariance VARFT of latent variables and the
-%    posterior predictive mean EYT and covariance VARYT.
+%    mean EFT and covariance VARFT of latent variables.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive joint density JPYT of the observations YT
+%        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
+%      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
+%
+%    Each row of X corresponds to one input vector and each row of
+%    Y corresponds to one output vector.
+%
+%    [EFT, VARFT, LJPYT] = GPLA_JPRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive joint density JPYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
-% 
-%    [EFT, VARFT, EYT, VARYT, PYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the logarithm predictive joint density JPYT of the observations YT
-%    at test input locations XT.
+%
+%    [EFT, VARFT, LJPYT, EYT, VARYT] = GPLA_JPRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also the posterior predictive mean and covariance.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -471,10 +475,13 @@ function [Eft, Varft, Eyt, Varyt, jpyt, jlpyt] = gpla_jpred(gp, x, y, xt, vararg
       % ============================================================
       % Evaluate also the predictive mean and variance of new observation(s)
       % ============================================================
-      if isempty(yt)                % Returns only diagonal of covariance matrix, variance vector
-        [Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, diag(Varft), [], zt);
+      if isempty(yt)
+          error('yt has to be provided to get ljpyt');
+      end
+      if nargout < 3                % Returns only diagonal of covariance matrix, variance vector
+        ljpyt = feval(gp.lik.fh.predy, gp.lik, Eft, diag(Varft), [], zt);
       else                          % Returns also predictive density vector pyt, not joint predictive density jpyt.
-        [Eyt, Varyt, jpyt] = feval(gp.lik.fh.predy, gp.lik, Eft, diag(Varft), yt, zt);
+        [ljpyt, Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, diag(Varft), yt, zt);
       end
     end
     

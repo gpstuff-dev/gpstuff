@@ -1,13 +1,12 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = gp_mo_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gp_mo_pred(gp, x, y, xt, varargin)
 %GP_PRED  Make predictions with Gaussian process 
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and variance VARFT of latent variables and the
-%    posterior predictive mean EYT and variance VARYT.
+%    mean EFT and variance VARFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
 %      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
@@ -15,10 +14,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_mo_pred(gp, x, y, xt, varargin)
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EFT, VARFT, LPYT] = GP_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
+% 
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
+%    Returns also posterior predictive mean and variance.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -105,17 +107,17 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     case 2
       [Eft, Varft] = fh_pred(gp, x, y, xt, varargin{:});
     case 3
-      [Eft, Varft, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt] = fh_pred(gp, x, y, xt, varargin{:});
     case 4
-      [Eft, Varft, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
     case 5
-      [Eft, Varft, Eyt, Varyt, pyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
   end
   return
 end
 
 ip=inputParser;
-ip.FunctionName = 'GP_PRED';
+ip.FunctionName = 'GP_MO_PRED';
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -132,7 +134,7 @@ tstind=ip.Results.tstind;
 
 [tn, nout] = size(y);
 
-if nargout > 4 && isempty(yt)
+if nargout > 2 && isempty(yt)
     error('GP_MO_PRED -> To compute PYT, the YT has to be provided.')
 end
 
@@ -197,8 +199,6 @@ if nargout > 2
     [V, Cv] = gp_trvar(gp,xt,predcf);
     Eyt = Eft;
     Varyt = Varft + Cv - V;
-    if nargout > 4
-        pyt = norm_pdf(yt, Eyt, sqrt(Varyt));
-    end
+    lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     
 end

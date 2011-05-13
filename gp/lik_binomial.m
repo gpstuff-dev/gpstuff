@@ -315,20 +315,21 @@ function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i
 end
 
 
-function [Ey, Vary, Py] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
 %LIK_BINOMIAL_PREDY  Returns the predictive mean, variance and density of y
 %
 %  Description         
-%    [EY, VARY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF) takes a
+%    [LPY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the succes counts YT, numbers of trials ZT.
+%
+%    [LPY, EY, VARY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
+%    observations related to the latent variables.
 %        
-%    [Ey, Vary, PY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF YT, ZT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the succes counts YT, numbers of trials ZT.
 %
 %  See also 
 %    GPEP_PRED, GPLA_PRED, GPMC_PRED
@@ -341,33 +342,34 @@ function [Ey, Vary, Py] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
   end
   
   nt=length(Ef);
-  Ey=zeros(nt,1);
-  EVary = zeros(nt,1);
-  VarEy = zeros(nt,1);
-  
-  if nargout > 2
-    Py=zeros(nt,1);
+  if nargout > 1
+      Ey=zeros(nt,1);
+      EVary = zeros(nt,1);
+      VarEy = zeros(nt,1);
   end
+  
+  lpy=zeros(nt,1);
   
   for i1=1:nt
     ci = sqrt(Varf(i1));
-    F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
-    
-    F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
-    
-    F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
-    
-    if nargout > 2
-      %bin_cc=exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1));
-      %F  = @(x)bin_cc.*(1./(1+exp(-x))).^yt(i1).*(1-(1./(1+exp(-x)))).^(zt(i1)-yt(i1)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-      F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-      Py(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+    if nargout > 1
+        F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+
+        F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+
+        F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+        VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
     end
+    %bin_cc=exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1));
+    %F  = @(x)bin_cc.*(1./(1+exp(-x))).^yt(i1).*(1-(1./(1+exp(-x)))).^(zt(i1)-yt(i1)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+    F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+    lpy(i1) = log(quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci));
   end
-  Vary = EVary+VarEy;
+  if nargout > 1
+      Vary = EVary+VarEy;
+  end
 end
 
 function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)

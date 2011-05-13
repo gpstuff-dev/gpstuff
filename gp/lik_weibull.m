@@ -401,20 +401,21 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   end
 end
 
-function [Ey, Vary, Py] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %LIK_WEIBULL_PREDY  Returns the predictive mean, variance and density of y
 %
-%  Description         
-%    [EY, VARY] = LIK_WEIBULL_PREDY(LIK, EF, VARF) takes a
+%  Description   
+%    LPY = LIK_WEIBULL_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the survival times YT, censoring indicators ZT.
+%
+%    [LPY, EY, VARY] = LIK_WEIBULL_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables
 %        
-%    [Ey, Vary, PY] = LIK_WEIBULL_PREDY(LIK, EF, VARF YT, ZT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the survival times YT, censoring indicators ZT.
 %
 %  See also
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -431,7 +432,7 @@ function [Ey, Vary, Py] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
   
   Ey=[];
   Vary=[];
-  Py = zeros(size(Ef));
+  lpy = zeros(size(Ef));
   %     Ey = zeros(size(Ef));
   %     EVary = zeros(size(Ef));
   %     VarEy = zeros(size(Ef)); 
@@ -456,16 +457,14 @@ function [Ey, Vary, Py] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
   %     Vary = EVary + VarEy;
 
   % Evaluate the posterior predictive densities of the given observations
-  if nargout > 2
-    for i1=1:length(Ef)
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Negative-binomial * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_weibull_norm(...
-        yt(i1),Ef(i1),Varf(i1),yc(i1),r);
-      % integrate over the f to get posterior predictive distribution
-      Py(i1) = quadgk(pdf, minf, maxf);
-    end
+  for i1=1:length(Ef)
+    % get a function handle of the likelihood times posterior
+    % (likelihood * posterior = Negative-binomial * Gaussian)
+    % and useful integration limits
+    [pdf,minf,maxf]=init_weibull_norm(...
+      yt(i1),Ef(i1),Varf(i1),yc(i1),r);
+    % integrate over the f to get posterior predictive distribution
+    lpy(i1) = log(quadgk(pdf, minf, maxf));
   end
 end
 

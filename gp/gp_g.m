@@ -82,12 +82,18 @@ switch gp.type
     % ============================================================
     % Evaluate covariance
     [K, C] = gp_trcov(gp,x);
+    notpositivedefinite = 0;
     
     if issparse(C)
       % evaluate the sparse inverse
       invC = spinv(C);       
-      LD = ldlchol(C);
-      if  ~isfield(gp,'meanf')
+      [LD, notpositivedefinite] = ldlchol(C);
+      if notpositivedefinite
+          % instead of stopping to chol error, return NaN
+          gdata = NaN;
+          gprior = NaN;
+      end
+      if  (~isfield(gp,'meanf') && ~notpositivedefinite)
           b = ldlsolve(LD,y);
       end
     else
@@ -100,7 +106,7 @@ switch gp.type
 
     % =================================================================
     % Gradient with respect to covariance function parameters
-    if ~isempty(strfind(gp.infer_params, 'covariance'))
+    if (~isempty(strfind(gp.infer_params, 'covariance')) && ~notpositivedefinite)
       for i=1:ncf
         i1=0;
         if ~isempty(gprior)
@@ -172,7 +178,7 @@ switch gp.type
             end
           for i2 = 1:length(DKff)
             i1=i1+1;
-            trK = sum(sum(invC.*DKff{i2}));       % d log(Kyâ?») / d th
+            trK = sum(sum(invC.*DKff{i2}));       % d log(Kyï¿½?ï¿½) / d th
             gdata(i1)=0.5*(-1*dMNM{i2} + trK + trA{i2});
             gprior(i1) = gprior_cf(i2);
           end
@@ -191,7 +197,7 @@ switch gp.type
     
     % =================================================================
     % Gradient with respect to Gaussian likelihood function parameters
-    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
+    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && ~notpositivedefinite
       % Evaluate the gradient from Gaussian likelihood
       DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
@@ -238,46 +244,55 @@ switch gp.type
     end
     
     
-    if ~isempty(strfind(gp.infer_params, 'mean')) && isfield(gp,'meanf')
+    if ~isempty(strfind(gp.infer_params, 'mean')) && isfield(gp,'meanf') && ~notpositivedefinite
         
         nmf=numel(gp.meanf);
         [H,b,B]=mean_prep(gp,x,[]);
         M = H'*b-y;
         
         if issparse(C)
-            LD = ldlchol(C);
-            KH = ldlsolve(LD, H');
-            LB = chol(B);
-            A = LB\(LB'\eye(size(B))) + H*KH;
-            LA = chol(A);
-            
-            a = ldlsolve(LD, M) - KH*(LA\(LA'\(KH'*M)));
-            iNH = ldlsolve(LD, H') - KH*(LA\(LA'\(KH'*H')));
+            [LD, notpositivedefinite] = ldlchol(C);
+            if ~notpositivedefinite
+                KH = ldlsolve(LD, H');
+            end
+            [LB, notpositivedefinite2] = chol(B);
+            if ~notpositivedefinite2
+                A = LB\(LB'\eye(size(B))) + H*KH;
+                LA = chol(A);
+                a = ldlsolve(LD, M) - KH*(LA\(LA'\(KH'*M)));
+                iNH = ldlsolve(LD, H') - KH*(LA\(LA'\(KH'*H')));
+            end
         else
             N = C + H'*B*H;
-            LN = chol(N);
-            a = LN\(LN'\M);
-            iNH = LN\(LN'\H');
+            [LN, notpositivedefinite3] = chol(N);
+            if ~notpositivedefinite3
+                a = LN\(LN'\M);
+                iNH = LN\(LN'\H');
+            end
         end
-        Ha=H*a;
-        
-        g_bb = (-H*a)';     % b and B parameters are log transformed in packing 
-        indB = find(B>0);
-        for i=1:length(indB)
-            Bt = zeros(size(B)); Bt(indB(i))=1;
-            BH = Bt*H;
-            g_B(i) = 0.5* ( Ha'*Bt*Ha - sum(sum(iNH.*(BH'))) );
-        end
-        g_BB = g_B.*B(indB)';
-        for i=1:nmf
-            gpmf = gp.meanf{i};
-            [lpg_b, lpg_B] = feval(gpmf.fh.lpg, gpmf);
-            ll=length(lpg_b);
-            gdata = [gdata -g_bb((i-1)*ll+1:i*ll)];
-            gprior = [gprior -lpg_b];
-            ll=length(lpg_B);
-            gdata = [gdata -g_B((i-1)*ll+1:i*ll)];
-            gprior = [gprior -lpg_B];
+        if (~notpositivedefinite && ~notpositivedefinite2 && ~notpositivedefinite3)
+            Ha=H*a;
+            g_bb = (-H*a)';     % b and B parameters are log transformed in packing 
+            indB = find(B>0);
+            for i=1:length(indB)
+                Bt = zeros(size(B)); Bt(indB(i))=1;
+                BH = Bt*H;
+                g_B(i) = 0.5* ( Ha'*Bt*Ha - sum(sum(iNH.*(BH'))) );
+            end
+            g_BB = g_B.*B(indB)';
+            for i=1:nmf
+                gpmf = gp.meanf{i};
+                [lpg_b, lpg_B] = feval(gpmf.fh.lpg, gpmf);
+                ll=length(lpg_b);
+                gdata = [gdata -g_bb((i-1)*ll+1:i*ll)];
+                gprior = [gprior -lpg_b];
+                ll=length(lpg_B);
+                gdata = [gdata -g_B((i-1)*ll+1:i*ll)];
+                gprior = [gprior -lpg_B];
+            end
+        else
+            gdata = NaN;
+            gprior = NaN;
         end
     end
     

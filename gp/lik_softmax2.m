@@ -10,7 +10,7 @@ function lik = lik_softmax2(varargin)
 %  See also
 %    GP_SET, LIK_*
 
-% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Pasi Jylï¿½nki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -215,21 +215,22 @@ end
 function [m_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 end
 
-function [Ey, Vary, py] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
 %LIK_SOFTMAX_PREDY  Returns the predictive mean, variance and density of
 %y
 %
 %  Description         
+%    LPY = LIK_SOFTMAX_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the succes counts YT, numbers of trials ZT.
+%
 %    [EY, VARY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables
 %        
-%    [Ey, Vary, PY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF YT, ZT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the succes counts YT, numbers of trials ZT.
 %
 %  See also 
 %    GPEP_PRED, GPLA_PRED, GPMC_PRED
@@ -242,7 +243,7 @@ function [Ey, Vary, py] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
   S=10000;
   [ntest,nout]=size(yt);
   pi=zeros(ntest,nout);
-  py=zeros(ntest,nout);
+  lpy=zeros(ntest,nout);
   [~,~,c] =size(Varf);
   if c>1
     mcmc=false;
@@ -260,13 +261,13 @@ function [Ey, Vary, py] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
     tmp = exp(f_star);
     tmp = tmp./(sum(tmp, 2)*ones(1,size(tmp,2)));
     pi(i1,:)=mean(tmp);
-    if nargout > 2
-      ytmp = repmat(yt(i1,:),S,1);
-      py(i1,:) = mean(tmp.^(ytmp).*(1-tmp).^(1-ytmp));
-    end
+    ytmp = repmat(yt(i1,:),S,1);
+    lpy(i1,:) = log(mean(tmp.^(ytmp).*(1-tmp).^(1-ytmp)));
   end
-  Ey = 2*pi-1;
-  Vary = 1-(2*pi-1).^2;
+  if nargout > 1
+    Ey = 2*pi-1;
+    Vary = 1-(2*pi-1).^2;
+  end
 end
 
 function reclik = lik_softmax_recappend(reclik, ri, lik)

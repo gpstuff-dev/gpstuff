@@ -33,7 +33,7 @@
 %
 %  See also DEMO_REGRESSION1
 
-% Copyright (c) 2010 Jaakko Riihimäki, Aki Vehtari
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -124,8 +124,8 @@ gp2=gp_optim(gp2,x,y,'opt',opt);
 
 % create points where predictions are made
 xgrid=linspace(min(x)-1.5,max(x)+1.5,200)';
-[Eft_map, Varft_map, Eyt_map, Varyt_map] = gp_pred(gp, x, y, xgrid);
-[Eft_map2, Varft_map2, Eyt_map2, Varyt_map2] = gp_pred(gp2, x, y, xgrid);
+[Eft_map, Varft_map, lpyt_map, Eyt_map, Varyt_map] = gp_pred(gp, x, y, xgrid, 'yt', ones(200,1));
+[Eft_map2, Varft_map2, lpyt_map2, Eyt_map2, Varyt_map2] = gp_pred(gp2, x, y, xgrid, 'yt', ones(200,1));
 
 % Plot the predictions and data
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;

@@ -99,23 +99,30 @@ switch gp.type
     if multicf
         for i1=1:nout
             [~, C] = gp_trcov(gp, x, gp.comp_cf{i1});
-            L=chol(C)';
-            b(:,i1) = L\y(:,i1);
-            zc = zc + sum(log(diag(L)));
+            [L,notpositivedefinite]=chol(C,'lower');
+            if ~notpositivedefinite
+                b(:,i1) = L\y(:,i1);
+                zc = zc + sum(log(diag(L)));
+            end
         end
     else
         [~, C] = gp_trcov(gp, x);
-        L=chol(C)';
-        for i1=1:nout
-            b(:,i1) = L\y(:,i1);
-            zc = zc + sum(log(diag(L)));
+        [L,notpositivedefinite]=chol(C,'lower');
+        if ~notpositivedefinite
+            for i1=1:nout
+                b(:,i1) = L\y(:,i1);
+                zc = zc + sum(log(diag(L)));
+            end
         end
     end
         
     % Are there specified mean functions
+    if notpositivedefinite
+        edata = NaN;
+    else
+        edata = 0.5*n.*log(2*pi) + zc + 0.5*sum(sum(b.*b));
+    end
     
-    edata = 0.5*n.*log(2*pi) + zc + 0.5*sum(sum(b.*b));
-        
     % ============================================================
     % FIC
     % ============================================================

@@ -1,4 +1,4 @@
-function [mu_star, Sigm_cc, Ey, Vary, pi_star] = gpla_softmax_pred(gp, x, y, xt, varargin)
+function [mu_star, Sigm_cc, pi_star, Ey, Vary] = gpla_softmax_pred(gp, x, y, xt, varargin)
 %function [Ef, Varf, Ey, Vary, Pyt] = gpla_softmax_pred(gp, x, y, xt, varargin)
 %GPLA_SOFTMAX_PRED Predictions with Gaussian Process Laplace
 %                approximation with softmax likelihood
@@ -10,10 +10,11 @@ function [mu_star, Sigm_cc, Ey, Vary, pi_star] = gpla_softmax_pred(gp, x, y, xt,
 %    and evaluates the predictive distribution at inputs XT. Returns
 %    a posterior mean EFT and variance VARFT of latent variables.
 %
-%    [EF, VARF, ~, ~, PYT] = GPLA_SOFTMAX_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EF, VARF, LPYT] = GPLA_SOFTMAX_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at input locations XT. This can be used for example in the
 %    cross-validation. Here Y has to be vector.
+%
 %
 %     OPTIONS is optional parameter-value pair
 %       predcf - is index vector telling which covariance functions are 
@@ -39,7 +40,7 @@ function [mu_star, Sigm_cc, Ey, Vary, pi_star] = gpla_softmax_pred(gp, x, y, xt,
 %  See also
 %    GPLA_SOFTMAX_E, GPLA_SOFTMAX_G, GP_PRED, DEMO_MULTICLASS
 %
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -115,7 +116,8 @@ function [mu_star, Sigm_cc, Ey, Vary, pi_star] = gpla_softmax_pred(gp, x, y, xt,
             
             tmp_star = exp(f_star);
             tmp_star = tmp_star./(sum(tmp_star, 2)*ones(1,size(tmp_star,2)));
-            pi_star(i1,:)=mean(tmp_star);
+            pi_star(i1,:)=log(mean(tmp_star));
+            
         end
         
         % ============================================================

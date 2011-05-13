@@ -10,7 +10,7 @@ function lik = lik_softmax(varargin)
 %  See also
 %    GP_SET, LIK_*
 
-% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Pasi Jylï¿½nki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -178,7 +178,7 @@ end
 function [m_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 end
 
-function [Ey, Vary, py] = lik_softmax_predy(lik, Ef, Varf, y, z)
+function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, y, z)
 end
 
 function reclik = lik_softmax_recappend(reclik, ri, lik)

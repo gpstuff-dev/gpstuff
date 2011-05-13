@@ -209,35 +209,37 @@ function [m_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, 
   m_2 = sigm2hati1;
 end
 
-function [Ey, Vary, py] = lik_probit_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
 %LIK_PROBIT_PREDY    Returns the predictive mean, variance and density of y
 %
-%  Description         
-%    [EY, VARY] = LIK_PROBIT_PREDY(LIK, EF, VARF) takes a
+%  Description       
+%    LPY = LIK_PROBIT_PREDY(LIK, EF, VARF, YT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | y) = \int p(yt | f) p(f|y) df.
+%    This requires also the class labels YT.
+%
+%    [LPY, EY, VARY] = LIK_PROBIT_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables
 %        
-%    [Ey, Vary, PY] = LIK_PROBIT_PREDY(LIK, EF, VARF, YT)
-%    Returns also the predictive density of YT, that is 
-%        p(yt | y) = \int p(yt | f) p(f|y) df.
-%    This requires also the class labels YT.
+
 %
 %  See also 
 %    GPEP_PRED, GPLA_PRED, GPMC_PRED
 
-  py1 = norm_cdf(Ef./sqrt(1+Varf));
-  Ey = 2*py1 - 1;
+  if nargout > 1
+    py1 = norm_cdf(Ef./sqrt(1+Varf));
+    Ey = 2*py1 - 1;
 
-  Vary = 1-Ey.^2;
-  
-  if nargout > 2
-    if ~isempty(find(abs(yt)~=1))
-      error('lik_probit: The class labels have to be {-1,1}')
-    end
-    py = norm_cdf(Ef.*yt./sqrt(1+Varf));    % Probability p(y_new)
+    Vary = 1-Ey.^2;
   end
+
+  if ~isempty(find(abs(yt)~=1))
+    error('lik_probit: The class labels have to be {-1,1}')
+  end
+  lpy = log(norm_cdf(Ef.*yt./sqrt(1+Varf)));    % Probability p(y_new)
 end
 
 function p = lik_probit_invlink(lik, f, z)

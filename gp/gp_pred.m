@@ -1,13 +1,12 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
 %GP_PRED  Make predictions with Gaussian process 
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT] = GP_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and variance VARFT of latent variables and the
-%    posterior predictive mean EYT and variance VARYT.
+%    mean EFT and variance VARFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
 %      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
@@ -15,10 +14,13 @@ function [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, varargin)
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, EYT, VARYT, PYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the predictive density PYT of the observations YT
+%    [EFT, VARFT, LPYT] = GP_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
+% 
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
+%    Returns also posterior predictive mean and variance.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -105,11 +107,11 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     case 2
       [Eft, Varft] = fh_pred(gp, x, y, xt, varargin{:});
     case 3
-      [Eft, Varft, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt] = fh_pred(gp, x, y, xt, varargin{:});
     case 4
-      [Eft, Varft, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
     case 5
-      [Eft, Varft, Eyt, Varyt, pyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
   end
   return
 end
@@ -132,7 +134,7 @@ tstind=ip.Results.tstind;
 
 tn = size(x,1);
 
-if nargout > 4 && isempty(yt)
+if nargout > 2 && isempty(yt)
     error('GP_PRED -> To compute PYT, the YT has to be provided.')
 end
 
@@ -204,9 +206,7 @@ switch gp.type
             [V, Cv] = gp_trvar(gp,xt,predcf);
             Eyt = Eft;
             Varyt = Varft + Cv - V;
-            if nargout > 4
-                pyt = norm_pdf(yt, Eyt, sqrt(Varyt));
-            end
+            lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
         else 
           % scale mixture case
             nu = gp.lik.nu;
@@ -216,15 +216,13 @@ switch gp.type
             Eyt = Eft;
             Varyt = (nu./(nu-2).*sigma2);
             
-            if nargout > 4
-                for i2 = 1:length(Eft)
-                    mean_app = Eft(i2);
-                    sigm_app = sqrt(Varft(i2));
-                    
-                    pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Varft(i2)));
-                    pyt(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
-                end
-            end           
+            for i2 = 1:length(Eft)
+                mean_app = Eft(i2);
+                sigm_app = sqrt(Varft(i2));
+
+                pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Varft(i2)));
+                lpyt(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
+            end         
         end
     end
   case 'FIC'
@@ -307,9 +305,7 @@ switch gp.type
     if nargout > 2
         Eyt = Eft;
         Varyt = Varft + Cnn_v - Knn_v;
-    end
-    if nargout > 4
-        pyt = norm_pdf(yt, Eyt, sqrt(Varyt));
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     end
     
   case {'PIC' 'PIC_BLOCK'}
@@ -426,9 +422,7 @@ switch gp.type
         Eyt = Eft;
         [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
         Varyt = Varft + Cnn_v - Knn_v;
-    end
-    if nargout > 4
-        pyt = norm_pdf(yt, Eyt, sqrt(Varyt));
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     end
   case 'CS+FIC'
     % Here tstind = 1 if the prediction is made for the training set 
@@ -603,9 +597,7 @@ switch gp.type
     if nargout > 2
         Eyt = Eft;
         Varyt = Varft + Cnn_v - Knn_v;
-    end
-    if nargout > 4
-        pyt = norm_pdf(yt, Eyt, sqrt(Varyt));
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     end
     
   case {'VAR' 'DTC' 'SOR'}
@@ -680,9 +672,7 @@ switch gp.type
           case 'SOR'
             Varyt = Varft + Cnn_v - sum(B2.^2,1)';
         end
-    end
-    if nargout > 4
-        pyt = norm_pdf(y, Eyt, sqrt(Varyt));
+        lpyt = norm_lpdf(y, Eyt, sqrt(Varyt));
     end  
     
   case 'SSGP'

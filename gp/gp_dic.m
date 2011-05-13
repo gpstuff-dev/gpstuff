@@ -175,7 +175,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
       case 'latent'     
         % A single GP solution -> focus on latent variables
 
-        [Ef, Varf, Ey, VarY] = feval(fh_pred, gp, x, y, x, 'tstind', tstind, options);
+        [Ef, Varf, lpy, Ey, VarY] = feval(fh_pred, gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         sampf = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', 5000, options);
         if isfield(gp.lik.fh,'trcov')
           % a Gaussian likelihood
@@ -211,7 +211,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
           if isfield(gp.lik.fh,'trcov')
             % a Gaussian likelihood
             sampf(:,i) = gp_rnd(Gp, x, y, x, 'tstind', tstind, options);
-            [Ef(:,i), Varf, Ey, VarY] = gp_pred(Gp, x, y, x, 'tstind', tstind);
+            [Ef(:,i), Varf, lpy, Ey, VarY] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind);
             sigma2(:,i) = VarY - Varf;
           end
         end
@@ -295,7 +295,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
           Gp = gp{i};
           weight(i) = Gp.ia_weight;
           w(i,:) = gp_pak(Gp);
-          [Ef(:,i), Varf(:,i), Ey, VarY] = feval(fh_pred, Gp, x, y, x, 'tstind', tstind, options);
+          [Ef(:,i), Varf(:,i), lpy, Ey, VarY] = feval(fh_pred, Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
           sigma2(:,i) = VarY - Varf(:,i);
         end
         mEf = sum(Ef.*repmat(weight, size(Ef,1), 1), 2);

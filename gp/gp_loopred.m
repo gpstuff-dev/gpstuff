@@ -1,14 +1,14 @@
-function [Eft, Varft, Eyt, Varyt, pyt] = gp_loopred(gp, x, y)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gp_loopred(gp, x, y)
 %GP_LOOPRED  Leave-one-out predictions assuming Gaussian observation model
 %
 %  Description
-%    [EFT, VARFT, EYT, VARYT, PYT] = GP_LOOPRED(GP, X, Y) takes a
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_LOOPRED(GP, X, Y) takes a
 %    Gaussian process structure GP, a matrix X of input vectors and
 %    a matrix Y of targets, and evaluates the leave-one-out
 %    predictive distribution at inputs X. Returns a posterior mean
 %    EFT and variance VARFT of latent variables, the posterior
-%    predictive mean EYT and variance VARYT of observations, and
-%    posterior predictive density PYT at input locations X.
+%    predictive mean EYT and variance VARYT of observations, and logarithm
+%    of the posterior predictive density PYT at input locations X.
 %
 %  References:
 %    S. Sundararajan and S. S. Keerthi (2001). Predictive
@@ -62,7 +62,7 @@ switch gp.type
     Varft = sigma2-gp.lik.sigma2;
     Eyt = myy;
     Varyt = sigma2;
-    pyt = exp(-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
+    lpyt = (-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
     
     % ============================================================
     % FIC

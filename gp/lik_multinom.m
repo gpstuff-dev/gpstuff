@@ -10,7 +10,7 @@ function lik = lik_multinom(varargin)
 %  See also
 %    GP_SET, LIK_*
 
-% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Pasi Jylï¿½nki
 % Copyright (c) 2010 Aki Vehtari
 % Copyright (c) 2010 Jarno Vanhatalo
 
@@ -215,13 +215,13 @@ end
 function [m_0, m_1, sigm2hati1] = lik_multinom_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 end
 
-function [Ey, Vary, py] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
+function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   
   N=sum(yt,2);
   S=10000;
   [ntest,nout]=size(yt);
   pi=zeros(ntest,nout);
-  py=zeros(ntest,nout);
+  lpy=zeros(ntest,nout);
   Ey=zeros(ntest,nout);
   [~,~,c] =size(Varf);
   if c>1
@@ -240,19 +240,19 @@ function [Ey, Vary, py] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
     tmp = exp(f_star);
     tmp = tmp./(sum(tmp, 2)*ones(1,size(tmp,2)));
     
-    Ey(i1,:) = N(i1).*mean(tmp);
-    for z1 = 1:nout;
-      for z2 = 1:nout
-        for z3=1:S
-          Var_tmp(:,:,z3) = (diag(tmp(z3,:)) - tmp(z3,:)'*tmp(z3,:));
+    if nargout > 1
+        Ey(i1,:) = N(i1).*mean(tmp);
+        for z1 = 1:nout;
+          for z2 = 1:nout
+            for z3=1:S
+              Var_tmp(:,:,z3) = (diag(tmp(z3,:)) - tmp(z3,:)'*tmp(z3,:));
+            end
+            Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+          end
         end
-        Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
-      end
     end
-    if nargout > 2
-      ytmp = repmat(yt(i1,:),S,1);
-      py(i1,:) = mean( mnpdf(ytmp,tmp) );
-    end
+    ytmp = repmat(yt(i1,:),S,1);
+    lpy(i1,:) = log(mean( mnpdf(ytmp,tmp) ));
   end
 end
 

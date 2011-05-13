@@ -35,7 +35,7 @@
 %
 %  See also DEMO_BINOMIAL_APC
 
-% Copyright (c) 2010 Jaakko Riihimäki, Aki Vehtari
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -88,8 +88,8 @@ gp=gp_optim(gp,x,y,'z',N,'opt',opt);
 % Make predictions at the grid points
 
 % Set the total number of trials Nt at the grid points xgrid
-[Eft_la, Varft_la, Eyt_la, Varyt_la] = ...
-    gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
+[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
+    gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid, 'yt', yt);
 
 % Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on
@@ -109,10 +109,10 @@ title('Gaussian process prediction with a squared exponential covariance functio
 
 % To compute predictive densities at the test points xt, the total number
 % of trials Nt must be set additionally:
-[Eft_la, Varft_la, Eyt_la, Varyt_la, pyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
+[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
 
 figure, set(gcf, 'color', 'w'), hold on
-hist(log(pyt_la), 20)
+hist((lpyt_la), 20)
 title('Histogram of log-predictive densities at the test points')
 
 figure, set(gcf, 'color', 'w'), hold on

@@ -22,7 +22,7 @@ function [g, gdata, gprior] = gpla_mo_g(w, gp, x, y, varargin)
 %  See also
 %    GPLA_SOFTMAX_E, GPLA_E, GPLA_SOFTMAX_PRED
 
-% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Pasi Jylï¿½nki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -74,7 +74,7 @@ switch gp.type
             end
         end
         
-        [e, edata, eprior, f, L, a, E, M, p] = gpla_multinom_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(gp_pak(gp), gp, x, y, 'z', z);
         
         % softmax
         f2=reshape(f,n,nout);
