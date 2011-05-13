@@ -1,6 +1,6 @@
 % Remove previous test values and create empty folder for new test values.
-path = which('testAll.m');
-path = strrep(path, 'testAll.m', 'testValues');
+path = which('test_all.m');
+path = strrep(path, 'test_all.m', 'testValues');
 if exist(path,'dir') == 7
     rmdir(path, 's');
 end

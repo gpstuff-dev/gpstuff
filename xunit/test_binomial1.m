@@ -11,7 +11,7 @@ initTestSuite;
         demo_binomial1
         path = which('test_binomial1');
         path = strrep(path,'test_binomial1.m', 'testValues/testBinomial1');
-        save(path, 'Eyt_la', 'Varyt_la', 'pyt_la');
+        save(path, 'Eyt_la', 'Varyt_la', 'lpyt_la');
 %         save('testValues/testBinomial1', 'Eyt_la', 'Varyt_la', 'pyt_la');
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all
@@ -28,7 +28,7 @@ initTestSuite;
 
     function testPredictiveDensity
         values.real = load('realValuesBinomial1.mat','pyt_la');
-        values.test = load('testValues/testBinomial1.mat','pyt_la');
-        assertElementsAlmostEqual(mean(values.real.pyt_la), mean(values.test.pyt_la), 'relative', 0.05);
+        values.test = load('testValues/testBinomial1.mat','lpyt_la');
+        assertElementsAlmostEqual(mean(values.real.pyt_la), mean(exp(values.test.lpyt_la)), 'relative', 0.05);
 
 
