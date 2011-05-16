@@ -10,7 +10,11 @@ initTestSuite;
         disp('Running: demo_derivativeobs')
         demo_derivativeobs
         path = which('test_derivativeobs.m');
-        path = strrep(path,'test_derivativeobs.m', 'testValues/testDerivativeobs');
+        path = strrep(path,'test_derivativeobs.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testDerivativeobs');           
         save(path);
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all

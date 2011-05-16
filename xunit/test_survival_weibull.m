@@ -11,7 +11,11 @@ prevstream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_survival_weibull')
 demo_survival_weibull;
 path = which('test_survival_weibull.m');
-path = strrep(path,'test_survival_weibull.m', 'testValues/testSurvival_weibull');
+path = strrep(path,'test_survival_weibull.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testSurvival_weibull'); 
 save(path, 'Ef1', 'Ef2', 'Varf1', 'Varf2');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

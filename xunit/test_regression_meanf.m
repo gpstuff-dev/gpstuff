@@ -1,4 +1,4 @@
-function test_suite = testRegression_meanf
+function test_suite = test_regression_meanf
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -10,7 +10,11 @@ stream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_regression_meanf')
 demo_regression_meanf
 path = which('test_regression_meanf.m');
-path = strrep(path,'test_regression_meanf.m', 'testValues/testRegression_meanf');
+path = strrep(path,'test_regression_meanf.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testRegression_meanf'); 
 save(path, 'Eft', 'Varft');
 RandStream.setDefaultStream(stream);
 drawnow;clear;close all

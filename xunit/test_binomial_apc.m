@@ -10,7 +10,11 @@ initTestSuite;
         disp('Running: demo_binomial_apc')
         demo_binomial_apc
         path = which('test_binomial_apc.m');
-        path = strrep(path,'test_binomial_apc.m', 'testValues/testBinomial_apc');
+        path = strrep(path,'test_binomial_apc.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testBinomial_apc');
         save(path, 'Eft', 'Varft', 'Eft_3', 'Varft_3');
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all

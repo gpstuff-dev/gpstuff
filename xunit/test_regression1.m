@@ -16,7 +16,11 @@ initTestSuite;
         Eft_mc = Eft_mc(1:50, 1:50);
         Varft_mc = Varft_mc(1:50, 1:50);
         path = which('test_regression1.m');
-        path = strrep(path,'test_regression1.m', 'testValues/testRegression1');
+        path = strrep(path,'test_regression1.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testRegression1');         
         save(path, 'K', 'C', 'w', 'Eft_map', 'Varft_map', ...
              'Eft_ia', 'Varft_ia', 'Eft_mc', 'Varft_mc');
         drawnow;clear;close all

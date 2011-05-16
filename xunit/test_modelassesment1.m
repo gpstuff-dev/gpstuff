@@ -10,7 +10,11 @@ initTestSuite;
         disp('Running: demo_modelassesment1')
         demo_modelassesment1
         path = which('test_modelassesment1.m');
-        path = strrep(path,'test_modelassesment1.m', 'testValues/testModelAssesment1');
+        path = strrep(path,'test_modelassesment1.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testModelAssesment1');         
         save(path, 'DIC', 'DIC2', 'DIC_latent', ...
             'p_eff', 'p_eff2', 'p_eff_latent', 'p_eff_latent2', 'mlpd_cv', 'mrmse_cv');
         RandStream.setDefaultStream(prevstream);

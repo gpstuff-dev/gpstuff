@@ -10,7 +10,11 @@ RandStream.setDefaultStream(stream0)
 disp('Running: demo_periodic')
 demo_periodic
 path = which('test_periodic.m');
-path = strrep(path,'test_periodic.m', 'testValues/testPeriodic');
+path = strrep(path,'test_periodic.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testPeriodic'); 
 save(path, 'Eft_full1', 'Varft_full1', 'Eft_full2', 'Varft_full2', ...
      'Eft_full', 'Varft_full');
 drawnow;clear;close all

@@ -11,7 +11,11 @@ prevstream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_regression_sparse1')
 demo_regression_sparse1
 path = which('test_regression_sparse1');
-path = strrep(path,'test_regression_sparse1.m', 'testValues/testRegression_sparse1');
+path = strrep(path,'test_regression_sparse1.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testRegression_sparse1'); 
 save(path, 'Eft_fic', 'Eft_pic', 'Eft_var', 'Eft_dtc', 'Eft_cs');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

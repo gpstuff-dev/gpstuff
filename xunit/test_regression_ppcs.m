@@ -12,7 +12,11 @@ demo_regression_ppcs
 K = K(1:50, 1:50);
 Ef = Ef(1:100);
 path = which('test_regression_ppcs.m');
-path = strrep(path,'test_regression_ppcs.m', 'testValues/testRegression_ppcs');
+path = strrep(path,'test_regression_ppcs.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testRegression_ppcs'); 
 save(path, 'K', 'Ef')
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all

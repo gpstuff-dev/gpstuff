@@ -13,7 +13,11 @@ function testDemo
     Varft=Varft(1:3,1:3,1:100);
     Covft=Covft(1:3,1:3,1:100);
     path = which('test_multiclass.m');
-    path = strrep(path,'test_multiclass.m', 'testValues/testMulticlass');
+    path = strrep(path,'test_multiclass.m', 'testValues');
+    if ~(exist(path, 'dir') == 7)
+        mkdir(path)
+    end
+    path = strcat(path, '/testMulticlass');     
     save(path,'Eft','Varft','Covft');
     drawnow;clear;close all
     

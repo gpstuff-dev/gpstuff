@@ -10,7 +10,11 @@ initTestSuite;
         disp('Running: demo_binomial1')
         demo_binomial1
         path = which('test_binomial1');
-        path = strrep(path,'test_binomial1.m', 'testValues/testBinomial1');
+        path = strrep(path,'test_binomial1.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testBinomial1');
         save(path, 'Eyt_la', 'Varyt_la', 'lpyt_la');
 %         save('testValues/testBinomial1', 'Eyt_la', 'Varyt_la', 'pyt_la');
         RandStream.setDefaultStream(prevstream);

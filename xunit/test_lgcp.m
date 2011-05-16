@@ -10,7 +10,11 @@ initTestSuite;
         disp('Running: demo_lgcp')
         demo_lgcp
         path = which('test_lgcp.m');
-        path = strrep(path,'test_lgcp.m', 'testValues/testLgcp');
+        path = strrep(path,'test_lgcp.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testLgcp');           
         save(path)
         RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all

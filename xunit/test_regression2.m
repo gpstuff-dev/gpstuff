@@ -10,7 +10,11 @@ function testDemo
     disp('Running: demo_regression2')
     demo_regression2
     path = which('test_regression2.m');
-    path = strrep(path,'test_regression2.m', 'testValues/testRegression2');
+    path = strrep(path,'test_regression2.m', 'testValues');
+    if ~(exist(path, 'dir') == 7)
+        mkdir(path)
+    end
+    path = strcat(path, '/testRegression2');     
     save(path, 'Eft_fic', 'Varft_fic', 'Eft_pic', 'Varft_pic', ...
          'Eft_csfic', 'Varft_csfic');
     drawnow;clear;close all

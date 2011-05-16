@@ -10,7 +10,11 @@ RandStream.setDefaultStream(stream0)
 disp('Running: demo_regression_hier')
 demo_regression_hier
 path = which('test_regression_hier.m');
-path = strrep(path,'test_regression_hier.m', 'testValues/testRegression_hier');
+path = strrep(path,'test_regression_hier.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testRegression_hier'); 
 save(path, 'Eff');
 drawnow;clear;close all
 

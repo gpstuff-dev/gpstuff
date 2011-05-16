@@ -11,7 +11,11 @@ function testDemo
     disp('Running: demo_regression_additive')
     demo_regression_additive
     path = which('test_regression_additive.m');
-    path = strrep(path,'test_regression_additive.m', 'testValues/testRegression_additive');
+    path = strrep(path,'test_regression_additive.m', 'testValues');
+    if ~(exist(path, 'dir') == 7)
+        mkdir(path)
+    end
+    path = strcat(path, '/testRegression_additive');     
     save(path, 'Eft_map');
     drawnow;clear;close all
     

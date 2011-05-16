@@ -17,7 +17,11 @@ initTestSuite;
         Varft_ep = Varft_ep(1:100);
         Varfs_mc = Varfs_mc(1:50,1:50);
         path = which('test_classific.m');
-        path = strrep(path,'test_classific.m', 'testValues/testClassific');
+        path = strrep(path,'test_classific.m', 'testValues');
+        if ~(exist(path, 'dir') == 7)
+            mkdir(path)
+        end
+        path = strcat(path, '/testClassific');        
         save(path, 'Eft_la', 'Varft_la', 'Eft_ep', 'Varft_ep', 'Efs_mc', 'Varfs_mc');
 %         save('testValues/testClassific', 'Eft_la', 'Varft_la', 'Eft_ep', 'Varft_ep', 'Efs_mc', 'Varfs_mc');
         RandStream.setDefaultStream(prevstream);

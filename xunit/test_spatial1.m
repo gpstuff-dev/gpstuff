@@ -13,7 +13,11 @@ demo_spatial1
 Ef = Ef(1:100);
 Varf = Varf(1:100);
 path = which('test_spatial1.m');
-path = strrep(path,'test_spatial1.m', 'testValues/testSpatial1');
+path = strrep(path,'test_spatial1.m', 'testValues');
+if ~(exist(path, 'dir') == 7)
+    mkdir(path)
+end
+path = strcat(path, '/testSpatial1'); 
 save(path, 'Elth', 'Elth2', 'Ef', 'Varf');
 RandStream.setDefaultStream(prevstream);
 drawnow;clear;close all
