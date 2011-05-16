@@ -48,7 +48,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 
     Eft=muvec_i;
     Varft=sigm2vec_i;
-    lpyt=Z_i;
+    lpyt=log(Z_i);
     n=length(y);
     if nargout > 3
       for cvi=1:n
