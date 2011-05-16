@@ -3,7 +3,7 @@ function metric = metric_distancematrix(varargin)
 %
 %	Description
 %
-%	METRIC = METRIC_distancematrix('INIT', NIN, COMPONENTS) Constructs an data
+%	METRIC = METRIC_distancematrix(NIN, COMPONENTS) Constructs an data
 %       structure for using a distance matrix input in a GP model. The GP
 %       input can be any precomputed symmetric distance matrix. Note that
 %       certain distances can only be used with certain covariance
@@ -27,22 +27,22 @@ function metric = metric_distancematrix(varargin)
 %                        NEEDS to be preset!
 %    lengthScales_prior  = Prior structure for metric parameters. 
 %                       (e.g. p.params.)
-%    pak         = function handle to pack function
+%    fh.pak         = function handle to pack function
 %                       (@metric_distancematrix_pak)
-%    unpak       = function handle to unpack function
+%    fh.unpak       = function handle to unpack function
 %                       (@metric_distancematrix_unpak)
-%    e           = function handle to energy function
+%    fh.e           = function handle to energy function
 %                       (@metric_distancematrix_e)
-%    ghyper      = function handle to gradient of energy with respect to hyperparameters
+%    fh.ghyper      = function handle to gradient of energy with respect to hyperparameters
 %                       (@metric_distancematrix_ghyper)
-%    ginput      = function handle to gradient of function with respect to inducing inputs
+%    fh.ginput      = function handle to gradient of function with respect to inducing inputs
 %                       (@metric_distancematrix_ginput)
-%    distance    = function handle to distance function of the metric.
+%    fh.dist        = function handle to distance function of the metric.
 %                       (@metric_distancematrix_distance)
-%    fh_recappend   = function handle to append the record function 
+%    fh.recappend   = function handle to append the record function 
 %                          (metric_distancematrix_recappend)
 %
-%	METRIC = METRIC_distancematrix('SET', METRIC, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
+%	METRIC = METRIC_distancematrix(METRIC, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in METRIC.
 %
     
@@ -138,10 +138,11 @@ function metric = metric_distancematrix(varargin)
         % Set the function handles to the nested functions
         metric.fh.pak        = @metric_distancematrix_pak;
         metric.fh.unpak      = @metric_distancematrix_unpak;
-        metric.fh.e          = @metric_distancematrix_e;
-        metric.fh.ghyper     = @metric_distancematrix_ghyper;
+        metric.fh.lp         = @metric_distancematrix_lp;
+        metric.fh.lpg        = @metric_distancematrix_lpg;
+        metric.fh.dist       = @metric_distancematrix_distance;        
+        metric.fh.distg      = @metric_distancematrix_ghyper;
         metric.fh.ginput     = @metric_distancematrix_ginput;
-        metric.fh.dist       = @metric_distancematrix_distance;
         metric.fh.recappend  = @metric_distancematrix_recappend;
         %metric.matrix     = @metric_distancematrix_matrix;
         %metric.initmatrices = @metric_distancematrix_initmatrices;
@@ -183,7 +184,7 @@ function metric = metric_distancematrix(varargin)
 
         if ~isempty(metric.p.lengthScales)
             w = log(metric.lengthScales);
-        
+            
             % Hyperparameters of lengthScale
             w = [w feval(metric.p.lengthScales.fh_pak, metric.p.lengthScales)];
         end
@@ -232,20 +233,18 @@ function metric = metric_distancematrix(varargin)
 %         w = w(i1+1:end);
     end
 
-    function eprior = metric_distancematrix_e(metric, x, t)
-    %METRIC_distancematrix_E     Evaluate the energy of prior of metric parameters
+    function eprior = metric_distancematrix_lp(metric)
+    %METRIC_DISTANCEMATRIX_LP  Evaluate the log prior of metric parameters
     %
-    %	Description
-    %	E = METRIC_distancematrix_E(METRIC, X, T) takes a metric data structure 
-    %   METRIC together with a matrix X of input vectors and a matrix T of target 
-    %   vectors and evaluates log p(th) x J, where th is a vector of metric parameters 
-    %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
-    %   are log transformed, when packed.)
+    %  Description
+    %    LP = METRIC_EUCLIDEAN_LP(METRIC) takes a metric structure
+    %    METRIC and returns log(p(th)), where th collects the
+    %    parameters.
     %
-    %	See also
-    %	METRIC_distancematrix_PAK, METRIC_distancematrix_UNPAK, METRIC_distancematrix_G, GP_E
+    %  See also
+    %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN_G, GP_E
     %
-        [n, m] = size(x);
+%         [n, m] = size(x);
 
         % Evaluate the prior contribution to the error. The parameters that
         % are sampled are from space W = log(w) where w is all the "real" samples.
@@ -253,7 +252,7 @@ function metric = metric_distancematrix(varargin)
         % into account also the  Jakobian of transformation W -> w = exp(W).
         % See Gelman et al., 2004, Bayesian data Analysis, second edition, p24.
 
-        eprior = feval(metric.p.lengthScales.fh_e, metric.lengthScales, metric.p.lengthScales) - sum(log(metric.lengthScales));
+        eprior = feval(metric.p.lengthScales.fh_e, metric.lengthScales, metric.p.lengthScales) + sum(log(metric.lengthScales));
         
 %         eprior = 0;
 %         mp=metric.p;
@@ -277,6 +276,28 @@ function metric = metric_distancematrix(varargin)
 
     end
     
+    function lpg = metric_distancematrix_lpg(metric) 
+    %METRIC_DISTANCEMATRIX_LPG  d log(prior)/dth of the metric parameters th
+    %
+    %  Description
+    %    LPG = METRIC_DISTANCEMATRIX_LPG(METRIC) takes a likelihood
+    %    structure METRIC and returns d log(p(th))/dth, where th
+    %    collects the parameters.
+    %
+    %  See also
+    %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
+    %
+
+        % Evaluate the prior contribution of gradient with respect to lengthScale
+          if ~isempty(metric.p.lengthScales)
+            i1=1; 
+            lll = length(metric.lengthScales);
+            lpgs = feval(metric.p.lengthScales.fh.lpg, metric.lengthScales, metric.p.lengthScales);
+            lpg(i1:i1-1+lll) = lpgs(1:lll).*metric.lengthScales + 1;
+            lpg = [lpg lpgs(lll+1:end)];
+          end
+        end
+   
     function [gdist, gprior]  = metric_distancematrix_ghyper(metric, x1, x2, mask) 
     %METRIC_distancematrix_GHYPER     Evaluate the gradient of the metric function and hyperprior 
     %                            w.r.t to it's hyperparameters.
@@ -450,7 +471,7 @@ function metric = metric_distancematrix(varargin)
     
     
 
-    function [dist]  = metric_distancematrix_distance(metric, x1, x2)         
+    function dist  = metric_distancematrix_distance(metric, x1, x2)         
     %METRIC_distancematrix_DISTANCE   Compute the distancematrix distence between
     %                            one or two matrices.
     %
@@ -573,8 +594,9 @@ function metric = metric_distancematrix(varargin)
  
         if nargin == 2 || isempty(x2)
             x2=x1;
-            dist=metric.distance(metric,x1);
-        else dist=metric.distance(metric,x1,x2);
+            dist=metric.fh.dist(metric,x1);          
+        else
+            dist=metric.fh.dist(metric,x1,x2);
         end
         
         
@@ -665,13 +687,14 @@ function metric = metric_distancematrix(varargin)
             recmetric.lengthScales = [];
 
             % Set the function handles
-            recmetric.pak       = @metric_distancematrix_pak;
-            recmetric.unpak     = @metric_distancematrix_unpak;
-            recmetric.e         = @metric_distancematrix_e;
-            recmetric.ghyper    = @metric_distancematrix_ghyper;
-            recmetric.ginput    = @metric_distancematrix_ginput;            
-            recmetric.dist      = @metric_distancematrix_distance;
-            recmetric.recappend = @metric_distancematrix_recappend;
+            recmetric.fh.pak       = @metric_distancematrix_pak;
+            recmetric.fh.unpak     = @metric_distancematrix_unpak;
+            recmetric.fh.lp        = @metric_distancematrix_lp;
+            recmetric.fh.lpg       = @metric_distancematrix_lpg;
+            recmetric.fh.dist      = @metric_distancematrix_distance;
+            recmetric.fh.distg     = @metric_distancematrix_ghyper;
+            recmetric.fh.ginput    = @metric_distancematrix_ginput;            
+            recmetric.fh.recappend = @metric_distancematrix_recappend;
             %recmetric.matrix    = @metric_distancematrix_matrix;
             return
         end
