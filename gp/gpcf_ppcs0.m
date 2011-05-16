@@ -949,11 +949,12 @@ function C = gpcf_ppcs0_cov(gpcf, x1, x2, varargin)
       for j=1:m1
         d = d + s2(j).*(x1(:,j)-x2(ii1,j)).^2;
       end
-      d = sqrt(d);
+      %d = sqrt(d);
       I0t = find(d==0);
       d(d >= 1) = 0;
       [I2,J2,R2] = find(d);
-      len = length(R);
+      R2=sqrt(R2);
+      %len = length(R);
       ntrip_prev = ntriplets;
       ntriplets = ntriplets + length(R2);
 

@@ -34,8 +34,8 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
 %    GP = GPEP_E('init', GP) takes a GP structure GP and
 %    initializes required fields for the EP algorithm.
 %
-%    GP = GPEP_E('clearcache', GP) takes a GP structure GP and
-%    cleares the internal cache stored in the nested function workspace
+%    GPEP_E('clearcache', GP) takes a GP structure GP and cleares
+%    the internal cache stored in the nested function workspace
 %
 %    [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i]
 %      = GPEP_E(w, gp, x, y, options)
@@ -127,9 +127,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
       tol = gp.latent_opt.tol;
       nutilde = zeros(size(y));
       tautilde = zeros(size(y));
-      %            nutilde = nutilde0;%zeros(size(y));
-      %            tautilde = tautilde0;%zeros(size(y));
-      %tautilde = gp.lik.sigma2^-1 *ones(size(y));
       logZep_tmp=0; logZep=Inf;
       if ~isfield(gp,'meanf')
         myy = zeros(size(y));
