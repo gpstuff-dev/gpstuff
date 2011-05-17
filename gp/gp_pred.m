@@ -163,12 +163,22 @@ switch gp.type
     nxt = size(xt,1); nblock=10000;
     ind = ceil(nxt./nblock);
     Eft = zeros(nxt,1);    % Mean
+    if isfield(gp,'derivobs') && gp.derivobs==1
+        nderobs = length(y)./length(x);
+        Eft = zeros(nxt,1)*nderobs;    % Mean
+    end
     Varft = zeros(nxt,1);    % Variance
     % Do the prediction in blocks to save memory
     for i1=1:ind
         xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
+        xtind2 = xtind;
         K=gp_cov(gp,x,xt(xtind,:),predcf);
-        Eft(xtind) = K'*a;
+        if isfield(gp,'derivobs') && gp.derivobs==1
+            for k2=2:nderobs
+                xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
+            end
+        end
+        Eft(xtind2) = K'*a;
         
         if  isfield(gp,'meanf')
             if issparse(C)
@@ -176,7 +186,7 @@ switch gp.type
             else
                 [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
             end
-            Eft(xtind) = Eft(xtind) + RB;
+            Eft(xtind2) = Eft(xtind2) + RB;
         end
         
         % Evaluate variance
@@ -185,15 +195,15 @@ switch gp.type
             
             V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
             if issparse(C)
-                Varft = V - diag(K'*ldlsolve(LD,K));
+                Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
             else
                 v = L\K;
-                Varft((i1-1)*nblock+1:min(i1*nblock,nxt)) = V - sum(v'.*v',2);
+                Varft(xtind2) = V - sum(v'.*v',2);
             end
             
             % If there are specified mean functions
             if  isfield(gp,'meanf')
-                Varft(xtind) = Varft(xtind) + RAR;
+                Varft(xtind2) = Varft(xtind2) + RAR;
             end
         end
     end

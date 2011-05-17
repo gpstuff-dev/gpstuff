@@ -193,13 +193,13 @@ function [w, s] = gpcf_rq_pak(gpcf)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(rq.magnSigma2)'];
     % Hyperparameters of magnSigma2
-    [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2)];
+    [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
     w = [w wh];
     s = [s; sh];
   end        
 
   if isfield(gpcf,'metric')
-    [wm sm] = feval(gpcf.metric.fh.pak, gpcf.metric)];
+    [wm sm] = feval(gpcf.metric.fh.pak, gpcf.metric);
     w = [w wm];
     s = [s; sm];
   else
@@ -211,7 +211,7 @@ function [w, s] = gpcf_rq_pak(gpcf)
         s = [s; 'log(rq.lengthScale)'];
       end
       % Hyperparameters of lengthScale
-      [wh sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale)];
+      [wh sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale);
       w = [w wh];
       s = [s; sh];
     end
@@ -220,7 +220,7 @@ function [w, s] = gpcf_rq_pak(gpcf)
   if ~isempty(gpcf.p.alpha)
     w= [w log(log(gpcf.alpha))];
     % Hyperparameters of alpha
-    [wh sh] = feval(gpcf.p.alpha.fh.pak, gpcf.p.alpha)];
+    [wh sh] = feval(gpcf.p.alpha.fh.pak, gpcf.p.alpha);
     w = [w wh];
     s = [s; sh];
   end

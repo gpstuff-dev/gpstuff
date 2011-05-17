@@ -397,83 +397,89 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
-      % loop over all the lengthScales
-      if length(gpcf.lengthScale) == 1
-        % In the case of isotropic PERIODIC
-        s = 2./gpcf.lengthScale.^2;
-        dist = 0;
-        for i=1:m
-          D = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
-          dist = dist + 2.*D.^2;
+        if ~isempty(gpcf.p.lengthScale)
+            % loop over all the lengthScales
+            if length(gpcf.lengthScale) == 1
+                % In the case of isotropic PERIODIC
+                s = 2./gpcf.lengthScale.^2;
+                dist = 0;
+                for i=1:m
+                    D = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
+                    dist = dist + 2.*D.^2;
+                end
+                D = Cdm.*s.*dist;
+                
+                ii1 = ii1+1;
+                DKff{ii1} = D;
+            else
+                % In the case ARD is used
+                for i=1:m
+                    s = 2./gpcf.lengthScale(i).^2;
+                    dist = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
+                    D = Cdm.*s.*2.*dist.^2;
+                    
+                    ii1 = ii1+1;
+                    DKff{ii1} = D;
+                end
+            end
         end
-        D = Cdm.*s.*dist;
-        
-        ii1 = ii1+1;
-        DKff{ii1} = D;
-      else
-        % In the case ARD is used
-        for i=1:m
-          s = 2./gpcf.lengthScale(i).^2;
-          dist = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
-          D = Cdm.*s.*2.*dist.^2;
-          
-          ii1 = ii1+1;
-          DKff{ii1} = D;
-        end
-      end
       
       if gpcf.decay == 1
-        if length(gpcf.lengthScale_sexp) == 1
-          % In the case of isotropic PERIODIC
-          s = 1./gpcf.lengthScale_sexp.^2;
-          dist = 0;
-          for i=1:m
-            D = bsxfun(@minus,x(:,i),x(:,i)');
-            dist = dist + D.^2;
+          if ~isempty(gpcf.p.lengthScale_sexp)
+              if length(gpcf.lengthScale_sexp) == 1
+                  % In the case of isotropic PERIODIC
+                  s = 1./gpcf.lengthScale_sexp.^2;
+                  dist = 0;
+                  for i=1:m
+                      D = bsxfun(@minus,x(:,i),x(:,i)');
+                      dist = dist + D.^2;
+                  end
+                  D = Cdm.*s.*dist;
+                  
+                  ii1 = ii1+1;
+                  DKff{ii1} = D;
+              else
+                  % In the case ARD is used
+                  for i=1:m
+                      s = 1./gpcf.lengthScale_sexp(i).^2;
+                      dist = bsxfun(@minus,x(:,i),x(:,i)');
+                      D = Cdm.*s.*dist.^2;
+                      
+                      ii1 = ii1+1;
+                      DKff{ii1} = D;
+                  end
+              end
           end
-          D = Cdm.*s.*dist;
-          
-          ii1 = ii1+1;
-          DKff{ii1} = D;
-        else
-          % In the case ARD is used
-          for i=1:m
-            s = 1./gpcf.lengthScale_sexp(i).^2;
-            dist = bsxfun(@minus,x(:,i),x(:,i)');
-            D = Cdm.*s.*dist.^2;
-            
-            ii1 = ii1+1;
-            DKff{ii1} = D;
-          end
-        end
       end
       
       if gpcf.optimPeriod == 1
-        % Evaluate help matrix for calculations of derivatives
-        % with respect to the period
-        if length(gpcf.lengthScale) == 1
-          % In the case of an isotropic PERIODIC
-          s = repmat(1./gpcf.lengthScale.^2, 1, m);
-          
-          
-          dist = 0;
-          for i=1:m
-            dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)').*s(i);                        
+          if ~isempty(gpcf.p.period)
+              % Evaluate help matrix for calculations of derivatives
+              % with respect to the period
+              if length(gpcf.lengthScale) == 1
+                  % In the case of an isotropic PERIODIC
+                  s = repmat(1./gpcf.lengthScale.^2, 1, m);
+                  
+                  
+                  dist = 0;
+                  for i=1:m
+                      dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)').*s(i);
+                  end
+                  D = Cdm.*dist;
+                  ii1=ii1+1;
+                  DKff{ii1} = D;
+              else
+                  % In the case ARD is used
+                  for i=1:m
+                      s = 1./gpcf.lengthScale(i).^2;        % set the length
+                      dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)');
+                      D = Cdm.*s.*dist;
+                      
+                      ii1=ii1+1;
+                      DKff{ii1} = D;
+                  end
+              end
           end
-          D = Cdm.*dist;
-          ii1=ii1+1;
-          DKff{ii1} = D;
-        else
-          % In the case ARD is used
-          for i=1:m
-            s = 1./gpcf.lengthScale(i).^2;        % set the length
-            dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)');
-            D = Cdm.*s.*dist;
-            
-            ii1=ii1+1;
-            DKff{ii1} = D;
-          end
-        end
       end
       
     end
