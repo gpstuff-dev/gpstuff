@@ -31,16 +31,6 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
     C = C + feval(gpcf.fh.cov, gpcf, x1, x2);
   end
 
-  % Add jitter if the inputs are equal
-  n1 = size(x1,1);
-  n2 = size(x2,1);
-  if n1 == n2  && max(max(abs(x1-x2))) == 0
-    if isfield(gp, 'jitterSigma2') && ~isempty(gp.jitterSigma2)
-      n = size(C,1);
-      Inn = sparse(1:n,1:n,1,n,n);
-      C = C + Inn.*gp.jitterSigma2;
-    end
-  end
 else
   % Derivative observations
   [n,m]=size(x1);
