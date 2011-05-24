@@ -6,7 +6,7 @@
 %    The analysis is conducted with full Gaussian process using
 %    both probit and logit likelihood. The performance of these two
 %    models are compared by evaluating the DIC statistics, number
-%    of efficient parameters and ten-fold cross validation. The
+%    of efficient parameters, WAIC and ten-fold cross validation. The
 %    inference will be conducted using maximum a posterior (MAP)
 %    estimate for the parameters using EP and Laplace
 %    approximation, via full Markov chain Monte Carlo (MCMC) and
@@ -69,6 +69,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 models{1} = 'pr_Laplace';
 p_eff_latent = gp_peff(gp, x, y);
 [DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'latent');
+WAIC(1) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 cvres = gp_kfcv(gp, x, y);
@@ -92,6 +93,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 models{2} = 'pr_EP';
 p_eff_latent(2) = gp_peff(gp, x, y) ;
 [DIC_latent(2), p_eff_latent2(2)] = gp_dic(gp, x, y, 'latent');
+WAIC(2) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 cvres = gp_kfcv(gp, x, y);
@@ -132,6 +134,7 @@ rgp=gp_mc(gp, x, y, 'record', r, opt);
 models{3} = 'pr_MCMC';
 [DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'focus', 'param');
 [DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'focus', 'all');
+WAIC2(3) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 opt.nsamples=50;
@@ -160,6 +163,7 @@ gp_array = gp_ia(gp, x, y, opt);
 models{4} = 'pr_IA'; 
 [DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'param');
 [DIC2(4), p_eff2(4)] =  gp_dic(gp_array, x, y, 'all');
+WAIC2(4) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
@@ -210,6 +214,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 models{5} = 'lo_Laplace';
 p_eff_latent(5) = gp_peff(gp, x, y);
 [DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'focus', 'latent');
+WAIC(5) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 cvres = gp_kfcv(gp, x, y);
@@ -233,6 +238,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 models{6} = 'lo_EP';
 p_eff_latent(6) = gp_peff(gp, x, y) ;
 [DIC_latent(6), p_eff_latent2(6)] = gp_dic(gp, x, y, 'latent');
+WAIC(6) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 cvres = gp_kfcv(gp, x, y);
@@ -273,6 +279,7 @@ rgp = gp_mc(gp, x, y, 'record', r, opt);
 models{7} = 'lo_MCMC';
 [DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'param');
 [DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'all');
+WAIC2(7) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 opt.nsamples=50;
@@ -301,6 +308,7 @@ gp_array = gp_ia(gp, x, y, opt);
 models{8} = 'lo_IA'; 
 [DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'param');
 [DIC2(8), p_eff2(8)] =  gp_dic(gp_array, x, y, 'all');
+WAIC2(8) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
@@ -325,6 +333,8 @@ S = sprintf([S '\n peff_h    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f 
 S = sprintf([S '\n peff_a    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f     %.2f     %.2f'], p_eff2);
 S = sprintf([S '\n peff_l    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f    %.2f     %.2f'], p_eff_latent);
 S = sprintf([S '\n peff_l2  %.2f      %.2f      %.2f    %.2f    %.2f     %.2f    %.2f     %.2f'], p_eff_latent2);
+S = sprintf([S '\n WAIC_l     %.2f      %.2f    %.2f  %.2f     %.2f     %.2f   %.2f   %.2f'], WAIC);
+S = sprintf([S '\n WAIC_a     %.2f      %.2f    %.2f  %.2f     %.2f     %.2f   %.2f   %.2f'], WAIC2);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n mlpd    %.2f      %.2f     %.2f   %.2f    %.2f    %.2f    %.2f    %.2f'], mlpd_cv);
 S = sprintf([S '\n ']);
@@ -339,6 +349,8 @@ S = sprintf([S '\n peff_h  = effective number of parameters (latent variables ma
 S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
 S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
 S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
+S = sprintf([S '\n WAIC_l  = WAIC with focus on latent variables. ']);
+S = sprintf([S '\n WAIC_a  = WAIC with focus on all parameters. ']);
 S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
 S = sprintf([S '\n '])
 
