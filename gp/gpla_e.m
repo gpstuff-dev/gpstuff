@@ -233,15 +233,41 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_new = feval(gp.lik.fh.ll, gp.lik, y, f, z);
               lp_old = -Inf;
               
-              while abs(lp_new - lp_old) > tol
+              iter=0;
+              while abs(lp_new - lp_old) > tol && iter < 20
+                iter = iter + 1;
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);    
                 if issparse(K)
                   sW = sparse(1:n, 1:n, sW, n, n);
-                  L = ldlchol( speye(n)+sW*K*sW );
+                  [L,notpositivedefinite] = ldlchol( speye(n)+sW*K*sW );
                 else
-                  L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
+                  [L,notpositivedefinite] = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                 end
+                if notpositivedefinite
+                  edata=NaN;
+                  e=NaN;
+                  edata=NaN;
+                  eprior=NaN;
+                  f=NaN;
+                  L=NaN;
+                  a=NaN;
+                  La2=NaN;
+                  p=NaN;
+                  ch.w = w;
+                  ch.e = e;
+                  ch.edata = edata;
+                  ch.eprior = eprior;
+                  ch.f = f;
+                  ch.L = L;
+                  ch.n = size(x,1);
+                  ch.La2 = La2;
+                  ch.a = a;
+                  ch.p=p;
+                  ch.datahash=datahash;
+                  return
+                end
+
                 if ~isfield(gp,'meanf')                   
                   b = W.*f+dlp;
                 else
@@ -306,10 +332,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               f_old = f+1;
               ge = Inf; %max(abs(a-dlp));
               
-              i1=0;
+              iter=0;
               % begin Newton's iterations
-              while lp - lp_old > tol || max(abs(f-f_old)) > tol
-                i1=i1+1;
+              while (lp - lp_old > tol || max(abs(f-f_old)) > tol) && iter < 40
+                iter=iter+1;
                 
                 W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent');
                 dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent');
@@ -353,7 +379,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   
                 end
                 
-                if Wlim>Wmax*0.5 || i1>5000
+                if Wlim>Wmax*0.5
                   %fprintf('\n%3d, p(f)=%.12f, max|a-g|=%.12f, %.3f \n',i1,lp,ge,Wlim)
                   break
                 end
@@ -484,7 +510,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_new = feval(gp.lik.fh.ll, gp.lik, y, f, z);
               lp_old = -Inf;
               
-              while lp_new - lp_old > tol
+              iter = 0;
+              while lp_new - lp_old > tol && iter < 40
+                iter = iter + 1;
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);
                 
@@ -632,7 +660,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_new = feval(gp.lik.fh.ll, gp.lik, y, f, z);
               lp_old = -Inf;
               
-              while lp_new - lp_old > tol
+              iter = 0;
+              while lp_new - lp_old > tol && iter < 40
+                iter = iter + 1;
                 lp_old = lp_new; a_old = a;
                 sW = sqrt(W);
 
@@ -792,7 +822,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_old = -Inf;
               I = sparse(1:n,1:n,1,n,n);
               
-              while lp_new - lp_old > tol                        % begin Newton's iterations
+              iter = 0;
+              while lp_new - lp_old > tol && iter < 40
+                iter = iter + 1;
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);
                 sqrtW = sparse(1:n,1:n,sW,n,n);
