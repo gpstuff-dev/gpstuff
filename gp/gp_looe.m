@@ -40,7 +40,7 @@ if isfield(gp,'mean') & ~isempty(gp.mean.meanFuncs)
 end
 
 gp=gp_unpak(gp, w);
-n=length(x);
+n = size(x,1);
 
 % First Evaluate the data contribution to the error
 switch gp.type

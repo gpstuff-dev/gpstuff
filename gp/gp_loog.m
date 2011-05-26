@@ -40,7 +40,7 @@ end
 
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
-n=length(x);
+n = size(x,1);
 
 g = [];
 gloo = [];

@@ -90,103 +90,101 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, xt, varargin)
 %    MC_PRED, GP_PRED, GP_SET, GP_MC
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-    
+  
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    
-    ip=inputParser;
-    ip.FunctionName = 'GPMC_PREDS';
-    ip.addRequired('gp',@isstruct);
-    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                     isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-    ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                     (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-    ip.parse(gp, x, y, xt, varargin{:});
-    yt=ip.Results.yt;
-    zt=ip.Results.zt;
-    z=ip.Results.z;
-    predcf=ip.Results.predcf;
-    tstind=ip.Results.tstind;
-    
-    tn = size(x,1);
-    if nargin < 4
-        error('Requires at least 4 arguments');
-    end
+  
+  ip=inputParser;
+  ip.FunctionName = 'GPMC_PREDS';
+  ip.addRequired('gp',@isstruct);
+  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+  ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                   (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  ip.parse(gp, x, y, xt, varargin{:});
+  yt=ip.Results.yt;
+  zt=ip.Results.zt;
+  z=ip.Results.z;
+  predcf=ip.Results.predcf;
+  tstind=ip.Results.tstind;
+  
+  tn = size(x,1);
+  if nargin < 4
+    error('Requires at least 4 arguments');
+  end
 
-    if nargout > 2 && isempty(yt)
-        error('mc_pred -> If lpy is wanted you must provide the vector yt as an optional input.')
+  if nargout > 2 && isempty(yt)
+    error('mc_pred -> If lpy is wanted you must provide the vector yt as an optional input.')
+  end
+  
+  nin  = size(x,2);
+  nout = 1;
+  nmc=size(gp.jitterSigma2,1);
+  
+  if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
+    % Non-Gaussian likelihood. The latent variables should be used in
+    % place of observations
+    y = gp.latentValues';
+  else 
+    y = repmat(y,1,nmc);
+  end
+
+  if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
+    ind = gp.tr_index;           % block indeces for training points
+    gp = rmfield(gp,'tr_index');
+  end
+  
+  % loop over all samples
+  for i1=1:nmc
+    Gp = take_nth(gp,i1);
+    if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
+      Gp = rmfield(Gp,'latent_method');
     end
-            
-    nin  = size(x,2);
-    nout = 1;
-    nmc=size(gp.jitterSigma2,1);
     
-    if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
-      % Non-Gaussian likelihood. The latent variables should be used in
-      % place of observations
-        y = gp.latentValues';
+    switch gp.type            
+      case 'FULL' 
+
+      case {'FIC' 'CS+FIC'} 
+        % Reformat the inducing inputs 
+        u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+        Gp.X_u = u;
+
+      case {'PIC' 'PIC_BLOCK'}
+        % Reformat the inducing inputs 
+        u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+        Gp.X_u = u;
+        Gp.tr_index = ind;
+    end
+    
+    if nargout < 3
+      [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
     else 
-        y = repmat(y,1,nmc);
+      if isfield(gp, 'latentValues')
+        [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
+        if any(Varf(:,i1) <= 0)
+          Varf(Varf<=0) = 1e-12; % Ensure positiveness, which may be a problem with FIC
+          warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
+        end
+        if nargout > 3
+          [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+        else
+          lpy(:,i1) = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+        end
+      else
+        if nargout < 4
+          [Ef(:,i1), Varf(:,i1), lpy(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+        else
+          [Ef(:,i1), Varf(:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
+        end
+      end            
     end
-
-    if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
-        ind = gp.tr_index;           % block indeces for training points
-        gp = rmfield(gp,'tr_index');
-    end
-    
-    % loop over all samples
-    for i1=1:nmc
-        Gp = take_nth(gp,i1);
-        if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
-          Gp = rmfield(Gp,'latent_method');
-        end
-        
-        switch gp.type            
-          case 'FULL' 
-
-          case {'FIC' 'CS+FIC'} 
-            % Reformat the inducing inputs 
-            u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
-            Gp.X_u = u;
-
-          case {'PIC' 'PIC_BLOCK'}
-            % Reformat the inducing inputs 
-            u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
-            Gp.X_u = u;
-            Gp.tr_index = ind;
-        end
-        
-        if nargout < 3
-            [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-        else 
-            if isfield(gp, 'latentValues')
-                [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
-                if any(Varf(:,i1) <= 0)
-                    Varf(Varf<=0) = 1e-12; % Ensure positiviness, which may be a problem with FIC
-                    warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
-                end
-%                 if isempty(yt)
-%                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), [], zt);
-                if nargout > 3
-                    [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
-                else
-                    lpy(:,i1) = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
-                end
-            else
-                if nargout < 4
-                    [Ef(:,i1), Varf(:,i1), lpy(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
-                else
-                    [Ef(:,i1), Varf(:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
-                end
-            end            
-        end
-    end    
+  end    
 end

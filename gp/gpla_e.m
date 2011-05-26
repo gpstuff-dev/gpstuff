@@ -122,7 +122,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       % re-evaluate the Laplace approximation
       gp=gp_unpak(gp, w);
       ncf = length(gp.cf);
-      n = length(x);
+      n = size(x,1);
       p = [];
 
       % Initialize latent values

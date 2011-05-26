@@ -194,7 +194,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   ip.addParamValue('trindex', [], @(x) isempty(x) || iscell(x))
   ip.addParamValue('tstindex', [], @(x) isempty(x) || iscell(x))
   ip.addParamValue('display', 'on', @(x) islogical(x) || ...
-                   ismember(x,{'on' 'off' 'iter'}))
+                   ismember(x,{'on' 'off' 'iter' 'fold'}))
   ip.addParamValue('save_results', false, @(x) islogical(x))
   ip.addParamValue('folder', [], @(x) ischar(x) )
   ip.parse(gp, x, y, varargin{:});
@@ -207,6 +207,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   trindex=ip.Results.trindex;
   tstindex=ip.Results.tstindex;
   display = ip.Results.display;
+  if isequal(display,'fold');display='iter';end
   save_results=ip.Results.save_results;
   folder = ip.Results.folder;
 
@@ -268,12 +269,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   cvws=[];
   trw=[];
   % loop over the crossvalidation sets
-  if ismember(display,{'on','fold'})
+  if ismember(display,{'on','iter'})
     fprintf('\n Evaluating the CV utility\n')
   end
   for i=1:length(trindex)
 
-    if isequal(display,'fold')
+    if isequal(display,'iter')
       fprintf('The CV-iteration number: %d \n', i)
     end
 
@@ -439,7 +440,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
 
     % Evaluate the training utility
-    if ismember(display,{'on','fold'})
+    if ismember(display,{'on','iter'})
       fprintf('\n Evaluating the training utility \n')
     end
 
@@ -521,7 +522,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       'mabs_cv','Var_lpd_cv', 'Var_rmse_cv', 'Var_abs_cv', 'trindex', 'tstindex', 'lpd_cvtr', 'rmse_cvtr',...
       'abs_cvtr', 'lpd_tr', 'rmse_tr', 'abs_tr', 'mlpd_ccv', 'mrmse_ccv', 'mabs_ccv', 'cpu_time', 'cvpreds');
 
-    if ismember(display,{'on','fold'})
+    if ismember(display,{'on','iter'})
       fprintf('The results have been saved in the folder:\n %s/%s \n', parent_folder, folder);
     end
 

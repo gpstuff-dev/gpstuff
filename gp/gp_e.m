@@ -75,7 +75,7 @@ z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
-n=length(x);
+n=size(x,1);
 
 % First Evaluate the data contribution to the error
 switch gp.type

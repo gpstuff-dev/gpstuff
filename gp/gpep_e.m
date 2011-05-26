@@ -119,7 +119,7 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
       % re-evaluate the EP approximation
       gp=gp_unpak(gp, w);
       ncf = length(gp.cf);
-      n = length(x);
+      n = size(x,1);
 
       % EP iteration parameters
       iter=1;

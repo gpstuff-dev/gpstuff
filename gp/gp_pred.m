@@ -135,121 +135,114 @@ tstind=ip.Results.tstind;
 tn = size(x,1);
 
 if nargout > 2 && isempty(yt)
-    error('GP_PRED -> To compute PYT, the YT has to be provided.')
+  error('GP_PRED -> To compute PYT, the YT has to be provided.')
 end
 
 % Evaluate this if sparse model is used
 switch gp.type
   case 'FULL'
-      
-      %evaluate a = C\y;
-      % -------------------
-      [~, C]=gp_trcov(gp,x);
-      
-      if issparse(C)
-          LD = ldlchol(C);
-          a = ldlsolve(LD,y);
-      elseif isempty(C)
-          C=0;
-          L=[];
-          a = zeros(length(y),1);
-      else
-          L = chol(C)';
-          a = L'\(L\y);
-      end
+    
+    %evaluate a = C\y;
+    % -------------------
+    [~, C]=gp_trcov(gp,x);
+    
+    if issparse(C)
+      LD = ldlchol(C);
+      a = ldlsolve(LD,y);
+    elseif isempty(C)
+      C=0;
+      L=[];
+      a = zeros(length(y),1);
+    else
+      L = chol(C,'lower');
+      a = L'\(L\y);
+    end
 
     % evaluate K*a
     % -------------------
     nxt = size(xt,1); nblock=10000;
     ind = ceil(nxt./nblock);
     Eft = zeros(nxt,1);    % Mean
-    if isfield(gp,'derivobs') && gp.derivobs==1
-        nderobs = length(y)./length(x);
-        Eft = zeros(nxt,1)*nderobs;    % Mean
-    end
     Varft = zeros(nxt,1);    % Variance
-    % Do the prediction in blocks to save memory
+                             
     for i1=1:ind
-        xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
-        xtind2 = xtind;
-        K=gp_cov(gp,x,xt(xtind,:),predcf);
-        if isfield(gp,'derivobs') && gp.derivobs==1
-            for k2=2:nderobs
-                xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
-            end
+      % Do the prediction in blocks to save memory
+      xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
+      K=gp_cov(gp,x,xt(xtind,:),predcf);
+      Eft(xtind) = K'*a;
+      
+      if  isfield(gp,'meanf')
+        if issparse(C)
+          % terms with non-zero mean -prior
+          [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);    
+        else
+          % terms with non-zero mean -prior
+          [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);    
         end
-        Eft(xtind2) = K'*a;
+        Eft(xtind) = Eft(xtind) + RB;
+      end
+      
+      % Evaluate variance
+      % Vector of diagonal elements of covariance matrix
+      if nargout > 1
         
+        V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+        if issparse(C)
+          Varft = V - diag(K'*ldlsolve(LD,K));
+        else
+          v = L\K;
+          Varft((i1-1)*nblock+1:min(i1*nblock,nxt)) = V - sum(v'.*v',2);
+        end
+        
+        % If there are specified mean functions
         if  isfield(gp,'meanf')
-            if issparse(C)
-                [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
-            else
-                [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
-            end
-            Eft(xtind2) = Eft(xtind2) + RB;
+          Varft(xtind) = Varft(xtind) + RAR;
         end
-        
-        % Evaluate variance
-        % Vector of diagonal elements of covariance matrix
-        if nargout > 1
-            
-            V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
-            if issparse(C)
-                Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
-            else
-                v = L\K;
-                Varft(xtind2) = V - sum(v'.*v',2);
-            end
-            
-            % If there are specified mean functions
-            if  isfield(gp,'meanf')
-                Varft(xtind2) = Varft(xtind2) + RAR;
-            end
-        end
+      end
     end
     
     if nargout > 2
-        % Scale mixture model in lik_smt is a special case 
-        % handle it separately
-        if ~strcmp(gp.lik.type, 'lik_smt') 
-          % normal case
-            [V, Cv] = gp_trvar(gp,xt,predcf);
-            Eyt = Eft;
-            Varyt = Varft + Cv - V;
-            lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
-        else 
-          % scale mixture case
-            nu = gp.lik.nu;
-            sigma2 = gp.lik.tau2.*gp.lik.alpha.^2;
-            sigma = sqrt(sigma2);
-            
-            Eyt = Eft;
-            Varyt = (nu./(nu-2).*sigma2);
-            
-            for i2 = 1:length(Eft)
-                mean_app = Eft(i2);
-                sigm_app = sqrt(Varft(i2));
+      % Scale mixture model in lik_smt is a special case 
+      % handle it separately
+      if ~strcmp(gp.lik.type, 'lik_smt') 
+        % normal case
+        [V, Cv] = gp_trvar(gp,xt,predcf);
+        Eyt = Eft;
+        Varyt = Varft + Cv - V;
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      else 
+        % scale mixture case
+        nu = gp.lik.nu;
+        sigma2 = gp.lik.tau2.*gp.lik.alpha.^2;
+        sigma = sqrt(sigma2);
+        
+        Eyt = Eft;
+        Varyt = (nu./(nu-2).*sigma2);
+        
+        for i2 = 1:length(Eft)
+          mean_app = Eft(i2);
+          sigm_app = sqrt(Varft(i2));
 
-                pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Varft(i2)));
-                lpyt(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
-            end         
-        end
+          pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Varft(i2)));
+          lpyt(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
+        end         
+      end
     end
   case 'FIC'
     % Check the tstind vector
     if nargin > 5
-        if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
-        end
+      if ~isempty(tstind) && length(tstind) ~= size(x,1)
+        error('tstind (if provided) has to be of same lenght as x.')
+      end
     else
-        tstind = [];
+      tstind = [];
     end
     
     u = gp.X_u;
     m = size(u,1);
     % Turn the inducing vector on right direction
     if size(u,2) ~= size(x,2)
-        u=u';
+      u=u';
     end
     % Calculate some help matrices
     [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
@@ -266,8 +259,9 @@ switch gp.type
     Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
                          % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
-    for i=1:length(x)
-        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+    n=size(x,1)
+    for i=1:n
+      iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;
@@ -277,52 +271,53 @@ switch gp.type
 
     % Prediction matrices formed with only subset of cf's.
     if ~isempty(predcf)
-        K_fu = gp_cov(gp, x, u, predcf);   % f x u
-        K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
-        K_nu = gp_cov(gp,xt,u,predcf);       % n x u
+      K_fu = gp_cov(gp, x, u, predcf);   % f x u
+      K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
+      K_nu = gp_cov(gp,xt,u,predcf);       % n x u
     end
     Eft = K_nu*(K_uu\(K_fu'*p));
 
     % if the prediction is made for training set, evaluate Lav also for prediction points
     if ~isempty(tstind)
-        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
-        Lav2 = zeros(size(Eft));
-        Lav2(tstind) = Kv_ff-Qv_ff;
-        Eft(tstind) = Eft(tstind) + Lav2(tstind).*p;
+      [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+      Luu = chol(K_uu)';
+      B=Luu\(K_fu');
+      Qv_ff=sum(B.^2)';
+      Lav2 = zeros(size(Eft));
+      Lav2(tstind) = Kv_ff-Qv_ff;
+      Eft(tstind) = Eft(tstind) + Lav2(tstind).*p;
     end
 
     if nargout > 1
-        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        B2=Luu\(K_nu');
-        
-        Varft = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+      [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+      Luu = chol(K_uu)';
+      B=Luu\(K_fu');
+      B2=Luu\(K_nu');
+      
+      Varft = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
 
-        % if the prediction is made for training set, evaluate Lav also for prediction points
-        if ~isempty(tstind)
-            Varft(tstind) = Varft(tstind)...
-                - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
-                + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
-                - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);
-        end
+      % if the prediction is made for training set, evaluate Lav also for prediction points
+      if ~isempty(tstind)
+        Varft(tstind) = Varft(tstind)...
+            - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
+            + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
+            - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);
+      end
+      
     end
-        
+    
     
     if nargout > 2
-        Eyt = Eft;
-        Varyt = Varft + Cnn_v - Knn_v;
-        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      Eyt = Eft;
+      Varyt = Varft + Cnn_v - Knn_v;
+      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     end
     
   case {'PIC' 'PIC_BLOCK'}
     u = gp.X_u;
     ind = gp.tr_index;
     if size(u,2) ~= size(x,2)
-        u=u';
+      u=u';
     end
 
     % Calculate some help matrices
@@ -338,10 +333,10 @@ switch gp.type
     B=Luu\K_fu';
     iLaKfu = zeros(size(K_fu));  % f x u
     for i=1:length(ind)
-        Qbl_ff = B(:,ind{i})'*B(:,ind{i});
-        [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
-        La{i} = Cbl_ff - Qbl_ff;
-        iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
+      Qbl_ff = B(:,ind{i})'*B(:,ind{i});
+      [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
+      La{i} = Cbl_ff - Qbl_ff;
+      iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
     end
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
@@ -352,59 +347,59 @@ switch gp.type
     % See Snelson and Ghahramani (2007) for details
     p=iLaKfu*(A\(iLaKfu'*tyy));
     for i=1:length(ind)
-        p2(ind{i},:) = La{i}\tyy(ind{i},:);
+      p2(ind{i},:) = La{i}\tyy(ind{i},:);
     end
     p= p2-p;
     
     % Prediction matrices formed with only subsetof cf's.
     if ~isempty(predcf)
-        K_fu = gp_cov(gp, x, u, predcf);        % f x u
-        K_nu = gp_cov(gp, xt, u, predcf);         % n x u
-        K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
+      K_fu = gp_cov(gp, x, u, predcf);        % f x u
+      K_nu = gp_cov(gp, xt, u, predcf);         % n x u
+      K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
     end
-        
+    
     iKuuKuf = K_uu\K_fu';    
     w_bu=zeros(length(xt),length(u));
     w_n=zeros(length(xt),1);
     for i=1:length(ind)
-        w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
-        K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf);              % n x u
-        w_n(tstind{i},:) = K_nf*p(ind{i},:);
+      w_bu(tstind{i},:) = repmat((iKuuKuf(:,ind{i})*p(ind{i},:))', length(tstind{i}),1);
+      K_nf = gp_cov(gp, xt(tstind{i},:), x(ind{i},:),predcf);              % n x u
+      w_n(tstind{i},:) = K_nf*p(ind{i},:);
     end
     
     Eft = K_nu*(iKuuKuf*p) - sum(K_nu.*w_bu,2) + w_n;
     
 
     if nargout > 1        
-        % Form iLaKfu again if a subset of cf's is used for making predictions
-        if ~isempty(predcf)
-            iLaKfu = zeros(size(K_fu));  % f x u
-            for i=1:length(ind)
-                iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
-            end
-        end
-        
-        kstarstar = gp_trvar(gp, xt, predcf);
-        KnuiKuu = K_nu/K_uu;
-        KufiLaKfu = K_fu'*iLaKfu;
-        QnfL = KnuiKuu*(K_fu'*L);
-        Varft1 = zeros(size(xt,1),1);
-        Varft2 = zeros(size(xt,1),1);
-        Varft3 = zeros(size(xt,1),1);
+      % Form iLaKfu again if a subset of cf's is used for making predictions
+      if ~isempty(predcf)
+        iLaKfu = zeros(size(K_fu));  % f x u
         for i=1:length(ind)
-            KubiLaKbu = K_fu(ind{i},:)'/La{i}*K_fu(ind{i},:);
-            nonblock = KufiLaKfu - KubiLaKbu;
-            Varft1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
-            
-            Knb = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);
-            Varft2(tstind{i}) = diag(Knb/La{i}*Knb');
-            
-            KnbL = Knb*L(ind{i},:);
-            QnbL = KnuiKuu(tstind{i},:)*(K_fu(ind{i},:)'*L(ind{i},:));
-            %Varft3(tstind{i}) = sum(QnfL(tstind{i},:) - QnbL + KnbL,2);
-            Varft3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
-        end        
-        Varft = kstarstar - (Varft1 + Varft2 - Varft3);
+          iLaKfu(ind{i},:) = La{i}\K_fu(ind{i},:);    
+        end
+      end
+      
+      kstarstar = gp_trvar(gp, xt, predcf);
+      KnuiKuu = K_nu/K_uu;
+      KufiLaKfu = K_fu'*iLaKfu;
+      QnfL = KnuiKuu*(K_fu'*L);
+      Varft1 = zeros(size(xt,1),1);
+      Varft2 = zeros(size(xt,1),1);
+      Varft3 = zeros(size(xt,1),1);
+      for i=1:length(ind)
+        KubiLaKbu = K_fu(ind{i},:)'/La{i}*K_fu(ind{i},:);
+        nonblock = KufiLaKfu - KubiLaKbu;
+        Varft1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
+        
+        Knb = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);
+        Varft2(tstind{i}) = diag(Knb/La{i}*Knb');
+        
+        KnbL = Knb*L(ind{i},:);
+        QnbL = KnuiKuu(tstind{i},:)*(K_fu(ind{i},:)'*L(ind{i},:));
+        %Varft3(tstind{i}) = sum(QnfL(tstind{i},:) - QnbL + KnbL,2);
+        Varft3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
+      end        
+      Varft = kstarstar - (Varft1 + Varft2 - Varft3);
     end
     
     
@@ -429,19 +424,19 @@ switch gp.type
 % $$$     Varft = diag(Knn) - diag(v'*v);
     
     if nargout > 2
-        Eyt = Eft;
-        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-        Varyt = Varft + Cnn_v - Knn_v;
-        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      Eyt = Eft;
+      [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+      Varyt = Varft + Cnn_v - Knn_v;
+      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     end
   case 'CS+FIC'
     % Here tstind = 1 if the prediction is made for the training set 
     if nargin > 5
-        if ~isempty(tstind) && length(tstind) ~= size(x,1)
-            error('tstind (if provided) has to be of same lenght as x.')
-        end
+      if ~isempty(tstind) && length(tstind) ~= size(x,1)
+        error('tstind (if provided) has to be of same lenght as x.')
+      end
     else
-        tstind = [];
+      tstind = [];
     end
     
     n = size(x,1);
@@ -460,37 +455,37 @@ switch gp.type
 
     % Loop through all covariance functions
     for i = 1:ncf        
-        % Non-CS covariances
-        if ~isfield(gp.cf{i},'cs') 
-            cf1 = [cf1 i];
-            % If used for prediction
-            if ~isempty(find(predcf==i))
-                predcf1 = [predcf1 i]; 
-            end
-        % CS-covariances
-        else
-            cf2 = [cf2 i];           
-            % If used for prediction
-            if ~isempty(find(predcf==i))
-                predcf2 = [predcf2 i]; 
-            end
+      % Non-CS covariances
+      if ~isfield(gp.cf{i},'cs') 
+        cf1 = [cf1 i];
+        % If used for prediction
+        if ~isempty(find(predcf==i))
+          predcf1 = [predcf1 i]; 
         end
+        % CS-covariances
+      else
+        cf2 = [cf2 i];           
+        % If used for prediction
+        if ~isempty(find(predcf==i))
+          predcf2 = [predcf2 i]; 
+        end
+      end
     end
     if isempty(predcf1) && isempty(predcf2)
-        predcf1 = cf1;
-        predcf2 = cf2;
+      predcf1 = cf1;
+      predcf2 = cf2;
     end
     
     % Determine the types of the covariance functions used
     % in making the prediction.
     if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
-        ptype = 1;
-        predcf2 = cf2;
+      ptype = 1;
+      predcf2 = cf2;
     elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
-        ptype = 2;
-        predcf1 = cf1;
+      ptype = 2;
+      predcf1 = cf1;
     else                                           % Both non-CS and CS covariances
-        ptype = 3;
+      ptype = 3;
     end
     
     % First evaluate needed covariance matrices
@@ -531,63 +526,63 @@ switch gp.type
     % Calculate the predictive mean according to the type of
     % covariance functions used for making the prediction
     if ptype == 1
-        Eft = K_nu*(K_uu\(K_fu'*p));
+      Eft = K_nu*(K_uu\(K_fu'*p));
     elseif ptype == 2
-        Eft = Kcs_nf*p;
+      Eft = Kcs_nf*p;
     else 
-        Eft = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
+      Eft = K_nu*(K_uu\(K_fu'*p)) + Kcs_nf*p;
     end
     
     % evaluate also Lav2 if the prediction is made for training set
     if ~isempty(tstind)
-        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        Qv_ff=sum(B.^2)';
-        Lav2 = zeros(size(Eft));
-        Lav2(tstind) = Kv_ff-Qv_ff;
+      [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf1);
+      Luu = chol(K_uu)';
+      B=Luu\(K_fu');
+      Qv_ff=sum(B.^2)';
+      Lav2 = zeros(size(Eft));
+      Lav2(tstind) = Kv_ff-Qv_ff;
     end  
 
     % Add also Lav2 if the prediction is made for training set
     % and non-CS covariance function is used for prediction
     if ~isempty(tstind) && (ptype == 1 || ptype == 3)
-        Eft(tstind) = Eft(tstind) + Lav2(tstind).*p;
+      Eft(tstind) = Eft(tstind) + Lav2(tstind).*p;
     end
     
     if nargout > 1
-        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        B2=Luu\(K_nu');
-        iLaKfu = La\K_fu;
-        
-        % Calculate the predictive variance according to the type
-        % covariance functions used for making the prediction
-        if ptype == 1 || ptype == 3                            
-            % FIC part of the covariance
-            Varft = Knn_v - sum(B2'.*(B*(La\B')*B2)',2) + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
-            % Add Lav2 if the prediction is made for the training set
-            if  ~isempty(tstind)
-                % Non-CS covariance
-                if ptype == 1
-                    Kcs_nf = sparse(tstind,1:n,Lav2(tstind),n2,n);
-                % Non-CS and CS covariances
-                else
-                    Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2(tstind),n2,n);
-                end
-                % Add Lav2 and possibly Kcs_nf
-                Varft = Varft - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ...
-                       - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);                
-            % In case of both non-CS and CS prediction covariances add 
-            % only Kcs_nf if the prediction is not done for the training set 
-            elseif ptype == 3
-                Varft = Varft - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ...
-                       - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
-            end
+      [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+      Luu = chol(K_uu)';
+      B=Luu\(K_fu');
+      B2=Luu\(K_nu');
+      iLaKfu = La\K_fu;
+      
+      % Calculate the predictive variance according to the type
+      % covariance functions used for making the prediction
+      if ptype == 1 || ptype == 3                            
+        % FIC part of the covariance
+        Varft = Knn_v - sum(B2'.*(B*(La\B')*B2)',2) + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        % Add Lav2 if the prediction is made for the training set
+        if  ~isempty(tstind)
+          % Non-CS covariance
+          if ptype == 1
+            Kcs_nf = sparse(tstind,1:n,Lav2(tstind),n2,n);
+            % Non-CS and CS covariances
+          else
+            Kcs_nf = Kcs_nf + sparse(tstind,1:n,Lav2(tstind),n2,n);
+          end
+          % Add Lav2 and possibly Kcs_nf
+          Varft = Varft - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ...
+                  - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);                
+          % In case of both non-CS and CS prediction covariances add 
+          % only Kcs_nf if the prediction is not done for the training set 
+        elseif ptype == 3
+          Varft = Varft - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ...
+                  - 2.*sum((Kcs_nf*iLaKfu).*(K_uu\K_nu')',2) + 2.*sum((Kcs_nf*L).*(L'*K_fu*(K_uu\K_nu'))' ,2);
+        end
         % Prediction with only CS covariance
-        elseif ptype == 2
-            Varft = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
-        end        
+      elseif ptype == 2
+        Varft = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
+      end        
     end
     
 % $$$     Lav_pr = Kv_ff-Qv_ff;
@@ -605,26 +600,26 @@ switch gp.type
 % $$$     Varft = V - diag(v'*v);
 
     if nargout > 2
-        Eyt = Eft;
-        Varyt = Varft + Cnn_v - Knn_v;
-        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      Eyt = Eft;
+      Varyt = Varft + Cnn_v - Knn_v;
+      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
     end
     
   case {'VAR' 'DTC' 'SOR'}
     % Check the tstind vector
     if nargin > 5
-        if ~isempty(tstind) && length(tstind) ~= size(tx,1)
-            error('tstind (if provided) has to be of same lenght as tx.')
-        end
+      if ~isempty(tstind) && length(tstind) ~= size(tx,1)
+        error('tstind (if provided) has to be of same lenght as tx.')
+      end
     else
-        tstind = [];
+      tstind = [];
     end
     
     u = gp.X_u;
     m = size(u,1);
     % Turn the inducing vector on right direction
     if size(u,2) ~= size(x,2)
-        u=u';
+      u=u';
     end
     % Calculate some help matrices
     [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
@@ -641,8 +636,9 @@ switch gp.type
     Lav = Cv_ff-Kv_ff;   % 1 x f, Vector of diagonal elements
                          % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
     iLaKfu = zeros(size(K_fu));  % f x u,
-    for i=1:length(x)
-        iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+    n=size(x,1)
+    for i=1:n
+      iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
     end
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;
@@ -652,43 +648,43 @@ switch gp.type
 
     % Prediction matrices formed with only subset of cf's.
     if ~isempty(predcf)
-        K_fu = gp_cov(gp, x, u, predcf);   % f x u
-        K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
-        K_nu = gp_cov(gp,xt,u,predcf);       % n x u
+      K_fu = gp_cov(gp, x, u, predcf);   % f x u
+      K_uu = gp_trcov(gp, u, predcf);     % u x u, noiseles covariance K_uu
+      K_nu = gp_cov(gp,xt,u,predcf);       % n x u
     end
     Eft = K_nu*(K_uu\(K_fu'*p));
 
 
     if nargout > 1
-        [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-        Luu = chol(K_uu)';
-        B=Luu\(K_fu');
-        B2=Luu\(K_nu');
-        
-        Varftr = sum(B2'.*(B*bsxfun(@ldivide,Lav,B')*B2)',2) - sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
-        switch gp.type
-          case {'VAR' 'DTC'}
-            Varft = Knn_v - Varftr;
-          case  'SOR'
-            Varft = sum(B2.^2,1)' - Varftr;
-        end
+      [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
+      Luu = chol(K_uu)';
+      B=Luu\(K_fu');
+      B2=Luu\(K_nu');
+      
+      Varftr = sum(B2'.*(B*bsxfun(@ldivide,Lav,B')*B2)',2) - sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+      switch gp.type
+        case {'VAR' 'DTC'}
+          Varft = Knn_v - Varftr;
+        case  'SOR'
+          Varft = sum(B2.^2,1)' - Varftr;
+      end
 
     end
     if nargout > 2
-        Eyt = Eft;
-        switch gp.type
-          case {'VAR' 'DTC'}
-            Varyt = Varft + Cnn_v - Knn_v;
-          case 'SOR'
-            Varyt = Varft + Cnn_v - sum(B2.^2,1)';
-        end
-        lpyt = norm_lpdf(y, Eyt, sqrt(Varyt));
+      Eyt = Eft;
+      switch gp.type
+        case {'VAR' 'DTC'}
+          Varyt = Varft + Cnn_v - Knn_v;
+        case 'SOR'
+          Varyt = Varft + Cnn_v - sum(B2.^2,1)';
+      end
+      lpyt = norm_lpdf(y, Eyt, sqrt(Varyt));
     end  
     
   case 'SSGP'
     if nargin > 4
-        error(['Prediction with a subset of original ' ...
-               'covariance functions not currently implemented with SSGP']);
+      error(['Prediction with a subset of original ' ...
+             'covariance functions not currently implemented with SSGP']);
     end
 
     [Phi_f, S] = gp_trcov(gp, x);
@@ -701,9 +697,12 @@ switch gp.type
 
     
     if nargout > 1
-        Varft = sum(Phi_a/L',2)*S(1,1);
+      Varft = sum(Phi_a/L',2)*S(1,1);
     end
     if nargout > 2
-        error('gp_pred with three output arguments is not implemented for SSGP!')
+      error('gp_pred with three output arguments is not implemented for SSGP!')
     end
+end
+if any(Varft<0)
+  warning('foo')
 end

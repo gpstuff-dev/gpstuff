@@ -16,12 +16,12 @@ function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
 %
 %    OPTIONS is optional parameter-value pair
 %      z         - optional observed quantity in triplet (x_i,y_i,z_i)
-%                  Some likelihoods may use this. For example, in case of 
-%                  Poisson likelihood we have z_i=E_i, that is, expected value 
-%                  for ith case. 
+%                  Some likelihoods may use this. For example, in
+%                  case of Poisson likelihood we have z_i=E_i, that
+%                  is, expected value for ith case.
 %      nsamp     - determines the number of samples used (default=500).
-%      prctiles  - determines percentiles that are computed from 0 to 100
-%                  (default=[2.5 97.5]).
+%      prctiles  - determines percentiles that are computed from 
+%                  0 to 100 (default=[2.5 97.5]).
 %
 %  See also
 %    GP_PRED
@@ -61,8 +61,8 @@ stream = RandStream('mrg32k3a');
 prevstream=RandStream.setDefaultStream(stream);
 
 % loop through the input variables
-for k1=1:nin
-    
+for k1=1:1 %nin
+  fprintf('k1=%d\n',k1)
     %- Compute the weight matrix based on Mahalanobis distances:
     x_=x; x_(:,k1)=[];
     covx_=covx; covx_(:,k1)=[]; covx_(k1,:)=[];

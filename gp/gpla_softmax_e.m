@@ -118,7 +118,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
       % re-evaluate the Laplace approximation
       gp=gp_unpak(gp, w);
       ncf = length(gp.cf);
-      n = length(x);
+      n = size(x,1);
       p = [];
 
       % Initialize latent values
