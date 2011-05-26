@@ -35,12 +35,13 @@ else
   if nn>1 && mm>1
     error('XX must be a vector');
   end
-  xx=xx(:);
 end
+xx=xx(:);
 m=length(x)/2;
-xd=bsxfun(@minus,x(1:m),x(m+1:end)');
+rp=randperm(n);
+xd=bsxfun(@minus,x(rp(1:m)),x(rp(m+1:end))');
 sh=fminbnd(@(s) err(s,xd),xab/n*4,xab,optimset('TolX',xab/n*4));
-p=mean(normpdf(bsxfun(@minus,x(1:m),xx'),0,sh));
+p=mean(normpdf(bsxfun(@minus,x(rp(1:m)),xx'),0,sh));
 
 function e=err(s,xd)
 e=-sum(log(sum(normpdf(xd,0,s))));
