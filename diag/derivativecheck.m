@@ -1,4 +1,4 @@
-function delta  = derivativecheck(w, fun)
+function delta  = derivativecheck(w, fun, epsilon)
 %DERIVATIVECHECK Compare user-supplied derivatives to
 %                finite-differencing derivatives.
 %
@@ -14,19 +14,24 @@ function delta  = derivativecheck(w, fun)
 %    step size 1.0e-6 is used, and the results for both gradient
 %    function and finite difference approximation are printed.
 %
+%    DERIVATIVECHECK(X, FUN, EPSILON) computes the finite
+%    difference gradients using user given step size EPSILON.
+%
 %    DELTA=DERIVATIVECHECK(X, FUN) returns the delta between the
 %    user-supllied and finite difference derivatives.
 %
 
 % Copyright (c) Christopher M Bishop, Ian T Nabney (1996, 1997)
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010-2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % Reasonable value for step size
-epsilon = 1.0e-5;
+if nargin<3
+  epsilon = 1.0e-5;
+end
 
 % Treat
 nparams = length(w);
