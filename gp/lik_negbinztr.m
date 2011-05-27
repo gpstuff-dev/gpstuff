@@ -237,10 +237,9 @@ function llg = lik_negbinztr_llg(lik, y, f, param, z)
     case 'param'      
       % Derivative using the psi function
       llg = sum(1 + log(r./(r+mu)) - (r+y)./(r+mu) + psi(r + y) - psi(r));
-      % add gradient of the normalization due to truncation
+      % add gradient of the normalization due to the truncation
       lp0=r.*(log(r) - log(r+mu));
       llg=llg-sum(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
-      
       % correction for the log transformation
       llg = llg.*lik.disper;
       
@@ -256,7 +255,7 @@ function llg = lik_negbinztr_llg(lik, y, f, param, z)
 % $$$             llg = llg.*lik.disper;
     case 'latent'
       llg = y - (r+y).*mu./(r+mu);
-      % add gradient of the normalization due to truncation
+      % add gradient of the normalization due to the truncation
       lp0=r.*(log(r) - log(r+mu));
       llg = llg -(1./(1-exp(-lp0)).*-r./(mu + r).*mu);
   end
@@ -291,19 +290,18 @@ function llg2 = lik_negbinztr_llg2(lik, y, f, param, z)
       
     case 'latent'
       llg2 = - mu.*(r.^2 + y.*r)./(r+mu).^2;
-      % add gradient of the normalization due to truncation
+      % add gradient of the normalization due to the truncation
       lp0=r.*(log(r) - log(r+mu));
       llg2=llg2+...
            (r.^2 + r.^2.*exp(-lp0).*(mu-1))./((mu + r).^2.*(exp(-lp0)-1).^2).*mu;
     case 'latent+param'
       llg2 = (y.*mu - mu.^2)./(r+mu).^2;
-      % add gradient of the normalization due to truncation
+      % add gradient of the normalization due to the truncation
       lp0=r.*(log(r) - log(r+mu));
-      llg2=llg2+exp(lp0)./(exp(lp0) - 1).^2 .* (log(r) - log(mu + r) - r.*(1./(mu + r) - 1./r)) .* (-r./(mu + r)) -1./(1 - exp(-lp0)).*-mu./(mu + r).^2;
+      llg2=llg2+(exp(lp0)./(exp(lp0) - 1).^2 .* (log(r) - log(mu + r) - r.*(1./(mu + r) - 1./r)) .* (-r./(mu + r)) -1./(1 - exp(-lp0)).*-mu./(mu + r).^2).*mu;
       
       % correction due to the log transformation
       llg2 = llg2.*lik.disper;
-      
       
   end
 end    
@@ -336,16 +334,17 @@ function llg3 = lik_negbinztr_llg3(lik, y, f, param, z)
       
     case 'latent'
       llg3 = - mu.*(r.^2 + y.*r)./(r + mu).^2 + 2.*mu.^2.*(r.^2 + y.*r)./(r + mu).^3;
-      % add gradient of the normalization due to truncation
+      % add gradient of the normalization due to the truncation
       lp0=r.*(log(r) - log(r+mu));
       llg3=llg3+ ...
            (exp(lp0).*(r.^2.*(r + r.*exp(2.*lp0)) + mu.^2.*r.^3 - mu.*r.^2.*(3.*r + exp(2.*lp0) + 1)) + exp(2.*lp0).*(mu.^2.*r.^3 - 2.*r.^3 + mu.*r.^2.*(3.*r + 2)))./((exp(lp0) - 1).^3.*(mu + r).^3).*mu;
     case 'latent2+param'
       llg3 = mu.*(y.*r - 2.*r.*mu - mu.*y)./(r+mu).^3;
-      % add gradient of the normalization due to truncation
+      % add gradient of the normalization due to the truncation
       lp0=r.*(log(r) - log(r+mu));
+      ip0=exp(-lp0);
       llg3=llg3+ ...
-           (mu.*(2.*r + (2.*r.*(mu - 1))./exp(lp0) + (r.^2.*(mu - 1).*(log(mu + r) - log(r) + r./(mu + r) - 1))./exp(lp0)))./((mu + r).^2.*(1./exp(lp0) - 1).^2) - (2.*mu.*r.^2.*(mu + exp(lp0) - 1))./(exp(lp0).*(mu + r).^3.*(1./exp(lp0) - 1).^2) - (2.*mu.*r.^2.*(mu + exp(lp0) - 1).*(log(mu + r) - log(r) + r./(mu + r) - 1))./(exp(2.*lp0).*(mu + r).^2.*(1./exp(lp0) - 1).^3);
+           (mu.*(2.*r + 2.*r.*ip0.*(mu - 1) + r.^2.*ip0.*(mu - 1).*(log(mu + r) - log(r) + r./(mu + r) - 1)))./((mu + r).^2.*(ip0 - 1).^2) - (2.*mu.*(r.^2 + r.^2.*ip0.*(mu - 1)))./((mu + r).^3.*(ip0 - 1).^2) - (2.*mu.*ip0.*(r.^2 + r.^2.*ip0.*(mu - 1)).*(log(mu + r) - log(r) + r./(mu + r) - 1))./((mu + r).^2.*(ip0 - 1).^3);
       % correction due to the log transformation
       llg3 = llg3.*lik.disper;
   end

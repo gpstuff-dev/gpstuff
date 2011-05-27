@@ -318,27 +318,36 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               
               % initialize to observations
               %f=y;
-              
-              nu=gp.lik.nu;
-              sigma2=gp.lik.sigma2;
-              Wmax=(nu+1)/nu/sigma2;
+             
+              switch gp.lik.type
+                % should be handled inside lik_*
+                case 'Student-t'
+                  nu=gp.lik.nu;
+                  sigma2=gp.lik.sigma2;
+                  Wmax=(nu+1)/nu/sigma2;
+                case 'Negbinztr'
+                  r=gp.lik.disper;
+                  Wmax=1./((1+r)./(1*r));
+                otherwise
+                  Wmax=100;
+              end
               Wlim=0;
               
               tol = 1e-10;
-              W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent');
-              dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent');
-              lp = -(f'*(K\f))/2 +feval(gp.lik.fh.ll, gp.lik, y, f);
+              W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+              dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+              lp = -(f'*(K\f))/2 +gp.lik.fh.ll(gp.lik, y, f, z);
               lp_old = -Inf;
               f_old = f+1;
               ge = Inf; %max(abs(a-dlp));
               
               iter=0;
               % begin Newton's iterations
-              while (lp - lp_old > tol || max(abs(f-f_old)) > tol) && iter < 40
+              while (lp - lp_old > tol || max(abs(f-f_old)) > tol) && iter < 400
                 iter=iter+1;
                 
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent');
-                dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent');
+                W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+                dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
                 
                 W(W<Wlim)=Wlim;
                 sW = sqrt(W);
@@ -360,7 +369,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 end
                 
                 f_new = K*a;
-                lp_new = -(a'*f_new)/2 + feval(gp.lik.fh.ll, gp.lik, y, f_new);
+                lp_new = -(a'*f_new)/2 + gp.lik.fh.ll(gp.lik, y, f_new, z);
                 ge_new=max(abs(a-dlp));
                 
                 d=lp_new-lp;
@@ -379,12 +388,12 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   
                 end
                 
-                if Wlim>Wmax*0.5
+                if Wlim>Wmax
                   %fprintf('\n%3d, p(f)=%.12f, max|a-g|=%.12f, %.3f \n',i1,lp,ge,Wlim)
                   break
                 end
-                
               end
+
               % --------------------------------------------------------------------------------
               % find the posterior mode of latent variables with likelihood specific algorithm
               % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
@@ -441,7 +450,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               warning('gpla_e: 1./Sigma(i,i) + W(i) < 0')
               
               ind = 1:i-1;
-              mu = K(i,ind)*feval(gp.lik.fh.llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+              if isempty(z)
+                mu = K(i,ind)*feval(gp.lik.fh.llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+              else
+                mu = K(i,ind)*feval(gp.lik.fh.llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z(I(ind)));
+              end
               upfact = feval(gp.lik.fh.upfact, gp, y(I(i)), mu, ll);
             end
             if upfact > 0
@@ -582,7 +595,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 warning('gpla_e: 1 + W(i).*ll < 0')
                 
                 ind = 1:i-1;
-                mu = K(i,ind)*feval(gp.lik.fh.llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+                if isempty(z)
+                  mu = K(i,ind)*feval(gp.lik.fh.llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+                else
+                  mu = K(i,ind)*feval(gp.lik.fh.llg, gp.lik, y(I(ind)), f(I(ind)), 'latent', z(I(ind)));
+                end
                 upfact = feval(gp.lik.fh.upfact, gp, y(I(i)), mu, ll);
                 
   % $$$                                 W2 = -1./(ll+1e-3);
