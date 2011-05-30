@@ -473,7 +473,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       trpreds.Varyt=Varyt;
     end
 
-    lpd_tr = mean(log(mean(exp(lpyt,2))));
+    lpd_tr = mean(log(mean(exp(lpyt),2)));
     rmse_tr = sqrt(mean((mean(Eyt,2) - y).^2));
     abs_tr = mean(abs(mean(Eyt,2) - y));
 
