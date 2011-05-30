@@ -298,14 +298,18 @@ function recmf = gpmf_recappend(recmf, ri, gpmf)
   % record magnSigma2
   if ~isempty(gpmf.b)
     recmf.b(ri,:)=gpmf.b;
-    recmf.p.b = feval(gpp.b.fh.recappend, recmf.p.b, ri, gpmf.p.b);
+    if ~isempty(recmf.p.b)
+      recmf.p.b = feval(gpp.b.fh.recappend, recmf.p.b, ri, gpmf.p.b);
+    end
   elseif ri==1
     recmf.b=[];
   end
   
   if ~isempty(gpmf.B)
     recmf.B(ri,:)=gpmf.B;
-    recmf.p.B = feval(gpp.B.fh.recappend, recmf.p.B, ri, gpmf.p.B);
+    if ~isempty(recmf.p.B)
+      recmf.p.B = feval(gpp.B.fh.recappend, recmf.p.B, ri, gpmf.p.B);
+    end
   elseif ri==1
     recmf.B=[];
   end
