@@ -90,54 +90,52 @@ switch gp.type
       if issparse(C)            % compact support covariances are in use
         [LD,notpositivedefinite] = ldlchol(C);
         if notpositivedefinite
-          % instead of stopping to chol error, return NaN
-          edata = NaN;
-        else
-          edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
+          set_output_for_notpositivedefinite()
+          return
         end
+        edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
       else
         [L,notpositivedefinite] = chol(C,'lower');
         if notpositivedefinite
-          % instead of stopping to chol error, return NaN
-          edata = NaN;
-        else
-          b=L\y;
-          edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+          set_output_for_notpositivedefinite()
+          return
         end
+        b=L\y;
+        edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
       end
     else
       [H,b,B]=mean_prep(gp,x,[]);                   
       if isempty(C)  
-        notpositivedefinite=0;
         L=1;
         C=0;
         logK=0;
         KH=H';
       elseif issparse(C)  
         [L,notpositivedefinite] = ldlchol(C);
-        if ~notpositivedefinite
-          logK = 0.5*sum(log(diag(L)));
-          KH = L'\(L\H');
+        if notpositivedefinite
+          set_output_for_notpositivedefinite()
+          return
         end
+        logK = 0.5*sum(log(diag(L)));
+        KH = L'\(L\H');
       else
         [L,notpositivedefinite] = chol(C,'lower');
-        if ~notpositivedefinite
-          L = chol(C,'lower');
-          logK = sum(log(diag(L)));
-          KH = L'\(L\H');
+        if notpositivedefinite
+          set_output_for_notpositivedefinite()
+          return
         end
+        logK = sum(log(diag(L)));
+        KH = L'\(L\H');
       end
       
-      if notpositivedefinite
-        edata=NaN;
-      else
-        A = B\eye(size(B)) + H*KH;
-        M = H'*b-y;
-        N = C + H'*B*H;
-        MNM = M'*(N\M);
-
-        edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
-      end
+      
+      A = B\eye(size(B)) + H*KH;
+      M = H'*b-y;
+      N = C + H'*B*H;
+      MNM = M'*(N\M);
+      
+      edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+      
     end
     
     % ============================================================
@@ -154,7 +152,11 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);          % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu,'lower');
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -175,7 +177,11 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A,'upper');
+    [A, notpositivedefinite] = chol(A,'upper');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     b = (y'*iLaKfu)/A;
@@ -192,7 +198,11 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);    % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-    Luu = chol(K_uu,'lower');
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
 
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -214,7 +224,11 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A,'lower');
+    [A, notpositivedefinite] = chol(A,'lower');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     b = (y'*iLaKfu)*inv(A)';
@@ -249,7 +263,11 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);    % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-    Luu = chol(K_uu,'lower');
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
 
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -263,7 +281,11 @@ switch gp.type
     La = sparse(1:n,1:n,Lav,n,n) + K_cs;
     gp.cf = cf_orig;     % Set the original covariance functions in the GP structure
 
-    LD = ldlchol(La);
+    [LD, notpositivedefinite] = ldlchol(La);
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     
     %        iLaKfu = La\K_fu;
     iLaKfu = ldlsolve(LD,K_fu);
@@ -275,7 +297,11 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A,'upper');
+    [A, notpositivedefinite] = chol(A,'upper');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     %b = (y'*iLaKfu)*inv(A)';
@@ -298,7 +324,11 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % n x m
     K_uu = gp_trcov(gp, u);          % m x m, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu';
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -319,7 +349,11 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;     % Ensure symmetry
-    A = chol(A);
+    [A, notpositivedefinite] = chol(A);
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     % The actual error evaluation
     % 0.5*log(det(K)) = sum(log(diag(L))), where L = chol(K). NOTE! chol(K) is upper triangular
     b = (y'*iLaKfu)/A;
@@ -345,7 +379,11 @@ switch gp.type
     m = size(Phi,2);
     
     A = eye(m,m) + Phi'*(S\Phi);
-    A = chol(A,'lower');
+    [A, notpositivedefinite] = chol(A,'lower');
+    if notpositivedefinite
+      set_output_for_notpositivedefinite()
+      return
+    end
     
     b = (y'/S*Phi)/A';
     edata = 0.5*n.*log(2*pi) + 0.5*sum(log(diag(S))) + sum(log(diag(A))) + 0.5*y'*(S\y) - 0.5*b*b';
@@ -392,3 +430,13 @@ if ~isempty(strfind(gp.infer_params, 'inducing'))
 end
 
 e = edata + eprior;
+
+function [edata, eprior, e] = set_output_for_notpositivedefinite()
+  %instead of stopping to chol error, return NaN
+  edata = NaN;
+  eprior= NaN;
+  e = NaN;
+end
+
+end
+

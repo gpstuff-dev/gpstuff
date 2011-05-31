@@ -142,7 +142,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             if ~isempty(z)
               z = z(p,:);
             end
-            LD = ldlchol(K);
+            [LD, notpositivedefinite] = ldlchol(K);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
           else
             % LD = chol(K);
           end
@@ -224,7 +228,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
                   Dc=sqrt(pi2(:,i1));
                   Lc=(Dc*Dc').*K;
                   Lc(1:n+1:end)=Lc(1:n+1:end)+1;
-                  Lc=chol(Lc);
+                  [Lc, notpositivedefinite]=chol(Lc);
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
+                  end
                   L(:,:,i1)=Lc;
                   
                   Ec=Lc'\diag(Dc);
@@ -233,7 +241,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
                   E(:,:,i1)=Ec;
                 end
                 
-                M=chol(E_tmp);
+                [M, notpositivedefinite]=chol(E_tmp);
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
+                end
                 
                 pif=sum(pi2.*f2,2);
                 
@@ -383,7 +395,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             Dc=sqrt(pi2(:,i1));
             Lc=(Dc*Dc').*K;
             Lc(1:n+1:end)=Lc(1:n+1:end)+1;
-            Lc=chol(Lc);
+            [Lc, notpositivedefinite]=chol(Lc);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             L(:,:,i1)=Lc;
             
             Ec=Lc'\diag(Dc);
@@ -391,7 +407,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             E_tmp=E_tmp+Ec;
             E(:,:,i1)=Ec;
           end
-          M=chol(E_tmp);
+          [M,notpositivedefinite]=chol(E_tmp);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           
           det_diag=0;
           det_mat_sum = zeros(n);
@@ -403,7 +423,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
           end
           
           %det_mat_sum=(det_mat_sum+det_mat_sum')./2;
-          det_mat=chol(eye(n)-det_mat_sum);
+          [det_mat, notpositivedefinite]=chol(eye(n)-det_mat_sum);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           det_term=sum(log(diag(det_mat)))+det_diag;
           
           
@@ -469,4 +493,28 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
     assert(isreal(eprior))
 
   end
+
+function [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite()
+  % Instead of stopping to chol error, return NaN
+  edata=NaN;
+  e=NaN;
+  eprior=NaN;
+  f=NaN;
+  L=NaN;
+  a=NaN;
+  E = NaN;
+  M = NaN;
+  p=NaN;
+  ch.w = w;
+  ch.e = e;
+  ch.edata = edata;
+  ch.eprior = eprior;
+  ch.f = f;
+  ch.L = L;
+  ch.M = M;
+  ch.E = E;
+  ch.a = a;
+  ch.p=p;
+  ch.datahash=datahash;
+end
 end

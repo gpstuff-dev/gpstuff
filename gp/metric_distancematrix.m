@@ -13,7 +13,6 @@ function metric = metric_distancematrix(varargin)
 %
 %	The fields and (default values) in METRIC_distancematrix are:
 %	  type        = 'metric_distancematrix'
-%	  nin         = Number of inputs in the data. (NIN)
 %	  components  = Cell array of vectors specifying which inputs are grouped together
 %                       with a same scaling parameter. 
 %                       For example, the component specification {[1 2] [3]} means that
@@ -26,21 +25,7 @@ function metric = metric_distancematrix(varargin)
 %                        data, from which smaller parts are chosen via indices.
 %                        NEEDS to be preset!
 %    lengthScales_prior  = Prior structure for metric parameters. 
-%                       (e.g. p.params.)
-%    fh.pak         = function handle to pack function
-%                       (@metric_distancematrix_pak)
-%    fh.unpak       = function handle to unpack function
-%                       (@metric_distancematrix_unpak)
-%    fh.e           = function handle to energy function
-%                       (@metric_distancematrix_e)
-%    fh.ghyper      = function handle to gradient of energy with respect to hyperparameters
-%                       (@metric_distancematrix_ghyper)
-%    fh.ginput      = function handle to gradient of function with respect to inducing inputs
-%                       (@metric_distancematrix_ginput)
-%    fh.dist        = function handle to distance function of the metric.
-%                       (@metric_distancematrix_distance)
-%    fh.recappend   = function handle to append the record function 
-%                          (metric_distancematrix_recappend)
+%                       (e.g. p.params.) [prior_unif]
 %
 %	METRIC = METRIC_distancematrix(METRIC, 'FIELD1', VALUE1, 'FIELD2', VALUE2, ...)
 %       Set the values of fields FIELD1... to the values VALUE1... in METRIC.
@@ -55,17 +40,17 @@ function metric = metric_distancematrix(varargin)
     ip=inputParser;
     ip.FunctionName = 'METRIC_DISTANCEMATRIX';
     ip.addOptional('metric', [], @isstruct);
-    ip.addParamValue('nin', [], @(x) isreal(x));
+%     ip.addParamValue('nin', [], @(x) isreal(x));
     ip.addParamValue('components',[], @(x) isempty(x) || iscell(x));
     ip.addParamValue('lengthScales',[] , @(x) isvector(x));
-    ip.addParamValue('Kstarstar',[], @(x) ismatrix(x) && all(x>0));
+    ip.addParamValue('Kstarstar',[], @(x) ismatrix(x));
     ip.addParamValue('lengthScales_prior',prior_unif, ...
                    @(x) isstruct(x) || isempty(x));
-    ip.addParamValue('Kff', [], @(x) ismatrix(x));
-    ip.addParamValue('Kfu', [], @(x) ismatrix(x));
-    ip.addParamValue('Kffstar', [], @(x) ismatrix(x));
-    ip.addParamValue('Kfstaru', [], @(x) ismatrix(x));
-    ip.addParamValue('X_u', [], @(x) ismatrix(x));
+%     ip.addParamValue('Kff', [], @(x) ismatrix(x));
+%     ip.addParamValue('Kfu', [], @(x) ismatrix(x));
+%     ip.addParamValue('Kffstar', [], @(x) ismatrix(x));
+%     ip.addParamValue('Kfstaru', [], @(x) ismatrix(x));
+%     ip.addParamValue('X_u', [], @(x) ismatrix(x));
     ip.parse(varargin{:});
     metric=ip.Results.metric;
     
@@ -84,48 +69,40 @@ function metric = metric_distancematrix(varargin)
         % Type
         metric.type = 'metric_distancematrix';
     end
-    
-    if init || ~ismember('nin', ip.UsingDefaults)
-        metric.nin = ip.Results.nin;
-    end
-    
     if init || ~ismember('components', ip.UsingDefaults)
         metric.components = ip.Results.components;
     end
-    
-    if init || ~ismember('lengthScales', ip.UsingDefaults)
-        metric.lengthScales = ones(1,length(metric.components));
-    end
-    
-    if init || ~ismember('Kff', ip.UsingDefaults)
-        metric.Kff = ip.Results.Kff;
-    end
-    
-    if init || ~ismember('Kffstar', ip.UsingDefaults)
-        metric.Kffstar=ip.Results.Kffstar;
-    end
-    
     if init || ~ismember('Kstarstar', ip.UsingDefaults)
-        metric.Kstarstar=[];
+        metric.Kstarstar=ip.Results.Kstarstar;
     end
     
-    if init || ~ismember('X_u', ip.UsingDefaults)
-        metric.X_u=ip.Results.X_u;
-    end
-    
-    if init || ~ismember('Kfu', ip.UsingDefaults)
-        metric.Kfu=ip.Results.Kfu;
-    end
-    
-    if init || ~ismember('Kfstaru', ip.UsingDefaults)
-        metric.Kfstaru=ip.Results.Kfstaru;
-    end
+%     if init || ~ismember('nin', ip.UsingDefaults)
+%         metric.nin = ip.Results.nin;
+%     end      
+%     if init || ~ismember('Kff', ip.UsingDefaults)
+%         metric.Kff = ip.Results.Kff;
+%     end
+%     if init || ~ismember('Kffstar', ip.UsingDefaults)
+%         metric.Kffstar=ip.Results.Kffstar;
+%     end
+%     if init || ~ismember('X_u', ip.UsingDefaults)
+%         metric.X_u=ip.Results.X_u;
+%     end
+%     if init || ~ismember('Kfu', ip.UsingDefaults)
+%         metric.Kfu=ip.Results.Kfu;
+%     end
+%     if init || ~ismember('Kfstaru', ip.UsingDefaults)
+%         metric.Kfstaru=ip.Results.Kfstaru;
+%     end
     
     if init || ~ismember('lengthScales', ip.UsingDefaults)
 %         if size(metric.lengthScales) ~= size(ip.Results.lengthScales)
 %             error('Incorrect number of parameters given')
 %         end
         metric.lengthScales=ip.Results.lengthScales;
+        if isempty(metric.lengthScales)
+          metric.lengthScales = repmat(1,1,length(metric.components));
+        end
     end
         
     if init || ~ismember('lengthScales_prior', ip.UsingDefaults)
@@ -356,7 +333,7 @@ function metric = metric_distancematrix(varargin)
 %                 end
 %             else
                  for i=1:m 
-                     gdist{i}=-s.*sqrt(squeeze(metric.Kstarstar(x1,x1)));
+                     gdist{i}=-s.*(squeeze(metric.Kstarstar(x1,x1)));
                  end
 %                 
 %            end
@@ -385,7 +362,7 @@ function metric = metric_distancematrix(varargin)
 %                 elseif size(metric.Kff,1)==n2 && size(metric.Kstarstar,1)==n1
                      x2=round(x2);
                      for i=1:m
-                         gdist{i}=-s.*sqrt(squeeze(metric.Kstarstar(x1,x2)));
+                         gdist{i}=-s.*(squeeze(metric.Kstarstar(x1,x2)));
                      end
 %                     
 %                 end
@@ -499,14 +476,16 @@ function metric = metric_distancematrix(varargin)
 %         if m1~=m2
 %             error('the number of columns of X1 and X2 has to be same')
 %         end
-        [m1,n1]=size(x1);
-        m1=max(m1,n1);
-        dist=0;
+
+  
+%         [m1,n1]=size(x1);
+%         m1=max(m1,n1);
+%         dist=0;
         s = 1./metric.lengthScales;
         x1=round(x1);
         if (nargin == 3)
-            [m2,n2]=size(x2);
-            m2=max(m2,n2);
+%             [m2,n2]=size(x2);
+%             m2=max(m2,n2);
             x2=round(x2);
 %             if m2~=n2
 %                 if n2==1
@@ -518,9 +497,9 @@ function metric = metric_distancematrix(varargin)
 %                 dist=s.*sqrt(squeeze(x1matrix))';
 %             end
 
-            dist=s.*sqrt(squeeze(metric.Kstarstar(x1,x2)));
+            dist=s.*(squeeze(metric.Kstarstar(x1,x2)));
 %              
-%              if size(metric.Kff,1)==m1 && length(metric.X_u)==m2
+%              if size(metric.,1)==m1 && length(metric.X_u)==m2
 %                  dist=s.*sqrt(squeeze(metric.Kff(:,x2matrix)));
 %              elseif size(metric.Kff,1)==m2 && length(metric.X_u)==m1
 %                  dist=s.*sqrt(squeeze(metric.Kff(x1matrix,:)));
@@ -543,7 +522,7 @@ function metric = metric_distancematrix(varargin)
 %             elseif size(metric.Kff,1)==m1
 %                 dist=s.*sqrt(squeeze(metric.Kff));
 %             else
-                dist=s.*sqrt(squeeze(metric.Kstarstar(x1,x1)));
+                dist=s.*(squeeze(metric.Kstarstar(x1,x1)));
 %             end
         end
 
@@ -680,7 +659,7 @@ function metric = metric_distancematrix(varargin)
     % Initialize record
         if nargin == 2
             recmetric.type = 'metric_distancematrix';
-            recmetric.nin = ri;
+%             recmetric.nin = ri;
             metric.components = recmetric.components;
             
             % Initialize parameters

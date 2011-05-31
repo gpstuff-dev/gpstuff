@@ -49,27 +49,23 @@ switch gp.type
     % ============================================================
   case 'FULL'   % A full GP
     [K, C] = gp_trcov(gp, x);
-    notpositivedefinite = 0;
-
     if issparse(C)
       iC = spinv(C); % evaluate the sparse inverse
       [LD, notpositivedefinite] = ldlchol(C);
-      if ~notpositivedefinite
-          b = ldlsolve(LD,y);
-          myy_i = y - b./full(diag(iC));
-          sigma2_i = 1./full(diag(iC));
+      if notpositivedefinite
+        set_output_for_notpositivedefinite()
+        return
       end
+      b = ldlsolve(LD,y);
+      myy_i = y - b./full(diag(iC));
+      sigma2_i = 1./full(diag(iC));
     else
       iC= inv(C);    % evaluate the full inverse
       b=C\y;
       myy_i = y - b./diag(iC);
       sigma2_i = 1./diag(iC);
     end
-    if notpositivedefinite
-        eloo = NaN;
-    else
-        eloo = 0.5 * (log(2*pi) + sum(log(sigma2_i) + (y-myy_i).^2./sigma2_i)./n);
-    end
+    eloo = 0.5 * (log(2*pi) + sum(log(sigma2_i) + (y-myy_i).^2./sigma2_i)./n);
     
     % ============================================================
     % FIC
@@ -97,6 +93,10 @@ switch gp.type
     
   otherwise
     error('Unknown type of Gaussian process!')
+end
+function eloo = set_output_for_notpositivedefinite()
+  % Instead of stopping to chol error, return NaN
+  eloo = NaN;
 end
 
 end

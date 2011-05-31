@@ -50,9 +50,11 @@ function waic = gp_waic(gp, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
+  ip.addOptional('method', '1', @(x) ismember(x,{'1','2'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
+  method=ip.Results.method;
   % pass these forward
   options=struct();
   z = ip.Results.z;
@@ -106,6 +108,7 @@ function waic = gp_waic(gp, x, y, varargin)
         [~, ~, lpyt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
         BtL = -1/tn * sum(lpyt);
         
+        
         nsamples = length(gp.edata);
         if strcmp(gp.type, 'PIC')
           tr_index = gp.tr_index;
@@ -132,37 +135,71 @@ function waic = gp_waic(gp, x, y, varargin)
           end
         end
         
-        if isfield(gp.lik.fh,'trcov')
-          % gaussian likelihood
-          for i=1:tn
-            fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
-            fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-              .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))').^2), fmin, fmax);
-            Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-              .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
-          end
-          Elog2 = Elog2.^2;
-          Vn = sum(Elog-Elog2);
-          waic = BtL + Vn/tn;
-        else
-          % non-gaussian likelihood
-          for i=1:tn
-            if ~isempty(z)
-              z1 = z(i);
-            else
-              z1 = [];
+        if strcmp(method,'1')
+          % Evaluate WAIC with variance form
+          
+          if isfield(gp.lik.fh,'trcov')
+            % gaussian likelihood
+            for i=1:tn
+              fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
+              fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
+              Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))').^2), fmin, fmax);
+              Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
             end
-            fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
-            fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-              .*llvec(gp_array, y(i), f, z1).^2), fmin, fmax);
-            Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-              .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            Elog2 = Elog2.^2;
+            Vn = sum(Elog-Elog2);
+            waic = BtL + Vn/tn;
+          else
+            % non-gaussian likelihood
+            for i=1:tn
+              if ~isempty(z)
+                z1 = z(i);
+              else
+                z1 = [];
+              end
+              fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
+              fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
+              Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*llvec(gp_array, y(i), f, z1).^2), fmin, fmax);
+              Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            end
+            Elog2 = Elog2.^2;
+            Vn = sum(Elog-Elog2);
+            waic = BtL + Vn/tn;
           end
-          Elog2 = Elog2.^2;
-          Vn = sum(Elog-Elog2);
-          waic = BtL + Vn/tn;
+          
+        else
+          % Evaluate WAIC with expected value form using Gibs trainig loss
+          
+          if isfield(gp.lik.fh,'trcov')
+            % gaussian likelihood
+            for i=1:tn
+              fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
+              fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
+              GtL(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
+            end
+            GtL = -1/tn*sum(GtL);
+            waic = 2*GtL-BtL;
+          else
+            % non-gaussian likelihood
+            for i=1:tn
+              if ~isempty(z)
+                z1 = z(i);
+              else
+                z1 = [];
+              end
+              fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
+              fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
+              GtL(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            end
+            GtL = -1/tn * sum(GtL);
+            waic = 2* GtL - BtL;
+          end
         end
         
           
@@ -170,26 +207,44 @@ function waic = gp_waic(gp, x, y, varargin)
         % A single GP solution -> focus on latent variables
         [Ef, Varf, lpyt] = feval(fh_pred, gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         BtL = - 1/tn*sum(lpyt);              % Bayes training loss.
+        
 %           n = 5000;                    % gp_rnd sample size
 %           [sampf] = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', n, options);
-        if isfield(gp.lik.fh,'trcov')
-          % Gaussian likelihood
-          sigma2 = gp.lik.sigma2;
+
+        if strcmp(method,'1')          
+          % Estimate WAIC with variance form
           
-%           Elog = mean((repmat(-0.5*log(2*pi*sigma2), 1, n) - (repmat(y,1,n) - sampf).^2./(2.*repmat(sigma2,1,n))).^2,2);
-%           Elog2 = mean((repmat(-0.5*log(2*pi*sigma2),1,n) - (repmat(y,1,n) - sampf).^2./(2.*repmat(sigma2,1,n))),2).^2;
+          if isfield(gp.lik.fh,'trcov')
+            % Gaussian likelihood
+            sigma2 = gp.lik.sigma2;
+            
+%             Elog = mean((repmat(-0.5*log(2*pi*sigma2), 1, n) - (repmat(y,1,n) - sampf).^2./(2.*repmat(sigma2,1,n))).^2,2);
+%             Elog2 = mean((repmat(-0.5*log(2*pi*sigma2),1,n) - (repmat(y,1,n) - sampf).^2./(2.*repmat(sigma2,1,n))),2).^2;
+            
+            for i=1:tn
+              fmin = Ef(i)-9*sqrt(Varf(i));
+              fmax = Ef(i)+9*sqrt(Varf(i));
+              
+%               Elog(i) = quadgk(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))).*(-0.5*log(2*pi*sigma2)- (y(i) - f).^2/(2.*sigma2)).^2, fmin, fmax);
+%               Elog2(i) = quadgk(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))).*(-0.5*log(2*pi*sigma2)- (y(i) - f).^2/(2.*sigma2)), fmin, fmax);
+
+              % Use moments to calculate Elog, Elog2. Faster than guadgk
+              % above.
+              
+              [m0, m1, m2, m3, m4] = moments(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))), fmin, fmax);          
+              Elog2(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
+              Elog(i) = (1/4 * m4 - y(i) * m3 + (3*y(i).^2./2+0.5*log(2*pi*sigma2).*sigma2) * m2 ...
+                         - (y(i).^3 + y(i).*log(2*pi*sigma2).*sigma2) * m1 + (y(i).^4/4 + 0.5*y(i).^2*log(2*pi*sigma2).*sigma2 ...
+                         + 0.25*log(2*pi*sigma2).^2.*sigma2.^2) * m0) ./ sigma2.^2;
+              
+            end
+            Elog2 = Elog2.^2;
+            
+            Vn = sum(Elog - Elog2);
+            waic = BtL + 1/tn * Vn;
           
-          for i=1:tn
-            fmin = Ef(i)-9*sqrt(Varf(i));
-            fmax = Ef(i)+9*sqrt(Varf(i));
-            Elog(i) = quadgk(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))).*(-0.5*log(2*pi*sigma2)- (y(i) - f).^2/(2.*sigma2)).^2, fmin, fmax);
-            Elog2(i) = quadgk(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))).*(-0.5*log(2*pi*sigma2)- (y(i) - f).^2/(2.*sigma2)), fmin, fmax);
-          end
-          Elog2 = Elog2.^2;
-          
-          Vn = sum(Elog - Elog2);
-          waic = BtL + 1/tn * Vn;
-          
+            % Analytic solution
+            
 %           k = Ef;
 %           a = 1./(2*Varf);
 %           C = 0.0997356./ (sigma2.^2.*sqrt(Varf));
@@ -204,25 +259,62 @@ function waic = gp_waic(gp, x, y, varargin)
 %           Vn = sum(Elog - Elog2);
 %           waic = BtL + 1/tn * Vn;
 
-        else
-          % Non-Gaussian likelihood
-          for i=1:tn
-            if ~isempty(z)
-              z1 = z(i);
-            else
-              z1 = [];
+          else
+            % Non-Gaussian likelihood
+            for i=1:tn
+              if ~isempty(z)
+                z1 = z(i);
+              else
+                z1 = [];
+              end
+              fmin = Ef(i)-9*sqrt(Varf(i));
+              fmax = Ef(i)+9*sqrt(Varf(i));
+              Elog(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1).^2 ,...
+                fmin, fmax);
+              Elog2(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
+                fmin, fmax);              
             end
-            fmin = Ef(i)-9*sqrt(Varf(i));
-            fmax = Ef(i)+9*sqrt(Varf(i));
-            Elog(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1).^2 ,...
-              fmin, fmax);
-            Elog2(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
-              fmin, fmax);
+            Elog2 = Elog2.^2;
+            Vn = sum(Elog-Elog2);
+            waic = BtL + 1/tn * Vn;
+            
           end
-          Elog2 = Elog2.^2;
-          Vn = sum(Elog-Elog2);
-          waic = BtL + 1/tn * Vn;
+          
+        else
+          % WAIC with expected value form using Gibs training loss GtL
+          
+          if isfield(gp.lik.fh,'trcov')
+            % Gaussian likelihood
+            sigma2 = gp.lik.sigma2;
+            for i=1:tn
+              fmin = Ef(i)-9*sqrt(Varf(i));
+              fmax = Ef(i)+9*sqrt(Varf(i));
               
+%               GtL(i) = quadgk(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))).*(-0.5*log(2*pi*sigma2)- (y(i) - f).^2/(2.*sigma2)), fmin, fmax);
+
+              % Use moments to calculate GtL, faster than guadk above.
+              [m0, m1, m2] = moments(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))), fmin, fmax);
+              GtL(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
+            end
+            GtL = -1/tn * sum(GtL);
+            waic = 2*GtL - BtL;
+          else
+            % Non-Gaussian likelihood
+            for i=1:tn
+              if ~isempty(z)
+                z1 = z(i);
+              else
+                z1 = [];
+              end
+              fmin = Ef(i)-9*sqrt(Varf(i));
+              fmax = Ef(i)+9*sqrt(Varf(i));
+              GtL(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
+                fmin, fmax);
+            end
+            GtL = -1/tn * sum(GtL);
+            waic = 2*GtL-BtL;
+          end
+          
         end
           
    
@@ -269,39 +361,73 @@ function waic = gp_waic(gp, x, y, varargin)
         sigma2(:,i) = repmat(Gp.lik.sigma2,1,tn);
       end
     end
-    if isfield(gp{1}.lik.fh,'trcov')
-      % gaussian likelihood
-      for i=1:tn
-        fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
-        fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-        Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-          .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))').^2), fmin, fmax);
-        Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-          .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
-      end
-      Elog2 = Elog2.^2;
-      Vn = sum(Elog-Elog2);
-      waic = BtL + Vn/tn;
-    else
-      % non-gaussian likelihood
-      for i=1:tn
-        if ~isempty(z)
-          z1 = z(i);
-        else
-          z1 = [];
+    if strcmp(method,'1')
+      % Evaluate WAIC with variance form
+      
+      if isfield(gp{1}.lik.fh,'trcov')
+        % gaussian likelihood
+        for i=1:tn
+          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+            .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))').^2), fmin, fmax);
+          Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+            .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
         end
-        fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
-        fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-        Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-          .*llvec(gp, y(i), f, z1).^2), fmin, fmax);
-        Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-          .*llvec(gp, y(i), f, z1)), fmin, fmax);
-      end
-      Elog2 = Elog2.^2;
-      Vn = sum(Elog-Elog2);
-      waic = BtL + Vn/tn;
+        Elog2 = Elog2.^2;
+        Vn = sum(Elog-Elog2);
+        waic = BtL + Vn/tn;
+      else
+        % non-gaussian likelihood
+        for i=1:tn
+          if ~isempty(z)
+            z1 = z(i);
+          else
+            z1 = [];
+          end
+          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+            .*llvec(gp, y(i), f, z1).^2), fmin, fmax);
+          Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+            .*llvec(gp, y(i), f, z1)), fmin, fmax);
+        end
+        Elog2 = Elog2.^2;
+        Vn = sum(Elog-Elog2);
+        waic = BtL + Vn/tn;
         
 
+      end
+      
+    else
+      % Evaluate waic with expected value form using Gibs training loss
+      
+      if isfield(gp{1}.lik.fh,'trcov')
+        % gaussian likelihood
+        for i=1:tn
+          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          GtL(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+            .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
+        end
+        GtL = -1/tn*sum(GtL);
+        waic = 2*GtL-BtL;
+      else
+        % non-gaussian likelihood
+        for i=1:tn
+          if ~isempty(z)
+            z1 = z(i);
+          else
+            z1 = [];
+          end
+          fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
+          fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
+          GtL(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+            .*llvec(gp, y(i), f, z1)), fmin, fmax);
+        end
+        GtL = -1/tn*sum(GtL);
+        waic = 2*GtL-BtL;
+      end
     end
         
 
@@ -360,4 +486,153 @@ function mpdf = multi_npdf(f, mean, sigma2)
   for i=1:length(f)
     mpdf(:,i) = norm_pdf(f(i), mean, sqrt(sigma2));
   end
+end
+
+function [m_0, m_1, m_2, m_3, m_4] = moments(fun, a, b, rtol, atol, minsubs)
+% QUAD_MOMENTS Calculate the 0th, 1st and 2nd moment of a given
+%              (unnormalized) probability distribution
+%
+%   [m_0, m_1, m_2] = quad_moments(fun, a, b, varargin) 
+%   Inputs:
+%      fun  = Function handle to the unnormalized probability distribution
+%      a,b  = integration limits [a,b]
+%      rtol = relative tolerance for the integration (optional, default 1e-6)
+%      atol = absolute tolerance for the integration (optional, default 1e-10)
+%               
+%   Returns the first three moments:
+%      m0  = int_a^b fun(x) dx
+%      m1  = int_a^b x*fun(x) dx / m0
+%      m2  = int_a^b x^2*fun(x) dx / m0
+%
+%   The function uses an adaptive Gauss-Kronrod quadrature. The same set of 
+%   integration points and intervals are used for each moment. This speeds up 
+%   the evaluations by factor 3, since the function evaluations are done only 
+%   once.
+% 
+%   The quadrature method is described by:
+%   L.F. Shampine, "Vectorized Adaptive Quadrature in Matlab",
+%   Journal of Computational and Applied Mathematics, 211, 2008, 
+%   pp. 131-140.
+
+%   Copyright (c) 2010 Jarno Vanhatalo, Jouni Hartikainen
+    
+% This software is distributed under the GNU General Public 
+% License (version 2 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
+    maxsubs = 650;
+    
+    if nargin < 4
+        rtol = 1.e-6;
+    end
+    if nargin < 5
+        atol = 1.e-10;
+    end
+    if nargin < 6
+        minsubs = 10;
+    end
+    
+    rtol = max(rtol,100*eps);
+    atol = max(atol,0);
+    minsubs = max(minsubs,2); % At least two subintervals are needed
+    
+    % points and weights
+    points15 = [0.2077849550078985; 0.4058451513773972; 0.5860872354676911; ...
+        0.7415311855993944; 0.8648644233597691; 0.9491079123427585; ...
+        0.9914553711208126];
+    points = [-points15(end:-1:1); 0; points15];
+    
+    w15 = [0.2044329400752989, 0.1903505780647854, 0.1690047266392679, ...
+        0.1406532597155259, 0.1047900103222502, 0.06309209262997855, ...
+        0.02293532201052922];
+    w = [w15(end:-1:1), 0.2094821410847278, w15];
+    
+    w7 = [0,0.3818300505051189,0,0.2797053914892767,0,0.1294849661688697,0];
+    ew = w - [w7(end:-1:1), 0.4179591836734694, w7];
+        
+    samples = numel(w);
+    
+    % split the interval.
+    if b-a <= 0
+        c = a; a = b; b=c;
+        warning('The start of the integration interval was less than the end of it.')
+    end
+    apu = a + (1:(minsubs-1))./minsubs*(b-a);
+    apu = [a,apu,b];
+    subs = [apu(1:end-1);apu(2:end)];
+        
+    % Initialize partial sums.
+    Ifx_ok = 0;
+    Ifx1_ok = 0;
+    Ifx2_ok = 0;
+    Ifx3_ok = 0;
+    Ifx4_ok = 0;
+    % The main loop
+    while true
+        % subintervals and their midpoints
+        midpoints = sum(subs)/2;   
+        halfh = diff(subs)/2;  
+        x = bsxfun(@plus,points*halfh,midpoints);
+        x = reshape(x,1,[]);
+        
+        fx = fun(x);
+        fx1 = fx.*x;
+        fx2 = fx.*x.^2;
+        fx3 = fx.*x.^3;
+        fx4 = fx.*x.^4;
+
+        fx = reshape(fx,samples,[]);
+        fx1 = reshape(fx1,samples,[]);
+        fx2 = reshape(fx2,samples,[]);
+        fx3 = reshape(fx3,samples,[]);
+        fx4 = reshape(fx4,samples,[]);
+        
+        % Subintegrals.
+        Ifxsubs = (w*fx) .* halfh;
+        errsubs = (ew*fx) .* halfh;
+        Ifxsubs1 = (w*fx1) .* halfh;
+        Ifxsubs2 = (w*fx2) .* halfh;
+        Ifxsubs3 = (w*fx3) .* halfh;
+        Ifxsubs4 = (w*fx4) .* halfh;
+
+        % Ifx and tol.
+        Ifx = sum(Ifxsubs) + Ifx_ok;
+        Ifx1 = sum(Ifxsubs1) + Ifx1_ok;
+        Ifx2 = sum(Ifxsubs2) + Ifx2_ok;
+        Ifx3 = sum(Ifxsubs3) + Ifx3_ok;
+        Ifx4 = sum(Ifxsubs4) + Ifx4_ok;
+        tol = max(atol,rtol*abs(Ifx));
+        
+        % determine the indices ndx of Ifxsubs for which the
+        % errors are acceptable and remove those from subs
+        ndx = find(abs(errsubs) <= (2/(b-a)*halfh*tol));
+        subs(:,ndx) = [];
+        if isempty(subs)
+            break
+        end
+        
+        % Update the integral.
+        Ifx_ok = Ifx_ok + sum(Ifxsubs(ndx));
+        Ifx1_ok = Ifx1_ok + sum(Ifxsubs1(ndx));
+        Ifx2_ok = Ifx2_ok + sum(Ifxsubs2(ndx));
+        Ifx3_ok = Ifx3_ok + sum(Ifxsubs3(ndx));
+        Ifx4_ok = Ifx4_ok + sum(Ifxsubs4(ndx));
+
+        
+        % Quit if too many subintervals.
+        nsubs = 2*size(subs,2);
+        if nsubs > maxsubs
+            warning('quad_moments: Reached the limit on the maximum number of intervals in use.');
+            break
+        end
+        midpoints(ndx) = []; 
+        subs = reshape([subs(1,:); midpoints; midpoints; subs(2,:)],2,[]); % Divide the remaining subintervals in half
+    end
+    
+    % Scale moments
+    m_0 = Ifx;
+    m_1 = Ifx1./Ifx;
+    m_2 = Ifx2./Ifx;
+    m_3 = Ifx3./Ifx;
+    m_4 = Ifx4./Ifx;
 end

@@ -145,7 +145,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
         % ============================================================
         case 'FULL'   % A full GP
           [K,C] = gp_trcov(gp, x);
-          notpositivedefinite = 0;
 
           % The EP algorithm for full support covariance function
           %------------------------------------------------------
@@ -156,6 +155,10 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
               Sigm = C + H'*B_m*H;
             end
             [Ls, notpositivedefinite] = chol(Sigm);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             Stildesqroot=zeros(n);
             
             % If Student-t likelihood is used, sort the update order so that
@@ -222,61 +225,57 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
                   Stildesqroot=diag(sqrt(tautilde));
                   B=eye(n)+Stildesqroot*C*Stildesqroot;
                   [L, notpositivedefinite]=chol(B,'lower');
-                  if ~notpositivedefinite
-                      V=(L\Stildesqroot)*C;
-                      Sigm=C-V'*V;                                 
-                      nutilde=Sigm\myy;
-
-                      tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                      vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
                   end
+                  V=(L\Stildesqroot)*C;
+                  Sigm=C-V'*V;
+                  nutilde=Sigm\myy;
                   
-                    if isfield(gp.latent_opt, 'display') && gp.latent_opt.display
-                      fprintf('negative cavity at site %d \n', i1)
-                    end
+                  tau_i=Sigm(i1,i1)^-1-tautilde(i1);
+                  vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                  
+                  if isfield(gp.latent_opt, 'display') && gp.latent_opt.display
+                    fprintf('negative cavity at site %d \n', i1)
+                  end
                 end
-                if ~notpositivedefinite
-                    myy_i=vee_i/tau_i;
-                    sigm2_i=tau_i^-1;
+                myy_i=vee_i/tau_i;
+                sigm2_i=tau_i^-1;
                 
-                    % marginal moments
-                    [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
-
-                    % update site parameters
-                    deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
-                    tautilde(i1)=tautilde(i1)+deltatautilde;
-                    nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+                % marginal moments
+                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
                 
-                    % Update mean and variance after each site update (standard EP)
-                    if isequal(gp.latent_opt.parallel,'off')
-                        apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
-                        Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
-
-                        % The below is how Rasmussen and Williams
-                        % (2006) do the update. The above version is
-                        % more robust.
-                        %apu = deltatautilde^-1+Sigm(i1,i1);
-                        %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
-                        %Sigm = Sigm - apu;
-                        %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
-                        if ~isfield(gp,'meanf')
-                          myy=Sigm*nutilde;
-                        else
-                          myy=Sigm*(C\(H'*b_m)+nutilde);
-                        end
-                    else
-                        % Parallel EP
-                        % Update myy & Sigm after all site parameters are
-                        % calculated
-                    end
+                % update site parameters
+                deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
+                tautilde(i1)=tautilde(i1)+deltatautilde;
+                nutilde(i1)=sigm2hati^-1*muhati-vee_i;
                 
-                    muvec_i(i1,1)=myy_i;
-                    sigm2vec_i(i1,1)=sigm2_i;
+                % Update mean and variance after each site update (standard EP)
+                if isequal(gp.latent_opt.parallel,'off')
+                  apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
+                  Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
+                  
+                  % The below is how Rasmussen and Williams
+                  % (2006) do the update. The above version is
+                  % more robust.
+                  %apu = deltatautilde^-1+Sigm(i1,i1);
+                  %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
+                  %Sigm = Sigm - apu;
+                  %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                  if ~isfield(gp,'meanf')
+                    myy=Sigm*nutilde;
+                  else
+                    myy=Sigm*(C\(H'*b_m)+nutilde);
+                  end
                 else
-                    MO(i1) = NaN;
-                    muvec_i(i1,1)=NaN;
-                    sigm2vec_i(i1,1)=NaN;
+                  % Parallel EP
+                  % Update myy & Sigm after all site parameters are
+                  % calculated
                 end
+                
+                muvec_i(i1,1)=myy_i;
+                sigm2vec_i(i1,1)=sigm2_i;
               end
               % Recompute the approximate posterior parameters
               if tautilde > 0             
@@ -293,43 +292,46 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
 
                   B=eye(n)+Stildesqroot*C*Stildesqroot;
                   [L,notpositivedefinite] = chol(B,'lower');
-                  if ~notpositivedefinite
-                      V=(L\Stildesqroot)*C;
-                      Sigm=C-V'*V; myy=Sigm*nutilde;
-                      Ls = chol(Sigm);
-
-                      % Compute the marginal likelihood
-                      % Direct formula (3.65):
-                      % Sigmtilde=diag(1./tautilde);
-                      % mutilde=inv(Stilde)*nutilde;
-                      %
-                      % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
-                      %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
-                      %         0.5*sum(log(sigm2vec_i+1./tautilde))+
-                      %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
-
-                      % 4. term & 1. term
-                      term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-
-                      % 5. term (1/2 element) & 2. term
-                      T=1./sigm2vec_i;
-                      Cnutilde = C*nutilde;
-                      L2 = V*nutilde;
-                      term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                      term52 = term52.*0.5;
-
-                      % 5. term (2/2 element)
-                      term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-
-                      % 3. term
-                      term3 = sum(log(M0));                         
-
-                      logZep = -(term41+term52+term5+term3);
-                      iter=iter+1;
-                  else
-                      logZep = NaN;
-                      iter=iter+1;
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
                   end
+                  V=(L\Stildesqroot)*C;
+                  Sigm=C-V'*V; myy=Sigm*nutilde;
+                  [Ls, notpositivedefinite] = chol(Sigm);
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
+                  end
+                  
+                  % Compute the marginal likelihood
+                  % Direct formula (3.65):
+                  % Sigmtilde=diag(1./tautilde);
+                  % mutilde=inv(Stilde)*nutilde;
+                  %
+                  % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
+                  %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
+                  %         0.5*sum(log(sigm2vec_i+1./tautilde))+
+                  %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+                  
+                  % 4. term & 1. term
+                  term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
+                  
+                  % 5. term (1/2 element) & 2. term
+                  T=1./sigm2vec_i;
+                  Cnutilde = C*nutilde;
+                  L2 = V*nutilde;
+                  term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
+                  term52 = term52.*0.5;
+                  
+                  % 5. term (2/2 element)
+                  term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                  
+                  % 3. term
+                  term3 = sum(log(M0));
+                  
+                  logZep = -(term41+term52+term5+term3);
+                  iter=iter+1;
                   
                 else                
                   % mean function used
@@ -342,44 +344,52 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
                   B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
                   % L to return, without the hBh term
                   [L,notpositivedefinite]=chol(B,'lower');
-                  % L for the calculation with mean term
-                  [L_m,notpositivedefinite2]=chol(B_h,'lower');                  
-
-                  if (~notpositivedefinite && ~notpositivedefinite2)
-                      % Recompute the approximate posterior
-                      % parameters
-                      V=(L_m\Stildesqroot)*C_t;
-                      Sigm=C_t-V'*V; myy=Sigm*(CHb+nutilde);
-
-
-                      Ls = chol(Sigm);
-                      T=1./sigm2vec_i;
-                      Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
-                      L2 = V*(S*H'*b_m-nutilde);
-
-                      zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
-                      % inv(K + S^-1)*S^-1
-                      Ks  = eye(size(zz)) - zz;               
-
-                      % 5. term (1/2 element)   
-                      term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);                           
-                      % 2. term 
-                      term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);                
-                      % 4. term
-                      term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));           
-                      % 1. term
-                      term1    = -1.*sum(log(diag(L_m)));                       
-                      % 3. term
-                      term3    = sum(log(M0));                                   
-                      % 5. term (2/2 element)
-                      term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-
-                      logZep = -(term4+term1+term5_1+term5+term2+term3);
-                      iter=iter+1;
-                  else
-                      logZep = NaN;
-                      iter=iter+1;
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
                   end
+                  % L for the calculation with mean term
+                  [L_m,notpositivedefinite]=chol(B_h,'lower');
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
+                  end
+
+                  % Recompute the approximate posterior
+                  % parameters
+                  V=(L_m\Stildesqroot)*C_t;
+                  Sigm=C_t-V'*V; myy=Sigm*(CHb+nutilde);
+                  
+                  
+                  [Ls, notpositivedefinite] = chol(Sigm);
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
+                  end
+                  T=1./sigm2vec_i;
+                  Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
+                  L2 = V*(S*H'*b_m-nutilde);
+                  
+                  zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                  % inv(K + S^-1)*S^-1
+                  Ks  = eye(size(zz)) - zz;
+                  
+                  % 5. term (1/2 element)
+                  term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);
+                  % 2. term
+                  term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);
+                  % 4. term
+                  term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));
+                  % 1. term
+                  term1    = -1.*sum(log(diag(L_m)));
+                  % 3. term
+                  term3    = sum(log(M0));
+                  % 5. term (2/2 element)
+                  term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                  
+                  logZep = -(term4+term1+term5_1+term5+term2+term3);
+                  iter=iter+1;
+                  
                 end
                 
                 %==============================
@@ -390,34 +400,37 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
                 % NOTE! This does not work reliably yet
                 Stilde=tautilde;
                 [Ls, notpositivedefinite] = chol(Sigm);
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
+                end
                 myy=Sigm*nutilde;
                 
-                if ~notpositivedefinite
-                    % Compute the marginal likelihood
-                    % 4. term & 1. term
-                    term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
-
-                    % 5. term (1/2 element) & 2. term
-                    T=1./sigm2vec_i;
-                    term52 = nutilde'*(Ls'*(Ls*nutilde)) - (nutilde'./(T+Stilde)')*nutilde;
-                    term52 = term52.*0.5;
-
-                    % 5. term (2/2 element)
-                    term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-
-                    % 3. term
-                    term3 = sum(log(M0));
-
-                    logZep = -(term41+term52+term5+term3);
-                    iter=iter+1;
-                    B=Ls;
-                    L=Ls;    
-                else
-                    logZep = NaN;
-                    iter=iter+1;
-                    B=NaN;
-                    L=NaN;
+                % Compute the marginal likelihood
+                % 4. term & 1. term
+                [~, notpositivedefinite] = chol(C);
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
                 end
+                term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
+                
+                % 5. term (1/2 element) & 2. term
+                T=1./sigm2vec_i;
+                term52 = nutilde'*(Ls'*(Ls*nutilde)) - (nutilde'./(T+Stilde)')*nutilde;
+                term52 = term52.*0.5;
+                
+                % 5. term (2/2 element)
+                term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+                
+                % 3. term
+                term3 = sum(log(M0));
+                
+                logZep = -(term41+term52+term5+term3);
+                iter=iter+1;
+                B=Ls;
+                L=Ls;
+                
               end
             end
             % EP algorithm for compactly supported covariance function (that is
@@ -437,7 +450,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             myy = zeros(size(y));
             sigm2 = zeros(size(y));
             gamma = zeros(size(y));
-            VD = ldlchol(Inn);
+            [VD, notpositivedefinite] = ldlchol(Inn);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             
             
             % The EP -algorithm
@@ -491,45 +508,49 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
               KsqrtS = ssmult(K,sqrtS);
               B = ssmult(sqrtS,KsqrtS) + Inn;
               [VD, notpositivedefinite] = ldlchol(B);
-              if ~notpositivedefinite
-                  Knutilde = K*nutilde;
-                  myy = Knutilde - KsqrtS*ldlsolve(VD,sqrtS*Knutilde);
-
-                  % Compute the marginal likelihood                        
-                  % 4. term & 1. term
-                  term41=0.5*sum(log(1+tautilde.*sigm2vec_i)) - 0.5.*sum(log(diag(VD)));
-
-                  % 5. term (1/2 element) & 2. term
-                  T=1./sigm2vec_i;
-                  term52 = nutilde'*myy - (nutilde'./(T+tautilde)')*nutilde;
-                  term52 = term52.*0.5;
-
-                  % 5. term (2/2 element)
-                  term5=0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
-
-                  % 3. term
-                  term3 = sum(log(M0));
-
-                  logZep = -(term41+term52+term5+term3);
-
-                  iter=iter+1;
-              else
-                  logZep = NaN;
-                  iter=iter+1;
+              if notpositivedefinite
+                set_output_for_notpositivedefinite()
+                return
               end
+              Knutilde = K*nutilde;
+              myy = Knutilde - KsqrtS*ldlsolve(VD,sqrtS*Knutilde);
+              
+              % Compute the marginal likelihood
+              % 4. term & 1. term
+              term41=0.5*sum(log(1+tautilde.*sigm2vec_i)) - 0.5.*sum(log(diag(VD)));
+              
+              % 5. term (1/2 element) & 2. term
+              T=1./sigm2vec_i;
+              term52 = nutilde'*myy - (nutilde'./(T+tautilde)')*nutilde;
+              term52 = term52.*0.5;
+              
+              % 5. term (2/2 element)
+              term5=0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
+              
+              % 3. term
+              term3 = sum(log(M0));
+              
+              logZep = -(term41+term52+term5+term3);
+              
+              iter=iter+1;
+              
             end
             % Reorder all the returned and stored values
-            if ~notpositivedefinite
-                B = B(r,r);
-                nutilde = nutilde(r);
-                tautilde = tautilde(r);
-                myy = myy(r);
-                y = y(r);
-                if ~isempty(z)
-                  z = z(r,:);
-                end
-                L = ldlchol(B);
+            
+            B = B(r,r);
+            nutilde = nutilde(r);
+            tautilde = tautilde(r);
+            myy = myy(r);
+            y = y(r);
+            if ~isempty(z)
+              z = z(r,:);
             end
+            [L, notpositivedefinite] = ldlchol(B);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
+            
           end
           edata = logZep;
           % Set something into La2
@@ -549,7 +570,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           K_fu = gp_cov(gp, x, u);           % f x u
           K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
           % Here we need only the diag(Q_ff), which is evaluated below
@@ -563,12 +588,20 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
           end
           A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L = iLaKfu/A;
           Lahat = 1./Lav;
           I = eye(size(K_uu));
 
-          R0 = chol(inv(K_uu));
+          [R0, notpositivedefinite] = chol(inv(K_uu));
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           R = R0;
           P = K_fu;
           myy = zeros(size(y));
@@ -655,7 +688,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             D = Stildesqroot.*Lav.*Stildesqroot + 1;
             SsqrtKfu = K_fu.*repmat(Stildesqroot,1,m);
             AA = K_uu + (SsqrtKfu'./repmat(D',m,1))*SsqrtKfu; AA = (AA+AA')/2;
-            AA = chol(AA,'lower');
+            [AA, notpositivedefinite] = chol(AA,'lower');
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA))) + 0.5.*sum(log(D));
 
             % 5. term (1/2 element) & 2. term
@@ -702,7 +739,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           
           K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
           % Here we need only the diag(Q_ff), which is evaluated below
@@ -714,16 +755,28 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             Qbl_ff = B(:,ind{i})'*B(:,ind{i});
             [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
             Labl{i} = Cbl_ff - Qbl_ff;
-            Llabl = chol(Labl{i});
+            [Llabl, notpositivedefinite] = chol(Labl{i});
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             iLaKfu(ind{i},:) = Llabl\(Llabl'\K_fu(ind{i},:));
           end
           A = K_uu+K_fu'*iLaKfu;
           A = (A+A')./2;     % Ensure symmetry
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L = iLaKfu/A;
           I = eye(size(K_uu));
 
-          R0 = chol(inv(K_uu));
+          [R0, notpositivedefinite] = chol(inv(K_uu));
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           R = R0;
           P = K_fu;
           R0P0t = R0*K_fu';
@@ -794,7 +847,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             for i=1:length(ind)
               sdtautilde = diag(Stildesqroot(ind{i}));
               Dhat = sdtautilde*Labl{i}*sdtautilde + eye(size(Labl{i}));
-              Ldhat{i} = chol(Dhat);
+              [Ldhat{i}, notpositivedefinite] = chol(Dhat);
+              if notpositivedefinite
+                set_output_for_notpositivedefinite()
+                return
+              end
               D{i} = Labl{i} - Labl{i}*sdtautilde*(Ldhat{i}\(Ldhat{i}'\sdtautilde*Labl{i}));
               P(ind{i},:) = D{i}*(Labl{i}\K_fu(ind{i},:));
               
@@ -828,7 +885,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
               
             end
             AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
-            AA = chol(AA,'lower');
+            [AA, notpositivedefinite] = chol(AA,'lower');
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             term41 = term41 - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA)));
 
             % 5. term (1/2 element) & 2. term
@@ -885,7 +946,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           K_fu = gp_cov(gp, x, u);           % f x u
           K_uu = gp_trcov(gp, u);            % u x u, noiseles covariance K_uu
           K_uu = (K_uu+K_uu')./2;            % ensure the symmetry of K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
 
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -912,16 +977,29 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           La = La(p,p);
           K_fu = K_fu(p,:);
           
-          VD = ldlchol(La);
+          [VD, notpositivedefinite] = ldlchol(La);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           iLaKfu = ldlsolve(VD,K_fu);
           A = K_uu+K_fu'*iLaKfu; A = (A+A')./2;     % Ensure symmetry
-          L = iLaKfu/chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
+          L = iLaKfu/A;
           
           I = eye(size(K_uu));
 
           Inn = sparse(1:n,1:n,1,n,n);
           sqrtS = sparse(1:n,1:n,0,n,n);
-          R0 = chol(inv(K_uu));
+          [R0, notpositivedefinite] = chol(inv(K_uu));
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           R = R0;
           P = K_fu;
           R0P0t = R0*K_fu';
@@ -930,7 +1008,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           gamma = zeros(size(K_uu,1),1);
           Ann=0;
           LasqrtS = La*sqrtS;                
-          VD = ldlchol(Inn);
+          [VD, notpositivedefinite] = ldlchol(Inn);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           while iter<=maxiter && abs(logZep_tmp-logZep)>tol
 
             logZep_tmp=logZep;
@@ -1001,7 +1083,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             sqrtSLa = ssmult(sqrtS,La);
             D2 = ssmult(sqrtSLa,sqrtS) + Inn;
             LasqrtS = ssmult(La,sqrtS);
-            VD = ldlchol(D2);
+            [VD, notpositivedefinite] = ldlchol(D2);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
 
             SsqrtKfu = sqrtS*K_fu;
             iDSsqrtKfu = ldlsolve(VD,SsqrtKfu);
@@ -1019,7 +1105,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
 
             % 4. term & 1. term                    
             AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
-            AA = chol(AA,'lower');
+            [AA, notpositivedefinite] = chol(AA,'lower');
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA))) + 0.5*sum(log(diag(VD)));
             
             % 5. term (1/2 element) & 2. term
@@ -1077,7 +1167,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
           K_fu = gp_cov(gp, x, u);           % f x u
           K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
           % Here we need only the diag(Q_ff), which is evaluated below
@@ -1152,7 +1246,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             Stildesqroot=sqrt(tautilde);
             SsqrtPhi = Phi.*repmat(Stildesqroot,1,m);
             AA = eye(m,m) + SsqrtPhi'*SsqrtPhi; AA = (AA+AA')/2;
-            AA = chol(AA,'lower');
+            [AA, notpositivedefinite] = chol(AA,'lower');
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) + sum(log(diag(AA)));
 
             % 5. term (1/2 element) & 2. term
@@ -1273,7 +1371,11 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
             Stildesqroot=sqrt(tautilde);
             SsqrtPhi = Phi.*repmat(Stildesqroot,1,m);
             AA = eye(m,m) + SsqrtPhi'*SsqrtPhi; AA = (AA+AA')/2;
-            AA = chol(AA,'lower');
+            [AA, notpositivedefinite] = chol(AA,'lower');
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) + sum(log(diag(AA)));
 
             % 5. term (1/2 element) & 2. term
@@ -1356,4 +1458,32 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
       iter_lkm=iter;
     end
   end
+
+function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite()
+  % Instead of stopping to chol error, return NaN
+  e = NaN;
+  edata = NaN;
+  eprior = NaN;
+  site_tau = NaN;
+  site_nu = NaN;
+  L = NaN;
+  La2 = NaN;
+  b = NaN;
+  muvec_i = NaN;
+  sigm2vec_i = NaN;
+  Z_i = NaN;
+  ch.w = w;
+  ch.e = e;
+  ch.edata = edata;
+  ch.eprior = eprior;
+  ch.tautilde = tautilde;
+  ch.nutilde = nutilde;
+  ch.L = L;
+  ch.La2 = La2;
+  ch.b = b;
+  ch.muvec_i = muvec_i;
+  ch.sigm2vec_i = sigm2vec_i;
+  ch.Z_i = Z_i;
+  ch.datahash=datahash;
+end
 end

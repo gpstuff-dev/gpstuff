@@ -185,7 +185,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                   Dc=sqrt(pi2(:,i1));
                   Lc=(Dc*Dc').*K(:,:,i1);
                   Lc(1:n+1:end)=Lc(1:n+1:end)+1;
-                  Lc=chol(Lc);
+                  [Lc,notpositivedefinite]=chol(Lc);
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
+                  end
                   L(:,:,i1)=Lc;
                   
                   Ec=Lc'\diag(Dc);
@@ -193,7 +197,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                   E(:,:,i1)=Ec;
                   RER(:,:,i1) = R((1:n)+(i1-1)*n,:)'*Ec*R((1:n)+(i1-1)*n,:);
                 end
-                M=chol(sum(RER,3));
+                [M, notpositivedefinite]=chol(sum(RER,3));
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
+                end
                 
                 b = pi2_vec.*f - pi2_mat*(pi2_mat'*f) + llg;                
                 for i1=1:nout
@@ -241,7 +249,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
               Dc=sqrt( pi2(:,i1) );
               Lc=(Dc*Dc').*K(:,:,i1);
               Lc(1:n+1:end)=Lc(1:n+1:end)+1;
-              Lc=chol(Lc);
+              [Lc, notpositivedefinite]=chol(Lc);
+              if notpositivedefinite
+                set_output_for_notpositivedefinite()
+                return
+              end
               L(:,:,i1)=Lc;
               
               pi2i = pi2_mat((1:n)+(i1-1)*n,:);
@@ -254,7 +266,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
               E(:,:,i1)=Ec;
               RER(:,:,i1) = R((1:n)+(i1-1)*n,:)'*Ec*R((1:n)+(i1-1)*n,:);
           end
-          M=chol(sum(RER,3));
+          [M, notpositivedefinite]=chol(sum(RER,3));
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           
           zc = zc + sum(log(diag(chol( eye(size(K(:,:,i1))) - Detn))));
           
@@ -327,4 +343,32 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
     assert(isreal(edata))
     assert(isreal(eprior))
   end
+
+function [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite()
+  % Instead of stopping to chol error, return NaN
+  edata=NaN;
+  e=NaN;
+  eprior=NaN;
+  f=NaN;
+  L=NaN;
+  a=NaN;
+%   La2=NaN;
+  E = NaN;
+  M = NaN;
+  p=NaN;
+  ch.w = w;
+  ch.e = e;
+  ch.edata = edata;
+  ch.eprior = eprior;
+  ch.f = f;
+  ch.L = L;
+  ch.M = M;
+  ch.E = E;
+  ch.n = size(x,1);
+  ch.La2 = La2;
+  ch.a = a;
+  ch.p=p;
+  ch.datahash=datahash;
 end
+end
+

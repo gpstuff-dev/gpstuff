@@ -100,28 +100,28 @@ switch gp.type
         for i1=1:nout
             [~, C] = gp_trcov(gp, x, gp.comp_cf{i1});
             [L,notpositivedefinite]=chol(C,'lower');
-            if ~notpositivedefinite
-                b(:,i1) = L\y(:,i1);
-                zc = zc + sum(log(diag(L)));
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
             end
+            b(:,i1) = L\y(:,i1);
+            zc = zc + sum(log(diag(L)));
         end
     else
         [~, C] = gp_trcov(gp, x);
         [L,notpositivedefinite]=chol(C,'lower');
-        if ~notpositivedefinite
-            for i1=1:nout
-                b(:,i1) = L\y(:,i1);
-                zc = zc + sum(log(diag(L)));
-            end
+        if notpositivedefinite
+          set_output_for_notpositivedefinite()
+          return
+        end
+        for i1=1:nout
+          b(:,i1) = L\y(:,i1);
+          zc = zc + sum(log(diag(L)));
         end
     end
         
     % Are there specified mean functions
-    if notpositivedefinite
-        edata = NaN;
-    else
-        edata = 0.5*n.*log(2*pi) + zc + 0.5*sum(sum(b.*b));
-    end
+    edata = 0.5*n.*log(2*pi) + zc + 0.5*sum(sum(b.*b));
     
     % ============================================================
     % FIC
@@ -181,3 +181,11 @@ if ~isempty(strfind(gp.infer_params, 'inducing'))
 end
 
 e = edata + eprior;
+
+function [e, edata, eprior] = set_output_for_notpositivedefinite()
+  % Instead of stopping to chol error, return NaN
+  e = NaN;
+  edata = NaN;
+  eprior = NaN;
+end
+

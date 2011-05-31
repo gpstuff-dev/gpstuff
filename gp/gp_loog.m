@@ -56,8 +56,12 @@ switch gp.type
     if issparse(C)
       % evaluate the sparse inverse
       invC = spinv(C);
-      LD = ldlchol(C);
-      b = ldlsolve(LD,y);
+      [LD, notpositivedefinite] = ldlchol(C);
+      if notpositivedefinite
+          b = NaN;
+      else
+          b = ldlsolve(LD,y);
+      end
     else
       % evaluate the full inverse
       invC = inv(C);        

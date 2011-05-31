@@ -155,33 +155,13 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             if ~isempty(z)
               z = z(p,:);
             end
-            LD = ldlchol(K);
             [LD,notpositivedefinite] = ldlchol(K);
           else
             [LD,notpositivedefinite] = chol(K);
           end
           
           if notpositivedefinite
-            edata=NaN;
-            e=NaN;
-            edata=NaN;
-            eprior=NaN;
-            f=NaN;
-            L=NaN;
-            a=NaN;
-            La2=NaN;
-            p=NaN;
-            ch.w = w;
-            ch.e = e;
-            ch.edata = edata;
-            ch.eprior = eprior;
-            ch.f = f;
-            ch.L = L;
-            ch.n = size(x,1);
-            ch.La2 = La2;
-            ch.a = a;
-            ch.p=p;
-            ch.datahash=datahash;
+            set_output_for_notpositivedefinite()
             return
           end
           
@@ -245,29 +225,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   [L,notpositivedefinite] = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                 end
                 if notpositivedefinite
-                  edata=NaN;
-                  e=NaN;
-                  edata=NaN;
-                  eprior=NaN;
-                  f=NaN;
-                  L=NaN;
-                  a=NaN;
-                  La2=NaN;
-                  p=NaN;
-                  ch.w = w;
-                  ch.e = e;
-                  ch.edata = edata;
-                  ch.eprior = eprior;
-                  ch.f = f;
-                  ch.L = L;
-                  ch.n = size(x,1);
-                  ch.La2 = La2;
-                  ch.a = a;
-                  ch.p=p;
-                  ch.datahash=datahash;
+                  set_output_for_notpositivedefinite()
                   return
                 end
-
                 if ~isfield(gp,'meanf')                   
                   b = W.*f+dlp;
                 else
@@ -353,12 +313,16 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 sW = sqrt(W);
                 if issparse(K)
                   sW = sparse(1:n, 1:n, sW, n, n);
-                  L = ldlchol( speye(n)+sW*K*sW );
+                  [L, notpositivedefinite] = ldlchol( speye(n)+sW*K*sW );
                 else
                   %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                   L=bsxfun(@times,bsxfun(@times,sW,K),sW');
                   L(1:n+1:end)=L(1:n+1:end)+1;
-                  L = chol(L);
+                  [L, notpositivedefinite] = chol(L);
+                end
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
                 end
                 %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                 b = W.*f+dlp;
@@ -417,15 +381,19 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               W = sparse(1:n,1:n, -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z), n,n);
               sqrtW = sqrt(W);
               B = sparse(1:n,1:n,1,n,n) + sqrtW*K*sqrtW;
-              L = ldlchol(B);
+              [L, notpositivedefinite] = ldlchol(B);
 
               % Note that here we use LDL cholesky
               edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %                        
             else
               sW = sqrt(W);
               B = eye(size(K)) + sW*sW'.*K;
-              L = chol(B)';
+              [L, notpositivedefinite] = chol(B, 'lower');
               edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
+            end
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
             end
           else                        % We may end up here if the likelihood is not log concace
                                       % For example Student-t likelihood. 
@@ -437,7 +405,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                    'with Student-t likelihood. Please use non-CS functions instead (e.g. gpcf_sexp)   ']);
           end
 
-          L = chol(K);
+          [L, notpositivedefinite] = chol(K);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L1 = L;
           for jj=1:size(K,1)
             i = I(jj);
@@ -480,7 +452,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
           K_fu = gp_cov(gp, x, u);         % f x u                
           K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
           % Here we need only the diag(Q_ff), which is evaluated below
@@ -489,7 +465,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
           iLaKfu = repmat(Lav,1,m).\K_fu;  % f x u
           A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L = iLaKfu/A;
           
           switch gp.latent_opt.optim_method
@@ -572,7 +552,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             Lah = 1 + sqrtW.*Lav.*sqrtW;
             sWKfu = repmat(sqrtW,1,m).*K_fu;
             A = K_uu + sWKfu'*(repmat(Lah,1,m).\sWKfu);   A = (A+A')./2;
-            A = chol(A);
+            [A, notpositivedefinite] = chol(A);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             edata = sum(log(Lah)) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
             edata = logZ + 0.5*edata;
           else
@@ -582,7 +566,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
   % $$$                         K = K(I,I);
             [W2,I] = sort(W, 1, 'descend');
             
-            L = chol(K);
+            [L, notpositivedefinite] = chol(K);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             L1 = L;
             for jj=1:size(K,1)
               i = I(jj);
@@ -630,7 +618,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           K_fu = gp_cov(gp, x, u);         % f x u
           K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
           % Here we need only the diag(Q_ff), which is evaluated below
@@ -642,12 +634,20 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             Qbl_ff = B(:,ind{i})'*B(:,ind{i});
             [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
             Labl{i} = Cbl_ff - Qbl_ff;
-            LLabl{i} = chol(Labl{i});
+            [LLabl{i}, notpositivedefinite] = chol(Labl{i});
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             iLaKfu(ind{i},:) = LLabl{i}\(LLabl{i}'\K_fu(ind{i},:));
           end
           A = K_uu+K_fu'*iLaKfu;
           A = (A+A')./2;     % Ensure symmetry
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L = iLaKfu/A;
           % Begin optimization
           switch gp.latent_opt.optim_method
@@ -686,12 +686,21 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 V = repmat(sW,1,m).*K_fu;
                 for i=1:length(ind)
                   Lah{i} = eye(size(Labl{i})) + diag(sW(ind{i}))*Labl{i}*diag(sW(ind{i}));
-                  LLah{i} = chol(Lah{i});
+                  [LLah{i}, notpositivedefinite] = chol(Lah{i});
+                  if notpositivedefinite
+                    set_output_for_notpositivedefinite()
+                    return
+                  end
                   V2(ind{i},:) = LLah{i}\(LLah{i}'\V(ind{i},:));
                 end                        
                 
                 A = K_uu + V'*V2;   A = (A+A')./2;
-                Lb = V2/chol(A);
+                [A, notpositivedefinite] = chol(A);
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
+                end
+                Lb = V2/A;
                 b = W.*f+dlp;
                 b2 = B'*(B*b);
                 bt = zeros(size(b2));
@@ -736,12 +745,20 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           edata = 0;
           for i=1:length(ind)
             Lahat = eye(size(Labl{i})) + diag(sqrtW(ind{i}))*Labl{i}*diag(sqrtW(ind{i}));
-            LLahat = chol(Lahat);
+            [LLahat, notpositivedefinite] = chol(Lahat);
+            if notpositivedefinite
+              set_output_for_notpositivedefinite()
+              return
+            end
             iLahatWKfu(ind{i},:) = LLahat\(LLahat'\WKfu(ind{i},:));
             edata = edata + 2.*sum(log(diag(LLahat)));
           end
           A = K_uu + WKfu'*iLahatWKfu;   A = (A+A')./2;
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           edata =  edata - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
           edata = logZ + 0.5*edata;
 
@@ -776,7 +793,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           K_fu = gp_cov(gp, x, u);         % f x u
           K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
-          Luu = chol(K_uu)';
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
 
           % Evaluate the Lambda (La)
           % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -801,13 +822,21 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           La = La(p,p);
           K_fu = K_fu(p,:);
           B = B(:,p);
-          VD = ldlchol(La);
+          [VD, notpositivedefinite] = ldlchol(La);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           
           iLaKfu = ldlsolve(VD,K_fu);
           %iLaKfu = La\K_fu;
 
           A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L = iLaKfu/A;
           % Begin optimization
           switch gp.latent_opt.optim_method
@@ -847,11 +876,20 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 sqrtW = sparse(1:n,1:n,sW,n,n);
                 
                 Lah = I + sqrtW*La*sqrtW; 
-                VDh = ldlchol(Lah);
+                [VDh, notpositivedefinite] = ldlchol(Lah);
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
+                end
                 V = repmat(sW,1,m).*K_fu;
                 Vt = ldlsolve(VDh,V);
                 A = K_uu + V'*Vt;   A = (A+A')./2;
-                Lb = Vt/chol(A);
+                [A, notpositivedefinite] = chol(A);
+                if notpositivedefinite
+                  set_output_for_notpositivedefinite()
+                  return
+                end
+                Lb = Vt/A;
                 b = W.*f+dlp;
                 b2 = sW.*(La*b + B'*(B*b));
                 a = b - sW.*(ldlsolve(VDh,b2) - Lb*(Lb'*b2) );
@@ -884,9 +922,17 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           WKfu = repmat(sqrtW,1,m).*K_fu;
           sqrtW = sparse(1:n,1:n,sqrtW,n,n);
           Lahat = sparse(1:n,1:n,1,n,n) + sqrtW*La*sqrtW;
-          LDh = ldlchol(Lahat);
+          [LDh, notpositivedefinite] = ldlchol(Lahat);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           A = K_uu + WKfu'*ldlsolve(LDh,WKfu);   A = (A+A')./2;
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           edata = sum(log(diag(LDh))) - 2*sum(log(diag(Luu))) + 2*sum(log(diag(A)));
           edata = logZ + 0.5*edata;
           
@@ -919,7 +965,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           m = size(Phi,2);
           
           A = eye(m,m) + Phi'*(S\Phi);
-          A = chol(A)';
+          [A, notpositivedefinite] = chol(A, 'lower');
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           L = (S\Phi)/A';
           
           switch gp.latent_opt.optim_method
@@ -950,7 +1000,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           end
           WPhi = repmat(sqrtW,1,m).*Phi;
           A = eye(m,m) + WPhi'./repmat((1+Sv.*W)',m,1)*WPhi;   A = (A+A')./2;
-          A = chol(A);
+          [A, notpositivedefinite] = chol(A);
+          if notpositivedefinite
+            set_output_for_notpositivedefinite()
+            return
+          end
           edata = sum(log(1+Sv.*W)) + 2*sum(log(diag(A)));
           edata = logZ + 0.5*edata;
 
@@ -1014,12 +1068,35 @@ function ikf = iKf(f, varargin)
     case {'PIC' 'PIC_BLOCK'}
       iLaf = zeros(size(f));
       for i=1:length(ind)
-        iLaf(ind{i},:) = LLabl{i}\(LLabl{i}'\f(ind{i},:));
+        iLaf(ind2depo{i},:) = LLabl{i}\(LLabl{i}'\f(ind{i},:));
       end
       ikf = iLaf - L*(L'*f);
     case 'CS+FIC'
       ikf = ldlsolve(VD,f) - L*(L'*f);
   end
 end
-    end
+end
+function [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite()
+  % Instead of stopping to chol error, return NaN
+  edata=NaN;
+  e=NaN;
+  eprior=NaN;
+  f=NaN;
+  L=NaN;
+  a=NaN;
+  La2=NaN;
+  p=NaN;
+  ch.w = w;
+  ch.e = e;
+  ch.edata = edata;
+  ch.eprior = eprior;
+  ch.f = f;
+  ch.L = L;
+  ch.n = size(x,1);
+  ch.La2 = La2;
+  ch.a = a;
+  ch.p=p;
+  ch.datahash=datahash;
+end
+
 end

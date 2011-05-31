@@ -186,6 +186,22 @@ function [Eft, Varft, lpyt, Eyt, Varyt, ft, pft] = gpia_pred(gp_array, x, y, xt,
     % Calculate mean and variance of the distributions
     Eft = sum(ft.*pft,2)./sum(pft,2);
     Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
+%     testi1 = Eft;
+%     testi2 = Varft;
+%     
+%     mEf = sum(bsxfun(@times,Eft_grid,P_TH), 1);
+%     mVarf = sum(bsxfun(@times, Varft_grid, P_TH), 1); %+ sum(bsxfun(@times,(Eft_grid - repmat(mEf, nGP,1)), P_TH).^2,1);
+%     fmin = mEf - 9.*sqrt(mVarf);
+%     fmax = mEf + 9.*sqrt(mVarf);
+%     for i=1:length(xt)
+% %       Eft(i) = quadgk(@(f) f.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+% %       Eft2(i) = quadgk(@(f) f.^2.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+% %       Varft(i) = Eft2(i) - Eft(i).^2;
+%       [~, Eft(i), m2] = quad_moments(@(f) norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+%       Varft(i) = m2 - Eft(i)^2;
+%     end
+      
+
     
     if nargout > 3
         Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
