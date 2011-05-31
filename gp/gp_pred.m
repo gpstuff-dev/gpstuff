@@ -96,7 +96,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
             fh_pred=@gpmc_mo_pred;
           otherwise
             fh_pred=@gpmc_pred;
-        end        
+        end
     end
   else
     error('Logical error by coder of this function!')
@@ -163,14 +163,24 @@ switch gp.type
     nxt = size(xt,1); nblock=10000;
     ind = ceil(nxt./nblock);
     Eft = zeros(nxt,1);    % Mean
+    if isfield(gp,'derivobs') && gp.derivobs==1
+      nderobs = length(y)./length(x);
+      Eft = zeros(nxt,1)*nderobs;    % Mean
+    end
     Varft = zeros(nxt,1);    % Variance
-                             
+    
     for i1=1:ind
       % Do the prediction in blocks to save memory
       xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
+      xtind2 = xtind;
       K=gp_cov(gp,x,xt(xtind,:),predcf);
-      Eft(xtind) = K'*a;
-      
+      if isfield(gp,'derivobs') && gp.derivobs==1
+        for k2=2:nderobs
+          xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
+        end
+      end
+      Eft(xtind2) = K'*a;
+      %foo
       if  isfield(gp,'meanf')
         if issparse(C)
           % terms with non-zero mean -prior
@@ -179,7 +189,7 @@ switch gp.type
           % terms with non-zero mean -prior
           [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);    
         end
-        Eft(xtind) = Eft(xtind) + RB;
+        Eft(xtind2) = Eft(xtind2) + RB;
       end
       
       % Evaluate variance
@@ -188,15 +198,15 @@ switch gp.type
         
         V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
         if issparse(C)
-          Varft = V - diag(K'*ldlsolve(LD,K));
+          Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
         else
           v = L\K;
-          Varft((i1-1)*nblock+1:min(i1*nblock,nxt)) = V - sum(v'.*v',2);
+          Varft(xtind2) = V - sum(v'.*v',2);
         end
         
         % If there are specified mean functions
         if  isfield(gp,'meanf')
-          Varft(xtind) = Varft(xtind) + RAR;
+          Varft(xtind2) = Varft(xtind2) + RAR;
         end
       end
     end
@@ -303,7 +313,6 @@ switch gp.type
             + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav2(tstind),1,m).*L), 2)  ...
             - Lav2(tstind)./Lav.*Lav2(tstind) + sum((repmat(Lav2(tstind),1,m).*L).^2,2);
       end
-      
     end
     
     
@@ -702,7 +711,4 @@ switch gp.type
     if nargout > 2
       error('gp_pred with three output arguments is not implemented for SSGP!')
     end
-end
-if any(Varft<0)
-  warning('foo')
 end
