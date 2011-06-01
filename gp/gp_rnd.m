@@ -1063,17 +1063,17 @@ elseif isstruct(gp) && numel(gp.jitterSigma2)>1
         % Non-Gaussian likelihood. The latent variables should be used in
         % place of observations
         y = gp.latentValues';
-      else 
-        % Use repmat'ed observations for symmetry
-        y = repmat(y,1,nmc);
+        ii=i1;
+      else         
+        ii=1;
       end
       if nargout<2
-        tsampft = gp_rnd(Gp, x, y(:,i1), xt, 'nsamp', nsampi, ...
+        tsampft = gp_rnd(Gp, x, y(:,ii), xt, 'nsamp', nsampi, ...
                          'z', z, 'zt', zt, 'predcf', predcf, ...
                          'tstind', tstind);
         sampft=[sampft tsampft];
       else
-        [tsampft, tsampyt] = gp_rnd(Gp, x, y(:,i1), xt, 'nsamp', ...
+        [tsampft, tsampyt] = gp_rnd(Gp, x, y(:,ii), xt, 'nsamp', ...
                                     nsampi, 'z', z, 'zt', zt, ...
                                     'predcf', predcf, 'tstind', tstind);
         sampft=[sampft tsampft];
