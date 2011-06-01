@@ -1459,20 +1459,20 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
     end
   end
 
-function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite()
+function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite()
   % Instead of stopping to chol error, return NaN
   e = NaN;
   edata = NaN;
   eprior = NaN;
-  site_tau = NaN;
-  site_nu = NaN;
+  tautilde = NaN;
+  nutilde = NaN;
   L = NaN;
   La2 = NaN;
   b = NaN;
   muvec_i = NaN;
   sigm2vec_i = NaN;
   Z_i = NaN;
-  ch.w = w;
+%   datahash = NaN;
   ch.e = e;
   ch.edata = edata;
   ch.eprior = eprior;
@@ -1484,6 +1484,6 @@ function [e, edata, eprior, site_tau, site_nu, L, La2, b, muvec_i, sigm2vec_i, Z
   ch.muvec_i = muvec_i;
   ch.sigm2vec_i = sigm2vec_i;
   ch.Z_i = Z_i;
-  ch.datahash=datahash;
+%   ch.datahash=datahash;
 end
 end

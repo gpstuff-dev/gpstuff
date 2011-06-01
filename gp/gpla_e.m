@@ -1086,17 +1086,15 @@ function [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite()
   a=NaN;
   La2=NaN;
   p=NaN;
-  ch.w = w;
   ch.e = e;
   ch.edata = edata;
   ch.eprior = eprior;
   ch.f = f;
   ch.L = L;
-  ch.n = size(x,1);
   ch.La2 = La2;
   ch.a = a;
   ch.p=p;
-  ch.datahash=datahash;
+%   ch.datahash=datahash;
 end
 
 end
