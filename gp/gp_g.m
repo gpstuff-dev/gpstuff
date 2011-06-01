@@ -95,12 +95,16 @@ switch gp.type
       end
       if  (~isfield(gp,'meanf') && ~notpositivedefinite)
           b = ldlsolve(LD,y);
+      else
+          [invNM invAt HinvC]=mean_gf(gp,x,C,LD,[],[],y,'gaussian');
       end
     else
       % evaluate the full inverse
       invC = inv(C);        
       if  ~isfield(gp,'meanf')
           b = C\y;
+      else
+          [invNM invAt HinvC]=mean_gf(gp,x,C,invC,[],[],y,'gaussian');
       end
     end
 
@@ -171,17 +175,15 @@ switch gp.type
             gprior(i1) = gprior_cf(i2);
           end
         else 
-            if issparse(C)
-                [dMNM trA]=mean_gf(gp,x,C,LD,DKff,[],y,'gaussian');
-            else
-                [dMNM trA]=mean_gf(gp,x,C,invC,DKff,[],y,'gaussian');
+            for i2 = 1:length(DKff)
+                i1=i1+1;
+                dA = -1*HinvC*DKff{i2}*HinvC';                  % d A / d th
+                trA = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
+                dMNM = invNM'*(DKff{i2}*invNM);           % d M'*N*M / d th
+                trK = sum(sum(invC.*DKff{i2}));       % d log(Ky�?�) / d th
+                gdata(i1)=0.5*(-1*dMNM + trK + trA);
+                gprior(i1) = gprior_cf(i2);
             end
-          for i2 = 1:length(DKff)
-            i1=i1+1;
-            trK = sum(sum(invC.*DKff{i2}));       % d log(Ky�?�) / d th
-            gdata(i1)=0.5*(-1*dMNM{i2} + trK + trA{i2});
-            gprior(i1) = gprior_cf(i2);
-          end
         end
         
         % Set the gradients of hyperparameter
@@ -201,14 +203,6 @@ switch gp.type
       % Evaluate the gradient from Gaussian likelihood
       DCff = feval(gp.lik.fh.cfg, gp.lik, x);
       gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
-      if isfield(gp,'meanf')
-          if issparse(C)
-            [dMNM trA]=mean_gf(gp,x,C,LD,DCff,[],y,'gaussian');
-        else
-            [dMNM trA]=mean_gf(gp,x,C,invC,DCff,[],y,'gaussian');
-        end
-      end
-      
       for i2 = 1:length(DCff)
         i1 = i1+1;
         if ~isfield(gp,'meanf')
@@ -228,7 +222,10 @@ switch gp.type
           else 
             trK = DCff{i2}.*(trace(invC));
           end
-          gdata(i1)=0.5*(-1*dMNM{i2} + trA{i2} + trK);
+          dA = -1*HinvC*DCff{i2}*HinvC';                  % d A / d th
+          trA = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
+          dMNM = invNM'*(DCff{i2}*invNM);           % d M'*N*M / d th
+          gdata(i1)=0.5*(-1*dMNM + trA + trK);
         end
         gprior(i1) = gprior_lik(i2);
       end

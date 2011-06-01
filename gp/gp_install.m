@@ -42,8 +42,10 @@ if isempty(suiteSparse)
     if (~isempty (strfind (computer, '64')))
         % 64-bit MATLAB
         mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
+        mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
     else
         mex -O -output private/trcov linuxCsource/trcov.c 
+        mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
     end
     
     fprintf ('\n GP package succesfully compiled ') ;

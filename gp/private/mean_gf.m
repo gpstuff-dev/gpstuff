@@ -1,4 +1,4 @@
-function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
+function [dMNM trA HinvC] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
 % MEAN_GF      Calculates help terms needed in gradient calculation with mean function
 %
 %     Description
@@ -48,84 +48,75 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
 
 
 
-        dMNM = cell(1,length(DKff));
-        trA  = cell(1,length(DKff));
+dMNM = cell(1,length(DKff));
+trA  = cell(1,length(DKff));
 %         dyKy = cell(1,length(DKff));
 %         dyCy = cell(1,length(DKff));      % with vauge prior
 %         trAv = cell(1,length(DKff));
-        
-        % prior assumption for weights, w ~ N(b,B) 
-        % b_m = prior mean for weights, B_m prior covariance matrix for weights
-        [H,b_m,B_m]=mean_prep(gp,x,[]);
-        
-        % help arguments
-        if issparse(Ky)
-            KH = ldlsolve(invKy, H');   % in case of CS covariance function invKy contains the LDL Cholesky decomposition of the covariance function
-            HinvC = KH';
-        else
-            HinvC = H*invKy;
-            N = Ky + H'*B_m*H;
-        end
+
+% prior assumption for weights, w ~ N(b,B)
+% b_m = prior mean for weights, B_m prior covariance matrix for weights
+[H,b_m,B_m]=mean_prep(gp,x,[]);
+
+% help arguments
+if issparse(Ky)
+    KH = ldlsolve(invKy, H');   % in case of CS covariance function invKy contains the LDL Cholesky decomposition of the covariance function
+    HinvC = KH';
+else
+    HinvC = H*invKy;
+    N = Ky + H'*B_m*H;
+end
 
 %         if gp.mf{1}.p.vague==0   % non-vague prior
-            
-            % help arguments that don't depend on DKff; non-vague p
-            if isequal(latent_method,'gaussian')
-                % help arguments with gaussian latent method
-                M = H'*b_m-y;
-                
-                LB = chol(B_m);
-                LA = chol(LB\(LB'\eye(size(B_m))) + HinvC*H');
-                invAt=LA\(LA'\eye(size(LA)));
 
-                if issparse(Ky)
-                    invNM = ldlsolve(invKy, M) - KH*(LA\(LA'\(KH'*M)));
-                else
-                    invN = N\eye(size(N));
-                end
-                
-                % Calculate the arguments which are to be returned
-                for i2 = 1:length(DKff)
-                    dA = -1*HinvC*DKff{i2}*HinvC';                  % d A / d th
-                    trA{i2} = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
-                    if issparse(Ky)
-                        dMNM{i2} = invNM'*(DKff{i2}*invNM);           % d M'*N*M / d th
-                    else
-                        dMNM{i2} = M'*(invN*DKff{i2}*invN*M);           % d M'*N*M / d th
-                    end
-                end
-                
-                
-            elseif isequal(latent_method,'EP')
-                % help arguments with EP latent method
-                S=Stildesqroot.^2;
-                M = S*H'*b_m-y;                                     % M is now (S*H'b_m - S*mutilde)
-                HKH = HinvC*S*H';                                   % inv(Ky + S^-1)*S^-1*S*H'
-                A = B_m\eye(size(B_m)) + HKH;
-                invAt=A\eye(size(A));
-                invAt=invAt';
-                B_h = eye(size(N)) + Stildesqroot*N*Stildesqroot;
-                L_m=chol(B_h,'lower');
-                zz=Stildesqroot*(L_m'\(L_m\(Stildesqroot*N)));
-                invN = eye(size(zz))-zz;                            % inv(Ky + H'*B_m*H + S^-1)*S^-1
-                
-                % Calculate the arguments which are to be returned
-                for i2=1:length(DKff)
-                    dA = -1*HinvC*S*DKff{i2}*(invKy*S*H');          % d A / d th
-                    trA{i2} = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
-                    dMNM{i2} = M'*(S^(-1)*invN*S*DKff{i2}*invN*M);  % with EP the d M'*N*M / d th
-                end
-                
-                
-            elseif isequal(latent_method,'laplace') 
-                error('latent method = laplace not implemented yet')
-            else
-                error('no correct latent method specified')
-            end
+% help arguments that don't depend on DKff; non-vague p
+if isequal(latent_method,'gaussian')
+    % help arguments with gaussian latent method
+    M = H'*b_m-y;
+    
+    LB = chol(B_m);
+    LA = chol(LB\(LB'\eye(size(B_m))) + HinvC*H');
+    invAt=LA\(LA'\eye(size(LA)));
+    
+    if issparse(Ky)
+        invNM = ldlsolve(invKy, M) - KH*(LA\(LA'\(KH'*M)));
+    else
+        invNM = N\M;
+    end
+    
+    dMNM = invNM;
+    trA = invAt;
+        
+elseif isequal(latent_method,'EP')
+    % help arguments with EP latent method
+    S=Stildesqroot.^2;
+    M = S*H'*b_m-y;                                     % M is now (S*H'b_m - S*mutilde)
+    HKH = HinvC*S*H';                                   % inv(Ky + S^-1)*S^-1*S*H'
+    A = B_m\eye(size(B_m)) + HKH;
+    invAt=A\eye(size(A));
+    invAt=invAt';
+    B_h = eye(size(N)) + Stildesqroot*N*Stildesqroot;
+    L_m=chol(B_h,'lower');
+    zz=Stildesqroot*(L_m'\(L_m\(Stildesqroot*N)));
+    invN = eye(size(zz))-zz;                            % inv(Ky + H'*B_m*H + S^-1)*S^-1
+    
+    % Calculate the arguments which are to be returned
+    for i2=1:length(DKff)
+        dA = -1*HinvC*S*DKff{i2}*(invKy*S*H');          % d A / d th
+        trA{i2} = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
+        dMNM{i2} = M'*(S^(-1)*invN*S*DKff{i2}*invN*M);  % with EP the d M'*N*M / d th
+    end
+    
+    
+elseif isequal(latent_method,'laplace')
+    error('latent method = laplace not implemented yet')
+else
+    error('no correct latent method specified')
+end
 
 
 %         else  % vague prior
-            
+
 %             if isequal(latent_method,'gaussian')
 %                 % help arguments that don't depend on DKff; vague p
 %                 HKH = HinvC*H';
@@ -135,15 +126,15 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
 %                 invAt = invAt';
 %                 G     = H'*AH*invKy*y;
 %                 b     = invKy*y;
-% 
+%
 %                 for i2 = 1:length(DKff)
 %                     % help arguments that depend on DKff; vague p
 %                     dyKy{i2} = b'*(DKff{i2}*b);            % d y'*Kyâ?»*y / d th
-%                     dA  = -1*HinvC*DKff{i2}*HinvC';        % d A / d th  
+%                     dA  = -1*HinvC*DKff{i2}*HinvC';        % d A / d th
 %                     trAv{i2} = sum(invAt(:).*dA(:));       % d log(|A|)/dth = trace(inv(A) * dA/dth)
 %                     P   = invKy*DKff{i2}*invKy;
-% 
-%                     dyCy1 = y'*P*G;           
+%
+%                     dyCy1 = y'*P*G;
 %                     dyCy3 = -G'*P*G;
 %                     dyCy{i2} = 2*dyCy1 + dyCy3;          % d y'*C*y /d th
 %                 end
@@ -151,6 +142,6 @@ function [dMNM trA] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
 %                 error('vague prior only for gaussian latent method at the moment')
 %             end
 %         end
-        
-        
+
+
 end

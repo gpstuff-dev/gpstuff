@@ -293,7 +293,8 @@ function gdist  = metric_euclidean_distg(metric, x, x2, mask)
       else
         for i=1:m
           D = -distc{i};
-          D(dist~=0) = D(dist~=0)./dist(dist~=0);
+          ind = dist~=0;
+          D(ind) = D(ind)./dist(ind);
           ii1 = ii1+1;
           gdist{ii1} = D;
         end
@@ -336,8 +337,12 @@ function dist = metric_euclidean_dist(metric, x1, x2)
 %
   if nargin == 2 || isempty(x2)
     x2=x1;
+    dist = dist_euclidean(metric,x1);
+    if ~any(isnan(dist))
+        return
+    end        
   end
-  
+    
   [n1,m1]=size(x1);
   [n2,m2]=size(x2);
   

@@ -1103,18 +1103,8 @@ function C = gpcf_sexp_trcov(gpcf, x)
 
   if isfield(gpcf,'metric')
     % If other than scaled euclidean metric
-    [n, m] =size(x);            
     ma2 = gpcf.magnSigma2;
-    
-    C = zeros(n,n);
-    for ii1=1:n-1
-      d = zeros(n-ii1,1);
-      col_ind = ii1+1:n;
-      d = feval(gpcf.metric.fh.dist, gpcf.metric, x(col_ind,:), x(ii1,:)).^2;                
-      C(col_ind,ii1) = d./2;
-    end
-    C(C<eps) = 0;
-    C = C+C';
+    C = feval(gpcf.metric.fh.dist, gpcf.metric, x).^2./2;
     C = ma2.*exp(-C);            
   else
     % If scaled euclidean metric

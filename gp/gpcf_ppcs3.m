@@ -445,8 +445,8 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
       const2 = 6*l^2 + 36*l + 45;
       const3 = 15*l + 45;
       
-      Dd = -(l+3).*cs.^(l+2).*(const1.*d.^3 + const2.*d.^2 + const3.*d + 15)/15;
-      Dd = Dd + cs.^(l+3).*(3.*const1.*d.^2 + 2.*const2.*d + const3)./15;
+      Dd = -(l+3).*cs.^(l+2).*(const1.*dist.^3 + const2.*dist.^2 + const3.*dist + 15)/15;
+      Dd = Dd + cs.^(l+3).*(3.*const1.*dist.^2 + 2.*const2.*dist + const3)./15;
       Dd = ma2.*Dd;
       
       for i=1:length(gdist)

@@ -131,8 +131,11 @@ switch gp.type
       
       A = B\eye(size(B)) + H*KH;
       M = H'*b-y;
-      N = C + H'*B*H;
-      MNM = M'*(N\M);
+      LN = chol(C + H'*B*H,'lower');
+      MNM = LN\M;
+      MNM = MNM'*MNM;
+%       N = C + H'*B*H;
+%       MNM = M'*(N\M);
       
       edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
       
