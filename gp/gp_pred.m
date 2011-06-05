@@ -135,7 +135,7 @@ tstind=ip.Results.tstind;
 tn = size(x,1);
 
 if nargout > 2 && isempty(yt)
-  error('GP_PRED -> To compute PYT, the YT has to be provided.')
+  lpyt=[];
 end
 
 % Evaluate this if sparse model is used
@@ -219,7 +219,9 @@ switch gp.type
         [V, Cv] = gp_trvar(gp,xt,predcf);
         Eyt = Eft;
         Varyt = Varft + Cv - V;
-        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+        if ~isempty(yt)
+          lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+        end
       else 
         % scale mixture case
         nu = gp.lik.nu;
@@ -234,7 +236,9 @@ switch gp.type
           sigm_app = sqrt(Varft(i2));
 
           pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Varft(i2)));
-          lpyt(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
+          if ~isempty(yt)
+            lpyt(i2) = log(quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app));
+          end
         end         
       end
     end
@@ -319,7 +323,9 @@ switch gp.type
     if nargout > 2
       Eyt = Eft;
       Varyt = Varft + Cnn_v - Knn_v;
-      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      if ~isempty(yt)
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      end
     end
     
   case {'PIC' 'PIC_BLOCK'}
@@ -436,7 +442,9 @@ switch gp.type
       Eyt = Eft;
       [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
       Varyt = Varft + Cnn_v - Knn_v;
-      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      if ~isempty(yt)
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      end
     end
   case 'CS+FIC'
     % Here tstind = 1 if the prediction is made for the training set 
@@ -611,7 +619,9 @@ switch gp.type
     if nargout > 2
       Eyt = Eft;
       Varyt = Varft + Cnn_v - Knn_v;
-      lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      if ~isempty(yt)
+        lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+      end
     end
     
   case {'VAR' 'DTC' 'SOR'}
@@ -687,7 +697,9 @@ switch gp.type
         case 'SOR'
           Varyt = Varft + Cnn_v - sum(B2.^2,1)';
       end
-      lpyt = norm_lpdf(y, Eyt, sqrt(Varyt));
+      if ~isempty(yt)
+        lpyt = norm_lpdf(y, Eyt, sqrt(Varyt));
+      end
     end  
     
   case 'SSGP'

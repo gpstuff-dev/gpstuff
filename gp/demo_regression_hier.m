@@ -238,8 +238,8 @@ title('Non-linear hierarchical model 3 with IA')
 drawnow
 
 %*** Missing Data Example ***
-% In the original paper (Gelfand et al, 1990) data was aslo to
-% demonstrate misiing data handling, by removing 1-4 weeks of data
+% In the original paper (Gelfand et al, 1990) data was also to
+% demonstrate missing data handling, by removing 1-4 weeks of data
 % for part of the rats. Handling missing data in this case is trivial
 % for GPs, too
 

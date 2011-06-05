@@ -1,25 +1,25 @@
-function [Eft, Varft, ljpyt, Eyt, Varyt] = gp_jpred(gp, x, y, xt, varargin)
+function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, xt, varargin)
 %GP_PRED  Make predictions with Gaussian process 
 %
 %  Description
-%    [EFT, VARFT] = GP_JPRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, COVFT] = GP_JPRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and covariance VARFT of latent variables.
+%    mean EFT and covariance COVFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
-%      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
+%      Covft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
 %
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, LJPYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, COVFT, LJPYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also logarithm of the predictive joint density JPYT of the observations YT
 %    at test input locations XT. This can be used for example in
 %    the cross-validation. Here Y has to be vector.
 %
-%    [EFT, VARFT, LJPYT, EYT, VARYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, COVFT, LJPYT, EYT, COVYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the posterior predictive mean and covariance.
 % 
 %    OPTIONS is optional parameter-value pair
@@ -105,13 +105,13 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     case 1
       [Eft] = fh_pred(gp, x, y, xt, varargin{:});
     case 2
-      [Eft, Varft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft] = fh_pred(gp, x, y, xt, varargin{:});
     case 3
-      [Eft, Varft, ljpyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft, ljpyt] = fh_pred(gp, x, y, xt, varargin{:});
     case 4
-      [Eft, Varft, ljpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft, ljpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
     case 5
-      [Eft, Varft, ljpyt, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft, ljpyt, Eyt, Covyt] = fh_pred(gp, x, y, xt, varargin{:});
   end
   return
 end
@@ -135,7 +135,7 @@ tstind=ip.Results.tstind;
 tn = size(x,1);
 
 if nargout > 2 && isempty(yt)
-    error('GP_PRED -> To compute LJPYT, the YT has to be provided.')
+  ljpyt=[];
 end
 
 % Evaluate this if sparse model is used
@@ -178,15 +178,15 @@ switch gp.type
 
         V = gp_trcov(gp,xt,predcf);            
         if issparse(C)
-            Varft = (V - (K'*ldlsolve(LD,K)));  
+            Covft = (V - (K'*ldlsolve(LD,K)));  
         else
             v = L\K;
-            Varft = (V - (v'*v));            
+            Covft = (V - (v'*v));            
         end
             
         % If there are specified mean functions
         if  isfield(gp,'meanf')           
-            Varft = Varft + RAR; 
+            Covft = Covft + RAR; 
         end
     end     
     
@@ -198,9 +198,11 @@ switch gp.type
             [V, Cv] = gp_trvar(gp,xt,predcf);
             Eyt = Eft;
             apu = Cv - V;
-            Varyt = Varft + diag(apu); % Utilize the Varft calculated above (faster!?) dimensions did not match here earlier!
+            Covyt = Covft + diag(apu); % Utilize the Covft calculated above (faster!?) dimensions did not match here earlier!
             % Log joint predictive density
-            ljpyt = mnorm_lpdf(yt', Eyt', Varyt); 
+            if ~isempty(yt)
+              ljpyt = mnorm_lpdf(yt', Eyt', Covyt); 
+            end
         else 
           % scale mixture case
             nu = gp.lik.nu;             % Not working at the moment. Probably.
@@ -208,13 +210,13 @@ switch gp.type
             sigma = sqrt(sigma2);
             
             Eyt = Eft;
-            Varyt = (nu./(nu-2).*sigma2);
+            Covyt = (nu./(nu-2).*sigma2);
 
             for i2 = 1:length(Eft)
                 mean_app = Eft(i2);
-                sigm_app = sqrt(Varft(i2));
+                sigm_app = sqrt(Covft(i2));
 
-                pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Varft(i2)));
+                pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Covft(i2)));
                 pyt(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
             end           
         end
@@ -303,15 +305,17 @@ switch gp.type
           a = L'\(L\y);
           v = L\K;
           
-          Varft = K2-v'*v;                         
+          Covft = K2-v'*v;                         
         end
     end
         
     
     if nargout > 2
         Eyt = Eft;
-        Varyt = Varft + diag(Cnn_v) - diag(Knn_v);
-        ljpyt = mnorm_lpdf(yt', Eyt', Varyt);
+        Covyt = Covft + diag(Cnn_v) - diag(Knn_v);
+        if ~isempty(yt)
+          ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
+        end
     end
     
   case {'PIC' 'PIC_BLOCK'}
@@ -388,9 +392,9 @@ switch gp.type
 %         KnuiKuu = K_nu/K_uu;
 %         KufiLaKfu = K_fu'*iLaKfu;
 %         QnfL = KnuiKuu*(K_fu'*L);
-%         Varft1 = zeros(size(xt,1),size(xt,1));
-%         Varft2 = zeros(size(xt,1),size(xt,1));
-%         Varft3 = zeros(size(xt,1),size(xt,1));
+%         Covft1 = zeros(size(xt,1),size(xt,1));
+%         Covft2 = zeros(size(xt,1),size(xt,1));
+%         Covft3 = zeros(size(xt,1),size(xt,1));
 %         C = B'*B;
 %         KKnn = gp_trcov(gp,xt,predcf);
 %         Knn = B2'*B2;
@@ -399,23 +403,23 @@ switch gp.type
 %         for i=1:length(ind)
 %             KubiLaKbu = K_fu(ind{i},:)'/La{i}*K_fu(ind{i},:);
 %             nonblock = KufiLaKfu - KubiLaKbu;
-%             Varft1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
+%             Covft1(tstind{i}) = diag(KnuiKuu(tstind{i},:)*nonblock*KnuiKuu(tstind{i},:)');
 %             
 %             Knb = gp_cov(gp, xt(tstind{i},:), x(ind{i},:), predcf);
-%             Varft2(tstind{i}) = diag(Knb/La{i}*Knb');
+%             Covft2(tstind{i}) = diag(Knb/La{i}*Knb');
 %             
 %             KnbL = Knb*L(ind{i},:);
 %             QnbL = KnuiKuu(tstind{i},:)*(K_fu(ind{i},:)'*L(ind{i},:));
-%             %Varft3(tstind{i}) = sum(QnfL(tstind{i},:) - QnbL + KnbL,2);
-%             Varft3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
+%             %Covft3(tstind{i}) = sum(QnfL(tstind{i},:) - QnbL + KnbL,2);
+%             Covft3(tstind{i}) = diag((QnfL(tstind{i},:) - QnbL + KnbL)*(QnfL(tstind{i},:) - QnbL + KnbL)');
 %             C(ind{i},ind{i}) = C(ind{i},ind{i}) + La{i};
 %             Knn(ind{i},ind{i}) = Knn(ind{i},ind{i}) + KKnn(tstind{i},tstind{i}) - B2(:,tstind{i})'*B2(:,tstind{i});
 %             Knf(tstind{i},ind{i}) = Knf(tstind{i},ind{i}) + KKnf(tstind{i},ind{i}) - B2(:,tstind{i})'*B(:,ind{i});
 %         end
 %         L = chol(C,'lower');
 %         v = L\Knf;
-%         Varft = Knn-v'*v;
-% %         Varft = kstarstar - (Varft1 + Varft2 - Varft3);       %MUUTETTU
+%         Covft = Knn-v'*v;
+% %         Covft = kstarstar - (Covft1 + Covft2 - Covft3);       %MUUTETTU
 %     end
     
  
@@ -438,14 +442,16 @@ switch gp.type
         L = chol(C)';
 
         v = L\Knf';
-        Varft = (Knn) - (v'*v);
+        Covft = (Knn) - (v'*v);
     end
     
     if nargout > 2
         Eyt = Eft;
         [Knn_v, Cnn_v] = gp_trvar(gp,xt,predcf);
-        Varyt = Varft + diag(Cnn_v) - diag(Knn_v);
-        ljpyt = mnorm_lpdf(yt', Eyt', Varyt);
+        Covyt = Covft + diag(Cnn_v) - diag(Knn_v);
+        if ~isempty(yt)
+          ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
+        end
     end
   case 'CS+FIC'
     % Here tstind = 1 if the prediction is made for the training set 
@@ -579,11 +585,11 @@ switch gp.type
         % covariance functions used for making the prediction
         if ptype == 1 || ptype == 3                            
             % FIC part of the covariance
-%             Varft = Knn_v - sum(B2'.*(B*(La\B')*B2)',2) +
+%             Covft = Knn_v - sum(B2'.*(B*(La\B')*B2)',2) +
 %             sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);             % MUUTETTU
             tmpmatr = (K_nu*(K_uu\(K_fu'*L)));
-            Varft = B2'*B2 + Kcs_nn + sparse(1:n2,1:n2,Knn_v - sum(B2.^2)',n2,n2) - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
-%             Varft = B2'*B2 + Kcs_nn - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
+            Covft = B2'*B2 + Kcs_nn + sparse(1:n2,1:n2,Knn_v - sum(B2.^2)',n2,n2) - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
+%             Covft = B2'*B2 + Kcs_nn - B2'*(B*(La\B')*B2) + tmpmatr*tmpmatr';
 
 
             % Add Lav2 if the prediction is made for the training set
@@ -597,22 +603,22 @@ switch gp.type
                 end
                  % Add Lav2 and possibly Kcs_nf
                  tmpmatr = Kcs_nf/chol(La);
-                 Varft = Varft - tmpmatr*tmpmatr';
+                 Covft = Covft - tmpmatr*tmpmatr';
                  tmpmatr = Kcs_nf*L;
-                 Varft = Varft + tmpmatr*tmpmatr';
-                 Varft = Varft - 2.*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+                 Covft = Covft + tmpmatr*tmpmatr';
+                 Covft = Covft - 2.*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
             % In case of both non-CS and CS prediction covariances add 
             % only Kcs_nf if the prediction is not done for the training set 
             elseif ptype == 3
                 tmpmatr = Kcs_nf/chol(La);
-                Varft = Varft - tmpmatr*tmpmatr';
+                Covft = Covft - tmpmatr*tmpmatr';
                 tmpmatr = Kcs_nf*L;
-                Varft = Varft + tmpmatr*tmpmatr';
-                Varft = Varft - 2*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
+                Covft = Covft + tmpmatr*tmpmatr';
+                Covft = Covft - 2*(Kcs_nf*iLaKfu)*(K_uu\K_nu') + 2.*(Kcs_nf*L)*(L'*K_fu*(K_uu\K_nu'));
             end
         % Prediction with only CS covariance
         elseif ptype == 2
-            Varft = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
+            Covft = Knn_v - sum((Kcs_nf/chol(La)).^2,2) + sum((Kcs_nf*L).^2, 2) ;
 
         end        
     end
@@ -629,12 +635,14 @@ switch gp.type
 % $$$ 
 % $$$     v = L\K;
 % $$$     V = gp_trvar(gp,xt,predcf);
-% $$$     Varft = V - diag(v'*v);
+% $$$     Covft = V - diag(v'*v);
 
     if nargout > 2
         Eyt = Eft;
-        Varyt = Varft + diag(Cnn_v) - diag(Knn_v);
-        ljpyt = mnorm_lpdf(yt', Eyt', Varyt);
+        Covyt = Covft + diag(Cnn_v) - diag(Knn_v);
+        if ~isempty(yt)
+          ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
+        end
     end
     
   case {'VAR' 'DTC' 'SOR'}
@@ -695,13 +703,13 @@ switch gp.type
         B=Luu\(K_fu');
         B2=Luu\(K_nu');
         
-        Varftr = sum(B2'.*(B*bsxfun(@ldivide,Lav2,B')*B2)',2) - sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
-%         Varftr = 
+        Covftr = sum(B2'.*(B*bsxfun(@ldivide,Lav2,B')*B2)',2) - sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+%         Covftr = 
         switch gp.type
           case {'VAR' 'DTC'}
-            Varft = Knn_v - Varftr;         % Knn_v = diag(K_*,*)
+            Covft = Knn_v - Covftr;         % Knn_v = diag(K_*,*)
           case  'SOR'
-            Varft = sum(B2.^2,1)' - Varftr;     % sum(B2.^2,1)' = diag(Q_*,*)
+            Covft = sum(B2.^2,1)' - Covftr;     % sum(B2.^2,1)' = diag(Q_*,*)
         end
 
     end
@@ -709,13 +717,13 @@ switch gp.type
         Eyt = Eft;
         switch gp.type
           case {'VAR' 'DTC'}
-            Varyt = Varft + Cnn_v - Knn_v;
+            Covyt = Covft + Cnn_v - Knn_v;
           case 'SOR'
-            Varyt = Varft + Cnn_v - sum(B2.^2,1)';
+            Covyt = Covft + Cnn_v - sum(B2.^2,1)';
         end
     end
     if nargout > 4
-        pyt = norm_pdf(y, Eyt, sqrt(Varyt));
+        pyt = norm_pdf(y, Eyt, sqrt(Covyt));
     end  
     
   case 'SSGP'
@@ -734,7 +742,7 @@ switch gp.type
 
     
     if nargout > 1
-        Varft = sum(Phi_a/L',2)*S(1,1);
+        Covft = sum(Phi_a/L',2)*S(1,1);
     end
     if nargout > 2
         error('gp_pred with three output arguments is not implemented for SSGP!')

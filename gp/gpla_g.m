@@ -87,7 +87,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
           s2 = 0.5*C2.*feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
         end
-      else                         % We might end up here if the likelihood is not log concace
+      else                         % We might end up here if the likelihood is not log-concave
                                    % For example Student-t likelihood. 
       C = L;
       V = L*diag(W);

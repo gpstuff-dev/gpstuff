@@ -26,7 +26,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
 
 
   ip=inputParser;
-  ip.FunctionName = 'GP_WAIC';
+  ip.FunctionName = 'GP_PREDPRCTY';
   ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
