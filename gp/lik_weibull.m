@@ -87,6 +87,7 @@ function lik = lik_weibull(varargin)
     lik.fh.llg3 = @lik_weibull_llg3;
     lik.fh.tiltedMoments = @lik_weibull_tiltedMoments;
     lik.fh.siteDeriv = @lik_weibull_siteDeriv;
+    lik.fh.invlink = @lik_weibull_invlink;
     lik.fh.predy = @lik_weibull_predy;
     lik.fh.recappend = @lik_weibull_recappend;
   end
@@ -401,6 +402,19 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   end
 end
 
+function p = lik_weibull_invlink(lik, f)
+%LIK_WEIBULL Returns values of inverse link function
+%             
+%  Description 
+%    P = LIK_WEIBULL_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values of inverse link function P.
+%
+%     See also
+%     LIK_WEIBULL_LL, LIK_WEIBULL_PREDY
+
+p = exp(f);
+end
+
 function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %LIK_WEIBULL_PREDY  Returns the predictive mean, variance and density of y
 %
@@ -616,6 +630,7 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
     reclik.fh.llg2 = @lik_weibull_llg2;
     reclik.fh.llg3 = @lik_weibull_llg3;
     reclik.fh.tiltedMoments = @lik_weibull_tiltedMoments;
+    reclik.fh.invlink = @lik_weibull_invlink;
     reclik.fh.predy = @lik_weibull_predy;
     reclik.fh.recappend = @lik_weibull_recappend;
     reclik.p=[];

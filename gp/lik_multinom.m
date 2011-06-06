@@ -44,6 +44,7 @@ function lik = lik_multinom(varargin)
     lik.fh.llg3 = @lik_multinom_llg3;
     lik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     lik.fh.predy = @lik_multinom_predy;
+    lik.fh.invlink = @lik_multinom_invlink;
     lik.fh.recappend = @lik_multinom_recappend;
   end
 
@@ -256,6 +257,18 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   end
 end
 
+function p = lik_multinom_invlink(lik, f, z)
+%LIK_MULTINOM_INVLINK Returns values of inverse link function
+%             
+%  Description 
+%    P = LIK_MULTINOM_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values of inverse link function P.
+%
+%     See also
+%     LIK_MULTINOM_LL, LIK_MULTINOM_PREDY
+p = logitinv(f).*z;
+end
+
 function reclik = lik_multinom_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
@@ -281,6 +294,7 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
     reclik.fh.llg3 = @lik_multinom_llg3;
     reclik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     reclik.fh.predy = @lik_multinom_predy;
+    reclik.fh.invlink = @lik_multinom_invlink;
     reclik.fh.recappend = @lik_multinom_recappend;
     return
   end
