@@ -90,14 +90,14 @@ switch gp.type
       if issparse(C)            % compact support covariances are in use
         [LD,notpositivedefinite] = ldlchol(C);
         if notpositivedefinite
-          set_output_for_notpositivedefinite()
+          [edata, eprior, e] = set_output_for_notpositivedefinite;
           return
         end
         edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
       else
         [L,notpositivedefinite] = chol(C,'lower');
         if notpositivedefinite
-          set_output_for_notpositivedefinite()
+          [edata, eprior, e] = set_output_for_notpositivedefinite;
           return
         end
         b=L\y;
@@ -113,15 +113,15 @@ switch gp.type
       elseif issparse(C)  
         [L,notpositivedefinite] = ldlchol(C);
         if notpositivedefinite
-          set_output_for_notpositivedefinite()
+          [edata, eprior, e] = set_output_for_notpositivedefinite;
           return
         end
         logK = 0.5*sum(log(diag(L)));
         KH = L'\(L\H');
-      else
+      else          
         [L,notpositivedefinite] = chol(C,'lower');
         if notpositivedefinite
-          set_output_for_notpositivedefinite()
+          [edata, eprior, e] = set_output_for_notpositivedefinite;
           return
         end
         logK = sum(log(diag(L)));
@@ -157,7 +157,7 @@ switch gp.type
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
     [Luu, notpositivedefinite] = chol(K_uu,'lower');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     % Evaluate the Lambda (La)
@@ -182,7 +182,7 @@ switch gp.type
     A = (A+A')./2;     % Ensure symmetry
     [A, notpositivedefinite] = chol(A,'upper');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     % The actual error evaluation
@@ -203,7 +203,7 @@ switch gp.type
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
     [Luu, notpositivedefinite] = chol(K_uu,'lower');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
 
@@ -229,7 +229,7 @@ switch gp.type
     A = (A+A')./2;     % Ensure symmetry
     [A, notpositivedefinite] = chol(A,'lower');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     % The actual error evaluation
@@ -268,7 +268,7 @@ switch gp.type
     K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
     [Luu, notpositivedefinite] = chol(K_uu,'lower');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
 
@@ -286,7 +286,7 @@ switch gp.type
 
     [LD, notpositivedefinite] = ldlchol(La);
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     
@@ -302,7 +302,7 @@ switch gp.type
     A = (A+A')./2;     % Ensure symmetry
     [A, notpositivedefinite] = chol(A,'upper');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     % The actual error evaluation
@@ -329,7 +329,7 @@ switch gp.type
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
     [Luu, notpositivedefinite] = chol(K_uu, 'lower');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     % Evaluate the Lambda (La)
@@ -354,7 +354,7 @@ switch gp.type
     A = (A+A')./2;     % Ensure symmetry
     [A, notpositivedefinite] = chol(A);
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     % The actual error evaluation
@@ -384,7 +384,7 @@ switch gp.type
     A = eye(m,m) + Phi'*(S\Phi);
     [A, notpositivedefinite] = chol(A,'lower');
     if notpositivedefinite
-      set_output_for_notpositivedefinite()
+      [edata, eprior, e] = set_output_for_notpositivedefinite;
       return
     end
     

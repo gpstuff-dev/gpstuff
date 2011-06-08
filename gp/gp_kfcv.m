@@ -364,11 +364,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     % make the prediction
     [Eft, Varft, lpyt, Eyt, Varyt] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
     if nargout>=6
-      cvtrpreds.Eft([trindex{i} tstindex{i}],i)=Eft([trindex{i} tstindex{i}],:);
-      cvtrpreds.Varft([trindex{i} tstindex{i}],i)=Varft([trindex{i} tstindex{i}],:);
-      cvtrpreds.lpyt([trindex{i} tstindex{i}],i)=lpyt([trindex{i} tstindex{i}],:);      
-      cvtrpreds.Eyt([trindex{i} tstindex{i}],i)=Eyt([trindex{i} tstindex{i}],:);
-      cvtrpreds.Varyt([trindex{i} tstindex{i}],i)=Varyt([trindex{i} tstindex{i}],:);
+      cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
+      cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
+      cvtrpreds.lpyt([trindex{i}(:) ; tstindex{i}(:)],i)=lpyt([trindex{i}(:) ; tstindex{i}(:)],:);      
+      cvtrpreds.Eyt([trindex{i}(:) ; tstindex{i}(:)],i)=Eyt([trindex{i}(:) ; tstindex{i}(:)],:);
+      cvtrpreds.Varyt([trindex{i}(:) ; tstindex{i}(:)],i)=Varyt([trindex{i}(:) ; tstindex{i}(:)],:);
     end
     if nargout>=2
       cvpreds.Eft(tstindex{i},:)=Eft(tstindex{i},:);
