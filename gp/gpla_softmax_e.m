@@ -144,7 +144,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             end
             [LD, notpositivedefinite] = ldlchol(K);
             if notpositivedefinite
-              set_output_for_notpositivedefinite()
+              [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
               return
             end
           else
@@ -230,7 +230,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
                   Lc(1:n+1:end)=Lc(1:n+1:end)+1;
                   [Lc, notpositivedefinite]=chol(Lc);
                   if notpositivedefinite
-                    set_output_for_notpositivedefinite()
+                    [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   L(:,:,i1)=Lc;
@@ -243,7 +243,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
                 
                 [M, notpositivedefinite]=chol(E_tmp);
                 if notpositivedefinite
-                  set_output_for_notpositivedefinite()
+                  [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
                   return
                 end
                 
@@ -397,7 +397,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
             Lc(1:n+1:end)=Lc(1:n+1:end)+1;
             [Lc, notpositivedefinite]=chol(Lc);
             if notpositivedefinite
-              set_output_for_notpositivedefinite()
+              [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
               return
             end
             L(:,:,i1)=Lc;
@@ -409,7 +409,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
           end
           [M,notpositivedefinite]=chol(E_tmp);
           if notpositivedefinite
-            set_output_for_notpositivedefinite()
+            [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
             return
           end
           
@@ -425,7 +425,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
           %det_mat_sum=(det_mat_sum+det_mat_sum')./2;
           [det_mat, notpositivedefinite]=chol(eye(n)-det_mat_sum);
           if notpositivedefinite
-            set_output_for_notpositivedefinite()
+            [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
             return
           end
           det_term=sum(log(diag(det_mat)))+det_diag;

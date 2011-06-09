@@ -187,7 +187,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                   Lc(1:n+1:end)=Lc(1:n+1:end)+1;
                   [Lc,notpositivedefinite]=chol(Lc);
                   if notpositivedefinite
-                    set_output_for_notpositivedefinite()
+                    [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   L(:,:,i1)=Lc;
@@ -199,7 +199,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                 end
                 [M, notpositivedefinite]=chol(sum(RER,3));
                 if notpositivedefinite
-                  set_output_for_notpositivedefinite()
+                  [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
                   return
                 end
                 
@@ -251,7 +251,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
               Lc(1:n+1:end)=Lc(1:n+1:end)+1;
               [Lc, notpositivedefinite]=chol(Lc);
               if notpositivedefinite
-                set_output_for_notpositivedefinite()
+                [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
                 return
               end
               L(:,:,i1)=Lc;
@@ -268,7 +268,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
           end
           [M, notpositivedefinite]=chol(sum(RER,3));
           if notpositivedefinite
-            set_output_for_notpositivedefinite()
+            [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
             return
           end
           

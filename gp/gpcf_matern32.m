@@ -122,12 +122,13 @@ function gpcf = gpcf_matern32(varargin)
   if ~ismember('selectedVariables',ip.UsingDefaults)
     if ~isfield(gpcf,'metric')
       if ~isempty(ip.Results.selectedVariables)
-        gpcf.metric=metric_euclidean('components',...
-                                     num2cell(ip.Results.selectedVariables),...
-                                     'lengthScale',gpcf.lengthScale,...
-                                     'lengthScale_prior',gpcf.p.lengthScale);
-        gpcf = rmfield(gpcf, 'lengthScale');
-        gpcf.p = rmfield(gpcf.p, 'lengthScale');
+        gpcf.selectedVariables = ip.Results.selectedVariables;
+%         gpcf.metric=metric_euclidean('components',...
+%                                      num2cell(ip.Results.selectedVariables),...
+%                                      'lengthScale',gpcf.lengthScale,...
+%                                      'lengthScale_prior',gpcf.p.lengthScale);
+%         gpcf = rmfield(gpcf, 'lengthScale');
+%         gpcf.p = rmfield(gpcf.p, 'lengthScale');
       end
     elseif isfield(gpcf,'metric') 
       if ~isempty(ip.Results.selectedVariables)
@@ -350,7 +351,6 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask)
 %    GPCF_MATERN32_PAK, GPCF_MATERN32_UNPAK, GPCF_MATERN32_LP, GP_G
 
   gpp=gpcf.p;
-  [n, m] =size(x);
 
   i1=0;i2=1;
   DKff = {};
@@ -379,6 +379,10 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask)
         DKff{ii1} = -gpcf.magnSigma2.*3.*dist.*distg{i}.*exp(-sqrt(3).*dist);
       end
     else
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         ma2 = gpcf.magnSigma2;
         % loop over all the lengthScales
@@ -431,6 +435,11 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask)
         DKff{ii1} = -gpcf.magnSigma2.*3.*dist.*distg{i}.*exp(-sqrt(3).*dist);
       end
     else
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+        x2 = x2(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         % Evaluate help matrix for calculations of derivatives with respect
         % to the lengthScale
@@ -593,10 +602,8 @@ function C = gpcf_matern32_cov(gpcf, x1, x2)
   if isempty(x2)
     x2=x1;
   end
-  [n1,m1]=size(x1);
-  [n2,m2]=size(x2);
 
-  if m1~=m2
+  if size(x1,2)~=size(x2,2)
     error('the number of columns of X1 and X2 has to be same')
   end
 
@@ -605,6 +612,12 @@ function C = gpcf_matern32_cov(gpcf, x1, x2)
     dist(dist<eps) = 0;
     C = gpcf.magnSigma2.*(1+sqrt(3).*dist).*exp(-sqrt(3).*dist);
   else
+    if isfield(gpcf,'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
     C=zeros(n1,n2);
     ma2 = gpcf.magnSigma2;
     
@@ -649,6 +662,9 @@ function C = gpcf_matern32_trcov(gpcf, x)
     C = trcov(gpcf,x);
     if isnan(C)
       % If there wasn't C-implementation do here
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
       [n, m] =size(x);
       
       s2 = 1./(gpcf.lengthScale).^2;

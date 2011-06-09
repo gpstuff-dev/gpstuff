@@ -120,12 +120,13 @@ function gpcf = gpcf_rq(varargin)
   if ~ismember('selectedVariables',ip.UsingDefaults)
     if ~isfield(gpcf,'metric')
       if ~isempty(ip.Results.selectedVariables)
-        gpcf.metric=metric_euclidean('components',...
-                                     num2cell(ip.Results.selectedVariables),...
-                                     'lengthScale',gpcf.lengthScale,...
-                                     'lengthScale_prior',gpcf.p.lengthScale);
-        gpcf = rmfield(gpcf, 'lengthScale');
-        gpcf.p = rmfield(gpcf.p, 'lengthScale');
+        gpcf.selectedVariables = ip.Results.selectedVariables;
+%         gpcf.metric=metric_euclidean('components',...
+%                                      num2cell(ip.Results.selectedVariables),...
+%                                      'lengthScale',gpcf.lengthScale,...
+%                                      'lengthScale_prior',gpcf.p.lengthScale);
+%         gpcf = rmfield(gpcf, 'lengthScale');
+%         gpcf.p = rmfield(gpcf.p, 'lengthScale');
       end
     elseif isfield(gpcf,'metric') 
       if ~isempty(ip.Results.selectedVariables)
@@ -386,7 +387,6 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask)
 %   GPCF_RQ_PAK, GPCF_RQ_UNPAK, GPCF_RQ_LP, GP_G
 
   gpp=gpcf.p;
-  [n, m] =size(x);
   a=(gpcf.alpha+1)/gpcf.alpha;
 
   i1=0;i2=1;
@@ -425,6 +425,10 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask)
         DKff{ii1} = Cdm.*-dist./(1+dist.^2./(2*gpcf.alpha)).*distg{i};
       end
     else
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       % loop over all the lengthScales
       if length(gpcf.lengthScale) == 1
         % Isotropic = no ARD
@@ -477,6 +481,11 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask)
         DKff{ii1} = -K.*distg{i};                    
       end
     else
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+        x2 = x2(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
       if length(gpcf.lengthScale) == 1
         % In the case of an isotropic EXP
@@ -503,6 +512,7 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask)
   elseif nargin == 4
     if isfield(gpcf,'metric')
       ii1=1;
+      [n, m] =size(x);
       DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
       
       dist = 0;
@@ -630,10 +640,8 @@ function C = gpcf_rq_cov(gpcf, x1, x2)
   if isempty(x2)
     x2=x1;
   end
-  [n1,m1]=size(x1);
-  [n2,m2]=size(x2);
 
-  if m1~=m2
+  if size(x1,2)~=size(x2,2)
     error('the number of columns of X1 and X2 has to be same')
   end
 
@@ -642,6 +650,12 @@ function C = gpcf_rq_cov(gpcf, x1, x2)
     dist(dist<eps) = 0;
     C = gpcf.magnSigma2.*(1+dist./(2*gpcf.alpha)).^(-gpcf.alpha);
   else
+    if isfield(gpcf, 'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
     C=zeros(n1,n2);
     ma2 = gpcf.magnSigma2;
     
@@ -692,12 +706,14 @@ function C = gpcf_rq_trcov(gpcf, x)
     C = ma2.*(1+C./(2*gpcf.alpha)).^(-gpcf.alpha);     
   else
     % If scaled euclidean metric
-    % Try to use the C-implementation            
-    %C = trcov(gpcf, x);
-    C=NaN;
+    % Try to use the C-implementation
+    C=trcov(gpcf, x);
 
     if isnan(C)
       % If there wasn't C-implementation do here
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
       [n, m] =size(x);
       
       s2 = 1./(2*gpcf.alpha.*gpcf.lengthScale.^2);

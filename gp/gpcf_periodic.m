@@ -780,44 +780,48 @@ function C = gpcf_periodic_trcov(gpcf, x)
   if isfield(gpcf,'metric')
     error('Covariance function not compatible with metrics'); 
   else
-
-    %C = trcov(gpcf, x);
     
-    [n, m] =size(x);
-    gp_period=gpcf.period;
-    
-    s = 1./(gpcf.lengthScale);
-    s2 = s.^2;
-    if size(s)==1
-      s2 = repmat(s2,1,m);
-      gp_period = repmat(gp_period,1,m);
-    end
-    if gpcf.decay == 1
-      s_sexp = 1./(gpcf.lengthScale_sexp);
-      s_sexp2 = s_sexp.^2;
-      if size(s_sexp)==1
-        s_sexp2 = repmat(s_sexp2,1,m);
+    % Try to use the C-implementation
+    C=trcov(gpcf, x);
+%     C = NaN;
+    if isnan(C)
+      % If there wasn't C-implementation do here
+      [n, m] =size(x);
+      gp_period=gpcf.period;
+      
+      s = 1./(gpcf.lengthScale);
+      s2 = s.^2;
+      if size(s)==1
+        s2 = repmat(s2,1,m);
+        gp_period = repmat(gp_period,1,m);
       end
-    end
-    
-    ma = gpcf.magnSigma2;
-    
-    C = zeros(n,n);
-    for ii1=1:n-1
-      d = zeros(n-ii1,1);
-      col_ind = ii1+1:n;
-      for ii2=1:m
-        d = d+2.*s2(ii2).*sin(pi.*(x(col_ind,ii2)-x(ii1,ii2))./gp_period(ii2)).^2;
-        if gpcf.decay == 1
-          d=d+s_sexp2(ii2)./2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+      if gpcf.decay == 1
+        s_sexp = 1./(gpcf.lengthScale_sexp);
+        s_sexp2 = s_sexp.^2;
+        if size(s_sexp)==1
+          s_sexp2 = repmat(s_sexp2,1,m);
         end
       end
-      C(col_ind,ii1) = d;
-
+      
+      ma = gpcf.magnSigma2;
+      
+      C = zeros(n,n);
+      for ii1=1:n-1
+        d = zeros(n-ii1,1);
+        col_ind = ii1+1:n;
+        for ii2=1:m
+          d = d+2.*s2(ii2).*sin(pi.*(x(col_ind,ii2)-x(ii1,ii2))./gp_period(ii2)).^2;
+          if gpcf.decay == 1
+            d=d+s_sexp2(ii2)./2.*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+          end
+        end
+        C(col_ind,ii1) = d;
+        
+      end
+      C(C<eps) = 0;
+      C = C+C';
+      C = ma.*exp(-C);
     end
-    C(C<eps) = 0;
-    C = C+C';
-    C = ma.*exp(-C);
   end
 end
 

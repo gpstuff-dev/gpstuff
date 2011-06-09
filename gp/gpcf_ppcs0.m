@@ -161,12 +161,13 @@ end
 if ~ismember('selectedVariables',ip.UsingDefaults)
   if ~isfield(gpcf,'metric')
     if ~isempty(ip.Results.selectedVariables)
-      gpcf.metric=metric_euclidean('components',...
-                                   num2cell(ip.Results.selectedVariables),...
-                                   'lengthScale',gpcf.lengthScale,...
-                                   'lengthScale_prior',gpcf.p.lengthScale);
-      gpcf = rmfield(gpcf, 'lengthScale');
-      gpcf.p = rmfield(gpcf.p, 'lengthScale');
+      gpcf.selectedVariables = ip.Results.selectedVariables;
+%       gpcf.metric=metric_euclidean('components',...
+%                                    num2cell(ip.Results.selectedVariables),...
+%                                    'lengthScale',gpcf.lengthScale,...
+%                                    'lengthScale_prior',gpcf.p.lengthScale);
+%       gpcf = rmfield(gpcf, 'lengthScale');
+%       gpcf.p = rmfield(gpcf.p, 'lengthScale');
     end
   elseif isfield(gpcf,'metric') 
     if ~isempty(ip.Results.selectedVariables)
@@ -382,7 +383,6 @@ function DKff = gpcf_ppcs0_cfg(gpcf, x, x2, mask)
 %   GPCF_PPCS0_PAK, GPCF_PPCS0_UNPAK, GPCF_PPCS0_LP, GP_G
 
   gpp=gpcf.p;
-  [n, m] =size(x);
 
   i1=0;i2=1;
   DKff = {};
@@ -449,6 +449,10 @@ function DKff = gpcf_ppcs0_cfg(gpcf, x, x2, mask)
         DKff{ii1} = D + D';
       end
     else
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables)
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -580,6 +584,11 @@ function DKff = gpcf_ppcs0_cfg(gpcf, x, x2, mask)
       end
 
     else
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+        x2 = x2(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -632,7 +641,7 @@ function DKff = gpcf_ppcs0_cfg(gpcf, x, x2, mask)
     %           DKff{2...} = d mask(Kff,I) / d lengthScale
   elseif nargin == 4
     ii1=0;
-
+    [n, m] =size(x);
     if ~isempty(gpcf.p.magnSigma2)
       ii1 = ii1+1;
       DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
@@ -924,6 +933,10 @@ function C = gpcf_ppcs0_cov(gpcf, x1, x2, varargin)
   else
     % If scaled euclidean metric
     
+    if isfield(gpcf, 'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
     [n1,m1]=size(x1);
     [n2,m2]=size(x2);
     
@@ -1032,6 +1045,9 @@ function C = gpcf_ppcs0_trcov(gpcf, x)
     C = trcov(gpcf,x);
     % ... evaluate the covariance here.
     if isnan(C)
+      if isfield(gpcf, 'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
       [n, m] =size(x);
       
       s = 1./(gpcf.lengthScale);

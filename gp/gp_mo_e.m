@@ -101,7 +101,7 @@ switch gp.type
             [~, C] = gp_trcov(gp, x, gp.comp_cf{i1});
             [L,notpositivedefinite]=chol(C,'lower');
             if notpositivedefinite
-              set_output_for_notpositivedefinite()
+              [e, edata, eprior] = set_output_for_notpositivedefinite();
               return
             end
             b(:,i1) = L\y(:,i1);
@@ -111,7 +111,7 @@ switch gp.type
         [~, C] = gp_trcov(gp, x);
         [L,notpositivedefinite]=chol(C,'lower');
         if notpositivedefinite
-          set_output_for_notpositivedefinite()
+          [e, edata, eprior] = set_output_for_notpositivedefinite();
           return
         end
         for i1=1:nout

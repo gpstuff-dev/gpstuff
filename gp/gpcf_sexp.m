@@ -103,14 +103,15 @@ function gpcf = gpcf_sexp(varargin)
   % selectedVariables options implemented using metric_euclidean
   if ~ismember('selectedVariables',ip.UsingDefaults)
     if ~isfield(gpcf,'metric')
-      if ~isempty(ip.Results.selectedVariables)
-        gpcf.metric=metric_euclidean('components',...
-                                     num2cell(ip.Results.selectedVariables),...
-                                     'lengthScale',gpcf.lengthScale,...
-                                     'lengthScale_prior',gpcf.p.lengthScale);
-        gpcf = rmfield(gpcf, 'lengthScale');
-        gpcf.p = rmfield(gpcf.p, 'lengthScale');
-      end
+      gpcf.selectedVariables = ip.Results.selectedVariables;
+%       if ~isempty(ip.Results.selectedVariables)
+%         gpcf.metric=metric_euclidean('components',...
+%                                      num2cell(ip.Results.selectedVariables),...
+%                                      'lengthScale',gpcf.lengthScale,...
+%                                      'lengthScale_prior',gpcf.p.lengthScale);
+%         gpcf = rmfield(gpcf, 'lengthScale');
+%         gpcf.p = rmfield(gpcf.p, 'lengthScale');
+%       end
     elseif isfield(gpcf,'metric') 
       if ~isempty(ip.Results.selectedVariables)
         gpcf.metric=metric_euclidean(gpcf.metric,...
@@ -347,7 +348,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
 %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
 
   gpp=gpcf.p;
-  [n, m] =size(x);
+%   [n, m] =size(x);
 
   i1=0;i2=1;
   DKff = {};
@@ -375,6 +376,10 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
         DKff{ii1} = -Cdm.*dist.*distg{i};
       end
     else
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -424,6 +429,11 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
         DKff{ii1} = -K.*dist.*distg{i};                    
       end
     else
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+        x2 = x2(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         % Evaluate help matrix for calculations of derivatives with respect
         % to the lengthScale
@@ -455,7 +465,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
     %           DKff{2...} = d mask(Kff,I) / d lengthScale
   elseif nargin == 4
     ii1=0;
-    
+    [n, m] =size(x);
     if ~isempty(gpcf.p.magnSigma2)
       ii1 = ii1+1;
       DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
@@ -1050,10 +1060,8 @@ function C = gpcf_sexp_cov(gpcf, x1, x2)
   if isempty(x2)
     x2=x1;
   end
-  [n1,m1]=size(x1);
-  [n2,m2]=size(x2);
 
-  if m1~=m2
+  if size(x1,2)~=size(x2,2)
     error('the number of columns of X1 and X2 has to be same')
   end
 
@@ -1062,6 +1070,12 @@ function C = gpcf_sexp_cov(gpcf, x1, x2)
     dist(dist<eps) = 0;
     C = gpcf.magnSigma2.*exp(-dist./2);            
   else
+    if isfield(gpcf,'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
     C=zeros(n1,n2);
     ma2 = gpcf.magnSigma2;
     
@@ -1110,8 +1124,12 @@ function C = gpcf_sexp_trcov(gpcf, x)
     % If scaled euclidean metric
     % Try to use the C-implementation
     C = trcov(gpcf, x);
+%     C = NaN;
     if isnan(C)
       % If there wasn't C-implementation do here
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
       [n, m] =size(x);
       
       s = 1./(gpcf.lengthScale);

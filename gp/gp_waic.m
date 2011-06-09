@@ -7,7 +7,7 @@ function waic = gp_waic(gp, x, y, varargin)
 %     parameters(MCM, IA). X contains training inputs and Y contains training
 %     outputs.
 % 
-%   WAIC is evaluated as follows
+%   WAIC is evaluated as follows when using variance form
 %        
 %          WAIC(n) = BtL(n) + Vn/n
 %        
@@ -17,12 +17,29 @@ function waic = gp_waic(gp, x, y, varargin)
 %          BtL = -1/n*sum(log(p(yt | xt, x, y)))
 %
 %          Vn = sum(E[log(p(y|th))^2] - E[log(p(y|th))]^2)
+%
+%   When using Gibbs training loss, waic is evaluated as follows
+%
+%          WAIC(n) = 2*GtL(n) + BtL(n)
+%
+%     where BtL(n) is as above and GtL is Gibbs training loss
+%
+%          GtL(n) = -E[mean(log(p(y|th)))]
 %     
 %     1) GP is a record structure from gp_mc or an array of GPs from gp_ia.
 %        Focus is now parameters and latent variables.
 %
 %     2) GP is Gaussian process structure. In this case the focus is in the
 %        latent variables and the parameters are considered fixed. 
+%
+%   OPTIONS is optional parameter-value pair
+%      method - Method to evaluate waic, '1' = Variance form, '2' = Gibbs
+%               training loss (default = 1)
+%      form   - Return form, 'full' or 'single' (default = 'full')
+%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, expected value 
+%               for ith case. 
 %     
 %               
 %
@@ -51,10 +68,12 @@ function waic = gp_waic(gp, x, y, varargin)
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
   ip.addOptional('method', '1', @(x) ismember(x,{'1','2'}))
+  ip.addOptional('form', 'full', @(x) ismember(x,{'full','single'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
   method=ip.Results.method;
+  form=ip.Results.form;
   % pass these forward
   options=struct();
   z = ip.Results.z;
@@ -106,8 +125,10 @@ function waic = gp_waic(gp, x, y, varargin)
         % MCMC solution
         
         [~, ~, lpyt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
-        BtL = -1/tn * sum(lpyt);
-        
+        BtL = -lpyt;
+        GtL = zeros(tn,1);
+        Elog = zeros(tn,1);
+        Elog2 = zeros(tn,1);
         
         nsamples = length(gp.edata);
         if strcmp(gp.type, 'PIC')
@@ -149,8 +170,12 @@ function waic = gp_waic(gp, x, y, varargin)
                 .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
             end
             Elog2 = Elog2.^2;
-            Vn = sum(Elog-Elog2);
-            waic = BtL + Vn/tn;
+            Vn = (Elog-Elog2);
+            if strcmp(form, 'full')
+              Vn = sum(Vn)/tn;
+              BtL = sum(BtL)/tn;
+            end
+            waic = BtL + Vn;
           else
             % non-gaussian likelihood
             for i=1:tn
@@ -167,8 +192,12 @@ function waic = gp_waic(gp, x, y, varargin)
                 .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
             end
             Elog2 = Elog2.^2;
-            Vn = sum(Elog-Elog2);
-            waic = BtL + Vn/tn;
+            Vn = (Elog-Elog2);
+            if strcmp(form, 'full')
+              Vn = sum(Vn)/tn;
+              BtL = sum(BtL)/tn;
+            end
+            waic = BtL + Vn;
           end
           
         else
@@ -182,8 +211,11 @@ function waic = gp_waic(gp, x, y, varargin)
               GtL(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
                 .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
             end
-            GtL = -1/tn*sum(GtL);
-            waic = 2*GtL-BtL;
+            if strcmp(form, 'full')
+              GtL = 1/tn*sum(GtL);
+              BtL = 1/tn*sum(BtL);
+            end
+            waic = -2*GtL-BtL;
           else
             % non-gaussian likelihood
             for i=1:tn
@@ -197,8 +229,11 @@ function waic = gp_waic(gp, x, y, varargin)
               GtL(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
                 .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
             end
-            GtL = -1/tn * sum(GtL);
-            waic = 2* GtL - BtL;
+            if strcmp(form, 'full')
+              GtL = 1/tn*sum(GtL);
+              BtL = 1/tn*sum(BtL);
+            end
+            waic = -2*GtL-BtL;
           end
         end
         
@@ -206,10 +241,14 @@ function waic = gp_waic(gp, x, y, varargin)
       case 'latent'     
         % A single GP solution -> focus on latent variables
         [Ef, Varf, lpyt] = feval(fh_pred, gp, x, y, x, 'yt', y, 'tstind', tstind, options);
-        BtL = - 1/tn*sum(lpyt);              % Bayes training loss.
+        BtL = -lpyt;              % Bayes training loss.
         
 %           n = 5000;                    % gp_rnd sample size
 %           [sampf] = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', n, options);
+
+        GtL = zeros(tn,1);
+        Elog = zeros(tn,1);
+        Elog2 = zeros(tn,1);
 
         if strcmp(method,'1')          
           % Estimate WAIC with variance form
@@ -239,9 +278,12 @@ function waic = gp_waic(gp, x, y, varargin)
               
             end
             Elog2 = Elog2.^2;
-            
-            Vn = sum(Elog - Elog2);
-            waic = BtL + 1/tn * Vn;
+            Vn = Elog-Elog2;
+            if strcmp(form,'full')
+              BtL = sum(BtL)/tn;
+              Vn = sum(Vn)/tn;
+            end
+            waic = BtL + Vn;
           
             % Analytic solution
             
@@ -275,7 +317,11 @@ function waic = gp_waic(gp, x, y, varargin)
                 fmin, fmax);              
             end
             Elog2 = Elog2.^2;
-            Vn = sum(Elog-Elog2);
+            Vn = Elog-Elog2;
+            if strcmp(form, 'full')
+              Vn = 1/tn * sum(Vn);
+              BtL = 1/tn * sum(BtL);
+            end
             waic = BtL + 1/tn * Vn;
             
           end
@@ -296,8 +342,11 @@ function waic = gp_waic(gp, x, y, varargin)
               [m0, m1, m2] = moments(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))), fmin, fmax);
               GtL(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
             end
-            GtL = -1/tn * sum(GtL);
-            waic = 2*GtL - BtL;
+            if strcmp(form,'full')
+              GtL = 1/tn * sum(GtL);
+              BtL = 1/tn * sum(BtL);
+            end
+            waic = -2*GtL - BtL;
           else
             % Non-Gaussian likelihood
             for i=1:tn
@@ -311,7 +360,10 @@ function waic = gp_waic(gp, x, y, varargin)
               GtL(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
                 fmin, fmax);
             end
-            GtL = -1/tn * sum(GtL);
+            if strcmp(form,'full')
+              GtL = -1/tn * sum(GtL);
+              BtL = 1/tn * sum(BtL);
+            end
             waic = 2*GtL-BtL;
           end
           
@@ -349,7 +401,10 @@ function waic = gp_waic(gp, x, y, varargin)
     end
     
     [~, ~, lpyt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
-    BtL = -1/tn * sum(lpyt);
+    BtL = -lpyt;
+    GtL = zeros(tn,1);
+    Elog = zeros(tn,1);
+    Elog2 = zeros(tn,1);
     
     nsamples = length(gp);
     for i = 1:nsamples
@@ -375,8 +430,12 @@ function waic = gp_waic(gp, x, y, varargin)
             .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
         end
         Elog2 = Elog2.^2;
-        Vn = sum(Elog-Elog2);
-        waic = BtL + Vn/tn;
+        Vn = (Elog-Elog2);
+        if strcmp(form, 'full')
+          Vn = sum(Vn)/tn;
+          BtL = sum(BtL)/tn;
+        end
+        waic = BtL + Vn;
       else
         % non-gaussian likelihood
         for i=1:tn
@@ -393,10 +452,13 @@ function waic = gp_waic(gp, x, y, varargin)
             .*llvec(gp, y(i), f, z1)), fmin, fmax);
         end
         Elog2 = Elog2.^2;
-        Vn = sum(Elog-Elog2);
-        waic = BtL + Vn/tn;
+        Vn = (Elog-Elog2);
+        if strcmp(form, 'full')
+          Vn = sum(Vn)/tn;
+          BtL = sum(BtL)/tn;
+        end
+        waic = BtL + Vn;
         
-
       end
       
     else
@@ -410,8 +472,11 @@ function waic = gp_waic(gp, x, y, varargin)
           GtL(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
             .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
         end
-        GtL = -1/tn*sum(GtL);
-        waic = 2*GtL-BtL;
+        if strcmp(form, 'full')
+          GtL = 1/tn*sum(GtL);
+          BtL = 1/tn*sum(BtL);
+        end
+        waic = -2*GtL-BtL;
       else
         % non-gaussian likelihood
         for i=1:tn
@@ -425,8 +490,11 @@ function waic = gp_waic(gp, x, y, varargin)
           GtL(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
             .*llvec(gp, y(i), f, z1)), fmin, fmax);
         end
-        GtL = -1/tn*sum(GtL);
-        waic = 2*GtL-BtL;
+        if strcmp(form, 'full')
+          GtL = 1/tn*sum(GtL);
+          BtL = 1/tn*sum(BtL);
+        end
+        waic = -2*GtL-BtL;
       end
     end
         

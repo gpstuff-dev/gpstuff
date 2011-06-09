@@ -53,7 +53,7 @@ switch gp.type
       iC = spinv(C); % evaluate the sparse inverse
       [LD, notpositivedefinite] = ldlchol(C);
       if notpositivedefinite
-        set_output_for_notpositivedefinite()
+        eloo = NaN;
         return
       end
       b = ldlsolve(LD,y);
@@ -93,10 +93,6 @@ switch gp.type
     
   otherwise
     error('Unknown type of Gaussian process!')
-end
-function eloo = set_output_for_notpositivedefinite()
-  % Instead of stopping to chol error, return NaN
-  eloo = NaN;
 end
 
 end
