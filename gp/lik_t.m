@@ -47,6 +47,7 @@ function lik = lik_t(varargin)
   ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
   ip.addParamValue('nu_prior',prior_fixed, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('fix_nu',[], @(x) isreal(x) && isfinite(x))
   ip.parse(varargin{:});
   lik=ip.Results.lik;
   
@@ -77,6 +78,9 @@ function lik = lik_t(varargin)
   if init || ~ismember('nu_prior',ip.UsingDefaults)
     lik.p.nu=ip.Results.nu_prior;
   end
+  if init || ~ismember('fix_nu',ip.UsingDefaults)
+    lik.fix_nu=ip.Results.fix_nu;
+  end
   
   if init      
     % Set the function handles to the subfunctions
@@ -89,7 +93,9 @@ function lik = lik_t(varargin)
     lik.fh.llg2 = @lik_t_llg2;
     lik.fh.llg3 = @lik_t_llg3;
     lik.fh.tiltedMoments = @lik_t_tiltedMoments;
+    lik.fh.tiltedMoments2 = @lik_t_tiltedMoments2;
     lik.fh.siteDeriv = @lik_t_siteDeriv;
+    lik.fh.siteDeriv2 = @lik_t_siteDeriv2;    
     lik.fh.optimizef = @lik_t_optimizef;
     lik.fh.upfact = @lik_t_upfact;
     lik.fh.predy = @lik_t_predy;
@@ -431,6 +437,107 @@ function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, myy_i
   end
 end
 
+function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments2(likelih, y, i1, sigm2_i, myy_i, z, eta)
+%LIKELIH_T_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+%
+%   Description
+%   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z)
+%   takes a likelihood data structure LIKELIH, incedence counts Y,
+%   expected counts Z, index I and cavity variance S2 and mean
+%   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
+%   of the posterior marginal (see Rasmussen and Williams (2006):
+%   Gaussian processes for Machine Learning, page 55).
+%
+%   See also
+%   GPEP_E
+
+  if nargin<7
+    eta=1;
+  end
+  
+  
+  %tol = 1e-8;
+  yy = y(i1);
+  nu = likelih.nu;
+  sigma2 = likelih.sigma2;
+  
+  % limiting distribution (nu -> infinity)
+  %sigma=sqrt(sigma2);
+  Vg=1/(1/sigm2_i +eta/sigma2);
+  mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
+  sigm_i=sqrt(sigm2_i);
+  sg=sqrt(Vg);
+  
+  % set integration limits and scaling
+  nu_lim=1e6;
+  if nu<nu_lim
+    if mg>myy_i
+      lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
+      t=linspace(myy_i,mg,10);
+    else
+      lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
+      t=linspace(mg,myy_i,10);
+    end
+    lpt_max=max(lpt(t,0));
+    C=log(1)-lpt_max;
+  else
+    lambdaconf=[mg-6*sg,mg+6*sg];
+    C=log(1)-lpt(mg,0);
+  end
+  
+  % set lower bound for log p(y,f)
+  %C=0;
+  %lpt_min=max(lpt(lambdaconf(1),C),lpt(lambdaconf(2),C));
+  %C=-20-lpt_min;
+  if nu>nu_lim
+    m_0=exp(-0.5*log(2*pi) -0.5*log(sigm2_i+sigma2) -0.5*(yy-myy_i)^2 /(sigm2_i+sigma2));
+    m_1=mg;
+    sigm2hati1 = Vg;
+  else
+    % Integrate with quadrature
+    RTOL = 1.e-12;
+    ATOL = 1.e-7;
+    
+    [m_0, m_1, m_2] = quad_moments(@(f) exp(lpt(f,C)),lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+    sigm2hati1 = m_2 - m_1.^2;
+    m_0=m_0*exp(-C);
+  end
+  
+  if ~isfinite(m_0) || m_0<=0 %|| nu>nu_lim
+    
+    %lastwarn('')
+    figure(2)
+    ilim=lambdaconf;
+    fh_l=@(f) t_lpdf(yy,nu,f,sqrt(sigma2)).*eta;
+    fh_p=@(f)  (-0.5/sigm2_i) * (f-myy_i).^2 -0.5*log(2*pi*sigm2_i);
+    t=linspace(ilim(1),ilim(2),500);
+    pt=exp(lpt(t,0));
+    plot(t,pt,'b',t,exp(fh_l(t)),'r',t,exp(fh_p(t)),'g',...
+      t,m_0*normpdf(t,m_1,sqrt(sigm2hati1)),'k--','linewidth',2)
+    ylim([0 max(pt)*1.5])
+    % title(sprintf('Z=%.4f, %s=%.4f, s=%.4f',Zm,'\mu',mm,'\sigma',sqrt(Vm)))
+    drawnow
+    keyboard
+  end
+  
+  function integrand = lpt(f,C)
+    r = yy-f;
+    if nu<nu_lim
+      lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+      lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
+    else
+      lpdf = log((nu+1)/2)/2 -log(nu.*pi.*sigma2)/2;
+      %lpdf = lpdf + log1p(r.^2./nu./sigma2) .* (-(nu+1)/2);
+      lpdf = lpdf + log(1+r.^2./nu./sigma2) .* (-(nu+1)/2);
+    end
+    %integrand = exp(lpdf*eta);
+    %integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
+    integrand = lpdf*eta - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2;
+    integrand = integrand+C;
+  end
+end
+
+
 
 function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_T_SITEDERIV  Evaluate the expectation of the gradient
@@ -538,6 +645,134 @@ function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   end
 
 end
+
+
+function [g_i] = lik_t_siteDeriv2(likelih, y, i1, sigm2_i, myy_i, z, eta, Zm)
+%LIKELIH_T_SITEDERIV   Evaluate the expectation of the gradient
+%                           of the log likelihood term with respect
+%                           to the likelihood parameters for EP
+%
+%   Description
+%   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY)
+%   takes a likelihood data structure LIKELIH, observations Y, index I
+%   and cavity variance S2 and mean MYY. Returns E_f [d log
+%   p(y_i|f_i) /d a], where a is the likelihood parameter and the
+%   expectation is over the marginal posterior. This term is
+%   needed when evaluating the gradients of the marginal
+%   likelihood estimate Z_EP with respect to the likelihood
+%   parameters (see Seeger (2008): Expectation propagation for
+%   exponential families)
+%
+%   See also
+%   GPEP_G
+    
+  if nargin<7
+    eta=1;
+  end
+    
+  znu = @deriv_nu;
+  zsigma2 = @deriv_sigma2;
+  
+  %tol = 1e-8;
+  yy = y(i1);
+  nu = likelih.nu;
+  sigma2 = likelih.sigma2;
+  %sigma = sqrt(sigma2);
+  
+  % limiting distribution (nu -> infinity)
+  %sigma=sqrt(sigma2);
+  Vg=1/(1/sigm2_i +eta/sigma2);
+  mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
+  sigm_i=sqrt(sigm2_i);
+  sg=sqrt(Vg);
+  
+  % set integration limits and scaling
+  nu_lim=1e6;
+  if nu<nu_lim
+    if mg>myy_i
+      lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
+      t=linspace(myy_i,mg,10);
+    else
+      lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
+      t=linspace(mg,myy_i,10);
+    end
+    lpt_max=max(lpt(t,0));
+    C=log(1)-lpt_max;
+  else
+    lambdaconf=[mg-6*sg,mg+6*sg];
+    C=log(1)-lpt(mg,0);
+  end
+  
+  % set lower bound for log p(y,f)
+  %C=0;
+  %lpt_min=max(lpt(lambdaconf(1),C),lpt(lambdaconf(2),C));
+  %C=-20-lpt_min;
+  
+  % Integrate with quadrature
+  RTOL = 1.e-12;
+  ATOL = 1.e-7;
+  
+  zm=@(f) exp(lpt(f,C));
+  
+  if nu>nu_lim
+    % the limiting normal observation model
+    g_i(1) = (-0.5/(sigm2_i+sigma2) +0.5*(yy-myy_i)^2 /(sigm2_i+sigma2)^2 ) *sigma2;
+    
+    if ~likelih.fix_nu
+      g_i(2) = 0;
+    end
+  else
+    % Integrate with quad
+    %[m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL)
+    
+    % Use the normalization determined in the likelih_t_tiltedMoments
+    m_0=Zm*exp(C);
+    
+    [g_i(1), fhncnt] = quadgk( @(f) zsigma2(f).*zm(f) , lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
+    g_i(1) = g_i(1)/m_0*sigma2;
+    
+    if ~likelih.fix_nu
+      [g_i(2), fhncnt] = quadgk(@(f) znu(f).*zm(f) , lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
+      g_i(2) = g_i(2)/m_0.*nu.*log(nu);
+    end
+    
+  end
+  
+  if any(~isfinite(g_i)) || any(~isreal(g_i)) %|| nu > nu_lim
+    t=linspace(lambdaconf(1), lambdaconf(2), 500);
+    plot(t,zm(t),'b',t,zm(t).*deriv_nu(t),'r',t,zm(t).*deriv_sigma2(t),'g')
+    keyboard
+  end
+  
+  function integrand = lpt(f,C)
+    r = yy-f;
+    if nu<nu_lim
+      lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+      lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
+    else
+      lpdf = log((nu+1)/2)/2 -log(nu.*pi.*sigma2)/2;
+      %lpdf = lpdf + log1p(r.^2./nu./sigma2) .* (-(nu+1)/2);
+      lpdf = lpdf + log(1+r.^2./nu./sigma2) .* (-(nu+1)/2);
+    end
+    %integrand = exp(lpdf*eta);
+    %integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
+    integrand = lpdf*eta - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2;
+    integrand = integrand+C;
+  end
+
+  function g = deriv_nu(f)
+    r = yy-f;
+    temp = 1 + r.^2./nu./sigma2;
+    g = psi((nu+1)/2)/2 - psi(nu/2)/2 - 1/(2*nu) - log(temp)/2 + (nu+1)./(2*temp) .* (r/nu).^2 /sigma2;
+  end
+
+  function g = deriv_sigma2(f)
+    r = yy-f;
+    g  = -1/sigma2/2 + (nu+1)/2 * r.^2 ./ (nu*sigma2.^2 + r.^2 *sigma2);
+  end
+
+end
+
 
 function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
 %LIK_T_OPTIMIZEF  function to optimize the latent variables
@@ -662,20 +897,24 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
   VarEy = zeros(size(Ef)); 
   lpy = zeros(size(Ef));
   if nargout > 1
-      for i1=1:length(Ef)
-        %%% With quadrature
-        ci = sqrt(Varf(i1));
-
-        F = @(x) x.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-        Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
-
-        F2 = @(x) (nu./(nu-2).*sigma2).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-        EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
-
-        F3 = @(x) x.^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-        VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
-      end
-      Vary = EVary + VarEy;
+%       for i1=1:length(Ef)
+%         %%% With quadrature
+%         ci = sqrt(Varf(i1));
+% 
+%         F = @(x) x.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+%         Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+% 
+%         F2 = @(x) (nu./(nu-2).*sigma2).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+%         EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+% 
+%         F3 = @(x) x.^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+%         VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+%       end
+%       Vary = EVary + VarEy;
+      
+      Ey = Ef;
+      nu_p=max(2.5,nu);
+      Vary=nu_p./(nu_p-2).*sigma2 +Varf;
   end
   
 
@@ -715,7 +954,9 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     reclik.fh.llg2 = @lik_t_llg2;
     reclik.fh.llg3 = @lik_t_llg3;
     reclik.fh.tiltedMoments = @lik_t_tiltedMoments;
+    reclik.fh.tiltedMoments2 = @lik_t_tiltedMoments2;
     reclik.fh.siteDeriv = @lik_t_siteDeriv;
+    reclik.fh.siteDeriv2 = @lik_t_siteDeriv2;
     reclik.fh.optimizef = @lik_t_optimizef;
     reclik.fh.upfact = @lik_t_upfact;
     reclik.fh.predy = @lik_t_predy;

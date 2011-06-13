@@ -35,8 +35,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('method', '1', @(x) ismember(x,{'1','2'}))
   ip.parse(w, gp, x, y, varargin{:});
   z=ip.Results.z;
+  method = ip.Results.method;
 
   
   gp=gp_unpak(gp, w);       % unpak the parameters
@@ -59,7 +61,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       if issparse(C)          
         % If compact support covariance functions are used 
         % the covariance matrix will be sparse
-        [e, edata, eprior, tautilde, nutilde, LD] = gpep_e(w, gp, x, y, 'z', z);
+        [e, edata, eprior, tautilde, nutilde, LD, ~, ~, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
         Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
         
         b = nutilde - Stildesqroot*ldlsolve(LD,Stildesqroot*(C*nutilde));
@@ -67,7 +69,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         invC = spinv(LD,1);       
         invC = Stildesqroot*invC*Stildesqroot;
       else
-        [e, edata, eprior, tautilde, nutilde, L] = gpep_e(w, gp, x, y, 'z', z);
+        [e, edata, eprior, tautilde, nutilde, L, ~, ~, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
         
         if tautilde > 0
           % This is the usual case where likelihood is log concave
@@ -139,15 +141,19 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       % =================================================================
       % Gradient with respect to likelihood function parameters
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'z', z);
+%         [Ef, Varf] = gpep_pred(gp, x, y, x, 'z', z);
         
-        sigm2_i = (Varf.^-1 - tautilde).^-1;
-        mu_i = sigm2_i.*(Ef./Varf - nutilde);
+%         sigm2_i = (Varf.^-1 - tautilde).^-1;
+%         mu_i = sigm2_i.*(Ef./Varf - nutilde);
         
         gdata_lik = 0;
         lik = gp.lik;
         for k1 = 1:length(y)
-          gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          if isempty(eta)
+            gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          else
+            gdata_lik = gdata_lik - feval(lik.fh.siteDeriv2,lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
+          end
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')

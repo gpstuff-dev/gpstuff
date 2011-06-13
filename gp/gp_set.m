@@ -74,6 +74,24 @@ function gp = gp_set(varargin)
 %        tol          - Termination tolerance on logZ. The default is 1e-6.
 %        parallel     - use parallel updating of site parameters: 
 %                       'on' or 'off' (default) 
+%        method       - method for evaluating EP. Default is 1 for log
+%                       concave likelihoods and 2 for not log concave.
+%
+%        for method = 2
+%        tolStop      - tolerance level for stopping the iterations.
+%                       Default is 1e-4
+%        tolUpdate    - Tolerance level for ignoring updates. Default is 
+%                       1e-6.
+%        tolInner     - Inner loop optimality tolerance. Default is 1e-4.
+%        tolGrad      - Tolerance level for g2/g. Default is 0.5
+%        tauc_lim     - Limit for cavity variance < tauc_lim*K(i,i).
+%                       Default is 2^2.
+%        df           - Damping factor. Default is 0.8.
+%        eta          - Eta parameter for fractional EP. Default is 0.8.
+%        ninit        - Number of initial parallel iterations. Default is
+%                       10.
+%        max_ninner   - Maximum number of inner loop iterations. Default is
+%                       3.
 %        
 %    The additional fields needed with mean functions
 %      meanf        - Single mean function structure or cell array of 
@@ -147,8 +165,11 @@ function gp = gp_set(varargin)
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
   ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
+  ip.addParamValue('method', 1, @(x) isreal(x) && (x==1 || x==2) &&  ...
+                    isfinite(x))
   ip.parse(varargin{:});
   gp=ip.Results.gp;
+
 
   if isempty(gp)
     % Initialize a Gaussian process
@@ -168,6 +189,12 @@ function gp = gp_set(varargin)
   % Likelihood
   if init || ~ismember('lik',ip.UsingDefaults)
     gp.lik = ip.Results.lik;
+  end
+  % Method to evaluate with EP
+  if ismember(gp.lik.type,{'Student-t'})
+    method=2;
+  else
+    method=ip.Results.method;
   end
   % Covariance function(s)
   if init || ~ismember('cf',ip.UsingDefaults)
@@ -268,7 +295,7 @@ function gp = gp_set(varargin)
           % Set latent method
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @ep_algorithm;
-          gp = gpep_e('init', gp);
+          gp = gpep_e('init', gp, 'method', method);
         case 'Laplace'
           % Remove traces of other latent methods
           if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
@@ -313,19 +340,62 @@ function gp = gp_set(varargin)
         case 'EP'
           % Handle latent_opt
           ipep=inputParser;
-          ipep.FunctionName = 'GP_SET - latent method MCMC options';
+          ipep.FunctionName = 'GP_SET - latent method EP options';
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('parallel','off', @(x) ischar(x));    % default off
+          ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tolInner', 1e-4, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tolGrad', 0.5, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tauc_lim', 2^2, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(x,1)==1 && isfinite(x))
+          ipep.addParamValue('max_ninner', 3, @(x) isreal(x) && rem(x,1)==1 && isfinite(x))
           ipep.parse(latent_opt);
-          if init || ~ismember('maxiter',ipep.UsingDefaults) || ~isfield(gp,'latent_opt')
-            gp.latent_opt.maxiter = ipep.Results.maxiter;
+          gp.latent_opt.method = method;
+          if init || ~ismember('maxiter',ipep.UsingDefaults) || ~isfield(gp,'maxiter')
+            if gp.latent_opt.method == 2 && ipep.Results.maxiter == 20
+              gp.latent_opt.maxiter = 200;
+            else
+              gp.latent_opt.maxiter = ipep.Results.maxiter;
+            end
           end
           if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
             gp.latent_opt.tol = ipep.Results.tol;
           end
           if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
             gp.latent_opt.parallel = ipep.Results.parallel;
+          end
+          if gp.latent_opt.method ==2
+            if init || ~ismember('tolStop',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolStop')
+              gp.latent_opt.tolStop = ipep.Results.tolStop;
+            end
+            if init || ~ismember('tolUpdate',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolUpdate')
+              gp.latent_opt.tolUpdate = ipep.Results.tolUpdate;
+            end
+            if init || ~ismember('tolInner',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolInner')
+              gp.latent_opt.tolInner = ipep.Results.tolInner;
+            end
+            if init || ~ismember('tolGrad',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolGrad')
+              gp.latent_opt.tolGrad = ipep.Results.tolGrad;
+            end
+            if init || ~ismember('tauc_lim',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tauc_lim')
+              gp.latent_opt.tauc_lim = ipep.Results.tauc_lim;
+            end
+            if init || ~ismember('df',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df')
+              gp.latent_opt.df = ipep.Results.df;
+            end
+            if init || ~ismember('eta',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'eta')
+              gp.latent_opt.eta = ipep.Results.eta;
+            end
+            if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
+              gp.latent_opt.ninit = ipep.Results.ninit;
+            end
+            if init || ~ismember('max_ninner',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'max_ninner')
+              gp.latent_opt.max_ninner = ipep.Results.max_ninner;
+            end
           end
         case 'Laplace'
           % these options not yet used
@@ -335,6 +405,7 @@ function gp = gp_set(varargin)
           ipla=inputParser;
           ipla.FunctionName = 'GP_SET - latent method Laplace options';
           ipla.addParamValue('optim_method',[], @(x) ischar(x));
+          ipla.addParamValue('maxiter', 40, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipla.parse(latent_opt);
           optim_method=ipla.Results.optim_method;
           if ~isempty(optim_method)
@@ -347,6 +418,9 @@ function gp = gp_set(varargin)
               otherwise
                 gp.latent_opt.optim_method='newton';
             end
+          end
+          if init || ~ismember('maxiter',ipla.UsingDefaults) || ~isfield(gp,'maxiter')
+            gp.latent_opt.maxiter = ipla.Results.maxiter;
           end
         otherwise
           error('Unknown type of latent_method!')

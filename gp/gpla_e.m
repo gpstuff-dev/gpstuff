@@ -124,6 +124,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       ncf = length(gp.cf);
       n = size(x,1);
       p = [];
+      maxiter = gp.latent_opt.maxiter;
 
       % Initialize latent values
       % zero seems to be a robust choice (Jarno)
@@ -214,7 +215,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_old = -Inf;
               
               iter=0;
-              while abs(lp_new - lp_old) > tol && iter < 20
+              while abs(lp_new - lp_old) > tol && iter < maxiter
                 iter = iter + 1;
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);    
@@ -303,7 +304,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               
               iter=0;
               % begin Newton's iterations
-              while (lp - lp_old > tol || max(abs(f-f_old)) > tol) && iter < 400
+              while (lp - lp_old > tol || max(abs(f-f_old)) > tol) && iter < maxiter
                 iter=iter+1;
                 
                 W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
@@ -504,7 +505,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_old = -Inf;
               
               iter = 0;
-              while lp_new - lp_old > tol && iter < 40
+              while lp_new - lp_old > tol && iter < maxiter
                 iter = iter + 1;
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);
@@ -678,7 +679,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_old = -Inf;
               
               iter = 0;
-              while lp_new - lp_old > tol && iter < 40
+              while lp_new - lp_old > tol && iter < maxiter
                 iter = iter + 1;
                 lp_old = lp_new; a_old = a;
                 sW = sqrt(W);
@@ -869,7 +870,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               I = sparse(1:n,1:n,1,n,n);
               
               iter = 0;
-              while lp_new - lp_old > tol && iter < 40
+              while lp_new - lp_old > tol && iter < maxiter
                 iter = iter + 1;
                 lp_old = lp_new; a_old = a; 
                 sW = sqrt(W);
