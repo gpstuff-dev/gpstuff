@@ -214,7 +214,8 @@ function [m_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i, m
     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
     sigm2hati1 = m_2 - m_1.^2;
     if sigm2hati1 >= sigm2_i
-      error('lik_logit_tilted_moments: sigm2hati1 >= sigm2_i');
+      warning('lik_logit_tilted_moments: sigm2hati1 >= sigm2_i');
+      sigm2hati1=sigm2_i-eps;
     end
   end
 end
@@ -258,8 +259,8 @@ function [lpy, Ey, Vary] = lik_logit_predy(lik, Ef, Varf, yt, zt)
       error('lik_logit: The class labels have to be {-1,1}')
     end
     % Quadrature integration                                    
-    lpy = zeros(length(Ef),1);
-    for i1 = 1:length(Ef)
+    lpy = zeros(length(yt),1);
+    for i1 = 1:length(yt)
       % get a function handle of the likelihood times posterior
       % (likelihood * posterior = Poisson * Gaussian)
       % and useful integration limits

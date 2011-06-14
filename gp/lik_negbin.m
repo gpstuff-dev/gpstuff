@@ -490,7 +490,8 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
   end
 
   % Evaluate the posterior predictive densities of the given observations
-  for i1=1:length(Ef)
+  lpy = zeros(length(yt),1);
+  for i1=1:length(yt)
     % get a function handle of the likelihood times posterior
     % (likelihood * posterior = Negative-binomial * Gaussian)
     % and useful integration limits

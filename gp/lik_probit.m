@@ -239,7 +239,10 @@ function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
   if ~isempty(find(abs(yt)~=1))
     error('lik_probit: The class labels have to be {-1,1}')
   end
-  lpy = log(norm_cdf(Ef.*yt./sqrt(1+Varf)));    % Probability p(y_new)
+  lpy=[];
+  if ~isempty(yt)
+    lpy = log(norm_cdf(Ef.*yt./sqrt(1+Varf)));    % Probability p(y_new)
+  end
 end
 
 function p = lik_probit_invlink(lik, f, z)

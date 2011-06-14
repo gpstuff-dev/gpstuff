@@ -348,8 +348,8 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
       VarEy = zeros(nt,1);
   end
   
+  nt=length(yt);
   lpy=zeros(nt,1);
-  
   for i1=1:nt
     ci = sqrt(Varf(i1));
     if nargout > 1

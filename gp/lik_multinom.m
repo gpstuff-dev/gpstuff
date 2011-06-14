@@ -252,8 +252,11 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
           end
         end
     end
-    ytmp = repmat(yt(i1,:),S,1);
-    lpy(i1,:) = log(mean( mnpdf(ytmp,tmp) ));
+    lpy=[];
+    if ~isempty(yt)
+      ytmp = repmat(yt(i1,:),S,1);
+      lpy(i1,:) = log(mean( mnpdf(ytmp,tmp) ));
+    end
   end
 end
 

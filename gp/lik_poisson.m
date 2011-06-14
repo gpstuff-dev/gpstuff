@@ -306,18 +306,15 @@ function [lpy, Ey, Vary] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
   end
 
   % Evaluate the posterior predictive densities of the given observations
-  if ~isempty(yt)
-    for i1=1:length(Ef)
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Poisson * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_poisson_norm(...
-        yt(i1),Ef(i1),Varf(i1),avgE(i1));
-      % integrate over the f to get posterior predictive distribution
-      lpy(i1) = log(quadgk(pdf, minf, maxf));
-    end
-  else
-    lpy = [];
+  lpy = zeros(length(yt),1);
+  for i1=1:length(yt)
+    % get a function handle of the likelihood times posterior
+    % (likelihood * posterior = Poisson * Gaussian)
+    % and useful integration limits
+    [pdf,minf,maxf]=init_poisson_norm(...
+      yt(i1),Ef(i1),Varf(i1),avgE(i1));
+    % integrate over the f to get posterior predictive distribution
+    lpy(i1) = log(quadgk(pdf, minf, maxf));
   end
 end
 

@@ -918,7 +918,8 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
   end
   
 
-  for i2 = 1:length(Ef)
+  lpy = zeros(length(yt),1);
+  for i2 = 1:length(yt)
     mean_app = Ef(i2);
     sigm_app = sqrt(Varf(i2));
     
