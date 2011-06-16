@@ -114,7 +114,7 @@ function lik = lik_gaussianbl(varargin)
           s = [s; 'log(gaussian.sigma2)'];
       end
       % Hyperparameters of noiseSigma2
-      [wh sh] = feval(lik.p.sigma2.fh.pak, lik.p.sigma2);
+      [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
       w = [w wh];
       s = [s sh];
     end    
@@ -141,7 +141,7 @@ function lik = lik_gaussianbl(varargin)
       w = w(i2+1:end);
       
       % Hyperparameters of sigma2
-      [p, w] = feval(lik.p.sigma2.fh.unpak, lik.p.sigma2, w);
+      [p, w] = lik.p.sigma2.fh.unpak(lik.p.sigma2, w);
       lik.p.sigma2 = p;
     end
   end
@@ -160,7 +160,7 @@ function lik = lik_gaussianbl(varargin)
 
     if ~isempty(lik.p.sigma2)
       likp=lik.p;
-      lp = feval(likp.sigma2.fh.lp, lik.sigma2, likp.sigma2) + sum(log(lik.sigma2));
+      lp = likp.sigma2.fh.lp(lik.sigma2, likp.sigma2) + sum(log(lik.sigma2));
     end
   end
 
@@ -182,7 +182,7 @@ function lik = lik_gaussianbl(varargin)
       likp=lik.p;
       i2=length(lik.sigma2);
       
-      lpgs = feval(likp.sigma2.fh.lpg, lik.sigma2, likp.sigma2);
+      lpgs = likp.sigma2.fh.lpg(lik.sigma2, likp.sigma2);
       lpg = lpgs(1:i2).*lik.sigma2 + 1;
       if length(lpgs) > 1
         lpg = [lpg lpgs(i2+1:end)];
@@ -347,7 +347,7 @@ function lik = lik_gaussianbl(varargin)
       reccf.sigma2(ri,:)=lik.sigma2;
       reccf.bl_indic(ri,:)=lik.bl_indic;
       if ~isempty(lik.p.sigma2)
-          reccf.p.sigma2 = feval(likp.sigma2.fh.recappend, reccf.p.sigma2, ri, likp.sigma2);
+          reccf.p.sigma2 = likp.sigma2.fh.recappend(reccf.p.sigma2, ri, likp.sigma2);
       end
     elseif ri==1
       reccf.sigma2=[];

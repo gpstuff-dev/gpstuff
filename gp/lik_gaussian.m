@@ -111,7 +111,7 @@ function [w s] = lik_gaussian_pak(lik)
     w = [w log(lik.sigma2)];
     s = [s 'log(gaussian.sigma2)'];
     % Hyperparameters of sigma2
-    [wh sh] = feval(lik.p.sigma2.fh.pak, lik.p.sigma2);
+    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s sh];
   end    
@@ -138,7 +138,7 @@ function [lik, w] = lik_gaussian_unpak(lik, w)
     w = w(2:end);
     
     % Hyperparameters of sigma2
-    [p, w] = feval(lik.p.sigma2.fh.unpak, lik.p.sigma2, w);
+    [p, w] = lik.p.sigma2.fh.unpak(lik.p.sigma2, w);
     lik.p.sigma2 = p;
   end
 end
@@ -157,7 +157,7 @@ function lp = lik_gaussian_lp(lik)
 
   if ~isempty(lik.p.sigma2)
     likp=lik.p;
-    lp = feval(likp.sigma2.fh.lp, lik.sigma2, likp.sigma2) + log(lik.sigma2);
+    lp = likp.sigma2.fh.lp(lik.sigma2, likp.sigma2) + log(lik.sigma2);
   end
 end
 
@@ -178,7 +178,7 @@ function lpg = lik_gaussian_lpg(lik)
   if ~isempty(lik.p.sigma2)
     likp=lik.p;
     
-    lpgs = feval(likp.sigma2.fh.lpg, lik.sigma2, likp.sigma2);
+    lpgs = likp.sigma2.fh.lpg(lik.sigma2, likp.sigma2);
     lpg = lpgs(1).*lik.sigma2 + 1;
     if length(lpgs) > 1
       lpg = [lpg lpgs(2:end)];
@@ -333,7 +333,7 @@ function reccf = lik_gaussian_recappend(reccf, ri, lik)
   if ~isempty(lik.sigma2)
     reccf.sigma2(ri,:)=lik.sigma2;
     if ~isempty(lik.p.sigma2)
-      reccf.p.sigma2 = feval(likp.sigma2.fh.recappend, reccf.p.sigma2, ri, likp.sigma2);
+      reccf.p.sigma2 = likp.sigma2.fh.recappend(reccf.p.sigma2, ri, likp.sigma2);
     end
   elseif ri==1
     reccf.sigma2=[];

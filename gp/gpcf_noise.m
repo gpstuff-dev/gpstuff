@@ -99,7 +99,7 @@ function [w, s] = gpcf_noise_pak(gpcf)
     w(1) = log(gpcf.noiseSigma2);
     s = [s 'log(noise.noiseSigma2)'];
     % Hyperparameters of noiseSigma2
-    [wh sh] = feval(gpcf.p.noiseSigma2.fh.pak, gpcf.p.noiseSigma2);
+    [wh sh] = gpcf.p.noiseSigma2.fh.pak(gpcf.p.noiseSigma2);
     w = [w wh];
     s = [s sh];
   end    
@@ -131,7 +131,7 @@ function [gpcf, w] = gpcf_noise_unpak(gpcf, w)
     w = w(2:end);
     
     % Hyperparameters of lengthScale
-    [p, w] = feval(gpcf.p.noiseSigma2.fh.unpak, gpcf.p.noiseSigma2, w);
+    [p, w] = gpcf.p.noiseSigma2.fh.unpak(gpcf.p.noiseSigma2, w);
     gpcf.p.noiseSigma2 = p;
   end
 end
@@ -160,7 +160,7 @@ function lp = gpcf_noise_lp(gpcf)
 
   if ~isempty(gpcf.p.noiseSigma2)
     % Evaluate the prior contribution to the error.
-    lp = feval(gpp.noiseSigma2.fh.lp, gpcf.noiseSigma2, gpp.noiseSigma2) +log(gpcf.noiseSigma2);
+    lp = gpp.noiseSigma2.fh.lp(gpcf.noiseSigma2, gpp.noiseSigma2) +log(gpcf.noiseSigma2);
   end
 end
 
@@ -180,7 +180,7 @@ function lpg = gpcf_noise_lpg(gpcf)
   gpp=gpcf.p;
   
   if ~isempty(gpcf.p.noiseSigma2)            
-    lpgs = feval(gpp.noiseSigma2.fh.lpg, gpcf.noiseSigma2, gpp.noiseSigma2);
+    lpgs = gpp.noiseSigma2.fh.lpg(gpcf.noiseSigma2, gpp.noiseSigma2);
     lpg = [lpg lpgs(1).*gpcf.noiseSigma2+1 lpgs(2:end)];
   end
 end
@@ -352,7 +352,7 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
   % record noiseSigma
   if ~isempty(gpcf.noiseSigma2)
     reccf.noiseSigma2(ri,:)=gpcf.noiseSigma2;
-    reccf.p.noiseSigma2 = feval(gpp.noiseSigma2.fh.recappend, reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
+    reccf.p.noiseSigma2 = gpp.noiseSigma2.fh.recappend(reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
   elseif ri==1
     reccf.noiseSigma2=[];
   end

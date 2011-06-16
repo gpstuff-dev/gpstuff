@@ -63,7 +63,7 @@ if ~isempty(strfind(param, 'covariance'))
   
   for i=1:ncf
     gpcf = gp.cf{i};
-    [gpcf, w] = feval(gpcf.fh.unpak, gpcf, w);
+    [gpcf, w] = gpcf.fh.unpak(gpcf, w);
     gp.cf{i} = gpcf;
   end
   
@@ -71,7 +71,7 @@ end
 
 % Unpack the parameters of likelihood function
 if ~isempty(strfind(param, 'likelihood'))
-  [gp.lik w] = feval(gp.lik.fh.unpak, gp.lik, w);
+  [gp.lik w] = gp.lik.fh.unpak(gp.lik, w);
 end
 
 % Unpack the inducing inputs
@@ -91,7 +91,7 @@ if ~isempty(strfind(param, 'mean'))
   
   for i=1:nmf
     gpmf = gp.meanf{i};
-    [gpmf, w] = feval(gpmf.fh.unpak, gpmf, w);
+    [gpmf, w] = gpmf.fh.unpak(gpmf, w);
     gp.meanf{i} = gpmf;
   end
   

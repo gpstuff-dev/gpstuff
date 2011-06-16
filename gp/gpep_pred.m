@@ -493,9 +493,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
     error('yt has to be provided to get lpyt.')
   end
   if nargout > 3
-    [lpyt, Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+    [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
   elseif nargout > 2
-    lpyt =  feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+    lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
   end
 end
 

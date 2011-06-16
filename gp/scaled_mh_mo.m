@@ -59,7 +59,7 @@ function [f, energ, diagn] = scaled_mh_mo(f, opt, gp, x, y, z)
       end
   end
   
-  e = -feval(gp.lik.fh.ll, gp.lik, y, f, z);
+  e = -gp.lik.fh.ll(gp.lik, y, f, z);
   ft = zeros(size(y));
   
   % Adaptive control algorithm to find such a value for lvs
@@ -69,7 +69,7 @@ function [f, energ, diagn] = scaled_mh_mo(f, opt, gp, x, y, z)
       for i1 =1:nout
           ft(:,i1)=sqrt(1-lvs.^2).*f(:,i1)+lvs.*L(:,:,i1)*randn(n,1);
       end
-      ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+      ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
       a=e-ed;
       if exp(a) > rand(1)
           f=ft;
@@ -85,7 +85,7 @@ function [f, energ, diagn] = scaled_mh_mo(f, opt, gp, x, y, z)
       for i1 =1:nout
           ft(:,i1)=sqrt(1-lvs.^2).*f(:,i1)+lvs.*L(:,:,i1)*randn(n,1);
       end
-      ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+      ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
       a=e-ed;
       if exp(a) > rand(1)
           f=ft;

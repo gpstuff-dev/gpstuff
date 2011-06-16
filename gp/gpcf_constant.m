@@ -98,7 +98,7 @@ function [w, s] = gpcf_constant_pak(gpcf, w)
     w = log(gpcf.constSigma2);
     s = [s 'log(constant.constSigma2)'];
     % Hyperparameters of constSigma2
-    [wh sh] = feval(gpcf.p.constSigma2.fh.pak, gpcf.p.constSigma2);
+    [wh sh] = gpcf.p.constSigma2.fh.pak(gpcf.p.constSigma2);
     w = [w wh];
     s = [s sh];
   end        
@@ -128,7 +128,7 @@ function [gpcf, w] = gpcf_constant_unpak(gpcf, w)
     gpcf.constSigma2 = exp(w(1));
     w = w(2:end);
     % Hyperparameters of magnSigma2
-    [p, w] = feval(gpcf.p.constSigma2.fh.unpak, gpcf.p.constSigma2, w);
+    [p, w] = gpcf.p.constSigma2.fh.unpak(gpcf.p.constSigma2, w);
     gpcf.p.constSigma2 = p;
   end
 end
@@ -154,7 +154,7 @@ function lp = gpcf_constant_lp(gpcf)
   lp = 0;
   gpp=gpcf.p;
   if ~isempty(gpp.constSigma2)
-    lp = feval(gpp.constSigma2.fh.lp, gpcf.constSigma2, gpp.constSigma2) +log(gpcf.constSigma2);
+    lp = gpp.constSigma2.fh.lp(gpcf.constSigma2, gpp.constSigma2) +log(gpcf.constSigma2);
   end
 end
 
@@ -174,7 +174,7 @@ function lpg = gpcf_constant_lpg(gpcf)
   gpp=gpcf.p;
   
   if ~isempty(gpcf.p.constSigma2)            
-    lpgs = feval(gpp.constSigma2.fh.lpg, gpcf.constSigma2, gpp.constSigma2);
+    lpgs = gpp.constSigma2.fh.lpg(gpcf.constSigma2, gpp.constSigma2);
     lpg = [lpg lpgs(1).*gpcf.constSigma2+1 lpgs(2:end)];
   end
 end

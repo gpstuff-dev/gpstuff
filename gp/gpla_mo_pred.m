@@ -115,7 +115,7 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_mo_pred(gp, x, y, xt, varargin)
         nout=size(y,2);
         f2=reshape(f,tn,nout);
                 
-        llg_vec = feval(gp.lik.fh.llg,gp.lik, y, f2, 'latent', z);
+        llg_vec = gp.lik.fh.llg(gp.lik, y, f2, 'latent', z);
         llg = reshape(llg_vec,size(y));
                    
         %mu_star = K_nf*reshape(a,tn,nout);
@@ -126,7 +126,7 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_mo_pred(gp, x, y, xt, varargin)
         end
         
         if nargout > 1
-            [pi2_vec, pi2_mat] = feval(gp.lik.fh.llg2, gp.lik, y, f2, 'latent', z);
+            [pi2_vec, pi2_mat] = gp.lik.fh.llg2(gp.lik, y, f2, 'latent', z);
             Varf=zeros(nout, nout, ntest);
             
             R=(repmat(1./pi2_vec,1,tn).*pi2_mat);
@@ -164,8 +164,8 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_mo_pred(gp, x, y, xt, varargin)
        error('yt has to be provided to get lpyt.')
    end
    if nargout > 3
-       [lpyt, Ey, Vary] = feval(gp.lik.fh.predy, gp.lik, Ef, Varf, [], zt);
+       [lpyt, Ey, Vary] = gp.lik.fh.predy(gp.lik, Ef, Varf, [], zt);
    elseif nargout > 2
-       lpyt = feval(gp.lik.fh.predy, gp.lik, Ef, Varf, yt, zt);
+       lpyt = gp.lik.fh.predy(gp.lik, Ef, Varf, yt, zt);
    end
 end

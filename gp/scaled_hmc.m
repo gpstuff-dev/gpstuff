@@ -146,7 +146,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           case 'FULL'
             f = L2*w;
             f = max(f,mincut);
-            gdata = - feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            gdata = - gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             
             if ~isfield(gp,'meanf')
                 b=Linv*f;
@@ -162,7 +162,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           case 'FIC'
             %        w(w<eps)=0;
             f = Lp.*(w + U*(iJUU*w));
-            gdata = - feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            gdata = - gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             f = max(f,mincut);
             gprior = f./Lav - iLaKfuic*(iLaKfuic'*f);
             g = gdata +gprior;
@@ -175,7 +175,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
                 f(ind{i}) = Lp{i}*w2(ind{i});
             end
             f = max(f,mincut);
-            gdata = - feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            gdata = - gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             gprior = zeros(size(gdata));
             for i=1:length(ind)
                 gprior(ind{i}) = Labl{i}\f(ind{i});
@@ -191,7 +191,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             w2= w + U*(iJUU*w);
             f = Lp*w2;
             f = max(f,mincut);
-            gdata = - feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            gdata = - gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             gprior = zeros(size(gdata));
             gprior = ldlsolve(Labl,f);
             gprior = gprior - iLaKfuic*(iLaKfuic'*f);
@@ -245,7 +245,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
             eprior = - 0.5*sum(B.^2);
             eprior = eprior + 0.5*f'*ldlsolve(Labl,f);
         end
-        edata =  - feval(gp.lik.fh.ll, gp.lik, y, f, z);
+        edata =  - gp.lik.fh.ll(gp.lik, y, f, z);
         e=edata + eprior;
     end
 
@@ -253,7 +253,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
     % GETL        Evaluate the transformation matrix (or matrices)
         
     % Evaluate the Lambda (La) for specific model
-        E = -feval(gp.lik.fh.llg2, gp.lik, y, zeros(size(y)), 'latent', z);
+        E = -gp.lik.fh.llg2(gp.lik, y, zeros(size(y)), 'latent', z);
         switch gp.type
           case 'FULL'
             C=gp_trcov(gp, x);

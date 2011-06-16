@@ -79,11 +79,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
     clear w gp varargin ip x y z
   elseif strcmp(w, 'clearcache')
     % clear the cache
-    feval(gp.fh.e, 'clearcache');    
+    gp.fh.e('clearcache');    
   else
     % call laplace_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for Laplace
-    [e, edata, eprior, f, L, a, E, M, p] = feval(gp.fh.e, w, gp, x, y, z);
+    [e, edata, eprior, f, L, a, E, M, p] = gp.fh.e(w, gp, x, y, z);
   end
 
   function [e, edata, eprior, f, L, a, E, M, p] = laplace_algorithm(w, gp, x, y, z)
@@ -204,7 +204,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
               %dlp = feval(gp.lik.fh.llg, gp.lik, y, f2, 'latent', z);
               %lp_new = feval(gp.lik.fh.ll, gp.lik, y, f2, z);
               
-              lp_new = feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+              lp_new = gp.lik.fh.ll(gp.lik, y, f2, z);
               lp_old = -Inf;
               
               Kbb=zeros(n*nout,1);
@@ -274,7 +274,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
                 end
                 f2=reshape(f,n,nout);
                 
-                lp_new = -a'*f/2 + feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+                lp_new = -a'*f/2 + gp.lik.fh.ll(gp.lik, y, f2, z);
                 
                 i = 0;
                 while i < 10 && lp_new < lp_old  || isnan(sum(f))
@@ -286,7 +286,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
                   end
                   f2=reshape(f,n,nout);
                   
-                  lp_new = -a'*f/2 + feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+                  lp_new = -a'*f/2 + gp.lik.fh.ll(gp.lik, y, f2, z);
                   i = i+1;
                 end 
               end
@@ -379,7 +379,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
               % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
               % likelih_t file.
             case 'lik_specific'
-              [f, a] = feval(gp.lik.fh.optimizef, gp, y, K);
+              [f, a] = gp.lik.fh.optimizef(gp, y, K);
             otherwise 
               error('gpla_e: Unknown optimization method ! ')
           end
@@ -431,7 +431,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
           det_term=sum(log(diag(det_mat)))+det_diag;
           
           
-          logZ = a'*f/2 - feval(gp.lik.fh.ll, gp.lik, y, f2, z) + det_term;
+          logZ = a'*f/2 - gp.lik.fh.ll(gp.lik, y, f2, z) + det_term;
           edata = logZ;
           
           % ============================================================
@@ -464,13 +464,13 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior -feval(gpcf.fh.lp, gpcf);
+        eprior = eprior - gpcf.fh.lp(gpcf);
       end
 
       % Evaluate the prior contribution to the error from likelihood function
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior -feval(lik.fh.lp, lik);
+        eprior = eprior - lik.fh.lp(lik);
       end
 
       e = edata + eprior;

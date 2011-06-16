@@ -33,7 +33,7 @@ if length(gp.cf)==0
   if nargout>1 && isfield(gp.lik.fh,'trcov')
     C=sparse(0);
     % Add Gaussian noise to the covariance
-    C = C + feval(gp.lik.fh.trcov, gp.lik, x1);
+    C = C + gp.lik.fh.trcov(gp.lik, x1);
   end
   return
 end
@@ -53,7 +53,7 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
       end
       for i=1:length(predcf)
         gpcf = gp.cf{predcf(i)};
-        K = K + feval(gpcf.fh.trcov, gpcf, x1);
+        K = K + gpcf.fh.trcov(gpcf, x1);
       end
 
       if ~isempty(gp.jitterSigma2)
@@ -67,7 +67,7 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
         C=K;
         if isfield(gp.lik.fh,'trcov')
           % Add Gaussian noise to the covariance
-          C = C + feval(gp.lik.fh.trcov, gp.lik, x1);
+          C = C + gp.lik.fh.trcov(gp.lik, x1);
         end
       end
 
@@ -78,13 +78,13 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
 
       % Evaluate the covariance without noise
       gpcf = gp.cf{1};
-      K = feval(gpcf.fh.trcov, gpcf, x1);
+      K = gpcf.fh.trcov(gpcf, x1);
 
       if nargout > 1 
         C=sparse(0);
         if isfield(gp.lik.fh,'trcov')
           % Add Gaussian noise to the covariance
-          C = C + feval(gp.lik.fh.trcov, gp.lik, x1);
+          C = C + gp.lik.fh.trcov(gp.lik, x1);
         end
       end   
   end
@@ -93,9 +93,9 @@ else
   gpcf = gp.cf{1};            % only for sexp at the moment
   [n,m]=size(x1);
   if m==1          
-    Kff = feval(gpcf.fh.trcov, gpcf, x1); 
-    Gset = feval(gpcf.fh.ginput4, gpcf, x1);
-    D = feval(gpcf.fh.ginput2, gpcf, x1, x1);
+    Kff = gpcf.fh.trcov(gpcf, x1); 
+    Gset = gpcf.fh.ginput4(gpcf, x1);
+    D = gpcf.fh.ginput2(gpcf, x1, x1);
 
     Kdf=Gset{1};
     Kfd = Kdf';
@@ -107,10 +107,10 @@ else
 
     % MULTIDIMENSIONAL input dim >1
   else
-    Kff = feval(gpcf.fh.trcov, gpcf, x1); 
-    G= feval(gpcf.fh.ginput4, gpcf, x1);
-    D= feval(gpcf.fh.ginput2, gpcf, x1, x1);
-    Kdf2 = feval(gpcf.fh.ginput3, gpcf, x1 ,x1);
+    Kff = gpcf.fh.trcov(gpcf, x1); 
+    G= gpcf.fh.ginput4(gpcf, x1);
+    D= gpcf.fh.ginput2(gpcf, x1, x1);
+    Kdf2 = gpcf.fh.ginput3(gpcf, x1 ,x1);
 
     Kdf=cat(1,G{1:m});
 
@@ -156,9 +156,9 @@ else
       % Add Gaussian noise to the covariance
       % same noise for obs and grad obs
       lik = gp.lik;
-      Noi=feval(lik.fh.trcov, lik, x1);
+      Noi=lik.fh.trcov(lik, x1);
       x2=repmat(x1,m,1);
-      Noi2=feval(lik.fh.trcov, lik, x2);
+      Noi2=lik.fh.trcov(lik, x2);
       Cff = Kff + Noi;
       Cdd = Kdd + Noi2;
       C = [Cff Kfd; Kdf Cdd];

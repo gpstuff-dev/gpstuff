@@ -490,7 +490,7 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
         [sampft] = gp_rnd(gp,x,y, xt, 'z', z, 'zt', zt, 'nsamp', 500);
         lpyt = zeros(500,1);
         for i=1:size(sampft,2)
-            lpyt(i) = feval(gp.lik.fh.ll, gp.lik, y, sampft(:,i), z);
+            lpyt(i) = gp.lik.fh.ll(gp.lik, y, sampft(:,i), z);
         end
         ljpyt = (sumlogs(lpyt));
     end

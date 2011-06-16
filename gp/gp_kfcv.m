@@ -362,7 +362,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
 
     % make the prediction
-    [Eft, Varft, lpyt, Eyt, Varyt] = feval(fp, gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
+    [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
     if nargout>=6
       cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
       cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
@@ -464,7 +464,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     cpu_time = cputime - cpu_time;
 
     % make the prediction
-    [Eft, Varft, lpyt, Eyt, Varyt] = feval(fp, gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
+    [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
     if nargout>=4
       trpreds.Eft=Eft;
       trpreds.Varft=Varft;

@@ -155,12 +155,12 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_preds(gp, x, y, xt, varargin)
 %                 if isempty(yt)
 %                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, ef, vf, [], zt);
                 if nargout > 3
-                    [ey,vy,ppy] = feval(Gp.lik.fh.predy, Gp.lik, ef, vf, yt, zt);
+                    [ey,vy,ppy] = Gp.lik.fh.predy(Gp.lik, ef, vf, yt, zt);
                     Ey(:,i1) = ey(:);
                     Vary(:,i1) = vy(:);
                     lpy(:,i1) = ppy(:);
                 else
-                    ppy = feval(Gp.lik.fh.predy, Gp.lik, ef, vf, yt, zt);
+                    ppy = Gp.lik.fh.predy(Gp.lik, ef, vf, yt, zt);
                     lpy(:,i1) = ppy(:);
                 end
             else

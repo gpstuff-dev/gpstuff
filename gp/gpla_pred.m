@@ -111,10 +111,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
       
       % Evaluate the mean
       if issparse(K_nf) && issparse(L)        
-        deriv = feval(gp.lik.fh.llg, gp.lik, y(p), f, 'latent', z(p));
+        deriv = gp.lik.fh.llg(gp.lik, y(p), f, 'latent', z(p));
         Eft = K_nf(:,p)*deriv;
       else
-        deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+        deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
         Eft = K_nf*deriv;
         if isfield(gp,'meanf')
           Eft=Eft + K_nf*(K\Hs'*b_m);
@@ -175,7 +175,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 
       [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-      deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
 
       K_nu=gp_cov(gp,xt,u,predcf);
@@ -200,7 +200,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
         Kuu_tr = gp_trcov(gp, u);
         Kuu_tr = (K_uu+K_uu')./2;
         
-        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
         kstarstar = gp_trvar(gp,xt,predcf);
         La = W.*La2;
         Lahat = 1 + La;
@@ -242,7 +242,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 
       [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-      deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
 
       iKuuKuf = K_uu\K_fu';
       w_bu=zeros(length(xt),length(u));
@@ -257,7 +257,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 
       % Evaluate the variance
       if nargout > 1
-        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
         kstarstar = gp_trvar(gp,xt,predcf);
         sqrtW = sqrt(W);
         % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -357,7 +357,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 
       Kcs_nf = gp_cov(gp, xt, x, predcf2);
 
-      deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
 
       % Calculate the predictive mean according to the type of
@@ -389,7 +389,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
       
       % Evaluate the variance
       if nargout > 1
-        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
         sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
         kstarstar = gp_trvar(gp,xt,predcf);
         Luu = chol(K_uu)';
@@ -445,9 +445,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
     error('yt has to be provided to get lpyt.')
   end
   if nargout > 3
-    [lpyt, Eyt, Varyt] = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+    [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
   elseif nargout > 2
-    lpyt = feval(gp.lik.fh.predy, gp.lik, Eft, Varft, yt, zt);
+    lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
   end
   
 end

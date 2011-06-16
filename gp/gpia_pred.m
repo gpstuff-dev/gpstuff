@@ -146,13 +146,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt, ft, pft] = gpia_pred(gp_array, x, y, xt,
 
     for j = 1:nGP
       if nargout <= 2 || (nargout == 3 && isempty(yt))
-        [Eft_grid(j,:), Varft_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
+        [Eft_grid(j,:), Varft_grid(j,:)]=fh_p(gp_array{j},x,y,xt,options);
       elseif nargout <= 3
-        [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options); 
+        [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options); 
       elseif isempty(yt)
-        [Eft_grid(j,:), Varft_grid(j,:), ~, Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
+        [Eft_grid(j,:), Varft_grid(j,:), ~, Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
       else
-        [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt, options);
+        [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
       end
     end
     

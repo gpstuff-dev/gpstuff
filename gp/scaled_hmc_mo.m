@@ -90,7 +90,7 @@ function [f, energ, diagn] = scaled_hmc_mo(f, opt, gp, x, y, z)
         f = L2*w;
         f = max(f,mincut);
         f2 = reshape(f,n,nout);
-        gdata = - feval(gp.lik.fh.llg, gp.lik, y, f2, 'latent', z);
+        gdata = - gp.lik.fh.llg(gp.lik, y, f2, 'latent', z);
         
         b=Linv*f;
         gprior=Linv'*b;
@@ -111,7 +111,7 @@ function [f, energ, diagn] = scaled_hmc_mo(f, opt, gp, x, y, z)
         eprior=.5*sum(B.^2);
             
         f2 = reshape(f,n,nout);
-        edata =  - feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+        edata =  - gp.lik.fh.ll(gp.lik, y, f2, z);
         e=edata + eprior;
     end
 
@@ -120,7 +120,7 @@ function [f, energ, diagn] = scaled_hmc_mo(f, opt, gp, x, y, z)
         
     % Evaluate the Lambda (La) for specific model
     
-       [pi2_vec, pi2_mat] = feval(gp.lik.fh.llg2, gp.lik, y, zeros(n,nout), 'latent', z);
+       [pi2_vec, pi2_mat] = gp.lik.fh.llg2(gp.lik, y, zeros(n,nout), 'latent', z);
        pi2 = reshape(pi2_vec,size(y));
        
        if isfield(gp, 'comp_cf')  % own covariance for each ouput component

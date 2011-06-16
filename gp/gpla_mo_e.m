@@ -79,11 +79,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
     clear w gp varargin ip x y z
   elseif strcmp(w, 'clearcache')
     % clear the cache
-    feval(gp.fh.e, 'clearcache');
+    gp.fh.e('clearcache');
   else
     % call laplace_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for Laplace
-    [e, edata, eprior, f, L, a, E, M, p] = feval(gp.fh.e, w, gp, x, y, z);
+    [e, edata, eprior, f, L, a, E, M, p] = gp.fh.e(w, gp, x, y, z);
   end
 
   function [e, edata, eprior, f, L, a, E, M, p] = laplace_algorithm(w, gp, x, y, z)
@@ -163,7 +163,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
               
               f2=reshape(f,n,nout);
                            
-              lp_new = feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+              lp_new = gp.lik.fh.ll(gp.lik, y, f2, z);
               lp_old = -Inf;
               
               c=zeros(n*nout,1);
@@ -176,8 +176,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
               while lp_new - lp_old > tol
                 lp_old = lp_new; a_old = a; 
                 
-                llg = feval(gp.lik.fh.llg,gp.lik, y, f2, 'latent', z);
-                [pi2_vec, pi2_mat] = feval(gp.lik.fh.llg2, gp.lik, y, f2, 'latent', z);
+                llg = gp.lik.fh.llg(gp.lik, y, f2, 'latent', z);
+                [pi2_vec, pi2_mat] = gp.lik.fh.llg2(gp.lik, y, f2, 'latent', z);
                 pi2 = reshape(pi2_vec,size(y));
                 
                 R = repmat(1./pi2_vec,1,n).*pi2_mat;
@@ -219,7 +219,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                 end
                 f2=reshape(f,n,nout);
                 
-                lp_new = -a'*f/2 + feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+                lp_new = -a'*f/2 + gp.lik.fh.ll(gp.lik, y, f2, z);
                 
                 i = 0;
                 while i < 10 && lp_new < lp_old  || isnan(sum(f))
@@ -231,7 +231,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
                   end
                   f2=reshape(f,n,nout);
                   
-                  lp_new = -a'*f/2 + feval(gp.lik.fh.ll, gp.lik, y, f2, z);
+                  lp_new = -a'*f/2 + gp.lik.fh.ll(gp.lik, y, f2, z);
                   i = i+1;
                 end 
               end
@@ -239,7 +239,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
               error('gpla_e: Unknown optimization method ! ')
           end
            
-          [pi2_vec, pi2_mat] = feval(gp.lik.fh.llg2, gp.lik, y, f2, 'latent', z);
+          [pi2_vec, pi2_mat] = gp.lik.fh.llg2(gp.lik, y, f2, 'latent', z);
           pi2 = reshape(pi2_vec,size(y));
           
           zc=0;
@@ -274,7 +274,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
           
           zc = zc + sum(log(diag(chol( eye(size(K(:,:,i1))) - Detn))));
           
-          logZ = a'*f/2 - feval(gp.lik.fh.ll, gp.lik, y, f2, z) + zc;
+          logZ = a'*f/2 - gp.lik.fh.ll(gp.lik, y, f2, z) + zc;
           edata = logZ;
           
           % ============================================================
@@ -308,7 +308,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
       if ~isempty(strfind(gp.infer_params, 'covariance'))
           for i=1:ncf
               gpcf = gp.cf{i};
-              eprior = eprior -feval(gpcf.fh.lp, gpcf);
+              eprior = eprior - gpcf.fh.lp(gpcf);
           end
       end
 
@@ -318,7 +318,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
       % Evaluate the prior contribution to the error from likelihood function
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior - feval(lik.fh.lp, lik);
+        eprior = eprior - lik.fh.lp(lik);
       end
 
       e = edata + eprior;

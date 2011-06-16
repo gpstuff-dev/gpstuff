@@ -200,7 +200,7 @@ function metric = metric_ibs_gxe(do, varargin)
 %             i1 = length(w);
 %         end
 %         i1=i1+1;
-        w=[feval(metric.metric_gene.pak,metric.metric_gene) feval(metric.metric_env.pak,metric.metric_env)];
+        w=[metric.metric_gene.pak(metric.metric_gene) metric.metric_env.pak(metric.metric_env)];
 %         i1=i1+1;
        % w=;
     end
@@ -221,9 +221,9 @@ function metric = metric_ibs_gxe(do, varargin)
 %        w1=w(2:2+length(metric.metric_env.components));
 %        w=w(i1+1:end);
 
-       [metric_gene, w] = feval(metric.metric_gene.unpak, metric.metric_gene, w);
+       [metric_gene, w] = metric.metric_gene.unpak(metric.metric_gene, w);
        metric.metric_gene=metric_gene;
-       [metric_env, w] = feval(metric.metric_env.unpak, metric.metric_env, w);
+       [metric_env, w] = metric.metric_env.unpak(metric.metric_env, w);
        metric.metric_env=metric_env;
     end
 

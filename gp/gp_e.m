@@ -403,7 +403,7 @@ eprior = 0;
 if ~isempty(strfind(gp.infer_params, 'covariance'))
   for i=1:ncf
     gpcf = gp.cf{i};
-    eprior = eprior -feval(gpcf.fh.lp, gpcf);
+    eprior = eprior - gpcf.fh.lp(gpcf);
   end
 end
 
@@ -413,7 +413,7 @@ end
 if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && isfield(gp.lik, 'p')
   % a Gaussian likelihood
   lik = gp.lik;
-  eprior = eprior -feval(lik.fh.lp, lik);
+  eprior = eprior - lik.fh.lp(lik);
 end
 
 % ============================================================
@@ -424,9 +424,9 @@ if ~isempty(strfind(gp.infer_params, 'inducing'))
     for i = 1:size(gp.X_u,1)
       if iscell(gp.p.X_u) % Own prior for each inducing input
         pr = gp.p.X_u{i};
-        eprior = eprior -feval(pr.fh.lp, gp.X_u(i,:), pr);
+        eprior = eprior - pr.fh.lp(gp.X_u(i,:), pr);
       else
-        eprior = eprior -feval(gp.p.X_u.fh.lp, gp.X_u(i,:), gp.p.X_u);
+        eprior = eprior - gp.p.X_u.fh.lp(gp.X_u(i,:), gp.p.X_u);
       end
     end
   end

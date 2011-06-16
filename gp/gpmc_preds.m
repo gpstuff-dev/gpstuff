@@ -174,9 +174,9 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, xt, varargin)
           warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
         end
         if nargout > 3
-          [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+          [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
         else
-          lpy(:,i1) = feval(Gp.lik.fh.predy, Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+          lpy(:,i1) = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
         end
       else
         if nargout < 4

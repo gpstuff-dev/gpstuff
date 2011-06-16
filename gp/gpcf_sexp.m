@@ -182,13 +182,13 @@ function [w,s] = gpcf_sexp_pak(gpcf)
     w = [w log(gpcf.magnSigma2)];
     s = [s; 'log(sexp.magnSigma2)'];
     % Hyperparameters of magnSigma2
-    [wh sh] = feval(gpcf.p.magnSigma2.fh.pak, gpcf.p.magnSigma2);
+    [wh sh] = gpcf.p.magnSigma2.fh.pak(gpcf.p.magnSigma2);
     w = [w wh];
     s = [s; sh];
   end        
 
   if isfield(gpcf,'metric')
-    [wh sh]=feval(gpcf.metric.fh.pak, gpcf.metric);
+    [wh sh]=gpcf.metric.fh.pak(gpcf.metric);
     w = [w wh];
     s = [s; sh];
   else
@@ -200,7 +200,7 @@ function [w,s] = gpcf_sexp_pak(gpcf)
         s = [s; 'log(sexp.lengthScale)'];
       end
       % Hyperparameters of lengthScale
-      [wh  sh] = feval(gpcf.p.lengthScale.fh.pak, gpcf.p.lengthScale);
+      [wh  sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
       w = [w wh];
       s = [s; sh];
     end
@@ -234,12 +234,12 @@ function [gpcf, w] = gpcf_sexp_unpak(gpcf, w)
     gpcf.magnSigma2 = exp(w(1));
     w = w(2:end);
     % Hyperparameters of magnSigma2
-    [p, w] = feval(gpcf.p.magnSigma2.fh.unpak, gpcf.p.magnSigma2, w);
+    [p, w] = gpcf.p.magnSigma2.fh.unpak(gpcf.p.magnSigma2, w);
     gpcf.p.magnSigma2 = p;
   end
 
   if isfield(gpcf,'metric')
-    [metric, w] = feval(gpcf.metric.fh.unpak, gpcf.metric, w);
+    [metric, w] = gpcf.metric.fh.unpak(gpcf.metric, w);
     gpcf.metric = metric;
   else            
     if ~isempty(gpp.lengthScale)
@@ -249,7 +249,7 @@ function [gpcf, w] = gpcf_sexp_unpak(gpcf, w)
       assert(all(gpcf.lengthScale>0 & isfinite(gpcf.lengthScale)))
       w = w(i2+1:end);
       % Hyperparameters of lengthScale
-      [p, w] = feval(gpcf.p.lengthScale.fh.unpak, gpcf.p.lengthScale, w);
+      [p, w] = gpcf.p.lengthScale.fh.unpak(gpcf.p.lengthScale, w);
       gpcf.p.lengthScale = p;
     end
   end
@@ -277,14 +277,14 @@ function lp = gpcf_sexp_lp(gpcf)
   gpp=gpcf.p;
   
   if ~isempty(gpcf.p.magnSigma2)
-    lp = lp +feval(gpp.magnSigma2.fh.lp, gpcf.magnSigma2, ...
+    lp = lp +gpp.magnSigma2.fh.lp(gpcf.magnSigma2, ...
                    gpp.magnSigma2) +log(gpcf.magnSigma2);
   end
 
   if isfield(gpcf,'metric')
-    lp = lp +feval(gpcf.metric.fh.lp, gpcf.metric);
+    lp = lp +gpcf.metric.fh.lp(gpcf.metric);
   elseif ~isempty(gpp.lengthScale)
-    lp = lp +feval(gpp.lengthScale.fh.lp, gpcf.lengthScale, ...
+    lp = lp +gpp.lengthScale.fh.lp(gpcf.lengthScale, ...
                    gpp.lengthScale) +sum(log(gpcf.lengthScale));
   end
 end
@@ -305,17 +305,17 @@ function lpg = gpcf_sexp_lpg(gpcf)
   gpp=gpcf.p;
   
   if ~isempty(gpcf.p.magnSigma2)            
-    lpgs = feval(gpp.magnSigma2.fh.lpg, gpcf.magnSigma2, gpp.magnSigma2);
+    lpgs = gpp.magnSigma2.fh.lpg(gpcf.magnSigma2, gpp.magnSigma2);
     lpg = [lpg lpgs(1).*gpcf.magnSigma2+1 lpgs(2:end)];
   end
   
   if isfield(gpcf,'metric')
-    lpg_dist = feval(gpcf.metric.fh.lpg, gpcf.metric);
+    lpg_dist = gpcf.metric.fh.lpg(gpcf.metric);
     lpg = [lpg lpg_dist];
   else
     if ~isempty(gpcf.p.lengthScale)
       lll = length(gpcf.lengthScale);
-      lpgs = feval(gpp.lengthScale.fh.lpg, gpcf.lengthScale, gpp.lengthScale);
+      lpgs = gpp.lengthScale.fh.lpg(gpcf.lengthScale, gpp.lengthScale);
       lpg = [lpg lpgs(1:lll).*gpcf.lengthScale+1 lpgs(lll+1:end)];
     end
   end
@@ -369,8 +369,8 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
     end
 
     if isfield(gpcf,'metric')
-      dist = feval(gpcf.metric.fh.dist, gpcf.metric, x);
-      distg = feval(gpcf.metric.fh.distg, gpcf.metric, x);
+      dist = gpcf.metric.fh.dist(gpcf.metric, x);
+      distg = gpcf.metric.fh.distg(gpcf.metric, x);
       for i=1:length(distg)
         ii1 = ii1+1;
         DKff{ii1} = -Cdm.*dist.*distg{i};
@@ -414,7 +414,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
     end
     
     ii1=0;
-    K = feval(gpcf.fh.cov, gpcf, x, x2);
+    K = gpcf.fh.cov(gpcf, x, x2);
     
     if ~isempty(gpcf.p.magnSigma2)
       ii1 = ii1 +1;
@@ -422,8 +422,8 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
     end
     
     if isfield(gpcf,'metric')                
-      dist = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2);
-      distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, x2);
+      dist = gpcf.metric.fh.dist(gpcf.metric, x, x2);
+      distg = gpcf.metric.fh.distg(gpcf.metric, x, x2);
       for i=1:length(distg)
         ii1 = ii1+1;                    
         DKff{ii1} = -K.*dist.*distg{i};                    
@@ -468,12 +468,12 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
     [n, m] =size(x);
     if ~isempty(gpcf.p.magnSigma2)
       ii1 = ii1+1;
-      DKff{ii1} = feval(gpcf.fh.trvar, gpcf, x);   % d mask(Kff,I) / d magnSigma2
+      DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
     end
 
     if isfield(gpcf,'metric')
       dist = 0;
-      distg = feval(gpcf.metric.fh.distg, gpcf.metric, x, [], 1);
+      distg = gpcf.metric.fh.distg(gpcf.metric, x, [], 1);
       for i=1:length(distg)
         ii1 = ii1+1;
         DKff{ii1} = 0;
@@ -514,7 +514,7 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
   
   [n, m] =size(x);
   ii1=0;
-  Cdm = feval(gpcf.fh.ginput4, gpcf, x);
+  Cdm = gpcf.fh.ginput4(gpcf, x);
   
   % grad with respect to MAGNSIGMA
   if ~isempty(gpcf.p.magnSigma2)
@@ -611,12 +611,12 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
   
   [n, m] =size(x);
   DKff = {};
-  [DKdd, DKdd3, DKdd4] = feval(gpcf.fh.ginput2, gpcf, x, x);
+  [DKdd, DKdd3, DKdd4] = gpcf.fh.ginput2(gpcf, x, x);
   ii1=0;
 
   if m>1
     % Cross derivative matrices (non-diagonal).
-    DKdda=feval(gpcf.fh.ginput3, gpcf, x,x);
+    DKdda=gpcf.fh.ginput3(gpcf, x,x);
 
     %MAGNSIGMA 
     %add matrices to the diagonal of help matrix, size (m*n,m*n)
@@ -814,10 +814,10 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2)
   [n, m] =size(x);
   ii1 = 0;
   if nargin == 2
-    K = feval(gpcf.fh.trcov, gpcf, x);
+    K = gpcf.fh.trcov(gpcf, x);
     if isfield(gpcf,'metric')
-      dist = feval(gpcf.metric.fh.dist, gpcf.metric, x);
-      gdist = feval(gpcf.metric.fh.ginput, gpcf.metric, x);
+      dist = gpcf.metric.fh.dist(gpcf.metric, x);
+      gdist = gpcf.metric.fh.ginput(gpcf.metric, x);
       for i=1:length(gdist)
         ii1 = ii1+1;
         DKff{ii1} = -K.*dist.*gdist{ii1};
@@ -844,11 +844,11 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2)
     end
     
   elseif nargin == 3
-    K = feval(gpcf.fh.cov, gpcf, x, x2);
+    K = gpcf.fh.cov(gpcf, x, x2);
 
     if isfield(gpcf,'metric')
-      dist = feval(gpcf.metric.fh.dist, gpcf.metric, x, x2);
-      gdist = feval(gpcf.metric.fh.ginput, gpcf.metric, x, x2);
+      dist = gpcf.metric.fh.dist(gpcf.metric, x, x2);
+      gdist = gpcf.metric.fh.ginput(gpcf.metric, x, x2);
       for i=1:length(gdist)
         ii1 = ii1+1;
         DKff{ii1}   = -K.*dist.*gdist{ii1};
@@ -904,9 +904,9 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
   end
   
   if isequal(x,x2)
-    K = feval(gpcf.fh.trcov, gpcf, x); 
+    K = gpcf.fh.trcov(gpcf, x); 
   else
-    K = feval(gpcf.fh.cov, gpcf, x, x2);
+    K = gpcf.fh.cov(gpcf, x, x2);
   end
 
   %metric doesn't work with grad.obs on
@@ -957,9 +957,9 @@ function DKff = gpcf_sexp_ginput3(gpcf, x, x2)
   end
 
   if isequal(x,x2)
-    K = feval(gpcf.fh.trcov, gpcf, x); 
+    K = gpcf.fh.trcov(gpcf, x); 
   else
-    K = feval(gpcf.fh.cov, gpcf, x, x2);
+    K = gpcf.fh.cov(gpcf, x, x2);
   end
   
   % Derivative the cov.function with respect to both input variables
@@ -1012,10 +1012,10 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2)
   ii1 = 0;
   if nargin==2
     flag=1;
-    K = feval(gpcf.fh.trcov, gpcf, x); 
+    K = gpcf.fh.trcov(gpcf, x); 
   else
     flag=0;
-    K = feval(gpcf.fh.cov, gpcf, x, x2);
+    K = gpcf.fh.cov(gpcf, x, x2);
     if isequal(x,x2)
       error('ginput4 fuktio saa vaaran inputin')
     end
@@ -1066,7 +1066,7 @@ function C = gpcf_sexp_cov(gpcf, x1, x2)
   end
 
   if isfield(gpcf,'metric')
-    dist = feval(gpcf.metric.fh.dist, gpcf.metric, x1, x2).^2;
+    dist = gpcf.metric.fh.dist(gpcf.metric, x1, x2).^2;
     dist(dist<eps) = 0;
     C = gpcf.magnSigma2.*exp(-dist./2);            
   else
@@ -1118,7 +1118,7 @@ function C = gpcf_sexp_trcov(gpcf, x)
   if isfield(gpcf,'metric')
     % If other than scaled euclidean metric
     ma2 = gpcf.magnSigma2;
-    C = feval(gpcf.metric.fh.dist, gpcf.metric, x).^2./2;
+    C = gpcf.metric.fh.dist(gpcf.metric, x).^2./2;
     C = ma2.*exp(-C);            
   else
     % If scaled euclidean metric
@@ -1222,7 +1222,7 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
     % record lengthScale
     if ~isempty(gpcf.lengthScale)
       reccf.lengthScale(ri,:)=gpcf.lengthScale;
-      reccf.p.lengthScale = feval(gpp.lengthScale.fh.recappend, reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+      reccf.p.lengthScale = gpp.lengthScale.fh.recappend(reccf.p.lengthScale, ri, gpcf.p.lengthScale);
     elseif ri==1
       reccf.lengthScale=[];
     end
@@ -1230,7 +1230,7 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
   % record magnSigma2
   if ~isempty(gpcf.magnSigma2)
     reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
-    reccf.p.magnSigma2 = feval(gpp.magnSigma2.fh.recappend, reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
+    reccf.p.magnSigma2 = gpp.magnSigma2.fh.recappend(reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
   elseif ri==1
     reccf.magnSigma2=[];
   end

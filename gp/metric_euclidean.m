@@ -141,7 +141,7 @@ function [w s] = metric_euclidean_pak(metric)
       s = [s; 'log(metric.lengthScale)'];
     end
     % Hyperparameters of lengthScale
-    [wh sh] = feval(metric.p.lengthScale.fh.pak, metric.p.lengthScale);
+    [wh sh] = metric.p.lengthScale.fh.pak(metric.p.lengthScale);
     w = [w wh];
     s = [s; sh];
   end
@@ -173,7 +173,7 @@ function [metric, w] = metric_euclidean_unpak(metric, w)
     w = w(i2+1:end);
     
     % Hyperparameters of lengthScale
-    [p, w] = feval(metric.p.lengthScale.fh.unpak, metric.p.lengthScale, w);
+    [p, w] = metric.p.lengthScale.fh.unpak(metric.p.lengthScale, w);
     metric.p.lengthScale = p;
   end
 end
@@ -196,7 +196,7 @@ function lp = metric_euclidean_lp(metric)
 % into account also the  Jakobian of transformation W -> w = exp(W).
 % See Gelman et.all., 2004, Bayesian data Analysis, second edition, p24.
   if ~isempty(metric.p.lengthScale)
-    lp = feval(metric.p.lengthScale.fh.lp, metric.lengthScale, metric.p.lengthScale) + sum(log(metric.lengthScale));
+    lp = metric.p.lengthScale.fh.lp(metric.lengthScale, metric.p.lengthScale) + sum(log(metric.lengthScale));
   else
     lp=0;
   end
@@ -219,7 +219,7 @@ function lpg = metric_euclidean_lpg(metric)
   if ~isempty(metric.p.lengthScale)
     i1=1; 
     lll = length(metric.lengthScale);
-    lpgs = feval(metric.p.lengthScale.fh.lpg, metric.lengthScale, metric.p.lengthScale);
+    lpgs = metric.p.lengthScale.fh.lpg(metric.lengthScale, metric.p.lengthScale);
     lpg(i1:i1-1+lll) = lpgs(1:lll).*metric.lengthScale + 1;
     lpg = [lpg lpgs(lll+1:end)];
   end
@@ -311,7 +311,7 @@ function gdist  = metric_euclidean_distg(metric, x, x2, mask)
     if ~isempty(metric.p.lengthScale)
       i1=1; 
       lll = length(metric.lengthScale);
-      gg = -feval(metric.p.lengthScale.fh.lpg, metric.lengthScale, metric.p.lengthScale);
+      gg = -metric.p.lengthScale.fh.lpg(metric.lengthScale, metric.p.lengthScale);
       gprior(i1:i1-1+lll) = gg(1:lll).*metric.lengthScale - 1;
       gprior = [gprior gg(lll+1:end)];
     end
@@ -466,7 +466,7 @@ function recmetric = metric_euclidean_recappend(recmetric, ri, metric)
   % record parameters
   if ~isempty(metric.lengthScale)
     recmetric.lengthScale(ri,:)=metric.lengthScale;
-    recmetric.p.lengthScale = feval(metric.p.lengthScale.fh.recappend, recmetric.p.lengthScale, ri, metric.p.lengthScale);
+    recmetric.p.lengthScale = metric.p.lengthScale.fh.recappend(recmetric.p.lengthScale, ri, metric.p.lengthScale);
   elseif ri==1
     recmetric.lengthScale=[];
   end

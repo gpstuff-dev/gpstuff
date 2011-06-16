@@ -78,7 +78,7 @@ function [w, s] = gpcf_prod_pak(gpcf)
   
   for i=1:ncf
     cf = gpcf.cf{i};
-    [wi si] = feval(cf.fh.pak, cf);
+    [wi si] = cf.fh.pak(cf);
     w = [w wi];
     s = [s; si];
   end
@@ -100,7 +100,7 @@ function [gpcf, w] = gpcf_prod_unpak(gpcf, w)
   
   for i=1:ncf
     cf = gpcf.cf{i};
-    [cf, w] = feval(cf.fh.unpak, cf, w);
+    [cf, w] = cf.fh.unpak(cf, w);
     gpcf.cf{i} = cf;
   end
 
@@ -121,7 +121,7 @@ function lp = gpcf_prod_lp(gpcf)
   ncf = length(gpcf.cf);
   for i=1:ncf
     cf = gpcf.cf{i};
-    lp = lp + feval(cf.fh.lp, cf);
+    lp = lp + cf.fh.lp(cf);
   end
   
 end
@@ -190,7 +190,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask)
     % evaluate the individual covariance functions
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = feval(cf.fh.trcov, cf, x);
+      C{i} = cf.fh.trcov(cf, x);
     end
     
     % Evaluate the gradients
@@ -198,7 +198,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask)
     DKff = {};
     for i=1:ncf
       cf = gpcf.cf{i};
-      DK = feval(cf.fh.cfg, cf, x);
+      DK = cf.fh.cfg(cf, x);
       
       CC = 1;
       for kk = ind(ind~=i)
@@ -221,7 +221,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask)
     % evaluate the individual covariance functions
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = feval(cf.fh.cov, cf, x, x2);
+      C{i} = cf.fh.cov(cf, x, x2);
     end
     
     % Evaluate the gradients
@@ -229,7 +229,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask)
     DKff = {};
     for i=1:ncf
       cf = gpcf.cf{i};
-      DK = feval(cf.fh.cfg, cf, x, x2);
+      DK = cf.fh.cfg(cf, x, x2);
       
       CC = 1;
       for kk = ind(ind~=i)
@@ -251,7 +251,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask)
     % evaluate the individual covariance functions
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = feval(cf.fh.trvar, cf, x);
+      C{i} = cf.fh.trvar(cf, x);
     end
     
     % Evaluate the gradients
@@ -259,7 +259,7 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask)
     DKff = {};
     for i=1:ncf
       cf = gpcf.cf{i};
-      DK = feval(cf.fh.cfg, cf, [], 1);
+      DK = cf.fh.cfg(cf, [], 1);
       
       CC = 1;
       for kk = ind(ind~=i)
@@ -302,14 +302,14 @@ function DKff = gpcf_prod_ginput(gpcf, x, x2)
     % evaluate the individual covariance functions
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = feval(cf.fh.trcov, cf, x);
+      C{i} = cf.fh.trcov(cf, x);
     end
     
     % Evaluate the gradients
     ind = 1:ncf;
     for i=1:ncf
       cf = gpcf.cf{i};
-      DK = feval(cf.fh.cfg, cf, x);
+      DK = cf.fh.cfg(cf, x);
       
       CC = 1;
       for kk = ind(ind~=i)
@@ -332,14 +332,14 @@ function DKff = gpcf_prod_ginput(gpcf, x, x2)
     % evaluate the individual covariance functions
     for i=1:ncf
       cf = gpcf.cf{i};
-      C{i} = feval(cf.fh.cov, cf, x, x2);
+      C{i} = cf.fh.cov(cf, x, x2);
     end
     
     % Evaluate the gradients
     ind = 1:ncf;
     for i=1:ncf
       cf = gpcf.cf{i};
-      DK = feval(cf.fh.cfg, cf, x, x2);
+      DK = cf.fh.cfg(cf, x, x2);
       
       CC = 1;
       for kk = ind(ind~=i)
@@ -385,7 +385,7 @@ function C = gpcf_prod_cov(gpcf, x1, x2)
   C = 1;
   for i=1:ncf
     cf = gpcf.cf{i};
-    C = C.*feval(cf.fh.cov, cf, x1, x2);
+    C = C.*cf.fh.cov(cf, x1, x2);
   end        
 end
 
@@ -406,7 +406,7 @@ function C = gpcf_prod_trcov(gpcf, x)
   C = 1;
   for i=1:ncf
     cf = gpcf.cf{i};
-    C = C.*feval(cf.fh.trcov, cf, x);
+    C = C.*cf.fh.trcov(cf, x);
   end
 end
 
@@ -429,7 +429,7 @@ function C = gpcf_prod_trvar(gpcf, x)
   C = 1;
   for i=1:ncf
     cf = gpcf.cf{i};
-    C = C.*feval(cf.fh.trvar, cf, x);
+    C = C.*cf.fh.trvar(cf, x);
   end
 end
 
@@ -454,7 +454,7 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     ncf = length(ri.cf);
     for i=1:ncf
       cf = ri.cf{i};
-      reccf.cf{i} = feval(cf.fh.recappend, [], ri.cf{i});
+      reccf.cf{i} = cf.fh.recappend([], ri.cf{i});
     end
     
     % Set the function handles
@@ -474,7 +474,7 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
   ncf = length(gpcf.cf);
   for i=1:ncf
     cf = gpcf.cf{i};
-    reccf.cf{i} = feval(cf.fh.recappend, reccf.cf{i}, ri, cf);
+    reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
   end
 end
 

@@ -79,8 +79,8 @@ switch gp.type
         % softmax
         f2=reshape(f,n,nout);
         
-        llg = feval(gp.lik.fh.llg,gp.lik, y, f2, 'latent', z);
-        [pi2_vec, pi2_mat] = feval(gp.lik.fh.llg2, gp.lik, y, f2, 'latent', z);
+        llg = gp.lik.fh.llg(gp.lik, y, f2, 'latent', z);
+        [pi2_vec, pi2_mat] = gp.lik.fh.llg2(gp.lik, y, f2, 'latent', z);
         R = repmat(1./pi2_vec,1,n).*pi2_mat;
         RE = zeros(n,n*nout);
         for i1=1:nout
@@ -114,7 +114,7 @@ switch gp.type
         
         % Derivative of determinant term w.r.t. f
         s2=zeros(n*nout,1);
-        dw_mat = feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
+        dw_mat = gp.lik.fh.llg3(gp.lik, y, f, 'latent', z);
         for cc3=1:nout
             for ii1=1:n
                 s2(ii1+(cc3-1)*n) = -0.5*trace(A(:,:,ii1)*dw_mat(:,:,cc3,ii1));
@@ -146,8 +146,8 @@ switch gp.type
             
             % Gradients from covariance functions
             gpcf = gp.cf{i};
-            DKff = feval(gpcf.fh.cfg, gpcf, x);
-            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+            DKff = gpcf.fh.cfg(gpcf, x);
+            gprior_cf = -gpcf.fh.lpg(gpcf);
             
             for i2 = 1:length(DKff)
                 i1 = i1+1;

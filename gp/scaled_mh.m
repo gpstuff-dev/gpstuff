@@ -40,14 +40,14 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       [K,C]=gp_trcov(gp, x);
       L=chol(C)';
       n=length(y);
-      e = -feval(gp.lik.fh.ll, gp.lik, y, f, z);
+      e = -gp.lik.fh.ll(gp.lik, y, f, z);
       
       % Adaptive control algorithm to find such a value for lvs 
       % that the rejection rate of Metropolis is optimal. 
       slrej = 0;
       for li=1:100
         ft=sqrt(1-lvs.^2).*f+lvs.*L*randn(n,1);
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -61,7 +61,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       % Do the actual sampling 
       for li=1:(opt.repeat)
         ft=sqrt(1-lvs.^2).*f+lvs.*L*randn(n,1);
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -96,14 +96,14 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       sLav = sqrt(Lav);
       
       n=length(y);
-      e = -feval(gp.lik.fh.ll, gp.lik, y, f, z);
+      e = -gp.lik.fh.ll(gp.lik, y, f, z);
 
       % Adaptive control algorithm to find such a value for lvs 
       % so that the rejection rate of Metropolis is optimal. 
       slrej = 0;
       for li=1:100
         ft=sqrt(1-lvs.^2).*f + lvs.*(sLav.*randn(n,1) + B'*randn(m,1));
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -117,7 +117,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       % Do the actual sampling 
       for li=1:(opt.repeat)
         ft=sqrt(1-lvs.^2).*f + lvs.*(sLav.*randn(n,1) + B'*randn(m,1));
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -159,7 +159,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       end
       
       n=length(y);
-      e = -feval(gp.lik.fh.ll, gp.lik, y, f, z);
+      e = -gp.lik.fh.ll(gp.lik, y, f, z);
 
       % Adaptive control algorithm to find such a value for lvs 
       % so that the rejection rate of Metropolis is optimal. 
@@ -171,7 +171,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         end
         ft=sqrt(1-lvs.^2).*f + lvs.*(sampf + B'*randn(m,1));
         at = max(min(ft, maxcut),mincut);
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -190,7 +190,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
         end
         ft=sqrt(1-lvs.^2).*f + lvs.*(sampf + B'*randn(m,1));
         at = max(min(ft, maxcut),mincut);
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -247,14 +247,14 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       sLa = chol(La)';
       
       n=length(y);
-      e = -feval(gp.lik.fh.ll, gp.lik, y, f, z);
+      e = -gp.lik.fh.ll(gp.lik, y, f, z);
 
       % Adaptive control algorithm to find such a value for lvs 
       % so that the rejection rate of Metropolis is optimal. 
       slrej = 0;
       for li=1:100
         ft=sqrt(1-lvs.^2).*f + lvs.*(sLa*randn(n,1) + B'*randn(m,1));
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;
@@ -268,7 +268,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       % Do the actual sampling 
       for li=1:(opt.repeat)
         ft=sqrt(1-lvs.^2).*f + lvs.*(sLa*randn(n,1) + B'*randn(m,1));
-        ed = -feval(gp.lik.fh.ll, gp.lik, y, ft, z);
+        ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
           f=ft;

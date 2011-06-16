@@ -22,7 +22,7 @@ function [g, gdata, gprior] = gpla_softmax_g(w, gp, x, y, varargin)
 %  See also
 %    GPLA_SOFTMAX_E, GPLA_E, GPLA_SOFTMAX_PRED
 
-% Copyright (c) 2010 Jaakko Riihimäki, Pasi Jylänki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki, Pasi Jylï¿½nki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -139,8 +139,8 @@ switch gp.type
             
             % Gradients from covariance functions
             gpcf = gp.cf{i};
-            DKff = feval(gpcf.fh.cfg, gpcf, x);
-            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+            DKff = gpcf.fh.cfg(gpcf, x);
+            gprior_cf = -gpcf.fh.lpg(gpcf);
             
             for i2 = 1:length(DKff)
                 i1 = i1+1;

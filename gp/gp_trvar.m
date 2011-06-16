@@ -39,7 +39,7 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
   end      
   for i=1:length(predcf)
     gpcf = gp.cf{predcf(i)};
-    K = K + feval(gpcf.fh.trvar, gpcf, x1);
+    K = K + gpcf.fh.trvar(gpcf, x1);
   end
 
   if ~isempty(gp.jitterSigma2)
@@ -50,7 +50,7 @@ if ~(isfield(gp,'derivobs') && gp.derivobs)
     C=K;
     if isfield(gp.lik.fh,'trvar')
       % Add Gaussian noise to the covariance
-      C = C + feval(gp.lik.fh.trvar, gp.lik, x1);
+      C = C + gp.lik.fh.trvar(gp.lik, x1);
     end
   end
 else
@@ -61,7 +61,7 @@ else
   gpcf = gp.cf{1};
   %right sized vector for the tr_var
   x2=zeros(m*n+n,1);
-  K = K + feval(gpcf.fh.trvar, gpcf, x2);
+  K = K + gpcf.fh.trvar(gpcf, x2);
 
   if ~isempty(gp.jitterSigma2)
     K = K + gp.jitterSigma2;
@@ -71,7 +71,7 @@ else
     C=K;
     if isfield(gp.lik.fh,'trvar')
       % Add Gaussian noise to the covariance
-      C = C + feval(gp.lik.fh.trvar, gp.lik, x2);
+      C = C + gp.lik.fh.trvar(gp.lik, x2);
     end
     C(C<eps)=0;
   end

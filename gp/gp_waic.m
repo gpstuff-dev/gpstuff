@@ -66,9 +66,9 @@ function waic = gp_waic(gp, x, y, varargin)
   ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
-  ip.addOptional('method', '1', @(x) ismember(x,{'1','2'}))
-  ip.addOptional('form', 'full', @(x) ismember(x,{'full','single'}))
+  ip.addParamValue('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
+  ip.addParamValue('method', '1', @(x) ismember(x,{'1','2'}))
+  ip.addParamValue('form', 'full', @(x) ismember(x,{'full','single'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
@@ -150,7 +150,7 @@ function waic = gp_waic(gp, x, y, varargin)
 
           gp_array{i} = Gp;
 %           w(i,:) = gp_pak(Gp);
-          [Ef(:,i), Varf(:,i)] = feval(fh_pred, Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          [Ef(:,i), Varf(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
           if isfield(gp.lik.fh,'trcov')
             sigma2(:,i) = repmat(Gp.lik.sigma2,1,tn);
           end
@@ -240,7 +240,7 @@ function waic = gp_waic(gp, x, y, varargin)
           
       case 'latent'     
         % A single GP solution -> focus on latent variables
-        [Ef, Varf, lpyt] = feval(fh_pred, gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef, Varf, lpyt] = fh_pred(gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         BtL = -lpyt;              % Bayes training loss.
         
 %           n = 5000;                    % gp_rnd sample size
@@ -411,7 +411,7 @@ function waic = gp_waic(gp, x, y, varargin)
       Gp = gp{i};
       weight(i) = Gp.ia_weight;
       w(i,:) = gp_pak(Gp);
-      [Ef(:,i), Varf(:,i)] = feval(fh_pred, Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+      [Ef(:,i), Varf(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
       if isfield(Gp.lik.fh,'trcov')
         sigma2(:,i) = repmat(Gp.lik.sigma2,1,tn);
       end

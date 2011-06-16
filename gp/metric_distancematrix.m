@@ -163,7 +163,7 @@ function metric = metric_distancematrix(varargin)
             w = log(metric.lengthScales);
             
             % Hyperparameters of lengthScale
-            w = [w feval(metric.p.lengthScales.fh_pak, metric.p.lengthScales)];
+            w = [w metric.p.lengthScales.fh.pak(metric.p.lengthScales)];
         end
 
     end
@@ -188,7 +188,7 @@ function metric = metric_distancematrix(varargin)
             w = w(i2+1:end);
         
             % Hyperparameters of lengthScale
-            [p, w] = feval(metric.p.lengthScales.fh_unpak, metric.p.lengthScales, w);
+            [p, w] = metric.p.lengthScales.fh.unpak(metric.p.lengthScales, w);
             metric.p.lengthScales = p;
         end
         
@@ -229,7 +229,7 @@ function metric = metric_distancematrix(varargin)
         % into account also the  Jakobian of transformation W -> w = exp(W).
         % See Gelman et al., 2004, Bayesian data Analysis, second edition, p24.
 
-        eprior = feval(metric.p.lengthScales.fh_e, metric.lengthScales, metric.p.lengthScales) + sum(log(metric.lengthScales));
+        eprior = -metric.p.lengthScales.fh.lp(metric.lengthScales, metric.p.lengthScales) + sum(log(metric.lengthScales));
         
 %         eprior = 0;
 %         mp=metric.p;
@@ -269,7 +269,7 @@ function metric = metric_distancematrix(varargin)
           if ~isempty(metric.p.lengthScales)
             i1=1; 
             lll = length(metric.lengthScales);
-            lpgs = feval(metric.p.lengthScales.fh.lpg, metric.lengthScales, metric.p.lengthScales);
+            lpgs = metric.p.lengthScales.fh.lpg(metric.lengthScales, metric.p.lengthScales);
             lpg(i1:i1-1+lll) = lpgs(1:lll).*metric.lengthScales + 1;
             lpg = [lpg lpgs(lll+1:end)];
           end
@@ -418,7 +418,7 @@ function metric = metric_distancematrix(varargin)
         if ~isempty(metric.p.lengthScales)
             i1=1; 
             lll = length(metric.lengthScales);
-            gg = feval(metric.p.lengthScales.fh_g, metric.lengthScales, metric.p.lengthScales);
+            gg = -metric.p.lengthScales.fh.lpg(metric.lengthScales, metric.p.lengthScales);
             gprior(i1:i1-1+lll) = gg(1:lll).*metric.lengthScales - 1;
             gprior = [gprior gg(lll+1:end)];
         end
@@ -682,7 +682,7 @@ function metric = metric_distancematrix(varargin)
         % record parameters
          if ~isempty(metric.lengthScales)
             recmetric.lengthScales(ri,:)=metric.lengthScales;
-            recmetric.p.lengthScales = feval(metric.p.lengthScales.fh_recappend, recmetric.p.lengthScales, ri, metric.p.lengthScales);
+            recmetric.p.lengthScales = metric.p.lengthScales.fh.recappend(recmetric.p.lengthScales, ri, metric.p.lengthScales);
         elseif ri==1
             recmetric.lengthScales=[];
         end

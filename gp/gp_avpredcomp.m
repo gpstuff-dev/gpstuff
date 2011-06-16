@@ -95,7 +95,7 @@ for k1=1:1 %nin
         
         % compute latent values through the inverse link function
         if isfield(gp.lik.fh, 'invlink')
-            ilfs = feval(gp.lik.fh.invlink, gp.lik, fs, z);
+            ilfs = gp.lik.fh.invlink(gp.lik, fs, z);
             % average change in outcome
             num=num+sum(bsxfun(@times,W(:,i1).*Usign,bsxfun(@minus,ilfs,ilfs(i1,:))));
         end

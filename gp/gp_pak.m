@@ -70,7 +70,7 @@ function [w, s] = gp_pak(gp, param)
       
       for i=1:ncf
         gpcf = gp.cf{i};
-        [wi, si] = feval(gpcf.fh.pak, gpcf);
+        [wi, si] = gpcf.fh.pak(gpcf);
         w = [w wi];
         s = [s; si];
       end
@@ -78,7 +78,7 @@ function [w, s] = gp_pak(gp, param)
     
     % Pack the parameters of likelihood function
     if ~isempty(strfind(param, 'likelihood'))
-      [wi si] = feval(gp.lik.fh.pak, gp.lik);
+      [wi si] = gp.lik.fh.pak(gp.lik);
       w = [w wi];
       s = [s; si];
     end
@@ -97,7 +97,7 @@ function [w, s] = gp_pak(gp, param)
       
       for i=1:mf
         gpmf = gp.meanf{i};
-        [wi, si] = feval(gpmf.fh.pak, gpmf);
+        [wi, si] = gpmf.fh.pak(gpmf);
         w = [w wi];
         s = [s; si];
       end

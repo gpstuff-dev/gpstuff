@@ -130,8 +130,8 @@ switch gp.type
         end
         
         gpcf = gp.cf{i};
-        DKff = feval(gpcf.fh.cfg, gpcf, x);
-        gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+        DKff = gpcf.fh.cfg(gpcf, x);
+        gprior_cf = -gpcf.fh.lpg(gpcf);
         
         % Evaluate the gradient with respect to covariance function
         % parameters
@@ -163,8 +163,8 @@ switch gp.type
     % Gradient with respect to Gaussian likelihood function parameters
     if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
-      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
-      gprior_lik = -feval(gp.lik.fh.lpg, gp.lik);
+      DCff = gp.lik.fh.cfg(gp.lik, x);
+      gprior_lik = -gp.lik.fh.lpg(gp.lik);
             
       for i2 = 1:length(DCff)
         i1 = i1+1;

@@ -110,7 +110,7 @@ function [w,s] = lik_weibull_pak(lik)
   if ~isempty(lik.p.shape)
     w = log(lik.shape);
     s = [s; 'log(weibull.shape)'];
-    [wh sh] = feval(lik.p.shape.fh.pak, lik.p.shape);
+    [wh sh] = lik.p.shape.fh.pak(lik.p.shape);
     w = [w wh];
     s = [s; sh];
   end
@@ -134,7 +134,7 @@ function [lik, w] = lik_weibull_unpak(lik, w)
   if ~isempty(lik.p.shape)
     lik.shape = exp(w(1));
     w = w(2:end);
-    [p, w] = feval(lik.p.shape.fh.unpak, lik.p.shape, w);
+    [p, w] = lik.p.shape.fh.unpak(lik.p.shape, w);
     lik.p.shape = p;
   end
 end
@@ -154,7 +154,7 @@ function lp = lik_weibull_lp(lik, varargin)
 % If prior for shape parameter, add its contribution
   lp=0;
   if ~isempty(lik.p.shape)
-    lp = feval(lik.p.shape.fh.lp, lik.shape, lik.p.shape) +log(lik.shape);
+    lp = lik.p.shape.fh.lp(lik.shape, lik.p.shape) +log(lik.shape);
   end
   
 end
@@ -174,7 +174,7 @@ function lpg = lik_weibull_lpg(lik)
   lpg=[];
   if ~isempty(lik.p.shape)            
     % Evaluate the gprior with respect to shape
-    ggs = feval(lik.p.shape.fh.lpg, lik.shape, lik.p.shape);
+    ggs = lik.p.shape.fh.lpg(lik.shape, lik.p.shape);
     lpg = ggs(1).*lik.shape + 1;
     if length(ggs) > 1
       lpg = [lpg ggs(2:end)];
@@ -644,6 +644,6 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
   
   reclik.shape(ri,:)=lik.shape;
   if ~isempty(lik.p)
-    reclik.p.shape = feval(lik.p.shape.fh.recappend, reclik.p.shape, ri, lik.p.shape);
+    reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
   end
 end

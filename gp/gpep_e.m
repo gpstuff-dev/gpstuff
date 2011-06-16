@@ -86,11 +86,11 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
     clear w gp varargin ip x y z
   elseif strcmp(w, 'clearcache')
     % clear the cache
-    feval(gp.fh.e, 'clearcache');
+    gp.fh.e('clearcache');
   else
     % call ep_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for EP
-    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta] = feval(gp.fh.e, w, gp, x, y, z);
+    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta] = gp.fh.e(w, gp, x, y, z);
   end
 
   function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta] = ep_algorithm(w, gp, x, y, z)
@@ -163,7 +163,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             end
             [Ls, notpositivedefinite] = chol(Sigm);
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             Stildesqroot=zeros(n);
@@ -171,8 +171,8 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             % If Student-t likelihood is used, sort the update order so that
             % the problematic updates are left for last
             if strcmp(gp.lik.type,'Student-t')
-              f=feval(gp.lik.fh.optimizef,gp,y,K);
-              W=-feval(gp.lik.fh.llg2,gp.lik,y,f,'latent');
+              f=gp.lik.fh.optimizef(gp,y,K);
+              W=-gp.lik.fh.llg2(gp.lik,y,f,'latent');
               [foo,I]=sort(W,'descend');
             else
               I=1:n;
@@ -233,7 +233,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   B=eye(n)+Stildesqroot*C*Stildesqroot;
                   [L, notpositivedefinite]=chol(B,'lower');
                   if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   V=(L\Stildesqroot)*C;
@@ -251,7 +251,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 sigm2_i=tau_i^-1;
                 
                 % marginal moments
-                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                 
                 % update site parameters
                 deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
@@ -300,14 +300,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   B=eye(n)+Stildesqroot*C*Stildesqroot;
                   [L,notpositivedefinite] = chol(B,'lower');
                   if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   V=(L\Stildesqroot)*C;
                   Sigm=C-V'*V; myy=Sigm*nutilde;
                   [Ls, notpositivedefinite] = chol(Sigm);
                   if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   
@@ -352,13 +352,13 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   % L to return, without the hBh term
                   [L,notpositivedefinite]=chol(B,'lower');
                   if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   % L for the calculation with mean term
                   [L_m,notpositivedefinite]=chol(B_h,'lower');
                   if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                     return
                   end
 
@@ -370,7 +370,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   
                   [Ls, notpositivedefinite] = chol(Sigm);
                   if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                     return
                   end
                   T=1./sigm2vec_i;
@@ -408,7 +408,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 Stilde=tautilde;
                 [Ls, notpositivedefinite] = chol(Sigm);
                 if notpositivedefinite
-                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                   return
                 end
                 myy=Sigm*nutilde;
@@ -417,7 +417,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 % 4. term & 1. term
                 [~, notpositivedefinite] = chol(C);
                 if notpositivedefinite
-                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                   return
                 end
                 term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
@@ -459,7 +459,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             gamma = zeros(size(y));
             [VD, notpositivedefinite] = ldlchol(Inn);
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             
@@ -484,7 +484,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 sigm2_i=tau_i^-1;
                 
                 % marginal moments
-                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                 
                 % update site parameters
                 tautilde_old = tautilde(i1);
@@ -516,7 +516,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               B = ssmult(sqrtS,KsqrtS) + Inn;
               [VD, notpositivedefinite] = ldlchol(B);
               if notpositivedefinite
-                [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                 return
               end
               Knutilde = K*nutilde;
@@ -554,7 +554,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             end
             [L, notpositivedefinite] = ldlchol(B);
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             
@@ -579,7 +579,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
           [Luu, notpositivedefinite] = chol(K_uu, 'lower');
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           % Evaluate the Lambda (La)
@@ -597,7 +597,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           A = K_uu+K_fu'*iLaKfu;  A = (A+A')./2;     % Ensure symmetry
           [A, notpositivedefinite] = chol(A);
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           L = iLaKfu/A;
@@ -606,7 +606,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
 
           [R0, notpositivedefinite] = chol(inv(K_uu));
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           R = R0;
@@ -633,7 +633,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               sigm2_i=tau_i^-1;
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
               
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -697,7 +697,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             AA = K_uu + (SsqrtKfu'./repmat(D',m,1))*SsqrtKfu; AA = (AA+AA')/2;
             [AA, notpositivedefinite] = chol(AA,'lower');
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA))) + 0.5.*sum(log(D));
@@ -748,7 +748,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
           [Luu, notpositivedefinite] = chol(K_uu, 'lower');
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           % Evaluate the Lambda (La)
@@ -764,7 +764,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             Labl{i} = Cbl_ff - Qbl_ff;
             [Llabl, notpositivedefinite] = chol(Labl{i});
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             iLaKfu(ind{i},:) = Llabl\(Llabl'\K_fu(ind{i},:));
@@ -773,7 +773,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           A = (A+A')./2;     % Ensure symmetry
           [A, notpositivedefinite] = chol(A);
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           L = iLaKfu/A;
@@ -781,7 +781,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
 
           [R0, notpositivedefinite] = chol(inv(K_uu));
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           R = R0;
@@ -812,7 +812,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 sigm2_i=tau_i^-1;
                 
                 % marginal moments
-                [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
 
                 % update site parameters
                 deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -856,7 +856,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               Dhat = sdtautilde*Labl{i}*sdtautilde + eye(size(Labl{i}));
               [Ldhat{i}, notpositivedefinite] = chol(Dhat);
               if notpositivedefinite
-                [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+                [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                 return
               end
               D{i} = Labl{i} - Labl{i}*sdtautilde*(Ldhat{i}\(Ldhat{i}'\sdtautilde*Labl{i}));
@@ -894,7 +894,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
             [AA, notpositivedefinite] = chol(AA,'lower');
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             term41 = term41 - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA)));
@@ -955,7 +955,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           K_uu = (K_uu+K_uu')./2;            % ensure the symmetry of K_uu
           [Luu, notpositivedefinite] = chol(K_uu, 'lower');
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
 
@@ -986,14 +986,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           
           [VD, notpositivedefinite] = ldlchol(La);
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           iLaKfu = ldlsolve(VD,K_fu);
           A = K_uu+K_fu'*iLaKfu; A = (A+A')./2;     % Ensure symmetry
           [A, notpositivedefinite] = chol(A);
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           L = iLaKfu/A;
@@ -1004,7 +1004,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           sqrtS = sparse(1:n,1:n,0,n,n);
           [R0, notpositivedefinite] = chol(inv(K_uu));
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           R = R0;
@@ -1017,7 +1017,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           LasqrtS = La*sqrtS;                
           [VD, notpositivedefinite] = ldlchol(Inn);
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           while iter<=maxiter && abs(logZep_tmp-logZep)>tol
@@ -1040,7 +1040,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               sigm2_i= tau_i^-1;  % 1./tau_i;  % 
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
 
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1092,7 +1092,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             LasqrtS = ssmult(La,sqrtS);
             [VD, notpositivedefinite] = ldlchol(D2);
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
 
@@ -1114,7 +1114,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             AA = K_uu + SsqrtKfu'*iDSsqrtKfu; AA = (AA+AA')/2;
             [AA, notpositivedefinite] = chol(AA,'lower');
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(Luu))) + sum(log(diag(AA))) + 0.5*sum(log(diag(VD)));
@@ -1176,7 +1176,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
           [Luu, notpositivedefinite] = chol(K_uu, 'lower');
           if notpositivedefinite
-            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
           % Evaluate the Lambda (La)
@@ -1210,7 +1210,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               sigm2_i=tau_i^-1;
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
               
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1255,7 +1255,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             AA = eye(m,m) + SsqrtPhi'*SsqrtPhi; AA = (AA+AA')/2;
             [AA, notpositivedefinite] = chol(AA,'lower');
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) + sum(log(diag(AA)));
@@ -1340,7 +1340,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               sigm2_i=tau_i^-1;
 
               % marginal moments
-              [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+              [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
               
               % update site parameters
               deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1380,7 +1380,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             AA = eye(m,m) + SsqrtPhi'*SsqrtPhi; AA = (AA+AA')/2;
             [AA, notpositivedefinite] = chol(AA,'lower');
             if notpositivedefinite
-              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+              [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
               return
             end
             term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) + sum(log(diag(AA)));
@@ -1428,14 +1428,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior -feval(gpcf.fh.lp, gpcf);
+        eprior = eprior - gpcf.fh.lp(gpcf);
       end
 
       % Evaluate the prior contribution to the error from likelihood
       % functions
       if isfield(gp.lik, 'p')
         lik = gp.lik;
-        eprior = eprior -feval(lik.fh.lp, lik);
+        eprior = eprior - lik.fh.lp(lik);
       end
 
       % The last things to do
@@ -1877,14 +1877,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
       eprior = 0;
       for i=1:ncf
         gpcf = gp.cf{i};
-        eprior = eprior - feval(gpcf.fh.lp, gpcf);
+        eprior = eprior - gpcf.fh.lp(gpcf);
         %         eprior = eprior - feval(gpcf.fh.lp, gpcf, x, y);
       end
       
       % Evaluate the prior contribution to the error from likelihood functions
       if isfield(gp, 'lik') && isfield(gp.lik, 'p')
         likelih = gp.lik;
-        eprior = eprior + feval(likelih.fh.lp, likelih);
+        eprior = eprior + likelih.fh.lp(likelih);
       end
       
       e = edata + eprior;
@@ -2002,7 +2002,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
 
 
 
-  function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, ch] = set_output_for_notpositivedefinite();
+  function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
     % Instead of stopping to chol error, return NaN
     e = NaN;
     edata = NaN;
@@ -2016,6 +2016,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
     sigm2vec_i = NaN;
     Z_i = NaN;
     datahash = NaN;
+    eta = NaN;
     w = NaN;
     ch.e = e;
     ch.edata = edata;
@@ -2028,6 +2029,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
     ch.muvec_i = muvec_i;
     ch.sigm2vec_i = sigm2vec_i;
     ch.Z_i = Z_i;
+    ch.eta = eta;
     ch.datahash=datahash;
     ch.w = NaN;
   end

@@ -146,9 +146,9 @@ function [Eft, Varft, ljpyt, Eyt, Varyt, ft, pft] = gpia_jpred(gp_array, x, y, x
     for j = 1:nGP
         if isempty(yt)
 %             [Eft_grid(j,:), Varft_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=feval(fh_p,gp_array{j},x,y,xt,options);
-            [Eft_grid(j,:), Varft_grid(:,:,j)]=feval(fh_p,gp_array{j},x,y,xt,options);            
+            [Eft_grid(j,:), Varft_grid(:,:,j)]=fh_p(gp_array{j},x,y,xt,options);            
         else
-            [Eft_grid(j,:), Varft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Varyt_grid(:,:,j)]=feval(fh_p,gp_array{j},x,y,xt, options);
+            [Eft_grid(j,:), Varft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Varyt_grid(:,:,j)]=fh_p(gp_array{j},x,y,xt, options);
         end
     end
     

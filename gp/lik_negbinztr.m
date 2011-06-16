@@ -114,7 +114,7 @@ function [w,s] = lik_negbinztr_pak(lik)
   if ~isempty(lik.p.disper)
     w = log(lik.disper);
     s = [s; 'log(negbinztr.disper)'];
-    [wh sh] = feval(lik.p.disper.fh.pak, lik.p.disper);
+    [wh sh] = lik.p.disper.fh.pak(lik.p.disper);
     w = [w wh];
     s = [s; sh];
   end
@@ -138,7 +138,7 @@ function [lik, w] = lik_negbinztr_unpak(lik, w)
   if ~isempty(lik.p.disper)
     lik.disper = exp(w(1));
     w = w(2:end);
-    [p, w] = feval(lik.p.disper.fh.unpak, lik.p.disper, w);
+    [p, w] = lik.p.disper.fh.unpak(lik.p.disper, w);
     lik.p.disper = p;
   end
 end
@@ -158,7 +158,7 @@ function lp = lik_negbinztr_lp(lik, varargin)
 % If prior for dispersion parameter, add its contribution
   lp=0;
   if ~isempty(lik.p.disper)
-    lp = feval(lik.p.disper.fh.lp, lik.disper, lik.p.disper) +log(lik.disper);
+    lp = lik.p.disper.fh.lp(lik.disper, lik.p.disper) +log(lik.disper);
   end
   
 end
@@ -178,7 +178,7 @@ function lpg = lik_negbinztr_lpg(lik)
   lpg=[];
   if ~isempty(lik.p.disper)            
     % Evaluate the gprior with respect to disper
-    ggs = feval(lik.p.disper.fh.lpg, lik.disper, lik.p.disper);
+    ggs = lik.p.disper.fh.lpg(lik.disper, lik.p.disper);
     lpg = ggs(1).*lik.disper + 1;
     if length(ggs) > 1
       lpg = [lpg ggs(2:end)];
@@ -748,6 +748,6 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
   
   reclik.disper(ri,:)=lik.disper;
   if ~isempty(lik.p)
-    reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.disper);
+    reclik.p.disper = lik.p.disper.fh.recappend(reclik.p.disper, ri, lik.p.disper);
   end
 end

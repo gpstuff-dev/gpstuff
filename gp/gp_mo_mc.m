@@ -215,7 +215,7 @@ function [record, gp, opt] = gp_mo_mc(gp, x, y, varargin)
       
       % --- Sample latent Values  -------------
       if ~isempty(opt.latent_opt)
-        [f, energ, diagnl] = feval(gp.fh.mc, f, opt.latent_opt, gp, x, y, z);
+        [f, energ, diagnl] = gp.fh.mc(f, opt.latent_opt, gp, x, y, z);
         gp.latentValues = f(:);
         f = f(:);
         plot(f), drawnow
@@ -271,7 +271,7 @@ function [record, gp, opt] = gp_mo_mc(gp, x, y, varargin)
       % --- Sample the likelihood parameters with Gibbs ------------- 
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
           isfield(gp.lik,'gibbs') && isequal(gp.lik.gibbs,'on')
-        [gp.lik, f] = feval(gp.lik.fh.gibbs, gp, gp.lik, x, f);
+        [gp.lik, f] = gp.lik.fh.gibbs(gp, gp.lik, x, f);
       end
       
       % --- Sample the likelihood parameters with HMC ------------- 
@@ -280,8 +280,8 @@ function [record, gp, opt] = gp_mo_mc(gp, x, y, varargin)
         infer_params = gp.infer_params;
         gp.infer_params = 'likelihood';
         w = gp_pak(gp);
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z)-feval(lik.fh.lp,feval(lik.fh.unpak,lik,w)));
-        fg = @(w, lik) (-feval(lik.fh.llg,feval(lik.fh.unpak,lik,w),y,f,'param',z)-feval(lik.fh.lpg,feval(lik.fh.unpak,lik,w)));
+        fe = @(w, lik) (-lik.fh.ll(feval(lik.fh.unpak,lik,w),y,f,z)-lik.fh.lp(feval(lik.fh.unpak,lik,w)));
+        fg = @(w, lik) (-lik.fh.llg(feval(lik.fh.unpak,lik,w),y,f,'param',z)-lik.fh.lpg(feval(lik.fh.unpak,lik,w)));
         % Set the state
         hmc2('state',lik_hmc_rstate);
         [w, energies, diagnh] = hmc2(fe, w, opt.lik_hmc_opt, fg, gp.lik);
@@ -301,7 +301,7 @@ function [record, gp, opt] = gp_mo_mc(gp, x, y, varargin)
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
           ~isempty(opt.lik_sls_opt)
         w = gp_pak(gp, 'likelihood');
-        fe = @(w, lik) (-feval(lik.fh.ll,feval(lik.fh.unpak,lik,w),y,f,z) -feval(lik.fh.lp,feval(lik.fh.unpak,lik,w)));
+        fe = @(w, lik) (-lik.fh.ll(feval(lik.fh.unpak,lik,w),y,f,z) -lik.fh.lp(feval(lik.fh.unpak,lik,w)));
         [w, energies, diagns] = sls(fe, w, opt.lik_sls_opt, [], gp.lik);
         if isfield(diagns, 'opt')
           opt.lik_sls_opt = diagns.opt;
@@ -386,16 +386,16 @@ function record = recappend(record)
     % Initialize the records of covariance functions
     for i=1:ncf
       cf = gp.cf{i};
-      record.cf{i} = feval(cf.fh.recappend, [], gp.cf{i});
+      record.cf{i} = cf.fh.recappend([], gp.cf{i});
       % Initialize metric structure
       if isfield(cf,'metric')
-        record.cf{i}.metric = feval(cf.metric.fh.recappend, cf.metric, 1);
+        record.cf{i}.metric = cf.metric.fh.recappend(cf.metric, 1);
       end
     end
     
     % Initialize the recordord for likelihood
     lik = gp.lik;
-    record.lik = feval(lik.fh.recappend, [], gp.lik);
+    record.lik = lik.fh.recappend([], gp.lik);
     
     % Set the meanfunctions into record if they exist
     if isfield(gp, 'meanf')
@@ -421,16 +421,16 @@ function record = recappend(record)
   % Set the record for every covariance function
   for i=1:ncf
     gpcf = gp.cf{i};
-    record.cf{i} = feval(gpcf.fh.recappend, record.cf{i}, ri, gpcf);
+    record.cf{i} = gpcf.fh.recappend(record.cf{i}, ri, gpcf);
     % Record metric structure
     if isfield(gpcf,'metric')
-      record.cf{i}.metric = feval(record.cf{i}.metric.fh.recappend, record.cf{i}.metric, ri, gpcf.metric);
+      record.cf{i}.metric = record.cf{i}.metric.fh.recappend(record.cf{i}.metric, ri, gpcf.metric);
     end
   end
 
   % Set the record for likelihood
   lik = gp.lik;
-  record.lik = feval(lik.fh.recappend, record.lik, ri, lik);
+  record.lik = lik.fh.recappend(record.lik, ri, lik);
 
   % Set jitterSigma2 to record
   if ~isempty(gp.jitterSigma2)
@@ -480,7 +480,7 @@ function e = gpmc_e(w, gp, x, y, f, z)
     % Evaluate the contribution to the error from non-Gaussian likelihood
     gp=gp_unpak(gp,w);
     lik=gp.lik;
-    e=e-feval(lik.fh.ll,lik,y,f,z)-feval(lik.fh.lp,lik);
+    e=e-lik.fh.ll(lik,y,f,z)-lik.fh.lp(lik);
   end
  
 end
@@ -498,7 +498,7 @@ function g = gpmc_g(w, gp, x, y, f, z)
     % Evaluate the contribution to the gradient from non-Gaussian likelihood
     gp=gp_unpak(gp,w);
     lik=gp.lik;
-    g=[g -feval(lik.fh.llg,lik,y,f,'param',z)-feval(lik.fh.lpg,lik)];
+    g=[g -lik.fh.llg(lik,y,f,'param',z)-lik.fh.lpg(lik)];
   end
 
 end

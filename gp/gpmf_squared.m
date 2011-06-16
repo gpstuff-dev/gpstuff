@@ -137,7 +137,7 @@ function [w, s] = gpmf_pak(gpmf, w)
       s = [s; 'gpmf_squared.b'];
     end
     % Hyperparameters of coeffSigma2
-    [wh sh] = feval(gpmf.p.b.fh.pak, gpmf.p.b);
+    [wh sh] = gpmf.p.b.fh.pak(gpmf.p.b);
     w = [w wh];
     s = [s; sh];
   end
@@ -150,7 +150,7 @@ function [w, s] = gpmf_pak(gpmf, w)
       s = [s; 'log(gpmf_squared.B)'];
     end
     % Hyperparameters of coeffSigma2
-    [wh sh] = feval(gpmf.p.B.fh.pak, gpmf.p.B);
+    [wh sh] = gpmf.p.B.fh.pak(gpmf.p.B);
     w = [w wh];
     s = [s; sh];
   end
@@ -185,7 +185,7 @@ function [gpmf, w] = gpmf_unpak(gpmf, w)
     w = w(i2+1:end);
     
     % Hyperparameters of coeffSigma2
-    [p, w] = feval(gpmf.p.b.fh.unpak, gpmf.p.b, w);
+    [p, w] = gpmf.p.b.fh.unpak(gpmf.p.b, w);
     gpmf.p.b = p;
   end
   
@@ -196,7 +196,7 @@ function [gpmf, w] = gpmf_unpak(gpmf, w)
     w = w(i2+1:end);
     
     % Hyperparameters of coeffSigma2
-    [p, w] = feval(gpmf.p.B.fh.unpak, gpmf.p.B, w);
+    [p, w] = gpmf.p.B.fh.unpak(gpmf.p.B, w);
     gpmf.p.B = p;
   end
   
@@ -219,12 +219,12 @@ function lp = gpmf_lp(gpmf)
   gpp=gpmf.p;
   
   if ~isempty(gpmf.p.b)
-    lp = lp +feval(gpp.b.fh.lp, gpmf.b, ...
+    lp = lp + gpp.b.fh.lp(gpmf.b, ...
                    gpp.b);
   end
 
   if ~isempty(gpp.B)
-    lp = lp +feval(gpp.B.fh.lp, gpmf.B, ...
+    lp = lp + gpp.B.fh.lp(gpmf.B, ...
                    gpp.B) +sum(log(gpmf.B));
   end
 end
@@ -246,13 +246,13 @@ function [lpg_b, lpg_B] = gpmf_lpg(gpmf)
   
   if ~isempty(gpmf.p.b)
     lll = length(gpmf.b);
-    lpgs = feval(gpp.b.fh.lpg, gpmf.b, gpp.b);
+    lpgs = gpp.b.fh.lpg(gpmf.b, gpp.b);
     lpg_b = [lpgs(1:lll) lpgs(lll+1:end)]; %
   end
   
   if ~isempty(gpmf.p.B)
     lll = length(gpmf.B);
-    lpgs = feval(gpp.B.fh.lpg, gpmf.B, gpp.B);
+    lpgs = gpp.B.fh.lpg(gpmf.B, gpp.B);
     lpg_B = [lpgs(1:lll).*gpmf.B+1 lpgs(lll+1:end)];
   end
 end
@@ -299,7 +299,7 @@ function recmf = gpmf_recappend(recmf, ri, gpmf)
   if ~isempty(gpmf.b)
     recmf.b(ri,:)=gpmf.b;
     if ~isempty(recmf.p.b)
-      recmf.p.b = feval(gpp.b.fh.recappend, recmf.p.b, ri, gpmf.p.b);
+      recmf.p.b = gpp.b.fh.recappend(recmf.p.b, ri, gpmf.p.b);
     end
   elseif ri==1
     recmf.b=[];
@@ -308,7 +308,7 @@ function recmf = gpmf_recappend(recmf, ri, gpmf)
   if ~isempty(gpmf.B)
     recmf.B(ri,:)=gpmf.B;
     if ~isempty(recmf.p.B)
-      recmf.p.B = feval(gpp.B.fh.recappend, recmf.p.B, ri, gpmf.p.B);
+      recmf.p.B = gpp.B.fh.recappend(recmf.p.B, ri, gpmf.p.B);
     end
   elseif ri==1
     recmf.B=[];

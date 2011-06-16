@@ -28,7 +28,7 @@ function gpcf = gpcf_linear(varargin)
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihimäki
+% Copyright (c) 2008-2010 Jaakko Riihimï¿½ki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -113,7 +113,7 @@ function [w, s] = gpcf_linear_pak(gpcf, w)
       s = [s; 'log(linear.coeffSigma2)'];
     end
     % Hyperparameters of coeffSigma2
-    [wh sh] = feval(gpcf.p.coeffSigma2.fh.pak, gpcf.p.coeffSigma2);
+    [wh sh] = gpcf.p.coeffSigma2.fh.pak(gpcf.p.coeffSigma2);
     w = [w wh];
     s = [s; sh];
   end
@@ -147,7 +147,7 @@ function [gpcf, w] = gpcf_linear_unpak(gpcf, w)
     w = w(i2+1:end);
     
     % Hyperparameters of coeffSigma2
-    [p, w] = feval(gpcf.p.coeffSigma2.fh.unpak, gpcf.p.coeffSigma2, w);
+    [p, w] = gpcf.p.coeffSigma2.fh.unpak(gpcf.p.coeffSigma2, w);
     gpcf.p.coeffSigma2 = p;
   end
 end
@@ -172,7 +172,7 @@ function lp = gpcf_linear_lp(gpcf)
   gpp=gpcf.p;
 
   if ~isempty(gpp.coeffSigma2)
-    lp = feval(gpp.coeffSigma2.fh.lp, gpcf.coeffSigma2, gpp.coeffSigma2) + sum(log(gpcf.coeffSigma2));
+    lp = gpp.coeffSigma2.fh.lp(gpcf.coeffSigma2, gpp.coeffSigma2) + sum(log(gpcf.coeffSigma2));
   end
 end
 
@@ -193,7 +193,7 @@ function lpg = gpcf_linear_lpg(gpcf)
   
   if ~isempty(gpcf.p.coeffSigma2)            
     lll=length(gpcf.coeffSigma2);
-    lpgs = feval(gpp.coeffSigma2.fh.lpg, gpcf.coeffSigma2, gpp.coeffSigma2);
+    lpgs = gpp.coeffSigma2.fh.lpg(gpcf.coeffSigma2, gpp.coeffSigma2);
     lpg = [lpg lpgs(1:lll).*gpcf.coeffSigma2+1 lpgs(lll+1:end)];
   end
 end
@@ -549,7 +549,7 @@ function reccf = gpcf_linear_recappend(reccf, ri, gpcf)
   if ~isempty(gpcf.coeffSigma2)
     reccf.coeffSigma2(ri,:)=gpcf.coeffSigma2;
     if ~isempty(gpp.coeffSigma2)
-      reccf.p.coeffSigma2 = feval(gpp.coeffSigma2.fh.recappend, reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
+      reccf.p.coeffSigma2 = gpp.coeffSigma2.fh.recappend(reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
     end
   elseif ri==1
     reccf.coeffSigma2=[];

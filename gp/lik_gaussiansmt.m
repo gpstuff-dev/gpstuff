@@ -273,7 +273,7 @@ function [lik, y] = lik_gaussiansmt_gibbs(gp, lik, x, y)
     pp = lik.p.nu;
     opt=struct('nomit',4,'display',0,'method','doubling', ...
                'wsize',4,'plimit',5,'unimodal',1,'mmlimits',[0; 128]);
-    nu=sls(@(nu) (-sum(sinvchi2_lpdf(U,nu,t2))-feval(pp.fh.lp, nu, pp)),nu,opt);
+    nu=sls(@(nu) (-sum(sinvchi2_lpdf(U,nu,t2))-pp.fh.lp(nu, pp)),nu,opt);
   end
   lik.sigma2 = rss2;
   lik.U = U;

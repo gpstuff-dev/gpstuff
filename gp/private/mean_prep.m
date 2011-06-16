@@ -27,9 +27,9 @@ function [H,b,B,Hs] = mean_prep(gp,x,xs)
   for i=1:num_mf
     gpmf=gp.meanf{i};
     % base functions' values
-    Hapu{i}=feval(gpmf.fh.geth,gpmf,x);
+    Hapu{i}=gpmf.fh.geth(gpmf,x);
     if ~isempty(xs)
-      Hapu2{i}=feval(gpmf.fh.geth,gpmf,xs);
+      Hapu2{i}=gpmf.fh.geth(gpmf,xs);
     end
     [dim nouse] = size(Hapu{i});
     dimcount=dimcount+dim;          % amount of input dimensions total

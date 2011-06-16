@@ -529,8 +529,8 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           case 'Laplace'
             [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
-            W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-            deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+            deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             ntest=size(xt,1);
             
             % Evaluate the expectation
@@ -623,7 +623,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
-            deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             ntest=size(xt,1);
             
             K_nu=gp_cov(gp,xt,u,predcf);
@@ -646,7 +646,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             Kuu_tr = gp_trcov(gp, u);
             Kuu_tr = (K_uu+K_uu')./2;
             
-            W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+            W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             La = W.*La2;
             Lahat = 1 + La;
@@ -765,7 +765,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
-            deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             
             iKuuKuf = K_uu\K_fu';
             w_bu=zeros(length(xt),length(u));
@@ -779,7 +779,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             Ef = K_nu*(iKuuKuf*deriv) - sum(K_nu.*w_bu,2) + w_n;
             
             % Evaluate the variance
-            W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+            W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
             kstarstar = gp_trvar(gp,xt,predcf);
             sqrtW = sqrt(W);
             % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -922,7 +922,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
             
 
-            deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             ntest=size(xt,1);
             
             % Calculate the predictive mean according to the type of
@@ -950,7 +950,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Ef(tstind) = Ef(tstind) + Lav.*deriv;
             end
             
-            W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+            W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
             sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
             kstarstar = gp_trvar(gp,xt,predcf);
             Luu = chol(K_uu)';

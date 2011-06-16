@@ -104,8 +104,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             i1 = length(gprior);
           end
           gpcf = gp.cf{i};
-          DKff = feval(gpcf.fh.cfg, gpcf, x);
-          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+          DKff = gpcf.fh.cfg(gpcf, x);
+          gprior_cf = -gpcf.fh.lpg(gpcf);
           
           if ~isfield(gp,'meanf')
             for i2 = 1:length(DKff)
@@ -150,14 +150,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         lik = gp.lik;
         for k1 = 1:length(y)
           if isempty(eta)
-            gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
           else
-            gdata_lik = gdata_lik - feval(lik.fh.siteDeriv2,lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
+            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
           end
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.lpg, lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -201,10 +201,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
-          DKuu = feval(gpcf.fh.cfg, gpcf, u); 
-          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
-          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+          DKff = gpcf.fh.cfg(gpcf, x, [], 1);
+          DKuu = gpcf.fh.cfg(gpcf, u); 
+          DKuf = gpcf.fh.cfg(gpcf, u, x); 
+          gprior_cf = -gpcf.fh.lpg(gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -249,9 +249,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -260,8 +260,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             i1=st;
             
             gpcf = gp.cf{i};
-            DKuu = feval(gpcf.fh.ginput, gpcf, u);
-            DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
+            DKuu = gpcf.fh.ginput(gpcf, u);
+            DKuf = gpcf.fh.ginput(gpcf, u, x);
             
             for i2 = 1:length(DKuu)
               i1 = i1+1;
@@ -288,12 +288,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         for k1 = 1:length(y)
-          gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
         end
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.lpg, lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -337,12 +337,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          DKuu = feval(gpcf.fh.cfg, gpcf, u);
-          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
+          DKuu = gpcf.fh.cfg(gpcf, u);
+          DKuf = gpcf.fh.cfg(gpcf, u, x); 
           for kk = 1:length(ind)
-            DKff{kk} = feval(gpcf.fh.cfg, gpcf, x(ind{kk},:));
+            DKff{kk} = gpcf.fh.cfg(gpcf, x(ind{kk},:));
           end
-          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+          gprior_cf = -gpcf.fh.lpg(gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -396,9 +396,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -407,8 +407,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i=1:ncf            
             i1=st;
             gpcf = gp.cf{i};
-            DKuu = feval(gpcf.fh.ginput, gpcf, u);
-            DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
+            DKuu = gpcf.fh.ginput(gpcf, u);
+            DKuf = gpcf.fh.ginput(gpcf, u, x);
             
             for i2 = 1:length(DKuu)
               i1 = i1+1;
@@ -441,12 +441,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         for k1 = 1:length(y)
-          gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
         end
 
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.lpg, lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -518,10 +518,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           if ~isfield(gpcf,'cs')
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
-            DKuu = feval(gpcf.fh.cfg, gpcf, u); 
-            DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
-            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+            DKff = gpcf.fh.cfg(gpcf, x, [], 1);
+            DKuu = gpcf.fh.cfg(gpcf, u); 
+            DKuf = gpcf.fh.cfg(gpcf, u, x); 
+            gprior_cf = -gpcf.fh.lpg(gpcf);
 
             for i2 = 1:length(DKuu)
               i1 = i1+1;
@@ -545,8 +545,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           else
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            DKff = feval(gpcf.fh.cfg, gpcf, x);
-            gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+            DKff = gpcf.fh.cfg(gpcf, x);
+            gprior_cf = -gpcf.fh.lpg(gpcf);
             for i2 = 1:length(DKff)
               i1 = i1+1;
               gdata(i1) = 0.5*(sum(sum(siLa.*DKff{i2}',2)) - sum(sum(L.*(L'*DKff{i2}')')) - b*DKff{i2}*b');
@@ -582,9 +582,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -594,8 +594,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             
             gpcf = gp.cf{i};            
             if ~isfield(gpcf,'cs')
-              DKuu = feval(gpcf.fh.ginput, gpcf, u);
-              DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
+              DKuu = gpcf.fh.ginput(gpcf, u);
+              DKuf = gpcf.fh.ginput(gpcf, u, x);
               
               for i2 = 1:length(DKuu)
                 i1 = i1 + 1;
@@ -628,11 +628,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         gdata_lik = 0;
         lik = gp.lik;
         for k1 = 1:length(y)
-          gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.lpg, lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -677,10 +677,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          DKff = feval(gpcf.fh.cfg, gpcf, x, [], 1);
-          DKuu = feval(gpcf.fh.cfg, gpcf, u); 
-          DKuf = feval(gpcf.fh.cfg, gpcf, u, x); 
-          gprior_cf = -feval(gpcf.fh.lpg, gpcf);
+          DKff = gpcf.fh.cfg(gpcf, x, [], 1);
+          DKuu = gpcf.fh.cfg(gpcf, u); 
+          DKuf = gpcf.fh.cfg(gpcf, u, x); 
+          gprior_cf = -gpcf.fh.lpg(gpcf);
           
           for i2 = 1:length(DKuu)
             i1 = i1+1;
@@ -720,9 +720,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = feval(pr.fh.lpg, gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = feval(gp.p.X_u.fh.lpg, gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -731,8 +731,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             i1=st;
             
             gpcf = gp.cf{i};
-            DKuu = feval(gpcf.fh.ginput, gpcf, u);
-            DKuf = feval(gpcf.fh.ginput, gpcf, u, x);
+            DKuu = gpcf.fh.ginput(gpcf, u);
+            DKuf = gpcf.fh.ginput(gpcf, u, x);
             
             for i2 = 1:length(DKuu)
               i1 = i1+1;
@@ -761,11 +761,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         for k1 = 1:length(y)
           sigm2_i = Varf(k1) ;
           myy_i = Ef(k1);
-          gdata_lik = gdata_lik - feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i, myy_i, z);
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i, myy_i, z);
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.lpg, lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
@@ -795,8 +795,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         % Move a small way in the ith coordinate of w
         step(i) = 1.0;
         func = fcnchk(func, 3);
-        fplus = feval(func, w+epsilon.*step, gp,x,y);
-        fminus = feval(func, w-epsilon.*step, gp,x,y);
+        fplus = func(w+epsilon.*step, gp,x,y);
+        fminus = func(w-epsilon.*step, gp,x,y);
         %   fplus  = feval('linef_test', epsilon, func, w, step, varargin{:});
         %   fminus = feval('linef_test', -epsilon, func, w, step, varargin{:});
         % Use central difference formula for approximation
@@ -840,8 +840,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if ~isempty(strfind(gp.infer_params, 'covariance'))
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
-          DKff = feval(gpcf.fh.cfg, gpcf, x);
-          gprior = -feval(gpcf.fh.lpg, gpcf);
+          DKff = gpcf.fh.cfg(gpcf, x);
+          gprior = -gpcf.fh.lpg(gpcf);
           i1 = i1+1;
           i2 = 1;
           
@@ -881,11 +881,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         for k1 = 1:length(y)
           sigm2_i = Varf(k1) ;
           myy_i = Ef(k1);
-          gdata_lik = gdata_lik + feval(lik.fh.siteDeriv, lik, y, k1, sigm2_i, myy_i, z);
+          gdata_lik = gdata_lik + lik.fh.siteDeriv(lik, y, k1, sigm2_i, myy_i, z);
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -feval(lik.fh.lpg, lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end

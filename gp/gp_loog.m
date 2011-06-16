@@ -75,7 +75,7 @@ switch gp.type
       
       gpcf = gp.cf{i};
       gpcf.GPtype = gp.type;
-      DKff = feval(gpcf.fh.cfg, gpcf, x);
+      DKff = gpcf.fh.cfg(gpcf, x);
       
       % Evaluate the gradient with respect to covariance function parameters
       for i2 = 1:length(DKff)
@@ -89,7 +89,7 @@ switch gp.type
 
     % Evaluate the gradient from Gaussian likelihood function
     if isfield(gp.lik.fh,'trcov')
-      DCff = feval(gp.lik.fh.cfg, gp.lik, x);
+      DCff = gp.lik.fh.cfg(gp.lik, x);
       for i2 = 1:length(DCff)
         i1 = i1+1;
         Z = invC*eye(n,n).*DCff{i2};

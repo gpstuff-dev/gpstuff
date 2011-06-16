@@ -47,7 +47,6 @@ function lik = lik_t(varargin)
   ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
   ip.addParamValue('nu_prior',prior_fixed, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('fix_nu',[], @(x) isreal(x) && isfinite(x))
   ip.parse(varargin{:});
   lik=ip.Results.lik;
   
@@ -77,9 +76,6 @@ function lik = lik_t(varargin)
   end
   if init || ~ismember('nu_prior',ip.UsingDefaults)
     lik.p.nu=ip.Results.nu_prior;
-  end
-  if init || ~ismember('fix_nu',ip.UsingDefaults)
-    lik.fix_nu=ip.Results.fix_nu;
   end
   
   if init      
@@ -123,14 +119,14 @@ function [w, s] = lik_t_pak(lik)
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s; 'log(lik.sigma2)'];
-    [wh sh] = feval(lik.p.sigma2.fh.pak, lik.p.sigma2);
+    [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
     s = [s; sh];
   end
   if ~isempty(lik.p.nu)
     w = [w log(log(lik.nu))];
     s = [s; 'loglog(lik.nu)'];
-    [wh sh] = feval(lik.p.nu.fh.pak, lik.p.nu);
+    [wh sh] = lik.p.nu.fh.pak(lik.p.nu);
     w = [w wh];
     s = [s; sh];
   end        
@@ -156,13 +152,13 @@ function [lik, w] = lik_t_unpak(lik, w)
   if ~isempty(lik.p.sigma2)
     lik.sigma2 = exp(w(1));
     w = w(2:end);
-    [p, w] = feval(lik.p.sigma2.fh.unpak, lik.p.sigma2, w);
+    [p, w] = lik.p.sigma2.fh.unpak(lik.p.sigma2, w);
     lik.p.sigma2 = p;
   end
   if ~isempty(lik.p.nu) 
     lik.nu = exp(exp(w(1)));
     w = w(2:end);
-    [p, w] = feval(lik.p.nu.fh.unpak, lik.p.nu, w);
+    [p, w] = lik.p.nu.fh.unpak(lik.p.nu, w);
     lik.p.nu = p;
   end
 end
@@ -182,10 +178,10 @@ function lp = lik_t_lp(lik)
   lp = 0;
   
   if ~isempty(lik.p.sigma2) 
-    lp = lp + feval(lik.p.sigma2.fh.lp, lik.sigma2, lik.p.sigma2) +log(sigma2);
+    lp = lp + lik.p.sigma2.fh.lp(lik.sigma2, lik.p.sigma2) +log(sigma2);
   end
   if ~isempty(lik.p.nu)
-    lp = lp + feval(lik.p.nu.fh.lp, lik.nu, lik.p.nu)  +log(v) +log(log(v));
+    lp = lp + lik.p.nu.fh.lp(lik.nu, lik.p.nu)  +log(v) +log(log(v));
   end
 end
 
@@ -209,11 +205,11 @@ function lpg = lik_t_lpg(lik)
   
   if ~isempty(lik.p.sigma2) 
     i1 = i1+1;
-    lpg(i1) = feval(lik.p.sigma2.fh.lpg, lik.sigma2, lik.p.sigma2).*sigma2 + 1;
+    lpg(i1) = lik.p.sigma2.fh.lpg(lik.sigma2, lik.p.sigma2).*sigma2 + 1;
   end
   if ~isempty(lik.p.nu) 
     i1 = i1+1;
-    lpg(i1) = feval(lik.p.nu.fh.lpg, lik.nu, lik.p.nu).*v.*log(v) +log(v) + 1;
+    lpg(i1) = lik.p.nu.fh.lpg(lik.nu, lik.p.nu).*v.*log(v) +log(v) + 1;
   end    
 end
 
@@ -718,7 +714,7 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, i1, sigm2_i, myy_i, z, eta, Zm)
     % the limiting normal observation model
     g_i(1) = (-0.5/(sigm2_i+sigma2) +0.5*(yy-myy_i)^2 /(sigm2_i+sigma2)^2 ) *sigma2;
     
-    if ~likelih.fix_nu
+    if (isfield(likelih,'p') && ~isempty(likelih.p.nu))
       g_i(2) = 0;
     end
   else
@@ -731,7 +727,7 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, i1, sigm2_i, myy_i, z, eta, Zm)
     [g_i(1), fhncnt] = quadgk( @(f) zsigma2(f).*zm(f) , lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
     g_i(1) = g_i(1)/m_0*sigma2;
     
-    if ~likelih.fix_nu
+    if (isfield(likelih,'p') && ~isempty(likelih.p.nu))
       [g_i(2), fhncnt] = quadgk(@(f) znu(f).*zm(f) , lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
       g_i(2) = g_i(2)/m_0.*nu.*log(nu);
     end

@@ -149,7 +149,7 @@ function gpcf = gpcf_intcov(varargin)
     
     for i=1:ncf
       cf = gpcf.cf{i};
-      [wi si] = feval(cf.fh.pak, cf);
+      [wi si] = cf.fh.pak(cf);
       w = [w wi];
       s = [s; si];
     end
@@ -181,7 +181,7 @@ function gpcf = gpcf_intcov(varargin)
     
     for i=1:ncf
       cf = gpcf.cf{i};
-      [cf, w] = feval(cf.fh.unpak, cf, w);
+      [cf, w] = cf.fh.unpak(cf, w);
       gpcf.cf{i} = cf;
     end
     
@@ -202,7 +202,7 @@ function gpcf = gpcf_intcov(varargin)
     ncf = length(gpcf.cf);
     for i=1:ncf
       cf = gpcf.cf{i};
-      lp = lp + feval(cf.fh.lp, cf);
+      lp = lp + cf.fh.lp(cf);
     end
   end
 
@@ -276,7 +276,7 @@ function gpcf = gpcf_intcov(varargin)
         % point-point covariance
         for i1=1:ncf
             cf = gpcf.cf{i1};
-            temp = feval(cf.fh.cfg, cf, x(pointInd1,1:end-1));
+            temp = cf.fh.cfg(cf, x(pointInd1,1:end-1));
             for j1 = 1:length(temp)
                 [I,J,R] = find(temp{j1});
                 DKff{end+1} = sparse(pointInd1(I),pointInd1(J),R,n1,n1);
@@ -290,7 +290,7 @@ function gpcf = gpcf_intcov(varargin)
             ii1=1;
             for i1=1:ncf
                 cf = gpcf.cf{i1};
-                temp = feval(cf.fh.cfg, cf, x(pointInd1,1:end-1),intpoints);
+                temp = cf.fh.cfg(cf, x(pointInd1,1:end-1),intpoints);
                 for k1 = 1:length(temp)
                     temp2{ii1}(:,j1) = mean(temp{k1},2);    
                     ii1=ii1+1;
@@ -312,7 +312,7 @@ function gpcf = gpcf_intcov(varargin)
                 ii1=1;
                 for i1=1:ncf
                     cf = gpcf.cf{i1};
-                    temp = feval(cf.fh.cfg, cf, intpoints1, intpoints2);
+                    temp = cf.fh.cfg(cf, intpoints1, intpoints2);
                     for l1 = 1:length(temp)
                         temp2{ii1}(j1,k1) = mean(mean(temp{l1}));
                         ii1=ii1+1;
@@ -401,7 +401,7 @@ function gpcf = gpcf_intcov(varargin)
   ncf = length(gpcf.cf);
   ww = [];
   for i1=1:ncf
-      ww = [ww feval(gpcf.cf{i1}.fh.pak, gpcf.cf{i1})];
+      ww = [ww gpcf.cf{i1}.fh.pak(gpcf.cf{i1})];
   end
   datahash=hash_sha512([x1, x2]);
   fromMem = false;
@@ -429,7 +429,7 @@ function gpcf = gpcf_intcov(varargin)
           temp=sparse(0);
           for i1=1:ncf
               cf = gpcf.cf{i1};
-              temp = temp + feval(cf.fh.cov, cf, x1(pointInd1,1:end-1),x2(pointInd2,1:end-1));
+              temp = temp + cf.fh.cov(cf, x1(pointInd1,1:end-1),x2(pointInd2,1:end-1));
           end
           [I,J,R] = find(temp);
           C = sparse(pointInd1(I),pointInd2(J),R,n1,n2);
@@ -446,7 +446,7 @@ function gpcf = gpcf_intcov(varargin)
               %intpoints = repmat(x2(intInd2(j1),1:end-1),numPoints,1) + intArea.*hammersley(m2-1,numPoints)';
               for i1=1:ncf
                   cf = gpcf.cf{i1};
-                  temp(:,j1) = temp(:,j1) + mean(feval(cf.fh.cov, cf, x1(pointInd1,1:end-1),intpoints),2);
+                  temp(:,j1) = temp(:,j1) + mean(cf.fh.cov(cf, x1(pointInd1,1:end-1),intpoints),2);
               end
           end
           [I,J,R] = find(temp);
@@ -460,7 +460,7 @@ function gpcf = gpcf_intcov(varargin)
               intpoints = repmat(x1(intInd1(j1),1:end-1),numPoints,1) + intArea.*rand(numPoints,dimInt);
               for i1=1:ncf
                   cf = gpcf.cf{i1};
-                  temp(:,j1) = temp(:,j1) + mean(feval(cf.fh.cov, cf, x2(pointInd2,1:dimInt),intpoints),2);
+                  temp(:,j1) = temp(:,j1) + mean(cf.fh.cov(cf, x2(pointInd2,1:dimInt),intpoints),2);
               end
           end
           [I,J,R] = find(temp');
@@ -476,7 +476,7 @@ function gpcf = gpcf_intcov(varargin)
                   intpoints2 = repmat(x2(intInd2(k1),1:dimInt),numPoints,1) + intArea.*rand(numPoints,dimInt);
                   for i1=1:ncf
                       cf = gpcf.cf{i1};
-                      temp(j1,k1) = temp(j1,k1) + mean(mean(feval(cf.fh.cov, cf, intpoints1, intpoints2)));
+                      temp(j1,k1) = temp(j1,k1) + mean(mean(cf.fh.cov(cf, intpoints1, intpoints2)));
                   end
               end
           end
@@ -519,7 +519,7 @@ function gpcf = gpcf_intcov(varargin)
     ncf = length(gpcf.cf);
     ww=[];
     for i1=1:ncf
-        ww = [ww feval(gpcf.cf{i1}.fh.pak, gpcf.cf{i1})];
+        ww = [ww gpcf.cf{i1}.fh.pak(gpcf.cf{i1})];
     end
     datahash=hash_sha512(x);
     fromMem = false;
@@ -545,7 +545,7 @@ function gpcf = gpcf_intcov(varargin)
         temp=sparse(0);
         for i1=1:ncf
             cf = gpcf.cf{i1};
-            temp = temp + feval(cf.fh.trcov, cf, x(pointInd1,1:end-1));
+            temp = temp + cf.fh.trcov(cf, x(pointInd1,1:end-1));
         end
         [I,J,R] = find(temp);
         C = sparse(pointInd1(I),pointInd1(J),R,n1,n1);
@@ -558,7 +558,7 @@ function gpcf = gpcf_intcov(varargin)
             %intpoints = repmat(x(intInd1(j1),1:end-1),numPoints,1) + intArea.*rand(numPoints,dimInt);
             for i1=1:ncf
                 cf = gpcf.cf{i1};
-                temp(:,j1) = temp(:,j1) + mean(feval(cf.fh.cov, cf, x(pointInd1,1:dimInt),intpoints),2);
+                temp(:,j1) = temp(:,j1) + mean(cf.fh.cov(cf, x(pointInd1,1:dimInt),intpoints),2);
             end
         end
         [I,J,R] = find(temp);
@@ -594,7 +594,7 @@ function gpcf = gpcf_intcov(varargin)
                 %intpoints2 = repmat(x(intInd1(k1),1:end-1),numPoints,1) + intArea.*rand(numPoints,dimInt);
                 for i1=1:ncf
                     cf = gpcf.cf{i1};
-                    temp(j1,k1) = temp(j1,k1) + mean(mean(feval(cf.fh.cov, cf, intpoints1, intpoints2)));
+                    temp(j1,k1) = temp(j1,k1) + mean(mean(cf.fh.cov(cf, intpoints1, intpoints2)));
                 end
             end
         end
@@ -611,7 +611,7 @@ function gpcf = gpcf_intcov(varargin)
             %intpoints = repmat(x(intInd1(j1),1:end-1),numPoints,1) + randpoints2;
             for i1=1:ncf
                 cf = gpcf.cf{i1};
-                temp2(j1) = temp2(j1) + mean(mean(feval(cf.fh.cov, cf, intpoints1, intpoints2)));
+                temp2(j1) = temp2(j1) + mean(mean(cf.fh.cov(cf, intpoints1, intpoints2)));
                 %temp2(j1) = temp2(j1) + mean(mean(feval(cf.fh.trcov, cf, intpoints)));
             end
         end
@@ -668,7 +668,7 @@ function gpcf = gpcf_intcov(varargin)
     temp = 0;
     for i1=1:ncf
       cf = gpcf.cf{i1};
-      temp = temp + feval(cf.fh.trvar, cf, x(pointInd1,1:end-1));
+      temp = temp + cf.fh.trvar(cf, x(pointInd1,1:end-1));
     end
     C(pointInd1) = temp;
         
@@ -679,7 +679,7 @@ function gpcf = gpcf_intcov(varargin)
         intpoints2 = repmat(x(intInd1(j1),1:end-1),numPoints,1) + intArea.*rand(numPoints,dimInt);
         for i1=1:ncf
             cf = gpcf.cf{i1};
-            temp(j1) = temp(j1) + mean(mean(feval(cf.fh.cov, cf, intpoints1, intpoints2)));
+            temp(j1) = temp(j1) + mean(mean(cf.fh.cov(cf, intpoints1, intpoints2)));
         end
     end
     C(intInd1) = temp;  
@@ -708,7 +708,7 @@ function gpcf = gpcf_intcov(varargin)
       ncf = length(ri.cf);
       for i=1:ncf
         cf = ri.cf{i};
-        reccf.cf{i} = feval(cf.fh.recappend, [], ri.cf{i});
+        reccf.cf{i} = cf.fh.recappend([], ri.cf{i});
       end
       
       % Set the function handles
@@ -730,7 +730,7 @@ function gpcf = gpcf_intcov(varargin)
     reccf.intArea(ri,:) = gpcf.intArea;
     for i=1:ncf
       cf = gpcf.cf{i};
-      reccf.cf{i} = feval(cf.fh.recappend, reccf.cf{i}, ri, cf);
+      reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
     end
   end
 end

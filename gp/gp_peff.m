@@ -37,7 +37,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
 %    Bayesian measures of model complexity and fit. J. R. 
 %    Statist. Soc. B, 64(4):583-639.
 %         
-%    Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). 
+%    Vanhatalo, J., Pietilï¿½inen V. and Vehtari, A. (2010). 
 %    Approximate inference for disease mapping with sparse
 %    Gaussian processes. Statistics in Medicine, 29(15):1580-1607.
 %   
@@ -241,7 +241,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
               case 'Laplace'
                 [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 
                 % Evaluate the prior variance
                 K = gp_trcov(gp,x);
@@ -293,7 +293,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
               case 'Laplace'
                 [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                 
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 La = W.*Lav;
                 Lahat = 1 + La;
                 sqrtW = sqrt(W);
@@ -354,7 +354,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
 
                 % Evaluate the variance
 
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 sqrtW = sqrt(W);
                 
                 % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
@@ -444,7 +444,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
               case 'Laplace'
                 [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
                                 
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
                 Lahat = sparse(1:tn,1:tn,1,tn,tn) + sqrtW*La2*sqrtW;
                 B = sqrtW*K_fu;

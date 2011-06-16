@@ -60,7 +60,7 @@ yt=y(1:nt,:); y(1:nt,:)=[];
 Nt=N(1:nt,:); N(1:nt,:)=[];
 
 % equally spaced test points for visualisation
-xgrid=linspace(min(x(:,1))-0.3,max(x(:,1))+0.3,100)';
+xgrid=linspace(min(x(:,1))-0.3,max(x(:,1))+0.3,400)';
 Ntgrid=ones(size(xgrid))*100;
 [n, nin] = size(x);
 

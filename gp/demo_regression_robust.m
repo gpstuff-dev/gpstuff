@@ -50,6 +50,7 @@
 %     4) MCMC approach with Student-t likelihood nu kept fixed to 4
 %     5) Laplace approximation Student-t likelihood
 %        nu kept fixed to 4
+%     6) EP approximation with fractional EP Student-t likelihood
 %
 %  See Vanhatalo et.al. for discussion on the model and methods.
 %
@@ -237,6 +238,54 @@ drawnow
 S3 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', ...
              gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
+ 
+% ========================================
+% EP approximation Student-t likelihood
+%  Here we optimize all the variables 
+%   (lengthScale, magnSigma2, sigma(noise-t) and nu)
+% ========================================
+disp(['Student-t noise model using EP integration over the';...
+      'latent values and MAP estimate for parameters      '])
+
+pl = prior_t();
+pm = prior_sqrtunif();
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+% Create the likelihood structure
+pnu = prior_logunif();
+pn = prior_logunif();
+lik = lik_t('nu', 4, 'nu_prior', pnu, 'sigma2', 0.1, 'sigma2_prior', pn);
+
+% ... Finally create the GP structure
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
+            'latent_method', 'EP','latent_opt',struct('parallel','off'));
+
+% --- MAP estimate using scaled conjugate gradient algorithm ---
+
+% Set the options for the scaled conjugate optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+% Optimize with the scaled conjugate gradient method
+gp=gp_optim(gp,x,y,'opt',opt);
+
+% Predictions to test points
+[Eft, Varft] = gp_pred(gp, x, y, xt);
+std_ft = sqrt(Varft);
+
+% Plot the prediction and data
+figure
+plot(xt,yt,'k')
+hold on
+plot(xt,Eft)
+plot(xt, Eft-2*std_ft, 'r--')
+plot(x,y,'.')
+legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
+plot(xt, Eft+2*std_ft, 'r--')
+title(sprintf('The predictions and the data points (Student-t noise model, (nu=%.2f,sigma=%.3f) with EP+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
+drawnow
+S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+           
+           
+           
 % ========================================
 % MCMC approach with Student-t likelihood
 %  Here we analyse the model with fixed degrees of freedom
@@ -292,7 +341,7 @@ legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
 plot(xt, Eft+2*std_ft, 'r--')
 title('The predictions and the data points (Student-t noise model, nu fixed (nu=4), with MCMC)')
 drawnow
-S4 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
+S5 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', mean(rr.cf{1}.lengthScale), mean(rr.cf{1}.magnSigma2))
 
 % ========================================
 % Laplace approximation Student-t likelihood
@@ -337,7 +386,7 @@ legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
 plot(xt, Eft+2*std_ft, 'r--')
 title(sprintf('The predictions and the data points (Student-t noise model, nu fixed (nu=%.2f,sigma=%.3f) with Laplace+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
 drawnow
-S5 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+S6 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
 
 
 % ========================================
@@ -357,7 +406,7 @@ pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.1, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
+gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
             'latent_method', 'EP','latent_opt',struct('parallel','off'));
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
@@ -382,4 +431,4 @@ legend('real f', 'Ef', 'Ef+-2*std(f)','y',4)
 plot(xt, Eft+2*std_ft, 'r--')
 title(sprintf('The predictions and the data points (Student-t noise model, nu fixed (nu=%.2f,sigma=%.3f) with EP+MAP)',gp.lik.nu, sqrt(gp.lik.sigma2)));
 drawnow
-S6 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)
+S7 = sprintf('length-scale: %.3f, magnSigma2: %.3f \n', gp.cf{1}.lengthScale, gp.cf{1}.magnSigma2)

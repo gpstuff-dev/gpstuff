@@ -213,10 +213,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       switch int_method
         case 'grid'
           % density in the mode
-          p_th(1) = -feval(fh_e,w,gp,x,y,options);
+          p_th(1) = -fh_e(w,gp,x,y,options);
           if ~isempty(xt)
             % predictions in the mode if needed
-            [Ef_grid(1,:), Varf_grid(end+1,:)]=feval(fh_p,gp,x,y,xt,options);
+            [Ef_grid(1,:), Varf_grid(end+1,:)]=fh_p(gp,x,y,xt,options);
           end
           
           % Put the mode to th-array and gp-model in the mode to gp_array
@@ -239,7 +239,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 
                 % log density
                 gp = gp_unpak(gp,w_p);
-                ptest = -feval(fh_e,w_p,gp,x,y,options);
+                ptest = -fh_e(w_p,gp,x,y,options);
                 if ~isnan(ptest)
                   % use value only if not NaN
                   p_th(end+1) = ptest;
@@ -248,7 +248,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   if ~isempty(xt)
                     % predictions if needed
                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
-                        feval(fh_p,gp,x,y,xt,options);
+                        fh_p(gp,x,y,xt,options);
                   end
                   % If the density is high enough, put the location in to the
                   % candidates list. The neighbours of that
@@ -272,7 +272,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 
                 % log density
                 gp = gp_unpak(gp,w_n);
-                ptest = -feval(fh_e,w_n,gp,x,y,options);
+                ptest = -fh_e(w_n,gp,x,y,options);
                 if ~isnan(ptest)
                   % use value only if not NaN
                   p_th(end+1) = ptest;
@@ -281,7 +281,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                   if ~isempty(xt)
                     % predictions if needed
                     [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
-                        feval(fh_p,gp,x,y,xt,options);
+                        fh_p(gp,x,y,xt,options);
                   end
                 
                   if (p_th(1)-p_th(end))<opt.threshold
@@ -362,8 +362,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               % from the mode, the log density drops by 2
               % No gradient and single-variable, so use fminbnd
               optim1=optimset('TolX',0.1);
-              target=feval(fh_e,w,gp,x,y,options)+2;
-              t = fminbnd(@(t) (target-feval(fh_e,w+t*temp*z,gp,x,y,options)).^2, f0/4, f0*4, optim1);
+              target=fh_e(w,gp,x,y,options)+2;
+              t = fminbnd(@(t) (target-fh_e(w+t*temp*z,gp,x,y,options)).^2, f0/4, f0*4, optim1);
               sd(points(:,ind)*dir>0, ind) = 0.5*t/sqrt(nParam);
             end
             % Each point is scaled with corresponding scaling parameter
@@ -380,11 +380,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             gp_array{end+1} = gp;
             
             % density
-            p_th(end+1) = -feval(fh_e,th(i1,:),gp,x,y,options);
+            p_th(end+1) = -fh_e(th(i1,:),gp,x,y,options);
             if ~isempty(xt)
               % predictions if needed
               [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
-                  feval(fh_p,gp,x,y,xt,options);
+                  fh_p(gp,x,y,xt,options);
             end
           end
           
@@ -414,7 +414,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       Scale = Sigma;
       [V,D] = eig(full(Sigma));
       z = (V*sqrt(D))'.*opt.step_size;
-      P0 =  -feval(fh_e,w,gp,x,y,options);
+      P0 =  -fh_e(w,gp,x,y,options);
       
       % Some jitter may be needed to get positive semi-definite covariance
       if any(eig(Sigma)<0)
@@ -457,7 +457,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               for i1 = 1 : length(delta)
                 ttt = zeros(1,nParam);
                 ttt(i0)=1;
-                phat = (-feval(fh_e,w+(delta(i1)*chol(Sigma)'*ttt')',gp,x,y,options));
+                phat = (-fh_e(w+(delta(i1)*chol(Sigma)'*ttt')',gp,x,y,options));
                 fi(i1) = abs(delta(i1)).*(2.*(P0-phat)).^(-.5);
                 
                 pp(i1) = exp(phat);
@@ -509,10 +509,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               ttt = zeros(1,nParam);
               ttt(i0)=1;
               for i1 = 1 : length(delta)
-                phat = exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options));
+                phat = exp(-fh_e(w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options));
                 
                 fi(i1) = nu^(-.5).*abs(delta(i1)).*(((exp(P0)/phat)^(2/(nu+nParam))-1).^(-.5));
-                rel(i1) = (exp(-feval(fh_e,w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options)))/ ...
+                rel(i1) = (exp(-fh_e(w+(delta(i1)*chol(Scale)'*ttt')',gp,x,y,options)))/ ...
                           mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
                 pp(i1) = phat;
                 pt(i1) = mt_pdf((delta(i1)*chol(Scale)'*ttt')', Scale, nu);
@@ -557,11 +557,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       for j = 1 : N
         gp_array{j}=gp_unpak(gp,th(j,:));
         % density
-        p_th(j) = -feval(fh_e,th(j,:),gp_array{j},x,y,options);
+        p_th(j) = -fh_e(th(j,:),gp_array{j},x,y,options);
         if ~isempty(xt)
           % predictions if needed
           [Ef_grid(j,:), Varf_grid(j,:)]=...
-              feval(fh_p,gp_array{j},x,y,xt,options);
+              fh_p(gp_array{j},x,y,xt,options);
         end
       end
       p_th = exp(p_th-min(p_th));
@@ -625,7 +625,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           ww=ww(end,:);
           gp = gp_unpak(gp, ww);
           
-          etr = feval(fh_e,ww,gp,x,y,options);
+          etr = fh_e(ww,gp,x,y,options);
           
         end % ------------- for l=1:opt.repeat -------------------------
         
@@ -637,7 +637,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         if ~isempty(xt)
           % predictions if needed
           [Ef_grid(j,:), Varf_grid(j,:)]=...
-              feval(fh_p,gp_array{j},x,y,xt,options);
+              fh_p(gp_array{j},x,y,xt,options);
         end
         
         % ----------- Set record -----------------------
@@ -804,7 +804,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   % if number of parameters is high
     
     m = length(w);
-    e0 = feval(fh_e,w0,gp,x,y,options);
+    e0 = fh_e(w0,gp,x,y,options);
     delta = 1e-4;
     H = -1*ones(m,m);
     
@@ -818,8 +818,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           w1(j) = w1(j) + delta;
           w2(j) = w2(j) - delta;
           
-          g1 = feval(fh_g,w1,gp,x,y,options);
-          g2 = feval(fh_g,w2,gp,x,y,options);
+          g1 = fh_g(w1,gp,x,y,options);
+          g2 = fh_g(w2,gp,x,y,options);
           
           H(i,j) = (g1(i)-g2(i))./(2.*delta);
           H(j,i) = H(i,j);
@@ -837,8 +837,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         w1(i) = [w1(i)+2*delta];
         w4(i) = [w4(i)-2*delta];
         
-        e1 = feval(fh_e,w1,gp,x,y,options);
-        e4 = feval(fh_e,w4,gp,x,y,options);
+        e1 = fh_e(w1,gp,x,y,options);
+        e4 = fh_e(w4,gp,x,y,options);
         
         H(i,i) = (e1 - 2*e0 + e4)./(4.*delta.^2);
         for j = i+1:m
@@ -848,10 +848,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           w3([i j]) = [w3(i)+delta w3(j)-delta];
           w4([i j]) = [w4(i)-delta w4(j)-delta];
           
-          e1 = feval(fh_e,w1,gp,x,y,options);
-          e2 = feval(fh_e,w2,gp,x,y,options);
-          e3 = feval(fh_e,w3,gp,x,y,options);
-          e4 = feval(fh_e,w4,gp,x,y,options);
+          e1 = fh_e(w1,gp,x,y,options);
+          e2 = fh_e(w2,gp,x,y,options);
+          e3 = fh_e(w3,gp,x,y,options);
+          e4 = fh_e(w4,gp,x,y,options);
           
           H(i,j) = (e1 - e2 - e3 + e4)./(4.*delta.^2);
           H(j,i) = H(i,j);
