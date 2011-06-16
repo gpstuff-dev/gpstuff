@@ -26,14 +26,14 @@ drawnow;clear;close all
 
 function testEstimatesIA
 values.real = load('realValuesSpatial1.mat', 'Elth', 'Elth2');
-values.test = load('testValues/testSpatial1.mat', 'Elth', 'Elth2');
+values.test = load(strrep(which('test_spatial1.m'), 'test_spatial1.m', 'testValues/testSpatial1.mat'), 'Elth', 'Elth2');
 assertElementsAlmostEqual(values.real.Elth, values.test.Elth, 'relative', 0.01);
 assertElementsAlmostEqual(values.real.Elth2, values.test.Elth2, 'relative', 0.01);
 
 
 function testPredictionIA
 values.real = load('realValuesSpatial1.mat', 'Ef', 'Varf');
-values.test = load('testValues/testSpatial1.mat', 'Ef', 'Varf');
+values.test = load(strrep(which('test_spatial1.m'), 'test_spatial1.m', 'testValues/testSpatial1.mat'), 'Ef', 'Varf');
 assertElementsAlmostEqual(mean(values.real.Ef), mean(values.test.Ef), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varf), mean(values.test.Varf), 'relative', 0.05);
 

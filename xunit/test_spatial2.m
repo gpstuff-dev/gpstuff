@@ -27,12 +27,12 @@ drawnow;clear;close all
 
 function testPredictionsEP
 values.real = load('realValuesSpatial2.mat', 'Ef', 'Varf');
-values.test = load('testValues/testSpatial2.mat', 'Ef', 'Varf');
+values.test = load(strrep(which('test_spatial2.m'), 'test_spatial2.m', 'testValues/testSpatial2.mat'), 'Ef', 'Varf');
 assertElementsAlmostEqual(mean(values.test.Ef), mean(values.real.Ef), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.test.Varf), mean(values.real.Varf), 'relative', 0.05);
 
 
 function testCovarianceMatrix
 values.real = load('realValuesSpatial2.mat', 'C');
-values.test = load('testValues/testSpatial2.mat', 'C');
+values.test = load(strrep(which('test_spatial2.m'), 'test_spatial2.m', 'testValues/testSpatial2.mat'), 'C');
 assertElementsAlmostEqual(mean(values.real.C), mean(values.test.C), 'relative', 0.05);

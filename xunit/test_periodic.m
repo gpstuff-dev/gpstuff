@@ -23,7 +23,7 @@ drawnow;clear;close all
 
 function testPredictionsMaunaLoa
 values.real = load('realValuesPeriodic.mat', 'Eft_full1', 'Eft_full2','Varft_full1','Varft_full2');
-values.test = load('testValues/testPeriodic.mat', 'Eft_full1', 'Eft_full2','Varft_full1','Varft_full2');
+values.test = load(strrep(which('test_periodic.m'), 'test_periodic.m', 'testValues/testPeriodic.mat'), 'Eft_full1', 'Eft_full2','Varft_full1','Varft_full2');
 assertElementsAlmostEqual(mean(values.real.Eft_full1), mean(values.test.Eft_full1), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Eft_full2), mean(values.test.Eft_full2), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft_full1), mean(values.test.Varft_full1), 'relative', 0.05);
@@ -32,7 +32,7 @@ assertElementsAlmostEqual(mean(values.real.Varft_full2), mean(values.test.Varft_
 
 function testPredictionsDrowning
 values.real = load('realValuesPeriodic.mat', 'Eft_full', 'Varft_full');
-values.test = load('testValues/testPeriodic.mat', 'Eft_full', 'Varft_full');
+values.test = load(strrep(which('test_periodic.m'), 'test_periodic.m', 'testValues/testPeriodic.mat'), 'Eft_full', 'Varft_full');
 assertElementsAlmostEqual(mean(values.real.Eft_full), mean(values.test.Eft_full), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft_full), mean(values.test.Varft_full), 'relative', 0.05);
 

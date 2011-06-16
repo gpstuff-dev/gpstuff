@@ -25,12 +25,12 @@ drawnow;clear;close all
 
 function testCovarianceMatrix
 values.real = load('realValuesRegression_ppcs.mat', 'K');
-values.test = load('testValues/testRegression_ppcs.mat', 'K');
+values.test = load(strrep(which('test_regression_ppcs.m'), 'test_regression_ppcs.m', 'testValues/testRegression_ppcs.mat'), 'K');
 assertElementsAlmostEqual(mean(values.real.K), mean(values.test.K))
 
 
 function testPrediction
 values.real = load('realValuesRegression_ppcs.mat', 'Ef');
-values.test = load('testValues/testRegression_ppcs.mat', 'Ef');
+values.test = load(strrep(which('test_regression_ppcs.m'), 'test_regression_ppcs.m', 'testValues/testRegression_ppcs.mat'), 'Ef');
 assertElementsAlmostEqual(mean(values.real.Ef), mean(values.test.Ef), 'relative', 0.05);
 

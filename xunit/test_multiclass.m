@@ -25,7 +25,7 @@ function testDemo
 
 function testPredictions
     values.real = load('realValuesMulticlass.mat');
-    values.test = load('testValues/testMulticlass.mat');
+    values.test = load(strrep(which('test_multiclass.m'), 'test_multiclass.m', 'testValues/testMulticlass.mat'));
     assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.01);
     assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.01);
     assertElementsAlmostEqual(mean(values.real.Covft), mean(values.test.Covft), 'relative', 0.01);

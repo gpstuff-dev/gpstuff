@@ -23,12 +23,12 @@ initTestSuite;
 
     function testPredictionsAll
         values.real = load('realValuesBinomial_apc', 'Eft', 'Varft');
-        values.test = load('testValues/testBinomial_apc', 'Eft', 'Varft');
+        values.test = load(strrep(which('test_binomial_apc.m'), 'test_binomial_apc.m', 'testValues/testBinomial_apc'), 'Eft', 'Varft');
         assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.05);
         assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.05);
 
     function testPredictionsCohort
         values.real = load('realValuesBinomial_apc', 'Eft_3', 'Varft_3');
-        values.test = load('testValues/testBinomial_apc', 'Eft_3', 'Varft_3');
+        values.test = load(strrep(which('test_binomial_apc.m'), 'test_binomial_apc.m', 'testValues/testBinomial_apc'), 'Eft_3', 'Varft_3');
         assertElementsAlmostEqual(mean(values.real.Eft_3), mean(values.test.Eft_3), 'relative', 0.05);
         assertElementsAlmostEqual(mean(values.real.Varft_3), mean(values.test.Varft_3), 'relative', 0.05);

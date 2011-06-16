@@ -23,5 +23,5 @@ function testDemo
 
 function testNeuralNetworkCFPrediction
     values.real = load('realValuesRegression_additive.mat','Eft_map');
-    values.test = load('testValues/testRegression_additive.mat','Eft_map');
+    values.test = load(strrep(which('test_regression_additive.m'), 'test_regression_additive.m', 'testValues/testRegression_additive.mat'),'Eft_map');
     assertElementsAlmostEqual(mean(values.real.Eft_map), mean(values.test.Eft_map), 'relative', 0.05);

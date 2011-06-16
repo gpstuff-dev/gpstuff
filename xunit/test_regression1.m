@@ -6,7 +6,7 @@ initTestSuite;
 
     function testDemo
         stream0 = RandStream('mt19937ar','Seed',0);
-        RandStream.setDefaultStream(stream0)
+        prevstream = RandStream.setDefaultStream(stream0);
         disp('Running: demo_regression1')
         demo_regression1
         Eft_map = Eft_map(1:50);
@@ -23,6 +23,7 @@ initTestSuite;
         path = strcat(path, '/testRegression1');         
         save(path, 'K', 'C', 'w', 'Eft_map', 'Varft_map', ...
              'Eft_ia', 'Varft_ia', 'Eft_mc', 'Varft_mc');
+        RandStream.setDefaultStream(prevstream);
         drawnow;clear;close all
 
 % Test saved values with multiple tests. Covariance matrices and
@@ -32,21 +33,21 @@ initTestSuite;
 
     function testCovarianceMatrices
         values.real = load('realValuesRegression1.mat','K','C');
-        values.test = load('testValues/testRegression1.mat','K','C');
+        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'K','C');
         assertElementsAlmostEqual(values.real.K, values.test.K);
         assertElementsAlmostEqual(values.real.C, values.test.C);
     
 
     function testOptimizedParameter
         values.real = load('realValuesRegression1.mat','w');
-        values.test = load('testValues/testRegression1.mat','w');
+        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'w');
         assertElementsAlmostEqual(values.real.w, values.test.w);
         
     
 
     function testPredictedMeanVarianceGrid
         values.real = load('realValuesRegression1.mat','Eft_map','Varft_map');
-        values.test = load('testValues/testRegression1.mat','Eft_map','Varft_map');
+        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_map','Varft_map');
         if length(values.test.Eft_map) > 50
             assertElementsAlmostEqual(values.real.Eft_map(1:50), values.test.Eft_map(1:50), 'relative', 0.01);
             assertElementsAlmostEqual(values.test.Varft_map(1:50), values.real.Varft_map(1:50), 'relative', 0.01);
@@ -58,7 +59,7 @@ initTestSuite;
 
     function testPredictedMeanVarianceMC
         values.real = load('realValuesRegression1.mat','Eft_mc','Varft_mc');
-        values.test = load('testValues/testRegression1.mat','Eft_mc','Varft_mc');
+        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_mc','Varft_mc');
         if length(values.test.Eft_mc) > 50
             assertElementsAlmostEqual(mean(mean(values.test.Eft_mc(1:50))), mean(mean(values.real.Eft_mc(1:50))), 'relative', 0.1);
             assertElementsAlmostEqual(mean(values.test.Varft_mc(1:50)), mean(values.real.Varft_mc(1:50)), 'absolute', 0.3);
@@ -70,7 +71,7 @@ initTestSuite;
 
     function testPredictedMeanVarianceIA
         values.real = load('realValuesRegression1.mat','Eft_ia','Varft_ia');
-        values.test = load('testValues/testRegression1.mat','Eft_ia','Varft_ia');
+        values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_ia','Varft_ia');
         if length(values.test.Eft_ia) > 50
             assertElementsAlmostEqual(mean(values.test.Eft_ia(1:50)), mean(values.real.Eft_ia(1:50)), 'relative', 0.01);
             assertElementsAlmostEqual(mean(values.test.Varft_ia(1:50)), mean(values.real.Varft_ia(1:50)), 'relative', 0.01);

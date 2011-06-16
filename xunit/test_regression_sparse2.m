@@ -28,13 +28,13 @@ drawnow;clear;close all
 
 function testPredictionsFull
 values.real = load('realValuesRegression_sparse2.mat', 'Eft_full', 'Varft_full');
-values.test = load('testValues/testRegression_sparse2.mat','Eft_full', 'Varft_full');
+values.test = load(strrep(which('test_regression_sparse2.m'), 'test_regression_sparse2.m', 'testValues/testRegression_sparse2.mat'),'Eft_full', 'Varft_full');
 assertElementsAlmostEqual(mean(values.real.Eft_full), mean(values.test.Eft_full), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft_full), mean(values.test.Varft_full), 'relative', 0.05);
 
 
 function testPredictionsVar
 values.real = load('realValuesRegression_sparse2.mat', 'Eft_var', 'Varft_var');
-values.test = load('testValues/testRegression_sparse2.mat', 'Eft_var', 'Varft_var');
+values.test = load(strrep(which('test_regression_sparse2.m'), 'test_regression_sparse2.m', 'testValues/testRegression_sparse2.mat'), 'Eft_var', 'Varft_var');
 assertElementsAlmostEqual(mean(values.real.Eft_var), mean(values.test.Eft_var), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft_var), mean(values.test.Varft_var), 'relative', 0.05);

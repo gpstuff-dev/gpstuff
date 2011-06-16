@@ -22,7 +22,7 @@ drawnow;clear;close all
 
 function testPredictions
 values.real = load('realValuesNeuralnetcov.mat','Eft_map', 'Eft_map2','Varft_map','Varft_map2');
-values.test = load('testValues/testNeuralnetcov.mat', 'Eft_map', 'Eft_map2','Varft_map','Varft_map2');
+values.test = load(strrep(which('test_neuralnetcov.m'), 'test_neuralnetcov.m', 'testValues/testNeuralnetcov.mat'), 'Eft_map', 'Eft_map2','Varft_map','Varft_map2');
 assertElementsAlmostEqual(mean(values.real.Eft_map), mean(values.test.Eft_map), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Eft_map2), mean(values.test.Eft_map2), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft_map), mean(values.test.Varft_map), 'relative', 0.05);

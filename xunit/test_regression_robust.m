@@ -23,7 +23,7 @@ drawnow;clear;close all
 
 function testPredictionEP
 values.real = load('realValuesRegression_robust', 'Eft', 'Varft');
-values.test = load('testValues/testRegression_robust', 'Eft', 'Varft');
+values.test = load(strrep(which('test_regression_robust.m'), 'test_regression_robust.m', 'testValues/testRegression_robust'), 'Eft', 'Varft');
 assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.05);
 

@@ -23,6 +23,6 @@ initTestSuite;
         
     function testLGCP
         values.real = load('realValuesLgcp.mat', 'x');
-        values.test = load('testValues/testLgcp.mat', 'x');
+        values.test = load(strrep(which('test_lgcp.m'), 'test_lgcp.m', 'testValues/testLgcp.mat'), 'x');
         assertElementsAlmostEqual(mean(values.real.x), mean(values.test.x), 'relative', 0.05)
 

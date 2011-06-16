@@ -31,20 +31,20 @@ initTestSuite;
         
     function testLaplace
         values.real = load('realValuesClassific.mat','Eft_la','Varft_la');
-        values.test = load('testValues/testClassific.mat','Eft_la','Varft_la');
+        values.test = load(strrep(which('test_classific.m'), 'test_classific.m', 'testValues/testClassific.mat'),'Eft_la','Varft_la');
         assertElementsAlmostEqual(mean(values.real.Eft_la),mean(values.test.Eft_la),'relative',0.01);
         assertElementsAlmostEqual(mean(values.real.Varft_la),mean(values.test.Varft_la),'relative',0.01);
         
         
     function testEP
         values.real = load('realValuesClassific.mat','Eft_ep','Varft_ep');
-        values.test = load('testValues/testClassific.mat','Eft_ep','Varft_ep');
+        values.test = load(strrep(which('test_classific.m'), 'test_classific.m', 'testValues/testClassific.mat'),'Eft_ep','Varft_ep');
         assertElementsAlmostEqual(mean(values.real.Eft_ep),mean(values.test.Eft_ep),'relative',0.01);
         assertElementsAlmostEqual(mean(values.real.Varft_ep),mean(values.test.Varft_ep),'relative',0.01);
 
 
     function testMC
         values.real = load('realValuesClassific.mat','Efs_mc','Varfs_mc');
-        values.test = load('testValues/testClassific.mat','Efs_mc','Varfs_mc');
+        values.test = load(strrep(which('test_classific.m'), 'test_classific.m', 'testValues/testClassific.mat'),'Efs_mc','Varfs_mc');
         assertElementsAlmostEqual(mean(mean(values.real.Efs_mc)),mean(mean(values.test.Efs_mc)),'absolute',0.7);
         assertElementsAlmostEqual(mean(mean(values.real.Varfs_mc)),mean(mean(values.test.Varfs_mc)),'absolute',0.7);

@@ -21,6 +21,6 @@ drawnow;clear;close all
 
 function testPredictionMissingData
 values.real = load('realValuesRegression_hier', 'Eff');
-values.test = load('testValues/testRegression_hier', 'Eff');
+values.test = load(strrep(which('test_regression_hier.m'), 'test_regression_hier.m', 'testValues/testRegression_hier'), 'Eff');
 assertVectorsAlmostEqual(mean(values.real.Eff), mean(values.test.Eff), 'relative', 0.01);
 
