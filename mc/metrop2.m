@@ -88,7 +88,7 @@ end
 
 % Main loop.
 k = - opt.nomit + 1;
-Eold = feval(f, x, varargin{:});	% Evaluate starting energy.
+Eold = f(x, varargin{:});	% Evaluate starting energy.
 nreject = 0;				% Initialise count of rejected states.
 while k <= opt_nsamples
 
@@ -97,7 +97,7 @@ while k <= opt_nsamples
   x = xold + randn(1, nparams)*stddev;
 
   % Now apply Metropolis algorithm.
-  Enew = feval(f, x, varargin{:});	% Evaluate new energy.
+  Enew = f(x, varargin{:});	% Evaluate new energy.
   a = exp(Eold - Enew);			% Acceptance threshold.
   if (diagnostics & k > 0)
     diagn_pos(k,:) = x;

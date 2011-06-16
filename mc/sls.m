@@ -161,7 +161,7 @@ end
 
 ind_umodal = 0;
 j = 0;
-y_new = -feval(f,x_0,varargin{:});
+y_new = -f(x_0,varargin{:});
 
 % The main loop of slice sampling
 for i = 1-nomit:1:nsamples
@@ -172,17 +172,17 @@ for i = 1-nomit:1:nsamples
     y = y_new + log(rand(1));
     if isinf(y)
       x_new = mmin + (mmax-mmin).*rand(1,length(x_new));
-      y_new = -feval(f,x_new,varargin{:});
+      y_new = -f(x_new,varargin{:});
     else
       L = max(x_0 - w.*rand(1,length(x_0)),mmin);
       R = min(L + w,mmax);
       x_new = L + rand(1,length(x_new)).*(R-L);
-      y_new = -feval(f,x_new,varargin{:});  
+      y_new = -f(x_new,varargin{:});  
       while y >= y_new
         L(x_new < x_0) = x_new(x_new < x_0);
         R(x_new >= x_0) = x_new(x_new >= x_0);
         x_new = L + rand(1,length(x_new)).*(R-L);
-        y_new = -feval(f,x_new,varargin{:});        
+        y_new = -f(x_new,varargin{:});        
       end % while
     end % isinf(y)
     
@@ -207,17 +207,17 @@ for i = 1-nomit:1:nsamples
     y = y_new + log(rand(1));
     if isinf(y)
       x_new = mmin + (mmax-mmin).*rand(1,length(x_new));
-      y_new = -feval(f,x_new,varargin{:});
+      y_new = -f(x_new,varargin{:});
     else
       L = mmin;
       R = mmax;
       x_new = L + rand(1,length(x_new)).*(R-L);
-      y_new = -feval(f,x_new,varargin{:});  
+      y_new = -f(x_new,varargin{:});  
       while y >= y_new
         L(x_new < x_0) = x_new(x_new < x_0);
         R(x_new >= x_0) = x_new(x_new >= x_0);
         x_new = L + rand(1,length(x_new)).*(R-L);
-        y_new = -feval(f,x_new,varargin{:});        
+        y_new = -f(x_new,varargin{:});        
       end % while
     end % isinf(y)
     
@@ -245,7 +245,7 @@ for i = 1-nomit:1:nsamples
       y = y_new + log(rand(1));
       if isinf(y)
         x_new(j) = mmin(j) + (mmax(j)-mmin(j)).*rand;
-        y_new = -feval(f,x_new,varargin{:});
+        y_new = -f(x_new,varargin{:});
       else
         L = x_new;
         R = x_new;
@@ -347,7 +347,7 @@ s = a(j);
 if (R(j) - L(j)) < 1.1*w(j)
   while 1
     M(j) = (l(j) + r(j))/2;
-    if s == 0 || y < -feval(f,M,varargin{:})
+    if s == 0 || y < -f(M,varargin{:})
       break;
     end
     if x_0(j) > M(j)
@@ -368,15 +368,15 @@ while s > 0
   tmp_ll(j) = tmp_ll(j) + q;
   tmp_rr = rr;
   tmp_rr(j) = tmp_rr(j) - q;
-  if y >= -feval(f,(tmp_ll),varargin{:})
+  if y >= -f((tmp_ll),varargin{:})
     ll(j) = ll(j) + q;
   end
-  if y >= -feval(f,(tmp_rr),varargin{:})
+  if y >= -f((tmp_rr),varargin{:})
     rr(j) = rr(j) - q;
   end
 end % while
 x_new(j) = ll(j) + rr(j) - x_0(j);
-y_new = -feval(f,x_new,varargin{:});
+y_new = -f(x_new,varargin{:});
 if x_new(j) < l(j) || x_new(j) > r(j) || y >= y_new
   x_new(j) = x_0(j);
   rej = rej + 1;
@@ -404,12 +404,12 @@ r = R(j);
 while 1
   x_new(j) = l + (r-l).*rand;
   if strcmp(method,'doubling')
-    y_new = -feval(f,x_new,varargin{:});
+    y_new = -f(x_new,varargin{:});
     if y < y_new && (um || accept(f,y,x_0,x_new,w,L,R,j,varargin{:}))
       break;
     end
   else
-    y_new = -feval(f,x_new,varargin{:});
+    y_new = -f(x_new,varargin{:});
     if y < y_new
       break;
       break;
@@ -455,7 +455,7 @@ if um % if the user defines the distribution to be unimodal
       fprintf('Overflow! (R:%d)\n',j);
     end
   end
-  while y < -feval(f,L,varargin{:})
+  while y < -f(L,varargin{:})
     L(j) = L(j) - w(j);
     if L(j) < mmin(j)
       L(j) = mmin(j);
@@ -465,7 +465,7 @@ if um % if the user defines the distribution to be unimodal
       break;
     end
   end
-  while y < -feval(f,R,varargin{:})
+  while y < -f(R,varargin{:})
     R(j) = R(j) + w(j);
     if R(j) > mmax(j)
       R(j) = mmax(j);
@@ -494,7 +494,7 @@ else % if the distribution is not defined to be unimodal
     end
     K = 0;
   end
-  while J > 0 && y < -feval(f,L,varargin{:})
+  while J > 0 && y < -f(L,varargin{:})
     L(j) = L(j) - w(j);
     if L(j) < mmin(j)
       L(j) = mmin(j);
@@ -505,7 +505,7 @@ else % if the distribution is not defined to be unimodal
     end
     J = J - 1;
   end
-  while K > 0 && y < -feval(f,R,varargin{:})
+  while K > 0 && y < -f(R,varargin{:})
     R(j) = R(j) + w(j);
     if R(j) > mmax(j)
       R(j) = mmax(j);
@@ -548,8 +548,8 @@ if um % if the user defines the distribution to be unimodal
   else
     Bo = 0;
   end
-  AL = -feval(f,L,varargin{:});
-  AR = -feval(f,R,varargin{:});
+  AL = -f(L,varargin{:});
+  AR = -f(R,varargin{:});
   while (Ao == 0 && y < AL) || (Bo == 0 && y < AR)
     if rand < 1/2
       L(j) = L(j) - (R(j)-L(j));
@@ -562,7 +562,7 @@ if um % if the user defines the distribution to be unimodal
       else
         Ao = 0;
       end
-      AL = -feval(f,L,varargin{:});
+      AL = -f(L,varargin{:});
     else
       R(j) = R(j) + (R(j)-L(j));
       if R(j) > mmax(j)
@@ -574,7 +574,7 @@ if um % if the user defines the distribution to be unimodal
       else
         Bo = 0;
       end
-      AR = -feval(f,R,varargin{:});
+      AR = -f(R,varargin{:});
     end
   end % while
 else % if the distribution is not defined to be unimodal
@@ -593,8 +593,8 @@ else % if the distribution is not defined to be unimodal
     end
   end
   K = p(j);
-  AL = -feval(f,L,varargin{:});
-  AR = -feval(f,R,varargin{:});
+  AL = -f(L,varargin{:});
+  AR = -f(R,varargin{:});
   while K > 0 && (y < AL || y < AR)
     if rand < 1/2
       L(j) = L(j) - (R(j)-L(j));
@@ -604,7 +604,7 @@ else % if the distribution is not defined to be unimodal
           fprintf('Underflow! (L:%d)\n',j);
         end
       end
-      AL = -feval(f,L,varargin{:});
+      AL = -f(L,varargin{:});
     else
       R(j) = R(j) + (R(j)-L(j));
       if R(j) > mmax(j)
@@ -613,7 +613,7 @@ else % if the distribution is not defined to be unimodal
           fprintf('Overflow! (R:%d)\n',j);
         end
       end
-      AR = -feval(f,R,varargin{:});
+      AR = -f(R,varargin{:});
     end
     K = K - 1;
   end % while
@@ -643,7 +643,7 @@ while r(j)-l(j) > 1.1*w(j)
   else
     l(j) = m;
   end
-  if d && y >= -feval(f,l,varargin{:}) && y >= -feval(f,r,varargin{:})
+  if d && y >= -f(l,varargin{:}) && y >= -f(r,varargin{:})
     out = 0;
     break;
   end

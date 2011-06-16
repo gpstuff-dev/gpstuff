@@ -37,11 +37,11 @@ l = opt.mmlimits(1);
 r = opt.mmlimits(2);
 
 % Generate sample
-y = -feval(f,x_0,varargin{:}) + log(rand);
+y = -f(x_0,varargin{:}) + log(rand);
 x_new = x_0;
 for iter=1:maxiter
   x_new = l + (r-l).*rand;
-  y_new = -feval(f,x_new,varargin{:});
+  y_new = -f(x_new,varargin{:});
   if y < y_new
     return;
   end
