@@ -220,6 +220,7 @@ function [w, s] = gpcf_rq_pak(gpcf)
   
   if ~isempty(gpcf.p.alpha)
     w= [w log(log(gpcf.alpha))];
+    s = [s; 'log(log(rq.alpha))'];
     % Hyperparameters of alpha
     [wh sh] = gpcf.p.alpha.fh.pak(gpcf.p.alpha);
     w = [w wh];
@@ -437,29 +438,35 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask)
         for i=1:m
           dist2 = dist2 + (bsxfun(@minus,x(:,i),x(:,i)')).^2;
         end
-        % dalpha
-        ii1=ii1+1;
-        DKff{ii1} = (ma2^(1-a).*.5.*dist2.*s.*Cdm.^a - gpcf.alpha.*log(Cdm.^(-1/gpcf.alpha)./ma2^(-1/gpcf.alpha)).*Cdm).*log(gpcf.alpha);
-        % dlengthscale
-        ii1 = ii1+1;
-        DKff{ii1} = Cdm.^a.*s.*dist2.*gpcf.magnSigma2^(-a+1);
+        if ~isempty(gpcf.p.lengthScale)
+          % dlengthscale
+          ii1 = ii1+1;
+          DKff{ii1} = Cdm.^a.*s.*dist2.*gpcf.magnSigma2^(-a+1);
+        end
+        if ~isempty(gpcf.p.alpha)
+          % dalpha
+          ii1=ii1+1;
+          DKff{ii1} = (ma2^(1-a).*.5.*dist2.*s.*Cdm.^a - gpcf.alpha.*log(Cdm.^(-1/gpcf.alpha)./ma2^(-1/gpcf.alpha)).*Cdm).*log(gpcf.alpha);
+        end
       else
         % ARD
         s = 1./(gpcf.lengthScale.^2);
-        % skip dalpha for a moment
-        ii1=ii1+1;
-        iialpha=ii1; 
         D=zeros(size(Cdm));
         for i=1:m
           dist2 =(bsxfun(@minus,x(:,i),x(:,i)')).^2;
           % sum distance for the dalpha
           D=D+dist2.*s(i); 
           % dlengthscale
-          ii1 = ii1+1;
-          DKff{ii1}=Cdm.^a.*s(i).*dist2.*gpcf.magnSigma2.^(-a+1);
+          if ~isempty(gpcf.p.lengthScale)
+            ii1 = ii1+1;
+            DKff{ii1}=Cdm.^a.*s(i).*dist2.*gpcf.magnSigma2.^(-a+1);
+          end
         end
-        % dalpha
-        DKff{iialpha} = (ma2^(1-a).*.5.*D.*Cdm.^a - gpcf.alpha.*log(Cdm.^(-1/gpcf.alpha)./ma2^(-1/gpcf.alpha)).*Cdm).*log(gpcf.alpha);
+        if ~isempty(gpcf.p.alpha)
+          % dalpha
+          ii1=ii1+1;
+          DKff{ii1} = (ma2^(1-a).*.5.*D.*Cdm.^a - gpcf.alpha.*log(Cdm.^(-1/gpcf.alpha)./ma2^(-1/gpcf.alpha)).*Cdm).*log(gpcf.alpha);
+        end
       end
     end
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
