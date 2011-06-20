@@ -272,7 +272,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   if ismember(display,{'on','iter'})
     fprintf('\n Evaluating the CV utility\n')
   end
-  for i=1:length(trindex)
+  nargout2 = nargout;
+  parfor i=1:length(trindex)
 
     if isequal(display,'iter')
       fprintf('The CV-iteration number: %d \n', i)
@@ -285,12 +286,17 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     ytst = y(tstindex{i},:);
 
     if ~isempty(z)
-      options_tr.z = z(trindex{i},:);
-      options_tst.zt = z;
-      options_tst.yt = y;
+      z_tr = z(trindex{i},:);
+      zt = z;
+      yt = y;
+%       options_tst.zt = z;
+%       options_tst.yt = y;
     else
-      options_tr = struct();
-      options_tst.yt = y;
+      z_tr = [];
+      yt = y;
+      zt = [];
+%       options_tr = struct();
+%       options_tst.yt = y;
     end
 
     gp = gp_orig;
@@ -302,32 +308,35 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
     switch gptype
       case {'FULL' 'VAR' 'DTC' 'SOR'}
-        tstind = [];
+        tstind2 = [];
       case {'FIC' 'CS+FIC'}
-        tstind = trindex{i};
+        tstind2 = trindex{i};
       case 'PIC'
-        % Set the block indices for the cv set of data points
+        % Set the block indices for the cv set of data points. Variable
+        % naming(e.g tstind2) because parfor loop.
         ntr = size(xtr,1);
         ntst = size(xtst,1);
+        tstind2 = [];
+        trind2 = [];
         for i1=1:length(gp.tr_index)
-          tstind{i1} = [];
-          trind{i1} = [];
+          tstind2{i1} = [];
+          trind2{i1} = [];
           for j1 = 1:length(gp.tr_index{i1})
             indtmp = find( sum((xtr - repmat(x(gp.tr_index{i1}(j1),:),ntr,1)).^2,2) == 0 );
             if isempty( indtmp )
               indtmp = find( sum((xtst - repmat(x(gp.tr_index{i1}(j1),:),ntst,1)).^2,2) == 0 );
-              tstind{i1} = [tstind{i1} indtmp];
+              tstind2{i1} = [tstind2{i1} indtmp];
             else
-              trind{i1} = [trind{i1} indtmp];
+              trind2{i1} = [trind2{i1} indtmp];
             end
           end
         end
         if iscell(gp)
           for j=1:numel(gp)
-            gp{j}.tr_index=trind;
+            gp{j}.tr_index=trind2;
           end
         else
-          gp.tr_index = trind;
+          gp.tr_index = trind2;
         end
     end
 
@@ -335,7 +344,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     switch inf_method
       case 'MAP'
         w=gp_pak(gp);
-        w = optimf(@(ww) gp_eg(ww, gp, xtr, ytr, options_tr), w, opt);
+        w = optimf(@(ww) gp_eg(ww, gp, xtr, ytr, 'z', z_tr), w, opt);
         gp=gp_unpak(gp,w);
         cvws(i,:)=w;
       case 'MCMC'
@@ -352,40 +361,51 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         if isfield(gp,'latentValues')
           gp.latentValues=gp_orig.latentValues(trindex{i});
         end
-        gp = gp_mc(gp, xtr, ytr, options_tr, opt);
+        gp = gp_mc(gp, xtr, ytr, 'z', z_tr, opt);
         nburnin = floor(length(gp.etr)/3);
         gp = thin(gp,nburnin);
       case 'IA'
-        gp = gp_ia(gp, xtr, ytr, options_tr, opt);
+        gp = gp_ia(gp, xtr, ytr, 'z', z_tr, opt);
       case 'fixed'
         % nothing to do here
     end
 
-    % make the prediction
-    [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, xtr, ytr, x, 'tstind', tstind, options_tr, options_tst);
-    if nargout>=6
-      cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
-      cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
-      cvtrpreds.lpyt([trindex{i}(:) ; tstindex{i}(:)],i)=lpyt([trindex{i}(:) ; tstindex{i}(:)],:);      
-      cvtrpreds.Eyt([trindex{i}(:) ; tstindex{i}(:)],i)=Eyt([trindex{i}(:) ; tstindex{i}(:)],:);
-      cvtrpreds.Varyt([trindex{i}(:) ; tstindex{i}(:)],i)=Varyt([trindex{i}(:) ; tstindex{i}(:)],:);
+    if iscell(gp)
+      gplik=gp{1}.lik;
+    else
+      gplik=gp.lik;
     end
-    if nargout>=2
-      cvpreds.Eft(tstindex{i},:)=Eft(tstindex{i},:);
-      cvpreds.Varft(tstindex{i},:)=Varft(tstindex{i},:);
-      cvpreds.lpyt(tstindex{i},:)=lpyt(tstindex{i},:);      
-      cvpreds.Eyt(tstindex{i},:)=Eyt(tstindex{i},:);
-      cvpreds.Varyt(tstindex{i},:)=Varyt(tstindex{i},:);
+    if ~isfield(gplik.fh,'trcov')
+      [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, xtr, ytr, x, 'tstind', tstind2, 'z', z_tr, 'yt', yt, 'zt', zt);
+    else
+      [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, xtr, ytr, x, 'tstind', tstind2, 'yt', yt);
+    end
+    % Because parfor loop, must use temporary cells *_cvt/cv, and save
+    % results later in cvtpreds and cvpreds structures.
+    if nargout2>=6
+      Eft_cvt{i}=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
+      Varft_cvt{i}=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
+      lpyt_cvt{i}=lpyt([trindex{i}(:) ; tstindex{i}(:)],:);      
+      Eyt_cvt{i}=Eyt([trindex{i}(:) ; tstindex{i}(:)],:);
+      Varyt_cvt{i}=Varyt([trindex{i}(:) ; tstindex{i}(:)],:);
+    end
+    if nargout2>=2
+      Eft_cv{i}=Eft(tstindex{i},:);
+      Varft_cv{i}=Varft(tstindex{i},:);
+      lpyt_cv{i}=lpyt(tstindex{i},:);      
+      Eyt_cv{i}=Eyt(tstindex{i},:);
+      Varyt_cv{i}=Varyt(tstindex{i},:);
     end
 
     % Evaluate statistics
-    lpd_cv(tstindex{i}) = log(mean(exp(lpyt(tstindex{i},:)),2));
+    % Use temporary cells (lpd_cv2, rmse_cv2, abs_cv2) here also.
+    lpd_cv2{i} = log(mean(exp(lpyt(tstindex{i},:)),2));
     lpd_cvtr(i) = mean(log(mean(exp(lpyt(trindex{i})),2)));
 
-    rmse_cv(tstindex{i}) = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
+    rmse_cv2{i} = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
     rmse_cvtr(i) = sqrt(mean((mean(Eyt(trindex{i},:),2) - ytr).^2));
 
-    abs_cv(tstindex{i}) = abs(mean(Eyt(tstindex{i},:),2) - ytst);
+    abs_cv2{i} = abs(mean(Eyt(tstindex{i},:),2) - ytst);
     abs_cvtr(i) = mean(abs(mean(Eyt(trindex{i},:),2) - ytr));
 
     lpd_cvm(i) = mean(log(mean(exp(lpyt(tstindex{i},:)),2)));
@@ -393,6 +413,26 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     abs_cvm(i) = mean(abs(mean(Eyt(tstindex{i},:),2) - ytst));
   end
 
+  % Save values from parfor loop to right indices.
+  for i=1:length(trindex)
+    lpd_cv(tstindex{i}) = lpd_cv2{i};
+    rmse_cv(tstindex{i}) = rmse_cv2{i};
+    abs_cv(tstindex{i}) = abs_cv2{i};
+    if nargout>=6
+      cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft_cvt{i};
+      cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft_cvt{i};
+      cvtrpreds.lpyt([trindex{i}(:) ; tstindex{i}(:)],i)=lpyt_cvt{i};
+      cvtrpreds.Eyt([trindex{i}(:) ; tstindex{i}(:)],i)=Eyt_cvt{i};
+      cvtrpreds.Varyt([trindex{i}(:) ; tstindex{i}(:)],i)=Varyt_cvt{i};
+    end
+    if nargout>=2
+      cvpreds.Eft(tstindex{i},:)=Eft_cv{i};
+      cvpreds.Varft(tstindex{i},:)=Varft_cv{i};
+      cvpreds.lpyt(tstindex{i},:)=lpyt_cv{i};
+      cvpreds.Eyt(tstindex{i},:)=Eyt_cv{i};
+      cvpreds.Varyt(tstindex{i},:)=Varyt_cv{i};
+    end
+  end
   mlpd_cv = mean(lpd_cv);
   mrmse_cv = sqrt(mean(rmse_cv));
   mabs_cv = mean(abs_cv);
