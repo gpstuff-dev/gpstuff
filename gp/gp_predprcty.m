@@ -1,15 +1,15 @@
 function prctys = gp_predprcty(gp, x, y, xt, varargin) 
-%GP_PREPRCTY  Percentiles for test inputs
+%GP_PREPRCTY  Percentiles of the predictive distribution at test points
 %
 %  Description
 %    PRCTY = GP_PREDPRCTY(GP, X, Y, XT, OPTIONS)
-%    Calculates percentiles for test inputs XT in posterior predictive
-%    distribution.
+%    takes a GP structure together with matrix X of training
+%    inputs and vector Y of training targets, and evaluates the
+%    percentiled of the predictive distribution at test inputs XT. 
 %
 %    OPTIONS is optional parameter-value pair
-%      prcty  - percentiles to be calculated by gp_predprcty (default = 
-%               [5 50 95])
-%      nsamp  - determines the number of samples used by gp_rnd in case of 
+%      prcty  - percentiles to be computed (default = [5 50 95])
+%      nsamp  - determines the number of samples used by GP_RND in case of 
 %               MCMC or IA (default = 5000).
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
@@ -20,10 +20,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
 %    GP_PRED, GP_PAK, GP_UNPAK
 %
 
-
 % Copyright (c) 2011 Ville Tolvanen
-
-
 
   ip=inputParser;
   ip.FunctionName = 'GP_PREDPRCTY';

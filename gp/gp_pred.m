@@ -2,7 +2,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
 %GP_PRED  Make predictions with Gaussian process 
 %
 %  Description
-%    [EFT, VARFT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT] = GP_PRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
@@ -14,18 +14,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, LPYT] = GP_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive density PYT of the observations YT
-%    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
+%    [EFT, VARFT, LPYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    returns also logarithm of the predictive density PYT of the
+%    observations YT at test input locations XT. This can be used
+%    for example in the cross-validation. Here Y has to be vector.
 % 
-%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_PRED(GP, X, Y, XT, OPTIONS)
 %    Returns also posterior predictive mean and variance.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
-%                 used for prediction. Default is all (1:gpcfn). 
-%                 See additional information below.
+%               used for prediction. Default is all (1:gpcfn). 
+%               See additional information below.
 %      tstind - a vector/cell array defining, which rows of X belong 
 %               to which training block in *IC type sparse models. 
 %               Default is []. In case of PIC, a cell array
@@ -180,7 +180,6 @@ switch gp.type
         end
       end
       Eft(xtind2) = K'*a;
-      %foo
       if  isfield(gp,'meanf')
         if issparse(C)
           % terms with non-zero mean -prior
@@ -291,7 +290,8 @@ switch gp.type
     end
     Eft = K_nu*(K_uu\(K_fu'*p));
 
-    % if the prediction is made for training set, evaluate Lav also for prediction points
+    % if the prediction is made for training set, evaluate Lav also for
+    % prediction points
     if ~isempty(tstind)
       [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
       Luu = chol(K_uu)';
@@ -310,7 +310,8 @@ switch gp.type
       
       Varft = Knn_v - sum(B2'.*(B*(repmat(Lav,1,size(K_uu,1)).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
 
-      % if the prediction is made for training set, evaluate Lav also for prediction points
+      % if the prediction is made for training set, evaluate Lav also for
+      % prediction points
       if ~isempty(tstind)
         Varft(tstind) = Varft(tstind)...
             - 2.*sum( B2(:,tstind)'.*(repmat((Lav.\Lav2(tstind)),1,m).*B'),2) ...
@@ -368,9 +369,9 @@ switch gp.type
     
     % Prediction matrices formed with only subsetof cf's.
     if ~isempty(predcf)
-      K_fu = gp_cov(gp, x, u, predcf);        % f x u
-      K_nu = gp_cov(gp, xt, u, predcf);         % n x u
-      K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
+      K_fu = gp_cov(gp, x, u, predcf);  % f x u
+      K_nu = gp_cov(gp, xt, u, predcf); % n x u
+      K_uu = gp_trcov(gp, u, predcf);   % u x u, noiseles covariance K_uu
     end
     
     iKuuKuf = K_uu\K_fu';    
@@ -495,25 +496,28 @@ switch gp.type
     
     % Determine the types of the covariance functions used
     % in making the prediction.
-    if ~isempty(predcf1) && isempty(predcf2)       % Only non-CS covariances
+    if ~isempty(predcf1) && isempty(predcf2)
+      % Only non-CS covariances
       ptype = 1;
       predcf2 = cf2;
-    elseif isempty(predcf1) && ~isempty(predcf2)   % Only CS covariances
+    elseif isempty(predcf1) && ~isempty(predcf2)
+      % Only CS covariances
       ptype = 2;
       predcf1 = cf1;
-    else                                           % Both non-CS and CS covariances
+    else
+      % Both non-CS and CS covariances
       ptype = 3;
     end
     
     % First evaluate needed covariance matrices
     % v defines that parameter is a vector
-    [Kv_ff, Cv_ff] = gp_trvar(gp, x, cf1);  % f x 1  vector    
-    K_fu = gp_cov(gp, x, u, cf1);         % f x u
+    [Kv_ff, Cv_ff] = gp_trvar(gp, x, cf1); % f x 1  vector    
+    K_fu = gp_cov(gp, x, u, cf1);          % f x u
     K_uu = gp_trcov(gp, u, cf1);    % u x u, noiseles covariance K_uu
-    K_uu = (K_uu+K_uu')./2;     % ensure the symmetry of K_uu
+    K_uu = (K_uu+K_uu')./2;         % ensure the symmetry of K_uu
 
     Luu  = chol(K_uu)';
-    K_nu = gp_cov(gp, xt, u, cf1);         % n x u
+    K_nu = gp_cov(gp, xt, u, cf1);  % n x u
 
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -535,10 +539,10 @@ switch gp.type
     %p2 = y./Lav - iLaKfu*(A\(iLaKfu'*y));
     %    Knf = K_nu*(K_uu\K_fu');
 
-    K_fu = gp_cov(gp, x, u, predcf1);       % f x u
-    K_uu = gp_trcov(gp, u, predcf1);         % u x u, noiseles covariance K_uu
-    K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
-    K_nu = gp_cov(gp, xt, u, predcf1);        % n x u    
+    K_fu = gp_cov(gp, x, u, predcf1);  % f x u
+    K_uu = gp_trcov(gp, u, predcf1);   % u x u, noiseles covariance K_uu
+    K_uu = (K_uu+K_uu')./2;            % ensure the symmetry of K_uu
+    K_nu = gp_cov(gp, xt, u, predcf1); % n x u    
 
     % Calculate the predictive mean according to the type of
     % covariance functions used for making the prediction
@@ -721,6 +725,6 @@ switch gp.type
       Varft = sum(Phi_a/L',2)*S(1,1);
     end
     if nargout > 2
-      error('gp_pred with three output arguments is not implemented for SSGP!')
+      error('GP_PRED with three output arguments is not implemented for SSGP!')
     end
 end
