@@ -156,23 +156,24 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             if ~isempty(z)
               z = z(p,:);
             end
-            [LD,notpositivedefinite] = ldlchol(K);
-          else
-            [LD,notpositivedefinite] = chol(K);
           end
-          
-          if notpositivedefinite
-            [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-            return
-          end
-          
           switch gp.latent_opt.optim_method
             % --------------------------------------------------------------------------------
             % find the posterior mode of latent variables by fminunc
             case 'fminunc_large'
               if issparse(K)
+                [LD,notpositivedefinite] = ldlchol(K);
+                if notpositivedefinite
+                  [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                  return
+                end
                 fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
-              else
+              else   
+                [LD,notpositivedefinite] = chol(K);
+                if notpositivedefinite
+                  [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                  return
+                end
                 fhm = @(W, f, varargin) (LD\(LD'\f) + repmat(W,1,size(f,2)).*f);  % W*f; %
               end                            
               defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-12,'TolFun', 1e-12,'LargeScale', 'on','Display', 'off');
