@@ -132,18 +132,18 @@ function waic = gp_waic(gp, x, y, varargin)
         Ef = zeros(tn, nsamples);
         Varf = zeros(tn, nsamples);
         sigma2 = zeros(tn, nsamples);
-        for i = 1:nsamples
-          Gp = take_nth(gp,i);
+        for j = 1:nsamples
+          Gp = take_nth(gp,j);
           if  strcmp(gp.type, 'FIC') | strcmp(gp.type, 'PIC')  || strcmp(gp.type, 'CS+FIC') || strcmp(gp.type, 'VAR') || strcmp(gp.type, 'DTC') || strcmp(gp.type, 'SOR')
             Gp.X_u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
           end
           Gp.tr_index = tr_index;
 
-          gp_array{i} = Gp;
-          %           w(i,:) = gp_pak(Gp);
-          [Ef(:,i), Varf(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          gp_array{j} = Gp;
+          %           w(j,:) = gp_pak(Gp);
+          [Ef(:,j), Varf(:,j)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
           if isfield(gp.lik.fh,'trcov')
-            sigma2(:,i) = repmat(Gp.lik.sigma2,1,tn);
+            sigma2(:,j) = repmat(Gp.lik.sigma2,1,tn);
           end
         end
         
@@ -390,13 +390,13 @@ function waic = gp_waic(gp, x, y, varargin)
     Elog2 = zeros(tn,1);
     
     nsamples = length(gp);
-    for i = 1:nsamples
-      Gp = gp{i};
-      weight(i) = Gp.ia_weight;
-      w(i,:) = gp_pak(Gp);
-      [Ef(:,i), Varf(:,i)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+    for j = 1:nsamples
+      Gp = gp{j};
+      weight(j) = Gp.ia_weight;
+      w(j,:) = gp_pak(Gp);
+      [Ef(:,j), Varf(:,j)] = fh_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
       if isfield(Gp.lik.fh,'trcov')
-        sigma2(:,i) = repmat(Gp.lik.sigma2,1,tn);
+        sigma2(:,j) = repmat(Gp.lik.sigma2,1,tn);
       end
     end
     if strcmp(method,'1')
