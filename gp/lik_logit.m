@@ -427,7 +427,6 @@ function reclik = lik_logit_recappend(reclik, ri, lik)
     reclik.fh.predy = @lik_logit_predy;
     reclik.fh.invlink = @lik_logit_invlink;
     reclik.fh.recappend = @lik_logit_recappend;
-    return
   end
 end
 

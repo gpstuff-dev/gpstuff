@@ -718,8 +718,8 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
 %  See also
 %    GP_MC
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reclik.type = 'Negbinztr';
 
     % Initialize parameter
@@ -743,11 +743,12 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
     if ~isempty(ri.p.disper)
       reclik.p.disper = ri.p.disper;
     end
-    return
-  end
-  
-  reclik.disper(ri,:)=lik.disper;
-  if ~isempty(lik.p)
-    reclik.p.disper = lik.p.disper.fh.recappend(reclik.p.disper, ri, lik.p.disper);
+  else
+    
+    % Append to the record
+    reclik.disper(ri,:)=lik.disper;
+    if ~isempty(lik.p)
+      reclik.p.disper = lik.p.disper.fh.recappend(reclik.p.disper, ri, lik.p.disper);
+    end
   end
 end

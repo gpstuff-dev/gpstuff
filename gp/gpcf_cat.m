@@ -306,8 +306,8 @@ function reccf = gpcf_cat_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_cat';
 
     % Initialize parameters
@@ -323,12 +323,10 @@ function reccf = gpcf_cat_recappend(reccf, ri, gpcf)
     reccf.fh.trcov  = @gpcf_cat_trcov;
     reccf.fh.trvar  = @gpcf_cat_trvar;
     reccf.fh.recappend = @gpcf_cat_recappend;
-
-    return
+  else
+    % Append to the record
+    if isfield(gpcf, 'selectedVariables')
+      reccf.selectedVariables = gpcf.selectedVariables;
+    end
   end
-
-  if isfield(gpcf, 'selectedVariables')
-    reccf.selectedVariables = gpcf.selectedVariables;
-  end
-  
 end

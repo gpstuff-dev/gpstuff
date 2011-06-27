@@ -698,8 +698,8 @@ function gpcf = gpcf_intcov(varargin)
   %  See also
   %    GP_MC and GP_MC -> RECAPPEND
 
-  % Initialize record
     if nargin == 2
+      % Initialize record
       reccf.type = 'gpcf_intcov';
       reccf.NintPoints = ri.NintPoints;
       reccf.intArea = ri.intArea;
@@ -721,16 +721,17 @@ function gpcf = gpcf_intcov(varargin)
       reccf.fh.trcov  = @gpcf_intcov_trcov;
       reccf.fh.trvar  = @gpcf_intcov_trvar;
       reccf.fh.recappend = @gpcf_intcov_recappend;
-      return
-    end
-    
-    %loop over all of the covariance functions
-    ncf = length(gpcf.cf);
-    reccf.NintPoints(ri,:) = gpcf.NintPoints;
-    reccf.intArea(ri,:) = gpcf.intArea;
-    for i=1:ncf
-      cf = gpcf.cf{i};
-      reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
+    else
+      % Append to the record
+      
+      %loop over all of the covariance functions
+      ncf = length(gpcf.cf);
+      reccf.NintPoints(ri,:) = gpcf.NintPoints;
+      reccf.intArea(ri,:) = gpcf.intArea;
+      for i=1:ncf
+        cf = gpcf.cf{i};
+        reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
+      end
     end
   end
 end

@@ -614,8 +614,8 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
 %  See also
 %    GP_MC
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reclik.type = 'Weibull';
 
     % Initialize parameter
@@ -639,11 +639,11 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
     if ~isempty(ri.p.shape)
       reclik.p.shape = ri.p.shape;
     end
-    return
-  end
-  
-  reclik.shape(ri,:)=lik.shape;
-  if ~isempty(lik.p)
-    reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
+  else
+    % Append to the record
+    reclik.shape(ri,:)=lik.shape;
+    if ~isempty(lik.p)
+      reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
+    end
   end
 end

@@ -302,11 +302,11 @@ function reccf = lik_gaussian_recappend(reccf, ri, lik)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'lik_gaussian';
     
-    % Initialize parameters
+    % Initialize the parameters
     reccf.sigma2 = []; 
     reccf.n = []; 
     
@@ -324,21 +324,18 @@ function reccf = lik_gaussian_recappend(reccf, ri, lik)
     if ~isempty(ri.p.sigma2)
       reccf.p.sigma2 = ri.p.sigma2;
     end
-    return
-  end
+  else
+    % Append to the record
+    likp = lik.p;
 
-  likp = lik.p;
-
-  % record sigma
-  if ~isempty(lik.sigma2)
+    % record sigma2
     reccf.sigma2(ri,:)=lik.sigma2;
-    if ~isempty(lik.p.sigma2)
+    if isfield(likp,'sigma2') && ~isempty(likp.sigma2)
       reccf.p.sigma2 = likp.sigma2.fh.recappend(reccf.p.sigma2, ri, likp.sigma2);
     end
-  elseif ri==1
-    reccf.sigma2=[];
-  end
-  if ~isempty(lik.n)
-    reccf.n(ri,:)=lik.n(:)';
+    % record n if given
+    if isfield(lik,'n') && ~isempty(lik.n)
+      reccf.n(ri,:)=lik.n(:)';
+    end
   end
 end

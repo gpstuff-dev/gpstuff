@@ -446,8 +446,8 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC, GP_MC->RECAPPEND
   
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_prod';
 
     % Initialize parameters
@@ -467,14 +467,15 @@ function reccf = gpcf_prod_recappend(reccf, ri, gpcf)
     reccf.fh.trcov  = @gpcf_prod_trcov;
     reccf.fh.trvar  = @gpcf_prod_trvar;
     reccf.fh.recappend = @gpcf_prod_recappend;
-    return
-  end
-  
-  %loop over all of the covariance functions
-  ncf = length(gpcf.cf);
-  for i=1:ncf
-    cf = gpcf.cf{i};
-    reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
+  else
+    % Append to the record
+    
+    % Loop over all of the covariance functions
+    ncf = length(gpcf.cf);
+    for i=1:ncf
+      cf = gpcf.cf{i};
+      reccf.cf{i} = cf.fh.recappend(reccf.cf{i}, ri, cf);
+    end
   end
 end
 

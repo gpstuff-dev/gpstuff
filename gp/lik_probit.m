@@ -285,7 +285,6 @@ function reclik = lik_probit_recappend(reclik, ri, lik)
     reclik.fh.predy = @lik_probit_predy;
     reclik.fh.invlink = @lik_probit_invlink;
     reclik.fh.recappend = @lik_probit_recappend;
-    return
   end
 end
 

@@ -317,8 +317,8 @@ function reccf = gpcf_mask_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_mask';
 
     % Initialize parameters
@@ -334,12 +334,10 @@ function reccf = gpcf_mask_recappend(reccf, ri, gpcf)
     reccf.fh.trcov  = @gpcf_mask_trcov;
     reccf.fh.trvar  = @gpcf_mask_trvar;
     reccf.fh.recappend = @gpcf_mask_recappend;
-
-    return
+  else
+    % Append to the record
+    if isfield(gpcf, 'selectedVariables')
+      reccf.selectedVariables = gpcf.selectedVariables;
+    end
   end
-
-  if isfield(gpcf, 'selectedVariables')
-    reccf.selectedVariables = gpcf.selectedVariables;
-  end
-  
 end

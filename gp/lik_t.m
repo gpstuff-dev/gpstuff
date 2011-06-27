@@ -933,11 +933,11 @@ function reclik = lik_t_recappend(reclik, ri, lik)
 %    covariance function record RECCF, record index RI, RECAPPEND
 %    returns a structure RECCF.
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reclik.type = 'Student-t';
 
-    % Initialize parameter
+    % Initialize parameters
     reclik.nu = [];
     reclik.sigma2 = [];
 
@@ -958,9 +958,20 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     reclik.fh.upfact = @lik_t_upfact;
     reclik.fh.predy = @lik_t_predy;
     reclik.fh.recappend = @lik_t_recappend;
-    return
+  else
+    % Append to the record
+    likp = lik.p;
+    
+    % record sigma2
+    reclik.sigma2(ri,:) = lik.sigma2;
+    if isfield(likp,'sigma2') && ~isempty(likp.sigma2)
+      reccf.p.sigma2 = likp.sigma2.fh.recappend(reccf.p.sigma2, ri, likp.sigma2);
+    end
+    % record nu
+    reclik.nu(ri,:) = lik.nu;
+    if isfield(likp,'nu') && ~isempty(likp.nu)
+      reccf.p.nu = likp.nu.fh.recappend(reccf.p.nu, ri, likp.nu);
+    end
   end
 
-  reclik.nu(ri,:) = lik.nu;
-  reclik.sigma2(ri,:) = lik.sigma2;
 end

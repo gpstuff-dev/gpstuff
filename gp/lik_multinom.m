@@ -299,7 +299,6 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
     reclik.fh.predy = @lik_multinom_predy;
     reclik.fh.invlink = @lik_multinom_invlink;
     reclik.fh.recappend = @lik_multinom_recappend;
-    return
   end
   
 end

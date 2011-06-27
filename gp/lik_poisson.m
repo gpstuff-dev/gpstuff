@@ -478,6 +478,5 @@ function reclik = lik_poisson_recappend(reclik, ri, lik)
     reclik.fh.predy = @lik_poisson_predy;
     reclik.fh.invlink = @lik_poisson_invlink;
     reclik.fh.recappend = @lik_poisson_recappend;
-    return
   end
 end

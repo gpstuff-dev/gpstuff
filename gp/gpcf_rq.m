@@ -776,8 +776,8 @@ function reccf = gpcf_rq_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_rq';
 
     % Initialize parameters
@@ -806,39 +806,29 @@ function reccf = gpcf_rq_recappend(reccf, ri, gpcf)
     if ~isempty(ri.p.alpha)
       reccf.p.alpha = ri.p.alpha;
     end
-    return
-  end
+  else
+    % Append to the record
 
   gpp = gpcf.p;
 
-  if ~isfield(gpcf,'metric')
-    % record lengthScale
-    if ~isempty(gpcf.lengthScale)
+    if ~isfield(gpcf,'metric')
+      % record lengthScale
       reccf.lengthScale(ri,:)=gpcf.lengthScale;
-      if ~isempty(ri.p.lengthScale)
+      if isfield(gpp,'lengthScale') && ~isempty(gpp.lengthScale)
         reccf.p.lengthScale = gpp.lengthScale.fh.recappend(reccf.p.lengthScale, ri, gpcf.p.lengthScale);
       end
-    elseif ri==1
-      reccf.lengthScale=[];
     end
-  end
-  % record magnSigma2
-  if ~isempty(gpcf.magnSigma2)
+    
+    % record magnSigma2
     reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
-    if ~isempty(ri.p.magnSigma2)
+    if isfield(gpp,'magnSigma2') && ~isempty(gpp.magnSigma2)
       reccf.p.magnSigma2 = gpp.magnSigma2.fh.recappend(reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
     end
-  elseif ri==1
-    reccf.magnSigma2=[];
-  end
 
-  % record alpha
-  if ~isempty(gpcf.alpha)
     reccf.alpha(ri,:)=gpcf.alpha;
-    if ~isempty(ri.p.alpha)
+    if isfield(gpp,'alpha') && ~isempty(ri.p.alpha)
       reccf.p.alpha = gpp.alpha.fh.recappend(reccf.p.alpha, ri, gpcf.p.alpha);
     end
-  elseif ri==1
-    reccf.alpha=[];
+    
   end
 end

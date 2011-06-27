@@ -716,8 +716,8 @@ function reccf = gpcf_neuralnetwork_recappend(reccf, ri, gpcf)
 %    GP_MC and GP_MC -> RECAPPEND
 
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_neuralnetwork';
     reccf.nin = ri;
     reccf.nout = 1;
@@ -745,27 +745,24 @@ function reccf = gpcf_neuralnetwork_recappend(reccf, ri, gpcf)
     if ~isempty(ri.p.biasSigma2)
       reccf.p.biasSigma2 = ri.p.biasSigma2;
     end
+  else
+    % Append to the record
+    gpp = gpcf.p;
     
-    return
-  end
-
-  gpp = gpcf.p;
-  % record weightSigma2
-  if ~isempty(gpcf.weightSigma2)
+    % record weightSigma2
     reccf.weightSigma2(ri,:)=gpcf.weightSigma2;
-    reccf.p.weightSigma2 = gpp.weightSigma2.fh.recappend(reccf.p.weightSigma2, ri, gpcf.p.weightSigma2);
-  elseif ri==1
-    reccf.weightSigma2=[];
-  end
-  % record biasSigma2
-  if ~isempty(gpcf.biasSigma2)
+    if isfield(gpp,'weightSigma2') && ~isempty(gpp.weightSigma2)
+      reccf.p.weightSigma2 = gpp.weightSigma2.fh.recappend(reccf.p.weightSigma2, ri, gpcf.p.weightSigma2);
+    end
+    
+    % record biasSigma2
     reccf.biasSigma2(ri,:)=gpcf.biasSigma2;
-  elseif ri==1
-    reccf.biasSigma2=[];
-  end
+    if isfield(gpp,'biasSigma2') && ~isempty(gpp.biasSigma2)
+      reccf.p.biasSigma2 = gpp.biasSigma2.fh.recappend(reccf.p.biasSigma2, ri, gpcf.p.biasSigma2);
+    end
   
-  if isfield(gpcf, 'selectedVariables')
-    reccf.selectedVariables = gpcf.selectedVariables;
+    if isfield(gpcf, 'selectedVariables')
+      reccf.selectedVariables = gpcf.selectedVariables;
+    end
   end
-  
 end

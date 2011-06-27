@@ -517,9 +517,8 @@ function reccf = gpcf_linear_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_linear';
 
     % Initialize parameters
@@ -541,22 +540,18 @@ function reccf = gpcf_linear_recappend(reccf, ri, gpcf)
       reccf.p.coeffSigma2 = ri.p.coeffSigma2;
     end
 
-    return
-  end
-
-  gpp = gpcf.p;
-  % record coeffSigma2
-  if ~isempty(gpcf.coeffSigma2)
+  else
+    % Append to the record
+    gpp = gpcf.p;
+    
+    % record coeffSigma2
     reccf.coeffSigma2(ri,:)=gpcf.coeffSigma2;
-    if ~isempty(gpp.coeffSigma2)
+    if isfield(gpp,'coeffSigma2') && ~isempty(gpp.coeffSigma2)
       reccf.p.coeffSigma2 = gpp.coeffSigma2.fh.recappend(reccf.p.coeffSigma2, ri, gpcf.p.coeffSigma2);
     end
-  elseif ri==1
-    reccf.coeffSigma2=[];
-  end
   
-  if isfield(gpcf, 'selectedVariables')
-    reccf.selectedVariables = gpcf.selectedVariables;
+    if isfield(gpcf, 'selectedVariables')
+      reccf.selectedVariables = gpcf.selectedVariables;
+    end
   end
-  
 end

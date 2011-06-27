@@ -207,6 +207,5 @@ function reclik = lik_softmax_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_softmax_tiltedMoments;
     reclik.fh.predy = @lik_softmax_predy;
     reclik.fh.recappend = @lik_softmax_recappend;
-    return
   end
 end

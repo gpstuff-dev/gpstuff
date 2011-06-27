@@ -320,8 +320,8 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_noise';
     
     % Initialize parameters
@@ -344,16 +344,14 @@ function reccf = gpcf_noise_recappend(reccf, ri, gpcf)
     if ~isempty(ri.p.noiseSigma2)
       reccf.p.noiseSigma2 = ri.p.noiseSigma2;
     end
-    return
-  end
+  else
+    % Append to the record
+    gpp = gpcf.p;
 
-  gpp = gpcf.p;
-
-  % record noiseSigma
-  if ~isempty(gpcf.noiseSigma2)
+    % record noiseSigma2
     reccf.noiseSigma2(ri,:)=gpcf.noiseSigma2;
-    reccf.p.noiseSigma2 = gpp.noiseSigma2.fh.recappend(reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
-  elseif ri==1
-    reccf.noiseSigma2=[];
+    if isfield(gpp,'noiseSigma2') && ~isempty(gpp.noiseSigma2)
+      reccf.p.noiseSigma2 = gpp.noiseSigma2.fh.recappend(reccf.p.noiseSigma2, ri, gpcf.p.noiseSigma2);
+    end
   end
 end

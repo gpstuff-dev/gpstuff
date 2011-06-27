@@ -364,8 +364,8 @@ function reccf = gpcf_constant_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
 
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_constant';
 
     % Initialize parameters
@@ -387,14 +387,15 @@ function reccf = gpcf_constant_recappend(reccf, ri, gpcf)
       reccf.p.constSigma2 = ri.p.constSigma2;
     end
 
-    return
-  end
+  else
+    % Append to the record
+    gpp = gpcf.p;
 
-  % record constSigma2
-  if ~isempty(gpcf.constSigma2)
+    % record constSigma2
     reccf.constSigma2(ri,:)=gpcf.constSigma2;
-  elseif ri==1
-    reccf.constSigma2=[];
+    if isfield(gpp,'constSigma2') && ~isempty(gpp.constSigma2)
+      reccf.p.constSigma2 = gpp.constSigma2.fh.recappend(reccf.p.constSigma2, ri, gpcf.p.constSigma2);
+    end
   end
 end
 

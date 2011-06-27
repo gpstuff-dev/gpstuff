@@ -313,7 +313,7 @@ function reccf = lik_gaussiansmt_recappend(reccf, ri, lik)
   
   
   if nargin == 2
-    % Initialize record
+    % Initialize the record
     reccf.type = 'Gaussian-smt';
     lik.ndata = [];
     
@@ -331,30 +331,23 @@ function reccf = lik_gaussiansmt_recappend(reccf, ri, lik)
     reccf.fh.trvar  = @lik_gaussiansmt_trvar;
     reccf.fh.gibbs = @lik_gaussiansmt_gibbs;
     reccf.fh.recappend = @lik_gaussiansmt_recappend;
-    return
-  end
+  else  
+    % Append to the record
+    reccf.ndata = lik.ndata;
+    gpp = lik.p;
   
-  reccf.ndata = lik.ndata;
-  gpp = lik.p;
-  
-  % record noiseSigma
-  if ~isempty(lik.sigma2)
+    % record noiseSigma
     reccf.sigma2(ri,:)=lik.sigma2;
-  elseif ri==1
-    reccf.sigma2=[];
+    if ~isempty(lik.nu)
+      reccf.nu(ri,:)=lik.nu;
+      reccf.U(ri,:) = lik.U;
+      reccf.tau2(ri,:) = lik.tau2;
+      reccf.alpha(ri,:) = lik.alpha;
+      reccf.r(ri,:) = lik.r;
+    end
+    if isfield(lik, 'censored')
+      reccf.cy(ri,:) = lik.cy';
+    end
   end
-  if ~isempty(lik.nu)
-    reccf.nu(ri,:)=lik.nu;
-    reccf.U(ri,:) = lik.U;
-    reccf.tau2(ri,:) = lik.tau2;
-    reccf.alpha(ri,:) = lik.alpha;
-    reccf.r(ri,:) = lik.r;
-  elseif ri==1
-    reccf.sigma2=[];
-  end
-  if isfield(lik, 'censored')
-    reccf.cy(ri,:) = lik.cy';
-  end
-  
 end
 
