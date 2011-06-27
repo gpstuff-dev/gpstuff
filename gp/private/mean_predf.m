@@ -28,8 +28,8 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
 %        Laplace:
 %        NOT IMPLEMENTED YET
 %
-%        Returns the help term RB for the posterior predicative mean and help term RAR 
-%        for posterior predicative variance. 
+%        Returns the help term RB for the posterior predictive
+%        mean and help term RAR for posterior predictive variance.
 %
 %        RB  = R'*Beta = R'*(inv(B1)*B2) 
 %        RAR = R'*inv(B1)*R
@@ -39,8 +39,8 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
 %        functions.
 
 
-%        See GPstuff doc and (Rasmussen and Williams 2006) page 28 for further
-%        explaining.
+%        See GPstuff doc and (Rasmussen and Williams 2006) page 28
+%        for further explanation.
 
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2011 Jarno Vanhatalo
@@ -74,11 +74,11 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
         
     R = Hs - H*KsK;
 
-%     if gp.mf{1}.p.vague==0        % non-vague prior
+%     if gp.mf{1}.p.vague==0    % non-vague prior
         invB = B\eye(size(B));
         B1 = invB + H*KsH;
         B2 = H*Ksy + invB*b;
-%     else                          % vague prior
+%     else                      % vague prior
 %         B1 = H*KsH;
 %         B2 = H*Ksy;
 %     end
@@ -88,7 +88,8 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
     RARapu=R'.*invAR';          % Calculate only the necessary.
     
     
-    RB  = R'*Beta;                % For predictive mean
-    RAR = sum(RARapu,2);          % For predictive variance
+    RB  = R'*Beta;              % For predictive mean
+    RAR = sum(RARapu,2);        % For predictive variance
     
 end
+  
