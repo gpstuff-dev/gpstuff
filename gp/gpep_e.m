@@ -2033,4 +2033,49 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
     ch.datahash=datahash;
     ch.w = NaN;
   end
+
+
+  function [dnu_q,dtau_q]=ep_update_dir(m_q,S_q,m_r,V_r,eta,up_mode,tolUpdate)
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%
+    % update direction for EP
+    %%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    V_q=diag(S_q);
+    switch up_mode
+      case 'ep'
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % site update by moment matching
+        [dnu_q,dtau_q]=deal(zeros(size(m_q)));
+        
+        ind_up=V_r>0 & max(abs(V_r-V_q),abs(m_r-m_q))>tolUpdate;
+        
+        dnu_q(ind_up) = ( m_r(ind_up)./V_r(ind_up) - m_q(ind_up)./V_q(ind_up) ) ./ eta(ind_up);
+        dtau_q(ind_up) = ( 1./V_r(ind_up) - 1./V_q(ind_up) )./ eta(ind_up);
+        
+      case 'grad'
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % gradient descend
+        
+        % evaluate the gradients
+        gnu_q = m_q - m_r;
+        gtau_q = 0.5*(V_r + m_r.^2 - V_q - m_q.^2);
+        
+        dnu_q=-gnu_q;
+        dtau_q=-gtau_q;
+        
+        %dfi=1e-1;
+        %dnu_q=-dfi*gnu_q;
+        %dtau_q=-dfi*gtau_q;
+        %[e2,gnu_q2,gtau_q2]=epdl_e(nu_q+dnu_q,tau_q+dtau_q,fh_tm,eta,K,nu_s,tau_s);
+        
+        % quasi Newton
+        %Hnu=(gnu_q2-gnu_q)./dnu_q;
+        %Htau=(gtau_q2-gtau_q)./(dtau_q);
+        %dnu_q=-gnu_q./(Hnu+a);
+        %dtau_q=-gtau_q./(Htau+a);
+    end
+
+  end
+
 end
