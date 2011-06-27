@@ -21,8 +21,8 @@ function lik = lik_binomial(varargin)
 %    GP_SET, LIK_*
 %
 
-% Copyright (c) 2009-2010  Jaakko Riihim�ki & Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2009-2010 Jaakko Riihim�ki & Jarno Vanhatalo
+% Copyright (c) 2010-2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -54,6 +54,7 @@ function lik = lik_binomial(varargin)
     lik.fh.llg3 = @lik_binomial_llg3;
     lik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
     lik.fh.predy = @lik_binomial_predy;
+    lik.fh.predprcty = @lik_binomial_predprcty;
     lik.fh.invlink = @lik_binomial_invlink;
     lik.fh.recappend = @lik_binomial_recappend;
   end
@@ -372,6 +373,40 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
   end
 end
 
+function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)
+%LIK_BINOMIAL_PREDPRCTY  Returns the percentiled of predictive density of y
+%
+%  Description         
+%    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
+%    Returns percentiles of the predictive density PY of YT, that is 
+%    This requires also the succes counts YT, numbers of trials ZT.
+%
+%  See also 
+%    GP_PREDPCTY
+
+  if isempty(zt)
+    error(['lik_binomial -> lik_binomial_predy: missing z!'... 
+           'Binomial likelihood needs the expected number of       '...
+           'occurrences as an extra input z. See, for             '...
+           'example, lik_binomial and gpla_e.                 ']);
+  end
+  
+  opt=optimset('TolX',.5,'Display','off');
+  nt=size(Ef,1);
+  prctys = zeros(nt,numel(prcty));
+  prcty=prcty/100;
+  for i1=1:nt
+    ci = sqrt(Varf(i1));
+    for i2=1:numel(prcty)
+      a=floor(fminbnd(@(a) (quadgk(@(f) binocdf(a,zt(i1),logitinv(f)).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,binoinv(prcty(i2),zt(i1),logitinv(Ef(i1)-1.96*ci)),binoinv(prcty(i2),zt(i1),logitinv(Ef(i1)+1.96*ci)),opt));
+      if quadgk(@(f) binocdf(a,zt(i1),logitinv(f)).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)<prcty(i2)
+        a=a+1;
+      end
+      prctys(i1,i2)=a;
+    end
+  end
+end
+
 function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %INIT_LOGIT_NORM
 %
@@ -514,7 +549,7 @@ function p = lik_binomial_invlink(lik, f, z)
 %     See also
 %     LIK_BINOMIAL_LL, LIK_BINOMIAL_PREDY
   
-  p = logitinv(f).*z;
+  p = logitinv(f);
 end
 
 function reclik = lik_binomial_recappend(reclik, ri, lik)

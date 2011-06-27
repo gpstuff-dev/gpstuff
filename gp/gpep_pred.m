@@ -117,19 +117,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
             z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
           end
 
-          Eft=K_nf*(nutilde-z);    % The mean, zero mean GP            
+          Eft=K_nf*(nutilde-z);    % The mean, zero mean GP        
         else
           z = Stildesqroot*(L'\(L\(Stildesqroot*(C))));
           
-          Eft_zm=K_nf*(nutilde-z*nutilde);              % The mean, zero mean GP    
-          Ks = eye(size(z)) - z;                       % inv(K + S^-1)*S^-1                    
+          Eft_zm=K_nf*(nutilde-z*nutilde); % The mean, zero mean GP
+          Ks = eye(size(z)) - z;           % inv(K + S^-1)*S^-1
           Ksy = Ks*nutilde;
           [RB RAR] = mean_predf(gp,x,xt,K_nf',Ks,Ksy,'EP',Stildesqroot.^2);
           
-          Eft = Eft_zm + RB;        % The mean
+          Eft = Eft_zm + RB;            % The mean
         end
         
-
         % Compute variance
         if nargout > 1
           if issparse(L)
@@ -489,13 +488,15 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================    
-  if nargout > 2 && isempty(yt)
-    error('yt has to be provided to get lpyt.')
-  end
-  if nargout > 3
+  if nargout == 3
+    if isempty(yt)
+      lpyt=[];
+    else
+      lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    end
+  elseif nargout > 3
     [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
-  elseif nargout > 2
-    lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
   end
+  
 end
 

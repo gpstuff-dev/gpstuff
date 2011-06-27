@@ -90,7 +90,7 @@ gp=gp_optim(gp,x,y,'z',N,'opt',opt);
 % Set the total number of trials Nt at the grid points xgrid
 [Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
     gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid, 'yt', yt);
-
+g
 % Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;
@@ -106,10 +106,9 @@ h4=plot(xgrid, 1./(1+exp(-(-1.5.*xgrid.^3+0.5*xgrid.^2+0.75*xgrid)))*100, 'color
 legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
 title('Gaussian process prediction with a squared exponential covariance function')
 
-
 % To compute predictive densities at the test points xt, the total number
 % of trials Nt must be set additionally:
-[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
+[~, ~, lpyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
 
 figure, set(gcf, 'color', 'w'), hold on
 hist((lpyt_la), 20)

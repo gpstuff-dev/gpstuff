@@ -117,6 +117,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
           else
             i1=0;
+            Stildesqroot=diag(sqrt(tautilde));
             invKs=eye(size(C))-Stildesqroot*(L'\(L\(Stildesqroot*C)));
             [dMNM trA]=mean_gf(gp,x,C,invKs,DKff,Stildesqroot,nutilde,'EP');
             for i2 = 1:length(DKff)

@@ -15,19 +15,34 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
 %    details on implementation.
 %
 %    The options structure should include the following fields:
-%      repeat              - the number MH-steps before 
-%                            returning single sample
-%      sample_latent_scale - the scale for the MH-step
+%      repeat              - the number of MH-steps before 
+%                            returning a single sample (default 10)
+%      sample_latent_scale - the scale for the MH-step (default 0.5)
+%
+%    OPT = SCALED_MH() Returns default options
+%
+%    OPT = SCALED_MH(OPT) Returns default options for fields not
+%    yet set in OPT
 %
 %  See also
 %    GP_MC
   
-% Copyright (c) 1999 Aki Vehtari
+% Copyright (c) 1999,2011 Aki Vehtari
 % Copyright (c) 2006-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
 % License.txt, included with the software, for details.
+
+% set default options using hmc2_opt
+  if nargin<=1
+    if nargin==0
+      f=scaled_mh_opt();
+    else
+      f=scaled_mh_opt(f);
+    end
+    return
+  end
 
   maxcut = -log(eps);
   mincut = -log(1/realmin - 1);
@@ -38,6 +53,10 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
     case {'FULL'}
       
       [K,C]=gp_trcov(gp, x);
+      if isfield(gp,'meanf')
+        [H_m,b_m,B_m]=mean_prep(gp,x,[]);
+        C = C + H_m'*B_m*H_m;
+      end
       L=chol(C)';
       n=length(y);
       e = -gp.lik.fh.ll(gp.lik, y, f, z);
@@ -284,4 +303,31 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       f = f';
       
   end
+end
+
+function opt = scaled_mh_opt(opt)
+%SCALED_MH_OPT  Default options for scaled Metropolis-Hastings sampling
+%
+%  Description
+%    OPT = SCALED_MH_OPT
+%      return default options
+%    OPT = SCALED_MH_OPT(OPT)
+%      fill empty options with default values
+%
+%  The options and defaults are
+%      repeat              - the number of MH-steps before 
+%                            returning a single sample (default 10)
+%      sample_latent_scale - the scale for the MH-step (default 0.5)
+
+  if nargin < 1
+    opt=[];
+  end
+
+  if ~isfield(opt,'repeat')
+    opt.repeat=10;
+  end
+  if ~isfield(opt,'sample_latent_scale')
+    opt.sample_latent_scale=0.5;
+  end
+
 end

@@ -35,6 +35,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
 %               that are also in the training set (if none, set
 %               TSTIND = [])
 %      yt     - optional observed yt in test points (see below)
+%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, expected value 
+%               for ith case. 
+%      zt     - optional observed quantity in triplet (xt_i,yt_i,zt_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, the expected 
+%               value for the ith case. 
 %
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just
@@ -183,10 +191,10 @@ switch gp.type
       if  isfield(gp,'meanf')
         if issparse(C)
           % terms with non-zero mean -prior
-          [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);    
+          [RB, RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);    
         else
           % terms with non-zero mean -prior
-          [RB RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);    
+          [RB, RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);
         end
         Eft(xtind2) = Eft(xtind2) + RB;
       end

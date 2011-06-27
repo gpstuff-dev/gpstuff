@@ -164,7 +164,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'Location', 'NorthWest')
 % noise structure
 gpcf1 = gpcf_sexp('lengthScale', 67*12, 'magnSigma2', 66*66);
 gpcfp = gpcf_periodic('lengthScale', 1.3, 'magnSigma2', 2.4*2.4);
-gpcfp = gpcf_periodic(gpcfp, 'period', 12,'optimPeriod',1,'lengthScale_sexp', 90*12, 'decay', 1);
+gpcfp = gpcf_periodic(gpcfp, 'period', 12,'lengthScale_sexp', 90*12, 'decay', 1);
 lik = lik_gaussian('sigma2', 0.3);
 gpcf2 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
 
@@ -270,7 +270,7 @@ x = [1:length(y)]';
 
 gpcf1 = gpcf_sexp('lengthScale', [67], 'magnSigma2', 1);
 gpcfp = gpcf_periodic('lengthScale', [1.3], 'magnSigma2', 2.4*2.4,...
-    'period', 12,'optimPeriod',0, 'lengthScale_sexp', 50, 'decay', 1);
+    'period', 12,'lengthScale_sexp', 50, 'decay', 1);
 likn=gpcf_neuralnetwork('biasSigma2',10,'weightSigma2',3);
 gpcf2 = gpcf_sexp('lengthScale', [2], 'magnSigma2', 2);
 

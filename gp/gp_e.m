@@ -64,14 +64,20 @@ end
 
 ip=inputParser;
 ip.FunctionName = 'GP_E';
-ip.addRequired('w', @(x) isempty(x) || ...
-               isvector(x) && isreal(x) && all(isfinite(x)));
+ip.addRequired('w', @(x) isempty(x) || isvector(x) && isreal(x));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
+if ~all(isfinite(w(:)));
+  % instead of stopping to error, return NaN
+  e=NaN;
+  edata = NaN;
+  eprior = NaN;
+  return;
+end
 
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);

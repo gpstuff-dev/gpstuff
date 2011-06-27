@@ -101,9 +101,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
       [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
 
       ntest=size(xt,1);
+      % notice the order xt,x to avoid transpose later
       K_nf = gp_cov(gp,xt,x,predcf);
       if isfield(gp,'meanf')
-        [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
+        [H,b_m,B_m,Hs]=mean_prep(gp,x,xt);
         K_nf=K_nf + Hs'*B_m*H;
         K = gp_trcov(gp, x);
         K = K+H'*B_m*H;
@@ -117,7 +118,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
         deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
         Eft = K_nf*deriv;
         if isfield(gp,'meanf')
-          Eft=Eft + K_nf*(K\Hs'*b_m);
+          Eft=Eft + K_nf*(K\H'*b_m);
         end
       end
 
@@ -441,13 +442,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================
-  if nargout > 2 && isempty(yt)
-    error('yt has to be provided to get lpyt.')
-  end
-  if nargout > 3
+  if nargout == 3
+    if isempty(yt)
+      lpyt=[];
+    else
+      lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    end
+  elseif nargout > 3
     [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
-  elseif nargout > 2
-    lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
   end
   
 end

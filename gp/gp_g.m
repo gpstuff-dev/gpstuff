@@ -58,13 +58,20 @@ end
 
 ip=inputParser;
 ip.FunctionName = 'GP_G';
-ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+ip.addRequired('w', @(x) isvector(x) && isreal(x));
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
+if ~all(isfinite(w(:)));
+  % instead of stopping to error, return NaN
+  g=NaN;
+  gdata = NaN;
+  gprior = NaN;
+  return;
+end
 
 % unpak the parameters
 gp=gp_unpak(gp, w);
@@ -90,8 +97,10 @@ switch gp.type
       [LD, notpositivedefinite] = ldlchol(C);
       if notpositivedefinite
           % instead of stopping to chol error, return NaN
+          g=NaN;
           gdata = NaN;
           gprior = NaN;
+          return;
       end
       if  (~isfield(gp,'meanf') && ~notpositivedefinite)
           b = ldlsolve(LD,y);
@@ -288,8 +297,10 @@ switch gp.type
                 gprior = [gprior -lpg_B];
             end
         else
-            gdata = NaN;
-            gprior = NaN;
+          g=NaN;
+          gdata = NaN;
+          gprior = NaN;
+          return
         end
     end
     

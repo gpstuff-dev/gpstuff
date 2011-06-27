@@ -56,7 +56,6 @@ function gpcf = gpcf_periodic(varargin)
   ip.addParamValue('lengthScale',10, @(x) isvector(x) && all(x>0));
   ip.addParamValue('period',1, @(x) isscalar(x) && x>0 && mod(x,1)==0);
   ip.addParamValue('lengthScale_sexp',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('optimPeriod',0, @(x) isscalar(x) && (x==0||x==1));
   ip.addParamValue('decay',0, @(x) isscalar(x) && (x==0||x==1));
   ip.addParamValue('magnSigma2_prior',prior_sqrtunif, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lengthScale_prior',prior_unif, @(x) isstruct(x) || isempty(x));
@@ -84,9 +83,6 @@ function gpcf = gpcf_periodic(varargin)
   end
   if init || ~ismember('period',ip.UsingDefaults)
     gpcf.period = ip.Results.period;
-  end
-  if init || ~ismember('optimPeriod',ip.UsingDefaults)
-    gpcf.optimPeriod = ip.Results.optimPeriod;
   end
   if init || ~ismember('lengthScale_sexp',ip.UsingDefaults)
     gpcf.lengthScale_sexp=ip . Results.lengthScale_sexp;
@@ -182,7 +178,7 @@ function [w, s] = gpcf_periodic_pak(gpcf)
       s = [s; sh];
     end
     
-    if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
+    if ~isempty(gpcf.p.period)
       w = [w log(gpcf.period)];
       s = [s; 'log(periodic.period)'];
       
@@ -240,7 +236,7 @@ function [gpcf, w] = gpcf_periodic_unpak(gpcf, w)
       gpcf.lengthScale_sexp = exp(w(i1:i2));
       w = w(i2+1:end);
     end
-    if ~isempty(gpp.period) && gpcf.optimPeriod == 1
+    if ~isempty(gpp.period)
       i2=length(gpcf.period);
       i1=1;
       gpcf.period = exp(w(i1:i2));
@@ -259,7 +255,7 @@ function [gpcf, w] = gpcf_periodic_unpak(gpcf, w)
       [p, w] = gpcf.p.lengthScale_sexp.fh.unpak(gpcf.p.lengthScale_sexp, w);
       gpcf.p.lengthScale_sexp = p;
     end
-    if ~isempty(gpp.period)  && gpcf.optimPeriod == 1
+    if ~isempty(gpp.period)
       [p, w] = gpcf.p.period.fh.unpak(gpcf.p.period, w);
       gpcf.p.period = p;
     end
@@ -304,7 +300,7 @@ function lp = gpcf_periodic_lp(gpcf)
     if ~isempty(gpp.lengthScale_sexp) && gpcf.decay == 1
       lp = lp +gpp.lengthScale_sexp.fh.lp(gpcf.lengthScale_sexp, gpp.lengthScale_sexp) +sum(log(gpcf.lengthScale_sexp));
     end
-    if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
+    if ~isempty(gpcf.p.period)
       lp = gpp.period.fh.lp(gpcf.period, gpp.period) +sum(log(gpcf.period));
     end
   end
@@ -342,7 +338,7 @@ function lpg = gpcf_periodic_lpg(gpcf)
     lpgs = gpp.lengthScale_sexp.fh.lpg(gpcf.lengthScale_sexp, gpp.lengthScale_sexp);
     lpg = [lpg lpgs(1:lll).*gpcf.lengthScale_sexp+1 lpgs(lll+1:end)];
   end
-  if ~isempty(gpcf.p.period) && gpcf.optimPeriod == 1
+  if ~isempty(gpcf.p.period)
     lpgs = gpp.period.fh.lpg(gpcf.period, gpp.period);
     lpg = [lpg lpgs(1).*gpcf.period+1 lpgs(2:end)];
   end
@@ -397,89 +393,87 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
-        if ~isempty(gpcf.p.lengthScale)
-            % loop over all the lengthScales
-            if length(gpcf.lengthScale) == 1
-                % In the case of isotropic PERIODIC
-                s = 2./gpcf.lengthScale.^2;
-                dist = 0;
-                for i=1:m
-                    D = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
-                    dist = dist + 2.*D.^2;
-                end
-                D = Cdm.*s.*dist;
-                
-                ii1 = ii1+1;
-                DKff{ii1} = D;
-            else
-                % In the case ARD is used
-                for i=1:m
-                    s = 2./gpcf.lengthScale(i).^2;
-                    dist = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
-                    D = Cdm.*s.*2.*dist.^2;
-                    
-                    ii1 = ii1+1;
-                    DKff{ii1} = D;
-                end
-            end
-        end
-      
-      if gpcf.decay == 1
-          if ~isempty(gpcf.p.lengthScale_sexp)
-              if length(gpcf.lengthScale_sexp) == 1
-                  % In the case of isotropic PERIODIC
-                  s = 1./gpcf.lengthScale_sexp.^2;
-                  dist = 0;
-                  for i=1:m
-                      D = bsxfun(@minus,x(:,i),x(:,i)');
-                      dist = dist + D.^2;
-                  end
-                  D = Cdm.*s.*dist;
-                  
-                  ii1 = ii1+1;
-                  DKff{ii1} = D;
-              else
-                  % In the case ARD is used
-                  for i=1:m
-                      s = 1./gpcf.lengthScale_sexp(i).^2;
-                      dist = bsxfun(@minus,x(:,i),x(:,i)');
-                      D = Cdm.*s.*dist.^2;
-                      
-                      ii1 = ii1+1;
-                      DKff{ii1} = D;
-                  end
-              end
+      if ~isempty(gpcf.p.lengthScale)
+        % loop over all the lengthScales
+        if length(gpcf.lengthScale) == 1
+          % In the case of isotropic PERIODIC
+          s = 2./gpcf.lengthScale.^2;
+          dist = 0;
+          for i=1:m
+            D = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
+            dist = dist + 2.*D.^2;
           end
+          D = Cdm.*s.*dist;
+          
+          ii1 = ii1+1;
+          DKff{ii1} = D;
+        else
+          % In the case ARD is used
+          for i=1:m
+            s = 2./gpcf.lengthScale(i).^2;
+            dist = sin(pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period);
+            D = Cdm.*s.*2.*dist.^2;
+            
+            ii1 = ii1+1;
+            DKff{ii1} = D;
+          end
+        end
       end
       
-      if gpcf.optimPeriod == 1
-          if ~isempty(gpcf.p.period)
-              % Evaluate help matrix for calculations of derivatives
-              % with respect to the period
-              if length(gpcf.lengthScale) == 1
-                  % In the case of an isotropic PERIODIC
-                  s = repmat(1./gpcf.lengthScale.^2, 1, m);
-                  
-                  
-                  dist = 0;
-                  for i=1:m
-                      dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)').*s(i);
-                  end
-                  D = Cdm.*dist;
-                  ii1=ii1+1;
-                  DKff{ii1} = D;
-              else
-                  % In the case ARD is used
-                  for i=1:m
-                      s = 1./gpcf.lengthScale(i).^2;        % set the length
-                      dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)');
-                      D = Cdm.*s.*dist;
-                      
-                      ii1=ii1+1;
-                      DKff{ii1} = D;
-                  end
-              end
+      if gpcf.decay == 1
+        if ~isempty(gpcf.p.lengthScale_sexp)
+          if length(gpcf.lengthScale_sexp) == 1
+            % In the case of isotropic PERIODIC
+            s = 1./gpcf.lengthScale_sexp.^2;
+            dist = 0;
+            for i=1:m
+              D = bsxfun(@minus,x(:,i),x(:,i)');
+              dist = dist + D.^2;
+            end
+            D = Cdm.*s.*dist;
+            
+            ii1 = ii1+1;
+            DKff{ii1} = D;
+          else
+            % In the case ARD is used
+            for i=1:m
+              s = 1./gpcf.lengthScale_sexp(i).^2;
+              dist = bsxfun(@minus,x(:,i),x(:,i)');
+              D = Cdm.*s.*dist.^2;
+              
+              ii1 = ii1+1;
+              DKff{ii1} = D;
+            end
           end
+        end
+      end
+      
+      if ~isempty(gpcf.p.period)
+        % Evaluate help matrix for calculations of derivatives
+        % with respect to the period
+        if length(gpcf.lengthScale) == 1
+          % In the case of an isotropic PERIODIC
+          s = repmat(1./gpcf.lengthScale.^2, 1, m);
+          
+          
+          dist = 0;
+          for i=1:m
+            dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)').*s(i);
+          end
+          D = Cdm.*dist;
+          ii1=ii1+1;
+          DKff{ii1} = D;
+        else
+          % In the case ARD is used
+          for i=1:m
+            s = 1./gpcf.lengthScale(i).^2;        % set the length
+            dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x(:,i)');
+            D = Cdm.*s.*dist;
+            
+            ii1=ii1+1;
+            DKff{ii1} = D;
+          end
+        end
       end
       
     end
@@ -547,7 +541,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
         end
       end
       
-      if gpcf.optimPeriod == 1
+      if ~isempty(gpcf.p.period)
         % Evaluate help matrix for calculations of derivatives
         % with respect to the period
         if length(gpcf.lengthScale) == 1
@@ -596,7 +590,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
           DKff{ii1}  = 0;                      % d mask(Kff,I) / d lengthScale_sexp
         end
       end
-      if gpcf.optimPeriod == 1
+      if ~isempty(gpcf.p.period)
         ii1 = ii1+1;                             % d mask(Kff,I) / d period
         DKff{ii1}  = 0;
       end
@@ -783,7 +777,7 @@ function C = gpcf_periodic_trcov(gpcf, x)
     
     % Try to use the C-implementation
     C=trcov(gpcf, x);
-%     C = NaN;
+    %     C = NaN;
     if isnan(C)
       % If there wasn't C-implementation do here
       [n, m] =size(x);
@@ -857,14 +851,13 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
   
-% Initialize record
   if nargin == 2
+    % Initialize the record
     reccf.type = 'gpcf_periodic';
 
     % Initialize parameters
     reccf.lengthScale= [];
     reccf.magnSigma2 = [];
-    reccf.optimPeriod=[];
     reccf.lengthScale_sexp = [];
     reccf.period = [];
     
@@ -889,11 +882,9 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
       end
     end
     
-    if gpcf.optimPeriod == 1
-      reccf.p.period=[];
-      if ~isempty(ri.p.period)
-        reccf.p.period= ri.p.period;
-      end
+    reccf.p.period=[];
+    if ~isempty(ri.p.period)
+      reccf.p.period= ri.p.period;
     end
     if isfield(ri.p,'lengthScale') && ~isempty(ri.p.lengthScale)
       reccf.p.lengthScale = ri.p.lengthScale;
@@ -901,55 +892,41 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
     if ~isempty(ri.p.magnSigma2)
       reccf.p.magnSigma2 = ri.p.magnSigma2;
     end
-    return
-  end
-
-  gpp = gpcf.p;
-  
-  % record lengthScale
-  if ~isempty(gpcf.lengthScale)
+  else
+    % Append to the record
+    
+    gpp = gpcf.p;
+    
+    % record lengthScale
     reccf.lengthScale(ri,:)=gpcf.lengthScale;
-    reccf.p.lengthScale = gpp.lengthScale.fh.recappend(reccf.p.lengthScale, ri, gpcf.p.lengthScale);
-  elseif ri==1
-    reccf.lengthScale=[];
-  end
-  
-  % record magnSigma2
-  if ~isempty(gpcf.magnSigma2)
+    if isfield(gpp,'lengthScale') && ~isempty(gpp.lengthScale)
+      reccf.p.lengthScale = gpp.lengthScale.fh.recappend(reccf.p.lengthScale, ri, gpcf.p.lengthScale);
+    end
+    
+    % record magnSigma2
     reccf.magnSigma2(ri,:)=gpcf.magnSigma2;
-  elseif ri==1
-    reccf.magnSigma2=[];
-  end
-  
-  % record lengthScale_sexp
-  if ~isempty(gpcf.lengthScale_sexp) && gpcf.decay == 1
-    reccf.lengthScale_sexp(ri,:)=gpcf.lengthScale_sexp;
-    reccf.p.lengthScale_sexp = gpp.lengthScale_sexp.fh.recappend(reccf.p.lengthScale_sexp, ri, gpcf.p.lengthScale_sexp);
-
-  elseif ri==1
-    reccf.lengthScale_sexp=[];
-  end
-  
-  % record period
-  if ~isempty(gpcf.period)
+    if isfield(gpp,'magnSigma2') && ~isempty(gpp.magnSigma2)
+      reccf.p.magnSigma2 = gpp.magnSigma2.fh.recappend(reccf.p.magnSigma2, ri, gpcf.p.magnSigma2);
+    end
+    
+    % record lengthScale_sexp
+    if ~isempty(gpcf.lengthScale_sexp) && gpcf.decay == 1
+      reccf.lengthScale_sexp(ri,:)=gpcf.lengthScale_sexp;
+      if isfield(gpp,'lengthScale_sexp') && ~isempty(gpp.lengthScale_sexp)
+        reccf.p.lengthScale_sexp = gpp.lengthScale_sexp.fh.recappend(reccf.p.lengthScale_sexp, ri, gpcf.p.lengthScale_sexp);
+      end
+    end
+    
+    % record period
     reccf.period(ri,:)=gpcf.period;
-    reccf.p.period = gpp.period.fh.recappend(reccf.p.period, ri, gpcf.p.period);
-
-  elseif ri==1
-    reccf.period=[];
+    if isfield(gpp,'period') && ~isempty(gpp.period)
+      reccf.p.period = gpp.period.fh.recappend(reccf.p.period, ri, gpcf.p.period);
+    end
+    
+    % record decay
+    if ~isempty(gpcf.decay)
+      reccf.decay(ri,:)=gpcf.decay;
+    end
+    
   end
-  
-  % record optimPeriod
-  if ~isempty(gpcf.optimPeriod)
-    reccf.optimPeriod(ri,:)=gpcf.optimPeriod;
-  elseif ri==1
-    reccf.optimPeriod=[];
-  end
-  % record decay
-  if ~isempty(gpcf.decay)
-    reccf.decay(ri,:)=gpcf.decay;
-  elseif ri==1
-    reccf.decay=[];
-  end
-  
 end

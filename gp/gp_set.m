@@ -17,6 +17,11 @@ function gp = gp_set(varargin)
 %                     covariance function structures created by
 %                     gpcf_* functions. The default is [].
 %                     This or meanf has to be defined as non-empty. 
+%      meanf        - Single mean function structure or cell array of 
+%                     mean function function structures created by
+%                     gpmf_* functions. The default is [].
+%                     This or cf has to be defined as non-empty. 
+%                     Mean functions work only with GP type 'FULL'
 %      type         - Type of Gaussian process
 %                      'FULL'   full GP (default)
 %                      'FIC'    fully independent conditional sparse
@@ -93,11 +98,6 @@ function gp = gp_set(varargin)
 %        max_ninner   - Maximum number of inner loop iterations. Default is
 %                       3.
 %        
-%    The additional fields needed with mean functions
-%      meanf        - Single mean function structure or cell array of 
-%                     mean function structures created by
-%                     gpmf_* functions. The default is {}.
-%
 %    The additional fields needed in sparse approximations are:
 %      X_u          - Inducing inputs, no default, has to be set when
 %                     FIC, PIC, PIC_BLOCK, VAR, DTC, or SOR is used.
@@ -207,6 +207,9 @@ function gp = gp_set(varargin)
   % Mean function(s)
   if init || ~ismember('meanf',ip.UsingDefaults)
     if ~isempty(ip.Results.meanf)
+      if ~isequal(gp.type,'FULL')
+        error('Mean functions ''meanf'' can be used only with GP type ''FULL''');
+      end
       gp.meanf=ip.Results.meanf;
       if isstruct(gp.meanf)
         % store single structure in a cell array, too
