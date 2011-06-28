@@ -958,6 +958,14 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     reclik.fh.upfact = @lik_t_upfact;
     reclik.fh.predy = @lik_t_predy;
     reclik.fh.recappend = @lik_t_recappend;
+    reclik.p.nu=[];
+    if ~isempty(ri.p.nu)
+      reclik.p.nu = ri.p.nu;
+    end
+    reclik.p.sigma2=[];
+    if ~isempty(ri.p.sigma2)
+      reclik.p.sigma2 = ri.p.sigma2;
+    end
   else
     % Append to the record
     likp = lik.p;
@@ -965,12 +973,12 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     % record sigma2
     reclik.sigma2(ri,:) = lik.sigma2;
     if isfield(likp,'sigma2') && ~isempty(likp.sigma2)
-      reccf.p.sigma2 = likp.sigma2.fh.recappend(reccf.p.sigma2, ri, likp.sigma2);
+      reclik.p.sigma2 = likp.sigma2.fh.recappend(reclik.p.sigma2, ri, likp.sigma2);
     end
     % record nu
     reclik.nu(ri,:) = lik.nu;
     if isfield(likp,'nu') && ~isempty(likp.nu)
-      reccf.p.nu = likp.nu.fh.recappend(reccf.p.nu, ri, likp.nu);
+      reclik.p.nu = likp.nu.fh.recappend(reclik.p.nu, ri, likp.nu);
     end
   end
 

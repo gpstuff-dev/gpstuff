@@ -90,7 +90,7 @@ gp=gp_optim(gp,x,y,'z',N,'opt',opt);
 % Set the total number of trials Nt at the grid points xgrid
 [Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
     gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid, 'yt', yt);
-g
+
 % Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;

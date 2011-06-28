@@ -289,14 +289,14 @@ function C = lik_gaussian_trvar(lik, x)
 
 end
 
-function reccf = lik_gaussian_recappend(reccf, ri, lik)
+function reclik = lik_gaussian_recappend(reclik, ri, lik)
 %RECAPPEND  Record append
 %
 %  Description
-%    RECCF = LIK_GAUSSIAN_RECAPPEND(RECCF, RI, LIK) takes a
-%    likelihood function record structure RECCF, record index RI
+%    RECLIK = LIK_GAUSSIAN_RECAPPEND(RECLIK, RI, LIK) takes a
+%    likelihood function record structure RECLIK, record index RI
 %    and likelihood function structure LIK with the current MCMC
-%    samples of the parameters. Returns RECCF which contains all
+%    samples of the parameters. Returns RECLIK which contains all
 %    the old samples and the current samples from LIK .
 %
 %  See also
@@ -304,38 +304,38 @@ function reccf = lik_gaussian_recappend(reccf, ri, lik)
 
   if nargin == 2
     % Initialize the record
-    reccf.type = 'lik_gaussian';
+    reclik.type = 'lik_gaussian';
     
     % Initialize the parameters
-    reccf.sigma2 = []; 
-    reccf.n = []; 
+    reclik.sigma2 = []; 
+    reclik.n = []; 
     
     % Set the function handles
-    reccf.fh.pak = @lik_gaussian_pak;
-    reccf.fh.unpak = @lik_gaussian_unpak;
-    reccf.fh.lp = @lik_gaussian_lp;
-    reccf.fh.lpg = @lik_gaussian_lpg;
-    reccf.fh.cfg = @lik_gaussian_cfg;
-    reccf.fh.trcov  = @lik_gaussian_trcov;
-    reccf.fh.trvar  = @lik_gaussian_trvar;
-    reccf.fh.recappend = @lik_gaussian_recappend;  
-    reccf.p=[];
-    reccf.p.sigma2=[];
+    reclik.fh.pak = @lik_gaussian_pak;
+    reclik.fh.unpak = @lik_gaussian_unpak;
+    reclik.fh.lp = @lik_gaussian_lp;
+    reclik.fh.lpg = @lik_gaussian_lpg;
+    reclik.fh.cfg = @lik_gaussian_cfg;
+    reclik.fh.trcov  = @lik_gaussian_trcov;
+    reclik.fh.trvar  = @lik_gaussian_trvar;
+    reclik.fh.recappend = @lik_gaussian_recappend;  
+    reclik.p=[];
+    reclik.p.sigma2=[];
     if ~isempty(ri.p.sigma2)
-      reccf.p.sigma2 = ri.p.sigma2;
+      reclik.p.sigma2 = ri.p.sigma2;
     end
   else
     % Append to the record
     likp = lik.p;
 
     % record sigma2
-    reccf.sigma2(ri,:)=lik.sigma2;
+    reclik.sigma2(ri,:)=lik.sigma2;
     if isfield(likp,'sigma2') && ~isempty(likp.sigma2)
-      reccf.p.sigma2 = likp.sigma2.fh.recappend(reccf.p.sigma2, ri, likp.sigma2);
+      reclik.p.sigma2 = likp.sigma2.fh.recappend(reclik.p.sigma2, ri, likp.sigma2);
     end
     % record n if given
     if isfield(lik,'n') && ~isempty(lik.n)
-      reccf.n(ri,:)=lik.n(:)';
+      reclik.n(ri,:)=lik.n(:)';
     end
   end
 end
