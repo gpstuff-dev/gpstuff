@@ -309,10 +309,12 @@ function gp = gp_set(varargin)
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @laplace_algorithm;
           switch gp.lik.type
-            case 'Softmax'
-              gp = gpla_softmax_e('init', gp);
-            case {'Softmax2' 'Multinom'}
-              gp = gpla_mo_e('init', gp);
+            %case 'Softmax'
+            %  gp = gpla_softmax_e('init', gp);
+            %case {'Softmax2' 'Multinom'}
+            %  gp = gpla_mo_e('init', gp);
+            case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph'}
+              gp = gpla_nd_e('init', gp);
             otherwise
               gp = gpla_e('init', gp);
           end
