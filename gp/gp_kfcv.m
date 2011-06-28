@@ -275,6 +275,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   nargout2 = nargout;
   parfor i=1:length(trindex)
 
+
     if isequal(display,'iter')
       fprintf('The CV-iteration number: %d \n', i)
     end
@@ -306,9 +307,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     else
       gptype=gp.type;
     end
+    tstind2 = [];
     switch gptype
-      case {'FULL' 'VAR' 'DTC' 'SOR'}
-        tstind2 = [];
       case {'FIC' 'CS+FIC'}
         tstind2 = trindex{i};
       case 'PIC'
@@ -316,7 +316,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         % naming(e.g tstind2) because parfor loop.
         ntr = size(xtr,1);
         ntst = size(xtst,1);
-        tstind2 = [];
         trind2 = [];
         for i1=1:length(gp.tr_index)
           tstind2{i1} = [];
