@@ -165,8 +165,8 @@ function gp = gp_set(varargin)
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
   ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
-  ip.addParamValue('method', 1, @(x) isreal(x) && (x==1 || x==2) &&  ...
-                    isfinite(x))
+%   ip.addParamValue('optim_method', [], @(x) isreal(x) && (x==1 || x==2) &&  ...
+%                     isfinite(x))
   ip.parse(varargin{:});
   gp=ip.Results.gp;
 
@@ -189,12 +189,6 @@ function gp = gp_set(varargin)
   % Likelihood
   if init || ~ismember('lik',ip.UsingDefaults)
     gp.lik = ip.Results.lik;
-  end
-  % Method to evaluate with EP
-  if ismember(gp.lik.type,{'Student-t'})
-    method=2;
-  else
-    method=ip.Results.method;
   end
   % Covariance function(s)
   if init || ~ismember('cf',ip.UsingDefaults)
@@ -298,7 +292,7 @@ function gp = gp_set(varargin)
           % Set latent method
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @ep_algorithm;
-          gp = gpep_e('init', gp, 'method', method);
+          gp = gpep_e('init', gp);
         case 'Laplace'
           % Remove traces of other latent methods
           if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
@@ -346,6 +340,7 @@ function gp = gp_set(varargin)
           % Handle latent_opt
           ipep=inputParser;
           ipep.FunctionName = 'GP_SET - latent method EP options';
+          ipep.addParamValue('optim_method',[], @(x) ischar(x));
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('parallel','off', @(x) ischar(x));    % default off
@@ -359,9 +354,20 @@ function gp = gp_set(varargin)
           ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(x,1)==1 && isfinite(x))
           ipep.addParamValue('max_ninner', 3, @(x) isreal(x) && rem(x,1)==1 && isfinite(x))
           ipep.parse(latent_opt);
-          gp.latent_opt.method = method;
+          optim_method = ipep.Results.optim_method;
+          if ~isempty(optim_method)
+            gp.latent_opt.optim_method=optim_method;
+          else
+            % If likelihood is not log-concave (exists functions siteDeriv2
+            % & tiltedMoments2) use robust-EP by default, else normal EP.
+            if isfield(gp.lik.fh, 'siteDeriv2')
+              gp.latent_opt.optim_method='robust-EP';
+            else
+              gp.latent_opt.optim_method='basic-EP';
+            end
+          end
           if init || ~ismember('maxiter',ipep.UsingDefaults) || ~isfield(gp,'maxiter')
-            if gp.latent_opt.method == 2 && ipep.Results.maxiter == 20
+            if strcmp(gp.latent_opt.optim_method,'robust-EP') && ismember('maxiter',ipep.UsingDefaults)
               gp.latent_opt.maxiter = 200;
             else
               gp.latent_opt.maxiter = ipep.Results.maxiter;
@@ -373,7 +379,7 @@ function gp = gp_set(varargin)
           if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
             gp.latent_opt.parallel = ipep.Results.parallel;
           end
-          if gp.latent_opt.method ==2
+          if strcmp(gp.latent_opt.optim_method, 'robust-EP')
             if init || ~ismember('tolStop',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolStop')
               gp.latent_opt.tolStop = ipep.Results.tolStop;
             end

@@ -166,7 +166,7 @@ function waic = gp_waic(gp, x, y, varargin)
               Vn = sum(Vn)/tn;
               BtL = sum(BtL)/tn;
             end
-            waic = BtL + Vn;
+            waic = -(BtL + Vn);
           else
             % non-Gaussian likelihood
             for i=1:tn
@@ -188,7 +188,7 @@ function waic = gp_waic(gp, x, y, varargin)
               Vn = sum(Vn)/tn;
               BtL = sum(BtL)/tn;
             end
-            waic = BtL + Vn;
+            waic = -(BtL + Vn);
           end
           
         else
@@ -204,10 +204,10 @@ function waic = gp_waic(gp, x, y, varargin)
                                         .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
             end
             if strcmp(form, 'full')
-              GtL = 1/tn*sum(GtL);
+              GtL = -1/tn*sum(GtL);
               BtL = 1/tn*sum(BtL);
             end
-            waic = -2*GtL-BtL;
+            waic = -2*GtL+BtL;
           else
             % non-Gaussian likelihood
             for i=1:tn
@@ -222,10 +222,10 @@ function waic = gp_waic(gp, x, y, varargin)
                                         .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
             end
             if strcmp(form, 'full')
-              GtL = 1/tn*sum(GtL);
+              GtL = -1/tn*sum(GtL);
               BtL = 1/tn*sum(BtL);
             end
-            waic = -2*GtL-BtL;
+            waic = -2*GtL+BtL;
           end
         end
         
@@ -266,7 +266,7 @@ function waic = gp_waic(gp, x, y, varargin)
               BtL = sum(BtL)/tn;
               Vn = sum(Vn)/tn;
             end
-            waic = BtL + Vn;
+            waic = -(BtL + Vn);
             
             % Analytic solution
             
@@ -305,7 +305,7 @@ function waic = gp_waic(gp, x, y, varargin)
               Vn = 1/tn * sum(Vn);
               BtL = 1/tn * sum(BtL);
             end
-            waic = BtL + 1/tn * Vn;
+            waic = -(BtL + 1/tn * Vn);
             
           end
           
@@ -326,10 +326,10 @@ function waic = gp_waic(gp, x, y, varargin)
               GtL(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
             end
             if strcmp(form,'full')
-              GtL = 1/tn * sum(GtL);
+              GtL = -1/tn * sum(GtL);
               BtL = 1/tn * sum(BtL);
             end
-            waic = -2*GtL - BtL;
+            waic = -2*GtL + BtL;
           else
             % Non-Gaussian likelihood
             for i=1:tn
@@ -340,14 +340,14 @@ function waic = gp_waic(gp, x, y, varargin)
               end
               fmin = Ef(i)-9*sqrt(Varf(i));
               fmax = Ef(i)+9*sqrt(Varf(i));
-              GtL(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
+              GtL(i) = -quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
                               fmin, fmax);
             end
             if strcmp(form,'full')
-              GtL = -1/tn * sum(GtL);
+              GtL = 1/tn * sum(GtL);
               BtL = 1/tn * sum(BtL);
             end
-            waic = 2*GtL-BtL;
+            waic = -2*GtL+BtL;
           end
           
         end
@@ -418,7 +418,7 @@ function waic = gp_waic(gp, x, y, varargin)
           Vn = sum(Vn)/tn;
           BtL = sum(BtL)/tn;
         end
-        waic = BtL + Vn;
+        waic = -(BtL + Vn);
       else
         % non-Gaussian likelihood
         for i=1:tn
@@ -440,7 +440,7 @@ function waic = gp_waic(gp, x, y, varargin)
           Vn = sum(Vn)/tn;
           BtL = sum(BtL)/tn;
         end
-        waic = BtL + Vn;
+        waic = -(BtL + Vn);
         
       end
       
@@ -456,10 +456,10 @@ function waic = gp_waic(gp, x, y, varargin)
                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*sigma2(i,:))')), fmin, fmax);
         end
         if strcmp(form, 'full')
-          GtL = 1/tn*sum(GtL);
+          GtL = -1/tn*sum(GtL);
           BtL = 1/tn*sum(BtL);
         end
-        waic = -2*GtL-BtL;
+        waic = -2*GtL+BtL;
       else
         % non-gaussian likelihood
         for i=1:tn
@@ -474,10 +474,10 @@ function waic = gp_waic(gp, x, y, varargin)
                                    .*llvec(gp, y(i), f, z1)), fmin, fmax);
         end
         if strcmp(form, 'full')
-          GtL = 1/tn*sum(GtL);
+          GtL = -1/tn*sum(GtL);
           BtL = 1/tn*sum(BtL);
         end
-        waic = -2*GtL-BtL;
+        waic = -2*GtL+BtL;
       end
     end
     

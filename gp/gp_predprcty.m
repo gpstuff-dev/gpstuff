@@ -80,7 +80,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
         
           if isfield(gp.lik.fh,'trcov')
             % Gaussian likelihood
-            [~, ~, ~, Eyt, Vary] = gp_pred(gp,x,y,xt, 'tstind', ...
+            [~, ~, ~, Eyt, Varyt] = gp_pred(gp,x,y,xt, 'tstind', ...
                                            tstind, options);
             prct = prct./100;
             prct = norminv(prct, 0, 1);
