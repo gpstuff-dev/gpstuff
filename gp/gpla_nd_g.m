@@ -57,7 +57,7 @@ switch gp.type
     if isfield(gp, 'comp_cf')  % own covariance for each ouput component
       multicf = true;
       if length(gp.comp_cf) ~= nout && nout > 1
-        error('GPLA_ND_E: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+        error('GPLA_ND_G: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
       end
     else
       multicf = false;
@@ -65,67 +65,100 @@ switch gp.type
     
     if isfield(gp.lik, 'structW') && ~gp.lik.structW
       
-      if isfield(gp.lik,'xtime')
-        xtime=gp.lik.xtime;
-        ntime = size(xtime,1);
-        nl=[ntime n];
+      if isfield(gp.lik, 'fullW') && gp.lik.fullW
+        nl=n;
       else
-        nl=[n n];
+        if isfield(gp.lik,'xtime')
+          xtime=gp.lik.xtime;
+          ntime = size(xtime,1);
+          nl=[ntime n];
+        else
+          nl=[n n];
+        end
       end
       nlp=length(nl); % number of latent processes
       
       K = zeros(sum(nl));
 
-      if isfield(gp.lik,'xtime')
-        K(1:ntime,1:ntime)=gp_trcov(gp, xtime, gp.comp_cf{1});
-        K((1:n)+ntime,(1:n)+ntime) = gp_trcov(gp, x, gp.comp_cf{2});
+      if isfield(gp.lik, 'fullW') && gp.lik.fullW
+        K = gp_trcov(gp,x);
       else
-        for i1=1:nlp
-          K((1:n)+(i1-1)*n,(1:n)+(i1-1)*n) = gp_trcov(gp, x, gp.comp_cf{i1});
+        if isfield(gp.lik,'xtime')
+          K(1:ntime,1:ntime)=gp_trcov(gp, xtime, gp.comp_cf{1});
+          K((1:n)+ntime,(1:n)+ntime) = gp_trcov(gp, x, gp.comp_cf{2});
+        else
+          for i1=1:nlp
+            K((1:n)+(i1-1)*n,(1:n)+(i1-1)*n) = gp_trcov(gp, x, gp.comp_cf{i1});
+          end
         end
       end
       
       if isfield(gp,'meanf')
+        [H,b_m,B_m]=mean_prep(gp,x,[]);
+        K=K+H'*B_m*H;
+        Hb_m=H'*b_m;
+        iKHb_m=K\Hb_m;
        % [H,b_m,B_m]=mean_prep(gp,x,[]);
        % K=K+H'*B_m*H;
       end
       
       [e, edata, eprior, f, L, a, W, p] = gpla_nd_e(gp_pak(gp), gp, x, y, 'z', z);
-      
-      KW=zeros(sum(nl));
-      if isfield(gp.lik,'xtime')
-         [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-         Wdiag=-Wdiag; Wmat=-Wmat;
-         KW=zeros(ntime+n);
-         KW(1:ntime,1:ntime)=bsxfun(@times, K(1:ntime,1:ntime), Wdiag(1:ntime)');
-         KW(1:ntime,ntime+(1:n))=K(1:ntime,1:ntime)*Wmat;
-         KW(ntime+(1:n),1:ntime)=K(ntime+(1:n),ntime+(1:n))*Wmat';
-         KW(ntime+(1:n),ntime+(1:n))=bsxfun(@times,K(ntime+(1:n),ntime+(1:n)), Wdiag(ntime+(1:n))');
-         KW(1:(ntime+n+1):end)=KW(1:(ntime+n+1):end)+1;
-      else
-        for il=1:nlp
-          KW((1:n)+(il-1)*n,1:n)=bsxfun(@times, K((1:n)+(il-1)*n,(1:n)+(il-1)*n), W(1:n,il)');
-          KW((1:n)+(il-1)*n,(n+1):(2*n))=bsxfun(@times, K((1:n)+(il-1)*n,(1:n)+(il-1)*n), W((n+1):(2*n),il)');
-        end
-        KW(1:(2*n+1):end)=KW(1:(2*n+1):end)+1;
+      if isnan(e)
+        return
       end
       
-      iKW=KW\eye(sum(nl));
-      A=iKW*K;
-      s2=zeros(sum(nl),1);
-      
-      if isfield(gp.lik,'xtime')
-        A_diag=diag(A);
-        A_mat=A(1:ntime,ntime+(1:n));
-        for i1=1:sum(nl)
-          [dw_diag,dw_mat]=feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z, i1);
-          s2(i1) = 0.5*(sum(A_diag.*dw_diag)+2*sum(sum(A_mat.*dw_mat)));
-        end
+      if isfield(gp.lik, 'fullW') && gp.lik.fullW
+        [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+        Wd=-g2d; Wu=g2u;
+        W=-(g2u*g2u'+diag(g2d));
+        g3=feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
+        %g3i1 = n*(-diag(g3d(:,i1)) + bsxfun(@times,g3,g3d(:,i1)') + bsxfun(@times,g3d(:,i1),g3'));
+        
+        KW=-(K*g2u)*g2u'- bsxfun(@times, K, g2d');
+        KW(1:(n+1):end)=KW(1:(n+1):end)+1;
+        iKW=KW\eye(n);
+        A=iKW*K;
+        
+        ny=sum(y);
+        const1=( 0.5*ny*(sum(A(1:(n+1):end).*g3'))-ny*sum(sum(A.*(g3*g3'))) );
+        const2=sum(bsxfun(@times,A,g3));
+        s2=const1.*g3 - 0.5*ny*diag(A).*g3 + ny*const2'.*g3;
       else
-        dw_mat = feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
-        for i1=1:n
-          s2(i1) = 0.5*trace(A(i1:n:(i1+n),i1:n:(i1+n))*dw_mat(:,:,1,i1));
-          s2(i1+n) = 0.5*trace(A(i1:n:(i1+n),i1:n:(i1+n))*dw_mat(:,:,2,i1));
+        KW=zeros(sum(nl));
+        if isfield(gp.lik,'xtime')
+          [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+          Wdiag=-Wdiag; Wmat=-Wmat;
+          KW=zeros(ntime+n);
+          KW(1:ntime,1:ntime)=bsxfun(@times, K(1:ntime,1:ntime), Wdiag(1:ntime)');
+          KW(1:ntime,ntime+(1:n))=K(1:ntime,1:ntime)*Wmat;
+          KW(ntime+(1:n),1:ntime)=K(ntime+(1:n),ntime+(1:n))*Wmat';
+          KW(ntime+(1:n),ntime+(1:n))=bsxfun(@times,K(ntime+(1:n),ntime+(1:n)), Wdiag(ntime+(1:n))');
+          KW(1:(ntime+n+1):end)=KW(1:(ntime+n+1):end)+1;
+        else
+          for il=1:nlp
+            KW((1:n)+(il-1)*n,1:n)=bsxfun(@times, K((1:n)+(il-1)*n,(1:n)+(il-1)*n), W(1:n,il)');
+            KW((1:n)+(il-1)*n,(n+1):(2*n))=bsxfun(@times, K((1:n)+(il-1)*n,(1:n)+(il-1)*n), W((n+1):(2*n),il)');
+          end
+          KW(1:(2*n+1):end)=KW(1:(2*n+1):end)+1;
+        end
+        
+        iKW=KW\eye(sum(nl));
+        A=iKW*K;
+        s2=zeros(sum(nl),1);
+        
+        if isfield(gp.lik,'xtime')
+          A_diag=diag(A);
+          A_mat=A(1:ntime,ntime+(1:n));
+          for i1=1:sum(nl)
+            [dw_diag,dw_mat]=feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z, i1);
+            s2(i1) = 0.5*(sum(A_diag.*dw_diag)+2*sum(sum(A_mat.*dw_mat)));
+          end
+        else
+          dw_mat = feval(gp.lik.fh.llg3, gp.lik, y, f, 'latent', z);
+          for i1=1:n
+            s2(i1) = 0.5*trace(A(i1:n:(i1+n),i1:n:(i1+n))*dw_mat(:,:,1,i1));
+            s2(i1+n) = 0.5*trace(A(i1:n:(i1+n),i1:n:(i1+n))*dw_mat(:,:,2,i1));
+          end
         end
       end
       
@@ -135,101 +168,138 @@ switch gp.type
         % Evaluate the gradients from covariance functions
         for i=1:ncf
           
-          % check in which components the covariance function is present
-          do = false(nlp,1);
-          for z1=1:nlp
-            if any(gp.comp_cf{z1}==i)
-              do(z1) = true;
-            end
-          end
-          
           i1=0;
           if ~isempty(gprior)
             i1 = length(gprior);
           end
           
           gpcf = gp.cf{i};
-          if isfield(gp.lik,'xtime')
-            if ~isempty(intersect(gp.comp_cf{1},i))
-              DKff = feval(gpcf.fh.cfg, gpcf, xtime);
+          if isfield(gp.lik, 'fullW') && gp.lik.fullW
+            DKff = feval(gpcf.fh.cfg, gpcf, x);
+          else
+            % check in which components the covariance function is present
+            do = false(nlp,1);
+            for z1=1:nlp
+              if any(gp.comp_cf{z1}==i)
+                do(z1) = true;
+              end
+            end
+            
+            if isfield(gp.lik,'xtime')
+              if ~isempty(intersect(gp.comp_cf{1},i))
+                DKff = feval(gpcf.fh.cfg, gpcf, xtime);
+              else
+                DKff = feval(gpcf.fh.cfg, gpcf, x);
+              end
             else
               DKff = feval(gpcf.fh.cfg, gpcf, x);
             end
-          else
-            DKff = feval(gpcf.fh.cfg, gpcf, x);
           end
-          
           gprior_cf = -feval(gpcf.fh.lpg, gpcf);
           g1 = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
           
-          %IKW=(eye(2*n)+K*W);
-          %WK=(eye(2*n)+K*W)\W;
-          %WK=W/IKW;
           
-          %WiKW=[diag(W(1:n,1)) diag(W((n+1):(2*n),1)); diag(W(1:n,2)) diag(W((n+1):(2*n),2))]*iKW;
-          if isfield(gp.lik,'xtime')
-          	WiKW=zeros(sum(nl));
-            WiKW(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),iKW(1:ntime,1:ntime)) + Wmat*iKW(ntime+(1:n),1:ntime);
-            WiKW(1:ntime,ntime+(1:n))=bsxfun(@times, Wdiag(1:ntime),iKW(1:ntime,ntime+(1:n))) + Wmat*iKW(ntime+(1:n),ntime+(1:n));
-            WiKW(ntime+(1:n),1:ntime)=Wmat'*iKW(1:ntime,1:ntime) + bsxfun(@times, Wdiag(ntime+(1:n)),iKW(ntime+(1:n),1:ntime));
-            WiKW(ntime+(1:n),ntime+(1:n))=bsxfun(@times, Wdiag(ntime+(1:n)),iKW(ntime+(1:n),ntime+(1:n))) + Wmat'*iKW(1:ntime,ntime+(1:n));
-          else
-            WiKW11=bsxfun(@times,W(1:n,1),iKW(1:n,1:n))+bsxfun(@times,W(1:n,2),iKW((1:n)+n,1:n));
-            WiKW12=bsxfun(@times,W(1:n,1),iKW(1:n,(1:n)+n))+bsxfun(@times,W(1:n,2),iKW((1:n)+n,(1:n)+n));
-            WiKW21=bsxfun(@times,W((1:n)+n,1),iKW(1:n,1:n))+bsxfun(@times,W((1:n)+n,2),iKW((1:n)+n,1:n));
-            WiKW22=bsxfun(@times,W((1:n)+n,1),iKW(1:n,(1:n)+n))+bsxfun(@times,W((1:n)+n,2),iKW((1:n)+n,(1:n)+n));
-            WiKW=[WiKW11 WiKW12; WiKW21 WiKW22];
-          end
-          %WK=W*inv(eye(2*n)+K*W);
-          %WK=W-W*inv(eye(2*n)+K*W)*K*W;
-          
-          for i2 = 1:length(DKff)
-            i1 = i1+1;
-            if ~isfield(gp,'meanf')
-              
-              %s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
-              dKnl = zeros(sum(nl));
-              
-              if isfield(gp.lik,'xtime')
-                if ~isempty(intersect(gp.comp_cf{1},i)) %do(indnl)
-                  dKnl(1:ntime,1:ntime) = DKff{i2};
-                  %end
-                else
-                  %if do(indnl)
-                  dKnl(ntime+(1:n),ntime+(1:n)) = DKff{i2};
-                  %end
-                end
+          if isfield(gp.lik, 'fullW') && gp.lik.fullW
+            for i2 = 1:length(DKff)
+              i1 = i1+1;
+              if ~isfield(gp,'meanf')
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*trace(iKWDKff*W);
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*trace(iKWDKff*(-g2u*g2u'-diag(g2d)));
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKWDKff*g2u)'*g2u) + 0.5*sum(iKWDKff(1:(n+1):end).*g2d');
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*g2u))'*g2u) + 0.5*sum(iKWDKff(1:(n+1):end).*g2d');
+                s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*g2u))'*g2u) + 0.5*sum(sum(iKW'.*DKff{i2}).*g2d');
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*trace(inv(eye(n)+K*W)*DKff{i2}*W);
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
               else
-                for indnl=1:nlp
-                  if do(indnl)
-                    dKnl((1:n)+(indnl-1)*n,(1:n)+(indnl-1)*n) = DKff{i2};
+                %s1 = 0.5 * (a-K\(H'*b_m))'*DKff{i2}*(a-K\(H'*b_m)) - 0.5*sum(sum(R.*DKff{i2}));
+                s1 = 0.5 * (a-iKHb_m)'*DKff{i2}*(a-iKHb_m) - 0.5*((-iKW*(DKff{i2}*g2u))'*g2u) + 0.5*sum(sum(iKW'.*DKff{i2}).*g2d');
+              end
+              %b = DKff{i2} * g1;
+              if issparse(K)
+                s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
+              else
+                
+                %s3=iKWDKff*g1;
+                s3=iKW*(DKff{i2}*g1);
+                
+                %s3=inv(eye(n)+K*W)*DKff{i2} * g1;
+                %              s3 = b - K*(R*b);
+                %              b = DKff{i2} * g1;
+                %s3 = (1./W).*(R*b);
+              end
+              gdata(i1) = -(s1 + s2'*s3);
+              gprior(i1) = gprior_cf(i2);
+            end
+          else
+            %IKW=(eye(2*n)+K*W);
+            %WK=(eye(2*n)+K*W)\W;
+            %WK=W/IKW;
+            
+            %WiKW=[diag(W(1:n,1)) diag(W((n+1):(2*n),1)); diag(W(1:n,2)) diag(W((n+1):(2*n),2))]*iKW;
+            if isfield(gp.lik,'xtime')
+              WiKW=zeros(sum(nl));
+              WiKW(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),iKW(1:ntime,1:ntime)) + Wmat*iKW(ntime+(1:n),1:ntime);
+              WiKW(1:ntime,ntime+(1:n))=bsxfun(@times, Wdiag(1:ntime),iKW(1:ntime,ntime+(1:n))) + Wmat*iKW(ntime+(1:n),ntime+(1:n));
+              WiKW(ntime+(1:n),1:ntime)=Wmat'*iKW(1:ntime,1:ntime) + bsxfun(@times, Wdiag(ntime+(1:n)),iKW(ntime+(1:n),1:ntime));
+              WiKW(ntime+(1:n),ntime+(1:n))=bsxfun(@times, Wdiag(ntime+(1:n)),iKW(ntime+(1:n),ntime+(1:n))) + Wmat'*iKW(1:ntime,ntime+(1:n));
+            else
+              WiKW11=bsxfun(@times,W(1:n,1),iKW(1:n,1:n))+bsxfun(@times,W(1:n,2),iKW((1:n)+n,1:n));
+              WiKW12=bsxfun(@times,W(1:n,1),iKW(1:n,(1:n)+n))+bsxfun(@times,W(1:n,2),iKW((1:n)+n,(1:n)+n));
+              WiKW21=bsxfun(@times,W((1:n)+n,1),iKW(1:n,1:n))+bsxfun(@times,W((1:n)+n,2),iKW((1:n)+n,1:n));
+              WiKW22=bsxfun(@times,W((1:n)+n,1),iKW(1:n,(1:n)+n))+bsxfun(@times,W((1:n)+n,2),iKW((1:n)+n,(1:n)+n));
+              WiKW=[WiKW11 WiKW12; WiKW21 WiKW22];
+            end
+            %WK=W*inv(eye(2*n)+K*W);
+            %WK=W-W*inv(eye(2*n)+K*W)*K*W;
+            
+            for i2 = 1:length(DKff)
+              i1 = i1+1;
+              if ~isfield(gp,'meanf')
+                
+                %s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
+                dKnl = zeros(sum(nl));
+                
+                if isfield(gp.lik,'xtime')
+                  if ~isempty(intersect(gp.comp_cf{1},i)) %do(indnl)
+                    dKnl(1:ntime,1:ntime) = DKff{i2};
+                    %end
+                  else
+                    %if do(indnl)
+                    dKnl(ntime+(1:n),ntime+(1:n)) = DKff{i2};
+                    %end
+                  end
+                else
+                  for indnl=1:nlp
+                    if do(indnl)
+                      dKnl((1:n)+(indnl-1)*n,(1:n)+(indnl-1)*n) = DKff{i2};
+                    end
                   end
                 end
+                
+                s1 = 0.5 * a'*dKnl*a - 0.5*sum(sum((dKnl.*WiKW)));
+                %s1 = 0.5 * a'*dKnl*a - 0.5*trace((eye(2*n)+K*W)\dKnl*W);
+                %s1 = 0.5 * a'*dKnl*a - 0.5*trace(WK*dKnl);
+              else
+                %s1 = 0.5 * (a-K\(H'*b_m))'*DKff{i2}*(a-K\(H'*b_m)) - 0.5*sum(sum(R.*DKff{i2}));
+              end
+              b = dKnl*g1;
+              %b = DKff{i2} * g1;
+              if issparse(K)
+                s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
+              else
+                %s3 = KW\b;
+                s3=iKW*b;
+                %s3 = b - K*(R*b);
+                %b = DKff{i2} * g1;
+                
+                %s3 = (1./W).*(R*b);
               end
               
-              s1 = 0.5 * a'*dKnl*a - 0.5*sum(sum((dKnl.*WiKW)));
-              %s1 = 0.5 * a'*dKnl*a - 0.5*trace((eye(2*n)+K*W)\dKnl*W);
-              %s1 = 0.5 * a'*dKnl*a - 0.5*trace(WK*dKnl);
-            else
-              %s1 = 0.5 * (a-K\(H'*b_m))'*DKff{i2}*(a-K\(H'*b_m)) - 0.5*sum(sum(R.*DKff{i2}));
+              gdata(i1) = -(s1 + s2'*s3);
+              %gdata(i1) = -(s1);
+              gprior(i1) = gprior_cf(i2);
             end
-            b = dKnl*g1;
-            %b = DKff{i2} * g1;
-            if issparse(K)
-              s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
-            else
-              %s3 = KW\b;
-              s3=iKW*b;
-              %s3 = b - K*(R*b);
-              %b = DKff{i2} * g1;
-              
-              %s3 = (1./W).*(R*b);
-            end
-            gdata(i1) = -(s1 + s2'*s3);
-            %gdata(i1) = -(s1);
-            gprior(i1) = gprior_cf(i2);
           end
-          
           % Set the gradients of hyperparameter
           if length(gprior_cf) > length(DKff)
             for i2=length(DKff)+1:length(gprior_cf)

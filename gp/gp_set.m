@@ -307,7 +307,7 @@ function gp = gp_set(varargin)
             %  gp = gpla_softmax_e('init', gp);
             %case {'Softmax2' 'Multinom'}
             %  gp = gpla_mo_e('init', gp);
-            case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph'}
+            case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp'}
               gp = gpla_nd_e('init', gp);
             otherwise
               gp = gpla_e('init', gp);

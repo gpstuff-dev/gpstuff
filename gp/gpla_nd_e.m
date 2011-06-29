@@ -144,39 +144,48 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
 
             if isfield(gp.lik, 'structW') && ~gp.lik.structW
               
-              % Initialize latent values
-              % zero seems to be a robust choice (Jarno)
-              % with mean functions, initialize to mean function values
-              
-              if isfield(gp.lik,'xtime')
-                xtime=gp.lik.xtime;
-                ntime = size(xtime,1);
-                nl=[ntime n];
+              if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                nl=n;
               else
-                nl=[n n];
+                if isfield(gp.lik,'xtime')
+                  xtime=gp.lik.xtime;
+                  ntime = size(xtime,1);
+                  nl=[ntime n];
+                else
+                  nl=[n n];
+                end
               end
               nlp=length(nl); % number of latent processes
               
               K = zeros(sum(nl));
               
+              % Initialize latent values
+              % zero seems to be a robust choice (Jarno)
+              % with mean functions, initialize to mean function values
               if ~isfield(gp,'meanf')
                 f = zeros(sum(nl),1);
               else
-               % [H,b_m,B_m]=mean_prep(gp,x,[]);
-               % f = H'*b_m;
+                [H,b_m,B_m]=mean_prep(gp,x,[]);
+                Hb_m=H'*b_m;
+                f = Hb_m;
               end
               
-              if isfield(gp.lik,'xtime')
-                K(1:ntime,1:ntime)=gp_trcov(gp, xtime, gp.comp_cf{1});
-                K((1:n)+ntime,(1:n)+ntime) = gp_trcov(gp, x, gp.comp_cf{2});
+              if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                K = gp_trcov(gp, x);
               else
-                for i1=1:nlp
-                  K((1:n)+(i1-1)*n,(1:n)+(i1-1)*n) = gp_trcov(gp, x, gp.comp_cf{i1});
+                if isfield(gp.lik,'xtime')
+                  K(1:ntime,1:ntime)=gp_trcov(gp, xtime, gp.comp_cf{1});
+                  K((1:n)+ntime,(1:n)+ntime) = gp_trcov(gp, x, gp.comp_cf{2});
+                else
+                  for i1=1:nlp
+                    K((1:n)+(i1-1)*n,(1:n)+(i1-1)*n) = gp_trcov(gp, x, gp.comp_cf{i1});
+                  end
                 end
               end
               
               if isfield(gp,'meanf')
-              %  K=K+H'*B_m*H;
+                K=K+H'*B_m*H;
+                iKHb_m=K\Hb_m;
               end
               
               switch gp.latent_opt.optim_method
@@ -185,15 +194,23 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   tol = 1e-12;
                   a = f;
                   if isfield(gp,'meanf')
-                  %  a = a-H'*b_m;
+                    a = a-Hb_m;  
                   end
                   
-                  if isfield(gp.lik,'xtime')
-                    [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                    Wdiag=-Wdiag; Wmat=-Wmat;
+                  if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                    [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                    Wd=-g2d; Wu=g2u;
                     W=[];
+                    % g2=g2u*g2u'+diag(g2d);
+                    % W=-(g2u*g2u'+diag(g2d));
                   else
-                    W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                    if isfield(gp.lik,'xtime')
+                      [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                      Wdiag=-Wdiag; Wmat=-Wmat;
+                      W=[];
+                    else
+                      W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                    end
                   end
                   dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
                   lp_new = feval(gp.lik.fh.ll, gp.lik, y, f, z);
@@ -201,32 +218,69 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   
                   WK=zeros(sum(nl));
                   
-                  while abs(lp_new - lp_old) > tol
+                  %iter=0;
+                  %maxiter=40;
+                  while abs(lp_new - lp_old) > tol %&& iter < maxiter
                     
+                    %iter = iter + 1;
                     lp_old = lp_new; a_old = a;
-                    if isfield(gp.lik,'xtime')
-                      b=Wdiag.*f+[Wmat*f((ntime+1):end); Wmat'*f(1:ntime)]+dlp;
-                    else
-                      b = sum(W.*repmat(reshape(f,n,nlp),nlp,1),2)+dlp;
-                    end
                     
-                    L=[];
-                    
-                    if isfield(gp.lik,'xtime')
-                      WK(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),K(1:ntime,1:ntime));
-                      WK(ntime+(1:n),ntime+(1:n))=bsxfun(@times, Wdiag(ntime+(1:n)),K(ntime+(1:n),ntime+(1:n)));
-                      WK(1:ntime,ntime+(1:n))=Wmat*K(ntime+(1:n),ntime+(1:n));
-                      WK(ntime+(1:n),1:ntime)=Wmat'*K(1:ntime,1:ntime);
-                      WK(1:(ntime+n+1):end)=WK(1:(ntime+n+1):end)+1;
-                    else
-                      for il=1:nlp
-                        WK(1:n,(1:n)+(il-1)*n)=bsxfun(@times, W(1:n,il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
-                        WK((n+1):(2*n),(1:n)+(il-1)*n)=bsxfun(@times, W((n+1):(2*n),il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
+                    if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                      CWd=K; CWd(1:(n+1):end)=CWd(1:(n+1):end)+1./Wd';
+                      [L,notpositivedefinite] = chol(CWd,'lower');
+%                      if notpositivedefinite
+%                        [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+%                        return
+%                      end
+                      if ~isfield(gp,'meanf')
+                        %b = W.*f+dlp;
+                        b = Wd.*f-Wu*(Wu'*f)+dlp;
+                      else
+                        b = Wd.*f-Wu*(Wu'*f)+iKHb_m+dlp;
+                        %b = W.*f+K\(H'*b_m)+dlp;
                       end
-                      WK(1:(2*n+1):end)=WK(1:(2*n+1):end)+1;
+                      
+                      Cb=K*b;
+                      % Cdb = Cb - C*(L'\(L\Cb));
+                      db=(b - (L'\(L\Cb)));
+                      Cdb = K*db;
+                      
+                      CWu=K*Wu;
+                      CdWu = CWu - K*(L'\(L\CWu));
+                      WuCdWu=(1-Wu'*CdWu);
+                      c=Wu*((Wu'*Cdb)./WuCdWu);
+                      
+                      Cc=K*c;
+                      %  Cdc = Cc - C*(L'\(L\Cc));
+                      dc=(c - (L'\(L\Cc)));
+                      %Cdc = K*dc;
+                      
+                      a=db+dc;
+                      
+                    else
+                      if isfield(gp.lik,'xtime')
+                        b=Wdiag.*f+[Wmat*f((ntime+1):end); Wmat'*f(1:ntime)]+dlp;
+                      else
+                        b = sum(W.*repmat(reshape(f,n,nlp),nlp,1),2)+dlp;
+                      end
+                      
+                      L=[];
+                      
+                      if isfield(gp.lik,'xtime')
+                        WK(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),K(1:ntime,1:ntime));
+                        WK(ntime+(1:n),ntime+(1:n))=bsxfun(@times, Wdiag(ntime+(1:n)),K(ntime+(1:n),ntime+(1:n)));
+                        WK(1:ntime,ntime+(1:n))=Wmat*K(ntime+(1:n),ntime+(1:n));
+                        WK(ntime+(1:n),1:ntime)=Wmat'*K(1:ntime,1:ntime);
+                        WK(1:(ntime+n+1):end)=WK(1:(ntime+n+1):end)+1;
+                      else
+                        for il=1:nlp
+                          WK(1:n,(1:n)+(il-1)*n)=bsxfun(@times, W(1:n,il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
+                          WK((n+1):(2*n),(1:n)+(il-1)*n)=bsxfun(@times, W((n+1):(2*n),il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
+                        end
+                        WK(1:(2*n+1):end)=WK(1:(2*n+1):end)+1;
+                      end
+                      a=WK\b;
                     end
-                    a=WK\b;
-                    
                     %diag(W)=diag(W)+delta; 0.1
                     %a=(eye(2*n)+W*K)\b;
                     f = K*a;
@@ -238,7 +292,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     if ~isfield(gp,'meanf')
                       lp_new = -a'*f/2 + lp;
                     else
-                      lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp; %f^=f-H'*b_m,
+                      %lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp; %f^=f-H'*b_m,
+                      lp_new = -(f-Hb_m)'*(a-iKHb_m)/2 + lp; %f^=f-Hb_m,
                     end
                     i = 0;
                     while i < 10 && lp_new < lp_old  || isnan(sum(f))
@@ -249,18 +304,23 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       if ~isfield(gp,'meanf')
                         lp_new = -a'*f/2 + lp;
                       else
-                        lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp;
+                        %lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp;
+                        lp_new = -(f-Hb_m)'*(a-iKHb_m)/2 + lp;
                       end
                       i = i+1;
                     end
                     
-                    if isfield(gp.lik,'xtime')
-                      [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                      Wdiag=-Wdiag; Wmat=-Wmat;
+                    if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                      [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                      Wd=-g2d; Wu=g2u;
                     else
-                      W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                      if isfield(gp.lik,'xtime')
+                        [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                        Wdiag=-Wdiag; Wmat=-Wmat;
+                      else
+                        W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                      end
                     end
-                    
                     dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
                   end
                   
@@ -269,44 +329,65 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               end
               
               % evaluate the approximate log marginal likelihood
-              if isfield(gp.lik,'xtime')
-                [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                Wdiag=-Wdiag; Wmat=-Wmat;
+              if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                Wd=-g2d; Wu=g2u;
               else
-                W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                if isfield(gp.lik,'xtime')
+                  [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                  Wdiag=-Wdiag; Wmat=-Wmat;
+                else
+                  W = -feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                end
               end
               
               if ~isfield(gp,'meanf')
                 logZ = 0.5 *f'*a - feval(gp.lik.fh.ll, gp.lik, y, f, z);
               else
-                %    logZ = 0.5 *((f-H'*b_m)'*(a-K\(H'*b_m))) - feval(gp.lik.fh.ll, gp.lik, y, f, z);
+                % logZ = 0.5 *((f-H'*b_m)'*(a-K\(H'*b_m))) - feval(gp.lik.fh.ll, gp.lik, y, f, z);
+                logZ = 0.5 *((f-Hb_m)'*(a-iKHb_m)) - feval(gp.lik.fh.ll, gp.lik, y, f, z);
               end
               
               %Wtmp = [diag(W(1:n,1:n)) diag(W(1:n,(1:n)+n)); diag(W((1:n)+n,1:n)) diag(W((1:n)+n,(1:n)+n))];
               
-              if isfield(gp.lik,'xtime')
-                WK(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),K(1:ntime,1:ntime));
-                WK(ntime+(1:n),ntime+(1:n))=bsxfun(@times, Wdiag(ntime+(1:n)),K(ntime+(1:n),ntime+(1:n)));
-                WK(1:ntime,ntime+(1:n))=Wmat*K(ntime+(1:n),ntime+(1:n));
-                WK(ntime+(1:n),1:ntime)=Wmat'*K(1:ntime,1:ntime);
-                WK(1:(ntime+n+1):end)=WK(1:(ntime+n+1):end)+1;
+              if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                sqWd = sqrt(Wd);
+                B = (sqWd*sqWd').*K;
+                B(1:(n+1):end)=B(1:(n+1):end)+1;
+                %B = eye(size(K)) + (sqWd*sqWd').*K;
+                [L,notpositivedefinite] = chol(B,'lower');
+%                if notpositivedefinite
+%                  [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+%                  return
+%                end
+                edata = logZ + sum(log(diag(L)))+0.5*log(WuCdWu);
+                %edata = logZ + 0.5.*sum(log(diag(L)));
+                La2 = Wd;
               else
-                for il=1:nlp
-                  WK(1:n,(1:n)+(il-1)*n)=bsxfun(@times, W(1:n,il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
-                  WK((n+1):(2*n),(1:n)+(il-1)*n)=bsxfun(@times, W((n+1):(2*n),il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
+                if isfield(gp.lik,'xtime')
+                  WK(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),K(1:ntime,1:ntime));
+                  WK(ntime+(1:n),ntime+(1:n))=bsxfun(@times, Wdiag(ntime+(1:n)),K(ntime+(1:n),ntime+(1:n)));
+                  WK(1:ntime,ntime+(1:n))=Wmat*K(ntime+(1:n),ntime+(1:n));
+                  WK(ntime+(1:n),1:ntime)=Wmat'*K(1:ntime,1:ntime);
+                  WK(1:(ntime+n+1):end)=WK(1:(ntime+n+1):end)+1;
+                else
+                  for il=1:nlp
+                    WK(1:n,(1:n)+(il-1)*n)=bsxfun(@times, W(1:n,il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
+                    WK((n+1):(2*n),(1:n)+(il-1)*n)=bsxfun(@times, W((n+1):(2*n),il),K((1:n)+(il-1)*n,(1:n)+(il-1)*n));
+                  end
+                  WK(1:(2*n+1):end)=WK(1:(2*n+1):end)+1;
                 end
-                WK(1:(2*n+1):end)=WK(1:(2*n+1):end)+1;
+                L=WK; %\eye(n*nlp);
+                
+                edata = logZ + 0.5*log(det(WK));
+                if isinf(edata)
+                  [ll,uu]=lu(WK);
+                  %s =  det(ll); % This is always +1 or -1
+                  edata = logZ + 0.5*det(ll)*prod(sign(diag(uu))).*sum(log(abs(diag(uu))));
+                end
+                La2 = W;
               end
-              L=WK; %\eye(n*nlp);
               
-              edata = logZ + 0.5*log(det(WK));
-              if isinf(edata)
-                [ll,uu]=lu(WK);
-                %s =  det(ll); % This is always +1 or -1 
-                edata = logZ + 0.5*det(ll)*prod(sign(diag(uu))).*sum(log(abs(diag(uu))));
-              end
-              
-              La2 = W;
               M=[];
               E=[];
               E=W;

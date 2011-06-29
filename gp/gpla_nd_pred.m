@@ -57,7 +57,9 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
   ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('predcf', [], @(x) isempty(x) || iscell(x) && isvector(x))
+  %ip.addParamValue('predcf', [], @(x) isempty(x) || iscell(x) && isvector(x))
+  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
   ip.parse(gp, x, y, xt, varargin{:});
@@ -86,52 +88,60 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
           [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
           Wdiag=-Wdiag; Wmat=-Wmat;
         end
-          
-        ntest=size(xt,1);
         
-        if isfield(gp.lik,'xtime')
-          xtime=gp.lik.xtime;
-          ntime = size(xtime,1);
-          nl=[ntime tn];
-          nlt=[ntime ntest];
+        ntest=size(xt,1);
+        if isfield(gp.lik, 'fullW') && gp.lik.fullW
+          nl=tn;
+          nlt=ntest;
         else
-          nl=[tn tn];
-          nlt=[ntest ntest];
+          if isfield(gp.lik,'xtime')
+            xtime=gp.lik.xtime;
+            ntime = size(xtime,1);
+            nl=[ntime tn];
+            nlt=[ntime ntest];
+          else
+            nl=[tn tn];
+            nlt=[ntest ntest];
+          end
         end
         nlp=length(nl); % number of latent processes
-
         
         K_nf = zeros(sum(nlt),sum(nl));
         
-        if isfield(gp.lik,'xtime')
-          if isempty(predcf)
-            %for i1=1:nl
-            K_nf(1:ntime,1:ntime) = gp_cov(gp, xtime, xtime, gp.comp_cf{1});
-            K_nf((1:ntest)+ntime,(1:tn)+ntime) = gp_cov(gp,xt,x, gp.comp_cf{2});
-            %end
-          else
-            %for i1=1:nl
-            K_nf(1:ntime,1:ntime) = gp_cov(gp,xtime,xtime, intersect(gp.comp_cf{1}, predcf));
-            K_nf((1:ntest)+ntime,(1:tn)+ntime) = gp_cov(gp,xt,x, intersect(gp.comp_cf{2}, predcf));
-            %end
-          end
+        if isfield(gp.lik, 'fullW') && gp.lik.fullW
+          K_nf = gp_cov(gp,xt,x,predcf);
+          K = gp_trcov(gp, x);
         else
-          if isempty(predcf)
-            for i1=1:nlp
-              K_nf((1:ntest)+(i1-1)*ntest,(1:tn)+(i1-1)*tn) = gp_cov(gp,xt,x, gp.comp_cf{i1});
+          if isfield(gp.lik,'xtime')
+            if isempty(predcf)
+              %for i1=1:nl
+              K_nf(1:ntime,1:ntime) = gp_cov(gp, xtime, xtime, gp.comp_cf{1});
+              K_nf((1:ntest)+ntime,(1:tn)+ntime) = gp_cov(gp,xt,x, gp.comp_cf{2});
+              %end
+            else
+              %for i1=1:nl
+              K_nf(1:ntime,1:ntime) = gp_cov(gp,xtime,xtime, intersect(gp.comp_cf{1}, predcf));
+              K_nf((1:ntest)+ntime,(1:tn)+ntime) = gp_cov(gp,xt,x, intersect(gp.comp_cf{2}, predcf));
+              %end
             end
           else
-            for i1=1:nlp
-              K_nf((1:ntest)+(i1-1)*ntest,(1:tn)+(i1-1)*tn) = gp_cov(gp,xt,x, intersect(gp.comp_cf{i1}, predcf));
+            if isempty(predcf)
+              for i1=1:nlp
+                K_nf((1:ntest)+(i1-1)*ntest,(1:tn)+(i1-1)*tn) = gp_cov(gp,xt,x, gp.comp_cf{i1});
+              end
+            else
+              for i1=1:nlp
+                K_nf((1:ntest)+(i1-1)*ntest,(1:tn)+(i1-1)*tn) = gp_cov(gp,xt,x, intersect(gp.comp_cf{i1}, predcf));
+              end
             end
           end
         end
         
         if isfield(gp,'meanf')
-         % [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
-         % K_nf=K_nf + Hs'*B_m*H;
-         % K = gp_trcov(gp, x);
-         % K = K+H'*B_m*H;
+          [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
+          K_nf=K_nf + Hs'*B_m*H;
+          %K = gp_trcov(gp, x);
+          K = K+H'*B_m*H;
         end
         
         % Evaluate the mean
@@ -142,7 +152,8 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
           deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
           Eft = K_nf*deriv;
           if isfield(gp,'meanf')
-            Eft=Eft + K_nf*(K\Hs'*b_m);
+            Eft=Eft + K_nf*(K\H'*b_m);
+            %Eft=Eft + K_nf*(K\Hs'*b_m);
           end
         end
         
@@ -156,41 +167,50 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
           %kstarstarfull = zeros(ntest*nlp);
                  
           if isempty(predcf)
-            if isfield(gp.lik,'xtime')
-              kstarstar(1:ntime,1) = gp_trvar(gp,xtime,gp.comp_cf{1});
-              kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,gp.comp_cf{2});
-              if nargout > 2
-                kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,gp.comp_cf{1});
-                kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,gp.comp_cf{2});
-              end
+            if isfield(gp.lik, 'fullW') && gp.lik.fullW
+              kstarstar = gp_trcov(gp,xt);
             else
-              for i1=1:nlp
-                kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,gp.comp_cf{i1});
+              if isfield(gp.lik,'xtime')
+                kstarstar(1:ntime,1) = gp_trvar(gp,xtime,gp.comp_cf{1});
+                kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,gp.comp_cf{2});
                 if nargout > 2
-                  kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,gp.comp_cf{i1});
+                  kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,gp.comp_cf{1});
+                  kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,gp.comp_cf{2});
+                end
+              else
+                for i1=1:nlp
+                  kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,gp.comp_cf{i1});
+                  if nargout > 2
+                    kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,gp.comp_cf{i1});
+                  end
                 end
               end
             end
           else
-            if isfield(gp.lik,'xtime')
-              kstarstar(1:ntime,1) = gp_trvar(gp,xtime,intersect(gp.comp_cf{1}, predcf));
-              kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{2}, predcf));
-              if nargout > 2
-                kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,intersect(gp.comp_cf{1}, predcf));
-                kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,intersect(gp.comp_cf{2}, predcf));
-              end
+            if isfield(gp.lik, 'fullW') && gp.lik.fullW
+              kstarstar = gp_trcov(gp,xt,predcf);
             else
-            for i1=1:nlp
-              kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{i1}, predcf));
-              if nargout > 2
-                kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,intersect(gp.comp_cf{i1}, predcf));
+              if isfield(gp.lik,'xtime')
+                kstarstar(1:ntime,1) = gp_trvar(gp,xtime,intersect(gp.comp_cf{1}, predcf));
+                kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{2}, predcf));
+                if nargout > 2
+                  kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,intersect(gp.comp_cf{1}, predcf));
+                  kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,intersect(gp.comp_cf{2}, predcf));
+                end
+              else
+                for i1=1:nlp
+                  kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{i1}, predcf));
+                  if nargout > 2
+                    kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,intersect(gp.comp_cf{i1}, predcf));
+                  end
+                end
               end
-            end
             end
           end
           
           if isfield(gp,'meanf')
-            kstarstar= kstarstar + diag(Hs'*B_m*Hs);
+            kstarstar = kstarstar + Hs'*B_m*Hs;
+            %kstarstar= kstarstar + diag(Hs'*B_m*Hs);
           end
           %           if W >= 0
           %               % This is the usual case where likelihood is log concave
@@ -214,38 +234,49 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
           %               R = diag(W) - V'*V;
           %               Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
           %           end
-          n=size(x,1);
-          iWK=L\eye(sum(nl));
           
-          %iWKW=iWK*[diag(W(1:n,1)) diag(W((n+1):(2*n),1)); diag(W(1:n,2)) diag(W((n+1):(2*n),2))];
           
-          if isfield(gp.lik,'xtime')
-            iWKW=zeros(n+ntime);
-            iWKW(1:ntime,1:ntime)=bsxfun(@times, iWK(1:ntime,1:ntime),Wdiag(1:ntime)') + iWK(1:ntime,ntime+(1:n))*Wmat';
-            iWKW(1:ntime,ntime+(1:n))=iWK(1:ntime,1:ntime)*Wmat + bsxfun(@times, iWK(1:ntime,ntime+(1:n)), Wdiag(ntime+(1:n))');
-            iWKW(ntime+(1:n),1:ntime)=bsxfun(@times,iWK(ntime+(1:n),1:ntime),Wdiag(1:ntime)') + iWK(ntime+(1:n),ntime+(1:n))*Wmat';
-            iWKW(ntime+(1:n),ntime+(1:n))=iWK(ntime+(1:n),1:ntime)*Wmat + bsxfun(@times, iWK(ntime+(1:n),ntime+(1:n)),Wdiag(ntime+(1:n))');
-          else
-            iWKW11=bsxfun(@times,iWK(1:n,1:n),W(1:n,1)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,1)');
-            iWKW12=bsxfun(@times,iWK(1:n,1:n),W(1:n,2)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,2)');
-            iWKW21=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,1)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,1)');
-            iWKW22=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,2)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,2)');
-            iWKW=[iWKW11 iWKW12; iWKW21 iWKW22];
-          end
+          if isfield(gp.lik, 'fullW') && gp.lik.fullW
+            [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+            %Wd=-g2d; Wu=g2u;
+            %KW=-(K*g2u)*g2u'-K*diag(g2d);
+            KW=(K*-g2u)*g2u'-bsxfun(@times, K, g2d');
+            KW(1:(tn+1):end)=KW(1:(tn+1):end)+1;
+            iKW=KW\eye(tn);
             
-          if nargout > 2
-            KiWKWK=K_nf*iWKW*K_nf';
-            Covft=kstarstarfull-KiWKWK;
-            Varft=kstarstar-diag(KiWKWK);
-            Varf=Covft;
-          else
-            Varft=kstarstar-diag(K_nf*iWKW*K_nf');
+            WiKW=-g2u*(g2u'*iKW)-bsxfun(@times,g2d,iKW);
+            Varft=kstarstar-K_nf*(WiKW*K_nf');
             Varf=Varft;
+          else
+            n=size(x,1);
+            iWK=L\eye(sum(nl));
+            %iWKW=iWK*[diag(W(1:n,1)) diag(W((n+1):(2*n),1)); diag(W(1:n,2)) diag(W((n+1):(2*n),2))];
+            if isfield(gp.lik,'xtime')
+              iWKW=zeros(n+ntime);
+              iWKW(1:ntime,1:ntime)=bsxfun(@times, iWK(1:ntime,1:ntime),Wdiag(1:ntime)') + iWK(1:ntime,ntime+(1:n))*Wmat';
+              iWKW(1:ntime,ntime+(1:n))=iWK(1:ntime,1:ntime)*Wmat + bsxfun(@times, iWK(1:ntime,ntime+(1:n)), Wdiag(ntime+(1:n))');
+              iWKW(ntime+(1:n),1:ntime)=bsxfun(@times,iWK(ntime+(1:n),1:ntime),Wdiag(1:ntime)') + iWK(ntime+(1:n),ntime+(1:n))*Wmat';
+              iWKW(ntime+(1:n),ntime+(1:n))=iWK(ntime+(1:n),1:ntime)*Wmat + bsxfun(@times, iWK(ntime+(1:n),ntime+(1:n)),Wdiag(ntime+(1:n))');
+            else
+              iWKW11=bsxfun(@times,iWK(1:n,1:n),W(1:n,1)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,1)');
+              iWKW12=bsxfun(@times,iWK(1:n,1:n),W(1:n,2)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,2)');
+              iWKW21=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,1)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,1)');
+              iWKW22=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,2)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,2)');
+              iWKW=[iWKW11 iWKW12; iWKW21 iWKW22];
+            end
+            
+            if nargout > 2
+              KiWKWK=K_nf*iWKW*K_nf';
+              Covft=kstarstarfull-KiWKWK;
+              Varft=kstarstar-diag(KiWKWK);
+              Varf=Covft;
+            else
+              Varft=kstarstar-diag(K_nf*iWKW*K_nf');
+              Varf=Varft;
+            end
           end
         end
         Ef=Eft;
-        
-        
         
       else
         
