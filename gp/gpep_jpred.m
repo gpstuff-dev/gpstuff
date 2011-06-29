@@ -1,25 +1,26 @@
-function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
+function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
 %GPEP_PRED  Predictions with Gaussian Process EP approximation
 %
 %  Description
-%    [EFT, VARFT] = GPEP_JPRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, COVFT] = GPEP_JPRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and covariance VARFT of latent variables.
+%    mean EFT and covariance COVFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
-%      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
+%      Covft = Cov[f | xt,x,y,th] = K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf. 
 %
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, LJPYT] = GPEP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive joint density JPYT of the observations YT
-%    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
+%    [EFT, COVFT, LJPYT] = GPEP_JPRED(GP, X, Y, XT, 'yt', YT, ...) 
+%    returns also logarithm of the predictive joint density JPYT of
+%    the observations YT at test input locations XT. This can be
+%    used for example in the cross-validation. Here Y has to be
+%    vector.
 %
-%    [EFT, VARFT, LJPYT, EYT, VARYT] = GPEP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, COVFT, LJPYT, EYT, VARYT] = GPEP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the posterior predictive mean and covariance.
 %
 %    OPTIONS is optional parameter-value pair
@@ -142,13 +143,13 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
             if nargout > 1
                 if issparse(L)
                     V = ldlsolve(L, Stildesqroot*K_nf');
-                    Varft = kstarstar - K_nf*(Stildesqroot*V);
+                    Covft = kstarstar - K_nf*(Stildesqroot*V);
                 else
                     V = (L\Stildesqroot)*K_nf';
-                    Varft = kstarstar - V'*V;
+                    Covft = kstarstar - V'*V;
                 end
                 if isfield(gp,'meanf')
-                     Varft = Varft + RAR;
+                     Covft = Covft + RAR;
                 end
             end
         else                         % We might end up here if the likelihood is not log concave
@@ -160,12 +161,12 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
             if nargout > 1
                 S = diag(tautilde);
                 V = K_nf*S*L';
-                Varft = kstarstar - (K_nf*S)*K_nf' + V*V';
+                Covft = kstarstar - (K_nf*S)*K_nf' + V*V';
             end
         end
 %         if nargout > 2
 %             Eyt = Eft;
-%             Varyt = Varft + (C_nn - kstarstar);
+%             Varyt = Covft + (C_nn - kstarstar);
 %         end
         % ============================================================
         % FIC
@@ -213,7 +214,7 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
         
         % Compute variance
         if nargout > 1
-            %Varft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+            %Covft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
             Luu = chol(K_uu)';
             B=Luu\(K_fu');   
             B2=Luu\(K_nu');   
@@ -223,7 +224,7 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
               Knf(tstind,:) = Knf(tstind,:) + diag(kstarstar(tstind) - sum(B.^2)');
             end
             
-            Varft = Knn - Knf * ( diag(1./La) - L*L' ) * Knf';
+            Covft = Knn - Knf * ( diag(1./La) - L*L' ) * Knf';
         end
         % ============================================================
         % PIC
@@ -277,7 +278,7 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
               C(ind{i},ind{i}) = C(ind{i},ind{i}) + inv(La{i});
             end
             
-            Varft = Knn - Knf * C * Knf';
+            Covft = Knn - Knf * C * Knf';
 
         end
         % ============================================================
@@ -393,7 +394,7 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
               Knf(tstind,:) = Knf(tstind,:) + diag(k(tstind) - sum(B.^2)');
             end
             
-            Varft = Knn - Knf * ( inv(La) - L*L' ) * Knf';
+            Covft = Knn - Knf * ( inv(La) - L*L' ) * Knf';
 
         end
         % ============================================================
@@ -440,17 +441,17 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
         
         if nargout > 1
             % Compute variances of predictions
-            %Varft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+            %Covft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
             Luu = chol(K_uu)';
             B=Luu\(K_fu');   
             B2=Luu\(K_nu');   
 
-            Varft = sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+            Covft = sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
             switch gp.type
               case {'VAR' 'DTC'}
-                Varft = kstarstar - Varft;
+                Covft = kstarstar - Covft;
               case 'SOR'
-                Varft = sum(B2.^2,1)' - Varft;
+                Covft = sum(B2.^2,1)' - Covft;
             end
         end
         % ============================================================
@@ -473,12 +474,12 @@ function [Eft, Varft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
         
         if nargout > 1
             % Compute variances of predictions
-            %Varft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
-            Varft = sum(Phi_a.^2,2) - sum(Phi_a.*((Phi_f'*(repmat(S,1,m).*Phi_f))*Phi_a')',2) + sum((Phi_a*(Phi_f'*L)).^2,2);
+            %Covft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+            Covft = sum(Phi_a.^2,2) - sum(Phi_a.*((Phi_f'*(repmat(S,1,m).*Phi_f))*Phi_a')',2) + sum((Phi_a*(Phi_f'*L)).^2,2);
             for i1=1:ntest
                 switch gp.lik.type
                   case 'Probit'
-                    p1(i1,1)=norm_cdf(Eft(i1,1)/sqrt(1+Varft(i1))); % Probability p(y_new=1)
+                    p1(i1,1)=norm_cdf(Eft(i1,1)/sqrt(1+Covft(i1))); % Probability p(y_new=1)
                   case 'Poisson'
                     p1 = NaN;
                 end

@@ -1,6 +1,6 @@
 function eloo = gpep_looe(w, gp, x, y, varargin)
 % GPEP_LOOE Evaluate the mean negative log leave-one-out predictive 
-%           density, assuming Gaussian observation model.
+%           density with EP approximation
 %
 %  Description
 %    LOOE = GPEP_LOOE(W, GP, X, Y, OPTIONS) takes a parameter

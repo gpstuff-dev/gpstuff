@@ -1,25 +1,26 @@
-function [Eft, Varft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
+function [Eft, Covft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
 %GPLA_PRED  Predictions with Gaussian Process Laplace approximation
 %
 %  Description
-%    [EFT, VARFT] = GPLA_JPRED(GP, X, Y, XT, OPTIONS)
+%    [EFT, COVFT] = GPLA_JPRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
 %    predictive distribution at test inputs XT. Returns a posterior
-%    mean EFT and covariance VARFT of latent variables.
+%    mean EFT and covariance COVFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
-%      Varft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
+%      Covft = Cov[f | xt,x,y,th] = K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf. 
 %
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, LJPYT] = GPLA_JPRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive joint density JPYT of the observations YT
-%    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
+%    [EFT, COVFT, LJPYT] = GPLA_JPRED(GP, X, Y, XT, 'yt', YT, ...) 
+%    returns also logarithm of the predictive joint density JPYT of
+%    the observations YT at test input locations XT. This can be
+%    used for example in the cross-validation. Here Y has to be
+%    vector.
 %
-%    [EFT, VARFT, LJPYT, EYT, VARYT] = GPLA_JPRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, COVFT, LJPYT, EYT, VARYT] = GPLA_JPRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the posterior predictive mean and covariance.
 %
 %    OPTIONS is optional parameter-value pair
@@ -143,18 +144,18 @@ function [Eft, Varft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
                 sqrtW = sparse(1:tn, 1:tn, sqrt(W), tn, tn);
                 sqrtWKfn = sqrtW*K_nf';
                 V = ldlsolve(L,sqrtWKfn);
-                Varft = K - sqrtWKfn'*V;
+                Covft = K - sqrtWKfn'*V;
             else
               W = diag(W);
               V = L\(sqrt(W)*K_nf');
-              Varft = kstarstar - (V'*V);
+              Covft = kstarstar - (V'*V);
             end
           else                  
             % We may end up here if the likelihood is not log concace
             % For example Student-t likelihood
             V = L*diag(W);
             R = diag(W) - V'*V;
-            Varft = kstarstar - K_nf*(R*K_nf');
+            Covft = kstarstar - K_nf*(R*K_nf');
           end
         end
         
@@ -240,17 +241,17 @@ function [Eft, Varft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
             L = chol(B)';
             
             V = L\(sqrt(W)*K_nf');
-            Varft = K - V'*V;
+            Covft = K - V'*V;
 
 %             % Set params for K_nf
 %             BB=Luu\(B');
 %             BB2=Luu\(K_nu');
-%             Varft = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+%             Covft = kstarstar - sum(BB2'.*(BB*(repmat(Lahat,1,m).\BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
 %             
 %             % if the prediction is made for training set, evaluate Lav also for prediction points
 %             if ~isempty(tstind)
 %                 LavsW = Lav.*sqrt(W);
-%                     Varft(tstind) = Varft(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
+%                     Covft(tstind) = Covft(tstind) - (LavsW./sqrt(Lahat)).^2 + sum((repmat(LavsW,1,m).*L2).^2, 2) ...
 %                            - 2.*sum((repmat(LavsW,1,m).*(repmat(Lahat,1,m).\B)).*(K_uu\K_nu(tstind,:)')',2)...
 %                            + 2.*sum((repmat(LavsW,1,m).*L2).*(L2'*B*(K_uu\K_nu(tstind,:)'))' ,2);
 %             end
@@ -322,7 +323,7 @@ function [Eft, Varft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
             end
             C = diag(sqrtW)*C*diag(sqrtW);
             
-            Varft = Knn - Knf * C * Knf';
+            Covft = Knn - Knf * C * Knf';
         end
         
       case 'CS+FIC'        
@@ -466,7 +467,7 @@ function [Eft, Varft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
             L = chol(B)';
             
             V = L\(sqrt(W)*K_nf');
-            Varft = K - V'*V;
+            Covft = K - V'*V;
 
         end
     end

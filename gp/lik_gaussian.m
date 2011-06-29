@@ -109,11 +109,11 @@ function [w s] = lik_gaussian_pak(lik)
   w = []; s = {};
   if ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
-    s = [s 'log(gaussian.sigma2)'];
+    s = [s; 'log(gaussian.sigma2)'];
     % Hyperparameters of sigma2
     [wh sh] = lik.p.sigma2.fh.pak(lik.p.sigma2);
     w = [w wh];
-    s = [s sh];
+    s = [s; sh];
   end    
 
 end
