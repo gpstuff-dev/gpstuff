@@ -385,7 +385,7 @@ function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)
 %    GP_PREDPCTY
 
   if isempty(zt)
-    error(['lik_binomial -> lik_binomial_predy: missing z!'... 
+    error(['lik_binomial -> lik_binomial_predprcty: missing z!'... 
            'Binomial likelihood needs the expected number of       '...
            'occurrences as an extra input z. See, for             '...
            'example, lik_binomial and gpla_e.                 ']);
@@ -576,6 +576,8 @@ function reclik = lik_binomial_recappend(reclik, ri, lik)
     reclik.fh.llg2 = @lik_binomial_llg2;
     reclik.fh.llg3 = @lik_binomial_llg3;
     reclik.fh.tiltedMoments = @lik_binomial_tiltedMoments;
+    reclik.fh.invlink = @lik_binomial_invlink;
+    reclik.fh.predprcty = @lik_binomial_predprcty;
     reclik.fh.predy = @lik_binomial_predy;
     reclik.fh.recappend = @likelih_binomial_recappend;
     return

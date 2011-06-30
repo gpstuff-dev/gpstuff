@@ -359,7 +359,7 @@ function gp = gp_set(varargin)
             gp.latent_opt.optim_method=optim_method;
           else
             % If likelihood is not log-concave (exists functions siteDeriv2
-            % & tiltedMoments2) use robust-EP by default, else normal EP.
+            % & tiltedMoments2) use robust-EP by default, else basic EP.
             if isfield(gp.lik.fh, 'siteDeriv2')
               gp.latent_opt.optim_method='robust-EP';
             else
@@ -422,12 +422,11 @@ function gp = gp_set(varargin)
           if ~isempty(optim_method)
             gp.latent_opt.optim_method=optim_method;
           else
-            switch gp.lik.type
-              case 'Student-t'
-                % slower than newton but more robust
-                gp.latent_opt.optim_method='lik_specific'; 
-              otherwise
-                gp.latent_opt.optim_method='newton';
+            if isfield(gp.lik.fh, 'optimizef')
+              % slower than newton but more robust
+              gp.latent_opt.optim_method='lik_specific'; 
+            else
+              gp.latent_opt.optim_method='newton';
             end
           end
           if init || ~ismember('maxiter',ipla.UsingDefaults) || ~isfield(gp,'maxiter')

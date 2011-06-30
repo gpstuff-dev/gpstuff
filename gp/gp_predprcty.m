@@ -71,9 +71,31 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
       
       case 'MCMC'
         % MCMC solution
-        
-        [sampft, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
-        prctys = prctile(sampyt, prct, 2);
+        if isfield(gp.lik.fh, 'trcov')
+          % Gaussian likelihood
+          [~, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
+          prctys = prctile(sampyt, prct, 2);
+        else
+          % Non-Gaussian likelihood
+          [Eft, Varft] = gp_pred(gp,x,y,xt, 'tstind', tstind, options);
+          prctys=gp.lik.fh.predprcty(gp.lik, Eft, Varft, zt, prct);
+%         if strcmp(gp.type, 'PIC')
+%           tr_index = gp.tr_index;
+%           gp = rmfield(gp, 'tr_index');
+%         else
+%           tr_index = [];
+%         end
+%           for i=1:nsamples
+%             Gp = take_nth(gp,i);
+%             if  strcmp(gp.type, 'FIC') | strcmp(gp.type, 'PIC')  || strcmp(gp.type, 'CS+FIC') || strcmp(gp.type, 'VAR') || strcmp(gp.type, 'DTC') || strcmp(gp.type, 'SOR')
+%               Gp.X_u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+%             end
+%             Gp.tr_index = tr_index;
+%             [Ef, Varf] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+%             prctys(:,:,i) = gp.lik.fh.predprcty(gp.lik, Ef, Varf, zt, prct);
+%           end
+%           prctys = mean(prctys,3);
+        end
         
       case 'Single'
         % Single GP 
@@ -81,7 +103,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
           if isfield(gp.lik.fh,'trcov')
             % Gaussian likelihood
             [~, ~, ~, Eyt, Varyt] = gp_pred(gp,x,y,xt, 'tstind', ...
-                                           tstind, options);
+                                           tstind);
             prct = prct./100;
             prct = norminv(prct, 0, 1);
             prctys = bsxfun(@plus, Eyt, bsxfun(@times, sqrt(Varyt), prct));
@@ -105,8 +127,19 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
         tstind = gp{1}.tr_index;
     end
     
-    [~, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, 'tstind', tstind, options);
-    prctys = prctile(sampyt, prct, 2);
+    if isfield(gp{1}.lik.fh, 'trcov')
+      % Gaussian likelihood
+      [~, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
+      prctys = prctile(sampyt, prct, 2);
+    else
+      % Non-Gaussian likelihood
+      [Eft, Varft] = gp_pred(gp,x,y,xt, 'tstind', tstind, options);
+      prctys=gp{1}.lik.fh.predprcty(gp{1}.lik, Eft, Varft, zt, prct);
+%       sampft = gp_rnd(gp,x,y,xt,'tstind',tstind, options, 'nsamp', nsamp);
+%       Eft = mean(sampft,2);
+%       Varft = var(sampft,[],2);
+%       prctys=gp{1}.lik.fh.predprcty(gp{1}.lik, Eft, Varft, zt, prct);
+    end
 
   end
 

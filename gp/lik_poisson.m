@@ -55,6 +55,7 @@ function lik = lik_poisson(varargin)
     lik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
     lik.fh.predy = @lik_poisson_predy;
     lik.fh.invlink = @lik_poisson_invlink;
+    lik.fh.predprcty = @lik_poisson_predprcty;
     lik.fh.recappend = @lik_poisson_recappend;
   end
 
@@ -318,6 +319,40 @@ function [lpy, Ey, Vary] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
   end
 end
 
+function prctys = lik_poisson_predprcty(lik, Ef, Varf, zt, prcty)
+%LIK_POISSON_PREDPRCTY  Returns the percentiles of predictive density of y
+%
+%  Description         
+%    PRCTY = LIK_POISSON_PREDPRCTY(LIK, EF, VARF YT, ZT)
+%    Returns percentiles of the predictive density PY of YT, that is 
+%    This requires also the succes counts YT, numbers of trials ZT.
+%
+%  See also 
+%    GP_PREDPCTY
+
+  if isempty(zt)
+    error(['lik_poisson -> lik_poisson_predprcty: missing z!'... 
+           'Poisson likelihood needs the expected number of       '...
+           'occurrences as an extra input z. See, for             '...
+           'example, lik_poisson and gpla_e.                 ']);
+  end
+  
+  opt=optimset('TolX',.5,'Display','off');
+  nt=size(Ef,1);
+  prctys = zeros(nt,numel(prcty));
+  prcty=prcty/100;
+  for i1=1:nt
+    ci = sqrt(Varf(i1));
+    for i2=1:numel(prcty)
+      a=floor(fminbnd(@(a) (quadgk(@(f) poisscdf(a,zt(i1).*exp(f).*norm_pdf(f,Ef(i1),ci)),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,poissinv(prcty(i2),zt(i1).*exp(Ef(i1)-1.96*ci)),poissinv(prcty(i2),zt(i1).*exp(Ef(i1)+1.96*ci)),opt));
+      if quadgk(@(f) poisscdf(a,zt(i1).*exp(f)).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)<prcty(i2)
+        a=a+1;
+      end
+      prctys(i1,i2)=a;
+    end
+  end
+end
+
 function [df,minf,maxf] = init_poisson_norm(yy,myy_i,sigm2_i,avgE)
 %INIT_POISSON_NORM
 %
@@ -477,6 +512,7 @@ function reclik = lik_poisson_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_poisson_tiltedMoments;
     reclik.fh.predy = @lik_poisson_predy;
     reclik.fh.invlink = @lik_poisson_invlink;
+    reclik.fh.predprcty = @lik_poisson_predprcty;
     reclik.fh.recappend = @lik_poisson_recappend;
   end
 end
