@@ -3,15 +3,15 @@ function lik = lik_zinegbin(varargin)
 %
 %  Description
 %    LIK = LIK_ZINEGBIN('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates Negative-binomial likelihood structure in which the
-%    named parameters have the specified values. Any unspecified
-%    parameters are set to default values.
+%    creates a zero-inflated Negative-binomial likelihood structure in
+%    which the named parameters have the specified values. Any unspecified
+%    parameters are set to default values.  
 %  
 %    LIK = LIK_ZINEGBIN(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
 %    modify a likelihood structure with the named parameters
 %    altered with the specified values.
 %
-%    Parameters for Negative-binomial likelihood [default]
+%    Parameters for a zero-inflated Negative-binomial likelihood [default]
 %      disper       - dispersion parameter r [10]
 %      disper_prior - prior for disper [prior_logunif]
 %  
@@ -20,19 +20,31 @@ function lik = lik_zinegbin(varargin)
 %    optimization, grid integration, MCMC etc.
 %
 %    The likelihood is defined as follows:
-%                  __ n
-%      p(y|f, z) = || i=1 [ (r/(r+mu_i))^r * gamma(r+y_i)
-%                           / ( gamma(r)*gamma(y_i+1) )
-%                           * (mu/(r+mu_i))^y_i ]
+%     
+%      p + (1-p)*NegBin(y|y=0),    when y=0
+%          (1-p)*NegBin(y|y>0),    when y>0,
+%
+%      where the probability p is given by a binary classifier with Logit
+%      likelihood and NegBin is the Negative-binomial distribution
+%      parametrized for the i'th observation as
+%                  
+%      NegBin(y_i) =   [ (r/(r+mu_i))^r * gamma(r+y_i)
+%                        / ( gamma(r)*gamma(y_i+1) )
+%                        * (mu/(r+mu_i))^y_i ]
 %
 %    where mu_i = z_i*exp(f_i) and r is the dispersion parameter.
 %    z is a vector of expected mean and f the latent value vector
 %    whose components are transformed to relative risk
 %    exp(f_i). 
 %
+%    The latent value vector f=[f1^T f2^T]^T has length 2*N, where N is the
+%    number of observations. The latents f1 are associated with the
+%    classification process and the latents f2 with Negative-binomial count
+%    process.
+%
 %    When using the Zinegbin likelihood you need to give the vector z
 %    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
+%    For example, you should call gpla_nd_e as follows: gpla_nd_e(w, gp,
 %    x, y, 'z', z)
 %
 %  See also
@@ -41,6 +53,7 @@ function lik = lik_zinegbin(varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2011 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -290,8 +303,11 @@ function lik = lik_zinegbin(varargin)
   %    structure LIK, incedence counts Y, expected counts Z, and
   %    latent values F. Returns the Hessian of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be only
-  %    'latent'. LLG2 is a vector with diagonal elements of the
-  %    Hessian matrix (off diagonals are zero).
+  %    'latent'. Second gradients form a matrix of size 2N x 2N as
+  %    [diag(LLG2_11) diag(LLG2_12); diag(LLG2_12) diag(LLG2_22)],
+  %    but the function returns only vectors of diagonal elements as
+  %    LLG2 = [LLG2_11 LLG2_12; LLG2_12 LLG2_22] (2Nx2 matrix) since off
+  %    diagonals of the blocks are zero.  
   %
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, GPLA_E
@@ -378,7 +394,10 @@ function lik = lik_zinegbin(varargin)
   %    structure LIK, incedence counts Y, expected counts Z and
   %    latent values F and returns the third gradients of the log
   %    likelihood with respect to PARAM. At the moment PARAM can be
-  %    only 'latent'. LLG3 is a vector with third gradients.
+  %    only 'latent'. LLG3 is a 2-by-2-by-2-by-N array of with third
+  %    gradients, where LLG3(:,:,1,i) is the third derivative wrt f1 for
+  %    the i'th observation and LLG3(:,:,2,i) is the third derivative wrt
+  %    f2 for the i'th observation.   
   %
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG2, GPLA_E, GPLA_G
@@ -420,7 +439,7 @@ function lik = lik_zinegbin(varargin)
       % 22
       % simplify(diff(-1/(exp(f1)+(r/(r+z*exp(f2)))^r)*((r/(r+z*exp(f2)))^(2*r-2)*(z*exp(f2)*r^2/(r+z*exp(f2))^2)^2/(exp(f1)+(r/(r+z*exp(f2)))^r) + (r-1)*(r/(r+z*exp(f2)))^(r-2)*(-z*exp(f2)^2*r^3/(r+z*exp(f2))^4) + (r/(r+z*exp(f2)))^(r-1)*(z*exp(f2)*r^2*(r+z*exp(f2))-2*z*exp(f2)^2*r^2)/(r+z*exp(f2))^3),f1))
       % simplify(diff(-1/(exp(f1)+(r/(r+z*exp(f2)))^r)*((r/(r+z*exp(f2)))^(2*r-2)*(z*exp(f2)*r^2/(r+z*exp(f2))^2)^2/(exp(f1)+(r/(r+z*exp(f2)))^r) + (r-1)*(r/(r+z*exp(f2)))^(r-2)*(-z*exp(f2)^2*r^3/(r+z*exp(f2))^4) + (r/(r+z*exp(f2)))^(r-1)*(z*exp(f2)*r^2*(r+z*exp(f2))-2*z*exp(f2)^2*r^2)/(r+z*exp(f2))^3),f2))
-      % symbolisella alusta alkaen:
+      % with symbolic math toolbox:
       % simplify(diff(simplify(diff(simplify(diff((-log(1+exp(f1)) + log( exp(f1) + (r./(r+z*exp(f2))).^r )),f2)),f2)),f1))
       
       expf2=exp(f2);
@@ -588,7 +607,7 @@ function lik = lik_zinegbin(varargin)
   %  Description         
   %    [EY, VARY] = LIK_ZINEGBIN_PREDY(LIK, EF, VARF) takes a
   %    likelihood structure LIK, posterior mean EF and posterior
-  %    Variance VARF of the latent variable and returns the
+  %    covariance COVF of the latent variable and returns the
   %    posterior predictive mean EY and variance VARY of the
   %    observations related to the latent variables
   %        
@@ -612,9 +631,6 @@ function lik = lik_zinegbin(varargin)
     r = lik.disper;
     
     Py = zeros(size(zt));
-    %Ey = zeros(size(zt));
-    %EVary = zeros(size(zt));
-    %VarEy = zeros(size(zt));
     
     S=10000;
     for i1=1:ntest
@@ -630,52 +646,11 @@ function lik = lik_zinegbin(varargin)
       else
         Py(i1)=mean(exp(-log(1+expf1) + r.*(log(r) - log(r+m)) + gammaln(r+yt(i1)) - gammaln(r) - gammaln(yt(i1)+1) + yt(i1).*(log(m) - log(r+m))));
       end
-      
-      %Eftmp=Ef(i1:ntest:(2*ntest))';
-      %Stmp=Sigm_tmp;
-      %minf1=Eftmp(1)-6*sqrt(Stmp(1,1));
-      %maxf1=Eftmp(1)+6*sqrt(Stmp(1,1));
-      %minf2=Eftmp(2)-6*sqrt(Stmp(2,2));
-      %maxf2=Eftmp(2)+6*sqrt(Stmp(2,2));
-      %F=@(f1,f2) exp(-log(1+exp(f1)) + log( exp(f1) + (r./(r+exp(f2).*zt(i1))).^r ) + mnorm_lpdf([f1 f2],Ef(i1:ntest:(2*ntest))',Sigm_tmp));
-      %Q = quad2d(F,minf1,maxf1,minf2,maxf2)
-      
     end
     Ey = [];
     Vary = [];
     lpyt=log(Py);
-    
-    %     % Evaluate Ey and Vary
-%     for i1=1:length(Ef)
-%       %%% With quadrature
-%       myy_i = Ef(i1);
-%       sigm_i = sqrt(Varf(i1));
-%       minf=myy_i-6*sigm_i;
-%       maxf=myy_i+6*sigm_i;
-% 
-%       F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-%       Ey(i1) = quadgk(F,minf,maxf);
-%       
-%       F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-%       EVary(i1) = quadgk(F2,minf,maxf);
-%       
-%       F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-%       VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
-%     end
-%     Vary = EVary + VarEy;
-% 
-%     % Evaluate the posterior predictive densities of the given observations
-%     if nargout > 2
-%       for i1=1:length(Ef)
-%         % get a function handle of the likelihood times posterior
-%         % (likelihood * posterior = Negative-binomial * Gaussian)
-%         % and useful integration limits
-%         [pdf,minf,maxf]=init_zinegbin_norm(...
-%           yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
-%         % integrate over the f to get posterior predictive distribution
-%         Py(i1) = quadgk(pdf, minf, maxf);
-%       end
-%     end
+
   end
 
   function [df,minf,maxf] = init_zinegbin_norm(yy,myy_i,sigm2_i,avgE,r)
