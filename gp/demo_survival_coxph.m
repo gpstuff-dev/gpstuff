@@ -1,22 +1,14 @@
-%DEMO_SURVIVAL_COXPH  Survival model using Weibull baseline hazard
+%DEMO_SURVIVAL_COXPH  Survival model using Cox proportional model 
 %
 %  Description 
-%    Survival model using Weibull distribution for the baseline hazard. The
-%    hazard rate is 
+%    Survival model using Cox proportional model with a piecewise
+%    log-constant baseline hazard. The hazard rate is 
 %   
 %       h(t) = h_0(t)*exp(f),
 %
-%    where the baseline hazard is assumed to be a Weibull distribution
+%    where the baseline hazard is assumed to piecewise log-constant. 
 %
-%       h_0(t) = r*t^(r-1), r>0
-%
-%    where r is the shape parameter. A zero-mean Gaussian process prior is
-%    assumed for for f = [f_1, f_2,...,f_n] ~ N(0, K), where K is the
-%    covariance matrix, whose elements are given as K_ij = k(x_i, x_j |
-%    th). The function k(x_i, x_j | th) is covariance function and th its
-%    parameters.
-%
-%    The inference is conducted via EP or Laplace, where we find
+%    The inference is conducted via Laplace, where we find
 %    Gaussian approximation for p(f| th, data), where th is the
 %    maximum a posterior (MAP) estimate for the parameters.
 %    
@@ -26,7 +18,7 @@
 %    American Statistical Association, 97:965–972). Data set was downloaded
 %    from http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
 %
-%  See also  DEMO_SPATIAL1
+%  See also  DEMO_SURVIVAL_WEIBULL
 
 % Copyright (c) 2011 Jaakko Riihimäki
 
@@ -35,11 +27,6 @@
 % License.txt, included with the software, for details.
 
 % First load data
-
-
-clear, clc
-
-
 S = which('demo_survival_weibull');
 L = strrep(S,'demo_survival_weibull.m','demos/leukemia.txt');
 leukemiadata=load(L);

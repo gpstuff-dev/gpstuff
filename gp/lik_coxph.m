@@ -1,34 +1,34 @@
 function lik = lik_coxph(varargin)
-%LIK_COXPH    Create a Negative-binomial likelihood structure 
+%LIK_COXPH    Create a Cox proportional hazard likelihood structure
 %
 %  Description
 %    LIK = LIK_COXPH('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates Negative-binomial likelihood structure in which the
-%    named parameters have the specified values. Any unspecified
-%    parameters are set to default values.
-%  
-%    LIK = LIK_COXPH(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
-%    modify a likelihood structure with the named parameters
-%    altered with the specified values.
+%    creates a proportional hazard model where a piecewise log-constant
+%    baseline hazard is assumed.  
+%    
+%    The likelihood contribution for the ith observation is
 %
-%    Parameters for Negative-binomial likelihood [default]
-%      disper       - dispersion parameter r [10]
-%      disper_prior - prior for disper [prior_logunif]
-%  
-%    Note! If the prior is 'prior_fixed' then the parameter in
-%    question is considered fixed and it is not handled in
-%    optimization, grid integration, MCMC etc.
+%      l_i = h_i(y_i)^(1-z_i)*[exp(-int_0^y_i*h_i dt],
+%    
+%    where hazard is h_i=h_0(y_i)*exp(f_i). A zero mean Gaussian process
+%    prior is placed for f = [f_1, f_2,...,f_n] ~ N(0, C). C is the
+%    covariance matrix, whose elements are given as C_ij = c(x_i, x_j |
+%    th). The function c(x_i, x_j| th) is covariance function and th its
+%    parameters, hyperparameters. We place a hyperprior for
+%    hyperparameters, p(th). 
 %
-%    The likelihood is defined as follows:
-%                  __ n
-%      p(y|f, z) = || i=1 [ (r/(r+mu_i))^r * gamma(r+y_i)
-%                           / ( gamma(r)*gamma(y_i+1) )
-%                           * (mu/(r+mu_i))^y_i ]
+%    The time axis is partioned into K intervals with equal lengths:
+%    0 = s_0 < s_1 < ... < s_K, where s_K > y_i for all i. The baseline
+%    hazard rate function h_0 is piecewise constant,  
 %
-%    where mu_i = z_i*exp(f_i) and r is the dispersion parameter.
-%    z is a vector of expected mean and f the latent value vector
-%    whose components are transformed to relative risk
-%    exp(f_i). 
+%      h_0(t) = la_k,
+%
+%    when t belongs to the interval (s_{k-1},s_k] and where ft_k=log(la_k).
+%    The hazard rate function is smoothed by assuming another Gaussian
+%    process prior ft = [ft_1, ft_2,...,ft_K] ~ N(0, C). 
+%
+%    z is a vector of censoring indicators with z = 0 for uncensored event
+%    and z = 1 for right censored event. 
 %
 %    When using the Coxph likelihood you need to give the vector z
 %    as an extra parameter to each function that requires also y. 
@@ -41,6 +41,7 @@ function lik = lik_coxph(varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo & Jouni Hartikainen
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2011 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -195,7 +196,6 @@ function lik = lik_coxph(varargin)
     end
     
     ntime=size(lik.xtime,1);
-    
     [n,ny]=size(y);
     
     i1=1;
