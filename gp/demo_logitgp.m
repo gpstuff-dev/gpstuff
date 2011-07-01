@@ -1,37 +1,27 @@
-% DEMO_LGCP    Demonstration for a log Gaussian Cox process
-%              with inference via Laplace approximation
+% DEMO_LOGITGP  Demonstration of Logistic-Gaussian Process density estimate
+%               for 1D and 2D data 
 %
 %    Description 
+%
+%    Logistic-Gaussian Process (LOGITGP) is a model for density estimation.
+%    For the samples from continuous distribution, the space is discretized
+%    into n intervals with equal lengths covering the interesting region. The
+%    following model is used in estimation
+%    
+%        p(y_i|f_i) ~ exp(f_i) / Sum_j^n exp(f_j),
+%
+%    where a zero mean Gaussian process prior is placed for f =
+%    [f_1, f_2,...,f_n] ~ N(0, K). K is the covariance matrix, whose
+%    elements are given as K_ij = k(x_i, x_j | th). The function
+%    k(x_i, x_j| th) is covariance function and th its parameters,
+%    hyperparameters. We place a hyperprior for hyperparameters, p(th).
+%
+%    The inference is conducted via Laplace and the last example compares
+%    the results of Laplace approximation to MCMC. 
+%
+%    See also  DEMO_LGCP
 
-%    Log Gaussian Cox process (LGCP) is a model for non-homogoneus
-%    point-process in which the log intensity is modelled using
-%    Gaussian process. LGCP can be modelled using log GP and
-%    Poisson observation model in a discretized space. In this
-%    demonstration LGCP is used for 1D and 2D density estimation.
-%
-%    The model constructed is as follows:
-%
-%    The number of occurences of the realised point pattern within cell w_i
-%
-%         y_i ~ Poisson(y_i| |w_i|exp(f_i))
-%
-%    where |w_i| is area of cell w_i and f_i is the log intensity.
-%
-%    We place a zero mean Gaussian process prior for f =
-%    [f_1, f_2,...,f_n] ~ N(0, K),
-%
-%    where K is the covariance matrix, whose elements are given as
-%    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
-%    covariance function and th its parameters, hyperparameters. We
-%    place a hyperprior for hyperparameters, p(th).
-%
-%    The inference is conducted via Laplace, where we find Gaussian
-%    approximation for p(f| th, data), where th is the maximum a
-%    posterior (MAP) estimate for the hyper-parameters.
-%
-%    See also  DEMO_SPATIAL2
-
-% Copyright (c) 2009-2010 Aki Vehtari
+% Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 2 or later); please refer to the file 
@@ -55,6 +45,7 @@ h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
 xt=linspace(-7,7,400)';
 [p,pq]=logitgp(x,xt,'int_method','mode');
 line(xt,p,'color','r','marker','none','linewidth',2)
+line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 xlim([-7 7])
 title('t_4')
 % correct density
@@ -71,6 +62,7 @@ h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
 xt=linspace(-6,6,400)';
 [p,pq]=logitgp(x,xt,'int_method','mode');
 line(xt,p,'color','r','marker','none','linewidth',2)
+line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 title('Mixture of two t_4')
 % correct density
 p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,.1)*1/3;
@@ -96,8 +88,8 @@ x=gamrnd(1,1,100,1);
 h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
 xt=linspace(0,6,400)';
 [p,pq]=logitgp(x,xt,'int_method','mode','gpcf',@gpcf_rq);
-%[p,pq,xt]=logitgp(x,xt,'int_method','mode','gpcf',@gpcf_rq);
 line(xt,p,'color','r','marker','none','linewidth',2)
+line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 title('Gamma(1,1)')
 
 % =====================================
@@ -149,6 +141,47 @@ line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 %plot(xt,p2),ylim([0 .5])
 %pp=reshape(p,26,26);
 %sum(sum(pp.*(log(pp)-bsxfun(@plus,log(p1'),log(p2)))))
-
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 title('Mixture of two Gaussians')
+
+
+% =====================================
+% 1) 1D-example MCMC vs Laplace
+% =====================================
+figure(3)
+subplot(2,1,1)
+hold on
+% t_4
+stream.Substream = 1;
+x=[trnd(4,1,100)]';
+xt=linspace(-7,7,50)';
+[N,X]=hist(x);
+h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
+[p,pq]=logitgp(x,xt,'int_method','mode');
+pla=p;
+line(xt,p,'color','r','marker','none','linewidth',2)
+line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+xlim([-7 7])
+title('t_4 (Laplace)')
+% correct density
+p0=t_pdf(xt,4,0,1);
+line(xt,p0,'color','k')
+
+subplot(2,1,2)
+hold on
+h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
+%[p,pq]=logitgp(x,xt,'int_method','mode');
+[p,pq]=logitgp(x,xt,'latent_method','MCMC');
+pmc=p;
+line(xt,p,'color','r','marker','none','linewidth',2)
+line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+%xlim([-7 7])
+title('t_4 (MCMC)')
+line(xt,p0,'color','k')
+
+[pks] = ksdensity(x,xt);
+
+disp(['Laplace: ' num2str(sum(p0.*log(pla)))])
+disp(['MCMC: ' num2str(sum(p0.*log(pmc)))])
+disp(['ksdensity: ' num2str(sum(p0.*log(pks)))])
+

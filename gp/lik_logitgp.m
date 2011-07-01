@@ -5,24 +5,16 @@ function lik = lik_logitgp(varargin)
 %    LIK = LIK_LOGITGP creates Logitgp likelihood structure
 %
 %    The likelihood is defined as follows:
-%                  __ n
-%      p(y|f, z) = || i=1 Poisson(y_i|z_i*exp(f_i))
+%               __ n
+%      p(y|f) = || i=1 exp(f_i) / Sum_{j=1}^n exp(f_j),
 %
-%      where z is a vector of expected mean and f the latent value
-%      vector whose components are transformed to relative risk
-%      exp(f_i). 
-%  
-%    When using the Logitgp likelihood you need to give the vector
-%    z as an extra parameter to each function that requires y also. 
-%    For example, you should call gpla_e as follows 
-%    gpla_e(w, gp, x, y, 'z', z)
+%      where f contains latent values.
 %
 %  See also
 %    GP_SET, LIK_*
 %
   
-% Copyright (c) 2006-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
