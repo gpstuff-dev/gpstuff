@@ -89,6 +89,7 @@ function lik = lik_negbin(varargin)
     lik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
     lik.fh.siteDeriv = @lik_negbin_siteDeriv;
     lik.fh.predy = @lik_negbin_predy;
+    lik.fh.predprcty = @lik_negbin_predprcty;
     lik.fh.invlink = @lik_negbin_invlink;
     lik.fh.recappend = @lik_negbin_recappend;
   end
@@ -502,6 +503,43 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
   end
 end
 
+function prctys = lik_negbin_predprcty(lik, Ef, Varf, zt, prcty)
+%LIK_BINOMIAL_PREDPRCTY  Returns the percentiled of predictive density of y
+%
+%  Description         
+%    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
+%    Returns percentiles of the predictive density PY of YT, that is 
+%    This requires also the succes counts YT, numbers of trials ZT.
+%
+%  See also 
+%    GP_PREDPCTY
+
+  if isempty(zt)
+    error(['lik_negbin -> lik_negbin_predprcty: missing zt!'... 
+           'Negbin likelihood needs the expected number of    '...
+           'occurrences as an extra input zt. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+  
+  opt=optimset('TolX',.5,'Display','off');
+  nt=size(Ef,1);
+  prctys = zeros(nt,numel(prcty));
+  prcty=prcty/100;
+  r = lik.disper;
+  for i1=1:nt
+    ci = sqrt(Varf(i1));
+    for i2=1:numel(prcty)
+      minf = nbininv(prcty(i2),r,r./(r+zt(i1).*exp(Ef(i1)-1.96*ci)));
+      maxf = nbininv(prcty(i2),r,r./(r+zt(i1).*exp(Ef(i1)+1.96*ci)));
+      a=floor(fminbnd(@(a) (quadgk(@(f) nbincdf(a,r,r./(r+zt(i1).*exp(f))).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,minf,maxf,opt));
+      if quadgk(@(f) nbincdf(a,r,r./(r+zt(i1).*exp(f))).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)<prcty(i2)
+        a=a+1;
+      end
+      prctys(i1,i2)=a;
+    end
+  end
+end
+
 function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
 %INIT_NEGBIN_NORM
 %
@@ -668,6 +706,7 @@ function reclik = lik_negbin_recappend(reclik, ri, lik)
     reclik.fh.llg3 = @lik_negbin_llg3;
     reclik.fh.tiltedMoments = @lik_negbin_tiltedMoments;
     reclik.fh.predy = @lik_negbin_predy;
+    reclik.fh.predprcty = @lik_negbin_predprcty;
     reclik.fh.invlink = @lik_negbin_invlink;
     reclik.fh.recappend = @lik_negbin_recappend;
     reclik.p=[];

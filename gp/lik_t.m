@@ -95,6 +95,7 @@ function lik = lik_t(varargin)
     lik.fh.optimizef = @lik_t_optimizef;
     lik.fh.upfact = @lik_t_upfact;
     lik.fh.predy = @lik_t_predy;
+    lik.fh.predprcty = @lik_t_predprcty;
     lik.fh.recappend = @lik_t_recappend;
   end
 
@@ -926,6 +927,36 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
   
 end
 
+function prctys = lik_t_predprcty(lik, Ef, Varf, zt, prcty)
+%LIK_T_PREDPRCTY  Returns the percentiles of predictive density of y
+%
+%  Description         
+%    PRCTY = LIK_T_PREDPRCTY(LIK, EF, VARF YT, ZT)
+%    Returns percentiles of the predictive density PY of YT.
+%
+%  See also 
+%    GP_PREDPCTY
+
+  opt=optimset('TolX',1e-5,'Display','off');
+  nt=size(Ef,1);
+  prctys = zeros(nt,numel(prcty));
+  prcty=prcty/100;
+  nu = lik.nu;
+  nu_p=max(2.5,nu);
+  sigma2 = lik.sigma2;
+  Vary=nu_p./(nu_p-2).*sigma2 +Varf;
+  for i1=1:nt
+    ci = sqrt(Varf(i1));
+    for i2=1:numel(prcty)
+      minf = Ef(i1) - 24.*Vary(i1);
+      maxf = Ef(i1) + 24.*Vary(i1);
+      a=(fminbnd(@(a) (quadgk(@(f) quadgk(@(y) t_pdf(y,nu,Ef(i1),sqrt(Vary(i1))),Ef(i1)-12*sqrt(Vary(i1)),a).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,minf,maxf,opt));
+      prctys(i1,i2)=a;
+    end
+  end
+end
+
+
 function reclik = lik_t_recappend(reclik, ri, lik)
 %RECAPPEND  Record append
 %  Description
@@ -957,6 +988,7 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     reclik.fh.optimizef = @lik_t_optimizef;
     reclik.fh.upfact = @lik_t_upfact;
     reclik.fh.predy = @lik_t_predy;
+    reclik.fh.predprcty = @lik_t_predprcty;
     reclik.fh.recappend = @lik_t_recappend;
     reclik.p.nu=[];
     if ~isempty(ri.p.nu)

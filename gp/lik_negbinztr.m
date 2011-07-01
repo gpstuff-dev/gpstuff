@@ -92,6 +92,7 @@ function lik = lik_negbinztr(varargin)
     lik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
     lik.fh.siteDeriv = @lik_negbinztr_siteDeriv;
     lik.fh.predy = @lik_negbinztr_predy;
+    lik.fh.predprcty = @lik_negbinztr_predprcty;
     lik.fh.invlink = @lik_negbinztr_invlink;
     lik.fh.recappend = @lik_negbinztr_recappend;
   end
@@ -692,6 +693,75 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
   
 end
 
+function prctys = lik_negbinztr_predprcty(lik, Ef, Varf, zt, prcty)
+%LIK_BINOMIAL_PREDPRCTY  Returns the percentiled of predictive density of y
+%
+%  Description         
+%    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
+%    Returns percentiles of the predictive density PY of YT, that is 
+%    This requires also the succes counts YT, numbers of trials ZT.
+%
+%  See also 
+%    GP_PREDPCTY
+
+  if isempty(zt)
+    error(['lik_negbin -> lik_negbinztr_predprcty: missing zt!'... 
+           'Negbinztr likelihood needs the expected number of    '...
+           'occurrences as an extra input zt. See, for         '...
+           'example, lik_negbin and gpla_e.               ']);
+  end
+  
+  opt=optimset('TolX',1e-7,'Display','off');
+  nt=size(Ef,1);
+  prctys = zeros(nt,numel(prcty));
+  prcty=prcty/100;
+  r = lik.disper;
+  mu = zt.*exp(Ef);
+  for i1=1:nt
+    ci = sqrt(Varf(i1));
+    for i2=1:numel(prcty)
+      minf = floor(fminbnd(@(b) (quadgk(@(y) llvec(lik,y,Ef(i1)-1.96*ci,zt(i1)), 0, b)-prcty(i2)).^2,nbininv(prcty(i2), r, r./(r+zt(i1).*exp(Ef(i1))))-5,nbininv(prcty(i2), r, r./(r+zt(i1).*exp(Ef(i1))))+5,opt));
+      if minf<0
+        minf = 0;
+      end
+      maxf = floor(fminbnd(@(b) (quadgk(@(y) llvec(lik,y,Ef(i1)+1.96*ci,zt(i1)), 0, b)-prcty(i2)).^2,nbininv(prcty(i2), r, r./(r+zt(i1).*exp(Ef(i1))))-5,nbininv(prcty(i2), r, r./(r+zt(i1).*exp(Ef(i1))))+5,opt));
+      if maxf<0
+        maxf = 0;
+      end
+%       j=0;
+%       figure;
+%       for a=-2:0.1:50
+%         j=j+1;
+%         testi(j) = (quadgk(@(f) quadgk(@(y) llvec(lik,y,Ef(i1),zt(i1)), 0, a).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2;
+%       end
+%       plot(-2:0.1:50,testi)
+%       if minf<maxf
+%         set(gca,'XTick',[minf maxf])
+%       else
+%         set(gca,'XTick',[minf minf+1])
+%       end
+%       hold on;
+      a=floor(fminbnd(@(a) (quadgk(@(f) quadgk(@(y) llvec(lik,y,Ef(i1),zt(i1)), 0, a) ...
+             .*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2, minf, maxf,opt));
+%       a=floor(fminbnd(@(a) (quadgk(@(f) nbincdf(a,r,r./(r+zt(i1).*exp(f))).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,nbininv(prcty(i2),r,r./(r+zt(i1).*exp(Ef(i1)-1.96*ci))),nbininv(prcty(i2),r,r./(r+zt(i1).*exp(Ef(i1)+1.96*ci))),opt));
+      if quadgk(@(f) quadgk(@(y) llvec(lik,y,Ef(i1),zt(i1)), 0, a).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4) < prcty(i2)
+        a=a+1;
+      end
+      prctys(i1,i2)=a;
+    end
+  end
+
+  function expll = llvec(lik,yt,f,z)
+    % Compute vector of likelihoods of single predictions
+    n = length(yt);
+    for i=1:n
+      expll(i) = exp(lik.fh.ll(lik, yt(i), f, z));
+    end
+  end
+
+end
+
+
 function mu = lik_negbinztr_invlink(lik, f, z)
 %LIK_NEGBINZTR_INVLINK  Returns values of inverse link function
 %             
@@ -736,6 +806,7 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
     reclik.fh.llg3 = @lik_negbinztr_llg3;
     reclik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
     reclik.fh.predy = @lik_negbinztr_predy;
+    reclik.fh.predprcty = @lik_negbinztr_predprcty;
     reclik.fh.invlink = @lik_negbinztr_invlink;
     reclik.fh.recappend = @lik_negbinztr_recappend;
     reclik.p=[];
