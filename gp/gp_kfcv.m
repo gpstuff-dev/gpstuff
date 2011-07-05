@@ -220,8 +220,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
   gp_orig = gp;
 
-  optdefault=struct('Display','off');
-  opt=optimset(optdefault,opt);
+  if ismember(inf_method,{'MAP' 'LOO' 'KFCV'})
+    optdefault=struct('Display','off');
+    opt=optimset(optdefault,opt);
+  end
 
   if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
     error('gp_kfcv: If you give cross-validation indexes, you need to provide both trindex and tstindex.')
