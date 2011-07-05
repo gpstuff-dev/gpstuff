@@ -172,8 +172,13 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %    Computation, 14(10):2439-2468, 2002.
 %
 
+%  Experimental features
+%      inf_method - inference method. Possible methods are
+%                    'LOO'      parameters optimized using leave-one-out
+%                    'KFCV'     parameters optimized using k-fold-CV
+  
 % Copyright (c) 2009-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010-2011 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -186,7 +191,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('inf_method', 'MAP', @(x) ...
-    ismember(x,{'MAP' 'MCMC' 'IA' 'fixed'}))
+    ismember(x,{'MAP' 'LOO' 'KFCV' 'MCMC' 'IA' 'fixed'}))
   ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
   ip.addParamValue('opt', struct(), @isstruct)
   ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
@@ -215,10 +220,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
   gp_orig = gp;
 
-  if isequal(inf_method,'MAP')
-    optdefault=struct('GradObj','on','LargeScale','off','Display','off');
-    opt=optimset(optdefault,opt);
-  end
+  optdefault=struct('Display','off');
+  opt=optimset(optdefault,opt);
 
   if (isempty(trindex) && ~isempty(tstindex)) || (~isempty(trindex) && isempty(tstindex))
     error('gp_kfcv: If you give cross-validation indexes, you need to provide both trindex and tstindex.')
@@ -229,43 +232,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   end
   parent_folder = pwd;
 
-  % Check which energy and gradient function
-  if iscell(gp)
-    fp=@gpia_pred;
-  else
-    if isfield(gp.lik.fh,'trcov')
-      % a Gaussian likelihood
-      fe=@gp_e;
-      fg=@gp_g;
-      switch inf_method
-        case {'MAP' 'fixed'}
-          fp=@gp_pred;
-        case 'MCMC'
-          fp=@gpmc_pred;
-        case 'IA'
-          fp=@gpia_pred;
-      end
-    else
-      switch inf_method
-        case {'MAP' 'fixed'}
-          switch gp.latent_method
-            case 'Laplace'
-              fe=@gpla_e;
-              fg=@gpla_g;
-              fp=@gpla_pred;
-            case 'EP'
-              fe=@gpep_e;
-              fg=@gpep_g;
-              fp=@gpep_pred;
-          end
-        case 'MCMC'
-          fp=@gpmc_pred;
-        case 'IA'
-          fp=@gpia_pred;
-      end
-    end
-  end
-
   cvws=[];
   trw=[];
   % loop over the crossvalidation sets
@@ -273,8 +239,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     fprintf('\n Evaluating the CV utility\n')
   end
   nargout2 = nargout;
+  % parfor enables parallel loop
   parfor i=1:length(trindex)
-
+  
 
     if isequal(display,'iter')
       fprintf('The CV-iteration number: %d \n', i)
@@ -287,17 +254,17 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     ytst = y(tstindex{i},:);
 
     if ~isempty(z)
-      z_tr = z(trindex{i},:);
+      ztr = z(trindex{i},:);
       zt = z;
       yt = y;
-%       options_tst.zt = z;
-%       options_tst.yt = y;
+%       opt_tst.zt = z;
+%       opt_tst.yt = y;
     else
-      z_tr = [];
+      ztr = [];
       yt = y;
       zt = [];
-%       options_tr = struct();
-%       options_tst.yt = y;
+%       opt_tr = struct();
+%       opt_tst.yt = y;
     end
 
     gp = gp_orig;
@@ -342,9 +309,16 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     % Conduct inference
     switch inf_method
       case 'MAP'
+        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt);
         w=gp_pak(gp);
-        w = optimf(@(ww) gp_eg(ww, gp, xtr, ytr, 'z', z_tr), w, opt);
-        gp=gp_unpak(gp,w);
+        cvws(i,:)=w;
+      case 'LOO'
+        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'energy','looe');
+        w=gp_pak(gp);
+        cvws(i,:)=w;
+      case 'KFCV'
+        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'energy','kfcve');
+        w=gp_pak(gp);
         cvws(i,:)=w;
       case 'MCMC'
         % Scaled mixture noise model is a special case
@@ -356,15 +330,15 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             gp.lik.U = gp_orig.lik.U(trindex{i});
             gp.lik.ndata = length(trindex{i});
         end
-        % Pick latentvalues for the training set in this fold
+        % Pick latent values for the training set in this fold
         if isfield(gp,'latentValues')
           gp.latentValues=gp_orig.latentValues(trindex{i});
         end
-        gp = gp_mc(gp, xtr, ytr, 'z', z_tr, opt);
+        gp = gp_mc(gp, xtr, ytr, 'z', ztr, opt);
         nburnin = floor(length(gp.etr)/3);
         gp = thin(gp,nburnin);
       case 'IA'
-        gp = gp_ia(gp, xtr, ytr, 'z', z_tr, opt);
+        gp = gp_ia(gp, xtr, ytr, 'z', ztr, opt);
       case 'fixed'
         % nothing to do here
     end
@@ -375,9 +349,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       gplik=gp.lik;
     end
     if ~isfield(gplik.fh,'trcov')
-      [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, xtr, ytr, x, 'tstind', tstind2, 'z', z_tr, 'yt', yt, 'zt', zt);
+      [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
     else
-      [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, xtr, ytr, x, 'tstind', tstind2, 'yt', yt);
+      [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', tstind2, 'yt', yt);
     end
     % Because parfor loop, must use temporary cells *_cvt/cv, and save
     % results later in cvtpreds and cvpreds structures.
@@ -470,12 +444,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
 
     if ~isempty(z)
-      options_tr.z = z;
-      options_tst.zt = z;
-      options_tst.yt = y;
+      opt_tr.z = z;
+      opt_tst.zt = z;
+      opt_tst.yt = y;
     else
-      options_tr = struct();
-      options_tst.yt = y;
+      opt_tr = struct();
+      opt_tst.yt = y;
     end
 
     % Evaluate the training utility
@@ -487,23 +461,30 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     cpu_time = cputime;
     switch inf_method
       case 'MAP'
+        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr);
         w=gp_pak(gp);
-        w = optimf(@(ww) gp_eg(ww, gp, x, y, options_tr), w, opt);
-        gp=gp_unpak(gp,w);
+        trw=w;
+      case 'LOO'
+        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'energy','looe');
+        w=gp_pak(gp);
+        trw=w;
+      case 'KFCV'
+        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'energy','kfcve');
+        w=gp_pak(gp);
         trw=w;
       case 'MCMC'
-        gp = gp_mc(gp, x, y, options_tr, opt);
+        gp = gp_mc(gp, x, y, opt_tr, opt);
         nburnin = floor(length(gp.etr)/3);
         gp = thin(gp,nburnin);
       case 'IA'
-        gp = gp_ia(gp, x, y, options_tr, opt);
+        gp = gp_ia(gp, x, y, opt_tr, opt);
       case 'fixed'
         % nothing to do here
     end
     cpu_time = cputime - cpu_time;
 
     % make the prediction
-    [Eft, Varft, lpyt, Eyt, Varyt] = fp(gp, x, y, x, 'tstind', tstind, options_tr, options_tst);
+    [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
     if nargout>=4
       trpreds.Eft=Eft;
       trpreds.Varft=Varft;
