@@ -61,6 +61,8 @@ function gpcf = gpcf_periodic(varargin)
   ip.addParamValue('lengthScale_prior',prior_unif, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lengthScale_sexp_prior',[], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('period_prior',[], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('selectedVariables',[], @(x) isempty(x) || ...
+                   (isvector(x) && all(x>0)));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
   
@@ -101,6 +103,10 @@ function gpcf = gpcf_periodic(varargin)
   end
   if init || ~ismember('period_prior',ip.UsingDefaults)
     gpcf.p.period = ip.Results.period_prior;
+  end
+  
+  if ~ismember('selectedVariables',ip.UsingDefaults)
+    gpcf.selectedVariables = ip.Results.selectedVariables;
   end
 
   if init
@@ -371,7 +377,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
 %    GPCF_PERIODIC_PAK, GPCF_PERIODIC_UNPAK, GPCF_PERIODIC_LP, GP_G
 
   gpp=gpcf.p;
-  [n, m] =size(x);
+%   [n, m] =size(x);
 
   i1=0;i2=1;
   gp_period=gpcf.period;
@@ -393,6 +399,10 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -490,6 +500,11 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
     if isfield(gpcf,'metric')                
       error('Covariance function not compatible with metrics');
     else 
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+        x2 = x2(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
       % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
       if length(gpcf.lengthScale) == 1
         % In the case of an isotropic PERIODIC
@@ -575,6 +590,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
     %           DKff{2...} = d mask(Kff,I) / d lengthScale etc.
   elseif nargin == 4
+    [n, m] =size(x);
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
@@ -702,17 +718,23 @@ function C = gpcf_periodic_cov(gpcf, x1, x2)
   if isempty(x2)
     x2=x1;
   end
-  [n1,m1]=size(x1);
-  [n2,m2]=size(x2);
+%   [n1,m1]=size(x1);
+%   [n2,m2]=size(x2);
   gp_period=gpcf.period;
 
-  if m1~=m2
+  if size(x1,2)~=size(x2,2)
     error('the number of columns of X1 and X2 has to be same')
   end
   
   if isfield(gpcf,'metric')
     error('Covariance function not compatible with metrics');
   else
+    if isfield(gpcf,'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
 
     C=zeros(n1,n2);
     ma2 = gpcf.magnSigma2;
@@ -780,6 +802,9 @@ function C = gpcf_periodic_trcov(gpcf, x)
     %     C = NaN;
     if isnan(C)
       % If there wasn't C-implementation do here
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
       [n, m] =size(x);
       gp_period=gpcf.period;
       

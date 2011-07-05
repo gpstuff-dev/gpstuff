@@ -948,10 +948,12 @@ function prctys = lik_t_predprcty(lik, Ef, Varf, zt, prcty)
   for i1=1:nt
     ci = sqrt(Varf(i1));
     for i2=1:numel(prcty)
-      minf = Ef(i1) - 24.*Vary(i1);
-      maxf = Ef(i1) + 24.*Vary(i1);
-      a=(fminbnd(@(a) (quadgk(@(f) quadgk(@(y) t_pdf(y,nu,Ef(i1),sqrt(Vary(i1))),Ef(i1)-12*sqrt(Vary(i1)),a).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,minf,maxf,opt));
+      minf=sqrt(Vary(i1))*tinv(prcty(i2),nu)+(Ef(i1)-2.5*sqrt(Vary(i1)));
+      maxf=sqrt(Vary(i1))*tinv(prcty(i2),nu)+(Ef(i1)+2.5*sqrt(Vary(i1)));
+      a=(fminbnd(@(a) (quadgk(@(f) tcdf((a-f)/sqrt(Vary(i1)),nu).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,minf,maxf,opt));
+%       a=(fminbnd(@(a) (quadgk(@(f) quadgk(@(y) t_pdf(y,nu,Ef(i1),sqrt(Vary(i1))),Ef(i1)-12*sqrt(Vary(i1)),a).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,minf,maxf,opt));
       prctys(i1,i2)=a;
+      close all;
     end
   end
 end

@@ -67,17 +67,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
       pyt_grid(j,:)=Z_i;
       n=length(y);
       if nargout > 3
-        for cvi=1:n
-          if isempty(z)
-            [~, Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = ...
-                gp{j}.lik.fh.predy(gp{j}.lik, muvec_i(cvi), ...
-                      sigm2vec_i(cvi), [], []);
-          else
-            [~, Eyt_grid(j,cvi), Varyt_grid(j,cvi)] = ...
-                gp{j}.lik.fh.predy(gp{j}.lik, muvec_i(cvi), ...
-                      sigm2vec_i(cvi), [], z(cvi));
-          end
-        end
+        [~, Eyt_grid(j,:), Varyt_grid(j,:)] = ...
+          gp{j}.lik.fh.predy(gp{j}.lik, muvec_i, ...
+          sigm2vec_i, y, z);
       end
     end
     

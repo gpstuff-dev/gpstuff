@@ -741,10 +741,11 @@ function prctys = lik_negbinztr_predprcty(lik, Ef, Varf, zt, prcty)
 %         set(gca,'XTick',[minf minf+1])
 %       end
 %       hold on;
-      a=floor(fminbnd(@(a) (quadgk(@(f) quadgk(@(y) llvec(lik,y,Ef(i1),zt(i1)), 0, a) ...
+%       a=floor(fminbnd(@(a) (quadgk(@(f) quadgk(@(y) llvec(lik,y,Ef(i1),zt(i1)), 0, a) ...
+%              .*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2, minf, maxf,opt));
+      a=floor(fminbnd(@(a) (quadgk(@(f) sum(llvec(lik,0:1:a,Ef(i1),zt(i1))) ...
              .*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2, minf, maxf,opt));
-%       a=floor(fminbnd(@(a) (quadgk(@(f) nbincdf(a,r,r./(r+zt(i1).*exp(f))).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4)-prcty(i2)).^2,nbininv(prcty(i2),r,r./(r+zt(i1).*exp(Ef(i1)-1.96*ci))),nbininv(prcty(i2),r,r./(r+zt(i1).*exp(Ef(i1)+1.96*ci))),opt));
-      if quadgk(@(f) quadgk(@(y) llvec(lik,y,Ef(i1),zt(i1)), 0, a).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4) < prcty(i2)
+      if quadgk(@(f) sum(llvec(lik,0:1:a,Ef(i1),zt(i1))).*norm_pdf(f,Ef(i1),ci),Ef(i1)-6*ci,Ef(i1)+6*ci,'AbsTol',1e-4) < prcty(i2)
         a=a+1;
       end
       prctys(i1,i2)=a;
@@ -754,8 +755,12 @@ function prctys = lik_negbinztr_predprcty(lik, Ef, Varf, zt, prcty)
   function expll = llvec(lik,yt,f,z)
     % Compute vector of likelihoods of single predictions
     n = length(yt);
-    for i=1:n
-      expll(i) = exp(lik.fh.ll(lik, yt(i), f, z));
+    if n>0
+      for i=1:n
+        expll(i) = exp(lik.fh.ll(lik, yt(i), f, z));
+      end
+    else
+      expll = 0;
     end
   end
 
