@@ -63,7 +63,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
     if nargin==3
       lpyt = gp.lik.fh.predy(gp.lik, myy_i, sigma2_i, y, z);
     elseif nargin>3
-      [lpyt,Eyt, Varyt] = gp.lik.fh.predy(gp.lik, myy_i, sigma2_i, y, z);
+      [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, myy_i, sigma2_i, y, z);
     end
 
   else

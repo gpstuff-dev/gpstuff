@@ -51,11 +51,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
     lpyt=log(Z_i);
     n=length(y);
     if nargout > 3
-      for cvi=1:n
-        [~, Eyt(cvi,1), Varyt(cvi,1)] = gp.lik.fh.predy(gp.lik, ...
-                                           muvec_i(cvi), sigm2vec_i(cvi), ...
-                                           [], z);
-      end
+      [~, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
     end
     
   else

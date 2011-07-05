@@ -89,10 +89,6 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
         switch gp.lik.type
-          %case 'Softmax'
-          %  fh_pred=@gpla_softmax_pred;
-          %case {'Multinom' 'Softmax2'}
-          %  fh_pred=@gpla_mo_pred;
           case {'Multinom' 'Softmax2' 'Zinegbin' 'Coxph' 'Logitgp'}
             fh_pred=@gpla_nd_pred;
           otherwise
@@ -148,7 +144,6 @@ if nargout > 2 && isempty(yt)
   lpyt=[];
 end
 
-% Evaluate this if sparse model is used
 switch gp.type
   case 'FULL'
     

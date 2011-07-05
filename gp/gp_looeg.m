@@ -40,11 +40,13 @@ if isfield(gp.lik.fh,'trcov')
   end
 else
   % non-Gaussian likelihood
-  if ~isequal(gp.latent_method,'EP')
-    gp=gp_set(gp,'latent_method','EP');
+  switch gp.latent_method
+    case 'Laplace'
+      e=gpla_looe(w, gp, x, y, varargin{:});
+    case 'EP'
+      e=gpep_looe(w, gp, x, y, varargin{:});
   end
-  e=gpep_looe(w, gp, x, y, varargin{:});
   if nargout>1
-    error('EP leave-one-out does not have gradients yet, use gradient-free optimization.')
+    error('Laplace and EP leave-one-out do not have gradients yet, use gradient-free optimization.')
   end
 end

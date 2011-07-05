@@ -1,4 +1,4 @@
-function [Eft, Varft, lpyt, Eyt, Varyt] = gp_loopred(gp, x, y)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gp_loopred(gp, x, y, varargin)
 %GP_LOOPRED  Leave-one-out predictions assuming Gaussian observation model
 %
 %  Description
@@ -25,6 +25,50 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_loopred(gp, x, y)
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
 % License.txt, included with the software, for details.
+
+if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
+  % use inference specific methods
+  if numel(gp.jitterSigma2)>1
+    error('Leave-one-out not yet supported for MCMC')
+  elseif isfield(gp,'latent_method') || ...
+      (iscell(gp) && isfield(gp{1},'latent_method'))
+    if iscell(gp)
+      latent_method=gp{1}.latent_method;
+      lik_type=gp{1}.lik.type;
+    else
+      latent_method=gp.latent_method;
+      lik_type=gp.lik.type;
+    end
+    switch latent_method
+      case 'Laplace'
+        switch lik_type
+          case {'Multinom' 'Softmax2' 'Zinegbin' 'Coxph' 'Logitgp'}
+            error('Laplace leave-one-out not yet supported for likelihoods with non-diagonal W')
+          otherwise
+            fh_pred=@gpla_loopred;
+        end
+      case 'EP'
+        fh_pred=@gpep_loopred;
+      case 'MCMC'
+        error('Leave-one-out not yet supported for MCMC')
+    end
+  else
+    error('Logical error by coder of this function!')
+  end
+  switch nargout
+    case 1
+      [Eft] = fh_pred(gp, x, y, varargin{:});
+    case 2
+      [Eft, Varft] = fh_pred(gp, x, y, varargin{:});
+    case 3
+      [Eft, Varft, lpyt] = fh_pred(gp, x, y, varargin{:});
+    case 4
+      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, varargin{:});
+    case 5
+      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, varargin{:});
+  end
+  return
+end
 
 % Nothing to parse, but check the arguments anyway
 ip=inputParser;

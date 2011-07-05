@@ -67,7 +67,7 @@ switch energy
     if isfield(gp.lik.fh,'trcov')
       optdefault=struct('GradObj','on','LargeScale','off');
     else
-      % EP-LOO does not have yet gradients
+      % EP-LOO and Laplace-LOO do not have yet gradients
       optdefault=struct('GradObj','off','LargeScale','off');
       if ismember('optimf',ip.UsingDefaults)
         optimf=@fminunc;
