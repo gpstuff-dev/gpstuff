@@ -87,7 +87,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       Eft_grid(j,:)=myy_i;
       Varft_grid(j,:)=sigma2_i;
       n=length(y);
-      if nargout > 2
+      if nargout == 3
+        lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
+      elseif nargout > 3
         [lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)] = ...
           gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
       end
