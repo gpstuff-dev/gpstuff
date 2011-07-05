@@ -134,7 +134,7 @@ rgp=gp_mc(gp, x, y, 'record', r, opt);
 models{3} = 'pr_MCMC';
 [DIC(3), p_eff(3)] =  gp_dic(rgp, x, y, 'focus', 'param');
 [DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'focus', 'all');
-WAIC2(3) = gp_waic(rgp,x,y);
+WAIC(3) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 opt.nsamples=50;
@@ -163,7 +163,7 @@ gp_array = gp_ia(gp, x, y, opt);
 models{4} = 'pr_IA'; 
 [DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'param');
 [DIC2(4), p_eff2(4)] =  gp_dic(gp_array, x, y, 'all');
-WAIC2(4) = gp_waic(gp_array,x,y);
+WAIC(4) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
@@ -279,7 +279,7 @@ rgp = gp_mc(gp, x, y, 'record', r, opt);
 models{7} = 'lo_MCMC';
 [DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'param');
 [DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'all');
-WAIC2(7) = gp_waic(rgp,x,y);
+WAIC(7) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 opt.nsamples=50;
@@ -308,7 +308,7 @@ gp_array = gp_ia(gp, x, y, opt);
 models{8} = 'lo_IA'; 
 [DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'param');
 [DIC2(8), p_eff2(8)] =  gp_dic(gp_array, x, y, 'all');
-WAIC2(8) = gp_waic(gp_array,x,y);
+WAIC(8) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
@@ -333,8 +333,7 @@ S = sprintf([S '\n peff_h    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f 
 S = sprintf([S '\n peff_a    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f     %.2f     %.2f'], p_eff2);
 S = sprintf([S '\n peff_l    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f    %.2f     %.2f'], p_eff_latent);
 S = sprintf([S '\n peff_l2  %.2f      %.2f      %.2f    %.2f    %.2f     %.2f    %.2f     %.2f'], p_eff_latent2);
-S = sprintf([S '\n WAIC_l     %.2f      %.2f    %.2f  %.2f     %.2f     %.2f   %.2f   %.2f'], WAIC);
-S = sprintf([S '\n WAIC_a     %.2f      %.2f    %.2f  %.2f     %.2f     %.2f   %.2f   %.2f'], WAIC2);
+S = sprintf([S '\n WAIC     %.2f      %.2f    %.2f  %.2f     %.2f     %.2f   %.2f   %.2f'], WAIC);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n mlpd    %.2f      %.2f     %.2f   %.2f    %.2f    %.2f    %.2f    %.2f'], mlpd_cv);
 S = sprintf([S '\n ']);
@@ -349,8 +348,7 @@ S = sprintf([S '\n peff_h  = effective number of parameters (latent variables ma
 S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
 S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
 S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
-S = sprintf([S '\n WAIC_l  = WAIC with focus on latent variables. ']);
-S = sprintf([S '\n WAIC_a  = WAIC with focus on all parameters. ']);
+S = sprintf([S '\n WAIC    = Widely applicable information criterion. ']);
 S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
 S = sprintf([S '\n '])
 

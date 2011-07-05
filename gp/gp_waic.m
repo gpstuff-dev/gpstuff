@@ -57,12 +57,10 @@ function waic = gp_waic(gp, x, y, varargin)
   ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
   ip.addParamValue('method', '1', @(x) ismember(x,{'1','2'}))
   ip.addParamValue('form', 'full', @(x) ismember(x,{'full','single'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
-  focus=ip.Results.focus;
   method=ip.Results.method;
   form=ip.Results.form;
   % pass these forward
@@ -88,12 +86,10 @@ function waic = gp_waic(gp, x, y, varargin)
 
     if isfield(gp, 'etr')
       % MCMC solution
-      if nargin < 4 || isempty(focus)
-        focus = 'param';
-      end
+      type = 'mcmc';
     else
       % A single GP
-      focus = 'latent';
+      type = 'single';
     end     
     
     % Define the error and prediction functions
@@ -110,9 +106,9 @@ function waic = gp_waic(gp, x, y, varargin)
       fh_pred = @gp_pred;
     end
     
-    switch focus
+    switch type
       
-      case {'param' 'all'}
+      case 'mcmc'
         % MCMC solution
         
         [~, ~, lpyt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
@@ -230,7 +226,7 @@ function waic = gp_waic(gp, x, y, varargin)
         end
         
         
-      case 'latent'     
+      case 'single'     
         % A single GP solution -> focus on latent variables
         [Ef, Varf, lpyt] = fh_pred(gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         BtL = -lpyt;              % Bayes training loss.

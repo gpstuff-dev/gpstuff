@@ -8,7 +8,8 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %     or latent variables depending on the input GP (See
 %     Spiegelhalter et al (2002) for discussion on the parameters
 %     in focus in Bayesian model). X contains training inputs and Y
-%     training outputs.
+%     training outputs. Output form can be set by providing 
+%     'output', PARAM pair.
 %
 %   DIC and p_eff are evaluated as follows:
 %     1) GP is a record structure from gp_mc or an array of GPs
@@ -78,9 +79,11 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
+  ip.addOptional('output', 'DIC', @(x) ismember(x,{'DIC', 'mlpd'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
+  output=ip.Results.output;
   % pass these forward
   options=struct();
   z = ip.Results.z;
@@ -327,5 +330,9 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 
   dic = 2*Davg - Dth;
   p_eff = Davg - Dth;
+  if strcmp(output,'mlpd')
+    % Scales output to correspond scale with waic, refpred, etc.
+    dic = dic/(-2*tn);
+  end
   
 end

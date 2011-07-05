@@ -102,7 +102,7 @@ rfull = thin(rfull, 10, 2);
 models{2} = 'full_MCMC';
 [DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'param');
 [DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'focus', 'all');
-WAIC2(2) = gp_waic(rfull,x,y);
+WAIC(2) = gp_waic(rfull,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 %
@@ -127,7 +127,7 @@ gp_array = gp_ia(gp, x, y, opt);
 models{3} = 'full_IA'; 
 [DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'param');
 [DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all');
-WAIC2(3) = gp_waic(gp_array,x,y);
+WAIC(3) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
@@ -204,7 +204,7 @@ rfic = thin(rfic, 10, 2);
 models{5} = 'FIC_MCMC'; 
 [DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'param');
 [DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y, 'focus', 'all');
-WAIC2(5) = gp_waic(rfic,x,y);
+WAIC(5) = gp_waic(rfic,x,y);
 
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
@@ -228,7 +228,7 @@ gpfic_array = gp_ia(gp_fic, x, y, opt);
 models{6} = 'FIC_IA'; 
 [DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'param');
 [DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'all');
-WAIC2(6) = gp_waic(gpfic_array,x,y);
+WAIC(6) = gp_waic(gpfic_array,x,y);
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
@@ -319,7 +319,7 @@ rpic.tr_index = trindex;
 models{8} = 'PIC_MCMC'; 
 [DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'param');
 [DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y, 'all');
-WAIC2(8) = gp_waic(rpic, x, y);
+WAIC(8) = gp_waic(rpic, x, y);
 
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
@@ -342,7 +342,7 @@ gppic_array = gp_ia(gp_pic, x, y, opt);
 models{9} = 'PIC_IA'; 
 [DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'param');
 [DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'all');
-WAIC2(9) = gp_waic(gppic_array, x, y);
+WAIC(9) = gp_waic(gppic_array, x, y);
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
@@ -368,8 +368,7 @@ S = sprintf([S '\n peff_h  %.2f       %.2f      %.2f     %.2f     %.2f      %.2f
 S = sprintf([S '\n peff_a  %.2f      %.2f     %.2f     %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], p_eff2);
 S = sprintf([S '\n peff_l  %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent);
 S = sprintf([S '\n peff_l2 %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent2);
-S = sprintf([S '\n WAIC_l   %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAIC);
-S = sprintf([S '\n WAIC_a   %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAIC2);
+S = sprintf([S '\n WAIC    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAIC);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n mlpd    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f    %.2f    %.2f    %.2f'], mlpd_cv);
 S = sprintf([S '\n rmse    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f     %.2f     %.2f     %.2f'], mrmse_cv);
@@ -383,8 +382,7 @@ S = sprintf([S '\n peff_h  = effective number of parameters (latent variables ma
 S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
 S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
 S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
-S = sprintf([S '\n WAIC_l   = WAIC with focus on latent parameters. ']);
-S = sprintf([S '\n WAIC_a   = WAIC with focus on all parameters. ']);
+S = sprintf([S '\n WAIC    = Widely applicable information criterion. ']);
 S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
 S = sprintf([S '\n mrmse   = mean root mean squared error from the 10-fold CV. ']);
 S = sprintf([S '\n '])
