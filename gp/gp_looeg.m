@@ -49,4 +49,7 @@ else
   if nargout>1
     error('Laplace and EP leave-one-out do not have gradients yet, use gradient-free optimization.')
   end
+  if isnan(e)
+    e=realmax;
+  end
 end
