@@ -21,7 +21,7 @@ function p = prior_gaussian(varargin)
 %    PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -108,10 +108,10 @@ function lp = prior_gaussian_lp(x, p)
   lp = 0.5*sum(-log(2*pi) -log(p.s2)- 1./p.s2 .* sum((x-p.mu).^2,1));
   
   if ~isempty(p.p.mu)
-    lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
+    lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
   end
   if ~isempty(p.p.s2)
-    lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
+    lp = lp + p.p.s2.fh.lp(p.s2, p.p.s2) + log(p.s2);
   end
 end
 
@@ -120,11 +120,11 @@ function lpg = prior_gaussian_lpg(x, p)
   lpg = (1./p.s2).*(p.mu-x);
   
   if ~isempty(p.p.mu)
-    lpgmu = sum((1./p.s2).*(x-p.mu)) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+    lpgmu = sum((1./p.s2).*(x-p.mu)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
     lpg = [lpg lpgmu];
   end
   if ~isempty(p.p.s2)
-    lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1;
+    lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(x-p.mu).^2 )) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
     lpg = [lpg lpgs2];
   end
 end

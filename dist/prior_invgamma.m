@@ -25,7 +25,7 @@ function p = prior_invgamma(varargin)
 
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -113,10 +113,10 @@ function lp = prior_invgamma_lp(x, p)
   lp = sum(-p.s./x - (p.sh+1).*log(x) +p.sh.*log(p.s)  - gammaln(p.sh));
   
   if ~isempty(p.p.sh)
-    lp = lp + feval(p.p.sh.fh.lp, p.sh, p.p.sh) + log(p.sh);
+    lp = lp + p.p.sh.fh.lp(p.sh, p.p.sh) + log(p.sh);
   end
   if ~isempty(p.p.s)
-    lp = lp + feval(p.p.s.fh.lp, p.s, p.p.s) + log(p.s);
+    lp = lp + p.p.s.fh.lp(p.s, p.p.s) + log(p.s);
   end
 end
 
@@ -125,11 +125,11 @@ function lpg = prior_invgamma_lpg(x, p)
   lpg = -(p.sh+1)./x + p.s./x.^2;
   
   if ~isempty(p.p.sh)
-    lpgsh = (-sum(digamma1(p.sh) + log(p.s) - log(x) ) + feval(p.p.sh.fh.lpg, p.sh, p.p.sh)).*p.sh + 1;
+    lpgsh = (-sum(digamma1(p.sh) + log(p.s) - log(x) ) + p.p.sh.fh.lpg(p.sh, p.p.sh)).*p.sh + 1;
     lpg = [lpg lpgsh];
   end
   if ~isempty(p.p.s)
-    lpgs = (sum(p.sh./p.s+1./x) + feval(p.p.s.fh.lpg, p.s, p.p.s)).*p.s + 1;
+    lpgs = (sum(p.sh./p.s+1./x) + p.p.s.fh.lpg(p.s, p.p.s)).*p.s + 1;
     lpg = [lpg lpgs];
   end
   

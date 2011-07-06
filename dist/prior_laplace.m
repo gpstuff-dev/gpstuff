@@ -21,7 +21,7 @@ function p = prior_laplace(varargin)
 %    PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -109,10 +109,10 @@ function lp = prior_laplace_lp(x, p)
   lp = sum(-log(2*p.s) - 1./p.s.* abs(x-p.mu));
   
   if ~isempty(p.p.mu)
-    lp = lp + feval(p.p.mu.fh.lp, p.mu, p.p.mu);
+    lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
   end
   if ~isempty(p.p.s)
-    lp = lp + feval(p.p.s.fh.lp, p.s, p.p.s) + log(p.s);
+    lp = lp + p.p.s.fh.lp(p.s, p.p.s) + log(p.s);
   end
 end
 
@@ -121,11 +121,11 @@ function lpg = prior_laplace_lpg(x, p)
   lpg = -sign(x-p.mu)./p.s; 
   
   if ~isempty(p.p.mu)
-    lpgmu = sum(sign(x-p.mu)./p.s) + feval(p.p.mu.fh.lpg, p.mu, p.p.mu);
+    lpgmu = sum(sign(x-p.mu)./p.s) + p.p.mu.fh.lpg(p.mu, p.p.mu);
     lpg = [lpg lpgmu];
   end
   if ~isempty(p.p.s)
-    lpgs = (sum(-1./p.s +1./p.s.^2.*abs(x-p.mu)) + feval(p.p.s.fh.lpg, p.s, p.p.s)).*p.s + 1;
+    lpgs = (sum(-1./p.s +1./p.s.^2.*abs(x-p.mu)) + p.p.s.fh.lpg(p.s, p.p.s)).*p.s + 1;
     lpg = [lpg lpgs];
   end
 end

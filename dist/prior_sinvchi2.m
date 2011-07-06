@@ -24,7 +24,7 @@ function p = prior_sinvchi2(varargin)
 %    PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 
 % This software is distributed under the GNU General Public
 % License (version 2 or later); please refer to the file
@@ -111,10 +111,10 @@ function lp = prior_sinvchi2_lp(x, p)
   lp = -sum((p.nu./2+1) .* log(x) + (p.s2.*p.nu./2./x) + (p.nu/2) .* log(2./(p.s2.*p.nu)) + gammaln(p.nu/2)) ;
   
   if ~isempty(p.p.s2)
-    lp = lp + feval(p.p.s2.fh.lp, p.s2, p.p.s2) + log(p.s2);
+    lp = lp + p.p.s2.fh.lp(p.s2, p.p.s2) + log(p.s2);
   end
   if ~isempty(p.p.nu)
-    lp = lp + feval(p.p.nu.fh.lp, p.nu, p.p.nu) + log(p.nu);
+    lp = lp + p.p.nu.fh.lp(p.nu, p.p.nu) + log(p.nu);
   end
 end
 
@@ -122,11 +122,11 @@ function lpg = prior_sinvchi2_lpg(x, p)
   lpg = -(p.nu/2+1)./x +p.nu.*p.s2./(2*x.^2);
 
   if ~isempty(p.p.s2)
-    lpgs2 = (-sum(p.nu/2.*(1./x-1./p.s2)) + feval(p.p.s2.fh.lpg, p.s2, p.p.s2)).*p.s2 + 1; 
+    lpgs2 = (-sum(p.nu/2.*(1./x-1./p.s2)) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1; 
     lpg = [lpg lpgs2];
   end
   if ~isempty(p.p.nu)
-    lpgnu = (-sum(0.5*(log(x) + p.s2./x + log(2./p.s2./p.nu) - 1 + digamma1(p.nu/2))) + feval(p.p.nu.fh.lpg, p.nu, p.p.nu)).*p.nu + 1;
+    lpgnu = (-sum(0.5*(log(x) + p.s2./x + log(2./p.s2./p.nu) - 1 + digamma1(p.nu/2))) + p.p.nu.fh.lpg(p.nu, p.p.nu)).*p.nu + 1;
     lpg = [lpg lpgnu];
   end
 end
