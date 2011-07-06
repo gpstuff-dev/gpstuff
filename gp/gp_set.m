@@ -79,10 +79,10 @@ function gp = gp_set(varargin)
 %        tol          - Termination tolerance on logZ. The default is 1e-6.
 %        parallel     - use parallel updating of site parameters: 
 %                       'on' or 'off' (default) 
-%        method       - method for evaluating EP. Default is 1 for log
-%                       concave likelihoods and 2 for not log concave.
+%        optim_method - method for evaluating EP. Default is basic-EP for log
+%                       concave likelihoods and robust-EP for not log concave.
 %
-%        for method = 2
+%        for robust-EP
 %        tolStop      - tolerance level for stopping the iterations.
 %                       Default is 1e-4
 %        tolUpdate    - Tolerance level for ignoring updates. Default is 
@@ -307,7 +307,7 @@ function gp = gp_set(varargin)
             %  gp = gpla_softmax_e('init', gp);
             %case {'Softmax2' 'Multinom'}
             %  gp = gpla_mo_e('init', gp);
-            case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp'}
+            case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp' 'Inputdependentnoise'}
               gp = gpla_nd_e('init', gp);
             otherwise
               gp = gpla_e('init', gp);
