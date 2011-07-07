@@ -56,6 +56,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
     % "cavity parameters"
     sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
     myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
+    % check if cavity varianes are negative
+    ii=find(sigma2_i<0);
+    if ~isempty(ii)
+      warning('gpla_loopred: some cavity variances are negative');
+      sigma2_i(ii) = sigm2ii(ii);
+      myy_i(ii) = f(ii);
+    end
     
     % leave-one-out predictions
     Eft=myy_i;

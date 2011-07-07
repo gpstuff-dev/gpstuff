@@ -26,9 +26,10 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 %
 
 %  Experimental
-%      energy - 'e' to minimize the marginal posterior energy (default) or
-%               'looe' to minimize the leave-one-out energy
-%               'kfcve' to minimize the k-fold-cv energy
+%      loss - 'e' to minimize the marginal posterior energy (default) or
+%             'loo' to minimize the negative leave-one-out lpd
+%             'kfcv' to minimize the negative k-fold-cv lpd
+%             'waic' to minimize the WAIC loss
 %      k          - number of folds in CV
 %
 %  See also
@@ -49,58 +50,97 @@ ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
 ip.addParamValue('opt', [], @isstruct)
-ip.addParamValue('energy', 'e', @(x) ismember(x,{'e', 'looe', 'kfcve'}))
+ip.addParamValue('loss', 'e', @(x) ismember(lower(x),{'e', 'loo', 'kfcv', 'waic' 'waic' 'waicv' 'waicg'}))
 ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
 ip.parse(gp, x, y, varargin{:});
 z=ip.Results.z;
 optimf=ip.Results.optimf;
 opt=ip.Results.opt;
-energy=ip.Results.energy;
+loss=ip.Results.loss;
 k=ip.Results.k;
 
-switch energy
+switch lower(loss)
   case 'e'
     fh_eg=@(ww) gp_eg(ww, gp, x, y, 'z', z);
     optdefault=struct('GradObj','on','LargeScale','off');
-  case 'looe'
+  case 'loo'
     fh_eg=@(ww) gp_looeg(ww, gp, x, y, 'z', z);
     if isfield(gp.lik.fh,'trcov')
       optdefault=struct('GradObj','on','LargeScale','off');
     else
       % EP-LOO and Laplace-LOO do not have yet gradients
-      optdefault=struct('GradObj','off','LargeScale','off');
+      optdefault=struct('Algorithm','interior-point');
       if ismember('optimf',ip.UsingDefaults)
-        optimf=@fminunc;
+        optimf=@fmincon;
       end
     end
-  case 'kfcve'
+  case 'kfcv'
     % kfcv does not have yet gradients
     fh_eg=@(ww) gp_kfcve(ww, gp, x, y, 'z', z, 'k', k);
-    optdefault=struct('GradObj','off','LargeScale','off');
+    optdefault=struct('Algorithm','interior-point');
     if ismember('optimf',ip.UsingDefaults)
-      optimf=@fminunc;
+      optimf=@fmincon;
+    end
+  case {'waic' 'waicv'}
+    % waic does not have yet gradients
+    fh_eg=@(ww) -gp_waic(gp_unpak(gp,ww), x, y, 'z', z);
+    optdefault=struct('Algorithm','interior-point');
+    if ismember('optimf',ip.UsingDefaults)
+      optimf=@fmincon;
+    end
+  case 'waicg'
+    % waic does not have yet gradients
+    fh_eg=@(ww) -gp_waic(gp_unpak(gp,ww), x, y, 'z', z, 'method', 'G');
+    optdefault=struct('Algorithm','interior-point');
+    if ismember('optimf',ip.UsingDefaults)
+      optimf=@fmincon;
     end
 end
 opt=optimset(optdefault,opt);
 w=gp_pak(gp);
-switch nargout
-  case 6
-    [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, opt);
-    varargout{:}={fval,exitflag,output,grad,hessian};
-  case 5
-    [w,fval,exitflag,output,grad] = optimf(fh_eg, w, opt);
-    varargout{:}={fval,exitflag,output,grad};
-  case 4
-    [w,fval,exitflag,output] = optimf(fh_eg, w, opt);
-    varargout{:}={fval,exitflag,output};
-  case 3
-    [w,fval,exitflag] = optimf(fh_eg, w, opt);
-    varargout{:}={fval,exitflag};
-  case 2
-    [w,fval] = optimf(fh_eg, w, opt);
-    varargout{:}={fval};
-  case 1
-    w = optimf(fh_eg, w, opt);
-    varargout{:}={};
+if isequal(lower(loss),'e') || (isequal(lower(loss),'loo') && isfield(gp.lik.fh,'trcov'))
+  switch nargout
+    case 6
+      [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, opt);
+      varargout{:}={fval,exitflag,output,grad,hessian};
+    case 5
+      [w,fval,exitflag,output,grad] = optimf(fh_eg, w, opt);
+      varargout{:}={fval,exitflag,output,grad};
+    case 4
+      [w,fval,exitflag,output] = optimf(fh_eg, w, opt);
+      varargout{:}={fval,exitflag,output};
+    case 3
+      [w,fval,exitflag] = optimf(fh_eg, w, opt);
+      varargout{:}={fval,exitflag};
+    case 2
+      [w,fval] = optimf(fh_eg, w, opt);
+      varargout{:}={fval};
+    case 1
+      w = optimf(fh_eg, w, opt);
+      varargout{:}={};
+  end
+else
+  lb=repmat(-8,size(w));
+  ub=repmat(4,size(w));
+  switch nargout
+    case 6
+      [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
+      varargout{:}={fval,exitflag,output,grad,hessian};
+    case 5
+      [w,fval,exitflag,output,grad] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
+      varargout{:}={fval,exitflag,output,grad};
+    case 4
+      [w,fval,exitflag,output] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
+      varargout{:}={fval,exitflag,output};
+    case 3
+      [w,fval,exitflag] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
+      varargout{:}={fval,exitflag};
+    case 2
+      [w,fval] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
+      varargout{:}={fval};
+    case 1
+      w = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
+      varargout{:}={};
+  end
 end
 gp=gp_unpak(gp,w);

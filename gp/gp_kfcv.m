@@ -176,6 +176,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %      inf_method - inference method. Possible methods are
 %                    'LOO'      parameters optimized using leave-one-out
 %                    'KFCV'     parameters optimized using k-fold-CV
+%                    'WAIC'     parameters optimized using WAIC
   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2011 Aki Vehtari
@@ -191,7 +192,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('inf_method', 'MAP', @(x) ...
-    ismember(x,{'MAP' 'LOO' 'KFCV' 'MCMC' 'IA' 'fixed'}))
+    ismember(x,{'MAP' 'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG' 'MCMC' 'IA' 'fixed'}))
   ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
   ip.addParamValue('opt', struct(), @isstruct)
   ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
@@ -220,7 +221,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
   gp_orig = gp;
 
-  if ismember(inf_method,{'MAP' 'LOO' 'KFCV'})
+  if ismember(inf_method,{'MAP' 'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG'})
     optdefault=struct('Display','off');
     opt=optimset(optdefault,opt);
   end
@@ -242,7 +243,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   end
   nargout2 = nargout;
   % parfor enables parallel loop
-  parfor i=1:length(trindex)
+  for i=1:length(trindex)
   
 
     if isequal(display,'iter')
@@ -314,12 +315,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt);
         w=gp_pak(gp);
         cvws(i,:)=w;
-      case 'LOO'
-        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'energy','looe');
-        w=gp_pak(gp);
-        cvws(i,:)=w;
-      case 'KFCV'
-        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'energy','kfcve');
+      case {'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG'}
+        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'loss',inf_method);
         w=gp_pak(gp);
         cvws(i,:)=w;
       case 'MCMC'
@@ -466,12 +463,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr);
         w=gp_pak(gp);
         trw=w;
-      case 'LOO'
-        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'energy','looe');
-        w=gp_pak(gp);
-        trw=w;
-      case 'KFCV'
-        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'energy','kfcve');
+      case {'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG'}
+        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'loss',inf_method);
         w=gp_pak(gp);
         trw=w;
       case 'MCMC'

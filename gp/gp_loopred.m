@@ -30,6 +30,8 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   % use inference specific methods
   if numel(gp.jitterSigma2)>1
     error('Leave-one-out not yet supported for MCMC')
+  elseif iscell(gp) && ~isfield(gp{1},'latent_method')
+    error('Leave-one-out not yet supported for GP_IA and Gaussian likelihood')
   elseif isfield(gp,'latent_method') || ...
       (iscell(gp) && isfield(gp{1},'latent_method'))
     if iscell(gp)
