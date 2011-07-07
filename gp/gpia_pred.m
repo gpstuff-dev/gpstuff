@@ -1,4 +1,4 @@
-function [Eft, Varft, lpyt, Eyt, Varyt, ft, pft] = gpia_pred(gp_array, x, y, xt, varargin) 
+function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin) 
 %GPIA_PRED  Prediction with Gaussian Process GP_IA solution.
 %
 %  Description
@@ -145,61 +145,63 @@ function [Eft, Varft, lpyt, Eyt, Varyt, ft, pft] = gpia_pred(gp_array, x, y, xt,
     % ==================================================
 
     for j = 1:nGP
-      if nargout <= 2 || (nargout == 3 && isempty(yt))
-        [Eft_grid(j,:), Varft_grid(j,:)]=fh_p(gp_array{j},x,y,xt,options);
-      elseif nargout <= 3
-        [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options); 
-      elseif isempty(yt)
-        [Eft_grid(j,:), Varft_grid(j,:), ~, Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
-      else
-        [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
-      end
+        if isempty(yt)
+            [Eft_grid(j,:), Varft_grid(j,:)]=fh_p(gp_array{j},x,y,xt,options);
+        else
+            if nargout > 3
+                [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
+            else
+                [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options); 
+            end
+        end
     end
     
     % ====================================================================
     % Grid of 501 points around 10 stds to both directions around the mode
     % ====================================================================
 
-    % ==============================
-    % Latent variables f
-    % ==============================
-    
-    ft = zeros(size(Eft_grid,2),501);
-    for j = 1 : size(Eft_grid,2);
-        ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));  
-    end
-    
-    % Calculate the density in each grid point by integrating over
-    % different models
-    pft = zeros(size(Eft_grid,2),501);
-    for j = 1 : size(Eft_grid,2)
-        pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
-    end
-
-    % Normalize distributions
-    pft = bsxfun(@rdivide,pft,sum(pft,2));
-
-    % Widths of each grid point
-    dft = diff(ft,1,2);
-    dft(:,end+1)=dft(:,end);
-
-    % Calculate mean and variance of the distributions
-    Eft = sum(ft.*pft,2)./sum(pft,2);
-    Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
+%     % ==============================
+%     % Latent variables f
+%     % ==============================
+%     
+%     ft = zeros(size(Eft_grid,2),501);
+%     for j = 1 : size(Eft_grid,2);
+%         ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));  
+%     end
+%     
+%     % Calculate the density in each grid point by integrating over
+%     % different models
+%     pft = zeros(size(Eft_grid,2),501);
+%     for j = 1 : size(Eft_grid,2)
+%         pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
+%     end
+% 
+%     % Normalize distributions
+%     pft = bsxfun(@rdivide,pft,sum(pft,2));
+% 
+%     % Widths of each grid point
+%     dft = diff(ft,1,2);
+%     dft(:,end+1)=dft(:,end);
+% 
+%     % Calculate mean and variance of the distributions
+%     Eft = sum(ft.*pft,2)./sum(pft,2);
+%     Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
 %     testi1 = Eft;
 %     testi2 = Varft;
 %     
-%     mEf = sum(bsxfun(@times,Eft_grid,P_TH), 1);
-%     mVarf = sum(bsxfun(@times, Varft_grid, P_TH), 1); %+ sum(bsxfun(@times,(Eft_grid - repmat(mEf, nGP,1)), P_TH).^2,1);
-%     fmin = mEf - 9.*sqrt(mVarf);
-%     fmax = mEf + 9.*sqrt(mVarf);
-%     for i=1:length(xt)
-% %       Eft(i) = quadgk(@(f) f.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
-% %       Eft2(i) = quadgk(@(f) f.^2.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
-% %       Varft(i) = Eft2(i) - Eft(i).^2;
-%       [~, Eft(i), m2] = quad_moments(@(f) norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
-%       Varft(i) = m2 - Eft(i)^2;
-%     end
+    mEf = sum(bsxfun(@times,Eft_grid,P_TH), 1);
+    mVarf = sum(bsxfun(@times, Varft_grid, P_TH), 1) + sum(bsxfun(@times,(Eft_grid - repmat(mEf, nGP,1)).^2, P_TH),1);
+    fmin = mEf - 12.*sqrt(mVarf);
+    fmax = mEf + 12.*sqrt(mVarf);
+    Eft = zeros(length(xt),1);
+    Varft = zeros(size(Eft));
+    for i=1:length(xt)
+%       Eft(i) = quadgk(@(f) f.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+%       Eft2(i) = quadgk(@(f) f.^2.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+%       Varft(i) = Eft2(i) - Eft(i).^2;
+      [~, Eft(i), m2] = quad_moments(@(f) norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+      Varft(i) = m2 - Eft(i)^2;
+    end
       
 
     
