@@ -145,15 +145,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin
     % ==================================================
 
     for j = 1:nGP
-        if isempty(yt)
-            [Eft_grid(j,:), Varft_grid(j,:)]=fh_p(gp_array{j},x,y,xt,options);
-        else
-            if nargout > 3
-                [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
-            else
-                [Eft_grid(j,:), Varft_grid(j,:), lpyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options); 
-            end
-        end
+      if nargout > 3
+        [Eft_grid(j,:), Varft_grid(j,:), lpytgrid, Eyt_grid(j,:), Varyt_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
+      elseif nargout > 2
+        [Eft_grid(j,:), Varft_grid(j,:), lpytgrid]=fh_p(gp_array{j},x,y,xt, options);
+      else
+        [Eft_grid(j,:), Varft_grid(j,:)]=fh_p(gp_array{j},x,y,xt, options);
+      end
+      if ~isempty(yt)
+        lpyt_grid(j,:) = lpytgrid;
+      end
     end
     
     % ====================================================================
@@ -191,8 +192,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin
 %     
     mEf = sum(bsxfun(@times,Eft_grid,P_TH), 1);
     mVarf = sum(bsxfun(@times, Varft_grid, P_TH), 1) + sum(bsxfun(@times,(Eft_grid - repmat(mEf, nGP,1)).^2, P_TH),1);
-    fmin = mEf - 12.*sqrt(mVarf);
-    fmax = mEf + 12.*sqrt(mVarf);
+    fmin = mEf - 6.*sqrt(mVarf);
+    fmax = mEf + 6.*sqrt(mVarf);
     Eft = zeros(length(xt),1);
     Varft = zeros(size(Eft));
     for i=1:length(xt)
@@ -205,14 +206,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin
       
 
     
-    if nargout > 3
+    if nargout > 2
+      if ~isempty(yt)
+        lpyt = sum(bsxfun(@times,lpyt_grid,P_TH),1)';
+      end
+      if nargout > 3
         Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
         Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
         Eyt=Eyt';
         Varyt=Varyt';
+      end
     end
-    
-    if ~isempty(yt)
-      lpyt = sum(bsxfun(@times,lpyt_grid,P_TH),1)';
-    end
+
     
