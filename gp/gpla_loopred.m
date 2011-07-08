@@ -115,7 +115,6 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       minf = f-6.*sqrt(sigm2ii);
       maxf = f+6.*sqrt(sigm2ii);
       for i=1:tn
-        plot(minf(i):0.01:maxf(i), norm_pdf(minf(i):0.01:maxf(i), f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),minf(i):0.01:maxf(i),z(i)),'-r')
         [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),x,z(i)), minf(i), maxf(i));
         Eft_grid(j,i) = m1;
         Varft_grid(j,i) = m2-m1^2;
