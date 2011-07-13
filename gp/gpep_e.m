@@ -1864,7 +1864,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           
           if ~isfinite(e)
             e=1e6;
-            keyboard
+%             keyboard
           end
           
           edata=-e;
@@ -1890,7 +1890,11 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           e = edata + eprior;
           sigm2vec_i = (tau_s-eta.*tau_q).^-1;
           muvec_i = (nu_s-eta.*nu_q).*sigm2vec_i;
-          L = chol(Sf);
+          [L, notpositivedefinite] = chol(Sf);
+          if notpositivedefinite
+            [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
+            return
+          end
           La2 = [];
           b = [];
           nutilde = nu_q;

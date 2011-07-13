@@ -120,13 +120,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       minf = f-6.*sqrt(sigm2ii);
       maxf = f+6.*sqrt(sigm2ii);
       for i=1:tn
-        [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),x,z(i)), minf(i), maxf(i));
+        if isempty(z)
+          z1 = [];
+        else
+          z1 = z(i);
+        end
+        [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),x,z1), minf(i), maxf(i));
         Eft_grid(j,i) = m1;
         Varft_grid(j,i) = m2-m1^2;
         lpyt_grid(j,i) = log(m0);
       end
       if nargout>3
-        [~,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:), Varft_grid(j,:), y, z);
+        [~,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
       end
      
       

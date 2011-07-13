@@ -61,7 +61,7 @@ stream = RandStream('mrg32k3a');
 prevstream=RandStream.setDefaultStream(stream);
 
 % loop through the input variables
-for k1=1:1 %nin
+for k1=1:nin
   fprintf('k1=%d\n',k1)
     %- Compute the weight matrix based on Mahalanobis distances:
     x_=x; x_(:,k1)=[];
@@ -90,8 +90,8 @@ for k1=1:1 %nin
         Udiff=ujs-ui;
         Usign=sign(Udiff);
         stream.Substream = rsubstream;
-        % draw random samples from posterior
-        fs = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp);
+        % draw random samples from the posterior
+        fs = gp_rnd(gp, x, y, xrep, 'z', z, 'nsamp', nsamp);
         
         % compute latent values through the inverse link function
         if isfield(gp.lik.fh, 'invlink')
