@@ -67,8 +67,10 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % latent variables.
 models{1} = 'full_MAP';
 p_eff_latent = gp_peff(gp, x, y);
-[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent');
+[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent', 'output', 'mlpd');
 WAIC(1) = gp_waic(gp,x,y);
+WAIC2(1) = gp_waic(gp,x,y, 'method', 'G');
+
 
 % Evaluate the 10-fold cross-validation results.
 disp(' MAP estimate for the parameters - k-fold-CV')
@@ -100,9 +102,10 @@ rfull = thin(rfull, 10, 2);
 
 % Evaluate the effective number of parameters and DIC. 
 models{2} = 'full_MCMC';
-[DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'param');
-[DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'focus', 'all');
+[DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'param', 'output', 'mlpd');
+[DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'focus', 'all', 'output', 'mlpd');
 WAIC(2) = gp_waic(rfull,x,y);
+WAIC2(2) = gp_waic(rfull,x,y, 'method', 'G');
 
 % Evaluate the 10-fold cross validation results. 
 %
@@ -125,9 +128,10 @@ opt.optimf=@fminscg;
 gp_array = gp_ia(gp, x, y, opt);
 
 models{3} = 'full_IA'; 
-[DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'param');
-[DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all');
+[DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'param', 'output', 'mlpd');
+[DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all', 'output', 'mlpd');
 WAIC(3) = gp_waic(gp_array,x,y);
+WAIC2(3) = gp_waic(gp_array,x,y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
@@ -169,8 +173,9 @@ gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 % latent variables.
 models{4} = 'FIC_MAP';
 p_eff_latent(4) = gp_peff(gp_fic, x, y);
-[DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'focus', 'latent');
+[DIC_latent(4), p_eff_latent2(4)] = gp_dic(gp_fic, x, y, 'focus', 'latent', 'output', 'mlpd');
 WAIC(4) = gp_waic(gp_fic,x,y);
+WAIC2(4) = gp_waic(gp_fic,x,y, 'method', 'G');
 
 % Evaluate the 10-fold cross validation results. 
 disp(' MAP estimate for the parameters - k-fold-CV')
@@ -202,9 +207,10 @@ rfic = thin(rfic, 10, 2);
 % the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{5} = 'FIC_MCMC'; 
-[DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'param');
-[DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y, 'focus', 'all');
+[DIC(5), p_eff(5)] =  gp_dic(rfic, x, y, 'focus', 'param', 'output', 'mlpd');
+[DIC2(5), p_eff2(5)] =  gp_dic(rfic, x, y, 'focus', 'all', 'output', 'mlpd');
 WAIC(5) = gp_waic(rfic,x,y);
+WAIC2(5) = gp_waic(rfic,x,y, 'method', 'G');
 
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
@@ -226,9 +232,10 @@ opt.optimf=@fminscg;
 gpfic_array = gp_ia(gp_fic, x, y, opt);
 
 models{6} = 'FIC_IA'; 
-[DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'param');
-[DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'all');
+[DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'param', 'output', 'mlpd');
+[DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'all', 'output', 'mlpd');
 WAIC(6) = gp_waic(gpfic_array,x,y);
+WAIC2(6) = gp_waic(gpfic_array,x,y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
@@ -283,8 +290,9 @@ gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);
-[DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'latent');
+[DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'latent', 'output', 'mlpd');
 WAIC(7) = gp_waic(gp_pic, x, y);
+WAIC2(7) = gp_waic(gp_pic, x, y, 'method', 'G');
 
 % Evaluate the 10-fold cross validation results. 
 disp(' MAP estimate for the parameters - k-fold-CV')
@@ -317,9 +325,10 @@ rpic.tr_index = trindex;
 % the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{8} = 'PIC_MCMC'; 
-[DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'param');
-[DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y, 'all');
+[DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'param', 'output', 'mlpd');
+[DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y, 'all', 'output', 'mlpd');
 WAIC(8) = gp_waic(rpic, x, y);
+WAIC2(8) = gp_waic(rpic, x, y, 'method', 'G');
 
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
@@ -340,9 +349,10 @@ opt.optimf=@fminscg;
 gppic_array = gp_ia(gp_pic, x, y, opt);
 
 models{9} = 'PIC_IA'; 
-[DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'param');
-[DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'all');
+[DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'param', 'output', 'mlpd');
+[DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'all', 'output', 'mlpd');
 WAIC(9) = gp_waic(gppic_array, x, y);
+WAIC2(9) = gp_waic(gppic_array, x, y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
@@ -368,7 +378,8 @@ S = sprintf([S '\n peff_h  %.2f       %.2f      %.2f     %.2f     %.2f      %.2f
 S = sprintf([S '\n peff_a  %.2f      %.2f     %.2f     %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], p_eff2);
 S = sprintf([S '\n peff_l  %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent);
 S = sprintf([S '\n peff_l2 %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent2);
-S = sprintf([S '\n WAIC    %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAIC);
+S = sprintf([S '\n WAIC_V  %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAIC);
+S = sprintf([S '\n WAIC_G  %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAIC2);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n mlpd    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f    %.2f    %.2f    %.2f'], mlpd_cv);
 S = sprintf([S '\n rmse    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f     %.2f     %.2f     %.2f'], mrmse_cv);
@@ -382,7 +393,8 @@ S = sprintf([S '\n peff_h  = effective number of parameters (latent variables ma
 S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
 S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
 S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
-S = sprintf([S '\n WAIC    = Widely applicable information criterion. ']);
+S = sprintf([S '\n WAIC_V  = WAIC via variance method ']);
+S = sprintf([S '\n WAIC_G  = WAIC via Gibbs training utility method ']);
 S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
 S = sprintf([S '\n mrmse   = mean root mean squared error from the 10-fold CV. ']);
 S = sprintf([S '\n '])

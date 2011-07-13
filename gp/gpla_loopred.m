@@ -75,7 +75,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
     minf = f-6.*sqrt(sigm2ii);
     maxf = f+6.*sqrt(sigm2ii);
     for i=1:tn
-      [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z(i)), minf(i), maxf(i));
+      if isempty(z)
+        z1 = [];
+      else
+        z1 = z(i);
+      end
+      [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z1), minf(i), maxf(i));
       Eft(i) = m1; 
       Varft(i) = m2-Eft(i)^2;
       lpyt(i) = log(m0);
@@ -104,7 +109,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 %       Eft_grid(j,:)=myy_i;
 %       Varft_grid(j,:)=sigma2_i;
 %       n=length(y);
-%       P_TH(j,:) = gp{j}.ia_weight;
+      P_TH(j,:) = gp{j}.ia_weight;
 %       
 %       if nargout == 3
 %         lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
