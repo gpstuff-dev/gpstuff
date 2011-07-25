@@ -199,7 +199,7 @@ function [w,s] = gpcf_exp_pak(gpcf)
         s = [s; 'log(exp.lengthScale)'];
       end
       % Hyperparameters of lengthScale
-      w = [w gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale)];
+      [wh sh] = gpcf.p.lengthScale.fh.pak(gpcf.p.lengthScale);
       w = [w wh];
       s = [s; sh];
     end
@@ -754,6 +754,9 @@ function reccf = gpcf_exp_recappend(reccf, ri, gpcf)
     end
     if ~isempty(ri.p.magnSigma2)
       reccf.p.magnSigma2 = ri.p.magnSigma2;
+    end
+    if isfield(ri, 'selectedVariables')
+        reccf.selectedVariables = ri.selectedVariables;
     end
   else
     % Append to the record

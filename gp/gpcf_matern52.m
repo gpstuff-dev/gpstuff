@@ -765,6 +765,9 @@ function reccf = gpcf_matern52_recappend(reccf, ri, gpcf)
     if ~isempty(ri.p.magnSigma2)
       reccf.p.magnSigma2 = ri.p.magnSigma2;
     end
+    if isfield(ri, 'selectedVariables')
+        reccf.selectedVariables = ri.selectedVariables;
+    end  
   else
     % Append to the record
     gpp = gpcf.p;

@@ -1212,6 +1212,9 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
     if isfield(ri.p,'magnSigma2') && ~isempty(ri.p.magnSigma2)
       reccf.p.magnSigma2 = ri.p.magnSigma2;
     end
+    if isfield(ri, 'selectedVariables')
+        reccf.selectedVariables = ri.selectedVariables;
+    end
   else
     % Append to the record
     
