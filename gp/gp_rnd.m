@@ -566,7 +566,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             K_nf=gp_cov(gp,xt,x,predcf);
             [n,nin] = size(x);
             
-            if tautilde > 0
+            if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
               sqrttautilde = sqrt(tautilde);
               Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
               

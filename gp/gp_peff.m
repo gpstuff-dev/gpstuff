@@ -222,7 +222,7 @@ function p_eff = gp_peff(gp, x, y, varargin);
                 % The prior variance
                 K=gp_trcov(gp,x);
                
-                if tautilde > 0
+                if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
                     sqrttautilde = sqrt(tautilde);
                     Stildesqroot = sparse(1:tn, 1:tn, sqrttautilde, tn, tn);
                                         

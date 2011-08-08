@@ -71,7 +71,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       else
         [e, edata, eprior, tautilde, nutilde, L, ~, ~, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
         
-        if tautilde > 0
+        if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
           % This is the usual case where likelihood is log concave
           % for example, Poisson and probit
           % Stildesqroot=diag(sqrt(tautilde));

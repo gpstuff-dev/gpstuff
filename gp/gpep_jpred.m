@@ -113,8 +113,9 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
         K_nf=gp_cov(gp,xt,x,predcf);
         [n,nin] = size(x);
  
-        if tautilde > 0             % This is the usual case where likelihood is log concave
-                                    % for example, Poisson and probit
+        if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')  
+          % This is the usual case where likelihood is log concave
+          % for example, Poisson and probit
             sqrttautilde = sqrt(tautilde);
             Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
             
