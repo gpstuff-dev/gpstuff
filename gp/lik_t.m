@@ -179,7 +179,7 @@ function lp = lik_t_lp(lik)
   lp = 0;
   
   if ~isempty(lik.p.sigma2) 
-    lp = lp + lik.p.sigma2.fh.lp(lik.sigma2, lik.p.sigma2) +log(sigma2);
+    lp = lp + lik.p.sigma2.fh.lp(sigma2, lik.p.sigma2) +log(sigma2);
   end
   if ~isempty(lik.p.nu)
     lp = lp + lik.p.nu.fh.lp(lik.nu, lik.p.nu)  +log(v) +log(log(v));
@@ -255,17 +255,21 @@ function llg = lik_t_llg(lik, y, f, param, z)
     case 'param'
       n = length(y);
 
-      % Derivative with respect to sigma2
-      llg(1) = -n./sigma2/2 + (v+1)./2.*sum(r.^2./(v.*sigma2.^2+r.^2*sigma2));
-      
-      % correction for the log transformation
-      llg(1) = llg(1).*sigma2;
+      i1=0;
+      if ~isempty(lik.p.sigma2)
+        i1=i1+1;
+        % Derivative with respect to sigma2
+        llg(i1) = -n./sigma2/2 + (v+1)./2.*sum(r.^2./(v.*sigma2.^2+r.^2*sigma2));
+        % correction for the log transformation
+        llg(i1) = llg(i1).*sigma2;
+      end
       if ~isempty(lik.p.nu)
+        i1=i1+1;
         % Derivative with respect to nu
-        llg(2) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma2)) + (v+1).*r.^2./(v.^2.*sigma2 + v.*r.^2));
+        llg(i1) = 0.5.* sum(psi((v+1)./2) - psi(v./2) - 1./v - log(1+r.^2./(v.*sigma2)) + (v+1).*r.^2./(v.^2.*sigma2 + v.*r.^2));
         
         % correction for the log transformation
-        llg(2) = llg(2).*v.*log(v);
+        llg(i1) = llg(i1).*v.*log(v);
       end
     case 'latent'
       llg  = (v+1).*r ./ (v.*sigma2 + r.^2);            

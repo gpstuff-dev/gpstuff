@@ -10,7 +10,8 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 %    corresponds to one target vector.
 %
 %    [E, EDATA, EPRIOR] = GP_E(W, GP, X, Y, OPTIONS) also returns
-%    the data and prior components of the total energy.
+%    the data and prior components of the total energy. EDATA is
+%    the negative marginal likelihood of the model.
 %
 %    The energy is minus log posterior cost function:
 %        E = EDATA + EPRIOR 

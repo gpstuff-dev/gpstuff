@@ -83,16 +83,5 @@ else
     % training covariance matrix
     C = [Kff Kfd; Kdf Kdd];   
     
-    % Add jitter if the inputs are equal
-    n1 = size(x1,1);
-    n2 = size(x2,1);
-    if n1 == n2  && max(max(abs(x1-x2))) == 0
-      if isfield(gp, 'jitterSigma2') && ~isempty(gp.jitterSigma2)
-        n = length(C);
-        C(1:n+1:n^2) = C(1:n+1:n^2) + gp.jitterSigma2;
-      end
-    end
-
-    
   end       
 end
