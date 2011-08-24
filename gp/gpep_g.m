@@ -82,6 +82,13 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           temp=L\diag(Stildesqroot);
           invC = temp'*temp;
           b=nutilde-Stildesqroot.*(L'\(L\(Stildesqroot.*(C*nutilde))));
+        elseif isequal(gp.latent_opt.optim_method, 'robust-EP')
+          Sf = L'*L;
+          A=bsxfun(@times,tautilde,Sf);  % = diag(tau_q)*Sf
+          b=nutilde-A*nutilde;              % = A*inv(diag(tau_q))*nu_q = A*mf
+          A=bsxfun(@times,-tautilde',A); % = -diag(tau_q)*Sf*diag(tau_q)
+          A(1:n+1:end)=A(1:n+1:end)+tautilde';
+          invC = A;
         else                         
           % We might end up here if the likelihood is not log concace
           % For example Student-t likelihood.

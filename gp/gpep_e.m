@@ -1527,6 +1527,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           eta=repmat(gp.latent_opt.eta,n,1);
           fh_tm=@(si,m_c,V_c,eta) likelih.fh.tiltedMoments2(likelih,y,si,V_c,m_c,z,eta);
           
+          fprintf('\n')
+          %       if likelih.fix_nu==0
+          fprintf('Theta:%s ',sprintf(' %.2g,',exp([0.5*w(1) (w(2:end-2)) 0.5*w(end-1) exp(w(end))])))
+          %       elseif
+          %         fprintf('Theta:%s ',sprintf(' %.2g,',exp([0.5*w(1) (w(2:end-1)) 0.5*w(end)])))
+          %       end
+          fprintf('\n')
+          
           % prior covariance
           K = gp_trcov(gp, x);
           
@@ -1884,7 +1892,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           % Evaluate the prior contribution to the error from likelihood functions
           if isfield(gp, 'lik') && isfield(gp.lik, 'p')
             likelih = gp.lik;
-            eprior = eprior + likelih.fh.lp(likelih);
+            eprior = eprior - likelih.fh.lp(likelih);
           end
           
           e = edata + eprior;
