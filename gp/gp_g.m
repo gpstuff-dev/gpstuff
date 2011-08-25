@@ -39,7 +39,7 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
         %  fh_g=@gpla_softmax_g;
         %case {'Softmax2' 'Multinom'}
         %  fh_g=@gpla_mo_g;
-        case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp'}
+        case {'Softmax' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp'}
           fh_g=@gpla_nd_g;
         otherwise
           fh_g=@gpla_g;

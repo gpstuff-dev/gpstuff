@@ -312,11 +312,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     % Conduct inference
     switch inf_method
       case 'MAP'
-        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt);
+        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt, 'optimf', optimf);
         w=gp_pak(gp);
         cvws(i,:)=w;
       case {'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG'}
-        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'loss',inf_method);
+        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'loss',inf_method, 'optimf', optimf);
         w=gp_pak(gp);
         cvws(i,:)=w;
       case 'MCMC'
@@ -460,11 +460,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     cpu_time = cputime;
     switch inf_method
       case 'MAP'
-        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr);
+        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr, 'optimf', optimf);
         w=gp_pak(gp);
         trw=w;
       case {'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG'}
-        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'loss',inf_method);
+        gp=gp_optim(gp,x,y,'z',z,'opt',opt_tr,'loss',inf_method, 'optimf', optimf);
         w=gp_pak(gp);
         trw=w;
       case 'MCMC'

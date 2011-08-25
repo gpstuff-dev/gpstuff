@@ -42,9 +42,9 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   switch gp.latent_method
     case 'Laplace'
       switch gp.lik.type
-        case 'Softmax'
-          fh_e=@gpla_softmax_e;
-        case {'Softmax2' 'Multinom'}
+%         case 'Softmax'
+%           fh_e=@gpla_softmax_e;
+        case {'Softmax' 'Multinom'}
           fh_e=@gpla_mo_e;
         otherwise
           fh_e=@gpla_e;
@@ -181,6 +181,8 @@ if ~isempty(strfind(gp.infer_params, 'inducing'))
 end
 
 e = edata + eprior;
+
+end
 
 function [e, edata, eprior] = set_output_for_notpositivedefinite()
   % Instead of stopping to chol error, return NaN

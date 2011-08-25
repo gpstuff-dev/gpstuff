@@ -307,7 +307,7 @@ function gp = gp_set(varargin)
             %  gp = gpla_softmax_e('init', gp);
             %case {'Softmax2' 'Multinom'}
             %  gp = gpla_mo_e('init', gp);
-            case {'Softmax2' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp' 'Inputdependentnoise'}
+            case {'Softmax' 'Multinom' 'Zinegbin' 'Coxph' 'Logitgp' 'Inputdependentnoise'}
               gp = gpla_nd_e('init', gp);
             otherwise
               gp = gpla_e('init', gp);
@@ -351,8 +351,8 @@ function gp = gp_set(varargin)
           ipep.addParamValue('tauc_lim', 2^2, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(x,1)==1 && isfinite(x))
-          ipep.addParamValue('max_ninner', 3, @(x) isreal(x) && rem(x,1)==1 && isfinite(x))
+          ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
+          ipep.addParamValue('max_ninner', 3, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
           ipep.parse(latent_opt);
           optim_method = ipep.Results.optim_method;
           if ~isempty(optim_method)

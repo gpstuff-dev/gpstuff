@@ -81,9 +81,9 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
         switch gp.lik.type
-          case 'Softmax'
-            fh_pred=@gpla_softmax_pred;
-          case {'Multinom' 'Softmax2'}
+%           case 'Softmax'
+%             fh_pred=@gpla_softmax_pred;
+          case {'Multinom' 'Softmax'}
             fh_pred=@gpla_mo_pred;
           otherwise
             fh_pred=@gpla_pred;
@@ -92,7 +92,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
         fh_pred=@gpep_pred;
       case 'MCMC'
         switch gp.lik.type
-          case {'Multinom' 'Softmax2'}
+          case {'Multinom' 'Softmax'}
             fh_pred=@gpmc_mo_pred;
           otherwise
             fh_pred=@gpmc_pred;
