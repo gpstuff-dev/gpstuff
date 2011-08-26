@@ -243,7 +243,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   end
   nargout2 = nargout;
   % parfor enables parallel loop
-  for i=1:length(trindex)
+  parfor i=1:length(trindex)
   
 
     if isequal(display,'iter')
