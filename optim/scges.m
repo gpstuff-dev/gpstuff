@@ -25,6 +25,10 @@ function [x, fs, vs, lambda] = scges(f, x, opt, gradf, varargin)
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005 Aki Vehtari
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 % Set empty options to default values
 opt=scges_opt(opt);
 

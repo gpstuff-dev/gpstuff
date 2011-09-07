@@ -22,6 +22,11 @@ function opt = bsearch_opt(opt)
 
 %	Copyright (c) Aki Vehtari (2004-2007)
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
+
 if nargin < 1
   opt=[];
 end

@@ -63,6 +63,10 @@ function [x, fval, exitflag, output, grad] = fminscg(fun, x, opt)
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
 % Copyright (c) 2005,2010 Aki Vehtari
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 % Set empty omptions to default values
 defaultopt = struct( ...
     'DerivativeCheck','off', ...   

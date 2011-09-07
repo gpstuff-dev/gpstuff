@@ -25,6 +25,10 @@ function opt = scges_opt(opt)
 
 %	Copyright (c) Aki Vehtari (1998-2010)
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 if nargin < 1
   opt=[];
 end

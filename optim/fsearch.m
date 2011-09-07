@@ -25,7 +25,7 @@ function [x,rec] = fsearch(fun,x0,opt,varargin)
 % Copyright (c) Aki Vehtari (2007)
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % 2007-02-23  Aki Vehtari  <Aki.Vehtari@hut.fi>
