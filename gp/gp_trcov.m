@@ -23,7 +23,7 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % no covariance functions?

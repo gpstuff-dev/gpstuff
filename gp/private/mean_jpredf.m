@@ -1,43 +1,41 @@
-function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
-% MEAN_PREDF       Calculates help terms needed in prediction with mean function
+function [RB RAR] = mean_jpredf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
+%MEAN_PREDF  Calculates help terms needed in prediction with mean function
 %
-%     Description
-%	  [RB, RAR] = MEAN_PREDF(gp,x,xt,K_nf,L,Ksy,latent_method,S) takes in
-%                 following variables:
+%  Description
+%    [RB, RAR] = MEAN_PREDF(gp,x,xt,K_nf,L,Ksy,latent_method,S)
 %
-%        Gaussian likelihood:
-%        gp              - a gp data structure
-%        x               - training inputs
-%        xt              - test inputs
-%        K_nf            - covariance matrix K(x,xt)
-%        L               - chol (K(x,x) + sigmaI)
-%        Ksy             - L'\(L\y) 
-%        S               - [] (empty)
-%        latent_method   - gaussian
+%    Gaussian likelihood:
+%      gp              - a GP structure
+%      x               - training inputs
+%      xt              - test inputs
+%      K_nf            - covariance matrix K(x,xt)
+%      L               - chol (K(x,x) + sigmaI)
+%      Ksy             - L'\(L\y) 
+%      S               - [] (empty)
+%      latent_method   - gaussian
 %
-%        EP:
-%        gp              - a gp data structure
-%        x               - training inputs
-%        xt              - test inputs
-%        K_nf            - covariance matrix K(x,xt)
-%        L               - inv(K(x,x) + S^-1)*S^-1
-%        Ksy             - inv(K + S^-1)*S^-1*nutilde  
-%        S               - diag(tautilde)
-%        latent_method   - EP
+%    EP:
+%      gp              - a GP structure
+%      x               - training inputs
+%      xt              - test inputs
+%      K_nf            - covariance matrix K(x,xt)
+%      L               - inv(K(x,x) + S^-1)*S^-1
+%      Ksy             - inv(K + S^-1)*S^-1*nutilde  
+%      S               - diag(tautilde)
+%      latent_method   - EP
 %
-%        Laplace:
-%        NOT IMPLEMENTED YET
+%    Laplace:
+%      NOT IMPLEMENTED YET
 %
-%        Returns the help term RB for the posterior predicative mean and help term RAR 
-%        for posterior predicative variance. 
+%    Returns the help term RB for the posterior predicative mean
+%    and help term RAR for posterior predicative variance.
 %
-%        RB  = R'*Beta = R'*(inv(B1)*B2) 
-%        RAR = R'*inv(B1)*R
+%      RB  = R'*Beta = R'*(inv(B1)*B2) 
+%      RAR = R'*inv(B1)*R
 
-%        The vague prior functionalities commented. Uncommenting vague
-%        prior rows here doesn't make vague prior compatibible with other
-%        functions.
-
+%    The vague prior functionalities commented. Uncommenting vague
+%    prior rows here doesn't make vague prior compatibible with
+%    other functions.
 
 %        See GPstuff doc and (Rasmussen and Williams 2006) page 28 for further
 %        explaining.
@@ -45,6 +43,10 @@ function [RB RAR] = mean_predf(gp,x,xt,K_nf,L,Ksy,latent_method,S)
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2011 Jarno Vanhatalo
 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+  
     % prior assumption for weights, w ~ N(b,B) 
     % b_m = prior mean for weights, B_m prior covariance matrix for weights
     [H,b,B,Hs]=mean_prep(gp,x,xt);

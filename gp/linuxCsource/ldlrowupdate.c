@@ -4,7 +4,7 @@
 
 /* -----------------------------------------------------------------------------
  * CHOLMOD/MATLAB Module.  Copyright (C) 2005-2006, Timothy A. Davis
- * The CHOLMOD/MATLAB Module is licensed under Version 2.0 of the GNU
+ * The CHOLMOD/MATLAB Module is licensed under Version 3 or later of the GNU
  * General Public License.  See gpl.txt for a text of the license.
  * CHOLMOD is also available under other licenses; contact authors for details.
  * http://www.cise.ufl.edu/research/sparse

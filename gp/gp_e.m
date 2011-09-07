@@ -35,7 +35,7 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 % Copyright (c) 2010 Heikki Peura
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
 if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')

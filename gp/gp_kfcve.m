@@ -1,19 +1,13 @@
 function ekfcv = gp_kfcve(w, gp, x, y, varargin)
 % GPEP_KFCVE Evaluate the mean negative log k-fold-cv predictive 
-%           density, assuming Gaussian observation model.
+%            density.
 %
 %  Description
-%    LOOE = GPEP_KFCVE(W, GP, X, Y, OPTIONS) takes a parameter
+%    EKFCV = GP_KFCVE(W, GP, X, Y, OPTIONS) takes a parameter
 %    vector W, Gaussian process structure GP, a matrix X of input
 %    vectors and a matrix Y of targets, and evaluates the mean
-%    negative log leave-one-out predictive density
-%      LOOE = - 1/n sum log p(Y_i | X, Y_{\i}, th) 
-%    where th represents the parameters (lengthScale,
-%    magnSigma2...), X is inputs and Y is observations.
-%
-%    EP leave-one-out is approximated by leaving-out site-term and
-%    using cavity distribution as leave-one-out posterior for the
-%    ith latent value.
+%    negative log leave-one-out predictive density using 
+%    K-fold cross-validation.
 %
 %    OPTIONS is optional parameter-value pair
 %      z          - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -34,13 +28,13 @@ function ekfcv = gp_kfcve(w, gp, x, y, varargin)
 %                   respective test set.
 %
 %  See also
-%    GP_KFCVE, GPEP_LOOPRED, GPEP_E
+%    GP_KFCV, GP_OPTIM
 %
 
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
 ip=inputParser;

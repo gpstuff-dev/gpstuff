@@ -7,7 +7,7 @@ function dist = dist_euclidean(metric, x)
 % Copyright (c) 2008 Jarno Vanhatalo     
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
 dist = NaN;

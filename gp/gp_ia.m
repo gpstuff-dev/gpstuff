@@ -63,7 +63,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% Licence (version 2 or later); please refer to the file
+% Licence (version 3 or later); please refer to the file
 % Licence.txt, included with the software, for details.
 
   ip=inputParser;

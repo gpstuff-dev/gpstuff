@@ -29,7 +29,7 @@ function gpcf = gpcf_SSsexp(varargin)
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   % allow use with or without init and set options
@@ -104,10 +104,10 @@ function gpcf = gpcf_SSsexp(varargin)
             gpcf.p.lengthScale=[];
             gpcf.p.magnSigma2=[];
 
-            % Set the function handles to the nested functions
+            % Set the function handles to the subfunctions
             gpcf.fh.pak = @gpcf_SSsexp_pak;
             gpcf.fh.unpak = @gpcf_SSsexp_unpak;
-            gpcf.fh.e = @gpcf_SSsexp_e;
+            gpcf.fh.lp = @gpcf_SSsexp_e;
             gpcf.fh.ghyper = @gpcf_SSsexp_ghyper;
             gpcf.fh.gind = @gpcf_SSsexp_gind;
             gpcf.fh.cov = @gpcf_SSsexp_cov;
@@ -144,7 +144,7 @@ function gpcf = gpcf_SSsexp(varargin)
         %GPcf_SEXP_PAK	 Combine GP covariance function hyper-parameters into one vector.
         %
         %  Description
-        %	W = GP_SEXP_PAK(GPCF, W) takes a Gaussian Process data structure GP and
+        %	W = GP_SEXP_PAK(GPCF, W) takes a Gaussian Process structure GP and
         %	combines the hyper-parameters into a single row vector W.
         %
         %	The ordering of the parameters in HP is defined by
@@ -157,7 +157,7 @@ function gpcf = gpcf_SSsexp(varargin)
         % Copyright (c) 2008      Jarno Vanhatalo
 
         % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
+        % License (version 3 or later); please refer to the file
         % License.txt, included with the software, for details.
 
         if nargin == 2
@@ -206,7 +206,7 @@ function gpcf = gpcf_SSsexp(varargin)
         %GPCF_SEXP_UNPAK  Separate GP covariance function hyper-parameter vector into components.
         %
         %  Description
-        %	GP = GPCF_SEXP_UNPAK(GP, W) takes an Gaussian Process data structure GP
+        %	GP = GPCF_SEXP_UNPAK(GP, W) takes an Gaussian Process structure GP
         %	and  a hyper-parameter vector W, and returns a Gaussian Process data
         %	structure  identical to the input model, except that the covariance
         %	hyper-parameters has been set to the of W.
@@ -218,7 +218,7 @@ function gpcf = gpcf_SSsexp(varargin)
         % Copyright (c) 2008      Jarno Vanhatalo
 
         % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
+        % License (version 3 or later); please refer to the file
         % License.txt, included with the software, for details.
 
         if nargin == 2
@@ -255,10 +255,10 @@ function gpcf = gpcf_SSsexp(varargin)
     end
 
     function eprior =gpcf_SSsexp_e(gpcf, x, t)
-        %GPCF_SEXP_E	Evaluate prior contribution of error of covariance function SE.
+        %GPCF_SEXP_LP	Evaluate prior contribution of error of covariance function SE.
         %
         %  Description
-        %	E = GPCF_SEXP_E(W, GP, X, T) takes a gp data structure GPCF together
+        %	E = GPCF_SEXP_LP(W, GP, X, T) takes a gp structure GPCF together
         %	with a matrix X of input vectors and a matrix T of target vectors,
         %	and evaluates the error function E. Each row of X corresponds
         %	to one input vector and each row of T corresponds to one
@@ -271,7 +271,7 @@ function gpcf = gpcf_SSsexp(varargin)
         % Copyright (c) 1998-2006 Aki Vehtari
 
         % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
+        % License (version 3 or later); please refer to the file
         % License.txt, included with the software, for details.
         [n, m] =size(x);
 
@@ -316,7 +316,7 @@ function gpcf = gpcf_SSsexp(varargin)
     %
     %  Descriptioni
     %	G = GPCF_SEXP_GHYPER(W, GPCF, X, T, G, GDATA, GPRIOR, VARARGIN) takes a gp
-    %   hyper-parameter vector W, data structure GPCF a matrix X of input vectors a
+    %   hyper-parameter vector W, structure GPCF a matrix X of input vectors a
     %   matrix T of target vectors, inverse covariance function ,
     %	and evaluates the error gradient G. Each row of X corresponds to one
     %   input vector and each row of T corresponds to one target vector.
@@ -330,7 +330,7 @@ function gpcf = gpcf_SSsexp(varargin)
     % Copyright (c) 2008      Jarno Vanhatalo
 
     % This software is distributed under the GNU General Public
-    % License (version 2 or later); please refer to the file
+    % License (version 3 or later); please refer to the file
     % License.txt, included with the software, for details.
         
         gpp=gpcf.p;
@@ -441,7 +441,7 @@ function gpcf = gpcf_SSsexp(varargin)
         % Copyright (c) 2006      Jarno Vanhatalo
 
         % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
+        % License (version 3 or later); please refer to the file
         % License.txt, included with the software, for details.
 
         gdata_ind = gdata_ind + gradient;
@@ -463,7 +463,7 @@ function gpcf = gpcf_SSsexp(varargin)
         % Copyright (c) 2008      Jarno Vanhatalo
 
         % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
+        % License (version 3 or later); please refer to the file
         % License.txt, included with the software, for details.
 
         [n, m] =size(x);
@@ -509,7 +509,7 @@ function gpcf = gpcf_SSsexp(varargin)
         % Copyright (c) 2008      Jarno Vanhatalo
 
         % This software is distributed under the GNU General Public
-        % License (version 2 or later); please refer to the file
+        % License (version 3 or later); please refer to the file
         % License.txt, included with the software, for details.
 
 % $$$         [n, m] =size(x);

@@ -38,7 +38,7 @@ function gpcf = gpcf_rq(varargin)
 % Copyright (c) 2010 Tuomas Nikoskinen, Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   if nargin>0 && ischar(varargin{1}) && ismember(varargin{1},{'init' 'set'})

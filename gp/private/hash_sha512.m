@@ -8,6 +8,11 @@ function h = hash_sha512(x)
 %  Reference  
 %    http://download.oracle.com/javase/1.4.2/docs/api/java/security/MessageDigest.html
 %  
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+  
   if isempty(x)
     h=[];
   else

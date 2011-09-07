@@ -14,7 +14,7 @@ function [C, Cinv] = gp_cov(gp, x1, x2, predcf)
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % Are gradient observations available; derivobs=1->yes, derivobs=0->no

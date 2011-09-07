@@ -66,7 +66,7 @@
 % Copyright (c) 2010 Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % ========================================
@@ -414,7 +414,9 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 % Optimize with the scaled conjugate gradient method
+derivativecheck(gp_pak(gp), @(w) gp_eg(w,gp,x,y))
 gp=gp_optim(gp,x,y,'opt',opt);
+derivativecheck(gp_pak(gp), @(w) gp_eg(w,gp,x,y))
 
 % Predictions to test points
 [Eft, Varft] = gp_pred(gp, x, y, xt);

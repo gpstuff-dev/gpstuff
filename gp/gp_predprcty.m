@@ -26,6 +26,10 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
 
 % Copyright (c) 2011 Ville Tolvanen, Aki Vehtari
 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
   ip=inputParser;
   ip.FunctionName = 'GP_PREDPRCTY';
   ip.addRequired('gp',@(x) isstruct(x) || iscell(x));

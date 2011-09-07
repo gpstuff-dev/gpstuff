@@ -56,7 +56,7 @@ function lik = lik_zinegbin(varargin)
 % Copyright (c) 2011 Jaakko Riihimäki
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   ip=inputParser;
@@ -647,10 +647,9 @@ function lik = lik_zinegbin(varargin)
         Py(i1)=mean(exp(-log(1+expf1) + r.*(log(r) - log(r+m)) + gammaln(r+yt(i1)) - gammaln(r) - gammaln(yt(i1)+1) + yt(i1).*(log(m) - log(r+m))));
       end
     end
-    Ey = [];
-    Vary = [];
+    Ey = repmat(NaN,size(Ef));
+    Vary = repmat(NaN,size(Ef));
     lpyt=log(Py);
-
   end
 
   function [df,minf,maxf] = init_zinegbin_norm(yy,myy_i,sigm2_i,avgE,r)

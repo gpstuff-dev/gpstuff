@@ -1,21 +1,28 @@
 function L = ldlrowmodify(L, c2, k)
-% LDLROWMODIFY    Function to modify the sparse cholesky factorization
-%                 L*D*L' = C, when a row and column k of C have changed
+%LDLROWMODIFY  Function to modify the sparse cholesky factorization
+%              L*D*L' = C, when a row and column k of C have changed
 %
-% L = rowmodify(L, c2, k)
-% Function to modify the cholesky factorization L*D*L' = C (which 
-% is stored in L), when a row and column k of C have changed from c to 
-% c2. The change in C is assumed to be such that the sparsity structure 
-% of C is remained the same. c is the old kth column of C and c2 is 
-% the new column.
+%  Description
+%    L = rowmodify(L, c2, k)
+%    Function to modify the Cholesky factorization L*D*L' = C
+%    (which is stored in L), when a row and column k of C have
+%    changed from c to c2. The change in C is assumed to be such
+%    that the sparsity structure of C is remained the same. c is
+%    the old kth column of C and c2 is the new column.
 %   
-% See gpep_e for usage
+%    See GPEP_E for usage
 %
-% See Davis and Hager 2005 (Row Modification of a sparse Cholesky 
-% factorization) section 4 for details of the algorithm.
+%  Reference  
+%    See Davis and Hager 2005 (Row Modification of a sparse
+%    Cholesky factorization) section 4 for details of the
+%    algorithm.
     
 %  Copyright (c) 2009-2010 Jarno Vanhatalo
     
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 % First evaluate the l_21 vector. That is the kth row vector of L
     
 % Evaluate the old c. NOTE! The C-version (mex-file) of this algorithm

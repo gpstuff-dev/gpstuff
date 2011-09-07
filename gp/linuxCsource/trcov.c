@@ -7,16 +7,16 @@
  *         between inputs i and j in TX.
  *
  *
- * Last modified: 2010-06-30 14:50:45 EEST
+ * Last modified: 2011-09-07 10:22:23 EEST
  *
  */
 
 /* Copyright (C) 1998-2001 Aki Vehtari
  * Copyright (C) 2008      Jarno Vanhatalo
  *
- *This software is distributed under the GNU General Public
- *License (version 2 or later); please refer to the file
- *License.txt, included with the software, for details.
+ * This software is distributed under the GNU General Public
+ * License (version 3 or later); please refer to the file
+ * License.txt, included with the software, for details.
  *
  */
 

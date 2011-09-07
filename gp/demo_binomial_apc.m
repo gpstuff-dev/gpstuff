@@ -44,7 +44,7 @@
 % Copyright (c) 2010 Jaakko Riihim�ki, Jouni Hartikainen, Aki Vehtari
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 

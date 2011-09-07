@@ -50,7 +50,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
 %                    Jarno Vanhatalo, Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   ip=inputParser;

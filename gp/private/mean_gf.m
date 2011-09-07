@@ -1,51 +1,55 @@
 function [dMNM trA HinvC] = mean_gf(gp,x,Ky,invKy,DKff,Stildesqroot,y,latent_method)
-% MEAN_GF      Calculates help terms needed in gradient calculation with mean function
+%MEAN_GF  Calculates help terms needed in gradient calculation with
+%         mean function
 %
-%     Description
-%	  [dMNM trA dyKy dyCy trAv] = MEAN_GF(gp,x,C,invC,DKff,Stildesqroot,y,latent_method) takes in
-%                                 following variables:
-%        Gaussian likelihood:
-%        gp              - a gp data structure
-%        x               - training inputs
-%        Ky              - cov. matrix K(x,x) + sigma*I
-%        invKy           - inv(Ky)
-%        DKff            - d Ky / d th, (th = hyperparameters)
-%        Stildesqroot    - [] (empty)
-%        y               - noisy latent values
-%        latent_method   - gaussian
+%  Description
+%    [dMNM trA dyKy dyCy trAv]
+%       = MEAN_GF(gp,x,C,invC,DKff,Stildesqroot,y,latent_method)
+%    Gaussian likelihood:
+%      gp              - a GP structure
+%      x               - training inputs
+%      Ky              - cov. matrix K(x,x) + sigma*I
+%      invKy           - inv(Ky)
+%      DKff            - d Ky / d th, (th = hyperparameters)
+%      Stildesqroot    - [] (empty)
+%      y               - noisy latent values
+%      latent_method   - gaussian
 %
-%        EP:
-%        gp              - a gp data structure
-%        x               - training inputs
-%        Ky              - cov. matrix K(x,x) + sigma*I
-%        invKy           - inv(Ky + S^-1)*S^-1
-%        DKff            - d Ky / d th, (th = hyperparameters)
-%        Stildesqroot    - sqrt( diag(tautilde) )
-%        y               - S*mutilde
-%        latent_method   - EP
+%    EP:
+%      gp              - a GP structure
+%      x               - training inputs
+%      Ky              - cov. matrix K(x,x) + sigma*I
+%      invKy           - inv(Ky + S^-1)*S^-1
+%      DKff            - d Ky / d th, (th = hyperparameters)
+%      Stildesqroot    - sqrt( diag(tautilde) )
+%      y               - S*mutilde
+%      latent_method   - EP
 %
-%        Laplace:
-%        NOT IMPLEMENTED YET
+%    Laplace:
+%      NOT IMPLEMENTED YET
 %
-%        Returns the help terms dMNM and trA
+%    Returns the help terms dMNM and trA
 %
-%        dMNM = d M'*inv(N)*M / d th
-%        trA  = d log|A| / dth
-%        dyKy = d y'*Ky*y/ d th
-%        dyCy = d y'*C*y / d th
-%        trAv = d log|Av|/ d th
+%      dMNM = d M'*inv(N)*M / d th
+%      trA  = d log|A| / dth
+%      dyKy = d y'*Ky*y/ d th
+%      dyCy = d y'*C*y / d th
+%      trAv = d log|Av|/ d th
 
-%        The vague prior functionalities commented. The function should return
-%        help terms  dyKy dyCy trAv with vague prior. Uncommenting vague
-%        prior rows here doesn't make vague prior compatibible with other
-%        functions.
+%    The vague prior functionalities commented. The function should
+%    return help terms dyKy dyCy trAv with vague prior. 
+%    Uncommenting vague prior rows here doesn't make vague prior
+%    compatibible with other functions.
 
-%        See GPstuff doc and (Rasmussen and Williams 2006) for further
-%        explaining.
+%    See GPstuff doc and (Rasmussen and Williams 2006) for further
+%    details.
 
 % Copyright (c) 2010 Tuomas Nikoskinen
 % Copyright (c) 2011 Jarno Vanhatalo
 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 
 dMNM = cell(1,length(DKff));

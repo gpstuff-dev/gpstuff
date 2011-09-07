@@ -77,7 +77,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin
 % Copyright (c) 2009-2010 Jarno Vanhatalo    
 
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.    
 
     

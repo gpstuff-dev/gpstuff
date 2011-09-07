@@ -28,6 +28,10 @@ function [e, g] = gp_eg(w, gp, x, y, varargin)
 
 % Copyright (c) 2010 Aki Vehtari
   
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 % Single function for some optimization routines, no need for mydeal...
 e=gp_e(w, gp, x, y, varargin{:});
 if nargout>1

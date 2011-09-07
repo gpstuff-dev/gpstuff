@@ -92,7 +92,7 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, xt, varargin)
 % Copyright (c) 2007-2010 Jarno Vanhatalo
   
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   

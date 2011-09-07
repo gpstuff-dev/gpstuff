@@ -27,7 +27,7 @@ function [m_0, m_1, m_2] = quad_moments2(fun, a, b, rtol, atol, minsubs)
 %   Copyright (c) 2010 Jarno Vanhatalo, Jouni Hartikainen
     
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
     maxsubs = 650;

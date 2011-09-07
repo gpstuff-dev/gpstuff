@@ -45,7 +45,7 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
 % Copyright (c) 2010 Jaakko Riihim�ki
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
   ip=inputParser;
@@ -371,7 +371,7 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
     error('yt has to be provided to get lpyt.')
   end
   if nargout > 3
-    [lpyt, Ey, Vary] = gp.lik.fh.predy(gp.lik, Ef, Varf, [], zt);
+    [lpyt, Ey, Vary] = gp.lik.fh.predy(gp.lik, Ef, Varf, yt, zt);
   elseif nargout > 2
     lpyt = gp.lik.fh.predy(gp.lik, Ef, Varf, yt, zt);
   end

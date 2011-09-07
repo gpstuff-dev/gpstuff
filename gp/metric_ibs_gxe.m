@@ -35,7 +35,7 @@ function metric = metric_ibs_gxe(do, varargin)
 % Copyright (c) 2009-2010 Heikki Peura
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
     if nargin < 2
@@ -189,7 +189,7 @@ function metric = metric_ibs_gxe(do, varargin)
     %METRIC_ibs_PAK	 Combine the metric parameters into one vector.
     %
     %	Description
-    %	W = METRIC_ibs_PAK(METRIC, W) takes a metric data structure METRIC and
+    %	W = METRIC_ibs_PAK(METRIC, W) takes a metric structure METRIC and
     %	combines the parameters into a single row vector W.
     %
     %	See also
@@ -209,8 +209,8 @@ function metric = metric_ibs_gxe(do, varargin)
     %METRIC_ibs_UNPAK  Separate metric parameter vector into components.
     %
     %	Description
-    %	[METRIC, W] = METRIC_ibs_UNPAK(METRIC, W) takes a metric data structure
-    %   METRIC parameter vector W, and returns a metric data structure  identical to the
+    %	[METRIC, W] = METRIC_ibs_UNPAK(METRIC, W) takes a metric structure
+    %   METRIC parameter vector W, and returns a metric structure  identical to the
     %   input, except that the parameters has been set to the values in W. Deletes the values
     %   set to METRIC from W and returns the modified W. 
     %
@@ -231,7 +231,7 @@ function metric = metric_ibs_gxe(do, varargin)
     %METRIC_ibs_E     Evaluate the energy of prior of metric parameters
     %
     %	Description
-    %	E = METRIC_ibs_E(METRIC, X, T) takes a metric data structure 
+    %	E = METRIC_ibs_E(METRIC, X, T) takes a metric structure 
     %   METRIC together with a matrix X of input vectors and a matrix T of target 
     %   vectors and evaluates log p(th) x J, where th is a vector of metric parameters 
     %   and J is the Jakobian of transformation exp(w) = th. (Note that the parameters 
@@ -278,7 +278,7 @@ function metric = metric_ibs_gxe(do, varargin)
     %
     %	Description
     %	[GDIST, GPRIOR_DIST] = METRIC_ibs_GHYPER(METRIC, X) takes a
-    %   metric data structure METRIC together with a matrix X of input vectors and 
+    %   metric structure METRIC together with a matrix X of input vectors and 
     %   return the gradient matrices GDIST and GPRIOR_DIST for each hyperparameter.
     %
     %	[GDIST, GPRIOR_DIST] = METRIC_ibs_GHYPER(METRIC, X, X2) forms the gradient

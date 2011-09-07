@@ -23,7 +23,7 @@ function eloo = gp_looe(w, gp, x, y)
 % Copyright (c) 2008-2010 Jarno Vanhatalo
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
 % Nothing to parse, but check the arguments anyway

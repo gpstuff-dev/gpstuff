@@ -10,20 +10,18 @@ function L2 = gp_lcriterion(gp, x, y, varargin)
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
 %     
-%               
-%
 %   See also
 %     
-%
 %   References
-%     Vehtari & Ojanen(2010). Bayesian preditive methods for model
-%     assesment and selection. Statistic Survey Vol 
-%     
-%     
+%     Vehtari & Ojanen (2011). Bayesian preditive methods for model
+%     assesment and selection. In preparation.
 %
 
 % Copyright (c) 2011 Ville Tolvanen
 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 
   ip=inputParser;

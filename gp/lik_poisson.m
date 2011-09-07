@@ -25,7 +25,7 @@ function lik = lik_poisson(varargin)
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
   ip=inputParser;
