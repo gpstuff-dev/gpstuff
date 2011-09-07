@@ -39,7 +39,7 @@ function [R,neff,V,W,B] = psrf(varargin)
 % Copyright (C) 2003 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 % 2004-01-22 Aki.Vehtari@hut.fi Added neff, R^2->R, and cleaning

@@ -18,7 +18,7 @@ function [P,X,sigma] = kernel1(T,sigma,bins,extra)
 % Copyright (C) 1999 Simo Särkkä
 %
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 % 2000-03-27  Aki Vehtari  <Aki.Vehtari@hut.fi>

@@ -19,7 +19,7 @@ function [snks, snkss] = ksstat(varargin)
 %   can be compared against this value (Robert & Casella, 2004).
 %   In case of comparing several chains, maximum of all the
 %   comparisons can be compared to simulated distribution of
-%   the maximum of all comparisons obtained using indpendent 
+%   the maximum of all comparisons obtained using independent 
 %   random random numbers (e.g. using randn(size(X))).
 %
 %   If only one simulation is given, the factor is calculated
@@ -55,7 +55,7 @@ function [snks, snkss] = ksstat(varargin)
 % Copyright (C) 2001-2005 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 % In case of one argument split to two halves (first and last thirds)

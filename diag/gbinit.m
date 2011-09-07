@@ -22,7 +22,7 @@ function nmin = gbinit(q,r,s)
 % Copyright (C) 1999 Simo Särkkä
 %
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 nmin = round(norminv((s+1)/2)^2*q*(1-q)/r^2);

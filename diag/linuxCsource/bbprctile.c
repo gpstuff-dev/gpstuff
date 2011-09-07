@@ -10,14 +10,14 @@
  *
  * Copyright (C) 1998-2003 Aki Vehtari
  *
- * Last modified: 2010-06-16 14:38:58 EEST
+ * Last modified: 2011-09-07 10:36:44 EEST
  *
  */
 
 
 /* 
  *This software is distributed under the GNU General Public 
- *License (version 2 or later); please refer to the file 
+ *License (version 3 or later); please refer to the file 
  *License.txt, included with the software, for details.
  *
  */

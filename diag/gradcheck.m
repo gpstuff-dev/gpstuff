@@ -16,7 +16,7 @@ function delta  = gradcheck(w, func, grad, varargin)
 %	Copyright (c) Christopher M Bishop, Ian T Nabney (1996, 1997)
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % Reasonable value for step size
@@ -63,7 +63,7 @@ function y = linef(lambda, fn, x, d, varargin)
 %	Copyright (c) Christopher M Bishop, Ian T Nabney (1996, 1997)
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % Check function string

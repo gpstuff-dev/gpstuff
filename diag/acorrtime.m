@@ -32,7 +32,7 @@ function t = acorrtime(x,maxlag)
 % Copyright (C) 2000-2001 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 if nargin > 1

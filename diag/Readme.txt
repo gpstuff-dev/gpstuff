@@ -10,5 +10,5 @@ Engineering <http://www.lce.hut.fi>. Later Aki Vehtari added a few
 additonal utilities, fixed bugs and improved the documentation.
 
 This software is distributed under the GNU General Public Licence
-(version 2 or later); please refer to the file Licence.txt,
+(version 3 or later); please refer to the file Licence.txt,
 included with the software, for details.
