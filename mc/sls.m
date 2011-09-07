@@ -28,7 +28,7 @@ function [samples,energies,diagn] = sls(f, x, opt, gradf, varargin)
 %  Copyright (c) Toni Auranen, 2003-2006
 
 % This software is distributed under the GNU General Public 
-% Licence (version 2 or later); please refer to the file 
+% Licence (version 3 or later); please refer to the file 
 % Licence.txt, included with the software, for details.
 
 %  Version 1.01, 21/1/2004, TA

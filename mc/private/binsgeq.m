@@ -10,7 +10,7 @@ function s=binsgeq(pc,p)
 % Copyright (c) 2004 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % This is fast only in Matlab 6.5 and later with JIT accelerator

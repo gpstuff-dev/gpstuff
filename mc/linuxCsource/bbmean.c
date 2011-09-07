@@ -6,14 +6,14 @@
  *   B number of bootstrap replicates
  *   w Mx1 vector of weights 
  *
- * Last modified: 2004-09-07 13:51:22 EEST
+ * Last modified: 2011-09-07 10:47:40 EEST
  *
  */
 
 /* Copyright (c) 1998-2004 Aki Vehtari
  *
  *This software is distributed under the GNU General Public 
- *License (version 2 or later); please refer to the file 
+ *License (version 3 or later); please refer to the file 
  *License.txt, included with the software, for details.
  *
  */

@@ -31,6 +31,10 @@ function s = resampstr(p,m,n)
 
 % Copyright (c) 2003-2004,2010 Aki Vehtari
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 if nargin<2
   [m,n]=size(p);
 elseif nargin==2

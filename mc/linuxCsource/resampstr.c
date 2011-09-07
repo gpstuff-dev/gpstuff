@@ -2,7 +2,15 @@
  *
  * (C) 2003 Aki Vehtari
  *
- * Last modified: 2011-03-29 19:13:44 EEST
+ * Last modified: 2011-09-07 10:48:47 EEST
+ *
+ */
+
+/* Copyright (C) 2003 Aki Vehtari
+ * 
+ *This software is distributed under the GNU General Public 
+ *License (version 3 or later); please refer to the file 
+ *License.txt, included with the software, for details.
  *
  */
 

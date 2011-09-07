@@ -58,6 +58,10 @@ function opt = sls_opt(opt)
 %  HUT/LCE, 12/2003
 %  (c) Toni Auranen
 %
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 %  Version 1.0, 16/1/2004, TA
 %  Version 1.03, 9/3/2004, TA
 %   - changed some display-settings

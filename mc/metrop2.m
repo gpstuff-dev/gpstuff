@@ -39,7 +39,7 @@ function [samples, energies, diagn] = metrop2(f, x, opt, gradf, varargin)
 %	Copyright (c) 1998-2000 Aki Vehtari 
 
 % This software is distributed under the GNU General Public 
-% License (version 2 or later); please refer to the file 
+% License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
 % Global variable to store state of momentum variables: set by set_state
