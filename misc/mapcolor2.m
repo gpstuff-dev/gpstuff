@@ -17,7 +17,12 @@ function map = mapcolor2(A, breaks)
 %            pcolor(A), shading flat
 %            colormap(map), colorbar
 %
-%   Markus Siivola, 25.4.2006 
+
+% Copyright (c) 2006 Markus Siivola
+
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
 
 % there must be 6 break values for seven colors
 if length(breaks) ~= 6

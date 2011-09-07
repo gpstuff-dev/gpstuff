@@ -1,4 +1,4 @@
-function [map rng] = mapcolor(A, x, s)
+function [map rng] = mapcolor_log(A, x, s)
 % MAPCOLOR(A, X) returns a colormap ranging from blue through gray
 % to red. The middle gray range starts from X(1) and ends at X(2).
 %
@@ -22,6 +22,12 @@ function [map rng] = mapcolor(A, x, s)
 %       map = mapcolor(A, [3, 7]);
 %       pcolor(A), shading flat
 %       colormap(map), colorbar
+
+% Copyright (c) 2006 Markus Siivola
+
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
 
 rng = [min(A(:)) max(A(:))];
 if nargin < 2

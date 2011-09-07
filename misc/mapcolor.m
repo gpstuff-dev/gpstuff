@@ -23,6 +23,12 @@ function [map rng] = mapcolor(A, x, s)
 %       pcolor(A), shading flat
 %       colormap(map), colorbar
 
+% Copyright (c) 2006 Markus Siivola
+
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 rng = [min(A(:)) max(A(:))];
 if nargin < 2
     m = mean(A(find(A > 0)));

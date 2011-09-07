@@ -14,6 +14,10 @@ function [xn, xmean, xstd] = normdata(x,xmean,xstd)
   
 % Copyright (c) 2010 Aki Vehtari
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
   if nargin<=1
     xmean=nanmean(x);
     xstd=nanstd(x);

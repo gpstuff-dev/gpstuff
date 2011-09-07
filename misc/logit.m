@@ -11,6 +11,10 @@ function v = logit(u)
   
 % Copyright (c) 2011 Aki Vehtari
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
 warning off MATLAB:divideByZero
 v=reallog(u./(1-u));
 warning on MATLAB:divideByZero

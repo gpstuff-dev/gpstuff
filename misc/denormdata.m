@@ -10,6 +10,10 @@ function [x] = denormdata(xn,xmean,xstd)
   
 % Copyright (c) 2010 Aki Vehtari
 
+% This software is distributed under the GNU General Public 
+% License (version 3 or later); please refer to the file 
+% License.txt, included with the software, for details.
+
   if nargin<3
     error('Too few arguments')
   end
