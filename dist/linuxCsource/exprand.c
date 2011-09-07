@@ -6,7 +6,7 @@
  *    The size of R is the size of MU.
  *    Alternatively, R = EXPRAND(MU,M,N) returns an M by N matrix. 
  *
- * Last modified: 2004-09-07 13:53:40 EEST
+ * Last modified: 2011-09-07 10:43:19 EEST
  *
  */
 
@@ -16,7 +16,7 @@
 /* Copyright (C) 1998-2000 Aki Vehtari
  * 
  *This software is distributed under the GNU General Public 
- *License (version 2 or later); please refer to the file 
+ *License (version 3 or later); please refer to the file 
  *License.txt, included with the software, for details.
  *
  */

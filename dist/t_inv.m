@@ -10,7 +10,7 @@ function tinv = t_inv (x, v, mu, sigma)
 % Copyright (c) 1995-1997, 2005-2007 Kurt Hornik
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 if nargin < 4
   sigma = 1;
