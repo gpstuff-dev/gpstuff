@@ -3,16 +3,17 @@ function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
 %
 %  Description
 %    [PS, FM, FPRCS, M, PRCS]=GP_AVPREDCOMP(GP, X, Y, OPTIONS)
-%    Takes a Gaussian process structure GP together with a matrix X of
-%    training inputs and vector Y of training targets, and returns average
-%    predictive comparison estimates for each input. PS is the average
-%    probability of knowing the sign of the change in the latent outcome
-%    for each input variable. FM and FPRCS are estimated predictive
-%    relevances for means and percentiles for each input variable when
-%    latent outcome variable is computed through the inverse link function.
-%    M and PRCS are estimated predictive relevances for mean and
-%    percentiles for each input variable when outcome variable is the
-%    latent variable. 
+%    Takes a Gaussian process structure GP together with a matrix X
+%    of training inputs and vector Y of training targets, and
+%    returns average predictive comparison estimates for each
+%    input. PS is the probability of knowing the sign of the
+%    average change in the latent outcome for each input variable. 
+%    FM and FPRCS are estimated predictive relevances for means and
+%    percentiles for each input variable when latent outcome
+%    variable is computed through the inverse link function. M and
+%    PRCS are estimated predictive relevances for mean and
+%    percentiles for each input variable when outcome variable is
+%    the latent variable.
 %
 %    OPTIONS is optional parameter-value pair
 %      z         - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -21,7 +22,7 @@ function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
 %                  is, expected value for ith case.
 %      nsamp     - determines the number of samples used (default=500).
 %      prctiles  - determines percentiles that are computed from 
-%                  0 to 100 (default=[2.5 97.5]).
+%                  0 to 100 (default=[5 95]).
 %
 %  See also
 %    GP_PRED
@@ -30,7 +31,7 @@ function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
 % Copyright (c) 2011      Aki Vehtari
 
 % This software is distributed under the GNU General Public
-% License (version 2 or later); please refer to the file
+% License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
 ip=inputParser;
@@ -40,7 +41,7 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('nsamp', 500, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('prctiles', [2.5 97.5], @(x) isreal(x) && isvector(x) && all(x>=0) && all(x<=100))
+ip.addParamValue('prctiles', [5 95], @(x) isreal(x) && isvector(x) && all(x>=0) && all(x<=100))
 
 ip.parse(gp, x, y, varargin{:});
 z=ip.Results.z;
@@ -95,7 +96,7 @@ for k1=1:nin
         
         % compute latent values through the inverse link function
         if isfield(gp.lik.fh, 'invlink')
-            ilfs = gp.lik.fh.invlink(gp.lik, fs, z);
+            ilfs = gp.lik.fh.invlink(gp.lik, fs, repmat(z,1,nsamp));
             % average change in outcome
             num=num+sum(bsxfun(@times,W(:,i1).*Usign,bsxfun(@minus,ilfs,ilfs(i1,:))));
         end
@@ -106,16 +107,7 @@ for k1=1:nin
         % average change in input
         den=den+sum(W(:,i1).*Udiff.*Usign);
         
-        % average probability of knowing the sign of the change in latent function
-        Wtmp=W(:,i1); Wtmp(i1)=0;
-        ppi1=mean(bsxfun(@times,bsxfun(@minus,fs,fs(i1,:)),Usign)>0,2);
-        ppi1(ppi1<0.5)=1-ppi1(ppi1<0.5);
-        pp=pp+sum(Wtmp.*ppi1)./sum(Wtmp);
     end
-    
-    % normalize average probability of knowing the sign of the change in
-    % latent function 
-    ps(k1,1)=pp/n;
     
     % means and percentiles when outcome is the latent function
     numfden=numf./den;
@@ -128,6 +120,13 @@ for k1=1:nin
     m(k1,1)=mean(numden);
     prcs(k1,:)=prctile(numden,prctiles);
 
+    % probability of knowing the sign of the change in
+    % latent function 
+    ps(k1,1)=mean(numfden>0);
+    if ps(k1,1)<0.5
+      ps(k1,1)=1-ps(k1,1);
+    end
+    
 end
 
 if ~isfield(gp.lik.fh, 'invlink')
