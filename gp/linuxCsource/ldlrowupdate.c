@@ -1,36 +1,30 @@
-/* ========================================================================== */
-/* === CHOLMOD/MATLAB/ldlrowupdate mexFunction ================================= */
-/* ========================================================================== */
-
-/* -----------------------------------------------------------------------------
- * CHOLMOD/MATLAB Module.  Copyright (C) 2005-2006, Timothy A. Davis
- * The CHOLMOD/MATLAB Module is licensed under Version 3 or later of the GNU
- * General Public License.  See gpl.txt for a text of the license.
- * CHOLMOD is also available under other licenses; contact authors for details.
- * http://www.cise.ufl.edu/research/sparse
- * MATLAB(tm) is a Trademark of The MathWorks, Inc.
- * -------------------------------------------------------------------------- */
-
-/* Multiple-rank update or downdate of a sparse LDL' factorization.
+/* LDLROWUPDATE a function to conduct row-update for LDL Cholesky factorization
  *
  * Usage:
  *
- *	LD = ldlrowupdate (LD,C)	update an LDL' factorization
- *	LD = ldlrowupdate (LD,C,'+')	update an LDL' factorization
- *	LD = ldlrowupdate (LD,C,'-')	downdate an LDL' factorization
+ *	LD = ldlrowupdate (i1,LD,C,'+')	update an LDL' factorization after inclusion of row
+ *	LD = ldlrowupdate (i1,LD,C,'-')	downdate an LDL' factorization after removal of row
  *
- * See ldlrowupdate.m for details.  LD and C must be real and sparse.
+ * Here i1 is to row that is modified in the matrix K = LDL. LD is the
+ * LDL Cholesky factorisation of K and C is the added/removed row of K.
  *
- * The bulk of the time is spent copying the input LD to the output LD.  This
- * mexFunction could be much faster if it could safely modify its input LD.
+ * See Davis and Hager 2005 (Row Modification of a sparse Cholesky 
+ * factorization) section 4 for details of the algorithm.
  */
+
+ /* -----------------------------------------------------------------------------
+ * The function requires SuiteSparse package by Timothy A. Davis to work. 
+ *
+ * Part of the code in this file is copied from CHOLMOD/MATLAB/ldlupdate.c 
+ * in SuiteSparse version 3.2.0. 
+ * -------------------------------------------------------------------------- */
 
 /* -----------------------------------------------------------------------------
  * Copyright (C) 2005-2006 Timothy A. Davis
  * Copyright (c) 2009-2010      Jarno Vanhatalo
  *
  * This software is distributed under the GNU General Public
- * License (version 2 or later); please refer to the file
+ * License (version 3 or later); please refer to the file
  * License.txt, included with the software, for details.
  * -----------------------------------------------------------------------------
  */

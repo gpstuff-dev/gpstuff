@@ -22,8 +22,8 @@ function gp_install(suiteSparse)
 %   important that suitesparse_path is in right format. Include also
 %   the last '/' sign in it.
     
-% The installation code is modified from the cholmod_install.m in SuiteSparse 
-% package by Timothy A. Davis.
+% Parts of the installation code are modified from the 
+% CHOLMOD/MATLAB/cholmod_install.m file in the SuiteSparse version 3.2.0.
 
 %   Copyright (c) 2006-2007, Timothy A. Davis
 %   Copyright (c) 2008-2010 Jarno Vanhatalo
@@ -33,7 +33,7 @@ function gp_install(suiteSparse)
 % License.txt, included with the software, for details.
 
 
-if isempty(suiteSparse)
+if nargin<1 || isempty(suiteSparse)
     % Compile without SuiteSparse.
     % This means that compactly supported covariance functions can not be used.
     % These are: gpcf_ppcs0, gpcf_ppcs1, gpcf_ppcs2, gpcf_ppcs3

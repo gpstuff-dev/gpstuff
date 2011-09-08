@@ -77,8 +77,8 @@ void mexFunction(const int nlhs, mxArray *plhs[],
     if (dims[0]!=1 && dims[1]!=1)
       mexErrMsgTxt( "gpcf.lengthScale must be a scalar or a vector." );
     lr=max(dims[0], dims[1]);
-    if (lr!=1 && lr!=n)
-      mexErrMsgTxt( "gpcf.lengthScale must be scalar or its lenght must same as number of columns in X." );
+    if (lr!=1 && lr!=n            )
+      mexErrMsgTxt( "gpcf.lengthScale must be a scalar or its lenght must be the same as the number of columns in X." );
     l = mxGetPr(field);
     
     if((field=mxGetField(*prhs, 0, "type"))==NULL)

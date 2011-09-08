@@ -18,21 +18,13 @@
  */
 
 /* -----------------------------------------------------------------------------
- * Copyright (C) 2005-2006 Timothy A. Davis
- * Copyright (c) 2009      Jarno Vanhatalo
+ * Copyright (c) 2009-2010      Jarno Vanhatalo
  *
  * This software is distributed under the GNU General Public
  * License (version 3 or later); please refer to the file
  * License.txt, included with the software, for details.
  /* -----------------------------------------------------------------------------
 
- /* -----------------------------------------------------------------------------
- * The function uses CHOLMOD/MATLAB Module by Timothy A. Davis. Parts of the
- * code are copied from ldlchol.c function.
- *
- * The CHOLMOD/MATLAB Module is licensed under Version 2.0 of the GNU
- * General Public License.
- * -------------------------------------------------------------------------- */
 
 #include <stdio.h>
 #include <stdlib.h>

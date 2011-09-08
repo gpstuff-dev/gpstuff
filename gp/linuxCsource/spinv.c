@@ -1,14 +1,14 @@
-/* SINV    Evaluate the sparse inverse matrix
+/* SPINV    Evaluate the sparse inverse matrix
  *
- * z = sinv(A)  returns the elements of inv(A)_ij, for which A_ij
+ * z = spinv(A)  returns the elements of inv(A)_ij, for which A_ij
  *      is different from zero. 
  *
- * z = sinv(LD, 1)  returns the elements of inv(A)_ij, for which A_ij
+ * z = spinv(LD, 1)  returns the elements of inv(A)_ij, for which A_ij
  *      is different from zero, and where LD is the LDL cholesky
  *      decomposition of A. LD has to be in the form returned by ldlchol.
  *
  *
- *   Note! If z = sinv(LD, 1) is used LD must not be modified in Matlab
+ *   Note! If z = spinv(LD, 1) is used LD must not be modified in Matlab
  *   after ldlchol. Matlab destroys the symbolic sparsity structure in
  *   the Cholesky decomposition, which is needed in the spinv
  *   algorithm. If LD is modified the worst scenario is memory corruption. 
@@ -22,6 +22,13 @@
  *
  */
 
+ /* -----------------------------------------------------------------------------
+ * The function requires SuiteSparse package by Timothy A. Davis to work. 
+ *
+ * Part of the code in this file is copied from CHOLMOD/MATLAB/ldlchol.c 
+ * in SuiteSparse version 3.2.0. 
+ * -------------------------------------------------------------------------- */
+
 /* -----------------------------------------------------------------------------
  * Copyright (C) 2005-2006 Timothy A. Davis
  * Copyright (c) 2008-2010 Jarno Vanhatalo
@@ -30,16 +37,6 @@
  * License (version 3 or later); please refer to the file
  * License.txt, included with the software, for details.
  /* -----------------------------------------------------------------------------
-
- /* -----------------------------------------------------------------------------
- * The function uses CHOLMOD/MATLAB Module by Timothy A. Davis. Parts of the
- * code are copied from ldlchol.c function.
- *
- * The CHOLMOD/MATLAB Module is licensed under Version 2.0 of the GNU
- * General Public License. CHOLMOD is also available under other licenses; contact
- * authors for details. http://www.cise.ufl.edu/research/sparse
- * MATLAB(tm) is a Trademark of The MathWorks, Inc.
- * -------------------------------------------------------------------------- */
 
 #include <stdio.h>
 #include "cholmod_matlab.h"

@@ -108,7 +108,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     error('Logical error by coder of this function!')
   end
   switch nargout
-    case 1
+    case {1 0}
       [Eft] = fh_pred(gp, x, y, xt, varargin{:});
     case 2
       [Eft, Varft] = fh_pred(gp, x, y, xt, varargin{:});
