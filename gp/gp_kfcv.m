@@ -244,7 +244,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   nargout2 = nargout;
   % parfor enables parallel loop
   parfor i=1:length(trindex)
-  
+    if isempty(tstindex{i})
+      continue
+    end
 
     if isequal(display,'iter')
       fprintf('The CV-iteration number: %d \n', i)
