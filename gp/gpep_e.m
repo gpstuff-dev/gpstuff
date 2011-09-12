@@ -42,10 +42,11 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
 %    returns many useful quantities produced by EP algorithm.
 %
   
-% Copyright (c) 2007  Jaakko Riihimï¿½ki
+% Copyright (c) 2007  Jaakko Riihimäki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura
 % Copyright (c) 2010-2011 Aki Vehtari
+% Copyright (c) 2011 Pasi Jylänki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -242,7 +243,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                       tau_i=Sigm(i1,i1)^-1-tautilde(i1);
                       vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
                       
-                      if isfield(gp.latent_opt, 'display') && gp.latent_opt.display
+                      if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
                         fprintf('negative cavity at site %d \n', i1)
                       end
                     end
@@ -1438,7 +1439,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           end
           
           % The last things to do
-          if isfield(gp.latent_opt, 'display') && gp.latent_opt.display
+          if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
             fprintf('   Number of iterations in EP: %d \n', iter-1)
           end
           
@@ -1489,7 +1490,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           e = ch.e;
           edata = ch.edata;
           eprior = ch.eprior;
-          %       mf = ch.mf;
           L = ch.L;
           La2 = ch.La2;
           b = ch.b;
@@ -1499,20 +1499,22 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           muvec_i = ch.muvec_i;
           sigm2vec_i = ch.sigm2vec_i;
           Z_i = ch.Z_i;
-          %       nu_s = ch.nu_s;
-          %       tau_s = ch.tau_s;
-          %       maxds = ch.maxds;
           
         else
           % preparations
-          maxiter=gp.latent_opt.maxiter;
-          tolStop=gp.latent_opt.tolStop;
-          tolUpdate=gp.latent_opt.tolUpdate;
-          tolInner=gp.latent_opt.tolInner;
-          tolGrad=gp.latent_opt.tolGrad;
-          tauc_lim=gp.latent_opt.tauc_lim; % cavity precision limit
-          ninit=gp.latent_opt.ninit;
-          max_ninner=gp.latent_opt.max_ninner;
+          ninit=gp.latent_opt.ninit; % max number of initial parallel iterations
+          maxiter=gp.latent_opt.maxiter; % max number of double-loop iterations
+          max_ninner=gp.latent_opt.max_ninner; % max number of inner loop iterations in the double-loop algorithm
+          tolStop=gp.latent_opt.tolStop; % converge tolerance
+          tolUpdate=gp.latent_opt.tolUpdate; % tolerance for the EP site updates
+          tolInner=gp.latent_opt.tolInner; % inner loop energy tolerance
+          tolGrad=gp.latent_opt.tolGrad; % minimum gradient (g) decrease in the search direction, abs(g_new)<tolGrad*abs(g)
+          Vc_lim=gp.latent_opt.cavity_var_lim; % limit for the cavity variance Vc, Vc < Vc_lim*diag(K)
+          eta1=gp.latent_opt.eta; % the initial fraction parameter
+          eta2=gp.latent_opt.eta2; % the secondary fraction parameter
+          
+          % control the display
+          display=gp.latent_opt.display;
           
           % The parameters or data have changed since
           % the last call for gpep_e. In this case we need to
@@ -1523,17 +1525,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           ncf = length(gp.cf);
           n=length(y);
           
-          df0=gp.latent_opt.df;
-          eta=repmat(gp.latent_opt.eta,n,1);
+          df0=gp.latent_opt.df; % the intial damping factor
+          eta=repmat(eta1,n,1);  % the initial vector of fraction parameters
           fh_tm=@(si,m_c,V_c,eta) likelih.fh.tiltedMoments2(likelih,y,si,V_c,m_c,z,eta);
-          
-          fprintf('\n')
-          %       if likelih.fix_nu==0
-          fprintf('Theta:%s ',sprintf(' %.2g,',exp([0.5*w(1) (w(2:end-2)) 0.5*w(end-1) exp(w(end))])))
-          %       elseif
-          %         fprintf('Theta:%s ',sprintf(' %.2g,',exp([0.5*w(1) (w(2:end-1)) 0.5*w(end)])))
-          %       end
-          fprintf('\n')
           
           % prior covariance
           K = gp_trcov(gp, x);
@@ -1541,40 +1535,47 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           % prior (zero) initialization
           [nu_q,tau_q]=deal(zeros(n,1));
           
-          % initialize q-distribution
-          [mf,Sf,lnZ_q]=evaluate_q(nu_q,tau_q,K);
+          % initialize the q-distribution (the multivariate Gaussian posterior approximation)
+          [mf,Sf,lnZ_q]=evaluate_q(nu_q,tau_q,K,display);
           
-          % surrogate distribution
+          % initialize the surrogate distribution (the independent Gaussian marginal approximations)
           nu_s=mf./diag(Sf);
           tau_s=1./diag(Sf);
           lnZ_s=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta ); % minus 0.5*log(2*pi)./eta
           
-          % initialize r-distribution
-          [lnZ_i,Z_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s);
+          % initialize r-distribution (the tilted distributions)
+          [lnZ_r,lnZ_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s,display);
           
           % initial energy (lnZ_ep)
-          e = lnZ_q + lnZ_i -lnZ_s;
-          fprintf('Initial energy: e=%.4f\n',e)
+          e = lnZ_q + lnZ_r -lnZ_s;
           
-          % EP search direction (moment matching)
-          up_mode='ep';
+          if ismember(display,{'final','iter'})
+            fprintf('\nInitial energy: e=%.4f, hyperparameters:\n',e)
+            fprintf('Cov:%s \n',sprintf(' %.2g,',gp_pak(gp,'covariance')))
+            fprintf('Lik:%s \n',sprintf(' %.2g,',gp_pak(gp,'likelihood')))
+          end
+          
+          % EP search direction
+          up_mode='ep'; % choose the moment matching
           [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
           
           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
           % initialize with ninit rounds of parallel EP
           %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
           
-          tauc_min=1./(tauc_lim*diag(K));
-          df=df0;
-          convergence=0;
+          df=df0; % initial damping factor
+          convergence=0; % convergence indicator
+          tol_m=zeros(1,2); % absolute moment tolerances
+          tauc_min=1./(Vc_lim*diag(K)); % minimum cavity precision
+          % Adjust damping by setting an upper limit (Vf_mult) to the increase 
+          % of the marginal variance
+          Vf_mult=2; 
           i1=0;
-          maxds=zeros(1,2);
-          while i1<ninit %|| ~cpos
+          while i1<ninit
             i1=i1+1;
             
-            % damped update
-            Vf_mult=2;
-            
+            %%%%%%%%%%%%%%%%%%%
+            % the damped update
             dfi=df(ones(n,1));
             temp=(1/Vf_mult-1)./diag(Sf);
             ii2=df*dtau_q<temp;
@@ -1582,300 +1583,418 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               dfi(ii2)=temp(ii2)./dtau_q(ii2);
             end
             
+            % proposal site parameters
             nu_q2=nu_q+dfi.*dnu_q;
             tau_q2=tau_q+dfi.*dtau_q;
             
-            % update q-distribution
-            [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K);
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % a proposal q-distribution
+            [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K,display);
             
+            % check that the new cavity variances do not exceed the limit
             tau_s2=1./diag(Sf2);
-            cpos=all( (tau_s2-eta.*tau_q2 )>=tauc_min);
-            if isempty(L2) || ~cpos
+            pcavity=all( (tau_s2-eta.*tau_q2 )>=tauc_min);
+            if isempty(L2) || ~pcavity
+              % In case of too small cavity precisions, half the step size
               df=df*0.5;
-              if df<0.1, break; end
-              fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,maxds(1),maxds(2),df)
-            else
-              [nu_q,tau_q,mf,Sf,lnZ_q]=deal(nu_q2,tau_q2,mf2,Sf2,lnZ_q2);
-              
-              % surrogate distribution
-              nu_s=mf./diag(Sf);
-              tau_s=tau_s2;
-              lnZ_s=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta );
-              %cpos=all( (tau_s-eta.*tau_q )>=tauc_min);
-              
-              % r-distribution
-              [lnZ_i,Z_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s);
-              
-              % EP search direction (moment matching)
-              [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
-              maxds=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
-              
-              % EP energy
-              e2 = lnZ_q + lnZ_i -lnZ_s;
-              tol_e=abs(e2-e);
-              e=e2;
-              
-              fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,maxds(1),maxds(2),df)
-              
-              % Check for convergence
-              if max(maxds)<tolStop
-                convergence=1;
+              if df<0.1,
+                % If mediocre damping is not sufficient, proceed to
+                % the double-loop algorithm
                 break
+              else
+                if ismember(display,{'iter'})
+                  fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+                end
+                continue
               end
+            end
+            
+            % a proposal surrogate distribution
+            nu_s2=mf2./diag(Sf2);
+            lnZ_s2=0.5*sum( (-log(tau_s2) +nu_s2.^2 ./tau_s2)./eta );
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % a proposal r-distribution
+            [lnZ_r2,lnZ_i2,m_r2,V_r2,p]=evaluate_r(nu_q2,tau_q2,eta,fh_tm,nu_s2,tau_s2,display);
+            
+            % the new energy
+            e2 = lnZ_q2 + lnZ_r2 -lnZ_s2;
+            
+            % check that the energy is defined and that the tilted moments are proper
+            if ~all(p) || ~isfinite(e2)
+              df=df*0.5;
+              if df<0.1,
+                break
+              else
+                if ismember(display,{'iter'})
+                  fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+                end
+                continue
+              end
+            end
+            
+            % accept the new state
+            [nu_q,tau_q,mf,Sf,lnZ_q]=deal(nu_q2,tau_q2,mf2,Sf2,lnZ_q2);
+            [lnZ_r,lnZ_i,m_r,V_r,lnZ_s,nu_s,tau_s]=deal(lnZ_r2,lnZ_i2,m_r2,V_r2,lnZ_s2,nu_s2,tau_s2);
+            
+            % EP search direction (moment matching)
+            [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
+            
+            % maximum difference of the marginal moments
+            tol_m=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
+            
+            % measure the convergence by the moment difference
+            tol_e=max(tol_m);
+            
+            % measure the convergence by the change of energy
+            %tol_e=abs(e2-e);
+            e=e2;
+            
+            if ismember(display,{'iter'})
+              fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+            end
+            
+            % Check for convergence
+            if tol_e<tolStop
+              convergence=1;
+              if ismember(display,{'final','iter'})
+                fprintf('Convergence with parallel EP, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+              end
+              break
             end
           end
           
           if convergence==0
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % start verified iterations
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % if no confergence with the parallel EP 
+            % start double-loop iterations
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-            tol_e=inf;      % energy difference for measuring convergence (tol_e < tolStop)
-            tol_ec=inf;
-            ninner=0;
+            up_mode=gp.latent_opt.up_mode;
+            %up_mode='ep'; % choose the moment matching
+            %up_mode='grad'; % choose the gradients
+            df_lim=gp.latent_opt.df_lim; % step size limit (1 suitable for ep updates)
             
-            % measure of expectation consistency
-            fh_ec=@(mf,Vf,m_r,V_r) max(max(abs(Vf-V_r)),max(abs(mf-m_r)));
-            
-            ec = fh_ec(mf,diag(Sf),m_r,V_r);
-            
-            % continue with moment matching
+            tol_e=inf;  % the energy difference for measuring convergence (tol_e < tolStop)
+            ninner=0;   % counter for the inner loop iterations
             df=df0;     % initial step size (damping factor)
-            df_lim=1;
             
-            
-            % intial gradient in the search direction
+            % the intial gradient in the search direction
             g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
+            
             rec_sadj=[0 e g]; % record for step size adjustment
             for i1=1:maxiter
               
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              % calculate new proposal state
+              % calculate a new proposal state
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               
+              % Limit the step size separately for each site so that the cavity 
+              % variances do not exceed the upper limit
               
               ii1=dtau_q>0;
-              %df1=min( ( (1-tauc_lim)*tau_s(ii1)./eta(ii1)-tau_q(ii1) )./dtau_q(ii1)/df ,1);
               df1=min( ( (tau_s(ii1)-tauc_min(ii1))./eta(ii1)-tau_q(ii1) )./dtau_q(ii1)/df ,1);
               dnu_q(ii1)=dnu_q(ii1).*df1;
               dtau_q(ii1)=dtau_q(ii1).*df1;
-              
               dfi=df;
-              if any(df1<1)
-                df_con=1;
-              else
-                df_con=0;
-              end
               
               % proposal
               nu_q2=nu_q+dfi*dnu_q;
               tau_q2=tau_q+dfi*dtau_q;
               
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              % objective for the proposal state
+              % energy for the proposal state
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               
-              % update q-distribution
-              [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K);
+              % update the q-distribution
+              [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K,display);
               
               if isempty(L2)
-                % q-distribution not defined
+                % the q-distribution not defined (the posterior covariance
+                % not positive definite)
                 e2=inf;
               else
-                % tilted distribution
-                [lnZ_i2,Z_i2,m_r2,V_r2]=evaluate_r(nu_q2,tau_q2,eta,fh_tm,nu_s,tau_s);
+                % the tilted distribution
+                [lnZ_r2,lnZ_i2,m_r2,V_r2]=evaluate_r(nu_q2,tau_q2,eta,fh_tm,nu_s,tau_s,display);
                 
-                % new energy
-                e2 = lnZ_q2 + lnZ_i2 -lnZ_s;
-                
-                % new expectation consistency
-                ec2 = fh_ec(mf2,diag(Sf2),m_r2,V_r2);
+                % the new energy
+                e2 = lnZ_q2 + lnZ_r2 -lnZ_s;
                 
                 % gradients in the search direction
                 g2 = sum( (mf2 -m_r2).*dnu_q ) +0.5*sum( (V_r2 +m_r2.^2 -diag(Sf2) -mf2.^2).*dtau_q );
                 
-                fprintf('dg=%6.3f, ',abs(g2)/abs(g))
+                if ismember(display,{'iter'})
+                  % ratio of the gradients
+                  fprintf('dg=%6.3f, ',min(abs(g2)/abs(g),99))
+                end
               end
               
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               % check if the energy decreases
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              if ~isfinite(e2) || g2>10*abs(g) %(df_con==1 && ec2>ec)
-                %%%%%%%%%%%%%%%%%%%%
-                % half the step size
-                fprintf('decreasing df by 50%%, ')
+              pcavity=true;
+              if ~isfinite(e2) || g2>10*abs(g)
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % ill-conditioned q-distribution or very large increase
+                % in the gradient
+                % => half the step size
+                
                 df=dfi*0.5;
                 
+                if ismember(display,{'iter'})
+                  fprintf('decreasing step size, ')
+                end
+                
               elseif size(rec_sadj,1)<=1 && ( e2>e || abs(g2)>abs(g)*tolGrad )
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % no decrease in energy or the new gradient exceeds the
+                % pre-defined limit
+                % => adjust the step size
                 
-                %%%%%%%%%%%%%%%%%%%%%%%
-                % no decrease in energy
-                fprintf('adjusting step size,    ')
+                if ismember(display,{'iter'})
+                  fprintf('adjusting step size,  ')
+                end
                 
-                % update the record
+                % update the record for step size adjustment
                 ii1=find(dfi>rec_sadj(:,1),1,'last');
                 ii2=find(dfi<rec_sadj(:,1),1,'first');
                 rec_sadj=[rec_sadj(1:ii1,:); dfi e2 g2; rec_sadj(ii2:end,:)];
                 
                 if size(rec_sadj,1)>1
-                  % adjust the step size with qubic interpolation
+                  % adjust the step size with spline interpolation
                   pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' rec_sadj(end,3)],[1 1]);
                   if g2>0
+                    % interpolation
                     [emax,df]=fnmin(pp,[0 dfi]);
                   else
-                    [emax,df]=fnmin(pp,[0 dfi*2]);
+                    % extrapolate at most by 50% at a time
+                    [emax,df]=fnmin(pp,[0 dfi*1.5]);
                   end
                   df=min(df,df_lim);
                   if df==0,
+                    % in case the spline approxmation fails
                     if g2>0
                       df=dfi*0.9;
                     else
-                      df=dfi*1.1;
+                      df=dfi*1.5;
                     end
                   end
                 else
+                  % no record of the previous gradients
                   if g2>0
+                    % too long initial step since the gradient is positive
                     df=dfi*0.9;
                   else
+                    % too short initial step since the gradient negative
                     df=dfi*1.1;
                   end
                 end
                 
-              elseif e2>e
-                
-                %%%%%%%%%%%%%%%%%%%%%%%
-                % no decrease in energy
-                %%%%%%%%%%%%%%%%%%%%%%%
-                
-                fprintf('reset search direction, ')
+              elseif e2>e || (abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep'))
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % No decrease in energy despite the step size adjustments.
+                % In some difficult cases the EP search direction may not
+                % result in decrease of the energy or the gradient
+                % despite of the step size adjustment. One reason for this 
+                % may be the parallel EP search direction
+                % => try the negative gradient as the search direction 
+                %
+                % or if the problem persists
+                % => try resetting the search direction
+                                
+                if abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep')
+                  % try switching to gradient based updates
+                  up_mode='grad';
+                  df_lim=1e3;
+                  df=1;
+                  if ismember(display,{'iter'})
+                    fprintf('switch to gradient updates, ')
+                  end
+                else
+                  if ismember(display,{'iter'})
+                    fprintf('reset the search direction, ')
+                  end
+                end
                 
                 % new search direction
                 [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
                 
-                % initial gradient in the search direction
+                % the initial gradient in the search direction
+                g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
+                
+                % re-init the step size adjustment record
+                rec_sadj=[0 e g];
+              else
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                % decrease of energy => accept the new state
+                
+                dInner=abs(e-e2); % the inner loop energy change
+                
+                % accept the new site parameters (nu_q,tau_q)
+                [mf,Sf,nu_q,tau_q,lnZ_q]=deal(mf2,Sf2,nu_q2,tau_q2,lnZ_q2);
+                
+                % accept also the new tilted distributions
+                [lnZ_r,lnZ_i,m_r,V_r,e]=deal(lnZ_r2,lnZ_i2,m_r2,V_r2,e2);
+                
+                % check that the new cavity variances are positive and not too large
+                tau_s2=1./diag(Sf);
+                pcavity=all( (tau_s2-eta.*tau_q )>=tauc_min);
+                supdate=false;
+                if pcavity && (dInner<tolInner || ninner>=max_ninner)
+                  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                  % try to update the surrogate distribution on the condition that
+                  % - the cavity variances are positive and not too large
+                  % - the new tilted moments are proper
+                  % - sufficient tolerance or the maximum number of inner 
+                  %   loop updates is exceeded
+                  
+                  % update the surrogate distribution
+                  nu_s2=mf.*tau_s2;
+                  lnZ_s2=0.5*sum( (-log(tau_s2) +nu_s2.^2 ./tau_s2)./eta );
+                  
+                  % update the tilted distribution
+                  [lnZ_r2,lnZ_i2,m_r2,V_r2]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s2,tau_s2,display);
+                  
+                  % evaluate the new energy
+                  e2 = lnZ_q + lnZ_r2 -lnZ_s2;
+                  
+                  if isfinite(e2) && e2>e
+                    % a successful surrogate update
+                    supdate=true;
+                    ninner=0; % reset the inner loop iteration counter
+                    
+                    % update the convergence criteria
+                    tol_e=abs(e2-e);
+                    
+                    % accept the new state
+                    [lnZ_r,lnZ_i,m_r,V_r,lnZ_s,nu_s,tau_s,e]=deal(lnZ_r2,lnZ_i2,m_r2,V_r2,lnZ_s2,nu_s2,tau_s2,e2);
+                    
+                    if ismember(display,{'iter'})
+                      fprintf('surrogate update,     ')
+                    end
+                  else
+                    % Improper tilted moments even though the cavity variances are
+                    % positive. This is an indication of numerically unstable 
+                    % tilted moment integrations but fractional updates usually help
+                    % => try switching to fractional updates
+                    pcavity=false;
+                    
+                    if ismember(display,{'iter'})
+                      fprintf('surrogate update failed, ')
+                    end
+                  end
+                end
+                
+                if all(eta==eta1) && ~pcavity && (dInner<tolInner || ninner>=max_ninner)
+                  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                  % If the inner loop moments (within tolerance) are matched 
+                  % but the new cavity variances are negative or the tilted moment
+                  % integrations fail after the surrogate update
+                  % => switch to fractional EP.
+                  %
+                  % This is a rare situation and most likely the
+                  % hyperparameters are such that the approximating family
+                  % is not flexible enough, i.e., the hyperparameters are
+                  % unsuitable for the data.
+                  % 
+                  % One can also try to reduce the lower limit for the
+                  % cavity precisions tauc_min=1./(Vc_lim*diag(K)), i.e. 
+                  % increase the maximum cavity variance Vc_lim.
+                  
+                  % try switching to fractional updates
+                  eta=repmat(eta2,n,1);
+                  
+                  % correct the surrogate normalization accordingly
+                  % the surrogate distribution is not updated
+                  lnZ_s2=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta );
+                  
+                  % update the tilted distribution
+                  [lnZ_r2,lnZ_i2,m_r2,V_r2]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s,display);
+                  
+                  % evaluate the new energy
+                  e2 = lnZ_q + lnZ_r2 -lnZ_s2;
+                  
+                  if isfinite(e2)
+                    % successful switch to fractional energy
+                    supdate=true;
+                    ninner=0; % reset the inner loop iteration counter
+                    
+                    % accept the new state
+                    [lnZ_r,lnZ_i,m_r,V_r,lnZ_s,e]=deal(lnZ_r2,lnZ_i2,m_r2,V_r2,lnZ_s2,e2);
+                    
+                    % start with ep search direction
+                    up_mode='ep';
+                    df_lim=1;
+                    df=0.1;
+                    if ismember(display,{'iter'})
+                      fprintf('switching to fractional EP, ')
+                    end
+                  else
+                    % Improper tilted moments even with fractional updates
+                    % This is very unlikely to happen because decreasing the
+                    % fraction parameter (eta2<eta1) stabilizes the
+                    % tilted moment integrations
+                    
+                    % revert back to the previous fraction parameter
+                    eta=repmat(eta1,n,1);
+                    
+                    if ismember(display,{'final','iter'})
+                      fprintf('Unable to switch to the fractional EP, check that eta2<eta1\n')
+                    end
+                    break;
+                  end
+                end
+                
+                if ~supdate
+                  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                  % no successful surrogate update, no sufficient tolerance, 
+                  % or the maximum number of inner loop updates is not yet exceeded
+                  % => continue with the same surrogate distribution
+                  
+                  ninner=ninner+1; % increase inner loop iteration counter
+                  if ismember(display,{'iter'})
+                    fprintf('inner-loop update,    ')
+                  end
+                end
+                
+                % the new search direction
+                [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
+                
+                % the initial gradient in the search direction
                 g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
                 
                 % re-init step size adjustment record
                 rec_sadj=[0 e g];
-              else
-                
-                dInner=abs(e-e2);
-                
-                % accept the new state
-                [mf,Sf,nu_q,tau_q,lnZ_q]=deal(mf2,Sf2,nu_q2,tau_q2,lnZ_q2);
-                [lnZ_i,Z_i,m_r,V_r,e,ec]=deal(lnZ_i2,Z_i2,m_r2,V_r2,e2,ec2);
-                
-                % check the new cavity variances
-                tau_s2=1./diag(Sf);
-                cpos=all( (tau_s2-eta.*tau_q )>=tauc_min);
-                
-                if cpos && (dInner<tolInner || ec<tolInner ||ninner>=max_ninner)
-                  
-                  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                  % update the surrogate distribution
-                  ninner=0;
-                  nu_s=mf.*tau_s2;
-                  tau_s=tau_s2;
-                  
-                  lnZ_s=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta );
-                  
-                  % update the tilted distribution
-                  [lnZ_i,Z_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s);
-                  
-                  % evaluate new energy
-                  e_old=e;
-                  e = lnZ_q + lnZ_i -lnZ_s;
-                  
-                  % new expectation consistency
-                  ec = fh_ec(mf,diag(Sf),m_r,V_r);
-                  
-                  % new search direction
-                  %d1=sum(dnu_q.^2)+sum(dtau_q.^2);
-                  [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
-                  
-                  % initial gradient in the search direction
-                  g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
-                  
-                  % update convergence criteria
-                  tol_e=abs(e-e_old);
-                  tol_ec=ec;
-                  
-                  fprintf('surrogate update,       ')
-                  
-                elseif ~cpos && (dInner<tolInner || ec<tolInner ||ninner>=max_ninner)
-                  
-                  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                  % update the surrogate distribution only partially
-                  ninner=0;
-                  
-                  if dInner<tolInner
-                    fprintf('switching to fEP, tau_c<tauc_min, ')
-                    eta=repmat(0.5,n,1);
-                    %               if all( (tau_s2-eta.*tau_q )>=tauc_min)
-                    %                 tau_s=tau_s2;
-                    %                 nu_s=mf.*tau_s2;
-                    %                 fprintf('surrogate update, ')
-                    %               end
-                    
-                  else
-                    fprintf('no surrogate update, tau_c<tauc_min, ')
-                  end
-                  
-                  lnZ_s=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta );
-                  
-                  % update the tilted distribution
-                  [lnZ_i,Z_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s);
-                  
-                  % evaluate new energy
-                  e_old=e;
-                  e = lnZ_q + lnZ_i -lnZ_s;
-                  
-                  % new expectation consistency
-                  %ec = fh_ec(mf,diag(Sf),m_r,V_r);
-                  
-                  % the new search direction
-                  [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
-                  
-                  % initial gradient in the search direction
-                  g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
-                  
-                else
-                  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                  % continue with the same surrogate distribution
-                  ninner=ninner+1;
-                  
-                  % new search direction
-                  [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
-                  
-                  % initial gradient in the search direction
-                  g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
-                  
-                  fprintf('no surrogate update,    ')
-                end
-                
-                % re-init step size adjustment record
-                rec_sadj=[0 e g];
               end
               
-              %maxds=[max(abs(dnu_q)) max(abs(dtau_q))];
-              maxds=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
+              % maximum difference of the marginal moments
+              tol_m=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
               
-              fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, df_con=%d\n',i1,e,maxds(1),maxds(2),df,df_con)
+              if ismember(display,{'iter'})
+                fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f,',i1,e,tol_m(1),tol_m(2),df,eta(1))
+                if ~pcavity
+                  fprintf(' surrogate update blocked by cavity precisions below the limit.\n')
+                else
+                  fprintf('\n')
+                end
+              end
               
               %%%%%%%%%%%%%%%%%%%%%%%
-              % Check for convergence
+              % check for convergence
               if tol_e<tolStop
+                if ismember(display,{'final','iter'})
+                  fprintf('Convergence, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
+                end
                 break
               end
-            end % end of site iterations
-          end % end of verified updates
-          
-          if ~isfinite(e)
-            e=1e6;
-%             keyboard
-          end
-          
-          edata=-e;
+            end % end of the double-loop updates
+            
+            if tol_e>tolStop
+              fprintf('\nNo convergence, %d iter, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
+              fprintf('Try to increase maxiter or max_ninner, or adjust tolInner\n')
+            end
+          end 
+          edata=-e; % the data contribution for the marginal posterior density
           
           % =====================================================================================
           % Evaluate the prior contribution to the error from covariance functions and likelihood
@@ -1895,11 +2014,17 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             eprior = eprior - likelih.fh.lp(likelih);
           end
           
+          % the total energy
           e = edata + eprior;
-          sigm2vec_i = (tau_s-eta.*tau_q).^-1;
-          muvec_i = (nu_s-eta.*nu_q).*sigm2vec_i;
+          
+          sigm2vec_i = 1./(tau_s-eta.*tau_q);     % vector of cavity variances
+          muvec_i = (nu_s-eta.*nu_q).*sigm2vec_i; % vector of cavity means
+          Z_i = lnZ_i; % vector of tilted normalization factors 
+          
+          % check that the posterior covariance is positive definite and
+          % calculate its Cholesky decomposition
           [L, notpositivedefinite] = chol(Sf);
-          if notpositivedefinite
+          if notpositivedefinite || ~isfinite(e)
             [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
             return
           end
@@ -1913,7 +2038,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           ch.e = e;
           ch.edata = edata;
           ch.eprior = eprior;
-          %       ch.mf = mf;
           ch.L = L;
           ch.nu_q = nu_q;
           ch.tau_q = tau_q;
@@ -1923,7 +2047,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           ch.Z_i = Z_i;
           ch.sigm2vec_i = sigm2vec_i;
           ch.muvec_i = muvec_i;
-          %       ch.maxds = maxds;
           ch.datahash = datahash;
           
         end
@@ -1931,169 +2054,184 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
         error('Unknown optim method!');
     end
   end
+
+  function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite()
+    % Instead of stopping to chol error, return NaN
+    e = NaN;
+    edata = NaN;
+    eprior = NaN;
+    tautilde = NaN;
+    nutilde = NaN;
+    L = NaN;
+    La2 = NaN;
+    b = NaN;
+    muvec_i = NaN;
+    sigm2vec_i = NaN;
+    Z_i = NaN;
+    datahash = NaN;
+    eta = NaN;
+    w = NaN;
+    ch.e = e;
+    ch.edata = edata;
+    ch.eprior = eprior;
+    ch.tautilde = tautilde;
+    ch.nutilde = nutilde;
+    ch.L = L;
+    ch.La2 = La2;
+    ch.b = b;
+    ch.muvec_i = muvec_i;
+    ch.sigm2vec_i = sigm2vec_i;
+    ch.Z_i = Z_i;
+    ch.eta = eta;
+    ch.datahash=datahash;
+    ch.w = NaN;
+  end
+    
+end
+
+function [m_q,S_q,lnZ_q,L1,L2]=evaluate_q(nu_q,tau_q,K,display)
+
+% function for determining the parameters of the q-distribution
+% when site variances tau_q may be negative
+%
+% q(f) = N(f|0,K)*exp( -0.5*f'*diag(tau_q)*f + nu_q'*f )/Z_q = N(f|m_q,S_q)
+%
+% S_q = inv(inv(K)+diag(tau_q))
+% m_q = S_q*nu_q;
+%
+% det(eye(n)+K*diag(tau_q))) = det(L1)^2 * det(L2)^2
+% where L1 and L2 are upper triangular
+%
+% see Expectation consistent approximate inference (Opper & Winther, 2005)
+
+n=length(nu_q);
+ii1=find(tau_q>0); n1=length(ii1); W1=sqrt(tau_q(ii1));
+ii2=find(tau_q<0); n2=length(ii2); W2=sqrt(abs(tau_q(ii2)));
+
+L=zeros(n);
+S_q=K;
+if ~isempty(ii1)
+  % Cholesky decomposition for the positive sites
+  L1=(W1*W1').*K(ii1,ii1);
+  L1(1:n1+1:end)=L1(1:n1+1:end)+1;
+  L1=chol(L1);
   
-    function [m_q,S_q,lnZ_q,L1,L2]=evaluate_q(nu_q,tau_q,K)
-      
-      %%%%%%%%%%%%%%%%
-      % q-distribution
-      
-      n=length(nu_q);
-      ii1=find(tau_q>0); n1=length(ii1); W1=sqrt(tau_q(ii1));
-      ii2=find(tau_q<0); n2=length(ii2); W2=sqrt(abs(tau_q(ii2)));
-      
-      L=zeros(n);
-      S_q=K;
-      if ~isempty(ii1)
-        % Cholesky decomposition for positive sites
-        L1=(W1*W1').*K(ii1,ii1);
-        L1(1:n1+1:end)=L1(1:n1+1:end)+1;
-        L1=chol(L1);
-        
-        L(:,ii1) = bsxfun(@times,K(:,ii1),W1')/L1;
-        
-        S_q=S_q-L(:,ii1)*L(:,ii1)';
-      else
-        L1=1;
-      end
-      
-      if ~isempty(ii2)
-        % Cholesky decomposition for negative sites
-        V=bsxfun(@times,K(ii2,ii1),W1')/L1;
-        L2=(W2*W2').*(V*V'-K(ii2,ii2));
-        L2(1:n2+1:end)=L2(1:n2+1:end)+1;
-        
-        [L2,pd]=chol(L2);
-        if pd==0
-          L(:,ii2)=bsxfun(@times,K(:,ii2),W2')/L2 -L(:,ii1)*(bsxfun(@times,V,W2)'/L2);
-          S_q=S_q+L(:,ii2)*L(:,ii2)';
-        else
-          L2=[];
-          
-          fprintf('Negative definite q-distribution.\n')
-        end
-        
-      else
-        L2=1;
-      end
-      %V_q=diag(S_q);
-      m_q=S_q*nu_q;
-      
-      % log normalization
-      lnZ_q = -sum(log(diag(L1))) -sum(log(diag(L2))) +0.5*sum(m_q.*nu_q);
+  L(:,ii1) = bsxfun(@times,K(:,ii1),W1')/L1;
+  
+  S_q=S_q-L(:,ii1)*L(:,ii1)';
+else
+  L1=1;
+end
+
+if ~isempty(ii2)
+  % Cholesky decomposition for the negative sites
+  V=bsxfun(@times,K(ii2,ii1),W1')/L1;
+  L2=(W2*W2').*(V*V'-K(ii2,ii2));
+  L2(1:n2+1:end)=L2(1:n2+1:end)+1;
+  
+  [L2,pd]=chol(L2);
+  if pd==0
+    L(:,ii2)=bsxfun(@times,K(:,ii2),W2')/L2 -L(:,ii1)*(bsxfun(@times,V,W2)'/L2);
+    S_q=S_q+L(:,ii2)*L(:,ii2)';
+  else
+    L2=[];
+    if ismember(display,{'iter'})
+      fprintf('Negative definite q-distribution.\n')
     end
-    
-    function [lnZ_i,Z_i,m_r,V_r,p]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s)
-      
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-      % r-distribution (tilted distribution)
-      
-      n=length(nu_q);
-      [m_r,V_r,nu_r,tau_r,p]=deal(zeros(n,1));
-      Z_i=ones(n,1);
-      for si=1:n
-        % cavity distribution
-        tau_r_si=tau_s(si)-eta(si)*tau_q(si);
-        if tau_r_si<=0
-          fprintf('Negative cavity precision at site %d.\n',si)
-          continue
-        end
-        nu_r_si=nu_s(si)-eta(si)*nu_q(si);
-        
-        % tilted moments
-        [Z_i_si,m_r_si,V_r_si] = fh_tm(si, nu_r_si/tau_r_si, 1/tau_r_si, eta(si));
-        
-        if V_r_si<=0
-          fprintf('Negative tilted variance at site %d\n',si)
-          continue
-        end
-        
-        % store the new parameters
-        [nu_r(si),tau_r(si),Z_i(si),m_r(si),V_r(si)]=...
-          deal(nu_r_si,tau_r_si,Z_i_si,m_r_si,V_r_si);
-        
-        p(si)=1;
-      end
-      
-      lnZ_i=sum(log(Z_i)./eta) +0.5*sum((-log(tau_r) +nu_r.^2 ./tau_r)./eta);
+  end
+  
+else
+  L2=1;
+end
+%V_q=diag(S_q);
+m_q=S_q*nu_q;
+
+% log normalization
+lnZ_q = -sum(log(diag(L1))) -sum(log(diag(L2))) +0.5*sum(m_q.*nu_q);
+end
+
+function [lnZ_r,lnZ_i,m_r,V_r,p]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s,display)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% function for determining the parameters of the r-distribution 
+% (the product of the tilted distributions)
+%
+% r(f) = exp(-lnZ_r) * prod_i p(y(i)|f(i)) * exp( -0.5*f(i)^2 tau_r(i) + nu_r(i)*f(i) )
+%      ~ prod_i N(f(i)|m_r(i),V_r(i))
+%
+% tau_r = tau_s - tau_q
+% nu_r = nu_s - nu_q
+%
+% lnZ_i(i) = log int p(y(i)|f(i)) * N(f(i)|nu_r(i)/tau_r(i),1/tau_r(i)) df(i)
+%
+% see Expectation consistent approximate inference (Opper & Winther, 2005)
+
+n=length(nu_q);
+[lnZ_i,m_r,V_r,nu_r,tau_r]=deal(zeros(n,1));
+p=false(n,1);
+for si=1:n
+  % cavity distribution
+  tau_r_si=tau_s(si)-eta(si)*tau_q(si);
+  if tau_r_si<=0
+    if ismember(display,{'iter'})
+      fprintf('Negative cavity precision at site %d\n',si)
     end
-    
-    
-    
-    function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite()
-      % Instead of stopping to chol error, return NaN
-      e = NaN;
-      edata = NaN;
-      eprior = NaN;
-      tautilde = NaN;
-      nutilde = NaN;
-      L = NaN;
-      La2 = NaN;
-      b = NaN;
-      muvec_i = NaN;
-      sigm2vec_i = NaN;
-      Z_i = NaN;
-      datahash = NaN;
-      eta = NaN;
-      w = NaN;
-      ch.e = e;
-      ch.edata = edata;
-      ch.eprior = eprior;
-      ch.tautilde = tautilde;
-      ch.nutilde = nutilde;
-      ch.L = L;
-      ch.La2 = La2;
-      ch.b = b;
-      ch.muvec_i = muvec_i;
-      ch.sigm2vec_i = sigm2vec_i;
-      ch.Z_i = Z_i;
-      ch.eta = eta;
-      ch.datahash=datahash;
-      ch.w = NaN;
+    continue
+  end
+  nu_r_si=nu_s(si)-eta(si)*nu_q(si);
+  
+  % tilted moments
+  [lnZ_si,m_r_si,V_r_si] = fh_tm(si, nu_r_si/tau_r_si, 1/tau_r_si, eta(si));
+  
+  if ~isfinite(lnZ_si) || V_r_si<=0
+    if ismember(display,{'iter'})
+      fprintf('Improper normalization or tilted variance at site %d\n',si)
     end
+    continue
+  end
+  
+  % store the new parameters
+  [nu_r(si),tau_r(si),lnZ_i(si),m_r(si),V_r(si)]=...
+    deal(nu_r_si,tau_r_si,lnZ_si,m_r_si,V_r_si);
+  
+  p(si)=true;
+end
+
+lnZ_r=sum(lnZ_i./eta) +0.5*sum((-log(tau_r) +nu_r.^2 ./tau_r)./eta);
+end
+
+function [dnu_q,dtau_q]=ep_update_dir(m_q,S_q,m_r,V_r,eta,up_mode,tolUpdate)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% update direction for double-loop EP
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+V_q=diag(S_q);
+switch up_mode
+  case 'ep'
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % site updates by moment matching
     
+    [dnu_q,dtau_q]=deal(zeros(size(m_q)));
     
-    function [dnu_q,dtau_q]=ep_update_dir(m_q,S_q,m_r,V_r,eta,up_mode,tolUpdate)
-      
-      %%%%%%%%%%%%%%%%%%%%%%%%%
-      % update direction for EP
-      %%%%%%%%%%%%%%%%%%%%%%%%%
-      
-      V_q=diag(S_q);
-      switch up_mode
-        case 'ep'
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          % site update by moment matching
-          [dnu_q,dtau_q]=deal(zeros(size(m_q)));
-          
-          ind_up=V_r>0 & max(abs(V_r-V_q),abs(m_r-m_q))>tolUpdate;
-          
-          dnu_q(ind_up) = ( m_r(ind_up)./V_r(ind_up) - m_q(ind_up)./V_q(ind_up) ) ./ eta(ind_up);
-          dtau_q(ind_up) = ( 1./V_r(ind_up) - 1./V_q(ind_up) )./ eta(ind_up);
-          
-        case 'grad'
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          % gradient descend
-          
-          % evaluate the gradients
-          gnu_q = m_q - m_r;
-          gtau_q = 0.5*(V_r + m_r.^2 - V_q - m_q.^2);
-          
-          dnu_q=-gnu_q;
-          dtau_q=-gtau_q;
-          
-          %dfi=1e-1;
-          %dnu_q=-dfi*gnu_q;
-          %dtau_q=-dfi*gtau_q;
-          %[e2,gnu_q2,gtau_q2]=epdl_e(nu_q+dnu_q,tau_q+dtau_q,fh_tm,eta,K,nu_s,tau_s);
-          
-          % quasi Newton
-          %Hnu=(gnu_q2-gnu_q)./dnu_q;
-          %Htau=(gtau_q2-gtau_q)./(dtau_q);
-          %dnu_q=-gnu_q./(Hnu+a);
-          %dtau_q=-gtau_q./(Htau+a);
-      end
-      
-    end
+    ind_up=V_r>0 & max(abs(V_r-V_q),abs(m_r-m_q))>tolUpdate;
     
+    dnu_q(ind_up) = ( m_r(ind_up)./V_r(ind_up) - m_q(ind_up)./V_q(ind_up) ) ./ eta(ind_up);
+    dtau_q(ind_up) = ( 1./V_r(ind_up) - 1./V_q(ind_up) )./ eta(ind_up);
+    
+  case 'grad'
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % gradient descend
+    % Not used at the moment!
+    
+    % evaluate the gradients wrt nu_q and tau_q
+    gnu_q = m_q - m_r;
+    gtau_q = 0.5*(V_r + m_r.^2 - V_q - m_q.^2);
+    
+    % the search direction
+    dnu_q=-gnu_q;
+    dtau_q=-gtau_q;  
+end
 
 end
+

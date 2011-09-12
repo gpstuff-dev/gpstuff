@@ -64,6 +64,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
+% Copyright (c) 2011      Pasi Jylänki
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -146,15 +147,22 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
       else                         
         % We might end up here if the likelihood is not log concave
         % For example Student-t likelihood. 
-        % NOTE! This does not work reliably yet
+        
+        %{
         z=tautilde.*(L'*(L*nutilde));
         Eft=K_nf*(nutilde-z);
         
         if nargout > 1
           S = diag(tautilde);
           V = K_nf*S*L';
-          Varft = kstarstar - sum((K_nf*S).*K_nf,2) + sum(V.^2,2);
+          Varft = kstarstar - sum((K_nf*S).*K_nf,2) + sum(V.^2,2);  
         end
+        %}
+        
+        % An alternative implementation for avoiding negative variances
+        [Eft,V]=pred_var(tautilde,K,K_nf,nutilde);
+        Varft=kstarstar-V;
+        
       end
       % ============================================================
       % FIC
@@ -501,3 +509,53 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
   
 end
 
+function [m,S]=pred_var(tau_q,K,A,b)
+
+% helper function for determining 
+%
+% m = A * inv( K+ inv(diag(tau_q)) ) * inv(diag(tau_q)) *b
+% S = diag( A * inv( K+ inv(diag(tau_q)) ) * A)
+% 
+% when the site variances tau_q may be negative
+%
+
+ii1=find(tau_q>0); n1=length(ii1); W1=sqrt(tau_q(ii1));
+ii2=find(tau_q<0); n2=length(ii2); W2=sqrt(abs(tau_q(ii2)));
+
+m=A*b;
+b=K*b;
+S=zeros(size(A,1),1);
+u=0;
+U=0;
+if ~isempty(ii1)
+  % Cholesky decomposition for the positive sites
+  L1=(W1*W1').*K(ii1,ii1);
+  L1(1:n1+1:end)=L1(1:n1+1:end)+1;
+  L1=chol(L1);
+  
+  U = bsxfun(@times,A(:,ii1),W1')/L1;
+  u = L1'\(W1.*b(ii1));
+  
+  m = m-U*u;
+  S = S+sum(U.^2,2);
+end
+
+if ~isempty(ii2)
+  % Cholesky decomposition for the negative sites
+  V=bsxfun(@times,K(ii2,ii1),W1')/L1;
+  L2=(W2*W2').*(V*V'-K(ii2,ii2));
+  L2(1:n2+1:end)=L2(1:n2+1:end)+1;
+  
+  [L2,pd]=chol(L2);
+  if pd==0
+    U = bsxfun(@times,A(:,ii2),W2')/L2 -U*(bsxfun(@times,V,W2)'/L2);
+    u = L2'\(W2.*b(ii2)) -L2'\(bsxfun(@times,V,W2)*u);
+    
+    m = m+U*u;
+    S = S-sum(U.^2,2);
+  else
+    fprintf('Negative definite posterior covariance.\n')
+  end
+end
+
+end

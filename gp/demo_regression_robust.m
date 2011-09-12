@@ -249,12 +249,13 @@ disp(['Student-t noise model using EP integration over the';...
 
 pl = prior_t();
 pm = prior_sqrtunif();
-gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
-                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1^2, ...
+                 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % Create the likelihood structure
-pnu = prior_logunif();
-pn = prior_logunif();
-lik = lik_t('nu', 4, 'nu_prior', pnu, 'sigma2', 0.1, 'sigma2_prior', pn);
+psigma2 = prior_logunif();
+pnu = prior_loglogunif();
+lik = lik_t('nu', 4, 'nu_prior', pnu, 'sigma2', 0.3^2, ...
+            'sigma2_prior', psigma2);
 
 % ... Finally create the GP structure
 gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
@@ -412,11 +413,9 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-derivativecheck(gp_pak(gp), @(w) gp_eg(w,gp,x,y))
 gp=gp_optim(gp,x,y,'opt',opt);
-derivativecheck(gp_pak(gp), @(w) gp_eg(w,gp,x,y))
 
 % Predictions to test points
 [Eft, Varft] = gp_pred(gp, x, y, xt);

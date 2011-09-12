@@ -82,21 +82,44 @@ function gp = gp_set(varargin)
 %        optim_method - method for evaluating EP. Default is basic-EP for log
 %                       concave likelihoods and robust-EP for not log concave.
 %
-%        for robust-EP
-%        tolStop      - tolerance level for stopping the iterations.
-%                       Default is 1e-4
-%        tolUpdate    - Tolerance level for ignoring updates. Default is 
-%                       1e-6.
-%        tolInner     - Inner loop optimality tolerance. Default is 1e-4.
-%        tolGrad      - Tolerance level for g2/g. Default is 0.5
-%        tauc_lim     - Limit for cavity variance < tauc_lim*K(i,i).
-%                       Default is 2^2.
-%        df           - Damping factor. Default is 0.8.
-%        eta          - Eta parameter for fractional EP. Default is 0.8.
-%        ninit        - Number of initial parallel iterations. Default is
-%                       10.
-%        max_ninner   - Maximum number of inner loop iterations. Default is
-%                       3.
+%      for robust-EP
+%        ninit        - Number of initial parallel iterations. Default is 10.
+%        maxiter      - Maximum number of EP iterations. The default is 200.
+%        df           - Initial damping factor. Default is 0.8.
+%        eta          - Eta parameter for fractional EP. Default is 1.
+%        eta2         - Secondary eta parameter for fractional EP, which is
+%                       used only when the double-loop method is
+%                       unable to proceed with eta. Default is 0.5.
+%        max_ninner   - The maximum number of inner-loop iterations in the
+%                       double-loop algorithm. The higher the
+%                       value, the more robust the convergence
+%                       properties are but with the cost of
+%                       increased computational burden. Default is 4.
+%        tolStop      - Tolerance level for stopping the iterations.
+%                       Default is 1e-4.
+%        tolGrad      - The minimum decrease gradient (g) in the search 
+%                       direction, abs(g_new)<tolGrad*abs(g) This
+%                       can be used to control the amount of step
+%                       size adjustments Default is 0.9.
+%        tolInner     - The inner loop energy tolerance. Smaller tolerance 
+%                       increases the robustness, but increases the 
+%                       computational cost. Default is 1e-3.
+%        tolUpdate    - Tolerance level for ignoring updates. Default is 1e-6.
+%        cavity_var_lim - Limit the for cavity variance Vc,
+%                         proportional to the prior variance diag(K):
+%                         Vc < Vc_lim*diag(K). Default is 2.
+%        up_mode      - The search direction in the double-loop algorithm:
+%                       'ep' or 'grad'. Default is 'ep'.
+%                       Note that the implementation will
+%                       automatically switch to gradients if the
+%                       inner-loop minimization fails to to reduce
+%                       the gradient within tolGrad
+%        df_lim       - Limit for the step size. Default is 1.
+%        display      - Control the amount of diagnostic verbosity.
+%                       'off' displays nothing (default), 'final'
+%                       display the hyperparameters and the final
+%                       output, and 'iter' displays output at each
+%                       iteration.
 %        
 %    The additional fields needed in sparse approximations are:
 %      X_u          - Inducing inputs, no default, has to be set when
@@ -141,7 +164,7 @@ function gp = gp_set(varargin)
 %    Intelligence,
 
 % Copyright (c) 2006-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010-2011 Aki Vehtari
   
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -344,15 +367,19 @@ function gp = gp_set(varargin)
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('parallel','off', @(x) ischar(x));    % default off
-          ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tolInner', 1e-4, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tolGrad', 0.5, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tauc_lim', 2^2, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
           ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
-          ipep.addParamValue('max_ninner', 3, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
+          ipep.addParamValue('eta2', .5, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('max_ninner', 4, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
+          ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tolGrad', 0.9, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tolInner', 1e-3, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('cavity_var_lim', 2, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}))
+          ipep.addParamValue('df_lim', 1, @(x) isreal(x) && isfinite(x))
+          ipep.addParamValue('display', 'off', @(x) ischar(x) && ismember(x,{'off', 'final', 'iter'}))
           ipep.parse(latent_opt);
           optim_method = ipep.Results.optim_method;
           if ~isempty(optim_method)
@@ -373,6 +400,21 @@ function gp = gp_set(varargin)
               gp.latent_opt.maxiter = ipep.Results.maxiter;
             end
           end
+            if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
+              gp.latent_opt.ninit = ipep.Results.ninit;
+            end
+            if init || ~ismember('df',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df')
+              gp.latent_opt.df = ipep.Results.df;
+            end
+            if init || ~ismember('eta',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'eta')
+              gp.latent_opt.eta = ipep.Results.eta;
+            end
+            if init || ~ismember('eta2',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'eta2')
+              gp.latent_opt.eta2 = ipep.Results.eta2;
+            end
+            if init || ~ismember('max_ninner',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'max_ninner')
+              gp.latent_opt.max_ninner = ipep.Results.max_ninner;
+            end
           if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
             gp.latent_opt.tol = ipep.Results.tol;
           end
@@ -383,29 +425,26 @@ function gp = gp_set(varargin)
             if init || ~ismember('tolStop',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolStop')
               gp.latent_opt.tolStop = ipep.Results.tolStop;
             end
-            if init || ~ismember('tolUpdate',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolUpdate')
-              gp.latent_opt.tolUpdate = ipep.Results.tolUpdate;
+            if init || ~ismember('tolGrad',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolGrad')
+              gp.latent_opt.tolGrad = ipep.Results.tolGrad;
             end
             if init || ~ismember('tolInner',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolInner')
               gp.latent_opt.tolInner = ipep.Results.tolInner;
             end
-            if init || ~ismember('tolGrad',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolGrad')
-              gp.latent_opt.tolGrad = ipep.Results.tolGrad;
+            if init || ~ismember('tolUpdate',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolUpdate')
+              gp.latent_opt.tolUpdate = ipep.Results.tolUpdate;
             end
-            if init || ~ismember('tauc_lim',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tauc_lim')
-              gp.latent_opt.tauc_lim = ipep.Results.tauc_lim;
+            if init || ~ismember('cavity_var_lim',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'cavity_var_lim')
+              gp.latent_opt.cavity_var_lim = ipep.Results.cavity_var_lim;
             end
-            if init || ~ismember('df',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df')
-              gp.latent_opt.df = ipep.Results.df;
+            if init || ~ismember('up_mode',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'up_mode')
+              gp.latent_opt.up_mode = ipep.Results.up_mode;
             end
-            if init || ~ismember('eta',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'eta')
-              gp.latent_opt.eta = ipep.Results.eta;
+            if init || ~ismember('df_lim',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df_lim')
+              gp.latent_opt.df_lim = ipep.Results.df_lim;
             end
-            if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
-              gp.latent_opt.ninit = ipep.Results.ninit;
-            end
-            if init || ~ismember('max_ninner',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'max_ninner')
-              gp.latent_opt.max_ninner = ipep.Results.max_ninner;
+            if init || ~ismember('display',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'display')
+              gp.latent_opt.display = ipep.Results.display;
             end
           end
         case 'Laplace'
