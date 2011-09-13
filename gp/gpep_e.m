@@ -42,11 +42,11 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
 %    returns many useful quantities produced by EP algorithm.
 %
   
-% Copyright (c) 2007  Jaakko Riihimäki
+% Copyright (c) 2007  Jaakko Riihimï¿½ki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura
 % Copyright (c) 2010-2011 Aki Vehtari
-% Copyright (c) 2011 Pasi Jylänki
+% Copyright (c) 2011 Pasi Jylï¿½nki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -1501,6 +1501,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           Z_i = ch.Z_i;
           
         else
+          % The parameters or data have changed since
+          % the last call for gpep_e. In this case we need to
+          % re-evaluate the EP approximation
+          
           % preparations
           ninit=gp.latent_opt.ninit; % max number of initial parallel iterations
           maxiter=gp.latent_opt.maxiter; % max number of double-loop iterations
@@ -1511,14 +1515,8 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           tolGrad=gp.latent_opt.tolGrad; % minimum gradient (g) decrease in the search direction, abs(g_new)<tolGrad*abs(g)
           Vc_lim=gp.latent_opt.cavity_var_lim; % limit for the cavity variance Vc, Vc < Vc_lim*diag(K)
           eta1=gp.latent_opt.eta; % the initial fraction parameter
-          eta2=gp.latent_opt.eta2; % the secondary fraction parameter
-          
-          % control the display
-          display=gp.latent_opt.display;
-          
-          % The parameters or data have changed since
-          % the last call for gpep_e. In this case we need to
-          % re-evaluate the EP approximation
+          eta2=gp.latent_opt.eta2; % the secondary fraction parameter          
+          display=gp.latent_opt.display; % control the display
           
           gp=gp_unpak(gp,w);
           likelih=gp.lik;
@@ -1555,116 +1553,120 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             fprintf('Lik:%s \n',sprintf(' %.2g,',gp_pak(gp,'likelihood')))
           end
           
-          % EP search direction
-          up_mode='ep'; % choose the moment matching
-          [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
-          
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          % initialize with ninit rounds of parallel EP
-          %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-          
-          df=df0; % initial damping factor
-          convergence=0; % convergence indicator
-          tol_m=zeros(1,2); % absolute moment tolerances
-          tauc_min=1./(Vc_lim*diag(K)); % minimum cavity precision
-          % Adjust damping by setting an upper limit (Vf_mult) to the increase 
-          % of the marginal variance
-          Vf_mult=2; 
-          i1=0;
-          while i1<ninit
-            i1=i1+1;
-            
-            %%%%%%%%%%%%%%%%%%%
-            % the damped update
-            dfi=df(ones(n,1));
-            temp=(1/Vf_mult-1)./diag(Sf);
-            ii2=df*dtau_q<temp;
-            if any(ii2)
-              dfi(ii2)=temp(ii2)./dtau_q(ii2);
-            end
-            
-            % proposal site parameters
-            nu_q2=nu_q+dfi.*dnu_q;
-            tau_q2=tau_q+dfi.*dtau_q;
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % a proposal q-distribution
-            [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K,display);
-            
-            % check that the new cavity variances do not exceed the limit
-            tau_s2=1./diag(Sf2);
-            pcavity=all( (tau_s2-eta.*tau_q2 )>=tauc_min);
-            if isempty(L2) || ~pcavity
-              % In case of too small cavity precisions, half the step size
-              df=df*0.5;
-              if df<0.1,
-                % If mediocre damping is not sufficient, proceed to
-                % the double-loop algorithm
-                break
-              else
-                if ismember(display,{'iter'})
-                  fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
-                end
-                continue
-              end
-            end
-            
-            % a proposal surrogate distribution
-            nu_s2=mf2./diag(Sf2);
-            lnZ_s2=0.5*sum( (-log(tau_s2) +nu_s2.^2 ./tau_s2)./eta );
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % a proposal r-distribution
-            [lnZ_r2,lnZ_i2,m_r2,V_r2,p]=evaluate_r(nu_q2,tau_q2,eta,fh_tm,nu_s2,tau_s2,display);
-            
-            % the new energy
-            e2 = lnZ_q2 + lnZ_r2 -lnZ_s2;
-            
-            % check that the energy is defined and that the tilted moments are proper
-            if ~all(p) || ~isfinite(e2)
-              df=df*0.5;
-              if df<0.1,
-                break
-              else
-                if ismember(display,{'iter'})
-                  fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
-                end
-                continue
-              end
-            end
-            
-            % accept the new state
-            [nu_q,tau_q,mf,Sf,lnZ_q]=deal(nu_q2,tau_q2,mf2,Sf2,lnZ_q2);
-            [lnZ_r,lnZ_i,m_r,V_r,lnZ_s,nu_s,tau_s]=deal(lnZ_r2,lnZ_i2,m_r2,V_r2,lnZ_s2,nu_s2,tau_s2);
-            
-            % EP search direction (moment matching)
+          if isfinite(e) % do not run the algorithm if the prior energy is not defined
+            % EP search direction
+            up_mode='ep'; % choose the moment matching
             [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
             
-            % maximum difference of the marginal moments
-            tol_m=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % initialize with ninit rounds of parallel EP
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-            % measure the convergence by the moment difference
-            tol_e=max(tol_m);
-            
-            % measure the convergence by the change of energy
-            %tol_e=abs(e2-e);
-            e=e2;
-            
-            if ismember(display,{'iter'})
-              fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
-            end
-            
-            % Check for convergence
-            if tol_e<tolStop
-              convergence=1;
-              if ismember(display,{'final','iter'})
-                fprintf('Convergence with parallel EP, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+            df=df0; % initial damping factor
+            convergence=false; % convergence indicator
+            tol_m=zeros(1,2); % absolute moment tolerances
+            tauc_min=1./(Vc_lim*diag(K)); % minimum cavity precision
+            % Adjust damping by setting an upper limit (Vf_mult) to the increase
+            % of the marginal variance
+            Vf_mult=2;
+            i1=0;
+            while i1<ninit
+              i1=i1+1;
+              
+              %%%%%%%%%%%%%%%%%%%
+              % the damped update
+              dfi=df(ones(n,1));
+              temp=(1/Vf_mult-1)./diag(Sf);
+              ii2=df*dtau_q<temp;
+              if any(ii2)
+                dfi(ii2)=temp(ii2)./dtau_q(ii2);
               end
-              break
+              
+              % proposal site parameters
+              nu_q2=nu_q+dfi.*dnu_q;
+              tau_q2=tau_q+dfi.*dtau_q;
+              
+              %%%%%%%%%%%%%%%%%%%%%%%%%%%
+              % a proposal q-distribution
+              [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K,display);
+              
+              % check that the new cavity variances do not exceed the limit
+              tau_s2=1./diag(Sf2);
+              pcavity=all( (tau_s2-eta.*tau_q2 )>=tauc_min);
+              if isempty(L2) || ~pcavity
+                % In case of too small cavity precisions, half the step size
+                df=df*0.5;
+                if df<0.1,
+                  % If mediocre damping is not sufficient, proceed to
+                  % the double-loop algorithm
+                  break
+                else
+                  if ismember(display,{'iter'})
+                    fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+                  end
+                  continue
+                end
+              end
+              
+              % a proposal surrogate distribution
+              nu_s2=mf2./diag(Sf2);
+              lnZ_s2=0.5*sum( (-log(tau_s2) +nu_s2.^2 ./tau_s2)./eta );
+              
+              %%%%%%%%%%%%%%%%%%%%%%%%%%%
+              % a proposal r-distribution
+              [lnZ_r2,lnZ_i2,m_r2,V_r2,p]=evaluate_r(nu_q2,tau_q2,eta,fh_tm,nu_s2,tau_s2,display);
+              
+              % the new energy
+              e2 = lnZ_q2 + lnZ_r2 -lnZ_s2;
+              
+              % check that the energy is defined and that the tilted moments are proper
+              if ~all(p) || ~isfinite(e2)
+                df=df*0.5;
+                if df<0.1,
+                  break
+                else
+                  if ismember(display,{'iter'})
+                    fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, increasing damping to df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+                  end
+                  continue
+                end
+              end
+              
+              % accept the new state
+              [nu_q,tau_q,mf,Sf,lnZ_q]=deal(nu_q2,tau_q2,mf2,Sf2,lnZ_q2);
+              [lnZ_r,lnZ_i,m_r,V_r,lnZ_s,nu_s,tau_s]=deal(lnZ_r2,lnZ_i2,m_r2,V_r2,lnZ_s2,nu_s2,tau_s2);
+              
+              % EP search direction (moment matching)
+              [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
+              
+              % Check for convergence
+              
+              % the difference between the marginal moments
+              tol_m=[abs(mf-m_r) abs(diag(Sf)-V_r)];
+              
+              % measure the convergence by the moment difference
+              convergence=all(tol_m(:,1) < abs(mf)*tolStop) && all(tol_m(:,2) < abs(diag(Sf))*tolStop);
+              
+              % measure the convergence by the change of energy
+              % convergence=abs(e2-e)<tolStop;
+              
+              tol_m=max(tol_m);
+              e=e2;
+              
+              if ismember(display,{'iter'})
+                fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+              end
+              
+              if convergence
+                if ismember(display,{'final','iter'})
+                  fprintf('Convergence with the parallel EP, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+                end
+                break
+              end
             end
           end
           
-          if convergence==0
+          if isfinite(e) && ~convergence
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % if no confergence with the parallel EP 
             % start double-loop iterations
@@ -1790,7 +1792,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   end
                 end
                 
-              elseif e2>e || (abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep'))
+              elseif e2>=e || (abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep'))
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % No decrease in energy despite the step size adjustments.
                 % In some difficult cases the EP search direction may not
@@ -1802,17 +1804,29 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 % or if the problem persists
                 % => try resetting the search direction
                                 
-                if abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep')
+                if strcmp(up_mode,'ep') && (e2>=e || abs(g2)>abs(g)*tolGrad)
                   % try switching to gradient based updates
                   up_mode='grad';
                   df_lim=1e3;
                   df=1;
+                  nfailure=0; % counter for unsuccessful inner loop iterations
                   if ismember(display,{'iter'})
                     fprintf('switch to gradient updates, ')
                   end
                 else
-                  if ismember(display,{'iter'})
-                    fprintf('reset the search direction, ')
+                  nfailure=nfailure+1;
+                  if nfailure>2
+                    % the algorithm is unable to decrease the energy  
+                    if ismember(display,{'iter'})
+                      fprintf('unable to decrease the energy, ')
+                    end
+                    e=nan;
+                    break;
+                  else
+                    % try resetting the search direction
+                    if ismember(display,{'iter'})
+                      fprintf('reset the search direction, ')
+                    end
                   end
                 end
                 
@@ -1828,6 +1842,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % decrease of energy => accept the new state
                 
+                nfailure=0; % reset the counter for unsuccessful inner loop iterations
                 dInner=abs(e-e2); % the inner loop energy change
                 
                 % accept the new site parameters (nu_q,tau_q)
@@ -1981,19 +1996,22 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               
               %%%%%%%%%%%%%%%%%%%%%%%
               % check for convergence
-              if tol_e<tolStop
+              convergence = tol_e<=tolStop;
+              if convergence
                 if ismember(display,{'final','iter'})
                   fprintf('Convergence, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
                 end
                 break
               end
             end % end of the double-loop updates
-            
-            if tol_e>tolStop
-              fprintf('\nNo convergence, %d iter, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
-              fprintf('Try to increase maxiter or max_ninner, or adjust tolInner\n')
-            end
-          end 
+          end
+          
+          % the current energy is not finite or no convergence
+          if ~isfinite(e) || ~convergence
+            fprintf('No convergence, %d iter, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
+            fprintf('Check the hyperparameters, increase maxiter and/or max_ninner, or decrease tolInner\n')
+          end
+          
           edata=-e; % the data contribution for the marginal posterior density
           
           % =====================================================================================
@@ -2214,7 +2232,8 @@ switch up_mode
     
     [dnu_q,dtau_q]=deal(zeros(size(m_q)));
     
-    ind_up=V_r>0 & max(abs(V_r-V_q),abs(m_r-m_q))>tolUpdate;
+    %ind_up=V_r>0 & max(abs(V_r-V_q),abs(m_r-m_q))>tolUpdate;
+    ind_up=V_r>0 & (abs(V_r-V_q) > tolUpdate*abs(V_q) | abs(m_r-m_q) > tolUpdate*abs(m_q));
     
     dnu_q(ind_up) = ( m_r(ind_up)./V_r(ind_up) - m_q(ind_up)./V_q(ind_up) ) ./ eta(ind_up);
     dtau_q(ind_up) = ( 1./V_r(ind_up) - 1./V_q(ind_up) )./ eta(ind_up);
