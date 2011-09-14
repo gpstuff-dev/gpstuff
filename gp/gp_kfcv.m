@@ -318,7 +318,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         w=gp_pak(gp);
         cvws(i,:)=w;
       case {'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG'}
-        gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'loss',inf_method, 'optimf', optimf);
+        if ismember('optimf',ip.UsingDefaults)
+          gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'loss',inf_method);
+        else
+          gp=gp_optim(gp,xtr,ytr,'z',ztr,'opt',opt,'loss',inf_method, 'optimf', optimf);
+        end
         w=gp_pak(gp);
         cvws(i,:)=w;
       case 'MCMC'
