@@ -35,6 +35,7 @@ function lik = lik_t(varargin)
   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2011 Pasi Jylänki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -438,108 +439,6 @@ function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, myy_i
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments2(likelih, y, i1, sigm2_i, myy_i, z, eta)
-%LIKELIH_T_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
-%
-%   Description
-%   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z)
-%   takes a likelihood data structure LIKELIH, incedence counts Y,
-%   expected counts Z, index I and cavity variance S2 and mean
-%   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
-%   of the posterior marginal (see Rasmussen and Williams (2006):
-%   Gaussian processes for Machine Learning, page 55).
-%
-%   See also
-%   GPEP_E
-
-  if nargin<7
-    eta=1;
-  end
-  
-  
-  %tol = 1e-8;
-  yy = y(i1);
-  nu = likelih.nu;
-  sigma2 = likelih.sigma2;
-  
-  % limiting distribution (nu -> infinity)
-  %sigma=sqrt(sigma2);
-  Vg=1/(1/sigm2_i +eta/sigma2);
-  mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
-  sigm_i=sqrt(sigm2_i);
-  sg=sqrt(Vg);
-  
-  % set integration limits and scaling
-  nu_lim=1e6;
-  if nu<nu_lim
-    if mg>myy_i
-      lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
-      t=linspace(myy_i,mg,10);
-    else
-      lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
-      t=linspace(mg,myy_i,10);
-    end
-    lpt_max=max(lpt(t,0));
-    C=log(1)-lpt_max;
-  else
-    lambdaconf=[mg-6*sg,mg+6*sg];
-    C=log(1)-lpt(mg,0);
-  end
-  
-  % set lower bound for log p(y,f)
-  %C=0;
-  %lpt_min=max(lpt(lambdaconf(1),C),lpt(lambdaconf(2),C));
-  %C=-20-lpt_min;
-  if nu>nu_lim
-    m_0=exp(-0.5*log(2*pi) -0.5*log(sigm2_i+sigma2) -0.5*(yy-myy_i)^2 /(sigm2_i+sigma2));
-    m_1=mg;
-    sigm2hati1 = Vg;
-  else
-    % Integrate with quadrature
-    RTOL = 1.e-12;
-    ATOL = 1.e-7;
-    
-    [m_0, m_1, m_2] = quad_moments(@(f) exp(lpt(f,C)),lambdaconf(1), lambdaconf(2), RTOL, ATOL);
-    sigm2hati1 = m_2 - m_1.^2;
-    m_0=m_0*exp(-C);
-  end
-  
-  if ~isfinite(m_0) || m_0<=0 %|| nu>nu_lim
-    
-    %lastwarn('')
-    figure(2)
-    ilim=lambdaconf;
-    fh_l=@(f) t_lpdf(yy,nu,f,sqrt(sigma2)).*eta;
-    fh_p=@(f)  (-0.5/sigm2_i) * (f-myy_i).^2 -0.5*log(2*pi*sigm2_i);
-    t=linspace(ilim(1),ilim(2),500);
-    pt=exp(lpt(t,0));
-    plot(t,pt,'b',t,exp(fh_l(t)),'r',t,exp(fh_p(t)),'g',...
-      t,m_0*normpdf(t,m_1,sqrt(sigm2hati1)),'k--','linewidth',2)
-    ylim([0 max(pt)*1.5])
-    % title(sprintf('Z=%.4f, %s=%.4f, s=%.4f',Zm,'\mu',mm,'\sigma',sqrt(Vm)))
-    drawnow
-    keyboard
-  end
-  
-  function integrand = lpt(f,C)
-    r = yy-f;
-    if nu<nu_lim
-      lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-      lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
-    else
-      lpdf = log((nu+1)/2)/2 -log(nu.*pi.*sigma2)/2;
-      %lpdf = lpdf + log1p(r.^2./nu./sigma2) .* (-(nu+1)/2);
-      lpdf = lpdf + log(1+r.^2./nu./sigma2) .* (-(nu+1)/2);
-    end
-    %integrand = exp(lpdf*eta);
-    %integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
-    integrand = lpdf*eta - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2;
-    integrand = integrand+C;
-  end
-end
-
-
-
 function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_T_SITEDERIV  Evaluate the expectation of the gradient
 %                 of the log likelihood term with respect
@@ -647,8 +546,131 @@ function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 
 end
 
+function [lnZhat, muhat, sigm2hat] = lik_t_tiltedMoments2(likelih, y, yi, sigm2_i, myy_i, z, eta)
+%LIKELIH_T_TILTEDMOMENTS    Returns the marginal moments for EP algorithm
+%
+%   Description
+%   [M_0, M_1, M2] = LIKELIH_T_TILTEDMOMENTS(LIKELIH, Y, I, S2, MYY, Z)
+%   takes a likelihood data structure LIKELIH, incedence counts Y,
+%   expected counts Z, index I and cavity variance S2 and mean
+%   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
+%   of the posterior marginal (see Rasmussen and Williams (2006):
+%   Gaussian processes for Machine Learning, page 55).
+%
+%   See also
+%   GPEP_E
 
-function [g_i] = lik_t_siteDeriv2(likelih, y, i1, sigm2_i, myy_i, z, eta, Zm)
+  if nargin<7
+    eta=1;
+  end
+  
+  yy = y(yi);
+  nu = likelih.nu;
+  sigma2 = likelih.sigma2;
+  sigma = sqrt(sigma2);
+  
+  % limiting distribution (nu -> infinity)
+  Vg=1/(1/sigm2_i +eta/sigma2);
+  mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
+  sigm_i=sqrt(sigm2_i);
+  sg=sqrt(Vg);
+  
+  % set integration limits and scaling
+  nu_lim=1e10;
+  if nu<nu_lim
+    
+    if sqrt(sigma2/sigm2_i)<0.05
+      % set the integration limits when the likelihood is very narrow
+      
+      % grid resolution
+      dd=10;
+      df = [12*sigm_i/100 2*dd*sigma/100];
+      
+      if yy>=myy_i
+        % grid break points   
+        bp=[min(myy_i-6*sigm_i,yy-dd*sigma) myy_i-6*sigm_i, ...
+          min(myy_i+6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
+          max(myy_i+6*sigm_i,yy+dd*sigma)];
+        
+        % grid values
+        a=1e-6;
+        fvec =[ bp(1):df(2):bp(2)-a, bp(2):df(1):bp(3)-a, bp(3):max(df):bp(4)-a, ...
+          bp(4):df(2):bp(5)-a, bp(5):df(1):bp(6)];
+      else
+        % grid break points   
+        bp=[min(myy_i-6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
+          max(myy_i-6*sigm_i,yy+dd*sigma), myy_i+6*sigm_i, ...
+          max(myy_i+6*sigm_i,yy+dd*sigma)];
+        
+        % grid values
+        a=1e-6;
+        fvec =[ bp(1):df(1):bp(2)-a, bp(2):df(2):bp(3)-a, bp(3):max(df):bp(4)-a, ...
+          bp(4):df(1):bp(5)-a, bp(5):df(2):bp(6)];
+      end
+      
+      np=numel(fvec);
+      logpt = lpt(fvec,0);
+      lpt_max = max([logpt lpt([myy_i mg],0)]);
+      lambdaconf=[fvec(1), fvec(end)];
+      for i1=2:np-1
+        if logpt(i1) < lpt_max+log(1e-7) %(exp(logpt(i1))/exp(lpt_max) < 1e-7)
+          lambdaconf(1) = fvec(i1);
+        else
+          break;
+        end
+      end
+      for i1=1:np-2
+        if logpt(end-i1) < lpt_max+log(1e-7) %(exp(logpt(end-i1))/exp(lpt_max) < 1e-7)
+          lambdaconf(2) = fvec(end-i1);
+        else
+          break;
+        end
+      end
+    else
+      % set the integration limits in easier cases
+      np=20;
+      if mg>myy_i
+        lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
+        fvec=linspace(myy_i,mg,np);
+      else
+        lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
+        fvec=linspace(mg,myy_i,np);
+      end
+      lpt_max=max(lpt(fvec,0));
+    end
+    C=log(1)-lpt_max; % scale the log-density for the quadrature tolerance
+  else
+    lambdaconf=[mg-6*sg,mg+6*sg];
+    C=log(1)-lpt(mg,0);
+  end
+  
+  if nu>nu_lim
+    % the limiting Gaussian case
+    Vz=sigm2_i+sigma2/eta;
+    lnZhat = 0.5*(-log(eta) +(1-eta)*log(2*pi*sigma2) -log(2*pi*Vz)) -(0.5/Vz)*(yy-myy_i)^2;
+    muhat = mg;
+    sigm2hat = Vg;
+  else
+    % Integrate with quadrature
+    RTOL = 1.e-6;
+    ATOL = 1.e-7;
+    
+    [m_0, m_1, m_2] = quad_moments(@(f) exp(lpt(f,C)),lambdaconf(1), lambdaconf(2), RTOL, ATOL);
+    muhat = m_1;
+    sigm2hat = m_2 - m_1.^2;
+    lnZhat = log(m_0) -C;
+  end
+  
+  function lpdf = lpt(f,C)
+    % logarithm of the tilted distribution
+    r = yy-f;
+    lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+    lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
+    lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
+  end
+end
+
+function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat)
 %LIKELIH_T_SITEDERIV   Evaluate the expectation of the gradient
 %                           of the log likelihood term with respect
 %                           to the likelihood parameters for EP
@@ -670,106 +692,148 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, i1, sigm2_i, myy_i, z, eta, Zm)
   if nargin<7
     eta=1;
   end
-    
-  znu = @deriv_nu;
-  zsigma2 = @deriv_sigma2;
   
-  %tol = 1e-8;
-  yy = y(i1);
+  yy = y(yi);
   nu = likelih.nu;
   sigma2 = likelih.sigma2;
-  %sigma = sqrt(sigma2);
+  sigma = sqrt(sigma2);
   
   % limiting distribution (nu -> infinity)
-  %sigma=sqrt(sigma2);
   Vg=1/(1/sigm2_i +eta/sigma2);
   mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
   sigm_i=sqrt(sigm2_i);
   sg=sqrt(Vg);
   
   % set integration limits and scaling
-  nu_lim=1e6;
+  nu_lim=1e10;
   if nu<nu_lim
-    if mg>myy_i
-      lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
-      t=linspace(myy_i,mg,10);
+    
+    if sqrt(sigma2/sigm2_i)<0.05
+      % set the integration limits when the likelihood is very narrow
+      
+      % grid resolution
+      dd=10;
+      df = [12*sigm_i/100 2*dd*sigma/100];
+      
+      if yy>=myy_i
+        % grid break points   
+        bp=[min(myy_i-6*sigm_i,yy-dd*sigma) myy_i-6*sigm_i, ...
+          min(myy_i+6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
+          max(myy_i+6*sigm_i,yy+dd*sigma)];
+        
+        % grid values
+        a=1e-6;
+        fvec =[ bp(1):df(2):bp(2)-a, bp(2):df(1):bp(3)-a, bp(3):max(df):bp(4)-a, ...
+          bp(4):df(2):bp(5)-a, bp(5):df(1):bp(6)];
+      else
+        % grid break points   
+        bp=[min(myy_i-6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
+          max(myy_i-6*sigm_i,yy+dd*sigma), myy_i+6*sigm_i, ...
+          max(myy_i+6*sigm_i,yy+dd*sigma)];
+        
+        % grid values
+        a=1e-6;
+        fvec =[ bp(1):df(1):bp(2)-a, bp(2):df(2):bp(3)-a, bp(3):max(df):bp(4)-a, ...
+          bp(4):df(1):bp(5)-a, bp(5):df(2):bp(6)];
+      end
+      
+      np=numel(fvec);
+      logpt = lpt(fvec,0);
+      lpt_max = max([logpt lpt([myy_i mg],0)]);
+      lambdaconf=[fvec(1), fvec(end)];
+      for i1=2:np-1
+        if logpt(i1) < lpt_max+log(1e-7) %(exp(logpt(i1))/exp(lpt_max) < 1e-7)
+          lambdaconf(1) = fvec(i1);
+        else
+          break;
+        end
+      end
+      for i1=1:np-2
+        if logpt(end-i1) < lpt_max+log(1e-7) %(exp(logpt(end-i1))/exp(lpt_max) < 1e-7)
+          lambdaconf(2) = fvec(end-i1);
+        else
+          break;
+        end
+      end
     else
-      lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
-      t=linspace(mg,myy_i,10);
+      % set the integration limits in easier cases
+      np=20;
+      if mg>myy_i
+        lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
+        fvec=linspace(myy_i,mg,np);
+      else
+        lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
+        fvec=linspace(mg,myy_i,np);
+      end
+      lpt_max=max(lpt(fvec,0));
     end
-    lpt_max=max(lpt(t,0));
-    C=log(1)-lpt_max;
+    C=log(1)-lpt_max; % scale the log-density for the quadrature tolerance
   else
     lambdaconf=[mg-6*sg,mg+6*sg];
     C=log(1)-lpt(mg,0);
   end
   
-  % set lower bound for log p(y,f)
-  %C=0;
-  %lpt_min=max(lpt(lambdaconf(1),C),lpt(lambdaconf(2),C));
-  %C=-20-lpt_min;
-  
-  % Integrate with quadrature
-  RTOL = 1.e-12;
-  ATOL = 1.e-7;
-  
-  zm=@(f) exp(lpt(f,C));
-  
   if nu>nu_lim
     % the limiting normal observation model
-    g_i(1) = (-0.5/(sigm2_i+sigma2) +0.5*(yy-myy_i)^2 /(sigm2_i+sigma2)^2 ) *sigma2;
+    Vz=sigm2_i+sigma2/eta;
+    g_i(1) = 0.5*( (1-eta)/sigma2 -1/Vz/eta  + (yy-myy_i)^2 /Vz^2 /eta ) *sigma2/eta;
     
     if (isfield(likelih,'p') && ~isempty(likelih.p.nu))
       g_i(2) = 0;
     end
   else
+    
+    % Integrate with quadrature
+    RTOL = 1.e-6;
+    ATOL = 1e-7;
+    
     % Integrate with quad
+    %zm=@(f) exp(lpt(f,C));
     %[m_0, fhncnt] = quadgk(zm, lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL)
     
-    % Use the normalization determined in the likelih_t_tiltedMoments
-    m_0=Zm*exp(C);
+    % Use the normalization determined in the lik_t_tiltedMoments2
+    m_0=exp(lnZhat+C);
     
-    [g_i(1), fhncnt] = quadgk( @(f) zsigma2(f).*zm(f) , lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
-    g_i(1) = g_i(1)/m_0*sigma2;
+    zm=@(f) deriv_sigma2(f).*exp(lpt(f,C))*sigma2;
+    [g_i(1), fhncnt] = quadgk( zm, lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
+    g_i(1) = g_i(1)/m_0;
     
     if (isfield(likelih,'p') && ~isempty(likelih.p.nu))
-      [g_i(2), fhncnt] = quadgk(@(f) znu(f).*zm(f) , lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
+      zm=@(f) deriv_nu(f).*exp(lpt(f,C));
+      [g_i(2), fhncnt] = quadgk( zm, lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
       g_i(2) = g_i(2)/m_0.*nu.*log(nu);
     end
     
   end
   
-  if any(~isfinite(g_i)) || any(~isreal(g_i)) %|| nu > nu_lim
-    t=linspace(lambdaconf(1), lambdaconf(2), 500);
-    plot(t,zm(t),'b',t,zm(t).*deriv_nu(t),'r',t,zm(t).*deriv_sigma2(t),'g')
-    keyboard
-  end
-  
-  function integrand = lpt(f,C)
+  function lpdf = lpt(f,C)
+    % logarithm of the tilted distribution
     r = yy-f;
-    if nu<nu_lim
-      lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-      lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
-    else
-      lpdf = log((nu+1)/2)/2 -log(nu.*pi.*sigma2)/2;
-      %lpdf = lpdf + log1p(r.^2./nu./sigma2) .* (-(nu+1)/2);
-      lpdf = lpdf + log(1+r.^2./nu./sigma2) .* (-(nu+1)/2);
-    end
-    %integrand = exp(lpdf*eta);
-    %integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
-    integrand = lpdf*eta - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2;
-    integrand = integrand+C;
+    lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+    lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
+    lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
   end
 
   function g = deriv_nu(f)
+    % derivative of the log-likelihood wrt nu
     r = yy-f;
-    temp = 1 + r.^2./nu./sigma2;
-    g = psi((nu+1)/2)/2 - psi(nu/2)/2 - 1/(2*nu) - log(temp)/2 + (nu+1)./(2*temp) .* (r/nu).^2 /sigma2;
+    temp = r.^2 ./(nu*sigma2);
+    g = psi((nu+1)/2) - psi(nu/2) - 1/nu;
+    g = g + (1+1/nu).*temp./(1+temp);
+    
+    % for small values use a more accurate method for log(1+x)
+    ii = temp<1e3;
+    g(ii) = g(ii)  - log1p(temp(ii));
+    g(~ii) = g(~ii) - log(1+temp(~ii));
+    g = g*0.5;
+    
   end
 
   function g = deriv_sigma2(f)
+    % derivative of the log-likelihood wrt sigma2
     r = yy-f;
-    g  = -1/sigma2/2 + (nu+1)/2 * r.^2 ./ (nu*sigma2.^2 + r.^2 *sigma2);
+    temp = r.^2 /sigma2;
+    g  = -1/sigma2/2 + ((1+1/nu)/2) * temp ./ (1 + temp/nu) /sigma2;
   end
 
 end
