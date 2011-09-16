@@ -9,7 +9,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, xt, varargin)
 %    mean EFT and covariance COVFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
-%      Covft = Var[f | xt,x,y,th] = diag(K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf). 
+%      Covft = Var[f | xt,x,y,th] = K_fy - K_fy*(Kyy+s^2I)^(-1)*K_yf. 
 %
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
