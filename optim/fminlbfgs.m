@@ -656,6 +656,10 @@ while(true)
   % Calculate value (and gradient if no extra time cost) of current alpha
   if ~isequal(optim.GradConstr,'on')
       [data,f_alpha, grad]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data, optim);
+      while isnan(f_alpha) || isinf(f_alpha) || any(isnan(grad)) || any(isinf(grad))
+        alpha = 0.25*alpha;
+        [data,f_alpha, grad]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data, optim);
+      end
       fPrime_alpha = grad'*data.dir(:);
   else
       gstep=data.initialStepLength/1e6;
@@ -703,7 +707,7 @@ while(true)
     % Finished bracketing phase
     data.bracket_exitflag  = 2; return
   end
- 
+  
   % Update alpha
   if (2*alpha - alphaPrev < alphaMax )
       brcktEndpntA = 2*alpha-alphaPrev; 
