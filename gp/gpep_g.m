@@ -102,6 +102,14 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         
       end
 
+      if ~all(isfinite(e));
+        % instead of stopping to error, return NaN
+        g=NaN;
+        gdata = NaN;
+        gprior = NaN;
+        return;
+      end
+      
       % =================================================================
       % Gradient with respect to covariance function parameters
       if ~isempty(strfind(gp.infer_params, 'covariance'))        
