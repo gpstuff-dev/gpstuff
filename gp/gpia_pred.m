@@ -190,13 +190,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin
 %     testi1 = Eft;
 %     testi2 = Varft;
 %     
+    nt = size(xt,1);
     mEf = sum(bsxfun(@times,Eft_grid,P_TH), 1);
     mVarf = sum(bsxfun(@times, Varft_grid, P_TH), 1) + sum(bsxfun(@times,(Eft_grid - repmat(mEf, nGP,1)).^2, P_TH),1);
     fmin = mEf - 6.*sqrt(mVarf);
     fmax = mEf + 6.*sqrt(mVarf);
-    Eft = zeros(length(xt),1);
+    Eft = zeros(nt,1);
     Varft = zeros(size(Eft));
-    for i=1:size(xt,1)
+    for i=1:nt
 %       Eft(i) = quadgk(@(f) f.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
 %       Eft2(i) = quadgk(@(f) f.^2.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
 %       Varft(i) = Eft2(i) - Eft(i).^2;
