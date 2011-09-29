@@ -119,6 +119,8 @@ function [x,fval,exitflag,output,grad]=fminlbfgs(funfcn,x_init,optim)
 %  Function is written by D.Kroon University of Twente (March 2009)
 
 % 2010-10-29 Aki Vehtari : GradConstr is 'off' by default.
+% 2011-9-28 Ville Tolvanen : Reduce step size until function returns finite
+%                            value
 
 %Copyright (c) 2009, Dirk-Jan Kroon
 %All rights reserved.
