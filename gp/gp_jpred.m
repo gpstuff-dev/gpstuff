@@ -165,9 +165,9 @@ switch gp.type
     
     if  isfield(gp,'meanf')
         if issparse(C)
-            [RB RAR] = mean_predf(gp,x,xt,K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
+            [RB RAR] = mean_jpredf(gp,x,xt,K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
         else
-            [RB RAR] = mean_predf(gp,x,xt,K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
+            [RB RAR] = mean_jpredf(gp,x,xt,K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
         end
         Eft = Eft + RB;
     end

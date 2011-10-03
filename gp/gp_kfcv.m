@@ -393,6 +393,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
   % Save values from parfor loop to right indices.
   for i=1:length(trindex)
+    if isempty(tstindex{i})
+      continue
+    end
     lpd_cv(tstindex{i}) = lpd_cv2{i};
     rmse_cv(tstindex{i}) = rmse_cv2{i};
     abs_cv(tstindex{i}) = abs_cv2{i};

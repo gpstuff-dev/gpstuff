@@ -265,7 +265,7 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
               iWKW=[iWKW11 iWKW12; iWKW21 iWKW22];
             end
             
-            if nargout > 2
+            if nargout >= 2
               KiWKWK=K_nf*iWKW*K_nf';
               Covft=kstarstarfull-KiWKWK;
               Varft=kstarstar-diag(KiWKWK);

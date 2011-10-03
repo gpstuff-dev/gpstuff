@@ -228,10 +228,10 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     if isfield(gp.lik, 'fullW') && gp.lik.fullW
                       CWd=K; CWd(1:(n+1):end)=CWd(1:(n+1):end)+1./Wd';
                       [L,notpositivedefinite] = chol(CWd,'lower');
-%                      if notpositivedefinite
-%                        [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-%                        return
-%                      end
+                      if notpositivedefinite
+                        [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                        return
+                      end
                       if ~isfield(gp,'meanf')
                         %b = W.*f+dlp;
                         b = Wd.*f-Wu*(Wu'*f)+dlp;
@@ -356,10 +356,10 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                 B(1:(n+1):end)=B(1:(n+1):end)+1;
                 %B = eye(size(K)) + (sqWd*sqWd').*K;
                 [L,notpositivedefinite] = chol(B,'lower');
-%                if notpositivedefinite
-%                  [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-%                  return
-%                end
+                if notpositivedefinite
+                  [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                  return
+                end
                 edata = logZ + sum(log(diag(L)))+0.5*log(WuCdWu);
                 %edata = logZ + 0.5.*sum(log(diag(L)));
                 La2 = Wd;
@@ -610,10 +610,11 @@ function [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite()
   f=NaN;
   L=NaN;
   a=NaN;
-%   La2=NaN;
   E = NaN;
   M = NaN;
   p=NaN;
+  datahash = NaN;
+  w = NaN;
   ch.w = w;
   ch.e = e;
   ch.edata = edata;
@@ -622,8 +623,6 @@ function [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite()
   ch.L = L;
   ch.M = M;
   ch.E = E;
-  ch.n = size(x,1);
-  ch.La2 = La2;
   ch.a = a;
   ch.p=p;
   ch.datahash=datahash;

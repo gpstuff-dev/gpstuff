@@ -158,6 +158,7 @@ function [l,lq,xx] = logitgp(x,varargin)
         nz=length(z);
         % form data for GP (xx,yy,ye)
         xx=z;
+        xt=z;
       else
         xx=xt;
         gridn=[length(unique(xx(:,1))) length(unique(xx(:,2)))];
@@ -261,17 +262,17 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
   %gp = gp_set('lik', lik_logitgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
   gp = gp_set('lik', lik_logitgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmfco,gpmflin,gpmfsq});
   
-  % Set the approximate inference method
-  gp = gp_set(gp, 'latent_method', latent_method);
+  % First optimise hyperparameters using Laplace approximation
+  gp = gp_set(gp, 'latent_method', 'Laplace');
+  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','off','Derivativecheck','off');
+  gp=gp_optim(gp,xx,yy,'opt',opt);
   
-  % Make prediction for the test points
   if strcmpi(latent_method,'Laplace')
-    %opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Derivativecheck','on');
-    opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','off','Derivativecheck','off');
-    gp=gp_optim(gp,xx,yy,'opt',opt);
+    % Just make prediction for the test points
     [Ef,Covf] = gp_pred(gp, xx, yy, xxt);
   elseif strcmpi(latent_method,'MCMC')
-    % Set the parameters for MCMC
+    gp = gp_set(gp, 'latent_method', 'MCMC');
+
     % Here we use two stage sampling to get faster convergence
     hmc_opt=hmc2_opt;
     hmc_opt.steps=10;
@@ -283,7 +284,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
     hmc2('state', sum(100*clock))
     
     % The first stage sampling
-    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15, 'display', 0);
     %[r,g,opt]=gp_mc(gp, xx, yy, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
     
     % re-set some of the sampling options
@@ -294,13 +295,12 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
     
     % The second stage sampling
     % Notice that previous record r is given as an argument
-    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'record', r);
+    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'display', 0, 'record', r);
     %[rgp,g,opt]=gp_mc(gp, xx, yy, 'nsamples', 500, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
     % Remove burn-in
     %rgp=thin(rgp,102);
     rgp=thin(rgp,102,4);
     
-    %[Ef, Covf] = gpmc_jpred(rgp, xx, yy, xxt);
     [Ef, Covf] = gpmc_jpreds(rgp, xx, yy, xxt);
      
   else

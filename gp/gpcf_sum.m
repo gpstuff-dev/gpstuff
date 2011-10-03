@@ -233,7 +233,7 @@ function DKff = gpcf_sum_cfg(gpcf, x, x2, mask)
     DKff = {};
     for i=1:ncf
       cf = gpcf.cf{i};
-      DK = cf.fh.cfg(cf, [], 1);
+      DK = cf.fh.cfg(cf, x, [], 1);
       DKff = [DKff DK];
 
     end
