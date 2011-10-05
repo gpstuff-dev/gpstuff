@@ -598,8 +598,6 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
       ch.datahash=datahash;
     end
     
-    assert(isreal(edata))
-    assert(isreal(eprior))
   end
 
 function [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite()
