@@ -218,10 +218,10 @@ switch gp.type
     if nargout > 2
       % Scale mixture model in lik_smt is a special case 
       % handle it separately
-      if ~strcmp(gp.lik.type, 'lik_smt') 
+      if ~strcmp(gp.lik.type, 'Gaussian-smt') 
         % normal case
         [V, Cv] = gp_trvar(gp,xt,predcf);
-        Eyt = Eft;
+        Eyt = Eft;e
         Varyt = Varft + Cv - V;
         if ~isempty(yt)
           lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
