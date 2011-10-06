@@ -35,5 +35,9 @@ function [e, g] = gp_eg(w, gp, x, y, varargin)
 % Single function for some optimization routines, no need for mydeal...
 e=gp_e(w, gp, x, y, varargin{:});
 if nargout>1
-  g=gp_g(w, gp, x, y, varargin{:});
+  if isnan(e)
+    g=NaN;
+  else
+    g=gp_g(w, gp, x, y, varargin{:});
+  end
 end
