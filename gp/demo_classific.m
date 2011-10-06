@@ -97,7 +97,8 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',20,'Display','iter');
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
-[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
+    gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
@@ -138,7 +139,8 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
-[Eft_ep, Varft_ep, lpyt_ep, Eyt_ep, Varyt_ep] = gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Eft_ep, Varft_ep, lpyt_ep, Eyt_ep, Varyt_ep] = ...
+    gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
@@ -196,12 +198,14 @@ hmc2('state', sum(100*clock));
 
 % The second stage sampling
 % Notice that previous record r is given as an argument
-[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, ...
+                  'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
 rgp=thin(rgp,102);
 
 % Make predictions
-[Efs_mc, Varfs_mc, lpys_mc, Eys_mc, Varys_mc] = gpmc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
+[Efs_mc, Varfs_mc, lpys_mc, Eys_mc, Varys_mc] = ...
+    gpmc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
 lpyt_mc = mean(lpys_mc,2);
 
 % Plot some nice figures that show results

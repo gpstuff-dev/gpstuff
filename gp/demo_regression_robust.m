@@ -101,7 +101,7 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf})
+gp = gp_set('lik', lik, 'cf', gpcf)
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 disp('Gaussian noise model and MAP estimate for parameters')
@@ -146,7 +146,7 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 % Here, set own Sigma2 for every data point
 lik = lik_gaussiansmt('ndata', n, 'sigma2', repmat(1,n,1), ...
                       'nu_prior', prior_logunif());
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9)
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9)
 
 hmc_opt.steps=10;
 hmc_opt.stepadj=0.06;
@@ -212,7 +212,7 @@ lik = lik_t('nu', 4, 'nu_prior', prior_logunif(), ...
             'sigma2', 10, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, ...
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6, ...
             'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
@@ -258,7 +258,7 @@ lik = lik_t('nu', 4, 'nu_prior', pnu, 'sigma2', 0.3^2, ...
             'sigma2_prior', psigma2);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-4, ...
             'latent_method', 'EP','latent_opt',struct('parallel','off'));
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
@@ -305,7 +305,7 @@ pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 10, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-4, ...
              'latent_method', 'MCMC');
 f=gp_pred(gp,x,y,x);
 gp=gp_set(gp, 'latent_opt', struct('f', f));
@@ -361,7 +361,7 @@ pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 10, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9, ...
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9, ...
             'latent_method', 'Laplace');
 e = gp_e(gp_pak(gp), gp, x, y);
 
@@ -407,7 +407,7 @@ pn = prior_logunif();
 lik = lik_t('nu', 4, 'nu_prior', [], 'sigma2', 0.1, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-4, ...
             'latent_method', 'EP','latent_opt',struct('parallel','off'));
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
@@ -415,7 +415,9 @@ gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-4, ...
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+c0=cputime;tic
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminscg);
+cputime-c0,toc
 
 % Predictions to test points
 [Eft, Varft] = gp_pred(gp, x, y, xt);

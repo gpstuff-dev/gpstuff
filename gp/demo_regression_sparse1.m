@@ -129,7 +129,7 @@ pm = prior_sqrtt('s2', 0.3);               % a prior structure
 pn = prior_logunif();
 gpcf = gpcf_ppcs2(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-8);
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8);
 
 % We have now constructed a GP model with gpcf_ppcs2 covariance
 % function. This is a compact support function which produces
@@ -186,7 +186,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 % if we want to optimize them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, ...
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, ...
                 'X_u', X_u, 'jitterSigma2', 1e-4)
 
 % -----------------------------
@@ -285,7 +285,7 @@ end
 gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 lik = lik_gaussian('sigma2', 0.2^2);
 
-gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf}, ...
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf, ...
                 'X_u', X_u, 'tr_index', trindex, 'jitterSigma2', 1e-4);
 
 % -----------------------------
@@ -351,7 +351,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 % if we want to optimize them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', {gpcf}, ...
+gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', gpcf, ...
                 'X_u', X_u, 'jitterSigma2', 1e-4);
 
 % -----------------------------
@@ -433,7 +433,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 % if we want to optimize them
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
-gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', {gpcf}, ...
+gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, ...
                 'X_u', X_u, 'jitterSigma2', 0.001);
 
 % -----------------------------

@@ -10,7 +10,7 @@
 % Simulate data 
 % x = 5*rand(20,2);
 % gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
-% gp = gp_set('lik', lik_gaussian, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+% gp = gp_set('lik', lik_gaussian, 'cf', gpcf1, 'jitterSigma2', 1e-4);
 % K = gp_trcov(gp,x);
 % 
 % L = chol(K)';
@@ -28,9 +28,9 @@ xt = [x1(:), x2(:)];
 gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
 gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 3);
 gpcf3 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1);
-gp1 = gp_set('lik', lik_gaussian, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
-gp2 = gp_set('lik', lik_gaussian, 'cf', {gpcf2}, 'jitterSigma2', 1e-4);
-gp3 = gp_set('lik', lik_gaussian, 'cf', {gpcf3}, 'jitterSigma2', 1e-4);
+gp1 = gp_set('lik', lik_gaussian, 'cf', gpcf1, 'jitterSigma2', 1e-4);
+gp2 = gp_set('lik', lik_gaussian, 'cf', gpcf2, 'jitterSigma2', 1e-4);
+gp3 = gp_set('lik', lik_gaussian, 'cf', gpcf3, 'jitterSigma2', 1e-4);
 K1 = gp_trcov(gp1,xt);
 K2 = gp_trcov(gp2,xt);
 K3 = gp_trcov(gp3,xt);

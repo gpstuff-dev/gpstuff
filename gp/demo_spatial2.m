@@ -76,7 +76,7 @@ gpcf1 = gpcf_ppcs2(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_negbin();
 
 % Create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4); 
+gp = gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-4); 
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');

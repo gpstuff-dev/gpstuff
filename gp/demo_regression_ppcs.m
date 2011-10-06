@@ -123,7 +123,7 @@ gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3, ...
 
 % MAP ESTIMATE
 % ============================================
-gp = gp_set('lik', lik, 'cf', {gpcf2}, 'jitterSigma2', 1e-6);
+gp = gp_set('lik', lik, 'cf', gpcf2, 'jitterSigma2', 1e-6);
 
 % Optimize the parameters
 % ---------------------------------

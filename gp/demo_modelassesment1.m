@@ -44,7 +44,7 @@ y = data(:,3);
 % --- Construct the model ---
 gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 lik = lik_gaussian('sigma2', 0.2^2);
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-9);
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -64,9 +64,11 @@ opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Evaluate the effective number of parameters and DIC with focus on
-% latent variables.
+% latent variables. 
 models{1} = 'full_MAP';
 p_eff_latent = gp_peff(gp, x, y);
+% For easier comparison to other methods, compute mean log
+% predictive density (mlpd) instead of deviance (-2n*mlpd)
 [DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent', 'output', 'mlpd');
 WAIC(1) = gp_waic(gp,x,y);
 WAIC2(1) = gp_waic(gp,x,y, 'method', 'G');
@@ -102,6 +104,8 @@ rfull = thin(rfull, 10, 2);
 
 % Evaluate the effective number of parameters and DIC. 
 models{2} = 'full_MCMC';
+% For easier comparison to other methods, compute mean log
+% predictive density (mlpd) instead of deviance (-2n*mlpd)
 [DIC(2), p_eff(2)] =  gp_dic(rfull, x, y, 'focus', 'param', 'output', 'mlpd');
 [DIC2(2), p_eff2(2)] =  gp_dic(rfull, x, y, 'focus', 'all', 'output', 'mlpd');
 WAIC(2) = gp_waic(rfull,x,y);
@@ -128,6 +132,8 @@ opt.optimf=@fminscg;
 gp_array = gp_ia(gp, x, y, opt);
 
 models{3} = 'full_IA'; 
+% For easier comparison to other methods, compute mean log
+% predictive density (mlpd) instead of deviance (-2n*mlpd)
 [DIC(3), p_eff(3)] =  gp_dic(gp_array, x, y, 'focus', 'param', 'output', 'mlpd');
 [DIC2(3), p_eff2(3)] =  gp_dic(gp_array, x, y, 'focus', 'all', 'output', 'mlpd');
 WAIC(3) = gp_waic(gp_array,x,y);
@@ -156,7 +162,7 @@ disp('GP with FIC sparse approximation')
 X_u = [u1(:) u2(:)];
 
 % Create the FIC GP structure
-gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, 'X_u', X_u)
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6, 'X_u', X_u)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -274,7 +280,7 @@ end
 gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 lik = lik_gaussian('sigma2', 0.2^2);
 
-gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf}, 'jitterSigma2', 1e-6, 'X_u', X_u);
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6, 'X_u', X_u);
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------

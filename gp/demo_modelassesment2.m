@@ -48,7 +48,7 @@ pl = prior_logunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 
 % Create the GP structure
-gp = gp_set('lik', lik_probit, 'cf', {gpcf}, 'jitterSigma2', 1e-4);
+gp = gp_set('lik', lik_probit, 'cf', gpcf, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
 disp([' Probit with Laplace integration over the latent values '; ...
@@ -194,7 +194,7 @@ gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 lik = ('init');
 
 % Create the GP structure
-gp = gp_set('lik', lik_logit, 'cf', {gpcf}, 'jitterSigma2', 1e-4);
+gp = gp_set('lik', lik_logit, 'cf', gpcf, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
@@ -423,7 +423,7 @@ S = sprintf([S '\n '])
 % Xu = Xu([3 4 7:18 20:24 26:30 33:36],:);
 % 
 % % Create the GP structure
-% gp = gp_init('init', 'FIC', lik, {gpcf}, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
+% gp = gp_init('init', 'FIC', lik, gpcf, [],'jitterSigma2', 0.01, 'X_u', Xu, 'infer_params', 'covariance');
 % 
 % gp = gp_init('set', gp, 'infer_params', 'covariance');           % optimize only parameters
 % 
@@ -587,7 +587,7 @@ S = sprintf([S '\n '])
 % trindex{2} = [trindex{2} ; trindex{1}]; trindex = {trindex{2:19}};
 % 
 % % Create the GP structure
-% gp = gp_init('init', 'PIC', lik, {gpcf}, [],'jitterSigma2', 0.01);
+% gp = gp_init('init', 'PIC', lik, gpcf, [],'jitterSigma2', 0.01);
 % gp = gp_init('set', gp, 'X_u', Xu, 'blocks', trindex, 'infer_params', 'covariance')
 % 
 % % ------- Laplace approximation --------

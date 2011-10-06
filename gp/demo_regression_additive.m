@@ -111,7 +111,7 @@ gpcf_s1 = gpcf_sexp('selectedVariables', 1, 'lengthScale',0.5, ...
 %gpcf_s1 = gpcf_sexp('magnSigma2', 0.15, 'magnSigma2_prior', pt, ...
 %                    'metric', metric1);
 %Covariance function for the second input variable
-gpcf_l2 = gpcf_linear('selectedVariables', [2], 'coeffSigma2_prior', pt);
+gpcf_l2 = gpcf_linear('selectedVariables', 2, 'coeffSigma2_prior', pt);
 gp = gp_set('lik', lik, 'cf', {gpcf_c gpcf_s1 gpcf_l2}, 'jitterSigma2', jitter);
 
 % Optimize with the scaled conjugate gradient method

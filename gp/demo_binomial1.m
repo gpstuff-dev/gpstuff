@@ -72,7 +72,7 @@ gpcf = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', ps2);
 
 % Create the GP structure
-gp = gp_set('lik', lik_binomial(), 'cf', {gpcf}, 'jitterSigma2', 1e-8);
+gp = gp_set('lik', lik_binomial(), 'cf', gpcf, 'jitterSigma2', 1e-8);
 
 % ------- Laplace approximation --------
 

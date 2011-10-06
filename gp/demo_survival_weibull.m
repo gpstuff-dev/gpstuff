@@ -68,7 +68,7 @@ gpcf1 = gpcf_neuralnetwork('weightSigma2', 1*ones(1,nin), 'biasSigma2', 0.05, 'w
 lik = lik_weibull();
 
 % Create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-6);
+gp = gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-6);
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');

@@ -10,7 +10,7 @@
 % Simulate data 
 % x = 5*rand(20,2);
 % gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
-% gp = gp_set('lik', lik_gaussian, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+% gp = gp_set('lik', lik_gaussian, 'cf', gpcf1, 'jitterSigma2', 1e-4);
 % K = gp_trcov(gp,x);
 % 
 % L = chol(K)';
@@ -26,7 +26,7 @@
 xt = [x1(:), x2(:)];
 
 gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
-gp = gp_set('lik', lik_gaussian, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+gp = gp_set('lik', lik_gaussian, 'cf', gpcf1, 'jitterSigma2', 1e-4);
 K = gp_trcov(gp,xt);
 
 L = chol(K)';
@@ -63,7 +63,7 @@ subplot(2,3,3);pcolor(x1, x2, reshape(f(:,3),size(x1))),shading flat,colormap(mc
 lik = lik_multinom;
 
 gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2);
-gp = gp_set('lik', lik_multinom, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+gp = gp_set('lik', lik_multinom, 'cf', gpcf1, 'jitterSigma2', 1e-4);
 
 %opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100);

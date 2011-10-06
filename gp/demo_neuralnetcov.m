@@ -62,8 +62,8 @@ pt = prior_t('s2', 4);
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 gpcf2 = gpcf_neuralnetwork(gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 
-gp = gp_set('lik', lik, 'cf', {gpcf1});
-gp2 = gp_set('lik', lik, 'cf', {gpcf2});
+gp = gp_set('lik', lik, 'cf', gpcf1);
+gp2 = gp_set('lik', lik, 'cf', gpcf2);
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
@@ -110,8 +110,8 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pt, 'magnSigma2_prior', pt);
 gpcf2 = gpcf_neuralnetwork(gpcf2, 'weightSigma2_prior', pt, 'biasSigma2_prior', pt);
 lik = lik_gaussian();
 
-gp = gp_set('lik', lik, 'cf', {gpcf1});
-gp2 = gp_set('lik', lik, 'cf', {gpcf2});
+gp = gp_set('lik', lik, 'cf', gpcf1);
+gp2 = gp_set('lik', lik, 'cf', gpcf2);
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)

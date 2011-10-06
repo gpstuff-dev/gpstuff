@@ -50,7 +50,7 @@ gpmf2 = gpmf_linear('prior_mean',.3,'prior_cov',1);
 gpmf3 = gpmf_squared('prior_mean',.3,'prior_cov',1);
 
 % Initialize gp structure
-gp = gp_set('lik', lik, 'cf', {gpcf}, 'meanf', {gpmf1,gpmf2,gpmf3});
+gp = gp_set('lik', lik, 'cf', gpcf, 'meanf', {gpmf1,gpmf2,gpmf3});
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');

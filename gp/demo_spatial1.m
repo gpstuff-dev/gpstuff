@@ -104,7 +104,7 @@ gpcf1 = gpcf_matern32(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_poisson();
 
 % Create the FIC GP structure so that inducing inputs are not optimized
-gp = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1}, 'X_u', Xu, ...
+gp = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
             'jitterSigma2', 1e-4, 'infer_params', 'covariance');
 
 % --- MAP estimate with Laplace approximation ---

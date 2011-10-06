@@ -107,7 +107,7 @@ pm = prior_sqrtunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Following lines do the same since the default type is FULL
-gp = gp_set('type','FULL','lik',lik,'cf',{gpcf},'jitterSigma2',1e-9);
+gp = gp_set('type','FULL','lik',lik,'cf',gpcf);
 %gp = gp_set('lik', lik, 'cf', gpcf);
 
 % Demostrate how to evaluate covariance matrices. 
@@ -169,7 +169,8 @@ title('The predicted underlying function and the data points (MAP solution)');
 % --- Grid integration ---
 disp(' Grid integration over the parameters')
 % Perform the grid integration and make predictions for p
-[gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = gp_ia(gp, x, y, xt, 'int_method', 'grid');
+[gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = ...
+    gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
 % Plot the prediction for few input location
 figure(2)
@@ -204,7 +205,7 @@ hmc2('state', sum(100*clock));
 [rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 400, 'repeat', 5, 'hmc_opt', hmc_opt);
 
 % After sampling we delete the burn-in and thin the sample chain
-rfull = thin(rfull, 10, 2);
+rfull = thin(rfull, 50, 2);
 
 % Now we make the predictions. 'gpmc_preds' is a function that
 % returns the predictive mean of the latent function with every
