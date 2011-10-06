@@ -1,7 +1,7 @@
-%DEMO_REGRESSION2  Regression problem demonstration with additive model
+%DEMO_REGRESSION2  Regression demonstration with additive model
 %
 %  Description
-%    A regression problem with one input variable and one output
+%    A regression demonstration with one input variable and one output
 %    variable with Gaussian noise. The output is assumed to be
 %    realization of two additive functions and Gaussian noise.
 %

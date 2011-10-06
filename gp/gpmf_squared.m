@@ -1,5 +1,5 @@
 function  gpmf = gpmf_squared(varargin)
-%GPMF_SQUARED  Create a squared base function for the GP mean function.
+%GPMF_SQUARED  Create a squared mean function
 %
 %  Description
 %    GPMF = GPMF_SQUARED('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
