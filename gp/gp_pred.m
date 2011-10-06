@@ -221,7 +221,7 @@ switch gp.type
       if ~strcmp(gp.lik.type, 'Gaussian-smt') 
         % normal case
         [V, Cv] = gp_trvar(gp,xt,predcf);
-        Eyt = Eft;e
+        Eyt = Eft;
         Varyt = Varft + Cv - V;
         if ~isempty(yt)
           lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
