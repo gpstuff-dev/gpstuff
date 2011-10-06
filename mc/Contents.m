@@ -7,6 +7,8 @@
 %    HMEAN         - Harmonic mean
 %    METROP2       - Markov Chain Monte Carlo sampling with Metropolis algorithm.
 %    METROP2_OPT   - Default options for Metropolis sampling.
+%    RANDPICK      - Pick element from x randomly
+%                    If x is matrix, pick row from x randomly.
 %    RESAMPDET     - Deterministic resampling
 %    RESAMPRES     - Residual resampling
 %    RESAMPSIM     - Simple random resampling
