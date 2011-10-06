@@ -11,6 +11,8 @@
 %    M2KML        - Converts GP prediction results to a KML file
 %    LOGITINV     - Inverse of the logit transformation
 %    LOGIT        - Logit transformation
+%    SOFTMAX2      - Softmax transfer function
 %    STR2FUN      - Compatibility wrapper to str2func
 %    SET_PIC      - Set the inducing inputs and blocks for two dimensional input data
 %    WMEAN        - weighted mean
+%
