@@ -164,6 +164,10 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               % with mean functions, initialize to mean function values
               if ~isfield(gp,'meanf')
                 f = zeros(sum(nl),1);
+%                 if isfield(gp.lik, 'sigma2')
+%                   Kf = gp_trcov(gp,x,gp.comp_cf{1});
+%                   f(1:n) = Kf*((Kf+gp.lik.sigma2.*eye(n))\y);
+%                 end
               else
                 [H,b_m,B_m]=mean_prep(gp,x,[]);
                 Hb_m=H'*b_m;
@@ -218,11 +222,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   
                   WK=zeros(sum(nl));
                   
-                  %iter=0;
-                  %maxiter=40;
+%                   iter=0;
+%                   maxiter=100;
                   while abs(lp_new - lp_old) > tol %&& iter < maxiter
                     
-                    %iter = iter + 1;
+%                     iter = iter + 1;
                     lp_old = lp_new; a_old = a;
                     
                     if isfield(gp.lik, 'fullW') && gp.lik.fullW
@@ -283,7 +287,15 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     end
                     %diag(W)=diag(W)+delta; 0.1
                     %a=(eye(2*n)+W*K)\b;
-                    f = K*a;
+                    f_new = K*a;
+                    
+                    %f(1:n) = f_new(1:n);
+                    f=f_new;
+                    
+%                     subplot(2,1,1), plot(x,y,'bo',x,f(1:n),'k',x,f(1:n)+sqrt(exp(f(n+1:2*n))*gp.lik.sigma2),'r',...
+%                       x,f(1:n)-sqrt(exp(f(n+1:2*n))*gp.lik.sigma2),'r')
+%                     subplot(2,1,2), plot(x, f(1:n), '-r', x, f(n+1:end), '-k');
+%                     f
                     %f(1:n)=K(1:n,1:n)*a(1:n);
                     %f((n+1):(2*n))=K((n+1):(2*n),(n+1):(2*n))*a((n+1):(2*n));
                     

@@ -16,6 +16,8 @@ function [l,lq,xx] = logitgp(x,varargin)
 %         (default is @gpcf_sexp)
 %       'latent_method' is optional 'Laplace' (default) or 'MCMC'
 %       'int_method' is optional 'mode' (default), 'CCD' or 'grid'
+%       'display' for printing optimization steps etc., 0=off or
+%         1=on (default)
 % 
 %     L is the estimated density
 %     LQ is the 5% and 95% percentiles of the density estimate
@@ -38,6 +40,7 @@ function [l,lq,xx] = logitgp(x,varargin)
   %ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
   ip.addParamValue('int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
   ip.addParamValue('normalize',false, @islogical);
+  ip.addParamValue('display', 1, @(x) isreal(x) && all(isfinite(x(:))))
   
   ip.parse(x,varargin{:});
   x=ip.Results.x;
@@ -48,6 +51,7 @@ function [l,lq,xx] = logitgp(x,varargin)
   latent_method=ip.Results.latent_method;
   int_method=ip.Results.int_method;
   normalize=ip.Results.normalize;
+  display=ip.Results.display;
   
   [n,m]=size(x);
   
@@ -85,7 +89,7 @@ function [l,lq,xx] = logitgp(x,varargin)
       xxn=(xx-mean(xx))./std(xx);
       
       %[Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -178,7 +182,7 @@ function [l,lq,xx] = logitgp(x,varargin)
       xxn=bsxfun(@rdivide,bsxfun(@minus,xx,mean(xx,1)),std(xx,1));
       
       % [Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -223,9 +227,14 @@ function [l,lq,xx] = logitgp(x,varargin)
   end
 end
 
-function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
+function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
+  if display==1
+    displ='iter';
+  else
+    displ='off';
+  end
   nin = size(xx,2);
   % init gp
   if strfind(func2str(gpcf),'ppcs')
@@ -264,10 +273,13 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
   
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
-  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','off','Derivativecheck','off');
+  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',displ,'Derivativecheck','off');
   gp=gp_optim(gp,xx,yy,'opt',opt);
   
   if strcmpi(latent_method,'Laplace')
+    %opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Derivativecheck','on');
+    opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',displ,'Derivativecheck','off');
+    gp=gp_optim(gp,xx,yy,'opt',opt);
     % Just make prediction for the test points
     [Ef,Covf] = gp_pred(gp, xx, yy, xxt);
   elseif strcmpi(latent_method,'MCMC')
@@ -284,7 +296,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
     hmc2('state', sum(100*clock))
     
     % The first stage sampling
-    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15, 'display', 0);
+    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15, 'display', display);
     %[r,g,opt]=gp_mc(gp, xx, yy, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
     
     % re-set some of the sampling options
@@ -295,7 +307,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
     
     % The second stage sampling
     % Notice that previous record r is given as an argument
-    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'display', 0, 'record', r);
+    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'record', r,  'display', display);
     %[rgp,g,opt]=gp_mc(gp, xx, yy, 'nsamples', 500, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
     % Remove burn-in
     %rgp=thin(rgp,102);
@@ -307,7 +319,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method)
     % integrate over the hyperparameters
     %[~, ~, ~, Ef, Covf] = gp_ia(opt, gp, xx, yy, xt, param);
     [notused, notused, notused, Ef, Covf]=...
-        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', int_method);
+        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', int_method, 'display', display);
   end
   
 end
