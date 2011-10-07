@@ -1,22 +1,22 @@
-function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
+function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
 %function [Ef, Varf, Ey, Vary, Pyt] = gpla_multinom_pred(gp, x, y, xt, varargin)
 %GPLA_MO_PRED Predictions with Gaussian Process Laplace
 %                approximation with multinom likelihood
 %
 %  Description
-%    [EFT, VARFT] = GPLA_MO_PRED(GP, X, Y, XT, OPTIONS) takes
+%    [EFT, COVFT] = GPLA_MO_PRED(GP, X, Y, XT, OPTIONS) takes
 %    a GP structure GP together with a matrix XT of input vectors,
 %    matrix X of training inputs and vector Y of training targets,
 %    and evaluates the predictive distribution at inputs XT. Returns
-%    a posterior mean EFT and variance VARFT of latent variables.
+%    a posterior mean EFT and covariance COVFT of latent variables.
 %
-%    [EF, VARF, LPYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EF, COVF, LPYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also logarithm of the predictive density PYT of the observations YT
 %    at input locations XT. This can be used for example in the
 %    cross-validation. Here Y has to be vector.
 %
 %    [EF, VARF, LPYT, EYT, VARYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the posterior predictive mean EYT and variance VARYT.
+%    returns also the posterior predictive mean EYT and covariance VARYT.
 %
 %     OPTIONS is optional parameter-value pair
 %       predcf - is index vector telling which covariance functions are 
@@ -161,55 +161,47 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
           % Evaluate the variance
           %kstarstar = gp_trvar(gp,xt,predcf);
           
-          kstarstar = zeros(sum(nlt),1);
+          %kstarstar = zeros(sum(nlt),1);
           %kstarstar = zeros(ntest*nlp,1);
           kstarstarfull = zeros(sum(nlt));
           %kstarstarfull = zeros(ntest*nlp);
                  
           if isempty(predcf)
             if isfield(gp.lik, 'fullW') && gp.lik.fullW
-              kstarstar = gp_trcov(gp,xt);
+              kstarstarfull = gp_trcov(gp,xt);
             else
               if isfield(gp.lik,'xtime')
-                kstarstar(1:ntime,1) = gp_trvar(gp,xtime,gp.comp_cf{1});
-                kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,gp.comp_cf{2});
-                if nargout > 2
+%                 kstarstar(1:ntime,1) = gp_trvar(gp,xtime,gp.comp_cf{1});
+%                 kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,gp.comp_cf{2});
                   kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,gp.comp_cf{1});
                   kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,gp.comp_cf{2});
-                end
               else
                 for i1=1:nlp
-                  kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,gp.comp_cf{i1});
-                  if nargout > 2
-                    kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,gp.comp_cf{i1});
-                  end
+%                   kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,gp.comp_cf{i1});
+                  kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,gp.comp_cf{i1});
                 end
               end
             end
           else
             if isfield(gp.lik, 'fullW') && gp.lik.fullW
-              kstarstar = gp_trcov(gp,xt,predcf);
+              kstarstarfull = gp_trcov(gp,xt,predcf);
             else
               if isfield(gp.lik,'xtime')
-                kstarstar(1:ntime,1) = gp_trvar(gp,xtime,intersect(gp.comp_cf{1}, predcf));
-                kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{2}, predcf));
-                if nargout > 2
-                  kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,intersect(gp.comp_cf{1}, predcf));
-                  kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,intersect(gp.comp_cf{2}, predcf));
-                end
+%                 kstarstar(1:ntime,1) = gp_trvar(gp,xtime,intersect(gp.comp_cf{1}, predcf));
+%                 kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{2}, predcf));
+                kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,intersect(gp.comp_cf{1}, predcf));
+                kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,intersect(gp.comp_cf{2}, predcf));
               else
                 for i1=1:nlp
-                  kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{i1}, predcf));
-                  if nargout > 2
-                    kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,intersect(gp.comp_cf{i1}, predcf));
-                  end
+%                   kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{i1}, predcf));
+                  kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,intersect(gp.comp_cf{i1}, predcf));
                 end
               end
             end
           end
           
           if isfield(gp,'meanf')
-            kstarstar = kstarstar + Hs'*B_m*Hs;
+            kstarstarfull = kstarstarfull + Hs'*B_m*Hs;
             %kstarstar= kstarstar + diag(Hs'*B_m*Hs);
           end
           %           if W >= 0
@@ -245,8 +237,8 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
             iKW=KW\eye(tn);
             
             WiKW=-g2u*(g2u'*iKW)-bsxfun(@times,g2d,iKW);
-            Varft=kstarstar-K_nf*(WiKW*K_nf');
-            Varf=Varft;
+            Varft=kstarstarfull-K_nf*(WiKW*K_nf');
+            Covf=Varft;
           else
             n=size(x,1);
             iWK=L\eye(sum(nl));
@@ -265,15 +257,10 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
               iWKW=[iWKW11 iWKW12; iWKW21 iWKW22];
             end
             
-            if nargout >= 2
-              KiWKWK=K_nf*iWKW*K_nf';
-              Covft=kstarstarfull-KiWKWK;
-              Varft=kstarstar-diag(KiWKWK);
-              Varf=Covft;
-            else
-              Varft=kstarstar-diag(K_nf*iWKW*K_nf');
-              Varf=Varft;
-            end
+            KiWKWK=K_nf*iWKW*K_nf';
+            Covf=kstarstarfull-KiWKWK;
+%               Varft=kstarstar-diag(KiWKWK);
+%               Varf=Covft;
           end
         end
         Ef=Eft;
@@ -281,26 +268,26 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
       else
         
         if isfield(gp, 'comp_cf')  % own covariance for each ouput component
-        multicf = true;
-        if length(gp.comp_cf) ~= nout && nout > 1
-          error('GPLA_ND_E: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
-        end
-        if ~isempty(predcf)
-          if ~iscell(predcf) || length(predcf)~=nout && nout > 1
-            error(['GPLA_ND_PRED: if own covariance for each output component is used,'...
-              'predcf has to be cell array and contain nout (vector) elements.   '])
+          multicf = true;
+          if length(gp.comp_cf) ~= nout && nout > 1
+            error('GPLA_ND_E: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+          end
+          if ~isempty(predcf)
+            if ~iscell(predcf) || length(predcf)~=nout && nout > 1
+              error(['GPLA_ND_PRED: if own covariance for each output component is used,'...
+                'predcf has to be cell array and contain nout (vector) elements.   '])
+            end
+          else
+            predcf = gp.comp_cf;
           end
         else
-          predcf = gp.comp_cf;
+          multicf = false;
+          for i1=1:nout
+            predcf2{i1} = predcf;
+          end
+          predcf=predcf2;
         end
-      else
-        multicf = false;
-        for i1=1:nout
-          predcf2{i1} = predcf;
-        end
-        predcf=predcf2;
-      end
-
+        
         
         
         [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(gp_pak(gp), gp, x, y, 'z', z);
@@ -371,8 +358,8 @@ function [Ef, Varf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
     error('yt has to be provided to get lpyt.')
   end
   if nargout > 3
-    [lpyt, Ey, Vary] = gp.lik.fh.predy(gp.lik, Ef, Varf, yt, zt);
+    [lpyt, Ey, Vary] = gp.lik.fh.predy(gp.lik, Ef, Covf, yt, zt);
   elseif nargout > 2
-    lpyt = gp.lik.fh.predy(gp.lik, Ef, Varf, yt, zt);
+    lpyt = gp.lik.fh.predy(gp.lik, Ef, Covf, yt, zt);
   end
 end
