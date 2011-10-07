@@ -16,7 +16,7 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
 %    cross-validation. Here Y has to be vector.
 %
 %    [EF, VARF, LPYT, EYT, VARYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also the posterior predictive mean EYT and covariance VARYT.
+%    returns also the posterior predictive mean EYT and variance VARYT.
 %
 %     OPTIONS is optional parameter-value pair
 %       predcf - is index vector telling which covariance functions are 
