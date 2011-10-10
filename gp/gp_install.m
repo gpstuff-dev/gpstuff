@@ -148,7 +148,11 @@ else
         elseif (v < 7.5)
             lapack = 'libmwlapack.lib' ;
         else
-            %lapack = 'libmwlapack.lib libmwblas.lib' ;
+            lapack = 'libmwlapack.lib libmwblas.lib' ;
+            % There seems to be something weird how Matlab forms the paths
+            % to lapack in Windows. If the above does not work try the
+            % below by changing the path to your own Matlab directory.
+            %lapack = 'C:\Program'' Files''\MATLAB\R2010a\extern\lib\win64\microsoft\libmwlapack.lib C:\Program'' Files''\MATLAB\R2010a\extern\lib\win64\microsoft\libmwblas.lib';
         end
     else
         if (v < 7.5)
