@@ -1,5 +1,6 @@
 % MISCELLANEOUS FUNCTIONS (in the misc-folder)
 %
+%    BINSGEQ      - Binary search of sorted vector
 %    CVIT         - Create itr and itst indeces for k-fold-cv
 %    CVITR        - Create itr and itst indeces for k-fold-cv with ranndom 
 %                   permutation
