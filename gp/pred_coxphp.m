@@ -1,4 +1,19 @@
 function p = pred_coxphp(gp, x, y, xt, pp, varargin)
+%PRED_COXPH     Integrates the model from zero to point pp (when time is 
+%   scaled to interval 0-1)
+%
+%  Description
+%    P = PRED_COXPHP(GP,X,Y,XT,PP)
+%    Integrates the model from zero to point pp with respect to time.
+%    Return P, the probability that event has happened before time pp. PP
+%    is vector of size 1xM(or Mx1) indicating times in scaled interval ~ Unif(0,1).
+%    Returns matrix P of size NxM where columns correspond to points in
+%    PP and rows correspond to rows in X (e.g. people).
+%
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 if size(pp,1) == 1
   pp=pp';
