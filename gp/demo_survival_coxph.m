@@ -112,8 +112,10 @@ xt01(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 xt02(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 
 
-[Ef1, Varf1] = gp_pred(gp, x, y, xt1, 'z', ye);
-[Ef2, Varf2] = gp_pred(gp, x, y, xt2, 'z', ye);
+[Ef1, Covf1] = gp_pred(gp, x, y, xt1, 'z', ye);
+[Ef2, Covf2] = gp_pred(gp, x, y, xt2, 'z', ye);
+Varf1 = diag(Covf1);
+Varf2 = diag(Covf2);
 
 
 figure, hold on, set(gcf, 'color', 'w'),
@@ -166,7 +168,8 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
 gp=gp_optim(gp,x2,y2,'z',ye,'opt',opt);
 
-[Ef1, Varf1] = gp_pred(gp, x2, y2, x2, 'z', ye);
+[Ef1, Covf1] = gp_pred(gp, x2, y2, x2, 'z', ye);
+Varf1 = diag(Covf1);
 xtmpl=linspace(min(y(:)),max(y(:)),50);
 
 figure, hold on, set(gcf, 'color', 'w'),

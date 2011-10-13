@@ -82,8 +82,8 @@
 %========================================================
 
 % Load the data
-S = which('demo_regression2');
-L = strrep(S,'demo_regression2.m','demos/maunaloa_data.txt');
+S = which('demo_regression1');
+L = strrep(S,'demo_regression1.m','demos/maunaloa_data.txt');
 data=load(L);
 y = data(:, 2:13);
 y=y';
