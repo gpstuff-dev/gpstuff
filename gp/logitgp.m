@@ -1,27 +1,35 @@
-function [l,lq,xx] = logitgp(x,varargin)
-% LOGITGP - Logistic-Gaussian Process density estimate for 1D and 2D data
-%   
-%   LOGITGP(X)
-%   [P,PQ,XT] = LOGITGP(X,XT,OPTIONS)
+function [p,pq,xx] = logitgp(x,varargin)
+%LOGITGP Logistic-Gaussian Process density estimate for 1D and 2D data
 % 
-%     X is 1D or 2D point data
-%     XT is optional test points
-%     OPTIONS are optional parameter-value pairs
-%       'gridn' is optional number of grid points used in each axis direction
-%         default is 100 for 1D, 15 for grid 2D, and 7 for Voronoi 2D
-%       'range' tells the estimation range, default is data range
-%         for 1D [XMIN XMAX]
-%         for 2D [XMIN XMAX YMIN YMAX]
-%       'gpcf' is optional function handle of a GPstuff covariance function 
-%         (default is @gpcf_sexp)
-%       'latent_method' is optional 'Laplace' (default) or 'MCMC'
-%       'int_method' is optional 'mode' (default), 'CCD' or 'grid'
-%       'display' for printing optimization steps etc., 0=off or
-%         1=on (default)
-% 
-%     L is the estimated density
-%     LQ is the 5% and 95% percentiles of the density estimate
-%     XX contains the used test points
+%  Description  
+%    LOGITGP(X,OPTIONS) Compute and plot LGP density estimate. X is
+%    1D or 2D point data. For 1D data plot the mean and 95% region. 
+%    For 2D data plot the density contours.
+%  
+%    [P,PQ,XT] = LOGITGP(X,OPTIONS) Compute LGP density estimate
+%    and return mean density P, 2.5% and 97.5% percentiles PQ, and
+%    grid locations.
+%  
+%    [P,PQ,XT] = LOGITGP(X,XT,OPTIONS) Compute LGP density estimate
+%    in the given grid locations XT.
+%  
+%    OPTIONS is optional parameter-value pair
+%      gridn     - optional number of grid points used in each axis direction
+%                  default is 400 for 1D, 20 for 2D.
+%      range     - tells the estimation range, default is 
+%                  [min(min(x),mean(x)-3*std(x)), max(max(x),mean(x)+3*std(x))]
+%                  for 1D [XMIN XMAX]
+%                  for 2D [X1MIN X1MAX X2MIN X2MAX]
+%      gpcf      - optional function handle of a GPstuff covariance function 
+%                      (default is @gpcf_sexp)
+%      latent_method - optional 'Laplace' (default) or 'MCMC'
+%      int_method    - optional 'mode' (default), 'CCD' or 'grid'
+%                      if latent_method is 'MCMC' then int_method is 'MCMC'
+%      display   - defines if messages are displayed. 
+%                  'off' (default) displays no output
+%                  'on' gives some output  
+%                  'iter' displays output at each iteration
+%
   
 % Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
 
@@ -40,7 +48,8 @@ function [l,lq,xx] = logitgp(x,varargin)
   %ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
   ip.addParamValue('int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
   ip.addParamValue('normalize',false, @islogical);
-  ip.addParamValue('display', 1, @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('display', 'off', @(x) islogical(x) || ...
+                   ismember(x,{'on' 'off' 'iter'}))
   
   ip.parse(x,varargin{:});
   x=ip.Results.x;
@@ -64,12 +73,19 @@ function [l,lq,xx] = logitgp(x,varargin)
       end
       xmin=min(x);xmax=max(x);
       if ~isempty(xrange)
+        % extend given range to include min(x) and max(x)
         xmin=min(xmin,xrange(1));
         xmax=max(xmax,xrange(2));
+      elseif ~isnan(xt)
+        % use xt to define range and 
+        % extend it to include min(x) and max(x)
+        xmin=min(xmin,min(xt));
+        xmax=max(xmax,max(xt));
       else
-        xmin=xmin-.5*std(x);
-        xmax=xmax+.5*std(x);
+        xmin=mean(x)-3*std(x);
+        xmax=mean(x)+3*std(x);
       end
+      
       % Discretize the data
       if isnan(xt)
         xx=linspace(xmin,xmax,gridn)';
@@ -80,10 +96,6 @@ function [l,lq,xx] = logitgp(x,varargin)
       
       xd=xx(2)-xx(1);
       yy=hist(x,xx)';
-      
-      % weight for normalization
-      % w=1/gridn;
-      % ye=w.*ones(gridn,1);
       
       % normalise, so that same prior is ok for different scales
       xxn=(xx-mean(xx))./std(xx);
@@ -107,18 +119,19 @@ function [l,lq,xx] = logitgp(x,varargin)
         pjr=bsxfun(@rdivide,qjr,sum(qjr(1:gridn,:)));
         pjr=pjr./xd;
       end
-      %l=prctile(pjr(gridn+1:end,:)',[50])';
-      %lq=prctile(pjr(gridn+1:end,:)',[2.5 97.5])';
-      l=mean(pjr')';
-      lq=prctile(pjr',[2.5 97.5])';
+      pp=mean(pjr')';
+      ppq=prctile(pjr',[2.5 97.5])';
       
       if nargout<1
         % no output, do the plot thing
         newplot
-        hp=patch([xx; xx(end:-1:1)],[lq(:,1); lq(end:-1:1,2)],[.9 .9 .9]);
+        hp=patch([xx; xx(end:-1:1)],[ppq(:,1); ppq(end:-1:1,2)],[.8 .8 .8]);
         set(hp,'edgecolor',[.9 .9 .9])
         xlim([xmin xmax])
-        line(xx,l,'linewidth',2);
+        line(xx,pp,'linewidth',2);
+      else
+        p=pp;
+        pq=ppq;
       end
       
     case 2 % 2D
@@ -131,8 +144,8 @@ function [l,lq,xx] = logitgp(x,varargin)
   
       % Parameters for a grid
       if isempty(gridn)
-        % number of points in direction
-        gridn=15;
+        % number of points in each direction
+        gridn=20;
       end
       if numel(gridn)==1
         gridn(2)=gridn(1);
@@ -140,16 +153,23 @@ function [l,lq,xx] = logitgp(x,varargin)
       x1min=min(x(:,1));x1max=max(x(:,1));
       x2min=min(x(:,2));x2max=max(x(:,2));
       if ~isempty(xrange)
-        % range extension
+        % extend given range to include min(x) and max(x)
         x1min=min(x1min,xrange(1));
         x1max=max(x1max,xrange(2));
         x2min=min(x2min,xrange(3));
         x2max=max(x2max,xrange(4));
+      elseif ~isnan(xt)
+        % use xt to define range and 
+        % extend it to include min(x) and max(x)
+        x1min=min(x1min,min(xt(:,1)));
+        x1max=max(x1max,max(xt(:,1)));
+        x2min=min(x2min,min(xt(:,2)));
+        x2max=max(x2max,max(xt(:,2)));
       else
-        x1min=x1min-0.5*std(x(:,1));
-        x1max=x1max+0.5*std(x(:,1));
-        x2min=x2min-0.5*std(x(:,2));
-        x2max=x2max+0.5*std(x(:,2));
+        x1min=mean(x(:,1))-3*std(x(:,1));
+        x1max=mean(x(:,1))+3*std(x(:,1));
+        x2min=mean(x(:,2))-3*std(x(:,2));
+        x2max=mean(x(:,1))+3*std(x(:,2));
       end
       
       % Discretize the data
@@ -201,15 +221,15 @@ function [l,lq,xx] = logitgp(x,varargin)
         pjr=pjr./xd;
       end
       
-      l=mean(pjr')';
-      lq=prctile(pjr',[2.5 97.5])';
+      pp=mean(pjr')';
+      ppq=prctile(pjr',[2.5 97.5])';
       
       if nargout<1
         G=zeros(size(z1));
         G(:)=prctile(pjr',50);
         %contour(z1,z2,G);
-        p=G(:);
-        p1=p./sum(p);
+        pp=G(:);
+        p1=pp./sum(pp);
         pu=unique(p1);pu=pu(end:-1:1);
         pc=cumsum(pu);
         PL=[.001 .01 .05 .1 .2 .5 .8 .9 .95];
@@ -217,10 +237,13 @@ function [l,lq,xx] = logitgp(x,varargin)
         for pli=1:numel(PL)
           qi(pli)=find(pc>PL(pli),1);
         end
-        pl=pu(qi).*sum(p);
+        pl=pu(qi).*sum(pp);
         contour(z1,z2,G,pl);
         %hold on, plot(x(:,1),x(:,2),'kx')
-        colorbar
+        %colorbar
+      else
+        p=pp;
+        pq=ppq;
       end
     otherwise
       error('X has to be Nx1 or Nx2')
@@ -230,11 +253,13 @@ end
 function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
-  if display==1
-    displ='iter';
+  % gp_mc and gp_ia still uses numeric display option
+  if strcmp(display,'off')
+    displ=0;
   else
-    displ='off';
+    displ=1;
   end
+  
   nin = size(xx,2);
   % init gp
   if strfind(func2str(gpcf),'ppcs')
@@ -244,42 +269,35 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
     gpcf1 = gpcf();
   end
   % default vague prior
-  pm = prior_t('s2', 1^2, 'nu', 4);
+  pm = prior_sqrtt('s2', 10^2, 'nu', 4);
   pl = prior_t('s2', 1^2, 'nu', 4);
   pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
      gpcf1 = gpcf(gpcf1, 'magnSigma2', .5, 'magnSigma2_prior', pm);
-     %gpcf1 = gpcf(gpcf1, 'magnSigma2', .00001, 'magnSigma2_prior', []);
   end
   if isfield(gpcf1,'lengthScale')
      gpcf1 = gpcf(gpcf1, 'lengthScale', .5, 'lengthScale_prior', pl);
-     %gpcf1 = gpcf(gpcf1, 'lengthScale', 10, 'lengthScale_prior', []);
-     %gpcf1 = gpcf(gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
   end
   if isfield(gpcf1,'alpha')
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
   end
-  %gpcf1=gpcf_matern52('lengthscale',.1,'lengthScale_prior', pl, 'magnSigma2', 1, 'magnSigma2_prior', pm);
-  %gpcf1=gpcf_sexp('lengthscale',[.1 .1],'lengthScale_prior', pl, 'magnSigma2', 1, 'magnSigma2_prior', pm);
-  %gpcf1=gpcf_exp('lengthscale',.1,'lengthScale_prior', pl, 'magnSigma2', 1, 'magnSigma2_prior', pm);
-  
+  if isfield(gpcf1,'biasSigma2')
+    gpcf1 = gpcf(gpcf1, 'biasSigma2', 10, 'weightSigma2', 10,'biasSigma2_prior',prior_logunif(),'weightSigma2_prior',prior_logunif());
+  end
+
   % Create the GP structure
   gpmfco = gpmf_constant('prior_mean',0,'prior_cov',100);
   gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
   gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
-  %gp = gp_set('lik', lik_logitgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
   gp = gp_set('lik', lik_logitgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmfco,gpmflin,gpmfsq});
   
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
-  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',displ,'Derivativecheck','off');
+  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
   gp=gp_optim(gp,xx,yy,'opt',opt);
   
   if strcmpi(latent_method,'Laplace')
-    %opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Derivativecheck','on');
-    opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',displ,'Derivativecheck','off');
-    gp=gp_optim(gp,xx,yy,'opt',opt);
     % Just make prediction for the test points
     [Ef,Covf] = gp_pred(gp, xx, yy, xxt);
   elseif strcmpi(latent_method,'MCMC')
@@ -296,7 +314,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
     hmc2('state', sum(100*clock))
     
     % The first stage sampling
-    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15, 'display', display);
+    [r,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15, 'display', displ);
     %[r,g,opt]=gp_mc(gp, xx, yy, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
     
     % re-set some of the sampling options
@@ -307,10 +325,8 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
     
     % The second stage sampling
     % Notice that previous record r is given as an argument
-    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'record', r,  'display', display);
-    %[rgp,g,opt]=gp_mc(gp, xx, yy, 'nsamples', 500, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+    [rgp,g,opt]=gp_mc(gp, xx, yy, 'hmc_opt', hmc_opt, 'nsamples', 500,'latent_opt', latent_opt, 'record', r,  'display', displ);
     % Remove burn-in
-    %rgp=thin(rgp,102);
     rgp=thin(rgp,102,4);
     
     [Ef, Covf] = gpmc_jpreds(rgp, xx, yy, xxt);
@@ -319,7 +335,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
     % integrate over the hyperparameters
     %[~, ~, ~, Ef, Covf] = gp_ia(opt, gp, xx, yy, xt, param);
     [notused, notused, notused, Ef, Covf]=...
-        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', int_method, 'display', display);
+        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', int_method, 'display', displ);
   end
-  
+
 end

@@ -27,9 +27,8 @@
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-%addpath /proj/bayes/software/jtriihim/gp_density/
-%stream = RandStream('mrg32k3a');
-%RandStream.setDefaultStream(stream);
+stream = RandStream('mrg32k3a');
+RandStream.setDefaultStream(stream);
 
 % =====================================
 % 1) 1D-examples
@@ -40,15 +39,11 @@ subplot(2,2,1)
 % t_4
 stream.Substream = 1;
 x=[trnd(4,1,100)]';
-[N,X]=hist(x);
-h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
 xt=linspace(-7,7,400)';
-[p,pq]=logitgp(x,xt,'int_method','mode');
-line(xt,p,'color','r','marker','none','linewidth',2)
-line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
-xlim([-7 7])
+logitgp(x,xt);
+axis tight
 title('t_4')
-% correct density
+% true density
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
 %sum(p0.*log(p))
@@ -56,41 +51,36 @@ line(xt,p0,'color','k')
 subplot(2,2,2)
 % Mixture of two t_4
 stream.Substream = 1;
-x=[trnd(4,1,100) 3+trnd(4,1,50)*0.1]';
-[N,X]=hist(x);
-h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
+n1=sum(rand(100,1)<3/4);
+n2=100-n1;
+x=[trnd(4,n1,1); 3+trnd(4,n2,1)/4];
 xt=linspace(-6,6,400)';
-[p,pq]=logitgp(x,xt,'int_method','mode');
-line(xt,p,'color','r','marker','none','linewidth',2)
-line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+logitgp(x,xt);
+axis tight
 title('Mixture of two t_4')
-% correct density
-p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,.1)*1/3;
+% true density
+p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/4)*1/3;
 line(xt,p0,'color','k')
-%sum(p0.*log(p))
 
 subplot(2,2,3)
 % Galaxy data
 x=load('demos/galaxy.txt');
-[N,X]=hist(x);
-h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
 xt=linspace(0,40000,200)';
-[p,pq]=logitgp(x,xt,'int_method','mode');
-line(xt,p,'color','r','marker','none','linewidth',2)
-line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+logitgp(x,xt);
+axis tight
 title('Galaxy data')
+% true density is unknown
 
 subplot(2,2,4)
 % Gamma(1,1)
 stream.Substream = 1;
 x=gamrnd(1,1,100,1);
-[N,X]=hist(x);
-h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
-xt=linspace(0,6,400)';
-[p,pq]=logitgp(x,xt,'int_method','mode','gpcf',@gpcf_rq);
-line(xt,p,'color','r','marker','none','linewidth',2)
-line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
+xt=linspace(0,5,400)';
+logitgp(x,xt);
+axis tight
 title('Gamma(1,1)')
+p0=gam_pdf(xt,1,1);
+line(xt,p0,'color','k')
 
 % =====================================
 % 1) 2D-examples
@@ -99,50 +89,43 @@ title('Gamma(1,1)')
 figure(2)
 clf
 subplot(2,2,1)
-% Mixture of two Gaussians
-n=200;
-stream.Substream = 1;
-x=[randn(n/2,2);bsxfun(@plus,randn(n/2,2)*0.5,[2 2])];
-logitgp(x,'int_method','mode','gridn',20);
-line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-title('Mixture of two Gaussians')
-
-subplot(2,2,2)
-% Truncated t_8
+% t_4
+n=100;
 Sigma = [1 .7; .7 1];R = chol(Sigma);
 stream.Substream = 1;
-x=trnd(8,200,2)*R;x(x(:,2)<-1,2)=-1;
-logitgp(x,'int_method','mode','gridn',20);
+x=trnd(8,n,2)*R;
+logitgp(x);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-title('Truncated t_8')
+axis([-4 4 -4 4])
+title('Student t_4')
+
+subplot(2,2,2)
+% Old faithful
+x=load('demos/faithful.txt');
+logitgp(x);
+line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
+title('Old faithful')
 
 subplot(2,2,3)
 % Banana-shaped
+n=100;
 stream.Substream = 1;
-b=0.02;x=randn(200,2);x(:,1)=x(:,1)*10;x(:,2)=x(:,2)+b*x(:,1).^2-10*b;
-logitgp(x,'int_method','mode','gridn',20);
+b=0.02;x=randn(n,2);x(:,1)=x(:,1)*10;x(:,2)=x(:,2)+b*x(:,1).^2-10*b;
+logitgp(x,'range',[-30 30 -5 20],'gridn',26);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-title('Banana-shaped')
-
+axis([-25 25 -5 10])
+title('Banana')
 
 subplot(2,2,4)
-% Mixture of two Gaussians
-n=200;
+% Ring
+n=100;
 stream.Substream = 1;
-x=[randn(n/2,2);bsxfun(@plus,randn(n/2,2)*0.5,[2 2])];
-%x=[randn(n,2)];%bsxfun(@plus,randn(n/2,2)*0.5,[2 2])];
-%xt=linspace(-3,4,26)';
-logitgp(x,'range',[-3 4 -3 4],'int_method','mode','gridn',26);
+phi=(rand(n,1)-0.5)*2*pi;
+x=[1.5*cos(phi)+randn(n,1)*0.2 1.5*sin(phi)+randn(n,1)*0.2];
+logitgp(x,'gridn',30);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-%p=logitgp(x,'range',[-3 4 -3 4],'int_method','mode','gridn',26);
-%p1=logitgp(x(:,1),'range',[-3 4],'int_method','mode','gridn',26);
-%p2=logitgp(x(:,2),'range',[-3 4],'int_method','mode','gridn',26);
-%plot(xt,p1),ylim([0 .5])
-%plot(xt,p2),ylim([0 .5])
-%pp=reshape(p,26,26);
-%sum(sum(pp.*(log(pp)-bsxfun(@plus,log(p1'),log(p2)))))
-line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-title('Mixture of two Gaussians')
+axis([-2.5 2.5 -2.5 2.5])
+title('Ring')
 
 
 % =====================================
@@ -155,22 +138,17 @@ hold on
 stream.Substream = 1;
 x=[trnd(4,1,100)]';
 xt=linspace(-7,7,50)';
-[N,X]=hist(x);
-h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
-[p,pq]=logitgp(x,xt,'int_method','mode');
+[p,pq]=logitgp(x,xt);
 pla=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
 line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 xlim([-7 7])
 title('t_4 (Laplace)')
-% correct density
+% true density
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
 
 subplot(2,1,2)
-hold on
-h=bar(X,N/sum(N.*diff(X(1:2))),'hist');set(h,'FaceColor',[.4 .6 1]);
-%[p,pq]=logitgp(x,xt,'int_method','mode');
 [p,pq]=logitgp(x,xt,'latent_method','MCMC');
 pmc=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
