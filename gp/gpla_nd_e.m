@@ -56,8 +56,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
   ip=inputParser;
   ip.FunctionName = 'GPLA_ND_E';
   ip.addRequired('w', @(x) ...
-                 (ischar(x) && strcmp(w, 'init')) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)));
+                 (ischar(x) && strcmp(w, 'init')) || isempty(x) || ...
+                 (isvector(x) && isreal(x) && all(isfinite(x))));
   ip.addRequired('gp',@isstruct);
   ip.addOptional('x', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('y', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))

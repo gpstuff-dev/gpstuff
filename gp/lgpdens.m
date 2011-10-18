@@ -1,16 +1,16 @@
-function [p,pq,xx] = logitgp(x,varargin)
-%LOGITGP Logistic-Gaussian Process density estimate for 1D and 2D data
+function [p,pq,xx] = lgpdens(x,varargin)
+%LGPDENS Logistic-Gaussian Process density estimate for 1D and 2D data
 % 
 %  Description  
-%    LOGITGP(X,OPTIONS) Compute and plot LGP density estimate. X is
+%    LGPDENS(X,OPTIONS) Compute and plot LGP density estimate. X is
 %    1D or 2D point data. For 1D data plot the mean and 95% region. 
 %    For 2D data plot the density contours.
 %  
-%    [P,PQ,XT] = LOGITGP(X,OPTIONS) Compute LGP density estimate
+%    [P,PQ,XT] = LGPDENS(X,OPTIONS) Compute LGP density estimate
 %    and return mean density P, 2.5% and 97.5% percentiles PQ, and
 %    grid locations.
 %  
-%    [P,PQ,XT] = LOGITGP(X,XT,OPTIONS) Compute LGP density estimate
+%    [P,PQ,XT] = LGPDENS(X,XT,OPTIONS) Compute LGP density estimate
 %    in the given grid locations XT.
 %  
 %    OPTIONS is optional parameter-value pair
@@ -38,7 +38,7 @@ function [p,pq,xx] = logitgp(x,varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'LOGITGP';
+  ip.FunctionName = 'LGPDENS';
   ip.addRequired('x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip.addOptional('xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip.addParamValue('gridn',[], @(x) isnumeric(x));
@@ -82,8 +82,8 @@ function [p,pq,xx] = logitgp(x,varargin)
         xmin=min(xmin,min(xt));
         xmax=max(xmax,max(xt));
       else
-        xmin=mean(x)-3*std(x);
-        xmax=mean(x)+3*std(x);
+        xmin=min(xmin,mean(x)-3*std(x));
+        xmax=max(xmax,mean(x)+3*std(x));
       end
       
       % Discretize the data
@@ -166,10 +166,10 @@ function [p,pq,xx] = logitgp(x,varargin)
         x2min=min(x2min,min(xt(:,2)));
         x2max=max(x2max,max(xt(:,2)));
       else
-        x1min=mean(x(:,1))-3*std(x(:,1));
-        x1max=mean(x(:,1))+3*std(x(:,1));
-        x2min=mean(x(:,2))-3*std(x(:,2));
-        x2max=mean(x(:,1))+3*std(x(:,2));
+        x1min=min(x1min,mean(x(:,1))-3*std(x(:,1)));
+        x1max=max(x1max,mean(x(:,1))+3*std(x(:,1)));
+        x2min=min(x2min,mean(x(:,2))-3*std(x(:,2)));
+        x2max=max(x2max,mean(x(:,1))+3*std(x(:,2)));
       end
       
       % Discretize the data

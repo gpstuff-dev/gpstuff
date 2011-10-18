@@ -1,8 +1,8 @@
-function lik = lik_logitgp(varargin)
-%LIK_LOGITGP   Create a Logitgp likelihood structure 
+function lik = lik_lgp(varargin)
+%LIK_LGP  Create a logistic Gaussian process likelihood structure 
 %
 %  Description
-%    LIK = LIK_LOGITGP creates Logitgp likelihood structure
+%    LIK = LIK_LGP creates a logistic Gaussian process likelihood structure
 %
 %    The likelihood is defined as follows:
 %               __ n
@@ -11,7 +11,7 @@ function lik = lik_logitgp(varargin)
 %      where f contains latent values.
 %
 %  See also
-%    GP_SET, LIK_*
+%    LGPDENS, GP_SET, LIK_*
 %
   
 % Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
@@ -21,18 +21,18 @@ function lik = lik_logitgp(varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'LIK_LOGITGP';
+  ip.FunctionName = 'LIK_LGP';
   ip.addOptional('lik', [], @isstruct);
   ip.parse(varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
     init=true;
-    lik.type = 'Logitgp';
+    lik.type = 'LGP';
     lik.structW = false;
     lik.fullW = true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Logitgp')
+    if ~isfield(lik,'type') && ~isequal(lik.type,'LGP')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -40,26 +40,26 @@ function lik = lik_logitgp(varargin)
 
   if init
     % Set the function handles to the subfunctions
-    lik.fh.pak = @lik_logitgp_pak;
-    lik.fh.unpak = @lik_logitgp_unpak;
-    lik.fh.ll = @lik_logitgp_ll;
-    lik.fh.llg = @lik_logitgp_llg;    
-    lik.fh.llg2 = @lik_logitgp_llg2;
-    lik.fh.llg3 = @lik_logitgp_llg3;
-    lik.fh.tiltedMoments = @lik_logitgp_tiltedMoments;
-    lik.fh.predy = @lik_logitgp_predy;
-    lik.fh.invlink = @lik_logitgp_invlink;
-    lik.fh.recappend = @lik_logitgp_recappend;
+    lik.fh.pak = @lik_lgp_pak;
+    lik.fh.unpak = @lik_lgp_unpak;
+    lik.fh.ll = @lik_lgp_ll;
+    lik.fh.llg = @lik_lgp_llg;    
+    lik.fh.llg2 = @lik_lgp_llg2;
+    lik.fh.llg3 = @lik_lgp_llg3;
+    lik.fh.tiltedMoments = @lik_lgp_tiltedMoments;
+    lik.fh.predy = @lik_lgp_predy;
+    lik.fh.invlink = @lik_lgp_invlink;
+    lik.fh.recappend = @lik_lgp_recappend;
   end
 
 end
 
-function [w,s] = lik_logitgp_pak(lik)
-%LIK_LOGITGP_PAK  Combine likelihood parameters into one vector.
+function [w,s] = lik_lgp_pak(lik)
+%LIK_LGP_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
-%    W = LIK_LOGITGP_PAK(LIK) takes a likelihood structure LIK
-%    and returns an empty verctor W. If Logitgp likelihood had
+%    W = LIK_LGP_PAK(LIK) takes a likelihood structure LIK
+%    and returns an empty verctor W. If LGP likelihood had
 %    parameters this would combine them into a single row vector
 %    W (see e.g. lik_negbin).
 %     
@@ -70,18 +70,18 @@ function [w,s] = lik_logitgp_pak(lik)
 end
 
 
-function [lik, w] = lik_logitgp_unpak(lik, w)
-%LIK_LOGITGP_UNPAK  Extract likelihood parameters from the vector.
+function [lik, w] = lik_lgp_unpak(lik, w)
+%LIK_LGP_UNPAK  Extract likelihood parameters from the vector.
 %
 %  Description
-%    W = LIK_LOGITGP_UNPAK(W, LIK) Doesn't do anything.
+%    W = LIK_LGP_UNPAK(W, LIK) Doesn't do anything.
 %
-%    If Logitgp likelihood had parameters this would extract them
+%    If LGP likelihood had parameters this would extract them
 %    parameters from the vector W to the LIK structure.
 %     
 %
 %  See also
-%    LIK_LOGITGP_PAK, GP_UNPAK
+%    LIK_LGP_PAK, GP_UNPAK
 
   lik=lik;
   w=w;
@@ -89,16 +89,16 @@ function [lik, w] = lik_logitgp_unpak(lik, w)
 end
 
 
-function logLik = lik_logitgp_ll(lik, y, f, z)
-%LIK_LOGITGP_LL    Log likelihood
+function logLik = lik_lgp_ll(lik, y, f, z)
+%LIK_LGP_LL    Log likelihood
 %
 %  Description
-%    E = LIK_LOGITGP_LL(LIK, Y, F, Z) takes a likelihood data
+%    E = LIK_LGP_LL(LIK, Y, F, Z) takes a likelihood data
 %    structure LIK, incedence counts Y, expected counts Z, and
 %    latent values F. Returns the log likelihood, log p(y|f,z).
 %
 %  See also
-%    LIK_LOGITGP_LLG, LIK_LOGITGP_LLG3, LIK_LOGITGP_LLG2, GPLA_E
+%    LIK_LGP_LLG, LIK_LGP_LLG3, LIK_LGP_LLG2, GPLA_E
 
   n=sum(y);
   qj=exp(f);
@@ -106,18 +106,18 @@ function logLik = lik_logitgp_ll(lik, y, f, z)
 end
 
 
-function deriv = lik_logitgp_llg(lik, y, f, param, z)
-%LIK_LOGITGP_LLG    Gradient of the log likelihood
+function deriv = lik_lgp_llg(lik, y, f, param, z)
+%LIK_LGP_LLG    Gradient of the log likelihood
 %
 %  Description 
-%    G = LIK_LOGITGP_LLG(LIK, Y, F, PARAM) takes a likelihood
+%    G = LIK_LGP_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, incedence counts Y, expected counts Z
 %    and latent values F. Returns the gradient of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
 %    'param' or 'latent'.
 %
 %  See also
-%    LIK_LOGITGP_LL, LIK_LOGITGP_LLG2, LIK_LOGITGP_LLG3, GPLA_E
+%    LIK_LGP_LL, LIK_LGP_LLG2, LIK_LGP_LLG3, GPLA_E
   
   switch param
     case 'latent'
@@ -129,12 +129,12 @@ function deriv = lik_logitgp_llg(lik, y, f, param, z)
 end
 
 
-function [g2d,g2u] = lik_logitgp_llg2(lik, y, f, param, z)
-%function g2 = lik_logitgp_llg2(lik, y, f, param, z)
-%LIK_LOGITGP_LLG2  Second gradients of the log likelihood
+function [g2d,g2u] = lik_lgp_llg2(lik, y, f, param, z)
+%function g2 = lik_lgp_llg2(lik, y, f, param, z)
+%LIK_LGP_LLG2  Second gradients of the log likelihood
 %
 %  Description        
-%    G2 = LIK_LOGITGP_LLG2(LIK, Y, F, PARAM) takes a likelihood
+%    G2 = LIK_LGP_LLG2(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, incedence counts Y, expected counts Z,
 %    and latent values F. Returns the Hessian of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
@@ -142,7 +142,7 @@ function [g2d,g2u] = lik_logitgp_llg2(lik, y, f, param, z)
 %    Hessian matrix (off diagonals are zero).
 %
 %  See also
-%    LIK_LOGITGP_LL, LIK_LOGITGP_LLG, LIK_LOGITGP_LLG3, GPLA_E
+%    LIK_LGP_LL, LIK_LGP_LLG, LIK_LGP_LLG3, GPLA_E
 
   switch param
     case 'latent'
@@ -155,18 +155,18 @@ function [g2d,g2u] = lik_logitgp_llg2(lik, y, f, param, z)
   end
 end    
 
-function g3 = lik_logitgp_llg3(lik, y, f, param, z)
-%LIK_LOGITGP_LLG3  Third gradients of the log likelihood
+function g3 = lik_lgp_llg3(lik, y, f, param, z)
+%LIK_LGP_LLG3  Third gradients of the log likelihood
 %
 %  Description
-%    G3 = LIK_LOGITGP_LLG3(LIK, Y, F, PARAM) takes a likelihood
+%    G3 = LIK_LGP_LLG3(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, incedence counts Y, expected counts Z
 %    and latent values F and returns the third gradients of the
 %    log likelihood with respect to PARAM. At the moment PARAM
 %    can be only 'latent'. G3 is a vector with third gradients.
 %
 %  See also
-%    LIK_LOGITGP_LL, LIK_LOGITGP_LLG, LIK_LOGITGP_LLG2, GPLA_E, GPLA_G
+%    LIK_LGP_LL, LIK_LGP_LLG, LIK_LGP_LLG2, GPLA_E, GPLA_G
   
   switch param
     case 'latent'
@@ -187,11 +187,11 @@ function g3 = lik_logitgp_llg3(lik, y, f, param, z)
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_logitgp_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-%LIK_LOGITGP_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+function [m_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+%LIK_LGP_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
-%    [M_0, M_1, M2] = LIK_LOGITGP_TILTEDMOMENTS(LIK, Y, I, S2,
+%    [M_0, M_1, M2] = LIK_LGP_TILTEDMOMENTS(LIK, Y, I, S2,
 %    MYY, Z) takes a likelihood structure LIK, incedence counts
 %    Y, expected counts Z, index I and cavity variance S2 and
 %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
@@ -204,10 +204,10 @@ function [m_0, m_1, sigm2hati1] = lik_logitgp_tiltedMoments(lik, y, i1, sigm2_i,
 
   
   if isempty(z)
-    error(['lik_logitgp -> lik_logitgp_tiltedMoments: missing z!'... 
-           'Logitgp likelihood needs the expected number of             '...
+    error(['lik_lgp -> lik_lgp_tiltedMoments: missing z!'... 
+           'LGP likelihood needs the expected number of             '...
            'occurrences as an extra input z. See, for                   '...
-           'example, lik_logitgp and gpla_e.                        ']);
+           'example, lik_lgp and gpla_e.                        ']);
   end
   
   yy = y(i1);
@@ -216,7 +216,7 @@ function [m_0, m_1, sigm2hati1] = lik_logitgp_tiltedMoments(lik, y, i1, sigm2_i,
   % get a function handle of an unnormalized tilted distribution 
   % (likelihood * cavity = Negative-binomial * Gaussian)
   % and useful integration limits
-  [tf,minf,maxf]=init_logitgp_norm(yy,myy_i,sigm2_i,avgE);
+  [tf,minf,maxf]=init_lgp_norm(yy,myy_i,sigm2_i,avgE);
   
   % Integrate with quadrature
   RTOL = 1.e-6;
@@ -233,22 +233,22 @@ function [m_0, m_1, sigm2hati1] = lik_logitgp_tiltedMoments(lik, y, i1, sigm2_i,
     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
     sigm2hati1 = m_2 - m_1.^2;
     if sigm2hati1 >= sigm2_i
-      error('lik_logitgp_tilted_moments: sigm2hati1 >= sigm2_i');
+      error('lik_lgp_tilted_moments: sigm2hati1 >= sigm2_i');
     end
   end
 end
 
 
-function [lpy, Ey, Vary] = lik_logitgp_predy(lik, Ef, Varf, yt, zt)
-%LIK_LOGITGP_PREDY    Returns the predictive mean, variance and density of y
+function [lpy, Ey, Vary] = lik_lgp_predy(lik, Ef, Varf, yt, zt)
+%LIK_LGP_PREDY    Returns the predictive mean, variance and density of y
 %
 %  Description  
-%    LPY = LIK_LOGITGP_PREDY(LIK, EF, VARF YT, ZT)
+%    LPY = LIK_LGP_PREDY(LIK, EF, VARF YT, ZT)
 %    Returns also the predictive density of YT, that is 
 %        p(yt | y,zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the incedence counts YT, expected counts ZT.
 %
-%    [LPY, EY, VARY] = LIK_LOGITGP_PREDY(LIK, EF, VARF) takes a
+%    [LPY, EY, VARY] = LIK_LGP_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
@@ -260,10 +260,10 @@ function [lpy, Ey, Vary] = lik_logitgp_predy(lik, Ef, Varf, yt, zt)
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
 
   if isempty(zt)
-    error(['lik_logitgp -> lik_logitgp_predy: missing zt!'... 
-           'Logitgp likelihood needs the expected number of     '...
+    error(['lik_lgp -> lik_lgp_predy: missing zt!'... 
+           'LGP likelihood needs the expected number of     '...
            'occurrences as an extra input zt. See, for           '...
-           'example, lik_logitgp and gpla_e.                ']);
+           'example, lik_lgp and gpla_e.                ']);
   end
   
   avgE = zt;
@@ -295,39 +295,39 @@ function [lpy, Ey, Vary] = lik_logitgp_predy(lik, Ef, Varf, yt, zt)
   % Evaluate the posterior predictive densities of the given observations
   for i1=1:length(Ef)
     % get a function handle of the likelihood times posterior
-    % (likelihood * posterior = Logitgp * Gaussian)
+    % (likelihood * posterior = LGP * Gaussian)
     % and useful integration limits
-    [pdf,minf,maxf]=init_logitgp_norm(...
+    [pdf,minf,maxf]=init_lgp_norm(...
       yt(i1),Ef(i1),Varf(i1),avgE(i1));
     % integrate over the f to get posterior predictive distribution
     lpy(i1) = log(quadgk(pdf, minf, maxf));
   end
 end
 
-function [df,minf,maxf] = init_logitgp_norm(yy,myy_i,sigm2_i,avgE)
-%INIT_LOGITGP_NORM
+function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
+%INIT_LGP_NORM
 %
 %  Description
-%    Return function handle to a function evaluating Logitgp *
+%    Return function handle to a function evaluating LGP *
 %    Gaussian which is used for evaluating (likelihood * cavity)
 %    or (likelihood * posterior) Return also useful limits for
-%    integration. This is private function for lik_logitgp.
+%    integration. This is private function for lik_lgp.
 %  
 %  See also
-%    LIK_LOGITGP_TILTEDMOMENTS, LIK_LOGITGP_PREDY
+%    LIK_LGP_TILTEDMOMENTS, LIK_LGP_PREDY
   
 % avoid repetitive evaluation of constant part
   ldconst = -gammaln(yy+1) - log(sigm2_i)/2 - log(2*pi)/2;
   
   % Create function handle for the function to be integrated
-  df = @logitgp_norm;
+  df = @lgp_norm;
   % use log to avoid underflow, and derivates for faster search
-  ld = @log_logitgp_norm;
-  ldg = @log_logitgp_norm_g;
-  ldg2 = @log_logitgp_norm_g2;
+  ld = @log_lgp_norm;
+  ldg = @log_lgp_norm_g;
+  ldg2 = @log_lgp_norm_g2;
 
   % Set the limits for integration
-  % Logitgp likelihood is log-concave so the logitgp_norm
+  % LGP likelihood is log-concave so the lgp_norm
   % function is unimodal, which makes things easier
   if yy==0
     % with yy==0, the mode of the likelihood is not defined
@@ -335,7 +335,7 @@ function [df,minf,maxf] = init_logitgp_norm(yy,myy_i,sigm2_i,avgE)
     modef = myy_i;
   else
     % use precision weighted mean of the Gaussian approximation
-    % of the Logitgp likelihood and Gaussian
+    % of the LGP likelihood and Gaussian
     mu=log(yy/avgE);
     s2=1./(yy+1./sigm2_i);
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
@@ -388,17 +388,17 @@ function [df,minf,maxf] = init_logitgp_norm(yy,myy_i,sigm2_i,avgE)
     end
   end
 
-  function integrand = logitgp_norm(f)
-  % Logitgp * Gaussian
+  function integrand = lgp_norm(f)
+  % LGP * Gaussian
     mu = avgE.*exp(f);
     integrand = exp(ldconst ...
                     -mu+yy.*log(mu) ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
-  function log_int = log_logitgp_norm(f)
-  % log(Logitgp * Gaussian)
-  % log_logitgp_norm is used to avoid underflow when searching
+  function log_int = log_lgp_norm(f)
+  % log(LGP * Gaussian)
+  % log_lgp_norm is used to avoid underflow when searching
   % integration interval
     mu = avgE.*exp(f);
     log_int = ldconst ...
@@ -406,17 +406,17 @@ function [df,minf,maxf] = init_logitgp_norm(yy,myy_i,sigm2_i,avgE)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
-  function g = log_logitgp_norm_g(f)
-  % d/df log(Logitgp * Gaussian)
-  % derivative of log_logitgp_norm
+  function g = log_lgp_norm_g(f)
+  % d/df log(LGP * Gaussian)
+  % derivative of log_lgp_norm
     mu = avgE.*exp(f);
     g = -mu+yy...
         + (myy_i - f)./sigm2_i;
   end
 
-  function g2 = log_logitgp_norm_g2(f)
-  % d^2/df^2 log(Logitgp * Gaussian)
-  % second derivate of log_logitgp_norm
+  function g2 = log_lgp_norm_g2(f)
+  % d^2/df^2 log(LGP * Gaussian)
+  % second derivate of log_lgp_norm
     mu = avgE.*exp(f);
     g2 = -mu...
          -1/sigm2_i;
@@ -424,24 +424,24 @@ function [df,minf,maxf] = init_logitgp_norm(yy,myy_i,sigm2_i,avgE)
 
 end
 
-function mu = lik_logitgp_invlink(lik, f, z)
-%LIK_LOGITGP_INVLINK  Returns values of inverse link function
+function mu = lik_lgp_invlink(lik, f, z)
+%LIK_LGP_INVLINK  Returns values of inverse link function
 %             
 %  Description 
-%    P = LIK_LOGITGP_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    P = LIK_LGP_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values MU of inverse link function.
 %
 %     See also
-%     LIK_LOGITGP_LL, LIK_LOGITGP_PREDY
+%     LIK_LGP_LL, LIK_LGP_PREDY
   
   mu = z.*exp(f);
 end
 
-function reclik = lik_logitgp_recappend(reclik, ri, lik)
+function reclik = lik_lgp_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
 %  Description 
-%    RECLIK = LIK_LOGITGP_RECAPPEND(RECLIK, RI, LIK) takes a
+%    RECLIK = LIK_LGP_RECAPPEND(RECLIK, RI, LIK) takes a
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
@@ -451,19 +451,19 @@ function reclik = lik_logitgp_recappend(reclik, ri, lik)
 %    GP_MC
 
   if nargin == 2
-    reclik.type = 'Logitgp';
+    reclik.type = 'LGP';
 
     % Set the function handles
-    reclik.fh.pak = @lik_logitgp_pak;
-    reclik.fh.unpak = @lik_logitgp_unpak;
-    reclik.fh.ll = @lik_logitgp_ll;
-    reclik.fh.llg = @lik_logitgp_llg;    
-    reclik.fh.llg2 = @lik_logitgp_llg2;
-    reclik.fh.llg3 = @lik_logitgp_llg3;
-    reclik.fh.tiltedMoments = @lik_logitgp_tiltedMoments;
-    reclik.fh.predy = @lik_logitgp_predy;
-    reclik.fh.invlink = @lik_logitgp_invlink;
-    reclik.fh.recappend = @lik_logitgp_recappend;
+    reclik.fh.pak = @lik_lgp_pak;
+    reclik.fh.unpak = @lik_lgp_unpak;
+    reclik.fh.ll = @lik_lgp_ll;
+    reclik.fh.llg = @lik_lgp_llg;    
+    reclik.fh.llg2 = @lik_lgp_llg2;
+    reclik.fh.llg3 = @lik_lgp_llg3;
+    reclik.fh.tiltedMoments = @lik_lgp_tiltedMoments;
+    reclik.fh.predy = @lik_lgp_predy;
+    reclik.fh.invlink = @lik_lgp_invlink;
+    reclik.fh.recappend = @lik_lgp_recappend;
     return
   end
 end

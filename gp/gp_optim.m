@@ -59,6 +59,11 @@ opt=ip.Results.opt;
 loss=ip.Results.loss;
 k=ip.Results.k;
 
+if isempty(gp_pak(gp))
+  % nothing to optimize
+  return
+end
+
 switch lower(loss)
   case 'e'
     fh_eg=@(ww) gp_eg(ww, gp, x, y, 'z', z);

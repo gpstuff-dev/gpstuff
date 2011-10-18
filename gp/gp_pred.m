@@ -89,7 +89,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
         switch gp.lik.type
-          case {'Multinom' 'Softmax' 'Zinegbin' 'Coxph' 'Logitgp'}
+          case {'Multinom' 'Softmax' 'Zinegbin' 'Coxph' 'LGP'}
             fh_pred=@gpla_nd_pred;
           otherwise
             fh_pred=@gpla_pred;
