@@ -290,7 +290,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
   gpmfco = gpmf_constant('prior_mean',0,'prior_cov',100);
   gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
   gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
-  gp = gp_set('lik', lik_logitgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmfco,gpmflin,gpmfsq});
+  gp = gp_set('lik', lik_lgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmfco,gpmflin,gpmfsq});
   
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
