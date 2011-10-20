@@ -319,7 +319,7 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
         
         if nargout > 1
           [pi2_vec, pi2_mat] = gp.lik.fh.llg2(gp.lik, y, f2, 'latent', z);
-          Varf=zeros(nout, nout, ntest);
+          Covf=zeros(nout, nout, ntest);
           
           R=(repmat(1./pi2_vec,1,tn).*pi2_mat);
           for i1=1:nout
@@ -328,11 +328,11 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
             
             for j1=1:nout
               c=E(:,:,j1)*c_cav;
-              Varf(i1,j1,:)=sum(c.*K_nf(:,:,j1)');
+              Covf(i1,j1,:)=sum(c.*K_nf(:,:,j1)');
             end
             
             kstarstar = gp_trvar(gp,xt,predcf{i1});
-            Varf(i1,i1,:) = squeeze(Varf(i1,i1,:)) + kstarstar - sum(b.*K_nf(:,:,i1)')';
+            Covf(i1,i1,:) = squeeze(Covf(i1,i1,:)) + kstarstar - sum(b.*K_nf(:,:,i1)')';
           end
         end
       end
