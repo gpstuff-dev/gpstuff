@@ -36,15 +36,31 @@ function hh = violinplot(x,y,varargin)
   for i1=1:m
     [p,~,yy]=lgpdens(y(:,i1),'gridn',200,...
                      'range',[mean(y(:,i1))-3*std(y(:,i1)) mean(y(:,i1))+3*std(y(:,i1))]);
+    cp=cumsum(p./sum(p));
+    qi05=binsgeq(cp,0.005);
+    qi995=binsgeq(cp,0.995);
+    p([1:qi05 qi995:end])=[];
+    yy([1:qi05 qi995:end])=[];
+    cp=cumsum(p./sum(p));
+    qi5=binsgeq(cp,0.05);
+    qi50=binsgeq(cp,0.5);
+    qi95=binsgeq(cp,0.95);
     p=p./max(p)/5;
     % if color was character, this will be rgb vector
     hp(1,i1)=patch(x(i1)+[p; -p(end:-1:1)],[yy; yy(end:-1:1)],color);
-    color=get(hp,'facecolor');
-    set(hp,'edgecolor',color);
-    set(hp,'facecolor',color.*0.2+[.8 .8 .8])
+    if i1==1
+      color=get(hp(1,i1),'facecolor');
+    end
+    set(hp(1,i1),'edgecolor',color);
+    set(hp(1,i1),'facecolor',color.*0.2+[.8 .8 .8])
     % median line
-    qi=binsgeq(cumsum(p./sum(p)),0.5);
-    h(1,i1)=line([x(i1)-p(qi) x(i1)+p(qi)],[yy(qi) yy(qi)],'color',color,'linewidth',1);
+    h(1,i1)=line([x(i1)-p(qi50) x(i1)+p(qi50)],[yy(qi50) yy(qi50)],'color',color,'linewidth',1);
+    % 5% line
+    h(1,i1)=line([x(i1)-p(qi5) x(i1)+p(qi5)],[yy(qi5) yy(qi5)],'color',color,'linewidth',1);
+    % 95% line
+    h(1,i1)=line([x(i1)-p(qi95) x(i1)+p(qi95)],[yy(qi95) yy(qi95)],'color',color,'linewidth',1);
+    % 90% interval
+    %h(1,i1)=line([x(i1) x(i1)],[yy(qi5) yy(qi95)],'color',color,'linewidth',1);
   end
   if nargout>0
     hh=[hp; h];
