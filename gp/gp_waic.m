@@ -222,7 +222,7 @@ function waic = gp_waic(gp, x, y, varargin)
             fmin = Ef(i)-9*sqrt(Varf(i));
             fmax = Ef(i)+9*sqrt(Varf(i));
             
-            % Use moments to calculate Elog, Elog2. Faster than guadgk
+            % Use moments to calculate Elog, Elog2. Faster than quadgk
             % above.
             
             [m0, m1, m2, m3, m4] = moments(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))), fmin, fmax);          

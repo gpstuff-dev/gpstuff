@@ -105,7 +105,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
         end
     end
   else
-    error('Logical error by coder of this function!')
+    error('Logical error by the coder of this function!')
   end
   switch nargout
     case {1 0}

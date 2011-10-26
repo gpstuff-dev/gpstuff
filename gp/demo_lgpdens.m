@@ -133,12 +133,12 @@ title('Ring')
 % 1) 1D-example MCMC vs Laplace
 % =====================================
 figure(3)
+clf
 subplot(2,1,1)
-hold on
 % t_4
 stream.Substream = 1;
 x=[trnd(4,1,100)]';
-xt=linspace(-7,7,50)';
+xt=linspace(-6,6,100)';
 [p,pq]=lgpdens(x,xt);
 pla=p;
 line(xt,p,'color','r','marker','none','linewidth',2)

@@ -1,4 +1,4 @@
-function [m_0, m_1, m_2] = quad_moments2(fun, a, b, rtol, atol, minsubs)
+function [m_0, m_1, m_2] = quad_moments(fun, a, b, rtol, atol, minsubs)
 % QUAD_MOMENTS Calculate the 0th, 1st and 2nd moment of a given
 %              (unnormalized) probability distribution
 %

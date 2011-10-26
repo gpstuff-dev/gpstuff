@@ -126,7 +126,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
         % no output, do the plot thing
         newplot
         hp=patch([xx; xx(end:-1:1)],[ppq(:,1); ppq(end:-1:1,2)],[.8 .8 .8]);
-        set(hp,'edgecolor',[.9 .9 .9])
+        set(hp,'edgecolor',[.8 .8 .8])
         xlim([xmin xmax])
         line(xx,pp,'linewidth',2);
       else
@@ -166,10 +166,10 @@ function [p,pq,xx] = lgpdens(x,varargin)
         x2min=min(x2min,min(xt(:,2)));
         x2max=max(x2max,max(xt(:,2)));
       else
-        x1min=min(x1min,mean(x(:,1))-3*std(x(:,1)));
-        x1max=max(x1max,mean(x(:,1))+3*std(x(:,1)));
-        x2min=min(x2min,mean(x(:,2))-3*std(x(:,2)));
-        x2max=max(x2max,mean(x(:,1))+3*std(x(:,2)));
+        x1min=min(x1min,mean(x(:,1))-1.5*std(x(:,1)));
+        x1max=max(x1max,mean(x(:,1))+1.5*std(x(:,1)));
+        x2min=min(x2min,mean(x(:,2))-1.5*std(x(:,2)));
+        x2max=max(x2max,mean(x(:,1))+1.5*std(x(:,2)));
       end
       
       % Discretize the data

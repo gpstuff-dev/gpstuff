@@ -309,9 +309,9 @@ function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i
     RTOL = RTOL.^2;
     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
     sigm2hati1 = m_2 - m_1.^2;
-    if sigm2hati1 >= sigm2_i
-      error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
-    end
+%    if sigm2hati1 >= sigm2_i
+%      error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
+%    end
   end
 end
 
@@ -464,12 +464,12 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
   end
   % integrand limits based on Gaussian approximation at mode
   modes=sqrt(-1/h);
-  minf=modef-8*modes;
-  maxf=modef+8*modes;
+  minf=modef-4*modes;
+  maxf=modef+4*modes;
   modeld=ld(modef);
   iter=0;
   % check that density at end points is low enough
-  lddiff=20; % min difference in log-density between mode and end-points
+  lddiff=12; % min difference in log-density between mode and end-points
   minld=ld(minf);
   step=1;
   while minld>(modeld-lddiff)
@@ -505,6 +505,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %     integrand = exp(ldconst ...
 %                     +yy*log(x)+(N-yy)*log(1-x) ...
 %                     -0.5*(f-myy_i).^2./sigm2_i);
+    integrand(isnan(integrand))=0;
   end
   
   function log_int = log_binomial_norm(f)
