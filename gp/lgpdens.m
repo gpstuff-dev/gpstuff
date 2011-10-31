@@ -42,7 +42,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   ip.addRequired('x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip.addOptional('xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip.addParamValue('gridn',[], @(x) isnumeric(x));
-  ip.addParamValue('range',[], @(x) isreal(x)&&(length(x)==2||length(x)==4));
+  ip.addParamValue('range',[], @(x) isempty(x)||isreal(x)&&(length(x)==2||length(x)==4));
   ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
   ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace' 'MCMC'}))
   %ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
@@ -268,7 +268,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
   else
     gpcf1 = gpcf();
   end
-  % default vague prior
+  % weakly informative prior
   pm = prior_sqrtt('s2', 10^2, 'nu', 4);
   pl = prior_t('s2', 1^2, 'nu', 4);
   pa = prior_t('s2', 10^2, 'nu', 4);
