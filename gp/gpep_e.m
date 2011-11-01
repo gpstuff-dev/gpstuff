@@ -1554,16 +1554,17 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           end
           
           if isfinite(e) % do not run the algorithm if the prior energy is not defined
-            % EP search direction
-            up_mode='ep'; % choose the moment matching
-            [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % initialize with ninit rounds of parallel EP
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-            df=df0; % initial damping factor
+            % EP search direction
+            up_mode='ep'; % choose the moment matching
+            [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
+            
             convergence=false; % convergence indicator
+            df=df0; % initial damping factor
             tol_m=zeros(1,2); % absolute moment tolerances
             tauc_min=1./(Vc_lim*diag(K)); % minimum cavity precision
             % Adjust damping by setting an upper limit (Vf_mult) to the increase
@@ -1640,15 +1641,15 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
               
               % Check for convergence
-              
               % the difference between the marginal moments
-              tol_m=[abs(mf-m_r) abs(diag(Sf)-V_r)];
+              Vf=diag(Sf);
+              tol_m=[abs(mf-m_r) abs(Vf-V_r)];
               
               % measure the convergence by the moment difference
-              convergence=all(tol_m(:,1) < abs(mf)*tolStop) && all(tol_m(:,2) < abs(diag(Sf))*tolStop);
+              convergence=all(tol_m(:,1)<tolStop*abs(mf)) && all(tol_m(:,2)<tolStop*abs(Vf));
               
               % measure the convergence by the change of energy
-              % convergence=abs(e2-e)<tolStop;
+              %convergence=abs(e2-e)<tolStop;
               
               tol_m=max(tol_m);
               e=e2;
@@ -1659,16 +1660,16 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               
               if convergence
                 if ismember(display,{'final','iter'})
-                  fprintf('Convergence with the parallel EP, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
+                  fprintf('Convergence with parallel EP, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%g.\n',i1,e,tol_m(1),tol_m(2),df)
                 end
                 break
               end
             end
-          end
+          end % end of initial rounds of parallel EP
           
           if isfinite(e) && ~convergence
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % if no confergence with the parallel EP 
+            % if no convergence with the parallel EP
             % start double-loop iterations
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
@@ -1691,18 +1692,27 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               % calculate a new proposal state
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               
-              % Limit the step size separately for each site so that the cavity 
-              % variances do not exceed the upper limit
-              
-              ii1=dtau_q>0;
-              df1=min( ( (tau_s(ii1)-tauc_min(ii1))./eta(ii1)-tau_q(ii1) )./dtau_q(ii1)/df ,1);
-              dnu_q(ii1)=dnu_q(ii1).*df1;
-              dtau_q(ii1)=dtau_q(ii1).*df1;
-              dfi=df;
+              % Limit the step size separately for each site so that the cavity variances
+              % do not exceed the upper limit (this will change the search direction)
+              % this should not happen after step size adjustment
+              ii1=tau_s-eta.*(tau_q+df*dtau_q)<tauc_min;
+              if any(ii1)
+                %ii1=dtau_q>0; df1=min( ( (tau_s(ii1)-tauc_min(ii1))./eta(ii1)-tau_q(ii1) )./dtau_q(ii1)/df ,1);
+                df1=( (tau_s(ii1)-tauc_min(ii1))./eta(ii1) -tau_q(ii1) )./dtau_q(ii1)/df;
+                
+                dnu_q(ii1)=dnu_q(ii1).*df1;
+                dtau_q(ii1)=dtau_q(ii1).*df1;
+                
+                % the intial gradient in the search direction
+                g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
+                
+                % re-init the step size adjustment record
+                rec_sadj=[0 e g];
+              end
               
               % proposal
-              nu_q2=nu_q+dfi*dnu_q;
-              tau_q2=tau_q+dfi*dtau_q;
+              nu_q2=nu_q+df*dnu_q;
+              tau_q2=tau_q+df*dtau_q;
               
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               % energy for the proposal state
@@ -1710,7 +1720,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               
               % update the q-distribution
               [mf2,Sf2,lnZ_q2,L1,L2]=evaluate_q(nu_q2,tau_q2,K,display);
-              
               if isempty(L2)
                 % the q-distribution not defined (the posterior covariance
                 % not positive definite)
@@ -1734,14 +1743,12 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               % check if the energy decreases
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              pcavity=true;
               if ~isfinite(e2) || g2>10*abs(g)
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % ill-conditioned q-distribution or very large increase
                 % in the gradient
                 % => half the step size
-                
-                df=dfi*0.5;
+                df=df*0.5;
                 
                 if ismember(display,{'iter'})
                   fprintf('decreasing step size, ')
@@ -1758,79 +1765,88 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 end
                 
                 % update the record for step size adjustment
-                ii1=find(dfi>rec_sadj(:,1),1,'last');
-                ii2=find(dfi<rec_sadj(:,1),1,'first');
-                rec_sadj=[rec_sadj(1:ii1,:); dfi e2 g2; rec_sadj(ii2:end,:)];
+                ii1=find(df>rec_sadj(:,1),1,'last');
+                ii2=find(df<rec_sadj(:,1),1,'first');
+                rec_sadj=[rec_sadj(1:ii1,:); df e2 g2; rec_sadj(ii2:end,:)];
                 
+                df_new=0;
                 if size(rec_sadj,1)>1
-                  % adjust the step size with spline interpolation
-                  pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' rec_sadj(end,3)],[1 1]);
-                  if g2>0
-                    % interpolation
-                    [emax,df]=fnmin(pp,[0 dfi]);
-                  else
-                    % extrapolate at most by 50% at a time
-                    [emax,df]=fnmin(pp,[0 dfi*1.5]);
-                  end
-                  df=min(df,df_lim);
-                  if df==0,
-                    % in case the spline approxmation fails
+                  if exist('csape','file')==2
                     if g2>0
-                      df=dfi*0.9;
+                      % adjust the step size with spline interpolation
+                      pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' rec_sadj(end,3)],[1 1]);
+                      [~,df_new]=fnmin(pp,[0 df]);
+                      
                     else
-                      df=dfi*1.5;
+                      % extrapolate with Hessian end-conditions
+                      H=(rec_sadj(end,3)-rec_sadj(end-1,3))/(rec_sadj(end,1)-rec_sadj(end-1,1));
+                      pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' H],[1 2]);
+                      % extrapolate at most by 100% at a time
+                      [~,df_new]=fnmin(pp,[df df*2]);
+                    end
+                  else
+                    % if curvefit toolbox does not exist, use a simple Hessian
+                    % approximation
+                    [~,ind]=sort(rec_sadj(:,2),'ascend');
+                    ind=ind(1:2);
+                    
+                    H=(rec_sadj(ind(1),3)-rec_sadj(ind(2),3))/(rec_sadj(ind(1),1)-rec_sadj(ind(2),1));
+                    df_new=rec_sadj(ind(1),1) -rec_sadj(ind(1),3)/H;
+                    if g2>0
+                      % interpolate
+                      df_new=max(min(df_new,df),0);
+                    else
+                      % extrapolate at most 100%
+                      df_new=max(min(df_new,2*df),df);
                     end
                   end
-                else
-                  % no record of the previous gradients
-                  if g2>0
-                    % too long initial step since the gradient is positive
-                    df=dfi*0.9;
-                  else
-                    % too short initial step since the gradient negative
-                    df=dfi*1.1;
-                  end
+                  df_new=min(df_new,df_lim);
                 end
                 
-              elseif e2>=e || (abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep'))
+                if df_new==0
+                  % the spline approxmation fails or no record of the previous gradients
+                  if g2>0
+                    df=df*0.9; % too long step since the gradient is positive
+                  else
+                    df=df*1.1; % too short step since the gradient is negative
+                  end
+                else
+                  df=df_new;
+                end
+                % prevent too small cavity-variances after the step-size adjustment
+                ii1=dtau_q>0;
+                if any(ii1)
+                  df_max=min( ( (tau_s(ii1)-tauc_min(ii1)-1e-8)./eta(ii1) -tau_q(ii1) )./dtau_q(ii1) );
+                  df=min(df,df_max);
+                end
+                
+              elseif e2>e+tolInner || (abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep'))
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % No decrease in energy despite the step size adjustments.
                 % In some difficult cases the EP search direction may not
                 % result in decrease of the energy or the gradient
-                % despite of the step size adjustment. One reason for this 
+                % despite of the step size adjustment. One reason for this
                 % may be the parallel EP search direction
-                % => try the negative gradient as the search direction 
+                % => try the negative gradient as the search direction
                 %
                 % or if the problem persists
                 % => try resetting the search direction
-                                
-                if strcmp(up_mode,'ep') && (e2>=e || abs(g2)>abs(g)*tolGrad)
+                
+                if abs(g2)>abs(g)*tolGrad && strcmp(up_mode,'ep')
                   % try switching to gradient based updates
                   up_mode='grad';
                   df_lim=1e3;
                   df=1;
-                  nfailure=0; % counter for unsuccessful inner loop iterations
                   if ismember(display,{'iter'})
                     fprintf('switch to gradient updates, ')
                   end
                 else
-                  nfailure=nfailure+1;
-                  if nfailure>2
-                    % the algorithm is unable to decrease the energy  
-                    if ismember(display,{'iter'})
-                      fprintf('unable to decrease the energy, ')
-                    end
-                    e=nan;
-                    break;
-                  else
-                    % try resetting the search direction
-                    if ismember(display,{'iter'})
-                      fprintf('reset the search direction, ')
-                    end
+                  if ismember(display,{'iter'})
+                    fprintf('reset the search direction, ')
                   end
                 end
                 
-                % new search direction
+                % the new search direction
                 [dnu_q,dtau_q]=ep_update_dir(mf,Sf,m_r,V_r,eta,up_mode,tolUpdate);
                 
                 % the initial gradient in the search direction
@@ -1842,7 +1858,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % decrease of energy => accept the new state
                 
-                nfailure=0; % reset the counter for unsuccessful inner loop iterations
                 dInner=abs(e-e2); % the inner loop energy change
                 
                 % accept the new site parameters (nu_q,tau_q)
@@ -1860,7 +1875,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   % try to update the surrogate distribution on the condition that
                   % - the cavity variances are positive and not too large
                   % - the new tilted moments are proper
-                  % - sufficient tolerance or the maximum number of inner 
+                  % - sufficient tolerance or the maximum number of inner
                   %   loop updates is exceeded
                   
                   % update the surrogate distribution
@@ -1889,7 +1904,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     end
                   else
                     % Improper tilted moments even though the cavity variances are
-                    % positive. This is an indication of numerically unstable 
+                    % positive. This is an indication of numerically unstable
                     % tilted moment integrations but fractional updates usually help
                     % => try switching to fractional updates
                     pcavity=false;
@@ -1902,7 +1917,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 
                 if all(eta==eta1) && ~pcavity && (dInner<tolInner || ninner>=max_ninner)
                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                  % If the inner loop moments (within tolerance) are matched 
+                  % If the inner loop moments (within tolerance) are matched
                   % but the new cavity variances are negative or the tilted moment
                   % integrations fail after the surrogate update
                   % => switch to fractional EP.
@@ -1911,9 +1926,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   % hyperparameters are such that the approximating family
                   % is not flexible enough, i.e., the hyperparameters are
                   % unsuitable for the data.
-                  % 
+                  %
                   % One can also try to reduce the lower limit for the
-                  % cavity precisions tauc_min=1./(Vc_lim*diag(K)), i.e. 
+                  % cavity precisions tauc_min=1./(Vc_lim*diag(K)), i.e.
                   % increase the maximum cavity variance Vc_lim.
                   
                   % try switching to fractional updates
@@ -1939,7 +1954,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     
                     % start with ep search direction
                     up_mode='ep';
-                    df_lim=1;
+                    df_lim=0.9;
                     df=0.1;
                     if ismember(display,{'iter'})
                       fprintf('switching to fractional EP, ')
@@ -1959,10 +1974,19 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     break;
                   end
                 end
+                             
+                if all(eta==eta2) && ~pcavity && (dInner<tolInner || ninner>=10)
+                  % Surrogate updates do not result into positive cavity variances
+                  % even with fractional updates with eta2 => terminate iterations
+                  if ismember(display,{'final','iter'})
+                    fprintf('surrogate update failed with fractional updates, try decreasing eta2\n')
+                  end
+                  break
+                end
                 
                 if ~supdate
                   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                  % no successful surrogate update, no sufficient tolerance, 
+                  % no successful surrogate update, no sufficient tolerance,
                   % or the maximum number of inner loop updates is not yet exceeded
                   % => continue with the same surrogate distribution
                   
@@ -1982,16 +2006,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 rec_sadj=[0 e g];
               end
               
-              % maximum difference of the marginal moments
-              tol_m=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
-              
               if ismember(display,{'iter'})
-                fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f,',i1,e,tol_m(1),tol_m(2),df,eta(1))
-                if ~pcavity
-                  fprintf(' surrogate update blocked by cavity precisions below the limit.\n')
-                else
-                  fprintf('\n')
-                end
+                % maximum difference of the marginal moments
+                tol_m=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
+                fprintf('%d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
               end
               
               %%%%%%%%%%%%%%%%%%%%%%%
@@ -1999,6 +2017,8 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               convergence = tol_e<=tolStop;
               if convergence
                 if ismember(display,{'final','iter'})
+                  % maximum difference of the marginal moments
+                  tol_m=[max(abs(mf-m_r)) max(abs(diag(Sf)-V_r))];
                   fprintf('Convergence, iter %d, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
                 end
                 break
@@ -2007,12 +2027,13 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           end
           
           % the current energy is not finite or no convergence
-          if ~isfinite(e) || ~convergence
+          if ~isfinite(e)
+            fprintf('Initial energy not defined, check the hyperparameters\n')
+          elseif ~convergence
             fprintf('No convergence, %d iter, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
             fprintf('Check the hyperparameters, increase maxiter and/or max_ninner, or decrease tolInner\n')
           end
-          
-          edata=-e; % the data contribution for the marginal posterior density
+          edata=-e; % the data contribution to the marginal posterior density
           
           % =====================================================================================
           % Evaluate the prior contribution to the error from covariance functions and likelihood
@@ -2037,7 +2058,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           
           sigm2vec_i = 1./(tau_s-eta.*tau_q);     % vector of cavity variances
           muvec_i = (nu_s-eta.*nu_q).*sigm2vec_i; % vector of cavity means
-          Z_i = lnZ_i; % vector of tilted normalization factors 
+          Z_i = lnZ_i; % vector of tilted normalization factors
           
           % check that the posterior covariance is positive definite and
           % calculate its Cholesky decomposition
@@ -2166,6 +2187,7 @@ m_q=S_q*nu_q;
 
 % log normalization
 lnZ_q = -sum(log(diag(L1))) -sum(log(diag(L2))) +0.5*sum(m_q.*nu_q);
+
 end
 
 function [lnZ_r,lnZ_i,m_r,V_r,p]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s,display)
@@ -2191,9 +2213,9 @@ for si=1:n
   % cavity distribution
   tau_r_si=tau_s(si)-eta(si)*tau_q(si);
   if tau_r_si<=0
-    if ismember(display,{'iter'})
-      fprintf('Negative cavity precision at site %d\n',si)
-    end
+    %     if ismember(display,{'iter'})
+    %       %fprintf('Negative cavity precision at site %d\n',si)
+    %     end
     continue
   end
   nu_r_si=nu_s(si)-eta(si)*nu_q(si);
@@ -2202,15 +2224,14 @@ for si=1:n
   [lnZ_si,m_r_si,V_r_si] = fh_tm(si, nu_r_si/tau_r_si, 1/tau_r_si, eta(si));
   
   if ~isfinite(lnZ_si) || V_r_si<=0
-    if ismember(display,{'iter'})
-      fprintf('Improper normalization or tilted variance at site %d\n',si)
-    end
+    %     if ismember(display,{'iter'})
+    %       fprintf('Improper normalization or tilted variance at site %d\n',si)
+    %     end
     continue
   end
   
   % store the new parameters
-  [nu_r(si),tau_r(si),lnZ_i(si),m_r(si),V_r(si)]=...
-    deal(nu_r_si,tau_r_si,lnZ_si,m_r_si,V_r_si);
+  [nu_r(si),tau_r(si),lnZ_i(si),m_r(si),V_r(si)]=deal(nu_r_si,tau_r_si,lnZ_si,m_r_si,V_r_si);
   
   p(si)=true;
 end
@@ -2253,4 +2274,3 @@ switch up_mode
 end
 
 end
-
