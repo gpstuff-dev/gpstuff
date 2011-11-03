@@ -525,7 +525,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 lp = gp.lik.fh.ll(gp.lik, y, f, z);
                 lp_new = -a'*f/2 + lp;
                 i = 0;
-                while i < 10 && lp_new < lp_old      || isnan(sum(f))
+                while i < 10 && lp_new < lp_old && ~isnan(sum(f))
                   % reduce step size by half
                   a = (a_old+a)/2;                                  
                   f = Lav.*a + B'*(B*a);

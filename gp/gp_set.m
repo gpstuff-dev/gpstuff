@@ -449,7 +449,6 @@ function gp = gp_set(varargin)
           end
         case 'Laplace'
           % these options not yet used
-          %gp.latent_opt.maxiter = 20;
           %gp.latent_opt.tol = 1e-10;
           % Handle latent_opt
           ipla=inputParser;

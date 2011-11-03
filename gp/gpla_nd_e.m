@@ -133,6 +133,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
       
       gp=gp_unpak(gp, w);
       ncf = length(gp.cf);
+      maxiter = gp.latent_opt.maxiter;
       
       % =================================================
       % First Evaluate the data contribution to the error
@@ -218,11 +219,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   
                   WK=zeros(sum(nl));
                   
-                  %iter=0;
-                  %maxiter=40;
-                  while abs(lp_new - lp_old) > tol %&& iter < maxiter
-                    
-                    %iter = iter + 1;
+                  iter=0;
+                  while abs(lp_new - lp_old) > tol && iter < maxiter
+                    iter = iter + 1;
                     lp_old = lp_new; a_old = a;
                     
                     if isfield(gp.lik, 'fullW') && gp.lik.fullW
@@ -296,7 +295,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       lp_new = -(f-Hb_m)'*(a-iKHb_m)/2 + lp; %f^=f-Hb_m,
                     end
                     i = 0;
-                    while i < 10 && lp_new < lp_old  || isnan(sum(f))
+                    while i < 10 && lp_new < lp_old && ~isnan(sum(f))
                       % reduce step size by half
                       a = (a_old+a)/2;
                       f = K*a;

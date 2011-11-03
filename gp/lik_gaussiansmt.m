@@ -5,7 +5,7 @@ function lik = lik_gaussiansmt(varargin)
 %  Description
 %    LIK = LIK_GAUSSIANSMT('ndata',N,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
 %    creates a scale mixture noise covariance function structure
-%    (with priors producing approximation of the Student's tw) in
+%    (with priors producing approximation of the Student's t) in
 %    which the named parameters have the specified values. Any
 %    unspecified parameters are set to default values. Obligatory
 %    parameter is 'ndata', which tells the number of data points,
