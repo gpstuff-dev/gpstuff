@@ -1,19 +1,49 @@
-function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
+function [apcs,apcss]=gp_avpredcomp3(gp, x, y, varargin)
 %GP_AVPREDCOMP  Average predictive comparison for Gaussian process model
 %
 %  Description
-%    [PS, FM, FPRCS, M, PRCS]=GP_AVPREDCOMP(GP, X, Y, OPTIONS)
-%    Takes a Gaussian process structure GP together with a matrix X
-%    of training inputs and vector Y of training targets, and
-%    returns average predictive comparison estimates for each
-%    input. PS is the probability of knowing the sign of the
-%    average change in the latent outcome for each input variable. 
-%    FM and FPRCS are estimated predictive relevances for means and
-%    percentiles for each input variable when latent outcome
-%    variable is computed through the inverse link function. M and
-%    PRCS are estimated predictive relevances for mean and
-%    percentiles for each input variable when outcome variable is
-%    the latent variable.
+%    APCS=GP_AVPREDCOMP(GP, X, Y, OPTIONS) Takes a Gaussian process
+%    structure GP together with a matrix X of training inputs and
+%    vector Y of training targets, and returns average predictive
+%    comparison (APC) estimates for each input in a structure APCS. 
+%    APCS contains following fields
+%      ps    - the probability of knowing the sign of the APC
+%              in the latent outcome for each input variable.
+%      fs    - the samples from the APC in the latent outcome for each
+%              input variable
+%      fsa   - the samples from the absolute APC in the latent outcome 
+%              for each input variable
+%      fsrms - the samples from the root mean squared APC in the latent
+%              outcome for each input variable
+%      ys    - the samples from the APC in the target outcome for each
+%              input variable
+%      ysa   - the samples from the absolute APC in the target outcome 
+%              for each input variable
+%      ysrms - the samples from the root mean squared APC in the target
+%              outcome for each input variable
+%
+%    [APCS,APCSS]=GP_AVPREDCOMP(GP, X, Y, OPTIONS) returns also APCSS
+%    which contains APCS components for each data point. These can
+%    be used to form conditional average predictive comparisons (CAPC).
+%    APCSS contains following fields
+%      numfs    - the samples from the numerator of APC in the latent
+%                 outcome for each input variable
+%      numfsa   - the samples from the numerator of absolute APC in
+%                 the latent outcome for each input variable
+%      numfsrms - the samples from the numerator of RMS APC in
+%                 the latent outcome for each input variable
+%      numys    - the samples from the numerator of APC in the latent
+%                 outcome for each input variable
+%      numysa   - the samples from the numerator of absolute APC in
+%                 the latent outcome for each input variable
+%      numysrms - the samples from the numerator of RMS APC in
+%                 the latent outcome for each input variable
+%      dens     - the samples from the denominator of APC in the latent
+%                 outcome for each input variable
+%      densa    - the samples from the denominator of absolute APC in
+%                 the latent outcome for each input variable
+%      densrms  - the samples from the denominator of RMS APC in
+%                 the latent outcome for each input variable
 %
 %    OPTIONS is optional parameter-value pair
 %      z         - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -21,8 +51,10 @@ function [ps, fm, fprcs, m, prcs]=gp_avpredcomp(gp, x, y, varargin)
 %                  case of Poisson likelihood we have z_i=E_i, that
 %                  is, expected value for ith case.
 %      nsamp     - determines the number of samples used (default=500).
-%      prctiles  - determines percentiles that are computed from 
-%                  0 to 100 (default=[5 95]).
+%      deltadist - indicator vector telling which component sets
+%                  are handled using the delta distance (0 if x=x',
+%                  and 1 otherwise). Default is found by examining
+%                  the covariance and metric functions used.
 %
 %  See also
 %    GP_PRED
@@ -41,22 +73,49 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('nsamp', 500, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('prctiles', [5 95], @(x) isreal(x) && isvector(x) && all(x>=0) && all(x<=100))
+ip.addParamValue('deltadist',[], @(x) isvector(x));
 
 ip.parse(gp, x, y, varargin{:});
 z=ip.Results.z;
 nsamp=ip.Results.nsamp;
-prctiles=ip.Results.prctiles;
+deltadist = logical(ip.Results.deltadist);
 
 [n, nin]=size(x);
+if isempty(deltadist)
+  deltadist=false(1,nin);
+  deltadist(gp_finddeltadist(gp))=true;
+end
 
-ps=zeros(nin,1);
-fm=zeros(nin,1);
-fprcs=zeros(nin,length(prctiles));
-m=zeros(nin,1);
-prcs=zeros(nin,length(prctiles));
+ps=zeros(1,nin);
+fs=zeros(nsamp,nin);
+fsa=zeros(nsamp,nin);
+fsrms=zeros(nsamp,nin);
+if nargout>1
+  numfs=zeros(n,nsamp,nin);
+  numfsa=zeros(n,nsamp,nin);
+  numfsrms=zeros(n,nsamp,nin);
+  dens=zeros(n,nsamp,nin);
+  densa=zeros(n,nsamp,nin);
+  densrms=zeros(n,nsamp,nin);
+end
+ys=zeros(nsamp,nin);
+ysa=zeros(nsamp,nin);
+ysrms=zeros(nsamp,nin);
+if nargout>1
+  numys=zeros(n,nsamp,nin);
+  numysa=zeros(n,nsamp,nin);
+  numysrms=zeros(n,nsamp,nin);
+end
 
+% covariance is used for Mahalanobis weighted distanec
 covx=cov(x);
+% handle categorical variables
+covx(deltadist,:)=0;
+covx(:,deltadist)=0;
+for i1=find(deltadist)
+  pdi=1./unique(x(:,i1));
+  covx(i1,i1)=pdi*(1-pdi);
+end
 
 stream = RandStream('mrg32k3a');
 prevstream=RandStream.setDefaultStream(stream);
@@ -64,74 +123,138 @@ prevstream=RandStream.setDefaultStream(stream);
 % loop through the input variables
 for k1=1:nin
   fprintf('k1=%d\n',k1)
-    %- Compute the weight matrix based on Mahalanobis distances:
-    x_=x; x_(:,k1)=[];
-    covx_=covx; covx_(:,k1)=[]; covx_(k1,:)=[];
-    % weight matrix:
-    W=zeros(n);
-    for i1=1:n
-        x_diff=bsxfun(@minus,x_(i1,:),x_((i1+1):n,:))';
-        W(i1,(i1+1):n)=1./(1+sum(x_diff.*(covx_\x_diff)));
+  %- Compute the weight matrix based on Mahalanobis distances:
+  x_=x; x_(:,k1)=[];
+  covx_=covx; covx_(:,k1)=[]; covx_(k1,:)=[];
+  deltadist_=deltadist; deltadist_(k1)=[];
+  % weight matrix:
+  W=zeros(n);
+  for i1=1:n
+    x_diff=zeros(nin-1,n-i1);
+    x_diff(~deltadist_,:)=bsxfun(@minus,x_(i1,~deltadist_),x_((i1+1):n,~deltadist_))';
+    x_diff(deltadist_,:)=double(bsxfun(@ne,x_(i1,deltadist_),x_((i1+1):n,deltadist_))');
+    W(i1,(i1+1):n)=1./(1+sum(x_diff.*(covx_\x_diff)));
+  end
+  W=W+W'+eye(n);
+  %-
+  
+  rsubstream=round(rand*10e9);
+  
+  numf=zeros(1,nsamp);
+  numfa=zeros(1,nsamp);
+  numfrms=zeros(1,nsamp);
+  numy=zeros(1,nsamp); 
+  numya=zeros(1,nsamp);
+  numyrms=zeros(1,nsamp);
+  den=0;
+  dena=0;
+  for i1=1:n
+    % inputs of interest
+    ui=x(i1, k1);
+    ujs=x(:, k1);
+    
+    % replicate same values for other inputs
+    xrep=repmat(x(i1,:),n,1); xrep(:,k1)=ujs;
+    
+    if deltadist(k1)
+      Udiff=double(ujs~=ui);
+    else
+      Udiff=ujs-ui;
     end
-    W=W+W'+eye(n);
-    %-
+    Udiffa=abs(Udiff);
+    Usign=sign(Udiff);
+    stream.Substream = rsubstream;
+    % draw random samples from the posterior
+    fr = gp_rnd(gp, x, y, xrep, 'z', z, 'nsamp', nsamp);
     
-    rsubstream=round(rand*10e9);
+    % average change in input
+    deni=sum(W(:,i1).*Udiff.*Usign);
+    denai=sum(W(:,i1).*Udiffa);
+    den=den+deni;
+    dena=dena+denai;
     
-    num=zeros(1,nsamp); den=0;
-    numf=zeros(1,nsamp); pp=0;
-    for i1=1:n
-        % inputs of interest
-        ui=x(i1, k1);
-        ujs=x(:, k1);
-        
-        % replicate same values for other inputs
-        xrep=repmat(x(i1,:),n,1); xrep(:,k1)=ujs;
-        
-        Udiff=ujs-ui;
-        Usign=sign(Udiff);
-        stream.Substream = rsubstream;
-        % draw random samples from the posterior
-        fs = gp_rnd(gp, x, y, xrep, 'z', z, 'nsamp', nsamp);
-        
-        % compute latent values through the inverse link function
-        if isfield(gp.lik.fh, 'invlink')
-            ilfs = gp.lik.fh.invlink(gp.lik, fs, repmat(z,1,nsamp));
-            % average change in outcome
-            num=num+sum(bsxfun(@times,W(:,i1).*Usign,bsxfun(@minus,ilfs,ilfs(i1,:))));
-        end
-        
-        % average change in latent outcome
-        numf=numf+sum(bsxfun(@times,W(:,i1).*Usign,bsxfun(@minus,fs,fs(i1,:))));
+    % average change in latent outcome
+    b=bsxfun(@minus,fr,fr(i1,:));
+    numfi=sum(bsxfun(@times,W(:,i1).*Usign,b));
+    numfai=sum(bsxfun(@times,W(:,i1),abs(b)));
+    numfrmsi=sum(bsxfun(@times,W(:,i1),b.^2));
+    numf=numf+numfi;
+    numfa=numfa+numfai;
+    numfrms=numfrms+numfrmsi;
 
-        % average change in input
-        den=den+sum(W(:,i1).*Udiff.*Usign);
-        
+    if nargout>1
+      numfs(i1,:,k1)=numfi;
+      numsa(i1,:,k1)=numfai;
+      numfsrms(i1,:,k1)=numfrmsi;
+      dens(i1,:,k1)=deni;
+      densa(i1,:,k1)=denai;
+      densrms(i1,:,k1)=denai;
     end
     
-    % means and percentiles when outcome is the latent function
-    numfden=numf./den;
-    fm(k1,1)=mean(numfden);
-    fprcs(k1,:)=prctile(numfden,prctiles);
+    % compute latent values through the inverse link function
+    if isfield(gp.lik.fh, 'invlink')
+      ilfr = gp.lik.fh.invlink(gp.lik, fr, repmat(z,1,nsamp));
+      % average change in outcome
+      b=bsxfun(@minus,ilfr,ilfr(i1,:));
+      numyi=sum(bsxfun(@times,W(:,i1).*Usign,b));
+      numyai=sum(bsxfun(@times,W(:,i1),abs(b)));
+      numyrmsi=sum(bsxfun(@times,W(:,i1),b.^2));
+      numy=numy+numyi;
+      numya=numya+numyai;
+      numyrms=numyrms+numyrmsi;
+      
+      if nargout>1
+        numys(i1,:,k1)=numyi;
+        numysa(i1,:,k1)=numyai;
+        numysrms(i1,:,k1)=numyrmsi;
+      end
+    end
     
-    % means and percentiles when outcome is computed through the inverse
-    % link function
-    numden=num./den;
-    m(k1,1)=mean(numden);
-    prcs(k1,:)=prctile(numden,prctiles);
+  end
+  
+  % outcome is the latent function
+  fs(:,k1)=numf./den;
+  fsa(:,k1)=numfa./dena;
+  fsrms(:,k1)=sqrt(numfrms./dena);
+  
+  if isfield(gp.lik.fh, 'invlink')
+    % outcome is computed through the inverse link function
+    ys(:,k1)=numy./den;
+    ysa(:,k1)=numya./dena;
+    ysrms(:,k1)=sqrt(numyrms./dena);
+  end
 
-    % probability of knowing the sign of the change in
-    % latent function 
-    ps(k1,1)=mean(numfden>0);
-    if ps(k1,1)<0.5
-      ps(k1,1)=1-ps(k1,1);
-    end
-    
+  % probability of knowing the sign of the change in
+  % latent function 
+  ps(1,k1)=mean(numf./den>0);
+  if ps(1,k1)<0.5
+    ps(1,k1)=1-ps(1,k1);
+  end
+  
 end
 
-if ~isfield(gp.lik.fh, 'invlink')
-    m=fm;
-    prcs=fprcs;
+apcs.ps=ps;
+apcs.fs=fs;
+apcs.fsa=fsa;
+apcs.fsrms=fsrms;
+if isfield(gp.lik.fh, 'invlink')
+  apcs.ys=ys;
+  apcs.ysa=ysa;
+  apcs.ysrms=ysrms;
+end
+
+if nargout>1
+  apcss.numfs=numfs;
+  apcss.numfsa=numfsa;
+  apcss.numfsrms=numfsrms;
+  apcss.dens=dens;
+  apcss.densa=densa;
+  apcss.densrms=densrms;
+  if isfield(gp.lik.fh, 'invlink')
+    apcss.numys=numys;
+    apcss.numysa=numysa;
+    apcss.numysrms=numysrms;
+  end
 end
 
 RandStream.setDefaultStream(prevstream);
