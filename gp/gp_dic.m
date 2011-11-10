@@ -9,7 +9,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 %     Spiegelhalter et al (2002) for discussion on the parameters
 %     in focus in Bayesian model). X contains training inputs and Y
 %     training outputs. Output form can be set by providing 
-%     'output', PARAM pair.
+%     'output', PARAM ('DIC', 'mlpd') and 'form', PARAM ('mean', 'all').
 %
 %   DIC and p_eff are evaluated as follows:
 %     1) GP is a record structure from gp_mc or an array of GPs
@@ -80,10 +80,12 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
   ip.addOptional('output', 'DIC', @(x) ismember(x,{'DIC', 'mlpd'}))
+  ip.addOptional('form', 'mean', @(x) ismember(x,{'mean','all'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
   output=ip.Results.output;
+  form=ip.Results.form;
   % pass these forward
   options=struct();
   z = ip.Results.z;
@@ -153,9 +155,18 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
 
         if isfield(gp.lik.fh,'trcov')
           % a Gaussian likelihood
-          Davg = 2*mean(gp.edata);
-          [e, edata] = gp_e(mean(w,1), Gp, x, y);
-          Dth = 2*edata;
+          if strcmp(form, 'mean')
+            Davg = 2*mean(gp.edata);
+            [e, edata] = gp_e(mean(w,1), Gp, x, y);
+            Dth = 2*edata;
+          else
+            Davg = 2.*gp.edata;
+            Dth = zeros(size(Davg));
+            for i1=1:size(w,1)
+              [e, edata] = gp_e(w(i,:), Gp, x, y);
+              Dth(i1) = 2*edata;
+            end
+          end
         else
           % non-Gaussian likelihood
           
@@ -165,14 +176,25 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
           
           gp2 = Gp;
           gp2 = gp_set(gp2, 'latent_method', 'Laplace');
-          [e, edata] = gpla_e(mean(w,1), gp2, x, y, 'z', z);
-          Dth = 2.*edata;
-          
-          for i1 = 1:length(gp.edata)
-            [e, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
-            Davg(i1) = 2.*edata;
+          if strcmp(form, 'mean')
+            [e, edata] = gpla_e(mean(w,1), gp2, x, y, 'z', z);
+            Dth = 2.*edata;
+            
+            for i1 = 1:length(gp.edata)
+              [e, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
+              Davg(i1) = 2.*edata;
+            end
+            Davg = mean(Davg);
+          else
+            Dth = zeros(size(gp.edata,1));
+            Davg = zeros(size(gp.edata,1));
+            for i1 = 1:length(gp.edata)
+              [~, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
+              Dth(i1) = 2.*edata;
+              [~, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
+              Davg(i1) = 2.*edata;
+            end
           end
-          Davg = mean(Davg);
         end
         
       case 'latent'     
@@ -183,15 +205,28 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
         if isfield(gp.lik.fh,'trcov')
           % a Gaussian likelihood
           sigma2 = VarY - Varf;
-          Dth = sum(log(2*pi*sigma2)) + sum( (y - Ef).^2./sigma2 );
-          Davg = sum(log(2*pi*sigma2)) + mean(sum( (repmat(y,1,5000) - sampf).^2./repmat(sigma2,1,5000), 1));
+          if strcmp(form, 'mean')
+            Dth = sum(log(2*pi*sigma2)) + sum( (y - Ef).^2./sigma2 );
+            Davg = sum(log(2*pi*sigma2)) + mean(sum( (repmat(y,1,5000) - sampf).^2./repmat(sigma2,1,5000), 1));
+          else
+            Dth = log(2*pi*sigma2) + (y - Ef).^2./sigma2;
+            Davg = log(2*pi*sigma2) + mean((repmat(y,1,5000) - sampf).^2./repmat(sigma2,1,5000),2);  
+          end
         else 
           % non-Gaussian likelihood
-          Dth = -2.*gp.lik.fh.ll(gp.lik, y, Ef, z);
-          for i1 = 1:size(sampf, 2)
-            Davg(i1) = gp.lik.fh.ll(gp.lik, y, sampf(:,i1), z);
+          if strcmp(form, 'mean')
+            Dth = -2.*gp.lik.fh.ll(gp.lik, y, Ef, z);
+            for i1 = 1:size(sampf, 2)
+              Davg(i1) = gp.lik.fh.ll(gp.lik, y, sampf(:,i1), z);
+            end
+            Davg = -2.*mean(Davg);
+          else
+            Dth = -2.*arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, Ef, z);
+            for i1 = 1:size(sampf, 2)
+              Davg(:,i1) = arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, sampf(:,i1), z);
+            end
+            Davg = -2.*mean(Davg,2);
           end
-          Davg = -2.*mean(Davg);
         end
         
       case 'all'        
@@ -221,19 +256,40 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
         
         if isfield(gp.lik.fh,'trcov')
           % a Gaussian likelihood
-          Ef = mean(Ef, 2);
-          msigma2 = mean(sigma2,2);
-          Dth = sum(log(2*pi*msigma2)) + sum( (y - Ef).^2./msigma2 );
-          Davg = mean(sum(log(2*pi*sigma2),1)) + mean(sum( (repmat(y,1,nsamples) - sampf).^2./sigma2, 1));
+          if strcmp(form, 'mean')
+            Ef = mean(Ef, 2);
+            msigma2 = mean(sigma2,2);
+            Dth = sum(log(2*pi*msigma2)) + sum( (y - Ef).^2./msigma2 );
+            Davg = mean(sum(log(2*pi*sigma2),1)) + mean(sum( (repmat(y,1,nsamples) - sampf).^2./sigma2, 1));
+          else
+            Ef = mean(Ef, 2);
+            msigma2 = mean(sigma2,2);
+            Dth = (log(2*pi*msigma2)) + ( (y - Ef).^2./msigma2 );
+            Davg = mean(log(2*pi*sigma2),2) + mean( (repmat(y,1,nsamples) - sampf).^2./sigma2, 2);
+          end
         else 
           % non-Gaussian likelihood
           Gp = gp_unpak(Gp, mean(w,1));
-          Dth = -2.*Gp.lik.fh.ll(Gp.lik, y, mean(gp.latentValues,1)', z);
-          for i1 = 1:nsamples
-            Gp = take_nth(gp,i1);
-            Davg(i1) = Gp.lik.fh.ll(Gp.lik, y, Gp.latentValues', z);
+          if strcmp(form, 'mean')
+            Dth = -2.*Gp.lik.fh.ll(Gp.lik, y, mean(gp.latentValues,1)', z);
+            for i1 = 1:nsamples
+              Gp = take_nth(gp,i1);
+              Davg(i1) = Gp.lik.fh.ll(Gp.lik, y, Gp.latentValues', z);
+            end
+            Davg = -2.*mean(Davg);
+          else
+            if ~isempty(z)
+              z1 = z;
+            else
+              z1 = ones(size(y));
+            end
+            Dth = -2.*arrayfun(@(a,b,c) Gp.lik.fh.ll(Gp.lik, a, b, c), y, mean(gp.latentValues,1)',z1);
+            for i1 = 1:nsamples
+              Gp = take_nth(gp,i1);
+              Davg(:,i1) = arrayfun(@(a,b,c) Gp.lik.fh.ll(Gp.lik, a, b, c), y, Gp.latentValues', z1);
+            end
+            Davg = -2.*mean(Davg,2);
           end
-          Davg = -2.*mean(Davg);
         end
     end       
 
@@ -306,33 +362,52 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
         if isfield(gp{1}.lik.fh,'trcov')
           % a Gaussian likelihood
           msigma2 = sum(sigma2.*repmat(weight, size(Ef,1), 1), 2);
-          Dth = sum(log(2*pi*msigma2)) + sum( (y - mEf).^2./msigma2 );
-          deviance = sum(log(2*pi*sigma2),1) + sum((Varf+Ef.^2-2.*repmat(y,1,nsamples).*Ef+repmat(y.^2,1,nsamples))./sigma2,1);
-          Davg = sum(deviance.*weight);
+          if strcmp(form, 'mean')
+            Dth = sum(log(2*pi*msigma2)) + sum( (y - mEf).^2./msigma2 );
+            deviance = sum(log(2*pi*sigma2),1) + sum((Varf+Ef.^2-2.*repmat(y,1,nsamples).*Ef+repmat(y.^2,1,nsamples))./sigma2,1);
+            Davg = sum(deviance.*weight);
+          else
+            Dth = log(2*pi*msigma2) + (y - mEf).^2./msigma2;
+            deviance = log(2*pi*sigma2) + (Varf+Ef.^2-2.*repmat(y,1,nsamples).*Ef+repmat(y.^2,1,nsamples))./sigma2;
+            Davg = sum(bsxfun(@times,deviance,weight),2);
+          end
         else
           % non-Gaussian likelihood
           mw = sum(w.*repmat(weight', 1, size(w,2)), 1);
           Gp = gp_unpak(Gp, mw);
-          Dth = -2.*Gp.lik.fh.ll(Gp.lik, y, mEf, z);
-          for i1 = 1:nsamples
-            Gp = gp{i1};
-            Davg(i1) = Gp.lik.fh.ll(Gp.lik, y, Ef(:,i), z);
+          if strcmp(form, 'mean')
+            Dth = -2.*Gp.lik.fh.ll(Gp.lik, y, mEf, z);
+            for i1 = 1:nsamples
+              Gp = gp{i1};
+              Davg(i1) = Gp.lik.fh.ll(Gp.lik, y, Ef(:,i), z);
+            end
+            Davg = -2.*sum(Davg.*weight);
+          else
+            Dth = -2.*arrayfun(@(a,b,c) Gp.lik.fh.ll(Gp.lik, a, b, c), y, mEf, z);
+            for i1 = 1:nsamples
+              Gp = gp{i1};
+              Davg(:,i1) = arrayfun(@(a,b,c) Gp.lik.fh.ll(Gp.lik, a, b, c), y, Ef(:,i), z);
+            end
+            Davg = -2.*sum(bsxfun(@times, Davg, weight),2);
           end
-          Davg = -2.*sum(Davg.*weight);
         end
     end       
 
     % ====================================================
   else 
     error(['gp_dic: The first input must be a GP structure, a record structure';
-           'from gp_mc or an array of GPs form gp_ia.                         ']) 
+           'from gp_mc or an array of GPs from gp_ia.                         ']) 
   end
 
   dic = 2*Davg - Dth;
   p_eff = Davg - Dth;
   if strcmp(output,'mlpd')
-    % Scales output to correspond scale with waic, refpred, etc.
-    dic = dic/(-2*tn);
+    % Scales output to correspond with waic, refpred, etc.
+    if strcmp(form, 'mean')
+      dic = dic/(-2*tn);
+    else
+      dic = dic/(-2);
+    end
   end
   
 end
