@@ -121,9 +121,9 @@ switch gp.type
 
     % =================================================================
     % Gradient with respect to covariance function parameters
+    i1=0;
     if (~isempty(strfind(gp.infer_params, 'covariance')) && ~notpositivedefinite)
       for i=1:ncf
-        i1=0;
         if ~isempty(gprior)
           i1 = length(gprior);
         end
