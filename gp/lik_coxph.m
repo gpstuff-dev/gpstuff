@@ -951,49 +951,48 @@ function lik = lik_coxph(varargin)
              'example, lik_coxph and gpla_e.               ']);
     end
     
-% %
-%     n=size(y,1);
-%     f1=f(1:ntime);
-%     f2=f((ntime+1):(ntime+n));
-%     
-%     la1=exp(f1);
-%     eta2=exp(f2);
-%     
-%     nu=1-z;
-%     sd=lik.stime(2)-lik.stime(1);
-% 
-%     ll=0;
-%     for i1=1:n
-%         si=sum(y(i1)>lik.stime);
-%         ll=ll + nu(i1).*(f1(si)+f2(i1)) - (y(i1)-lik.stime(si)).*la1(si).*eta2(i1) - sum(sd.*la1(1:(si-1)).*eta2(i1));
-%     end
-% &
     ntime=size(lik.xtime,1);
     ntest=size(zt,1);
-        
+    ny=size(yt,2);
+    
     Py = zeros(size(zt));
     %Ey = zeros(size(zt));
     %EVary = zeros(size(zt));
     %VarEy = zeros(size(zt));
     
     S=10000;
+    sd=lik.stime(2)-lik.stime(1);
+    nu=1-zt;
+    
     for i1=1:ntest
       Sigm_tmp=Covf([1:ntime i1+ntime],[1:ntime i1+ntime]);
       Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
       f_star=mvnrnd(Ef([1:ntime i1+ntime]), Sigm_tmp, S);
-      
       
       f1=f_star(:,1:ntime);
       f2=f_star(:,(ntime+1):end);
       
       la1=exp(f1);
       eta2=exp(f2);
-      nu=1-zt;
-      sd=lik.stime(2)-lik.stime(1);
       
-      si=sum(yt(i1)>lik.stime);
-      Py(i1)=mean(exp(nu(i1).*(f1(:,si)+f2) - (yt(i1)-lik.stime(si)).*la1(:,si).*eta2 - sum(sd.*la1(:,1:(si-1)),2).*eta2));
-      
+      if ny==1
+        si=sum(yt(i1)>lik.stime);
+        Py(i1)=mean(exp(nu(i1).*(f1(:,si)+f2) - (yt(i1)-lik.stime(si)).*la1(:,si).*eta2 - sum(sd.*la1(:,1:(si-1)),2).*eta2));
+      else
+        
+        sb=sum(bsxfun(@gt,yt(i1,1),lik.stime),2);
+        se=sum(bsxfun(@gt,yt(i1,2),lik.stime),2);
+        
+        if sb==0
+          Py(i1) = mean(exp(nu(i1).*(f1(:,se)+f2) - (yt(i1,2)-lik.stime(se)).*la1(:,se).*eta2 - sum(sd.*la1(:,1:(se-1)),2).*eta2));
+        else
+          if se==sb
+            Py(i1) = mean(exp(nu(i1).*(f1(:,se)+f2) - (yt(i1,2)-yt(i1,1)).*la1(:,se).*eta2));
+          else
+            Py(i1) = mean(exp(nu(i1).*(f1(:,se)+f2) - (yt(i1,2)-lik.stime(se)).*la1(:,se).*eta2 - sum(sd.*la1(:,(sb+1):(se-1)),2).*eta2 - (lik.stime(sb+1)-yt(i1,1)).*la1(:,sb).*eta2));
+          end
+        end
+      end
     end
     Ey = [];
     Vary = [];
