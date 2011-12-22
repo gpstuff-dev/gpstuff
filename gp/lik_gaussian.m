@@ -215,7 +215,7 @@ function DKff = lik_gaussian_cfg(lik, x, x2)
       if isempty(lik.n)
           DKff{1}=lik.sigma2;
       else
-          n=size(x,1)
+          n=size(x,1);
           DKff{1} = sparse(1:n, 1:n, lik.sigma2./lik.n, n, n);
       end
   end

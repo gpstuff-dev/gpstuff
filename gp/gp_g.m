@@ -253,6 +253,7 @@ switch gp.type
     
     
     if ~isempty(strfind(gp.infer_params, 'mean')) && isfield(gp,'meanf') && ~notpositivedefinite
+        notpositivedefinite2 = 0; notpositivedefinite3 = 0;
         
         nmf=numel(gp.meanf);
         [H,b,B]=mean_prep(gp,x,[]);

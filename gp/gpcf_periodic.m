@@ -393,8 +393,11 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
   if nargin == 2
     Cdm = gpcf_periodic_trcov(gpcf, x);
     
-    ii1=1;
-    DKff{ii1} = Cdm;
+    ii1=0;
+    if ~isempty(gpcf.p.magnSigma2)
+        ii1=1;
+        DKff{ii1} = Cdm;
+    end
 
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
@@ -493,9 +496,12 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
       error('gpcf_periodic -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
     
-    ii1=1;
     K = gpcf.fh.cov(gpcf, x, x2);
-    DKff{ii1} = K;
+    ii1=0;
+    if ~isempty(gpcf.p.magnSigma2)
+        ii1=1;
+        DKff{ii1} = K;
+    end
     
     if isfield(gpcf,'metric')                
       error('Covariance function not compatible with metrics');
@@ -594,8 +600,11 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask)
     if isfield(gpcf,'metric')
       error('Covariance function not compatible with metrics');
     else
-      ii1=1;
-      DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
+        ii1=0;
+        if ~isempty(gpcf.p.magnSigma2)
+            ii1=1;
+            DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
+        end
       for i2=1:length(gpcf.lengthScale)
         ii1 = ii1+1;
         DKff{ii1}  = 0;                          % d mask(Kff,I) / d lengthScale
@@ -900,7 +909,7 @@ function reccf = gpcf_periodic_recappend(reccf, ri, gpcf)
     reccf.p=[];
     reccf.p.lengthScale=[];
     reccf.p.magnSigma2=[];
-    if gpcf.decay == 1
+    if ri.decay == 1
       reccf.p.lengthScale_sexp=[];
       if ~isempty(ri.p.lengthScale_sexp)
         reccf.p.lengthScale_sexp = ri.p.lengthScale_sexp;
