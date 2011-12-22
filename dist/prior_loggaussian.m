@@ -30,7 +30,7 @@ function p = prior_loggaussian(varargin)
   ip=inputParser;
   ip.FunctionName = 'PRIOR_LOGGAUSSIAN';
   ip.addOptional('p', [], @isstruct);
-  ip.addParamValue('mu',0, @(x) isscalar(x) && x>0);
+  ip.addParamValue('mu',0, @(x) isscalar(x));
   ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
   ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
@@ -107,7 +107,7 @@ end
 function lp = prior_loggaussian_lp(x, p)
   
   lp = -0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
-  
+    
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
   end
