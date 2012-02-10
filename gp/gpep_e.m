@@ -547,6 +547,11 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 B = B(r,r);
                 nutilde = nutilde(r);
                 tautilde = tautilde(r);
+                muvec_i = muvec_i(r);
+                sigm2vec_i = sigm2vec_i(r);
+                M0 = M0(r);
+%                 Z_i = Z_i(r);
+%                 eta = eta(r);
                 myy = myy(r);
                 y = y(r);
                 if ~isempty(z)
