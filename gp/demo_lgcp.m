@@ -39,14 +39,14 @@
 % =====================================
 % 1D-example
 % =====================================
-fprintf(['Coal disaster data with EP integration over the latent\n' ...
-         'values and CCD integration over the parameters\n'])
+fprintf(['Coal disaster data with EP integration over the latent values\n'])
+
 figure
 % Coal disaster data
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/coal.txt');
 x=load(L);
-lgcp(x,'int_method','CCD')
+lgcp(x,'gpcf',@gpcf_neuralnetwork)
 line([x x],[4.7 5],'color','k')
 line(xlim,[4.85 4.85],'color','k')
 xlim([1850 1963])

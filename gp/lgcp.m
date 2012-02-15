@@ -1,10 +1,10 @@
-function [l,lq,xt] = lgcp(x,varargin)
+function [l,lq,xt,gp] = lgcp(x,varargin)
 % LGCP - Log Gaussian Cox Process intensity estimate for 1D and 2D data
 %   
 %   LGCP(X)
-%   [P,PQ,XT] = LGCP(X,XT,OPTIONS)
+%   [P,PQ,XT,GP] = LGCP(X,XT,OPTIONS)
 % 
-%     X is 1D or 2D point data
+%     X  is 1D or 2D point data
 %     XT is optional test points
 %     OPTIONS are optional parameter-value pairs
 %       'gridn' is optional number of grid points used in each axis direction
@@ -17,11 +17,15 @@ function [l,lq,xt] = lgcp(x,varargin)
 %       'latent_method' is optional 'EP' (default) or 'Laplace'
 %       'int_method' is optional 'mode' (default), 'CCD' or 'grid'
 % 
-%     P is the estimated intensity  
+%     P  is the estimated intensity  
 %     PQ is the 5% and 95% percentiles of the intensity estimate
 %     XT contains the used test points
+%     GP is the Gaussian process formed. As the grid is scaled to
+%        unit range or unit square, additional field 'scale' is
+%        included which includes the range for the grid in the
+%        original x space.
   
-% Copyright (c) 2009-2010 Aki Vehtari
+% Copyright (c) 2009-2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -70,11 +74,12 @@ function [l,lq,xt] = lgcp(x,varargin)
       if isnan(xt)
         xt=linspace(xmin,xmax,max(gridn,200))';
       end
-      % normalise, so that same prior is ok for different scales
-      xxn=(xx-mean(xx))./std(xx);
-      xtn=(xt-mean(xx))./std(xx);
+      % normalise to unit range, so that same prior is ok for different scales
+      xxn=(xx-min(xx))./range(xx);
+      xtn=(xt-min(xx))./range(xx);
       % smooth...
-      [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
+      [Ef,Varf,gp]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
+      gp.scale=range(xx);
       
       % compute mean and quantiles
       A=range(xx);
@@ -113,8 +118,8 @@ function [l,lq,xt] = lgcp(x,varargin)
         % range extension
         x1min=min(x1min,xrange(1));
         x1max=max(x1max,xrange(2));
-        x2min=min(x2min,xrange(1));
-        x2max=max(x2max,xrange(2));
+        x2min=min(x2min,xrange(3));
+        x2max=max(x2max,xrange(4));
       end
       % Form regular grid to discretize the data
       zz1=linspace(x1min,x1max,gridn)';
@@ -137,11 +142,13 @@ function [l,lq,xt] = lgcp(x,varargin)
                            linspace(x2min,x2max,max(100,gridn)));
         xt=[xt1(:) xt2(:)];
       end
-      % normalise, so that same prior is ok for different scales
-      xxn=bsxfun(@rdivide,bsxfun(@minus,xx,mean(xx,1)),std(xx,1));
-      xtn=bsxfun(@rdivide,bsxfun(@minus,xt,mean(xx,1)),std(xx,1));
+      % normalise to unit square, so that same prior is ok for different scales
+      xxn=bsxfun(@rdivide,bsxfun(@minus,xx,min(xx,1)),range(xx,1));
+      xtn=bsxfun(@rdivide,bsxfun(@minus,xt,min(xx,1)),range(xx,1));
       % smooth...
-      [Ef,Varf]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
+      [Ef,Varf,gp]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
+      gp.scale=[range(xx(:,1)) range(xx(:,2))];
+      
       % compute mean
       A = range(xx(:,1)).*range(xx(:,2));
       lm=exp(Ef+Varf/2)./A.*n;
@@ -170,7 +177,7 @@ function [l,lq,xt] = lgcp(x,varargin)
 
 end
 
-function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
+function [Ef,Varf,gp] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
   nin = size(xx,2);
@@ -182,8 +189,10 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
     gpcf1 = gpcf();
   end
   % default vague prior
-  pm = prior_t('s2', .1^2, 'nu', 4);
+  pm = prior_sqrtt('s2', 1^2, 'nu', 4);
   pl = prior_t('s2', 2^2, 'nu', 4);
+  %pm = prior_logunif();
+  %pl = prior_logunif();
   pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
@@ -194,6 +203,9 @@ function [Ef,Varf] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
   end
   if isfield(gpcf1,'alpha')
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);
+  end
+  if isfield(gpcf1,'weightSigma2')
+    gpcf1 = gpcf(gpcf1, 'weightSigma2_prior', prior_logunif(), 'biasSigma2_prior', prior_logunif());
   end
   
   % Create the GP structure
