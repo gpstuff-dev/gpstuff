@@ -77,7 +77,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
         % MCMC solution
         if isfield(gp.lik.fh, 'trcov')
           % Gaussian likelihood
-          [~, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
+          [tmp, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
           prctys = prctile(sampyt, prct, 2);
         else
           % Non-Gaussian likelihood
@@ -106,7 +106,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
         
           if isfield(gp.lik.fh,'trcov')
             % Gaussian likelihood
-            [~, ~, ~, Eyt, Varyt] = gp_pred(gp,x,y,xt, 'tstind', ...
+            [tmp, tmp, tmp, Eyt, Varyt] = gp_pred(gp,x,y,xt, 'tstind', ...
                                            tstind);
             prct = prct./100;
             prct = norminv(prct, 0, 1);
@@ -133,7 +133,7 @@ function prctys = gp_predprcty(gp, x, y, xt, varargin)
     
     if isfield(gp{1}.lik.fh, 'trcov')
       % Gaussian likelihood
-      [~, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
+      [tmp, sampyt] = gp_rnd(gp,x,y,xt, 'nsamp', nsamp, options);
       prctys = prctile(sampyt, prct, 2);
     else
       % Non-Gaussian likelihood

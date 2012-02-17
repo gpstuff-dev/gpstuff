@@ -166,13 +166,13 @@ ntest=size(xt,1);
 K_nf = zeros(ntest,tn,nout);
 if multicf
     for i1=1:nout
-        [~,C] = gp_trcov(gp, x, gp.comp_cf{i1});
+        [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
         L(:,:,i1) = chol(C)';
         K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
     end
 else
     for i1=1:nout
-        [~,C] = gp_trcov(gp, x);
+        [tmp,C] = gp_trcov(gp, x);
         L(:,:,i1) = chol(C)';
         K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});        
     end

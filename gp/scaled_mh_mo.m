@@ -49,13 +49,13 @@ function [f, energ, diagn] = scaled_mh_mo(f, opt, gp, x, y, z)
   L = zeros(n,n,nout);
   if multicf
       for i1=1:nout
-          [~, C] = gp_trcov(gp, x, gp.comp_cf{i1});
-          L(:,:,i1)=chol(C)';
+          [tmp, C] = gp_trcov(gp, x, gp.comp_cf{i1});
+          L(:,:,i1)=chol(C, 'lower');
       end
   else
       for i1=1:nout
-          [~, C] = gp_trcov(gp, x);
-          L(:,:,i1)=chol(C)';
+          [tmp, C] = gp_trcov(gp, x);
+          L(:,:,i1)=chol(C, 'lower');
       end
   end
   

@@ -52,7 +52,7 @@ z = ip.Results.z;
 ind = ip.Results.ind;
 xt = ip.Results.xt;
 predictive = false;
-[n, ~] = size(x);
+[n, tmp] = size(x);
 [nin, n_ind] = size(fvec);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z);
 if size(ind,1)==1

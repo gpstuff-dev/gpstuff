@@ -44,5 +44,5 @@ ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
-[~, ~, lpyt] = gpla_loopred(gp, x, y, 'z', z);
+[tmp, tmp, lpyt] = gpla_loopred(gp, x, y, 'z', z);
 eloo=-mean(lpyt);

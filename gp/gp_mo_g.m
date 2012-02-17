@@ -95,12 +95,12 @@ switch gp.type
     invC = zeros(n,n,nout);
     if multicf
         for i1=1:nout
-            [~, C] = gp_trcov(gp, x, gp.comp_cf{i1});
+            [tmp, C] = gp_trcov(gp, x, gp.comp_cf{i1});
             invC(:,:,i1) = inv(C);
             b(:,i1) = C\y(:,i1);
         end
     else
-        [~, C] = gp_trcov(gp, x);
+        [tmp, C] = gp_trcov(gp, x);
         invCtmp = inv(C);
         for i1=1:nout
             invC(:,:,i1) = invCtmp;

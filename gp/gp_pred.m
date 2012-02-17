@@ -149,7 +149,7 @@ switch gp.type
     
     %evaluate a = C\y;
     % -------------------
-    [~, C]=gp_trcov(gp,x);
+    [tmp, C]=gp_trcov(gp,x);
     
     if issparse(C)
       LD = ldlchol(C);

@@ -108,7 +108,7 @@ title('Gaussian process prediction with a squared exponential covariance functio
 
 % To compute predictive densities at the test points xt, the total number
 % of trials Nt must be set additionally:
-[~, ~, lpyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
+[tmp, tmp, lpyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
 
 figure, set(gcf, 'color', 'w'), hold on
 hist((lpyt_la), 20)

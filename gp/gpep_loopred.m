@@ -43,7 +43,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 
   if ~iscell(gp)
     % Single GP
-    [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i,Z_i] = gpep_e(gp_pak(gp), ...
+    [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,muvec_i,sigm2vec_i,Z_i] = gpep_e(gp_pak(gp), ...
                                                       gp, x, y, 'z', z);
 
     Eft=muvec_i;
@@ -51,14 +51,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
     lpyt=log(Z_i);
     n=length(y);
     if nargout > 3
-      [~, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
+      [tmp, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
     end
     
   else
     % Cell array of GPs
     nGP = numel(gp);
     for j = 1:nGP
-      [~,~,~,~,~,~,~,~,muvec_i,sigm2vec_i,Z_i] = gpep_e(gp_pak(gp{j}), ...
+      [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,muvec_i,sigm2vec_i,Z_i] = gpep_e(gp_pak(gp{j}), ...
                                                         gp{j}, x, y, 'z', z);
       
       P_TH(j,:) = gp{j}.ia_weight;
@@ -67,7 +67,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
       pyt_grid(j,:)=Z_i;
       n=length(y);
       if nargout > 3
-        [~, Eyt_grid(j,:), Varyt_grid(j,:)] = ...
+        [tmp, Eyt_grid(j,:), Varyt_grid(j,:)] = ...
           gp{j}.lik.fh.predy(gp{j}.lik, muvec_i, ...
           sigm2vec_i, y, z);
       end

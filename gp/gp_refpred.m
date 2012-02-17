@@ -58,7 +58,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       else
         fh1 = @(gp,Ef,Varf,f,z) exp(predvec(gp,Ef,(Varf),f,z));
       end
-      [Ef1, Varf1, ~, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+      [Ef1, Varf1, tmp, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
     else
       model1 = 2;
       if isfield(gp1.lik.fh, 'trcov')
@@ -83,7 +83,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         end
         Gp.tr_index = tr_index;
         gp_array1{j} = Gp;
-        [Ef1(:,j), Varf1(:,j), ~, Ey1(:,j), Vary1(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
       end
       gp1 = gp_array1;
     end
@@ -102,7 +102,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       Gp = gp1{j};
       weight1(j) = Gp.ia_weight;
       w(j,:) = gp_pak(Gp);
-      [Ef1(:,j), Varf1(:,j), ~, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+      [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
     end
     if isfield(gp1{1}.lik.fh, 'trcov')
       fh1 = @(f,Ey,Vary) sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight1'),1);
@@ -128,7 +128,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       else
         fh2 = @(gp,Ef,Varf,f,z) predvec(gp,Ef,(Varf),f,z);
       end
-      [Ef2, Varf2, ~, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+      [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
     else
       model2 = 2;
       if isfield(gp2.lik.fh, 'trcov')
@@ -153,7 +153,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         end
         Gp.tr_index = tr_index;
         gp_array2{j} = Gp;
-        [Ef2(:,j), Varf2(:,j), ~, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
       end
       gp2 = gp_array2;
     end
@@ -172,7 +172,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       Gp = gp2{j};
       weight2(j) = Gp.ia_weight;
       w(j,:) = gp_pak(Gp);
-      [Ef2(:,j), Varf2(:,j), ~, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+      [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
     end
     if isfield(gp2{1}.lik.fh, 'trcov')
       fh2 = @(f,Ey,Vary) log(sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight2'),1));
@@ -210,7 +210,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           z1 = [];
         end
         if model1~=3
-          [~, ~, int] = int_limits(gp1, Ef1(i,:), z1);
+          [tmp, tmp, int] = int_limits(gp1, Ef1(i,:), z1);
         else
           [minf maxf] = int_limits(gp1,Ef1(i,:),z1);
           minf = sum(minf.*weight1);

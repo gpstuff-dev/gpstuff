@@ -61,7 +61,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       if issparse(C)          
         % If compact support covariance functions are used 
         % the covariance matrix will be sparse
-        [e, edata, eprior, tautilde, nutilde, LD, ~, ~, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
+        [e, edata, eprior, tautilde, nutilde, LD, tmp, tmp, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
         Stildesqroot = sparse(1:n,1:n,sqrt(tautilde),n,n);
         
         b = nutilde - Stildesqroot*ldlsolve(LD,Stildesqroot*(C*nutilde));
@@ -69,7 +69,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         invC = spinv(LD,1);       
         invC = Stildesqroot*invC*Stildesqroot;
       else
-        [e, edata, eprior, tautilde, nutilde, L, ~, ~, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
+        [e, edata, eprior, tautilde, nutilde, L, tmp, tmp, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
         
         if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
           % This is the usual case where likelihood is log concave

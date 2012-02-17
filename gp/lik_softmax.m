@@ -244,7 +244,7 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
   [ntest,nout]=size(yt);
   pi=zeros(ntest,nout);
   lpy=zeros(ntest,nout);
-  [~,~,c] =size(Varf);
+  [notused,notused,c] =size(Varf);
   if c>1
     mcmc=false;
   else

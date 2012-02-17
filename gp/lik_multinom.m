@@ -224,7 +224,7 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   pi=zeros(ntest,nout);
   lpy=zeros(ntest,nout);
   Ey=zeros(ntest,nout);
-  [~,~,c] =size(Varf);
+  [notused,notused,c] =size(Varf);
   if c>1
     mcmc=false;
   else

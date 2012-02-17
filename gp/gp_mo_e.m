@@ -98,7 +98,7 @@ switch gp.type
     zc=0;
     if multicf
         for i1=1:nout
-            [~, C] = gp_trcov(gp, x, gp.comp_cf{i1});
+            [tmp, C] = gp_trcov(gp, x, gp.comp_cf{i1});
             [L,notpositivedefinite]=chol(C,'lower');
             if notpositivedefinite
               [e, edata, eprior] = set_output_for_notpositivedefinite();
@@ -108,7 +108,7 @@ switch gp.type
             zc = zc + sum(log(diag(L)));
         end
     else
-        [~, C] = gp_trcov(gp, x);
+        [tmp, C] = gp_trcov(gp, x);
         [L,notpositivedefinite]=chol(C,'lower');
         if notpositivedefinite
           [e, edata, eprior] = set_output_for_notpositivedefinite();

@@ -201,7 +201,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, xt, varargin
 %       Eft(i) = quadgk(@(f) f.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
 %       Eft2(i) = quadgk(@(f) f.^2.*norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
 %       Varft(i) = Eft2(i) - Eft(i).^2;
-      [~, Eft(i), m2] = quad_moments(@(f) norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
+      [tmp, Eft(i), m2] = quad_moments(@(f) norm_pdf(f,mEf(i),sqrt(mVarf(i))), fmin(i), fmax(i));
       Varft(i) = m2 - Eft(i)^2;
     end
       

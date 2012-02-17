@@ -172,7 +172,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           b=Linv*f;
           gprior=Linv'*b;
         else
-          [H_m,b_m,~]=mean_prep(gp,x,[]);
+          [H_m,b_m,tmp]=mean_prep(gp,x,[]);
           M = (H_m'*b_m-f);
           b=Linv*M;
           gprior=-1*Linv'*b;

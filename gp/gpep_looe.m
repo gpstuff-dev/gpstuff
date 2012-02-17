@@ -44,5 +44,5 @@ ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
-[~,~,~,~,~,~,~,~,~,~,Z_i] = gpep_e(w, gp, x, y, 'z', z);
+[tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,Z_i] = gpep_e(w, gp, x, y, 'z', z);
 eloo=-mean(log(Z_i));

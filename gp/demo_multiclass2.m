@@ -212,7 +212,7 @@ rgp=thin(rgp,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, ~, ~, pgs_mc] = gpmc_mo_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, tmp, tmp, pgs_mc] = gpmc_mo_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
 pg_mc = reshape(mean(pgs_mc,2),900,3);

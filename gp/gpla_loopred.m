@@ -86,7 +86,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       lpyt(i) = log(m0);
     end
     if nargout>3
-      [~,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+      [tmp,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
     end
     
   else
@@ -131,7 +131,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
         lpyt_grid(j,i) = log(m0);
       end
       if nargout>3
-        [~,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
+        [tmp,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
       end
      
       

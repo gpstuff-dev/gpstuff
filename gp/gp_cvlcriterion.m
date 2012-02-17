@@ -42,7 +42,7 @@ function PE2 = gp_cvlcriterion(gp, x, y, varargin)
   [tn, nin] = size(x);
   if ((isstruct(gp) && isfield(gp.lik.fh, 'trcov')) || (iscell(gp) && isfield(gp{1}.lik.fh,'trcov')))
     % Gaussian likelihood
-    [~,~,~,Ey,Vary] = gp_loopred(gp, x, y);
+    [tmp,tmp,tmp,Ey,Vary] = gp_loopred(gp, x, y);
     PE2 = mean((Ey-y).^2 + Vary);
 
   else

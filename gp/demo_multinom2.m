@@ -110,7 +110,7 @@ hold on; plot(x(:,1),x(:,2),'k.')
 % % -------------------------------------------------
 % 
 % % HUOM! Eyt ja Varyt predictiot on huonosti toteutettu. Koodaa z:lla, joka
-% % kuvaa kokonaismäärää. pyt on pielessä
+% % kuvaa kokonaismï¿½ï¿½rï¿½ï¿½. pyt on pielessï¿½
 % [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, 'yt', yt);
 % 
 % figure
@@ -204,7 +204,7 @@ rgp=thin(rgp,102,2);
 
 % Make predictions
 Efs_mc = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-%[Efs_mc, Varfs_mc, ~, ~, pgs_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),3));
+%[Efs_mc, Varfs_mc, tmp, tmp, pgs_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),361,3);
 pg_mc = reshape(mean(pgs_mc,2),361,3);

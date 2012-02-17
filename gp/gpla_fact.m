@@ -52,7 +52,7 @@ predictive = false;
 z = ip.Results.z;
 ind = ip.Results.ind;
 xt = ip.Results.xt;
-[n, ~] = size(x);
+[n,tmp] = size(x);
 [nin, n_ind] = size(fvec);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z);
 if size(ind,1)==1
@@ -67,7 +67,7 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z);
 end
-[~, ~, ~, f_mode] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
+[tmp, tmp, tmp, f_mode] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
 if iscell(gp)
   gplik = gp{1}.lik;
 else

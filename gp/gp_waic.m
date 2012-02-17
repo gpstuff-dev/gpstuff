@@ -89,7 +89,7 @@ function waic = gp_waic(gp, x, y, varargin)
 
     if isfield(gp, 'etr')
       % MCMC solution
-      [~, ~, BUt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
+      [tmp, tmp, BUt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
       GUt = zeros(tn,1);
       Elog = zeros(tn,1);
       Elog2 = zeros(tn,1);
@@ -344,7 +344,7 @@ function waic = gp_waic(gp, x, y, varargin)
         tstind = gp{1}.tr_index;
     end
     
-    [~, ~, BUt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
+    [tmp, tmp, BUt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
     GUt = zeros(tn,1);
     Elog = zeros(tn,1);
     Elog2 = zeros(tn,1);

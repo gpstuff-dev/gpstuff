@@ -41,13 +41,13 @@ function L2 = gp_lcriterion(gp, x, y, varargin)
   [tn, nin] = size(x);
   if ((isstruct(gp) && isfield(gp.lik.fh, 'trcov')) || (iscell(gp) && isfield(gp{1}.lik.fh,'trcov')))
     % Gaussian likelihood
-    [~,~,~,Ey,Vary] = gp_pred(gp, x, y, x, 'yt', y);
+    [tmp,tmp,tmp,Ey,Vary] = gp_pred(gp, x, y, x, 'yt', y);
     L2 = sum((y-Ey).^2 + Vary);
 
   else
     % Non-Gaussian likelihood
     warning('L-criterion not sensible for non-gaussian likelihoods');
-    [~,~,~,Ey,Vary] = gp_pred(gp, x, y, x, 'yt', y, options);
+    [tmp,tmp,tmp,Ey,Vary] = gp_pred(gp, x, y, x, 'yt', y, options);
     L2 = sum((y-Ey).^2 + Vary);
     
   end

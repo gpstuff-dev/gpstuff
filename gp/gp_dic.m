@@ -189,9 +189,9 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             Dth = zeros(size(gp.edata,1));
             Davg = zeros(size(gp.edata,1));
             for i1 = 1:length(gp.edata)
-              [~, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
+              [tmp, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
               Dth(i1) = 2.*edata;
-              [~, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
+              [tmp, edata] = gpla_e(w(i1,:), gp2, x, y, 'z', z);
               Davg(i1) = 2.*edata;
             end
           end
@@ -221,6 +221,9 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             end
             Davg = -2.*mean(Davg);
           else
+            if isempty(z)
+              z = ones(size(Ef));
+            end
             Dth = -2.*arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, Ef, z);
             for i1 = 1:size(sampf, 2)
               Davg(:,i1) = arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, sampf(:,i1), z);

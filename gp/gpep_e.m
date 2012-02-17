@@ -415,7 +415,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     
                     % Compute the marginal likelihood
                     % 4. term & 1. term
-                    [~, notpositivedefinite] = chol(C);
+                    [tmp, notpositivedefinite] = chol(C);
                     if notpositivedefinite
                       [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z_i, eta, ch] = set_output_for_notpositivedefinite();
                       return
@@ -550,8 +550,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 muvec_i = muvec_i(r);
                 sigm2vec_i = sigm2vec_i(r);
                 M0 = M0(r);
-%                 Z_i = Z_i(r);
-%                 eta = eta(r);
                 myy = myy(r);
                 y = y(r);
                 if ~isempty(z)
@@ -1158,6 +1156,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               D = La(r,r);
               nutilde = nutilde(r);
               tautilde = tautilde(r);
+              M0 = M0(r);
+              muvec_i = muvec_i(r);
+              sigm2vec_i = sigm2vec_i(r);
               myy = myy(r);
               P = P(r,:);
               y = y(r);
@@ -1780,19 +1781,19 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     if g2>0
                       % adjust the step size with spline interpolation
                       pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' rec_sadj(end,3)],[1 1]);
-                      [~,df_new]=fnmin(pp,[0 df]);
+                      [tmp,df_new]=fnmin(pp,[0 df]);
                       
                     else
                       % extrapolate with Hessian end-conditions
                       H=(rec_sadj(end,3)-rec_sadj(end-1,3))/(rec_sadj(end,1)-rec_sadj(end-1,1));
                       pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' H],[1 2]);
                       % extrapolate at most by 100% at a time
-                      [~,df_new]=fnmin(pp,[df df*2]);
+                      [tmp,df_new]=fnmin(pp,[df df*2]);
                     end
                   else
                     % if curvefit toolbox does not exist, use a simple Hessian
                     % approximation
-                    [~,ind]=sort(rec_sadj(:,2),'ascend');
+                    [tmp,ind]=sort(rec_sadj(:,2),'ascend');
                     ind=ind(1:2);
                     
                     H=(rec_sadj(ind(1),3)-rec_sadj(ind(2),3))/(rec_sadj(ind(1),1)-rec_sadj(ind(2),1));
