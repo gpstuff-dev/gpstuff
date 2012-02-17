@@ -58,7 +58,7 @@ function hh = violinplot(x,varargin)
   
   [n,m]=size(y);
   for i1=1:m
-    [p,~,yy]=lgpdens(y(:,i1),'gridn',200,'range',xrange);
+    [p,notused,yy]=lgpdens(y(:,i1),'gridn',200,'range',xrange);
     cp=cumsum(p./sum(p));
     qicutofflo=binsgeq(cp,cutoff/2);
     qicutoffhi=binsgeq(cp,1-cutoff/2);
