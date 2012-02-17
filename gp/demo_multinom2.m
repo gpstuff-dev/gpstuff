@@ -109,8 +109,6 @@ hold on; plot(x(:,1),x(:,2),'k.')
 % % Predict also observations and plot the predictions with variance
 % % -------------------------------------------------
 % 
-% % HUOM! Eyt ja Varyt predictiot on huonosti toteutettu. Koodaa z:lla, joka
-% % kuvaa kokonaism��r��. pyt on pieless�
 % [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, 'yt', yt);
 % 
 % figure
