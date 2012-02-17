@@ -83,7 +83,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z1), minf(i), maxf(i));
       Eft(i) = m1; 
       Varft(i) = m2-Eft(i)^2;
-      lpyt(i) = log(m0);
+      lpyt(i) = -log(m0);
     end
     if nargout>3
       [tmp,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
