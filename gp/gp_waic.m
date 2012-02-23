@@ -136,10 +136,10 @@ function waic = gp_waic(gp, x, y, varargin)
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
           if strcmp(form, 'mean')
-            Vn = sum(Vn);
+            Vn = mean(Vn);
             BUt = mean(BUt);
           end
-          waic = BUt - Vn/tn;
+          waic = BUt - Vn;
         else
           % non-Gaussian likelihood
           for i=1:tn
@@ -158,10 +158,10 @@ function waic = gp_waic(gp, x, y, varargin)
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
           if strcmp(form, 'mean')
-            Vn = sum(Vn);
+            Vn = mean(Vn);
             BUt = mean(BUt);
           end
-          waic = BUt - Vn/tn;
+          waic = BUt - Vn;
         end
         
       else
@@ -236,9 +236,9 @@ function waic = gp_waic(gp, x, y, varargin)
           Vn = Elog-Elog2;
           if strcmp(form,'mean')
             BUt = mean(BUt);
-            Vn = sum(Vn);
+            Vn = mean(Vn);
           end
-          waic = BUt - Vn/tn;
+          waic = BUt - Vn;
           
           % Analytic solution
           
@@ -274,10 +274,10 @@ function waic = gp_waic(gp, x, y, varargin)
           Elog2 = Elog2.^2;
           Vn = Elog-Elog2;
           if strcmp(form, 'mean')
-            Vn = sum(Vn);
+            Vn = mean(Vn);
             BUt = mean(BUt);
           end
-          waic = BUt - Vn/tn;
+          waic = BUt - Vn;
           
         end
         
@@ -375,10 +375,10 @@ function waic = gp_waic(gp, x, y, varargin)
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
         if strcmp(form, 'mean')
-          Vn = sum(Vn);
+          Vn = mean(Vn);
           BUt = mean(BUt);
         end
-        waic = BUt - Vn/tn;
+        waic = BUt - Vn;
       else
         % non-Gaussian likelihood
         for i=1:tn
@@ -397,10 +397,10 @@ function waic = gp_waic(gp, x, y, varargin)
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
         if strcmp(form, 'mean')
-          Vn = sum(Vn);
+          Vn = mean(Vn);
           BUt = mean(BUt);
         end
-        waic = BUt - Vn/tn;
+        waic = BUt - Vn;
         
       end
       
