@@ -34,15 +34,10 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % use inference specific methods
   switch gp.latent_method
     case 'Laplace'
-      switch gp.lik.type
-        %case 'Softmax'
-        %  fh_g=@gpla_softmax_g;
-        %case {'Softmax2' 'Multinom'}
-        %  fh_g=@gpla_mo_g;
-        case {'Softmax' 'Multinom' 'Zinegbin' 'Coxph' 'LGP'}
-          fh_g=@gpla_nd_g;
-        otherwise
-          fh_g=@gpla_g;
+      if isfield(gp.lik, 'type_nd')
+        fh_g = @gpla_nd_g;
+      else
+        fh_g = @gpla_g;
       end
     case 'EP'
       fh_g=@gpep_g;
