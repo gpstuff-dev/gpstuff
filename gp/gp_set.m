@@ -325,15 +325,10 @@ function gp = gp_set(varargin)
           % Set latent method
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @laplace_algorithm;
-          switch gp.lik.type
-            %case 'Softmax'
-            %  gp = gpla_softmax_e('init', gp);
-            %case {'Softmax2' 'Multinom'}
-            %  gp = gpla_mo_e('init', gp);
-            case {'Softmax' 'Multinom' 'Zinegbin' 'Coxph' 'LGP' 'Inputdependentnoise'}
-              gp = gpla_nd_e('init', gp);
-            otherwise
-              gp = gpla_e('init', gp);
+          if isfield(gp.lik, 'type_nd')
+            gp = gpla_nd_e('init', gp);
+          else
+            gp = gpla_e('init', gp);
           end
         case 'NA'
           % no latent method set

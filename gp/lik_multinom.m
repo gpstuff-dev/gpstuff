@@ -27,6 +27,8 @@ function lik = lik_multinom(varargin)
   if isempty(lik)
     init=true;
     lik.type = 'Multinom';
+    lik.type_nd = true;
+    lik.type_mo = true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Multinom')
       error('First argument does not seem to be a valid likelihood function structure')

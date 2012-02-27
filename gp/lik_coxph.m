@@ -57,6 +57,7 @@ function lik = lik_coxph(varargin)
     init=true;
     lik.type = 'Coxph';
     lik.structW = false;
+    lik.type_nd = true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Coxph')
       error('First argument does not seem to be a valid likelihood function structure')
