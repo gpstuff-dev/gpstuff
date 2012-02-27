@@ -350,7 +350,7 @@ function gp = gp_set(varargin)
           % Handle latent_opt
           ipmc=inputParser;
           ipmc.FunctionName = 'GP_SET - latent method MCMC options';
-          ipmc.addParamValue('method',@scaled_mh, @(x) isa(x,'function_handle'));
+          ipmc.addParamValue('method',@esls, @(x) isa(x,'function_handle'));
           ipmc.addParamValue('f',[],  @(x) isreal(x) && all(isfinite(x(:))));
           ipmc.parse(latent_opt);
           if init || ~ismember('method',ipmc.UsingDefaults) || ~isfield(gp.fh,'mc')

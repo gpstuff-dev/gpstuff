@@ -23,6 +23,10 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with hmc2
 %                    (respecting infer_params option).
+%      ssls_opt    - Options structure for surrogate slice sampling (see
+%                    surrogate_sls). When this is given the covariance 
+%                    function and likelihood parameters are sampled with 
+%                    surrogate_sls
 %      sls_opt     - Options structure for slice sampler (see sls_opt). 
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with sls
@@ -85,6 +89,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   ip.addParamValue('record',[], @isstruct);
   ip.addParamValue('hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('ssls_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lik_hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lik_sls_opt', [], @(x) isstruct(x) || isempty(x));
@@ -97,6 +102,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   opt.display=ip.Results.display;
   record=ip.Results.record;
   opt.hmc_opt = ip.Results.hmc_opt;
+  opt.ssls_opt = ip.Results.ssls_opt;
   opt.sls_opt = ip.Results.sls_opt;
   opt.latent_opt = ip.Results.latent_opt;
   opt.lik_hmc_opt = ip.Results.lik_hmc_opt;
@@ -179,7 +185,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       fprintf('likel.rej  ');
     end
     if ~isempty(opt.latent_opt)
-      fprintf('lrej ')              % rejection rate of latent value sampling
+      if isequal(gp.fh.mc, @esls)
+        fprintf('lslsn')              % No rejection rate for esls, print first accepted value
+      else
+        fprintf('lrej ')              % rejection rate of latent value sampling
+      end
       if isfield(opt.latent_opt, 'sample_latent_scale') 
         fprintf('    lvScale    ')
       end
@@ -216,7 +226,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         [f, energ, diagnl] = gp.fh.mc(f, opt.latent_opt, gp, x, y, z);
         gp.latentValues = f(:);
         f = f(:);
-        lrej=lrej+diagnl.rej/opt.repeat;
+        if ~isequal(gp.fh.mc, @esls)
+          lrej=lrej+diagnl.rej/opt.repeat;
+        else
+          lrej = diagnl.rej;
+        end
         if isfield(diagnl, 'opt')
           opt.latent_opt = diagnl.opt;
         end
@@ -265,6 +279,25 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
 
+      % Sample parameters & latent values with SSLS
+      if ~isempty(opt.ssls_opt)
+        if isfield(opt.ssls_opt,'infer_params')
+          infer_params = gp.infer_params;
+          gp.infer_params = opt.sls_opt.infer_params;
+        end
+        w = gp_pak(gp);
+        [w, f, diagns] = surrogate_sls(f, w, opt.ssls_opt, gp, x, y, z);
+        gp.latentValues = f;
+        if isfield(diagns, 'opt')
+          opt.sls_opt = diagns.opt;
+        end
+        w=w(end,:);
+        gp = gp_unpak(gp, w);
+        if isfield(opt.sls_opt,'infer_params')
+          gp.infer_params = infer_params;
+        end
+      end      
+      
       % --- Sample the likelihood parameters with Gibbs ------------- 
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
           isfield(gp.lik,'gibbs') && isequal(gp.lik.gibbs,'on')
