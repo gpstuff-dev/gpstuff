@@ -219,13 +219,12 @@ function waic = gp_waic(gp, x, y, varargin)
           sigma2 = gp.lik.sigma2;
           
           for i=1:tn
-            fmin = Ef(i)-9*sqrt(Varf(i));
-            fmax = Ef(i)+9*sqrt(Varf(i));
             
-            % Use moments to calculate Elog, Elog2. Faster than quadgk
-            % above.
+            % Analytical moments for Gaussian distribution
             
-            [m0, m1, m2, m3, m4] = moments(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))), fmin, fmax);          
+            m0 = 1; m1 = Ef(i); m2 = Ef(i)^2 + Varf(i); m3 = Ef(i)*(Ef(i)^2+3*Varf(i));
+            m4 = Ef(i)^4+6*Ef(i)^2*Varf(i)+3*Varf(i)^2;
+          
             Elog2(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
             Elog(i) = (1/4 * m4 - y(i) * m3 + (3*y(i).^2./2+0.5*log(2*pi*sigma2).*sigma2) * m2 ...
                        - (y(i).^3 + y(i).*log(2*pi*sigma2).*sigma2) * m1 + (y(i).^4/4 + 0.5*y(i).^2*log(2*pi*sigma2).*sigma2 ...
@@ -239,22 +238,6 @@ function waic = gp_waic(gp, x, y, varargin)
             Vn = mean(Vn);
           end
           waic = BUt - Vn;
-          
-          % Analytic solution
-          
-          %           k = Ef;
-          %           a = 1./(2*Varf);
-          %           C = 0.0997356./ (sigma2.^2.*sqrt(Varf));
-          %           I4 = 3./(4.*a.^2).*sqrt(pi./a);
-          %           I2 = (6.*k.^2 + 2.*sigma2.*log(2.*pi.*sigma2)) * 1./(2.*a).*sqrt(pi./a);
-          %           I0 = (k.^2+sigma2.*log(2.*sigma2.*pi)).^2.*sqrt(pi./a);
-          %           Elog = C.*(I4+I2+I0);
-          %           C = -1./(2.*sigma2).*1./sqrt(2*pi.*Varf);
-          %           I2 = 1./(2*a).*sqrt(pi./a);
-          %           I0 = (k.^2+sigma2.*log(2*pi*sigma2)).*sqrt(a./pi);
-          %           Elog2 = (C.*(I2+I0)).^2;
-          %           Vn = sum(Elog - Elog2);
-          %           waic = BUt + 1/tn * Vn;
 
         else
           % Non-Gaussian likelihood
@@ -291,13 +274,11 @@ function waic = gp_waic(gp, x, y, varargin)
             if Varf(i)<eps
               GUt(i)=(-0.5*log(2*pi*sigma2)- (y(i) - Ef(i)).^2/(2.*sigma2));
             else
-              fmin = Ef(i)-9*sqrt(Varf(i));
-              fmax = Ef(i)+9*sqrt(Varf(i));
               
               % GUt(i) = quadgk(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))).*(-0.5*log(2*pi*sigma2)- (y(i) - f).^2/(2.*sigma2)), fmin, fmax);
 
-              % Use moments to calculate GUt, faster than guadk above.
-              [m0, m1, m2] = moments(@(f) norm_pdf(f,Ef(i),sqrt(Varf(i))), fmin, fmax);
+              m0 = 1; m1 = Ef(i); m2 = Ef(i)^2 + Varf(i);
+              
               GUt(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
             end
           end
