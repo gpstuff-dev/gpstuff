@@ -10,8 +10,13 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
+%      method - method for inference, 'posterior' (default) uses posterior
+%               predictive density, 'loo' uses leave-one-out predictive 
+%               density (approximative) and 'kfcv' uses loo cross-validation 
+%               posterior predictive density.
 %     
 %   See also
+%     GP_LOOPRED, GP_KFCV   
 %
 %   References
 %     Vehtari & Ojanen (2011). Bayesian preditive methods for model
@@ -31,6 +36,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('method', 'posterior', @(x) ismember(x,{'posterior' 'kfcv' 'loo'}))
   ip.parse(gp1, gp2, x, y, varargin{:});
   % pass these forward
   options=struct();
@@ -41,8 +47,11 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
   end
   [tn, nin] = size(x);
   u_g = zeros(size(y));
+  opt = optimset('TolX', 1e-4, 'TolFun', 1e-4);
 
   if isstruct(gp1)
+    % Single gp or MCMC
+    
     switch gp1.type
       case {'FULL' 'VAR' 'DTC' 'SOR'}
         tstind = [];
@@ -58,7 +67,20 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       else
         fh1 = @(gp,Ef,Varf,f,z) exp(predvec(gp,Ef,(Varf),f,z));
       end
-      [Ef1, Varf1, tmp, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+      
+      switch method
+        case 'posterior'
+          [Ef1, Varf1, tmp, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+        case 'loo'
+          if ~isfield(gp1.lik.fh, 'trcov')
+            gp1 = gp_set(gp1, 'latent_method', 'EP');
+          end
+          [Ef1, Varf1, tmp, Ey1, Vary1] = gp_loopred(gp1,x,y, options);
+        case 'kfcv'
+          [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'off', 'k', tn, options);
+          [Ef1, Varf1, Ey1, Vary1] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
+      end
+        
     else
       model1 = 2;
       if isfield(gp1.lik.fh, 'trcov')
@@ -83,11 +105,20 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         end
         Gp.tr_index = tr_index;
         gp_array1{j} = Gp;
-        [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        switch method
+          case 'posterior'
+            [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          case 'loo'
+            [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_loopred(Gp, x, y, options);
+          case 'kfcv'
+            [tmp, pred] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+            [Ef1(:,j), Varf1(:,j), Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
+        end
       end
       gp1 = gp_array1;
     end
   else
+    % GP IA
     switch gp1{1}.type
       case {'FULL' 'VAR' 'DTC' 'SOR'}
         tstind = [];
@@ -102,7 +133,15 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       Gp = gp1{j};
       weight1(j) = Gp.ia_weight;
       w(j,:) = gp_pak(Gp);
-      [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+      switch method
+        case 'posterior'
+          [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        case 'loo'
+          [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, options);
+        case 'kfcv'
+          [tmp, preds] = gp_pred(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+          [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
+      end
     end
     if isfield(gp1{1}.lik.fh, 'trcov')
       fh1 = @(f,Ey,Vary) sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight1'),1);
@@ -113,6 +152,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
   end
   
   if isstruct(gp2)
+    % Single gp or MCMC
     switch gp2.type
       case {'FULL' 'VAR' 'DTC' 'SOR'}
         tstind = [];
@@ -128,7 +168,18 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       else
         fh2 = @(gp,Ef,Varf,f,z) predvec(gp,Ef,(Varf),f,z);
       end
-      [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+      switch method
+        case 'posterior'
+          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+        case 'loo'
+          if ~isfield(gp2.lik.fh, 'trcov')
+            gp1 = gp_set(gp2, 'latent_method', 'EP');
+          end
+          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp1,x,y, options);
+        case 'kfcv'
+          [~, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'off', options);
+          [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
+      end
     else
       model2 = 2;
       if isfield(gp2.lik.fh, 'trcov')
@@ -153,11 +204,19 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         end
         Gp.tr_index = tr_index;
         gp_array2{j} = Gp;
-        [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        switch method
+          case 'posterior'
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          case 'loo'
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, options);
+          case 'kfcv'
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+        end
       end
       gp2 = gp_array2;
     end
   else
+    % GP IA
     switch gp2{1}.type
       case {'FULL' 'VAR' 'DTC' 'SOR'}
         tstind = [];
@@ -172,7 +231,14 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       Gp = gp2{j};
       weight2(j) = Gp.ia_weight;
       w(j,:) = gp_pak(Gp);
-      [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+      switch method
+        case 'posterior'
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        case 'loo'
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, options);
+        case 'kfcv'
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+      end
     end
     if isfield(gp2{1}.lik.fh, 'trcov')
       fh2 = @(f,Ey,Vary) log(sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight2'),1));
@@ -322,4 +388,3 @@ function [minf, maxf, interval] = int_limits(gp, Ef, z)
   end
 
 end
-
