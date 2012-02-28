@@ -177,7 +177,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           end
           [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp1,x,y, options);
         case 'kfcv'
-          [~, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'off', options);
+          [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'off', options);
           [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
       end
     else
