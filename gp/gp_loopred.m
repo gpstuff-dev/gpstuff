@@ -36,18 +36,17 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
       (iscell(gp) && isfield(gp{1},'latent_method'))
     if iscell(gp)
       latent_method=gp{1}.latent_method;
-      lik_type=gp{1}.lik.type;
+      gplik=gp{1}.lik;
     else
       latent_method=gp.latent_method;
-      lik_type=gp.lik.type;
+      gplik=gp.lik;
     end
     switch latent_method
       case 'Laplace'
-        switch lik_type
-          case {'Multinom' 'Softmax' 'Zinegbin' 'Coxph' 'LGP'}
-            error('Laplace leave-one-out not yet supported for likelihoods with non-diagonal W')
-          otherwise
-            fh_pred=@gpla_loopred;
+        if isfield(gplik, 'type_nd')
+          error('Laplace leave-one-out not yet supported for likelihoods with non-diagonal W')
+        else
+          fh_pred=@gpla_loopred;
         end
       case 'EP'
         fh_pred=@gpep_loopred;
