@@ -86,8 +86,6 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'off', 'k', tn, options);
           [Ef1, Varf1, Ey1, Vary1] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
         case 'joint'
-          % Varf and Vary actually covariance matrices, naming just so no
-          % changes needed later
           [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
       end
         
@@ -125,6 +123,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
             [Ef1(:,j), Varf1(:,j), Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
         end
       end
+      if isequal(method, 'joint')
+        [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1, x, y, x, 'yt', y, 'tstind', tstind, options);
+      end
       gp1 = gp_array1;
     end
   else
@@ -152,6 +153,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           [tmp, preds] = gp_pred(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
           [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
       end
+    end
+    if isequal(method, 'joint')
+        [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1, x, y, x, 'yt', y, 'tstind', tstind, options);
     end
     if isfield(gp1{1}.lik.fh, 'trcov')
       fh1 = @(f,Ey,Vary) sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight1'),1);
@@ -190,7 +194,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'off', options);
           [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
         case 'joint'
-          [Ef2, Covf2, tmp, Ey2, Covy2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+          [Ef2, Covf2, tmp, Ey2, Covy2] = gp_jpred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
       end
     else
       model2 = 2;
@@ -224,6 +228,10 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           case 'kfcv'
             [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
         end
+        
+      end
+      if isequal(method, 'joint')
+        [Ef2, Covf2, tmp, Ey2, Covy2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
       end
       gp2 = gp_array2;
     end
@@ -251,6 +259,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         case 'kfcv'
           [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
       end
+    end
+    if isequal(method, 'joint')
+      [Ef2, Covf2, tmp, Ey2, Covy2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
     end
     if isfield(gp2{1}.lik.fh, 'trcov')
       fh2 = @(f,Ey,Vary) log(sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight2'),1));
