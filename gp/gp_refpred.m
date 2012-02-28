@@ -12,8 +12,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %               for ith case. 
 %      method - method for inference, 'posterior' (default) uses posterior
 %               predictive density, 'loo' uses leave-one-out predictive 
-%               density (approximative) and 'kfcv' uses loo cross-validation 
-%               posterior predictive density.
+%               density (approximative), 'kfcv' uses loo cross-validation 
+%               posterior predictive density, 'joint' uses joint
+%               posterior predictive density for latent values
 %     
 %   See also
 %     GP_LOOPRED, GP_KFCV   
@@ -23,7 +24,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %     assesment and selection. In preparation.
 %
 
-% Copyright (c) 2011 Ville Tolvanen
+% Copyright (c) 2011-2012 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -63,7 +64,12 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
     if ~isfield(gp1,'etr')
       model1 = 1;
       if isfield(gp1.lik.fh, 'trcov')
-        fh1 = @(f,Ey,Vary) norm_pdf(f,Ey,sqrt(Vary));
+        switch method
+          case 'joint'
+            
+          otherwise
+            fh1 = @(f,Ey,Vary) norm_pdf(f,Ey,sqrt(Vary));
+        end
       else
         fh1 = @(gp,Ef,Varf,f,z) exp(predvec(gp,Ef,(Varf),f,z));
       end
@@ -79,6 +85,10 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         case 'kfcv'
           [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'off', 'k', tn, options);
           [Ef1, Varf1, Ey1, Vary1] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
+        case 'joint'
+          % Varf and Vary actually covariance matrices, naming just so no
+          % changes needed later
+          [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
       end
         
     else
@@ -170,15 +180,17 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       end
       switch method
         case 'posterior'
-          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
         case 'loo'
           if ~isfield(gp2.lik.fh, 'trcov')
             gp1 = gp_set(gp2, 'latent_method', 'EP');
           end
-          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp1,x,y, options);
+          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x,y, options);
         case 'kfcv'
           [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'off', options);
           [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
+        case 'joint'
+          [Ef2, Covf2, tmp, Ey2, Covy2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
       end
     else
       model2 = 2;
@@ -260,53 +272,67 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       maxf = sum(bsxfun(@times, weight1, Ey1+6.*sqrt(Vary1)),2);
     end
     
-    for i=1:tn
-      u_g(i) = quadgk(@(f) fh1(f,Ey1(i,:),Vary1(i,:)).*fh2(f,Ey2(i,:),Vary2(i,:)), minf(i), maxf(i));
+    switch method
+      case 'joint'
+        u_g = -0.5.*((Ey1 - Ey2)'*(Covy2\(Ey1-Ey2)) + sum(sum(inv(Covy2).*Covy1))) ...
+          -(tn/2*log(2*pi) + sum(diag(Covy2)));
+      otherwise
+        for i=1:tn
+          u_g(i) = quadgk(@(f) fh1(f,Ey1(i,:),Vary1(i,:)).*fh2(f,Ey2(i,:),Vary2(i,:)), minf(i), maxf(i));
+        end
     end
  
   else
     % Non-Gaussian likelihood
     
-    if ismember(gp1.lik.type, {'Binomial', 'Poisson', 'Probit', 'Logit', 'Negbin', 'Negbinztr'})
-      % Discrete likelihoods
-      for i=1:tn
-        if ~isempty(z)
-          z1 = z(i);
-        else
-          z1 = [];
-        end
-        if model1~=3
-          [tmp, tmp, int] = int_limits(gp1, Ef1(i,:), z1);
-        else
-          [minf maxf] = int_limits(gp1,Ef1(i,:),z1);
-          minf = sum(minf.*weight1);
-          maxf = sum(maxf.*weight1);
-          int = minf:maxf;
-        end
-        u_g(i) = sum(fh1(gp1,Ef1(i,:),Varf1(i,:),int,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),int,z1));
-      end
-    else
-      % Continuous likelihoods
-      for i=1:tn
-        if ~isempty(z)
-          z1 = z(i);
-        else
-          z1 = [];
-        end
-        if model1~=3
-          if ismember(gp1.lik.type, {'Student-t', 'Weibull'})
-            [minf, maxf] = int_limits(gp1, Ef1(i), z1);
-          else
-            minf = mean(Ey1(i) - 12.*sqrt(Vary1(i)),2);
-            minf(minf<0)=0;
-            maxf = mean(Ey1(i) + 12.*sqrt(Vary1(i)),2);
+    switch method
+      case 'joint'
+        % Joint refpred of latent values
+        u_g = -0.5.*((Ef1 - Ef2)'*(Covf2\(Ef1-Ef2)) + sum(sum(inv(Covf2).*Covf1))) ...
+          -(tn/2*log(2*pi) + sum(diag(Covf2)));
+        
+      otherwise
+        if ismember(gp1.lik.type, {'Binomial', 'Poisson', 'Probit', 'Logit', 'Negbin', 'Negbinztr'})
+          % Discrete likelihoods
+          for i=1:tn
+            if ~isempty(z)
+              z1 = z(i);
+            else
+              z1 = [];
+            end
+            if model1~=3
+              [tmp, tmp, int] = int_limits(gp1, Ef1(i,:), z1);
+            else
+              [minf maxf] = int_limits(gp1,Ef1(i,:),z1);
+              minf = sum(minf.*weight1);
+              maxf = sum(maxf.*weight1);
+              int = minf:maxf;
+            end
+            u_g(i) = sum(fh1(gp1,Ef1(i,:),Varf1(i,:),int,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),int,z1));
           end
         else
-          minf = sum(bsxfun(@times, weight1, Ey1(i,:)-12.*sqrt(Vary1(i,:))),2);
-          maxf = sum(bsxfun(@times, weight1, Ey1(i,:)+12.*sqrt(Vary1(i,:))),2);
+          % Continuous likelihoods
+          for i=1:tn
+            if ~isempty(z)
+              z1 = z(i);
+            else
+              z1 = [];
+            end
+            if model1~=3
+              if ismember(gp1.lik.type, {'Student-t', 'Weibull'})
+                [minf, maxf] = int_limits(gp1, Ef1(i), z1);
+              else
+                minf = mean(Ey1(i) - 12.*sqrt(Vary1(i)),2);
+                minf(minf<0)=0;
+                maxf = mean(Ey1(i) + 12.*sqrt(Vary1(i)),2);
+              end
+            else
+              minf = sum(bsxfun(@times, weight1, Ey1(i,:)-12.*sqrt(Vary1(i,:))),2);
+              maxf = sum(bsxfun(@times, weight1, Ey1(i,:)+12.*sqrt(Vary1(i,:))),2);
+            end
+            u_g(i) = quadgk(@(f) fh1(gp1,Ef1(i,:),Varf1(i,:),f,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),f,z1), minf, maxf, 'absTol', 1e-3);
+          end
         end
-        u_g(i) = quadgk(@(f) fh1(gp1,Ef1(i,:),Varf1(i,:),f,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),f,z1), minf, maxf, 'absTol', 1e-3);
-      end
     end
   end
   u_g = mean(u_g);
