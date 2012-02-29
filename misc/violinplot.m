@@ -49,7 +49,7 @@ function hh = violinplot(x,varargin)
   if isempty(y)
     y=x;
     x=1:size(y,2);
-  elseif isvector(y) && ~isvector(x)
+  elseif (isvector(y) && ~isvector(x)) || isscalar(y)
     horiz=false;
     tmp=x;
     x=y;
