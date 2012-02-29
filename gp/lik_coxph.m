@@ -8,7 +8,7 @@ function lik = lik_coxph(varargin)
 %    
 %    The likelihood contribution for the ith observation is
 %
-%      l_i = h_i(y_i)^(1-z_i)*[exp(-int_0^y_i*h_i dt],
+%      l_i = h_i(y_i)^(1-z_i)*[exp(-int_0^y_i*h_i dt)],
 %    
 %    where hazard is h_i=h_0(y_i)*exp(f_i). A zero mean Gaussian process
 %    prior is placed for f = [f_1, f_2,...,f_n] ~ N(0, C). C is the
