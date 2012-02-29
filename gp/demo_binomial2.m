@@ -214,6 +214,7 @@ legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
 legend('boxoff')
 line(xlim,[.5 .5],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
+axis([-1.5 1.5 0 1])
 xlabel('log dose')
 
 % Histogram of LD50
@@ -299,6 +300,7 @@ legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
 legend('boxoff')
 line(xlim,[.5 .5],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
+axis([-1.5 1.5 0 1])
 xlabel('log dose')
 
 % Histogram of LD50
