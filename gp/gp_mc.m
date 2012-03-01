@@ -23,10 +23,6 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with hmc2
 %                    (respecting infer_params option).
-%      ssls_opt    - Options structure for surrogate slice sampling (see
-%                    surrogate_sls). When this is given the covariance 
-%                    function and likelihood parameters are sampled with 
-%                    surrogate_sls
 %      sls_opt     - Options structure for slice sampler (see sls_opt). 
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with sls
@@ -89,7 +85,6 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   ip.addParamValue('record',[], @isstruct);
   ip.addParamValue('hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('ssls_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lik_hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lik_sls_opt', [], @(x) isstruct(x) || isempty(x));
@@ -279,24 +274,25 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
 
-      % Sample parameters & latent values with SSLS
-      if ~isempty(opt.ssls_opt)
-        if isfield(opt.ssls_opt,'infer_params')
-          infer_params = gp.infer_params;
-          gp.infer_params = opt.sls_opt.infer_params;
-        end
-        w = gp_pak(gp);
-        [w, f, diagns] = surrogate_sls(f, w, opt.ssls_opt, gp, x, y, z);
-        gp.latentValues = f;
-        if isfield(diagns, 'opt')
-          opt.sls_opt = diagns.opt;
-        end
-        w=w(end,:);
-        gp = gp_unpak(gp, w);
-        if isfield(opt.sls_opt,'infer_params')
-          gp.infer_params = infer_params;
-        end
-      end      
+%       % Sample parameters & latent values with SSLS
+%       % NOT WORKING! NOT WORKING! DONT USE
+%       if ~isempty(opt.ssls_opt)
+%         if isfield(opt.ssls_opt,'infer_params')
+%           infer_params = gp.infer_params;
+%           gp.infer_params = opt.sls_opt.infer_params;
+%         end
+%         w = gp_pak(gp);
+%         [w, f, diagns] = surrogate_sls(f, w, opt.ssls_opt, gp, x, y, z);
+%         gp.latentValues = f;
+%         if isfield(diagns, 'opt')
+%           opt.ssls_opt = diagns.opt;
+%         end
+%         w=w(end,:);
+%         gp = gp_unpak(gp, w);
+%         if isfield(opt.sls_opt,'infer_params')
+%           gp.infer_params = infer_params;
+%         end
+%       end      
       
       % --- Sample the likelihood parameters with Gibbs ------------- 
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
