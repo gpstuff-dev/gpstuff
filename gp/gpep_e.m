@@ -1691,6 +1691,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             % the intial gradient in the search direction
             g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -diag(Sf) -mf.^2).*dtau_q );
             
+            sdir_reset=false;
             rec_sadj=[0 e g]; % record for step size adjustment
             for i1=1:maxiter
               
@@ -1842,14 +1843,22 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   % try switching to gradient based updates
                   up_mode='grad';
                   df_lim=1e3;
-                  df=1;
+                  df=0.1;
                   if ismember(display,{'iter'})
                     fprintf('switch to gradient updates, ')
                   end
-                else
+                elseif ~sdir_reset
                   if ismember(display,{'iter'})
                     fprintf('reset the search direction, ')
                   end
+                  sdir_reset=true;
+                elseif g2<0 && abs(g2)<abs(g) && e2>e
+                  if ismember(display,{'final','iter'})
+                    fprintf('Unable to continue: gradients of the inner-loop objective are inconsistent\n')
+                  end
+                  break;
+                else
+                  df=df*0.1;
                 end
                 
                 % the new search direction
@@ -1894,7 +1903,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   % evaluate the new energy
                   e2 = lnZ_q + lnZ_r2 -lnZ_s2;
                   
-                  if isfinite(e2) && e2>e
+                  if isfinite(e2)
                     % a successful surrogate update
                     supdate=true;
                     ninner=0; % reset the inner loop iteration counter
@@ -1953,6 +1962,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   if isfinite(e2)
                     % successful switch to fractional energy
                     supdate=true;
+                    pcavity=true;
                     ninner=0; % reset the inner loop iteration counter
                     
                     % accept the new state
