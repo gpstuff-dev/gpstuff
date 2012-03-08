@@ -88,7 +88,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           if ~isfield(gp1.lik.fh, 'trcov')
             gp1 = gp_set(gp1, 'latent_method', 'EP');
           end
-          [Ef1, Varf1, tmp, Ey1, Vary1] = gp_loopred(gp1,x,y, options);
+          [Ef1, Varf1, tmp, Ey1, Vary1] = gp_loopred(gp1,x,y, 'z', z);
         case 'kfcv'
           [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'iter', 'k', tn, options);
           [Ef1, Varf1, Ey1, Vary1] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
@@ -124,7 +124,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           case 'posterior'
             [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
           case 'loo'
-            [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_loopred(Gp, x, y, options);
+            [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_loopred(Gp, x, y, 'z', z);
           case 'kfcv'
             [tmp, pred] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
             [Ef1(:,j), Varf1(:,j), Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
@@ -155,7 +155,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         case 'posterior'
           [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         case 'loo'
-          [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, options);
+          [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, 'z', z);
         case 'kfcv'
           [tmp, preds] = gp_pred(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
           [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
@@ -196,7 +196,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           if ~isfield(gp2.lik.fh, 'trcov')
             gp1 = gp_set(gp2, 'latent_method', 'EP');
           end
-          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x,y, options);
+          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x,y, 'z', z);
         case 'kfcv'
           [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'iter', options);
           [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
@@ -231,7 +231,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           case 'posterior'
             [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
           case 'loo'
-            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, options);
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, 'z', z);
           case 'kfcv'
             [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
         end
@@ -262,7 +262,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         case 'posterior'
           [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         case 'loo'
-          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, options);
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, 'z', z);
         case 'kfcv'
           [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
       end
