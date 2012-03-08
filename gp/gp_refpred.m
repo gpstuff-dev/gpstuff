@@ -3,7 +3,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %            single predictions.
 % 
 %   Description
-%     
+%     u = GP_REFPRED(GP1, GP2, X, Y, OPTIONS) evaluates reference
+%     predictive approximation between models GP1 and GP2. Here GP1 is the
+%     reference model and GP2 is the candidate model.
 %
 %   OPTIONS is optional parameter-value pair
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -15,6 +17,8 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %               density (approximative), 'kfcv' uses loo cross-validation 
 %               posterior predictive density, 'joint' uses joint
 %               posterior predictive density for latent values
+%               (non-Gaussian likelihood) or observations (Gaussian
+%               likelihood)
 %     
 %   See also
 %     GP_LOOPRED, GP_KFCV   
@@ -37,11 +41,14 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('method', 'posterior', @(x) ismember(x,{'posterior' 'kfcv' 'loo'}))
+  ip.addParamValue('method', 'posterior', @(x) ismember(x,{'posterior' 'kfcv' 'loo' 'joint'}))
+  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
   ip.parse(gp1, gp2, x, y, varargin{:});
   % pass these forward
   options=struct();
   z = ip.Results.z;
+  method = ip.Results.method;
+  form = ip.Results.form;
   if ~isempty(ip.Results.z)
     options.zt=ip.Results.z;
     options.z=ip.Results.z;
@@ -83,10 +90,10 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           end
           [Ef1, Varf1, tmp, Ey1, Vary1] = gp_loopred(gp1,x,y, options);
         case 'kfcv'
-          [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'off', 'k', tn, options);
+          [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'iter', 'k', tn, options);
           [Ef1, Varf1, Ey1, Vary1] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
         case 'joint'
-          [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+          [Ef1, Covf1] = gp_jpred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
       end
         
     else
@@ -119,12 +126,12 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           case 'loo'
             [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_loopred(Gp, x, y, options);
           case 'kfcv'
-            [tmp, pred] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+            [tmp, pred] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
             [Ef1(:,j), Varf1(:,j), Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
         end
       end
       if isequal(method, 'joint')
-        [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef1, Covf1] = gp_jpred(gp1, x, y, x, 'yt', y, 'tstind', tstind, options);
       end
       gp1 = gp_array1;
     end
@@ -150,12 +157,12 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         case 'loo'
           [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = gp_pred(Gp, x, y, options);
         case 'kfcv'
-          [tmp, preds] = gp_pred(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+          [tmp, preds] = gp_pred(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
           [Ef1(:,j), Varf1(:,j), tmp, Ey1(:,j), Vary1(:,j)] = deal(preds.Eft, preds.Varft, preds.Eyt, preds.Varyt);
       end
     end
     if isequal(method, 'joint')
-        [Ef1, Covf1, tmp, Ey1, Covy1] = gp_jpred(gp1, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef1, Covf1] = gp_jpred(gp1, x, y, x, 'yt', y, 'tstind', tstind, options);
     end
     if isfield(gp1{1}.lik.fh, 'trcov')
       fh1 = @(f,Ey,Vary) sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight1'),1);
@@ -191,10 +198,10 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           end
           [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x,y, options);
         case 'kfcv'
-          [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'off', options);
+          [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'iter', options);
           [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
         case 'joint'
-          [Ef2, Covf2, tmp, Ey2, Covy2] = gp_jpred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+          [Ef2, Covf2] = gp_jpred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
       end
     else
       model2 = 2;
@@ -226,12 +233,12 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           case 'loo'
             [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, options);
           case 'kfcv'
-            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
         end
         
       end
       if isequal(method, 'joint')
-        [Ef2, Covf2, tmp, Ey2, Covy2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef2, Covf2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
       end
       gp2 = gp_array2;
     end
@@ -261,7 +268,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       end
     end
     if isequal(method, 'joint')
-      [Ef2, Covf2, tmp, Ey2, Covy2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
+      [Ef2, Covf2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
     end
     if isfield(gp2{1}.lik.fh, 'trcov')
       fh2 = @(f,Ey,Vary) log(sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight2'),1));
@@ -274,22 +281,14 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
   if ((isstruct(gp1) && isfield(gp1.lik.fh, 'trcov')) || (iscell(gp1) && isfield(gp1{1}.lik.fh,'trcov')))
     % Gaussian likelihood
     
-    % Integration limits from gp1 predictions
-    if model1~=3
-      minf = mean(Ey1 - 6.*sqrt(Vary1),2);
-      maxf = mean(Ey1 + 6.*sqrt(Vary1),2);
-    else
-      minf = sum(bsxfun(@times, weight1, Ey1-6.*sqrt(Vary1)),2);
-      maxf = sum(bsxfun(@times, weight1, Ey1+6.*sqrt(Vary1)),2);
-    end
-    
     switch method
       case 'joint'
-        u_g = -0.5.*((Ey1 - Ey2)'*(Covy2\(Ey1-Ey2)) + sum(sum(inv(Covy2).*Covy1))) ...
-          -(tn/2*log(2*pi) + sum(diag(Covy2)));
+        u_g = -0.5.*((Ey1 - Ey2)'*(Covy2\(Ey1-Ey2)) + sum(sum(inv(Covy2).*Covy1)) ...
+          + tn*log(2*pi) + 2*sum(log(diag(chol(Covy2)))));
       otherwise
         for i=1:tn
-          u_g(i) = quadgk(@(f) fh1(f,Ey1(i,:),Vary1(i,:)).*fh2(f,Ey2(i,:),Vary2(i,:)), minf(i), maxf(i));
+          m1 = Ey1(i,:); m2=Ey1(i,:).^2 + Vary1(i,:);
+          u_g(i) = mean(-1./(2.*Vary2(i,:))*m2 + Ey2(i,:)./Vary2(i,:)*m1 - Ey2(i,:).^2./(2.*Vary2(i,:)) - 0.5*log(2*pi*Vary2(i,:)));
         end
     end
  
@@ -299,8 +298,8 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
     switch method
       case 'joint'
         % Joint refpred of latent values
-        u_g = -0.5.*((Ef1 - Ef2)'*(Covf2\(Ef1-Ef2)) + sum(sum(inv(Covf2).*Covf1))) ...
-          -(tn/2*log(2*pi) + sum(diag(Covf2)));
+        u_g = -0.5.*((Ef1 - Ef2)'*(Covf2\(Ef1-Ef2)) + sum(sum(inv(Covf2).*Covf1)) ...
+          + tn*log(2*pi) + 2*sum(log(diag(chol(Covf2)))));
         
       otherwise
         if ismember(gp1.lik.type, {'Binomial', 'Poisson', 'Probit', 'Logit', 'Negbin', 'Negbinztr'})
@@ -346,7 +345,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         end
     end
   end
-  u_g = mean(u_g);
+  if isequal(form, 'mean')
+    u_g = mean(u_g);
+  end
 end
 
 function predvec = predvec(gp, Ef, Varf, f, z)

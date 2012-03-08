@@ -1,4 +1,4 @@
-function [Eft, Covft, ljpyt, Eyt, Varyt] = gpla_jpred(gp, x, y, xt, varargin)
+function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, xt, varargin)
 %GPLA_PRED  Predictions with Gaussian Process Laplace approximation
 %
 %  Description
