@@ -1,6 +1,6 @@
-%DEMO_REGRESSION_ADDITIVE  Regression demonstration with additive Gaussian
-%                          process using linear, squared exponential and
-%                          neural network covariance fucntions 
+%DEMO_REGRESSION_ADDITIVE2  Regression demonstration with additive Gaussian
+%                           process using linear, squared exponential and
+%                           neural network covariance fucntions 
 %
 %  Description
 %    Gaussian process solutions in 2D regression problem using

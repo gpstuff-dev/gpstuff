@@ -138,7 +138,7 @@ subplot(2,1,1)
 % t_4
 stream.Substream = 1;
 x=[trnd(4,1,100)]';
-xt=linspace(-6,6,100)';
+xt=linspace(-6,6,200)';
 [p,pq]=lgpdens(x,xt);
 pla=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
@@ -154,7 +154,7 @@ subplot(2,1,2)
 pmc=p;
 line(xt,p,'color','r','marker','none','linewidth',2)
 line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
-%xlim([-7 7])
+xlim([-7 7])
 title('t_4 (MCMC)')
 line(xt,p0,'color','k')
 

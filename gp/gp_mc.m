@@ -85,6 +85,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   ip.addParamValue('record',[], @isstruct);
   ip.addParamValue('hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('ssls_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lik_hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('lik_sls_opt', [], @(x) isstruct(x) || isempty(x));

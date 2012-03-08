@@ -75,8 +75,8 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
         xt=linspace(xmin,xmax,max(gridn,200))';
       end
       % normalise to unit range, so that same prior is ok for different scales
-      xxn=(xx-min(xx))./range(xx);
-      xtn=(xt-min(xx))./range(xx);
+      xxn=(xx-min(xx))./range(xx)-0.5;
+      xtn=(xt-min(xx))./range(xx)-0.5;
       % smooth...
       [Ef,Varf,gp]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
       gp.scale=range(xx);
@@ -143,8 +143,8 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
         xt=[xt1(:) xt2(:)];
       end
       % normalise to unit square, so that same prior is ok for different scales
-      xxn=bsxfun(@rdivide,bsxfun(@minus,xx,min(xx,1)),range(xx,1));
-      xtn=bsxfun(@rdivide,bsxfun(@minus,xt,min(xx,1)),range(xx,1));
+      xxn=bsxfun(@rdivide,bsxfun(@minus,xx,min(xx,[],1)),range(xx,1))-.5;
+      xtn=bsxfun(@rdivide,bsxfun(@minus,xt,min(xx,[],1)),range(xx,1))-.5;
       % smooth...
       [Ef,Varf,gp]=gpsmooth(xxn,yy,ye,xtn,gpcf,latent_method,int_method);
       gp.scale=[range(xx(:,1)) range(xx(:,2))];
@@ -199,7 +199,7 @@ function [Ef,Varf,gp] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
      gpcf1 = gpcf(gpcf1, 'magnSigma2', .1, 'magnSigma2_prior', pm);
   end
   if isfield(gpcf1,'lengthScale')
-     gpcf1 = gpcf(gpcf1, 'lengthScale', 1, 'lengthScale_prior', pl);
+     gpcf1 = gpcf(gpcf1, 'lengthScale', .1, 'lengthScale_prior', pl);
   end
   if isfield(gpcf1,'alpha')
     gpcf1 = gpcf(gpcf1, 'alpha', 20, 'alpha_prior', pa);

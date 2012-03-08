@@ -32,6 +32,7 @@ function [g, gdata, gprior] = gp_g(w, gp, x, y, varargin)
 
 if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % use inference specific methods
+  % not the nicest way of doing this, but a quick solution
   switch gp.latent_method
     case 'Laplace'
       if isfield(gp.lik, 'type_nd')

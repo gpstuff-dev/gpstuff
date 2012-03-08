@@ -1,4 +1,4 @@
-%DEMO_REGRESSION2  Regression demonstration with additive model
+%DEMO_REGRESSION_ADDITIVE1  Regression demonstration with additive model
 %
 %  Description
 %    A regression demonstration with one input variable and one output

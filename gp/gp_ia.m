@@ -138,15 +138,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         fh_g = @gpep_g;
         fh_p = @gpep_pred;
       case 'Laplace'
-        switch gp.lik.type
-          case 'Softmax'
-            fh_e=@gpla_softmax_e;
-            fh_g=@gpla_softmax_g;
-            fh_p=@gpla_softmax_pred;
-          otherwise
-            fh_e = @gpla_e;
-            fh_g = @gpla_g;
-            fh_p = @gpla_pred;
+        if isfield(gp.lik, 'type_nd')
+          fh_e=@gpla_nd_e;
+          fh_g=@gpla_nd_g;
+          fh_p=@gpla_nd_pred;
+        else
+          fh_e = @gpla_e;
+          fh_g = @gpla_g;
+          fh_p = @gpla_pred;
         end
     end
   else
@@ -216,7 +215,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           p_th(1) = -fh_e(w,gp,x,y,options);
           if ~isempty(xt)
             % predictions in the mode if needed
-            [Ef_grid(1,:), Varf_grid(end+1,:)]=fh_p(gp,x,y,xt,options);
+            [Ef_grid(1,:), Varf_grid(1,:)]=fh_p(gp,x,y,xt,options);
           end
           
           % Put the mode to th-array and gp-model in the mode to gp_array

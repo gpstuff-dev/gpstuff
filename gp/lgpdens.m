@@ -297,10 +297,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
   opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
   gp=gp_optim(gp,xx,yy,'opt',opt);
   
-  if strcmpi(latent_method,'Laplace')
-    % Just make prediction for the test points
-    [Ef,Covf] = gp_pred(gp, xx, yy, xxt);
-  elseif strcmpi(latent_method,'MCMC')
+  if strcmpi(latent_method,'MCMC')
     gp = gp_set(gp, 'latent_method', 'MCMC');
 
     % Here we use two stage sampling to get faster convergence
@@ -332,10 +329,14 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
     [Ef, Covf] = gpmc_jpreds(rgp, xx, yy, xxt);
      
   else
-    % integrate over the hyperparameters
-    %[~, ~, ~, Ef, Covf] = gp_ia(opt, gp, xx, yy, xt, param);
-    [notused, notused, notused, Ef, Covf]=...
-        gp_ia(gp, xx, yy, xt, 'z', ye, 'int_method', int_method, 'display', displ);
+    if strcmpi(int_method,'mode')
+      % Just make prediction for the test points
+      [Ef,Covf] = gp_pred(gp, xx, yy, xxt);
+    else
+      % integrate over the hyperparameters
+      %[~, ~, ~, Ef, Covf] = gp_ia(opt, gp, xx, yy, xt, param);
+      gpia=gp_ia(gp, xx, yy, 'int_method', int_method, 'display', displ);
+      [Ef, Covf]=gpia_jpred(gpia, xx, yy, xxt);
+    end
   end
-
 end

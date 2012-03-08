@@ -129,9 +129,15 @@ function [Eft, Varft, ljpyt, Eyt, Varyt, ft, pft] = gpia_jpred(gp_array, x, y, x
             fh_g = @gpep_g;
             fh_p = @gpep_jpred;
           case 'Laplace'
-            fh_e = @gpla_e;
-            fh_g = @gpla_g;
-            fh_p = @gpla_jpred;
+            if isfield(gp_array{1}.lik, 'type_nd')
+              fh_e=@gpla_nd_e;
+              fh_g=@gpla_nd_g;
+              fh_p=@gpla_nd_pred;
+            else
+              fh_e = @gpla_e;
+              fh_g = @gpla_g;
+              fh_p = @gpla_jpred;
+            end
         end
     else 
         fh_e = @gp_e;

@@ -40,14 +40,13 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 
 if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % use inference specific methods
-  % not the nicest way of doing this, but quick solution
+  % not the nicest way of doing this, but a quick solution
   switch gp.latent_method
     case 'Laplace'
-      switch gp.lik.type
-%         case 'Softmax'
-%           fh_e=@gpla_softmax_e;
-        otherwise
-          fh_e=@gpla_e;
+      if isfield(gp.lik, 'type_nd')
+        fh_e = @gpla_nd_e;
+      else
+        fh_e = @gpla_e;
       end
     case 'EP'
       fh_e=@gpep_e;

@@ -46,10 +46,11 @@ figure
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demos/coal.txt');
 x=load(L);
-lgcp(x,'gpcf',@gpcf_neuralnetwork)
-line([x x],[4.7 5],'color','k')
-line(xlim,[4.85 4.85],'color','k')
+lgcp(x,[1850:1963]','gpcf',@gpcf_exp)
+line([x x],[5 5.3],'color','k')
+line(xlim,[5.15 5.15],'color','k')
 xlim([1850 1963])
+ylim([0 5.29])
 title('The coal mine disaster data, estimated intensity, and 90% interval')
 xlabel('Year')
 ylabel('Intensity')
@@ -69,11 +70,3 @@ colorbar
 axis square
 set(gca,'xtick',[0:.2:1],'ytick',[0:.2:1])
 title('Redwood data and intensity estimate')
-
-
-%%%ylim([0 5])
-%%%set(gcf,'units','centimeters');
-%%%set(gcf,'pos',[ 9.5742    9.5742    7.8962    5.9222])
-%%%set(gcf,'paperunits',get(gcf,'units'))
-%%%set(gcf,'paperpos',get(gcf,'pos'))
-%%%print -depsc2 /proj/bayes/jpvanhat/software/doc/GPstuffDoc/pics/demo_lgcp_fig2.eps
