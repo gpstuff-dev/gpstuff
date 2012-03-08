@@ -46,7 +46,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
     % Single GP
     
     % latent posterior
-    [f, sigm2ii] = gpla_pred(gp, x, y, x, 'z', z);
+    [f, sigm2ii, lp] = gpla_pred(gp, x, y, x, 'yt', y, 'z', z, 'zt', z);
     
 %     % "site parameters"
 %     W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
@@ -88,13 +88,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
     if nargout>3
       [tmp,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
     end
+    if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
+      warning('very bad predictive densities, gpla_loopred might not be reliable, check results!');
+    end
     
   else
     % Cell array of GPs
     nGP = numel(gp);
     for j = 1:nGP
       % latent posterior
-      [f, sigm2ii] = gpla_pred(gp{j}, x, y, x, 'z', z);
+      [f, sigm2ii, lp] = gpla_pred(gp{j}, x, y, x, 'yt', y, 'z', z, 'zt', z);
       
 %       % "site parameters"
 %       W        = -gp{j}.lik.fh.llg2(gp{j}.lik, y, f, 'latent', z);
@@ -169,10 +172,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       end
       lpyt = (sum(bsxfun(@times,lpyt_grid,P_TH),1)');
     end
+    if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
+      warning('very bad predictive densities, gpla_loopred might not be reliable, check results!');
+    end
     
 
   end
 end
+
 
 function expll = llvec(gplik, y, f, z)
   for i=1:size(f,2)
