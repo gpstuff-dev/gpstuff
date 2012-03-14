@@ -22,7 +22,7 @@ Cinv=[];
 if ~(isfield(gp,'derivobs') && gp.derivobs)
   ncf = length(gp.cf);
 
-  C = sparse(0);
+  C = sparse(zeros(size(x1,1), size(x2,1)));
   if nargin < 4 || isempty(predcf)
     predcf = 1:ncf;
   end      
