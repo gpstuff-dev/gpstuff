@@ -126,23 +126,21 @@ function waic = gp_waic(gp, x, y, varargin)
         if isfield(gp.lik.fh,'trcov')
           % Gaussian likelihood
           for i=1:tn
-            fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
-            fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                       .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))').^2), fmin, fmax);
-            Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                        .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
-                                      
-%            for i2 = 1:nsamples
-             m = Ef(i,:);
-             s2 = Varf(i,:);
-             m0 = 1; m1 = m; m2 = m.^2 + s2; m3 = m.*(m.^2+3*s2);
-             m4 = m.^4+6.*m.^2.*s2+3*s2.^2;
-             Elog2(i) = mean((-0.5.*log(2.*pi.*sigma2(i,:)) - y(i).^2./(2.*sigma2(i,:))).*m0 - 1./(2.*sigma2(i,:)) .* m2 + y(i)./sigma2(i,:) .* m1);
-             Elog(i) = mean((1/4 .* m4 - y(i) .* m3 + (3.*y(i).^2./2+0.5.*log(2.*pi.*sigma2(i,:)).*sigma2(i,:)) .* m2 ...
-               - (y(i).^3 + y(i).*log(2.*pi.*sigma2(i,:)).*sigma2(i,:)) .* m1 + (y(i).^4./4 + 0.5.*y(i).^2.*log(2.*pi.*sigma2(i,:)).*sigma2(i,:) ...
-               + 0.25.*log(2.*pi.*sigma2(i,:)).^2.*sigma2(i,:).^2) .* m0) ./ sigma2(i,:).^2);
-%            end
+%             fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
+%             fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
+%             Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+%                                        .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))').^2), fmin, fmax);
+%             Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+%                                         .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
+%                                       
+            m = Ef(i,:);
+            s2 = Varf(i,:);
+            m0 = 1; m1 = m; m2 = m.^2 + s2; m3 = m.*(m.^2+3*s2);
+            m4 = m.^4+6.*m.^2.*s2+3*s2.^2;
+            Elog2(i) = mean((-0.5.*log(2.*pi.*sigma2(i,:)) - y(i).^2./(2.*sigma2(i,:))).*m0 - 1./(2.*sigma2(i,:)) .* m2 + y(i)./sigma2(i,:) .* m1);
+            Elog(i) = mean((1/4 .* m4 - y(i) .* m3 + (3.*y(i).^2./2+0.5.*log(2.*pi.*sigma2(i,:)).*sigma2(i,:)) .* m2 ...
+              - (y(i).^3 + y(i).*log(2.*pi.*sigma2(i,:)).*sigma2(i,:)) .* m1 + (y(i).^4./4 + 0.5.*y(i).^2.*log(2.*pi.*sigma2(i,:)).*sigma2(i,:) ...
+              + 0.25.*log(2.*pi.*sigma2(i,:)).^2.*sigma2(i,:).^2) .* m0) ./ sigma2(i,:).^2);
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
