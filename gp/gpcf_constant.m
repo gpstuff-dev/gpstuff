@@ -374,7 +374,7 @@ function reccf = gpcf_constant_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_constant_pak;
     reccf.fh.unpak = @gpcf_constant_unpak;
-    reccf.fh.e = @gpcf_constant_lp;
+    reccf.fh.lp = @gpcf_constant_lp;
     reccf.fh.lpg = @gpcf_constant_lpg;
     reccf.fh.cfg = @gpcf_constant_cfg;
     reccf.fh.cov = @gpcf_constant_cov;

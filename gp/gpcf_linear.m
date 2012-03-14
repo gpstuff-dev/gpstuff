@@ -527,7 +527,7 @@ function reccf = gpcf_linear_recappend(reccf, ri, gpcf)
     % Set the function handles
     reccf.fh.pak = @gpcf_linear_pak;
     reccf.fh.unpak = @gpcf_linear_unpak;
-    reccf.fh.e = @gpcf_linear_lp;
+    reccf.fh.lp = @gpcf_linear_lp;
     reccf.fh.lpg = @gpcf_linear_lpg;
     reccf.fh.cfg = @gpcf_linear_cfg;
     reccf.fh.cov = @gpcf_linear_cov;
