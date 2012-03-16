@@ -10,7 +10,7 @@ function p = prior_sinvchi2(varargin)
 %    P = PRIOR_SINVCHI2(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
-
+%
 %    Parameterisation is done by Bayesian Data Analysis,  
 %    second edition, Gelman et.al 2004.
 %    
