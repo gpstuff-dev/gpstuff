@@ -8,17 +8,20 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %     reference model and GP2 is the candidate model.
 %
 %   OPTIONS is optional parameter-value pair
-%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
-%               Some likelihoods may use this. For example, in case of 
-%               Poisson likelihood we have z_i=E_i, that is, expected value 
-%               for ith case. 
-%      method - method for inference, 'posterior' (default) uses posterior
-%               predictive density, 'loo' uses leave-one-out predictive 
-%               density (approximative), 'kfcv' uses loo cross-validation 
-%               posterior predictive density, 'joint' uses joint
-%               posterior predictive density for latent values
-%               (non-Gaussian likelihood) or observations (Gaussian
-%               likelihood)
+%      z        - optional observed quantity in triplet (x_i,y_i,z_i)
+%                 Some likelihoods may use this. For example, in case of 
+%                 Poisson likelihood we have z_i=E_i, that is, expected value 
+%                 for ith case. 
+%      method   - method for inference, 'posterior' (default) uses posterior
+%                 predictive density, 'loo' uses leave-one-out predictive 
+%                 density (approximative), 'kfcv' uses loo cross-validation 
+%                 posterior predictive density, 'joint' uses joint
+%                 posterior predictive density for latent values
+%                 (non-Gaussian likelihood) or observations (Gaussian
+%                 likelihood)
+%      x2,y2,z2 - Optional inputs and outputs for second candidate model gp2. 
+%                 If only one or neither is specified, original x and/or y 
+%                 are used for both models.
 %     
 %   See also
 %     GP_LOOPRED, GP_KFCV   
@@ -41,11 +44,17 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('x2', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('y2', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z2', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('method', 'posterior', @(x) ismember(x,{'posterior' 'kfcv' 'loo' 'joint'}))
   ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
   ip.parse(gp1, gp2, x, y, varargin{:});
   % pass these forward
   options=struct();
+  x2 = ip.Results.x2;
+  y2 = ip.Results.y2;
+  z2 = ip.Results.z2;
   z = ip.Results.z;
   method = ip.Results.method;
   form = ip.Results.form;
@@ -53,9 +62,21 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
     options.zt=ip.Results.z;
     options.z=ip.Results.z;
   end
+  if ~isempty(ip.Results.z2)
+    options2.zt=ip.Results.z2;
+    options2.z=ip.Results.z2;
+  else
+    options2 = options;
+  end
   [tn, nin] = size(x);
   u_g = zeros(size(y));
   opt = optimset('TolX', 1e-4, 'TolFun', 1e-4);
+  if isempty(x2)
+    x2 = x;
+  end
+  if isempty(y2)
+    y2 = y;
+  end
 
   if isstruct(gp1)
     % Single gp or MCMC
@@ -116,8 +137,6 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         tr_index = [];
       end
       
-      Ef = zeros(tn, nsamples);
-      Varf = zeros(tn, nsamples);
       for j = 1:nsamples
         Gp = take_nth(gp1,j);
         if  strcmp(gp1.type, 'FIC') | strcmp(gp1.type, 'PIC')  || strcmp(gp1.type, 'CS+FIC') || strcmp(gp1.type, 'VAR') || strcmp(gp1.type, 'DTC') || strcmp(gp1.type, 'SOR')
@@ -197,21 +216,21 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       switch method
         case 'posterior'
           if ~isequal(gp2.lik.type, 'Coxph')
-            [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+            [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x2,y2,x2,'yt',y2, 'tstind', tstind, options2);
           else
-            [Ef2, Varf2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+            [Ef2, Varf2] = gp_pred(gp2,x2,y2,x2,'yt',y2, 'tstind', tstind, options2);
 %             Varf2 = diag(Varf2);
           end
         case 'loo'
           if ~isfield(gp2.lik.fh, 'trcov') && ~isfield(gp2.lik, 'type_nd')
             gp1 = gp_set(gp2, 'latent_method', 'EP');
           end
-          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x,y, 'z', z);
+          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x2,y2, 'z', z2);
         case 'kfcv'
-          [tmp, preds] = gp_kfcv(gp2, x, y, 'tstindex', tstind, 'opt', opt, 'k', tn, 'opt', opt, 'display', 'iter', options);
+          [tmp, preds] = gp_kfcv(gp2, x2, y2, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options2);
           [Ef2, Varf2, Ey2, Vary2] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
         case 'joint'
-          [Ef2, Covf2] = gp_jpred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+          [Ef2, Covf2] = gp_jpred(gp2,x2,y2,x2,'yt',y2, 'tstind', tstind, options2);
       end
     else
       model2 = 2;
@@ -228,8 +247,6 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         tr_index = [];
       end
       
-      Ef = zeros(tn, nsamples);
-      Varf = zeros(tn, nsamples);
       for j = 1:nsamples
         Gp = take_nth(gp2,j);
         if  strcmp(gp2.type, 'FIC') | strcmp(gp2.type, 'PIC')  || strcmp(gp2.type, 'CS+FIC') || strcmp(gp2.type, 'VAR') || strcmp(gp2.type, 'DTC') || strcmp(gp2.type, 'SOR')
@@ -239,16 +256,16 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
         gp_array2{j} = Gp;
         switch method
           case 'posterior'
-            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gpmc_pred(Gp, x2, y2, x2, 'yt', y2, 'tstind', tstind, options2);
           case 'loo'
-            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, 'z', z);
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x2, y2, 'z', z2);
           case 'kfcv'
-            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x, y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options);
+            [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_kfcv(Gp, x2, y2, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'iter', options2);
         end
         
       end
       if isequal(method, 'joint')
-        [Ef2, Covf2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
+        [Ef2, Covf2] = gp_jpred(gp2, x2, y2, x2, 'yt', y2, 'tstind', tstind, options2);
       end
       gp2 = gp_array2;
     end
@@ -270,15 +287,15 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       w(j,:) = gp_pak(Gp);
       switch method
         case 'posterior'
-          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x2, y2, x2, 'yt', y2, 'tstind', tstind, options2);
         case 'loo'
-          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x, y, 'z', z);
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_loopred(Gp, x2, y2, 'z', z2);
         case 'kfcv'
-          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options);
+          [Ef2(:,j), Varf2(:,j), tmp, Ey2(:,j), Vary2(:,j)] = gp_pred(Gp, x2, y2, x2, 'yt', y2, 'tstindex', tstind, 'k', tn, 'opt', opt, 'display', 'off', options2);
       end
     end
     if isequal(method, 'joint')
-      [Ef2, Covf2] = gp_jpred(gp2, x, y, x, 'yt', y, 'tstind', tstind, options);
+      [Ef2, Covf2] = gp_jpred(gp2, x2, y2, x2, 'yt', y2, 'tstind', tstind, options2);
     end
     if isfield(gp2{1}.lik.fh, 'trcov')
       fh2 = @(f,Ey,Vary) log(sum(bsxfun(@times, multi_npdf(f,Ey,(Vary)),weight2'),1));
@@ -317,8 +334,10 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           for i=1:tn
             if ~isempty(z)
               z1 = z(i);
+              z12 = z2(i);
             else
               z1 = [];
+              z12 = [];
             end
             if model1~=3
               [tmp, tmp, int] = int_limits(gp1, Ef1(i,:), z1);
@@ -328,15 +347,17 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
               maxf = sum(maxf.*weight1);
               int = minf:maxf;
             end
-            u_g(i) = sum(fh1(gp1,Ef1(i,:),Varf1(i,:),int,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),int,z1));
+            u_g(i) = sum(fh1(gp1,Ef1(i,:),Varf1(i,:),int,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),int,z12));
           end
         else
           % Continuous likelihoods
           for i=1:tn
             if ~isempty(z)
               z1 = z(i);
+              z12 = z2(i);
             else
               z1 = [];
+              z12 = [];
             end
             if model1~=3
               if ismember(gp1.lik.type, {'Student-t', 'Weibull', 'Coxph'})
@@ -351,11 +372,11 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
               maxf = sum(bsxfun(@times, weight1, Ey1(i,:)+12.*sqrt(Vary1(i,:))),2);
             end
             if ~isequal(gp1.lik.type, 'Coxph')
-              u_g(i) = quadgk(@(f) fh1(gp1,Ef1(i,:),Varf1(i,:),f,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),f,z1), minf, maxf, 'absTol', 1e-3);
+              u_g(i) = quadgk(@(f) fh1(gp1,Ef1(i,:),Varf1(i,:),f,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),f,z12), minf, maxf, 'absTol', 1e-3);
             else
               ntime1=size(gp1.lik.xtime,1);
               ntime2=size(gp2.lik.xtime,1);
-              u_g(i) = quadgk(@(f) fh1(gp1,Ef1([1:ntime1 i],:),Varf1([1:ntime1 i+ntime1],[1:ntime1 i+ntime1]),f,z1).*fh2(gp2,Ef2([1:ntime2 i],:),Varf2([1:ntime2 i+ntime2],[1:ntime2 i+ntime2]),f,z1), minf, maxf, 'absTol', 1e-3);
+              u_g(i) = quadgk(@(f) fh1(gp1,Ef1([1:ntime1 i],:),Varf1([1:ntime1 i+ntime1],[1:ntime1 i+ntime1]),f,z1).*fh2(gp2,Ef2([1:ntime2 i],:),Varf2([1:ntime2 i+ntime2],[1:ntime2 i+ntime2]),f,z12), minf, maxf, 'absTol', 1e-3);
             end
           end
         end
