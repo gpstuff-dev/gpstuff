@@ -83,9 +83,14 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       
       switch method
         case 'posterior'
-          [Ef1, Varf1, tmp, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+          if ~isequal(gp1.lik.type, 'Coxph')
+            [Ef1, Varf1, tmp, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+          else
+            [Ef1, Varf1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
+%             Varf1 = diag(Varf1);
+          end
         case 'loo'
-          if ~isfield(gp1.lik.fh, 'trcov')
+          if ~isfield(gp1.lik.fh, 'trcov') && ~isfield(gp1.lik, 'type_nd')
             gp1 = gp_set(gp1, 'latent_method', 'EP');
           end
           [Ef1, Varf1, tmp, Ey1, Vary1] = gp_loopred(gp1,x,y, 'z', z);
@@ -191,9 +196,14 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
       end
       switch method
         case 'posterior'
-          [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+          if ~isequal(gp2.lik.type, 'Coxph')
+            [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+          else
+            [Ef2, Varf2] = gp_pred(gp2,x,y,x,'yt',y, 'tstind', tstind, options);
+%             Varf2 = diag(Varf2);
+          end
         case 'loo'
-          if ~isfield(gp2.lik.fh, 'trcov')
+          if ~isfield(gp2.lik.fh, 'trcov') && ~isfield(gp2.lik, 'type_nd')
             gp1 = gp_set(gp2, 'latent_method', 'EP');
           end
           [Ef2, Varf2, tmp, Ey2, Vary2] = gp_loopred(gp2,x,y, 'z', z);
@@ -329,7 +339,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
               z1 = [];
             end
             if model1~=3
-              if ismember(gp1.lik.type, {'Student-t', 'Weibull'})
+              if ismember(gp1.lik.type, {'Student-t', 'Weibull', 'Coxph'})
                 [minf, maxf] = int_limits(gp1, Ef1(i), z1);
               else
                 minf = mean(Ey1(i) - 12.*sqrt(Vary1(i)),2);
@@ -340,7 +350,13 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
               minf = sum(bsxfun(@times, weight1, Ey1(i,:)-12.*sqrt(Vary1(i,:))),2);
               maxf = sum(bsxfun(@times, weight1, Ey1(i,:)+12.*sqrt(Vary1(i,:))),2);
             end
-            u_g(i) = quadgk(@(f) fh1(gp1,Ef1(i,:),Varf1(i,:),f,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),f,z1), minf, maxf, 'absTol', 1e-3);
+            if ~isequal(gp1.lik.type, 'Coxph')
+              u_g(i) = quadgk(@(f) fh1(gp1,Ef1(i,:),Varf1(i,:),f,z1).*fh2(gp2,Ef2(i,:),Varf2(i,:),f,z1), minf, maxf, 'absTol', 1e-3);
+            else
+              ntime1=size(gp1.lik.xtime,1);
+              ntime2=size(gp2.lik.xtime,1);
+              u_g(i) = quadgk(@(f) fh1(gp1,Ef1([1:ntime1 i],:),Varf1([1:ntime1 i+ntime1],[1:ntime1 i+ntime1]),f,z1).*fh2(gp2,Ef2([1:ntime2 i],:),Varf2([1:ntime2 i+ntime2],[1:ntime2 i+ntime2]),f,z1), minf, maxf, 'absTol', 1e-3);
+            end
           end
         end
     end
@@ -422,6 +438,10 @@ function [minf, maxf, interval] = int_limits(gp, Ef, z)
       % Probably not very sensible...
       minf = 1e-5;
       maxf = 1e5;
+      interval = maxf;
+    case 'Coxph'
+      minf = 0;
+      maxf = 1;
       interval = maxf;
   end
 
