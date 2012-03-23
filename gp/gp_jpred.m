@@ -103,10 +103,10 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
       [Eft] = fh_pred(gp, x, y, xt, varargin{:});
     case 2
       [Eft, Covft] = fh_pred(gp, x, y, xt, varargin{:});
-    case 3
-      [Eft, Covft, ljpyt] = fh_pred(gp, x, y, xt, varargin{:});
     otherwise
-      error('Too many output arguments!')
+      [Eft, Covft, ljpyt] = fh_pred(gp, x, y, xt, varargin{:});
+      Eyt = [];
+      Covyt = [];
   end
   return
 end

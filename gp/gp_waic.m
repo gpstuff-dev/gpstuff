@@ -53,7 +53,7 @@ function waic = gp_waic(gp, x, y, varargin)
 %     
 %
 
-% Copyright (c) 2011 Ville Tolvanen
+% Copyright (c) 2011-2012 Ville Tolvanen
 
   ip=inputParser;
   ip.FunctionName = 'GP_WAIC';
@@ -256,12 +256,23 @@ function waic = gp_waic(gp, x, y, varargin)
             else
               z1 = [];
             end
-            fmin = Ef(i)-9*sqrt(Varf(i));
-            fmax = Ef(i)+9*sqrt(Varf(i));
-            Elog(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1).^2 ,...
-                             fmin, fmax);
-            Elog2(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
-                              fmin, fmax);              
+            if ~isequal(gp.lik.type, 'Coxph')
+              fmin = Ef(i)-9*sqrt(Varf(i));
+              fmax = Ef(i)+9*sqrt(Varf(i));
+              Elog(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1).^2 ,...
+                fmin, fmax);
+              Elog2(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
+                fmin, fmax);
+            else
+              % Use MC to integrate over latents
+              ntime = size(gp.lik.xtime,1);
+              ns = 10000;
+              Sigma_tmp = Varf([1:ntime ntime+i], [1:ntime ntime+i]);
+              Sigma_tmp = (Sigma_tmp + Sigma_tmp') ./ 2;
+              f = mvnrnd(Ef([1:ntime ntime+i]), Sigma_tmp, ns);
+              Elog2(i) = 1/ns * sum(llvec(gp, y(i), f', z1));
+              Elog(i) = 1/ns * sum((llvec(gp, y(i), f', z1)).^2);
+            end
           end
           Elog2 = Elog2.^2;
           Vn = Elog-Elog2;
@@ -304,10 +315,20 @@ function waic = gp_waic(gp, x, y, varargin)
             else
               z1 = [];
             end
-            fmin = Ef(i)-9*sqrt(Varf(i));
-            fmax = Ef(i)+9*sqrt(Varf(i));
-            GUt(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
-                            fmin, fmax);
+            if ~isequal(gp.lik.type, 'Coxph')
+              fmin = Ef(i)-9*sqrt(Varf(i));
+              fmax = Ef(i)+9*sqrt(Varf(i));
+              GUt(i) = quadgk(@(f) norm_pdf(f, Ef(i), sqrt(Varf(i))).*llvec(gp, y(i), f, z1) ,...
+                fmin, fmax);
+            else
+              % If likelihood coxph use mc to integrate over latents
+              ntime = size(gp.lik.xtime,1);
+              ns = 10000;
+              Sigma_tmp = Varf([1:ntime ntime+i], [1:ntime ntime+i]);
+              Sigma_tmp = (Sigma_tmp + Sigma_tmp') ./ 2;
+              f = mvnrnd(Ef([1:ntime ntime+i]), Sigma_tmp, ns);
+              GUt(i) = 1/ns * sum(llvec(gp, y(i), f', z1));
+            end
           end
           if strcmp(form,'mean')
             GUt = mean(GUt);
@@ -445,9 +466,9 @@ function lls=llvec(gp, y, fs, z)
   if isstruct(gp)
     if ~isfield(gp, 'etr')
       % single gp
-      lls=zeros(size(fs));
-      for i1=1:numel(fs)
-        lls(i1)=gp.lik.fh.ll(gp.lik,y,fs(i1),z);
+      lls=zeros(1,size(fs,2));
+      for i1=1:size(fs,2)
+        lls(i1)=gp.lik.fh.ll(gp.lik,y,fs(:,i1),z);
       end
       %     else
       %       % mc

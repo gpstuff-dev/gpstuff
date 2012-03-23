@@ -117,18 +117,7 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
       focus = 'latent';
     end     
     
-    % Define the error and prediction functions
-    if ~isfield(gp.lik.fh,'trcov') && isfield(gp, 'latent_method')
-      switch gp.latent_method
-        case 'Laplace'
-          fh_pred = @gpla_pred;
-        case 'EP'
-          fh_pred = @gpep_pred;
-      end
-    else
-      fh_pred = @gp_pred;
-    end
-
+    fh_pred = @gp_pred;
     
     
     switch focus
@@ -200,8 +189,16 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
       case 'latent'     
         % A single GP solution -> focus on latent variables
 
-        [Ef, Varf, lpy, Ey, VarY] = fh_pred(gp, x, y, x, 'yt', y, 'tstind', tstind, options);
-        sampf = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', 5000, options);
+        if ~isfield(gp.lik, 'type_nd')
+          [Ef, Varf, lpy, Ey, VarY] = fh_pred(gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          sampf = gp_rnd(gp, x, y, x, 'tstind', tstind, 'nsamp', 5000, options);
+        else
+          [Ef, Covf, lpy, Ey, Covy] = gp_jpred(gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+          sigma_tmp = chol((Covf+Covf')./2, 'lower');
+          sampf = repmat(Ef,1,5000) + sigma_tmp*randn(size(Ef,1),5000);          
+          Varf = diag(Covf);
+          VarY = diag(Covy);
+        end
         if isfield(gp.lik.fh,'trcov')
           % a Gaussian likelihood
           sigma2 = VarY - Varf;
@@ -221,14 +218,27 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
             end
             Davg = -2.*mean(Davg);
           else
-            if isempty(z)
-              z = ones(size(Ef));
+            if ~isequal(gp.lik.type, 'Coxph')
+              if isempty(z)
+                z = ones(size(Ef));
+              end
+              Dth = -2.*arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, Ef, z);
+              for i1 = 1:size(sampf, 2)
+                Davg(:,i1) = arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, sampf(:,i1), z);
+              end
+              Davg = -2.*mean(Davg,2);
+            else
+              % If likelihood coxph use mc to integrate over latents
+              ntime = size(gp.lik.xtime,1);
+              for i=1:tn
+                Dth(i,1) = -2*gp.lik.fh.ll(gp.lik, y(i), Ef([1:ntime ntime+i]), z(i));
+                fs = repmat(Ef([1:ntime ntime+i]),1,5000) + chol((Covf([1:ntime ntime+i],[1:ntime ntime+i])+Covf([1:ntime ntime+i],[1:ntime ntime+i])')./2, 'lower')*randn(ntime+1,5000);
+                for i1=1:size(fs,1)
+                  Davg(i,i1) = gp.lik.fh.ll(gp.lik, y(i), fs(:,i1), z(i));
+                end
+              end
+              Davg = -2.*mean(Davg,2);
             end
-            Dth = -2.*arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, Ef, z);
-            for i1 = 1:size(sampf, 2)
-              Davg(:,i1) = arrayfun(@(a,b,c) gp.lik.fh.ll(gp.lik, a, b, c), y, sampf(:,i1), z);
-            end
-            Davg = -2.*mean(Davg,2);
           end
         end
         
