@@ -25,7 +25,7 @@ drawnow;clear;close all
 function testPredictionsWeibull
 values.real = load('realValuesSurvival_weibull', 'Ef1', 'Varf1', 'Ef2', 'Varf2');
 values.test = load(strrep(which('test_survival_weibull.m'), 'test_survival_weibull.m', 'testValues/testSurvival_weibull'), 'Ef1', 'Varf1', 'Ef2', 'Varf2');
-assertElementsAlmostEqual(values.real.Ef1, values.test.Ef1, 'relative', 0.05);
-assertElementsAlmostEqual(values.real.Ef2, values.test.Ef2, 'relative', 0.05);
-assertElementsAlmostEqual(values.real.Varf1, values.test.Varf1, 'relative', 0.05);
-assertElementsAlmostEqual(values.real.Varf2, values.test.Varf2, 'relative', 0.05);
+assertElementsAlmostEqual(values.real.Ef1, values.test.Ef1, 'relative', 0.10);
+assertElementsAlmostEqual(values.real.Ef2, values.test.Ef2, 'relative', 0.10);
+assertElementsAlmostEqual(values.real.Varf1, values.test.Varf1, 'relative', 0.10);
+assertElementsAlmostEqual(values.real.Varf2, values.test.Varf2, 'relative', 0.10);

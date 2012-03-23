@@ -41,7 +41,7 @@ initTestSuite;
     function testOptimizedParameter
         values.real = load('realValuesRegression1.mat','w');
         values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'w');
-        assertElementsAlmostEqual(values.real.w, values.test.w);
+        assertElementsAlmostEqual(values.real.w, values.test.w, 'relative', 0.1);
         
     
 
@@ -49,11 +49,11 @@ initTestSuite;
         values.real = load('realValuesRegression1.mat','Eft_map','Varft_map');
         values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_map','Varft_map');
         if length(values.test.Eft_map) > 50
-            assertElementsAlmostEqual(values.real.Eft_map(1:50), values.test.Eft_map(1:50), 'relative', 0.01);
-            assertElementsAlmostEqual(values.test.Varft_map(1:50), values.real.Varft_map(1:50), 'relative', 0.01);
+            assertElementsAlmostEqual(values.real.Eft_map(1:50), values.test.Eft_map(1:50), 'relative', 0.1);
+            assertElementsAlmostEqual(values.test.Varft_map(1:50), values.real.Varft_map(1:50), 'relative', 0.1);
         else
-            assertElementsAlmostEqual(values.test.Eft_map, values.real.Eft_map, 'relative', 0.01);
-            assertElementsAlmostEqual(values.test.Varft_map, values.real.Varft_map, 'relative', 0.01);
+            assertElementsAlmostEqual(values.test.Eft_map, values.real.Eft_map, 'relative', 0.1);
+            assertElementsAlmostEqual(values.test.Varft_map, values.real.Varft_map, 'relative', 0.1);
         end
         
 
@@ -73,11 +73,11 @@ initTestSuite;
         values.real = load('realValuesRegression1.mat','Eft_ia','Varft_ia');
         values.test = load(strrep(which('test_regression1.m'), 'test_regression1.m', 'testValues/testRegression1.mat'),'Eft_ia','Varft_ia');
         if length(values.test.Eft_ia) > 50
-            assertElementsAlmostEqual(mean(values.test.Eft_ia(1:50)), mean(values.real.Eft_ia(1:50)), 'relative', 0.01);
-            assertElementsAlmostEqual(mean(values.test.Varft_ia(1:50)), mean(values.real.Varft_ia(1:50)), 'relative', 0.01);
+            assertElementsAlmostEqual(mean(values.test.Eft_ia(1:50)), mean(values.real.Eft_ia(1:50)), 'relative', 0.1);
+            assertElementsAlmostEqual(mean(values.test.Varft_ia(1:50)), mean(values.real.Varft_ia(1:50)), 'relative', 0.1);
         else
-            assertElementsAlmostEqual(mean(values.test.Eft_ia), mean(values.real.Eft_ia), 'relative', 0.01);
-            assertElementsAlmostEqual(mean(values.test.Varft_ia), mean(values.real.Varft_ia), 'relative', 0.01);
+            assertElementsAlmostEqual(mean(values.test.Eft_ia), mean(values.real.Eft_ia), 'relative', 0.1);
+            assertElementsAlmostEqual(mean(values.test.Varft_ia), mean(values.real.Varft_ia), 'relative', 0.1);
         end
     
     

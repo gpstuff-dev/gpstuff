@@ -24,14 +24,14 @@ initTestSuite;
     function testPrediction
         values.real = load('realValuesDerivativeobs.mat','Eft','Varft');
         values.test = load(strrep(which('test_derivativeobs.m'), 'test_derivativeobs.m', 'testValues/testDerivativeobs'),'Eft','Varft');
-        assertElementsAlmostEqual(mean(values.real.Eft),mean(values.test.Eft),'relative', 0.05);
-        assertElementsAlmostEqual(mean(values.real.Varft),mean(values.test.Varft),'relative', 0.05);
+        assertElementsAlmostEqual(mean(values.real.Eft),mean(values.test.Eft),'relative', 0.1);
+        assertElementsAlmostEqual(mean(values.real.Varft),mean(values.test.Varft),'relative', 0.1);
     
         
     function testPredictionDerivative
         values.real = load('realValuesDerivativeobs.mat','Eft2','Varft2');
         values.test = load(strrep(which('test_derivativeobs.m'), 'test_derivativeobs.m', 'testValues/testDerivativeobs.mat'),'Eft2','Varft2');
-        assertElementsAlmostEqual(mean(values.real.Eft2),mean(values.test.Eft2),'relative', 0.05);
-        assertElementsAlmostEqual(mean(values.real.Varft2),mean(values.test.Varft2),'relative', 0.05);
+        assertElementsAlmostEqual(mean(values.real.Eft2),mean(values.test.Eft2),'relative', 0.1);
+        assertElementsAlmostEqual(mean(values.real.Varft2),mean(values.test.Varft2),'relative', 0.1);
         
 

@@ -23,6 +23,6 @@ drawnow;clear;close all
 function testPredictions
 values.real = load('realValuesRegression_meanf.mat', 'Eft', 'Varft');
 values.test = load(strrep(which('test_regression_meanf.m'), 'test_regression_meanf.m', 'testValues/testRegression_meanf.mat'), 'Eft', 'Varft');
-assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.05);
-assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.05);
+assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.10);
+assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.10);
 

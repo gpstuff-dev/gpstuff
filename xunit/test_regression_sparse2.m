@@ -6,7 +6,7 @@ initTestSuite;
 % demo & save test values.
 
 function testDemo
-stream0 = RandStream('mt19937ar','Seed',1);
+stream0 = RandStream('mt19937ar','Seed',0);
 prevstream = RandStream.setDefaultStream(stream0);
 disp('Running: demo_regression_sparse2')
 demo_regression_sparse2
