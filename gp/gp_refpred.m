@@ -19,9 +19,9 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 %                 posterior predictive density for latent values
 %                 (non-Gaussian likelihood) or observations (Gaussian
 %                 likelihood)
-%      x2,y2,z2 - Optional inputs and outputs for second candidate model gp2. 
-%                 If only one or neither is specified, original x and/or y 
-%                 are used for both models.
+%      x2,y2,z2 - Optional values for candidate model gp2. 
+%                 If only subset of these is specified, remaining variables
+%                 are set from x,y,z.
 %     
 %   See also
 %     GP_LOOPRED, GP_KFCV   
@@ -67,6 +67,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
     options2.z=ip.Results.z2;
   else
     options2 = options;
+    z2 = z;
   end
   [tn, nin] = size(x);
   u_g = zeros(size(y));
@@ -108,7 +109,6 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
             [Ef1, Varf1, tmp, Ey1, Vary1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
           else
             [Ef1, Varf1] = gp_pred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);
-%             Varf1 = diag(Varf1);
           end
         case 'loo'
           if ~isfield(gp1.lik.fh, 'trcov') && ~isfield(gp1.lik, 'type_nd')
@@ -219,7 +219,6 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
             [Ef2, Varf2, tmp, Ey2, Vary2] = gp_pred(gp2,x2,y2,x2,'yt',y2, 'tstind', tstind, options2);
           else
             [Ef2, Varf2] = gp_pred(gp2,x2,y2,x2,'yt',y2, 'tstind', tstind, options2);
-%             Varf2 = diag(Varf2);
           end
         case 'loo'
           if ~isfield(gp2.lik.fh, 'trcov') && ~isfield(gp2.lik, 'type_nd')

@@ -181,8 +181,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       % ===============================
       % New variable z for exploration
       % ===============================
-      
-      H = hessian(w);
+
+      H = eye(nParam);
+      for i2 = 1:nParam
+        H(:,i2) = hessianMultiplication(w, H(:,i2));
+      end
+      if any(eig(H))<0
+        H = hessian(w);
+      end
       Sigma = inv(H);
       
       % Some jitter may be needed to get positive semi-definite covariance
@@ -862,6 +868,19 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     if any(eig(H)<0)
       warning('GP_IA -> HESSIAN: the Hessian matrix is singular. Check the optimization.')
     end
+    
+  end
+
+  function vv = hessianMultiplication(w0, v)
+    if size(w0) ~= size(v)
+      v = v';
+    end
+    rr = 1e-4;
+    g2 = fh_g(w0-rr*v, gp, x, y, options);
+    g1 = fh_g(w0+rr*v, gp, x, y, options);
+    vv = (g1 - g2) / (2*rr);
+    
+    
     
   end
 
