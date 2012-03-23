@@ -1,0 +1,151 @@
+Running: demo_regression_hier
+1) Linear model with intercept and slope wrt time
+Iter    1  f(x)   20.43751  Scale 1.0e+01
+Iter    2  f(x)   20.42539  Scale 5.0e+00
+Iter    3  f(x)   20.37484  Scale 2.5e+00
+Iter    4  f(x)   20.36955  Scale 1.2e+00
+Iter    5  f(x)   20.22960  Scale 6.2e-01
+Iter    6  f(x)   20.22567  Scale 3.1e-01
+Iter    7  f(x)   20.22235  Scale 1.6e-01
+Iter    8  f(x)   20.13197  Scale 7.8e-02
+Iter    9  f(x)   20.13180  Scale 3.9e-02
+Iter   10  f(x)   20.13166  Scale 2.0e-02
+Iter   11  f(x)   20.12264  Scale 9.8e-03
+Iter   12  f(x)   20.12264  Scale 4.9e-03
+TolFun reached
+2) Linear model with hierarchical intercept
+Iter    1  f(x)    5.88917  Scale 1.0e+01
+Iter    2  f(x)  -17.15105  Scale 1.0e+01
+Iter    3  f(x)  -28.00775  Scale 5.0e+00
+Iter    4  f(x)  -36.13724  Scale 2.5e+00
+Iter    5  f(x)  -36.85016  Scale 1.2e+00
+Iter    6  f(x)  -36.88659  Scale 6.2e-01
+Iter    7  f(x)  -36.93349  Scale 3.1e-01
+Iter    8  f(x)  -37.00244  Scale 1.6e-01
+Iter    9  f(x)  -37.01545  Scale 7.8e-02
+Iter   10  f(x)  -37.02728  Scale 3.9e-02
+Iter   11  f(x)  -37.09140  Scale 2.0e-02
+Iter   12  f(x)  -37.10170  Scale 9.8e-03
+Iter   13  f(x)  -37.10329  Scale 4.9e-03
+Iter   14  f(x)  -37.10458  Scale 2.4e-03
+Iter   15  f(x)  -37.10598  Scale 1.2e-03
+Iter   16  f(x)  -37.10719  Scale 6.1e-04
+Iter   17  f(x)  -37.10736  Scale 3.1e-04
+Iter   18  f(x)  -37.10741  Scale 1.5e-04
+TolFun reached
+3) Linear model with hierarchical intercept and slope
+Iter    1  f(x)   17.80795  Scale 1.0e+01
+Iter    2  f(x)    1.99937  Scale 5.0e+00
+Iter    3  f(x)  -37.60678  Scale 2.5e+00
+Iter    4  f(x)  -39.14060  Scale 1.2e+00
+Iter    5  f(x)  -46.33401  Scale 6.2e-01
+Iter    6  f(x)  -46.72105  Scale 3.1e-01
+Iter    7  f(x)  -46.83950  Scale 1.6e-01
+Iter    8  f(x)  -46.85149  Scale 7.8e-02
+Iter    9  f(x)  -46.88836  Scale 3.9e-02
+Iter   10  f(x)  -46.96452  Scale 2.0e-02
+Iter   11  f(x)  -46.99326  Scale 9.8e-03
+Iter   12  f(x)  -47.00959  Scale 4.9e-03
+Iter   13  f(x)  -47.01316  Scale 2.4e-03
+Iter   14  f(x)  -47.01622  Scale 1.2e-03
+Iter   15  f(x)  -47.04036  Scale 6.1e-04
+Iter   16  f(x)  -47.04387  Scale 3.1e-04
+Iter   17  f(x)  -47.04432  Scale 1.5e-04
+Iter   18  f(x)  -47.04454  Scale 7.6e-05
+Iter   19  f(x)  -47.04569  Scale 3.8e-05
+Iter   20  f(x)  -47.04591  Scale 1.9e-05
+Iter   21  f(x)  -47.04596  Scale 9.5e-06
+TolFun reached
+4) Nonlinear model with hierarchical intercept
+Iter    1  f(x)    6.01511  Scale 1.0e+01
+Iter    2  f(x)  -23.41118  Scale 1.0e+01
+Iter    3  f(x)  -34.24074  Scale 5.0e+00
+Iter    4  f(x)  -44.07250  Scale 2.5e+00
+Iter    5  f(x)  -44.26769  Scale 1.2e+00
+Iter    6  f(x)  -45.23955  Scale 6.2e-01
+Iter    7  f(x)  -45.48376  Scale 3.1e-01
+Iter    8  f(x)  -45.53943  Scale 1.6e-01
+Iter    9  f(x)  -45.93951  Scale 7.8e-02
+Iter   10  f(x)  -46.13432  Scale 3.9e-02
+Iter   11  f(x)  -46.73151  Scale 2.0e-02
+Iter   12  f(x)  -46.78447  Scale 9.8e-03
+Iter   13  f(x)  -46.82516  Scale 4.9e-03
+Iter   14  f(x)  -46.84006  Scale 2.4e-03
+Iter   15  f(x)  -46.84895  Scale 1.2e-03
+Iter   16  f(x)  -46.85657  Scale 6.1e-04
+Iter   17  f(x)  -46.88757  Scale 3.1e-04
+Iter   18  f(x)  -46.88879  Scale 1.5e-04
+Iter   19  f(x)  -46.88909  Scale 7.6e-05
+Iter   20  f(x)  -46.88934  Scale 3.8e-05
+Iter   21  f(x)  -46.89031  Scale 1.9e-05
+Iter   22  f(x)  -46.89042  Scale 9.5e-06
+Iter   23  f(x)  -46.89045  Scale 4.8e-06
+TolFun reached
+5) Non-linear hierarchical model 1 with MAP
+Iter    1  f(x)  -10.30957  Scale 1.0e+01
+Iter    2  f(x)  -16.16835  Scale 5.0e+00
+Iter    3  f(x)  -51.53611  Scale 2.5e+00
+Iter    4  f(x)  -62.03384  Scale 1.2e+00
+Iter    5  f(x)  -62.20075  Scale 1.2e+00
+Iter    6  f(x)  -65.72565  Scale 6.2e-01
+Iter    7  f(x)  -66.50709  Scale 3.1e-01
+Iter    8  f(x)  -66.71786  Scale 1.6e-01
+Iter    9  f(x)  -66.87662  Scale 7.8e-02
+Iter   10  f(x)  -66.94464  Scale 3.9e-02
+Iter   11  f(x)  -69.77416  Scale 2.0e-02
+Iter   12  f(x)  -69.81546  Scale 9.8e-03
+Iter   13  f(x)  -70.60360  Scale 4.9e-03
+Iter   14  f(x)  -70.76555  Scale 2.4e-03
+Iter   15  f(x)  -70.78239  Scale 1.2e-03
+Iter   16  f(x)  -70.79497  Scale 6.1e-04
+Iter   17  f(x)  -70.81841  Scale 3.1e-04
+Iter   18  f(x)  -70.82593  Scale 1.5e-04
+Iter   19  f(x)  -70.82834  Scale 7.6e-05
+Iter   20  f(x)  -70.83376  Scale 3.8e-05
+Iter   21  f(x)  -70.83905  Scale 1.9e-05
+Iter   22  f(x)  -70.84648  Scale 9.5e-06
+Iter   23  f(x)  -70.85164  Scale 4.8e-06
+Iter   24  f(x)  -70.85988  Scale 2.4e-06
+Iter   25  f(x)  -70.86557  Scale 1.2e-06
+Iter   26  f(x)  -70.86588  Scale 6.0e-07
+Iter   27  f(x)  -70.86603  Scale 3.0e-07
+Iter   28  f(x)  -70.86613  Scale 1.5e-07
+TolFun reached
+6) Non-linear hierarchical model 1 with IA
+7) Non-linear hierarchical model 2 with MAP
+Iter    1  f(x)   16.84581  Scale 1.0e+01
+Iter    2  f(x)  -55.29943  Scale 5.0e+00
+Iter    3  f(x)  -62.41638  Scale 2.5e+00
+Iter    4  f(x)  -64.77534  Scale 1.2e+00
+Iter    5  f(x)  -73.12309  Scale 6.2e-01
+Iter    6  f(x)  -76.50221  Scale 3.1e-01
+Iter    7  f(x)  -77.48419  Scale 1.6e-01
+Iter    8  f(x)  -78.03450  Scale 7.8e-02
+Iter    9  f(x)  -78.08098  Scale 3.9e-02
+Iter   10  f(x)  -78.15598  Scale 2.0e-02
+Iter   11  f(x)  -78.21705  Scale 9.8e-03
+Iter   12  f(x)  -78.27644  Scale 4.9e-03
+Iter   13  f(x)  -78.29851  Scale 2.4e-03
+Iter   14  f(x)  -78.34294  Scale 1.2e-03
+Iter   15  f(x)  -78.38370  Scale 6.1e-04
+Iter   16  f(x)  -78.39207  Scale 3.1e-04
+Iter   17  f(x)  -78.39881  Scale 1.5e-04
+Iter   18  f(x)  -78.39953  Scale 7.6e-05
+Iter   19  f(x)  -78.39981  Scale 3.8e-05
+Iter   20  f(x)  -78.40071  Scale 1.9e-05
+Iter   21  f(x)  -78.40377  Scale 9.5e-06
+Iter   22  f(x)  -78.40505  Scale 4.8e-06
+Iter   23  f(x)  -78.40560  Scale 2.4e-06
+Iter   24  f(x)  -78.40943  Scale 1.2e-06
+Iter   25  f(x)  -78.40944  Scale 6.0e-07
+TolFun reached
+8) Non-linear hierarchical model 2 with IA
+9) Non-linear hierarchical model 3 with IA
+TolFun reached
+10) Missing data example
+TolFun reached
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+   -0.7146   -3.4726    0.4198    0.0951   -3.3896   -4.6204   -4.8918
+

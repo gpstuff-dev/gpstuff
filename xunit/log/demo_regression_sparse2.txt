@@ -1,0 +1,97 @@
+Running: demo_regression_sparse2
+Note! Since data and initial placement of the inducing points
+      is random, there is variation in the results for each run.
+Iter    1  f(x)  421.11607  Scale 1.0e+01
+Iter    2  f(x)  249.49658  Scale 5.0e+00
+Iter    3  f(x)  204.40569  Scale 2.5e+00
+Iter    4  f(x)  196.92131  Scale 1.2e+00
+Iter    5  f(x)  185.91115  Scale 6.2e-01
+Iter    6  f(x)  184.72664  Scale 3.1e-01
+Iter    7  f(x)  184.64473  Scale 1.6e-01
+Iter    8  f(x)  182.62500  Scale 7.8e-02
+Iter    9  f(x)  182.62500  Scale 2.5e+01
+Iter   10  f(x)  181.94199  Scale 1.0e+02
+Iter   11  f(x)  181.94199  Scale 5.0e+01
+Iter   12  f(x)  180.94418  Scale 2.0e+02
+Iter   13  f(x)  173.26800  Scale 1.0e+02
+Iter   14  f(x)  156.27360  Scale 5.0e+01
+Iter   15  f(x)  110.91023  Scale 2.5e+01
+Iter   16  f(x)   60.87191  Scale 1.2e+01
+Iter   17  f(x)   58.75684  Scale 6.2e+00
+Iter   18  f(x)   58.49962  Scale 3.1e+00
+Iter   19  f(x)   58.44887  Scale 1.6e+00
+Iter   20  f(x)   58.41216  Scale 7.8e-01
+Iter   21  f(x)   58.39235  Scale 3.9e-01
+Iter   22  f(x)   58.38926  Scale 1.9e-01
+Iter   23  f(x)   58.38420  Scale 9.7e-02
+Iter   24  f(x)   58.38420  Scale 4.9e-02
+TolX reached
+Iter    1  f(x)   65.31284  Scale 1.0e+01
+Iter    2  f(x)   65.31284  Scale 1.9e+01
+Iter    3  f(x)   59.62867  Scale 7.6e+01
+Iter    4  f(x)   58.72381  Scale 7.0e+03
+Iter    5  f(x)   58.67887  Scale 2.8e+04
+TolX reached
+Iter    1  f(x)  408.17138  Scale 1.0e+01
+Iter    2  f(x)  408.17138  Scale 3.7e+02
+Iter    3  f(x)  395.98135  Scale 1.5e+03
+Iter    4  f(x)  337.63724  Scale 5.8e+05
+Iter    5  f(x)  336.72633  Scale 2.9e+05
+Iter    6  f(x)  334.91153  Scale 1.5e+05
+Iter    7  f(x)  331.39286  Scale 7.3e+04
+Iter    8  f(x)  324.78413  Scale 3.7e+04
+Iter    9  f(x)  313.14822  Scale 1.8e+04
+Iter   10  f(x)  295.07438  Scale 9.1e+03
+Iter   11  f(x)  271.89099  Scale 4.6e+03
+Iter   12  f(x)  244.18796  Scale 2.3e+03
+Iter   13  f(x)  216.23482  Scale 1.1e+03
+Iter   14  f(x)  203.17157  Scale 5.7e+02
+Iter   15  f(x)  175.92957  Scale 2.9e+02
+Iter   16  f(x)  143.74029  Scale 1.4e+02
+Iter   17  f(x)  132.59308  Scale 7.1e+01
+Iter   18  f(x)  125.94849  Scale 3.6e+01
+Iter   19  f(x)  125.94849  Scale 1.8e+01
+Iter   20  f(x)  122.97379  Scale 7.1e+01
+Iter   21  f(x)  111.75581  Scale 7.1e+01
+Iter   22  f(x)  104.27656  Scale 3.6e+01
+Iter   23  f(x)   98.81767  Scale 1.8e+01
+Iter   24  f(x)   91.90158  Scale 8.9e+00
+Iter   25  f(x)   85.31233  Scale 4.5e+00
+Iter   26  f(x)   82.75525  Scale 2.2e+00
+Iter   27  f(x)   80.36819  Scale 1.1e+00
+Iter   28  f(x)   79.81954  Scale 5.6e-01
+Iter   29  f(x)   78.69677  Scale 2.8e-01
+Iter   30  f(x)   78.52401  Scale 1.4e-01
+Iter   31  f(x)   78.46591  Scale 7.0e-02
+Iter   32  f(x)   78.42721  Scale 3.5e-02
+Iter   33  f(x)   78.41363  Scale 1.7e-02
+Iter   34  f(x)   78.40034  Scale 8.7e-03
+Iter   35  f(x)   78.39171  Scale 4.4e-03
+Iter   36  f(x)   78.38563  Scale 2.2e-03
+Iter   37  f(x)   78.38161  Scale 1.1e-03
+Iter   38  f(x)   78.37966  Scale 5.4e-04
+Iter   39  f(x)   78.37942  Scale 2.7e-04
+TolX reached
+
+n =
+
+   100
+
+Iter    1  f(x)   78.46157  Scale 1.0e+01
+Iter    2  f(x)   73.27440  Scale 1.0e+01
+Iter    3  f(x)   73.27440  Scale 3.8e+02
+Iter    4  f(x)   71.46800  Scale 1.5e+03
+Iter    5  f(x)   57.66756  Scale 3.6e+03
+Iter    6  f(x)   57.18178  Scale 3.6e+03
+Iter    7  f(x)   56.29291  Scale 1.8e+03
+TolX reached
+
+n =
+
+   100
+
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    0.8887   -0.8427   -2.9264
+

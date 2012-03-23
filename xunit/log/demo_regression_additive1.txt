@@ -1,0 +1,136 @@
+Running: demo_regression_additive1
+
+gp = 
+
+            type: 'FULL'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+
+Iter    1  f(x) 1099.09405  Scale 1.0e+01
+Iter    2  f(x)  949.90919  Scale 5.0e+00
+Iter    3  f(x)  744.66646  Scale 2.5e+00
+Iter    4  f(x)  706.45266  Scale 1.2e+00
+Iter    5  f(x)  639.32989  Scale 6.2e-01
+Iter    6  f(x)  637.54834  Scale 3.1e-01
+Iter    7  f(x)  627.25155  Scale 1.6e-01
+Iter    8  f(x)  626.95730  Scale 7.8e-02
+Iter    9  f(x)  625.73922  Scale 3.9e-02
+Iter   10  f(x)  625.72079  Scale 2.0e-02
+Iter   11  f(x)  625.70518  Scale 9.8e-03
+Iter   12  f(x)  625.59253  Scale 4.9e-03
+Iter   13  f(x)  625.58919  Scale 2.4e-03
+Iter   14  f(x)  625.57723  Scale 1.2e-03
+Iter   15  f(x)  625.57100  Scale 6.1e-04
+Iter   16  f(x)  625.56823  Scale 3.1e-04
+Iter   17  f(x)  625.56529  Scale 1.5e-04
+Iter   18  f(x)  625.56379  Scale 7.6e-05
+Iter   19  f(x)  625.56347  Scale 3.8e-05
+TolFun reached
+
+gp_fic = 
+
+            type: 'FIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+             X_u: [24x1 double]
+            nind: 24
+               p: [1x1 struct]
+
+Iter    1  f(x) 2310.12714  Scale 1.0e+01
+Iter    2  f(x) 1629.43631  Scale 5.0e+00
+Iter    3  f(x) 1481.27720  Scale 2.5e+00
+Iter    4  f(x) 1384.01936  Scale 1.2e+00
+Iter    5  f(x) 1344.64482  Scale 6.2e-01
+Iter    6  f(x) 1332.86670  Scale 3.1e-01
+Iter    7  f(x) 1323.72176  Scale 1.6e-01
+Iter    8  f(x) 1321.59043  Scale 7.8e-02
+Iter    9  f(x) 1321.40528  Scale 3.9e-02
+Iter   10  f(x) 1321.33619  Scale 2.0e-02
+Iter   11  f(x) 1321.29375  Scale 9.8e-03
+Iter   12  f(x) 1321.28369  Scale 4.9e-03
+Iter   13  f(x) 1321.27976  Scale 2.4e-03
+Iter   14  f(x) 1321.27768  Scale 1.2e-03
+Iter   15  f(x) 1321.27602  Scale 6.1e-04
+Iter   16  f(x) 1321.27602  Scale 3.1e-04
+TolX reached
+
+gp_pic = 
+
+            type: 'PIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+             X_u: [24x1 double]
+            nind: 24
+               p: [1x1 struct]
+        tr_index: []
+
+Iter    1  f(x) 1181.88248  Scale 1.0e+01
+Iter    2  f(x) 1063.31768  Scale 5.0e+00
+Iter    3  f(x)  863.53557  Scale 2.5e+00
+Iter    4  f(x)  746.73347  Scale 1.2e+00
+Iter    5  f(x)  734.30348  Scale 6.2e-01
+Iter    6  f(x)  719.18801  Scale 3.1e-01
+Iter    7  f(x)  714.53337  Scale 1.6e-01
+Iter    8  f(x)  712.83189  Scale 7.8e-02
+Iter    9  f(x)  712.56075  Scale 3.9e-02
+Iter   10  f(x)  710.90664  Scale 2.0e-02
+Iter   11  f(x)  710.87757  Scale 9.8e-03
+Iter   12  f(x)  710.79893  Scale 4.9e-03
+Iter   13  f(x)  710.78498  Scale 2.4e-03
+Iter   14  f(x)  710.52782  Scale 1.2e-03
+Iter   15  f(x)  710.52657  Scale 6.1e-04
+TolX reached
+
+gp_csfic = 
+
+            type: 'CS+FIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]  [1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+             X_u: [24x1 double]
+            nind: 24
+               p: [1x1 struct]
+
+Iter    1  f(x) 1099.09392  Scale 1.0e+01
+Iter    2  f(x)  949.90901  Scale 5.0e+00
+Iter    3  f(x)  744.66742  Scale 2.5e+00
+Iter    4  f(x)  706.45362  Scale 1.2e+00
+Iter    5  f(x)  639.33542  Scale 6.2e-01
+Iter    6  f(x)  637.54726  Scale 3.1e-01
+Iter    7  f(x)  627.26127  Scale 1.6e-01
+Iter    8  f(x)  626.96722  Scale 7.8e-02
+Iter    9  f(x)  625.73874  Scale 3.9e-02
+Iter   10  f(x)  625.72888  Scale 2.0e-02
+Iter   11  f(x)  625.70317  Scale 2.0e-02
+Iter   12  f(x)  625.60422  Scale 9.8e-03
+Iter   13  f(x)  625.59897  Scale 4.9e-03
+Iter   14  f(x)  625.58213  Scale 2.4e-03
+Iter   15  f(x)  625.56621  Scale 1.2e-03
+Iter   16  f(x)  625.56506  Scale 6.1e-04
+Iter   17  f(x)  625.56506  Scale 6.1e-04
+Iter   18  f(x)  625.56506  Scale 2.4e-03
+Iter   19  f(x)  625.56506  Scale 9.8e-03
+Iter   20  f(x)  625.56506  Scale 3.9e-02
+Iter   21  f(x)  625.55910  Scale 1.6e-01
+Iter   22  f(x)  625.55910  Scale 7.8e-02
+Iter   23  f(x)  625.55910  Scale 3.1e-01
+Iter   24  f(x)  625.55910  Scale 1.2e+00
+Iter   25  f(x)  625.55910  Scale 5.0e+00
+Iter   26  f(x)  625.55910  Scale 2.0e+01
+Iter   27  f(x)  625.54552  Scale 8.0e+01
+Iter   28  f(x)  625.54552  Scale 4.0e+01
+Iter   29  f(x)  625.54552  Scale 1.6e+02
+Iter   30  f(x)  625.52993  Scale 6.4e+02
+TolX reached
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    4.1862    4.7403    1.6187    2.0946   -3.5341
+

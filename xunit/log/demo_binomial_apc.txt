@@ -1,0 +1,30 @@
+Running: demo_binomial_apc
+Iter    1  f(x) 1905.29512  Scale 1.0e+01
+Iter    2  f(x) 1905.29512  Scale 5.0e+00
+Iter    3  f(x) 1905.29512  Scale 2.0e+01
+Iter    4  f(x) 1810.06639  Scale 8.0e+01
+Iter    5  f(x) 1787.51250  Scale 4.0e+01
+Iter    6  f(x) 1779.86578  Scale 2.0e+01
+Iter    7  f(x) 1772.61882  Scale 2.0e+01
+Iter    8  f(x) 1771.91167  Scale 1.0e+01
+Iter    9  f(x) 1771.57551  Scale 5.0e+00
+Iter   10  f(x) 1771.45882  Scale 2.5e+00
+Iter   11  f(x) 1771.32870  Scale 1.2e+00
+Iter   12  f(x) 1771.24037  Scale 6.2e-01
+Iter   13  f(x) 1771.12991  Scale 3.1e-01
+Iter   14  f(x) 1770.95870  Scale 1.6e-01
+Iter   15  f(x) 1770.64543  Scale 7.8e-02
+Iter   16  f(x) 1769.95741  Scale 3.9e-02
+Iter   17  f(x) 1769.92638  Scale 2.0e-02
+TolFun reached
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+  Columns 1 through 8
+
+   -0.2186    1.9709   -0.2129    2.1078   -0.4876    2.0836   -0.5768    2.0601
+
+  Column 9
+
+    1.2728
+

@@ -1,0 +1,15 @@
+Running: demo_regression_meanf
+Checking gradient ...
+
+   analytic   diffs     delta
+
+   -7.0368   -7.0368    0.0000
+    1.8956    1.8956   -0.0000
+   -2.3321   -2.3321    0.0000
+
+TolFun reached
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    1.0896   -0.4396   -1.4863
+

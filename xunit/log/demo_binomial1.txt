@@ -1,0 +1,21 @@
+Running: demo_binomial1
+Iter    1  f(x)  173.54651  Scale 1.0e+01
+Iter    2  f(x)  173.30354  Scale 5.0e+00
+Iter    3  f(x)  173.18463  Scale 2.5e+00
+Iter    4  f(x)  173.18463  Scale 1.7e+01
+Iter    5  f(x)  173.13349  Scale 6.7e+01
+Iter    6  f(x)  171.42721  Scale 3.4e+01
+Iter    7  f(x)  170.58550  Scale 1.7e+01
+Iter    8  f(x)  170.30549  Scale 1.7e+01
+Iter    9  f(x)  170.24361  Scale 8.4e+00
+Iter   10  f(x)  170.18289  Scale 4.2e+00
+Iter   11  f(x)  170.14814  Scale 2.1e+00
+Iter   12  f(x)  170.13729  Scale 1.0e+00
+Iter   13  f(x)  170.05423  Scale 5.2e-01
+Iter   14  f(x)  170.05369  Scale 2.6e-01
+TolFun reached
+
+ gp hyperparameters: 
+ 
+   -0.2972   -0.9330
+
