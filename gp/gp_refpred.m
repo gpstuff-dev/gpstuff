@@ -434,7 +434,7 @@ function [minf, maxf, interval] = int_limits(gp, Ef, z)
       maxf = binoinv(0.9999, z, p);
       interval = minf:maxf;
     case 'Poisson'
-      lambda = z.*exp(Ef(:,i1));
+      lambda = z.*exp(Ef);
       minf = poissinv(0.0001, lambda);
       maxf = poissinv(0.9999, lambda);
       interval=minf:maxf;

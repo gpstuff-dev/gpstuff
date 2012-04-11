@@ -51,7 +51,12 @@ else
       e=gpep_looe(w, gp, x, y, varargin{:});
   end
   if nargout>1
-    error('Laplace and EP leave-one-out do not have gradients yet, use gradient-free optimization.')
+    switch gp.latent_method
+      case 'Laplace'
+        error('Laplace leave-one-out does not have gradients yet, use gradient-free optimization.')
+      case 'EP'
+        g=gpep_loog(w,gp,x,y);
+    end;
   end
   if isnan(e)
     e=realmax;

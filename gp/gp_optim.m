@@ -70,10 +70,10 @@ switch lower(loss)
     optdefault=struct('GradObj','on','LargeScale','off');
   case 'loo'
     fh_eg=@(ww) gp_looeg(ww, gp, x, y, 'z', z);
-    if isfield(gp.lik.fh,'trcov')
+    if isfield(gp.lik.fh,'trcov') || isequal(gp.latent_method, 'EP')
       optdefault=struct('GradObj','on','LargeScale','off');
     else
-      % EP-LOO and Laplace-LOO do not have yet gradients
+      % Laplace-LOO does not have yet gradients
       optdefault=struct('Algorithm','interior-point');
       if ismember('optimf',ip.UsingDefaults)
         optimf=@fmincon;
@@ -103,7 +103,7 @@ switch lower(loss)
 end
 opt=optimset(optdefault,opt);
 w=gp_pak(gp);
-if isequal(lower(loss),'e') || (isequal(lower(loss),'loo') && isfield(gp.lik.fh,'trcov'))
+if isequal(lower(loss),'e') || (isequal(lower(loss),'loo')) && (isfield(gp.lik.fh,'trcov') || isequal(gp.latent_method, 'EP'))
   switch nargout
     case 6
       [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, opt);
