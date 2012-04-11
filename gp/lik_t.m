@@ -35,7 +35,7 @@ function lik = lik_t(varargin)
   
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-% Copyright (c) 2011 Pasi Jylänki
+% Copyright (c) 2011 Pasi Jylï¿½nki
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -569,97 +569,124 @@ function [lnZhat, muhat, sigm2hat] = lik_t_tiltedMoments2(likelih, y, yi, sigm2_
   sigma2 = likelih.sigma2;
   sigma = sqrt(sigma2);
   
+  nuprime = eta*nu+eta-1;
+  a=nuprime/2; %a=nu/2;
+  
+  u=linspace(log(1e-8),5,200);
+  du=u(2)-u(1);
+  lnpu=(a-1)*u -a*exp(u)+u;
+  
+  %   sigma2 t-likelihood parameter, scale squared
+  %   sigm2_i cavity variance
+  %   myy_i cavity mean
+  
+  sigma2prime = sigma2*nu/nuprime;
+  Vu = sigm2_i + (sigma2prime)./exp(u);
+  lnZu = 0.5*(-log(2*pi*Vu)) -0.5 * (yy-myy_i)^2 ./Vu;
+  lnZt = eta*gammaln((nu+1)/2) - eta/2*log(nu*pi*sigma2) - eta*gammaln(nu/2) - gammaln((nuprime+1)/2) + 0.5*log(nuprime*pi*sigma2prime) + gammaln(nuprime/2);
+  
+  ptu=exp(lnpu+lnZu+lnZt);
+  
+  Z_0=sum(ptu)*du;
+  lnZhat=log(Z_0) + a*log(a)-gammaln(a);
+  
+  Vtu=1./(1/sigm2_i +(1/sigma2prime)*exp(u));
+  mtu=Vtu.*(myy_i/sigm2_i + (yy/sigma2prime)*exp(u));
+  
+  muhat=sum(mtu.*ptu)*du/Z_0;
+  sigm2hat=sum((Vtu+mtu.^2).*ptu)*du/Z_0-muhat^2;
+  
   % limiting distribution (nu -> infinity)
-  Vg=1/(1/sigm2_i +eta/sigma2);
-  mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
-  sigm_i=sqrt(sigm2_i);
-  sg=sqrt(Vg);
-  
-  % set integration limits and scaling
-  nu_lim=1e10;
-  if nu<nu_lim
-    
-    if sqrt(sigma2/sigm2_i)<0.05
-      % set the integration limits when the likelihood is very narrow
-      
-      % grid resolution
-      dd=10;
-      df = [12*sigm_i/100 2*dd*sigma/100];
-      
-      if yy>=myy_i
-        % grid break points   
-        bp=[min(myy_i-6*sigm_i,yy-dd*sigma) myy_i-6*sigm_i, ...
-          min(myy_i+6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
-          max(myy_i+6*sigm_i,yy+dd*sigma)];
-        
-        % grid values
-        a=1e-6;
-        fvec =[ bp(1):df(2):bp(2)-a, bp(2):df(1):bp(3)-a, bp(3):max(df):bp(4)-a, ...
-          bp(4):df(2):bp(5)-a, bp(5):df(1):bp(6)];
-      else
-        % grid break points   
-        bp=[min(myy_i-6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
-          max(myy_i-6*sigm_i,yy+dd*sigma), myy_i+6*sigm_i, ...
-          max(myy_i+6*sigm_i,yy+dd*sigma)];
-        
-        % grid values
-        a=1e-6;
-        fvec =[ bp(1):df(1):bp(2)-a, bp(2):df(2):bp(3)-a, bp(3):max(df):bp(4)-a, ...
-          bp(4):df(1):bp(5)-a, bp(5):df(2):bp(6)];
-      end
-      
-      np=numel(fvec);
-      logpt = lpt(fvec,0);
-      lpt_max = max([logpt lpt([myy_i mg],0)]);
-      lambdaconf=[fvec(1), fvec(end)];
-      for i1=2:np-1
-        if logpt(i1) < lpt_max+log(1e-7) %(exp(logpt(i1))/exp(lpt_max) < 1e-7)
-          lambdaconf(1) = fvec(i1);
-        else
-          break;
-        end
-      end
-      for i1=1:np-2
-        if logpt(end-i1) < lpt_max+log(1e-7) %(exp(logpt(end-i1))/exp(lpt_max) < 1e-7)
-          lambdaconf(2) = fvec(end-i1);
-        else
-          break;
-        end
-      end
-    else
-      % set the integration limits in easier cases
-      np=20;
-      if mg>myy_i
-        lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
-        fvec=linspace(myy_i,mg,np);
-      else
-        lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
-        fvec=linspace(mg,myy_i,np);
-      end
-      lpt_max=max(lpt(fvec,0));
-    end
-    C=log(1)-lpt_max; % scale the log-density for the quadrature tolerance
-  else
-    lambdaconf=[mg-6*sg,mg+6*sg];
-    C=log(1)-lpt(mg,0);
-  end
-  
-  if nu>nu_lim
-    % the limiting Gaussian case
-    Vz=sigm2_i+sigma2/eta;
-    lnZhat = 0.5*(-log(eta) +(1-eta)*log(2*pi*sigma2) -log(2*pi*Vz)) -(0.5/Vz)*(yy-myy_i)^2;
-    muhat = mg;
-    sigm2hat = Vg;
-  else
-    % Integrate with quadrature
-    RTOL = 1.e-6;
-    ATOL = 1.e-7;
-    
-    [m_0, m_1, m_2] = quad_moments(@(f) exp(lpt(f,C)),lambdaconf(1), lambdaconf(2), RTOL, ATOL);
-    muhat = m_1;
-    sigm2hat = m_2 - m_1.^2;
-    lnZhat = log(m_0) -C;
-  end
+%   Vg=1/(1/sigm2_i +eta/sigma2);
+%   mg=Vg*(myy_i/sigm2_i +yy*eta/sigma2);
+%   sigm_i=sqrt(sigm2_i);
+%   sg=sqrt(Vg);
+%   
+%   % set integration limits and scaling
+%   nu_lim=1e10;
+%   if nu<nu_lim
+%     
+%     if sqrt(sigma2/sigm2_i)<0.05
+%       % set the integration limits when the likelihood is very narrow
+%       
+%       % grid resolution
+%       dd=10;
+%       df = [12*sigm_i/100 2*dd*sigma/100];
+%       
+%       if yy>=myy_i
+%         % grid break points   
+%         bp=[min(myy_i-6*sigm_i,yy-dd*sigma) myy_i-6*sigm_i, ...
+%           min(myy_i+6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
+%           max(myy_i+6*sigm_i,yy+dd*sigma)];
+%         
+%         % grid values
+%         a=1e-6;
+%         fvec =[ bp(1):df(2):bp(2)-a, bp(2):df(1):bp(3)-a, bp(3):max(df):bp(4)-a, ...
+%           bp(4):df(2):bp(5)-a, bp(5):df(1):bp(6)];
+%       else
+%         % grid break points   
+%         bp=[min(myy_i-6*sigm_i,yy-dd*sigma), yy-dd*sigma, yy+dd*sigma,...
+%           max(myy_i-6*sigm_i,yy+dd*sigma), myy_i+6*sigm_i, ...
+%           max(myy_i+6*sigm_i,yy+dd*sigma)];
+%         
+%         % grid values
+%         a=1e-6;
+%         fvec =[ bp(1):df(1):bp(2)-a, bp(2):df(2):bp(3)-a, bp(3):max(df):bp(4)-a, ...
+%           bp(4):df(1):bp(5)-a, bp(5):df(2):bp(6)];
+%       end
+%       
+%       np=numel(fvec);
+%       logpt = lpt(fvec,0);
+%       lpt_max = max([logpt lpt([myy_i mg],0)]);
+%       lambdaconf=[fvec(1), fvec(end)];
+%       for i1=2:np-1
+%         if logpt(i1) < lpt_max+log(1e-7) %(exp(logpt(i1))/exp(lpt_max) < 1e-7)
+%           lambdaconf(1) = fvec(i1);
+%         else
+%           break;
+%         end
+%       end
+%       for i1=1:np-2
+%         if logpt(end-i1) < lpt_max+log(1e-7) %(exp(logpt(end-i1))/exp(lpt_max) < 1e-7)
+%           lambdaconf(2) = fvec(end-i1);
+%         else
+%           break;
+%         end
+%       end
+%     else
+%       % set the integration limits in easier cases
+%       np=20;
+%       if mg>myy_i
+%         lambdaconf=[myy_i-6*sigm_i,max(mg+6*sg,myy_i+6*sigm_i)];
+%         fvec=linspace(myy_i,mg,np);
+%       else
+%         lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
+%         fvec=linspace(mg,myy_i,np);
+%       end
+%       lpt_max=max(lpt(fvec,0));
+%     end
+%     C=log(1)-lpt_max; % scale the log-density for the quadrature tolerance
+%   else
+%     lambdaconf=[mg-6*sg,mg+6*sg];
+%     C=log(1)-lpt(mg,0);
+%   end
+%   
+%   if nu>nu_lim
+%     % the limiting Gaussian case
+%     Vz=sigm2_i+sigma2/eta;
+%     lnZhat = 0.5*(-log(eta) +(1-eta)*log(2*pi*sigma2) -log(2*pi*Vz)) -(0.5/Vz)*(yy-myy_i)^2;
+%     muhat = mg;
+%     sigm2hat = Vg;
+%   else
+%     % Integrate with quadrature
+%     RTOL = 1.e-6;
+%     ATOL = 1.e-7;
+%     tic
+%     [m_0, m_1, m_2] = quad_moments(@(f) exp(lpt(f,C)),lambdaconf(1), lambdaconf(2), RTOL, ATOL);toc
+%     muhat = m_1;
+%     sigm2hat = m_2 - m_1.^2;
+%     lnZhat = log(m_0) -C;
+%   end
   
   function lpdf = lpt(f,C)
     % logarithm of the tilted distribution
