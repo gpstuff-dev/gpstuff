@@ -5,7 +5,8 @@ function [Ef, Varf, xtnn] = gp_pred_c(gp,x,y,xt, ind,varargin)
 %    GP_PRED_SINGLE(GP,X,Y,XT,IND,OPTIONS) does predictions using only
 %    covariates specified in vector IND. Other covariates are fixed to
 %    either mean, median or values chosen by user. Returns predictions for
-%    latent values, variance and corresponding inputs. 
+%    latent values, variance and corresponding inputs. If IND=0, only time
+%    is used as a covariate.
 %
 %   OPTIONS is optional parameter-value pair
 %      method - which value to fix the not used covariates, 'mean'
@@ -62,26 +63,38 @@ xto=xt; [n,tmp]=size(xto);
 
 if length(ind)==1
   
-  [xtnn, iu] = unique(xt(:,ind));
+  if ind~=0
+    [xtnn, iu] = unique(xt(:,ind));
+  else
+    xtnn = xt(1,:);
+    iu = 1;
+    ind=1:4;
+  end
   if ~isempty(z)
 %     options.z = options.z(iu);
     options.zt = options.zt(iu);
   end
   meanxt=mean(xt);
   if isequal(method, 'mean')
-    xt = repmat(meanxt, length(xtnn), 1);
+    xt = repmat(meanxt, size(xtnn,1), 1);
   else
-    xt = repmat(median(xt), length(xtnn), 1);
+    xt = repmat(median(xt), size(xtnn,1), 1);
   end
   if ~isempty(var)
     xt(:,~isnan(var)) = repmat(var(~isnan(var)), length(xtnn), 1);
   end
+  
   xt(:,ind) = xtnn;
   if ~strcmp(gp.lik.type, 'Coxph')
     [Ef, Varf] = gp_pred(gp, x, y, xt, 'predcf', predcf, 'tstind', tstind, options);
   else
     [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, 'predcf', predcf, 'tstind', tstind, options);
-    Ef = Ef2; Varf = diag(Covf(size(Ef1,1)+1:end,size(Ef1,1)+1:end));
+    if ~isvector(ind)
+      Ef = Ef2; Varf = diag(Covf(size(Ef1,1)+1:end,size(Ef1,1)+1:end));
+    else
+      Ef = Ef1; Varf = diag(Covf(1:size(Ef1,1), 1:size(Ef1,1)));
+      xtnn = gp.lik.xtime;
+    end
   end
   if isequal(plot_results, 'on')
     plot(xtnn, Ef, 'xb', xtnn, Ef, '-k', xtnn, Ef-sqrt(Varf), '--b', xtnn, Ef+sqrt(Varf), '--b')
