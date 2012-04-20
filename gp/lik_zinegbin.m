@@ -498,7 +498,7 @@ function lik = lik_zinegbin(varargin)
     end
   end
   
-  function [m_0, m_1, sigm2hati1] = lik_zinegbin_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+  function [logM_0, m_1, sigm2hati1] = lik_zinegbin_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
   %LIK_ZINEGBIN_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
   %
   %  Description

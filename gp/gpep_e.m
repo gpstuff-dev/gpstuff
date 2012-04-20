@@ -142,7 +142,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
             myy = H'*b_m;
           end
           
-          M0 = [];
+          logM0 = [];
           
           % =================================================
           % First Evaluate the data contribution to the error
@@ -251,7 +251,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     sigm2_i=tau_i^-1;
                     
                     % marginal moments
-                    [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                     
                     % update site parameters
                     deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
@@ -335,7 +335,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                       term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
                       
                       % 3. term
-                      term3 = sum(log(M0));
+                      term3 = sum(logM0);
                       
                       logZep = -(term41+term52+term5+term3);
                       iter=iter+1;
@@ -390,7 +390,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                       % 1. term
                       term1    = -1.*sum(log(diag(L_m)));
                       % 3. term
-                      term3    = sum(log(M0));
+                      term3    = sum(logM0);
                       % 5. term (2/2 element)
                       term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
                       
@@ -431,7 +431,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
                     
                     % 3. term
-                    term3 = sum(log(M0));
+                    term3 = sum(logM0);
                     
                     logZep = -(term41+term52+term5+term3);
                     iter=iter+1;
@@ -484,7 +484,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     sigm2_i=tau_i^-1;
                     
                     % marginal moments
-                    [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                     
                     % update site parameters
                     tautilde_old = tautilde(i1);
@@ -535,7 +535,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   term5=0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
                   
                   % 3. term
-                  term3 = sum(log(M0));
+                  term3 = sum(logM0);
                   
                   logZep = -(term41+term52+term5+term3);
                   
@@ -549,7 +549,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 tautilde = tautilde(r);
                 muvec_i = muvec_i(r);
                 sigm2vec_i = sigm2vec_i(r);
-                M0 = M0(r);
+                logM0 = logM0(r);
                 myy = myy(r);
                 y = y(r);
                 if ~isempty(z)
@@ -636,7 +636,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   sigm2_i=tau_i^-1;
                   
                   % marginal moments
-                  [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -713,7 +713,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
                 
                 % 3. term
-                term3 = -sum(log(M0));
+                term3 = -sum(logM0);
                 
                 logZep = term41+term52+term5+term3;
                 
@@ -815,7 +815,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                     sigm2_i=tau_i^-1;
                     
                     % marginal moments
-                    [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                     
                     % update site parameters
                     deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -910,7 +910,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
                 
                 % 3. term
-                term3 = -sum(log(M0));
+                term3 = -sum(logM0);
                 
                 logZep = term41+term52+term5+term3;
                 
@@ -1043,7 +1043,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   sigm2_i= tau_i^-1;  % 1./tau_i;  %
                   
                   % marginal moments
-                  [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1130,7 +1130,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
                 
                 % 3. term
-                term3 = -sum(log(M0));
+                term3 = -sum(logM0);
                 
                 logZep = term41+term52+term5+term3;
                 
@@ -1156,7 +1156,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
               D = La(r,r);
               nutilde = nutilde(r);
               tautilde = tautilde(r);
-              M0 = M0(r);
+              logM0 = logM0(r);
               muvec_i = muvec_i(r);
               sigm2vec_i = sigm2vec_i(r);
               myy = myy(r);
@@ -1216,7 +1216,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   sigm2_i=tau_i^-1;
                   
                   % marginal moments
-                  [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1277,7 +1277,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
                 
                 % 3. term
-                term3 = -sum(log(M0));
+                term3 = -sum(logM0);
                 
                 logZep = term41+term52+term5+term3;
                 
@@ -1346,7 +1346,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                   sigm2_i=tau_i^-1;
                   
                   % marginal moments
-                  [M0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
@@ -1402,7 +1402,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
                 term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
                 
                 % 3. term
-                term3 = -sum(log(M0));
+                term3 = -sum(logM0);
                 
                 logZep = term41+term52+term5+term3;
                 
@@ -1450,7 +1450,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, Z
           end
           
           e = edata + eprior;
-          Z_i = M0(:);
+          Z_i = logM0(:);
           eta = [];
           
           % store values to the cache

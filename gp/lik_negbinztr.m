@@ -351,7 +351,7 @@ function llg3 = lik_negbinztr_llg3(lik, y, f, param, z)
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_NEGBINZTR_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -401,7 +401,7 @@ function [m_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sigm2_
       %sigm2hati1=sigm2_i-1e-9;
     end
   end
-  
+  logM_0 = log(m_0);
 end
 
 function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)

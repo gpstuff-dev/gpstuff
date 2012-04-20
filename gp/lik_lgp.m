@@ -188,7 +188,7 @@ function g3 = lik_lgp_llg3(lik, y, f, param, z)
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_LGP_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -237,6 +237,7 @@ function [m_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, myy
       error('lik_lgp_tilted_moments: sigm2hati1 >= sigm2_i');
     end
   end
+  logM_0 = log(m_0);
 end
 
 

@@ -214,7 +214,7 @@ function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_softmax_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 end
 
 function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)

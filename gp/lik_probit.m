@@ -181,7 +181,7 @@ function llg3 = lik_probit_llg3(lik, y, f, param, z)
 end
 
 
-function [m_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -207,6 +207,7 @@ function [m_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, 
   sigm2hati1=sigm2_i-(sigm2_i^2*normp_zi)/((1+sigm2_i)*normc_zi)*(zi+normp_zi/normc_zi);
   m_1 = muhati1;
   m_2 = sigm2hati1;
+  logM_0 = log(m_0);
 end
 
 function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)

@@ -692,7 +692,7 @@ function lik = lik_coxph(varargin)
   end
 
   
-  function [m_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
+  function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
       
       [n,ny]=size(y);
       
@@ -760,7 +760,7 @@ function lik = lik_coxph(varargin)
             sigm2_i=tau_i^-1;
             
             % marginal moments
-            [M0(k1), muhati, sigm2hati] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp(k1), sdvec(k1), c1);
+            [logM0(k1), muhati, sigm2hati] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp(k1), sdvec(k1), c1);
             %[M0, muhati, sigm2hati] = coxph_tiltedMoments(lik, y(i1,:), k1, sigm2_i, myy_i, c1, sd_vec(i1), ztmp);
             
             deltatautilde=sigm2hati^-1-tau_i-tautilde(k1);
@@ -824,7 +824,7 @@ function lik = lik_coxph(varargin)
             term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
             
             % 3. term
-            term3 = sum(log(M0));
+            term3 = sum(logM0);
             
             V_tmp=(L\Stildesqroot);
             Sigm_inv_tmp=V_tmp'*V_tmp;
@@ -869,6 +869,7 @@ function lik = lik_coxph(varargin)
       m_2=[m_211 m_212'; m_212 m_222]./m_0;
       
       sigm2hati1=m_2 - m_1*m_1';
+      logM_0 = log(m_0);
       
       %figure(1),hold on, plot(fg(j1),logZep,'.')
       %figure(2),hold on, plot(fg(j1),exp(-logZep),'.')
@@ -1032,7 +1033,7 @@ function lik = lik_coxph(varargin)
 %     end
   end
 
-  function [m_0, m_1, sigm2hati1] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp, sd, c1)
+  function [logM_0, m_1, sigm2hati1] = coxph_tiltedMoments(sigm2_i, myy_i, nutmp, sd, c1)
   
   integrand = @(f) exp(-c1.*exp(f).*sd + nutmp*(f+log(c1)) - log(sigm2_i)/2 - log(2*pi)/2 - 0.5*(f-myy_i).^2./sigm2_i);
   RTOL = 1.e-6;
@@ -1056,7 +1057,7 @@ function lik = lik_coxph(varargin)
       error('lik_poisson_tilted_moments: sigm2hati1 >= sigm2_i');
     end
   end
-  
+  logM_0 = log(m_0);
   end
 
 

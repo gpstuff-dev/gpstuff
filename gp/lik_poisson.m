@@ -201,7 +201,7 @@ function third_grad = lik_poisson_llg3(lik, y, f, param, z)
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_poisson_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_poisson_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_POISSON_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -250,6 +250,7 @@ function [m_0, m_1, sigm2hati1] = lik_poisson_tiltedMoments(lik, y, i1, sigm2_i,
       error('lik_poisson_tilted_moments: sigm2hati1 >= sigm2_i');
     end
   end
+  logM_0 = log(m_0);
 end
 
 

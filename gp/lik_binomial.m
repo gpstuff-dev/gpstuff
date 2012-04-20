@@ -210,7 +210,7 @@ function llg3 = lik_binomial_llg3(lik, y, f, param, z)
   end
 end
 
-function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_BINOMIAL_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -313,6 +313,7 @@ function [m_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm2_i
 %      error('lik_binomial_tilted_moments: sigm2hati1 >= sigm2_i');
 %    end
   end
+  logM_0 = log(m_0);
 end
 
 

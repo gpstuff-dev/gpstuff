@@ -88,8 +88,8 @@ for i1=1:size(ind,1)
     % Here we keep track of normalizing constants so we dont have to
     % normalize distributions at any point. 
     %     Z_q = sqrt(2*pi*cii);
-    M0 = gp.lik.fh.tiltedMoments(gp.lik, y, ind(i1), sigm2vec_i(ind(i1)), muvec_i(ind(i1)), z);
-    Z_p = M0*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
+    logM0 = gp.lik.fh.tiltedMoments(gp.lik, y, ind(i1), sigm2vec_i(ind(i1)), muvec_i(ind(i1)), z);
+    Z_p = exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
     
     % Function handle to marginal distribution without any correction parameters
     fh_p = @(f) 1/Z_p*exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./norm_pdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
@@ -128,8 +128,8 @@ for i1=1:size(ind,1)
         continue;
       end
       % Correction("unnormalizing") constant for gaussian likelihood approximation.
-      M0 = gp.lik.fh.tiltedMoments(gp.lik, y, j, sigm2vec_i(j), muvec_i(j), z);
-      Ztilde=M0*sqrt(2*pi)*sqrt(sigm2vec_i(j)+1./tautilde(j))*exp(0.5*(muvec_i(j)-nutilde(j)./tautilde(j)).^2/(sigm2vec_i(j)+1./tautilde(j)));
+      logM0 = gp.lik.fh.tiltedMoments(gp.lik, y, j, sigm2vec_i(j), muvec_i(j), z);
+      Ztilde=exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(j)+1./tautilde(j))*exp(0.5*(muvec_i(j)-nutilde(j)./tautilde(j)).^2/(sigm2vec_i(j)+1./tautilde(j)));
       
       % Function handle for gaussian approximation of the likelihood
       t_i = @(f) Ztilde.*norm_pdf(f, nutilde(j)/tautilde(j), 1/sqrt(tautilde(j)));

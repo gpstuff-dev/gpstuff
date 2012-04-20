@@ -356,7 +356,7 @@ function llg3 = lik_t_llg3(lik, y, f, param, z)
 end
 
 
-function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_T_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -430,7 +430,7 @@ function [m_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, myy_i
   [m_0, m_1, m_2] = quad_moments(zm,lambdaconf(1), lambdaconf(2), RTOL, ATOL);        
   
   sigm2hati1 = m_2 - m_1.^2;
-  
+  logM_0 = log(m_0);
   function integrand = zeroth_moment(f)
     r = yy-f;
     term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
