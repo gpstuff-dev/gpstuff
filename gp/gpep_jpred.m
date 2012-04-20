@@ -498,7 +498,7 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, xt, varargin)
     end
     
     if nargout > 3
-        error('too many output arguments.')
+        error('Too many output arguments for GPEP_JPRED.')
     end
     
 

@@ -482,6 +482,6 @@ function [Eft, Covft, ljpyt] = gpla_jpred(gp, x, y, xt, varargin)
     end
     
     if nargout > 3
-        error('too many output arguments.')
+        error('Too many output arguments for GPLA_JPRED.')
     end
 end
