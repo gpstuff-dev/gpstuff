@@ -11,11 +11,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 %    predictive mean EYT and variance VARYT of observations, and logarithm
 %    of posterior predictive density PYT at input locations X.
 %
-%    Laplace leave-one-out is approximated by computing a Laplace
-%    site-term and computing a Laplace cavity distribution as
-%    leave-one-out posterior for the ith latent value. Since the
-%    ith likelihood has influenced other site terms through the
-%    prior, this estimate can be over-optimistic.
+%    Laplace leave-one-out is approximated in linear response style by
+%    expressing solutions for LOO problem in terms of solution for full
+%    problem. The computational cheap solution can be obtained by making
+%    the assumption that the difference between these two solution is small 
+%    such that their difference may be treated as an Taylor expansion 
+%    truncated at first order.
 %
 %    OPTIONS is optional parameter-value pair
 %      z  - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -38,8 +39,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('method', 'lrs', @(x) ismember(x, {'lrs' 'cavity' 'inla'}))
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
+  method = ip.Results.method;
   [tn,nin] = size(x);
   
   if ~iscell(gp)
@@ -47,50 +50,66 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
     
     % latent posterior
     [f, sigm2ii, lp] = gpla_pred(gp, x, y, x, 'yt', y, 'z', z, 'zt', z);
-    
-%     % "site parameters"
-%     W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-%     deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-%     sigm2_t  = 1./W;
-%     mu_t     = f + sigm2_t.*deriv;
-%     
-%     % "cavity parameters"
-%     sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
-%     myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
-%     % check if cavity varianes are negative
-%     ii=find(sigma2_i<0);
-%     if ~isempty(ii)
-%       warning('gpla_loopred: some cavity variances are negative');
-%       sigma2_i(ii) = sigm2ii(ii);
-%       myy_i(ii) = f(ii);
-%     end
-%     
-%     % leave-one-out predictions
-%     Eft=myy_i;
-%     Varft=sigma2_i;
+   
+   switch method
 
-    Eft = zeros(tn,1);
-    Varft = zeros(tn,1);
-    lpyt = zeros(tn,1);
-    minf = f-6.*sqrt(sigm2ii);
-    maxf = f+6.*sqrt(sigm2ii);
-    for i=1:tn
-      if isempty(z)
-        z1 = [];
-      else
-        z1 = z(i);
-      end
-      [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z1), minf(i), maxf(i));
-      Eft(i) = m1; 
-      Varft(i) = m2-Eft(i)^2;
-      lpyt(i) = -log(m0);
+     case 'inla'
+       
+       Eft = zeros(tn,1);
+       Varft = zeros(tn,1);
+       lpyt = zeros(tn,1);
+       minf = f-6.*sqrt(sigm2ii);
+       maxf = f+6.*sqrt(sigm2ii);
+       for i=1:tn
+         if isempty(z)
+           z1 = [];
+         else
+           z1 = z(i);
+         end
+         [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z1), minf(i), maxf(i));
+         Eft(i) = m1;
+         Varft(i) = m2-Eft(i)^2;
+         lpyt(i) = -log(m0);
+       end
+
+     case 'cavity'
+
+       % "site parameters"
+       W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+       deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+       sigm2_t  = 1./W;
+       mu_t     = f + sigm2_t.*deriv;
+       
+       % "cavity parameters"
+       sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
+       myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
+       % check if cavity varianes are negative
+       ii=find(sigma2_i<0);
+       if ~isempty(ii)
+         warning('gpla_loopred: some cavity variances are negative');
+         sigma2_i(ii) = sigm2ii(ii);
+         myy_i(ii) = f(ii);
+       end
+       
+       % leave-one-out predictions
+       Eft=myy_i;
+       Varft=sigma2_i;
+
+     case 'lrs'
+
+       K = gp_cov(gp,x,x);
+       deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+       La       = 1./-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+       Varft=1./diag(inv(K+diag(La)))-La;
+       Eft=f-Varft.*deriv;
+
+   end
+    if nargout>2
+      [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
     end
-    if nargout>3
-      [tmp,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
-    end
-    if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
-      warning('very bad predictive densities, gpla_loopred might not be reliable, check results!');
-    end
+   if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
+     warning('very bad predictive densities, gpla_loopred might not be reliable, check results!');
+   end
     
   else
     % Cell array of GPs
@@ -99,45 +118,68 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       % latent posterior
       [f, sigm2ii, lp] = gpla_pred(gp{j}, x, y, x, 'yt', y, 'z', z, 'zt', z);
       
-%       % "site parameters"
-%       W        = -gp{j}.lik.fh.llg2(gp{j}.lik, y, f, 'latent', z);
-%       deriv    = gp{j}.lik.fh.llg(gp{j}.lik, y, f, 'latent', z);
-%       sigm2_t  = 1./W;
-%       mu_t     = f + sigm2_t.*deriv;
-%       
-%       % "cavity parameters"
-%       sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
-%       myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
-%       
-%       Eft_grid(j,:)=myy_i;
-%       Varft_grid(j,:)=sigma2_i;
-%       n=length(y);
       P_TH(j,:) = gp{j}.ia_weight;
-%       
-%       if nargout == 3
-%         lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
-%       elseif nargout > 3
-%         [lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)] = ...
-%           gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
-%       end
-      minf = f-6.*sqrt(sigm2ii);
-      maxf = f+6.*sqrt(sigm2ii);
-      for i=1:tn
-        if isempty(z)
-          z1 = [];
-        else
-          z1 = z(i);
-        end
-        [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),x,z1), minf(i), maxf(i));
-        Eft_grid(j,i) = m1;
-        Varft_grid(j,i) = m2-m1^2;
-        lpyt_grid(j,i) = log(m0);
-      end
-      if nargout>3
-        [tmp,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
-      end
-     
       
+      switch method
+
+        case 'inla'
+
+          minf = f-6.*sqrt(sigm2ii);
+          maxf = f+6.*sqrt(sigm2ii);
+          for i=1:tn
+            if isempty(z)
+              z1 = [];
+            else
+              z1 = z(i);
+            end
+            [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),x,z1), minf(i), maxf(i));
+            Eft_grid(j,i) = m1;
+            Varft_grid(j,i) = m2-m1^2;
+            lpyt_grid(j,i) = log(m0);
+          end
+          if nargout>3
+            [tmp,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
+          end
+
+        case 'cavity'
+
+          % "site parameters"
+          W        = -gp{j}.lik.fh.llg2(gp{j}.lik, y, f, 'latent', z);
+          deriv    = gp{j}.lik.fh.llg(gp{j}.lik, y, f, 'latent', z);
+          sigm2_t  = 1./W;
+          mu_t     = f + sigm2_t.*deriv;
+          
+          % "cavity parameters"
+          sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
+          myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
+          
+          Eft_grid(j,:)=myy_i;
+          Varft_grid(j,:)=sigma2_i;
+          n=length(y);
+          
+          if nargout == 3
+            lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
+          elseif nargout > 3
+            [lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)] = ...
+              gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
+          end
+
+        case 'lrs'
+          
+          K = gp_cov(gp{j},x,x);
+          deriv    = gp{j}.lik.fh.llg(gp{j}.lik, y, f, 'latent', z);
+          La       = 1./-gp{j}.lik.fh.llg2(gp{j}.lik, y, f, 'latent', z);
+          Varft_grid(j,:)=1./diag(inv(K+diag(La)))-La;
+          Eft_grid(j,:)=f-Varft_grid(j,:)'.*deriv;
+          
+          if nargout == 3
+            lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, Eft_grid(j,:), Varft_grid(j,:), y, z);
+          elseif nargout > 3
+            [lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)] = ...
+              gp{j}.lik.fh.predy(gp{j}.lik, Eft_grid(j,:), Varft_grid(j,:), y, z);
+          end
+
+      end
     end
     
     ft = zeros(size(Eft_grid,2),501);
