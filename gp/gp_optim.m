@@ -107,22 +107,22 @@ if isequal(lower(loss),'e') || (isequal(lower(loss),'loo')) && (isfield(gp.lik.f
   switch nargout
     case 6
       [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, opt);
-      varargout{:}={fval,exitflag,output,grad,hessian};
+      varargout={fval,exitflag,output,grad,hessian};
     case 5
       [w,fval,exitflag,output,grad] = optimf(fh_eg, w, opt);
-      varargout{:}={fval,exitflag,output,grad};
+      varargout={fval,exitflag,output,grad};
     case 4
       [w,fval,exitflag,output] = optimf(fh_eg, w, opt);
-      varargout{:}={fval,exitflag,output};
+      varargout={fval,exitflag,output};
     case 3
       [w,fval,exitflag] = optimf(fh_eg, w, opt);
-      varargout{:}={fval,exitflag};
+      varargout={fval,exitflag};
     case 2
       [w,fval] = optimf(fh_eg, w, opt);
-      varargout{:}={fval};
+      varargout={fval};
     case 1
       w = optimf(fh_eg, w, opt);
-      varargout{:}={};
+      varargout={};
   end
 else
   lb=repmat(-8,size(w));
@@ -130,22 +130,22 @@ else
   switch nargout
     case 6
       [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
-      varargout{:}={fval,exitflag,output,grad,hessian};
+      varargout={fval,exitflag,output,grad,hessian};
     case 5
       [w,fval,exitflag,output,grad] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
-      varargout{:}={fval,exitflag,output,grad};
+      varargout={fval,exitflag,output,grad};
     case 4
       [w,fval,exitflag,output] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
-      varargout{:}={fval,exitflag,output};
+      varargout={fval,exitflag,output};
     case 3
       [w,fval,exitflag] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
-      varargout{:}={fval,exitflag};
+      varargout={fval,exitflag};
     case 2
       [w,fval] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
-      varargout{:}={fval};
+      varargout={fval};
     case 1
       w = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
-      varargout{:}={};
+      varargout={};
   end
 end
 gp=gp_unpak(gp,w);

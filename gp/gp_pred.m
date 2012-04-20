@@ -128,7 +128,7 @@ ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.parse(gp, x, y, xt, varargin{:});
@@ -182,7 +182,9 @@ switch gp.type
           xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
         end
       end
-      Eft(xtind2) = K'*a;
+      if ~isempty(K)
+        Eft(xtind2) = K'*a;
+      end
       if  isfield(gp,'meanf')
         if issparse(C)
           % terms with non-zero mean -prior

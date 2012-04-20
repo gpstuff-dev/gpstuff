@@ -238,7 +238,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   cvws=[];
   trw=[];
   % loop over the crossvalidation sets
-  if ismember(display,{'on','iter'})
+  if ismember(display,{'iter'})
     fprintf('\n Evaluating the CV utility\n')
   end
   nargout2 = nargout;
@@ -461,7 +461,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
 
     % Evaluate the training utility
-    if ismember(display,{'on','iter'})
+    if ismember(display,{'iter'})
       fprintf('\n Evaluating the training utility \n')
     end
 

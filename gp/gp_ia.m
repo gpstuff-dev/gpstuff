@@ -788,7 +788,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       fprintf('The Normal approximations for the conditional posteriors should be checked.\n')
     end
     
-    fprintf('\n \n')
+    %fprintf('\n \n')
   end
 
   % Add the integration weights into the gp_array
