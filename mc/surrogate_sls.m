@@ -28,7 +28,7 @@ function [samples,samplesf,diagn] = surrogate_sls(f, x, opt, gp, xx, yy, z, vara
 %  by Iain Murray and Ryan P. Adams, 2010, Arxiv preprint arXiv:1006.0868
 
 %  Copyright (c) Toni Auranen, 2003-2006
-%  Copyright (c) Ville Tolvanen, 2011
+%  Copyright (c) Ville Tolvanen, 2012
 
 
 % This software is distributed under the GNU General Public 
@@ -260,16 +260,15 @@ for i = 1-nomit:1:nsamples
    otherwise
     ind_umodal = ind_umodal + 1;
     x_new = x_0;
+    f_new = f_0;
     for j = 1:nparams
       L = x_new;
       R = x_new;
       switch method
         case 'stepping'
-          [L, R] = stepping_out(f_0,y,x_new,L,R,w,m,j,mmin,mmax,display_info,umodal,xx,yy,gp,z,eta,g,varargin{:});
+          [L, R] = stepping_out(f_new,y,x_new,L,R,w,m,j,mmin,mmax,display_info,umodal,xx,yy,gp,z,eta,g,varargin{:});
         case 'doubling'
-          error('Not working yet');
-%         case 'doubling'
-%           [L, R] = doubling(f,y,x_new,L,R,w,p,j,mmin,mmax,display_info,umodal,varargin{:});
+          [L, R] = doubling(f_new,y,x_new,L,R,w,m,j,mmin,mmax,display_info,umodal,xx,yy,gp,z,eta,g,varargin{:});
         case 'minmax'
           L(j) = mmin(j);
           R(j) = mmax(j);
@@ -277,9 +276,9 @@ for i = 1-nomit:1:nsamples
           error('unknown method');
       end % switch
       if overrelaxation(j)
-        [x_new, f_new, rej_step, rej_old] = bisection(f_0,y,x_new,L,R,w,a,rej_step,j,umodal,xx,yy,gp,z,eta,g);
+        [x_new, f_new, rej_step, rej_old] = bisection(f_new,y,x_new,L,R,w,a,rej_step,j,umodal,xx,yy,gp,z,eta,g);
       else
-        [x_new, f_new] = shrinkage(f_0,y,x_new,w,L,R,method,j,maxiter,umodal,xx,yy,gp,z,eta,g);
+        [x_new, f_new] = shrinkage(f_new,y,x_new,w,L,R,method,j,maxiter,umodal,xx,yy,gp,z,eta,g);
       end % if overrelaxation
       if umodal % adjust the slice if the distribution is known to be unimodal
         w(j) = (w(j)*ind_umodal + abs(x_0(j)-x_new(j)))/(ind_umodal+1);
@@ -364,7 +363,7 @@ end
 %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%
 
-function [x_new, f, rej, rej_old] = bisection(f,y,x_0,L,R,w,a,rej,j,um,xx,yy,gp,z,eta,g);
+function [x_new, f_new, rej, rej_old] = bisection(f,y,x_0,L,R,w,a,rej,j,um,xx,yy,gp,z,eta,g);
 %function [x_new, y_new, rej, rej_old] = bisection(f,y,x_0,L,R,w,a,rej,j,um,varargin);
 %
 % Bisection for overrelaxation (stepping-out needs to be used)
@@ -456,7 +455,7 @@ while 1
     end
   else
     if y < y_new
-      f(:,end+1) = f_new;
+%       f(:,end+1) = f_new;
       break;
     end
   end % if strcmp
@@ -586,11 +585,12 @@ end
 %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%
 
-function [L,R] = doubling(f,y,x_0,L,R,w,p,j,mmin,mmax,di,um,varargin);
+function [L,R] = doubling(f,y,x_0,L,R,w,m,j,mmin,mmax,di,um,xx,yy,gp,z,eta,g,varargin)
 %function [L,R] = doubling(f,y,x_0,L,R,w,p,j,mmin,mmax,di,um,varargin);
 %
 % Doubling scheme for slice sampling
-
+f_new = f(:,end);
+x_new = x_0;
 if um % if the user defines the distribution to be unimodal
   L(j) = x_0(j) - w(j).*rand;
   if L(j) < mmin(j)
@@ -612,8 +612,8 @@ if um % if the user defines the distribution to be unimodal
   else
     Bo = 0;
   end
-  AL = -f(L,varargin{:});
-  AR = -f(R,varargin{:});
+  AL = getY(gp,xx,yy,z,f_new, L, eta, g);
+  AR = getY(gp,xx,yy,z,f_new, R, eta, g);
   while (Ao == 0 && y < AL) || (Bo == 0 && y < AR)
     if rand < 1/2
       L(j) = L(j) - (R(j)-L(j));
@@ -626,7 +626,7 @@ if um % if the user defines the distribution to be unimodal
       else
         Ao = 0;
       end
-      AL = -f(L,varargin{:});
+      AL = getY(gp,xx,yy,z,f_new, L, eta, g);
     else
       R(j) = R(j) + (R(j)-L(j));
       if R(j) > mmax(j)
@@ -638,7 +638,7 @@ if um % if the user defines the distribution to be unimodal
       else
         Bo = 0;
       end
-      AR = -f(R,varargin{:});
+      AR = getY(gp,xx,yy,z,f_new, R, eta, g);
     end
   end % while
 else % if the distribution is not defined to be unimodal
@@ -657,8 +657,8 @@ else % if the distribution is not defined to be unimodal
     end
   end
   K = p(j);
-  AL = -f(L,varargin{:});
-  AR = -f(R,varargin{:});
+  AL = getY(gp,xx,yy,z,f_new, L, eta, g);
+  AR = getY(gp,xx,yy,z,f_new, R, eta, g);
   while K > 0 && (y < AL || y < AR)
     if rand < 1/2
       L(j) = L(j) - (R(j)-L(j));
@@ -668,7 +668,7 @@ else % if the distribution is not defined to be unimodal
           fprintf('Underflow! (L:%d)\n',j);
         end
       end
-      AL = -f(L,varargin{:});
+      AL = getY(gp,xx,yy,z,f_new, L, eta, g);
     else
       R(j) = R(j) + (R(j)-L(j));
       if R(j) > mmax(j)
@@ -677,7 +677,7 @@ else % if the distribution is not defined to be unimodal
           fprintf('Overflow! (R:%d)\n',j);
         end
       end
-      AR = -f(R,varargin{:});
+      AR = getY(gp,xx,yy,z,f_new, R, eta, g);
     end
     K = K - 1;
   end % while
@@ -725,16 +725,18 @@ end
 
 gp = gp_unpak(gp, w);
 [K,C] = gp_trcov(gp, xx);
-for ii=1:size(yy,1)
-  [~,~, m2(ii,:)] = gp.lik.fh.tiltedMoments(gp.lik, yy, ii, C(ii,ii), 0, z);
-end
-S = diag(1./(1./m2 - 1./diag(C)));
+% for ii=1:size(yy,1)
+%   [~,~, m2(ii,:)] = gp.lik.fh.tiltedMoments(gp.lik, yy, ii, C(ii,ii), 0, z);
+% end
+% S = diag(1./(1./m2 - 1./diag(C)));
+S = 10*eye(size(C));
 if isempty(eta) || isempty(g)
   g = mvnrnd(f,S)';
 end
-RR = S - S/(S+C)*S;
-m = RR*(S\g);
-LR = chol(RR,'lower');
+R = S-S*((S+K)\S);
+R = (R+R')./2;
+LR = chol(R,'lower');
+m = R*(S\g);
 if isempty(eta) || isempty(g)
   eta = LR\(f-m);
   f_new = [];
@@ -769,5 +771,5 @@ function opt = ssls_opt(opt)
 % fsamples - number of latent samples per hyperparameter sample
   
 if ~isfield(opt, 'fsamples')
-  opt.fsamples = 1;
+  opt.fsamples = 2;
 end
