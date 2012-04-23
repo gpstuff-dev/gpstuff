@@ -111,6 +111,23 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     error('Not enough arguments')
   end
 
+  % If no options structures, use SSLS as a default sampler for parameters
+  % and latent values
+  if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
+      isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
+      isempty(opt.lik_gibbs_opt)
+    opt.ssls_opt.latent_opt.display=0;
+    opt.ssls_opt.latent_opt.repeat = 40;
+    opt.ssls_opt.nomit = 0;
+    opt.ssls_opt.display = 0;
+    opt.ssls_opt.method = 'minmax';
+    opt.ssls_opt.wsize = 10;
+    opt.ssls_opt.plimit = 5;
+    opt.ssls_opt.unimodal = 1;
+    opt.ssls_opt.mmlimits = [-15; 15];
+    opt.ssls_opt.fsamples = 2;
+  end
+    
   % Set latent values
   if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
       && ~isfield(gp.lik.fh,'trcov')
@@ -154,6 +171,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       hmc_rstate=hmc2('state');
     end
   end    
+  if ~isempty(opt.ssls_opt)
+    f=gp.latentValues;
+  end
   if ~isempty(opt.lik_hmc_opt)
     if isfield(opt.lik_hmc_opt, 'rstate')
       if ~isempty(opt.lik_hmc_opt.rstate)
@@ -275,25 +295,24 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         end
       end
 
-%       % Sample parameters & latent values with SSLS
-%       % NOT WORKING! NOT WORKING! DONT USE
-%       if ~isempty(opt.ssls_opt)
-%         if isfield(opt.ssls_opt,'infer_params')
-%           infer_params = gp.infer_params;
-%           gp.infer_params = opt.sls_opt.infer_params;
-%         end
-%         w = gp_pak(gp);
-%         [w, f, diagns] = surrogate_sls(f, w, opt.ssls_opt, gp, x, y, z);
-%         gp.latentValues = f;
-%         if isfield(diagns, 'opt')
-%           opt.ssls_opt = diagns.opt;
-%         end
-%         w=w(end,:);
-%         gp = gp_unpak(gp, w);
-%         if isfield(opt.sls_opt,'infer_params')
-%           gp.infer_params = infer_params;
-%         end
-%       end      
+      % Sample parameters & latent values with SSLS
+      if ~isempty(opt.ssls_opt)
+        if isfield(opt.ssls_opt,'infer_params')
+          infer_params = gp.infer_params;
+          gp.infer_params = opt.sls_opt.infer_params;
+        end
+        w = gp_pak(gp);
+        [w, f, diagns] = surrogate_sls(f, w, opt.ssls_opt, gp, x, y, z);
+        gp.latentValues = f;
+        if isfield(diagns, 'opt')
+          opt.ssls_opt = diagns.opt;
+        end
+        w=w(end,:);
+        gp = gp_unpak(gp, w);
+        if isfield(opt.sls_opt,'infer_params')
+          gp.infer_params = infer_params;
+        end
+      end      
       
       % --- Sample the likelihood parameters with Gibbs ------------- 
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && ...
