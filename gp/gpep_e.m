@@ -136,10 +136,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           tautilde = zeros(size(y));
           logZep_tmp=0; logZep=Inf;
           if ~isfield(gp,'meanf')
-            myy = zeros(size(y));
+            mf = zeros(size(y));
           else
             [H,b_m,B_m]=mean_prep(gp,x,[]);
-            myy = H'*b_m;
+            mf = H'*b_m;
           end
           
           logM0 = [];
@@ -191,9 +191,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     % $$$                             S11 = sum(Ls(:,i1).^2);
                     % $$$                             S1 = Ls'*Ls(:,i1);
                     % $$$                             tau_i=S11^-1-tautilde(i1);
-                    % $$$                             vee_i=S11^-1*myy(i1)-nutilde(i1);
+                    % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
                     % $$$
-                    % $$$                             myy_i=vee_i/tau_i;
+                    % $$$                             mu_i=nu_i/tau_i;
                     % $$$                             sigm2_i=tau_i^-1;
                     % $$$
                     % $$$                             if sigm2_i < 0
@@ -201,12 +201,12 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     % $$$                             end
                     % $$$
                     % $$$                             % marginal moments
-                    % $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, myy_i, z);
+                    % $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, mu_i, z);
                     % $$$
                     % $$$                             % update site parameters
                     % $$$                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                     % $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
-                    % $$$                             nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                    % $$$                             nutilde(i1) = sigm2hati^-1*muhati-nu_i;
                     % $$$
                     % $$$                             upfact = 1./(deltatautilde^-1+S11);
                     % $$$                             if upfact > 0
@@ -215,15 +215,15 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
                     % $$$                             end
                     % $$$                             Sigm = Ls'*Ls;
-                    % $$$                             myy=Sigm*nutilde;
+                    % $$$                             mf=Sigm*nutilde;
                     % $$$
-                    % $$$                             muvec_i(i1,1)=myy_i;
+                    % $$$                             muvec_i(i1,1)=mu_i;
                     % $$$                             sigm2vec_i(i1,1)=sigm2_i;
                     
                     % Algorithm as in Rasmussen and Williams 2006
                     % approximate cavity parameters
                     tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                    vee_i = Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                    nu_i = Sigm(i1,i1)^-1*mf(i1)-nutilde(i1);
                     
                     if tau_i < 0
                       tautilde(find(tautilde<0)) = 0;
@@ -238,50 +238,50 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       end
                       V=(L\Stildesqroot)*C;
                       Sigm=C-V'*V;
-                      nutilde=Sigm\myy;
+                      nutilde=Sigm\mf;
                       
                       tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                      vee_i=Sigm(i1,i1)^-1*myy(i1)-nutilde(i1);
+                      nu_i=Sigm(i1,i1)^-1*mf(i1)-nutilde(i1);
                       
                       if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
                         fprintf('negative cavity at site %d \n', i1)
                       end
                     end
-                    myy_i=vee_i/tau_i;
+                    mu_i=nu_i/tau_i;
                     sigm2_i=tau_i^-1;
                     
                     % marginal moments
-                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                     
                     % update site parameters
                     deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
                     tautilde(i1)=tautilde(i1)+deltatautilde;
-                    nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+                    nutilde(i1)=sigm2hati^-1*muhati-nu_i;
                     
                     % Update mean and variance after each site update (standard EP)
                     if isequal(gp.latent_opt.parallel,'off')
-                      apu = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
-                      Sigm = Sigm - apu*(Sigm(:,i1)*Sigm(:,i1)');
+                      ds = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
+                      Sigm = Sigm - ds*(Sigm(:,i1)*Sigm(:,i1)');
                       
                       % The below is how Rasmussen and Williams
                       % (2006) do the update. The above version is
                       % more robust.
-                      %apu = deltatautilde^-1+Sigm(i1,i1);
-                      %apu = (Sigm(:,i1)/apu)*Sigm(:,i1)';
-                      %Sigm = Sigm - apu;
+                      %ds = deltatautilde^-1+Sigm(i1,i1);
+                      %ds = (Sigm(:,i1)/ds)*Sigm(:,i1)';
+                      %Sigm = Sigm - ds;
                       %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
                       if ~isfield(gp,'meanf')
-                        myy=Sigm*nutilde;
+                        mf=Sigm*nutilde;
                       else
-                        myy=Sigm*(C\(H'*b_m)+nutilde);
+                        mf=Sigm*(C\(H'*b_m)+nutilde);
                       end
                     else
                       % Parallel EP
-                      % Update myy & Sigm after all site parameters are
+                      % Update mf & Sigm after all site parameters are
                       % calculated
                     end
                     
-                    muvec_i(i1,1)=myy_i;
+                    muvec_i(i1,1)=mu_i;
                     sigm2vec_i(i1,1)=sigm2_i;
                   end
                   % Recompute the approximate posterior parameters
@@ -304,7 +304,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                         return
                       end
                       V=(L\Stildesqroot)*C;
-                      Sigm=C-V'*V; myy=Sigm*nutilde;
+                      Sigm=C-V'*V; mf=Sigm*nutilde;
                       [Ls, notpositivedefinite] = chol(Sigm);
                       if notpositivedefinite
                         [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
@@ -365,7 +365,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       % Recompute the approximate posterior
                       % parameters
                       V=(L_m\Stildesqroot)*C_t;
-                      Sigm=C_t-V'*V; myy=Sigm*(CHb+nutilde);
+                      Sigm=C_t-V'*V; mf=Sigm*(CHb+nutilde);
                       
                       
                       [Ls, notpositivedefinite] = chol(Sigm);
@@ -411,7 +411,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
                       return
                     end
-                    myy=Sigm*nutilde;
+                    mf=Sigm*nutilde;
                     
                     % Compute the marginal likelihood
                     % 4. term & 1. term
@@ -454,7 +454,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 
                 Inn = sparse(1:n,1:n,1,n,n);
                 sqrtS = sparse(1:n,1:n,0,n,n);
-                myy = zeros(size(y));
+                mf = zeros(size(y));
                 sigm2 = zeros(size(y));
                 gamma = zeros(size(y));
                 [VD, notpositivedefinite] = ldlchol(Inn);
@@ -475,23 +475,23 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     sqrtSKi1 = ssmult(sqrtS, Ki1);
                     tttt = ldlsolve(VD,sqrtSKi1);
                     sigm2(i1) = Ki1(i1) - sqrtSKi1'*tttt;
-                    myy(i1) = gamma(i1) - tttt'*sqrtS*gamma;
+                    mf(i1) = gamma(i1) - tttt'*sqrtS*gamma;
                     
                     tau_i=sigm2(i1)^-1-tautilde(i1);
-                    vee_i=sigm2(i1)^-1*myy(i1)-nutilde(i1);
+                    nu_i=sigm2(i1)^-1*mf(i1)-nutilde(i1);
                     
-                    myy_i=vee_i/tau_i;
+                    mu_i=nu_i/tau_i;
                     sigm2_i=tau_i^-1;
                     
                     % marginal moments
-                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                     
                     % update site parameters
                     tautilde_old = tautilde(i1);
                     deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
                     tautilde(i1)=tautilde(i1)+deltatautilde;
                     nutilde_old = nutilde(i1);
-                    nutilde(i1)=sigm2hati^-1*muhati-vee_i;
+                    nutilde(i1)=sigm2hati^-1*muhati-nu_i;
                     deltanutilde = nutilde(i1) - nutilde_old;
                     
                     % Update the LDL decomposition
@@ -507,7 +507,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     end
                     gamma = gamma + Ki1.*deltanutilde;
                     
-                    muvec_i(i1,1)=myy_i;
+                    muvec_i(i1,1)=mu_i;
                     sigm2vec_i(i1,1)=sigm2_i;
                   end
                   % Recompute the approximate posterior parameters
@@ -520,7 +520,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     return
                   end
                   Knutilde = K*nutilde;
-                  myy = Knutilde - KsqrtS*ldlsolve(VD,sqrtS*Knutilde);
+                  mf = Knutilde - KsqrtS*ldlsolve(VD,sqrtS*Knutilde);
                   
                   % Compute the marginal likelihood
                   % 4. term & 1. term
@@ -528,7 +528,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   
                   % 5. term (1/2 element) & 2. term
                   T=1./sigm2vec_i;
-                  term52 = nutilde'*myy - (nutilde'./(T+tautilde)')*nutilde;
+                  term52 = nutilde'*mf - (nutilde'./(T+tautilde)')*nutilde;
                   term52 = term52.*0.5;
                   
                   % 5. term (2/2 element)
@@ -550,7 +550,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 muvec_i = muvec_i(r);
                 sigm2vec_i = sigm2vec_i(r);
                 logM0 = logM0(r);
-                myy = myy(r);
+                mf = mf(r);
                 y = y(r);
                 if ~isempty(z)
                   z = z(r,:);
@@ -614,7 +614,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               end
               R = R0;
               P = K_fu;
-              myy = zeros(size(y));
+              mf = zeros(size(y));
               eta = zeros(size(y));
               gamma = zeros(size(K_uu,1),1);
               D_vec = Lav;
@@ -629,20 +629,20 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   pn = P(i1,:)';
                   Ann = D_vec(i1) + sum((R*pn).^2);
                   tau_i = Ann^-1-tautilde(i1);
-                  myy(i1) = eta(i1) + pn'*gamma;
-                  vee_i = Ann^-1*myy(i1)-nutilde(i1);
+                  mf(i1) = eta(i1) + pn'*gamma;
+                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
                   
-                  myy_i=vee_i/tau_i;
+                  mu_i=nu_i/tau_i;
                   sigm2_i=tau_i^-1;
                   
                   % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                   tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
+                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
                   
                   % Standard EP
                   if isequal(gp.latent_opt.parallel,'off')
@@ -659,14 +659,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       R = cholupdate(R, RtRpnU, '+');
                     end
                     eta(i1) = eta(i1) + (deltanutilde - deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
-                    gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
-                    %                            myy = eta + P*gamma;
+                    gamma = gamma + (deltanutilde - deltatautilde.*mf(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
+                    %                            mf = eta + P*gamma;
                   else
                     % Parallel EP
                   end
                   
                   % Store cavity parameters
-                  muvec_i(i1,1)=myy_i;
+                  muvec_i(i1,1)=mu_i;
                   sigm2vec_i(i1,1)=sigm2_i;
                 end
                 
@@ -683,7 +683,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
                 eta = D_vec.*nutilde;
                 gamma = R'*(R*(P'*nutilde));
-                myy = eta + P*gamma;
+                mf = eta + P*gamma;
                 
                 % Compute the marginal likelihood, see FULL model for
                 % details about equations
@@ -790,7 +790,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               R = R0;
               P = K_fu;
               R0P0t = R0*K_fu';
-              myy = zeros(size(y));
+              mf = zeros(size(y));
               eta = zeros(size(y));
               gamma = zeros(size(K_uu,1),1);
               D = Labl;
@@ -808,20 +808,20 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     Dbl = D{bl}; dn = Dbl(in,in); pn = P(i1,:)';
                     Ann = dn + sum((R*pn).^2);
                     tau_i = Ann^-1-tautilde(i1);
-                    myy(i1) = eta(i1) + pn'*gamma;
-                    vee_i = Ann^-1*myy(i1)-nutilde(i1);
+                    mf(i1) = eta(i1) + pn'*gamma;
+                    nu_i = Ann^-1*mf(i1)-nutilde(i1);
                     
-                    myy_i=vee_i/tau_i;
+                    mu_i=nu_i/tau_i;
                     sigm2_i=tau_i^-1;
                     
                     % marginal moments
-                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                     
                     % update site parameters
                     deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                     tautilde(i1) = tautilde(i1)+deltatautilde;
-                    deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
-                    nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                    deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
+                    nutilde(i1) = sigm2hati^-1*muhati-nu_i;
                     
                     if isequal(gp.latent_opt.parallel,'off')
                       % Update the parameters
@@ -838,15 +838,15 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                         R = cholupdate(R, RtRpnU, '+');
                       end
                       eta(bl_ind) = eta(bl_ind) + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dblin;
-                      gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
-                      %myy = eta + P*gamma;
+                      gamma = gamma + (deltanutilde - deltatautilde.*mf(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
+                      %mf = eta + P*gamma;
                       
                       D{bl} = Dbl;
                     else
                       % Parallel EP
                     end
                     % Store cavity parameters
-                    muvec_i(i1,1)=myy_i;
+                    muvec_i(i1,1)=mu_i;
                     sigm2vec_i(i1,1)=sigm2_i;
                   end
                 end
@@ -870,7 +870,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 end
                 R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
                 gamma = R'*(R*(P'*nutilde));
-                myy = eta + P*gamma;
+                mf = eta + P*gamma;
                 
                 % Compute the marginal likelihood, see FULL model for
                 % details about equations
@@ -1013,7 +1013,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               R = R0;
               P = K_fu;
               R0P0t = R0*K_fu';
-              myy = zeros(size(y));
+              mf = zeros(size(y));
               eta = zeros(size(y));
               gamma = zeros(size(K_uu,1),1);
               Ann=0;
@@ -1036,20 +1036,20 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   pn = P(i1,:)';
                   Ann = dn + sum((R*pn).^2);
                   tau_i = Ann^-1-tautilde(i1);
-                  myy(i1) = eta(i1) + pn'*gamma;
-                  vee_i = Ann^-1*myy(i1)-nutilde(i1);
+                  mf(i1) = eta(i1) + pn'*gamma;
+                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
                   
-                  myy_i=vee_i/tau_i;
+                  mu_i=nu_i/tau_i;
                   sigm2_i= tau_i^-1;  % 1./tau_i;  %
                   
                   % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                   tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
+                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
                   
                   % Standard EP
                   if isequal(gp.latent_opt.parallel,'off')
@@ -1064,10 +1064,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       R = cholupdate(R, RtRpnU, '+');
                     end
                     eta = eta + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Di1;
-                    gamma = gamma + (deltanutilde - deltatautilde.*myy(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
+                    gamma = gamma + (deltanutilde - deltatautilde.*mf(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
                     
                     % Store cavity parameters
-                    muvec_i(i1,1)=myy_i;
+                    muvec_i(i1,1)=mu_i;
                     sigm2vec_i(i1,1)=sigm2_i;
                     
                     D2_o = ssmult(sqrtS,LasqrtS(:,i1)) + Inn(:,i1);
@@ -1105,7 +1105,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 R = chol(inv( eye(size(R0)) + R0P0t*sqrtS*ldlsolve(VD,sqrtS*R0P0t'))) * R0;
                 eta = La*nutilde - sqrtSLa'*ldlsolve(VD,sqrtSLa*nutilde);
                 gamma = R'*(R*(P'*nutilde));
-                myy = eta + P*gamma;
+                mf = eta + P*gamma;
                 
                 % Compute the marginal likelihood,
                 Lhat = La*L - sqrtSLa'*ldlsolve(VD,sqrtSLa*L);
@@ -1159,7 +1159,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               logM0 = logM0(r);
               muvec_i = muvec_i(r);
               sigm2vec_i = sigm2vec_i(r);
-              myy = myy(r);
+              mf = mf(r);
               P = P(r,:);
               y = y(r);
               if ~isempty(z)
@@ -1196,7 +1196,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               
               R = eye(m,m);
               P = Phi;
-              myy = zeros(size(y));
+              mf = zeros(size(y));
               gamma = zeros(m,1);
               Ann=0;
               
@@ -1209,20 +1209,20 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   phi = Phi(i1,:)';
                   Ann = sum((R*phi).^2);
                   tau_i = Ann^-1-tautilde(i1);
-                  myy(i1) = phi'*gamma;
-                  vee_i = Ann^-1*myy(i1)-nutilde(i1);
+                  mf(i1) = phi'*gamma;
+                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
                   
-                  myy_i=vee_i/tau_i;
+                  mu_i=nu_i/tau_i;
                   sigm2_i=tau_i^-1;
                   
                   % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                   tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
+                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
                   
                   % Standard EP
                   if isequal(gp.latent_opt.parallel,'off')
@@ -1236,13 +1236,13 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       RtLphiU = R'*(R*phi).*sqrt(updfact);
                       R = cholupdate(R, RtLphiU, '+');
                     end
-                    gamma = gamma - R'*(R*phi)*(deltatautilde*myy(i1)-deltanutilde);
+                    gamma = gamma - R'*(R*phi)*(deltatautilde*mf(i1)-deltanutilde);
                   else
                     % Parallel EP
                   end
                   
                   % Store cavity parameters
-                  muvec_i(i1,1)=myy_i;
+                  muvec_i(i1,1)=mu_i;
                   sigm2vec_i(i1,1)=sigm2_i;
                 end
                 
@@ -1251,7 +1251,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 % Re-evaluate the parameters
                 R = chol(inv(eye(m,m) + Phi'*(repmat(tautilde,1,m).*Phi)));
                 gamma = R'*(R*(Phi'*nutilde));
-                myy = Phi*gamma;
+                mf = Phi*gamma;
                 
                 % Compute the marginal likelihood, see FULL model for
                 % details about equations
@@ -1326,7 +1326,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               
               R = eye(m,m);
               P = Phi;
-              myy = zeros(size(y));
+              mf = zeros(size(y));
               gamma = zeros(m,1);
               Ann=0;
               
@@ -1339,20 +1339,20 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   phi = Phi(i1,:)';
                   Ann = sum((R*phi).^2);
                   tau_i = Ann^-1-tautilde(i1);
-                  myy(i1) = phi'*gamma;
-                  vee_i = Ann^-1*myy(i1)-nutilde(i1);
+                  mf(i1) = phi'*gamma;
+                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
                   
-                  myy_i=vee_i/tau_i;
+                  mu_i=nu_i/tau_i;
                   sigm2_i=tau_i^-1;
                   
                   % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, myy_i, z);
+                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
                   
                   % update site parameters
                   deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
                   tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-vee_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-vee_i;
+                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
+                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
                   
                   % Update the parameters
                   lnn = sum((R*phi).^2);
@@ -1364,10 +1364,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     RtLphiU = R'*(R*phi).*sqrt(updfact);
                     R = cholupdate(R, RtLphiU, '+');
                   end
-                  gamma = gamma - R'*(R*phi)*(deltatautilde*myy(i1)-deltanutilde);
+                  gamma = gamma - R'*(R*phi)*(deltatautilde*mf(i1)-deltanutilde);
                   
                   % Store cavity parameters
-                  muvec_i(i1,1)=myy_i;
+                  muvec_i(i1,1)=mu_i;
                   sigm2vec_i(i1,1)=sigm2_i;
                 end
                 
@@ -1376,7 +1376,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 % Re-evaluate the parameters
                 R = chol(inv(eye(m,m) + Phi'*(repmat(tautilde,1,m).*Phi)));
                 gamma = R'*(R*(Phi'*nutilde));
-                myy = Phi*gamma;
+                mf = Phi*gamma;
                 
                 % Compute the marginal likelihood, see FULL model for
                 % details about equations
