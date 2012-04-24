@@ -777,8 +777,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         lik = gp.lik;
         for k1 = 1:length(y)
           sigm2_i = Varf(k1) ;
-          myy_i = Ef(k1);
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i, myy_i, z);
+          mu_i = Ef(k1);
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i, mu_i, z);
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
@@ -897,8 +897,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         lik = gp.lik;
         for k1 = 1:length(y)
           sigm2_i = Varf(k1) ;
-          myy_i = Ef(k1);
-          gdata_lik = gdata_lik + lik.fh.siteDeriv(lik, y, k1, sigm2_i, myy_i, z);
+          mu_i = Ef(k1);
+          gdata_lik = gdata_lik + lik.fh.siteDeriv(lik, y, k1, sigm2_i, mu_i, z);
         end
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')

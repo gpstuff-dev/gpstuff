@@ -64,7 +64,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010      Heikki Peura
-% Copyright (c) 2011      Pasi Jylänki
+% Copyright (c) 2011      Pasi Jylï¿½nki
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -191,7 +191,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
 
       % From this on evaluate the prediction
       % See Snelson and Ghahramani (2007) for details 
-      %        p=iLaKfu*(A\(iLaKfu'*myytilde));
+      %        p=iLaKfu*(A\(iLaKfu'*mutilde));
       p = b';
       
       ntest=size(xt,1);
@@ -238,7 +238,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, xt, varargin)
 
       % From this on evaluate the prediction
       % See Snelson and Ghahramani (2007) for details 
-      %        p=iLaKfu*(A\(iLaKfu'*myytilde));
+      %        p=iLaKfu*(A\(iLaKfu'*mutilde));
       p = b';
 
       iKuuKuf = K_uu\K_fu';
