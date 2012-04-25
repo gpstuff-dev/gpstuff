@@ -106,7 +106,8 @@ function ll = lik_probit_ll(lik, y, f, z)
   ll = log(norm_cdf(p));
   if any(p<-10)
     % log of asymptotic expansion of cumulative gaussian for higher accuracy
-    % for small p
+    % for small p.  Idea to use this method originated from lightspeed 
+    % toolbox by T. Minka
     i = find(p<-10);
     c = 1 - 1./p(i).^2.*(1-3./p(i).^2.*(1-5./p(i).^2.*(1-7./p(i).^2)));
     ll(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i).^2)+log(c); 
@@ -255,7 +256,8 @@ function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
     lpy = log(norm_cdf(p));    % Probability p(y_new)
     if any(p<-10)
       % log of asymptotic expansion of cumulative gaussian for higher accuracy
-      % for small p
+      % for small p. Idea to use this method originated from
+      % lightspeed toolbox by T. Minka
       i = find(p<-10);
       c = 1 - 1./p(i).^2.*(1-3./p(i).^2.*(1-5./p(i).^2.*(1-7./p(i).^2)));
       lpy(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i).^2)+log(c);
