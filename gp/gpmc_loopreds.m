@@ -2,15 +2,19 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_loopreds(gp, x, y, varargin)
 %GPMC_LOOPREDS  Leave-one-out predictions with Gaussian Process MCMC approximation.
 %
 %  Description
-%    [EFT, VARFT, LPYT, EYT, VARYT] = GP_LOOPRED(RECGP, X, Y) takes a
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPMC_LOOPREDS(RECGP, X, Y) takes a
 %    Gaussian processes record structure RECGP (returned by gp_mc)
 %    together with a matrix XT of input vectors, matrix X of
 %    training inputs and vector Y of training targets. Evaluates the
-%    leave-one-out predictive distribution at inputs X. Returns
-%    posterior predictive means EFT and variances VARFT of latent
-%    variables, the posterior predictive means EYT and variances VARYT of
-%    observations, and logarithm of the posterior predictive densities PYT
-%    at input locations X. 
+%    leave-one-out predictive distribution at inputs X with respect to
+%    latent variables and returns posterior predictive means EFT and
+%    variances VARFT of latent variables, the posterior predictive means
+%    EYT and variances VARYT of observations, and logarithm of the
+%    posterior predictive densities PYT at input locations X. That is: 
+%      - The hyperparameters, hp, are sampled from the full posterior p(S|x,y)
+%      by gp_mc 
+%      - With each hyperparameter sample, hp_s, we evaluate the LOO-CV
+%      distributions p(f_i | x_\i, y_\i, hp_s)
 %
 %  References:
 %    S. Sundararajan and S. S. Keerthi (2001). Predictive
