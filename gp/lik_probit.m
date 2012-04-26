@@ -110,7 +110,7 @@ function ll = lik_probit_ll(lik, y, f, z)
     % toolbox by T. Minka
     i = find(p<-10);
     c = 1 - 1./p(i).^2.*(1-3./p(i).^2.*(1-5./p(i).^2.*(1-7./p(i).^2)));
-    ll(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i).^2)+log(c); 
+    ll(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i))+log(c); 
   end
   ll = sum(ll);
 end
@@ -260,7 +260,7 @@ function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)
       % lightspeed toolbox by T. Minka
       i = find(p<-10);
       c = 1 - 1./p(i).^2.*(1-3./p(i).^2.*(1-5./p(i).^2.*(1-7./p(i).^2)));
-      lpy(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i).^2)+log(c);
+      lpy(i) = -0.5*log(2*pi)-p(i).^2./2-log(-p(i))+log(c);
     end
   end
 end
