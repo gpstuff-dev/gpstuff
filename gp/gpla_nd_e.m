@@ -1,9 +1,9 @@
 function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
-%GPLA_MO_E  Do Laplace approximation and return marginal log posterior
+%GPLA_ND_E  Do Laplace approximation and return marginal log posterior
 %                estimate for multioutput likelihood
 %
 %  Description
-%    E = GPLA_MO_E(W, GP, X, Y, OPTIONS) takes a GP data
+%    E = GPLA_ND_E(W, GP, X, Y, OPTIONS) takes a GP data
 %    structure GP together with a matrix X of input vectors and a
 %    matrix Y of target vectors, and finds the Laplace
 %    approximation for the conditional posterior p(Y | X, th),
@@ -11,7 +11,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
 %    below). Each row of X corresponds to one input vector and each
 %    row of Y corresponds to one target vector.
 %
-%    [E, EDATA, EPRIOR] = GPLA_MO_E(W, GP, X, Y, OPTIONS)
+%    [E, EDATA, EPRIOR] = GPLA_ND_E(W, GP, X, Y, OPTIONS)
 %    returns also the data and prior components of the total
 %    energy.
 %
@@ -28,19 +28,19 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
 %          value for ith case.
 %
 %  See also
-%    GP_SET, GP_E, GPLA_SOFTMAX_G, GPLA_SOFTMAX_PRED
+%    GP_SET, GP_E, GPLA_ND_G, GPLA_ND_PRED
 
 %  Description 2
 %    Additional properties meant only for internal use.
 %  
-%    GP = GPLA_MO_E('init', GP) takes a GP structure GP and
+%    GP = GPLA_ND_E('init', GP) takes a GP structure GP and
 %    initializes required fields for the Laplace approximation.
 %
-%    GP = GPLA_MO_E('clearcache', GP) takes a GP structure GP and
+%    GP = GPLA_ND_E('clearcache', GP) takes a GP structure GP and
 %    cleares the internal cache stored in the nested function workspace
 %
 %    [e, edata, eprior, f, L, a, La2, p]
-%       = gpla_mo_e(w, gp, x, y, varargin)
+%       = gpla_nd_e(w, gp, x, y, varargin)
 %    returns many useful quantities produced by EP algorithm.
 %
 % The Newton's method is implemented as described in
@@ -158,8 +158,6 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               end
               nlp=length(nl); % number of latent processes
               
-              K = zeros(sum(nl));
-              
               % Initialize latent values
               % zero seems to be a robust choice (Jarno)
               % with mean functions, initialize to mean function values
@@ -172,8 +170,39 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               end
               
               if isfield(gp.lik, 'fullW') && gp.lik.fullW
-                K = gp_trcov(gp, x);
+                if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                  gptmp=gp; gptmp.jitterSigma2=0;
+                  % Use Kronecker product kron(Ka,Kb) instead of K
+                  Ka = gp_trcov(gptmp, unique(x(:,1)));
+                  % fix the magnitude sigma to 1 for Kb matrix
+                  wtmp=gp_pak(gptmp); wtmp(1)=0; gptmp=gp_unpak(gptmp,wtmp);
+                  Kb = gp_trcov(gptmp, unique(x(:,2)));
+                  clear gptmp
+                  n1=size(Ka,1);
+                  n2=size(Kb,1);
+                elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
+                  % unique values from covariance matrix
+                  K1 = gp_cov(gp, x(1,:), x);
+                  K1(1)=K1(1)+gp.jitterSigma2;
+                  if size(x,2)==1
+                    % form circulant matrix to avoid border effects
+                    Kcirc=[K1 0 K1(end:-1:2)];
+                    fftKcirc = fft(Kcirc);
+                  elseif size(x,2)==2
+                    n1=gp.latent_opt.gridn(1);
+                    n2=gp.latent_opt.gridn(2);
+                    Ktmp=reshape(K1,n2,n1);
+                    % form circulant matrix to avoid border effects
+                    Ktmp=[Ktmp; zeros(1,n1); flipud(Ktmp(2:end,:))];
+                    fftKcirc=fft2([Ktmp zeros(2*n2,1) fliplr(Ktmp(:,2:end))]);
+                  else
+                    error('FFT speed-up implemented only for 1D and 2D cases.')
+                  end
+                else
+                  K = gp_trcov(gp, x);
+                end
               else
+                K = zeros(sum(nl));
                 if isfield(gp.lik,'xtime')
                   K(1:ntime,1:ntime)=gp_trcov(gp, xtime, gp.comp_cf{1});
                   K((1:n)+ntime,(1:n)+ntime) = gp_trcov(gp, x, gp.comp_cf{2});
@@ -185,8 +214,17 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               end
               
               if isfield(gp,'meanf')
-                K=K+H'*B_m*H;
-                iKHb_m=K\Hb_m;
+                if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                  % only zero mean function implemented for Kronecker
+                  % approximation
+                  iKHb_m=zeros(n,1);
+                elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
+                  % only zero mean function implemented for FFT speed-up
+                  iKHb_m=zeros(n,1);
+                else
+                  K=K+H'*B_m*H;
+                  iKHb_m=K\Hb_m;
+                end
               end
               
               switch gp.latent_opt.optim_method
@@ -199,11 +237,11 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   end
                   
                   if isfield(gp.lik, 'fullW') && gp.lik.fullW
-                    [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                    Wd=-g2d; Wu=g2u;
-                    W=[];
-                    % g2=g2u*g2u'+diag(g2d);
-                    % W=-(g2u*g2u'+diag(g2d));
+                    % a vector to form the second gradient
+                    g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                    g2sq=sqrt(g2);
+                    
+                    ny=sum(y); % total number of observations
                   else
                     if isfield(gp.lik,'xtime')
                       [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
@@ -217,7 +255,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   lp_new = feval(gp.lik.fh.ll, gp.lik, y, f, z);
                   lp_old = -Inf;
                   
-                  WK=zeros(sum(nl));
+                  if ~(isfield(gp.lik, 'fullW') && gp.lik.fullW)
+                    WK=zeros(sum(nl));
+                  end
                   
                   iter=0;
                   while abs(lp_new - lp_old) > tol && iter < maxiter
@@ -225,36 +265,87 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     lp_old = lp_new; a_old = a;
                     
                     if isfield(gp.lik, 'fullW') && gp.lik.fullW
-                      CWd=K; CWd(1:(n+1):end)=CWd(1:(n+1):end)+1./Wd';
-                      [L,notpositivedefinite] = chol(CWd,'lower');
-                      if notpositivedefinite
-                        [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
+                      
                       if ~isfield(gp,'meanf')
+                        b = ny*(g2.*f-g2*(g2'*f))+dlp;
                         %b = W.*f+dlp;
-                        b = Wd.*f-Wu*(Wu'*f)+dlp;
                       else
-                        b = Wd.*f-Wu*(Wu'*f)+iKHb_m+dlp;
+                        b = ny*(g2.*f-g2*(g2'*f))+iKHb_m+dlp;
                         %b = W.*f+K\(H'*b_m)+dlp;
                       end
                       
-                      Cb=K*b;
-                      % Cdb = Cb - C*(L'\(L\Cb));
-                      db=(b - (L'\(L\Cb)));
-                      Cdb = K*db;
-                      
-                      CWu=K*Wu;
-                      CdWu = CWu - K*(L'\(L\CWu));
-                      WuCdWu=(1-Wu'*CdWu);
-                      c=Wu*((Wu'*Cdb)./WuCdWu);
-                      
-                      Cc=K*c;
-                      %  Cdc = Cc - C*(L'\(L\Cc));
-                      dc=(c - (L'\(L\Cc)));
-                      %Cdc = K*dc;
-                      
-                      a=db+dc;
+                      if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                        
+                        % use Kronecker product structure in matrix vector
+                        % multiplications
+                        q=Kb*reshape(b,n2,n1)*Ka;
+                        Kg=q(:);
+                        Kg=Kg+gp.jitterSigma2*b;
+                        
+                        if isfield(gp,'meanf')
+                          Kg=Kg+H'*(B_m*(H*b));
+                        end
+                        v=sqrt(ny)*(g2sq.*Kg-(g2*(g2'*Kg))./g2sq);
+                        
+                        % fast matrix vector multiplication with
+                        % Kronecker product for matrix inversion
+                        if isfield(gp,'meanf')
+                          [iSg,~]=pcg(@(z) mvm_kron(g2,ny,Ka,Kb,H,B_m,gp.jitterSigma2,z), v, gp.latent_opt.pcg_tol);
+                        else
+                          [iSg,~]=pcg(@(z) mvm_kron(g2,ny,Ka,Kb,[],[],gp.jitterSigma2,z), v, gp.latent_opt.pcg_tol);
+                        end
+                        a=b-sqrt(ny)*(g2sq.*iSg  - g2*(g2'*(iSg./g2sq)));
+                        
+                      elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
+                        
+                        % use FFT speed-up in matrix vector multiplications
+                        if size(x,2)==1
+                          gge=zeros(2*n,1);
+                          gge(1:n)=b;
+                          q=ifft(fftKcirc.*fft(gge'));
+                          Kg=q(1:n)';
+                        elseif size(x,2)==2
+                          gge=zeros(2*n2,2*n1);
+                          gge(1:n2,1:n1)=reshape(b,n2,n1);
+                          
+                          q=ifft2(fftKcirc.*fft2(gge));
+                          q=q(1:n2,1:n1);
+                          Kg=q(:);
+                        else
+                          error('FFT speed-up implemented only for 1D and 2D cases.')
+                        end
+                        
+                        if isfield(gp,'meanf')
+                          Kg=Kg+H'*(B_m*(H*b));
+                        end
+                        v=sqrt(ny)*(g2sq.*Kg-(g2*(g2'*Kg))./g2sq);
+                        
+                        if isfield(gp,'meanf')
+                          % fast matrix vector multiplication with fft for matrix inversion
+                          [iSg,~]=pcg(@(z) mvm_fft(g2,ny,fftKcirc,H,B_m,z), v, gp.latent_opt.pcg_tol);
+                        else
+                          [iSg,~]=pcg(@(z) mvm_fft(g2,ny,fftKcirc,[],[],z), v, gp.latent_opt.pcg_tol);
+                        end
+                        a=b-sqrt(ny)*(g2sq.*iSg  - g2*(g2'*(iSg./g2sq)));
+                        
+                      else
+                        
+                        %R=-g2*g2sq'; R(1:(n+1):end)=R(1:(n+1):end)+g2sq';
+                        KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
+                        RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
+                        RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
+                        [L,notpositivedefinite] = chol(RKR,'lower');
+                        
+                        if notpositivedefinite
+                          [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                          return
+                        end
+                        
+                        Kb=K*b;
+                        RCb=g2sq.*Kb-g2sq*(g2'*Kb);
+                        iRCb=L'\(L\RCb);
+                        a=b-ny*(g2sq.*iRCb-g2*(g2sq'*iRCb));
+                      end
                       
                     else
                       if isfield(gp.lik,'xtime')
@@ -280,12 +371,40 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       end
                       a=WK\b;
                     end
-                    %diag(W)=diag(W)+delta; 0.1
-                    %a=(eye(2*n)+W*K)\b;
-                    f = K*a;
-                    %f(1:n)=K(1:n,1:n)*a(1:n);
-                    %f((n+1):(2*n))=K((n+1):(2*n),(n+1):(2*n))*a((n+1):(2*n));
                     
+                    if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                        f2=Kb*reshape(a,n2,n1)*Ka;
+                        f=f2(:);
+                        f=f+gp.jitterSigma2*a;
+                        
+                        if isfield(gp,'meanf')
+                          f=f+H'*(B_m*(H*a));
+                        end
+                    elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
+                      if size(x,2)==1
+                        a2=zeros(2*n,1);
+                        a2(1:n)=a;
+                        f2=ifft(fftKcirc.*fft(a2'));
+                        f=f2(1:n)';
+                        if isfield(gp,'meanf')
+                          f=f+H'*(B_m*(H*a));
+                        end
+                      elseif size(x,2)==2
+                        a2=zeros(2*n2,2*n1);
+                        a2(1:n2,1:n1)=reshape(a,n2,n1);
+                        
+                        f2=ifft2(fftKcirc.*fft2(a2));
+                        f2=f2(1:n2,1:n1);
+                        f=f2(:);
+                        if isfield(gp,'meanf')
+                          f=f+H'*(B_m*(H*a));
+                        end
+                      else
+                        error('FFT speed-up implemented only for 1D and 2D cases.')
+                      end
+                    else
+                      f = K*a;
+                    end
                     
                     lp = feval(gp.lik.fh.ll, gp.lik, y, f, z);
                     if ~isfield(gp,'meanf')
@@ -298,7 +417,42 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     while i < 10 && lp_new < lp_old && ~isnan(sum(f))
                       % reduce step size by half
                       a = (a_old+a)/2;
-                      f = K*a;
+                      
+                      if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                        f2=Kb*reshape(a,n2,n1)*Ka;
+                        f=f2(:);
+                        f=f+gp.jitterSigma2*a;
+                        
+                        if isfield(gp,'meanf')
+                          f=f+H'*(B_m*(H*a));
+                        end
+                      elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
+                        if size(x,2)==1
+                          a2=zeros(2*n,1);
+                          a2(1:n)=a;
+                          f2=ifft(fftKcirc.*fft(a2'));
+                          f=f2(1:n)';
+                          
+                          if isfield(gp,'meanf')
+                            f=f+H'*(B_m*(H*a));
+                          end
+                        elseif size(x,2)==2
+                          a2=zeros(2*n2,2*n1);
+                          a2(1:n2,1:n1)=reshape(a,n2,n1);
+                          f2=ifft2(fftKcirc.*fft2(a2));
+                          f2=f2(1:n2,1:n1);
+                          f=f2(:);
+                          
+                          if isfield(gp,'meanf')
+                            f=f+H'*(B_m*(H*a));
+                          end
+                        else
+                          error('FFT speed-up implemented only for 1D and 2D cases.')
+                        end
+                      else
+                        f = K*a;
+                      end
+                      
                       lp = feval(gp.lik.fh.ll, gp.lik, y, f, z);
                       if ~isfield(gp,'meanf')
                         lp_new = -a'*f/2 + lp;
@@ -310,8 +464,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     end
                     
                     if isfield(gp.lik, 'fullW') && gp.lik.fullW
-                      [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                      Wd=-g2d; Wu=g2u;
+                      g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                      g2sq=sqrt(g2);
                     else
                       if isfield(gp.lik,'xtime')
                         [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
@@ -329,8 +483,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               
               % evaluate the approximate log marginal likelihood
               if isfield(gp.lik, 'fullW') && gp.lik.fullW
-                [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-                Wd=-g2d; Wu=g2u;
+                g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                g2sq=sqrt(g2);
               else
                 if isfield(gp.lik,'xtime')
                   [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
@@ -347,21 +501,99 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                 logZ = 0.5 *((f-Hb_m)'*(a-iKHb_m)) - feval(gp.lik.fh.ll, gp.lik, y, f, z);
               end
               
-              %Wtmp = [diag(W(1:n,1:n)) diag(W(1:n,(1:n)+n)); diag(W((1:n)+n,1:n)) diag(W((1:n)+n,(1:n)+n))];
-              
               if isfield(gp.lik, 'fullW') && gp.lik.fullW
-                sqWd = sqrt(Wd);
-                B = (sqWd*sqWd').*K;
-                B(1:(n+1):end)=B(1:(n+1):end)+1;
-                %B = eye(size(K)) + (sqWd*sqWd').*K;
-                [L,notpositivedefinite] = chol(B,'lower');
-                if notpositivedefinite
-                  [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
-                  return
+                if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+                  [Va,Da]=eig(Ka); [Vb,Db]=eig(Kb);
+                  
+                  % eigenvalues of K matrix
+                  Dtmp=kron(diag(Da),diag(Db));
+                  
+                  [sDtmp,istmp]=sort(Dtmp,'descend');
+                  
+                  % Form the low-rank approximation.  Exclude eigenvalues
+                  % smaller than gp.latent_opt.eig_tol or take
+                  % gp.latent_opt.eig_prct*n eigenvalues at most.
+                  nlr=min([sum(sDtmp>gp.latent_opt.eig_tol) round(gp.latent_opt.eig_prct*n)]);
+                  sDtmp=sDtmp+gp.jitterSigma2;
+                  
+                  itmp1=meshgrid(1:n1,1:n2);
+                  itmp2=meshgrid(1:n2,1:n1)';
+                  ind=[itmp1(:) itmp2(:)];
+                  
+                  % included eigenvalues
+                  Dlr=sDtmp(1:nlr);
+                  % included eigenvectors
+                  Vlr=zeros(n,nlr);
+                  for i1=1:nlr
+                    Vlr(:,i1)=kron(Va(:,ind(istmp(i1),1)),Vb(:,ind(istmp(i1),2)));
+                  end
+                  
+                  L=[];
+                  
+                  % diag(K)-diag(Vlr*diag(Dlr)*Vlr')
+                  Lb=gp_trvar(gp,x)-sum(bsxfun(@times,Vlr.*Vlr,Dlr'),2);
+                  if isfield(gp,'meanf')
+                    Dt=[Dlr; diag(B_m)];
+                    Vt=[Vlr H'];
+                  else
+                    Dt=Dlr;
+                    Vt=Vlr;
+                  end
+
+                  tmp=bsxfun(@times,Lb.^(-1/2),bsxfun(@times,Vt,sqrt(Dt)'));
+                  tmp=tmp'*tmp;
+                  tmp(1:size(tmp,1)+1:end)=tmp(1:size(tmp,1)+1:end)+1;
+                  logZa=sum(log(diag(chol(tmp,'lower'))));
+                  
+                  Lbt=ny*(g2)+1./Lb;
+                  
+                  St=[diag(1./Dt)+Vt'*bsxfun(@times,1./Lb,Vt) zeros(size(Dt,1),1); ...
+                    zeros(1,size(Dt,1)) 1];
+                  Pt=[bsxfun(@times,1./Lb,Vt) sqrt(ny)*g2];
+                  
+                  logZb=sum(log(diag(chol(St,'lower'))));
+                  
+                  Ptt=bsxfun(@times,1./sqrt(Lbt),Pt);
+                  logZc=sum(log(diag(chol(St-Ptt'*Ptt,'lower'))));
+                  
+                  edata = logZ + logZa - logZb + logZc + 0.5*sum(log(Lb)) + 0.5*sum(log(Lbt));
+                  
+                elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
+                  
+                  K = gp_trcov(gp, x);
+                  if isfield(gp,'meanf')
+                    K=K+H'*B_m*H;
+                  end
+                  
+                  % exact determinant
+                  KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
+                  RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
+                  RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
+                  [L,notpositivedefinite] = chol(RKR,'lower');
+                  if notpositivedefinite
+                    [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  edata = logZ + sum(log(diag(L)));
+                  
+                  % % determinant approximated using only the largest eigenvalues
+                  % opts.issym = 1;
+                  % Deig=eigs(@(z) mvm_fft(g2, ny, fftKcirc, H, B_m, z),n,round(n*0.05),'lm',opts);
+                  % edata = logZ + 0.5*sum(log(Deig));
+                  % L=[];
+                else
+                  
+                  KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
+                  RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
+                  RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
+                  [L,notpositivedefinite] = chol(RKR,'lower');
+                  if notpositivedefinite
+                    [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  edata = logZ + sum(log(diag(L)));
                 end
-                edata = logZ + sum(log(diag(L)))+0.5*log(WuCdWu);
-                %edata = logZ + 0.5.*sum(log(diag(L)));
-                La2 = Wd;
+                La2 = [];
               else
                 if isfield(gp.lik,'xtime')
                   WK(1:ntime,1:ntime)=bsxfun(@times, Wdiag(1:ntime),K(1:ntime,1:ntime));
@@ -389,7 +621,6 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               
               M=[];
               E=[];
-              E=W;
               
             else
               

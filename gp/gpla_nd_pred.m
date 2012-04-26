@@ -1,21 +1,20 @@
 function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
-%function [Ef, Varf, Ey, Vary, Pyt] = gpla_multinom_pred(gp, x, y, xt, varargin)
-%GPLA_MO_PRED Predictions with Gaussian Process Laplace
-%                approximation with multinom likelihood
+%GPLA_ND_PRED Predictions with Gaussian Process Laplace
+%             approximation with non-diagonal likelihoods
 %
 %  Description
-%    [EFT, COVFT] = GPLA_MO_PRED(GP, X, Y, XT, OPTIONS) takes
+%    [EFT, COVFT] = GPLA_ND_PRED(GP, X, Y, XT, OPTIONS) takes
 %    a GP structure GP together with a matrix XT of input vectors,
 %    matrix X of training inputs and vector Y of training targets,
 %    and evaluates the predictive distribution at inputs XT. Returns
 %    a posterior mean EFT and covariance COVFT of latent variables.
 %
-%    [EF, COVF, LPYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EF, COVF, LPYT] = GPLA_ND_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also logarithm of the predictive density PYT of the observations YT
 %    at input locations XT. This can be used for example in the
 %    cross-validation. Here Y has to be vector.
 %
-%    [EF, VARF, LPYT, EYT, VARYT] = GPLA_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EF, VARF, LPYT, EYT, VARYT] = GPLA_ND_PRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the posterior predictive mean EYT and variance VARYT.
 %
 %     OPTIONS is optional parameter-value pair
@@ -40,7 +39,7 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
 %                is, expected value for ith case.
 %
 %  See also
-%    GPLA_MO_E, GPLA_MO_G, GP_PRED, DEMO_MULTICLASS
+%    GPLA_ND_E, GPLA_ND_G, GP_PRED, DEMO_MULTICLASS
 %
 % Copyright (c) 2010 Jaakko Riihim�ki
 
@@ -106,23 +105,54 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
         end
         nlp=length(nl); % number of latent processes
         
-        K_nf = zeros(sum(nlt),sum(nl));
-        
         if isfield(gp.lik, 'fullW') && gp.lik.fullW
-          K_nf = gp_cov(gp,xt,x,predcf);
-          K = gp_trcov(gp, x);
+          if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+            
+            gptmp=gp; gptmp.jitterSigma2=0;
+            Ka = gp_trcov(gptmp, unique(x(:,1)));
+            wtmp=gp_pak(gptmp); wtmp(1)=0; gptmp=gp_unpak(gptmp,wtmp);
+            Kb = gp_trcov(gptmp, unique(x(:,2)));
+            clear gptmp
+            n1=size(Ka,1);
+            n2=size(Kb,1);
+            
+            [Va,Da]=eig(Ka); [Vb,Db]=eig(Kb);
+            
+            % eigenvalues of K matrix
+            Dtmp=kron(diag(Da),diag(Db));
+            [sDtmp,istmp]=sort(Dtmp,'descend');
+            
+            n = size(y,1);
+            % Form the low-rank approximation.  Exclude eigenvalues
+            % smaller than gp.latent_opt.eig_tol or take
+            % gp.latent_opt.eig_prct*n eigenvalues at most.
+            nlr=min([sum(sDtmp>gp.latent_opt.eig_tol) round(gp.latent_opt.eig_prct*n)]);
+            sDtmp=sDtmp+gp.jitterSigma2;
+            
+            itmp1=meshgrid(1:n1,1:n2);
+            itmp2=meshgrid(1:n2,1:n1)';
+            ind=[itmp1(:) itmp2(:)];
+            
+            % included eigenvalues
+            Dlr=sDtmp(1:nlr);
+            % included eigenvectors
+            Vlr=zeros(n,nlr);
+            for i1=1:nlr
+              Vlr(:,i1)=kron(Va(:,ind(istmp(i1),1)),Vb(:,ind(istmp(i1),2)));
+            end
+          else
+            K_nf = gp_cov(gp,xt,x,predcf);
+            K = gp_trcov(gp, x);
+          end
         else
+          K_nf = zeros(sum(nlt),sum(nl));
           if isfield(gp.lik,'xtime')
             if isempty(predcf)
-              %for i1=1:nl
               K_nf(1:ntime,1:ntime) = gp_cov(gp, xtime, xtime, gp.comp_cf{1});
               K_nf((1:ntest)+ntime,(1:tn)+ntime) = gp_cov(gp,xt,x, gp.comp_cf{2});
-              %end
             else
-              %for i1=1:nl
               K_nf(1:ntime,1:ntime) = gp_cov(gp,xtime,xtime, intersect(gp.comp_cf{1}, predcf));
               K_nf((1:ntest)+ntime,(1:tn)+ntime) = gp_cov(gp,xt,x, intersect(gp.comp_cf{2}, predcf));
-              %end
             end
           else
             if isempty(predcf)
@@ -139,128 +169,148 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
         
         if isfield(gp,'meanf')
           [H,b_m,B_m Hs]=mean_prep(gp,x,xt);
-          K_nf=K_nf + Hs'*B_m*H;
-          %K = gp_trcov(gp, x);
-          K = K+H'*B_m*H;
+          if ~(isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1)
+            K_nf=K_nf + Hs'*B_m*H;
+            %K = gp_trcov(gp, x);
+            K = K+H'*B_m*H;
+          end
         end
         
         % Evaluate the mean
-        if issparse(K_nf) && issparse(L)
-          deriv = feval(gp.lik.fh.llg, gp.lik, y(p), f, 'latent', z(p));
-          Eft = K_nf(:,p)*deriv;
+        if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+          Eft=f;
         else
-          deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
-          Eft = K_nf*deriv;
-          if isfield(gp,'meanf')
-            Eft=Eft + K_nf*(K\H'*b_m);
-            %Eft=Eft + K_nf*(K\Hs'*b_m);
+          if issparse(K_nf) && issparse(L)
+            deriv = feval(gp.lik.fh.llg, gp.lik, y(p), f, 'latent', z(p));
+            Eft = K_nf(:,p)*deriv;
+          else
+            deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            Eft = K_nf*deriv;
+            if isfield(gp,'meanf')
+              Eft=Eft + K_nf*(K\H'*b_m);
+              %Eft=Eft + K_nf*(K\Hs'*b_m);
+            end
           end
         end
         
         if nargout > 1
-          % Evaluate the variance
-          %kstarstar = gp_trvar(gp,xt,predcf);
           
-          %kstarstar = zeros(sum(nlt),1);
-          %kstarstar = zeros(ntest*nlp,1);
-          kstarstarfull = zeros(sum(nlt));
-          %kstarstarfull = zeros(ntest*nlp);
-                 
-          if isempty(predcf)
-            if isfield(gp.lik, 'fullW') && gp.lik.fullW
-              kstarstarfull = gp_trcov(gp,xt);
+          if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
+            
+            Lb=gp_trvar(gp,x)-sum(bsxfun(@times,Vlr.*Vlr,Dlr'),2);
+            if isfield(gp,'meanf')
+              Dt=[Dlr; diag(B_m)];
+              Vt=[Vlr H'];
             else
-              if isfield(gp.lik,'xtime')
-%                 kstarstar(1:ntime,1) = gp_trvar(gp,xtime,gp.comp_cf{1});
-%                 kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,gp.comp_cf{2});
+              Dt=Dlr;
+              Vt=Vlr;
+            end
+            
+            g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+            Lbt=sum(y)*(g2)+1./Lb;
+            
+            St=[diag(1./Dt)+Vt'*bsxfun(@times,1./Lb,Vt) zeros(size(Dt,1),1); ...
+              zeros(1,size(Dt,1)) 1];
+            Pt=[bsxfun(@times,1./Lb,Vt) sqrt(sum(y))*g2];
+            Ptt=bsxfun(@times,1./sqrt(Lbt),Pt);
+            
+            StL=chol(St-Ptt'*Ptt,'lower');
+            iStL=StL\(bsxfun(@times,Pt',1./Lbt'));
+            
+            Covfd=1./Lbt;
+            Covfu=iStL;
+            Covf{1}=Covfd; Covf{2}=Covfu; 
+          else
+            
+            % Evaluate the variance
+            if isempty(predcf)
+              if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                kstarstarfull = gp_trcov(gp,xt);
+              else
+                kstarstarfull = zeros(sum(nlt));
+                if isfield(gp.lik,'xtime')
                   kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,gp.comp_cf{1});
                   kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,gp.comp_cf{2});
+                else
+                  for i1=1:nlp
+                    kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,gp.comp_cf{i1});
+                  end
+                end
+              end
+            else
+              if isfield(gp.lik, 'fullW') && gp.lik.fullW
+                kstarstarfull = gp_trcov(gp,xt,predcf);
               else
-                for i1=1:nlp
-%                   kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,gp.comp_cf{i1});
-                  kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,gp.comp_cf{i1});
+                kstarstarfull = zeros(sum(nlt));
+                if isfield(gp.lik,'xtime')
+                  kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,intersect(gp.comp_cf{1}, predcf));
+                  kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,intersect(gp.comp_cf{2}, predcf));
+                else
+                  for i1=1:nlp
+                    kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,intersect(gp.comp_cf{i1}, predcf));
+                  end
                 end
               end
             end
-          else
+            
+            if isfield(gp,'meanf')
+              kstarstarfull = kstarstarfull + Hs'*B_m*Hs;
+            end
+            %           if W >= 0
+            %               % This is the usual case where likelihood is log concave
+            %               % for example, Poisson and probit
+            %               if issparse(K_nf) && issparse(L)
+            %                   % If compact support covariance functions are used
+            %                   % the covariance matrix will be sparse
+            %                   sqrtW = sqrt(W);
+            %                   sqrtWKfn = sqrtW*K_nf(:,p)';
+            %                   V = ldlsolve(L,sqrtWKfn);
+            %                   Varft = kstarstar - sum(sqrtWKfn.*V,1)';
+            %               else
+            %                   W = diag(W);
+            %                   V = L\(sqrt(W)*K_nf');
+            %                   Varft = kstarstar - sum(V'.*V',2);
+            %               end
+            %           else
+            %               % We may end up here if the likelihood is not log concace
+            %               % For example Student-t likelihood
+            %               V = L*diag(W);
+            %               R = diag(W) - V'*V;
+            %               Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
+            %           end
+            
+            
             if isfield(gp.lik, 'fullW') && gp.lik.fullW
-              kstarstarfull = gp_trcov(gp,xt,predcf);
+              g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+              
+              KW=(K*-(sqrt(sum(y))*g2))*(sqrt(sum(y))*g2)'-bsxfun(@times, K, (-sum(y)*g2)');
+              KW(1:(tn+1):end)=KW(1:(tn+1):end)+1;
+              iKW=KW\eye(tn);
+              
+              WiKW=-(sqrt(sum(y))*g2)*((sqrt(sum(y))*g2)'*iKW)-bsxfun(@times,(-sum(y)*g2),iKW);
+              Varft=kstarstarfull-K_nf*(WiKW*K_nf');
+              Covf=Varft;
             else
+              n=size(x,1);
+              iWK=L\eye(sum(nl));
+              %iWKW=iWK*[diag(W(1:n,1)) diag(W((n+1):(2*n),1)); diag(W(1:n,2)) diag(W((n+1):(2*n),2))];
               if isfield(gp.lik,'xtime')
-%                 kstarstar(1:ntime,1) = gp_trvar(gp,xtime,intersect(gp.comp_cf{1}, predcf));
-%                 kstarstar((1:ntest)+ntime,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{2}, predcf));
-                kstarstarfull(1:ntime,1:ntime) = gp_trcov(gp,xtime,intersect(gp.comp_cf{1}, predcf));
-                kstarstarfull((1:ntest)+ntime,(1:ntest)+ntime) = gp_trcov(gp,xt,intersect(gp.comp_cf{2}, predcf));
+                iWKW=zeros(n+ntime);
+                iWKW(1:ntime,1:ntime)=bsxfun(@times, iWK(1:ntime,1:ntime),Wdiag(1:ntime)') + iWK(1:ntime,ntime+(1:n))*Wmat';
+                iWKW(1:ntime,ntime+(1:n))=iWK(1:ntime,1:ntime)*Wmat + bsxfun(@times, iWK(1:ntime,ntime+(1:n)), Wdiag(ntime+(1:n))');
+                iWKW(ntime+(1:n),1:ntime)=bsxfun(@times,iWK(ntime+(1:n),1:ntime),Wdiag(1:ntime)') + iWK(ntime+(1:n),ntime+(1:n))*Wmat';
+                iWKW(ntime+(1:n),ntime+(1:n))=iWK(ntime+(1:n),1:ntime)*Wmat + bsxfun(@times, iWK(ntime+(1:n),ntime+(1:n)),Wdiag(ntime+(1:n))');
               else
-                for i1=1:nlp
-%                   kstarstar((1:ntest)+(i1-1)*ntest,1) = gp_trvar(gp,xt,intersect(gp.comp_cf{i1}, predcf));
-                  kstarstarfull((1:ntest)+(i1-1)*ntest,(1:ntest)+(i1-1)*ntest) = gp_trcov(gp,xt,intersect(gp.comp_cf{i1}, predcf));
-                end
+                iWKW11=bsxfun(@times,iWK(1:n,1:n),W(1:n,1)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,1)');
+                iWKW12=bsxfun(@times,iWK(1:n,1:n),W(1:n,2)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,2)');
+                iWKW21=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,1)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,1)');
+                iWKW22=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,2)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,2)');
+                iWKW=[iWKW11 iWKW12; iWKW21 iWKW22];
               end
+              
+              KiWKWK=K_nf*iWKW*K_nf';
+              Covf=kstarstarfull-KiWKWK;
             end
-          end
-          
-          if isfield(gp,'meanf')
-            kstarstarfull = kstarstarfull + Hs'*B_m*Hs;
-            %kstarstar= kstarstar + diag(Hs'*B_m*Hs);
-          end
-          %           if W >= 0
-          %               % This is the usual case where likelihood is log concave
-          %               % for example, Poisson and probit
-          %               if issparse(K_nf) && issparse(L)
-          %                   % If compact support covariance functions are used
-          %                   % the covariance matrix will be sparse
-          %                   sqrtW = sqrt(W);
-          %                   sqrtWKfn = sqrtW*K_nf(:,p)';
-          %                   V = ldlsolve(L,sqrtWKfn);
-          %                   Varft = kstarstar - sum(sqrtWKfn.*V,1)';
-          %               else
-          %                   W = diag(W);
-          %                   V = L\(sqrt(W)*K_nf');
-          %                   Varft = kstarstar - sum(V'.*V',2);
-          %               end
-          %           else
-          %               % We may end up here if the likelihood is not log concace
-          %               % For example Student-t likelihood
-          %               V = L*diag(W);
-          %               R = diag(W) - V'*V;
-          %               Varft = kstarstar - sum(K_nf.*(R*K_nf')',2);
-          %           end
-          
-          
-          if isfield(gp.lik, 'fullW') && gp.lik.fullW
-            [g2d,g2u] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-            %Wd=-g2d; Wu=g2u;
-            %KW=-(K*g2u)*g2u'-K*diag(g2d);
-            KW=(K*-g2u)*g2u'-bsxfun(@times, K, g2d');
-            KW(1:(tn+1):end)=KW(1:(tn+1):end)+1;
-            iKW=KW\eye(tn);
-            
-            WiKW=-g2u*(g2u'*iKW)-bsxfun(@times,g2d,iKW);
-            Varft=kstarstarfull-K_nf*(WiKW*K_nf');
-            Covf=Varft;
-          else
-            n=size(x,1);
-            iWK=L\eye(sum(nl));
-            %iWKW=iWK*[diag(W(1:n,1)) diag(W((n+1):(2*n),1)); diag(W(1:n,2)) diag(W((n+1):(2*n),2))];
-            if isfield(gp.lik,'xtime')
-              iWKW=zeros(n+ntime);
-              iWKW(1:ntime,1:ntime)=bsxfun(@times, iWK(1:ntime,1:ntime),Wdiag(1:ntime)') + iWK(1:ntime,ntime+(1:n))*Wmat';
-              iWKW(1:ntime,ntime+(1:n))=iWK(1:ntime,1:ntime)*Wmat + bsxfun(@times, iWK(1:ntime,ntime+(1:n)), Wdiag(ntime+(1:n))');
-              iWKW(ntime+(1:n),1:ntime)=bsxfun(@times,iWK(ntime+(1:n),1:ntime),Wdiag(1:ntime)') + iWK(ntime+(1:n),ntime+(1:n))*Wmat';
-              iWKW(ntime+(1:n),ntime+(1:n))=iWK(ntime+(1:n),1:ntime)*Wmat + bsxfun(@times, iWK(ntime+(1:n),ntime+(1:n)),Wdiag(ntime+(1:n))');
-            else
-              iWKW11=bsxfun(@times,iWK(1:n,1:n),W(1:n,1)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,1)');
-              iWKW12=bsxfun(@times,iWK(1:n,1:n),W(1:n,2)')+bsxfun(@times,iWK(1:n,(1:n)+n),W((1:n)+n,2)');
-              iWKW21=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,1)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,1)');
-              iWKW22=bsxfun(@times,iWK((1:n)+n,1:n),W(1:n,2)')+bsxfun(@times,iWK((1:n)+n,(1:n)+n),W((1:n)+n,2)');
-              iWKW=[iWKW11 iWKW12; iWKW21 iWKW22];
-            end
-            
-            KiWKWK=K_nf*iWKW*K_nf';
-            Covf=kstarstarfull-KiWKWK;
-%               Varft=kstarstar-diag(KiWKWK);
-%               Varf=Covft;
           end
         end
         Ef=Eft;
@@ -287,8 +337,6 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, xt, varargin)
           end
           predcf=predcf2;
         end
-        
-        
         
         [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(gp_pak(gp), gp, x, y, 'z', z);
         

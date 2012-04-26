@@ -29,9 +29,17 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %                  'off' (default) displays no output
 %                  'on' gives some output  
 %                  'iter' displays output at each iteration
+%      speed-up   - defines if speed-up is used.
+%                  'off' (default) no speed-up is used
+%                  'on' With SEXP or EXP covariance function in 2D case
+%                  uses Kronecker product structure and approximates the
+%                  full posterior with a low-rank approximation. Otherwise
+%                  with SEXP, EXP, MATERN32 and MATERN52 covariance
+%                  functions in 1D and 2D cases uses FFT/FFT2 matrix-vector
+%                  multiplication speed-up in the Newton's algorithm.
 %
-  
-% Copyright (c) 2011 Jaakko Riihimäki and Aki Vehtari
+
+% Copyright (c) 2011-2012 Jaakko Riihimäki and Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -50,7 +58,8 @@ function [p,pq,xx] = lgpdens(x,varargin)
   ip.addParamValue('normalize',false, @islogical);
   ip.addParamValue('display', 'off', @(x) islogical(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
-  
+  ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
+                 
   ip.parse(x,varargin{:});
   x=ip.Results.x;
   xt=ip.Results.xt;
@@ -61,6 +70,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   int_method=ip.Results.int_method;
   normalize=ip.Results.normalize;
   display=ip.Results.display;
+  speedup=ip.Results.speedup;
   
   [n,m]=size(x);
   
@@ -101,7 +111,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
       xxn=(xx-mean(xx))./std(xx);
       
       %[Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -202,7 +212,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
       xxn=bsxfun(@rdivide,bsxfun(@minus,xx,mean(xx,1)),std(xx,1));
       
       % [Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -215,7 +225,13 @@ function [p,pq,xx] = lgpdens(x,varargin)
         end
         pjr=mean(PJR,2);
       else
-        qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
+        if strcmpi(speedup,'on') && length(Covf)==2
+          qr1=bsxfun(@plus,bsxfun(@times,randn(1000,size(Ef,1)),sqrt(Covf{1})'),Ef');
+          qr2=randn(1000,size(Covf{2},1))*Covf{2};
+          qr=qr1+qr2;
+        else
+          qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
+        end
         qjr=exp(qr)';
         pjr=bsxfun(@rdivide,qjr,sum(qjr));
         pjr=pjr./xd;
@@ -250,7 +266,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   end
 end
 
-function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
+function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
   % gp_mc and gp_ia still uses numeric display option
@@ -268,8 +284,14 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
   else
     gpcf1 = gpcf();
   end
-  % weakly informative prior
-  pm = prior_sqrtt('s2', 10^2, 'nu', 4);
+  
+  if ~isempty(speedup) && strcmp(speedup, 'on') && size(xx,2)==2 && (strcmp(gpcf1.type,'gpcf_sexp') || strcmp(gpcf1.type,'gpcf_exp'))
+    % less weakly informative prior for Kronecker low-rank approximation
+    pm = prior_sqrtt('s2', 1^2, 'nu', 4);
+  else
+    % weakly informative prior
+    pm = prior_sqrtt('s2', 10^2, 'nu', 4);
+  end
   pl = prior_t('s2', 1^2, 'nu', 4);
   pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
@@ -295,7 +317,28 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display)
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
   opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
+  
+  if ~isempty(speedup) && strcmp(speedup, 'on')
+    gp.latent_opt.gridn=gridn;
+    gp.latent_opt.pcg_tol=1e-12;
+    if size(xx,2)==2 && (strcmp(gp.cf{1}.type,'gpcf_sexp') || strcmp(gp.cf{1}.type,'gpcf_exp'))
+      % exclude eigenvalues smaller than 1e-6 or take 50%
+      % eigenvalues at most
+      gp.latent_opt.eig_tol=1e-6;
+      gp.latent_opt.eig_prct=0.5;
+      gp.latent_opt.kron=1;
+      opt.LargeScale='off';
+      if norm(xx-xxt)~=0
+        warning('In the low-rank approximation the grid locations xx are used instead of xxt in predictions.')
+        xxt=xx;
+      end
+    elseif strcmp(gp.cf{1}.type,'gpcf_sexp') || strcmp(gp.cf{1}.type,'gpcf_exp') || strcmp(gp.cf{1}.type,'gpcf_matern32') || strcmp(gp.cf{1}.type,'gpcf_matern52')
+      gp.latent_opt.fft=1;
+    end
+  end
+  
   gp=gp_optim(gp,xx,yy,'opt',opt);
+  gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
   
   if strcmpi(latent_method,'MCMC')
     gp = gp_set(gp, 'latent_method', 'MCMC');

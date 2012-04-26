@@ -130,7 +130,7 @@ function deriv = lik_lgp_llg(lik, y, f, param, z)
 end
 
 
-function [g2d,g2u] = lik_lgp_llg2(lik, y, f, param, z)
+function g2 = lik_lgp_llg2(lik, y, f, param, z)
 %function g2 = lik_lgp_llg2(lik, y, f, param, z)
 %LIK_LGP_LLG2  Second gradients of the log likelihood
 %
@@ -147,12 +147,12 @@ function [g2d,g2u] = lik_lgp_llg2(lik, y, f, param, z)
 
   switch param
     case 'latent'
-      n=sum(y);
       qj=exp(f);
-      pj=qj./sum(qj);
-      %g2=n*( bsxfun(@times,pj,pj')-diag(pj) );
-      g2d=-n*pj;
-      g2u=sqrt(n)*pj;
+      
+      % g2 is not the second gradient of the log likelihood but only a
+      % vector to form the exact gradient term in gpla_nd_e, gpla_nd_g and
+      % gpla_nd_pred functions
+      g2=qj./sum(qj);
   end
 end    
 
@@ -172,8 +172,10 @@ function g3 = lik_lgp_llg3(lik, y, f, param, z)
   switch param
     case 'latent'
       qj=exp(f);
-      % Not actually the third gradient of log-likelihood, only an aid
-      % vector for creating the exact gradient in gpla_de_g function
+      
+      % g3 is not the third gradient of the log likelihood but only a
+      % vector to form the exact gradient term in gpla_nd_e, gpla_nd_g and
+      % gpla_nd_pred functions
       g3=qj./sum(qj);
       
       %n=sum(y);
