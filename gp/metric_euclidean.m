@@ -335,11 +335,15 @@ function dist = metric_euclidean_dist(metric, x1, x2)
 %  See also
 %    METRIC_EUCLIDEAN_PAK, METRIC_EUCLIDEAN_UNPAK, METRIC_EUCLIDEAN, GP_E
 %
-  if nargin == 2 || isempty(x2)
+  if (nargin == 2 || isempty(x2))
+    % use fast c-code for self-distance
     x2=x1;
+    % force deltadist to be logical for simplified c-code
+    metric.deltadist=logical(metric.deltadist);
     dist = dist_euclidean(metric,x1);
     if ~any(isnan(dist))
-        return
+      % if c-code was available, result is not NaN
+      return
     end        
   end
     
