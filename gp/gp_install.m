@@ -32,6 +32,13 @@ function gp_install(suiteSparse)
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+% Compile the 'dist_euclidean' mex-function
+if (~isempty (strfind (computer, '64')))
+  % 64-bit MATLAB
+  mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
+else
+  mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+end
 
 if nargin<1 || isempty(suiteSparse)
     % Compile without SuiteSparse.
@@ -40,12 +47,12 @@ if nargin<1 || isempty(suiteSparse)
     
     % Compile the 'trcov' mex-function
     if (~isempty (strfind (computer, '64')))
-        % 64-bit MATLAB
-        mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
-        mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      % 64-bit MATLAB
+      mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
+      mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
     else
-        mex -O -output private/trcov linuxCsource/trcov.c 
-        mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      mex -O -output private/trcov linuxCsource/trcov.c 
+      mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
     end
     
     fprintf ('\n GP package succesfully compiled ') ;
