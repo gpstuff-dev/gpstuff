@@ -26,7 +26,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                   use optimset to set options for optimization.
 %                   Default options for optimization are 'GradObj'
 %                   is 'on', 'LargeScale' is 'off', 'Display' is 'off'
-%      k          - number of folds in CV
+%      k          - number of folds in CV, default k=10
 %      rstream    - number of a random stream to be used for
 %                   permuting the data befor division. This way
 %                   same permutation can be obtained for different
@@ -243,7 +243,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   end
   nargout2 = nargout;
   % parfor enables parallel loop
-  parfor i=1:length(trindex)
+  %parfor i=1:length(trindex)
+  for i=1:length(trindex)
     if isempty(tstindex{i})
       continue
     end
@@ -326,6 +327,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         w=gp_pak(gp);
         cvws(i,:)=w;
       case 'MCMC'
+        if numel(gp.jitterSigma2)>1
+          gp=thin(gp,numel(gp.jitterSigma2)-1);
+        end
         % Scaled mixture noise model is a special case
         % where we need to modify the noiseSigmas2 vector
         % to a right length
