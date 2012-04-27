@@ -127,7 +127,7 @@ end
 
 function lp = prior_sqrtt_lp(x, p)
   
-  lp=sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) - 2*sqrt(x));
+  lp=sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) - log(2*sqrt(x)));
   
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
@@ -142,7 +142,7 @@ end
 
 function lpg = prior_sqrtt_lpg(x, p)
 
-  lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1./sqrt(x);
+  lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1./(2*x);
   
   if ~isempty(p.p.mu)
     lpgmu = sum((p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
