@@ -106,33 +106,55 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   opt.lik_gibbs_opt = ip.Results.lik_gibbs_opt;
   opt.persistence_reset = ip.Results.persistence_reset;
   
-  % Check arguments
-  if nargin < 3
-    error('Not enough arguments')
-  end
-
-  % If no options structures, use SSLS as a default sampler for parameters
-  % and latent values
-  if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
-      isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
-      isempty(opt.lik_gibbs_opt)
-    opt.ssls_opt.latent_opt.display=0;
-    opt.ssls_opt.latent_opt.repeat = 40;
-    opt.ssls_opt.nomit = 0;
-    opt.ssls_opt.display = 0;
-    opt.ssls_opt.method = 'minmax';
-    opt.ssls_opt.wsize = 10;
-    opt.ssls_opt.plimit = 5;
-    opt.ssls_opt.unimodal = 1;
-    opt.ssls_opt.mmlimits = [-15; 15];
-    opt.ssls_opt.fsamples = 2;
+  % Default samplers and some checking
+  if isfield(gp,'latent_method') && isequal(gp.latent_method,'MCMC')
+    % If no options structures, use SSLS as a default sampler for parameters
+    % and ESLS for latent values
+    if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
+        isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
+        isempty(opt.lik_gibbs_opt)
+      opt.latent_opt.display=0;
+      opt.latent_opt.repeat = 40;
+      opt.ssls_opt.latent_opt.display=0;
+      opt.ssls_opt.latent_opt.repeat = 40;
+      opt.ssls_opt.nomit = 0;
+      opt.ssls_opt.display = 0;
+      opt.ssls_opt.method = 'minmax';
+      opt.ssls_opt.wsize = 10;
+      opt.ssls_opt.plimit = 5;
+      opt.ssls_opt.unimodal = 0;
+      opt.ssls_opt.mmlimits = [-10; 10];
+      opt.ssls_opt.fsamples = 2;
+    end
+    % Set latent values
+    if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
+        && ~isfield(gp.lik.fh,'trcov')
+      gp.latentValues=zeros(size(y));
+    end
+  else
+    % latent method is not MCMC
+    % If no options structures, use SLS as a default sampler for parameters
+    if ~isempty(opt.ssls_opt)
+      warning('Latent method is not MCMC. ssls_opt ignored')
+      opt.ssls_opt=[];
+    end
+    if ~isempty(opt.latent_opt)
+      warning('Latent method is not MCMC. latent_opt ignored')
+      opt.latent_opt=[];
+    end
+    if isempty(opt.hmc_opt) && isempty(opt.sls_opt) && ...
+        isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
+        isempty(opt.lik_gibbs_opt)
+      opt.sls_opt.nomit = 0;
+      opt.sls_opt.display = 0;
+      opt.sls_opt.method = 'minmax';
+      opt.sls_opt.wsize = 10;
+      opt.sls_opt.plimit = 5;
+      opt.sls_opt.unimodal = 0;
+      opt.sls_opt.mmlimits = [-10; 10];
+    end
   end
     
-  % Set latent values
-  if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
-      && ~isfield(gp.lik.fh,'trcov')
-    gp.latentValues=zeros(size(y));
-  end
   % Initialize record
   if isempty(record)
     % No old record
@@ -451,6 +473,14 @@ function record = recappend(record)
     if isfield(gp,'p')
       record.p = gp.p;
     end
+    if isfield(gp,'latent_method')
+      record.latent_method = gp.latent_method;
+      record.latent_opt = gp.latent_opt;
+    end
+    if isfield(gp,'fh')
+      record.fh=gp.fh;
+    end
+    
     record.infer_params = gp.infer_params;
     record.e = [];
     record.edata = [];
@@ -502,7 +532,7 @@ function record = recappend(record)
     % Set rejects 
     record.lrejects(ri,1)=lrej;
   else
-    [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = gp_e(gp_pak(gp), gp, x, y);
+    [record.e(ri,:),record.edata(ri,:),record.eprior(ri,:)] = gp_e(gp_pak(gp), gp, x, y, 'z', z);
     record.etr(ri,:) = record.e(ri,:);
   end
   
