@@ -38,6 +38,14 @@ function [e, edata, eprior] = gp_e(w, gp, x, y, varargin)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+if ~all(isfinite(w(:)));
+  % instead of stopping to error, return NaN
+  e=NaN;
+  edata = NaN;
+  eprior = NaN;
+  return;
+end
+
 if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % use inference specific methods
   % not the nicest way of doing this, but a quick solution
@@ -71,13 +79,6 @@ ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
-if ~all(isfinite(w(:)));
-  % instead of stopping to error, return NaN
-  e=NaN;
-  edata = NaN;
-  eprior = NaN;
-  return;
-end
 
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
