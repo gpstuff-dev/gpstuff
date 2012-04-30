@@ -225,7 +225,7 @@ cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
-gp=gp_optim(gp,xn,yn);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % integrate over parameters
 gps=gp_ia(gp,xn,yn);
 % predict and plot

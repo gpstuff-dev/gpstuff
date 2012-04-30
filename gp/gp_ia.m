@@ -384,21 +384,26 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           p_th=[]; gp_array={};
           for i1 = 1 : size(th,1)
             gp = gp_unpak(gp,th(i1,:));
-            gp_array{end+1} = gp;
-            
+            gp_array{i1} = gp;
             % density
-            p_th(end+1) = -fh_e(th(i1,:),gp,x,y,options);
-            if ~isempty(xt)
-              % predictions if needed
-              [Ef_grid(end+1,:), Varf_grid(end+1,:)]=...
+            p_th(i1) = -fh_e(th(i1,:),gp,x,y,options);
+          end
+          % Remove points with NaN density
+          dii=isnan(p_th);
+          p_th(dii)=[];
+          gp_array(dii)=[];
+          th(dii,:)=[];
+
+          if ~isempty(xt)
+            % predictions if needed
+            for i1 = 1 : size(th,1)
+              [Ef_grid(i1,:), Varf_grid(i1,:)]=...
                   fh_p(gp,x,y,xt,options);
             end
           end
           
           p_th=p_th-min(p_th);
           p_th=exp(p_th);
-          p_th=p_th/sum(p_th);
-          
           
           % Calculate the area weights for the integration and scale
           % densities of the design points with these weights
@@ -409,7 +414,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           delta_0=1;
           
           p_th=p_th.*[delta_0,repmat(delta_k,1,size(th,1)-1)];
-          P_TH=p_th/sum(p_th);
+          P_TH=p_th./sum(p_th);
           P_TH=P_TH(:);
       end
       
