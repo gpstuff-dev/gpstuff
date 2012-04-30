@@ -20,23 +20,18 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 %      opt    - options structure for the minimization function. 
 %               Use optimset to set these options. By default options
 %               'GradObj' is 'on', 'LargeScale' is 'off'.
+%      loss   - 'e' to minimize the marginal posterior energy (default) or
+%               'loo' to minimize the negative leave-one-out lpd
+%               'kfcv' to minimize the negative k-fold-cv lpd
+%               'waic' to minimize the WAIC loss
+%               only 'e' and 'loo' with Gaussian likelihood have gradients
+%      k      - number of folds in kfcv
 %
 %  See also
 %    GP_SET, GP_E, GP_G, GP_EG, FMINSCG, FMINLBFGS, OPTIMSET, DEMO_REGRESSION*
 %
 
-%  Experimental
-%      loss - 'e' to minimize the marginal posterior energy (default) or
-%             'loo' to minimize the negative leave-one-out lpd
-%             'kfcv' to minimize the negative k-fold-cv lpd
-%             'waic' to minimize the WAIC loss
-%      k          - number of folds in CV
-%
-%  See also
-%    GP_SET, GP_E, GP_G, GP_EG, GP_LOOE, GP_LOOG, GP_LOOEG, GPEP_LOOE, 
-%    FMINSCG, FMINLBFGS, OPTIMSET, DEMO_REGRESSION*
-
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010-2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file

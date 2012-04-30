@@ -1,16 +1,15 @@
-%DEMO_MODELASSESMENT1  Demonstration for model assessment with DIC, number 
-%                      of effective parameters and ten-fold cross validation
+%DEMO_MODELASSESMENT1 Demonstration for model assessment with WAIC,
+% DIC, number of effective parameters and ten-fold cross validation
 %                       
 %  Description
 %    We will consider the regression problem in demo_regression1. 
 %    The analysis is conducted with full Gaussian process, and FIC
 %    and PIC sparse approximations. The performance of these models
-%    are compared by evaluating the DIC statistics, number of
-%    efficient parameters, WAIC and ten-fold cross validation. The
-%    inference will be conducted using maximum a posterior (MAP)
-%    estimate for the parameters, via full Markov chain Monte Carlo
-%    (MCMC) and with an integration approximation (IA) for the
-%    parameters.
+%    are compared by evaluating WAIC, DIC, the number of effective
+%    parameters and ten-fold cross validation. The inference will
+%    be conducted using maximum a posterior (MAP) estimate for the
+%    parameters, via full Markov chain Monte Carlo (MCMC) and with
+%    an integration approximation (IA) for the parameters.
 %
 %    This demo is organised in three parts:
 %     1) data analysis with full GP model
@@ -20,7 +19,7 @@
 %  See also DEMO_REGRESSION1, DEMO_SPARSERE1
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010-2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -83,24 +82,11 @@ mrmse_cv(1) = cvres.mrmse_cv;
 % --- MCMC approach ---
 disp(' MCMC integration over the parameters')
 
-% The sampling options are set to 'opt' structure, which is given to
-% 'gp_mc' sampler
-opt = [];
-opt.nsamples= 100;
-opt.repeat=4;
-opt.hmc_opt = hmc2_opt;
-opt.hmc_opt.steps=4;
-opt.hmc_opt.stepadj=0.05;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes few minutes)
-rfull = gp_mc(gp, x, y, opt);
+% Do the sampling (this takes about 1 minute)
+[rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 220);
 
 % After sampling delete the burn-in and thin the sample chain
-rfull = thin(rfull, 10, 2);
+rfull = thin(rfull, 21, 2);
 
 % Evaluate the effective number of parameters and DIC. 
 models{2} = 'full_MCMC';
@@ -115,7 +101,7 @@ WAIC2(2) = gp_waic(rfull,x,y, 'method', 'G');
 %
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
-% should be run with larger sample size. We also set the save option to 0.
+% should be run with larger sample size.
 disp(' MCMC integration over the parameters - k-fold-CV')
 opt.nsamples= 50; 
 cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'rstream', 1);
@@ -124,12 +110,8 @@ mrmse_cv(2) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 disp(' Grid integration over the parameters')
-clear opt
-opt.int_method = 'grid';
-opt.step_size = 2;
-opt.optimf=@fminscg;
 
-gp_array = gp_ia(gp, x, y, opt);
+gp_array = gp_ia(gp, x, y, 'int_method', 'grid');
 
 models{3} = 'full_IA'; 
 % For easier comparison to other methods, compute mean log
@@ -141,6 +123,8 @@ WAIC2(3) = gp_waic(gp_array,x,y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
+clear opt
+opt.int_method = 'grid';
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
 mlpd_cv(3) = cvres.mlpd_cv;
 mrmse_cv(3) = cvres.mrmse_cv;
@@ -171,7 +155,7 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6, 'X_
 disp(' MAP estimate for the parameters')
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',40);
 % Optimize with the scaled conjugate gradient method
 gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
@@ -193,21 +177,11 @@ mrmse_cv(4) = cvres.mrmse_cv;
 % (the inducing inputs are fixed)
 disp(' MCMC integration over the parameters')
 
-clear('opt')
-opt.nsamples= 100;
-opt.repeat=5;
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.02;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 3-5 minutes)
-rfic = gp_mc(gp_fic, x, y, opt);
+% Do the sampling (this takes about 1 minute)
+rfic = gp_mc(gp_fic, x, y, 'nsamples', 220);
 
 % After sampling we delete the burn-in and thin the sample chain
-rfic = thin(rfic, 10, 2);
+rfic = thin(rfic, 21, 2);
 
 % Evaluate the effective number of parameters and DIC. Note that 
 % the effective number of parameters as a second output, but here 
@@ -221,6 +195,7 @@ WAIC2(5) = gp_waic(rfic,x,y, 'method', 'G');
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
+clear opt
 opt.nsamples= 50; 
 disp(' MCMC integration over the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt);
@@ -230,12 +205,7 @@ mrmse_cv(5) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 disp(' Grid integration over the parameters')
-clear opt
-opt.int_method = 'grid';
-opt.step_size = 2;
-opt.optimf=@fminscg;
-
-gpfic_array = gp_ia(gp_fic, x, y, opt);
+gpfic_array = gp_ia(gp_fic, x, y, 'int_method', 'grid');
 
 models{6} = 'FIC_IA'; 
 [DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'param', 'output', 'mlpd');
@@ -245,6 +215,8 @@ WAIC2(6) = gp_waic(gpfic_array,x,y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
+clear opt
+opt.int_method = 'grid';
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt);
 mlpd_cv(6) = cvres.mlpd_cv;
 mrmse_cv(6) = cvres.mrmse_cv;
@@ -290,7 +262,7 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 disp(' MAP estimate for the parameters')
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',40);
 % Optimize with the scaled conjugate gradient method
 gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
@@ -309,22 +281,12 @@ mrmse_cv(7) = cvres.mrmse_cv;
 % --- MCMC approach ---
 disp(' MCMC integration over the parameters')
 
-clear opt
-opt.nsamples= 100;
-opt.repeat=5;
-opt.hmc_opt.steps=3;
-opt.hmc_opt.stepadj=0.02;
-opt.hmc_opt.persistence=0;
-opt.hmc_opt.decay=0.6;
-opt.hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 3-5 minutes)
-rpic = gp_mc(gp_pic, x, y, opt);
+% Do the sampling (this takes about 1 minute)
+rpic = gp_mc(gp_pic, x, y, 'nsamples', 220);
 
 % After sampling we delete the burn-in and thin the sample chain
 rpic = rmfield(rpic, 'tr_index');
-rpic = thin(rpic, 10, 2);
+rpic = thin(rpic, 21, 2);
 rpic.tr_index = trindex;
 
 % Evaluate the effective number of parameters and DIC. Note that 
@@ -339,6 +301,7 @@ WAIC2(8) = gp_waic(rpic, x, y, 'method', 'G');
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
+clear opt
 opt.nsamples= 50; 
 disp(' MCMC integration over the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt);
@@ -347,12 +310,8 @@ mrmse_cv(8) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
 disp(' Grid integration over the parameters')
-clear opt
-opt.int_method = 'grid';
-opt.step_size = 2;
-opt.optimf=@fminscg;
 
-gppic_array = gp_ia(gp_pic, x, y, opt);
+gppic_array = gp_ia(gp_pic, x, y, 'int_method', 'grid');
 
 models{9} = 'PIC_IA'; 
 [DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'param', 'output', 'mlpd');
@@ -362,10 +321,11 @@ WAIC2(9) = gp_waic(gppic_array, x, y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
 disp(' Grid integration over the parameters - k-fold-CV')
+clear opt
+opt.int_method = 'grid';
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt);
 mlpd_cv(9) = cvres.mlpd_cv;
 mrmse_cv(9) = cvres.mrmse_cv;
-
 
 
 %========================================================

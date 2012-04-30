@@ -347,9 +347,6 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
 %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
 
   gpp=gpcf.p;
-%   [n, m] =size(x);
-
-  i1=0;i2=1;
   DKff = {};
 
   % Evaluate: DKff{1} = d Kff / d magnSigma2

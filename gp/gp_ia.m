@@ -5,9 +5,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %    [GP_ARRAY, P_TH, TH, EF, VARF, PF, FF] = GP_IA(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure GP with covariates X and observations Y
 %    and returns an array of GPs GP_ARRAY and corresponding weights
-%    P_TH. If optional test covariates XT is included, GP_IA also
-%    returns corresponding mean EF, variance VARF and density PF
-%    evaluated at points FF.
+%    P_TH and hyperparameter values. If optional test covariates XT
+%    are included, GP_IA also returns corresponding mean EF,
+%    variance VARF and density PF evaluated at points FF.
 %
 %    OPTIONS is optional parameter-value pair
 %      int_method - the method used for integration
@@ -128,9 +128,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
   if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
 
-  % ===========================
+  % ===============================
   % Which latent method is used
-  % ===========================
+  % ===============================
   if isfield(gp, 'latent_method')
     switch gp.latent_method
       case 'EP'
@@ -147,6 +147,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fh_g = @gpla_g;
           fh_p = @gpla_pred;
         end
+      case 'MCMC'
+        error('GP_IA: Use GP_MC for inference when latent method is MCMC')
     end
   else
     fh_e = @gp_e;
@@ -159,9 +161,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   optdefault.Display='off';
   opt_optim=optimset(optdefault,opt_optim);
 
-  % ====================================
+  % ===============================
   % Find the mode of the parameters
-  % ====================================
+  % ===============================
   w = gp_pak(gp);
   w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
   gp = gp_unpak(gp,w);
@@ -169,11 +171,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   % Number of parameters
   nParam = length(w);
 
-  gp_array={}; % Array of gp-models with different parameters
-  Ef_grid = []; % Predicted means with different parameters
+  gp_array={};    % Array of gp-models with different parameters
+  Ef_grid = [];   % Predicted means with different parameters
   Varf_grid = []; % Variance of predictions with different parameters
-  p_th=[]; % List of the weights of different parameters (un-normalized)
-  th=[]; % List of parameters
+  p_th=[];        % List of the weights of different parameters (un-normalized)
+  th=[];          % List of parameters
 
   switch int_method
     case {'grid', 'CCD'}

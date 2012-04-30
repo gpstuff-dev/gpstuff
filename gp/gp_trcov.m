@@ -27,13 +27,16 @@ function [K, C] = gp_trcov(gp, x1, predcf)
 % License.txt, included with the software, for details.
 
 % no covariance functions?
-if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf==0)
+if length(gp.cf)==0 || (nargin>2 && ~isempty(predcf) && predcf(1)==0)
   K=[];
   C=[];
   if nargout>1 && isfield(gp.lik.fh,'trcov')
     C=sparse(0);
     % Add Gaussian noise to the covariance
     C = C + gp.lik.fh.trcov(gp.lik, x1);
+    if ~isempty(gp.jitterSigma2)
+      C=C+gp.jitterSigma2;
+    end
   end
   return
 end

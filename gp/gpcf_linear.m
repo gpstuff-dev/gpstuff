@@ -242,10 +242,10 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x(:,gpcf.selectedVariables)*(x(:,gpcf.selectedVariables)');
         else
-          for i=1:length(gpcf.coeffSigma2)
-            DD = gpcf.coeffSigma2(i)*x(:,gpcf.selectedVariables(i))*(x(:,gpcf.selectedVariables(i))');
+          for i1=1:length(gpcf.coeffSigma2)
+            DD = gpcf.coeffSigma2(i1)*x(:,gpcf.selectedVariables(i1))*(x(:,gpcf.selectedVariables(i))');
             DD(abs(DD)<=eps) = 0;
-            DKff{i}= (DD+DD')./2;
+            DKff{i1}= (DD+DD')./2;
           end
         end
       end
@@ -254,10 +254,16 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x*(x');
         else
-          for i=1:m
-            DD = gpcf.coeffSigma2(i)*x(:,i)*(x(:,i)');
-            DD(abs(DD)<=eps) = 0;
-            DKff{i}= (DD+DD')./2;
+          if isa(gpcf.coeffSigma2,'single')
+            epsi=eps('single');
+          else
+            epsi=eps;
+          end
+          DKff=cell(m,1);
+          for i1=1:m
+            DD = gpcf.coeffSigma2(i1)*x(:,i1)*(x(:,i1)');
+            DD(abs(DD)<=epsi) = 0;
+            DKff{i1}= (DD+DD')./2;
           end
         end
       end
@@ -275,8 +281,8 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x(:,gpcf.selectedVariables)*(x2(:,gpcf.selectedVariables)');
         else
-          for i=1:length(gpcf.coeffSigma2)
-            DKff{i}=gpcf.coeffSigma2(i)*x(:,gpcf.selectedVariables(i))*(x2(:,gpcf.selectedVariables(i))');
+          for i1=1:length(gpcf.coeffSigma2)
+            DKff{i1}=gpcf.coeffSigma2(i1)*x(:,gpcf.selectedVariables(i1))*(x2(:,gpcf.selectedVariables(i1))');
           end
         end
       end
@@ -285,8 +291,8 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x*(x2');
         else
-          for i=1:m
-            DKff{i}=gpcf.coeffSigma2(i)*x(:,i)*(x2(:,i)');
+          for i1=1:m
+            DKff{i1}=gpcf.coeffSigma2(i1)*x(:,i1)*(x2(:,i1)');
           end
         end
       end
@@ -300,8 +306,8 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*sum(x(:,gpcf.selectedVariables).^2,2); % d mask(Kff,I) / d coeffSigma2
         else
-          for i=1:length(gpcf.coeffSigma2)
-            DKff{i}=gpcf.coeffSigma2(i)*(x(:,gpcf.selectedVariables(i)).^2); % d mask(Kff,I) / d coeffSigma2
+          for i1=1:length(gpcf.coeffSigma2)
+            DKff{i1}=gpcf.coeffSigma2(i1)*(x(:,gpcf.selectedVariables(i)).^2); % d mask(Kff,I) / d coeffSigma2
           end
         end
       end
@@ -310,8 +316,8 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*sum(x.^2,2); % d mask(Kff,I) / d coeffSigma2
         else
-          for i=1:m
-            DKff{i}=gpcf.coeffSigma2(i)*(x(:,i).^2); % d mask(Kff,I) / d coeffSigma2
+          for i1=1:m
+            DKff{i1}=gpcf.coeffSigma2(i1)*(x(:,i1).^2); % d mask(Kff,I) / d coeffSigma2
           end
         end
       end

@@ -67,6 +67,10 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
     case 3
       [e, edata, eprior] = fh_e(w, gp, x, y, varargin{:});
   end
+  if ~isreal(e)
+    warning('Energy is not real')
+    e=NaN;
+  end
   return
 end
 
@@ -152,7 +156,7 @@ switch gp.type
     % FIC
     % ============================================================
   case 'FIC'
-    % The eguations in FIC are implemented as by Neil (2006)
+    % The equations in FIC are implemented as by Lawrence (2007)
     % See also Snelson and Ghahramani (2006) and Vanhatalo and Vehtari (2007)
 
     % First evaluate needed covariance matrices
@@ -381,10 +385,11 @@ switch gp.type
     % ============================================================
     % SSGP
     % ============================================================    
-  case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
-                     % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
-                     % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
-                     % NOTE! This does not work at the moment.
+  case 'SSGP'   % Predictions with sparse spectral sampling approximation for GP
+                % The approximation is proposed by M. Lazaro-Gredilla, 
+                % J. Quinonero-Candela and A. Figueiras-Vidal
+                % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
+                % NOTE! This does not work at the moment.
     [Phi, S] = gp_trcov(gp, x);
     m = size(Phi,2);
     

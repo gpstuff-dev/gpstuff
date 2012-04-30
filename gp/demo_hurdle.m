@@ -74,8 +74,9 @@ xii=sub2ind([60 35],x0(:,2),x0(:,1));
 
 % Plot the figures
 figure
+subplot(1,2,1)
 G=repmat(NaN,size(X1));
-G(xii)=Ef(1:size(x,1));
+G(xii)=Efz(:);
 pcolor(X1,X2,G),shading flat
 %colormap(mapcolor(G)),
 colorbar
@@ -84,10 +85,9 @@ axis equal
 axis([0 35 0 60])
 title('Posterior mean of latent zero process')
 
-% Plot the figures
-figure
+subplot(1,2,2)
 G=repmat(NaN,size(X1));
-G(xii)=(Ef((size(x,1)+1):end));
+G(xii)=Efc(:);
 pcolor(X1,X2,G),shading flat
 %colormap(mapcolor(G)),
 colorbar

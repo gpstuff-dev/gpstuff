@@ -57,7 +57,7 @@
 %     2) data analysis with grid integration over the parameters
 %     3) data analysis with MCMC integration over the parameters
 %
-%  See also DEMO_REGRESSION2
+%  See also DEMO_*
 %
 %  References:
 %    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
@@ -107,8 +107,8 @@ pm = prior_sqrtunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Following lines do the same since the default type is FULL
-gp = gp_set('type','FULL','lik',lik,'cf',gpcf);
-%gp = gp_set('lik', lik, 'cf', gpcf);
+%gp = gp_set('type','FULL','lik',lik,'cf',gpcf);
+gp = gp_set('lik', lik, 'cf', gpcf);
 
 % Demostrate how to evaluate covariance matrices. 
 % K contains the covariance matrix without noise variance 
@@ -143,7 +143,7 @@ disp(' MAP estimate for the parameters')
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'optimf',@fminscg,'opt',opt);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % get optimized parameter values for display
 [w,s]=gp_pak(gp);
@@ -168,7 +168,12 @@ title('The predicted underlying function and the data points (MAP solution)');
 
 % --- Grid integration ---
 disp(' Grid integration over the parameters')
-% Perform the grid integration and make predictions for p
+% Perform the grid integration and make predictions
+gp_array = gp_ia(gp, x, y, 'int_method', 'grid');
+[Eft_ia, Varft_ia] = gp_pred(gp_array, x, y, xt);
+
+% We can also get predictions for marginals of f, which are not
+% Gaussian due to integration over the hyperparameters
 [gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = ...
     gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
@@ -182,39 +187,28 @@ subplot(2,1,2)
 plot(x_ia(400,:), fx_ia(400,:))
 title('p(f|D) at input location (-0.8, 1.1)');
 
-
 % --- MCMC ---
 disp(' MCMC integration over the parameters')
 %  (see gp_mc for details)
-% The parameters are sampled with hybrid Monte Carlo 
-% (see, for example, Neal (1996)). 
+% The parameters are sampled using default method, that is,
+% slice sampling
 
-% The HMC sampling options are set to 'hmc_opt' structure, which is
-% given to 'gp_mc' sampler
-hmc_opt = hmc2_opt;
-hmc_opt.steps=4;
-hmc_opt.stepadj=0.05;
-hmc_opt.persistence=0;
-hmc_opt.decay=0.6;
-hmc_opt.nsamples=1;
-hmc2('state', sum(100*clock));
-
-% Do the sampling (this takes approximately 5-10 minutes)
-% 'rfull'   will contain a record structure with all the sampls
+% Do the sampling (this takes approximately 1 minute)
+% 'gp_rec'  will contain a record structure with all the sampls
 % 'g'       will contain a GP structure at the current state of the sampler
-[rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 400, 'repeat', 5, 'hmc_opt', hmc_opt);
+[gp_rec,g,opt] = gp_mc(gp, x, y, 'nsamples', 220);
 
 % After sampling we delete the burn-in and thin the sample chain
-rfull = thin(rfull, 50, 2);
+gp_rec = thin(gp_rec, 21, 2);
 
-% Now we make the predictions. 'gpmc_preds' is a function that
+% Now we make the predictions. 'gp_rec_preds' is a function that
 % returns the predictive mean of the latent function with every
 % sampled parameter value. Thus, the returned Eft_mc is a matrix of
 % size n x (number of samples). By taking the mean over the samples
 % we do the Monte Carlo integration over the parameters. (See also
-% gpmc_pred, which directly returns the expectation of the mean and
+% gp_rec_pred, which directly returns the expectation of the mean and
 % variance)
-[Eft_mc, Varft_mc] = gpmc_preds(rfull, x, y, xt);
+[Eft_mc, Varft_mc] = gp_pred(gp_rec, x, y, xt);
 
 figure(1)
 clf
@@ -226,7 +220,7 @@ axis on;
 title(['The predicted underlying function ';
        'and the data points (MAP solution)']);
 subplot(1,2,2)
-mesh(xt1, xt2, reshape(mean(Eft_mc'),37,37));
+mesh(xt1, xt2, reshape(Eft_mc,37,37));
 hold on
 plot3(x(:,1), x(:,2), y, '*')
 axis on;
@@ -239,32 +233,32 @@ set(gcf,'pos',[93 511 1098 420])
 figure(3)
 clf
 subplot(1,2,1)
-plot(rfull.cf{1}.lengthScale)
+plot(gp_rec.cf{1}.lengthScale)
 title('The sample chain of length-scales')
 subplot(1,2,2)
-plot(rfull.cf{1}.magnSigma2)
+plot(gp_rec.cf{1}.magnSigma2)
 title('The sample chain of magnitude')
 set(gcf,'pos',[93 511 1098 420])
 
 figure(4)
 clf
 subplot(1,4,1)
-hist(rfull.cf{1}.lengthScale(:,1))
+hist(gp_rec.cf{1}.lengthScale(:,1))
 hold on
 plot(gp.cf{1}.lengthScale(1), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Length-scale 1')
 subplot(1,4,2)
-hist(rfull.cf{1}.lengthScale(:,2))
+hist(gp_rec.cf{1}.lengthScale(:,2))
 hold on
 plot(gp.cf{1}.lengthScale(2), 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Length-scale 2')
 subplot(1,4,3)
-hist(rfull.cf{1}.magnSigma2)
+hist(gp_rec.cf{1}.magnSigma2)
 hold on
 plot(gp.cf{1}.magnSigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('magnitude')
 subplot(1,4,4)
-hist(rfull.lik.sigma2)
+hist(gp_rec.lik.sigma2)
 hold on
 plot(gp.lik.sigma2, 0, 'rx', 'MarkerSize', 11, 'LineWidth', 2)
 title('Noise variance')
@@ -274,8 +268,9 @@ set(gcf,'pos',[93 511 1098 420])
 
 % Sample from two posterior marginals and plot them alongside 
 % with the MAP and grid integration results
-sf = normrnd(Eft_mc(100,:), sqrt(Varft_mc(100,:)));
-sf2 = normrnd(Eft_mc(400,:), sqrt(Varft_mc(400,:)));
+[Eft_mcs, Varft_mcs] = gp_rec_preds(gp_rec, x, y, xt);
+sf = normrnd(Eft_mcs(100,:), sqrt(Varft_mcs(100,:)));
+sf2 = normrnd(Eft_mcs(400,:), sqrt(Varft_mcs(400,:)));
 
 figure(2)
 subplot(1,2,1)
@@ -345,7 +340,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ 
 % $$$ figure(4)
 % $$$ clf, subplot(1,4,1)
-% $$$ hist(rfull.cf{1}.lengthScale(:,1))
+% $$$ hist(gp_rec.cf{1}.lengthScale(:,1))
 % $$$ h = findobj(gca,'Type','patch');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
@@ -354,7 +349,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ xlim([0.3 1.6])
 % $$$ 
 % $$$ subplot(1,4,2)
-% $$$ hist(rfull.cf{1}.lengthScale(:,2))
+% $$$ hist(gp_rec.cf{1}.lengthScale(:,2))
 % $$$ h = findobj(gca,'Type','patch');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
@@ -363,7 +358,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ xlim([0.4 1.4])
 % $$$ 
 % $$$ subplot(1,4,3)
-% $$$ hist(rfull.cf{1}.magnSigma2)
+% $$$ hist(gp_rec.cf{1}.magnSigma2)
 % $$$ h = findobj(gca,'Type','patch');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on
@@ -372,7 +367,7 @@ title('p(f|D) at input location (-0.8, 1.1)');
 % $$$ xlim([0.5 6])
 % $$$ 
 % $$$ subplot(1,4,4)
-% $$$ hist(rfull.lik.sigma2)
+% $$$ hist(gp_rec.lik.sigma2)
 % $$$ h = findobj(gca,'Type','patch');
 % $$$ set(h,'FaceColor','w','EdgeColor','k')
 % $$$ hold on

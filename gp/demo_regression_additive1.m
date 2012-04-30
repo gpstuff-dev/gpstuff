@@ -272,7 +272,7 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 %========================================================
 
 % Here we conduct the same analysis as in part 1, but this time we 
-% use FIC approximation
+% use CS+FIC approximation
 
 % Create the CS+FIC GP structure
 if ~exist('ldlchol')

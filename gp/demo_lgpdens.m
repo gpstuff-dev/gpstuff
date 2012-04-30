@@ -134,41 +134,28 @@ title('Ring')
 % with Kronecker product (low-rank) speed-up
 % =====================================
 figure(3)
-% Student t_4, 1D
-stream.Substream = 1;
-x=trnd(4,1,100)';
-xt=linspace(-7,7,800)';
+% Galaxy data with finer grid, 1D
+x=load('demos/galaxy.txt');
+xt=linspace(0,40000,800)';
 subplot(2,2,1)
 t0=cputime; lgpdens(x,xt,'speedup', 'off'); t0=cputime-t0;
 axis tight
-title(['t_4, no speed-up, cpu-time: ' num2str(t0)])
-% true density
-p0=t_pdf(xt,4,0,1);
-line(xt,p0,'color','k')
+title(['Galaxy, no speed-up, cpu-time: ' num2str(t0)])
 subplot(2,2,2)
 t1=cputime; lgpdens(x,xt,'speedup', 'on'); t1=cputime-t1;
 axis tight
-title(['t_4, FFT speed-up, cpu-time: ' num2str(t1)])
-% true density
-p0=t_pdf(xt,4,0,1);
-line(xt,p0,'color','k')
-%sum(p0.*log(p))
+title(['Galaxy, FFT speed-up, cpu-time: ' num2str(t1)])
 
-% Student t_4, 2D
-n=100;
-Sigma = [1 .7; .7 1];R = chol(Sigma);
-stream.Substream = 1;
-x=trnd(8,n,2)*R;
+% Old faithful, 2D
+x=load('demos/faithful.txt');
 subplot(2,2,3)
-t0=cputime; lgpdens(x,'gridn', 26, 'speedup', 'off'); t0=cputime-t0;
+t0=cputime; lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'off'); t0=cputime-t0;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-axis([-4 4 -4 4])
-title(['t_4, no speed-up, cpu-time: ' num2str(t0)])
+title(['Old faithful, no speed-up, cpu-time: ' num2str(t0)])
 subplot(2,2,4)
-t1=cputime; lgpdens(x,'gridn', 26, 'speedup', 'on'); t1=cputime-t1;
+t1=cputime; lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'on'); t1=cputime-t1;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-axis([-4 4 -4 4])
-title(['t_4, KRON speed-up, cpu-time: ' num2str(t1)])
+title(['Old faithful, KRON speed-up, cpu-time: ' num2str(t1)])
 
 
 % =====================================

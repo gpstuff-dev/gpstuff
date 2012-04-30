@@ -176,10 +176,10 @@ function [p,pq,xx] = lgpdens(x,varargin)
         x2min=min(x2min,min(xt(:,2)));
         x2max=max(x2max,max(xt(:,2)));
       else
-        x1min=min(x1min,mean(x(:,1))-1.5*std(x(:,1)));
-        x1max=max(x1max,mean(x(:,1))+1.5*std(x(:,1)));
-        x2min=min(x2min,mean(x(:,2))-1.5*std(x(:,2)));
-        x2max=max(x2max,mean(x(:,1))+1.5*std(x(:,2)));
+        x1min=min(x1min,mean(x(:,1))-3*std(x(:,1)));
+        x1max=max(x1max,mean(x(:,1))+3*std(x(:,1)));
+        x2min=min(x2min,mean(x(:,2))-3*std(x(:,2)));
+        x2max=max(x2max,mean(x(:,1))+3*std(x(:,2)));
       end
       
       % Discretize the data
@@ -338,7 +338,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   
   gp=gp_optim(gp,xx,yy,'opt',opt);
-  gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
+  %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
   
   if strcmpi(latent_method,'MCMC')
     gp = gp_set(gp, 'latent_method', 'MCMC');

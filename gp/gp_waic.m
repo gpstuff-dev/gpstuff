@@ -113,7 +113,6 @@ function waic = gp_waic(gp, x, y, varargin)
         Gp.tr_index = tr_index;
 
         gp_array{j} = Gp;
-        %           w(j,:) = gp_pak(Gp);
         [Ef(:,j), Varf(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         if isfield(gp.lik.fh,'trcov')
           sigma2(:,j) = repmat(Gp.lik.sigma2,1,tn);

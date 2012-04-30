@@ -10,11 +10,12 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %    predictive distribution p(yt|x,y,xt) at locations XT.
 %
 %    OPTIONS is optional parameter-value pair
+%      nsamp  - determines the number of samples (default = 1).
 %      predcf - index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn)
 %      tstind - a vector defining, which rows of X belong to which 
 %               training block in *IC type sparse models. Default is [].
-%      nsamp  - determines the number of samples (default = 1).
+%               See also GP_PRED.
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
@@ -147,7 +148,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
                              % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
         iLaKfu = zeros(size(K_fu));  % f x u,
-        n=size(x,1)
+        n=size(x,1);
         for i=1:n
           iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
         end
@@ -165,7 +166,8 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         end
         Ef = K_nu*(K_uu\(K_fu'*p)) ;
 
-        % if the prediction is made for training set, evaluate Lav also for prediction points
+        % if the prediction is made for training set, evaluate Lav also for
+        % prediction points
         if ~isempty(tstind)
           [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
           Luu = chol(K_uu,'lower');

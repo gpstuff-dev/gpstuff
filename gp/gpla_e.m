@@ -74,7 +74,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
   if strcmp(w, 'init')
     % Initialize cache
     ch = [];
-     
+
     % return function handle to the nested function ep_algorithm
     % this way each gp has its own peristent memory for EP
     gp.fh.e = @laplace_algorithm;
@@ -97,7 +97,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       return
   end
   % code for the Laplace algorithm
-    
+
   % check whether saved values can be used
     if isempty(z)
       datahash=hash_sha512([x y]);

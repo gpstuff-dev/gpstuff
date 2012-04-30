@@ -11,29 +11,29 @@
 %   GP_RND    Random draws from the postrior Gaussian process
 %
 %  Covariance functions:
-%   GPCF_CAT           Create a categorigal covariance function
-%   GPCF_CONSTANT      Create a constant covariance function 
-%   GPCF_EXP           Create a squared exponential covariance function
-%   GPCF_LINEAR        Create a linear covariance function
-%   GPCF_MASK  Create a mask covariance function
-%   GPCF_MATERN32      Create a Matern nu=3/2 covariance function
-%   GPCF_MATERN52      Create a Matern nu=5/2 covariance function
+%   GPCF_CAT          Create a categorigal covariance function
+%   GPCF_CONSTANT     Create a constant covariance function 
+%   GPCF_EXP          Create a squared exponential covariance function
+%   GPCF_LINEAR       Create a linear covariance function
+%   GPCF_MASK         Create a mask covariance function
+%   GPCF_MATERN32     Create a Matern nu=3/2 covariance function
+%   GPCF_MATERN52     Create a Matern nu=5/2 covariance function
 %   GPCF_NEURALNETWORK Create a neural network covariance function
-%   GPCF_NOISE         Create a independent noise covariance function
-%   GPCF_PERIODIC      Create a periodic covariance function
-%   GPCF_PPCS0         Create a piece wise polynomial (q=0) covariance function 
-%   GPCF_PPCS1         Create a piece wise polynomial (q=1) covariance function 
-%   GPCF_PPCS2         Create a piece wise polynomial (q=2) covariance function 
-%   GPCF_PPCS3         Create a piece wise polynomial (q=3) covariance function 
-%   GPCF_PROD          Create a product form covariance function 
-%   GPCF_RQ            Create a rational quadratic covariance function 
-%   GPCF_SEXP          Create a squared exponential covariance function
-%   GPCF_SUM           Create a sum form covariance function
+%   GPCF_NOISE        Create a independent noise covariance function
+%   GPCF_PERIODIC     Create a periodic covariance function
+%   GPCF_PPCS0        Create a piece wise polynomial (q=0) covariance function 
+%   GPCF_PPCS1        Create a piece wise polynomial (q=1) covariance function 
+%   GPCF_PPCS2        Create a piece wise polynomial (q=2) covariance function 
+%   GPCF_PPCS3        Create a piece wise polynomial (q=3) covariance function 
+%   GPCF_PROD         Create a product form covariance function 
+%   GPCF_RQ           Create a rational quadratic covariance function 
+%   GPCF_SEXP         Create a squared exponential covariance function
+%   GPCF_SUM          Create a sum form covariance function
 %
 %  Mean functions:
-%   GPMF_CONSTANT      Create a constant mean function
-%   GPMF_LINEAR        Create a linear mean function
-%   GPMF_SQUARED       Create a squared mean function
+%   GPMF_CONSTANT     Create a constant mean function
+%   GPMF_LINEAR       Create a linear mean function
+%   GPMF_SQUARED      Create a squared mean function
 %
 %  Likelihood functions:
 %   LIK_BINOMIAL    Create a binomial likelihood structure 
@@ -41,7 +41,7 @@
 %   LIK_GAUSSIANSMT Create a Gaussian scale mixture approximating t
 %   LIK_LOGIT       Create a Logit likelihood structure 
 %   LIK_NEGBIN      Create a Negbin likelihood structure 
-%   LIK_NEGBINZTR   Create a zero-truncated Negative-binomial likelihood structure
+%   LIK_NEGBINZTR   Create a zero-truncated Negbin likelihood structure
 %   LIK_POISSON     Create a Poisson likelihood structure 
 %   LIK_PROBIT      Create a Probit likelihood structure 
 %   LIK_T           Create a Student-t likelihood structure 
@@ -74,7 +74,7 @@
 %                 2D data
 %
 %  Model assesment and comparison:
-%   GP_DIC        The DIC statistics and efective number of parameters in a GP model
+%   GP_DIC        The DIC statistics and effective number of parameters
 %   GP_KFCV       K-fold cross validation for a GP model
 %   GP_LOOE       Evaluate the leave-one-out predictive density in case of
 %                 Gaussian observation model

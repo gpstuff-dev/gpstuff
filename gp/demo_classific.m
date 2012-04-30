@@ -44,7 +44,7 @@
 %
 
 % Copyright (c) 2008-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -76,7 +76,7 @@ lik = lik_probit();
 gpcf = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
 % Set the prior for the parameters of covariance functions 
-pl = prior_unif();
+pl = prior_t();
 pm = prior_sqrtunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 
@@ -92,14 +92,13 @@ fprintf(['%s model with Laplace integration over the latent values and\n' ...
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',20,'Display','iter');
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',100,'Display','iter');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % Make predictions
 [Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
     gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
-
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
@@ -174,48 +173,24 @@ fprintf(['%s model with MCMC integration over the latent values and\n' ...
 
 % Set the approximate inference method
 % Note that MCMC for latent values requires often more jitter
-gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
+gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-6);
 
-% % Set the parameters for MCMC
-% % Here we use two stage sampling to get faster convergence
-% hmc_opt=hmc2_opt;
-% hmc_opt.steps=10;
-% hmc_opt.stepadj=0.05;
-% hmc_opt.nsamples=1;
-% latent_opt.display=0;
-% latent_opt.repeat = 20;
-% latent_opt.sample_latent_scale = 0.5;
-% hmc2('state', sum(100*clock))
-% 
-% % The first stage sampling
-% [r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
-% 
-% % re-set some of the sampling options
-% hmc_opt.steps=4;
-% hmc_opt.stepadj=0.05;
-% latent_opt.repeat = 5;
-% hmc2('state', sum(100*clock));
-% 
-% % The second stage sampling
-% % Notice that previous record r is given as an argument
-% [rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, ...
-%                   'latent_opt', latent_opt, 'record', r);
-
-[rgp, g, opt] = gp_mc(gp, x, y, 'nsamples', 400);
+% Sample using default method, that is, surrogate and elliptical slice samplers
+% these samplers are quite robust with default options
+[gp_rec,g,opt]=gp_mc(gp, x, y, 'nsamples', 220);
 % Remove burn-in
-rgp=thin(rgp,102);
+gp_rec=thin(gp_rec,21,2);
 
 % Make predictions
-[Efs_mc, Varfs_mc, lpys_mc, Eys_mc, Varys_mc] = ...
-    gpmc_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-lpyt_mc = mean(lpys_mc,2);
+[Ef_mc, Varf_mc, lpy_mc, Ey_mc, Vary_mc] = ...
+    gp_pred(gp_rec, x, y, xt, 'yt', ones(size(xt,1),1) );
 
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
 figure, hold on;
 n_pred=size(xt,1);
-h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_mc),20,20));
+h1=pcolor(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpy_mc),20,20));
 set(h1, 'edgealpha', 0), set(h1, 'facecolor', 'interp')
 colormap(repmat(linspace(1,0,64)', 1, 3).*repmat(ones(1,3), 64,1))
 axis([-inf inf -inf inf]), %axis off
@@ -225,7 +200,7 @@ set(gcf, 'color', 'w'), title('predictive probability and training cases with MC
 
 % Visualise predictive probability  p(ystar = 1) with contours
 figure, hold on
-[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpyt_mc),20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
+[cs,h]=contour(reshape(xt(:,1),20,20),reshape(xt(:,2),20,20),reshape(exp(lpy_mc),20,20),[0.025 0.25 0.5 0.75 0.975], 'linewidth', 3);
 text_handle = clabel(cs,h);
 set(text_handle,'BackgroundColor',[1 1 .6],'Edgecolor',[.7 .7 .7],'linewidth', 2, 'fontsize',14)
 c1=[linspace(0,1,64)' 0*ones(64,1) linspace(1,0,64)'];
@@ -244,6 +219,7 @@ disp('Compare MCMC, Laplace and EP results for two latent variables')
 % see GP_IA for integrating over parameters when using Laplace
 % or EP for latent values
 apu1 = 123; apu2 = 340;
+[Efs_mc, Varfs_mc, lpys_mc] = gpmc_preds(gp_rec, x, y, xt, 'yt', ones(size(xt,1),1) );
 sf1 = randn(size(Efs_mc(apu1,:))).*sqrt(Varfs_mc(apu1,:))+Efs_mc(apu1,:);
 sf2 = randn(size(Efs_mc(apu2,:))).*sqrt(Varfs_mc(apu2,:))+Efs_mc(apu2,:);
 

@@ -65,11 +65,11 @@ Ntgrid=ones(size(xgrid))*100;
 [n, nin] = size(x);
 
 % Set priors
-ps2 = prior_sinvchi2('s2', 2.7^2, 'nu', 0.2);
-pl = prior_logunif();
+pl = prior_t();
+pm = prior_sqrtunif();
 % Create covariance function
 gpcf = gpcf_sexp('lengthScale', ones(1,nin), 'magnSigma2', 1, ...
-                  'lengthScale_prior', pl, 'magnSigma2_prior', ps2);
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the GP structure
 gp = gp_set('lik', lik_binomial(), 'cf', gpcf, 'jitterSigma2', 1e-8);
@@ -88,8 +88,7 @@ gp=gp_optim(gp,x,y,'z',N,'opt',opt);
 % Make predictions at the grid points
 
 % Set the total number of trials Nt at the grid points xgrid
-[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
-    gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid, 'yt', yt);
+[Eft_la, Varft_la, lpy_la, Eyt_la, Varyt_la] = gp_pred(gp, x, y, xgrid, 'z', N, 'zt', Ntgrid);
 
 % Visualise the predictions
 figure, set(gcf, 'color', 'w'), hold on
@@ -108,7 +107,8 @@ title('Gaussian process prediction with a squared exponential covariance functio
 
 % To compute predictive densities at the test points xt, the total number
 % of trials Nt must be set additionally:
-[tmp, tmp, lpyt_la] = gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
+[Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
+    gp_pred(gp, x, y, xt, 'z', N, 'yt', yt, 'zt', Nt);
 
 figure, set(gcf, 'color', 'w'), hold on
 hist((lpyt_la), 20)

@@ -464,8 +464,9 @@ function record = recappend(record)
     end
     if isfield(gp,'latent_method')
       record.latent_method = gp.latent_method;
-%       record.latent_opt = gp.latent_opt;
-      record.latent_opt = opt.latent_opt;
+    end
+    if isfield(gp,'latent_opt')
+      record.latent_opt = gp.latent_opt;
     end
     if isfield(gp,'fh')
       record.fh=gp.fh;

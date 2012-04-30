@@ -343,35 +343,33 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
            'example, lik_binomial and gpla_e.                 ']);
   end
   
-  nt=length(Ef);
   if nargout > 1
-      Ey=zeros(nt,1);
-      EVary = zeros(nt,1);
-      VarEy = zeros(nt,1);
+    nt=length(Ef);
+    Ey=zeros(nt,1);
+    EVary = zeros(nt,1);
+    VarEy = zeros(nt,1);
+    for i1=1:nt
+      ci = sqrt(Varf(i1));
+      F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+      Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
+      
+      F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+      EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
+      
+      F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+      VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
+    end
+    Vary = EVary+VarEy;
   end
   
   nt=length(yt);
   lpy=zeros(nt,1);
   for i1=1:nt
     ci = sqrt(Varf(i1));
-    if nargout > 1
-        F  = @(x)zt(i1)./(1+exp(-x)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-        Ey(i1) = quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci);
-
-        F2  = @(x)zt(i1)./(1+exp(-x)).*(1-1./(1+exp(-x))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-        EVary(i1) = quadgk(F2,Ef(i1)-6*ci,Ef(i1)+6*ci);
-
-        F3  = @(x)(zt(i1)./(1+exp(-x))).^2.*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-        VarEy(i1) = quadgk(F3,Ef(i1)-6*ci,Ef(i1)+6*ci) - Ey(i1).^2;
-    end
-    %bin_cc=exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1));
-    %F  = @(x)bin_cc.*(1./(1+exp(-x))).^yt(i1).*(1-(1./(1+exp(-x)))).^(zt(i1)-yt(i1)).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
     F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
     lpy(i1) = log(quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci));
   end
-  if nargout > 1
-      Vary = EVary+VarEy;
-  end
+  
 end
 
 function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)

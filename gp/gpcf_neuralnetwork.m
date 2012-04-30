@@ -280,7 +280,6 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
   
   [n, m] =size(x);
   
-  i1=0;
   DKff = {};
   gprior = [];
   

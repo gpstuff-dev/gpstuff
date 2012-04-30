@@ -1,17 +1,17 @@
-function [dic, p_eff] = gp_dic(gp, x, y, varargin);
-% GP_DIC The DIC statistics and effective number of parameters in a GP model
+function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
+%GP_DIC The DIC and the effective number of parameters in a GP model
 %
 %  Description
-%   [DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
-%     number of parameters as defined by Spiegelhalter et al
-%     (2002). The statistics are evaluated with focus on parameters
-%     or latent variables depending on the input GP (See
-%     Spiegelhalter et al (2002) for discussion on the parameters
-%     in focus in Bayesian model). X contains training inputs and Y
-%     training outputs. Output form can be set by providing 
-%     'output', PARAM ('DIC', 'mlpd') and 'form', PARAM ('mean', 'all').
+%    [DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
+%    number of parameters as defined by Spiegelhalter et al
+%    (2002). The statistics are evaluated with focus on parameters
+%    or latent variables depending on the input GP (See
+%    Spiegelhalter et al (2002) for discussion on the parameters
+%    in focus in Bayesian model). X contains training inputs and Y
+%    training outputs. Output form can be set by providing 
+%    'output', PARAM ('DIC', 'mlpd') and 'form', PARAM ('mean', 'all').
 %
-%   DIC and p_eff are evaluated as follows:
+%    DIC and p_eff are evaluated as follows:
 %     1) GP is a record structure from gp_mc or an array of GPs
 %        from gp_ia. In this case the focus is in the parameters
 %        (the parameters of the covariance function and the
@@ -119,7 +119,6 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
     
     fh_pred = @gp_pred;
     
-    
     switch focus
       
       case 'param'
@@ -162,7 +161,6 @@ function [dic, p_eff] = gp_dic(gp, x, y, varargin);
           % For non-Gaussian likelihood we cannot evaluate the marginal
           % likelihood p(y|th) exactly. For this reason we
           % use Laplace approximation to approximate p(y|th)
-          
           gp2 = Gp;
           gp2 = gp_set(gp2, 'latent_method', 'Laplace');
           if strcmp(form, 'mean')

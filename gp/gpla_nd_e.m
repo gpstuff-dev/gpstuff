@@ -53,11 +53,14 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % parse inputs
   ip=inputParser;
   ip.FunctionName = 'GPLA_ND_E';
   ip.addRequired('w', @(x) ...
-                 (ischar(x) && strcmp(w, 'init')) || isempty(x) || ...
-                 (isvector(x) && isreal(x) && all(isfinite(x))));
+                 isempty(x) || ...
+                 (ischar(x) && strcmp(w, 'init')) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)) ...
+                 || all(isnan(x)));
   ip.addRequired('gp',@isstruct);
   ip.addOptional('x', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
   ip.addOptional('y', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
@@ -68,7 +71,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
   z=ip.Results.z;
   
   if strcmp(w, 'init')
-    % initialize cache
+    % Initialize cache
     ch = [];
 
     % return function handle to the nested function ep_algorithm
@@ -89,8 +92,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
   function [e, edata, eprior, f, L, a, E, M, p] = laplace_algorithm(w, gp, x, y, z)
       
   if strcmp(w, 'clearcache')
-	ch=[];
-    return
+      ch=[];
+      return
   end
   % code for the Laplace algorithm
 
