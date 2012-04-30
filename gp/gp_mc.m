@@ -113,18 +113,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
         isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
         isempty(opt.lik_gibbs_opt)
-      opt.latent_opt.display=0;
-      opt.latent_opt.repeat = 40;
-      opt.ssls_opt.latent_opt.display=0;
-      opt.ssls_opt.latent_opt.repeat = 40;
-      opt.ssls_opt.nomit = 0;
-      opt.ssls_opt.display = 0;
-      opt.ssls_opt.method = 'minmax';
-      opt.ssls_opt.wsize = 10;
-      opt.ssls_opt.plimit = 5;
-      opt.ssls_opt.unimodal = 0;
-      opt.ssls_opt.mmlimits = [-10; 10];
-      opt.ssls_opt.fsamples = 2;
+      opt.ssls_opt.latent_opt.repeat = 20;
     end
     % Set latent values
     if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
@@ -475,7 +464,8 @@ function record = recappend(record)
     end
     if isfield(gp,'latent_method')
       record.latent_method = gp.latent_method;
-      record.latent_opt = gp.latent_opt;
+%       record.latent_opt = gp.latent_opt;
+      record.latent_opt = opt.latent_opt;
     end
     if isfield(gp,'fh')
       record.fh=gp.fh;

@@ -67,7 +67,7 @@ function gp = gp_set(varargin)
 %    The options which can be set for each latent method are
 %      MCMC:
 %        method - Function handle to function which samples the
-%                 latent values @scaled_mh (default) or @scaled_hmc
+%                 latent values @esls (default), @scaled_mh or @scaled_hmc
 %        f      - 1xn vector of latent values. The default is [].
 %      Laplace:
 %        optim_method - Method to find the posterior mode

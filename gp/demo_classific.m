@@ -176,30 +176,32 @@ fprintf(['%s model with MCMC integration over the latent values and\n' ...
 % Note that MCMC for latent values requires often more jitter
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 
-% Set the parameters for MCMC
-% Here we use two stage sampling to get faster convergence
-hmc_opt=hmc2_opt;
-hmc_opt.steps=10;
-hmc_opt.stepadj=0.05;
-hmc_opt.nsamples=1;
-latent_opt.display=0;
-latent_opt.repeat = 20;
-latent_opt.sample_latent_scale = 0.5;
-hmc2('state', sum(100*clock))
+% % Set the parameters for MCMC
+% % Here we use two stage sampling to get faster convergence
+% hmc_opt=hmc2_opt;
+% hmc_opt.steps=10;
+% hmc_opt.stepadj=0.05;
+% hmc_opt.nsamples=1;
+% latent_opt.display=0;
+% latent_opt.repeat = 20;
+% latent_opt.sample_latent_scale = 0.5;
+% hmc2('state', sum(100*clock))
+% 
+% % The first stage sampling
+% [r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+% 
+% % re-set some of the sampling options
+% hmc_opt.steps=4;
+% hmc_opt.stepadj=0.05;
+% latent_opt.repeat = 5;
+% hmc2('state', sum(100*clock));
+% 
+% % The second stage sampling
+% % Notice that previous record r is given as an argument
+% [rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, ...
+%                   'latent_opt', latent_opt, 'record', r);
 
-% The first stage sampling
-[r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
-
-% re-set some of the sampling options
-hmc_opt.steps=4;
-hmc_opt.stepadj=0.05;
-latent_opt.repeat = 5;
-hmc2('state', sum(100*clock));
-
-% The second stage sampling
-% Notice that previous record r is given as an argument
-[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, ...
-                  'latent_opt', latent_opt, 'record', r);
+[rgp, g, opt] = gp_mc(gp, x, y, 'nsamples', 400);
 % Remove burn-in
 rgp=thin(rgp,102);
 
