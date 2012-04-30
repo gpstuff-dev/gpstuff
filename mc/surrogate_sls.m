@@ -37,7 +37,6 @@ function [samples,samplesf,diagn] = surrogate_sls(f, x, opt, gp, xx, yy, z, vara
 
 
 % Set empty options to default values
-opt = sls_opt(opt);
 opt = ssls_opt(opt);
 %if opt.display, disp(opt); end
 if opt.display == 1
@@ -186,11 +185,7 @@ for i = 1-nomit:1:nsamples
     f_0 = f_new;
     if i > 0
       samples(i,:) = x_new;
-      if isempty(opt.latent_opt)
-        latent_opt = esls();
-      else
-        latent_opt = opt.latent_opt;
-      end
+      latent_opt = esls(opt.latent_opt);
       gp = gp_unpak(gp, x_new);
       for ii=1:opt.fsamples-1
         f_new = esls(f_new, latent_opt, gp, xx, yy, z);
@@ -233,11 +228,7 @@ for i = 1-nomit:1:nsamples
     f_0 = f_new;
     if i > 0
       samples(i,:) = x_new;
-      if isempty(opt.latent_opt)
-        latent_opt = esls();
-      else
-        latent_opt = opt.latent_opt;
-      end
+      latent_opt = esls(opt.latent_opt);
       gp = gp_unpak(gp, x_new);
       for ii=1:opt.fsamples-1
         f_new = esls(f_new, latent_opt, gp, xx, yy, z);
@@ -276,7 +267,7 @@ for i = 1-nomit:1:nsamples
           error('unknown method');
       end % switch
       if overrelaxation(j)
-        [x_new, f_new, rej_step, rej_old] = bisection(f_new,y,x_new,L,R,w,a,rej_step,j,umodal,xx,yy,gp,z,eta,g);
+        [x_new, f_new, rej_step, rej_old, y_new] = bisection(f_new,y,x_new,L,R,w,a,rej_step,j,umodal,xx,yy,gp,z,eta,g);
       else
         [x_new, f_new] = shrinkage(f_new,y,x_new,w,L,R,method,j,maxiter,umodal,xx,yy,gp,z,eta,g);
       end % if overrelaxation
@@ -296,12 +287,7 @@ for i = 1-nomit:1:nsamples
     f_0 = f_new;
     if i > 0
       samples(i,:) = x_new;
-      if isempty(opt.latent_opt)
-        latent_opt = esls();
-      else
-        latent_opt = opt.latent_opt;
-      end
-      %       samplesf(:,end+1) = f_new;
+      latent_opt = esls(opt.latent_opt);
       gp = gp_unpak(gp, x_new);
       for ii=1:opt.fsamples-1
         f_new = esls(f_new, latent_opt, gp, xx, yy, z);
@@ -363,7 +349,7 @@ end
 %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%
 
-function [x_new, f_new, rej, rej_old] = bisection(f,y,x_0,L,R,w,a,rej,j,um,xx,yy,gp,z,eta,g);
+function [x_new, f_new, rej, rej_old, y_new] = bisection(f,y,x_0,L,R,w,a,rej,j,um,xx,yy,gp,z,eta,g);
 %function [x_new, y_new, rej, rej_old] = bisection(f,y,x_0,L,R,w,a,rej,j,um,varargin);
 %
 % Bisection for overrelaxation (stepping-out needs to be used)
@@ -773,3 +759,49 @@ function opt = ssls_opt(opt)
 if ~isfield(opt, 'fsamples')
   opt.fsamples = 2;
 end
+if nargin < 1
+  opt=[];
+end
+if nargin < 1
+  opt=[];
+end
+
+if ~isfield(opt,'nsamples')
+  opt.nsamples = 1;
+end
+if ~isfield(opt,'nomit')
+  opt.nomit = 0;
+end
+if ~isfield(opt,'display')
+  opt.display = 0;
+end
+if ~isfield(opt,'method')
+  opt.method = 'multi';
+end
+if ~isfield(opt,'overrelaxation')
+  opt.overrelaxation = 0;
+elseif opt.overrelaxation == 1 && (strcmp(opt.method,'doubling') || strcmp(opt.method,'minmax'))
+  opt.method = 'stepping';
+end
+if ~isfield(opt,'alimit')
+  opt.alimit = 4;
+end
+if ~isfield(opt,'wsize')
+  opt.wsize = 2;
+end
+if ~isfield(opt,'mlimit')
+  opt.mlimit = 4;
+end
+if ~isfield(opt,'maxiter')
+  opt.maxiter = 50;
+end
+if ~isfield(opt,'plimit')
+  opt.plimit = 2;
+end
+if ~isfield(opt,'unimodal')
+  opt.unimodal = 0;
+end
+if ~isfield(opt,'mmlimits')
+  opt.mmlimits = [opt.wsize-(opt.wsize*opt.mlimit); opt.wsize+(opt.wsize*opt.mlimit)];
+end
+
