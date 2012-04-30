@@ -1,4 +1,4 @@
-function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_pred(gp, x, y, xt, varargin)
+function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_pred(gp, x, y, varargin)
 %GPMC_PRED  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
@@ -6,12 +6,33 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_pred(gp, x, y, xt, varargin)
 %    Gaussian processes record structure RECGP (returned by gp_mc)
 %    together with a matrix XT of input vectors, matrix X of
 %    training inputs and vector Y of training targets. Returns
-%    matrices EFS and VARFS that contain mean and variance of the
+%    matrices EF and VARF that contain mean and variance of the
 %    marginal posterior predictive distribution
 %  
 %        E[f | xt, y] = E[ E[f | x, y, th] ]
 %      Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
 %   
+%    [EF, VARF, LPY] = GP_PRED(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
+%    returns also the log predictive density LPY of the
+%    observations YT at input locations XT
+%
+%        Lpy = log(p(yt | xt, x, y))
+%
+%    [EF, VARF, LPY, EY, VARY] = GP_PRED(RECGP, X, Y, XT, OPTIONS) 
+%    returns also the predictive means EY and variances VARY for test
+%    observations at input locations XT
+%
+%        Ey(:,i) = E[y | xt, x, y]
+%      Vary(:,i) = Var[y | xt, x, y]
+%
+%    where the latent variables and parameters have been
+%    marginalized out.
+%
+%    [EF, VARF, LPY, EY, VARY] = GPMC_PRED(RECGP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density LPY of the training
+%    observations Y.
+%  
 %    OPTIONS is an optional parameter-value pair
 %      predcf - index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). See
@@ -33,23 +54,6 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_pred(gp, x, y, xt, varargin)
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
 %       
-%    [EF, VARF, LPY] = GP_PRED(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also logarithm of the predictive density PY of the observations YT
-%    at input locations XT
-%
-%        Py = p(yt | xt, x, y)
-%
-%    [EF, VARF, LPY, EY, VARY] = GP_PRED(RECGP, X, Y, XT, OPTIONS) 
-%    returns also the predictive means and variances for test
-%    observations at input locations XT
-%
-%        Ey(:,i) = E[y | xt, x, y]
-%      Vary(:,i) = Var[y | xt, x, y]
-%
-%    where the latent variables and parameters have been
-%    marginalized out.
-%
-%
 %     NOTE! In case of FIC and PIC sparse approximation the
 %     prediction for only some PREDCF covariance functions is just
 %     an approximation since the covariance functions are coupled
@@ -79,39 +83,38 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_pred(gp, x, y, xt, varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2010 Aki Vehtari
-    
+  
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
   
   switch nargout % ugly...
     case 1
-      [Efs] = gpmc_mo_preds(gp, x, y, xt, varargin{:});
+      [Efs] = gpmc_mo_preds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
     case 2
-      [Efs, Varfs] = gpmc_mo_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs] = gpmc_mo_preds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
     case 3
-      [Efs, Varfs, lpys] = gpmc_mo_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs, lpys] = gpmc_mo_preds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
-      lpy = mean(lpys,2);
-%       Ey=mean(Eys,2);
+      lpy=log(mean(exp(lpys),2));
+      %       Ey=mean(Eys,2);
     case 4
-      [Efs, Varfs, lpys, Eys] = gpmc_mo_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs, lpys, Eys] = gpmc_mo_preds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
       Ey=mean(Eys,2);
-      lpy = mean(lpys,2);
-%       Vary=mean(Varys,2) + var(Eys,0,2);
+      lpy=log(mean(exp(lpys),2));
     case 5
-      [Efs, Varfs, lpys, Eys, Varys] = gpmc_mo_preds(gp, x, y, xt, varargin{:});
+      [Efs, Varfs, lpys, Eys, Varys] = gpmc_mo_preds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
       Varf=mean(Varfs,2) + var(Efs,0,2);
       Ey=mean(Eys,2);
       Vary=mean(Varys,2) + var(Eys,0,2);
-      lpy=mean(lpys,2);
+      lpy=log(mean(exp(lpys),2));
   end
 
 end

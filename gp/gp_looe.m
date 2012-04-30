@@ -42,57 +42,24 @@ end
 gp=gp_unpak(gp, w);
 n = size(x,1);
 
-% First Evaluate the data contribution to the error
-switch gp.type
-    % ============================================================
-    % FULL GP (and compact support GP)
-    % ============================================================
-  case 'FULL'   % A full GP
-    [K, C] = gp_trcov(gp, x);
-    if issparse(C)
-      iC = spinv(C); % evaluate the sparse inverse
-      [LD, notpositivedefinite] = ldlchol(C);
-      if notpositivedefinite
-        eloo = NaN;
-        return
-      end
-      b = ldlsolve(LD,y);
-      myy_i = y - b./full(diag(iC));
-      sigma2_i = 1./full(diag(iC));
-    else
-      iC= inv(C);    % evaluate the full inverse
-      b=C\y;
-      myy_i = y - b./diag(iC);
-      sigma2_i = 1./diag(iC);
-    end
-    eloo = 0.5 * (log(2*pi) + sum(log(sigma2_i) + (y-myy_i).^2./sigma2_i)./n);
-    
-    % ============================================================
-    % FIC
-    % ============================================================
-  case 'FIC'
-    error('GP_LOOE is not implemented for FIC!')
-    
-    % ============================================================
-    % PIC
-    % ============================================================
-  case {'PIC' 'PIC_BLOCK'}
-    error('GP_LOOE is not implemented for PIC!')
-    
-    % ============================================================
-    % CS+FIC
-    % ============================================================
-  case 'CS+FIC'
-    error('GP_LOOE is not implemented for CS+FIC!')
-        
-    % ============================================================
-    % SSGP
-    % ============================================================    
-  case 'SSGP'
-    error('GP_LOOE is not implemented for SSGP!')
-    
-  otherwise
-    error('Unknown type of Gaussian process!')
+% For single Gaussian process with Gaussian likelihood LOO
+% log predictive density can be computed analytically.
+% S. Sundararajan and S. S. Keerthi (2001). Predictive Approaches
+% for Choosing Hyperparameters in Gaussian Processes. Neural
+% Computation 13:1103-1118.
+
+% gp_looprep returns b=C\y and iCv=diag(inv(C))
+% using efficient computation for CS, FIC, PIC, and CS+FIC
+[b,iCv]=gp_looprep(gp,x,y);
+if isnan(b)
+  eloo=NaN;
+  return
 end
+
+% LOO-predictions
+myy = y - b./iCv;
+sigma2 = 1./iCv;
+lpyt = (-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
+eloo -sum(lpyt);
 
 end

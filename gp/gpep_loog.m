@@ -25,7 +25,7 @@ function gloo = gpep_loog(w, gp, x, y, varargin)
 % License.txt, included with the software, for details.
 
 ip=inputParser;
-ip.FunctionName = 'GPEP_LOOE';
+ip.FunctionName = 'GPEP_LOOG';
 ip.addRequired('w', @(x) isempty(x) || ...
   isvector(x) && isreal(x) && all(isfinite(x)));
 ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
@@ -77,7 +77,7 @@ switch gp.type
         
         dpyt{i2} = Nzi.*y./sqrt(1+sigma2vec_i).*(dmuvec_i - 0.5*zi./sqrt(1+sigma2vec_i).*dsigma2vec_i);
         
-        gloo(i0) = -1/n*sum(dpyt{i2}./norm_cdf(y.*zi));
+        gloo(i0) = -sum(dpyt{i2}./norm_cdf(y.*zi));
       end
       
     end

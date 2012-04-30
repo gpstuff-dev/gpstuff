@@ -2,32 +2,33 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 %GPLA_LOOPRED  Leave-one-out predictions with Laplace approximation
 %
 %  Description
-%    [EFT, VARFT, LPYT, EYT, VARYT] = GPLA_LOOPRED(GP, X, Y,
-%    OPTIONS) takes a Gaussian process structure GP together with a
-%    matrix XT of input vectors, matrix X of training inputs and
-%    vector Y of training targets, and evaluates the leave-one-out
-%    predictive distribution at inputs X. Returns a posterior mean
-%    EFT and variance VARFT of latent variables, the posterior
-%    predictive mean EYT and variance VARYT of observations, and logarithm
-%    of posterior predictive density PYT at input locations X.
-%
-%    Laplace leave-one-out is approximated in linear response style by
-%    expressing solutions for LOO problem in terms of solution for full
-%    problem. The computational cheap solution can be obtained by making
-%    the assumption that the difference between these two solution is small 
-%    such that their difference may be treated as an Taylor expansion 
-%    truncated at first order.
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPLA_LOOPRED(GP, X, Y, OPTIONS)
+%    takes a Gaussian process structure GP together with a matrix X
+%    of training inputs and vector Y of training targets, and
+%    evaluates the leave-one-out predictive distribution at inputs
+%    X and returns means EFT and variances VARFT of latent
+%    variables, the logarithm of the predictive densities PYT, and
+%    the predictive means EYT and variances VARYT of observations
+%    at input locations X.
 %
 %    OPTIONS is optional parameter-value pair
-%      z  - optional observed quantity in triplet (x_i,y_i,z_i)
-%           Some likelihoods may use this. For example, in case of
-%           Poisson likelihood we have z_i=E_i, that is, expected
-%           value for ith case.
+%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, expected value 
+%               for ith case. 
+%
+%    Laplace leave-one-out is approximated in linear response style
+%    by expressing the solutions for LOO problem in terms of
+%    solution for the full problem. The computationally cheap
+%    solution can be obtained by making the assumption that the
+%    difference between these two solution is small such that their
+%    difference may be treated as an Taylor expansion truncated at
+%    first order (Winther et al 2012, in progress).
 %
 %  See also
-%    GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
+%    GP_LOOPRED, GP_PRED
   
-% Copyright (c) 2011  Aki Vehtari
+% Copyright (c) 2011-2012  Aki Vehtari, Ville Tolvanen
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -35,7 +36,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPLA_LOOPRED';
-  ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
+  ip.addRequired('gp', @(x) isstruct(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -45,183 +46,91 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
   method = ip.Results.method;
   [tn,nin] = size(x);
   
-  if ~iscell(gp)
-    % Single GP
-    
-    % latent posterior
-    [f, sigm2ii, lp] = gpla_pred(gp, x, y, x, 'yt', y, 'z', z, 'zt', z);
-   
-   switch method
+  % latent posterior
+  [f, sigm2ii, lp] = gpla_pred(gp, x, y, 'z', z);
+  
+  switch method
 
-     case 'inla'
-       
-       Eft = zeros(tn,1);
-       Varft = zeros(tn,1);
-       lpyt = zeros(tn,1);
-       minf = f-6.*sqrt(sigm2ii);
-       maxf = f+6.*sqrt(sigm2ii);
-       for i=1:tn
-         if isempty(z)
-           z1 = [];
-         else
-           z1 = z(i);
-         end
-         [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z1), minf(i), maxf(i));
-         Eft(i) = m1;
-         Varft(i) = m2-Eft(i)^2;
-         lpyt(i) = -log(m0);
-       end
-
-     case 'cavity'
-
-       % "site parameters"
-       W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-       deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-       sigm2_t  = 1./W;
-       mu_t     = f + sigm2_t.*deriv;
-       
-       % "cavity parameters"
-       sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
-       myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
-       % check if cavity varianes are negative
-       ii=find(sigma2_i<0);
-       if ~isempty(ii)
-         warning('gpla_loopred: some cavity variances are negative');
-         sigma2_i(ii) = sigm2ii(ii);
-         myy_i(ii) = f(ii);
-       end
-       
-       % leave-one-out predictions
-       Eft=myy_i;
-       Varft=sigma2_i;
-
-     case 'lrs'
-
-       K = gp_cov(gp,x,x);
-       deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-       La       = 1./-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-       Varft=1./diag(inv(K+diag(La)))-La;
-       Eft=f-Varft.*deriv;
-
-   end
-    if nargout>2
-      [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
-    end
-   if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
-     warning('very bad predictive densities, gpla_loopred might not be reliable, check results!');
-   end
-    
-  else
-    % Cell array of GPs
-    nGP = numel(gp);
-    for j = 1:nGP
-      % latent posterior
-      [f, sigm2ii, lp] = gpla_pred(gp{j}, x, y, x, 'yt', y, 'z', z, 'zt', z);
-      
-      P_TH(j,:) = gp{j}.ia_weight;
-      
-      switch method
-
-        case 'inla'
-
-          minf = f-6.*sqrt(sigm2ii);
-          maxf = f+6.*sqrt(sigm2ii);
-          for i=1:tn
-            if isempty(z)
-              z1 = [];
-            else
-              z1 = z(i);
-            end
-            [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp{1}.lik,y(i),x,z1), minf(i), maxf(i));
-            Eft_grid(j,i) = m1;
-            Varft_grid(j,i) = m2-m1^2;
-            lpyt_grid(j,i) = log(m0);
-          end
-          if nargout>3
-            [tmp,Eyt_grid(j,:),Varyt_grid(j,:)] = gp{1}.lik.fh.predy(gp{1}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
-          end
-
-        case 'cavity'
-
-          % "site parameters"
-          W        = -gp{j}.lik.fh.llg2(gp{j}.lik, y, f, 'latent', z);
-          deriv    = gp{j}.lik.fh.llg(gp{j}.lik, y, f, 'latent', z);
-          sigm2_t  = 1./W;
-          mu_t     = f + sigm2_t.*deriv;
-          
-          % "cavity parameters"
-          sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
-          myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
-          
-          Eft_grid(j,:)=myy_i;
-          Varft_grid(j,:)=sigma2_i;
-          n=length(y);
-          
-          if nargout == 3
-            lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
-          elseif nargout > 3
-            [lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)] = ...
-              gp{j}.lik.fh.predy(gp{j}.lik, myy_i, sigma2_i, y, z);
-          end
-
-        case 'lrs'
-          
-          K = gp_cov(gp{j},x,x);
-          deriv    = gp{j}.lik.fh.llg(gp{j}.lik, y, f, 'latent', z);
-          La       = 1./-gp{j}.lik.fh.llg2(gp{j}.lik, y, f, 'latent', z);
-          Varft_grid(j,:)=1./diag(inv(K+diag(La)))-La;
-          Eft_grid(j,:)=f-Varft_grid(j,:)'.*deriv;
-          
-          if nargout == 3
-            lpyt_grid(j,:) = gp{j}.lik.fh.predy(gp{j}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
-          elseif nargout > 3
-            [lpyt_grid(j,:), Eyt_grid(j,:), Varyt_grid(j,:)] = ...
-              gp{j}.lik.fh.predy(gp{j}.lik, Eft_grid(j,:)', Varft_grid(j,:)', y, z);
-          end
-
+    case 'inla'
+      % Leonhard Held and Birgit Schrödle and Håvard Rue (2010)
+      % Posterior and Cross-validatory Predictive Checks: A
+      % Comparison of MCMC and INLA. In (eds) Thomas Kneib and
+      % Gerhard Tutz, Statistical Modelling and Regression
+      % Structures, pp. 91-110. Springer.
+      Eft = zeros(tn,1);
+      Varft = zeros(tn,1);
+      lpyt = zeros(tn,1);
+      minf = f-6.*sqrt(sigm2ii);
+      maxf = f+6.*sqrt(sigm2ii);
+      for i=1:tn
+        if isempty(z)
+          z1 = [];
+        else
+          z1 = z(i);
+        end
+        [m0, m1, m2] = quad_moments(@(x) norm_pdf(x, f(i), sqrt(sigm2ii(i)))./llvec(gp.lik,y(i),x,z1), minf(i), maxf(i));
+        Eft(i) = m1;
+        Varft(i) = m2-Eft(i)^2;
+        lpyt(i) = -log(m0);
       end
-    end
-    
-    ft = zeros(size(Eft_grid,2),501);
-    for j = 1 : size(Eft_grid,2);
-      ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));
-    end
-    
-    % Calculate the density in each grid point by integrating over
-    % different models
-    pft = zeros(size(Eft_grid,2),501);
-    for j = 1 : size(Eft_grid,2)
-      pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1);
-    end
-    
-    % Normalize distributions
-    pft = bsxfun(@rdivide,pft,sum(pft,2));
-    
-    % Widths of each grid point
-    dft = diff(ft,1,2);
-    dft(:,end+1)=dft(:,end);
-    
-    % Calculate mean and variance of the distributions
-    Eft = sum(ft.*pft,2)./sum(pft,2);
-    Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
-    
-    if nargout > 2
-      if nargout > 3
-        Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
-        Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
-        Eyt=Eyt';
-        Varyt=Varyt';
+
+    case 'cavity'
+      % using EP equations
+
+      % "site parameters"
+      W        = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+      deriv    = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+      sigm2_t  = 1./W;
+      mu_t     = f + sigm2_t.*deriv;
+      
+      % "cavity parameters"
+      sigma2_i = 1./(1./sigm2ii-1./sigm2_t);
+      myy_i    = sigma2_i.*(f./sigm2ii-mu_t./sigm2_t);
+      % check if cavity varianes are negative
+      ii=find(sigma2_i<0);
+      if ~isempty(ii)
+        warning('gpla_loopred: some cavity variances are negative');
+        sigma2_i(ii) = sigm2ii(ii);
+        myy_i(ii) = f(ii);
       end
-      lpyt = (sum(bsxfun(@times,lpyt_grid,P_TH),1)');
-    end
-    if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
-      warning('very bad predictive densities, gpla_loopred might not be reliable, check results!');
-    end
-    
+      
+      % leave-one-out predictions
+      Eft=myy_i;
+      Varft=sigma2_i;
+
+    case 'lrs'
+      % Manfred Opper and Ole Winther (2000). Gaussian Processes for
+      % Classification: Mean-Field Algorithms. In Neural
+      % Computation, 12(11):2655-2684.
+      %
+      % Ole Winther et al (2012). Work in progress.
+
+      K = gp_trcov(gp,x);
+      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+      La = 1./-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+      % really large values don't contribute, but make variance
+      % computation unstable. 2e15 approx 1/(2*eps)
+      La = min(La,2e15);
+      Varft=1./diag(inv(K+diag(La)))-La;
+      % check if cavity varianes are negative
+      ii=find(Varft<0);
+      if ~isempty(ii)
+        warning('gpla_loopred: some LOO latent variances are negative');
+        Varft(ii) = 0;
+      end
+      Eft=f-Varft.*deriv;
 
   end
+  
+  if nargout>2
+    [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+  end
+  
+  if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
+    warning('Very bad predictive densities, gpla_loopred might not be reliable, check results!');
+  end
+  
 end
-
 
 function expll = llvec(gplik, y, f, z)
   for i=1:size(f,2)

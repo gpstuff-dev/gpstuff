@@ -29,18 +29,90 @@ function [e, g] = gp_looeg(w, gp, x, y, varargin)
 %    GP_LOOE, GP_LOOG, GPEP_LOOE
 %
 
-% Copyright (c) 2010 Aki Vehtari
-  
+% Copyright (c) 2010,2012 Aki Vehtari
+
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+% Nothing to parse, but check the arguments anyway
+ip=inputParser;
+ip.FunctionName = 'GP_LOOEG';
+ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+ip.addRequired('gp',@isstruct);
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.parse(w, gp, x, y);
+
+if isfield(gp,'mean') & ~isempty(gp.mean.meanFuncs)
+  error('GP_LOOEG: Mean functions not yet supported');
+end
+
+gp=gp_unpak(gp, w);
+n = size(x,1);
+
 % Single function for some optimization routines, no need for mydeal...
 if isfield(gp.lik.fh,'trcov')
   % Gaussian likelihood
-  e=gp_looe(w, gp, x, y);
-  if nargout>1
-    g=gp_loog(w, gp, x, y);
+  if nargout<2
+    % gp_looprep returns b=C\y and iCv=diag(inv(C))
+    % using efficient computation for CS, FIC, PIC, and CS+FIC
+    [b,iCv]=gp_looprep(gp,x,y);
+    if isnan(b)
+      e=NaN;
+      return
+    end
+    myy = y - b./iCv;
+    sigma2 = 1./iCv;
+    lpyt = (-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
+    e = -sum(lpyt);
+  else
+    % gp_looprep returns b=C\y and iCv=diag(inv(C))
+    % using efficient computation for CS, FIC, PIC, and CS+FIC
+    % to avoid recomputation of these terms, both error and gradients are
+    % computed below, instead of calling gp_looe and gp_loog
+    [b,iCv,iC]=gp_looprep(gp,x,y);
+    if isnan(b)
+      e=NaN;
+      g=NaN;
+      return
+    end
+    myy = y - b./iCv;
+    sigma2 = 1./iCv;
+    lpyt = (-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
+    e = -sum(lpyt);
+    
+    % Get the gradients of the covariance matrices and gprior
+    % from gpcf_* structures and evaluate the gradients
+    ncf = length(gp.cf);
+    g = [];
+    i1=0;
+    for i=1:ncf
+      gpcf = gp.cf{i};
+      gpcf.GPtype = gp.type;
+      DKff = gpcf.fh.cfg(gpcf, x);
+      
+      % Evaluate the gradient with respect to covariance function parameters
+      for i2 = 1:length(DKff)
+        i1 = i1+1;  
+        Z = iC*DKff{i2};
+        Zb = Z*b;            
+        g(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+      end
+      
+    end
+
+    % Evaluate the gradient from Gaussian likelihood function
+    if isfield(gp.lik.fh,'trcov')
+      DCff = gp.lik.fh.cfg(gp.lik, x);
+      for i2 = 1:length(DCff)
+        i1 = i1+1;
+        Z = iC*eye(n,n).*DCff{i2};
+        Zb = Z*b;            
+        g(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+      end
+    end
+    
   end
 else
   % non-Gaussian likelihood

@@ -1,5 +1,5 @@
-function [Eft, Varft, lpyt, Eyt, Varyt] = gp_mo_pred(gp, x, y, xt, varargin)
-%GP_PRED  Make predictions with Gaussian process 
+function [Eft, Varft, lpyt, Eyt, Varyt] = gp_mo_pred(gp, x, y, varargin)
+%GP_MO_PRED  Make predictions with Gaussian process 
 %
 %  Description
 %    [EFT, VARFT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
@@ -15,12 +15,17 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_mo_pred(gp, x, y, xt, varargin)
 %    Y corresponds to one output vector.
 %
 %    [EFT, VARFT, LPYT] = GP_MO_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive density PYT of the observations YT
-%    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
+%    returns also the log predictive density LPYT of the
+%    observations YT at test input locations XT. This can be used
+%    for example in the cross-validation. Here Y has to be vector.
 % 
 %    [EFT, VARFT, LPYT, EYT, VARYT] = GP_MO_PRED(GP, X, Y, XT, OPTIONS)
-%    Returns also posterior predictive mean and variance.
+%    Returns also posterior predictive means EYT and variance VARYT.
+%
+%    [EF, VARF, LPY, EY, VARY] = GP_PRED(GP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density LPY of the training
+%    observations Y.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -81,8 +86,8 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
         switch gp.lik.type
-%           case 'Softmax'
-%             fh_pred=@gpla_softmax_pred;
+          %           case 'Softmax'
+          %             fh_pred=@gpla_softmax_pred;
           case {'Multinom' 'Softmax'}
             fh_pred=@gpla_mo_pred;
           otherwise
@@ -103,15 +108,15 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   end
   switch nargout
     case 1
-      [Eft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft] = fh_pred(gp, x, y, varargin{:});
     case 2
-      [Eft, Varft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft] = fh_pred(gp, x, y, varargin{:});
     case 3
-      [Eft, Varft, lpyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt] = fh_pred(gp, x, y, varargin{:});
     case 4
-      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, varargin{:});
     case 5
-      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, varargin{:});
   end
   return
 end
@@ -121,84 +126,118 @@ ip.FunctionName = 'GP_MO_PRED';
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
 ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.parse(gp, x, y, xt, varargin{:});
+if numel(varargin)==0 || isnumeric(varargin{1})
+  % inputParser should handle this, but it doesn't
+  ip.parse(gp, x, y, varargin{:});
+else
+  ip.parse(gp, x, y, [], varargin{:});
+end
+xt=ip.Results.xt;
 yt=ip.Results.yt;
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
+if isempty(xt)
+  xt=x;
+    if isempty(tstind)
+      if iscell(gp)
+        gptype=gp{1}.type;
+      else
+        gptype=gp.type;
+      end
+      switch gptype
+        case {'FULL' 'VAR' 'DTC' 'SOR'}
+          tstind = [];
+        case {'FIC' 'CS+FIC'}
+          tstind = 1:size(x,1);
+        case 'PIC'
+          if iscell(gp)
+            tstind = gp{1}.tr_index;
+          else
+            tstind = gp.tr_index;
+          end
+      end
+    end
+  if isempty(yt)
+    yt=y;
+  end
+  if isempty(zt)
+    zt=z;
+  end
+end
 
 [tn, nout] = size(y);
 
 if nargout > 2 && isempty(yt)
-    error('GP_MO_PRED -> To compute PYT, the YT has to be provided.')
+  error('GP_MO_PRED -> To compute LPYT, the YT has to be provided.')
 end
 
 
 
 if isfield(gp, 'comp_cf')  % own covariance for each ouput component
-    multicf = true;
-    if length(gp.comp_cf) ~= nout
-        error('GP_MO_E: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+  multicf = true;
+  if length(gp.comp_cf) ~= nout
+    error('GP_MO_E: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+  end
+  if ~isempty(predcf)
+    if ~iscell(predcf) || length(predcf)~=nout
+      error(['GP_MO_PRED: if own covariance for each output component is used,'...
+             'predcf has to be cell array and contain nout (vector) elements.   '])
     end
-    if ~isempty(predcf)
-        if ~iscell(predcf) || length(predcf)~=nout
-            error(['GP_MO_PRED: if own covariance for each output component is used,'...
-                'predcf has to be cell array and contain nout (vector) elements.   '])
-        end
-    else
-        predcf = gp.comp_cf;
-    end
+  else
+    predcf = gp.comp_cf;
+  end
 else
-    multicf = false;
-    for i1=1:nout
-        predcf2{i1} = predcf;
-    end
-    predcf=predcf2;
+  multicf = false;
+  for i1=1:nout
+    predcf2{i1} = predcf;
+  end
+  predcf=predcf2;
 end
 
 L = zeros(tn,tn,nout);
 ntest=size(xt,1);
 K_nf = zeros(ntest,tn,nout);
 if multicf
-    for i1=1:nout
-        [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
-        L(:,:,i1) = chol(C)';
-        K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
-    end
+  for i1=1:nout
+    [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
+    L(:,:,i1) = chol(C)';
+    K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+  end
 else
-    for i1=1:nout
-        [tmp,C] = gp_trcov(gp, x);
-        L(:,:,i1) = chol(C)';
-        K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});        
-    end
+  for i1=1:nout
+    [tmp,C] = gp_trcov(gp, x);
+    L(:,:,i1) = chol(C)';
+    K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});        
+  end
 end
 
 
 Eft = zeros(ntest,nout);
 for i1=1:nout
-   Eft(:,i1) = K_nf(:,:,i1)*(L(:,:,i1)'\(L(:,:,i1)\y(:,i1))); 
+  Eft(:,i1) = K_nf(:,:,i1)*(L(:,:,i1)'\(L(:,:,i1)\y(:,i1))); 
 end
 
 % NOTE! THIS FUNCTION RETURNS THE VARIANCE IN DIFFERENT FORMAT THAN
 % GPLA_MO_PRED
 Varft = zeros(ntest,nout);
 if nargout > 1
-    for i1=1:nout
-        v = L(:,:,i1)\K_nf(:,:,i1)';
-        V = gp_trvar(gp,xt,predcf{i1});
-        Varft(:,i1) = V - sum(v'.*v',2);
-    end
+  for i1=1:nout
+    v = L(:,:,i1)\K_nf(:,:,i1)';
+    V = gp_trvar(gp,xt,predcf{i1});
+    Varft(:,i1) = V - sum(v'.*v',2);
+  end
 end
 if nargout > 2
-    % normal case
-    [V, Cv] = gp_trvar(gp,xt,predcf);
-    Eyt = Eft;
-    Varyt = Varft + Cv - V;
-    lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
-    
+  % normal case
+  [V, Cv] = gp_trvar(gp,xt,predcf);
+  Eyt = Eft;
+  Varyt = Varft + Cv - V;
+  lpyt = norm_lpdf(yt, Eyt, sqrt(Varyt));
+  
 end

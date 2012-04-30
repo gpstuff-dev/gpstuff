@@ -1,4 +1,4 @@
-function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_preds(gp, x, y, xt, varargin)
+function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_preds(gp, x, y, varargin)
 %GPMC_PREDS  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
@@ -19,13 +19,33 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_preds(gp, x, y, xt, varargin)
 %      Varfs(:,i) = Var[ f(xt) | th_i, x, y ]
 %  
 %    The marginal posterior mean and variance can be evaluated from
-%    these as follows (See also MC_PRED):
+%    these as follows (See also GPMC_PRED and GP_PRED):
 %  
 %        E[f | xt, y] = E[ E[f | x, y, th] ]
 %                     = mean(Efs,2)
 %      Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
 %                     = mean(Varfs,2) + var(Efs,0,2)
 %   
+%    [EFS, VARFS, LPYS] = GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
+%    returns also the predictive density PYS of the observations YT
+%    at input locations XT given RECGP
+%
+%        Pys(:,i) = p(yt | xt, x, y, th_i)
+%
+%    [EFS, VARFS, LPYS, EYS, VARYS] = GP_PREDS(RECGP, X, Y, XT, OPTIONS) 
+%    returns also the predictive means EYS and variances VARYS for test
+%    observations at input locations XT given RECGP
+%
+%        Eys(:,i) = E[y | xt, x, y, th_i]
+%      Varys(:,i) = Var[y | xt, x, y, th_i]
+%
+%    where the latent variables have been marginalized out.
+%
+%    [EFS, VARFS, LPYS, EYS, VARYS] = GPMC_PREDS(RECGP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density LPYS of the training
+%    observations Y.
+%  
 %    OPTIONS is an optional parameter-value pair
 %      predcf - index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). See
@@ -47,22 +67,6 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_preds(gp, x, y, xt, varargin)
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
 %       
-%    [EFS, VARFS, LPYS] = GP_PREDS(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also the predictive density PYS of the observations YT
-%    at input locations XT given RECGP
-%
-%        Pys(:,i) = p(yt | xt, x, y, th_i)
-%
-%    [EFS, VARFS, LPYS, EYS, VARYS] = GP_PREDS(RECGP, X, Y, XT, OPTIONS) 
-%    returns also the predictive means and variances for test
-%    observations at input locations XT given RECGP
-%
-%        Eys(:,i) = E[y | xt, x, y, th_i]
-%      Varys(:,i) = Var[y | xt, x, y, th_i]
-%
-%    where the latent variables have been marginalized out.
-%
-%
 %     NOTE! In case of FIC and PIC sparse approximation the
 %     prediction for only some PREDCF covariance functions is just
 %     an approximation since the covariance functions are coupled
@@ -90,86 +94,120 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_mo_preds(gp, x, y, xt, varargin)
 %    MC_PRED, GP_PRED, GP_SET, GP_MC
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-    
+  
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-    
-    ip=inputParser;
-    ip.FunctionName = 'GPMC_PREDS';
-    ip.addRequired('gp',@isstruct);
-    ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                     isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-    ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                     (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-    ip.parse(gp, x, y, xt, varargin{:});
-    yt=ip.Results.yt;
-    zt=ip.Results.zt;
-    z=ip.Results.z;
-    predcf=ip.Results.predcf;
-    tstind=ip.Results.tstind;
-    
-    tn = size(x,1);
-    if nargin < 4
-        error('Requires at least 4 arguments');
+  
+  ip=inputParser;
+  ip.FunctionName = 'GPMC_PREDS';
+  ip.addRequired('gp',@isstruct);
+  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
+  ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+  ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                   (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  if numel(varargin)==0 || isnumeric(varargin{1})
+    % inputParser should handle this, but it doesn't
+    ip.parse(gp, x, y, varargin{:});
+  else
+    ip.parse(gp, x, y, [], varargin{:});
+  end
+  xt=ip.Results.xt;
+  yt=ip.Results.yt;
+  zt=ip.Results.zt;
+  z=ip.Results.z;
+  predcf=ip.Results.predcf;
+  tstind=ip.Results.tstind;
+  if isempty(xt)
+    xt=x;
+    if isempty(tstind)
+      if iscell(gp)
+        gptype=gp{1}.type;
+      else
+        gptype=gp.type;
+      end
+      switch gptype
+        case {'FULL' 'VAR' 'DTC' 'SOR'}
+          tstind = [];
+        case {'FIC' 'CS+FIC'}
+          tstind = 1:size(x,1);
+        case 'PIC'
+          if iscell(gp)
+            tstind = gp{1}.tr_index;
+          else
+            tstind = gp.tr_index;
+          end
+      end
     end
+    if isempty(yt)
+      yt=y;
+    end
+    if isempty(zt)
+      zt=z;
+    end
+  end
+  
+  tn = size(x,1);
+  if nargin < 4
+    error('Requires at least 4 arguments');
+  end
 
-    if nargout > 2 && isempty(yt)
-        error('mc_pred -> If lpy is wanted you must provide the vector y as 7''th input.')
+  if nargout > 2 && isempty(yt)
+    error('mc_pred -> If lpy is wanted you must provide the vector y as 7''th input.')
+  end
+  
+  [n,nout] = size(y);
+  nmc=size(gp.jitterSigma2,1);
+  
+  % Non-Gaussian likelihood. Thus latent variables should be used in
+  % place of observations
+  if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
+    y = gp.latentValues';
+  else 
+    y = repmat(y,1,nmc);
+  end
+  
+  % loop over all samples
+  for i1=1:nmc
+    Gp = take_nth(gp,i1);
+    if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
+      Gp = rmfield(Gp,'latent_method');
     end
-            
-    [n,nout] = size(y);
-    nmc=size(gp.jitterSigma2,1);
     
-    % Non-Gaussian likelihood. Thus latent variables should be used in
-    % place of observations
-    if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
-        y = gp.latentValues';
+    if nargout < 3
+      [ef, vf] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind);
+      Ef(:,i1) = ef(:);
+      Varf(:,i1) = vf(:);
     else 
-        y = repmat(y,1,nmc);
+      if isfield(gp, 'latentValues')
+        [ef, vf] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind);
+        Ef(:,i1) = ef(:);
+        Varf(:,i1) = vf(:);
+        %                 if isempty(yt)
+        %                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, ef, vf, [], zt);
+        if nargout > 3
+          [ey,vy,ppy] = Gp.lik.fh.predy(Gp.lik, ef, vf, yt, zt);
+          Ey(:,i1) = ey(:);
+          Vary(:,i1) = vy(:);
+          lpy(:,i1) = ppy(:);
+        else
+          ppy = Gp.lik.fh.predy(Gp.lik, ef, vf, yt, zt);
+          lpy(:,i1) = ppy(:);
+        end
+      else
+        if nargout < 4
+          [Ef(:,i1), Varf(:,i1), lpy(:,i1)] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
+        else
+          [Ef(:,i1), Varf(:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
+        end
+      end            
     end
-    
-    % loop over all samples
-    for i1=1:nmc
-        Gp = take_nth(gp,i1);
-        if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
-          Gp = rmfield(Gp,'latent_method');
-        end
-                
-        if nargout < 3
-            [ef, vf] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind);
-            Ef(:,i1) = ef(:);
-            Varf(:,i1) = vf(:);
-        else 
-            if isfield(gp, 'latentValues')
-                [ef, vf] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind);
-                Ef(:,i1) = ef(:);
-                Varf(:,i1) = vf(:);
-%                 if isempty(yt)
-%                     [Ey(:,i1), Vary(:,i1)] = feval(Gp.lik.fh.predy, Gp.lik, ef, vf, [], zt);
-                if nargout > 3
-                    [ey,vy,ppy] = Gp.lik.fh.predy(Gp.lik, ef, vf, yt, zt);
-                    Ey(:,i1) = ey(:);
-                    Vary(:,i1) = vy(:);
-                    lpy(:,i1) = ppy(:);
-                else
-                    ppy = Gp.lik.fh.predy(Gp.lik, ef, vf, yt, zt);
-                    lpy(:,i1) = ppy(:);
-                end
-            else
-                if nargout < 4
-                    [Ef(:,i1), Varf(:,i1), lpy(:,i1)] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
-                else
-                    [Ef(:,i1), Varf(:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_mo_pred(Gp, x, reshape(y(:,i1),n,nout), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt); 
-                end
-            end            
-        end
-    end    
+  end    
 end

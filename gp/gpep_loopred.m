@@ -4,29 +4,33 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 %  Description
 %    [EFT, VARFT, LPYT, EYT, VARYT] = GPEP_LOOPRED(GP, X, Y,
 %    OPTIONS) takes a Gaussian process structure GP together with a
-%    matrix XT of input vectors, matrix X of training inputs and
-%    vector Y of training targets, and evaluates the leave-one-out
-%    predictive distribution at inputs X. Returns a posterior mean
-%    EFT and variance VARFT of latent variables, the posterior
-%    predictive mean EYT and variance VARYT of observations, and logarithm
-%    of posterior predictive density PYT at input locations X.
+%    matrix X of training inputs and vector Y of training targets,
+%    and evaluates the leave-one-out predictive distribution at
+%    inputs X and returns means EFT and variances VARFT of latent
+%    variables, the logarithm of the predictive densities PYT, and
+%    the predictive means EYT and variances VARYT of observations
+%    at input locations X.
+%
+%    OPTIONS is optional parameter-value pair
+%      z      - optional observed quantity in triplet (x_i,y_i,z_i)
+%               Some likelihoods may use this. For example, in case of 
+%               Poisson likelihood we have z_i=E_i, that is, expected value 
+%               for ith case. 
 %
 %    EP leave-one-out is approximated by leaving-out site-term and
 %    using cavity distribution as leave-one-out posterior for the
-%    ith latent value. Since the ith likelihood has influenced
-%    other site terms through the prior, this estimate can be
-%    over-optimistic.
+%    ith latent value. 
 %
-%    OPTIONS is optional parameter-value pair
-%      z  - optional observed quantity in triplet (x_i,y_i,z_i)
-%           Some likelihoods may use this. For example, in case of
-%           Poisson likelihood we have z_i=E_i, that is, expected
-%           value for ith case.
+%  References
+%    Manfred Opper and Ole Winther (2000). Gaussian Processes for
+%    Classification: Mean-Field Algorithms. Neural Computation,
+%    12(11):2655-2684.
 %
 %  See also
-%    GPEP_E, GPEP_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
+%    GP_LOOPRED, GP_PRED
   
-% Copyright (c) 2010  Aki Vehtari
+% Copyright (c) 2010-2012  Aki Vehtari, Ville Tolvanen
+% Copyright (c) 2011-2012  Ville Tolvanen
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -34,75 +38,21 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPEP_LOOPRED';
-  ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
+  ip.addRequired('gp', @(x) isstruct(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
 
-  if ~iscell(gp)
-    % Single GP
-    [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,muvec_i,sigm2vec_i,lnZ_i] = gpep_e(gp_pak(gp), ...
-                                                      gp, x, y, 'z', z);
+  [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,muvec_i,sigm2vec_i,lnZ_i] = ...
+      gpep_e(gp_pak(gp), gp, x, y, 'z', z);
 
-    Eft=muvec_i;
-    Varft=sigm2vec_i;
-    lpyt=lnZ_i;
-    n=length(y);
-    if nargout > 3
-      [tmp, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
-    end
-    
-  else
-    % Cell array of GPs
-    nGP = numel(gp);
-    for j = 1:nGP
-      [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,muvec_i,sigm2vec_i,lnZ_i] = gpep_e(gp_pak(gp{j}), ...
-                                                        gp{j}, x, y, 'z', z);
-      
-      P_TH(j,:) = gp{j}.ia_weight;
-      Eft_grid(j,:)=muvec_i;
-      Varft_grid(j,:)=sigm2vec_i;
-      pyt_grid(j,:)=exp(lnZ_i);
-      n=length(y);
-      if nargout > 3
-        [tmp, Eyt_grid(j,:), Varyt_grid(j,:)] = ...
-          gp{j}.lik.fh.predy(gp{j}.lik, muvec_i, ...
-          sigm2vec_i, y, z);
-      end
-    end
-    
-    ft = zeros(size(Eft_grid,2),501);
-    for j = 1 : size(Eft_grid,2);
-        ft(j,:) = Eft_grid(1,j)-10*sqrt(Varft_grid(1,j)) : 20*sqrt(Varft_grid(1,j))/500 : Eft_grid(1,j)+10*sqrt(Varft_grid(1,j));  
-    end
-    
-    % Calculate the density in each grid point by integrating over
-    % different models
-    pft = zeros(size(Eft_grid,2),501);
-    for j = 1 : size(Eft_grid,2)
-        pft(j,:) = sum(norm_pdf(repmat(ft(j,:),size(Eft_grid,1),1), repmat(Eft_grid(:,j),1,size(ft,2)), repmat(sqrt(Varft_grid(:,j)),1,size(ft,2))).*repmat(P_TH,1,size(ft,2)),1); 
-    end
-
-    % Normalize distributions
-    pft = bsxfun(@rdivide,pft,sum(pft,2));
-
-    % Widths of each grid point
-    dft = diff(ft,1,2);
-    dft(:,end+1)=dft(:,end);
-
-    % Calculate mean and variance of the distributions
-    Eft = sum(ft.*pft,2)./sum(pft,2);
-    Varft = sum(pft.*(repmat(Eft,1,size(ft,2))-ft).^2,2)./sum(pft,2);
-    
-    if nargout > 3
-      Eyt = sum(Eyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1);
-      Varyt = sum(Varyt_grid.*repmat(P_TH,1,size(Eyt_grid,2)),1) + sum((Eyt_grid - repmat(Eyt,nGP,1)).^2, 1);
-      Eyt=Eyt';
-      Varyt=Varyt';
-    end
-    lpyt = log(sum(bsxfun(@times,pyt_grid,P_TH),1)');
-
+  Eft=muvec_i;
+  Varft=sigm2vec_i;
+  lpyt=lnZ_i;
+  if nargout > 3
+    [tmp, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, muvec_i, sigm2vec_i, [], z);
   end
+  
 end

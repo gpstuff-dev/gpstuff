@@ -1,4 +1,4 @@
-function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, varargin)
 %GP_PRED  Make predictions with Gaussian process 
 %
 %  Description
@@ -14,13 +14,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
 %    Each row of X corresponds to one input vector and each row of
 %    Y corresponds to one output vector.
 %
-%    [EFT, VARFT, LPYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive density PYT of the
+%    [EFT, VARFT, LPYT] = GP_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS)
+%    returns also logarithm of the predictive density LPYT of the
 %    observations YT at test input locations XT. This can be used
-%    for example in the cross-validation. Here Y has to be vector.
+%    for example in the cross-validation. Here Y has to be a vector.
 % 
 %    [EFT, VARFT, LPYT, EYT, VARYT] = GP_PRED(GP, X, Y, XT, OPTIONS)
-%    Returns also posterior predictive mean and variance.
+%    returns also the posterior predictive mean EYT and variance VARYT.
+%
+%    [EF, VARF, LPY, EY, VARY] = GP_PRED(GP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density LPY of the training
+%    observations Y.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -73,11 +78,65 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008 Jouni Hartikainen
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
+
+ip=inputParser;
+ip.FunctionName = 'GP_PRED';
+ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
+ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
+ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
+ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+if numel(varargin)==0 || isnumeric(varargin{1})
+  % inputParser should handle this, but it doesn't
+  ip.parse(gp, x, y, varargin{:});
+else
+  ip.parse(gp, x, y, [], varargin{:});
+end
+xt=ip.Results.xt;
+yt=ip.Results.yt;
+zt=ip.Results.zt;
+z=ip.Results.z;
+predcf=ip.Results.predcf;
+tstind=ip.Results.tstind;
+if isempty(xt)
+  xt=x;
+  if isempty(tstind)
+    if iscell(gp)
+      gptype=gp{1}.type;
+    else
+      gptype=gp.type;
+    end
+    switch gptype
+      case {'FULL' 'VAR' 'DTC' 'SOR'}
+        tstind = [];
+      case {'FIC' 'CS+FIC'}
+        tstind = 1:size(x,1);
+      case 'PIC'
+        if iscell(gp)
+          tstind = gp{1}.tr_index;
+        else
+          tstind = gp.tr_index;
+        end
+    end
+  end
+  if isempty(yt)
+    yt=y;
+  end
+  if isempty(zt)
+    zt=z;
+  end
+end
 
 if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   % use inference specific methods
@@ -105,39 +164,29 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   else
     error('Logical error by the coder of this function!')
   end
+  % pass these forward
+  options=struct();
+  if ~isempty(yt);options.yt=yt;end
+  if ~isempty(z);options.z=z;end
+  if ~isempty(zt);options.zt=zt;end
+  if ~isempty(predcf);options.predcf=predcf;end
+  if ~isempty(tstind);options.tstind=tstind;end
   switch nargout
     case {1 0}
-      [Eft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft] = fh_pred(gp, x, y, varargin{:});
     case 2
-      [Eft, Varft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft] = fh_pred(gp, x, y, varargin{:});
     case 3
-      [Eft, Varft, lpyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt] = fh_pred(gp, x, y, varargin{:});
     case 4
-      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, varargin{:});
     case 5
-      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, varargin{:});
   end
   return
 end
 
-ip=inputParser;
-ip.FunctionName = 'GP_PRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)&x>=0))
-ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.parse(gp, x, y, xt, varargin{:});
-yt=ip.Results.yt;
-predcf=ip.Results.predcf;
-tstind=ip.Results.tstind;
-
 tn = size(x,1);
-
 if nargout > 2 && isempty(yt)
   lpyt=[];
 end
@@ -258,8 +307,8 @@ switch gp.type
     
     u = gp.X_u;
     m = size(u,1);
-    % Turn the inducing vector on right direction
     if size(u,2) ~= size(x,2)
+      % Turn the inducing vector on right direction
       u=u';
     end
     % Calculate some help matrices
@@ -267,7 +316,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);   % f x u
     K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
     K_nu = gp_cov(gp,xt,u);       % n x u
-    Luu = chol(K_uu)';
+    Luu = chol(K_uu,'lower');
     
     % Evaluate the Lambda (La) for specific model
     % Q_ff = K_fu*inv(K_uu)*K_fu'
@@ -338,6 +387,7 @@ switch gp.type
     u = gp.X_u;
     ind = gp.tr_index;
     if size(u,2) ~= size(x,2)
+      % Turn the inducing vector on right direction
       u=u';
     end
 
@@ -363,14 +413,12 @@ switch gp.type
     A = (A+A')./2;            % Ensure symmetry
     L = iLaKfu/chol(A);
 
-    tyy = y;
     % From this on evaluate the prediction
     % See Snelson and Ghahramani (2007) for details
-    p=iLaKfu*(A\(iLaKfu'*tyy));
     for i=1:length(ind)
-      p2(ind{i},:) = La{i}\tyy(ind{i},:);
+      p(ind{i},:) = La{i}\y(ind{i},:);
     end
-    p= p2-p;
+    p = p - L*(L'*y);
     
     % Prediction matrices formed with only subsetof cf's.
     if ~isempty(predcf)
@@ -462,10 +510,14 @@ switch gp.type
       tstind = [];
     end
     
+    u = gp.X_u;
+    if size(u,2) ~= size(x,2)
+      % Turn the inducing vector on right direction
+      u=u';
+    end
+    
     n = size(x,1);
     n2 = size(xt,1);
-
-    u = gp.X_u;
     m = size(u,1);
     ncf = length(gp.cf);
     
@@ -478,15 +530,15 @@ switch gp.type
 
     % Loop through all covariance functions
     for i = 1:ncf        
-      % Non-CS covariances
       if ~isfield(gp.cf{i},'cs') 
+        % Non-CS covariances
         cf1 = [cf1 i];
         % If used for prediction
         if ~isempty(find(predcf==i))
           predcf1 = [predcf1 i]; 
         end
-        % CS-covariances
       else
+        % CS-covariances
         cf2 = [cf2 i];           
         % If used for prediction
         if ~isempty(find(predcf==i))

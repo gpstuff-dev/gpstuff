@@ -1,13 +1,14 @@
 function [H,b,B,Hs] = mean_prep(gp,x,xs)
 %MEAN_PREP  Calculates help terms needed in inference with mean function
 %
-% Description
-%   [H,b,B,Hs] = mean_prep(gpmf,x) takes in GP structure, test and
-%   training inputs. Returns base functions' values evaluated at
-%   training inputs x and test inputs xs in matrices H and Hs
-%   (corresponding order), base functions' weigths' prior mean
-%   vector b and prior covariance matrix B.
-
+%  Description
+%    [H,b,B,Hs] = mean_prep(gpmf,x) takes in GP structure, test and
+%    training inputs. Returns base functions' values evaluated at
+%    training inputs x and test inputs xs in matrices H and Hs
+%    (corresponding order), base functions' weigths' prior mean
+%    vector b and prior covariance matrix B.
+%
+  
 % Copyright (c) 2010 Tuomas Nikoskinen
 
 % This software is distributed under the GNU General Public

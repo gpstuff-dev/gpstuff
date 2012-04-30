@@ -45,4 +45,4 @@ z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
 [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,lnZ_i] = gpep_e(w, gp, x, y, 'z', z);
-eloo=-mean(lnZ_i);
+eloo=-sum(lnZ_i);

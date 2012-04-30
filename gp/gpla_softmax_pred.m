@@ -1,4 +1,4 @@
-function [mu_star, Sigm_cc, pi_star, Ey, Vary] = gpla_softmax_pred(gp, x, y, xt, varargin)
+function [mu_star, Sigm_cc, pi_star, Ey, Vary] = gpla_softmax_pred(gp, x, y, varargin)
 %function [Ef, Varf, Ey, Vary, Pyt] = gpla_softmax_pred(gp, x, y, xt, varargin)
 %GPLA_SOFTMAX_PRED Predictions with Gaussian Process Laplace
 %                approximation with softmax likelihood
@@ -51,7 +51,7 @@ function [mu_star, Sigm_cc, pi_star, Ey, Vary] = gpla_softmax_pred(gp, x, y, xt,
   ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
   ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -59,12 +59,41 @@ function [mu_star, Sigm_cc, pi_star, Ey, Vary] = gpla_softmax_pred(gp, x, y, xt,
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-  ip.parse(gp, x, y, xt, varargin{:});
+  if numel(varargin)==0 || isnumeric(varargin{1})
+    % inputParser should handle this, but it doesn't
+    ip.parse(gp, x, y, varargin{:});
+  else
+    ip.parse(gp, x, y, [], varargin{:});
+  end
+  xt=ip.Results.xt;
   yt=ip.Results.yt;
-  z=ip.Results.z;
-  zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  if isempty(xt)
+    xt=x;
+    if isempty(tstind)
+      if iscell(gp)
+        gptype=gp{1}.type;
+      else
+        gptype=gp.type;
+      end
+      switch gptype
+        case {'FULL' 'VAR' 'DTC' 'SOR'}
+          tstind = [];
+        case {'FIC' 'CS+FIC'}
+          tstind = 1:size(x,1);
+        case 'PIC'
+          if iscell(gp)
+            tstind = gp{1}.tr_index;
+          else
+            tstind = gp.tr_index;
+          end
+      end
+    end
+    if isempty(yt)
+      yt=y;
+    end
+  end
 
   Ey=[];
   Vary=[];

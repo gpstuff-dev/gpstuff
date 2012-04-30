@@ -45,77 +45,48 @@ n = size(x,1);
 g = [];
 gloo = [];
 
-switch gp.type
-  case 'FULL'
-    % ============================================================
-    % FULL
-    % ============================================================
-    % Evaluate covariance
-    [K, C] = gp_trcov(gp,x);
-    
-    if issparse(C)
-      % evaluate the sparse inverse
-      invC = spinv(C);
-      [LD, notpositivedefinite] = ldlchol(C);
-      if notpositivedefinite
-          b = NaN;
-      else
-          b = ldlsolve(LD,y);
-      end
-    else
-      % evaluate the full inverse
-      invC = inv(C);        
-      b = C\y;
-    end
+% For single Gaussian process with Gaussian likelihood LOO
+% gradient of log predictive density can be computed analytically.
+% S. Sundararajan and S. S. Keerthi (2001). Predictive Approaches
+% for Choosing Hyperparameters in Gaussian Processes. Neural
+% Computation 13:1103-1118.
 
-    % Get the gradients of the covariance matrices and gprior
-    % from gpcf_* structures and evaluate the gradients
-    i1=0;
-    for i=1:ncf
-      
-      gpcf = gp.cf{i};
-      gpcf.GPtype = gp.type;
-      DKff = gpcf.fh.cfg(gpcf, x);
-      
-      % Evaluate the gradient with respect to covariance function parameters
-      for i2 = 1:length(DKff)
-        i1 = i1+1;  
-        Z = invC*DKff{i2};
-        Zb = Z*b;            
-        gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
-      end
-      
-    end
+% gp_looprep returns b=C\y and iCv=diag(inv(C))
+% using efficient computation for CS, FIC, PIC, and CS+FIC
+[b,iCv,iC]=gp_looprep(gp,x,y);
+if isnan(b)
+  gloo=NaN;
+  return
+end
 
-    % Evaluate the gradient from Gaussian likelihood function
-    if isfield(gp.lik.fh,'trcov')
-      DCff = gp.lik.fh.cfg(gp.lik, x);
-      for i2 = 1:length(DCff)
-        i1 = i1+1;
-        Z = invC*eye(n,n).*DCff{i2};
-        Zb = Z*b;            
-        gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./diag(invC)).*diag(Z*invC))./diag(invC) )./n;
-      end
-    end
+% Get the gradients of the covariance matrices and gprior
+% from gpcf_* structures and evaluate the gradients
+i1=0;
+for i=1:ncf
+  
+  gpcf = gp.cf{i};
+  gpcf.GPtype = gp.type;
+  DKff = gpcf.fh.cfg(gpcf, x);
+  
+  % Evaluate the gradient with respect to covariance function parameters
+  for i2 = 1:length(DKff)
+    i1 = i1+1;  
+    Z = iC*DKff{i2};
+    Zb = Z*b;            
+    gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+  end
+  
+end
 
-  case 'FIC'
-    % ============================================================
-    % FIC
-    % ============================================================
-    
-  case {'PIC' 'PIC_BLOCK'}
-    % ============================================================
-    % PIC
-    % ============================================================
-    
-  case 'CS+FIC'
-    % ============================================================
-    % CS+FIC
-    % ============================================================
-    
-  case 'SSGP'
-    % ============================================================
-    % SSGP
-    % ============================================================
+% Evaluate the gradient from Gaussian likelihood function
+if isfield(gp.lik.fh,'trcov')
+  DCff = gp.lik.fh.cfg(gp.lik, x);
+  for i2 = 1:length(DCff)
+    i1 = i1+1;
+    Z = iC*eye(n,n).*DCff{i2};
+    Zb = Z*b;            
+    gloo(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+  end
+end
 
 end

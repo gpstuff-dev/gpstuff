@@ -1,4 +1,4 @@
-function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, xt, varargin)
+function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
 %GP_PRED  Make predictions with Gaussian process 
 %
 %  Description
@@ -22,6 +22,11 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, xt, varargin)
 %    [EFT, COVFT, LJPYT, EYT, COVYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the posterior predictive mean and covariance.
 % 
+%    [EF, COVF, LJPY, EY, VARY] = GP_JPRED(GP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density PY of the training
+%    observations Y.
+%
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
 %                 used for prediction. Default is all (1:gpcfn). 
@@ -65,7 +70,8 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, xt, varargin)
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
 % Copyright (c) 2008 Jouni Hartikainen
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
@@ -100,15 +106,15 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   end
   switch nargout
     case 1
-      [Eft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft] = fh_pred(gp, x, y, varargin{:});
     case 2
-      [Eft, Covft] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft] = fh_pred(gp, x, y, varargin{:});
     case 3
-      [Eft, Covft, ljpyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft, ljpyt] = fh_pred(gp, x, y, varargin{:});
     case 4
-      [Eft, Covft, ljpyt, Eyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft, ljpyt, Eyt] = fh_pred(gp, x, y, varargin{:});
     case 5
-      [Eft, Covft, ljpyt, Eyt, Covyt] = fh_pred(gp, x, y, xt, varargin{:});
+      [Eft, Covft, ljpyt, Eyt, Covyt] = fh_pred(gp, x, y, varargin{:});
   end
   return
 end
@@ -118,16 +124,42 @@ ip.FunctionName = 'GP_JPRED';
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
 ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('predcf', [], @(x) isempty(x) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)&x>0))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.parse(gp, x, y, xt, varargin{:});
+ip.parse(gp, x, y, varargin{:});
+xt=ip.Results.xt;
 yt=ip.Results.yt;
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
+if isempty(xt)
+  xt=x;
+  if isempty(tstind)
+    if iscell(gp)
+      gptype=gp{1}.type;
+    else
+      gptype=gp.type;
+    end
+    switch gptype
+      case {'FULL' 'VAR' 'DTC' 'SOR'}
+        tstind = [];
+      case {'FIC' 'CS+FIC'}
+        tstind = 1:size(x,1);
+      case 'PIC'
+        if iscell(gp)
+          tstind = gp{1}.tr_index;
+        else
+          tstind = gp.tr_index;
+        end
+    end
+  end
+  if isempty(yt)
+    yt=y;
+  end
+end
 
 tn = size(x,1);
 

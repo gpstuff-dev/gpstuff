@@ -1,4 +1,4 @@
-function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
+function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 %GPLA_PRED  Predictions with Gaussian Process Laplace approximation
 %
 %  Description
@@ -9,13 +9,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 %    mean EFT and variance VARFT of latent variables and the
 %    posterior predictive mean EYT and variance VARYT.
 %
-%    [EFT, VARFT, LPYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive density PYT of the observations YT
-%    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
-%
-%    [EFT, VARFT, LPYT, EYT, VARYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, ...)
+%    [EFT, VARFT, LPYT] = GPLA_PRED(GP, X, Y, XT, 'yt', YT, OPTIONS)
+%    returns also logarithm of the predictive density LPYT of the
+%    observations YT at test input locations XT. This can be used
+%    for example in the cross-validation. Here Y has to be a vector.
+% 
+%    [EFT, VARFT, LPYT, EYT, VARYT] = GPLA_PRED(GP, X, Y, XT, OPTIONS)
 %    returns also the posterior predictive mean EYT and variance VARYT.
+%
+%    [EF, VARF, LPY, EY, VARY] = GPLA_PRED(GP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density LPY of the training
+%    observations Y.
 %
 %    OPTIONS is optional parameter-value pair
 %      predcf - an index vector telling which covariance functions are 
@@ -66,6 +71,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
 %    GPLA_E, GPLA_G, GP_PRED, DEMO_SPATIAL, DEMO_CLASSIFIC
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
+% Copyright (c) 2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -76,7 +82,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
   ip.addRequired('gp', @isstruct);
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
   ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
@@ -84,12 +90,46 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, xt, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-  ip.parse(gp, x, y, xt, varargin{:});
+  if numel(varargin)==0 || isnumeric(varargin{1})
+    % inputParser should handle this, but it doesn't
+    ip.parse(gp, x, y, varargin{:});
+  else
+    ip.parse(gp, x, y, [], varargin{:});
+  end
+  xt=ip.Results.xt;
   yt=ip.Results.yt;
   z=ip.Results.z;
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  if isempty(xt)
+    xt=x;
+    if isempty(tstind)
+      if iscell(gp)
+        gptype=gp{1}.type;
+      else
+        gptype=gp.type;
+      end
+      switch gptype
+        case {'FULL' 'VAR' 'DTC' 'SOR'}
+          tstind = [];
+        case {'FIC' 'CS+FIC'}
+          tstind = 1:size(x,1);
+        case 'PIC'
+          if iscell(gp)
+            tstind = gp{1}.tr_index;
+          else
+            tstind = gp.tr_index;
+          end
+      end
+    end
+    if isempty(yt)
+      yt=y;
+    end
+    if isempty(zt)
+      zt=z;
+    end
+  end
 
   [tn, tnin] = size(x);
   

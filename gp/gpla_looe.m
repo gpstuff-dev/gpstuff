@@ -45,4 +45,4 @@ z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
 [tmp, tmp, lpyt] = gpla_loopred(gp, x, y, 'z', z);
-eloo=-mean(lpyt);
+eloo=-sum(lpyt);

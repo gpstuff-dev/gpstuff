@@ -1,17 +1,38 @@
-function [Ef, Varf, ljpy, Ey, Vary] = gpmc_jpred(gp, x, y, xt, varargin)
-%GPMC_PRED  Predictions with Gaussian Process MCMC approximation.
+function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpred(gp, x, y, varargin)
+%GPMC_JPRED  Predictions with Gaussian Process MCMC approximation.
 %
 %  Description
-%    [EF, VARF] = GPMC_PRED(RECGP, X, Y, XT, OPTIONS) takes a
+%    [EF, COVF] = GPMC_JPRED(RECGP, X, Y, XT, OPTIONS) takes a
 %    Gaussian processes record structure RECGP (returned by gp_mc)
 %    together with a matrix XT of input vectors, matrix X of
 %    training inputs and vector Y of training targets. Returns
-%    matrices EFS and VARFS that contain mean and covariances of the
+%    matrices EFS and COVFS that contain mean and covariances of the
 %    marginal posterior predictive distribution
 %  
 %        E[f | xt, y] = E[ E[f | x, y, th] ]
 %      Var[f | xt, y] = E[ Var[f | x, y, th] ] + Var[ E[f | x, y, th] ]
 %   
+%    [EF, COVF, LJPY] = GP_JPRED(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
+%    returns also logarithm of the predictive joint density JPY of
+%    the observations YT at input locations XT
+%
+%        Py = p(yt | xt, x, y)
+%       
+%    [EF, COVF, LJPY, EY, COVY] = GP_JPRED(RECGP, X, Y, XT, OPTIONS) 
+%    returns also the predictive means and covariances for test
+%    observations at input locations XT
+%
+%        Ey(:,i) = E[y | xt, x, y]
+%      Covy(:,i) = Var[y | xt, x, y]
+%
+%    where the latent variables and parameters have been
+%    marginalized out.
+%
+%    [EF, COVF, LJPY, EY, COVY] = GPMC_JPRED(RECGP, X, Y, OPTIONS)
+%    evaluates the predictive distribution at training inputs X
+%    and logarithm of the predictive density PY of the training
+%    observations Y.
+%  
 %    OPTIONS is an optional parameter-value pair
 %      predcf - index vector telling which covariance functions are 
 %               used for prediction. Default is all (1:gpcfn). See
@@ -32,23 +53,6 @@ function [Ef, Varf, ljpy, Ey, Vary] = gpmc_jpred(gp, x, y, xt, varargin)
 %               Some likelihoods may use this. For example, in case
 %               of Poisson likelihood we have z_i=E_i, that is, the
 %               expected value for the ith case.
-%
-%    [EF, VARF, LJPY] = GP_PRED(RECGP, X, Y, XT, 'yt', YT, OPTIONS) 
-%    returns also logarithm of the predictive joint density JPY of the observations YT
-%    at input locations XT
-%
-%        Py = p(yt | xt, x, y)
-%       
-%    [EF, VARF, LJPY, EY, VARY] = GP_PRED(RECGP, X, Y, XT, OPTIONS) 
-%    returns also the predictive means and covariances for test
-%    observations at input locations XT
-%
-%        Ey(:,i) = E[y | xt, x, y]
-%      Vary(:,i) = Var[y | xt, x, y]
-%
-%    where the latent variables and parameters have been
-%    marginalized out.
-%
 %
 %     NOTE! In case of FIC and PIC sparse approximation the
 %     prediction for only some PREDCF covariance functions is just
@@ -78,68 +82,63 @@ function [Ef, Varf, ljpy, Ey, Vary] = gpmc_jpred(gp, x, y, xt, varargin)
 %
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
-    
+% Copyright (c) 2011-2012 Ville Tolvanen
+  
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
   
   switch nargout % ugly...
     case 1
-      [Efs] = gpmc_jpreds(gp, x, y, xt, varargin{:});
+      [Efs] = gpmc_jpreds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
     case 2
-      [Efs, Varfs] = gpmc_jpreds(gp, x, y, xt, varargin{:});
+      [Efs, Covfs] = gpmc_jpreds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
-      Varf = zeros(size(Varfs(:,:,1)));
-      n = size(Varfs,3);
+      Covf = zeros(size(Covfs(:,:,1)));
+      n = size(Covfs,3);
       for i = 1:n
-          Varf = Varf + Varfs(:,:,i);
+        Covf = Covf + Covfs(:,:,i);
       end
-      Varf = Varf./n + diag(var(Efs,0,2));
-%       Varf=mean(Varfs,2) + var(Efs,0,2);
+      Covf = Covf./n + diag(var(Efs,0,2));
     case 3
-      [Efs, Varfs, ljpys] = gpmc_jpreds(gp, x, y, xt, varargin{:});
+      [Efs, Covfs, ljpys] = gpmc_jpreds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
-      Varf = zeros(size(Varfs(:,:,1)));
-      n = size(Varfs,3);
+      Covf = zeros(size(Covfs(:,:,1)));
+      n = size(Covfs,3);
       for i = 1:n
-          Varf = Varf + Varfs(:,:,i);
+        Covf = Covf + Covfs(:,:,i);
       end
-      Varf = Varf./n + diag(var(Efs,0,2));
-%       Varf=mean(Varfs,2) + var(Efs,0,2);
-      ljpy = mean(ljpys);
+      Covf = Covf./n + diag(var(Efs,0,2));
+      ljpy=log(mean(exp(ljpys),2));
     case 4
-      [Efs, Varfs, ljpys, Eys] = gpmc_jpreds(gp, x, y, xt, varargin{:});
+      [Efs, Covfs, ljpys, Eys] = gpmc_jpreds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
-      Varf = zeros(size(Varfs(:,:,1)));
-      n = size(Varfs,3);
+      Covf = zeros(size(Covfs(:,:,1)));
+      n = size(Covfs,3);
       for i = 1:n
-          Varf = Varf + Varfs(:,:,i);
+        Covf = Covf + Covfs(:,:,i);
       end
-      Varf = Varf./n + diag(var(Efs,0,2));      
-%       Varf=mean(Varfs,2) + var(Efs,0,2);
-      ljpy = mean(ljpys);
+      Covf = Covf./n + diag(var(Efs,0,2));      
+      ljpy=log(mean(exp(ljpys),2));
       Ey = mean(Eys,2);
     case 5
-      [Efs, Varfs, ljpys, Eys, Varys] = gpmc_jpreds(gp, x, y, xt, varargin{:});
+      [Efs, Covfs, ljpys, Eys, Covys] = gpmc_jpreds(gp, x, y, varargin{:});
       Ef=mean(Efs,2);
-      Varf = zeros(size(Varfs(:,:,1)));
-      n = size(Varfs,3);
+      Covf = zeros(size(Covfs(:,:,1)));
+      n = size(Covfs,3);
       for i = 1:n
-          Varf = Varf + Varfs(:,:,i);
+        Covf = Covf + Covfs(:,:,i);
       end
-      Varf = Varf./n + diag(var(Efs,0,2));
-%       Varf=mean(Varfs,2) + var(Efs,0,2);
+      Covf = Covf./n + diag(var(Efs,0,2));
       Ey=mean(Eys,2);
-      Vary = zeros(size(Varys(:,:,1)));
-      n = size(Varys,3);
+      Covy = zeros(size(Covys(:,:,1)));
+      n = size(Covys,3);
       for i = 1:n
-          Vary = Vary + Varys(:,:,i);
+        Covy = Covy + Covys(:,:,i);
       end
-      Vary = Vary./n + diag(var(Eys,0,2));
-%       Vary=mean(Varys,2) + var(Eys,0,2);
-      ljpy=mean(ljpys,2);
+      Covy = Covy./n + diag(var(Eys,0,2));
+      ljpy=log(mean(exp(ljpys),2));
   end
 
 end
