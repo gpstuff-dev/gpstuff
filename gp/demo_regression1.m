@@ -201,13 +201,7 @@ disp(' MCMC integration over the parameters')
 % After sampling we delete the burn-in and thin the sample chain
 gp_rec = thin(gp_rec, 21, 2);
 
-% Now we make the predictions. 'gp_rec_preds' is a function that
-% returns the predictive mean of the latent function with every
-% sampled parameter value. Thus, the returned Eft_mc is a matrix of
-% size n x (number of samples). By taking the mean over the samples
-% we do the Monte Carlo integration over the parameters. (See also
-% gp_rec_pred, which directly returns the expectation of the mean and
-% variance)
+% Make the predictions
 [Eft_mc, Varft_mc] = gp_pred(gp_rec, x, y, xt);
 
 figure(1)
@@ -268,7 +262,9 @@ set(gcf,'pos',[93 511 1098 420])
 
 % Sample from two posterior marginals and plot them alongside 
 % with the MAP and grid integration results
-[Eft_mcs, Varft_mcs] = gp_rec_preds(gp_rec, x, y, xt);
+% gpmc_preds returns the predictive mean of the latent function
+% with every sampled parameter value.
+[Eft_mcs, Varft_mcs] = gpmc_preds(gp_rec, x, y, xt);
 sf = normrnd(Eft_mcs(100,:), sqrt(Varft_mcs(100,:)));
 sf2 = normrnd(Eft_mcs(400,:), sqrt(Varft_mcs(400,:)));
 
