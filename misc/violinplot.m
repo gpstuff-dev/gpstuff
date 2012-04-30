@@ -5,10 +5,11 @@ function hh = violinplot(x,varargin)
 %    VIOLINPLOT(X,Y,OPTIONS) Plot a vertical violin illustrating
 %    the density of the data Y at location given by X. X is 1xM
 %    vector and Y is NxM matrix. If X is NxM vector and Y is 1xM
-%    matrix, the horizontal violin is plotted. For each column of X
-%    and Y, one violinplot and median line presenting the estimated
-%    distribution of Y is plotted. The density estimate is made
-%    using LGPDENS.
+%    matrix, the horizontal violin is plotted. 
+%  
+%    For each column of X and Y, one violinplot and 5%, 50% and 95%
+%    lines presenting the estimated distribution of Y is plotted. 
+%    The density estimate is made using LGPDENS.
 %  
 %    H=VIOLINPLOT(X,Y,OPTIONS) returns graphics handles.
 %
@@ -19,6 +20,8 @@ function hh = violinplot(x,varargin)
 %               [min(min(x),mean(x)-3*std(x)), max(max(x),mean(x)+3*std(x))]
 %      dots   - indicates whether extreme points outside violin are plotted
 %               on or off (default)
+%      cutoff - cutoff for not plotting thin tails. Default is
+%               0.01, that is, 1% of the mass in both tails is not plotted
 %
   
 % Copyright (c) 2011 Aki Vehtari
