@@ -87,29 +87,32 @@ if isfield(gp.lik.fh,'trcov')
     ncf = length(gp.cf);
     g = [];
     i1=0;
-    for i=1:ncf
-      gpcf = gp.cf{i};
-      gpcf.GPtype = gp.type;
-      DKff = gpcf.fh.cfg(gpcf, x);
-      
-      % Evaluate the gradient with respect to covariance function parameters
-      for i2 = 1:length(DKff)
-        i1 = i1+1;  
-        Z = iC*DKff{i2};
-        Zb = Z*b;            
-        g(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
+      for i=1:ncf
+        gpcf = gp.cf{i};
+        gpcf.GPtype = gp.type;
+        DKff = gpcf.fh.cfg(gpcf, x);
+        
+        % Evaluate the gradient with respect to covariance function parameters
+        for i2 = 1:length(DKff)
+          i1 = i1+1;  
+          Z = iC*DKff{i2};
+          Zb = Z*b;            
+          g(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+        end
       end
-      
     end
 
     % Evaluate the gradient from Gaussian likelihood function
-    if isfield(gp.lik.fh,'trcov')
-      DCff = gp.lik.fh.cfg(gp.lik, x);
-      for i2 = 1:length(DCff)
-        i1 = i1+1;
-        Z = iC*eye(n,n).*DCff{i2};
-        Zb = Z*b;            
-        g(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+    if ~isempty(strfind(gp.infer_params, 'likelihood'))
+      if isfield(gp.lik.fh,'trcov')
+        DCff = gp.lik.fh.cfg(gp.lik, x);
+        for i2 = 1:length(DCff)
+          i1 = i1+1;
+          Z = iC*eye(n,n).*DCff{i2};
+          Zb = Z*b;            
+          g(i1) = - sum( (b.*Zb - 0.5*(1 + b.^2./iCv).*diag(Z*iC))./iCv );
+        end
       end
     end
     

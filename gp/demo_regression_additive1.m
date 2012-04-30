@@ -189,8 +189,8 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 
 % optimize simultaneously parameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+inducing');  % optimize parameters and inducing inputs
-gp_fic = gp_set(gp_fic, 'infer_params', 'covariance');           % optimize only parameters
+%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');  % optimize parameters and inducing inputs
+gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood'); % optimize only parameters
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
@@ -238,8 +238,8 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 % optimize simultaneously parameters and inducing inputs. Note that 
 % the inducing inputs are not transformed through logarithm when packed
 
-%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  % optimize parameters and inducing inputs
-gp_pic = gp_set(gp_pic, 'infer_params', 'covariance');           % optimize only parameters
+%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood+inducing');  % optimize parameters and inducing inputs
+gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           % optimize only parameters
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');

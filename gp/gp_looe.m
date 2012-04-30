@@ -60,6 +60,6 @@ end
 myy = y - b./iCv;
 sigma2 = 1./iCv;
 lpyt = (-0.5 * (log(2*pi) + log(sigma2) + (y-myy).^2./sigma2));
-eloo -sum(lpyt);
+eloo = -sum(lpyt);
 
 end

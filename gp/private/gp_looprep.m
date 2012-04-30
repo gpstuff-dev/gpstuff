@@ -35,6 +35,8 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
         [LD, notpositivedefinite] = ldlchol(C);
         if notpositivedefinite
           b = NaN;
+          iCv = NaN;
+          iC = NaN;
           return
         end
         b = ldlsolve(LD,y);
@@ -62,7 +64,13 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
       [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
       K_fu = gp_cov(gp, x, u);   % f x u
       K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
-      Luu = chol(K_uu,'lower');
+      [Luu, notpositivedefinite] = chol(K_uu,'lower');
+      if notpositivedefinite
+        b = NaN;
+        iCv = NaN;
+        iC = NaN;
+        return
+      end
       B=Luu\(K_fu');
       Qv_ff=sum(B.^2)';
       Lav = Cv_ff-Qv_ff;   % 1 x f, Vector of diagonal elements
@@ -77,7 +85,12 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
       A = (A+A')./2;
       L = iLaKfu/chol(A);
       
-      iCv = 1./Lav - sum(L.^2,2); % iCv = diag(inv(C));
+      if nargout==3
+        iC = diag(1./Lav) - L*L'; % Cv = inv(C);
+        iCv = diag(iC); %           iCv = diag(inv(C));
+      else
+        iCv = 1./Lav - sum(L.^2,2); % iCv = diag(inv(C));
+      end
       b = y./Lav - L*(L'*y);      % b = C\y;
       
     case {'PIC' 'PIC_BLOCK'} % PIC
@@ -114,11 +127,25 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
 
       % From this on evaluate the prediction
       % See Snelson and Ghahramani (2007) for details
+      n=size(y,1);
+      iCv=zeros(n,1);
+      if nargout==3
+        iC=zeros(n,n);
+      end
       for i=1:length(ind)
-        iCv(ind{i},:) = diag(inv(La{i}));
+        if nargout==3
+          iC(ind{i},ind{i}) = inv(La{i});
+        else
+          iCv(ind{i},:) = diag(inv(La{i}));
+        end
         b(ind{i},:) = La{i}\y(ind{i},:);
       end
-      iCv = iCv - sum(L.^2,2); % iCv = diag(inv(C));
+      if nargout==3
+        iC = iC - L*L';          % iC  = inv(C);
+        iCv = diag(iC);          % iCv = diag(inv(C));
+      else
+        iCv = iCv - sum(L.^2,2); % iCv = diag(inv(C));
+      end
       b = b - L*(L'*y);        % b = C\y;
 
     case 'CS+FIC' % CS+FIC
@@ -171,8 +198,13 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
       A = K_uu+K_fu'*iLaKfu;
       A = (A+A')./2;     % Ensure symmetry
       L = iLaKfu/chol(A);
-      
-      iCv = diag(inv(La)) - sum(L.^2,2); % iCv = diag(inv(C));
+   
+      if nargout==3
+        iC = inv(La) - L*L'; % iCv = diag(inv(C));
+        iCv = diag(iC)     ; % iCv = diag(inv(C));
+      else
+        iCv = diag(inv(La)) - sum(L.^2,2); % iCv = diag(inv(C));
+      end
       b = La\y - L*(L'*y);         % b = C\y;
       
     case 'SSGP' % SSGP
