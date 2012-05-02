@@ -39,7 +39,7 @@ function gpcf = gpcf_linear(varargin)
   ip.FunctionName = 'GPCF_LINEAR';
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('coeffSigma2',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('coeffSigma2_prior',prior_sqrtunif, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('coeffSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
   ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;

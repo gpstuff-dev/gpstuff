@@ -33,7 +33,7 @@ function gpcf = gpcf_constant(varargin)
   ip.FunctionName = 'GPCF_CONSTANT';
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('constSigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('constSigma2_prior',prior_sqrtunif, @(x) isstruct(x) || isempty(x));
+  ip.addParamValue('constSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
   ip.parse(varargin{:});
   gpcf=ip.Results.gpcf;
 
