@@ -246,9 +246,9 @@ function [p,pq,xx] = lgpdens(x,varargin)
         %contour(z1,z2,G);
         pp=G(:);
         p1=pp./sum(pp);
-        pu=unique(p1);pu=pu(end:-1:1);
+        pu=sort(p1,'ascend');
         pc=cumsum(pu);
-        PL=[.001 .01 .05 .1 .2 .5 .8 .9 .95];
+        PL=[.05 .1 .2 .5 .8 .9 .95];
         qi=[];
         for pli=1:numel(PL)
           qi(pli)=find(pc>PL(pli),1);
