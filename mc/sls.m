@@ -24,8 +24,11 @@ function [samples,energies,diagn] = sls(f, x, opt, gradf, varargin)
 
 %  Based on "Slice Sampling" by Radford M. Neal in "The Annals of Statistics"
 %  2003, Vol. 31, No. 3, 705-767, (c) Institute of Mathematical Statistics, 2003
+%  Thompson & Neal (2010) Covariance-Adaptive Slice Sampling. Technical
+%  Report No. 1002, Department of Statistic, University of Toronto
 %
 %  Copyright (c) Toni Auranen, 2003-2006
+%  Copyright (c) Ville Tolvanen, 2012
 
 % This software is distributed under the GNU General Public 
 % Licence (version 3 or later); please refer to the file 
@@ -56,6 +59,7 @@ function [samples,energies,diagn] = sls(f, x, opt, gradf, varargin)
 %   - fixed some bugs
 %  Version 1.7, 15/3/2005, TA
 %   - added the hyperrectangle multivariate sampling
+
 
 % Start timing and construct a function handle from the function name string
 % (Timing is off, and function handles are left for the user)
@@ -166,6 +170,49 @@ y_new = -f(x_0,varargin{:});
 % The main loop of slice sampling
 for i = 1-nomit:1:nsamples
   switch method
+   % Shrinking-Rank method from Thompson & Neal (2010)
+   case 'shrnk'
+    if ~isfield(opt, 'sigma') || isempty(opt.sigma)
+      opt.sigma = 1;
+    end
+    ytr = -log(rand) - y_new;
+    k = 0;
+    sigma(1) = opt.sigma;
+    J = [];
+    np = length(x_0);
+    
+    while 1
+      k = k+1;
+      c(k,:) = P(J, mvnrnd(x_0, sigma(k).^2*eye(np)));
+      sigma2 = 1./(sum(1./sigma.^2));
+      mu = sigma2*(sum(bsxfun(@times, 1./sigma'.^2, bsxfun(@minus, c,x_0)),1));
+      x_prop = x_0 + P(J, mvnrnd(mu, sqrt(sigma2)*eye(np)));
+      y_new = f(x_prop, varargin{:});
+      if y_new < ytr
+        % Accept proposal
+        break;
+      end
+      gradient = gradf(x_prop, varargin{:});
+      gstar = P(J, gradient);
+      if size(J,2) < size(x,2)-1 && gstar*gradient'/(norm(gstar)*norm(gradient)) > cos(pi/3)
+        J = [J gstar'/norm(gstar)];
+        sigma(k+1) = sigma(k);
+      else
+        sigma(k+1) = 0.95*sigma(k);
+      end
+      
+    end
+    % Save sampling step and set up the new 'old' sample
+    x_0 = x_prop;
+    if i > 0
+      samples(i,:) = x_prop;
+    end
+    
+    % Save energies
+    if save_energies && i > 0
+      energies(i) = y_new;
+    end
+    
    % Multivariate rectangle sampling step
    case 'multi'
     x_new = x_0;
@@ -652,3 +699,11 @@ end % while
 if isempty(out)
   out = 1;
 end;
+
+function p = P(J,v)
+if size(J,2) ~= 0
+  p = v' - J*(J'*v');
+  p = p';
+else
+  p = v;
+end
