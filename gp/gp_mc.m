@@ -22,7 +22,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %      hmc_opt     - Options structure for HMC sampler (see hmc2_opt). 
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with hmc2
-%                    (respecting infer_params option).
+%                    (respecting infer_params option). If optional
+%                    argument hmc_opt.nuts = 1, No-U-Turn HMC is used (see
+%                    nuts_hmc) instead.
 %      sls_opt     - Options structure for slice sampler (see sls_opt). 
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with sls
@@ -265,26 +267,47 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       
       % --- Sample parameters with HMC ------------- 
       if ~isempty(opt.hmc_opt)
-        if isfield(opt.hmc_opt,'infer_params')
-          infer_params = gp.infer_params;
-          gp.infer_params = opt.hmc_opt.infer_params;
-        end
-        w = gp_pak(gp);
-        % Set the state
-        hmc2('state',hmc_rstate);
-        % sample (y is passed as z, to allow sampling of likelihood parameters)
-        [w, energies, diagnh] = hmc2(@gpmc_e, w, opt.hmc_opt, @gpmc_g, gp, x, y, f, z);
-        % Save the current state
-        hmc_rstate=hmc2('state');
-        hmcrej=hmcrej+diagnh.rej/opt.repeat;
-        if isfield(diagnh, 'opt')
+        if isfield(opt.hmc_opt, 'nuts') && opt.hmc_opt.nuts
+          % Use NUTS hmc
+          w = gp_pak(gp);
+          lp = @(w) deal(-gpmc_e(w,gp,x,y,f,z), -gpmc_g(w,gp,x,y,f,z));
+          if k<opt.hmc_opt.nadapt
+            % Take one sample while adjusting step length
+            opt.hmc_opt.Madapt = 1; 
+            opt.hmc_opt.M = 0; 
+          else
+            % Take one smaple without adjusting step length
+            opt.hmc_opt.Madapt = 0; 
+            opt.hmc_opt.M = 1; 
+          end
+          [w, energies, diagnh] = hmc_nuts(lp, w, opt.hmc_opt);
           opt.hmc_opt = diagnh.opt;
-        end
-        opt.hmc_opt.rstate = hmc_rstate;
-        w=w(end,:);
-        gp = gp_unpak(gp, w);
-        if isfield(opt.hmc_opt,'infer_params')
-          gp.infer_params = infer_params;
+          hmcrej=hmcrej+diagnh.rej/opt.repeat;
+          w=w(end,:);
+          gp = gp_unpak(gp, w);
+
+        else
+          if isfield(opt.hmc_opt,'infer_params')
+            infer_params = gp.infer_params;
+            gp.infer_params = opt.hmc_opt.infer_params;
+          end
+          w = gp_pak(gp);
+          % Set the state
+          hmc2('state',hmc_rstate);
+          % sample (y is passed as z, to allow sampling of likelihood parameters)
+          [w, energies, diagnh] = hmc2(@gpmc_e, w, opt.hmc_opt, @gpmc_g, gp, x, y, f, z);
+          % Save the current state
+          hmc_rstate=hmc2('state');
+          hmcrej=hmcrej+diagnh.rej/opt.repeat;
+          if isfield(diagnh, 'opt')
+            opt.hmc_opt = diagnh.opt;
+          end
+          opt.hmc_opt.rstate = hmc_rstate;
+          w=w(end,:);
+          gp = gp_unpak(gp, w);
+          if isfield(opt.hmc_opt,'infer_params')
+            gp.infer_params = infer_params;
+          end
         end
       end
       
