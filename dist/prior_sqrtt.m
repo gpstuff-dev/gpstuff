@@ -3,7 +3,7 @@ function p = prior_sqrtt(varargin)
 %       
 %  Description
 %    P = PRIOR_SQRTT('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
-%    creates for quare root of the parameter Student's
+%    creates for the square root of the parameter Student's
 %    t-distribution prior structure in which the named parameters
 %    have the specified values. Any unspecified parameters are set
 %    to default values.
@@ -21,7 +21,7 @@ function p = prior_sqrtt(varargin)
 %      nu_prior - prior for nu [prior_fixed]
 %
 %  See also
-%    PRIOR_*
+%    PRIOR_t, PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
@@ -45,9 +45,9 @@ function p = prior_sqrtt(varargin)
   
   if isempty(p)
     init=true;
-    p.type = 'Sqrtt';
+    p.type = 'Sqrt-t';
   else
-    if ~isfield(p,'type') && ~isequal(p.type,'Sqrtt')
+    if ~isfield(p,'type') && ~isequal(p.type,'Sqrt-t')
       error('First argument does not seem to be a valid prior structure')
     end
     init=false;
@@ -127,7 +127,9 @@ end
 
 function lp = prior_sqrtt_lp(x, p)
   
-  lp=sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) - log(2*sqrt(x)));
+  lJ = -log(2*sqrt(x));  % log(1/(2*x^(1/2))) log(|J|) of transformation
+  x  = sqrt(x);
+  lp = sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) + lJ);
   
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
@@ -142,7 +144,9 @@ end
 
 function lpg = prior_sqrtt_lpg(x, p)
 
-  lpg=-(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) - 1./(2*x);
+  lJg = -1./(2*x);        % gradient of log(|J|) of transformation
+  x   = sqrt(x);
+  lpg = -(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) + lJg;
   
   if ~isempty(p.p.mu)
     lpgmu = sum((p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2)) + p.p.mu.fh.lpg(p.mu, p.p.mu);

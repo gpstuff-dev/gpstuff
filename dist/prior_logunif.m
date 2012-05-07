@@ -53,11 +53,13 @@ function [p, w] = prior_logunif_unpak(p, w)
 end
 
 function lp = prior_logunif_lp(x, p)
-  lp = -sum(log(x));   % = log(1./x)
+  lJ = -log(x);    % log(1/x) log(|J|) of transformation
+  lp = sum(lJ);
 end
 
 function lpg = prior_logunif_lpg(x, p)
-  lpg = -1./x;
+  lJg = -1./x;     % gradient of log(|J|) of transformation
+  lpg = lJg;
 end
 
 function rec = prior_logunif_recappend(rec, ri, p)

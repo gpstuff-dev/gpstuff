@@ -54,11 +54,13 @@ function [p, w] = prior_sqrtunif_unpak(p, w)
 end
 
 function lp = prior_sqrtunif_lp(x, p)
-  lp = -sum(log(2*sqrt(x)));% = log(1/(2*sqrt(x)))
+  lJ  = -log(2*sqrt(x));  % log(1/(2*sqrt(x))) log(|J|) of transformation
+  lp  = sum(lJ);
 end
 
 function lpg = prior_sqrtunif_lpg(x, p)
-  lpg = -1./(2*x);
+  lJg = -1./(2*x);        % gradient of log(|J|) of transformation
+  lpg = lJg;
 end
 
 function rec = prior_sqrtunif_recappend(rec, ri, p)

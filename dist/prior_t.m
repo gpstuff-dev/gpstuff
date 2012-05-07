@@ -23,7 +23,7 @@ function p = prior_t(varargin)
 %      nu_prior - prior for nu [prior_fixed]
 %
 %  See also
-%    PRIOR_T, PRIOR_*
+%    PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
