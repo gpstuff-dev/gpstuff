@@ -29,7 +29,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %                  'off' (default) displays no output
 %                  'on' gives some output  
 %                  'iter' displays output at each iteration
-%      speed-up   - defines if speed-up is used.
+%      speedup   - defines if speed-up is used.
 %                  'off' (default) no speed-up is used
 %                  'on' With SEXP or EXP covariance function in 2D case
 %                  uses Kronecker product structure and approximates the
@@ -37,7 +37,11 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %                  with SEXP, EXP, MATERN32 and MATERN52 covariance
 %                  functions in 1D and 2D cases uses FFT/FFT2 matrix-vector
 %                  multiplication speed-up in the Newton's algorithm.
-%
+%      cond_dens - defines if conditional density estimate is computed.
+%                  'off' (default) no conditional density
+%                  'on' computes for 2D the conditional median density
+%                  estimate p(x2|x1) when the matrix [x1 x2] is given as
+%                  input. 
 
 % Copyright (c) 2011-2012 Jaakko Riihimäki and Aki Vehtari
 
@@ -59,7 +63,8 @@ function [p,pq,xx] = lgpdens(x,varargin)
   ip.addParamValue('display', 'off', @(x) islogical(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
   ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
-                 
+  ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
+  
   ip.parse(x,varargin{:});
   x=ip.Results.x;
   xt=ip.Results.xt;
@@ -71,11 +76,15 @@ function [p,pq,xx] = lgpdens(x,varargin)
   normalize=ip.Results.normalize;
   display=ip.Results.display;
   speedup=ip.Results.speedup;
+  cond_dens=ip.Results.cond_dens;
   
   [n,m]=size(x);
   
   switch m
     case 1 % 1D
+      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+        error('LGPDENS: the input x must be 2D if cond_dens option is ''on''.')
+      end
       % Parameters for a grid
       if isempty(gridn)
         % number of points
@@ -111,7 +120,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
       xxn=(xx-mean(xx))./std(xx);
       
       %[Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -146,12 +155,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
       
     case 2 % 2D
       
+      if ~isempty(cond_dens) && strcmpi(cond_dens,'on') && ~isempty(speedup) && strcmp(speedup, 'on')
+        warning('No speed-up option available with the cond_dens option. Using full covariance instead.')
+        speedup='off';
+      end
       % Find unique points
       [xu,I,J]=unique(x,'rows');
       % and count number of repeated x's
       counts=crosstab(J); 
       nu=length(xu);
-  
+      
       % Parameters for a grid
       if isempty(gridn)
         % number of points in each direction
@@ -190,9 +203,15 @@ function [p,pq,xx] = lgpdens(x,varargin)
         [z1,z2]=meshgrid(zz1,zz2);
         z=[z1(:),z2(:)];
         nz=length(z);
-        % form data for GP (xx,yy,ye)
         xx=z;
-        xt=z;
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+          zzt1=linspace(x1min,x1max,gridn(1))';
+          zzt2=linspace(x2min,x2max,gridn(2)*10)';
+          [zt1,zt2]=meshgrid(zzt1,zzt2);
+          zt=[zt1(:),zt2(:)];
+          %nzt=length(zt);
+          xt=zt;
+        end
       else
         xx=xt;
         gridn=[length(unique(xx(:,1))) length(unique(xx(:,2)))];
@@ -210,9 +229,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
       
       % normalise, so that same prior is ok for different scales
       xxn=bsxfun(@rdivide,bsxfun(@minus,xx,mean(xx,1)),std(xx,1));
+      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+        xxtn=bsxfun(@rdivide,bsxfun(@minus,xt,mean(xx,1)),std(xx,1));
+      end
       
       % [Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn);
+      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+        [Ef,Covf]=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens);
+      else
+        [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens);        
+      end
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -233,30 +259,67 @@ function [p,pq,xx] = lgpdens(x,varargin)
           qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf,'upper'),Ef');
         end
         qjr=exp(qr)';
-        pjr=bsxfun(@rdivide,qjr,sum(qjr));
-        pjr=pjr./xd;
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on') 
+          pjr=zeros(size(qjr));
+          unx2=unique(xt(:,2));
+          xd2=(unx2(2)-unx2(1));
+          for k1=1:size(qjr,2)
+            qjrtmp=reshape(qjr(:,k1),[gridn(2)*10 gridn(1)]);
+            qjrtmp=bsxfun(@rdivide,qjrtmp,sum(qjrtmp));
+            qjrtmp=qjrtmp./xd2;
+            pjr(:,k1)=qjrtmp(:);
+          end
+        else
+          pjr=bsxfun(@rdivide,qjr,sum(qjr));
+          pjr=pjr./xd;
+        end
       end
       
-      pp=mean(pjr')';
+      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+        pp=median(pjr')';
+      else
+        pp=mean(pjr')';
+      end
       ppq=prctile(pjr',[2.5 97.5])';
       
       if nargout<1
-        G=zeros(size(z1));
-        G(:)=prctile(pjr',50);
-        %contour(z1,z2,G);
-        pp=G(:);
-        p1=pp./sum(pp);
-        pu=sort(p1,'ascend');
-        pc=cumsum(pu);
-        PL=[.05 .1 .2 .5 .8 .9 .95];
-        qi=[];
-        for pli=1:numel(PL)
-          qi(pli)=find(pc>PL(pli),1);
+        % no output, do the plot thing
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+          pjr2=reshape(pjr,[gridn(2)*10 gridn(1) size(qjr,2)]);
+          qp=median(pjr2,3);
+          %qp=mean(pjr2,3);
+          qp=bsxfun(@rdivide,qp,sum(qp,1));
+          qpc=cumsum(qp,1);
+          PL=[.05 .1 .2 .5 .8 .9 .95];
+          for i1=1:gridn(1)
+            pc=qpc(:,i1);
+            for pli=1:numel(PL),
+              qi(pli)=find(pc>PL(pli),1);
+            end,
+            ql(:,i1)=unx2(qi);
+          end
+          plot(zz1,ql','linewidth',1)
+          legend('.05','.1','.2','.5','.8','.9','.95')
+          xlim([x1min x1max])
+          ylim([x2min x2max])
+        else
+          G=zeros(size(z1));
+          G(:)=prctile(pjr',50);
+          %contour(z1,z2,G);
+          pp=G(:);
+          p1=pp./sum(pp);
+          pu=sort(p1,'ascend');
+          pc=cumsum(pu);
+          PL=[.05 .1 .2 .5 .8 .9 .95];
+          qi=[];
+          for pli=1:numel(PL)
+            qi(pli)=find(pc>PL(pli),1);
+          end
+          pl=pu(qi).*sum(pp);
+          contour(z1,z2,G,pl);
+          %hold on, plot(x(:,1),x(:,2),'kx')
+          %colorbar
         end
-        pl=pu(qi).*sum(pp);
-        contour(z1,z2,G,pl);
-        %hold on, plot(x(:,1),x(:,2),'kx')
-        %colorbar
       else
         p=pp;
         pq=ppq;
@@ -266,7 +329,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   end
 end
 
-function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn)
+function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
   % gp_mc and gp_ia still uses numeric display option
@@ -312,7 +375,15 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   %gpmfco = gpmf_constant('prior_mean',0,'prior_cov',100);
   gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
   gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
-  gp = gp_set('lik', lik_lgp, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin,gpmfsq});
+  
+  if ~isempty(cond_dens) && strcmp(cond_dens, 'on')
+    lik=lik_lgpc;
+    lik.gridn=gridn;
+  else
+    lik=lik_lgp;
+  end
+  
+  gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin,gpmfsq});
   
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -341,8 +412,11 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
   
   if strcmpi(latent_method,'MCMC')
+    if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+      error('LGPDENS: MCMC is not implemented if cond_dens option is ''on''.')
+    end
     gp = gp_set(gp, 'latent_method', 'MCMC');
-
+    
     % Here we use two stage sampling to get faster convergence
     hmc_opt=hmc2_opt;
     hmc_opt.steps=10;

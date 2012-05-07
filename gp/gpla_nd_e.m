@@ -90,10 +90,10 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
   end
 
   function [e, edata, eprior, f, L, a, E, M, p] = laplace_algorithm(w, gp, x, y, z)
-      
+
   if strcmp(w, 'clearcache')
-      ch=[];
-      return
+    ch=[];
+    return
   end
   % code for the Laplace algorithm
 
@@ -270,11 +270,29 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     if isfield(gp.lik, 'fullW') && gp.lik.fullW
                       
                       if ~isfield(gp,'meanf')
-                        b = ny*(g2.*f-g2*(g2'*f))+dlp;
-                        %b = W.*f+dlp;
+                        if strcmpi(gp.lik.type,'LGPC')
+                          n1=gp.lik.gridn(1); n2=gp.lik.gridn(2);
+                          b=zeros(n,1);
+                          ny2=sum(reshape(y,fliplr(gp.lik.gridn)));
+                          for k1=1:n1
+                            b((1:n2)+(k1-1)*n2) = ny2(k1)*(g2((1:n2)+(k1-1)*n2).*f((1:n2)+(k1-1)*n2)-g2((1:n2)+(k1-1)*n2)*(g2((1:n2)+(k1-1)*n2)'*f((1:n2)+(k1-1)*n2)))+dlp((1:n2)+(k1-1)*n2);
+                          end
+                        else
+                          b = ny*(g2.*f-g2*(g2'*f))+dlp;
+                          %b = W.*f+dlp;
+                        end
                       else
-                        b = ny*(g2.*f-g2*(g2'*f))+iKHb_m+dlp;
-                        %b = W.*f+K\(H'*b_m)+dlp;
+                        if strcmpi(gp.lik.type,'LGPC')
+                          n1=gp.lik.gridn(1); n2=gp.lik.gridn(2);
+                          b=zeros(n,1);
+                          ny2=sum(reshape(y,fliplr(gp.lik.gridn)));
+                          for k1=1:n1
+                            b((1:n2)+(k1-1)*n2) = ny2(k1)*(g2((1:n2)+(k1-1)*n2).*f((1:n2)+(k1-1)*n2)-g2((1:n2)+(k1-1)*n2)*(g2((1:n2)+(k1-1)*n2)'*f((1:n2)+(k1-1)*n2)))+iKHb_m((1:n2)+(k1-1)*n2)+dlp((1:n2)+(k1-1)*n2);
+                          end
+                        else
+                          b = ny*(g2.*f-g2*(g2'*f))+iKHb_m+dlp;
+                          %b = W.*f+K\(H'*b_m)+dlp;
+                        end
                       end
                       
                       if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
@@ -332,22 +350,47 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                         a=b-sqrt(ny)*(g2sq.*iSg  - g2*(g2'*(iSg./g2sq)));
                         
                       else
-                        
-                        %R=-g2*g2sq'; R(1:(n+1):end)=R(1:(n+1):end)+g2sq';
-                        KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
-                        RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
-                        RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
-                        [L,notpositivedefinite] = chol(RKR,'lower');
-                        
-                        if notpositivedefinite
-                          [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
-                          return
+                        if strcmpi(gp.lik.type,'LGPC')
+                          R=zeros(n);
+                          RKR=K;
+                          for k1=1:n1
+                            R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)=sqrt(ny2(k1))*(diag(g2sq((1:n2)+(k1-1)*n2))-g2((1:n2)+(k1-1)*n2)*g2sq((1:n2)+(k1-1)*n2)');
+                            RKR(:,(1:n2)+(k1-1)*n2)=RKR(:,(1:n2)+(k1-1)*n2)*R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2);
+                          end
+                          for k1=1:n1
+                            RKR((1:n2)+(k1-1)*n2,:)=R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)'*RKR((1:n2)+(k1-1)*n2,:);
+                          end
+                          %RKR=R'*K*R;
+                          RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
+                          [L,notpositivedefinite] = chol(RKR,'lower');
+                          
+                          if notpositivedefinite
+                            [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                            return
+                          end
+                          
+                          Kb=K*b;
+                          RCb=R'*Kb;
+                          
+                          iRCb=L'\(L\RCb);
+                          a=b-R*iRCb;
+                        else
+                          %R=-g2*g2sq'; R(1:(n+1):end)=R(1:(n+1):end)+g2sq';
+                          KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
+                          RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
+                          RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
+                          [L,notpositivedefinite] = chol(RKR,'lower');
+                          
+                          if notpositivedefinite
+                            [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                            return
+                          end
+                          
+                          Kb=K*b;
+                          RCb=g2sq.*Kb-g2sq*(g2'*Kb);
+                          iRCb=L'\(L\RCb);
+                          a=b-ny*(g2sq.*iRCb-g2*(g2sq'*iRCb));
                         end
-                        
-                        Kb=K*b;
-                        RCb=g2sq.*Kb-g2sq*(g2'*Kb);
-                        iRCb=L'\(L\RCb);
-                        a=b-ny*(g2sq.*iRCb-g2*(g2sq'*iRCb));
                       end
                       
                     else
@@ -586,8 +629,21 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   % L=[];
                 else
                   
-                  KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
-                  RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
+                  if strcmpi(gp.lik.type,'LGPC')
+                    R=zeros(n);
+                    RKR=K;
+                    for k1=1:n1
+                      R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)=sqrt(ny2(k1))*(diag(g2sq((1:n2)+(k1-1)*n2))-g2((1:n2)+(k1-1)*n2)*g2sq((1:n2)+(k1-1)*n2)');
+                      RKR(:,(1:n2)+(k1-1)*n2)=RKR(:,(1:n2)+(k1-1)*n2)*R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2);
+                    end
+                    for k1=1:n1
+                      RKR((1:n2)+(k1-1)*n2,:)=R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)'*RKR((1:n2)+(k1-1)*n2,:);
+                    end
+                    %RKR=R'*K*R;
+                  else
+                    KR=bsxfun(@times,K,g2sq')-(K*g2)*g2sq';
+                    RKR=ny*(bsxfun(@times,g2sq,KR)-g2sq*(g2'*KR));
+                  end
                   RKR(1:(n+1):end)=RKR(1:(n+1):end)+1;
                   [L,notpositivedefinite] = chol(RKR,'lower');
                   if notpositivedefinite

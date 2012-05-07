@@ -179,15 +179,52 @@ switch gp.type
           s2=const1.*g3 - 0.5*ny*dA.*g3 + ny*const2.*g3;
           
         else
-          
-          KW=-(K*(sqrt(ny)*g2))*(sqrt(ny)*g2)'- bsxfun(@times, K, (-ny*g2)');
-          KW(1:(n+1):end)=KW(1:(n+1):end)+1;
-          iKW=KW\eye(n);
-          A=iKW*K;
-          
-          const1=( 0.5*ny*(sum(A(1:(n+1):end).*g3'))-ny*sum(sum(A.*(g3*g3'))) );
-          const2=sum(bsxfun(@times,A,g3));
-          s2=const1.*g3 - 0.5*ny*diag(A).*g3 + ny*const2'.*g3;
+          if strcmpi(gp.lik.type,'LGPC')
+            n1=gp.lik.gridn(1); n2=gp.lik.gridn(2);
+            ny2=sum(reshape(y,fliplr(gp.lik.gridn)));
+            g2sq=sqrt(g2);
+            
+            R=zeros(n);
+            RR=zeros(n,n2);
+            for k1=1:n1
+              R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)=sqrt(ny2(k1))*(diag(g2sq((1:n2)+(k1-1)*n2))-g2((1:n2)+(k1-1)*n2)*g2sq((1:n2)+(k1-1)*n2)');
+              RR((1:n2)+(k1-1)*n2,:)=R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)*R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)';
+            end
+            KW=K;
+            for k1=1:n1
+              KW(:,(1:n2)+(k1-1)*n2)=KW(:,(1:n2)+(k1-1)*n2)*RR((1:n2)+(k1-1)*n2,:);
+            end
+            %KW=K*(R*R');
+            
+            KW(1:(n+1):end)=KW(1:(n+1):end)+1;
+            iKW=KW\eye(n);
+            A=iKW*K;
+            
+            s2=zeros(n,1);
+            for k1=1:n1
+              if ny2(k1)~=0
+                g3tmp=g3((1:n2)+(k1-1)*n2);
+                Atmp=A((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2);
+                for ind2=1:n2
+                  g3dtmp=-g3tmp*g3tmp(ind2);
+                  g3dtmp(ind2)=g3dtmp(ind2)+g3tmp(ind2);
+                  s2( ind2+(k1-1)*n2 ) = -ny2(k1)*0.5*sum(diag(Atmp).*g3dtmp) ...
+                    + ny2(k1)*sum(sum(Atmp.*(bsxfun(@times,g3tmp,g3dtmp'))));
+                end
+              end
+            end
+            
+          else
+            KW=-(K*(sqrt(ny)*g2))*(sqrt(ny)*g2)'- bsxfun(@times, K, (-ny*g2)');
+            
+            KW(1:(n+1):end)=KW(1:(n+1):end)+1;
+            iKW=KW\eye(n);
+            A=iKW*K;
+            
+            const1=( 0.5*ny*(sum(A(1:(n+1):end).*g3'))-ny*sum(sum(A.*(g3*g3'))) );
+            const2=sum(bsxfun(@times,A,g3));
+            s2=const1.*g3 - 0.5*ny*diag(A).*g3 + ny*const2'.*g3;
+          end
         end
         
       else
@@ -418,9 +455,18 @@ switch gp.type
               for i2 = 1:length(DKff)
                 i1 = i1+1;
                 if ~isfield(gp,'meanf')
-                  s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                  if strcmpi(gp.lik.type,'LGPC')
+                    %s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                    s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(diag( R*(R'*(iKW*DKff{i2}))));
+                  else
+                    s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                  end
                 else
-                  s1 = 0.5 * (a-iKHb_m)'*DKff{i2}*(a-iKHb_m) - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                  if strcmpi(gp.lik.type,'LGPC')
+                    s1 = 0.5 * (a-iKHb_m)'*DKff{i2}*(a-iKHb_m) - 0.5*sum(diag( R*(R'*(iKW*DKff{i2}))));
+                  else
+                    s1 = 0.5 * (a-iKHb_m)'*DKff{i2}*(a-iKHb_m) - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                  end
                 end
                 %b = DKff{i2} * g1;
                 if issparse(K)

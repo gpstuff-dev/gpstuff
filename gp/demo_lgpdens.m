@@ -31,6 +31,7 @@
 stream = RandStream('mrg32k3a');
 RandStream.setDefaultStream(stream);
 
+
 % =====================================
 % 1) 1D-examples
 % =====================================
@@ -83,6 +84,7 @@ title('Gamma(1,1)')
 p0=gam_pdf(xt,1,1);
 line(xt,p0,'color','k')
 
+
 % =====================================
 % 1) 2D-examples
 % =====================================
@@ -130,10 +132,21 @@ title('Ring')
 
 
 % =====================================
+% 1) 2D-example of conditional density estimate
+% =====================================
+figure(3)
+% Ring
+lgpdens(x,'gridn',30, 'cond_dens', 'on');
+line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
+axis([-2.5 2.5 -2.5 2.5])
+title('Ring - conditional density')
+
+
+% =====================================
 % 1D-example with FFT speed-up and 2D-example
 % with Kronecker product (low-rank) speed-up
 % =====================================
-figure(3)
+figure(4)
 % Galaxy data with finer grid, 1D
 x=load('demos/galaxy.txt');
 xt=linspace(0,40000,800)';
@@ -161,7 +174,7 @@ title(['Old faithful, KRON speed-up, cpu-time: ' num2str(t1)])
 % =====================================
 % 1) 1D-example MCMC vs Laplace
 % =====================================
-figure(4)
+figure(5)
 clf
 subplot(2,1,1)
 % t_4

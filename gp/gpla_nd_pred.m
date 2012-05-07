@@ -320,15 +320,34 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, varargin)
             
             
             if isfield(gp.lik, 'fullW') && gp.lik.fullW
-              g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
-              
-              KW=(K*-(sqrt(sum(y))*g2))*(sqrt(sum(y))*g2)'-bsxfun(@times, K, (-sum(y)*g2)');
-              KW(1:(tn+1):end)=KW(1:(tn+1):end)+1;
-              iKW=KW\eye(tn);
-              
-              WiKW=-(sqrt(sum(y))*g2)*((sqrt(sum(y))*g2)'*iKW)-bsxfun(@times,(-sum(y)*g2),iKW);
-              Varft=kstarstarfull-K_nf*(WiKW*K_nf');
-              Covf=Varft;
+              if strcmpi(gp.lik.type,'LGPC')
+                g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                g2sq=sqrt(g2);
+                n1=gp.lik.gridn(1); n2=gp.lik.gridn(2);
+                ny2=sum(reshape(y,fliplr(gp.lik.gridn)));
+                
+                R=zeros(tn);
+                for k1=1:n1
+                  R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2)=sqrt(ny2(k1))*(diag(g2sq((1:n2)+(k1-1)*n2))-g2((1:n2)+(k1-1)*n2)*g2sq((1:n2)+(k1-1)*n2)');
+                  %RKR(:,(1:n2)+(k1-1)*n2)=RKR(:,(1:n2)+(k1-1)*n2)*R((1:n2)+(k1-1)*n2,(1:n2)+(k1-1)*n2);
+                end
+                KW=K*(R*R');
+                KW(1:(tn+1):end)=KW(1:(tn+1):end)+1;
+                iKW=KW\eye(tn);
+                WiKW=(R*R')*iKW;
+                Varft=kstarstarfull-K_nf*(WiKW*K_nf');
+                Covf=Varft;
+              else
+                g2 = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+                
+                KW=(K*-(sqrt(sum(y))*g2))*(sqrt(sum(y))*g2)'-bsxfun(@times, K, (-sum(y)*g2)');
+                KW(1:(tn+1):end)=KW(1:(tn+1):end)+1;
+                iKW=KW\eye(tn);
+                
+                WiKW=-(sqrt(sum(y))*g2)*((sqrt(sum(y))*g2)'*iKW)-bsxfun(@times,(-sum(y)*g2),iKW);
+                Varft=kstarstarfull-K_nf*(WiKW*K_nf');
+                Covf=Varft;
+              end
             else
               n=size(x,1);
               iWK=L\eye(sum(nl));
