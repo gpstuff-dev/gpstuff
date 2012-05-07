@@ -298,8 +298,15 @@ function [p,pq,xx] = lgpdens(x,varargin)
             end,
             ql(:,i1)=unx2(qi);
           end
-          plot(zz1,ql','linewidth',1)
-          legend('.05','.1','.2','.5','.8','.9','.95')
+          hold on
+          h1=plot(zz1,ql(4,:)','-', 'color', [0 0 255]./255,'linewidth',2);
+          h2=plot(zz1,ql([3 5],:)','--', 'color', [0 127 0]./255,'linewidth',1);
+          h3=plot(zz1,ql([2 6],:)','-.', 'color', [255 0 0]./255,'linewidth',1);
+          h4=plot(zz1,ql([1 7],:)',':', 'color', [0 0 0]./255,'linewidth',1);
+          hold off
+          legend([h1 h2(1) h3(1) h4(1)],'.5','.2/.8','.1/.9','.05/.95')
+          %plot(zz1,ql','linewidth',1)
+          %legend('.05','.1','.2','.5','.8','.9','.95')
           xlim([x1min x1max])
           ylim([x2min x2max])
         else
