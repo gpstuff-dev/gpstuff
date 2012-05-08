@@ -80,18 +80,20 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         if issparse(C)
           LD = ldlchol(C);
           Ef = repmat( K'*ldlsolve(LD,y), 1, nsamp) ;
-          predcov = chol(K2 - K'*ldlsolve(LD,K),'lower');
+          pcov = K2 - K'*ldlsolve(LD,K);
           if  isfield(gp,'meanf')
               [RB RAR] = mean_jpredf(gp,x,xt,K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
               Ef = Ef + repmat(RB,1,nsamp);
-              predcov = predcov + RAR;
+              pcov = pcov + RAR;
           end
+          predcov = chol(pcov,'lower');
           sampft = Ef + predcov*randn(size(Ef));
           if nargout > 1
-            predcov = chol(C2 - K'*ldlsolve(LD,K),'lower');            
+            pcov = C2 - K'*ldlsolve(LD,K);
             if  isfield(gp,'meanf')
-                predcov = predcov + RAR;
+                pcov = pcov + RAR;
             end
+            predcov = chol(pcov,'lower');
             sampyt = Ef + predcov*randn(size(Ef));
           end        
         else
@@ -101,18 +103,20 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           Ef = repmat( K'*a, 1, nsamp);
           v = L\K;
 
-          predcov = chol(K2-v'*v,'lower');
+          pcov = K2-v'*v;
           if  isfield(gp,'meanf')
               [RB RAR] = mean_jpredf(gp,x,xt,K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
               Ef = Ef + repmat(RB,1,nsamp);
-              predcov = predcov + RAR;
+              pcov = pcov + RAR;
           end
+          predcov = chol(pcov,'lower');
           sampft = Ef + predcov*randn(size(Ef));
           if nargout > 1
-            predcov = chol(C2-v'*v,'lower');
+            pcov = C2-v'*v;
             if  isfield(gp,'meanf')
-                predcov = predcov + RAR;
+                pcov = pcov + RAR;
             end
+            predcov = chol(pcov,'lower');
             sampyt = Ef + predcov*randn(size(Ef));
           end
         end   
