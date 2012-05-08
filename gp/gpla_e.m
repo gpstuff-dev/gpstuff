@@ -426,10 +426,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               ind = 1:i-1;
               if isempty(z)
                 mu = K(i,ind)*gp.lik.fh.llg(gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+                upfact = gp.lik.fh.upfact(gp, y(I(i)), mu, ll);
               else
                 mu = K(i,ind)*gp.lik.fh.llg(gp.lik, y(I(ind)), f(I(ind)), 'latent', z(I(ind)));
+                upfact = gp.lik.fh.upfact(gp, y(I(i)), mu, ll, z(I(i)));
               end
-              upfact = gp.lik.fh.upfact(gp, y(I(i)), mu, ll);
             end
             if upfact > 0
               L = cholupdate(L, l.*sqrt(upfact), '-');
@@ -1050,8 +1051,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       ch.datahash=datahash;
     end
     
-    assert(isreal(edata))
-    assert(isreal(eprior))
+%    assert(isreal(edata))
+%    assert(isreal(eprior))
 
 %
 % ==============================================================

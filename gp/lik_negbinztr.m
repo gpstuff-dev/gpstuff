@@ -91,6 +91,7 @@ function lik = lik_negbinztr(varargin)
     lik.fh.llg3 = @lik_negbinztr_llg3;
     lik.fh.tiltedMoments = @lik_negbinztr_tiltedMoments;
     lik.fh.siteDeriv = @lik_negbinztr_siteDeriv;
+    lik.fh.upfact = @lik_negbinztr_upfact;
     lik.fh.predy = @lik_negbinztr_predy;
     lik.fh.predprcty = @lik_negbinztr_predprcty;
     lik.fh.invlink = @lik_negbinztr_invlink;
@@ -453,6 +454,23 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
     lp0=r.*(log(r) - log(r+mu));
     g = g -(1./(1 - exp(-lp0)).*(log(r./(mu + r)) - r./(mu + r) + 1));
   end
+end
+
+function upfact = lik_negbinztr_upfact(gp, y, mu, ll, z)
+  r = gp.lik.disper;
+  sll = sqrt(ll);
+
+  fh_e = @(f) negbinztr_pdf(y, exp(f).*z', r).*norm_pdf(f, mu, sll);
+  EE = quadgk(fh_e, max(mu-6*sll,-30), min(mu+6*sll,30));
+  
+  
+  fm = @(f) f.*negbinztr_pdf(y, exp(f).*z', r).*norm_pdf(f, mu, sll)./EE;
+  mm  = quadgk(fm, max(mu-6*sll,-30), min(mu+6*sll,30));
+  
+  fV = @(f) (f - mm).^2.*negbinztr_pdf(y, exp(f).*z', r).*norm_pdf(f, mu, sll)./EE;
+  Varp = quadgk(fV, max(mu-6*sll,-30), min(mu+6*sll,30));
+  
+  upfact = -(Varp - ll)./ll^2;
 end
 
 function [lpy, Ey, Vary] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)

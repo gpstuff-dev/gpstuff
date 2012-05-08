@@ -943,18 +943,19 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
   
 end
 
-function upfact = lik_t_upfact(gp, y, mu, ll)
+function upfact = lik_t_upfact(gp, y, mu, ll, z)
   nu = gp.lik.nu;
   sigma = sqrt(gp.lik.sigma2);
+  sll = sqrt(ll);
 
-  fh_e = @(f) t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll);
+  fh_e = @(f) t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, sll);
   EE = quadgk(fh_e, -40, 40);
   
   
-  fm = @(f) f.*t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll)./EE;
+  fm = @(f) f.*t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, sll)./EE;
   mm  = quadgk(fm, -40, 40);
   
-  fV = @(f) (f - mm).^2.*t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, ll)./EE;
+  fV = @(f) (f - mm).^2.*t_pdf(f, nu, y, sigma).*norm_pdf(f, mu, sll)./EE;
   Varp = quadgk(fV, -40, 40);
   
   upfact = -(Varp - ll)./ll^2;
@@ -1005,8 +1006,12 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
 %       Vary = EVary + VarEy;
       
       Ey = Ef;
-      nu_p=max(2.5,nu);
-      Vary=nu_p./(nu_p-2).*sigma2 +Varf;
+      if nu>2
+        Vary=nu./(nu-2).*sigma2 +Varf;
+      else
+        warning('Variance of Student''s t-distribution is not defined for nu<=2')
+        Vary=NaN+Varf;
+      end
   end
   
 
