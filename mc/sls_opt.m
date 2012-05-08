@@ -22,7 +22,10 @@ function opt = sls_opt(opt)
 %    method ('stepping')
 %      whether to use stepping-out ('stepping'), doubling ('doubling'),
 %      ('minmax') to grow the slice or ('multi') and ('multimm') for
-%      hyperrectangle multivariate sampling
+%      hyperrectangle multivariate sampling or ('shrnk') for adaptive
+%      shrinking-rank method
+%    sigma2 (1)
+%      initial crumb variance for adaptive method ('shrnk')
 %    overrelaxation (0)
 %      whether to use (1) or not (0) overrelaxed slice sampling
 %      (stepping-out with bisection is used)
