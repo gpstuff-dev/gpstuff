@@ -170,11 +170,58 @@ y_new = -f(x_0,varargin{:});
 % The main loop of slice sampling
 for i = 1-nomit:1:nsamples
   switch method
+   % Slice covariance matching from Thompson & Neal (2010)
+   case 'covmatch' 
+    theta = 1;
+    np = length(x_0);
+    M = y_new;
+    ee = exprnd(1);
+    ytilde0 = M-ee;
+    x_0 = x_0';
+    sigma = opt.sigma;
+    R = 1./sigma*eye(np);
+    F = R;
+    cbarstar = 0;
+    
+    while 1
+      z = mvnrnd(zeros(1,np), eye(np))';
+      c = x_0 + F\z;
+      cbarstar = cbarstar + F'*(F*c);
+      cbar = R\(R'\cbarstar);
+      z = mvnrnd(zeros(1,np), eye(np))';
+      x_prop = cbar + R\z;
+      y_new = -f(x_prop',varargin{:});
+      if y_new > ytilde0
+        % Accept proposal
+        break;
+      end
+      G = -gradf(x_prop', varargin{:})';
+      gr = G/norm(G);
+      delta = norm(x_prop - c);
+      u = x_prop + delta*gr;
+      lu = -f(u', varargin{:});
+      kappa = -2/delta^2*(lu-y_new-delta*norm(G));
+      lxu = 0.5*norm(G)^2/kappa + y_new;
+      M = max(M, lxu);
+      sigma2 = 2/3*(M-ytilde0)/kappa;
+      alpha = max(0, 1/sigma2 - (1+theta)*gr'*(R'*(R*gr)));
+      F = chol(theta*(R'*R) + alpha*(gr*gr'));
+      R = chol((1+theta)*(R'*R) + alpha*(gr*gr'));
+      
+    end
+    % Save sampling step and set up the new 'old' sample
+    x_0 = x_prop;
+    if i > 0
+      samples(i,:) = x_prop;
+    end
+    
+    % Save energies
+    if save_energies && i > 0
+      energies(i) = -y_new;
+    end
+    
    % Shrinking-Rank method from Thompson & Neal (2010)
    case 'shrnk'
-    if ~isfield(opt, 'sigma') || isempty(opt.sigma)
-      opt.sigma = 1;
-    end
     ytr = -log(rand) - y_new;
     k = 0;
     sigma(1) = opt.sigma;

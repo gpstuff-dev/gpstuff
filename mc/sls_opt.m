@@ -22,10 +22,11 @@ function opt = sls_opt(opt)
 %    method ('stepping')
 %      whether to use stepping-out ('stepping'), doubling ('doubling'),
 %      ('minmax') to grow the slice or ('multi') and ('multimm') for
-%      hyperrectangle multivariate sampling or ('shrnk') for adaptive
-%      shrinking-rank method
-%    sigma2 (1)
-%      initial crumb variance for adaptive method ('shrnk')
+%      hyperrectangle multivariate sampling or ('shrnk') and ('covmatch')
+%      for covariance-adaptive sampling
+%    sigma (1)
+%      initial crumb standard deviation for adaptive methods ('shrnk') and
+%      ('covmatch')
 %    overrelaxation (0)
 %      whether to use (1) or not (0) overrelaxed slice sampling
 %      (stepping-out with bisection is used)
@@ -122,4 +123,7 @@ if ~isfield(opt,'unimodal')
 end
 if ~isfield(opt,'mmlimits')
   opt.mmlimits = [opt.wsize-(opt.wsize*opt.mlimit); opt.wsize+(opt.wsize*opt.mlimit)];
+end
+if ~isfield(opt, 'sigma') || isempty(opt.sigma)
+  opt.sigma = 1;
 end
