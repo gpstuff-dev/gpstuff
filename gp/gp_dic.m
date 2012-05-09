@@ -394,6 +394,9 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
             end
             Davg = -2.*sum(Davg.*weight);
           else
+            if isempty(z)
+              z = zeros(size(y));
+            end
             Dth = -2.*arrayfun(@(a,b,c) Gp.lik.fh.ll(Gp.lik, a, b, c), y, mEf, z);
             for i1 = 1:nsamples
               Gp = gp{i1};
