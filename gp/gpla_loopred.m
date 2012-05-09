@@ -74,6 +74,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
         lpyt(i) = -log(m0);
       end
 
+      if nargout>3
+        [~,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+      end
+      if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
+        warning('Very bad predictive densities, gpla_loopred might not be reliable, check results!');
+      end
+  
     case 'cavity'
       % using EP equations
 
@@ -98,6 +105,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       Eft=myy_i;
       Varft=sigma2_i;
 
+      if nargout==3
+        lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+      elseif nargout>3
+        [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+      end
+      
     case 'lrs'
       % Manfred Opper and Ole Winther (2000). Gaussian Processes for
       % Classification: Mean-Field Algorithms. In Neural
@@ -120,16 +133,14 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       end
       Eft=f-Varft.*deriv;
 
-  end
+      if nargout==3
+        lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+      elseif nargout>3
+        [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+      end
   
-  if nargout>2
-    [lpyt,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
   end
-  
-  if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
-    warning('Very bad predictive densities, gpla_loopred might not be reliable, check results!');
-  end
-  
+
 end
 
 function expll = llvec(gplik, y, f, z)
