@@ -362,11 +362,11 @@ function gp = gp_set(varargin)
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('parallel','off', @(x) ischar(x));    % default off
-          ipep.addParamValue('ninit', 10, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
+          ipep.addParamValue('ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
           ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('eta2', .5, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('max_ninner', 4, @(x) isreal(x) && rem(1,x)==1 && isfinite(x))
+          ipep.addParamValue('max_ninner', 4, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
           ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('tolGrad', 0.9, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('tolInner', 1e-3, @(x) isreal(x) && isfinite(x))
