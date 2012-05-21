@@ -89,7 +89,7 @@ if length(ind)==1
     [Ef, Varf] = gp_pred(gp, x, y, xt, 'predcf', predcf, 'tstind', tstind, options);
   else
     [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, 'predcf', predcf, 'tstind', tstind, options);
-    if ~isvector(ind)
+    if isscalar(ind)
       Ef = Ef2; Varf = diag(Covf(size(Ef1,1)+1:end,size(Ef1,1)+1:end));
     else
       Ef = Ef1; Varf = diag(Covf(1:size(Ef1,1), 1:size(Ef1,1)));
