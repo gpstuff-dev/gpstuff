@@ -395,6 +395,13 @@ function gp = gp_set(varargin)
               gp.latent_opt.maxiter = ipep.Results.maxiter;
             end
           end
+          if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
+            gp.latent_opt.tol = ipep.Results.tol;
+          end
+          if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
+            gp.latent_opt.parallel = ipep.Results.parallel;
+          end
+          if strcmp(gp.latent_opt.optim_method, 'robust-EP')
             if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
               gp.latent_opt.ninit = ipep.Results.ninit;
             end
@@ -410,13 +417,6 @@ function gp = gp_set(varargin)
             if init || ~ismember('max_ninner',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'max_ninner')
               gp.latent_opt.max_ninner = ipep.Results.max_ninner;
             end
-          if init || ~ismember('tol',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
-            gp.latent_opt.tol = ipep.Results.tol;
-          end
-          if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
-            gp.latent_opt.parallel = ipep.Results.parallel;
-          end
-          if strcmp(gp.latent_opt.optim_method, 'robust-EP')
             if init || ~ismember('tolStop',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'tolStop')
               gp.latent_opt.tolStop = ipep.Results.tolStop;
             end
