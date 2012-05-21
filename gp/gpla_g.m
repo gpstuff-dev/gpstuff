@@ -333,15 +333,19 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
         DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
         DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
-        b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
-        bb = (iLa2W.*b - L2*(L2'*b));
-        s3 = b - (La1.*bb + B'*(B*bb));            
+%         b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
+%         bb = (iLa2W.*b - L2*(L2'*b));
+%         s3 = b - (La1.*bb + B'*(B*bb));
+        b = repmat(La1,1,size(DL_f_sigma,2)).*DL_f_sigma + B'*(B*DL_f_sigma);            
+        bb = (repmat(iLa2W,1,size(DL_f_sigma,2)).*b - L2*(L2'*b));
+        s3 = b - (repmat(La1,1,size(DL_f_sigma,2)).*bb + B'*(B*bb));
 
-        gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+%         gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+        gdata_lik = - DL_sigma - 0.5.*sum(repmat(s2t,1,size(DL_f_sigma,2)).*DW_sigma) - s2'*s3;
         
         % evaluate prior contribution for the gradient
         if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lgp(lik);
+          g_logPrior = -lik.fh.lpg(lik);
         else
           g_logPrior = zeros(size(gdata_lik));
         end
