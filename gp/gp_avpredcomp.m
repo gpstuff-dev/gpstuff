@@ -1,4 +1,4 @@
-function [apcs,apcss]=gp_avpredcomp3(gp, x, y, varargin)
+function [apcs,apcss]=gp_avpredcomp(gp, x, y, varargin)
 %GP_AVPREDCOMP  Average predictive comparison for Gaussian process model
 %
 %  Description
@@ -113,7 +113,7 @@ covx=cov(x);
 covx(deltadist,:)=0;
 covx(:,deltadist)=0;
 for i1=find(deltadist)
-  pdi=1./unique(x(:,i1));
+  pdi=1./numel(unique(x(:,i1)));
   covx(i1,i1)=pdi*(1-pdi);
 end
 
