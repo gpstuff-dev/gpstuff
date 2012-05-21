@@ -390,10 +390,13 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           end
           % Remove points with NaN density
           dii=isnan(p_th);
-          p_th(dii)=[];
-          gp_array(dii)=[];
-          th(dii,:)=[];
-
+          if ~isempty(dii)
+            warning('Some of CCD density evaluations were NaN')
+            p_th(dii)=[];
+            gp_array(dii)=[];
+            th(dii,:)=[];
+          end
+            
           if ~isempty(xt)
             % predictions if needed
             for i1 = 1 : size(th,1)
