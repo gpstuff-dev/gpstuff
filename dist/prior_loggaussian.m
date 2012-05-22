@@ -106,7 +106,9 @@ end
 
 function lp = prior_loggaussian_lp(x, p)
   
-  lp = -0.5*sum(log(x.^2.*p.s2*2*pi) + 1./p.s2 .* sum((log(x)-p.mu).^2,1));
+  lJ = -log(x);    % =log(1/x)=log(|J|) of transformation
+  xt  = log(x);    % transformed x
+  lp = 0.5*sum(-log(2*pi) -log(p.s2)- 1./p.s2 .* sum((xt-p.mu).^2,1)) +lJ;
     
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
@@ -118,14 +120,17 @@ end
 
 function lpg = prior_loggaussian_lpg(x, p)
   
-  lpg = -(1./(x.*p.s2)).*(log(x)-p.mu+p.s2);
+  lJg = -1./x;     % gradient of log(|J|) of transformation
+  xt   = log(x);   % transformed x
+  xtg  = 1./x;     % derivative of transformation
+  lpg = xtg.*(1./p.s2).*(p.mu-xt) + lJg;
   
   if ~isempty(p.p.mu)
-    lpgmu = sum((1./p.s2).*(log(x)-p.mu)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
+    lpgmu = sum((1./p.s2).*(xt-p.mu)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
     lpg = [lpg lpgmu];
   end
   if ~isempty(p.p.s2)
-    lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(log(x)-p.mu).^2 )) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
+    lpgs2 = (sum(-0.5*(1./p.s2-1./p.s2.^2.*(xt-p.mu).^2 )) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
     lpg = [lpg lpgs2];
   end
 end

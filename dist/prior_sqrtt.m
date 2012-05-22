@@ -128,8 +128,8 @@ end
 function lp = prior_sqrtt_lp(x, p)
   
   lJ = -log(2*sqrt(x));  % log(1/(2*x^(1/2))) log(|J|) of transformation
-  x  = sqrt(x);
-  lp = sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2) + lJ);
+  xt = sqrt(x);          % transformation
+  lp = sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(xt-p.mu).^2./p.nu./p.s2) + lJ);
   
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
@@ -145,19 +145,20 @@ end
 function lpg = prior_sqrtt_lpg(x, p)
 
   lJg = -1./(2*x);        % gradient of log(|J|) of transformation
-  x   = sqrt(x);
-  lpg = -(p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2) + lJg;
+  xt  = sqrt(x);          % transformation
+  xtg = 1./(2*sqrt(x));   % derivative of transformation
+  lpg = xtg.*(-(p.nu+1).*(xt-p.mu)./(p.nu.*p.s2 + (xt-p.mu).^2)) + lJg;
   
   if ~isempty(p.p.mu)
-    lpgmu = sum((p.nu+1).*(x-p.mu)./(p.nu.*p.s2 + (x-p.mu).^2)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
+    lpgmu = sum((p.nu+1).*(xt-p.mu)./(p.nu.*p.s2 + (xt-p.mu).^2)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
     lpg = [lpg lpgmu];
   end
   if ~isempty(p.p.s2)
-    lpgs2 = (sum(-1./(2.*p.s2)+((p.nu + 1)*(p.mu - x)^2)./(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
+    lpgs2 = (sum(-1./(2.*p.s2)+((p.nu + 1)*(p.mu - xt)^2)./(2*p.s2*((p.mu-xt)^2 + p.nu*p.s2))) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
     lpg = [lpg lpgs2];
   end
   if ~isempty(p.p.nu)
-    lpgnu = (0.5*sum(digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(x-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(x-p.mu).^2./p.nu./p.s2).*(x-p.mu).^2./p.s2./p.nu.^2) + p.p.nu.fh.lpg(p.nu, p.p.nu)).*p.nu + 1;
+    lpgnu = (0.5*sum(digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(xt-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(xt-p.mu).^2./p.nu./p.s2).*(xt-p.mu).^2./p.s2./p.nu.^2) + p.p.nu.fh.lpg(p.nu, p.p.nu)).*p.nu + 1;
     lpg = [lpg lpgnu];
   end
 end
