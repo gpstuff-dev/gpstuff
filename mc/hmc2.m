@@ -343,7 +343,11 @@ function set_state(f, x)
 global HMC_MOM
 if isnumeric(x)
   s = RandStream('mt19937ar','Seed',x);
-  RandStream.setDefaultStream(s);
+  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+    RandStream.setDefaultStream(s);
+  else
+    RandStream.setGlobalStream(s);
+  end
 else
   if ~isstruct(x)
     error('Second argument to hmc must be number or state structure');
@@ -352,7 +356,11 @@ else
       | ~isfield(x, 'mom'))
     error('Second argument to hmc must contain correct fields')
   end
-  RandStream.setDefaultStream(x.stream);
+  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+    RandStream.setDefaultStream(x.stream);
+  else
+    RandStream.setGlobalStream(x.stream);
+  end
   x.State=x.streamstate;
   HMC_MOM = x.mom;
 end
