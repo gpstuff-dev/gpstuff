@@ -118,7 +118,11 @@ for i1=find(deltadist)
 end
 
 stream = RandStream('mrg32k3a');
-prevstream=RandStream.setDefaultStream(stream);
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream);
+else
+  prevstream = RandStream.setGlobalStream(stream);
+end
 
 % loop through the input variables
 for k1=1:nin
@@ -257,4 +261,8 @@ if nargout>1
   end
 end
 
-RandStream.setDefaultStream(prevstream);
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end

@@ -29,7 +29,11 @@
 % License.txt, included with the software, for details.
 
 stream = RandStream('mrg32k3a');
-RandStream.setDefaultStream(stream);
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(stream);
+else
+  RandStream.setGlobalStream(stream);
+end
 
 
 % =====================================
