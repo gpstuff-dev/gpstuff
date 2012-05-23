@@ -39,7 +39,11 @@ end
 
 if rsubstream>0
   stream = RandStream('mrg32k3a');
-  prevstream=RandStream.setDefaultStream(stream);
+  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+    prevstream=RandStream.setDefaultStream(stream);
+  else
+    prevstream=RandStream.setGlobalStream(stream);
+  end
   stream.Substream = rsubstream;
 
   rii=randperm(n);
@@ -48,5 +52,9 @@ if rsubstream>0
     itr{cvi}=rii(itr{cvi});
   end
 
-  RandStream.setDefaultStream(prevstream);
+  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+    RandStream.setDefaultStream(prevstream);
+  else
+    RandStream.setGlobalStream(prevstream);
+  end;
 end
