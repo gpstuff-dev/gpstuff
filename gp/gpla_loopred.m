@@ -47,7 +47,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
   [tn,nin] = size(x);
   
   % latent posterior
-  [f, sigm2ii, lp] = gpla_pred(gp, x, y, 'z', z);
+  [f, sigm2ii, lp] = gpla_pred(gp, x, y, 'z', z, 'tstind', []);
   
   switch method
 
@@ -118,14 +118,59 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       %
       % Ole Winther et al (2012). Work in progress.
 
-      K = gp_trcov(gp,x);
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       La = 1./-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
       % really large values don't contribute, but make variance
       % computation unstable. 2e15 approx 1/(2*eps)
       La = min(La,2e15);
-      Varft=1./diag(inv(K+diag(La)))-La;
-      % check if cavity varianes are negative
+      
+      switch gp.type
+        case 'FULL' 
+          % FULL GP (and compact support GP)
+          K = gp_trcov(gp,x);
+          Varft=1./diag(inv(K+diag(La)))-La;
+          
+        case 'FIC' 
+          % FIC
+          % Use inverse lemma for FIC low rank covariance matrix approximation
+          % Code adapated from gp_pred
+          
+          u = gp.X_u;
+          m = size(u,1);
+          % Turn the inducing vector on right direction
+          if size(u,2) ~= size(x,2)
+            u=u';
+          end
+          [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % 1 x f  vector
+          K_fu = gp_cov(gp, x, u);   % f x u
+          K_uu = gp_trcov(gp, u);     % u x u, noiseles covariance K_uu
+          Luu = chol(K_uu,'lower');
+%          [Luu, notpositivedefinite] = chol(K_uu,'lower');
+%          if notpositivedefinite
+%            b = NaN;
+%            iCv = NaN;
+%            iC = NaN;
+%            return
+%          end
+          B=Luu\(K_fu');
+          Qv_ff=sum(B.^2)';
+          Lav = Cv_ff-Qv_ff + La;   % 1 x f, Vector of diagonal elements
+          
+          % iLaKfu = diag(inv(Lav))*K_fu = inv(La)*K_fu
+          iLaKfu = zeros(size(K_fu));  % f x u,
+          n=size(x,1);
+          for i=1:n
+            iLaKfu(i,:) = K_fu(i,:)./Lav(i);  % f x u
+          end
+          A = K_uu+K_fu'*iLaKfu;
+          A = (A+A')./2;
+          L = iLaKfu/chol(A);
+          
+          %Varft=1./diag(inv(K+diag(La)))-La;
+          Varft=1./(1./Lav - sum(L.^2,2))-La;
+      end
+      
+      % check if cavity variances are negative
       ii=find(Varft<0);
       if ~isempty(ii)
         warning('gpla_loopred: some LOO latent variances are negative');
