@@ -330,7 +330,7 @@ function [logM_0, m_1, sigm2hati1] = lik_weibull_tiltedMoments(lik, y, i1, sigm2
   r = lik.shape;
   
   % get a function handle of an unnormalized tilted distribution 
-  % (likelihood * cavity = Negative-binomial * Gaussian)
+  % (likelihood * cavity = Weibull * Gaussian)
   % and useful integration limits
   [tf,minf,maxf]=init_weibull_norm(yy,myy_i,sigm2_i,yc,r);
   
@@ -387,7 +387,7 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   r = lik.shape;
   
   % get a function handle of an unnormalized tilted distribution 
-  % (likelihood * cavity = Negative-binomial * Gaussian)
+  % (likelihood * cavity = Weibull * Gaussian)
   % and useful integration limits
   [tf,minf,maxf]=init_weibull_norm(yy,myy_i,sigm2_i,yc,r);
   % additionally get function handle for the derivative
@@ -475,7 +475,7 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
   lpy = zeros(length(yt),1);
   for i1=1:length(yt)
     % get a function handle of the likelihood times posterior
-    % (likelihood * posterior = Negative-binomial * Gaussian)
+    % (likelihood * posterior = Weibull * Gaussian)
     % and useful integration limits
     [pdf,minf,maxf]=init_weibull_norm(...
       yt(i1),Ef(i1),Varf(i1),yc(i1),r);
