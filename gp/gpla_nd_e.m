@@ -183,6 +183,42 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                   clear gptmp
                   n1=size(Ka,1);
                   n2=size(Kb,1);
+                  
+                  [Va,Da]=eig(Ka); [Vb,Db]=eig(Kb);
+                  % eigenvalues of K matrix
+                  Dtmp=kron(diag(Da),diag(Db));
+                  [sDtmp,istmp]=sort(Dtmp,'descend');
+                  
+                  % Form the low-rank approximation.  Exclude eigenvalues
+                  % smaller than gp.latent_opt.eig_tol or take
+                  % gp.latent_opt.eig_prct*n eigenvalues at most.
+                  nlr=min([sum(sDtmp>gp.latent_opt.eig_tol) round(gp.latent_opt.eig_prct*n)]);
+                  sDtmp=sDtmp+gp.jitterSigma2;
+                  
+                  itmp1=meshgrid(1:n1,1:n2);
+                  itmp2=meshgrid(1:n2,1:n1)';
+                  ind=[itmp1(:) itmp2(:)];
+                  
+                  % included eigenvalues
+                  Dlr=sDtmp(1:nlr);
+                  % included eigenvectors
+                  Vlr=zeros(n,nlr);
+                  for i1=1:nlr
+                    Vlr(:,i1)=kron(Va(:,ind(istmp(i1),1)),Vb(:,ind(istmp(i1),2)));
+                  end
+                  %L=[];
+                  
+                  % diag(K)-diag(Vlr*diag(Dlr)*Vlr')
+                  Lb=gp_trvar(gp,x)-sum(bsxfun(@times,Vlr.*Vlr,Dlr'),2);
+                  if isfield(gp,'meanf')
+                    Dt=[Dlr; diag(B_m)];
+                    Vt=[Vlr H'];
+                  else
+                    Dt=Dlr;
+                    Vt=Vlr;
+                  end
+                  Dtsq=sqrt(Dt);
+                  
                 elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
                   % unique values from covariance matrix
                   K1 = gp_cov(gp, x(1,:), x);
@@ -297,25 +333,48 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       
                       if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
                         
-                        % use Kronecker product structure in matrix vector
+                        % Use Kronecker product structure in matrix vector
                         % multiplications
-                        q=Kb*reshape(b,n2,n1)*Ka;
-                        Kg=q(:);
-                        Kg=Kg+gp.jitterSigma2*b;
+                        %-
+                        % q=Kb*reshape(b,n2,n1)*Ka;
+                        % Kg=q(:);
+                        % Kg=Kg+gp.jitterSigma2*b;
+                        %-
+                        % OR use reduced-rank approximation for K
+                        %-
+                        Kg=Lb.*b+Vlr*(Dlr.*(Vlr'*b));
+                        %-
                         
                         if isfield(gp,'meanf')
                           Kg=Kg+H'*(B_m*(H*b));
                         end
-                        v=sqrt(ny)*(g2sq.*Kg-(g2*(g2'*Kg))./g2sq);
                         
-                        % fast matrix vector multiplication with
-                        % Kronecker product for matrix inversion
-                        if isfield(gp,'meanf')
-                          [iSg,~]=pcg(@(z) mvm_kron(g2,ny,Ka,Kb,H,B_m,gp.jitterSigma2,z), v, gp.latent_opt.pcg_tol);
-                        else
-                          [iSg,~]=pcg(@(z) mvm_kron(g2,ny,Ka,Kb,[],[],gp.jitterSigma2,z), v, gp.latent_opt.pcg_tol);
-                        end
-                        a=b-sqrt(ny)*(g2sq.*iSg  - g2*(g2'*(iSg./g2sq)));
+                        % % Use Kronecker product structure
+                        %-
+                        % v=sqrt(ny)*(g2sq.*Kg-(g2*(g2'*Kg))./g2sq);
+                        % % fast matrix vector multiplication with
+                        % % Kronecker product for matrix inversion
+                        % if isfield(gp,'meanf')
+                        %   [iSg,~]=pcg(@(z) mvm_kron(g2,ny,Ka,Kb,H,B_m,gp.jitterSigma2,z), v, gp.latent_opt.pcg_tol);
+                        % else
+                        %   [iSg,~]=pcg(@(z) mvm_kron(g2,ny,Ka,Kb,[],[],gp.jitterSigma2,z), v, gp.latent_opt.pcg_tol);
+                        % end
+                        % a=b-sqrt(ny)*(g2sq.*iSg  - g2*(g2'*(iSg./g2sq)));
+                        %-
+                        
+                        % use reduced-rank approximation for K
+                        %-
+                        Zt=1./(1+ny*g2.*Lb);
+                        Ztsq=sqrt(Zt);
+                        Ltmp=bsxfun(@times,Ztsq.*sqrt(ny).*g2sq,bsxfun(@times,Vt,sqrt(Dt)'));
+                        Ltmp=Ltmp'*Ltmp;
+                        Ltmp(1:(size(Dt,1)+1):end)=Ltmp(1:(size(Dt,1)+1):end)+1;
+                        L=chol(Ltmp,'lower');
+                        
+                        EKg=ny*g2.*(Zt.*Kg)-sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*(Vt*(Dtsq.*(L'\(L\(Dtsq.*(Vt'*(sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*Kg)))))))))));
+                        E1=ny*g2.*(Zt.*ones(n,1))-sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*(Vt*(Dtsq.*(L'\(L\(Dtsq.*(Vt'*(sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*ones(n,1))))))))))));
+                        a=b-(EKg-E1*((E1'*Kg)./(ones(1,n)*E1)));
+                        %-
                         
                       elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
                         
@@ -419,9 +478,17 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                     end
                     
                     if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
-                        f2=Kb*reshape(a,n2,n1)*Ka;
-                        f=f2(:);
-                        f=f+gp.jitterSigma2*a;
+                        
+                        % % Use Kronecker product structure
+                        %- 
+                        % f2=Kb*reshape(a,n2,n1)*Ka;
+                        % f=f2(:);
+                        % f=f+gp.jitterSigma2*a;
+                        %-
+                        % use reduced-rank approximation for K
+                        %-
+                        f=Lb.*a+Vlr*(Dlr.*(Vlr'*a));
+                        %-
                         
                         if isfield(gp,'meanf')
                           f=f+H'*(B_m*(H*a));
@@ -465,9 +532,16 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       a = (a_old+a)/2;
                       
                       if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
-                        f2=Kb*reshape(a,n2,n1)*Ka;
-                        f=f2(:);
-                        f=f+gp.jitterSigma2*a;
+                        % % Use Kronecker product structure
+                        %- 
+                        % f2=Kb*reshape(a,n2,n1)*Ka;
+                        % f=f2(:);
+                        % f=f+gp.jitterSigma2*a;
+                        %-
+                        % use reduced-rank approximation for K
+                        %-
+                        f=Lb.*a+Vlr*(Dlr.*(Vlr'*a));
+                        %-
                         
                         if isfield(gp,'meanf')
                           f=f+H'*(B_m*(H*a));
@@ -549,61 +623,40 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               
               if isfield(gp.lik, 'fullW') && gp.lik.fullW
                 if isfield(gp.latent_opt, 'kron') && gp.latent_opt.kron==1
-                  [Va,Da]=eig(Ka); [Vb,Db]=eig(Kb);
+                  % % Use Kronecker product structure
+                  %-
+                  % tmp=bsxfun(@times,Lb.^(-1/2),bsxfun(@times,Vt,sqrt(Dt)'));
+                  % tmp=tmp'*tmp;
+                  % tmp(1:size(tmp,1)+1:end)=tmp(1:size(tmp,1)+1:end)+1;
+                  % logZa=sum(log(diag(chol(tmp,'lower'))));
+                  %
+                  % Lbt=ny*(g2)+1./Lb;
+                  %
+                  % St=[diag(1./Dt)+Vt'*bsxfun(@times,1./Lb,Vt) zeros(size(Dt,1),1); ...
+                  %   zeros(1,size(Dt,1)) 1];
+                  % Pt=[bsxfun(@times,1./Lb,Vt) sqrt(ny)*g2];
+                  %
+                  % logZb=sum(log(diag(chol(St,'lower'))));
+                  %
+                  % Ptt=bsxfun(@times,1./sqrt(Lbt),Pt);
+                  % logZc=sum(log(diag(chol(St-Ptt'*Ptt,'lower'))));
+                  %
+                  % edata = logZ + logZa - logZb + logZc + 0.5*sum(log(Lb)) + 0.5*sum(log(Lbt));
+                  %-
                   
-                  % eigenvalues of K matrix
-                  Dtmp=kron(diag(Da),diag(Db));
+                  % use reduced-rank approximation for K
+                  %-
+                  Zt=1./(1+ny*g2.*Lb);
+                  Ztsq=sqrt(Zt);
+                  Ltmp=bsxfun(@times,Ztsq.*sqrt(ny).*g2sq,bsxfun(@times,Vt,sqrt(Dt)'));
+                  Ltmp=Ltmp'*Ltmp;
+                  Ltmp(1:(size(Dt,1)+1):end)=Ltmp(1:(size(Dt,1)+1):end)+1;
+                  L=chol(Ltmp,'lower');
                   
-                  [sDtmp,istmp]=sort(Dtmp,'descend');
-                  
-                  % Form the low-rank approximation.  Exclude eigenvalues
-                  % smaller than gp.latent_opt.eig_tol or take
-                  % gp.latent_opt.eig_prct*n eigenvalues at most.
-                  nlr=min([sum(sDtmp>gp.latent_opt.eig_tol) round(gp.latent_opt.eig_prct*n)]);
-                  sDtmp=sDtmp+gp.jitterSigma2;
-                  
-                  itmp1=meshgrid(1:n1,1:n2);
-                  itmp2=meshgrid(1:n2,1:n1)';
-                  ind=[itmp1(:) itmp2(:)];
-                  
-                  % included eigenvalues
-                  Dlr=sDtmp(1:nlr);
-                  % included eigenvectors
-                  Vlr=zeros(n,nlr);
-                  for i1=1:nlr
-                    Vlr(:,i1)=kron(Va(:,ind(istmp(i1),1)),Vb(:,ind(istmp(i1),2)));
-                  end
-                  
-                  L=[];
-                  
-                  % diag(K)-diag(Vlr*diag(Dlr)*Vlr')
-                  Lb=gp_trvar(gp,x)-sum(bsxfun(@times,Vlr.*Vlr,Dlr'),2);
-                  if isfield(gp,'meanf')
-                    Dt=[Dlr; diag(B_m)];
-                    Vt=[Vlr H'];
-                  else
-                    Dt=Dlr;
-                    Vt=Vlr;
-                  end
-
-                  tmp=bsxfun(@times,Lb.^(-1/2),bsxfun(@times,Vt,sqrt(Dt)'));
-                  tmp=tmp'*tmp;
-                  tmp(1:size(tmp,1)+1:end)=tmp(1:size(tmp,1)+1:end)+1;
-                  logZa=sum(log(diag(chol(tmp,'lower'))));
-                  
-                  Lbt=ny*(g2)+1./Lb;
-                  
-                  St=[diag(1./Dt)+Vt'*bsxfun(@times,1./Lb,Vt) zeros(size(Dt,1),1); ...
-                    zeros(1,size(Dt,1)) 1];
-                  Pt=[bsxfun(@times,1./Lb,Vt) sqrt(ny)*g2];
-                  
-                  logZb=sum(log(diag(chol(St,'lower'))));
-                  
-                  Ptt=bsxfun(@times,1./sqrt(Lbt),Pt);
-                  logZc=sum(log(diag(chol(St-Ptt'*Ptt,'lower'))));
-                  
-                  edata = logZ + logZa - logZb + logZc + 0.5*sum(log(Lb)) + 0.5*sum(log(Lbt));
-                  
+                  LTtmp=L\( Dtsq.*(Vt'*( (g2sq.*sqrt(ny)).*((1./(1+ny*g2.*Lb)).* (sqrt(ny)*g2sq) ) )) );
+                  edata = logZ + sum(log(diag(L)))+0.5*sum(log(1+ny*g2.*Lb)) ...
+                    -0.5*log(ny) + 0.5*log(sum(((g2*ny)./(ny*g2.*Lb+1)))-LTtmp'*LTtmp);
+                  %-
                 elseif isfield(gp.latent_opt, 'fft') && gp.latent_opt.fft==1
                   
                   K = gp_trcov(gp, x);

@@ -355,13 +355,8 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     gpcf1 = gpcf();
   end
   
-  if ~isempty(speedup) && strcmp(speedup, 'on') && size(xx,2)==2 && (strcmp(gpcf1.type,'gpcf_sexp') || strcmp(gpcf1.type,'gpcf_exp'))
-    % less weakly informative prior for Kronecker low-rank approximation
-    pm = prior_sqrtt('s2', 1^2, 'nu', 4);
-  else
-    % weakly informative prior
-    pm = prior_sqrtt('s2', 10^2, 'nu', 4);
-  end
+  % weakly informative prior
+  pm = prior_sqrtt('s2', 10^2, 'nu', 4);
   pl = prior_t('s2', 1^2, 'nu', 4);
   pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
