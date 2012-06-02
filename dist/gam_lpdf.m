@@ -7,6 +7,9 @@ function y = gam_lpdf(x,a,b)
 %   The size of X is the common size of the input arguments. A
 %   scalar input functions as a constant matrix of the same size as
 %   the other inputs.
+%
+%   The parameterization is as in Gelman et al. (2004). Bayesian Data
+%   Analysis (second edition)
 
 % Copyright (c) 1998-2004 Aki Vehtari
 
