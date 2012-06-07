@@ -285,7 +285,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lgp(gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
               gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
