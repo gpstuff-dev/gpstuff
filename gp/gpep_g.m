@@ -296,6 +296,35 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         
       end
+      % =================================================================
+      % Gradient with respect to a likelihood function parameters        
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
+%         [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
+%         sigm2_i = (Varf.^-1 - tautilde).^-1;
+%         mu_i = sigm2_i.*(Ef./Varf - nutilde);
+        
+        gdata_lik = 0;
+        lik = gp.lik;
+        for k1 = 1:length(y)
+          if ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          else
+            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
+          end
+        end
+
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
       
       % =================================================================
       % Gradient with respect to inducing inputs
@@ -364,34 +393,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
       end
       
-      % =================================================================
-      % Gradient with respect to a likelihood function parameters        
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-%         [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-%         sigm2_i = (Varf.^-1 - tautilde).^-1;
-%         mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          if ~isequal(gp.latent_opt.optim_method, 'robust-EP')
-            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-          else
-            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
-          end
-        end
 
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
-      end
       
     case {'PIC' 'PIC_BLOCK'}
       % ============================================================
@@ -468,7 +470,34 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
       end
       
+      % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
 
+        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', gp.tr_index, 'z', z);
+        
+        sigm2_i = (Varf.^-1 - tautilde).^-1;
+        mu_i = sigm2_i.*(Ef./Varf - nutilde);
+        
+        gdata_lik = 0;
+        lik = gp.lik;
+        for k1 = 1:length(y)
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+        end
+
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
       % =================================================================
       % Gradient with respect to inducing inputs
       
@@ -516,34 +545,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
           end
         end
-      end
-      
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', gp.tr_index, 'z', z);
-        
-        sigm2_i = (Varf.^-1 - tautilde).^-1;
-        mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-        end
-
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
       
 
@@ -654,7 +655,32 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           end
         end
 
-      end             
+      end         
+      
+      % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
+        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
+        sigm2_i = (Varf.^-1 - tautilde).^-1;
+        mu_i = sigm2_i.*(Ef./Varf - nutilde);
+        
+        gdata_lik = 0;
+        lik = gp.lik;
+        for k1 = 1:length(y)
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+        end
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
       
       % =================================================================
       % Gradient with respect to inducing inputs
@@ -704,32 +730,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
           end
         end
-      end
-      
-
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-        sigm2_i = (Varf.^-1 - tautilde).^-1;
-        mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-        end
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
       
     case {'DTC' 'SOR'}
@@ -795,6 +795,31 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       end
       
       % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
+        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
+        gdata_lik = 0;
+        lik = gp.lik;
+        for k1 = 1:length(y)
+          sigm2_i = Varf(k1) ;
+          mu_i = Ef(k1);
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i, mu_i, z);
+        end
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
+      
+      % =================================================================
       % Gradient with respect to inducing inputs
       
       if ~isempty(strfind(gp.infer_params, 'inducing'))
@@ -839,30 +864,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             end
           end
         end
-      end
-      
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          sigm2_i = Varf(k1) ;
-          mu_i = Ef(k1);
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i, mu_i, z);
-        end
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
       
       

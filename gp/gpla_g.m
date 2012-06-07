@@ -270,6 +270,39 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       end
       
       % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
+        gdata_lik = 0;
+        lik = gp.lik;
+
+        
+        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
+        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
+        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
+%         b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
+%         bb = (iLa2W.*b - L2*(L2'*b));
+%         s3 = b - (La1.*bb + B'*(B*bb));
+        b = repmat(La1,1,size(DL_f_sigma,2)).*DL_f_sigma + B'*(B*DL_f_sigma);            
+        bb = (repmat(iLa2W,1,size(DL_f_sigma,2)).*b - L2*(L2'*b));
+        s3 = b - (repmat(La1,1,size(DL_f_sigma,2)).*bb + B'*(B*bb));
+
+%         gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+        gdata_lik = - DL_sigma - 0.5.*sum(repmat(s2t,1,size(DL_f_sigma,2)).*DW_sigma) - s2'*s3;
+        
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
+      % =================================================================
       % Gradient with respect to inducing inputs
       
       if ~isempty(strfind(gp.infer_params, 'inducing'))
@@ -320,39 +353,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             end
           end
         end
-      end
-      
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
-        gdata_lik = 0;
-        lik = gp.lik;
-
-        
-        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
-        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
-        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
-%         b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);            
-%         bb = (iLa2W.*b - L2*(L2'*b));
-%         s3 = b - (La1.*bb + B'*(B*bb));
-        b = repmat(La1,1,size(DL_f_sigma,2)).*DL_f_sigma + B'*(B*DL_f_sigma);            
-        bb = (repmat(iLa2W,1,size(DL_f_sigma,2)).*b - L2*(L2'*b));
-        s3 = b - (repmat(La1,1,size(DL_f_sigma,2)).*bb + B'*(B*bb));
-
-%         gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
-        gdata_lik = - DL_sigma - 0.5.*sum(repmat(s2t,1,size(DL_f_sigma,2)).*DW_sigma) - s2'*s3;
-        
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
 
       g = gdata + gprior;
@@ -481,6 +481,41 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       end
       
       % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
+        gdata_lik = 0;
+        lik = gp.lik;
+        
+        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
+        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
+        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
+        b = B'*(B*DL_f_sigma);
+        for kk=1:length(ind)
+          b(ind{kk}) = b(ind{kk}) + La1{kk}*DL_f_sigma(ind{kk});
+          bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
+        end
+        bb = (bbt - L2*(L2'*b));
+        for kk=1:length(ind)
+          s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
+        end
+        s3 = b - (s3t + B'*(B*bb));
+
+        gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
+      % =================================================================
       % Gradient with respect to inducing inputs
       
       if ~isempty(strfind(gp.infer_params, 'inducing'))
@@ -543,41 +578,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             end
           end
         end
-      end
-      
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
-        gdata_lik = 0;
-        lik = gp.lik;
-        
-        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
-        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
-        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
-        b = B'*(B*DL_f_sigma);
-        for kk=1:length(ind)
-          b(ind{kk}) = b(ind{kk}) + La1{kk}*DL_f_sigma(ind{kk});
-          bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
-        end
-        bb = (bbt - L2*(L2'*b));
-        for kk=1:length(ind)
-          s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
-        end
-        s3 = b - (s3t + B'*(B*bb));
-
-        gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
-
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
 
       g = gdata + gprior;        
@@ -746,6 +746,35 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         end
         
       end
+      
+      % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
+        gdata_lik = 0;
+        lik = gp.lik;
+        
+        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
+        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
+        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
+        b = La1*DL_f_sigma + B'*(B*DL_f_sigma);            
+        bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
+        s3 = b - (La1*bb + B'*(B*bb));            
+        
+        gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+        
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
       % =================================================================
       % Gradient with respect to inducing inputs
       
@@ -800,33 +829,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             end
           end
         end
-      end
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
-        gdata_lik = 0;
-        lik = gp.lik;
-        
-        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
-        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
-        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
-        b = La1*DL_f_sigma + B'*(B*DL_f_sigma);            
-        bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
-        s3 = b - (La1*bb + B'*(B*bb));            
-        
-        gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
-        
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
 
       g = gdata + gprior;
