@@ -93,9 +93,10 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
       end
       b = y./Lav - L*(L'*y);      % b = C\y;
       
-    case {'PIC' 'PIC_BLOCK'} % PIC
-                             % Use inverse lemma for PIC low rank covariance matrix approximation
-                             % Code adapated from gp_pred
+    case {'PIC' 'PIC_BLOCK'}
+      % PIC
+      % Use inverse lemma for PIC low rank covariance matrix approximation
+      % Code adapated from gp_pred
       
       u = gp.X_u;
       ind = gp.tr_index;
@@ -148,9 +149,10 @@ function [b, iCv, iC] = gp_looprep(gp, x, y)
       end
       b = b - L*(L'*y);        % b = C\y;
 
-    case 'CS+FIC' % CS+FIC
-                  % Use inverse lemma for CS+FIC
-                  % Code adapated from gp_pred
+    case 'CS+FIC'
+      % CS+FIC
+      % Use inverse lemma for CS+FIC
+      % Code adapated from gp_pred
       
       u = gp.X_u;
       if size(u,2) ~= size(x,2)

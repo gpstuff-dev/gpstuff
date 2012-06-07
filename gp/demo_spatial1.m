@@ -95,10 +95,10 @@ dims = [1    60     1    35];
 [n,nin] = size(x);
 
 % Create the covariance functions
-gpcf1 = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05);
 pl = prior_t('s2',10);
 pm = prior_sqrtunif();
-gpcf1 = gpcf_matern32(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+%gpcf2 = gpcf_ppcs3('nin',nin,'lengthScale', 5, 'magnSigma2', 0.05, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 lik = lik_poisson();
@@ -106,6 +106,12 @@ lik = lik_poisson();
 % Create the FIC GP structure so that inducing inputs are not optimized
 gp = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
             'jitterSigma2', 1e-4, 'infer_params', 'covariance');
+% alternative models
+%gp = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
+%            'jitterSigma2', 1e-4, 'infer_params', 'covariance',...
+%            'tr_index', trindex);
+%gp = gp_set('type', 'CS+FIC', 'lik', lik, 'cf', {gpcf1 gpcf2}, 'X_u', Xu, ...
+%            'jitterSigma2', 1e-4, 'infer_params', 'covariance');
 
 % --- MAP estimate with Laplace approximation ---
 

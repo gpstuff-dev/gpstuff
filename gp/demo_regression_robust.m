@@ -101,7 +101,7 @@ gpcf = gpcf_sexp('lengthScale', 1, 'magnSigma2', 0.2^2, ...
 lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', gpcf)
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9)
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 disp('Gaussian noise model and MAP estimate for parameters')

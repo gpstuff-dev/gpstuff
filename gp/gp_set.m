@@ -285,6 +285,21 @@ function gp = gp_set(varargin)
       && isempty(gp.X_u)
     error(sprintf('Need to set X_u when using %s',gp.type))
   end
+  if ismember(gp.type,{'CS+FIC'})
+    % check that we have both cs and non-cs type covariance functions
+    ncf=numel(gp.cf);
+    iscs=0;isnoncs=0;
+    for i = 1:ncf
+      if isfield(gp.cf{i},'cs')
+        iscs=1;
+      else
+        isnoncs=1;
+      end
+    end
+    if ~(iscs && isnoncs)
+      error('With CS+FIC need to define at least one cs and one non-cs covariance function')
+    end
+  end
   % Latent method
   if isfield(gp.lik.fh,'trcov')
     % Gaussian likelihood
