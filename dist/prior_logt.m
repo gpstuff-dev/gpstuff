@@ -1,19 +1,17 @@
-function p = prior_t(varargin)
-%PRIOR_T  Student-t prior structure     
+function p = prior_logt(varargin)
+%PRIOR_LOGT  Student-t prior structure for the log of the parameter
 %       
 %  Description
-%    P = PRIOR_T('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
-%    creates Student's t-distribution prior structure in which the
-%    named parameters have the specified values. Any unspecified
-%    parameters are set to default values.
+%    P = PRIOR_LOGT('PARAM1', VALUE1, 'PARAM2', VALUE2, ...) 
+%    creates for the log of the parameter Student's t-distribution
+%    prior structure in which the named parameters have the
+%    specified values. Any unspecified parameters are set to
+%    default values.
 %
-%    P = PRIOR_T(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+%    P = PRIOR_LOGT(P, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
 %    modify a prior structure with the named parameters altered
 %    with the specified values.
 %
-%    Parameterisation is done as in Bayesian Data Analysis,  
-%    second edition, Gelman et.al 2004.
-%    
 %    Parameters for Student-t prior [default]
 %      mu       - location [0]
 %      s2       - scale [1]
@@ -23,7 +21,7 @@ function p = prior_t(varargin)
 %      nu_prior - prior for nu [prior_fixed]
 %
 %  See also
-%    PRIOR_*
+%    PRIOR_t, PRIOR_*
 
 % Copyright (c) 2000-2001,2010 Aki Vehtari
 % Copyright (c) 2009 Jarno Vanhatalo
@@ -34,7 +32,7 @@ function p = prior_t(varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'PRIOR_T';
+  ip.FunctionName = 'PRIOR_LOGT';
   ip.addOptional('p', [], @isstruct);
   ip.addParamValue('mu',0, @(x) isscalar(x));
   ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
@@ -47,9 +45,9 @@ function p = prior_t(varargin)
   
   if isempty(p)
     init=true;
-    p.type = 't';
+    p.type = 'Log-t';
   else
-    if ~isfield(p,'type') && ~isequal(p.type,'t')
+    if ~isfield(p,'type') && ~isequal(p.type,'Log-t')
       error('First argument does not seem to be a valid prior structure')
     end
     init=false;
@@ -81,34 +79,34 @@ function p = prior_t(varargin)
 
   if init
     % set functions
-    p.fh.pak = @prior_t_pak;
-    p.fh.unpak = @prior_t_unpak;
-    p.fh.lp = @prior_t_lp;
-    p.fh.lpg = @prior_t_lpg;
-    p.fh.recappend = @prior_t_recappend;
+    p.fh.pak = @prior_logt_pak;
+    p.fh.unpak = @prior_logt_unpak;
+    p.fh.lp = @prior_logt_lp;
+    p.fh.lpg = @prior_logt_lpg;
+    p.fh.recappend = @prior_logt_recappend;
   end
 
 end
 
-function [w, s] = prior_t_pak(p)
+function [w, s] = prior_logt_pak(p)
   
   w=[];
   s={};
   if ~isempty(p.p.mu)
     w = p.mu;
-    s=[s; 't.mu'];
+    s=[s; 'Log-Student-t.mu'];
   end        
   if ~isempty(p.p.s2)
     w = [w log(p.s2)];
-    s=[s; 'log(t.s2)'];
+    s=[s; 'log(Log-Student-t.s2)'];
   end
   if ~isempty(p.p.nu)
     w = [w log(p.nu)];
-    s=[s; 'log(t.nu)'];
+    s=[s; 'log(Log-Student-t.nu)'];
   end
 end
 
-function [p, w] = prior_t_unpak(p, w)
+function [p, w] = prior_logt_unpak(p, w)
   
   if ~isempty(p.p.mu)
     i1=1;
@@ -127,41 +125,45 @@ function [p, w] = prior_t_unpak(p, w)
   end
 end
 
-function lp = prior_t_lp(x, p)
+function lp = prior_logt_lp(x, p)
   
-  lp=sum(gammaln((p.nu+1)./2) -gammaln(p.nu./2) -0.5*log(p.nu.*pi.*p.s2) -(p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2));
+  lJ = -log(x);    % =log(1/x)=log(|J|) of transformation
+  xt  = log(x);    % transformed x
+  lp = sum(gammaln((p.nu+1)./2) - gammaln(p.nu./2) - 0.5*log(p.nu.*pi.*p.s2) - (p.nu+1)./2.*log(1+(xt-p.mu).^2./p.nu./p.s2) + lJ);
   
   if ~isempty(p.p.mu)
     lp = lp + p.p.mu.fh.lp(p.mu, p.p.mu);
   end
   if ~isempty(p.p.s2)
-    lp = lp + p.p.s2.fh.lp(p.s2, p.p.s2) +log(p.s2);
+    lp = lp + p.p.s2.fh.lp(p.s2, p.p.s2) + log(p.s2);
   end
   if ~isempty(p.p.nu)
-    lp = lp + p.p.nu.fh.lp(p.nu, p.p.nu) +log(p.nu);
+    lp = lp + p.p.nu.fh.lp(p.nu, p.p.nu) + log(p.nu);
   end
 end
 
-function lpg = prior_t_lpg(x, p)
+function lpg = prior_logt_lpg(x, p)
 
- %lpg=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
-  lpg=-(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2);
+  lJg = -1./x;     % gradient of log(|J|) of transformation
+  xt  = log(x);    % transformed x
+  xtg  = 1./x;     % derivative of transformation
+  lpg = xtg.*(-(p.nu+1).*(xt-p.mu)./(p.nu.*p.s2 + (xt-p.mu).^2)) + lJg;
   
   if ~isempty(p.p.mu)
-    lpgmu = sum( (p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2) ) + p.p.mu.fh.lpg(p.mu, p.p.mu);
+    lpgmu = sum((p.nu+1).*(xt-p.mu)./(p.nu.*p.s2 + (xt-p.mu).^2)) + p.p.mu.fh.lpg(p.mu, p.p.mu);
     lpg = [lpg lpgmu];
   end
   if ~isempty(p.p.s2)
-    lpgs2 = (sum( -1./(2.*p.s2) +((p.nu + 1)*(p.mu - x)^2)./(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
+    lpgs2 = (sum(-1./(2.*p.s2)+((p.nu + 1)*(p.mu - xt)^2)./(2*p.s2*((p.mu-xt)^2 + p.nu*p.s2))) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
     lpg = [lpg lpgs2];
   end
   if ~isempty(p.p.nu)
-    lpgnu = (0.5*sum( digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(x-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(x-p.mu).^2./p.nu./p.s2).*(x-p.mu).^2./p.s2./p.nu.^2) + p.p.nu.fh.lpg(p.nu, p.p.nu)).*p.nu + 1;
+    lpgnu = (0.5*sum(digamma1((p.nu+1)./2)-digamma1(p.nu./2)-1./p.nu-log(1+(xt-p.mu).^2./p.nu./p.s2)+(p.nu+1)./(1+(xt-p.mu).^2./p.nu./p.s2).*(xt-p.mu).^2./p.s2./p.nu.^2) + p.p.nu.fh.lpg(p.nu, p.p.nu)).*p.nu + 1;
     lpg = [lpg lpgnu];
   end
 end
 
-function rec = prior_t_recappend(rec, ri, p)
+function rec = prior_logt_recappend(rec, ri, p)
 % The parameters are not sampled in any case.
   rec = rec;
   if ~isempty(p.p.mu)

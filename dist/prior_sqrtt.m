@@ -34,7 +34,7 @@ function p = prior_sqrtt(varargin)
   ip=inputParser;
   ip.FunctionName = 'PRIOR_SQRTT';
   ip.addOptional('p', [], @isstruct);
-  ip.addParamValue('mu',0, @(x) isscalar(x) && x>0);
+  ip.addParamValue('mu',0, @(x) isscalar(x));
   ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
   ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
