@@ -196,7 +196,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       DKuu_u = 0;
       DKuf_u = 0;
 
-      [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
+      [e, edata, eprior, tautilde, nutilde, L, La, b, mu_i, sigm2_i, Z_i, eta] = gpep_e(w, gp, x, y, 'z', z);
 
       K_fu = gp_cov(gp, x, u);         % f x u
       K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -204,6 +204,20 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       iKuuKuf = K_uu\K_fu';
       
       LL = sum(L.*L,2);
+      
+      if isequal(gp.latent_opt.optim_method, 'robust-EP')
+        % Help parameters for Robust-EP
+        S = 1+tautilde.*b;
+        WiS = tautilde./S;
+      end
+      
+      if ~all(isfinite(e));
+        % instead of stopping to error, return NaN
+        g=NaN;
+        gdata = NaN;
+        gprior = NaN;
+        return;
+      end
       
       % =================================================================
       % Gradient with respect to covariance function parameters
@@ -223,19 +237,52 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           DKuf = gpcf.fh.cfg(gpcf, u, x); 
           gprior_cf = -gpcf.fh.lpg(gpcf);
           
-          for i2 = 1:length(DKuu)
-            i1 = i1+1;
+          if ~isequal(gp.latent_opt.optim_method, 'robust-EP')
             
-            KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-            gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
-                               sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-
-            gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
-            gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-            gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}./La) - sum(LL.*DKff{i2}));
-            gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
-
-            gprior(i1) = gprior_cf(i2);
+            for i2 = 1:length(DKuu)
+              i1 = i1+1;
+              
+              KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+              gdata(i1) = -0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + 2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - ...
+                sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+              
+              gdata(i1) = gdata(i1) - 0.5.*(b.*DKff{i2}')*b';
+              gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+              gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}./La) - sum(LL.*DKff{i2}));
+              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+              
+              gprior(i1) = gprior_cf(i2);
+            end
+            
+          else
+            % Robust-EP
+            for i2 = 1:length(DKuu)
+              i1 = i1+1;
+              % Evaluate derivative of log(det(I+Ktilde*W)) where Ktilde is
+              % FIC sparse approximation of covariance with respect to
+              % hyperparameters
+              
+              Dd = DKff{i2} - 2.*sum(DKuf{i2}.*iKuuKuf)' - sum((-iKuuKuf'*DKuu{i2})'.*iKuuKuf)'; % d(diag(Kff - Qff)) / dth
+              DS = Dd.*tautilde;
+              gdata(i1) = -0.5.*sum(DS./S);
+              DTtilde = DKuu{i2} + DKuf{i2}*bsxfun(@times, WiS, K_fu) - K_fu'*bsxfun(@times, WiS.*DS./S, K_fu) + ...
+                K_fu'*bsxfun(@times, WiS, DKuf{i2}');
+              gdata(i1) = gdata(i1) - 0.5.*sum(sum(inv(L).*(L\DTtilde)));
+              gdata(i1) = gdata(i1) - 0.5.*sum(sum(-inv(La).*(La\DKuu{i2}))); 
+              iSKfuiL = bsxfun(@times, 1./S, K_fu/L');
+              
+              % Evaluate derivative of quadratic term
+              % nutilde'*sigma^-1*nutilde with respect to hyperparameters
+            
+              
+              nud=(nutilde'*iSKfuiL)/L;
+              nuDpcovnu = sum(nutilde.^2.*(-DS.*b./S.^2 + Dd./S)) + 2*(nutilde./S)'*(DKuf{i2}'*nud') - ...
+                2*((nutilde.*DS./S)'*iSKfuiL)*(iSKfuiL'*nutilde) - nud*DTtilde*nud'; % nutilde'* d(sigma^-1)/dth *nutilde
+              gdata(i1) = gdata(i1) + 0.5*nuDpcovnu; 
+              gdata(i1) = -gdata(i1);
+              gprior(i1) = gprior_cf(i2);
+            end
+            
           end
           
           % Set the gradients of hyperparameter
@@ -280,16 +327,38 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
             DKuu = gpcf.fh.ginput(gpcf, u);
             DKuf = gpcf.fh.ginput(gpcf, u, x);
             
-            for i2 = 1:length(DKuu)
-              i1 = i1+1;
-              
-              KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-              
-              gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
-                                            2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-              gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
-                                            sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+            if ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+              for i2 = 1:length(DKuu)
+                i1 = i1+1;
+                
+                KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                
+                gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                  2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
+                gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                  sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                
+                
+              end
+            else
+              % Robust-EP
+              for i2 = 1:length(DKuu)
+                i1 = i1+1;
+                Dd = -2.*sum(DKuf{i2}.*iKuuKuf)' - sum((-iKuuKuf'*DKuu{i2})'.*iKuuKuf)';
+                DS = Dd.*tautilde;
+                gdata(i1) = -0.5.*sum(DS./S);
+                DTtilde = DKuu{i2} + DKuf{i2}*bsxfun(@times, WiS, K_fu) - K_fu'*bsxfun(@times, WiS.*DS./S, K_fu) + ...
+                  K_fu'*bsxfun(@times, WiS, DKuf{i2}');
+                gdata(i1) = gdata(i1) - 0.5.*sum(sum(inv(L).*(L\DTtilde)));
+                gdata(i1) = gdata(i1) - 0.5.*sum(sum(-La^-1.*(La\DKuu{i2})));
+                iSKfuiL = bsxfun(@times, 1./S, K_fu/L');
+                nud=(nutilde'*iSKfuiL)/L;
+                nuDpcovnu = sum(nutilde.^2.*(-DS.*b./S.^2 + Dd./S)) + 2*(nutilde./S)'*(DKuf{i2}'*nud') - 2*((nutilde.*DS./S)'*iSKfuiL)*(iSKfuiL'*nutilde) - nud*DTtilde*nud';
+                gdata(i1) = gdata(i1) + 0.5*nuDpcovnu;
+                gdata(i1) = -gdata(i1);
+                
+              end
             end
           end
         end
@@ -298,14 +367,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       % =================================================================
       % Gradient with respect to a likelihood function parameters        
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-        sigm2_i = (Varf.^-1 - tautilde).^-1;
-        mu_i = sigm2_i.*(Ef./Varf - nutilde);
+%         [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
+%         sigm2_i = (Varf.^-1 - tautilde).^-1;
+%         mu_i = sigm2_i.*(Ef./Varf - nutilde);
         
         gdata_lik = 0;
         lik = gp.lik;
         for k1 = 1:length(y)
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          if ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
+          else
+            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
+          end
         end
 
         % evaluate prior contribution for the gradient

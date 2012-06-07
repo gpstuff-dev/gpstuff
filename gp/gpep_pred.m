@@ -231,40 +231,51 @@ switch gp.type
 
     kstarstar=gp_trvar(gp,xt,predcf);        
 
-    % From this on evaluate the prediction
-    % See Snelson and Ghahramani (2007) for details 
-    %        p=iLaKfu*(A\(iLaKfu'*mutilde));
-    p = b';
-    
-    ntest=size(xt,1);
-    
-    Eft = K_nu*(K_uu\(K_fu'*p));
-    
-    % if the prediction is made for training set, evaluate Lav also for prediction points
-    if ~isempty(tstind)
-      [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
-      Luu = chol(K_uu)';
-      B=Luu\(K_fu');
-      Qv_ff=sum(B.^2)';
-      Lav = Kv_ff-Qv_ff;
-      Eft(tstind) = Eft(tstind) + Lav.*p;
-    end
-    
-    % Compute variance
-    if nargout > 1
-      %Varft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
-      Luu = chol(K_uu)';
-      B=Luu\(K_fu');   
-      B2=Luu\(K_nu');   
-      Varft = kstarstar - sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
-
+    if all(tautilde > 0) && ~isequal(gp.latent_opt.optim_method, 'robust-EP')
+      
+      % From this on evaluate the prediction
+      % See Snelson and Ghahramani (2007) for details
+      %        p=iLaKfu*(A\(iLaKfu'*mutilde));
+      p = b';
+      
+      ntest=size(xt,1);
+      
+      Eft = K_nu*(K_uu\(K_fu'*p));
+      
       % if the prediction is made for training set, evaluate Lav also for prediction points
       if ~isempty(tstind)
-        Varft(tstind) = Varft(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((La.\Lav),1,m).*B'),2) ...
+        [Kv_ff, Cv_ff] = gp_trvar(gp, xt(tstind,:), predcf);
+        Luu = chol(K_uu)';
+        B=Luu\(K_fu');
+        Qv_ff=sum(B.^2)';
+        Lav = Kv_ff-Qv_ff;
+        Eft(tstind) = Eft(tstind) + Lav.*p;
+      end
+      
+      % Compute variance
+      if nargout > 1
+        %Varft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
+        Luu = chol(K_uu)';
+        B=Luu\(K_fu');
+        B2=Luu\(K_nu');
+        Varft = kstarstar - sum(B2'.*(B*(repmat(La,1,m).\B')*B2)',2)  + sum((K_nu*(K_uu\(K_fu'*L))).^2, 2);
+        
+        % if the prediction is made for training set, evaluate Lav also for prediction points
+        if ~isempty(tstind)
+          Varft(tstind) = Varft(tstind) - 2.*sum( B2(:,tstind)'.*(repmat((La.\Lav),1,m).*B'),2) ...
             + 2.*sum( B2(:,tstind)'*(B*L).*(repmat(Lav,1,m).*L), 2)  ...
             - Lav./La.*Lav + sum((repmat(Lav,1,m).*L).^2,2);
+        end
       end
+    
+    else
+      % Robust-EP
+      [Eft,V]=pred_var2(tautilde,nutilde,L,K_uu,K_fu,b,K_nu);
+      Varft=kstarstar-V;
+      
     end
+      
+      
     % ============================================================
     % PIC
     % ============================================================
@@ -599,5 +610,40 @@ if ~isempty(ii2)
     fprintf('Posterior covariance is negative definite.\n')
   end
 end
+
+end
+
+function [m_q,S_q]=pred_var2(tautilde,nutilde,L,K_uu,K_fu,D,K_nu)
+
+% function for determining the parameters of the q-distribution
+% when site variances tau_q may be negative
+%
+% q(f) = N(f|0,K)*exp( -0.5*f'*diag(tau_q)*f + nu_q'*f )/Z_q = N(f|m_q,S_q)
+%
+% S_q = inv(inv(K)+diag(tau_q)) where K is sparse approximation for prior
+%       covariance
+% m_q = S_q*nu_q;
+%
+% det(eye(n)+K*diag(tau_q))) = det(L1)^2 * det(L2)^2
+% where L1 and L2 are upper triangular
+%
+% see Expectation consistent approximate inference (Opper & Winther, 2005)
+
+n=length(nutilde);
+
+U = K_fu;
+S = 1+tautilde.*D;
+B = tautilde./S;
+BUiL = bsxfun(@times, B, U)/L';
+% iKS = diag(B) - BUiL*BUiL';
+
+Ktnu = D.*nutilde + U*(K_uu\(U'*nutilde));
+m_q = nutilde - B.*Ktnu + BUiL*(BUiL'*Ktnu);
+kstar = K_nu*(K_uu\K_fu');
+m_q = kstar*m_q;
+
+S_q = sum(bsxfun(@times,B',kstar.^2),2) - sum((kstar*BUiL).^2,2);
+% S_q = kstar*iKS*kstar';
+
 
 end
