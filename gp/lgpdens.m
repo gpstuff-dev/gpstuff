@@ -372,9 +372,12 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   
   % weakly informative prior
-  pm = prior_sqrtt('s2', 10^2, 'nu', 4);
-  pl = prior_t('s2', 1^2, 'nu', 4);
+  pm = prior_logunif();
+  pl = prior_t('s2', 10^2, 'nu', 4);
   pa = prior_t('s2', 10^2, 'nu', 4);
+  %pm = prior_sqrtt('s2', 10^2, 'nu', 4);
+  %pl = prior_t('s2', 1^2, 'nu', 4);
+  %pa = prior_t('s2', 10^2, 'nu', 4);
   % different covariance functions have different parameters
   if isfield(gpcf1,'magnSigma2')
      gpcf1 = gpcf(gpcf1, 'magnSigma2', .5, 'magnSigma2_prior', pm);
