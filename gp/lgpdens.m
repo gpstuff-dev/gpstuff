@@ -205,8 +205,14 @@ function [p,pq,xx] = lgpdens(x,varargin)
         nz=length(z);
         xx=z;
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+          % use ntx2 times more grid points for predictions
+          if gridn(2)>10
+            ntx2=3;
+          else
+            ntx2=10;
+          end
           zzt1=linspace(x1min,x1max,gridn(1))';
-          zzt2=linspace(x2min,x2max,gridn(2)*10)';
+          zzt2=linspace(x2min,x2max,gridn(2)*ntx2)';
           [zt1,zt2]=meshgrid(zzt1,zzt2);
           zt=[zt1(:),zt2(:)];
           %nzt=length(zt);
@@ -249,7 +255,11 @@ function [p,pq,xx] = lgpdens(x,varargin)
           pjr=pjr./xd;
           PJR(:,i1)=mean(pjr,2);
         end
-        pjr=mean(PJR,2);
+        pjr=PJR;
+        %pjr=mean(PJR,2);
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on') 
+          unx2=(unique(xt(:,2)));
+        end
       else
         if strcmpi(speedup,'on') && length(Covf)==2
           qr1=bsxfun(@plus,bsxfun(@times,randn(1000,size(Ef,1)),sqrt(Covf{1})'),Ef');
@@ -264,7 +274,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
           unx2=unique(xt(:,2));
           xd2=(unx2(2)-unx2(1));
           for k1=1:size(qjr,2)
-            qjrtmp=reshape(qjr(:,k1),[gridn(2)*10 gridn(1)]);
+            qjrtmp=reshape(qjr(:,k1),[gridn(2)*ntx2 gridn(1)]);
             qjrtmp=bsxfun(@rdivide,qjrtmp,sum(qjrtmp));
             qjrtmp=qjrtmp./xd2;
             pjr(:,k1)=qjrtmp(:);
@@ -285,7 +295,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
       if nargout<1
         % no output, do the plot thing
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-          pjr2=reshape(pjr,[gridn(2)*10 gridn(1) size(qjr,2)]);
+          pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
           qp=median(pjr2,3);
           %qp=mean(pjr2,3);
           qp=bsxfun(@rdivide,qp,sum(qp,1));
@@ -414,10 +424,14 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
   
   if strcmpi(latent_method,'MCMC')
-    if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-      error('LGPDENS: MCMC is not implemented if cond_dens option is ''on''.')
-    end
     gp = gp_set(gp, 'latent_method', 'MCMC');
+    
+    %if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+    if size(xx,2)==2
+      % add more jitter for 2D cases with MCMC
+      gp = gp_set(gp, 'jitterSigma2', 1e-2);
+      %error('LGPDENS: MCMC is not implemented if cond_dens option is ''on''.')
+    end
     
     % Here we use two stage sampling to get faster convergence
     hmc_opt=hmc2_opt;
