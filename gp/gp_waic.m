@@ -20,11 +20,11 @@ function waic = gp_waic(gp, x, y, varargin)
 %
 %    When using the Gibbs training loss, WAIC is evaluated as follows
 %
-%          WAIC(n) = BUt(n) + 2*(GUt(n) - BUt(n))
+%          WAIC(n) = BUt(n) - 2*(BUt(n) - GUt(n))
 %
 %    where BUt(n) is as above and GUt is Gibbs training utility
 %
-%          GtL(n) = E_th[mean(log(p(y|th)))].
+%          GUt(n) = E_th[mean(log(p(y|th)))].
 %     
 %    GP can be a Gaussian process structure, a record structure
 %    from GP_MC or an array of GPs from GP_IA.
@@ -188,7 +188,7 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt = mean(GUt);
             BUt = mean(BUt);
           end
-          waic = BUt+2*(GUt-BUt);
+          waic = BUt-2*(BUt-GUt);
         else
           % non-Gaussian likelihood
           for i=1:tn
@@ -206,7 +206,7 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt = mean(GUt);
             BUt = mean(BUt);
           end
-          waic = BUt+2*(GUt-BUt);
+          waic = BUt-2*(BUt-GUt);
         end
       end
       
@@ -305,7 +305,7 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt = mean(GUt);
             BUt = mean(BUt);
           end
-          waic = BUt+2*(GUt-BUt);
+          waic = BUt-2*(BUt-GUt);
         else
           % Non-Gaussian likelihood
           for i=1:tn
@@ -333,7 +333,7 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt = mean(GUt);
             BUt = mean(BUt);
           end
-          waic = BUt+2*(GUt-BUt);
+          waic = BUt-2*(BUt-GUt);
         end
         
       end
@@ -429,7 +429,7 @@ function waic = gp_waic(gp, x, y, varargin)
           GUt = mean(GUt);
           BUt = mean(BUt);
         end
-        waic = BUt+2*(GUt-BUt);
+        waic = BUt-2*(BUt-GUt);
 
       else
         % non-gaussian likelihood
@@ -448,7 +448,7 @@ function waic = gp_waic(gp, x, y, varargin)
           GUt = mean(GUt);
           BUt = mean(BUt);
         end
-        waic = BUt+2*(GUt-BUt);
+        waic = BUt-2*(BUt-GUt);
 
       end
     end
