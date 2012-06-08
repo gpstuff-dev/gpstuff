@@ -328,7 +328,11 @@ function state = get_state(f)
 %                    (including momentum)
 
 global HMC_MOM
-state.stream=RandStream.getDefaultStream;
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  state.stream=RandStream.getDefaultStream;
+else
+  state.stream=RandStream.getGlobalStream;
+end
 state.streamstate = state.stream.State;
 state.mom = HMC_MOM;
 return
