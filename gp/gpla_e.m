@@ -423,6 +423,15 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             if 1./ll + W(i) < 0 %1 + W(i).*ll <= 0 | abs(upfact) > abs(1./ll) %upfact > 1./ll
               warning('gpla_e: 1./Sigma(i,i) + W(i) < 0')
               
+              if ~isfield(gp.lik.fh,'upfact')
+                % log-concave likelihood, this should not happen
+                % let's just return NaN
+                [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                return
+              end
+              
+              % non-log-concave likelihood, this may happen
+              % let's try to do something about it
               ind = 1:i-1;
               if isempty(z)
                 mu = K(i,ind)*gp.lik.fh.llg(gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
