@@ -42,6 +42,10 @@ function [p,pq,xx] = lgpdens(x,varargin)
 %                  'on' computes for 2D the conditional median density
 %                  estimate p(x2|x1) when the matrix [x1 x2] is given as
 %                  input. 
+%      basis_function - defines if basis functions are used. 
+%                       'on' (default) uses linear and quadratic basis
+%                       functions
+%                       'off' no basis functions
 
 % Copyright (c) 2011-2012 Jaakko Riihimäki and Aki Vehtari
 
@@ -64,6 +68,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
                    ismember(x,{'on' 'off' 'iter'}))
   ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
   ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
+  ip.addParamValue('basis_function',[], @(x) ismember(x,{'on' 'off'}));
   
   ip.parse(x,varargin{:});
   x=ip.Results.x;
@@ -77,6 +82,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   display=ip.Results.display;
   speedup=ip.Results.speedup;
   cond_dens=ip.Results.cond_dens;
+  basis_function=ip.Results.basis_function;
   
   [n,m]=size(x);
   
@@ -120,7 +126,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
       xxn=(xx-mean(xx))./std(xx);
       
       %[Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
-      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens);
+      [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
       
       if strcmpi(latent_method,'MCMC')
         PJR=zeros(size(Ef,1),size(Covf,3));
@@ -241,9 +247,9 @@ function [p,pq,xx] = lgpdens(x,varargin)
       
       % [Ef,Covf]=gpsmooth(xxn,yy,[xxn; xtn],gpcf,latent_method,int_method);
       if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-        [Ef,Covf]=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens);
+        [Ef,Covf]=gpsmooth(xxn,yy,xxtn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
       else
-        [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens);        
+        [Ef,Covf]=gpsmooth(xxn,yy,xxn,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function);
       end
       
       if strcmpi(latent_method,'MCMC')
@@ -346,7 +352,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   end
 end
 
-function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens)
+function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,speedup,gridn,cond_dens,basis_function)
 % Make inference with log Gaussian process and EP or Laplace approximation
 
   % gp_mc and gp_ia still uses numeric display option
@@ -382,11 +388,6 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   if isfield(gpcf1,'biasSigma2')
     gpcf1 = gpcf(gpcf1, 'biasSigma2', 10, 'weightSigma2', 10,'biasSigma2_prior',prior_logunif(),'weightSigma2_prior',prior_logunif());
   end
-
-  % Create the GP structure
-  %gpmfco = gpmf_constant('prior_mean',0,'prior_cov',100);
-  gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
-  gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
   
   if ~isempty(cond_dens) && strcmp(cond_dens, 'on')
     lik=lik_lgpc;
@@ -395,8 +396,15 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     lik=lik_lgp;
   end
   
-  gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin,gpmfsq});
-  
+  % Create the GP structure
+  if ~isempty(basis_function) && strcmp(basis_function, 'off')
+    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+  else
+    %gpmfco = gpmf_constant('prior_mean',0,'prior_cov',100);
+    gpmflin = gpmf_linear('prior_mean',0,'prior_cov',100);
+    gpmfsq = gpmf_squared('prior_mean',0,'prior_cov',100);
+    gp = gp_set('lik', lik, 'cf', {gpcf1}, 'jitterSigma2', 1e-4, 'meanf', {gpmflin,gpmfsq});
+  end
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
   opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
