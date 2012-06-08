@@ -7,7 +7,11 @@ initTestSuite;
 
     function testDemo
         stream0 = RandStream('mt19937ar','Seed',0);
-        prevstream = RandStream.setDefaultStream(stream0);
+        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+          prevstream = RandStream.setDefaultStream(stream0);
+        else
+          prevstream = RandStream.setGlobalStream(stream0);
+        end
         disp('Running: demo_classific')
         demo_classific
         Eft_la = Eft_la(1:100);
@@ -23,8 +27,11 @@ initTestSuite;
         end
         path = strcat(path, '/testClassific');        
         save(path, 'Eft_la', 'Varft_la', 'Eft_ep', 'Varft_ep', 'Efs_mc', 'Varfs_mc');
-%         save('testValues/testClassific', 'Eft_la', 'Varft_la', 'Eft_ep', 'Varft_ep', 'Efs_mc', 'Varfs_mc');
-        RandStream.setDefaultStream(prevstream);
+        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+          RandStream.setDefaultStream(prevstream);
+        else
+          RandStream.setGlobalStream(prevstream);
+        end
         drawnow;clear;close all
 
  % Compare test values to real values.
