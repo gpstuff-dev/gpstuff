@@ -253,19 +253,41 @@ function [p,pq,xx] = lgpdens(x,varargin)
       end
       
       if strcmpi(latent_method,'MCMC')
-        PJR=zeros(size(Ef,1),size(Covf,3));
-        for i1=1:size(Covf,3)
-          qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
-          qjr=exp(qr)';
-          pjr=bsxfun(@rdivide,qjr,sum(qjr));
-          pjr=pjr./xd;
-          PJR(:,i1)=mean(pjr,2);
-        end
-        pjr=PJR;
-        %pjr=mean(PJR,2);
-        if ~isempty(cond_dens) && strcmpi(cond_dens,'on') 
+        
+        if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
           unx2=(unique(xt(:,2)));
+          xd2=(unx2(2)-unx2(1));
+          PJR=zeros(size(Ef,1),size(Covf,3));
+          for i1=1:size(Covf,3)
+            qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
+            qjr=exp(qr)';
+            %pjr=bsxfun(@rdivide,qjr,sum(qjr));
+            pjr=qjr;
+            pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
+            for j1=1:size(pjr2,3)
+              pjr2(:,:,j1)=bsxfun(@rdivide,pjr2(:,:,j1),sum(pjr2(:,:,j1)))./xd2;
+            end
+            pjr=reshape(pjr2,[gridn(2)*ntx2*gridn(1) size(pjr,2)]);
+            PJR(:,i1)=mean(pjr,2);
+          end
+          pjr=PJR;
+          %qp=median(pjr2,3);
+          %qp=bsxfun(@rdivide,qp,sum(qp,1));
+          
+        else  
+          
+          PJR=zeros(size(Ef,1),size(Covf,3));
+          for i1=1:size(Covf,3)
+            qr=bsxfun(@plus,randn(1000,size(Ef,1))*chol(Covf(:,:,i1),'upper'),Ef(:,i1)');
+            qjr=exp(qr)';
+            pjr=bsxfun(@rdivide,qjr,sum(qjr));
+            pjr=pjr./xd;
+            PJR(:,i1)=mean(pjr,2);
+          end
+          pjr=PJR;
+          %pjr=mean(PJR,2);
         end
+        
       else
         if strcmpi(speedup,'on') && length(Covf)==2
           qr1=bsxfun(@plus,bsxfun(@times,randn(1000,size(Ef,1)),sqrt(Covf{1})'),Ef');
@@ -291,19 +313,19 @@ function [p,pq,xx] = lgpdens(x,varargin)
         end
       end
       
-      if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
-        pp=median(pjr')';
-      else
-        pp=mean(pjr')';
-      end
+      %if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
+      %  pp=median(pjr')';
+      %else
+      pp=mean(pjr')';
+      %end
       ppq=prctile(pjr',[2.5 97.5])';
       
       if nargout<1
         % no output, do the plot thing
         if ~isempty(cond_dens) && strcmpi(cond_dens,'on')
           pjr2=reshape(pjr,[gridn(2)*ntx2 gridn(1) size(pjr,2)]);
-          qp=median(pjr2,3);
-          %qp=mean(pjr2,3);
+          %qp=median(pjr2,3);
+          qp=mean(pjr2,3);
           qp=bsxfun(@rdivide,qp,sum(qp,1));
           qpc=cumsum(qp,1);
           PL=[.05 .1 .2 .5 .8 .9 .95];
