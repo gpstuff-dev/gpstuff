@@ -1528,6 +1528,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           likelih=gp.lik;
           ncf = length(gp.cf);
           n=length(y);
+          next_step=0;
           
           
           df0=gp.latent_opt.df; % the intial damping factor
@@ -1760,7 +1761,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 % re-init the step size adjustment record
                 rec_sadj=[0 e g];
               end
-              
               % proposal
               nu_q2=nu_q+df*dnu_q;
               tau_q2=tau_q+df*dtau_q;
@@ -1780,11 +1780,15 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 otherwise
                   error('Robust-EP not implemented for this type of GP!');
               end
+              
+              % check cavity
+              pcavity=all( (1./Vf2-eta.*tau_q2 )>=tauc_min);
+              
               if isempty(L2)
                 % the q-distribution not defined (the posterior covariance
                 % not positive definite)
                 e2=inf;
-              else
+              elseif pcavity
                 % the tilted distribution
                 [lnZ_r2,lnZ_i2,m_r2,V_r2]=evaluate_r(nu_q2,tau_q2,eta,fh_tm,nu_s,tau_s,display);
                 
@@ -1803,7 +1807,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
               % check if the energy decreases
               %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-              if ~isfinite(e2) || g2>10*abs(g)
+              if ~isfinite(e2) || ( pcavity && g2>10*abs(g) )
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 % ill-conditioned q-distribution or very large increase
                 % in the gradient
@@ -1813,6 +1817,53 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 if ismember(display,{'iter'})
                   fprintf('decreasing step size, ')
                 end
+              elseif ~pcavity
+                % The cavity distributions resulting from the proposal distribution
+                % are not well defined, reset the site parameters by doing 
+                % one parallel update with a zero initialization and continue 
+                % with double loop iterations
+                
+                if ismember(display,{'iter'})
+                  fprintf('re-init the posterior due to ill-conditioned cavity distributions, ')
+                end
+                
+                up_mode='ep';
+                nu_q=zeros(size(y));tau_q=zeros(size(y));
+                mf=zeros(size(y));
+                switch gp.type
+                  case 'FULL'
+                    Sf=K;Vf=diag(K);
+                  case 'FIC'
+                    Vf=Cv_ff;
+                end
+                nu_s=mf./Vf;
+                tau_s=1./Vf;
+%                 lnZ_s=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta ); % minus 0.5*log(2*pi)./eta
+                [lnZ_r,lnZ_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s,display);
+%                 e = lnZ_q + lnZ_r -lnZ_s;
+                [dnu_q,dtau_q]=ep_update_dir(mf,Vf,m_r,V_r,eta,up_mode,tolUpdate);
+                %nu_q=dnu_q; tau_q=dtau_q;
+                nu_q=0.9.*dnu_q; tau_q=0.9.*dtau_q;
+                
+                switch gp.type
+                  case 'FULL'
+                    [mf,Sf,lnZ_q]=evaluate_q(nu_q,tau_q,K,display);
+                    Vf = diag(Sf);
+                  case 'FIC'
+                    [mf,Vf,lnZ_q]=evaluate_q2(nu_q,tau_q,Luu, K_fu, Kv_ff, Qv_ff, display);
+                  otherwise
+                    error('Robust-EP not implemented for this type of GP!');
+                end
+                nu_s=mf./Vf; tau_s=1./Vf;
+                lnZ_s=0.5*sum( (-log(tau_s) +nu_s.^2 ./tau_s)./eta ); % minus 0.5*log(2*pi)./eta
+                [lnZ_r,lnZ_i,m_r,V_r]=evaluate_r(nu_q,tau_q,eta,fh_tm,nu_s,tau_s,display);
+                e = lnZ_q + lnZ_r -lnZ_s;
+                [dnu_q,dtau_q]=ep_update_dir(mf,Vf,m_r,V_r,eta,up_mode,tolUpdate);
+                
+                df=0.8;
+                
+                g = sum( (mf -m_r).*dnu_q ) +0.5*sum( (V_r +m_r.^2 -Vf -mf.^2).*dtau_q );
+                rec_sadj=[0 e g];
                 
               elseif size(rec_sadj,1)<=1 && ( e2>e || abs(g2)>abs(g)*tolGrad )
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1842,7 +1893,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       H=(rec_sadj(end,3)-rec_sadj(end-1,3))/(rec_sadj(end,1)-rec_sadj(end-1,1));
                       pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' H],[1 2]);
                       % extrapolate at most by 100% at a time
-                      [tmp,df_new]=fnmin(pp,[df df*2]);
+                      [tmp,df_new]=fnmin(pp,[df df*1.5]);
                     end
                   else
                     % if curvefit toolbox does not exist, use a simple Hessian
@@ -1857,7 +1908,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       df_new=max(min(df_new,df),0);
                     else
                       % extrapolate at most 100%
-                      df_new=max(min(df_new,2*df),df);
+                      df_new=max(min(df_new,1.5*df),df);
                     end
                   end
                   df_new=min(df_new,df_lim);
