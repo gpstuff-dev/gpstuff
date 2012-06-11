@@ -1527,9 +1527,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           gp=gp_unpak(gp,w);
           likelih=gp.lik;
           ncf = length(gp.cf);
-          n=length(y);
-          next_step=0;
-          
+          n=length(y);          
           
           df0=gp.latent_opt.df; % the intial damping factor
           eta=repmat(eta1,n,1);  % the initial vector of fraction parameters
