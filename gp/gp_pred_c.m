@@ -1,8 +1,8 @@
-function [Ef, Varf, xtnn] = gp_pred_c(gp,x,y,xt, ind,varargin)
-%GP_PRED_SINGLE Do conditional predictions using specific covariates
+function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt, ind,varargin)
+%GP_CPRED Do conditional predictions using specific covariates
 %
 %  Description
-%    GP_PRED_SINGLE(GP,X,Y,XT,IND,OPTIONS) does predictions using only
+%    GP_CPRED(GP,X,Y,XT,IND,OPTIONS) does predictions using only
 %    covariates specified in vector IND. Other covariates are fixed to
 %    either mean, median or values chosen by user. Returns predictions for
 %    latent values, variance and corresponding inputs. If IND=0, only time
@@ -24,7 +24,7 @@ function [Ef, Varf, xtnn] = gp_pred_c(gp,x,y,xt, ind,varargin)
 
 
 ip=inputParser;
-ip.FunctionName = 'GP_PRED_SINGLE';
+ip.FunctionName = 'GP_CPRED';
 ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
