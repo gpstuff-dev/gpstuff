@@ -22,8 +22,8 @@ function gpcf = gpcf_ppcs2(varargin)
 %                          direction.
 %      l_nin             - order of the polynomial [floor(nin/2) + 3]
 %                          Has to be greater than or equal to default.
-%      magnSigma2_prior  - prior for magnSigma2  [prior_sqrtunif]
-%      lengthScale_prior - prior for lengthScale [prior_unif]
+%      magnSigma2_prior  - prior for magnSigma2  [prior_logunif]
+%      lengthScale_prior - prior for lengthScale [prior_t]
 %      metric            - metric structure used by the covariance function []
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using

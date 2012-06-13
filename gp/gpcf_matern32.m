@@ -18,8 +18,8 @@ function gpcf = gpcf_matern32(varargin)
 %                          to an isotropic function or vector
 %                          defining own length-scale for each input
 %                          direction.
-%      magnSigma2_prior  - prior for magnSigma2  [prior_sqrtunif]
-%      lengthScale_prior - prior for lengthScale [prior_unif]
+%      magnSigma2_prior  - prior for magnSigma2  [prior_logunif]
+%      lengthScale_prior - prior for lengthScale [prior_t]
 %      metric            - metric structure used by the covariance function []
 %      selectedVariables - vector defining which inputs are used [all]
 %                          selectedVariables is shorthand for using
