@@ -54,7 +54,7 @@ function gpcf = gpcf_periodic(varargin)
   ip.addOptional('gpcf', [], @isstruct);
   ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('period',1, @(x) isscalar(x) && x>0 && mod(x,1)==0);
+  ip.addParamValue('period',1, @(x) isscalar(x) && x>0);
   ip.addParamValue('lengthScale_sexp',10, @(x) isvector(x) && all(x>0));
   ip.addParamValue('decay',0, @(x) isscalar(x) && (x==0||x==1));
   ip.addParamValue('magnSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
