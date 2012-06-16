@@ -152,7 +152,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
         else
           fh_pred = @gpla_pred;
         end
-      case 'EP'
+      case {'EP' 'robust-EP'}
         fh_pred=@gpep_pred;
       case 'MCMC'
         if isfield(gp, 'type_mo')

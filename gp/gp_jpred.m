@@ -91,7 +91,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
         else
           fh_pred = @gpla_jpred;
         end
-      case 'EP'
+      case {'EP' 'robust-EP'}
         fh_pred=@gpep_jpred;
       case 'MCMC'
         switch gp.lik.type
