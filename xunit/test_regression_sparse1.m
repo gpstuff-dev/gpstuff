@@ -1,13 +1,23 @@
 function test_suite = test_regression_sparse1
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_REGRESSION_SPARSE1
+
 initTestSuite;
 
 
+function testDemo
 % Set random number stream so that failing isn't because randomness. Run
 % demo & save test values.
-
-function testDemo
 stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setDefaultStream(stream0);
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream0);
+else
+  prevstream = RandStream.setGlobalStream(stream0);
+end
+
 disp('Running: demo_regression_sparse1')
 demo_regression_sparse1
 path = which('test_regression_sparse1');
@@ -17,7 +27,13 @@ if ~(exist(path, 'dir') == 7)
 end
 path = strcat(path, '/testRegression_sparse1'); 
 save(path, 'Eft_fic', 'Eft_pic', 'Eft_var', 'Eft_dtc', 'Eft_cs');
-RandStream.setDefaultStream(prevstream);
+
+% Set back initial random stream
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end
 drawnow;clear;close all
 
 % Compare test values to real values.

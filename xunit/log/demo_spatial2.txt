@@ -2,23 +2,23 @@ Running: demo_spatial2
 GP with negative-binomial observation model, Laplace
 integration over the latent values and MAP estimate
 for the parameters
-Iter    1  f(x) 5286.51016  Scale 1.0e+01
-Iter    2  f(x) 5241.08920  Scale 4.0e+01
-Iter    3  f(x) 5221.71597  Scale 4.0e+01
-Iter    4  f(x) 5217.14288  Scale 2.0e+01
-Iter    5  f(x) 5216.79423  Scale 1.0e+01
-Iter    6  f(x) 5216.68680  Scale 5.0e+00
-Iter    7  f(x) 5216.68228  Scale 2.5e+00
+Iter    1  f(x) 5285.35508  Scale 1.0e+01
+Iter    2  f(x) 5240.14119  Scale 4.0e+01
+Iter    3  f(x) 5220.81658  Scale 4.0e+01
+Iter    4  f(x) 5216.27586  Scale 2.0e+01
+Iter    5  f(x) 5215.92667  Scale 1.0e+01
+Iter    6  f(x) 5215.81807  Scale 5.0e+00
+Iter    7  f(x) 5215.81352  Scale 2.5e+00
 TolX reached
 Proportion of non-zeros is 0.0715
 GP with negative-binomial observation model, EP
 integration over the latent values and MAP estimate
 for the parameters
-Iter    1  f(x) 5216.66845  Scale 1.0e+01
+Iter    1  f(x) 5215.79970  Scale 1.0e+01
 TolX reached
 Proportion of non-zeros is 0.0715
 
  gp hyperparameters (gp_pak(gp)): 
  
-   -2.1725    2.2598    2.8964
+   -2.1786    2.2593    2.8956
 

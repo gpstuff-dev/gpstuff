@@ -1,12 +1,23 @@
 function test_suite = test_neuralnetcov
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_NEURALNETCOV
+
 initTestSuite;
 
-% Set random number stream so that test failing isn't because randomness.
-% Run demo & save test values.
 
 function testDemo
+% Set random number stream so that failing isn't because randomness. Run
+% demo & save test values.
 stream0 = RandStream('mt19937ar','Seed',0);
-RandStream.setDefaultStream(stream0)
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream0);
+else
+  prevstream = RandStream.setGlobalStream(stream0);
+end
+
 disp('Running: demo_neuralnetcov')
 demo_neuralnetcov
 path = which('test_neuralnetcov.m');
@@ -16,6 +27,13 @@ if ~(exist(path, 'dir') == 7)
 end
 path = strcat(path, '/testNeuralnetcov'); 
 save(path,  'Eft_map', 'Varft_map', 'Eft_map2', 'Varft_map2');
+
+% Set back initial random stream
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end
 drawnow;clear;close all
 
 % Compare test values to real values.

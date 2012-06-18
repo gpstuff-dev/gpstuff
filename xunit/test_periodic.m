@@ -1,22 +1,40 @@
 function test_suite = test_periodic
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_PERIODIC
+
 initTestSuite;
 
-% Set random number stream so that test failing isn't because randomness.
-% Run demo & save test values.
 
 function testDemo
+% Set random number stream so that test failing isn't because randomness.
+% Run demo & save test values.
 stream0 = RandStream('mt19937ar','Seed',0);
-RandStream.setDefaultStream(stream0)
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream0);
+else
+  prevstream = RandStream.setGlobalStream(stream0);
+end
+
 disp('Running: demo_periodic')
 demo_periodic
 path = which('test_periodic.m');
 path = strrep(path,'test_periodic.m', 'testValues');
 if ~(exist(path, 'dir') == 7)
-    mkdir(path)
+  mkdir(path)
 end
-path = strcat(path, '/testPeriodic'); 
+path = strcat(path, '/testPeriodic');
 save(path, 'Eft_full1', 'Varft_full1', 'Eft_full2', 'Varft_full2', ...
-     'Eft_full', 'Varft_full');
+  'Eft_full', 'Varft_full');
+
+% Set back initial random stream
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end
 drawnow;clear;close all
 
 % Compare test values to real values.

@@ -1,34 +1,53 @@
 function test_suite = test_binomial_apc
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_BINOMIAL_APC
+
+% Copyright (c) 2011-2012 Ville Tolvanen
+
 initTestSuite;
 
-% Set random number stream so that the test failing isn't because
-% randomness. Run demo & save test values
 
-    function testDemo
-        stream0 = RandStream('mt19937ar','Seed',0);
-        prevstream = RandStream.setDefaultStream(stream0);
-        disp('Running: demo_binomial_apc')
-        demo_binomial_apc
-        path = which('test_binomial_apc.m');
-        path = strrep(path,'test_binomial_apc.m', 'testValues');
-        if ~(exist(path, 'dir') == 7)
-            mkdir(path)
-        end
-        path = strcat(path, '/testBinomial_apc');
-        save(path, 'Eft', 'Varft', 'Eft_3', 'Varft_3');
-        RandStream.setDefaultStream(prevstream);
-        drawnow;clear;close all
-        
-% Compare test values to real values.
-
-    function testPredictionsAll
-        values.real = load('realValuesBinomial_apc', 'Eft', 'Varft');
-        values.test = load(strrep(which('test_binomial_apc.m'), 'test_binomial_apc.m', 'testValues/testBinomial_apc'), 'Eft', 'Varft');
-        assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.05);
-        assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.05);
-
-    function testPredictionsCohort
-        values.real = load('realValuesBinomial_apc', 'Eft_3', 'Varft_3');
-        values.test = load(strrep(which('test_binomial_apc.m'), 'test_binomial_apc.m', 'testValues/testBinomial_apc'), 'Eft_3', 'Varft_3');
-        assertElementsAlmostEqual(mean(values.real.Eft_3), mean(values.test.Eft_3), 'relative', 0.05);
-        assertElementsAlmostEqual(mean(values.real.Varft_3), mean(values.test.Varft_3), 'relative', 0.05);
+  function testDemo
+    % Set random number stream so that the test failing isn't because
+    % randomness. Run demo & save test values
+    stream0 = RandStream('mt19937ar','Seed',0);
+    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      prevstream = RandStream.setDefaultStream(stream0);
+    else
+      prevstream = RandStream.setGlobalStream(stream0);
+    end
+    
+    disp('Running: demo_binomial_apc')
+    demo_binomial_apc
+    path = which('test_binomial_apc.m');
+    path = strrep(path,'test_binomial_apc.m', 'testValues');
+    if ~(exist(path, 'dir') == 7)
+      mkdir(path)
+    end
+    path = strcat(path, '/testBinomial_apc');
+    save(path, 'Eft', 'Varft', 'Eft_3', 'Varft_3');
+    
+    % Set back initial random stream
+    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      RandStream.setDefaultStream(prevstream);
+    else
+      RandStream.setGlobalStream(prevstream);
+    end
+    drawnow;clear;close all
+    
+    % Compare test values to real values.
+    
+  function testPredictionsAll
+    values.real = load('realValuesBinomial_apc', 'Eft', 'Varft');
+    values.test = load(strrep(which('test_binomial_apc.m'), 'test_binomial_apc.m', 'testValues/testBinomial_apc'), 'Eft', 'Varft');
+    assertElementsAlmostEqual((values.real.Eft), (values.test.Eft), 'absolute', 0.1);
+    assertElementsAlmostEqual((values.real.Varft), (values.test.Varft), 'absolute', 0.1);
+    
+  function testPredictionsCohort
+    values.real = load('realValuesBinomial_apc', 'Eft_3', 'Varft_3');
+    values.test = load(strrep(which('test_binomial_apc.m'), 'test_binomial_apc.m', 'testValues/testBinomial_apc'), 'Eft_3', 'Varft_3');
+    assertElementsAlmostEqual((values.real.Eft_3), (values.test.Eft_3), 'absolute', 0.1);
+    assertElementsAlmostEqual((values.real.Varft_3), (values.test.Varft_3), 'absolute', 0.1);

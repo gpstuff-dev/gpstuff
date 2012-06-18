@@ -1,38 +1,47 @@
 function test_suite = test_regression1
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_REGRESSION1
+
 initTestSuite;
 
-% Set random number stream so that test failing isn't because randomness.
-% Run demo & save test values.
 
-    function testDemo
-        stream0 = RandStream('mt19937ar','Seed',0);
-        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-          prevstream = RandStream.setDefaultStream(stream0);
-        else
-          prevstream = RandStream.setGlobalStream(stream0);
-        end
-        disp('Running: demo_regression1')
-        demo_regression1
-        Eft_map = Eft_map(1:50);
-        Varft_map = Varft_map(1:50);
-        Eft_ia = Eft_ia(1:50);
-        Varft_ia = Varft_ia(1:50);
-        Eft_mc = Eft_mc(1:50);
-        Varft_mc = Varft_mc(1:50);
-        path = which('test_regression1.m');
-        path = strrep(path,'test_regression1.m', 'testValues');
-        if ~(exist(path, 'dir') == 7)
-            mkdir(path)
-        end
-        path = strcat(path, '/testRegression1');         
-        save(path, 'K', 'C', 'w', 'Eft_map', 'Varft_map', ...
-             'Eft_ia', 'Varft_ia', 'Eft_mc', 'Varft_mc');
-        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-          RandStream.setDefaultStream(prevstream);
-        else
-          RandStream.setGlobalStream(prevstream);
-        end
-        drawnow;clear;close all
+  function testDemo
+    % Set random number stream so that test failing isn't because randomness.
+    % Run demo & save test values.
+    stream0 = RandStream('mt19937ar','Seed',0);
+    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      prevstream = RandStream.setDefaultStream(stream0);
+    else
+      prevstream = RandStream.setGlobalStream(stream0);
+    end
+    
+    disp('Running: demo_regression1')
+    demo_regression1
+    Eft_map = Eft_map(1:50);
+    Varft_map = Varft_map(1:50);
+    Eft_ia = Eft_ia(1:50);
+    Varft_ia = Varft_ia(1:50);
+    Eft_mc = Eft_mc(1:50);
+    Varft_mc = Varft_mc(1:50);
+    path = which('test_regression1.m');
+    path = strrep(path,'test_regression1.m', 'testValues');
+    if ~(exist(path, 'dir') == 7)
+      mkdir(path)
+    end
+    path = strcat(path, '/testRegression1');
+    save(path, 'K', 'C', 'w', 'Eft_map', 'Varft_map', ...
+      'Eft_ia', 'Varft_ia', 'Eft_mc', 'Varft_mc');
+    
+    % Set back initial random stream
+    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      RandStream.setDefaultStream(prevstream);
+    else
+      RandStream.setGlobalStream(prevstream);
+    end
+    drawnow;clear;close all
 
 % Test saved values with multiple tests. Covariance matrices and
 % optimized parameters are tested with zero tolerance, while mean and 

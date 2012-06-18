@@ -1,4 +1,10 @@
 function test_suite = test_regression_hier
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_REGRESSION_HIER
+
 initTestSuite;
 
 % Set random number stream so that test failing isn't because randomness.
@@ -6,7 +12,11 @@ initTestSuite;
 
 function testDemo
 stream0 = RandStream('mt19937ar','Seed',0);
-RandStream.setDefaultStream(stream0)
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream0);
+else
+  prevstream = RandStream.setGlobalStream(stream0);
+end
 disp('Running: demo_regression_hier')
 demo_regression_hier
 path = which('test_regression_hier.m');
@@ -16,6 +26,13 @@ if ~(exist(path, 'dir') == 7)
 end
 path = strcat(path, '/testRegression_hier'); 
 save(path, 'Eff');
+
+% Set back initial random stream
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end
 drawnow;clear;close all
 
 

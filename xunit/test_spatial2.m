@@ -1,13 +1,24 @@
 function test_suite = test_spatial2
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_SPATIAL2
+
 initTestSuite;
 
 
-% Set random number stream so that failing isn't because randomness. Run
-% demo & save test values.
 
 function testDemo
+% Set random number stream so that failing isn't because randomness. Run
+% demo & save test values.
 stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setDefaultStream(stream0);
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream0);
+else
+  prevstream = RandStream.setGlobalStream(stream0);
+end
+
 disp('Running: demo_spatial2')
 demo_spatial2
 Ef = Ef(1:100);
@@ -20,7 +31,13 @@ if ~(exist(path, 'dir') == 7)
 end
 path = strcat(path, '/testSpatial2'); 
 save(path, 'Ef', 'Varf', 'C');
-RandStream.setDefaultStream(prevstream);
+
+% Set back initial random stream
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end
 drawnow;clear;close all
 
 % Compare test values to real values.

@@ -1,16 +1,24 @@
 function test_suite = test_regression_meanf
+
+%   Run specific demo and save values for comparison.
+%
+%   See also
+%     TEST_ALL, DEMO_REGRESSION_MEANF
+
 initTestSuite;
 
-% Set random number stream so that test failing isn't because randomness.
-% Run demo & save test values.
+
 
 function testDemo
+% Set random number stream so that test failing isn't because randomness.
+% Run demo & save test values.
 stream0 = RandStream('mt19937ar','Seed',0);
 if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
   prevstream = RandStream.setDefaultStream(stream0);
 else
   prevstream = RandStream.setGlobalStream(stream0);
 end
+
 disp('Running: demo_regression_meanf')
 demo_regression_meanf
 path = which('test_regression_meanf.m');
@@ -20,12 +28,13 @@ if ~(exist(path, 'dir') == 7)
 end
 path = strcat(path, '/testRegression_meanf'); 
 save(path, 'Eft');
+
+% Set back initial random stream
 if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(stream);
+  RandStream.setDefaultStream(prevstream);
 else
-  RandStream.setGlobalStream(stream);
+  RandStream.setGlobalStream(prevstream);
 end
-RandStream.setDefaultStream(stream);
 drawnow;clear;close all
 
 

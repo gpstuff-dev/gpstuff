@@ -4,34 +4,36 @@ Checking gradient ...
 
    analytic   diffs     delta
 
-    2.8891    2.8891   -0.0000
+    2.6657    2.6657    0.0000
    -3.7894   -3.7894   -0.0000
     1.6251    1.6251   -0.0000
 
-TolFun reached
+TolX reached
 GP model with derivative obs
 Checking gradient ...
 
    analytic   diffs     delta
 
-    4.5710    4.5710    0.0000
+    4.3476    4.3476    0.0000
   -13.6379  -13.6379   -0.0000
     4.4016    4.4016   -0.0000
 
-Iter    1  f(x)    8.52339  Scale 1.0e+01
-Iter    2  f(x)    2.76257  Scale 4.0e+01
-Iter    3  f(x)    1.13104  Scale 2.0e+01
-Iter    4  f(x)   -1.75131  Scale 1.0e+01
-Iter    5  f(x)   -4.01455  Scale 5.0e+00
-Iter    6  f(x)   -6.98764  Scale 2.5e+00
-Iter    7  f(x)   -7.67297  Scale 1.2e+00
-Iter    8  f(x)   -7.74641  Scale 6.2e-01
-Iter    9  f(x)   -7.77817  Scale 3.1e-01
-Iter   10  f(x)   -7.78063  Scale 1.6e-01
-Iter   11  f(x)   -7.78148  Scale 7.8e-02
+Iter    1  f(x)    7.59864  Scale 1.0e+01
+Iter    2  f(x)    1.85674  Scale 4.0e+01
+Iter    3  f(x)    0.24225  Scale 2.0e+01
+Iter    4  f(x)   -2.62778  Scale 1.0e+01
+Iter    5  f(x)   -4.86994  Scale 5.0e+00
+Iter    6  f(x)   -7.89983  Scale 2.5e+00
+Iter    7  f(x)   -8.55890  Scale 1.2e+00
+Iter    8  f(x)   -8.62510  Scale 6.2e-01
+Iter    9  f(x)   -8.66668  Scale 3.1e-01
+Iter   10  f(x)   -8.66988  Scale 1.6e-01
+Iter   11  f(x)   -8.67148  Scale 7.8e-02
+Iter   12  f(x)   -8.68341  Scale 3.9e-02
+Iter   13  f(x)   -8.68413  Scale 2.0e-02
 TolFun reached
 
  gp hyperparameters (gp_pak(gp)): 
  
-   -1.4178   -0.2189   -4.9443
+   -1.5025   -0.2305   -4.9053
 

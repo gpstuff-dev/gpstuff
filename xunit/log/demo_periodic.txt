@@ -8,32 +8,47 @@ gp =
     infer_params: 'covariance+likelihood'
     jitterSigma2: 0
 
-Iter    1  f(x) 1934.54484  Scale 1.0e+01
-Iter    2  f(x)  997.90177  Scale 5.0e+00
-Iter    3  f(x)  860.04408  Scale 2.5e+00
-Iter    4  f(x)  683.23839  Scale 1.2e+00
-Iter    5  f(x)  671.39944  Scale 6.2e-01
-Iter    6  f(x)  658.83560  Scale 3.1e-01
-Iter    7  f(x)  633.62653  Scale 1.6e-01
-Iter    8  f(x)  629.26496  Scale 7.8e-02
-Iter    9  f(x)  626.73064  Scale 3.9e-02
-Iter   10  f(x)  625.58167  Scale 2.0e-02
-Iter   11  f(x)  624.61566  Scale 9.8e-03
-Iter   12  f(x)  621.75152  Scale 4.9e-03
-Iter   13  f(x)  621.59105  Scale 2.4e-03
-Iter   14  f(x)  621.08380  Scale 1.2e-03
-Iter   15  f(x)  620.74452  Scale 6.1e-04
-Iter   16  f(x)  620.52253  Scale 3.1e-04
-Iter   17  f(x)  619.85328  Scale 1.5e-04
-Iter   18  f(x)  619.80821  Scale 7.6e-05
-Iter   19  f(x)  619.23695  Scale 3.8e-05
-Iter   20  f(x)  619.18538  Scale 1.9e-05
-Iter   21  f(x)  619.15838  Scale 9.5e-06
-Iter   22  f(x)  619.13037  Scale 4.8e-06
-Iter   23  f(x)  619.12171  Scale 2.4e-06
-Iter   24  f(x)  619.10912  Scale 1.2e-06
-Iter   25  f(x)  619.10705  Scale 6.0e-07
-Iter   26  f(x)  619.10695  Scale 3.0e-07
+Iter    1  f(x) 1929.52377  Scale 1.0e+01
+Iter    2  f(x)  990.89245  Scale 5.0e+00
+Iter    3  f(x)  853.19261  Scale 2.5e+00
+Iter    4  f(x)  672.42796  Scale 1.2e+00
+Iter    5  f(x)  644.67186  Scale 6.2e-01
+Iter    6  f(x)  629.88758  Scale 3.1e-01
+Iter    7  f(x)  619.23738  Scale 1.6e-01
+Iter    8  f(x)  606.75435  Scale 7.8e-02
+Iter    9  f(x)  602.79038  Scale 3.9e-02
+Iter   10  f(x)  601.47575  Scale 2.0e-02
+Iter   11  f(x)  600.82863  Scale 9.8e-03
+Iter   12  f(x)  597.64314  Scale 4.9e-03
+Iter   13  f(x)  597.59266  Scale 2.4e-03
+Iter   14  f(x)  596.79484  Scale 1.2e-03
+Iter   15  f(x)  596.64851  Scale 6.1e-04
+Iter   16  f(x)  596.52252  Scale 3.1e-04
+Iter   17  f(x)  595.80383  Scale 1.5e-04
+Iter   18  f(x)  595.77724  Scale 7.6e-05
+Iter   19  f(x)  595.38633  Scale 3.8e-05
+Iter   20  f(x)  594.70153  Scale 1.9e-05
+Iter   21  f(x)  594.31864  Scale 9.5e-06
+Iter   22  f(x)  594.15255  Scale 4.8e-06
+Iter   23  f(x)  594.14370  Scale 2.4e-06
+Iter   24  f(x)  593.92148  Scale 1.2e-06
+Iter   25  f(x)  592.38544  Scale 6.0e-07
+Iter   26  f(x)  592.36559  Scale 3.0e-07
+Iter   27  f(x)  592.30233  Scale 1.5e-07
+Iter   28  f(x)  592.29057  Scale 7.5e-08
+Iter   29  f(x)  592.28025  Scale 3.7e-08
+Iter   30  f(x)  592.23047  Scale 1.9e-08
+Iter   31  f(x)  592.22653  Scale 9.3e-09
+Iter   32  f(x)  592.21271  Scale 4.7e-09
+Iter   33  f(x)  592.20248  Scale 2.3e-09
+Iter   34  f(x)  592.14507  Scale 1.2e-09
+Iter   35  f(x)  592.12786  Scale 5.8e-10
+Iter   36  f(x)  592.12269  Scale 2.9e-10
+Iter   37  f(x)  592.11615  Scale 1.5e-10
+Iter   38  f(x)  592.09746  Scale 7.3e-11
+Iter   39  f(x)  592.08816  Scale 3.6e-11
+Iter   40  f(x)  592.08465  Scale 1.8e-11
+Iter   41  f(x)  592.08390  Scale 9.1e-12
 TolX reached
 
 gp = 
@@ -58,32 +73,27 @@ gp =
                fh: [1x1 struct]
        latent_opt: [1x1 struct]
 
-Iter    1  f(x)  274.87662  Scale 1.0e+01
-Iter    2  f(x)  257.95569  Scale 5.0e+00
-Iter    3  f(x)  253.27786  Scale 2.5e+00
-Iter    4  f(x)  250.53297  Scale 1.2e+00
-Iter    5  f(x)  249.87337  Scale 6.2e-01
-Iter    6  f(x)  249.46859  Scale 3.1e-01
-Iter    7  f(x)  249.31681  Scale 1.6e-01
-Iter    8  f(x)  249.08962  Scale 7.8e-02
-Iter    9  f(x)  249.04933  Scale 3.9e-02
-Iter   10  f(x)  249.02493  Scale 2.0e-02
-Iter   11  f(x)  249.00592  Scale 9.8e-03
-Iter   12  f(x)  248.99278  Scale 4.9e-03
-Iter   13  f(x)  248.98999  Scale 2.4e-03
-Iter   14  f(x)  248.98427  Scale 1.2e-03
-Iter   15  f(x)  248.98242  Scale 6.1e-04
-Iter   16  f(x)  248.98132  Scale 3.1e-04
-Iter   17  f(x)  248.98080  Scale 1.5e-04
+Iter    1  f(x)  269.20562  Scale 1.0e+01
+Iter    2  f(x)  254.33279  Scale 5.0e+00
+Iter    3  f(x)  250.68796  Scale 2.5e+00
+Iter    4  f(x)  247.24355  Scale 1.2e+00
+Iter    5  f(x)  246.87531  Scale 6.2e-01
+Iter    6  f(x)  246.18753  Scale 3.1e-01
+Iter    7  f(x)  246.10892  Scale 1.6e-01
+Iter    8  f(x)  246.01906  Scale 7.8e-02
+Iter    9  f(x)  246.00012  Scale 3.9e-02
+Iter   10  f(x)  245.98465  Scale 2.0e-02
+Iter   11  f(x)  245.93921  Scale 9.8e-03
+Iter   12  f(x)  245.89906  Scale 4.9e-03
+Iter   13  f(x)  245.88887  Scale 2.4e-03
+Iter   14  f(x)  245.84975  Scale 1.2e-03
+Iter   15  f(x)  245.84438  Scale 6.1e-04
+Iter   16  f(x)  245.83971  Scale 3.1e-04
+Iter   17  f(x)  245.83830  Scale 1.5e-04
+Iter   18  f(x)  245.83813  Scale 7.6e-05
 TolFun reached
 
  gp hyperparameters (gp_pak(gp)): 
  
-  Columns 1 through 8
-
-   -1.4950    4.0055   -0.5834   -0.1452    4.6017   -2.8921   -0.4391    0.9272
-
-  Column 9
-
-    2.4323
+   -1.7149    3.9789   -0.4828   -0.1299    4.6408   -2.9777   -0.4417    0.9194    2.4354
 
