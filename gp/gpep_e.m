@@ -1527,7 +1527,8 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           gp=gp_unpak(gp,w);
           likelih=gp.lik;
           ncf = length(gp.cf);
-          n=length(y);          
+          n=length(y);      
+          pvis=0;
           
           df0=gp.latent_opt.df; % the intial damping factor
           eta=repmat(eta1,n,1);  % the initial vector of fraction parameters
@@ -1815,7 +1816,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 if ismember(display,{'iter'})
                   fprintf('decreasing step size, ')
                 end
-              elseif ~pcavity
+              elseif ~pcavity && ~pvis
                 % The cavity distributions resulting from the proposal distribution
                 % are not well defined, reset the site parameters by doing 
                 % one parallel update with a zero initialization and continue 
@@ -1824,6 +1825,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 if ismember(display,{'iter'})
                   fprintf('re-init the posterior due to ill-conditioned cavity distributions, ')
                 end
+                
+                % Do resetting only once
+                pvis=1;
                 
                 up_mode='ep';
                 nu_q=zeros(size(y));tau_q=zeros(size(y));
