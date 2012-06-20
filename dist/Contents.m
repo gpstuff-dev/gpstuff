@@ -3,17 +3,22 @@
 % Priors 
 %  PRIOR_FIXED       Fix parameter to its current value
 %  PRIOR_GAMMA       Gamma prior structure     
-%  PRIOR_INVGAMMA    Inverse-gamma prior structure     
-%  PRIOR_LAPLACE     Laplace (double exponential) prior structure
-%  PRIOR_LOGLOGUNIF  Uniform prior structure for the log(log(parameter))
-%  PRIOR_LOGUNIF     Uniform prior structure for the logarithm of the parameter
 %  PRIOR_GAUSSIAN    Gaussian prior structure     
+%  PRIOR_INVGAMMA    Inverse-gamma prior structure     
+%  PRIOR_INVT        Inverse Student-t prior structure
+%  PRIOR_INVT        Inverse uniform prior structure
+%  PRIOR_LAPLACE     Laplace (double exponential) prior structure
 %  PRIOR_LOGGAUSSIAN Log-Gaussian prior structure     
+%  PRIOR_LOGLOGUNIF  Uniform prior structure for the log(log(parameter))
+%  PRIOR_LOGT        Student-t prior structure for the logarithm of the parameter
+%  PRIOR_LOGUNIF     Uniform prior structure for the logarithm of the parameter
 %  PRIOR_SINVCHI2    Scaled inverse-chi-square prior structure
-%  PRIOR_T           Student-t prior structure
 %  PRIOR_SQRTT       Student-t prior structure for the square root of the
 %                    parameter
+%  PRIOR_SQRTUNIF    Uniform prior structure for the square root of the
+%                    parameter
 %  PRIOR_UNIF        Uniform prior structure     
+%  PRIOR_T           Student-t prior structure
 %  PRIOR_SQRTUNIF    Uniform prior structure for the square root of the
 %                    parameter
 %
