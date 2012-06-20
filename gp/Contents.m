@@ -27,6 +27,7 @@
 %   GPCF_PPCS3        Create a piece wise polynomial (q=3) covariance function 
 %   GPCF_PROD         Create a product form covariance function 
 %   GPCF_RQ           Create a rational quadratic covariance function 
+%   GPCF_SCALED       Create a scaled covariance function
 %   GPCF_SEXP         Create a squared exponential covariance function
 %   GPCF_SUM          Create a sum form covariance function
 %
@@ -53,36 +54,30 @@
 %   GP_G          Evaluate gradient of energy (GP_E) for Gaussian Process
 %   GP_EG         Evaluate both GP_E and GP_G. Useful in optimisation.
 %   GP_PRED       Make predictions with Gaussian process 
-%   GPEP_E        Conduct Expectation propagation and return negative marginal 
-%                 log posterior estimate
-%   GPEP_G        Evaluate gradient of EP's negative marginal log posterior 
-%                 estimate
-%   GPEP_PRED     Predictions with Gaussian Process EP approximation
-%   GPLA_E        Construct Laplace approximation and return negative marginal 
-%                 log posterior estimate
-%   GPLA_G        Evaluate gradient of Laplace approximation's marginal 
-%                 log posterior estimate
-%   GPLA_PRED     Predictions with Gaussian Process Laplace approximation
+%   GP_CPRED      Conditional predictions using specific covariates
+%   GP_JPRED      Joint predictions with Gaussian process 
+%   GP_PREPRCTMU  Percentiles of the distribution of the location parameter
+%   GP_PREPRCTY   Percentiles of the predictive distribution at test points
 %   GP_MC         Markov chain sampling for Gaussian process models
-%   GPMC_PRED     Predictions with Gaussian Process MCMC approximation.
 %   GPMC_PREDS    Conditional predictions with Gaussian Process MCMC
 %                 approximation.
 %   GP_IA         Integration approximation with grid, Monte Carlo or
 %                 CCD integration
-%   GPIA_PRED     Prediction with Gaussian Process GP_IA solution.
 %   LGCP          Log Gaussian Cox Process intensity estimate for 1D and 
 %                 2D data
 %
 %  Model assesment and comparison:
-%   GP_DIC        The DIC statistics and effective number of parameters
 %   GP_KFCV       K-fold cross validation for a GP model
+%   GP_LOOPRED    Leave-one-out-predictions with Gaussian Process
 %   GP_LOOE       Evaluate the leave-one-out predictive density in case of
 %                 Gaussian observation model
 %   GP_LOOG       Evaluate the gradient of the leave-one-out predictive 
 %                 density (GP_LOOE) in case of Gaussian observation model 
-%   GP_LOOPRED    Leave-one-out-predictions with Gaussian Process
+%   GP_WAIC       The widely applicable information criterion
+%   GP_DIC        The DIC statistics and effective number of parameters
 %   GP_PEFF       The efective number of parameters in GP model with focus 
 %                 on latent variables.
+%   GP_AVPREDCOMP Average predictive comparison for Gaussian process model
 %
 %  Metrics:
 %   METRIC_EUCLIDEAN   An Euclidean distance for Gaussian process models.
@@ -94,6 +89,8 @@
 %   SPINV         Evaluate the sparsified inverse matrix
 %   SCALED_HMC    A scaled hybric Monte Carlo samping for latent values
 %   SCALED_MH     A scaled Metropolis Hastings samping for latent values
+%   SURROGATE_SLS Markov chain Monte Carlo sampling using Surrogate data Slice Sampling
+%   ESLS          Markov chain update for a distribution with a Gaussian "prior" factored out
 %   GP_INSTALL    Matlab function to compile all the c-files to mex in the 
 %                 GPstuff/gp folder.
 %

@@ -1,5 +1,5 @@
 function [samples,samplesf,diagn] = surrogate_sls(f, x, opt, gp, xx, yy, z, varargin)
-%SLS  Markov Chain Monte Carlo sampling using Surrogate data Slice Sampling
+%SURROGATE_SLS  Markov Chain Monte Carlo sampling using Surrogate data Slice Sampling
 %
 %  Description
 %    SAMPLES = SURROGATE_SLS(F, X, OPTIONS) uses slice sampling to sample

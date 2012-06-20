@@ -1,5 +1,5 @@
 function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt, ind,varargin)
-%GP_CPRED Do conditional predictions using specific covariates
+%GP_CPRED Conditional predictions using specific covariates
 %
 %  Description
 %    GP_CPRED(GP,X,Y,XT,IND,OPTIONS) does predictions using only

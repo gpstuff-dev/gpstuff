@@ -1,11 +1,11 @@
 function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
-%GP_PRED  Make predictions with Gaussian process 
+%GP_JPRED  Joint predictions with Gaussian process 
 %
 %  Description
 %    [EFT, COVFT] = GP_JPRED(GP, X, Y, XT, OPTIONS)
 %    takes a GP structure together with matrix X of training
 %    inputs and vector Y of training targets, and evaluates the
-%    predictive distribution at test inputs XT. Returns a posterior
+%    joint predictive distribution at test inputs XT. Returns a posterior
 %    mean EFT and covariance COVFT of latent variables.
 %
 %        Eft =  E[f | xt,x,y,th]  = K_fy*(Kyy+s^2I)^(-1)*y
@@ -15,9 +15,10 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
 %    Y corresponds to one output vector.
 %
 %    [EFT, COVFT, LJPYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
-%    returns also logarithm of the predictive joint density JPYT of the observations YT
-%    at test input locations XT. This can be used for example in
-%    the cross-validation. Here Y has to be vector.
+%    returns also logarithm of the predictive joint density LJPYT of
+%    the observations YT at test input locations XT. This can be
+%    used for example in the cross-validation. Here Y has to be
+%    vector.
 %
 %    [EFT, COVFT, LJPYT, EYT, COVYT] = GP_JPRED(GP, X, Y, XT, 'yt', YT, ...)
 %    returns also the posterior predictive mean and covariance.

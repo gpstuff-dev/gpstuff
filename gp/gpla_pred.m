@@ -19,7 +19,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 %
 %    [EF, VARF, LPY, EY, VARY] = GPLA_PRED(GP, X, Y, OPTIONS)
 %    evaluates the predictive distribution at training inputs X
-%    and logarithm of the predictive density LPY of the training
+%    and logarithm of the predictive density LPYT of the training
 %    observations Y.
 %
 %    OPTIONS is optional parameter-value pair

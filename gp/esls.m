@@ -1,34 +1,32 @@
-function [f, energ, diagn] = elliptical_sls(f, opt, gp, x, y, z, angle_range)
-%ELLIPTICAL_SLICE Markov chain update for a distribution with a Gaussian "prior" factored out
+function [f, energ, diagn] = esls(f, opt, gp, x, y, z, angle_range)
+%ESLS Markov chain update for a distribution with a Gaussian "prior" factored out
 %
 %  Description
+%   [F, ENERG, DIAG] = ESLS(F, OPT, GP, X, Y) takes the current
+%   latent values F, options structure OPT, Gaussian process
+%   structure GP, inputs X and outputs Y. Samples new latent values
+%   and returns also energies ENERG and diagnostics DIAG.
+%
 %    A Markov chain update is applied to the D-element array f leaving a
 %    "posterior" distribution
 %    P(f) \propto N(f;0,Sigma) L(f)
 %    invariant. Where N(0,Sigma) is a zero-mean Gaussian distribution with
 %    covariance Sigma. Often L is a likelihood function in an inference problem.
 %
-%  [F, ENERG, DIAG] = ELLIPTICAL_SLS(F, OPT, GP, X, Y) takes the
-%    current latent values F, options structure OPT, Gaussian
-%    process structure GP, inputs X and outputs Y. Samples new
-%    latent values and returns also energies ENERG and diagnostics
-%    DIAG.
+%  Reference:
+%   Elliptical slice sampling
+%   Iain Murray, Ryan Prescott Adams and David J.C. MacKay.
+%   The Proceedings of the 13th International Conference on Artificial
+%   Intelligence and Statistics (AISTATS), JMLR W&CP 9:541-548, 2010.
 %
 %  See also
 %    GP_MC
-
 
 % Iain Murray, September 2009
 % Tweak to interface and documentation, September 2010
 % Ville Tolvanen, October 2011 - Changed inputs and outputs for the function to
 % fit in with other GPstuf samplers. Documentation standardized with other
 % GPstuff documentation and modified according to input/output changes.
-
-% Reference:
-% Elliptical slice sampling
-% Iain Murray, Ryan Prescott Adams and David J.C. MacKay.
-% The Proceedings of the 13th International Conference on Artificial
-% Intelligence and Statistics (AISTATS), JMLR W&CP 9:541-548, 2010.
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
