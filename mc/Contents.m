@@ -4,6 +4,7 @@
 %    GIBBS         - Gibbs sampling
 %    HMC2          - Hybrid Monte Carlo sampling.
 %    HMC2_OPT      - Default options for Hybrid Monte Carlo sampling.
+%    HMC_NUTS      - No-U-Turn Sampler (NUTS)
 %    HMEAN         - Harmonic mean
 %    METROP2       - Markov Chain Monte Carlo sampling with Metropolis algorithm.
 %    METROP2_OPT   - Default options for Metropolis sampling.
