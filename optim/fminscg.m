@@ -57,6 +57,10 @@ function [x, fval, exitflag, output, grad] = fminscg(fun, x, opt)
 %    MaxIter
 %      Maximum number of iterations allowed, a positive integer. 
 %      The default value is 400.
+%    lambda
+%      Initial scale parameter for optimizer. The default value is 10
+%    lambdalim
+%      Limit for the scale paramer. The defualt value is 1e101.
 %
 %  See also OPTIMSET
 
@@ -73,7 +77,9 @@ defaultopt = struct( ...
     'Display','final', ...
     'MaxIter',400, ...
     'TolFun',1e-6, ...
-    'TolX',1e-6); 
+    'TolX',1e-6, ...
+    'lambda', 10, ...
+    'lambdalim', 1e101); 
 
 % If just 'defaults' passed in, return the default options in X
 if nargin==1 && nargout <= 1 && isequal(fun,'defaults')
@@ -98,6 +104,8 @@ end
 maxiter = optimget(opt,'MaxIter',defaultopt,'fast');
 tolfun = optimget(opt,'TolFun',defaultopt,'fast');
 tolx = optimget(opt,'TolX',defaultopt,'fast');
+lambda = optimget(opt,'lambda', defaultopt, 'fast');
+lambdalim = optimget(opt, 'lambdalim', defaultopt, 'fast');
 
 nparams = length(x);
 
@@ -113,7 +121,7 @@ gradnew = gradold;
 d = - gradnew;                  % Initial search direction.
 success = 1;                    % Force calculation of directional derivs.
 nsuccess = 0;                   % nsuccess counts number of successes.
-lambda = 10.0;                  % Initial scale parameter.
+% lambda = 10.0;                  % Initial scale parameter.
 lambdamin = 1.0e-15; 
 lambdamax = 1.0e100;
 j = 1;                          % j counts number of iterations.
@@ -144,7 +152,7 @@ while (j <= maxiter)
     end
     sigma = sigma0/sqrt(kappa);
     xplus = x + sigma*d;
-    [~,gplus] = feval(fun, xplus);
+    [tmp,gplus] = feval(fun, xplus);
     if nargin>4
       output.funcCount=output.funcCount+1;
     end
@@ -250,6 +258,11 @@ while (j <= maxiter)
   if (Delta > 0.75)
     lambda = max(0.5*lambda, lambdamin);
   end
+  
+  % If scale parameter is at its limit, stop optimization
+  if lambda >= lambdalim
+    break;
+  end
 
   % Update search direction using Polak-Ribiere formula, or re-start 
   % in direction of negative gradient after nparams steps.
@@ -270,7 +283,11 @@ end
 % iterations.
 exitflag=0;
 if (display >= 1)
-  disp('Warning: Maximum number of iterations has been exceeded');
+  if lambda<lambdalim
+    disp('Warning: Maximum number of iterations has been exceeded');
+  else
+    disp('Warning: Optimization stopped because scale parameter reached limit');
+  end
   if lambda>1e5
     warning('Scale > 1e5: Check that the analytic gradients are correct!')
   end
