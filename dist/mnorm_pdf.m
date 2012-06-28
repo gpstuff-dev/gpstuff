@@ -14,7 +14,7 @@ function y = mnorm_pdf(x,mu,S)
 % License.txt, included with the software, for details.
 
 if nargin < 3, 
-  sigma = 1;
+  S = eye(size(x,2));
 end
 
 if nargin < 2;
