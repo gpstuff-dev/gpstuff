@@ -411,7 +411,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           % Remove points with NaN density
           dii=find(isnan(p_th));
           if ~isempty(dii)
-            warning(sprintf('%d/%d of CCD density evaluations were NaN',sum(dii),numel(dii)))
+            warning(sprintf('%d/%d of CCD density evaluations were NaN',numel(dii),numel(p_th)))
             p_th(dii)=[];
             gp_array(dii)=[];
             th(dii,:)=[];
