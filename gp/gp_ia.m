@@ -31,7 +31,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   parameter space according to Hessian at the mode.
 %                   Default is TRUE.
 %       autoscale - tells whether automatic scaling is used in CCD and is_*
-%                   Default is TRUE.
+%                   Default is FALSE.
 %       threshold - threshold for drop of log-density in grid search.
 %                   Default is 2.5,
 %       step_size - step-size for grid search. Default is 1.
@@ -81,7 +81,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('tstind', [], @(x) isempty(x) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('rotate', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('autoscale', true, @(x) islogical(x) && isscalar(x))
+  ip.addParamValue('autoscale', false, @(x) islogical(x) && isscalar(x))
   ip.addParamValue('validate', 1, @(x) ismember(x,[1 2]))
   ip.addParamValue('threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
