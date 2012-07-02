@@ -31,7 +31,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   parameter space according to Hessian at the mode.
 %                   Default is TRUE.
 %       autoscale - tells whether automatic scaling is used in CCD and is_*
-%                   Default is FALSE.
+%                   Default is TRUE.
 %       threshold - threshold for drop of log-density in grid search.
 %                   Default is 2.5,
 %       step_size - step-size for grid search. Default is 1.
@@ -81,7 +81,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('tstind', [], @(x) isempty(x) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('rotate', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('autoscale', false, @(x) islogical(x) && isscalar(x))
+  ip.addParamValue('autoscale', true, @(x) islogical(x) && isscalar(x))
   ip.addParamValue('validate', 1, @(x) ismember(x,[1 2]))
   ip.addParamValue('threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
@@ -93,7 +93,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                    isfinite(x) && x>=1)
   ip.addParamValue('repeat', 10, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>=1)
-  ip.addParamValue('f0', 1.3, @(x) isscalar(x) && isreal(x) && ...
+  ip.addParamValue('f0', 1.1, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
   ip.addParamValue('qmc', true, @(x) islogical(x) && isscalar(x))
   ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
@@ -333,7 +333,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           
           % Radius of the sphere (greater than 1)
           if isempty(opt.f0)
-            f0=1.3;
+            f0=1.1;
           else
             f0 = opt.f0;
           end
@@ -353,6 +353,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           if ~opt.autoscale
             points = f0*points;
           else
+            % log-density at mode
+            l0=-fh_e(w,gp,x,y,options);
             for j = 1 : nParam*2
               % Here temp is one of the points on the main axis in either
               % positive or negative direction.
@@ -365,19 +367,37 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               ind = ceil(j/2);
               temp(ind)=dir;
               
-              % Find the scaling parameter so that when we move 2 stds
-              % from the mode, the log density drops by 2
-              % No gradient and single-variable, so use fminbnd
-              optim1=optimset('TolX',0.1);
-              target=fh_e(w,gp,x,y,options)+2;
-              t = fminbnd(@(t) (target-fh_e(w+t*temp*z,gp,x,y,options)).^2, f0/4, f0*4, optim1);
-              sd(points(:,ind)*dir>0, ind) = 0.5*t/sqrt(nParam);
+              % Find the scaling parameter so that when we move sqrt(2) std
+              % from the mode, the log density drops approximately by 1
+              % (Rue et al use 2 std with drop of 2. We use sqrt(2) std to 
+              % avoid bad hyperparameter values for highly
+              % skewed hyperparameter posteriors)
+              
+              % First order approximation (as in gmrflib/approx-inference.c)
+              lt=-fh_e(w+sqrt(2)*temp*z,gp,x,y,options);
+              if l0>lt
+                t=sqrt(1/(l0-lt));
+              else
+                t=1;
+              end
+              sd(points(:,ind)*dir>0, ind) = t;
+
+%              % Alternative more accurate but slower optimization based
+%              % approach. No gradient and single-variable, so use
+%              % fminbnd (gradient could be used, but it's
+%              % computation is slower)
+%              optim1=optimset('TolX',0.1);
+%              target=fh_e(w,gp,x,y,options)+1;
+%              t = fminbnd(@(t) (target-fh_e(w+t*temp*z,gp,x,y,options)).^2,...
+%                          1/4, 3, optim1);
+%              sd(points(:,ind)*dir>0, ind) = t/sqrt(2);
             end
+            
             % Each point is scaled with corresponding scaling parameter
             % and desired radius
             points = f0*sd.*points;
           end
-          
+
           % Put the points into parameter-space
           th = points*z+repmat(w,size(points,1),1);
           
@@ -389,9 +409,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             p_th(i1) = -fh_e(th(i1,:),gp,x,y,options);
           end
           % Remove points with NaN density
-          dii=isnan(p_th);
+          dii=find(isnan(p_th));
           if ~isempty(dii)
-            warning('Some of CCD density evaluations were NaN')
+            warning(sprintf('%d/%d of CCD density evaluations were NaN',sum(dii),numel(dii)))
             p_th(dii)=[];
             gp_array(dii)=[];
             th(dii,:)=[];
@@ -408,15 +428,18 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           p_th=p_th-min(p_th);
           p_th=exp(p_th);
           
-          % Calculate the area weights for the integration and scale
-          % densities of the design points with these weights
-          delta_k = 1/((2*pi)^(-nParam/2)*exp(-.5*nParam*f0^2)*(size(points,1)-1)*f0^2);
-          delta_0 = (2*pi)^(nParam/2)*(1-1/f0^2);
+          if nParam>1
+            % Calculate the area weights for the integration and scale
+            % densities of the design points with these weights
+            delta_k = 1/((2*pi)^(-nParam/2)*exp(-.5*nParam*f0^2)*(size(points,1)-1)*f0^2);
+            delta_0 = (2*pi)^(nParam/2)*(1-1/f0^2);
+            
+            delta_k=delta_k/delta_0;
+            delta_0=1;
           
-          delta_k=delta_k/delta_0;
-          delta_0=1;
-          
-          p_th=p_th.*[delta_0,repmat(delta_k,1,size(th,1)-1)];
+            p_th=p_th.*[delta_0,repmat(delta_k,1,size(th,1)-1)];
+          end
+          % Normalize weights
           P_TH=p_th./sum(p_th);
           P_TH=P_TH(:);
       end
@@ -889,9 +912,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     g2 = fh_g(w0-rr*v, gp, x, y, options);
     g1 = fh_g(w0+rr*v, gp, x, y, options);
     vv = (g1 - g2) / (2*rr);
-    
-    
-    
   end
 
 end
