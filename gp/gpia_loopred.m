@@ -90,8 +90,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
     w=exp(lw);
     % check the effective sample size
     m_eff=1./sum(w.^2,2);
-    if min(m_eff)<n/10
-      warning(sprintf('For %d folds the effective sample size in IS is less than n/10',sum(m_eff<(n/10))))
+    if min(m_eff)<nGP/10
+      warning(sprintf('For %d folds the effective sample size in IS is less than m/10',sum(m_eff<(nGP/10))))
     end
   
     % reweight ia weights

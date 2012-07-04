@@ -31,7 +31,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   parameter space according to Hessian at the mode.
 %                   Default is TRUE.
 %       autoscale - tells whether automatic scaling is used in CCD and is_*
-%                   Default is TRUE.
+%                   - 'off' no automatic scaling
+%                   - 'on' (default) automatic scaling along main axes
+%                   - 'full' automatic scaling in each design direction
 %       threshold - threshold for drop of log-density in grid search.
 %                   Default is 2.5,
 %       step_size - step-size for grid search. Default is 1.
@@ -55,12 +57,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   every repeat'th iteration, default 0.
 %       repeat    - number of subiterations in HMC.
 %                   Default is 10.
-%       display   - defines if information is printed, 1=yes, 0=no.
-%                   Default 1.
+%      display    - defines if messages are displayed. 
+%                   - 'off' displays no output
+%                   - 'on' (default) gives some output  
+%                   - 'iter' displays output at each evaluation point
 %       
 
-% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
-% Copyright (c) 2010 Aki Vehtari
+% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % Licence (version 3 or later); please refer to the file
@@ -81,7 +85,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('tstind', [], @(x) isempty(x) || ...
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('rotate', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('autoscale', true, @(x) islogical(x) && isscalar(x))
+  ip.addParamValue('autoscale', 'on', @(x) (islogical(x) && isscalar(x))|| ...
+                   ismember(x,{'on' 'off' 'full'}))
   ip.addParamValue('validate', 1, @(x) ismember(x,[1 2]))
   ip.addParamValue('threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
@@ -100,13 +105,22 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('opt_optim', [], @isstruct)
   ip.addParamValue('opt_hmc', [], @isstruct);
   ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
-  ip.addParamValue('display', 1, @(x) isreal(x) && all(isfinite(x(:))))
+  ip.addParamValue('display', 'on', @(x) islogical(x) || isreal(x) || ...
+                   ismember(x,{'on' 'off' 'iter'}))
   ip.parse(gp, x, y, varargin{:});
   xt=ip.Results.xt;
   % integration parameters
   int_method=ip.Results.int_method;
   opt.rotate=ip.Results.rotate;
   opt.autoscale=ip.Results.autoscale;
+  if ~ischar(opt.autoscale)
+    % compatibility with old syntax
+    if opt.autoscale
+      opt.autoscale='on';
+    else
+      opt.autoscale='off';
+    end
+  end
   opt.validate=ip.Results.validate;
   opt.threshold=ip.Results.threshold;
   opt.step_size=ip.Results.step_size;
@@ -121,6 +135,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   opt.persistence_reset=ip.Results.persistence_reset;
   opt.repeat=ip.Results.repeat;
   opt.display=ip.Results.display;
+  if ~ischar(opt.display)
+    % compatibility with old syntax
+    if opt.display
+      opt.display='on';
+    else
+      opt.display='off';
+    end
+  end
   % pass these forward
   options=struct();
   if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
@@ -161,12 +183,22 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   optdefault.Display='off';
   opt_optim=optimset(optdefault,opt_optim);
 
+  tic
+    
   % ===============================
   % Find the mode of the parameters
   % ===============================
   w = gp_pak(gp);
-  w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
-  gp = gp_unpak(gp,w);
+  if isa(optimf,'function_handle')
+    if ismember(opt.display,{'on','iter'})
+      fprintf('%s: finding the mode\n',int_method);
+    end
+    w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
+    gp = gp_unpak(gp,w);
+    if ismember(opt.display,{'on','iter'})
+      fprintf('  Elapsed time %.2f seconds\n',toc);
+    end
+  end
   
   % Number of parameters
   nParam = length(w);
@@ -185,14 +217,25 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       % ===============================
 
       H = eye(nParam);
+      if ismember(opt.display,{'on','iter'})
+        fprintf('%s: computing Hessian using multiplication\n',int_method);
+      end
       for i2 = 1:nParam
         H(:,i2) = hessianMultiplication(w, H(:,i2));
       end
+      if ismember(opt.display,{'on','iter'})
+        fprintf('  Elapsed time %.2f seconds\n',toc);
+      end
       if any(eig(H))<0
+        if ismember(opt.display,{'on','iter'});
+          fprintf('%s: computing Hessian using finite difference\n',int_method);
+        end
         H = hessian(w);
+        if ismember(opt.display,{'on','iter'})
+          fprintf('  Elapsed time %.2f seconds\n',toc);
+        end
       end
       Sigma = inv(H);
-      
       % Some jitter may be needed to get positive semi-definite covariance
       if any(eig(Sigma)<0)
         jitter = 0;
@@ -219,6 +262,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       
       switch int_method
         case 'grid'
+          if ismember(opt.display,{'on','iter'})
+            fprintf('grid: evaluating density in a grid\n');
+          end
+          if ismember(opt.display,{'iter'})
+            fprintf('1 ');
+          end
           % density in the mode
           p_th(1) = -fh_e(w,gp,x,y,options);
           if ~isempty(xt)
@@ -244,6 +293,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 % The parameters in the neighbour
                 w_p = w + candidates(1,:)*z + z(i1,:);
                 
+                if ismember(opt.display,{'iter'})
+                  fprintf('%d ',numel(p_th,1));
+                end
                 % log density
                 gp = gp_unpak(gp,w_p);
                 ptest = -fh_e(w_p,gp,x,y,options);
@@ -303,12 +355,16 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             candidates(1,:)=[];
           end
           
+          if ismember(opt.display,{'on','iter'})
+            fprintf('grid: evaluated density at %d points\n',numel(p_th));
+            fprintf('  Elapsed time %.2f seconds\n',toc);
+          end
           % Convert densities from the log-space and normalize them
           p_th = p_th(:)-min(p_th);
           P_TH = exp(p_th)/sum(exp(p_th));
           
         case 'CCD'
-          % Walsh indeces (see Sanchez and Sanchez (2005))
+          % Walsh indices (see Sanchez and Sanchez (2005))
           walsh = [1 2 4 8 15 16 32 51 64 85 106 128 150 171 219 237 ...
                    247 256 279 297 455 512 537 557 597 643 803 863 898 ...
                    1024 1051 1070 1112 1169 1333 1345 1620 1866 2048 ...
@@ -323,6 +379,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                    25700 26360 26591 26776 28443 28905 29577 32705];
           
           % How many design points
+          if nParam>120
+            error('Maximum number of parameters handled by CCD is 120')
+          end
           ii = sum(nParam >= [1 2 3 4 6 7 9 12 18 22 30 39 53 70 93]);
           H0 = 1;
           
@@ -333,7 +392,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           
           % Radius of the sphere (greater than 1)
           if isempty(opt.f0)
-            f0=1.1;
+            f0 = 1.1;
           else
             f0 = opt.f0;
           end
@@ -349,38 +408,47 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             points(end+1,:)=zeros(1,nParam);
             points(end,i1)=-sqrt(nParam);
           end
-          
-          if ~opt.autoscale
-            points = f0*points;
-          else
-            % log-density at mode
-            l0=-fh_e(w,gp,x,y,options);
-            for j = 1 : nParam*2
-              % Here temp is one of the points on the main axis in either
-              % positive or negative direction.
-              temp = zeros(1,nParam);
-              if mod(j,2) == 1
-                dir = 1;
-              else
-                dir = -1;
+          if ismember(opt.display,{'on','iter'})
+            fprintf('CCD: %d points for %d parameters\n', ...
+                    size(points,1),size(points,2));
+          end
+
+          switch opt.autoscale
+            case 'off'
+              points = f0*points;
+            case 'on'
+              % automatic scaling along main axes
+              if ismember(opt.display,{'on','iter'})
+                fprintf('CCD: autoscaling in %d directions\n',nParam*2);
               end
-              ind = ceil(j/2);
-              temp(ind)=dir;
-              
-              % Find the scaling parameter so that when we move sqrt(2) std
-              % from the mode, the log density drops approximately by 1
-              % (Rue et al use 2 std with drop of 2. We use sqrt(2) std to 
-              % avoid bad hyperparameter values for highly
-              % skewed hyperparameter posteriors)
-              
-              % First order approximation (as in gmrflib/approx-inference.c)
-              lt=-fh_e(w+sqrt(2)*temp*z,gp,x,y,options);
-              if l0>lt
-                t=sqrt(1/(l0-lt));
-              else
-                t=1;
-              end
-              sd(points(:,ind)*dir>0, ind) = t;
+              % log-density at mode
+              l0=-fh_e(w,gp,x,y,options);
+              for j = 1 : nParam*2
+                if ismember(opt.display,{'iter'}),fprintf('%d ',j);end
+
+                % Here temp is one of the points on the main axis in either
+                % positive or negative direction.
+                temp = zeros(1,nParam);
+                if mod(j,2) == 1
+                  dir = 1;
+                else
+                  dir = -1;
+                end
+                ind = ceil(j/2);
+                temp(ind)=dir;
+                
+                % Find the scaling parameter so that when we move 2 std
+                % from the mode, the log density drops (approximately) by 2
+                
+                % First order approximation (as in gmrflib/approx-inference.c)
+                lt=-fh_e(w+2*temp*z,gp,x,y,options);
+                if l0>lt
+                  t=sqrt(2/(l0-lt));
+                else
+                  t=1;
+                end
+                ts(j)=t;
+                sd(points(:,ind)*dir>0, ind) = max(min(t,3),1/3);
 
 %              % Alternative more accurate but slower optimization based
 %              % approach. No gradient and single-variable, so use
@@ -391,23 +459,80 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %              t = fminbnd(@(t) (target-fh_e(w+t*temp*z,gp,x,y,options)).^2,...
 %                          1/4, 3, optim1);
 %              sd(points(:,ind)*dir>0, ind) = t/sqrt(2);
-            end
-            
-            % Each point is scaled with corresponding scaling parameter
-            % and desired radius
-            points = f0*sd.*points;
+              end
+              if ismember(opt.display,{'iter'}),fprintf('\n');end
+              if ismember(opt.display,{'on','iter'})
+                fprintf('CCD: scaling minmax [%.2f %.2f]\n',min(ts),max(ts));
+                fprintf('  Elapsed time %.2f seconds\n',toc);
+              end
+              
+              % Each point is scaled with corresponding scaling parameter
+              % and desired radius
+              points = f0*sd.*points;
+              
+            case 'full'
+              % automatic scaling along each design direction
+              if ismember(opt.display,{'on','iter'})
+                fprintf('CCD: autoscaling in %d directions\n',size(points,1));
+              end
+              
+              % log-density at mode
+              l0=-fh_e(w,gp,x,y,options);
+              if ismember(opt.display,{'iter'})
+                fprintf('origo lp=%.2f\n',l0);
+              end
+              for i1 = 2:size(points,1)
+                if ismember(opt.display,{'iter'}),fprintf('%d ',i1);end
+                % Find the scaling parameter so that when we move sqrt(2) std
+                % from the mode, the log density drops (approximately) by 1
+                tht=sqrt(2)/sqrt(nParam)*points(i1,:)*z+w;
+                lt = -fh_e(tht,gp,x,y,options);
+                if l0>lt
+                  t=sqrt(1/(l0-lt));
+                else
+                  t=1;
+                end
+                if ismember(opt.display,{'iter'})
+                  fprintf('lp=%.2f t=%.2f\n',lt, t);
+                end
+                ts(i1)=t;
+                points(i1,:)=t*f0*points(i1,:);
+              end
+              if ismember(opt.display,{'on','iter'})
+                fprintf('CCD: scaling minmax [%.2f %.2f]\n',min(ts),max(ts));
+                fprintf('  Elapsed time %.2f seconds\n',toc);
+              end
           end
-
+        
           % Put the points into parameter-space
           th = points*z+repmat(w,size(points,1),1);
+          if ismember(opt.display,{'on','iter'})
+            fprintf('%s: evaluating density at %d points\n',int_method,size(th,1));
+          end
           
           p_th=[]; gp_array={};
-          for i1 = 1 : size(th,1)
+          if ismember(opt.display,{'iter'}),fprintf('1 ');end
+          gp = gp_unpak(gp,th(1,:));
+          gp_array{1} = gp;
+          % density
+          if exist('l0')
+            p_th(1) = l0;
+          else
+            p_th(1) = -fh_e(th(1,:),gp,x,y,options);
+          end            
+          if ismember(opt.display,{'iter'}),fprintf('lp=%.2f\n',p_th(1));end
+          for i1 = 2:size(th,1)
+            if ismember(opt.display,{'iter'}),fprintf('%d ',i1);end
             gp = gp_unpak(gp,th(i1,:));
             gp_array{i1} = gp;
             % density
             p_th(i1) = -fh_e(th(i1,:),gp,x,y,options);
+            if ismember(opt.display,{'iter'}),fprintf('lp=%.2f\n',p_th(i1));end
           end
+          if ismember(opt.display,{'on','iter'})
+            fprintf('  Elapsed time %.2f seconds\n',toc);
+          end
+          
           % Remove points with NaN density
           dii=find(isnan(p_th));
           if ~isempty(dii)
@@ -416,15 +541,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             gp_array(dii)=[];
             th(dii,:)=[];
           end
-            
-          if ~isempty(xt)
-            % predictions if needed
-            for i1 = 1 : size(th,1)
-              [Ef_grid(i1,:), Varf_grid(i1,:)]=...
-                  fh_p(gp,x,y,xt,options);
-            end
-          end
-          
+  
           p_th=p_th-min(p_th);
           p_th=exp(p_th);
           
@@ -439,9 +556,34 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           
             p_th=p_th.*[delta_0,repmat(delta_k,1,size(th,1)-1)];
           end
+          
+          % Remove points with negligible weights
+          p_th=p_th./sum(p_th);
+          dii=find(p_th<(1e-2/numel(p_th)));
+          if ~isempty(dii)
+            if ismember(opt.display,{'on','iter'})
+              fprintf('%d/%d of CCD points had negligible weights and were removed\n',numel(dii),numel(p_th))
+            end
+            p_th(dii)=[];
+            gp_array(dii)=[];
+            th(dii,:)=[];
+          end
+          
           % Normalize weights
           P_TH=p_th./sum(p_th);
           P_TH=P_TH(:);
+          if ~all(isreal(P_TH))
+            error('CCD: Imaginary evaluations')
+          end
+          
+          if ~isempty(xt)
+            % predictions if needed
+            for i1 = 1 : size(th,1)
+              [Ef_grid(i1,:), Varf_grid(i1,:)]=...
+                  fh_p(gp,x,y,xt,options);
+            end
+          end
+          
       end
       
     case {'is_normal' 'is_normal_qmc' 'is_t'}
@@ -474,13 +616,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             th  = repmat(w,N,1)+(chol(Sigma,'lower')*(sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1)))';
             p_th_appr = mnorm_pdf(th, w, Sigma);
           else
-%             th = mvnrnd(w,Sigma,N);
             th = repmat(w,N,length(w)) + randn(N, length(w))*chol(Sigma);
             p_th_appr = mnorm_pdf(th, w, Sigma);
           end
           
           
-          if opt.autoscale
+          if ismember(opt.autoscale,{'on' 'full'})
             
             if opt.qmc
               e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
@@ -632,7 +773,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         hmc_rstate=hmc2('state');
       end
       
-      if opt.display
+      if ismember(opt.display,{'on','iter'})
         fprintf('Starting the HMC sampler\n')
         fprintf(' cycle  etr      ');
         fprintf('hrej     \n')
@@ -682,7 +823,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         ri=ri+1;
         
         % Display some statistics  THIS COULD BE DONE IN NICER WAY ALSO (V.P.)
-        if opt.display
+        if ismember(display,{'on','iter'})
           fprintf(' %4d  %.3f  ',ri, etr);
           fprintf(' %.1e  ',hmcrej);
           fprintf('\n');

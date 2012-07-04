@@ -169,15 +169,12 @@ title('The predicted underlying function and the data points (MAP solution)');
 % --- Grid integration ---
 disp(' Grid integration over the parameters')
 % Perform the grid integration and make predictions
-gp_array = gp_ia(gp, x, y, 'int_method', 'grid');
-[Eft_ia, Varft_ia] = gp_pred(gp_array, x, y, xt);
-
 % We can also get predictions for marginals of f, which are not
 % Gaussian due to integration over the hyperparameters
 [gp_array, P_TH, th, Eft_ia, Varft_ia, fx_ia, x_ia] = ...
     gp_ia(gp, x, y, xt, 'int_method', 'grid');
 
-% Plot the prediction for few input location
+% Plot the predictions for two input locations
 figure(2)
 clf
 subplot(2,1,1)
@@ -188,14 +185,6 @@ plot(x_ia(400,:), fx_ia(400,:))
 title('p(f|D) at input location (-0.8, 1.1)');
 
 % --- MCMC ---
-disp(' MCMC integration over the parameters')
-%  (see gp_mc for details)
-% The parameters are sampled using default method, that is,
-% slice sampling
-
-% Do the sampling (this takes approximately 1 minute)
-% 'gp_rec'  will contain a record structure with all the sampls
-% 'g'       will contain a GP structure at the current state of the sampler
 [gp_rec,g,opt] = gp_mc(gp, x, y, 'nsamples', 220);
 
 % After sampling we delete the burn-in and thin the sample chain
@@ -278,7 +267,7 @@ ff = norm_pdf(x_ia(100,:)', Eft_map(100), sqrt(Varft_map(100)));
 plot(x_ia(100,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
 set(gca, 'Ytick', [])
 title('p(f|D) at input location (-1.6, 0.7)');
-%xlim([0 1])
+xlim([0 1])
 
 subplot(1,2,2)
 [N,X] = hist(sf2);
@@ -289,7 +278,7 @@ ff = norm_pdf(x_ia(400,:)', Eft_map(400), sqrt(Varft_map(400)));
 plot(x_ia(400,:), max(N)/max(ff)*ff, 'r', 'lineWidth', 2)
 set(gca, 'Ytick', [])
 title('p(f|D) at input location (-0.8, 1.1)');
-%xlim([-1.2 -0.5])
+xlim([-1.2 -0.6])
 
 
 

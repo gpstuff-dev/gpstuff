@@ -1,17 +1,19 @@
 function [f, energ, diagn] = esls(f, opt, gp, x, y, z, angle_range)
-%ESLS Markov chain update for a distribution with a Gaussian "prior" factored out
+%ESLS  Markov chain update for a distribution with a Gaussian "prior" 
+%      factored out
 %
 %  Description
-%   [F, ENERG, DIAG] = ESLS(F, OPT, GP, X, Y) takes the current
-%   latent values F, options structure OPT, Gaussian process
-%   structure GP, inputs X and outputs Y. Samples new latent values
-%   and returns also energies ENERG and diagnostics DIAG.
+%    [F, ENERG, DIAG] = ESLS(F, OPT, GP, X, Y) takes the current
+%    latent values F, options structure OPT, Gaussian process
+%    structure GP, inputs X and outputs Y. Samples new latent
+%    values and returns also energies ENERG and diagnostics DIAG.
 %
 %    A Markov chain update is applied to the D-element array f leaving a
 %    "posterior" distribution
 %    P(f) \propto N(f;0,Sigma) L(f)
-%    invariant. Where N(0,Sigma) is a zero-mean Gaussian distribution with
-%    covariance Sigma. Often L is a likelihood function in an inference problem.
+%    invariant. Where N(0,Sigma) is a zero-mean Gaussian
+%    distribution with covariance Sigma. Often L is a likelihood
+%    function in an inference problem.
 %
 %  Reference:
 %   Elliptical slice sampling
@@ -22,7 +24,7 @@ function [f, energ, diagn] = esls(f, opt, gp, x, y, z, angle_range)
 %  See also
 %    GP_MC
 
-% Iain Murray, September 2009
+% Copyright (c) Iain Murray, September 2009
 % Tweak to interface and documentation, September 2010
 % Ville Tolvanen, October 2011 - Changed inputs and outputs for the function to
 % fit in with other GPstuf samplers. Documentation standardized with other

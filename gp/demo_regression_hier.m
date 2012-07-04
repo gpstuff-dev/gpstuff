@@ -48,7 +48,7 @@ x=[x repmat([1:nrats]',ntime,1)];
 [yn,ymean,ystd]=normdata(y);
 
 % optmization options
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','on');
 
 % common Gaussian likelihood with weakly informative prior for variance
 lik=lik_gaussian('sigma2',.1,...
@@ -58,12 +58,13 @@ cc=gpcf_cat('selectedVariables',2);
 
 % 1) Linear model with intercept and slope wrt time
 disp('1) Linear model with intercept and slope wrt time')
-cfc=gpcf_constant('constSigma2',1);
-cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1,...
+                'coeffSigma2_prior',prior_t());
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfl});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -75,14 +76,15 @@ drawnow
 
 % 2) Linear model with hierarchical intercept
 disp('2) Linear model with hierarchical intercept')
-cfc=gpcf_constant('constSigma2',1);
-cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1,...
+                'coeffSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -94,8 +96,9 @@ drawnow
 
 % 3) Linear model with hierarchical intercept and slope
 disp('3) Linear model with hierarchical intercept and slope')
-cfc=gpcf_constant('constSigma2',1);
-cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1,...
+                'coeffSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % linear covariance term for each rat
@@ -103,7 +106,7 @@ cfli=gpcf_prod('cf',{cfl cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfli});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -116,8 +119,9 @@ drawnow
 % 4) Nonlinear model with hierarchical intercept
 % include linear part, too
 disp('4) Nonlinear model with hierarchical intercept')
-cfc=gpcf_constant('constSigma2',1);
-cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1,...
+                'coeffSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part
@@ -125,7 +129,7 @@ cfs=gpcf_sexp('selectedVariables',1);
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfs});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -138,21 +142,22 @@ drawnow
 % 5) Nonlinear model with hierarchical intercept and curve
 % include linear part, too
 disp('5) Non-linear hierarchical model 1 with MAP')
-cfc=gpcf_constant('constSigma2',1);
-cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
+cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1,...
+                'coeffSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % linear covariance term for each rat
 cfli=gpcf_prod('cf',{cfl cc});
 % nonlinear part
-cfs=gpcf_sexp('selectedVariables',1,'lengthScale_prior',prior_t());
+cfs=gpcf_sexp('selectedVariables',1);
 % nonlinear covariance term for each rat
 cfsi=gpcf_prod('cf',{cfs cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfli cfs cfsi},...
-          'jitterSigma2',1e-9);
+          'jitterSigma2',1e-6);
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -166,7 +171,7 @@ drawnow
 %    we need to integrate over the parameteres
 % integrate over parameters
 disp('6) Non-linear hierarchical model 1 with IA')
-gps=gp_ia(gp,xn,yn);
+[gps,pth,th]=gp_ia(gp,xn,yn);
 % predict and plot
 Ef=gp_pred(gps,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -179,7 +184,7 @@ drawnow
 % 7) Nonlinear model with hierarchical intercept and curve
 %    Same as 5, but with no linear and product covariances
 disp('7) Non-linear hierarchical model 2 with MAP')
-cfc=gpcf_constant('constSigma2',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part with delta distance for ratid
@@ -189,7 +194,7 @@ cfs=gpcf_sexp('metric',metric_euclidean('components',{[1] [2]},...
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfs});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -215,17 +220,18 @@ drawnow
 
 % 9) With neuralnetwork covariance and integration over the parameters
 disp('9) Non-linear hierarchical model 3 with IA')
-cfc=gpcf_constant('constSigma2',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part with neuralnetwork covariance
-cfnn=gpcf_neuralnetwork('selectedVariables',1);
+cfnn=gpcf_neuralnetwork('selectedVariables',1,'biasSigma2_prior',prior_t(),...
+                        'weightSigma2_prior',prior_t());
 % nonlinear covariance term for each rat
 cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt);
+gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
 % integrate over parameters
 gps=gp_ia(gp,xn,yn);
 % predict and plot
@@ -276,7 +282,7 @@ ymn(missi,:)=[];
 xmn(missi,:)=[];
 
 % 10) neuralnetwork covariance, IA and missing data
-cfc=gpcf_constant('constSigma2',1);
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part with neuralnetwork covariance
