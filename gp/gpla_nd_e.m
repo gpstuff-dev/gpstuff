@@ -166,7 +166,7 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               % with mean functions, initialize to mean function values
               if ~isfield(gp,'meanf')
                 f = zeros(sum(nl),1);
-                if isfield(gp.lik, 'sigma2')
+                if isequal(gp.type, 'Inputdependentnoise')
                   Kf = gp_trcov(gp,x,gp.comp_cf{1});
                   f(1:n) = Kf*((Kf+gp.lik.sigma2.*eye(n))\y);
                 end
@@ -599,8 +599,6 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       end
                     end
                     dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
-%                     figure(1),plot(f), hold all
-%                     figure(2),plot(K*dlp), hold all
                   end
                   
                 otherwise

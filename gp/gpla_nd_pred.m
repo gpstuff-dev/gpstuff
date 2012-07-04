@@ -122,10 +122,11 @@ function [Ef, Covf, lpyt, Ey, Vary] = gpla_nd_pred(gp, x, y, varargin)
         % FULL
         % ============================================================
         [e, edata, eprior, f, L, a, W, p] = gpla_nd_e(gp_pak(gp), gp, x, y, 'z', z);
-        W=-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
         if isfield(gp.lik,'xtime')
           [Wdiag, Wmat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
           Wdiag=-Wdiag; Wmat=-Wmat;
+        else
+          W=-gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
         end
         
         ntest=size(xt,1);
