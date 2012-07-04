@@ -404,7 +404,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
         i=i+length(gpcf.lengthScale_sexp);
       end
       if ~isempty(gpcf.p.period)
-        i=i+1;
+        i=i+length(gpcf.lengthScale);
       end
       DKff=i;
       return
@@ -423,7 +423,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
     Cdm = gpcf_periodic_trcov(gpcf, x);
     
     ii1=0;
-    if ~isempty(gpcf.p.magnSigma2)
+    if ~isempty(gpcf.p.magnSigma2) && (~savememory || all(i1==1));
         ii1=1;
         DKff{ii1} = Cdm;
     end
@@ -443,7 +443,6 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
           return
         else
           i1=i1-1;
-          ii1=ii1-1;
         end
       end
         
@@ -474,7 +473,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
         end
       end
       if savememory
-        if length(DKff) ==2
+        if length(DKff) == 1
           DKff=DKff{1};
           return
         end
@@ -508,7 +507,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
         end
       end
       if savememory
-        if length(DKff) ==2
+        if length(DKff) == 1
           DKff=DKff{1};
           return
         end
@@ -545,14 +544,14 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
       
     end
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3 || isempty(x2)
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_periodic -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
     
     K = gpcf.fh.cov(gpcf, x, x2);
     ii1=0;
-    if ~isempty(gpcf.p.magnSigma2)
+    if ~isempty(gpcf.p.magnSigma2) && (~savememory || all(i1==1))
         ii1=1;
         DKff{ii1} = K;
     end
@@ -568,34 +567,46 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
       if ~savememory
         i1=1:m;
       else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
         i1=i1-1;
-        ii1=ii1-1;
       end
       % Evaluate help matrix for calculations of derivatives with respect to the lengthScale
-      if length(gpcf.lengthScale) == 1
-        % In the case of an isotropic PERIODIC
-        s = 1./gpcf.lengthScale.^2;
-        dist = 0; dist2 = 0;
-        for i=1:m
-          dist = dist + 2.*sin(pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).^2;                        
-        end
-        DK_l = 2.*s.*K.*dist;
-        
-        ii1=ii1+1;
-        DKff{ii1} = DK_l;
-      else
-        % In the case ARD is used
-        for i=1:m
-          s = 1./gpcf.lengthScale(i).^2;        % set the length
-          dist = 2.*sin(pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period);
-          DK_l = 2.*s.*K.*dist.^2;
+      if ~isempty(gpcf.p.lengthScale) && (~savememory || all(i1 <= length(gpcf.lengthScale)))
+        if length(gpcf.lengthScale) == 1
+          % In the case of an isotropic PERIODIC
+          s = 1./gpcf.lengthScale.^2;
+          dist = 0; dist2 = 0;
+          for i=1:m
+            dist = dist + 2.*sin(pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).^2;
+          end
+          DK_l = 2.*s.*K.*dist;
           
           ii1=ii1+1;
           DKff{ii1} = DK_l;
+        else
+          % In the case ARD is used
+          for i=i1
+            s = 1./gpcf.lengthScale(i).^2;        % set the length
+            dist = 2.*sin(pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period);
+            DK_l = 2.*s.*K.*dist.^2;
+            
+            ii1=ii1+1;
+            DKff{ii1} = DK_l;
+          end
         end
       end
+      if savememory
+        if length(DKff) == 1
+          DKff=DKff{1};
+          return
+        end
+        i1=i1-length(gpcf.lengthScale);
+      end
       
-      if gpcf.decay == 1
+      if gpcf.decay == 1 && (~savememory || all(i1 <= length(gpcf.lengthScale_sexp)))
         % Evaluate help matrix for calculations of derivatives with
         % respect to the lengthScale_sexp
         if length(gpcf.lengthScale_sexp) == 1
@@ -611,7 +622,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
           DKff{ii1} = DK_l;
         else
           % In the case ARD is used
-          for i=1:m
+          for i=i1
             s = 1./gpcf.lengthScale_sexp(i).^2;        % set the length
             dist = bsxfun(@minus,x(:,i),x2(:,i)');
             DK_l = s.*K.*dist.^2;
@@ -621,6 +632,13 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
           end
         end
       end
+      if savememory
+        if length(DKff) == 1
+          DKff=DKff{1};
+          return
+        end
+        i1=i1-length(gpcf.lengthScale_sexp);
+      end
       
       if ~isempty(gpcf.p.period)
         % Evaluate help matrix for calculations of derivatives
@@ -628,30 +646,26 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
         if length(gpcf.lengthScale) == 1
           % In the case of an isotropic PERIODIC
           s = repmat(1./gpcf.lengthScale.^2, 1, m);
-        else
-          s = 1./gpcf.lengthScale.^2;
-        end
-        dist = 0; dist2 = 0;
-        for i=1:m
-          dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x2(:,i)').*s(i);                        
-        end
-        DK_l = K.*dist;
-        
-        ii1=ii1+1;
-        DKff{ii1} = DK_l;
-        
-        % In the case ARD is used
-        for i=1:m
-          s = 1./gpcf.lengthScale(i).^2;        % set the length
-          dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x2(:,i)');
-          DK_l = s.*K.*dist;
+          dist = 0; dist2 = 0;
+          for i=1:m
+            dist = dist + 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x2(:,i)').*s(i);
+          end
+          DK_l = K.*dist;
           
           ii1=ii1+1;
           DKff{ii1} = DK_l;
+        else
+          % In the case ARD is used
+          for i=i1
+            s = 1./gpcf.lengthScale(i).^2;        % set the length
+            dist = 2.*pi./gp_period.*sin(2.*pi.*bsxfun(@minus,x(:,i),x2(:,i)')./gp_period).*bsxfun(@minus,x(:,i),x2(:,i)');
+            DK_l = s.*K.*dist;
+            
+            ii1=ii1+1;
+            DKff{ii1} = DK_l;
+          end
         end
-        
       end
-      
     end
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
     %           DKff{2...} = d mask(Kff,I) / d lengthScale etc.
@@ -661,7 +675,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
       error('Covariance function not compatible with metrics');
     else
         ii1=0;
-        if ~isempty(gpcf.p.magnSigma2)
+        if ~isempty(gpcf.p.magnSigma2) && (~savememory || all(i1==1))
             ii1=1;
             DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
         end
@@ -682,7 +696,7 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
     end
   end
   if savememory
-    DKff=DKff{2};
+    DKff=DKff{1};
   end
 end
 
