@@ -243,7 +243,7 @@ function lpg = gpcf_neuralnetwork_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask, i1)
 %GPCF_NEURALNETWORK_CFG  Evaluate gradient of covariance function
 %                        with respect to the parameters
 %
@@ -265,6 +265,14 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
 %    covariance matrix Kff = k(X,X2) with respect to th (cell
 %    array with matrix elements).
 %
+%    DKff = GPCF_NEURALNETWORK_CFG(GPCF,X,X2,[],i) takes a
+%    covariance function structure GPCF, a matrix X of input
+%    vectors and returns DKff, the gradients of covariance matrix
+%    Kff = k(X,X2) with respect to ith hyperparameter(matrix).
+%    5th input parameter can also be used without X2. If i = 0, 
+%    number of hyperparameters is returned. 
+%  
+%
 %  See also
 %    GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK,
 %    GPCF_NEURALNETWORK_LP, GP_G
@@ -280,6 +288,23 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
   
   [n, m] =size(x);
   
+  if nargin==5
+    if i1==0
+      if ~isempty(gpcf.p.biasSigma2)
+        i=1;
+      end
+      if ~isempty(gpcf.p.weightSigma2)
+        i=i+length(gpcf.weightSigma2);
+      end
+      DKff=i;
+      return
+    end
+    savememory=1;
+  else
+    savememory=0;
+    i1=1:m;
+  end
+  
   DKff = {};
   gprior = [];
   
@@ -289,7 +314,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
   % are transformed through log() and thus dK/dlog(p) = p * dK/dp
   
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     
     x_aug=[ones(size(x,1),1) x];
     
@@ -309,15 +334,23 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
     C_tmp=2/pi./sqrt(1-(S_nom./S_den).^2);
     % C(abs(C)<=eps) = 0;
     C_tmp = (C_tmp+C_tmp')./2;
+    ii1 = 0;    
     
-    bnom_g=2*ones(n);
-    bden_g=(0.5./S_den).*(bnom_g.*repmat(S_den_tmp',n,1)+repmat(S_den_tmp,1,n).*bnom_g);
-    bg=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
-
-    ii1 = 0;
-    if ~isempty(gpcf.p.biasSigma2)
-      ii1 = ii1+1;
-      DKff{ii1}=(bg+bg')/2;
+    if ~savememory || i1==1
+      bnom_g=2*ones(n);
+      bden_g=(0.5./S_den).*(bnom_g.*repmat(S_den_tmp',n,1)+repmat(S_den_tmp,1,n).*bnom_g);
+      bg=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+      
+      if ~isempty(gpcf.p.biasSigma2)
+        ii1 = ii1+1;
+        DKff{ii1}=(bg+bg')/2;
+      end
+      if savememory
+        DKff=DKff{ii1};
+        return
+      end
+    elseif savememory
+      i1=i1-1;
     end
     
     if ~isempty(gpcf.p.weightSigma2)
@@ -330,7 +363,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
         ii1 = ii1+1;
         DKff{ii1}=(wg+wg')/2;
       else
-        for d1=1:m
+        for d1=i1
           wnom_g=2*x(:,d1)*x(:,d1)';
           tmp_g=2*x(:,d1).^2;
           tmp=tmp_g*S_den_tmp';
@@ -344,7 +377,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
     end
     
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     
     if size(x,2) ~= size(x2,2)
       error('gpcf_neuralnetwork -> _ghyper: The number of columns in x and x2 has to be the same. ')
@@ -372,14 +405,22 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
     
     C_tmp=2/pi./sqrt(1-(S_nom./S_den).^2);
     %C(abs(C)<=eps) = 0;
-    
-    bnom_g=2*ones(n, n2);            
-    bden_g=(0.5./S_den).*(bnom_g.*repmat(S_den_tmp2',n,1)+repmat(S_den_tmp1,1,n2).*bnom_g);
-    
     ii1 = 0;
-    if ~isempty(gpcf.p.biasSigma2)
-      ii1 = ii1 + 1;
-      DKff{ii1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+
+    if ~savememory || i1==1
+      bnom_g=2*ones(n, n2);
+      bden_g=(0.5./S_den).*(bnom_g.*repmat(S_den_tmp2',n,1)+repmat(S_den_tmp1,1,n2).*bnom_g);
+      
+      if ~isempty(gpcf.p.biasSigma2)
+        ii1 = ii1 + 1;
+        DKff{ii1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+      end
+      if savememory
+        DKff=DKff{ii1};
+        return
+      end
+    elseif savememory
+      i1=i1-1;
     end
     
     if ~isempty(gpcf.p.weightSigma2)
@@ -392,7 +433,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
         ii1 = ii1 + 1;
         DKff{ii1}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
       else
-        for d1=1:m
+        for d1=i1
           wnom_g=2*x(:,d1)*x2(:,d1)';
           tmp_g1=2*x(:,d1).^2;
           tmp_g2=2*x2(:,d1).^2;
@@ -406,7 +447,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
 
     % Evaluate: DKff{1}    = d mask(Kff,I) / d biasSigma2
     %           DKff{2...} = d mask(Kff,I) / d weightSigma2
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
     
     x_aug=[ones(size(x,1),1) x];
     
@@ -429,9 +470,16 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
     bden_g=(0.5./S_den).*(2*bnom_g.*S_den);
     
     ii1 = 0;
-    if ~isempty(gpcf.p.biasSigma2)
+    if ~isempty(gpcf.p.biasSigma2) && (~savememory || all(i1==1))
       ii1 = ii1 + 1;
       DKff{ii1}=gpcf.biasSigma2*C_tmp.*(bnom_g.*S_den-bden_g.*S_nom)./S_den2;
+    end
+    if savememory
+      if i1==1
+        DKff=DKff{1};
+        return
+      end
+      i1=i1-1;
     end
     
     if ~isempty(gpcf.p.weightSigma2)
@@ -442,7 +490,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
         ii1 = ii1+1;
         DKff{ii1}=s(1)*C_tmp.*(wnom_g.*S_den-wden_g.*S_nom)./S_den2;
       else
-        for d1=1:m
+        for d1=i1
           wnom_g=2*x(:,d1).^2;
           wden_g=0.5./S_den.*(2*wnom_g.*S_den);
           
@@ -452,10 +500,14 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask)
       end
     end
   end
+  if savememory
+    DKff=DKff{1};
+  end
+  
 end
 
 
-function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2)
+function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2, i1)
 %GPCF_NEURALNETWORK_GINPUT  Evaluate gradient of covariance function with 
 %                           respect to x.
 %
@@ -471,6 +523,11 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2)
 %    Kff = k(X,X2) with respect to X (cell array with matrix
 %    elements).
 %
+%    DKff = GPCF_NEURALNETWORK_GINPUT(GPCF, X, X2, i) takes a
+%    covariance function structure GPCF, a matrix X of input
+%    vectors and returns DKff, the gradients of covariance matrix
+%    Kff = k(X,X2) with respect to ith covariate in  X (matrix).
+%
 %  See also
 %    GPCF_NEURALNETWORK_PAK, GPCF_NEURALNETWORK_UNPAK,
 %    GPCF_NEURALNETWORK_LP, GP_G
@@ -484,7 +541,16 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2)
   
   [n, m] =size(x);
   
-  if nargin == 2
+  if nargin==4
+    if i1==0
+      DKff=m;
+      return
+    end
+  else
+    i1=1:m;
+  end
+  
+  if nargin == 2 || isempty(x2) 
     
     if length(gpcf.weightSigma2) == 1
       % In the case of an isotropic NEURALNETWORK
@@ -506,7 +572,7 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2)
     C_tmp = (C_tmp+C_tmp')./2;
     
     ii1=0;
-    for d1=1:m
+    for d1=i1
       for j=1:n
         
         DK = zeros(n);
@@ -525,7 +591,7 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2)
       end
     end
     
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     
     if length(gpcf.weightSigma2) == 1
       % In the case of an isotropic NEURALNETWORK
@@ -551,7 +617,7 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2)
     % C(abs(C)<=eps) = 0;
     
     ii1 = 0;
-    for d1=1:m
+    for d1=i1
       for j = 1:n
         
         DK = zeros(n, n2);

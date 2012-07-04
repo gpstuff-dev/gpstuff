@@ -96,7 +96,7 @@ switch lower(loss)
       optimf=@fmincon;
     end
 end
-opt=optimset(optdefault,opt);
+opt=setOpt(optdefault,opt);
 w=gp_pak(gp);
 if isequal(lower(loss),'e') || (isequal(lower(loss),'loo')) && (isfield(gp.lik.fh,'trcov') || isequal(gp.latent_method, 'EP'))
   switch nargout
@@ -121,7 +121,7 @@ if isequal(lower(loss),'e') || (isequal(lower(loss),'loo')) && (isfield(gp.lik.f
   end
 else
   lb=repmat(-8,size(w));
-  ub=repmat(4,size(w));
+  ub=repmat(10,size(w));
   switch nargout
     case 6
       [w,fval,exitflag,output,grad,hessian] = optimf(fh_eg, w, [], [], [], [], lb, ub, [], opt);
@@ -144,3 +144,19 @@ else
   end
 end
 gp=gp_unpak(gp,w);
+end
+
+function opt=setOpt(optdefault, opt)
+  % Set default options
+  opttmp=optimset(optdefault,opt);
+  
+  % Set some additional options for @fminscg
+  if isfield(opt,'lambda')
+    opttmp.lambda=opt.lambda;
+  end
+  if isfield(opt,'lambdalim')
+    opttmp.lambdalim=opt.lambdalim;
+  end
+  opt=opttmp;
+end
+

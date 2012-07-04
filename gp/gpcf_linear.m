@@ -198,7 +198,7 @@ function lpg = gpcf_linear_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_linear_cfg(gpcf, x, x2, mask, ii1)
 %GPCF_LINEAR_CFG  Evaluate gradient of covariance function
 %                 with respect to the parameters
 %
@@ -221,13 +221,32 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
 %    elements). This is needed for example in FIC sparse
 %    approximation.
 %
+%    DKff = GPCF_LINEAR_CFG(GPCF,X,X2,MASK,i) takes a covariance 
+%    function structure GPCF, a matrix X of input vectors and 
+%    returns DKff, the gradient of covariance matrix Kff = 
+%    k(X,X2), or k(X,X) if X2 is empty with respect to ith 
+%    hyperparameter. 
+%
 %  See also
 %   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G
 
   [n, m] =size(x);
 
-  i1=0;
+  i1=1;
   DKff = {};
+  
+  if nargin==5
+    savememory=1;
+    if ii1==0
+      DKff=0;
+      if ~isempty(gpcf.p.coeffSigma2)
+        DKff=length(gpcf.coeffSigma2);
+      end
+      return
+    end
+  else
+    savememory=0;
+  end
   
   % Evaluate: DKff{1} = d Kff / d coeffSigma2
   % NOTE! Here we have already taken into account that the parameters are transformed
@@ -235,15 +254,18 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
 
   
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     
     if isfield(gpcf, 'selectedVariables')
       if ~isempty(gpcf.p.coeffSigma2)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x(:,gpcf.selectedVariables)*(x(:,gpcf.selectedVariables)');
         else
-          for i1=1:length(gpcf.coeffSigma2)
-            DD = gpcf.coeffSigma2(i1)*x(:,gpcf.selectedVariables(i1))*(x(:,gpcf.selectedVariables(i))');
+          if ~savememory
+            ii1=1:length(gpcf.coeffSigma2);
+          end
+          for i1=ii1
+            DD = gpcf.coeffSigma2(i1)*x(:,gpcf.selectedVariables(i1))*(x(:,gpcf.selectedVariables(i1))');
             DD(abs(DD)<=eps) = 0;
             DKff{i1}= (DD+DD')./2;
           end
@@ -259,8 +281,11 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
           else
             epsi=eps;
           end
-          DKff=cell(m,1);
-          for i1=1:m
+          if ~savememory
+            ii1=1:length(gpcf.coeffSigma2);
+          end
+          DKff=cell(length(ii1),1);
+          for i1=ii1
             DD = gpcf.coeffSigma2(i1)*x(:,i1)*(x(:,i1)');
             DD(abs(DD)<=epsi) = 0;
             DKff{i1}= (DD+DD')./2;
@@ -271,7 +296,7 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
     
     
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_linear -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -281,7 +306,10 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x(:,gpcf.selectedVariables)*(x2(:,gpcf.selectedVariables)');
         else
-          for i1=1:length(gpcf.coeffSigma2)
+          if ~savememory
+            ii1=1:length(gpcf.coeffSigma2);
+          end
+          for i1=ii1
             DKff{i1}=gpcf.coeffSigma2(i1)*x(:,gpcf.selectedVariables(i1))*(x2(:,gpcf.selectedVariables(i1))');
           end
         end
@@ -291,7 +319,10 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*x*(x2');
         else
-          for i1=1:m
+          if ~savememory
+            ii1=1:m;
+          end            
+          for i1=ii1
             DKff{i1}=gpcf.coeffSigma2(i1)*x(:,i1)*(x2(:,i1)');
           end
         end
@@ -299,15 +330,18 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
     end
     % Evaluate: DKff{1}    = d mask(Kff,I) / d coeffSigma2
     %           DKff{2...} = d mask(Kff,I) / d coeffSigma2
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
     
     if isfield(gpcf, 'selectedVariables')
       if ~isempty(gpcf.p.coeffSigma2)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*sum(x(:,gpcf.selectedVariables).^2,2); % d mask(Kff,I) / d coeffSigma2
         else
-          for i1=1:length(gpcf.coeffSigma2)
-            DKff{i1}=gpcf.coeffSigma2(i1)*(x(:,gpcf.selectedVariables(i)).^2); % d mask(Kff,I) / d coeffSigma2
+          if ~savememory
+            ii1=1:length(gpcf.coeffSigma2);
+          end
+          for i1=ii1
+            DKff{i1}=gpcf.coeffSigma2(i1)*(x(:,gpcf.selectedVariables(i1)).^2); % d mask(Kff,I) / d coeffSigma2
           end
         end
       end
@@ -316,17 +350,23 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask)
         if length(gpcf.coeffSigma2) == 1
           DKff{1}=gpcf.coeffSigma2*sum(x.^2,2); % d mask(Kff,I) / d coeffSigma2
         else
-          for i1=1:m
+          if ~savememory
+            ii1=1:m;
+          end
+          for i1=ii1
             DKff{i1}=gpcf.coeffSigma2(i1)*(x(:,i1).^2); % d mask(Kff,I) / d coeffSigma2
           end
         end
       end
     end
   end
+  if savememory
+    DKff=DKff{i1};
+  end
 end
 
 
-function DKff = gpcf_linear_ginput(gpcf, x, x2)
+function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
 %GPCF_LINEAR_GINPUT  Evaluate gradient of covariance function with 
 %                    respect to x.
 %
@@ -341,11 +381,30 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2)
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %
+%    DKff = GPCF_LINEAR_GINPUT(GPCF, X, X2, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2) with respect to ith covariate in X (matrix).
+%
 %  See also
 %   GPCF_LINEAR_PAK, GPCF_LINEAR_UNPAK, GPCF_LINEAR_LP, GP_G        
   [n, m] =size(x);
   
-  if nargin == 2
+  if nargin==4
+    savememory=1;
+    if i1==0
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
+      return
+    end
+  else
+    savememory=0;
+  end
+  
+  if nargin == 2 || isempty(x2)
     
     %K = feval(gpcf.fh.trcov, gpcf, x);
     
@@ -358,7 +417,10 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2)
     
     ii1 = 0;
     if isfield(gpcf, 'selectedVariables')
-      for i=1:length(gpcf.selectedVariables)
+      if ~savememory
+        i1=1:length(gpcf.selectedVariables);
+      end
+      for i=i1
         for j = 1:n
           
           DK = zeros(n);
@@ -371,7 +433,10 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2)
         end
       end
     else
-      for i=1:m
+      if ~savememory
+        i1=1:m;
+      end
+      for i=i1
         for j = 1:n
           
           DK = zeros(n);
@@ -387,7 +452,7 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2)
     
     
     
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     %K = feval(gpcf.fh.cov, gpcf, x, x2);
     
     if length(gpcf.coeffSigma2) == 1
@@ -399,7 +464,10 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2)
     
     ii1 = 0;
     if isfield(gpcf, 'selectedVariables')
-      for i=1:length(gpcf.selectedVariables)
+      if ~savememory
+        i1=1:length(gpcf.selectedVariables);
+      end
+      for i=i1
         for j = 1:n
           
           DK = zeros(n, size(x2,1));
@@ -410,7 +478,10 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2)
         end
       end
     else
-      for i=1:m
+      if ~savememory
+        i1=1:m;
+      end
+      for i=i1
         for j = 1:n
           
           DK = zeros(n, size(x2,1));

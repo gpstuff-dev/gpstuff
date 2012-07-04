@@ -320,7 +320,7 @@ function lpg = gpcf_sexp_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask, i1)
 %GPCF_SEXP_CFG  Evaluate gradient of covariance function
 %               with respect to the parameters
 %
@@ -343,11 +343,34 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
 %    elements). This is needed for example in FIC sparse
 %    approximation.
 %
+%    DKff = GPCF_SEXP_CFG(GPCF, X, X2, MASK, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    hyperparameter.
+%
 %  See also
 %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
 
   gpp=gpcf.p;
   DKff = {};
+  
+  if nargin == 5
+    savememory=1;
+    if i1==0
+      i=0;
+      if ~isempty(gpcf.p.magnSigma2)
+        i=i+1;
+      end
+      if ~isempty(gpcf.p.lengthScale)
+        i=i+length(gpcf.lengthScale);
+      end
+      DKff=i;
+      return
+    end
+  else
+    savememory=0;
+  end
 
   % Evaluate: DKff{1} = d Kff / d magnSigma2
   %           DKff{2} = d Kff / d lengthScale
@@ -355,7 +378,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
   % are transformed through log() and thus dK/dlog(p) = p * dK/dp
 
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     Cdm = gpcf_sexp_trcov(gpcf, x);
     ii1=0;
 
@@ -376,6 +399,16 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
         x = x(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
+      if ~savememory
+        i1=1:m;
+      else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
+        i1=i1-1;
+        ii1=ii1-1;
+      end
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -392,7 +425,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
           DKff{ii1} = D;
         else
           % In the case ARD is used
-          for i=1:m
+          for i=i1
             s = 2./gpcf.lengthScale(i).^2;
             dist = bsxfun(@minus,x(:,i),x(:,i)');
             D = Cdm.*s.*dist.^2./2;
@@ -404,7 +437,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
       end
     end
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_sexp -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -430,6 +463,16 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
         x2 = x2(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
+      if ~savememory
+        i1=1:m;
+      else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
+        i1=i1-1;
+        ii1=ii1-1;
+      end
       if ~isempty(gpcf.p.lengthScale)
         % Evaluate help matrix for calculations of derivatives with respect
         % to the lengthScale
@@ -446,7 +489,7 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
           DKff{ii1} = DK_l;
         else
           % In the case ARD is used
-          for i=1:m
+          for i=i1
             s = 1./gpcf.lengthScale(i).^2;        % set the length
             dist = bsxfun(@minus,x(:,i),x2(:,i)');
             DK_l = s.*K.*dist.^2;
@@ -459,10 +502,10 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
     end
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
     %           DKff{2...} = d mask(Kff,I) / d lengthScale
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
     ii1=0;
     [n, m] =size(x);
-    if ~isempty(gpcf.p.magnSigma2)
+    if ~isempty(gpcf.p.magnSigma2) && (~savememory || all(i1==1))
       ii1 = ii1+1;
       DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
     end
@@ -482,6 +525,9 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask)
         end
       end
     end
+  end
+  if savememory
+    DKff=DKff{1};
   end
 
 end
@@ -789,7 +835,7 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
 end
 
 
-function DKff = gpcf_sexp_ginput(gpcf, x, x2)
+function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
 %GPCF_SEXP_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x.
 %
@@ -809,7 +855,20 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2)
   
   [n, m] =size(x);
   ii1 = 0;
-  if nargin == 2
+  if nargin<4
+    i1=1:m;
+  else
+    if i1==0
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
+      return
+    end
+  end
+  
+  if nargin == 2 || isempty(x2)
     K = gpcf.fh.trcov(gpcf, x);
     if isfield(gpcf,'metric')
       dist = gpcf.metric.fh.dist(gpcf.metric, x);
@@ -825,7 +884,7 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2)
       else
         s = 1./gpcf.lengthScale.^2;
       end
-      for i=1:m
+      for i=i1
         for j = 1:n
           DK = zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x(:,i)');
@@ -839,7 +898,7 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2)
       end
     end
     
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     K = gpcf.fh.cov(gpcf, x, x2);
 
     if isfield(gpcf,'metric')
@@ -857,7 +916,7 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2)
         s = 1./gpcf.lengthScale.^2;
       end
       
-      for i=1:m
+      for i=i1
         for j = 1:n
           DK= zeros(size(K));
           DK(j,:) = -s(i).*bsxfun(@minus,x(j,i),x2(:,i)');
@@ -983,7 +1042,7 @@ function DKff = gpcf_sexp_ginput3(gpcf, x, x2)
   end
 end
 
-function DKff = gpcf_sexp_ginput4(gpcf, x, x2)
+function DKff = gpcf_sexp_ginput4(gpcf, x, x2, i1)
 %GPCF_SEXP_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x. Simplified and faster version of
 %                  sexp_ginput, returns full matrices.
@@ -1006,7 +1065,7 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2)
   
   [n, m] =size(x);
   ii1 = 0;
-  if nargin==2
+  if nargin==2 || isempty(x2)
     flag=1;
     K = gpcf.fh.trcov(gpcf, x); 
   else
@@ -1016,7 +1075,10 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2)
       error('ginput4 fuktio saa vaaran inputin')
     end
   end
-  
+  if nargin<4
+    i1=1:m;
+  end
+    
   if isfield(gpcf,'metric')
     error('no metric implemented')
   else
@@ -1026,7 +1088,7 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2)
     else
       s = 1./gpcf.lengthScale.^2;
     end
-    for i=1:m
+    for i=i1
       DK = zeros(size(K));
       if flag==1
         DK = -s(i).*bsxfun(@minus,x(:,i),x(:,i)');

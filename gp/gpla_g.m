@@ -46,6 +46,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
   g = [];
   gdata = [];
   gprior = [];
+  
+  if isfield(gp, 'savememory') && gp.savememory
+    savememory=1;
+  else
+    savememory=0;
+  end
 
   % First Evaluate the data contribution to the error
   switch gp.type
@@ -107,23 +113,35 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           end
           
           gpcf = gp.cf{i};
-          DKff = gpcf.fh.cfg(gpcf, x);
+          if savememory
+            % If savememory option is used, just get the number of
+            % hyperparameters and calculate gradients later
+            np=gpcf.fh.cfg(gpcf,[],[],[],0);
+          else
+            DKffc = gpcf.fh.cfg(gpcf, x);
+            np=length(DKffc);
+          end
           gprior_cf = -gpcf.fh.lpg(gpcf);
 
           g1 = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
-          for i2 = 1:length(DKff)
+          for i2 = 1:np
+            if savememory
+              DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+            else
+              DKff=DKffc{i2};
+            end
             i1 = i1+1;
             if ~isfield(gp,'meanf')
-                s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(sum(R.*DKff{i2}));
+                s1 = 0.5 * a'*DKff*a - 0.5*sum(sum(R.*DKff));
             else
-                s1 = 0.5 * (a-K\(H'*b_m))'*DKff{i2}*(a-K\(H'*b_m)) - 0.5*sum(sum(R.*DKff{i2}));
+                s1 = 0.5 * (a-K\(H'*b_m))'*DKff*(a-K\(H'*b_m)) - 0.5*sum(sum(R.*DKff));
             end
-            b = DKff{i2} * g1;
+            b = DKff * g1;
             if issparse(K)
               s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
             else
               s3 = b - K*(R*b);
-              b = DKff{i2} * g1;
+              b = DKff * g1;
               %s3 = (1./W).*(R*b);
             end
             gdata(i1) = -(s1 + s2'*s3);
@@ -131,8 +149,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           end
           
           % Set the gradients of hyperparameter
-          if length(gprior_cf) > length(DKff)
-            for i2=length(DKff)+1:length(gprior_cf)
+          if length(gprior_cf) > np
+            for i2=np+1:length(gprior_cf)
               i1 = i1+1;
               gdata(i1) = 0;
               gprior(i1) = gprior_cf(i2);
@@ -231,25 +249,40 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          DKff = gpcf.fh.cfg(gpcf, x, [], 1);
-          DKuu = gpcf.fh.cfg(gpcf, u); 
-          DKuf = gpcf.fh.cfg(gpcf, u, x);
+          if savememory
+            % If savememory option is used, just get the number of
+            % hyperparameters and calculate gradients later
+            np=gpcf.fh.cfg(gpcf,[],[],[],0);
+          else
+            DKffc = gpcf.fh.cfg(gpcf, x, [], 1);
+            DKuuc = gpcf.fh.cfg(gpcf, u);
+            DKufc = gpcf.fh.cfg(gpcf, u, x);
+            np=length(DKuuc);
+          end
           gprior_cf = -gpcf.fh.lpg(gpcf);
           
-          for i2 = 1:length(DKuu)
+          for i2 = 1:np
             i1 = i1+1;
-            
+            if savememory
+              DKff=gpcf.fh.cfg(gpcf,x,[],1,i2);
+              DKuu=gpcf.fh.cfg(gpcf,u,[],[],i2);
+              DKuf=gpcf.fh.cfg(gpcf,u,x,[],i2);
+            else
+              DKff=DKffc{i2};
+              DKuu=DKuuc{i2};
+              DKuf=DKufc{i2};
+            end
             % 0.5* a'*dK*a, where a = K\f
-            KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-            gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + (a'.*DKff{i2}')*a...
-                               - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
+            KfuiKuuKuu = iKuuKuf'*DKuu;
+            gdata(i1) = -0.5.*((2.*a'*DKuf'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + (a'.*DKff')*a...
+                               - (2.*a'.*sum(DKuf'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
             
             % trace( inv(inv(W) + K) * dQ) )
-            gdata(i1) = gdata(i1) - 0.5.*sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf)));
-            gdata(i1) = gdata(i1) + 0.5.*sum(DKff{i2}.*iLa2W - LL.*DKff{i2});
-            gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+            gdata(i1) = gdata(i1) - 0.5.*sum(sum(L2'.*(2.*L2'*DKuf'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf)));
+            gdata(i1) = gdata(i1) + 0.5.*sum(DKff.*iLa2W - LL.*DKff);
+            gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
             
-            b = (2*DKuf{i2}' - KfuiKuuKuu)*(iKuuKuf*b3) + DKff{i2}.*b3 - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+            b = (2*DKuf' - KfuiKuuKuu)*(iKuuKuf*b3) + DKff.*b3 - sum((2.*DKuf'- KfuiKuuKuu).*iKuuKuf',2).*b3;
             bb = sqrtW.*(Lah.\(sqrtW.*b)) - L2*(L2'*b);
             s3 = b - (La1.*bb + B'*(B*bb));
             gdata(i1) = gdata(i1) - s2'*s3;
@@ -258,8 +291,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           end
           
           % Set the gradients of hyperparameter
-          if length(gprior_cf) > length(DKff)
-            for i2=length(DKff)+1:length(gprior_cf)
+          if length(gprior_cf) > np
+            for i2=np+1:length(gprior_cf)
               i1 = i1+1;
               gdata(i1) = 0;
               gprior(i1) = gprior_cf(i2);
@@ -329,27 +362,40 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             i1=st;
             
             gpcf = gp.cf{i};
-            DKuu = gpcf.fh.ginput(gpcf, u);
-            DKuf = gpcf.fh.ginput(gpcf, u, x);
+            if savememory
+              % If savememory option is used, just get the number of
+              % covariates in X and calculate gradients later
+              np=gpcf.fh.ginput(gpcf,u,[],0);
+            else
+              np=1;
+              DKuu = gpcf.fh.ginput(gpcf, u);
+              DKuf = gpcf.fh.ginput(gpcf, u, x);
+            end
             
-            for i2 = 1:length(DKuu)
-              i1 = i1+1;
+            for i3 = 1:np
+              if savememory
+                DKuu=gpcf.fh.ginput(gpcf,u,[],i3);
+                DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
+              end
+              for i2 = 1:length(DKuu)
+                i1 = i1+1;
               
-              % 0.5* a'*dK*a, where a = K\f
-              KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-              gdata(i1) = gdata(i1) -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + ...
+                % 0.5* a'*dK*a, where a = K\f
+                KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                gdata(i1) = gdata(i1) -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + ...
                                            - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
               
-              % trace( inv(inv(W) + K) * dQ) )
-              gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
-              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                % trace( inv(inv(W) + K) * dQ) )
+                gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
               
               
-              % b2*dK*b3
-              b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3)  - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
-              bb = (iLa2W.*b - L2*(L2'*b));
-              s3 = b - (La1.*bb + B'*(B*bb));
-              gdata(i1) = gdata(i1) - s2'*s3;
+                % b2*dK*b3
+                b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3)  - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+                bb = (iLa2W.*b - L2*(L2'*b));
+                s3 = b - (La1.*bb + B'*(B*bb));
+                gdata(i1) = gdata(i1) - s2'*s3;
+              end
             end
           end
         end
@@ -427,33 +473,52 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           % Get the gradients of the covariance matrices 
           % and gprior from gpcf_* structures
           gpcf = gp.cf{i};
-          DKuu = gpcf.fh.cfg(gpcf, u);
-          DKuf = gpcf.fh.cfg(gpcf, u, x); 
-          for kk = 1:length(ind)
-            DKff{kk} = gpcf.fh.cfg(gpcf, x(ind{kk},:));                 
+          
+          if savememory
+            % If savememory option is used, just get the number of
+            % hyperparameters and calculate gradients later
+            np=gpcf.fh.cfg(gpcf,[],[],[],0);
+          else
+            DKuuc = gpcf.fh.cfg(gpcf, u);
+            DKufc = gpcf.fh.cfg(gpcf, u, x);
+            for kk = 1:length(ind)
+              DKffc{kk} = gpcf.fh.cfg(gpcf, x(ind{kk},:));
+            end
+            np=length(DKuuc);
           end
           gprior_cf = -gpcf.fh.lpg(gpcf);
           
-          for i2 = 1:length(DKuu)
+          for i2 = 1:np
             i1 = i1+1;
-            
-            KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-            gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) );
-            gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+            if savememory
+              DKuu=gpcf.fh.cfg(gpcf,u,[],[],i2);
+              DKuf=gpcf.fh.cfg(gpcf,u,x,[],i2);
+            else
+              DKuu=DKuuc{i2};
+              DKuf=DKufc{i2};
+            end
+            KfuiKuuKuu = iKuuKuf'*DKuu;
+            gdata(i1) = -0.5.*((2.*a'*DKuf'-(a'*KfuiKuuKuu))*(iKuuKuf*a) );
+            gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
 
-            b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3);
+            b = (2*DKuf'-KfuiKuuKuu)*(iKuuKuf*b3);
             for kk=1:length(ind)
-              gdata(i1) = gdata(i1) -0.5.*(a(ind{kk})'*DKff{kk}{i2}*a(ind{kk})...
-                                           - (2.*a(ind{kk})'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*a(ind{kk})...
+              if savememory
+                DKff=gpcf.fh.cfg(gpcf, x(ind{kk},:),[],[],i2);
+              else
+                DKff=DKffc{kk}{i2};
+              end
+              gdata(i1) = gdata(i1) -0.5.*(a(ind{kk})'*DKff*a(ind{kk})...
+                                           - (2.*a(ind{kk})'*DKuf(:,ind{kk})'*iKuuKuf(:,ind{kk})*a(ind{kk})...
                                               -a(ind{kk})'*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*a(ind{kk})) );
               
               % trace( inv(inv(W) + K) * dQ) )                        
-              gdata(i1) = gdata(i1) + 0.5.*(sum(sum(iLa2W{kk}.*DKff{kk}{i2})) - sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKff{kk}{i2}))));
-              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
+              gdata(i1) = gdata(i1) + 0.5.*(sum(sum(iLa2W{kk}.*DKff)) - sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKff))));
+              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKuf(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                                             sum(sum(L2(ind{kk},:)'.*((L2(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
               
-              b(ind{kk}) = b(ind{kk}) + DKff{kk}{i2}*b3(ind{kk})...
-                  - (2.*DKuf{i2}(:,ind{kk})'- KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})*b3(ind{kk});
+              b(ind{kk}) = b(ind{kk}) + DKff*b3(ind{kk})...
+                  - (2.*DKuf(:,ind{kk})'- KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})*b3(ind{kk});
               bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
             end
             
@@ -469,8 +534,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           end
           
           % Set the gradients of hyperparameter
-          if length(gprior_cf) > length(DKuu)
-            for i2=length(DKuu)+1:length(gprior_cf)
+          if length(gprior_cf) > np
+            for i2=np+1:length(gprior_cf)
               i1 = i1+1;
               gdata(i1) = 0;
               gprior(i1) = gprior_cf(i2);
@@ -532,9 +597,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.g(gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.g(gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -543,38 +608,51 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           for i=1:ncf            
             i1=st;
             gpcf = gp.cf{i};
-            DKuu = gpcf.fh.ginput(gpcf, u);
-            DKuf = gpcf.fh.ginput(gpcf, u, x);
+            if savememory
+              % If savememory option is used, just get the number of
+              % covariates in X and calculate gradients later
+              np=gpcf.fh.ginput(gpcf,u,[],0);
+            else
+              DKuu = gpcf.fh.ginput(gpcf, u);
+              DKuf = gpcf.fh.ginput(gpcf, u, x);
+              np=1;
+            end
             
-            for i2 = 1:length(DKuu)
-              i1 = i1+1;
+            for i3 = 1:np
+              if savememory
+                DKuu=gpcf.fh.ginput(gpcf,u,[],i3);
+                DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
+              end
+              for i2 = 1:length(DKuu)
+                i1 = i1+1;
               
               
-              KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-              gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) );
-              gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) );
+                gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
               
-              b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3);
-              for kk=1:length(ind)
-                gdata(i1) = gdata(i1) -0.5.*(- (2.*a(ind{kk})'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*a(ind{kk})...
+                b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3);
+                for kk=1:length(ind)
+                  gdata(i1) = gdata(i1) -0.5.*(- (2.*a(ind{kk})'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*a(ind{kk})...
                                                 -a(ind{kk})'*KfuiKuuKuu(ind{kk},:)*iKuuKuf(:,ind{kk})*a(ind{kk})) );
                 
-                % trace( inv(inv(W) + K) * dQ) )                        
-                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
+                  % trace( inv(inv(W) + K) * dQ) )                         
+                  gdata(i1) = gdata(i1) + 0.5.*(2.*sum(sum(L2(ind{kk},:)'.*(L2(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                                               sum(sum(L2(ind{kk},:)'.*((L2(ind{kk},:)'*KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})))));
                 
-                b(ind{kk}) = b(ind{kk}) + ...
+                  b(ind{kk}) = b(ind{kk}) + ...
                     - (2.*DKuf{i2}(:,ind{kk})'- KfuiKuuKuu(ind{kk},:))*iKuuKuf(:,ind{kk})*b3(ind{kk});
-                bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
-              end
+                  bbt(ind{kk},:) = iLa2W{kk}*b(ind{kk});
+                end
               
-              % b2*dK*b3
-              bb = (bbt - L2*(L2'*b));
-              for kk=1:length(ind)
-                s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
+                % b2*dK*b3
+                bb = (bbt - L2*(L2'*b));
+                for kk=1:length(ind)
+                  s3t(ind{kk},:) = La1{kk}*bb(ind{kk});
+                end
+                s3 = b - (s3t + B'*(B*bb));
+                gdata(i1) = gdata(i1) - s2'*s3;
               end
-              s3 = b - (s3t + B'*(B*bb));
-              gdata(i1) = gdata(i1) - s2'*s3;
             end
           end
         end
@@ -684,29 +762,44 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           if ~isfield(gpcf,'cs')
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            DKff = gpcf.fh.cfg(gpcf, x, [], 1);
-            DKuu = gpcf.fh.cfg(gpcf, u); 
-            DKuf = gpcf.fh.cfg(gpcf, u, x); 
+            if savememory
+              % If savememory option is used, just get the number of
+              % hyperparameters and calculate gradients later
+              np=gpcf.fh.cfg(gpcf,[],[],[],0);
+            else
+              DKffc = gpcf.fh.cfg(gpcf, x, [], 1);
+              DKuuc = gpcf.fh.cfg(gpcf, u);
+              DKufc = gpcf.fh.cfg(gpcf, u, x);
+              np=length(DKuuc);
+            end
             gprior_cf = -gpcf.fh.lpg(gpcf);
             
-            for i2 = 1:length(DKuu)
+            for i2 = 1:np
               i1 = i1+1;
-              
+              if savememory
+                DKff=gpcf.fh.cfg(gpcf,x,[],1,i2);
+                DKuu=gpcf.fh.cfg(gpcf,u,[],[],i2);
+                DKuf=gpcf.fh.cfg(gpcf,u,x,[],i2);
+              else
+                DKff=DKffc{i2};
+                DKuu=DKuuc{i2};
+                DKuf=DKufc{i2};
+              end
               % 0.5* a'*dK*a, where a = K\f
-              KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-              gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + (a'.*DKff{i2}')*a...
-                                 - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
+              KfuiKuuKuu = iKuuKuf'*DKuu;
+              gdata(i1) = -0.5.*((2.*a'*DKuf'-(a'*KfuiKuuKuu))*(iKuuKuf*a) + (a'.*DKff')*a...
+                                 - (2.*a'.*sum(DKuf'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
               
               % trace( inv(inv(W) + K) * dQ) )
-              gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
-              gdata(i1) = gdata(i1) + 0.5.*(sum(DKff{i2}.*dsiLa2.*W - LL.*DKff{i2}));
-              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+              gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+              gdata(i1) = gdata(i1) + 0.5.*(sum(DKff.*dsiLa2.*W - LL.*DKff));
+              gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
               
-              gdata(i1) = gdata(i1) + 0.5.*sum(sum(sqrtW*ldlsolve(LD2,repmat(sW,1,m).*(2.*DKuf{i2}' - KfuiKuuKuu)).*iKuuKuf',2));
-              gdata(i1) = gdata(i1) - 0.5.*sum(sW.*dsiLa2.*sW.*sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2) ); 
+              gdata(i1) = gdata(i1) + 0.5.*sum(sum(sqrtW*ldlsolve(LD2,repmat(sW,1,m).*(2.*DKuf' - KfuiKuuKuu)).*iKuuKuf',2));
+              gdata(i1) = gdata(i1) - 0.5.*sum(sW.*dsiLa2.*sW.*sum((2.*DKuf' - KfuiKuuKuu).*iKuuKuf',2) ); 
               
               % b2*dK*b3
-              b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3) + DKff{i2}.*b3 - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+              b = (2*DKuf'-KfuiKuuKuu)*(iKuuKuf*b3) + DKff.*b3 - sum((2.*DKuf'- KfuiKuuKuu).*iKuuKuf',2).*b3;
               bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
               s3 = b - (La1*bb + B'*(B*bb));
               gdata(i1) = gdata(i1) - s2'*s3;
@@ -718,15 +811,26 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           else
             % Get the gradients of the covariance matrices 
             % and gprior from gpcf_* structures
-            DKff = gpcf.fh.cfg(gpcf, x);
+            if savememory
+              % If savememory option is used, just get the number of
+              % hyperparameters and calculate gradients later
+              np=gpcf.fh.cfg(gpcf,[],[],[],0);
+            else
+              DKffc = gpcf.fh.cfg(gpcf, x);
+            end
             gprior_cf = -gpcf.fh.lpg(gpcf);
             
-            for i2 = 1:length(DKff)
+            for i2 = 1:np
               i1 = i1+1;
+              if savememory
+                DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+              else
+                DKff=DKffc{i2};
+              end
               
               % Evaluate the gradient with respect to magnSigma
-              gdata(i1) = 0.5*(sum(sW.*sum(siLa2.*(sqrtW*DKff{i2})',2)) - sum(sum(L2.*(L2'*DKff{i2}')')) - a'*DKff{i2}*a);
-              b = DKff{i2}*b3;
+              gdata(i1) = 0.5*(sum(sW.*sum(siLa2.*(sqrtW*DKff)',2)) - sum(sum(L2.*(L2'*DKff')')) - a'*DKff*a);
+              b = DKff*b3;
               bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
               s3 = b - (La1*bb + B'*(B*bb));
               gdata(i1) = gdata(i1) - s2'*s3;
@@ -736,8 +840,8 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           end
           
           % Set the gradients of hyperparameter
-          if length(gprior_cf) > length(DKff)
-            for i2=length(DKff)+1:length(gprior_cf)
+          if length(gprior_cf) > np
+            for i2=np+1:length(gprior_cf)
               i1 = i1+1;
               gdata(i1) = 0;
               gprior(i1) = gprior_cf(i2);
@@ -791,9 +895,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.g(gp.X_u(i,:), pr);
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.g(gp.X_u(i,:), gp.p.X_u);
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -802,29 +906,42 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             i1=st;
             gpcf = gp.cf{i};            
             if ~isfield(gpcf,'cs')
-              DKuu = gpcf.fh.ginput(gpcf, u);
-              DKuf = gpcf.fh.ginput(gpcf, u, x);
+              if savememory
+                % If savememory option is used, just get the number of
+                % covariates in X and calculate gradients later
+                np=gpcf.fh.ginput(gpcf,u,[],0);
+              else
+                DKuu = gpcf.fh.ginput(gpcf, u);
+                DKuf = gpcf.fh.ginput(gpcf, u, x);
+                np=1;
+              end
               
-              for i2 = 1:length(DKuu)
-                i1=i1+1;
+              for i3 = 1:np
+                if savememory
+                  DKuu=gpcf.fh.ginput(gpcf,u,[],i3);
+                  DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
+                end
+                for i2 = 1:length(DKuu)
+                  i1=i1+1;
                 
-                % 0.5* a'*dK*a, where a = K\f
-                KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) ...
+                  % 0.5* a'*dK*a, where a = K\f
+                  KfuiKuuKuu = iKuuKuf'*DKuu{i2};
+                  gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuKuu))*(iKuuKuf*a) ...
                                    - (2.*a'.*sum(DKuf{i2}'.*iKuuKuf',2)'*a-a'.*sum(KfuiKuuKuu.*iKuuKuf',2)'*a) );
                 
-                % trace( inv(inv(W) + K) * dQ) )
-                gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
-                gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
+                  % trace( inv(inv(W) + K) * dQ) )
+                  gdata(i1) = gdata(i1) - 0.5.*(sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuKuu*iKuuKuf))));
+                  gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 
-                gdata(i1) = gdata(i1) + 0.5.*sum(sum(sqrtW*ldlsolve(LD2,repmat(sW,1,m).*(2.*DKuf{i2}' - KfuiKuuKuu)).*iKuuKuf',2));
-                gdata(i1) = gdata(i1) - 0.5.*( sum(sW.*dsiLa2.*sW.*sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); 
+                  gdata(i1) = gdata(i1) + 0.5.*sum(sum(sqrtW*ldlsolve(LD2,repmat(sW,1,size(u,1)).*(2.*DKuf{i2}' - KfuiKuuKuu)).*iKuuKuf',2));
+                  gdata(i1) = gdata(i1) - 0.5.*( sum(sW.*dsiLa2.*sW.*sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) );
                 
-                % b2*dK*b3
-                b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3) - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
-                bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
-                s3 = b - (La1*bb + B'*(B*bb));
-                gdata(i1) = gdata(i1) - s2'*s3;
+                  % b2*dK*b3
+                  b = (2*DKuf{i2}'-KfuiKuuKuu)*(iKuuKuf*b3) - sum((2.*DKuf{i2}'- KfuiKuuKuu).*iKuuKuf',2).*b3;
+                  bb = (sW.*ldlsolve(LD2,sW.*b) - L2*(L2'*b));
+                  s3 = b - (La1*bb + B'*(B*bb));
+                  gdata(i1) = gdata(i1) - s2'*s3;
+                end
               end
             end
           end

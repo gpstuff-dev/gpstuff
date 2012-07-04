@@ -21,7 +21,7 @@ function gpcf = gpcf_mask(varargin)
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihimäki
+% Copyright (c) 2008-2010 Jaakko Riihimï¿½ki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -139,7 +139,7 @@ function lpg = gpcf_mask_lpg(gpcf)
 
 end
 
-function DKff = gpcf_mask_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_mask_cfg(gpcf, x, x2, mask,i1)
 %GPCF_MASK_CFG  Evaluate gradient of covariance function
 %               with respect to the parameters.
 %
@@ -161,6 +161,11 @@ function DKff = gpcf_mask_cfg(gpcf, x, x2, mask)
 %    elements). This is needed for example with FIC sparse
 %    approximation.
 %
+%    DKff = GPCF_MASK_CFG(GPCF, X, X2, [], i) takes a covariance function
+%    structure GPCF, a matrix X of input vectors and returns
+%    DKff, the gradients of covariance matrix Kff = k(X,X2), or k(X,X)
+%    if X2 is empty, with respect to ith hyperparameter.
+%
 %  See also
 %    GPCF_MASK_PAK, GPCF_MASK_UNPAK, GPCF_MASK_LP, GP_G
 
@@ -168,7 +173,7 @@ function DKff = gpcf_mask_cfg(gpcf, x, x2, mask)
   
 end
 
-function [DKff, lpg]  = gpcf_mask_ginput(gpcf, x, x2)
+function [DKff, lpg]  = gpcf_mask_ginput(gpcf, x, x2, i1)
 %GPCF_MASK_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x.
 %
@@ -183,12 +188,18 @@ function [DKff, lpg]  = gpcf_mask_ginput(gpcf, x, x2)
 %    and returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %
+%    DKff = GPCF_MASK_GINPUT(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith covariate
+%    in X.
+%
 %  See also
 %   GPCF_MASK_PAK, GPCF_MASK_UNPAK, GPCF_MASK_LP, GP_G
   
   [n, m] =size(x);
   
-  if nargin == 2
+  if nargin == 2 || isempty(x2)
     ii1 = 0;
     for i=1:m
       for j = 1:n
@@ -197,7 +208,7 @@ function [DKff, lpg]  = gpcf_mask_ginput(gpcf, x, x2)
         lpg(ii1) = 0;
       end
     end
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     ii1 = 0;
     for i=1:m
       for j = 1:n
@@ -206,6 +217,9 @@ function [DKff, lpg]  = gpcf_mask_ginput(gpcf, x, x2)
         lpg(ii1) = 0; 
       end
     end
+  end
+  if nargin==4
+    DKff=DKff{1};
   end
 end
 

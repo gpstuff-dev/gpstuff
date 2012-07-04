@@ -47,6 +47,12 @@ g = [];
 gdata = [];
 gprior = [];
 
+if isfield(gp,'savememory') && gp.savememory
+  savememory=1;
+else
+  savememory=0;
+end
+
 % First Evaluate the data contribution to the error
 switch gp.type
   % ============================================================
@@ -239,6 +245,7 @@ switch gp.type
           KW(ntime+(1:n),ntime+(1:n))=bsxfun(@times,K(ntime+(1:n),ntime+(1:n)), Wdiag(ntime+(1:n))');
           KW(1:(ntime+n+1):end)=KW(1:(ntime+n+1):end)+1;
         else
+          W=-gp.lik.fh.llg2(gp.lik, y, f, 'latent',z);
           for il=1:nlp
             KW((1:n)+(il-1)*n,1:n)=bsxfun(@times, K((1:n)+(il-1)*n,(1:n)+(il-1)*n), W(1:n,il)');
             KW((1:n)+(il-1)*n,(n+1):(2*n))=bsxfun(@times, K((1:n)+(il-1)*n,(1:n)+(il-1)*n), W((n+1):(2*n),il)');
@@ -336,7 +343,14 @@ switch gp.type
                 Lls=dc{2}*ones(n,1)-sum(bsxfun(@times,Vlslr1.^2,Dlslr1'),2)-sum(bsxfun(@times,Vlslr2.^2,Dlslr2'),2);
                 
             else
-              DKff = feval(gpcf.fh.cfg, gpcf, x);
+              if savememory
+                % If savememory option is used, just get the number of
+                % hyperparameters and calculate gradients later
+                np=gpcf.fh.cfg(gpcf,[],[],[],0);
+              else
+                DKffc = feval(gpcf.fh.cfg, gpcf, x);
+                np=length(DKffc);
+              end
             end
           else
             % check in which components the covariance function is present
@@ -349,12 +363,33 @@ switch gp.type
             
             if isfield(gp.lik,'xtime')
               if ~isempty(intersect(gp.comp_cf{1},i))
-                DKff = feval(gpcf.fh.cfg, gpcf, xtime);
+                if savememory
+                  % If savememory option is used, just get the number of
+                  % hyperparametrs and calculate gradients later
+                  np=gpcf.fh.cfg(gpcf,[],[],[],0);
+                else
+                  DKffc = gpcf.fh.cfg(gpcf, xtime);
+                  np=length(DKffc);
+                end
               else
-                DKff = feval(gpcf.fh.cfg, gpcf, x);
+                if savememory
+                  % If savememory option is used, just get the number of
+                  % hyperparametrs and calculate gradients later
+                  np=gpcf.fh.cfg(gpcf,[],[],[],0);
+                else
+                  DKffc = gpcf.fh.cfg(gpcf, x);
+                  np=length(DKffc);
+                end
               end
             else
-              DKff = feval(gpcf.fh.cfg, gpcf, x);
+              if savememory
+                % If savememory option is used, just get the number of
+                % hyperparametrs and calculate gradients later
+                np=gpcf.fh.cfg(gpcf,[],[],[],0);
+              else
+                DKffc = gpcf.fh.cfg(gpcf, x);
+                np=length(DKffc);
+              end
             end
           end
           gprior_cf = -feval(gpcf.fh.lpg, gpcf);
@@ -452,27 +487,32 @@ switch gp.type
               
             else
               
-              for i2 = 1:length(DKff)
+              for i2 = 1:np
                 i1 = i1+1;
+                if savememory
+                  DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+                else
+                  DKff=DKffc{i2};
+                end
                 if ~isfield(gp,'meanf')
                   if strcmpi(gp.lik.type,'LGPC')
                     %s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
-                    s1 = 0.5 * a'*DKff{i2}*a - 0.5*sum(diag( R*(R'*(iKW*DKff{i2}))));
+                    s1 = 0.5 * a'*DKff*a - 0.5*sum(diag( R*(R'*(iKW*DKff))));
                   else
-                    s1 = 0.5 * a'*DKff{i2}*a - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                    s1 = 0.5 * a'*DKff*a - 0.5*((-iKW*(DKff*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff).*(-ny*g2)');
                   end
                 else
                   if strcmpi(gp.lik.type,'LGPC')
-                    s1 = 0.5 * (a-iKHb_m)'*DKff{i2}*(a-iKHb_m) - 0.5*sum(diag( R*(R'*(iKW*DKff{i2}))));
+                    s1 = 0.5 * (a-iKHb_m)'*DKff*(a-iKHb_m) - 0.5*sum(diag( R*(R'*(iKW*DKff))));
                   else
-                    s1 = 0.5 * (a-iKHb_m)'*DKff{i2}*(a-iKHb_m) - 0.5*((-iKW*(DKff{i2}*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff{i2}).*(-ny*g2)');
+                    s1 = 0.5 * (a-iKHb_m)'*DKff*(a-iKHb_m) - 0.5*((-iKW*(DKff*(sqrt(ny)*g2)))'*(sqrt(ny)*g2)) + 0.5*sum(sum(iKW'.*DKff).*(-ny*g2)');
                   end
                 end
                 %b = DKff{i2} * g1;
                 if issparse(K)
                   s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
                 else
-                  s3=iKW*(DKff{i2}*g1);
+                  s3=iKW*(DKff*g1);
                 end
               
               gdata(i1) = -(s1 + s2'*s3);
@@ -494,23 +534,38 @@ switch gp.type
               WiKW=[WiKW11 WiKW12; WiKW21 WiKW22];
             end
             
-            for i2 = 1:length(DKff)
+            for i2 = 1:np
               i1 = i1+1;
               if ~isfield(gp,'meanf')
                 dKnl = zeros(sum(nl));
                 if isfield(gp.lik,'xtime')
                   if ~isempty(intersect(gp.comp_cf{1},i)) %do(indnl)
-                    dKnl(1:ntime,1:ntime) = DKff{i2};
+                    if savememory
+                      DKff=gpcf.fh.cfg(gpcf,xtime,[],[],i2);
+                    else
+                      DKff=DKffc{i2};
+                    end
+                    dKnl(1:ntime,1:ntime) = DKff;
                     %end
                   else
+                    if savememory
+                      DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+                    else
+                      DKff=DKffc{i2};
+                    end
                     %if do(indnl)
-                    dKnl(ntime+(1:n),ntime+(1:n)) = DKff{i2};
+                    dKnl(ntime+(1:n),ntime+(1:n)) = DKff;
                     %end
                   end
                 else
+                  if savememory
+                    DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+                  else
+                    DKff=DKffc{i2};
+                  end
                   for indnl=1:nlp
                     if do(indnl)
-                      dKnl((1:n)+(indnl-1)*n,(1:n)+(indnl-1)*n) = DKff{i2};
+                      dKnl((1:n)+(indnl-1)*n,(1:n)+(indnl-1)*n) = DKff;
                     end
                   end
                 end
@@ -542,8 +597,8 @@ switch gp.type
             end
           else
             % Set the gradients of hyperparameter
-            if length(gprior_cf) > length(DKff)
-              for i2=length(DKff)+1:length(gprior_cf)
+            if length(gprior_cf) > np
+              for i2=np+1:length(gprior_cf)
                 i1 = i1+1;
                 gdata(i1) = 0;
                 gprior(i1) = gprior_cf(i2);

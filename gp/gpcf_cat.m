@@ -21,7 +21,7 @@ function gpcf = gpcf_cat(varargin)
 %    GP_SET, GPCF_*, PRIOR_*, MEAN_*
 
 % Copyright (c) 2007-2010 Jarno Vanhatalo
-% Copyright (c) 2008-2010 Jaakko Riihimäki
+% Copyright (c) 2008-2010 Jaakko Riihimï¿½ki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -139,7 +139,7 @@ function lpg = gpcf_cat_lpg(gpcf)
 
 end
 
-function DKff = gpcf_cat_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_cat_cfg(gpcf, x, x2, mask, i1)
 %GPCF_CAT_CFG  Evaluate gradient of covariance function
 %              with respect to the parameters.
 %
@@ -168,7 +168,7 @@ function DKff = gpcf_cat_cfg(gpcf, x, x2, mask)
   
 end
 
-function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2)
+function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2, i1)
 %GPCF_CAT_GINPUT  Evaluate gradient of covariance function with 
 %                 respect to x.
 %
@@ -188,7 +188,7 @@ function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2)
   
   [n, m] =size(x);
   
-  if nargin == 2
+  if nargin == 2 || isempty(x2)
     ii1 = 0;
     for i=1:m
       for j = 1:n
@@ -197,7 +197,7 @@ function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2)
         lpg(ii1) = 0;
       end
     end
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     ii1 = 0;
     for i=1:m
       for j = 1:n

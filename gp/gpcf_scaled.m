@@ -152,7 +152,7 @@ function lpg = gpcf_scaled_lpg(gpcf)
   lpg=[lpg cf.fh.lpg(cf)];
 end
 
-function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask, i1)
 %GPCF_scaled_CFG  Evaluate gradient of covariance function
 %               with respect to the parameters.
 %
@@ -175,11 +175,25 @@ function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask)
 %    elements). This is needed for example with FIC sparse
 %    approximation.
 %
+%    DKff = GPCF_scaled_CFG(GPCF, X, X2, [], i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    hyperparameter.
+%
 %  See also
 %    GPCF_scaled_PAK, GPCF_scaled_UNPAK, GPCF_scaled_LP, GP_G
 
   [n, m] =size(x);
-
+  if nargin==5
+    savememory=1;
+    if i1==0
+      DKff=gpcf.cf{1}.fh.cfg(gpcf.cf{1},[],[],[],0);
+      return
+    end
+  else
+    savememory=0;
+  end
   DKff = {};
   % Evaluate: DKff{1} = d Kff / d magnSigma2
   %           DKff{2} = d Kff / d lengthScale
@@ -187,20 +201,24 @@ function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask)
   % through log() and thus dK/dlog(p) = p * dK/dp
 
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     
     scale = sparse(1:n,1:n,x(:,gpcf.scaler),n,n);
     
     % Evaluate the gradients
     DKff = {};
     cf = gpcf.cf{1};
-    DK = feval(cf.fh.cfg, cf, x);
+    if ~savememory
+      DK = cf.fh.cfg(cf, x);
+    else
+      DK = {cf.fh.cfg(cf,x,[],[],i1)};
+    end
     for j = 1:length(DK)
         DKff{end+1} = scale*DK{j}*scale;
     end
     
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_scaled -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -211,7 +229,11 @@ function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask)
     % Evaluate the gradients
     DKff = {};
     cf = gpcf.cf{1};
-    DK = feval(cf.fh.cfg, cf, x, x2);
+    if ~savememory
+      DK = cf.fh.cfg(cf, x, x2);
+    else
+      DK = {cf.fh.cfg(cf,x, x2, [], i1)};
+    end
     
     for j = 1:length(DK)
         DKff{end+1} = scale*DK{j}*scale2;
@@ -219,24 +241,31 @@ function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask)
     
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
     %           DKff{2...} = d mask(Kff,I) / d lengthScale
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
       
       % Evaluate the gradients
       DKff = {};
       scale = x(:,gpcf.scaler);
       
       cf = gpcf.cf{1};
-      DK = feval(cf.fh.cfg, cf, [], 1);
+      if ~savememory
+        DK = cf.fh.cfg(cf, x, [], 1);
+      else
+        DK = cf.fh.cfg(cf, x, [], 1, i1);
+      end
       
       for j = 1:length(DK)
           DKff{end+1} = scale.*DK{j}.*scale;
       end
       
   end
+  if savememory
+    DKff=DKff{1};
+  end
 end
 
 
-function DKff = gpcf_scaled_ginput(gpcf, x, x2)
+function DKff = gpcf_scaled_ginput(gpcf, x, x2,i1)
 %GPCF_scaled_GINPUT  Evaluate gradient of covariance function with 
 %                  respect to x
 %
@@ -251,25 +280,48 @@ function DKff = gpcf_scaled_ginput(gpcf, x, x2)
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %
+%    DKff = GPCF_scaled_GINPUT(GPCF, X, X2) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    covariate in X (cell array with matrix elements).
+%
 %  See also
 %    GPCF_scaled_PAK, GPCF_scaled_UNPAK, GPCF_scaled_LP, GP_G
   
   [n, m] =size(x);
+  if nargin==4
+    savememory=1;
+    if i1==0
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
+      return
+    end
+  else
+    savememory=0;
+  end
 
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || isempty(x2)
     scale = sparse(1:n,1:n,x(:,gpcf.scaler),n,n);
     DKff = {};
     
     cf = gpcf.cf{1};
-    DK = feval(cf.fh.cfg, cf, x);
+    if ~savememory
+      DK = cf.fh.ginput(cf, x);
+    else
+      DK = cf.fh.ginput(cf,x,[],i1);
+    end
     
     for j = 1:length(DK)
         DKff{end+1} = scale*DK{j}*scale;
     end
 
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
       if size(x,2) ~= size(x2,2)
           error('gpcf_scaled -> _ghyper: The number of columns in x and x2 has to be the same. ')
       end
@@ -278,7 +330,11 @@ function DKff = gpcf_scaled_ginput(gpcf, x, x2)
       scale2 = sparse(1:n2,1:n2,x2(:,gpcf.scaler),n2,n2);
       
       cf = gpcf.cf{1};
-      DK = feval(cf.fh.cfg, cf, x, x2);
+      if ~savememory
+        DK = cf.fh.ginput(cf, x, x2);
+      else
+        DK = cf.fh.ginput(cf,x,x2,i1);
+      end
       
       for j = 1:length(DK)
           DKff{end+1} = scale*DK{j}*scale2;

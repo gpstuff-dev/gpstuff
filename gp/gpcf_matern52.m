@@ -323,7 +323,7 @@ function lpg = gpcf_matern52_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask, i1)
 %GPCF_MATERN52_CFG  Evaluate gradient of covariance function 
 %                      with respect to the parameters
 %
@@ -347,21 +347,44 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
 %    array with matrix elements). This is needed
 %    for example with FIC sparse approximation.
 %
+%    DKff = GPCF_MATERN52_CFG(GPCF, X, X2, [], i) takes a
+%    covariance function structure GPCF, a matrix X of input
+%    vectors and returns DKff, the gradients of covariance matrix
+%    Kff = k(X,X2), or k(X,X) if X2 is empty, with respect to ith
+%    hyperparameter.
+%
 %  See also
 %    GPCF_MATERN52_PAK, GPCF_MATERN52_UNPAK, GPCF_MATERN52_LP, GP_G
 
   gpp=gpcf.p;
 
-  i1=0;i2=1;
+  i2=1;
   DKff = {};
   gprior = [];
+  
+  if nargin==5
+    savememory=1;
+    if i1==0
+      i=0;
+      if ~isempty(gpcf.p.magnSigma2)
+        i=1;
+      end
+      if ~isempty(gpcf.p.lengthScale)
+        i=i+length(gpcf.lengthScale);
+      end
+      DKff=i;
+      return
+    end
+  else
+    savememory=0;
+  end
 
   % Evaluate: DKff{1} = d Kff / d magnSigma2
   %           DKff{2} = d Kff / d lengthScale
   % NOTE! Here we have already taken into account that the parameters
   % are transformed through log() and thus dK/dlog(p) = p * dK/dp
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     Cdm = gpcf_matern52_trcov(gpcf, x);
 
     ii1=0;
@@ -385,6 +408,16 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
         x = x(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
+      if ~savememory
+        i1=1:m;
+      else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
+        ii1=ii1-1;
+        i1=i1-1;
+      end
       if ~isempty(gpcf.p.lengthScale)
         ma2 = gpcf.magnSigma2;
         % loop over all the lengthScales
@@ -406,7 +439,7 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
             dist = dist + s(i).*(bsxfun(@minus,x(:,i),x(:,i)')).^2;
           end
           dist=sqrt(dist);
-          for i=1:m
+          for i=i1
             D = ma2.*s(i).*((5+5.*sqrt(5).*dist)/3).*(bsxfun(@minus,x(:,i),x(:,i)')).^2.*exp(-sqrt(5).*dist);
             
             ii1 = ii1+1;
@@ -416,7 +449,7 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
       end
     end
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_matern52 -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -444,6 +477,16 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
         x2 = x2(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
+      if ~savememory
+        i1=1:m;
+      else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
+        ii1=ii1-1;
+        i1=i1-1;
+      end
       if ~isempty(gpcf.p.lengthScale)
         % Evaluate help matrix for calculations of derivatives with respect
         % to the lengthScale
@@ -466,7 +509,7 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
           for i=1:m
             dist = dist + s(i).*(bsxfun(@minus,x(:,i),x2(:,i)')).^2;
           end
-          for i=1:m
+          for i=i1
             D1 = ma2.*exp(-sqrt(5.*dist)).*s(i).*(bsxfun(@minus,x(:,i),x2(:,i)')).^2;;
             DK = (5./3 + 5.*sqrt(5.*dist)/3).*D1;
             ii1=ii1+1;
@@ -477,10 +520,10 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
     end
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
     %           DKff{2...} = d mask(Kff,I) / d lengthScale
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
     ii1=0;
     
-    if ~isempty(gpcf.p.magnSigma2)
+    if ~isempty(gpcf.p.magnSigma2) && (~savememory || all(i1==1))
       ii1 = ii1+1;
       DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
     end
@@ -501,9 +544,12 @@ function DKff = gpcf_matern52_cfg(gpcf, x, x2, mask)
       end
     end
   end
+  if savememory
+    DKff=DKff{1};
+  end
 end
 
-function DKff = gpcf_matern52_ginput(gpcf, x, x2)
+function DKff = gpcf_matern52_ginput(gpcf, x, x2, i1)
 %GPCF_MATERN52_GINPUT  Evaluate gradient of covariance function with 
 %                      respect to x.
 %
@@ -518,13 +564,32 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2)
 %    and returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %
+%    DKff = GPCF_MATERN52_GINPUT(GPCF, X, X2, [], i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith covariate
+%    in X.
+%
 %  See also
 %    GPCF_MATERN52_PAK, GPCF_MATERN52_UNPAK, GPCF_MATERN52_LP, GP_G
 
   [n, m] =size(x);
   ma2 = gpcf.magnSigma2;
   ii1 = 0;
-  if nargin == 2
+  if nargin==4
+    savememory=1;
+    if i1==0
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
+      return
+    end
+  else
+    savememory=0;
+  end
+  if nargin == 2 || isempty(x2)
     if isfield(gpcf,'metric')
       K = gpcf.fh.trcov(gpcf, x);
       dist = gpcf.metric.fh.dist(gpcf.metric, x);
@@ -547,7 +612,10 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2)
         dist = dist + s(i2).*(bsxfun(@minus,x(:,i2),x(:,i2)')).^2;
       end
       dist=sqrt(dist);
-      for i=1:m
+      if ~savememory
+        i1=1:m;
+      end
+      for i=i1
         for j = 1:n
           D1 = zeros(n,n);
           D1(j,:) = sqrt(s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
@@ -559,7 +627,7 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2)
         end
       end
     end
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     if isfield(gpcf,'metric')
       K = gpcf.fh.cov(gpcf, x, x2);
       dist = gpcf.metric.fh.dist(gpcf.metric, x, x2);
@@ -583,7 +651,10 @@ function DKff = gpcf_matern52_ginput(gpcf, x, x2)
       end
       dist=sqrt(dist);
       ii1 = 0;
-      for i=1:m
+      if ~savememory
+        i1=1:m;
+      end
+      for i=i1
         for j = 1:n
           D1 = zeros(n,n2);
           D1(j,:) = sqrt(s(i)).*bsxfun(@minus,x(j,i),x2(:,i)');

@@ -55,6 +55,10 @@ function gp = gp_set(varargin)
 %                      'covariance+inducing' = infer covariance function
 %                                              parameters and inducing 
 %                                              inputs
+%      savememory   - Option for memory saving. Used in gradient
+%                     calculations. The defaults is 'off'.
+%      selectedVariables - Defining used covariates for single latent
+%                     models. The default is all covariates.
 %
 %    The additional fields when the likelihood is not Gaussian
 %    (lik is not lik_gaussian or lik_gaussiansm) are:
@@ -188,6 +192,8 @@ function gp = gp_set(varargin)
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
   ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
+  ip.addParamValue('savememory','off', @(x) islogical(x) || isscalar(x) || ...
+                   (ischar(x) && ismember(x,{'on' 'off'})));
 %   ip.addParamValue('optim_method', [], @(x) isreal(x) && (x==1 || x==2) &&  ...
 %                     isfinite(x))
   ip.parse(varargin{:});
@@ -260,7 +266,26 @@ function gp = gp_set(varargin)
         gp.derivobs=true;
       case 'off'
         if isfield(gp,'derivobs')
-          gp=rmfield(gp,'derivobs')
+          gp=rmfield(gp,'derivobs');
+        end
+    end
+  end
+  
+  if init || ~ismember('savememory',ip.UsingDefaults) || ~isfield(gp,'savememory')
+    savememory=ip.Results.savememory;
+    if ~ischar(savememory)
+      if savememory
+        savememory='on';
+      else
+        savememory='off';
+      end
+    end
+    switch savememory
+      case 'on'
+        gp.savememory=true;
+      case 'off'
+        if isfield(gp,'savememory')
+          gp=rmfield(gp,'savememory');
         end
     end
   end

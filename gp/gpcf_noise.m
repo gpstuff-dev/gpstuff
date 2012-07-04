@@ -185,7 +185,7 @@ function lpg = gpcf_noise_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_noise_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_noise_cfg(gpcf, x, x2, mask, i1)
 %GPCF_NOISE_CFG  Evaluate gradient of covariance function
 %                with respect to the parameters
 %
@@ -217,10 +217,17 @@ function DKff = gpcf_noise_cfg(gpcf, x, x2, mask)
     gpp=gpcf.p;
     DKff{1}=gpcf.noiseSigma2;
   end
+  if nargin==4
+    if i1==0
+      DKff=1;
+      return
+    end
+    DKff=DKff{1};
+  end
   
 end
 
-function DKff = gpcf_noise_ginput(gpcf, x, t)
+function DKff = gpcf_noise_ginput(gpcf, x, t, i1)
 %GPCF_NOISE_GINPUT  Evaluate gradient of covariance function with 
 %                   respect to x
 %

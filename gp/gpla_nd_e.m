@@ -166,6 +166,10 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
               % with mean functions, initialize to mean function values
               if ~isfield(gp,'meanf')
                 f = zeros(sum(nl),1);
+                if isfield(gp.lik, 'sigma2')
+                  Kf = gp_trcov(gp,x,gp.comp_cf{1});
+                  f(1:n) = Kf*((Kf+gp.lik.sigma2.*eye(n))\y);
+                end
               else
                 [H,b_m,B_m]=mean_prep(gp,x,[]);
                 Hb_m=H'*b_m;
@@ -595,6 +599,8 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
                       end
                     end
                     dlp = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+%                     figure(1),plot(f), hold all
+%                     figure(2),plot(K*dlp), hold all
                   end
                   
                 otherwise
@@ -904,6 +910,9 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(w, gp, varargin)
       % ======================================================================
       % Evaluate the prior contribution to the error from covariance functions
       % ======================================================================
+      if isnan(edata)
+        1;
+      end
       eprior = 0;
       if ~isempty(strfind(gp.infer_params, 'covariance'))
         for i=1:ncf

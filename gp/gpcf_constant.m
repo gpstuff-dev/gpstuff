@@ -179,7 +179,7 @@ function lpg = gpcf_constant_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_constant_cfg(gpcf, x, x2, mask)  
+function DKff = gpcf_constant_cfg(gpcf, x, x2, mask, i1)  
 %GPCF_CONSTANT_CFG  Evaluate gradient of covariance function
 %                   with respect to the parameters
 %
@@ -211,20 +211,27 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask)
   i1=0;
   DKff = {};
   
+  if nargin==5
+    if i1==0
+      DKff=1;
+      return
+    end
+  end
+  
   % Evaluate: DKff{1} = d Kff / d constSigma2
   %           DKff{2} = d Kff / d coeffSigma2
   % NOTE! Here we have already taken into account that the parameters are transformed
   % through log() and thus dK/dlog(p) = p * dK/dp
   
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     
     if ~isempty(gpcf.p.constSigma2)
       DKff{1}=ones(n)*gpcf.constSigma2;
     end
     
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_constant -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -235,17 +242,20 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask)
     
     % Evaluate: DKff{1}    = d mask(Kff,I) / d constSigma2
     %           DKff{2...} = d mask(Kff,I) / d coeffSigma2
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
 
     if ~isempty(gpcf.p.constSigma2)
       DKff{1}=ones(n,1)*gpcf.constSigma2; % d mask(Kff,I) / d constSigma2
     end
   end
+  if nargin==5
+    DKff=DKff{1};
+  end
 
 end
 
 
-function DKff = gpcf_constant_ginput(gpcf, x, x2)
+function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
 %GPCF_CONSTANT_GINPUT  Evaluate gradient of covariance function with 
 %                      respect to x.
 %
@@ -264,8 +274,14 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2)
 %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
   
   [n, m] =size(x);
+  if nargin==5
+    if i1==0
+      DKff=m;
+      return
+    end
+  end
   
-  if nargin == 2
+  if nargin == 2 || isempty(x2)
     ii1 = 0;
     for i=1:m
       for j = 1:n
@@ -274,7 +290,7 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2)
       end
     end
     
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     %K = feval(gpcf.fh.cov, gpcf, x, x2);
     
     ii1 = 0;
@@ -285,6 +301,9 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2)
         gprior(ii1) = 0; 
       end
     end
+  end
+  if nargin==5
+    DKff=DKff{1};
   end
 end
 

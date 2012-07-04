@@ -357,7 +357,7 @@ function lpg = gpcf_ppcs3_lpg(gpcf)
   end
 end
 
-function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
+function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask, i1)
 %GPCF_PPCS3_CFG  Evaluate gradient of covariance function
 %                with respect to the parameters
 %
@@ -373,6 +373,12 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
 %    k(X,X2) with respect to th (cell array with matrix
 %    elements).
 %
+%    DKff = GPCF_PPCS3_CFG(GPCF, X, X2, [], i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    hyperparameter.
+%
 %    DKff = GPCF_PPCS3_CFG(GPCF, X, [], MASK) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the diagonal of gradients of covariance matrix
@@ -385,9 +391,26 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
 
   gpp=gpcf.p;
 
-  i1=0;i2=1;
+  i2=1;
   DKff = {};
   gprior = [];
+  
+  if nargin==5
+    savememory=1;
+    if i1==0
+      i=0;
+      if ~isempty(gpcf.p.magnSigma2)
+        i=i+1;
+      end
+      if ~isempty(gpcf.p.lengthScale)
+        i=i+length(gpcf.lengthScale);
+      end
+      DKff=i;
+      return
+    end
+  else
+    savememory=0;
+  end
 
   % Evaluate: DKff{1} = d Kff / d magnSigma2
   %           DKff{2} = d Kff / d lengthScale
@@ -395,7 +418,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
   % are transformed through log() and thus dK/dlog(p) = p * dK/dp
 
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || (isempty(x2) && isempty(mask))
     Cdm = gpcf_ppcs3_trcov(gpcf, x);
 
     ii1=0;
@@ -460,6 +483,16 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
         x = x(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
+      if ~savememory
+        i1=1:m;
+      else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
+        i1=i1-1;
+        ii1=ii1-1;
+      end
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -519,7 +552,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
           Dd = -ma2.*Dd;
           int = d ~= 0;
           
-          for i = 1:m
+          for i = i1
             % Calculate the gradient matrix
             D = d_l(:,i).*Dd;
             % Divide by r in cases where r is non-zero
@@ -533,7 +566,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
       end
     end
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || isempty(mask)
     if size(x,2) ~= size(x2,2)
       error('gpcf_ppcs -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -612,6 +645,16 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
         x2 = x2(:,gpcf.selectedVariables);
       end
       [n, m] =size(x);
+      if ~savememory
+        i1=1:m;
+      else
+        if i1==1
+          DKff=DKff{1};
+          return
+        end
+        i1=i1-1;
+        ii1=ii1-1;
+      end
       if ~isempty(gpcf.p.lengthScale)
         % loop over all the lengthScales
         if length(gpcf.lengthScale) == 1
@@ -660,7 +703,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
           D = -(l+3).*cs1.^(l+2).*(const1.*d1.^3 + const2.*d1.^2 + const3.*d1 + 15)/15;
           D = D + cs1.^(l+3).*(3.*const1.*d1.^2 + 2.*const2.*d1 + const3)./15;
           
-          for i = 1:m
+          for i = i1
             % Calculate the gradient matrix
             DK_l = -D.*ma2.*d_l1{i};
             % Divide by r in cases where r is non-zero
@@ -673,11 +716,11 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
     end
     % Evaluate: DKff{1}    = d mask(Kff,I) / d magnSigma2
     %           DKff{2...} = d mask(Kff,I) / d lengthScale
-  elseif nargin == 4
+  elseif nargin == 4 || nargin == 5
     ii1=0;
     [n, m] =size(x);
     
-    if ~isempty(gpcf.p.magnSigma2)
+    if ~isempty(gpcf.p.magnSigma2) && (~savememory && all(i1==1))
       ii1 = ii1+1;
       DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
     end
@@ -699,9 +742,12 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask)
       end
     end
   end
+  if savememory
+    DKff=DKff{1};
+  end
 end
 
-function DKff = gpcf_ppcs3_ginput(gpcf, x, x2)
+function DKff = gpcf_ppcs3_ginput(gpcf, x, x2, i1)
 %GPCF_PPCS3_GINPUT  Evaluate gradient of covariance function with 
 %                   respect to x
 %
@@ -716,14 +762,32 @@ function DKff = gpcf_ppcs3_ginput(gpcf, x, x2)
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %
+%    DKff = GPCF_PPCS3_GINPUT(GPCF, X, X2, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith
+%    covariate in X (cell array with matrix elements).
+%
 %  See also
 %    GPCF_PPCS3_PAK, GPCF_PPCS3_UNPAK, GPCF_PPCS3_LP, GP_G
 
   [n, m] =size(x);
   ii1=0;
   DKff = {};
+  if nargin<4
+    i1=1:m;
+  else
+    if i1==0
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
+      return
+    end
+  end
   % evaluate the gradient for training covariance
-  if nargin == 2
+  if nargin == 2 || isempty(x2)
 
     K = gpcf_ppcs3_trcov(gpcf, x);
     l = gpcf.l;
@@ -811,7 +875,7 @@ function DKff = gpcf_ppcs3_ginput(gpcf, x, x2)
       
       row = ones(n,1);
       cols = 1:n;
-      for i = 1:m
+      for i = i1
         for j = 1:n
           % Calculate the gradient matrix
           ind = find(d(:,j));
@@ -827,7 +891,7 @@ function DKff = gpcf_ppcs3_ginput(gpcf, x, x2)
     end
 
     % Evaluate the gradient of non-symmetric covariance (e.g. K_fu)
-  elseif nargin == 3
+  elseif nargin == 3 || nargin == 4
     if size(x,2) ~= size(x2,2)
       error('gpcf_ppcs -> _ghyper: The number of columns in x and x2 has to be the same. ')
     end
@@ -923,7 +987,7 @@ function DKff = gpcf_ppcs3_ginput(gpcf, x, x2)
 
       row = ones(n2,1);
       cols = 1:n2;
-      for i = 1:m
+      for i = i1
         for j = 1:n
           % Calculate the gradient matrix
           ind = find(d(j,:));
