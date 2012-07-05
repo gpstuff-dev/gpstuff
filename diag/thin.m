@@ -41,6 +41,10 @@ if isstruct(x)
     % single structure
     names = fieldnames(x);
     for i=1:size(names,1)
+      if isequal(names{i},'xtime')
+        % Coxph model has ntime x 1 vector, which should be passed as is
+        continue
+      end
       value = getfield(x,names{i});
       if ~ischar(value) && (length(value) > 1 || isstruct(value))
 	x = setfield(x,names{i},thin(value,nburn,nthin,nlast));
