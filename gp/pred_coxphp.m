@@ -1,6 +1,6 @@
 function p = pred_coxphp(gp, x, y, xt, yt, varargin)
-%PRED_COXPH     Integrates the model from zero to point yt (when time is 
-%   scaled to interval 0-1)
+%PRED_COXPHP  Integrates the model from zero to point yt (when time is 
+%  scaled to interval 0-1)
 %
 %  Description
 %    P = PRED_COXPHP(GP,X,Y,XT,YT)

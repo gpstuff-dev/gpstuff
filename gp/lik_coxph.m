@@ -243,8 +243,8 @@ function lik = lik_coxph(varargin)
     f1=f(1:ntime);
     f2=f((ntime+1):(ntime+n));
     
-    la1=exp(f1);
-    eta2=exp(f2);
+    la1=exp(f1(:));
+    eta2=exp(f2(:));
     
     nu=1-z;
     sd=lik.stime(2)-lik.stime(1);
