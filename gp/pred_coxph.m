@@ -1,6 +1,8 @@
 function [Eft1, Eft2, Covf, lpyt] = pred_coxph(gp, x, y, xt, varargin)
 % PRED_COXPH Wrapper for returning useful values for coxph likelihood
 
+% Copyright (c) 2012 Ville Tolvanen
+
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.

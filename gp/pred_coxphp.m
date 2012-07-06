@@ -14,6 +14,8 @@ function p = pred_coxphp(gp, x, y, xt, yt, varargin)
 %    time for every test point.
 %
 
+% Copyright (c) 2012 Ville Tolvanen
+
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
