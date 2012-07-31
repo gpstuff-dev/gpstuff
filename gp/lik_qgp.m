@@ -20,6 +20,10 @@ function lik = lik_qgp(varargin)
 %    question is considered fixed and it is not handled in
 %    optimization, grid integration, MCMC etc. 
 %
+%    Note that because the form of the likelihood, second order derivatives
+%    with respect to latent values are 0. Because this, EP should be used
+%    instead of Laplace approximation.    
+%
 %  See also
 %    GP_SET, PRIOR_*, LIK_*
 %
