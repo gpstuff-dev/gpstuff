@@ -20,6 +20,14 @@ function lik = lik_qgp(varargin)
 %    question is considered fixed and it is not handled in
 %    optimization, grid integration, MCMC etc. 
 %
+%    The likelihood is defined as follows:
+%                            __ n
+%      p(y|f, sigma2, tau) = || i=1 tau*(1-tau)/sigma*exp(-(y-f)/sigma*
+%                                 (tau - I(t <= f)))
+%    
+%    where tau is the quantile of interest, sigma is the standard deviation
+%    of the distribution and I(t <= f) = 1 if t <= f, 0 otherwise.
+%
 %    Note that because the form of the likelihood, second order derivatives
 %    with respect to latent values are 0. Because this, EP should be used
 %    instead of Laplace approximation.    
@@ -28,7 +36,7 @@ function lik = lik_qgp(varargin)
 %    GP_SET, PRIOR_*, LIK_*
 %
 %   References
-%     Boukavalas et al. (2012). Direct Gaussian Process Quantile Regression
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
 %     Using Expectation Propagation. Appearing in Proceedings of the 29th
 %     International Conference on Machine Learning, Edinburg, Scotland, UK,
 %     2012.
