@@ -69,8 +69,8 @@ function lik = lik_coxph(varargin)
     % Set the function handles to the nested functions
     lik.fh.pak = @lik_coxph_pak;
     lik.fh.unpak = @lik_coxph_unpak;
-%    lik.fh.lp = @lik_coxph_lp;
-%    lik.fh.lpg = @lik_coxph_lpg;
+%   lik.fh.lp = @lik_coxph_lp;
+%   lik.fh.lpg = @lik_coxph_lpg;
     lik.fh.ll = @lik_coxph_ll;
     lik.fh.llsamps = @lik_coxph_llsamps;
     lik.fh.llg = @lik_coxph_llg;    
@@ -80,6 +80,7 @@ function lik = lik_coxph(varargin)
     lik.fh.predy = @lik_coxph_predy;
     lik.fh.invlink = @lik_coxph_invlink;
     lik.fh.recappend = @lik_coxph_recappend;
+    lik.fh.predcdf= @lik_coxph_predcdf;
   end
 
   function [w,s] = lik_coxph_pak(lik)
@@ -1253,5 +1254,49 @@ function lik = lik_coxph(varargin)
     end
 
   end
+  function [cdf,Ey,Vary] = lik_coxph_predcdf(lik,Ef,Covf,yt)
+        
+%      if isempty(zt)
+%         error(['lik_coxph -> lik_coxph_predy: missing zt!'... 
+%         'Coxph likelihood needs the expected number of    '...
+%         'occurrences as an extra input zt. See, for         '...
+%         'example, lik_coxph and gpla_e.               ']);
+%      end           
+        
+    
+    ntime = size(lik.stime,2)-1;
+    Ef1 = Ef(1:ntime); Ef(1:ntime) = []; Ef2 = Ef;    
+    nsamps = 10000;
+    sd=lik.stime(2)-lik.stime(1);
+    Sigm_tmp=Covf;
+    Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
+    % f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
+    f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
+
+    f1=f_star(:,1:ntime);
+    f2=f_star(:,(ntime+1):end);
+
+    la1=exp(f1);
+    eta2=exp(f2);
+
+    mST=zeros(size(eta2,2),1);
+    if size(yt,2) == 1
+      % Integrate from zero to yt
+      cumsumtmp=cumsum(la1'*sd)';
+      %   t=binsgeq(gp.lik.xtime,yt(i));
+      for i1=1:size(eta2,2)
+        Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
+        mStime=mean(Stime);
+       % for i=1:size(yt,1)
+        mST(i1)=mStime(binsgeq(lik.xtime,yt(i1)));
+        %end
+      end
+      cdf = 1- mST;
+
+    else
+        error('Size(yt,2) ~= 1');
+    end
+
+    end
 end
 

@@ -90,6 +90,7 @@ function lik = lik_loggaussian(varargin)
     lik.fh.invlink = @lik_loggaussian_invlink;
     lik.fh.predy = @lik_loggaussian_predy;
     lik.fh.recappend = @lik_loggaussian_recappend;
+    lik.fh.predcdf = @lik_loggaussian_predcdf;
   end
 
 end
@@ -669,5 +670,187 @@ function reclik = lik_loggaussian_recappend(reclik, ri, lik)
     end
   end
 end
+function [cdf,Ey,Vary] = lik_loggaussian_predcdf(lik, Ef, Varf, yt)
+%LIK_LOGGAUSSIAN_PREDY  Returns the predictive mean, variance and density of y
+%
+%  Description   
+%    LPY = LIK_LOGGAUSSIAN_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the survival times YT, censoring indicators ZT.
+%
+%    [LPY, EY, VARY] = LIK_LOGGAUSSIAN_PREDY(LIK, EF, VARF) takes a
+%    likelihood structure LIK, posterior mean EF and posterior
+%    Variance VARF of the latent variable and returns the
+%    posterior predictive mean EY and variance VARY of the
+%    observations related to the latent variables
+%        
+%
+%  See also
+%    GPLA_PRED, GPEP_PRED, GPMC_PRED
+% 
+%   if isempty(zt)
+%     error(['lik_loggaussian -> lik_loggaussian_predy: missing zt!'... 
+%            'loggaussian likelihood needs the censoring    '...
+%            'indicators as an extra input zt. See, for         '...
+%            'example, lik_loggaussian and gpla_e.               ']);
+%   end
+% 
+%   yc = 1-zt;
+  s2 = lik.sigma2;
+  
+  Ey=[];
+  Vary=[];
+  lpy = zeros(size(Ef));
+%   Ey = zeros(size(Ef));
+%   EVary = zeros(size(Ef));
+%   VarEy = zeros(size(Ef));
+%   
+% %   Evaluate Ey and Vary
+%   for i1=1:length(Ef)
+%     %%% With quadrature
+%     myy_i = Ef(i1);
+%     sigm_i = sqrt(Varf(i1));
+%     minf=myy_i-6*sigm_i;
+%     maxf=myy_i+6*sigm_i;
+%     
+%     F = @(f) exp(log(yc(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+%     Ey(i1) = quadgk(F,minf,maxf);
+%     
+%     F2 = @(f) exp(log(yc(i1).*exp(f)+((yc(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
+%     EVary(i1) = quadgk(F2,minf,maxf);
+%     
+%     F3 = @(f) exp(2*log(yc(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+%     VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+%   end
+%   Vary = EVary + VarEy;
 
+  % Evaluate the posterior predictive densities of the given observations
+  cdf = zeros(length(yt),1);
+  for i1=1:length(yt)
+    % get a function handle of the likelihood times posterior
+    % (likelihood * posterior = Negative-binomial * Gaussian)
+    % and useful integration limits
+    [pdf,minf,maxf]=init_cdfloggaussian_norm(...
+      yt(i1),Ef(i1),Varf(i1),s2);
+    % integrate over the f to get posterior predictive distribution
+    cdf(i1) = quadgk(pdf, minf, maxf);
+  end
+end
+
+
+function [df,minf,maxf] = init_cdfloggaussian_norm(yy,myy_i,sigm2_i,s2)
+%INIT_LOGGAUSSIAN_NORM
+%
+%  Description
+%    Return function handle to a function evaluating
+%    loggaussian * Gaussian which is used for evaluating
+%    (likelihood * cavity) or (likelihood * posterior) Return
+%    also useful limits for integration. This is private function
+%    for lik_loggaussian.
+%  
+%  See also
+%    LIK_LOGGAUSSIAN_TILTEDMOMENTS, LIK_LOGGAUSSIAN_SITEDERIV,
+%    LIK_LOGGAUSSIAN_PREDY
+  
+% avoid repetitive evaluation of constant part
+  ldconst = -log(sigm2_i)/2 - log(2*pi)/2;
+  
+  % Create function handle for the function to be integrated
+  df = @cdfloggaussian_norm;
+  % use log to avoid underflow, and derivates for faster search
+  ld = @log_cdfloggaussian_norm;
+  ldg = @log_cdfloggaussian_norm_g;
+  ldg2 = @log_cdfloggaussian_norm_g2;
+
+  % Set the limits for integration
+%   if yc==0
+    % with yy==0, the mode of the likelihood is not defined
+    % use the mode of the Gaussian (cavity or posterior) as a first guess
+    modef = myy_i;
+%   else
+%     % use precision weighted mean of the Gaussian approximation
+%     % of the loggaussian likelihood and Gaussian
+%     mu=log(yy);
+%     %s2=1./(yc+1./sigm2_i);
+% %     s2=s2;
+%     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
+%   end
+  % find the mode of the integrand using Newton iterations
+  % few iterations is enough, since the first guess in the right direction
+  niter=4;       % number of Newton iterations
+  mindelta=1e-6; % tolerance in stopping Newton iterations
+  for ni=1:niter
+    g=ldg(modef);
+    h=ldg2(modef);
+    delta=-g/h;
+    modef=modef+delta;
+    if abs(delta)<mindelta
+      break
+    end
+  end
+  % integrand limits based on Gaussian approximation at mode
+  modes=sqrt(-1/h);
+  minf=modef-8*modes;
+  maxf=modef+8*modes;
+  modeld=ld(modef);
+  iter=0;
+  % check that density at end points is low enough
+  lddiff=20; % min difference in log-density between mode and end-points
+  minld=ld(minf);
+  step=1;
+  while minld>(modeld-lddiff)
+    minf=minf-step*modes;
+    minld=ld(minf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_loggaussian -> init_loggaussian_norm: ' ...
+             'integration interval minimun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  maxld=ld(maxf);
+  step=1;
+  while maxld>(modeld-lddiff)
+    maxf=maxf+step*modes;
+    maxld=ld(maxf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_loggaussian -> init_loggaussian_norm: ' ...
+             'integration interval maximun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  
+  function integrand = cdfloggaussian_norm(f)
+  % loggaussian * Gaussian
+    integrand = exp(ldconst + log(norm_cdf((log(yy)-f)/sqrt(s2))) ...
+              -0.5*(f-myy_i).^2./sigm2_i);
+  end
+
+  function log_int = log_cdfloggaussian_norm(f)
+  % log(loggaussian * Gaussian)
+  % log_loggaussian_norm is used to avoid underflow when searching
+  % integration interval
+    log_int = ldconst + log(norm_cdf((log(yy)-f)/sqrt(s2))) ...
+              -0.5*(f-myy_i).^2./sigm2_i;
+  end
+
+  function g = log_cdfloggaussian_norm_g(f)
+  % d/df log(loggaussian * Gaussian)
+  % derivative of log_loggaussian_norm
+    g =  1./(norm_cdf((log(yy)-f)/sqrt(s2))).*1/sqrt(2*pi*s2)*exp(-(log(yy)-f).^2./(2*s2)).*(-1)  ...
+        + (myy_i - f)./sigm2_i;
+  end
+
+  function g2 = log_cdfloggaussian_norm_g2(f)
+  % d^2/df^2 log(loggaussian * Gaussian)
+  % second derivate of log_loggaussian_norm
+    g2 = -(1/sqrt(2*pi*s2)).*(exp(-(log(yy)-f).^2./(2*s2)).*((log(yy)-f)./s2).*(norm_cdf((log(yy)-f)/sqrt(s2))) + ...
+        1/sqrt(2*pi*s2)*exp(-(log(yy)-f).^2./(s2)))./(norm_cdf((log(yy)-f)/sqrt(s2))).^2 -1/sigm2_i;
+  end
+
+end
 

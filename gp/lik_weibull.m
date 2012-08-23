@@ -23,7 +23,7 @@ function lik = lik_weibull(varargin)
 %                  __ n
 %      p(y|f, z) = || i=1 [ r^(1-z_i) exp( (1-z_i)*f_i
 %                           +(1-z_i)*(r-1)*log(y_i)
-%                           -exp(f_i)*y_i^r ]
+%                           -exp(f_i)*y_i^r) ]
 %
 %    where r is the shape parameter of Weibull distribution.
 %    z is a vector of censoring indicators with z = 0 for uncensored event
@@ -89,6 +89,7 @@ function lik = lik_weibull(varargin)
     lik.fh.siteDeriv = @lik_weibull_siteDeriv;
     lik.fh.invlink = @lik_weibull_invlink;
     lik.fh.predy = @lik_weibull_predy;
+    lik.fh.predcdf = @lik_weibull_predcdf;
     lik.fh.recappend = @lik_weibull_recappend;
   end
 
@@ -447,7 +448,8 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
   
   Ey=[];
   Vary=[];
-  lpy = zeros(size(Ef));
+  
+  %     lpy = zeros(size(Ef));
   %     Ey = zeros(size(Ef));
   %     EVary = zeros(size(Ef));
   %     VarEy = zeros(size(Ef)); 
@@ -502,6 +504,8 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   ldconst = yc*log(r)+yc*(r-1)*log(yy)...
             - log(sigm2_i)/2 - log(2*pi)/2;
   
+   
+  
   % Create function handle for the function to be integrated
   df = @weibull_norm;
   % use log to avoid underflow, and derivates for faster search
@@ -523,7 +527,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
-  % few iterations is enough, since the first guess in the right direction
+  % few iterations is enough, since first guess is in the right direction
   niter=4;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
@@ -648,3 +652,193 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
     end
   end
 end
+function [cdf, Ey, Vary] = lik_weibull_predcdf(lik, Ef, Varf, yt)
+%LIK_WEIBULL_PREDY  Returns the predictive mean, variance and density of y
+%
+%  Description   
+%    LPY = LIK_WEIBULL_PREDY(LIK, EF, VARF YT, ZT)
+%    Returns logarithm of the predictive density PY of YT, that is 
+%        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
+%    This requires also the survival times YT, censoring indicators ZT.
+%
+%    [LPY, EY, VARY] = LIK_WEIBULL_PREDY(LIK, EF, VARF) takes a
+%    likelihood structure LIK, posterior mean EF and posterior
+%    Variance VARF of the latent variable and returns the
+%    posterior predictive mean EY and variance VARY of the
+%    observations related to the latent variables
+%        
+%
+%  See also
+%    GPLA_PRED, GPEP_PRED, GPMC_PRED
+
+%   if isempty(zt)
+%     error(['lik_weibull -> lik_survweibull_predcdf: missing zt!'... 
+%            'Weibull likelihood needs the censoring    '...
+%            'indicators as an extra input zt. See, for         '...
+%            'example, lik_weibull and gpla_e.               ']);
+%   end
+% 
+%   yc = 1-zt;
+  r = lik.shape;
+  
+  Ey=[];
+  Vary=[];
+  
+  %     lpy = zeros(size(Ef));
+  %     Ey = zeros(size(Ef));
+  %     EVary = zeros(size(Ef));
+  %     VarEy = zeros(size(Ef)); 
+  %     
+  %     % Evaluate Ey and Vary 
+  %     for i1=1:length(Ef)
+  %       %%% With quadrature
+  %       myy_i = Ef(i1);
+  %       sigm_i = sqrt(Varf(i1));
+  %       minf=myy_i-6*sigm_i;
+  %       maxf=myy_i+6*sigm_i;
+  % 
+  %       F = @(f) exp(log(yc(i1))+f+norm_lpdf(f,myy_i,sigm_i));
+  %       Ey(i1) = quadgk(F,minf,maxf);
+  %       
+  %       F2 = @(f) exp(log(yc(i1).*exp(f)+((yc(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
+  %       EVary(i1) = quadgk(F2,minf,maxf);
+  %       
+  %       F3 = @(f) exp(2*log(yc(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
+  %       VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
+  %     end
+  %     Vary = EVary + VarEy;
+
+  % Evaluate the posterior predictive densities of the given observations
+  cdf = zeros(length(yt),1);
+  for i1=1:length(yt)
+    % get a function handle of the likelihood times posterior
+    % (likelihood * posterior = Weibull * Gaussian)
+    % and useful integration limits
+    [sf,minf,maxf]=init_surv_weibull_norm(...
+      yt(i1),Ef(i1),Varf(i1),r);
+    % integrate over the f to get posterior predictive distribution
+    cdf(i1) = 1-(quadgk(sf, minf, maxf));
+  end
+end
+
+
+function [df,minf,maxf] = init_surv_weibull_norm(yy,myy_i,sigm2_i,r)
+%INIT_WEIBULL_NORM
+%
+%  Description
+%    Return function handle to a function evaluating
+%    Weibull * Gaussian which is used for evaluating
+%    (likelihood * cavity) or (likelihood * posterior) Return
+%    also useful limits for integration. This is private function
+%    for lik_weibull.
+%  
+%  See also
+%    LIK_WEIBULL_TILTEDMOMENTS, LIK_WEIBULL_SITEDERIV,
+%    LIK_WEIBULL_PREDY
+  
+% avoid repetitive evaluation of constant part
+  ldconst = - log(sigm2_i)/2 - log(2*pi)/2;
+  
+   
+  
+  % Create function handle for the function to be integrated
+  df = @survweibull_norm;
+  % use log to avoid underflow, and derivates for faster search
+  ld = @log_survweibull_norm;
+  ldg = @log_survweibull_norm_g;
+  ldg2 = @log_survweibull_norm_g2;
+
+  % Set the limits for integration
+  %if yc==0
+    % with yy==0, the mode of the likelihood is not defined
+    % use the mode of the Gaussian (cavity or posterior) as a first guess
+    modef = myy_i;
+  %else
+    % use precision weighted mean of the Gaussian approximation
+    % of the Weibull likelihood and Gaussian
+    %mu=log(yc./(yy.^r));
+    %s2=1./(yc+1./sigm2_i);
+    %s2=1./yc;
+    %modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
+ % end
+  % find the mode of the integrand using Newton iterations
+  % few iterations is enough, since the first guess in the right direction
+  niter=4;       % number of Newton iterations
+  mindelta=1e-6; % tolerance in stopping Newton iterations
+  for ni=1:niter
+    g=ldg(modef);
+    h=ldg2(modef);
+    delta=-g/h;
+    modef=modef+delta;
+    if abs(delta)<mindelta
+      break
+    end
+  end
+  % integrand limits based on Gaussian approximation at mode
+  modes=sqrt(-1/h);
+  minf=modef-8*modes;
+  maxf=modef+8*modes;
+  modeld=ld(modef);
+  iter=0;
+  % check that density at end points is low enough
+  lddiff=20; % min difference in log-density between mode and end-points
+  minld=ld(minf);
+  step=1;
+  while minld>(modeld-lddiff)
+    minf=minf-step*modes;
+    minld=ld(minf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_weibull -> init_weibullsurv_norm: ' ...
+             'integration interval minimun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  maxld=ld(maxf);
+  step=1;
+  while maxld>(modeld-lddiff)
+    maxf=maxf+step*modes;
+    maxld=ld(maxf);
+    iter=iter+1;
+    step=step*2;
+    if iter>100
+      error(['lik_weibull -> init_weibullsurv_norm: ' ...
+             'integration interval maximun not found ' ...
+             'even after looking hard!'])
+    end
+  end
+  
+  function integrand = survweibull_norm(f)
+  % Weibull * Gaussian
+    integrand = exp(ldconst ...
+                    -exp(f).*yy.^r ...
+                    -0.5*(f-myy_i).^2./sigm2_i);
+  end
+
+  function log_int = log_survweibull_norm(f)
+  % log(Weibull * Gaussian)
+  % log_weibull_norm is used to avoid underflow when searching
+  % integration interval
+    log_int = ldconst ...
+              -exp(f).*yy.^r ...
+              -0.5*(f-myy_i).^2./sigm2_i;
+  end
+
+  function g = log_survweibull_norm_g(f)
+  % d/df log(Weibull * Gaussian)
+  % derivative of log_weibull_norm
+    g = - exp(f).*yy.^r ...
+        + (myy_i - f)./sigm2_i;
+  end
+
+  function g2 = log_survweibull_norm_g2(f)
+  % d^2/df^2 log(Weibull * Gaussian)
+  % second derivate of log_weibull_norm
+    g2 = - exp(f).*yy.^r ...
+         -1/sigm2_i;
+  end
+
+end
+
+
