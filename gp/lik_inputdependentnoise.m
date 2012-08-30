@@ -26,9 +26,7 @@ function lik = lik_inputdependentnoise(varargin)
   
   if isempty(lik)
     init=true;
-    lik.type_nd=true;
-    lik.structW = false;
-%     lik.fullW = false;
+    lik.nondiagW=true;
     lik.type = 'Inputdependentnoise';
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Inputdependentnoise')
@@ -226,7 +224,7 @@ function lik = lik_inputdependentnoise(varargin)
     end
   end
 
-  function llg2 = lik_inputdependentnoise_llg2(lik, y, ff, param, z)
+  function [llg2, llg2mat] = lik_inputdependentnoise_llg2(lik, y, ff, param, z)
   %function [pi_vec, pi_mat] = lik_inputdependentnoise_llg2(lik, y, ff, param, z)
   %LIK_INPUTDEPENDENTNOISE_LLG2  Second gradients of the log likelihood
   %
@@ -247,7 +245,6 @@ function lik = lik_inputdependentnoise(varargin)
     n=length(y);
     f1=f(1:n);
     f2=f((n+1):2*n);
-%     sigma2 = 0.1;
     sigma2 = lik.sigma2;
     expf2=exp(f2);
 
@@ -255,6 +252,9 @@ function lik = lik_inputdependentnoise(varargin)
       case 'param'
         
       case 'latent'
+        
+%         llg2 = [2./(sigma2.*expf2); 3/2.*(y-f1).^2./(sigma2.*expf2)];
+%         llg2mat = [diag(1./sqrt(sigma2.*expf2)); diag(-(y-f1)./sqrt(sigma2.*expf2))];
         
         llg2_11=-1./(sigma2.*expf2);
         llg2_12=-(y-f1)./(sigma2*expf2);
@@ -452,9 +452,10 @@ function lik = lik_inputdependentnoise(varargin)
 
 
 %     ntest=size(yt,1);
-    ntest = 0.5*size(Ef,1);
     Ef = Ef(:);
+    ntest = 0.5*size(Ef,1);
     Ef1=Ef(1:ntest); Ef2=Ef(ntest+1:end);
+%     Varf1=squeeze(Varf(1,1,:)); Varf2=squeeze(Varf(2,2,:));
     Varf1=diag(Varf(1:ntest,1:ntest));Varf2=diag(Varf(ntest+1:end,ntest+1:end));
     sigma2=lik.sigma2;
 %     if ntest ~= 0.5*numel(Ef)
@@ -502,11 +503,6 @@ function lik = lik_inputdependentnoise(varargin)
       s1=sqrt(Varf1(i2)); s2=sqrt(Varf2(i2));
       pd=@(f1,f2) norm_pdf(yt(i2), f1, sqrt(sigma2.*exp(f2))).*norm_pdf(f1,Ef1(i2),sqrt(Varf1(i2))).*norm_pdf(f2,Ef2(i2),sqrt(Varf2(i2)));
       lpy(i2) = log(dblquad(pd, m1-6.*s1, m1+6.*s1, m2-6.*s2, m2+6.*s2));
-      if ~isreal(lpy(i2))
-        1;
-      end
-%       pd=@(f) exp(-2*Ef1(i2)^2+2*exp(f).*f.*sigma2+f.*Varf1(i2)+4*Ef1(i2).*y-2.*y.^2) ...
-%           .*erf(exp(-f./2).*(2*exp(f).*(
     end
 %     sigma2 = lik.sigma2;
 %     Ef1=Ef(1:ntest);

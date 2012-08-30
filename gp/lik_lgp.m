@@ -29,9 +29,7 @@ function lik = lik_lgp(varargin)
   if isempty(lik)
     init=true;
     lik.type = 'LGP';
-    lik.structW = false;
-    lik.fullW = true;
-    lik.type_nd = true;
+    lik.nondiagW = true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'LGP')
       error('First argument does not seem to be a valid likelihood function structure')

@@ -66,7 +66,7 @@ pm = prior_sqrtt('s2',10,'nu',10);
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm);
 
 % Create the GP structure
-gp = gp_set('lik', lik_softmax, 'cf', gpcf1, 'jitterSigma2', 1e-2);
+gp = gp_set('lik', lik_softmax, 'cf', gpcf1, 'jitterSigma2', 1e-2, 'savememory', 'on');
 
 % ------- Laplace approximation --------
 fprintf(['Softmax model with Laplace integration over the latent\n' ...
@@ -76,7 +76,7 @@ fprintf(['Softmax model with Laplace integration over the latent\n' ...
 gp = gp_set(gp, 'latent_method', 'Laplace');
 [Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
 
-% gp2 = gp_set('lik', lik_softmax2, 'cf', {gpcf1 gpcf1 gpcf1}, 'jitterSigma2', 1e-2);
+% gp2 = gp_set('lik', lik_softmax, 'cf', {gpcf1 gpcf1 gpcf1}, 'jitterSigma2', 1e-2);
 % gp2 = gp_set(gp2, 'latent_method', 'Laplace');
 % gp2.comp_cf = {1 2 3};
 % [Eft2, Varft2, ~, ~, pyt2] = gp_pred(gp2, x, y, xt, 'yt', ones(size(yt)));
