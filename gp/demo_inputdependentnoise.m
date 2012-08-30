@@ -16,10 +16,12 @@
 %---------------------------------
 % 1D Demonstration
 %---------------------------------
+stream0 = RandStream('mt19937ar','Seed',0);
+prevstream = RandStream.setGlobalStream(stream0);
 close all;
 % x = 100*rand([40 1]);
-n =250;
-nt = 250;
+n =150;
+nt = 150;
 x=linspace(-100,200,n)';
 % xt = linspace(0,100, nt)';
 xt=x;
@@ -74,9 +76,8 @@ lik = lik_inputdependentnoise('sigma2', 0.1, 'sigma2_prior', prior_fixed());
 
 % NOTE! if Multible covariance functions per latent is used, define
 % gp.comp_cf as follows:
-% gp.comp_cf = {[1 2] [3 4]};
-gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-9);
-gp.comp_cf = {[1] [2]};
+% gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
+gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-9, 'comp_cf', {[1] [2]});
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -84,13 +85,15 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 % gp.latent_opt.maxiter=1e6;
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
 
 % Optimize with the scaled conjugate gradient method
+% gp=gpla_nd_e('init',gp); gp.lik.structW=false;gp.lik.fullW=false;
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % make prediction to the data points
 [Ef, Varf,lpyt] = gp_pred(gp, x, y, xt, 'yt', yt);
+Ef=Ef(:); %Varf=diag(Varf);
 Ef11 = Ef(1:nt);
 Ef12 = Ef(nt+1:end);
 fprintf('mlpd inputdependentnoise: %.2f\n', mean(lpyt));
@@ -135,6 +138,8 @@ figure, plot(xt, s2.*exp(Ef12), '-b',x, sigma2.*exp(f2), '-k', xt, s2.*exp(Ef12 
 %------------------------------------
 % 2D Demonstration
 %------------------------------------
+stream0 = RandStream('mt19937ar','Seed',0);
+prevstream = RandStream.setGlobalStream(stream0);
 
 % Create data from two 2 dimensional gaussians
 nt=10;
@@ -164,14 +169,14 @@ gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 lik=lik_inputdependentnoise('sigma2', 0.1, 'sigma2_prior', prior_fixed());
 
-gp=gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-6);
-gp.comp_cf = {[1] [2]};
+gp=gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-6, 'comp_cf', {[1] [2]});
 gp = gp_set(gp, 'latent_method', 'Laplace');
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
 gp=gp_optim(gp,x,y,'opt',opt);
 % Increase maxiter for predictions in case of slow convergence
 gp.latent_opt.maxiter=1e6;
 [Ef,Varf,lpyt]=gp_pred(gp,x,y,xt, 'yt',yt);
+Ef=Ef(:);% Varf=[diag(squeeze(Varf(1,1,:))), zeros(100); zeros(100) diag(squeeze(Varf(2,2,:)))];
 fprintf('mlpd inputdependentnoise: %.2f\n', mean(lpyt));
 
 lik2 = lik_gaussian('sigma2', sigma2);
@@ -200,6 +205,8 @@ alpha(.4)
 %--------------------------------------------
 % Demonstration without heteroscedastic noise
 %--------------------------------------------
+stream0 = RandStream('mt19937ar','Seed',0);
+prevstream = RandStream.setGlobalStream(stream0);
 
 
 n =200;
@@ -227,10 +234,10 @@ x=x(:); y=y(:); xt=xt(:);
 % f2 = f2-mean(f2); f2=f2./std(f2);
 
 % Create the covariance functions
-pl = prior_logunif();
-pm = prior_logunif(); 
-% pl = prior_t('s2',20);
-% pm = prior_t('s2',20); 
+% pl = prior_logunif();
+% pm = prior_logunif(); 
+pl = prior_t('s2',20);
+pm = prior_t('s2',20); 
 gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', 0.5);
 gpcf2 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2',0.1);
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -238,15 +245,21 @@ gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the the model
 lik = lik_inputdependentnoise('sigma2', 0.1, 'sigma2_prior', prior_fixed());
-gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-6);
-gp.comp_cf = {[1] [2]};
+gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-9, 'comp_cf', {[1] [2]});
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
+
+% if flat priors are used, there might be need to increase
+% gp.latent_opt.maxiter for laplace algorithm to converge properly
+
+% gp.latent_opt.maxiter=1e6;
+
 gp=gp_optim(gp,x,y,'opt',opt);
 
 [Ef, Varf,lpyt] = gp_pred(gp, x, y, xt,'yt',yt);
+Ef=Ef(:);% Varf=[diag(squeeze(Varf(1,1,:))), zeros(n); zeros(n) diag(squeeze(Varf(2,2,:)))];
 Ef11 = Ef(1:nt);
 Ef12 = Ef(nt+1:end);
 fprintf('mlpd inputdependentnoise: %.2f\n', mean(lpyt));

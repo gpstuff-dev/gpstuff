@@ -95,8 +95,8 @@ hold on; plot(x(:,1),x(:,2),'k.')
 % -------------------------------------------------
 
 % % HUOM! Eyt ja Varyt predictiot on huonosti toteutettu. Koodaa z:lla, joka
-% % kuvaa kokonaismäärää. pyt on pielessä
-% [Eft, Varft, Eyt, Varyt, pyt] = gp_pred(gp, x, y, xt, 'yt', yt);
+% % kuvaa kokonaismï¿½ï¿½rï¿½ï¿½. pyt on pielessï¿½
+[Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, xt, 'yt', yt);
 % 
 % figure
 % variance = [squeeze(Varft(1,1,:)) ; squeeze(Varft(3,3,:)) ; squeeze(Varft(3,3,:))];

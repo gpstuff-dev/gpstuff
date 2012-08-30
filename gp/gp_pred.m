@@ -147,8 +147,8 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   elseif isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
-        if isfield(gp.lik, 'type_nd')
-          fh_pred = @gpla_nd_pred;
+        if isfield(gp.lik, 'nondiagW')
+          fh_pred = @gpla2_pred;
         else
           fh_pred = @gpla_pred;
         end

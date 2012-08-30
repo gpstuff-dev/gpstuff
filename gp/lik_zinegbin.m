@@ -71,8 +71,7 @@ function lik = lik_zinegbin(varargin)
   if isempty(lik)
     init=true;
     lik.type = 'Zinegbin';
-    lik.structW = false;
-    lik.type_nd = true;
+    lik.nondiagW=true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Zinegbin')
       error('First argument does not seem to be a valid likelihood function structure')
@@ -296,7 +295,7 @@ function lik = lik_zinegbin(varargin)
   end
 
   function llg2 = lik_zinegbin_llg2(lik, y, ff, param, z)
-  %function [pi_vec, pi_mat] = lik_zinegbin_llg2(lik, y, ff, param, z)
+%   function [pi_vec, pi_mat] = lik_zinegbin_llg2(lik, y, ff, param, z)
   %LIK_ZINEGBIN_LLG2  Second gradients of the log likelihood
   %
   %  Description        
@@ -349,10 +348,10 @@ function lik = lik_zinegbin(varargin)
         llg2_11(yind)=-expf1(yind)./(1+expf1(yind)).^2;
         llg2_22(yind)=-m(yind).*(r.^2 + y(yind).*r)./(r+m(yind)).^2;
         
-        %llg2 = [diag(llg2_11) diag(llg2_12); diag(llg2_12) diag(llg2_22)];
+%         llg2 = [diag(llg2_11) diag(llg2_12); diag(llg2_12) diag(llg2_22)];
         llg2 = [llg2_11 llg2_12; llg2_12 llg2_22];
         
-%         
+%         R=[];
 %         nl=2;
 %         pi_mat=zeros(nl*n, n);
 %         llg2_12sq=sqrt(llg2_12);

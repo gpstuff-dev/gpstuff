@@ -52,7 +52,7 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   switch gp.latent_method
     case 'Laplace'
       if isfield(gp.lik, 'type_nd')
-        fh_e = @gpla_nd_e;
+        fh_e = @gpla2_e;
       else
         fh_e = @gpla_e;
       end

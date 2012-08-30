@@ -55,6 +55,11 @@ function gp = gp_set(varargin)
 %                      'covariance+inducing' = infer covariance function
 %                                              parameters and inducing 
 %                                              inputs
+%      comp_cf      - Option for when multiple latents are inferred
+%                     (gpla2_e/g/pred). Sets specific covariance functions
+%                     for specific latent processes. Must be given in cell
+%                     format where ith element of the cell is vector
+%                     defining covariance functions for ith latent process.
 %      savememory   - Option for memory saving. Used in gradient
 %                     calculations. The defaults is 'off'.
 %      selectedVariables - Defining used covariates for single latent
@@ -190,6 +195,7 @@ function gp = gp_set(varargin)
   ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
   ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
   ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
+  ip.addParamValue('comp_cf', [], @(x) iscell(x))    
   ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
   ip.addParamValue('savememory','off', @(x) islogical(x) || isscalar(x) || ...
@@ -269,6 +275,10 @@ function gp = gp_set(varargin)
           gp=rmfield(gp,'derivobs');
         end
     end
+  end
+  % Covariance functions for multiple latent processes
+  if ~ismember('comp_cf',ip.UsingDefaults)
+    gp.comp_cf=ip.Results.comp_cf;
   end
   
   if init || ~ismember('savememory',ip.UsingDefaults) || ~isfield(gp,'savememory')
@@ -365,8 +375,8 @@ function gp = gp_set(varargin)
           % Set latent method
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @laplace_algorithm;
-          if isfield(gp.lik, 'type_nd')
-            gp = gpla_nd_e('init', gp);
+          if isfield(gp.lik, 'nondiagW')
+            gp = gpla2_e('init', gp);
           else
             gp = gpla_e('init', gp);
           end

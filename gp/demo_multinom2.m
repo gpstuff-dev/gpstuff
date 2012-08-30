@@ -35,7 +35,7 @@ K1 = gp_trcov(gp1,xt);
 K2 = gp_trcov(gp2,xt);
 K3 = gp_trcov(gp3,xt);
 
-L1 = chol(K1)';L2 = chol(K2)';L3 = chol(K3)';
+L1 = chol(K1,'lower');L2 = chol(K2,'lower');L3 = chol(K3,'lower');
 f = [L1*randn(length(xt), 1) L2*randn(length(xt), 1) L3*randn(length(xt), 1)];
 expf = exp(f);
 
@@ -202,14 +202,14 @@ rgp=thin(rgp,102,2);
 
 % Make predictions
 Efs_mc = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-%[Efs_mc, Varfs_mc, tmp, tmp, pgs_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),3));
+% [Efs_mc, Varfs_mc, lpgs_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),361,3);
-pg_mc = reshape(mean(pgs_mc,2),361,3);
+% pg_mc = reshape(mean(exp(lpgs_mc),2),361,3);
 
 
 pyt2_mc = exp(Ef_mc)./(sum(exp(Ef_mc),2)*ones(1,3));
-pyt2_mc = reshape(mean(pgs_mc,2),900,3);
+% pyt2_mc = reshape(mean(pgs_mc,2),900,3);
 
 % Plot the relative abundances
 

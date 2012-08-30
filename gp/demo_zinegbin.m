@@ -49,14 +49,13 @@ gpcf2 = gpcf_neuralnetwork('weightSigma2', [1.2 2.1], 'biasSigma2', 0.8, 'weight
 gpcf3 = gpcf_neuralnetwork('weightSigma2', [0.9 0.7], 'biasSigma2', 1.2, 'weightSigma2_prior', pl, 'biasSigma2_prior', pm);
 
 % Create the likelihood structure
-lik = lik_zinegbin();
+lik = lik_zinegbin('disper_prior', prior_fixed());
 
 % NOTE! if Multible covariance functions per latent is used, define
 % gp.comp_cf as follows:
-% gp.comp_cf = {[1 2] [3 4]};
-gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-6);
-gp.comp_cf = {[1 2] [1 3]};
-%gp.comp_cf = {[1] [2]};
+% gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
+gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-6, 'comp_cf', {[1 2] [1 3]});
+
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');

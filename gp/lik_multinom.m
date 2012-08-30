@@ -27,7 +27,7 @@ function lik = lik_multinom(varargin)
   if isempty(lik)
     init=true;
     lik.type = 'Multinom';
-    lik.type_nd = true;
+    lik.nondiagW = true;
     lik.type_mo = true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Multinom')

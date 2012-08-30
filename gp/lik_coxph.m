@@ -50,19 +50,29 @@ function lik = lik_coxph(varargin)
   ip=inputParser;
   ip.FunctionName = 'LIK_COXPH';
   ip.addOptional('lik', [], @isstruct);
+  ip.addParamValue('S', linspace(0,1.001,50), @(x) isvector(x));
   ip.parse(varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)
     init=true;
     lik.type = 'Coxph';
-    lik.structW = false;
-    lik.type_nd = true;
+    lik.nondiagW=true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Coxph')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
+  end
+  
+  if init || ~ismember('S', ip.UsingDefaults)
+    s=ip.Results.S;
+    xtmp=zeros(length(s)-1,1);
+    for i2=1:(length(s)-1)
+      xtmp(i2,1)=mean([s(i2) s(i2+1)]);
+    end
+    lik.xtime=xtmp;
+    lik.stime=s;
   end
   
   if init

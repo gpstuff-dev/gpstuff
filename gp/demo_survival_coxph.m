@@ -76,22 +76,21 @@ gpcfh = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1.1, 'lengthScale_prior', pl, 
 gpcf = gpcf_sexp('lengthScale', ones(1,size(x,2)), 'magnSigma2', 1.2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-lik = lik_coxph();
+lik = lik_coxph('S', S);
 
-% use mean of time intervals in hazard function
-xtmp=zeros(length(S)-1,1);
-for i1=1:(length(S)-1)
-    xtmp(i1,1)=mean([S(i1) S(i1+1)]);
-end
-lik.xtime=xtmp;
-lik.stime=S;
+% % use mean of time intervals in hazard function
+% xtmp=zeros(length(S)-1,1);
+% for i1=1:(length(S)-1)
+%     xtmp(i1,1)=mean([S(i1) S(i1+1)]);
+% end
+% lik.xtime=xtmp;
+% lik.stime=S;
 
 % NOTE! if Multible covariance functions per latent is used, define
 % gp.comp_cf as follows:
-% gp.comp_cf = {[1 2] [5 6]}
+% gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
 % where [1 2] are for hazard function, and [5 6] for proportional part
-gp = gp_set('lik', lik, 'cf', {gpcfh gpcf}, 'jitterSigma2', 1e-6);
-gp.comp_cf = {[1] [2]};
+gp = gp_set('lik', lik, 'cf', {gpcfh gpcf}, 'jitterSigma2', 1e-6, 'comp_cf', {1 2});
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -157,10 +156,9 @@ gpcf = gpcf_sexp('lengthScale', ones(1,size(x2,2)), 'magnSigma2', .5, 'lengthSca
 
 % NOTE! if Multible covariance functions per latent is used, define
 % gp.comp_cf as follows:
-% gp.comp_cf = {[1 2] [5 6]}
+% gp = gp_set(..., 'comp_cf', {[1 2] [5 6]});
 % where [1 2] are for hazard function, and [5 6] for proportional part
-gp = gp_set('lik', lik, 'cf', {gpcfh gpcf}, 'jitterSigma2', 1e-6);
-gp.comp_cf = {[1] [2]};
+gp = gp_set('lik', lik, 'cf', {gpcfh gpcf}, 'jitterSigma2', 1e-6, 'comp_cf', {[1] [2]});
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
