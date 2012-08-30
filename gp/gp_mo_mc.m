@@ -218,7 +218,7 @@ function [record, gp, opt] = gp_mo_mc(gp, x, y, varargin)
         [f, energ, diagnl] = gp.fh.mc(f, opt.latent_opt, gp, x, y, z);
         gp.latentValues = f(:);
         f = f(:);
-        plot(f), drawnow
+%         plot(f), drawnow
         lrej=lrej+diagnl.rej/opt.repeat;
         if isfield(diagnl, 'opt')
           opt.latent_opt = diagnl.opt;
