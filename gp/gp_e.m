@@ -51,7 +51,7 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % not the nicest way of doing this, but a quick solution
   switch gp.latent_method
     case 'Laplace'
-      if isfield(gp.lik, 'type_nd')
+      if isfield(gp.lik, 'nondigW')
         fh_e = @gpla2_e;
       else
         fh_e = @gpla_e;
