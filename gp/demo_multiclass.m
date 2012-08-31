@@ -66,7 +66,7 @@ pm = prior_sqrtt('s2',10,'nu',10);
 gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl,'magnSigma2_prior', pm);
 
 % Create the GP structure
-gp = gp_set('lik', lik_softmax, 'cf', gpcf1, 'jitterSigma2', 1e-2, 'savememory', 'on');
+gp = gp_set('lik', lik_softmax, 'cf', gpcf1, 'jitterSigma2', 1e-2);
 
 % ------- Laplace approximation --------
 fprintf(['Softmax model with Laplace integration over the latent\n' ...
@@ -82,7 +82,7 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 % [Eft2, Varft2, ~, ~, pyt2] = gp_pred(gp2, x, y, xt, 'yt', ones(size(yt)));
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -116,12 +116,12 @@ contour(xtg1, xtg2, reshape(exp(pg(:,3)),30,30),'k', 'linewidth', 2)
 % Note that MCMC for latent values requires often more jitter
 lat = gp_pred(gp, x, y, x);
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
-gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh_mo));
+gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh2));
 gp.latentValues = lat(:);
 
-gp_mo_e(gp_pak(gp), gp, x,y)
-gp_mo_g(gp_pak(gp), gp, x,y)
-gradcheck(randn(size(gp_pak(gp))), @gp_mo_e, @gp_mo_g, gp, x, y);
+gp2_e(gp_pak(gp), gp, x,y)
+gp2_g(gp_pak(gp), gp, x,y)
+gradcheck(randn(size(gp_pak(gp))), @gp2_e, @gp2_g, gp, x, y);
 
 % Set the parameters for MCMC...
 hmc_opt.steps=10;
@@ -133,7 +133,7 @@ latent_opt.sample_latent_scale = 0.05;
 hmc2('state', sum(100*clock))
 
 % Sample
-[r,g,opt]=gp_mo_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+[r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;
@@ -143,13 +143,13 @@ latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp_mo_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+[rgp,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
 rgp=thin(rgp,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, pgs_mc] = gpmc_mo_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, pgs_mc] = gpmc2_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
 pg_mc = reshape(mean(exp(pgs_mc),2),900,3);
@@ -169,7 +169,7 @@ contour(xtg1, xtg2, reshape(pg_mc(:,3),30,30),'k', 'linewidth', 2)
 
 
 
-gp2 = gp_set(gp, 'latent_opt', struct('method',@scaled_hmc_mo));
+gp2 = gp_set(gp, 'latent_opt', struct('method',@scaled_hmc2));
 gp2.latentValues = lat(:);
 
 % Set the parameters for MCMC...
@@ -188,7 +188,7 @@ latent_opt.window=5;
 
 % Here we make an initialization with 
 % slow sampling parameters
-[rgp2,gp2,opt]=gp_mo_mc(gp2, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+[rgp2,gp2,opt]=gp2_mc(gp2, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 
 
@@ -196,7 +196,7 @@ latent_opt.window=5;
 hmc2('state', sum(100*clock))
 
 % Sample
-[r,g,opt]=gp_mo_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+[r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;
@@ -206,13 +206,13 @@ latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp_mo_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+[rgp,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
 rgp=thin(rgp,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, tmp, tmp, pgs_mc] = gpmc_mo_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, tmp, tmp, pgs_mc] = gpmc2_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
 pg_mc = reshape(mean(pgs_mc,2),900,3);

@@ -77,7 +77,7 @@ function lik = lik_inputdependentnoise(varargin)
   %   LIK_INPUTDEPENDENTNOISE_UNPAK, GP_PAK
     
   w = []; s = {};
-  if ~isempty(lik.p.sigma2)
+  if isfield(lik.p, 'sigma2') && ~isempty(lik.p.sigma2)
     w = [w log(lik.sigma2)];
     s = [s 'log(gaussian.sigma2)'];
     % Hyperparameters of sigma2
