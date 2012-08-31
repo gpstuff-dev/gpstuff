@@ -118,7 +118,7 @@ switch gp.type
   % ============================================================
   case 'FULL'
     
-    [e, edata, eprior, f, L, a, E, M] = gpla_nd_e(gp_pak(gp), gp, x, y, 'z', z);
+    [e, edata, eprior, f, L, a, E, M] = gpla2_e(gp_pak(gp), gp, x, y, 'z', z);
     
     switch gp.lik.type
       

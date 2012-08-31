@@ -70,7 +70,7 @@ switch gp.type
     end
     
     % Get help parameters
-    [e, edata, eprior, f, L, a, E, M, p] = gpla_nd_e(gp_pak(gp), gp, x, y, 'z', z);
+    [e, edata, eprior, f, L, a, E, M, p] = gpla2_e(gp_pak(gp), gp, x, y, 'z', z);
     if isnan(e)
       return
     end

@@ -47,11 +47,9 @@ if ~all(isfinite(w(:)));
 end
 
 if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
-  % use inference specific methods
-  % not the nicest way of doing this, but a quick solution
   switch gp.latent_method
     case 'Laplace'
-      if isfield(gp.lik, 'nondigW')
+      if isfield(gp.lik, 'nondiagW')
         fh_e = @gpla2_e;
       else
         fh_e = @gpla_e;
