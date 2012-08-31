@@ -66,7 +66,15 @@ z=ip.Results.z;
 % unpak the parameters
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
-[n,nout]=size(y);
+switch gp.lik.type
+  case {'LGP', 'LGPC', 'Coxph'}
+    error('GP2_G not implemented for this type of likelihood');
+  case {'Softmax', 'Multinom'}    
+    [n,nout]=size(y);
+  otherwise
+    n=size(y,1);
+    nout=length(gp.comp_cf);
+end
 
 g = [];
 gdata = [];
