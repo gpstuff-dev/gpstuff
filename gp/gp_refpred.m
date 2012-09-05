@@ -116,7 +116,7 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
           end
           [Ef1, Varf1, tmp, Ey1, Vary1] = gp_loopred(gp1,x,y, 'z', z);
         case 'kfcv'
-          [~, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'iter', 'k', tn, options);
+          [tmp, preds] = gp_kfcv(gp1, x, y, 'tstindex', tstind, 'opt', opt, 'display', 'iter', 'k', tn, options);
           [Ef1, Varf1, Ey1, Vary1] = deal(preds.Eft,preds.Varft,preds.Eyt,preds.Varyt);
         case 'joint'
           [Ef1, Covf1] = gp_jpred(gp1,x,y,x,'yt',y, 'tstind', tstind, options);

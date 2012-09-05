@@ -428,11 +428,11 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             Eyt=[];
             Varyt=[];
           elseif predft && predyt
-            [Eft, Varft,~, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+            [Eft, Varft,tmp, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
                                                  tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
             lpyt=[];
           elseif predlpyt && predyt  
-            [~,~,lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+            [tmp, tmp,lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
                                                 tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
             Eft=[];
             Varft=[];
@@ -443,14 +443,14 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             Varyt=[];
             lpyt=[];
           elseif predlpyt
-            [~,~,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+            [tmp, tmp,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
                                     tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
             Eyt=[];
             Varyt=[];
             Eft=[];
             Varft=[];
           else
-            [~,~,~,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+            [tmp, tmp, tmp,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
                                             tstind2, 'z', ztr, 'yt', yt, 'zt', zt); 
             Eft=[];
             Varft=[];
@@ -465,19 +465,19 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
             [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, ...
                                         'tstind', tstind2, 'yt', yttst);
           elseif predft && predyt
-            [Eft, Varft, ~,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
+            [Eft, Varft, tmp,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
                                                     'tstind', tstind2, 'yt', yt);
           elseif predlpyt && predyt  
-            [~,~,lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
+            [tmp, tmp,lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
                                                 'tstind', tstind2, 'yt', yt);
           elseif predft
             [Eft,Varft] = gp_pred(gp, xtr, ytr, x, ...
                                     'tstind', tstind2, 'yt', yt);
           elseif predlpyt
-            [~,~,lpyt] = gp_pred(gp, xtr, ytr, x, ...
+            [tmp, tmp,lpyt] = gp_pred(gp, xtr, ytr, x, ...
                                     'tstind', tstind2, 'yt', yt);
           else
-            [~,~,~,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
+            [tmp,tmp, tmp,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
                                             'tstind', tstind2, 'yt', yt);
           end
 
@@ -858,10 +858,10 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         Varyt=[];
         Eyt=[];
       elseif predft && predyt
-        [Eft, Varft, ~,Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
+        [Eft, Varft, tmp,Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
         lpyt=[];
       elseif predlpyt && predyt  
-        [~,~,lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
+        [tmp, tmp,lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
         Eft=[];
         Varft=[];
       elseif predft
@@ -869,13 +869,13 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         Varyt=[];
         Eyt=[];
       elseif predlpyt
-        [~,~,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
+        [tmp, tmp,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
         Varyt=[];
         Eyt=[];
         Eft=[];
         Varft=[];
       else
-        [~,~,~,Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
+        [tmp,tmp, tmp,Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
         Eft=[];
         Varft=[];
         lpyt=[];

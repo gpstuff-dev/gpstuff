@@ -256,7 +256,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       end
       
     case 'inla'
-      % Leonhard Held and Birgit Schrödle and Håvard Rue (2010)
+      % Leonhard Held and Birgit Schrï¿½dle and Hï¿½vard Rue (2010)
       % Posterior and Cross-validatory Predictive Checks: A
       % Comparison of MCMC and INLA. In (eds) Thomas Kneib and
       % Gerhard Tutz, Statistical Modelling and Regression
@@ -283,7 +283,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
       end
 
       if nargout>3
-        [~,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
+        [tmp,Eyt,Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, y, z);
       end
       if sum((abs(lpyt)./abs(lp) > 5) == 1) > 0.1*tn;
         warning('Very bad predictive densities, gpla_loopred might not be reliable, check results!');

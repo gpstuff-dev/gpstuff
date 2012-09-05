@@ -150,7 +150,7 @@ j = 0;
 for i = 1-nomit:1:nsamples
   
   % Treshold
-  [y, ~, eta, g] = getY(gp, xx, yy, z, f_0, x_0, []);
+  [y, tmp, eta, g] = getY(gp, xx, yy, z, f_0, x_0, []);
   
 %   fprintf('\n')
 %   fprintf('Treshold: %g\n',y);
@@ -428,7 +428,7 @@ l = L(j);
 r = R(j);
 
 f_new = f(:,end);
-% [y, ~, eta, g] = getY(gp, xx, yy, z, f_new, x_0, []);
+% [y, tmp, eta, g] = getY(gp, xx, yy, z, f_new, x_0, []);
 
 while 1
   x_new(j) = l + (r-l).*rand;
@@ -712,7 +712,7 @@ end
 gp = gp_unpak(gp, w);
 [K,C] = gp_trcov(gp, xx);
 % for ii=1:size(yy,1)
-%   [~,~, m2(ii,:)] = gp.lik.fh.tiltedMoments(gp.lik, yy, ii, C(ii,ii), 0, z);
+%   [tmp,tmp, m2(ii,:)] = gp.lik.fh.tiltedMoments(gp.lik, yy, ii, C(ii,ii), 0, z);
 % end
 % S = diag(1./(1./m2 - 1./diag(C)));
 S = 10*eye(size(C));
