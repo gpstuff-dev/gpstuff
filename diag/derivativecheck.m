@@ -53,7 +53,7 @@ for i = 1:nparams
     deltaf(i,:) = 0.5*(fplus(:)' - fminus(:)')/epsilon;
   end
 end
-[~,gradient] = fun(w);
+[tmp,gradient] = fun(w);
 gradient=gradient(:)';
 fprintf(1, 'Checking gradient ...\n\n');
 fprintf(1, '   analytic   diffs     delta\n\n');
