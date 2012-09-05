@@ -144,10 +144,10 @@ for m = 2:M+Madapt+1,
         v = 2*(rand() < 0.5)-1;
         % Double the size of the tree.
         if (v == -1)
-            [thetaminus, rminus, gradminus, ~, ~, ~, thetaprime, gradprime, logpprime, nprime, sprime, alpha, nalpha] = ...
+            [thetaminus, rminus, gradminus, tmp, tmp, tmp, thetaprime, gradprime, logpprime, nprime, sprime, alpha, nalpha] = ...
                 build_tree(thetaminus, rminus, gradminus, logu, v, j, epsilon, f, joint);
         else
-            [~, ~, ~, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, nprime, sprime, alpha, nalpha] = ...
+            [tmp, tmp, tmp, thetaplus, rplus, gradplus, thetaprime, gradprime, logpprime, nprime, sprime, alpha, nalpha] = ...
                 build_tree(thetaplus, rplus, gradplus, logu, v, j, epsilon, f, joint);
         end
         % Use Metropolis-Hastings to decide whether or not to move to a
@@ -230,10 +230,10 @@ else
     % subtree.
     if (sprime == 1)
         if (v == -1)
-            [thetaminus, rminus, gradminus, ~, ~, ~, thetaprime2, gradprime2, logpprime2, nprime2, sprime2, alphaprime2, nalphaprime2] = ...
+            [thetaminus, rminus, gradminus, tmp, tmp, tmp, thetaprime2, gradprime2, logpprime2, nprime2, sprime2, alphaprime2, nalphaprime2] = ...
                 build_tree(thetaminus, rminus, gradminus, logu, v, j-1, epsilon, f, joint0);
         else
-            [~, ~, ~, thetaplus, rplus, gradplus, thetaprime2, gradprime2, logpprime2, nprime2, sprime2, alphaprime2, nalphaprime2] = ...
+            [tmp, tmp, tmp, thetaplus, rplus, gradplus, thetaprime2, gradprime2, logpprime2, nprime2, sprime2, alphaprime2, nalphaprime2] = ...
                 build_tree(thetaplus, rplus, gradplus, logu, v, j-1, epsilon, f, joint0);
         end
         % Choose which subtree to propagate a sample up from.
@@ -257,13 +257,13 @@ function epsilon = find_reasonable_epsilon(theta0, grad0, logp0, f)
 epsilon = 1;
 r0 = randn(1, length(theta0));
 % Figure out what direction we should be moving epsilon.
-[~, rprime, ~, logpprime] = leapfrog(theta0, r0, grad0, epsilon, f);
+[tmp, rprime, tmp, logpprime] = leapfrog(theta0, r0, grad0, epsilon, f);
 acceptprob = exp(logpprime - logp0 - 0.5 * (rprime * rprime' - r0 * r0'));
 a = 2 * (acceptprob > 0.5) - 1;
 % Keep moving epsilon in that direction until acceptprob crosses 0.5.
 while (acceptprob^a > 2^(-a))
     epsilon = epsilon * 2^a;
-    [~, rprime, ~, logpprime] = leapfrog(theta0, r0, grad0, epsilon, f);
+    [tmp, rprime, tmp, logpprime] = leapfrog(theta0, r0, grad0, epsilon, f);
     acceptprob = exp(logpprime - logp0 - 0.5 * (rprime * rprime' - r0 * r0'));
 end
 end
