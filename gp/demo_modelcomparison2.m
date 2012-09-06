@@ -126,15 +126,15 @@ gpcf1 = gpcf_sexp('lengthScale', ones(1,size(x,2)), 'magnSigma2', 1.2, 'lengthSc
 gpcf2 = gpcf_sexp('lengthScale', ones(1,size(x,2)), 'magnSigma2', 1.2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-lik = lik_coxph();
+lik = lik_coxph('S', S);
 
 % use mean of time intervals in hazard function
-xtmp=zeros(length(S)-1,1);
-for i1=1:(length(S)-1)
-    xtmp(i1,1)=mean([S(i1) S(i1+1)]);
-end
-lik.xtime=xtmp;
-lik.stime=S;
+% xtmp=zeros(length(S)-1,1);
+% for i1=1:(length(S)-1)
+%     xtmp(i1,1)=mean([S(i1) S(i1+1)]);
+% end
+% lik.xtime=xtmp;
+% lik.stime=S;
 
 % NOTE! if Multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:

@@ -26,9 +26,9 @@ if ~strcmp(gp.lik.type, 'Coxph')
   error('Likelihood not Coxph')
 end
 if nargout > 3
-  [Ef, Covf, lpyt] = gpla_nd_pred(gp, x, y, xt, varargin{:});
+  [Ef, Covf, lpyt] = gpla2_pred(gp, x, y, xt, varargin{:});
 else
-  [Ef, Covf] = gpla_nd_pred(gp, x, y, xt, varargin{:});
+  [Ef, Covf] = gpla2_pred(gp, x, y, xt, varargin{:});
 end
 ntime = size(gp.lik.stime,2)-1;
 Eft1 = Ef(1:ntime); Ef(1:ntime) = []; Eft2 = Ef;

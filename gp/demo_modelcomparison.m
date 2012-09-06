@@ -83,25 +83,23 @@ gpcf2 = gpcf_sexp('lengthScale', ones(1,size(x2,2)), 'magnSigma2', 1.2, 'lengthS
 
 
 % Create the likelihood structure
-lik = lik_coxph();
+lik = lik_coxph('S', S);
 
 % use mean of time intervals in hazard function
-xtmp=zeros(length(S)-1,1);
-for i1=1:(length(S)-1)
-    xtmp(i1,1)=mean([S(i1) S(i1+1)]);
-end
-lik.xtime=xtmp;
-lik.stime=S;
+% xtmp=zeros(length(S)-1,1);
+% for i1=1:(length(S)-1)
+%     xtmp(i1,1)=mean([S(i1) S(i1+1)]);
+% end
+% lik.xtime=xtmp;
+% lik.stime=S;
 
 % NOTE! if Multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
-% gp.comp_cf = {[1 2] [5 6]}
+% gp = gp_set(..., 'comp_cf', {[1 2] [5 6]});
 % where [1 2] are for hazard function, and [5 6] for proportional part
-gp1 = gp_set('lik', lik, 'cf', {gpcfh1 gpcf2}, 'jitterSigma2', 1e-6);
-gp1.comp_cf = {[1] [2]};
+gp1 = gp_set('lik', lik, 'cf', {gpcfh1 gpcf1}, 'jitterSigma2', 1e-6, 'comp_cf', {[1] [2]});
 
-gp2 = gp_set('lik', lik, 'cf', {gpcfh1 gpcf2}, 'jitterSigma2', 1e-6);
-gp2.comp_cf = {[1] [2]};
+gp2 = gp_set('lik', lik, 'cf', {gpcfh2 gpcf2}, 'jitterSigma2', 1e-6, 'comp_cf', {[1] [2]});
 
 % Set the approximate inference method to Laplace
 gp1 = gp_set(gp1, 'latent_method', 'Laplace');
