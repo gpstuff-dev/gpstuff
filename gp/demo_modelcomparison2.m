@@ -491,7 +491,7 @@ fs_lg = gp_rnd(gplg, x, y, xa , 'z', ye,'nsamp',1000);
 
 %zz = 0.001:.001:max(y);
 for i=1:size(zz,2)   
-yylg(i) =1. - mean(cdf('normal', log(zz(i)), fs_lg, sqrt(gplg.lik.sigma2)),2);
+yylg(i) =1. - mean(norm_cdf(log(zz(i)), fs_lg, sqrt(gplg.lik.sigma2)),2);
 end
 
 % Log Logistic model 
