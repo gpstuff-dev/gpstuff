@@ -47,7 +47,6 @@ function lik = lik_probit(varargin)
     lik.fh.llg = @lik_probit_llg;    
     lik.fh.llg2 = @lik_probit_llg2;
     lik.fh.llg3 = @lik_probit_llg3;
-    lik.fh.llg4 = @lik_probit_llg4;
     lik.fh.tiltedMoments = @lik_probit_tiltedMoments;
     lik.fh.predy = @lik_probit_predy;
     lik.fh.invlink = @lik_probit_invlink;
@@ -220,41 +219,6 @@ function llg3 = lik_probit_llg3(lik, y, f, param, z)
   end
 end
 
-function llg4 = lik_probit_llg4(lik, y, f, param, z)
-%LIK_PROBIT_LLG3  Fourth gradients of the log likelihood
-%
-%  Description
-%    LLG3 = LIK_PROBIT_LLG3(LIK, Y, F, PARAM) takes a likelihood
-%    structure LIK, class labels Y, and latent values F and
-%    returns the third gradients of the log likelihood with
-%    respect to PARAM. At the moment PARAM can be only 'latent'. 
-%    LLG3 is a vector with third gradients.
-%
-%  See also
-%    LIK_PROBIT_LL, LIK_PROBIT_LLG, LIK_PROBIT_LLG2, GPLA_E, GPLA_G
-
-  if ~isempty(find(abs(y)~=1))
-    error('lik_probit: The class labels have to be {-1,1}')
-  end
-  
-  switch param
-    case 'latent'
-      z=y.*f;
-      ncdf=norm_cdf(z);
-      if any(z<-10)
-        % log of asymptotic expansion of cumulative gaussian for higher accuracy
-        % for small p.  Idea to use this method originated from lightspeed
-        % toolbox by T. Minka
-        i = find(p<-10);
-        c = 1 - 1./z(i).^2.*(1-3./z(i).^2.*(1-5./z(i).^2.*(1-7./z(i).^2)));
-        ncdf(i) = -0.5*log(2*pi)-z(i).^2./2-log(-z(i))+log(c);
-      end
-      z2 = norm_pdf(f)./ncdf;
-      llg4=(-f.*z2-y.*z2.^2).*(6.*y.*z2.^2  + 6.*f.*z2 ...
-        - (y-y.*f.^2)) + 3.*z2.^2 + 2.*y.*f.*z2;
-  end
-end
-
 function [logM_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
@@ -365,7 +329,6 @@ function reclik = lik_probit_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_probit_llg;    
     reclik.fh.llg2 = @lik_probit_llg2;
     reclik.fh.llg3 = @lik_probit_llg3;
-    reclik.fh.llg4 = @lik_probit_llg4;
     reclik.fh.tiltedMoments = @lik_probit_tiltedMoments;
     reclik.fh.predy = @lik_probit_predy;
     reclik.fh.invlink = @lik_probit_invlink;
