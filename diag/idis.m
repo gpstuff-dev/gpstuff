@@ -1,17 +1,28 @@
 function [id,bb,rt,rn] = idis(pt,pn,varargin)
-% [ID,BB,RT,RN]= IDIS(PT,PN)
+%IDIS Integrated Discrimination Improvement given probabilities from two models
 % 
-% Description 
+%  Description 
+%    IDI = IDIS(PT,PN) Returns Integrated Discrimination Improvement (IDI)
+%    given two vectors of probabilities: PT for traditional model
+%    and PN for new model.
 %
-%   Given two vectors of cdf estimated probabilities (Pt = traditional model, Pn = new model)
-%   returns Integrated Discrimination Improvement, it's Bayesian Bootstrap
-%   estimated density, R² estimation of new and old model 
-% 
-%  OPTIONS
-%      rsubstream    - number of a random stream to be used for
-%                   simulating dirrand variables the data. This way
-%                   same simulation can be obtained for different
-%                   models. 
+%    [IDI,BB] = Returns also Bayesian bootstrap samples BB
+%    from the distribution of the IDI statistic.
+%
+%    [IDI,BB,RT,RN] = Returns also R^2 statistics for two models:
+%    RT for traditional model and RN for new model.
+%   
+%  Options
+%    rsubstream - number of a random stream to be used for
+%                 simulating dirrand variables. This way same
+%                 simulation can be obtained for different models. 
+%                 See doc RandStream for more information.
+%
+%  Reference
+%    L. E. Chambless, C. P. Cummiskey, and G. Cui (2011). Several
+%    methods to assess improvement in risk prediction models:
+%    Extension to survival analysis. Statistics in Medicine
+%    30(1):22-38.
 
 ip=inputParser;
 ip.addRequired('pt',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -20,14 +31,13 @@ ip.addParamValue('rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) &
 ip.parse(pt,pn,varargin{:})
 rsubstream=ip.Results.rsubstream;
 
-  if nargin<3
-    [rt,bbt]=rsqr(pt);
-    [rn,bbn]=rsqr(pn);
-  else
-    [rt,bbt]=rsqr(pt,'rsubstream',rsubstream);
-    [rn,bbn]=rsqr(pn,'rsubstream',rsubstream);
-  end
-    id=rn-rt;
-    bb=bbn-bbt;
+if nargin<3
+  [rt,bbt]=rsqr(pt);
+  [rn,bbn]=rsqr(pn);
+else
+  [rt,bbt]=rsqr(pt,'rsubstream',rsubstream);
+  [rn,bbn]=rsqr(pn,'rsubstream',rsubstream);
 end
-
+id=rn-rt;
+bb=bbn-bbt;
+end
