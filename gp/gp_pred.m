@@ -143,7 +143,11 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   if iscell(gp)
     fh_pred=@gpia_pred;
   elseif numel(gp.jitterSigma2)>1
-    fh_pred=@gpmc_pred;
+    if isfield(gp.lik, 'nondiagW')
+      fh_pred=@gpmc2_pred;
+    else
+      fh_pred=@gpmc_pred;
+    end
   elseif isfield(gp,'latent_method')
     switch gp.latent_method
       case 'Laplace'
@@ -155,8 +159,8 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
       case {'EP' 'robust-EP'}
         fh_pred=@gpep_pred;
       case 'MCMC'
-        if isfield(gp, 'type_mo')
-          fh_pred = @gpmc_mo_pred;
+        if isfield(gp, 'nondiagW')
+          fh_pred = @gpmc2_pred;
         else
           fh_pred = @gpmc_pred;
         end

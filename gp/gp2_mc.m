@@ -104,7 +104,7 @@ function [record, gp, opt] = gp2_mc(gp, x, y, varargin)
   opt.lik_gibbs_opt = ip.Results.lik_gibbs_opt;
   opt.persistence_reset = ip.Results.persistence_reset;
   
-  switch gp.type
+  switch gp.lik.type
     case {'LGP', 'LGPC', 'Coxph'}
       error('gp2_mc not implemented for this type of likelihood');
     case {'Softmax', 'Multinom'}

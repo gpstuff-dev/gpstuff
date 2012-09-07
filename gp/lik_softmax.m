@@ -27,7 +27,6 @@ function lik = lik_softmax(varargin)
     init=true;
     lik.type = 'Softmax';
     lik.nondiagW=true;
-    lik.type_mo = true;
   else
     if ~isfield(lik,'type') && ~isequal(lik.type,'Softmax')
       error('First argument does not seem to be a valid likelihood function structure')

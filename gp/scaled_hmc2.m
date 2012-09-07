@@ -37,7 +37,7 @@ else
 end
 
 % Initialize variables
-switch gp.type
+switch gp.lik.type
   case {'LGP', 'LGPC'}
     error('scaled_hmc2 not implemented for this type of likelihood');
   case {'Softmax', 'Multinom'}

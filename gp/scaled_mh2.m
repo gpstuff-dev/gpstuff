@@ -33,7 +33,7 @@ maxcut = -log(eps);
 mincut = -log(1/realmin - 1);
 lvs=opt.sample_latent_scale;
 a = max(min(f, maxcut),mincut);
-switch gp.type
+switch gp.lik.type
   case {'LGP', 'LGPC', 'Coxph'}
     error('scaled_mh2 not implemented for this type of likelihood');
   case {'Softmax', 'Multinom'}

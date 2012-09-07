@@ -185,18 +185,15 @@ latent_opt.repeat=20;
 latent_opt.steps=20;
 latent_opt.stepadj=0.15;
 latent_opt.window=5;
+hmc2('state', sum(100*clock))
 
 % Here we make an initialization with 
 % slow sampling parameters
+
 [rgp2,gp2,opt]=gp2_mc(gp2, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
-
-
-
-hmc2('state', sum(100*clock))
-
 % Sample
-[r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+% [r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;
@@ -206,13 +203,13 @@ latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+[rgp,g,opt]=gp2_mc(gp2, x, y, 'nsamples', 200, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', rgp2);
 % Remove burn-in
 rgp=thin(rgp,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, tmp, tmp, pgs_mc] = gpmc2_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, pgs_mc] = gpmc2_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
 pg_mc = reshape(mean(pgs_mc,2),900,3);
