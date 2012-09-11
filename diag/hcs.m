@@ -8,11 +8,11 @@ function [c,bb] = hcs(crit,y,z,t,varargin)
 %    Harrel's C at time T and it's estimated density using
 %    Bayesian Bootstrap method
 %
-%  Options
-%    rsubstream - number of a random stream to be used for
-%                 simulating dirrand variables. This way same
-%                 simulation can be obtained for different models. 
-%                 See doc RandStream for more information.
+%    OPTIONS is optional parameter-value pair
+%      rsubstream - number of a random stream to be used for
+%                   simulating dirrand variables. This way same
+%                   simulation can be obtained for different models. 
+%                   See doc RandStream for more information.
 %
 %  Reference
 %    L. E. Chambless, C. P. Cummiskey, and G. Cui (2011). Several

@@ -2,21 +2,22 @@ function [id,bb,rt,rn] = idis(pt,pn,varargin)
 %IDIS Integrated Discrimination Improvement given probabilities from two models
 % 
 %  Description 
-%    IDI = IDIS(PT,PN) Returns Integrated Discrimination Improvement (IDI)
+%    IDI = IDIS(PT,PN,OPTIONS) Returns Integrated Discrimination Improvement (IDI)
 %    given two vectors of probabilities: PT for traditional model
 %    and PN for new model.
 %
-%    [IDI,BB] = Returns also Bayesian bootstrap samples BB
-%    from the distribution of the IDI statistic.
+%    [IDI,BB] = IDIS(PT,PN,OPTIONS) Returns also Bayesian bootstrap
+%    samples BB from the distribution of the IDI statistic.
 %
-%    [IDI,BB,RT,RN] = Returns also R^2 statistics for two models:
-%    RT for traditional model and RN for new model.
+%    [IDI,BB,RT,RN] = IDIS(PT,PN,OPTIONS) Returns also R^2
+%    statistics for two models: RT for traditional model and RN for
+%    new model.
 %   
-%  Options
-%    rsubstream - number of a random stream to be used for
-%                 simulating dirrand variables. This way same
-%                 simulation can be obtained for different models. 
-%                 See doc RandStream for more information.
+%    OPTIONS is optional parameter-value pair
+%      rsubstream - number of a random stream to be used for
+%                   simulating dirrand variables. This way same
+%                   simulation can be obtained for different models. 
+%                   See doc RandStream for more information.
 %
 %  Reference
 %    L. E. Chambless, C. P. Cummiskey, and G. Cui (2011). Several

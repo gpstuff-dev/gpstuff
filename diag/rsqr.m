@@ -2,18 +2,18 @@ function [r,bb] = rsqr(p,varargin)
 %RSQR R^2 statistic given probabilities
 %
 %  Description:
-%    R = RSQR(P) Returns R^2 statistic given vector P of estimated
-%    probabilities of presenting event before time T and using
-%    Bayesian bootstrap its density estimate
+%    R = RSQR(P,OPTIONS) Returns R^2 statistic given vector P of
+%    estimated probabilities of presenting event before time T and
+%    using Bayesian bootstrap its density estimate
 %
-%    [R,BB] = RSQR(P) Returns also Bayesian bootstrap samples BB
-%    from the distribution of the R^2 statistic.
+%    [R,BB] = RSQR(P,OPTIONS) Returns also Bayesian bootstrap
+%    samples BB from the distribution of the R^2 statistic.
 %
-%  Options
-%    rsubstream - number of a random stream to be used for
-%                 simulating dirrand variables. This way same
-%                 simulation can be obtained for different models. 
-%                 See doc RandStream for more information.
+%    OPTIONS is optional parameter-value pair
+%      rsubstream - number of a random stream to be used for
+%                   simulating dirrand variables. This way same
+%                   simulation can be obtained for different models. 
+%                   See doc RandStream for more information.
 %
 %  Reference
 %    L. E. Chambless, C. P. Cummiskey, and G. Cui (2011). Several
