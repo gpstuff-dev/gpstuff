@@ -91,6 +91,9 @@ function p = prior_t(varargin)
 end
 
 function [w, s] = prior_t_pak(p)
+% This is a mandatory subfunction used for example 
+% in energy and gradient computations.
+
   
   w=[];
   s={};
@@ -109,6 +112,9 @@ function [w, s] = prior_t_pak(p)
 end
 
 function [p, w] = prior_t_unpak(p, w)
+% This is a mandatory subfunction used for example 
+% in energy and gradient computations.
+
   
   if ~isempty(p.p.mu)
     i1=1;
@@ -128,6 +134,9 @@ function [p, w] = prior_t_unpak(p, w)
 end
 
 function lp = prior_t_lp(x, p)
+% This is a mandatory subfunction used for example 
+% in energy computations.
+
   
   lp=sum(gammaln((p.nu+1)./2) -gammaln(p.nu./2) -0.5*log(p.nu.*pi.*p.s2) -(p.nu+1)./2.*log(1+(x-p.mu).^2./p.nu./p.s2));
   
@@ -143,6 +152,9 @@ function lp = prior_t_lp(x, p)
 end
 
 function lpg = prior_t_lpg(x, p)
+% This is a mandatory subfunction used for example 
+% in gradient computations.
+
 
  %lpg=(p.nu+1)./p.nu .* (x-p.mu)./p.s2 ./ (1 + (x-p.mu).^2./p.nu./p.s2);
   lpg=-(p.nu+1).* (x-p.mu) ./ (p.nu.*p.s2 + (x-p.mu).^2);
@@ -162,6 +174,8 @@ function lpg = prior_t_lpg(x, p)
 end
 
 function rec = prior_t_recappend(rec, ri, p)
+% This subfunction is needed when using MCMC sampling (gp_mc).
+
 % The parameters are not sampled in any case.
   rec = rec;
   if ~isempty(p.p.mu)
