@@ -166,7 +166,8 @@ function [w,s] = gpcf_sexp_pak(gpcf)
 %    W = GPCF_SEXP_PAK(GPCF) takes a covariance function
 %    structure GPCF and combines the covariance function
 %    parameters and their hyperparameters into a single row
-%    vector W.
+%    vector W. This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %
 %       w = [ log(gpcf.magnSigma2)
 %             (hyperparameters of gpcf.magnSigma2)
@@ -218,7 +219,8 @@ function [gpcf, w] = gpcf_sexp_unpak(gpcf, w)
 %    returns a covariance function structure identical to the
 %    input, except that the covariance parameters have been set
 %    to the values in W. Deletes the values set to GPCF from W
-%    and returns the modified W.
+%    and returns the modified W. This is a mandatory subfunction
+%    used for example in energy and gradient computations.
 %
 %    Assignment is inverse of  
 %       w = [ log(gpcf.magnSigma2)
@@ -261,7 +263,8 @@ function lp = gpcf_sexp_lp(gpcf)
 %  Description
 %    LP = GPCF_SEXP_LP(GPCF) takes a covariance function
 %    structure GPCF and returns log(p(th)), where th collects the
-%    parameters.
+%    parameters. This is a mandatory subfunction used for example 
+%    in energy computations.
 %
 %  See also
 %    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LPG, GP_LP
@@ -295,7 +298,8 @@ function lpg = gpcf_sexp_lpg(gpcf)
 %  Description
 %    LPG = GPCF_SEXP_LPG(GPCF) takes a covariance function
 %    structure GPCF and returns LPG = d log (p(th))/dth, where th
-%    is the vector of parameters.
+%    is the vector of parameters. This is a mandatory subfunction 
+%    used in gradient computations.
 %
 %  See also
 %    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
@@ -328,26 +332,29 @@ function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask, i1)
 %    DKff = GPCF_SEXP_CFG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to th (cell array with matrix elements).
+%    respect to th (cell array with matrix elements). This is a 
+%    mandatory subfunction used in gradient computations.
 %
 %    DKff = GPCF_SEXP_CFG(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to th (cell array with matrix
-%    elements).
+%    elements). This subfunction is needed when using 
+%    sparse approximations (e.g. FIC).
 %
 %    DKff = GPCF_SEXP_CFG(GPCF, X, [], MASK) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the diagonal of gradients of covariance matrix
 %    Kff = k(X,X2) with respect to th (cell array with matrix
-%    elements). This is needed for example in FIC sparse
-%    approximation.
+%    elements). This subfunction is needed when using sparse 
+%    approximations (e.g. FIC).
 %
 %    DKff = GPCF_SEXP_CFG(GPCF, X, X2, MASK, i) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
-%    hyperparameter.
+%    hyperparameter. This subfunction is needed when using 
+%    memory save option in gp_set.
 %
 %  See also
 %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
@@ -538,8 +545,6 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
 %                respect to x, with respect to parameters.
 %
 %  Description
-%    This function is needed for handling derivative observations.
-%
 %    DKff = GPCF_SEXP_CFDG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of derivatived covariance matrix
@@ -549,7 +554,9 @@ function DKff = gpcf_sexp_cfdg(gpcf, x)
 %    Evaluate: DKff{1:m} = d Kff / d magnSigma2
 %              DKff{m+1:2m} = d Kff / d lengthScale_m
 %    m is the dimension of inputs. If ARD is used, then multiple
-%    lengthScales.
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+
 %
 %  See also
 %    GPCF_SEXP_GINPUT
@@ -635,8 +642,6 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
 %                 to parameters.
 %
 %  Description
-%    This function is needed for handling derivative observations.
-%
 %    DKff = GPCF_SEXP_CFDG2(GPCF, X) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of derivative covariance matrix
@@ -646,7 +651,9 @@ function DKff = gpcf_sexp_cfdg2(gpcf, x)
 %    Evaluate: DKff{1-m} = d Kff / d magnSigma2
 %              DKff{m+1-2m} = d Kff / d lengthScale_m
 %    m is the dimension of inputs. If ARD is used, then multiple
-%    lengthScales.
+%    lengthScales. This subfunction is needed when using derivative 
+%    observations.
+
 %
 %  See also
 %   GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2 
@@ -843,12 +850,16 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
 %    DKff = GPCF_SEXP_GHYPER(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to X (cell array with matrix elements)
+%    respect to X (cell array with matrix elements). This subfunction
+%    is needed when computing gradients with respect to inducing
+%    inputs in sparse approximations.
 %
 %    DKff = GPCF_SEXP_GHYPER(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
+%    This subfunction is needed when computing gradients with 
+%    respect to inducing inputs in sparse approximations.
 %
 %  See also
 %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
@@ -937,8 +948,6 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
 %                   same dimension).
 %
 %  Description
-%    This function is needed for handling derivative observations.
-%
 %    DKff = GPCF_SEXP_GINPUT2(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of twice derivatived covariance
@@ -946,7 +955,8 @@ function [DKff, DKff1, DKff2]  = gpcf_sexp_ginput2(gpcf, x, x2)
 %    elements). Input variable's dimensions are expected to be
 %    same. The function returns also DKff1 and DKff2 which are
 %    parts of DKff and needed with CFDG2. DKff = DKff1 -
-%    DKff2.
+%    DKff2. This subfunction is needed when using derivative 
+%    observations.
 %   
 %  See also
 %    GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_CFDG2 
@@ -992,15 +1002,14 @@ function DKff = gpcf_sexp_ginput3(gpcf, x, x2)
 %                   different dimensions).
 %
 %  Description
-%    This function is needed for handling derivative observations.
-%
 %    DKff = GPCF_SEXP_GINPUT3(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of twice derivatived covariance
 %    matrix K(df,df) = dk(X1,X2)/dX1dX2 (cell array with matrix
 %    elements). The derivative is calculated in multidimensional
 %    problem between input's observation dimensions which are not
-%    same .
+%    same. This subfunction is needed when using derivative 
+%    observations.
 %   
 %  See also
 %    GPCF_SEXP_GINPUT, GPCF_SEXP_GINPUT2, GPCF_SEXP_CFDG2 
@@ -1048,17 +1057,17 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2, i1)
 %                  sexp_ginput, returns full matrices.
 %
 %  Description
-%    This function is needed for handling derivative observations.
-%
 %    DKff = GPCF_SEXP_GHYPER(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to X (whole matrix)
+%    respect to X (whole matrix). This subfunction is needed when 
+%    using derivative observations.
 %
 %    DKff = GPCF_SEXP_GHYPER(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
-%    k(X,X2) with respect to X (whole matrix).
+%    k(X,X2) with respect to X (whole matrix). This subfunction 
+%    is needed when using derivative observations.
 %
 %  See also
 %    GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G
@@ -1110,7 +1119,8 @@ function C = gpcf_sexp_cov(gpcf, x1, x2)
 %    Gaussian process GP and two matrixes TX and X that contain
 %    input vectors to GP. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i in TX
-%    and j in X.
+%    and j in X. This is a mandatory subfunction used for example in
+%    prediction and energy computations.
 %
 %  See also
 %    GPCF_SEXP_TRCOV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
@@ -1169,6 +1179,8 @@ function C = gpcf_sexp_trcov(gpcf, x)
 %    Gaussian process GP and matrix TX that contains training
 %    input vectors. Returns covariance matrix C. Every element ij
 %    of C contains covariance between inputs i and j in TX.
+%    This is a mandatory subfunction used for example in
+%    prediction and energy computations.
 %
 %  See also
 %    GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
@@ -1220,8 +1232,8 @@ function C = gpcf_sexp_trvar(gpcf, x)
 %    C = GP_SEXP_TRVAR(GPCF, TX) takes in covariance function of
 %    a Gaussian process GPCF and matrix TX that contains training
 %    inputs. Returns variance vector C. Every element i of C
-%    contains variance of input i in TX.
-%
+%    contains variance of input i in TX. This is a mandatory 
+%    subfunction used for example in prediction and energy computations.
 %  See also
 %    GPCF_SEXP_COV, GP_COV, GP_TRCOV
 
@@ -1239,7 +1251,8 @@ function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
 %    covariance function record structure RECCF, record index RI
 %    and covariance function structure GPCF with the current MCMC
 %    samples of the parameters. Returns RECCF which contains all
-%    the old samples and the current samples from GPCF .
+%    the old samples and the current samples from GPCF. This 
+%    subfunction is needed when using MCMC sampling (gp_mc).
 %
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND

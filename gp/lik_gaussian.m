@@ -99,6 +99,8 @@ function [w s] = lik_gaussian_pak(lik)
 %  Description
 %    W = LIK_GAUSSIAN_PAK(LIK) takes a likelihood structure LIK
 %    and combines the parameters into a single row vector W.
+%    This is a mandatory subfunction used for example in energy 
+%    and gradient computations.
 %
 %       w = [ log(lik.sigma2)
 %             (hyperparameters of lik.magnSigma2)]'
@@ -124,7 +126,8 @@ function [lik, w] = lik_gaussian_unpak(lik, w)
 %  Description
 %    W = LIK_GAUSSIAN_UNPAK(W, LIK) takes a likelihood structure
 %    LIK and extracts the parameters from the vector W to the LIK
-%    structure.
+%    structure. This is a mandatory subfunction used for example 
+%    in energy and gradient computations.
 %
 %    Assignment is inverse of  
 %       w = [ log(lik.sigma2)
@@ -149,6 +152,8 @@ function lp = lik_gaussian_lp(lik)
 %  Description
 %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters.
+%    This is a mandatory subfunction used for example in energy 
+%    computations.
 %
 %  See also
 %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_G, GP_E
@@ -168,7 +173,8 @@ function lpg = lik_gaussian_lpg(lik)
 %  Description
 %    LPG = LIK_GAUSSIAN_LPG(LIK) takes a Gaussian likelihood
 %    function structure LIK and returns LPG = d log (p(th))/dth,
-%    where th is the vector of parameters.
+%    where th is the vector of parameters. This is a mandatory 
+%    subfunction used for example in gradient computations.
 %
 %  See also
 %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
@@ -199,13 +205,15 @@ function DKff = lik_gaussian_cfg(lik, x, x2)
 %    function structure LIK, a matrix X of input vectors and
 %    returns DKff, the gradients of Gaussian noise covariance
 %    matrix Kff = k(X,X) with respect to th (cell array with
-%    matrix elements).
+%    matrix elements). This subfunction is needed only in Gaussian 
+%    likelihood.
 %
 %    DKff = LIK_GAUSSIAN_CFG(LIK, X, X2) takes a Gaussian
 %    likelihood function structure LIK, a matrix X of input
 %    vectors and returns DKff, the gradients of Gaussian noise
 %    covariance matrix Kff = k(X,X) with respect to th (cell
-%    array with matrix elements).
+%    array with matrix elements). This subfunction is needed 
+%    only in Gaussian likelihood.
 %
 %  See also
 %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
@@ -229,12 +237,14 @@ function DKff  = lik_gaussian_ginput(lik, x, t, g_ind, gdata_ind, gprior_ind, va
 %    DKff = LIK_GAUSSIAN_GINPUT(LIK, X) takes a likelihood
 %    function structure LIK, a matrix X of input vectors and
 %    returns DKff, the gradients of likelihood matrix Kff =
-%    k(X,X) with respect to X (cell array with matrix elements)
+%    k(X,X) with respect to X (cell array with matrix elements).
+%    This subfunction is needed only in Gaussian likelihood.
 %
 %    DKff = LIK_GAUSSIAN_GINPUT(LIK, X, X2) takes a likelihood
 %    function structure LIK, a matrix X of input vectors and
 %    returns DKff, the gradients of likelihood matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
+%    This subfunction is needed only in Gaussian likelihood.
 %
 %  See also
 %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G
@@ -250,7 +260,7 @@ function C = lik_gaussian_trcov(lik, x)
 %    of a Gaussian process GP and matrix TX that contains
 %    training input vectors. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i and j
-%    in TX
+%    in TX. This subfunction is needed only in Gaussian likelihood.
 %
 %  See also
 %    LIK_GAUSSIAN_COV, LIK_GAUSSIAN_TRVAR, GP_COV, GP_TRCOV
@@ -274,7 +284,8 @@ function C = lik_gaussian_trvar(lik, x)
 %    C = LIK_GAUSSIAN_TRVAR(LIK, TX) takes in covariance function
 %    of a Gaussian process LIK and matrix TX that contains
 %    training inputs. Returns variance vector C. Every element i
-%    of C contains variance of input i in TX
+%    of C contains variance of input i in TX. This subfunction is 
+%    needed only in Gaussian likelihood.
 %
 %
 %  See also
@@ -297,7 +308,8 @@ function reclik = lik_gaussian_recappend(reclik, ri, lik)
 %    likelihood function record structure RECLIK, record index RI
 %    and likelihood function structure LIK with the current MCMC
 %    samples of the parameters. Returns RECLIK which contains all
-%    the old samples and the current samples from LIK .
+%    the old samples and the current samples from LIK. This 
+%    subfunction is needed when using MCMC sampling (gp_mc).
 %
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND
