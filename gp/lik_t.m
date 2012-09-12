@@ -107,7 +107,9 @@ function [w, s] = lik_t_pak(lik)
 %
 %  Description 
 %    W = LIK_T_PAK(LIK) takes a likelihood structure LIK and
-%    combines the parameters into a single row vector W.
+%    combines the parameters into a single row vector W. This 
+%    is a mandatory subfunction used for example in energy and 
+%    gradient computations.
 %     
 %       w = [ log(lik.sigma2)
 %             (hyperparameters of lik.sigma2)
@@ -140,7 +142,8 @@ function [lik, w] = lik_t_unpak(lik, w)
 %  Description
 %    W = LIK_T_UNPAK(W, LIK) takes a likelihood structure LIK and
 %    extracts the parameters from the vector W to the LIK
-%    structure.
+%    structure. This is a mandatory subfunction used for example 
+%    in energy and gradient computations.
 %     
 %    Assignment is inverse of  
 %       w = [ log(lik.sigma2)
@@ -171,6 +174,8 @@ function lp = lik_t_lp(lik)
 %  Description
 %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters.
+%    This is a mandatory subfunction used for example in energy 
+%    computations.
 %
 %  See also
 %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
@@ -193,7 +198,8 @@ function lpg = lik_t_lpg(lik)
 %  Description
 %    LPG = LIK_T_LPG(LIK) takes a likelihood structure LIK
 %    and returns d log(p(th))/dth, where th collects the
-%    parameters.
+%    parameters. This is a mandatory subfunction used 
+%    for example in gradient computations.
 %
 %  See also
 %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_G
@@ -221,7 +227,10 @@ function ll = lik_t_ll(lik, y, f, z)
 %  Description
 %    LL = LIK_T_LL(LIK, Y, F) takes a likelihood structure LIK,
 %    observations Y, and latent values F. Returns the log
-%    likelihood, log p(y|f,z).
+%    likelihood, log p(y|f,z). This subfunction is needed when 
+%    using Laplace approximation or MCMC for inference with 
+%    non-Gaussian likelihoods. This subfunction is also used in
+%    information criteria (DIC, WAIC) computations.
 %
 %  See also
 %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
@@ -243,7 +252,9 @@ function llg = lik_t_llg(lik, y, f, param, z)
 %    LOKLIKG = LIK_T_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, observations Y, and latent values F. Returns
 %    the gradient of log likelihood with respect to PARAM. At the
-%    moment PARAM can be 'param' or 'latent'.
+%    moment PARAM can be 'param' or 'latent'. This subfunction is 
+%    needed when using Laplace approximation or MCMC for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_T_LL, LIK_T_LLG2, LIK_T_LLG3, GPLA_E
@@ -288,7 +299,8 @@ function llg2 = lik_t_llg2(lik, y, f, param, z)
 %    the Hessian of log likelihood with respect to PARAM. At the
 %    moment PARAM can be only 'latent'. LLG2 is a vector with
 %    diagonal elements of the Hessian matrix (off diagonals are
-%    zero).
+%    zero). This subfunction is needed when using Laplace 
+%    approximation or EP for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_T_LL, LIK_T_LLG, LIK_T_LLG3, GPLA_E
@@ -327,7 +339,9 @@ function llg3 = lik_t_llg3(lik, y, f, param, z)
 %    structure LIK, observations Y and latent values F and
 %    returns the third gradients of log likelihood with respect
 %    to PARAM. At the moment PARAM can be only 'latent'. G3 is a
-%    vector with third gradients.
+%    vector with third gradients. This subfunction is needed when 
+%    using Laplace approximation for inference with non-Gaussian 
+%    likelihoods.
 %
 %  See also
 %    LIK_T_LL, LIK_T_LLG, LIK_T_LLG2, GPLA_E, GPLA_G
@@ -366,6 +380,8 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
 %    MYY. Returns the zeroth moment M_0, mean M_1 and variance
 %    M_2 of the posterior marginal (see Rasmussen and Williams
 %    (2006): Gaussian processes for Machine Learning, page 55).
+%    This subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -453,7 +469,9 @@ function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    needed when evaluating the gradients of the marginal
 %    likelihood estimate Z_EP with respect to the likelihood
 %    parameters (see Seeger (2008): Expectation propagation for
-%    exponential families)
+%    exponential families).  This subfunction is needed when using 
+%    EP for inference with non-Gaussian likelihoods and there are
+%    likelihood parameters.
 %
 %  See also
 %    GPEP_G
@@ -555,7 +573,9 @@ function [lnZhat, muhat, sigm2hat] = lik_t_tiltedMoments2(likelih, y, yi, sigm2_
 %   expected counts Z, index I and cavity variance S2 and mean
 %   MYY. Returns the zeroth moment M_0, mean M_1 and variance M_2
 %   of the posterior marginal (see Rasmussen and Williams (2006):
-%   Gaussian processes for Machine Learning, page 55).
+%   Gaussian processes for Machine Learning, page 55). This subfunction 
+%   is needed when using robust-EP for inference with non-Gaussian 
+%   likelihoods.
 %
 %   See also
 %   GPEP_E
@@ -711,7 +731,9 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
 %   needed when evaluating the gradients of the marginal
 %   likelihood estimate Z_EP with respect to the likelihood
 %   parameters (see Seeger (2008): Expectation propagation for
-%   exponential families)
+%   exponential families).  This subfunction is needed when using 
+%   robust-EP for inference with non-Gaussian likelihoods and there 
+%   are likelihood parameters.
 %
 %   See also
 %   GPEP_G
@@ -877,7 +899,9 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
 %    and evaluates A = (K + W)\Y as a sideproduct. Lav and K_fu
 %    are needed for sparse approximations. For details, see
 %    Vanhatalo, Jyl�nki and Vehtari (2009): Gaussian process
-%    regression with Student-t likelihood.
+%    regression with Student-t likelihood. This subfunction is 
+%    needed when using lik_specific optimization method for mode 
+%    finding in Laplace algorithm.
 %
   
   iter = 1;
@@ -968,13 +992,16 @@ function [lpy, Ey, Vary] = lik_t_predy(lik, Ef, Varf, y, z)
 %    LPY = LIK_T_PREDY(LIK, EF, VARF YT)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %       p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-%    This requires also the observations YT.
+%    This requires also the observations YT. This subfunction is 
+%    needed when computing posterior preditive distributions for 
+%    future observations.
 %
 %    [LPY, EY, VARY] = LIK_T_PREDY(LIK, EF, VARF) takes a likelihood
 %    structure LIK, posterior mean EF and posterior Variance
 %    VARF of the latent variable and returns the posterior
 %    predictive mean EY and variance VARY of the observations
-%    related to the latent variables
+%    related to the latent variables. This subfunction is needed when 
+%    computing posterior preditive distributions for future observations.
 %        
 
 %
@@ -1032,7 +1059,8 @@ function prctys = lik_t_predprcty(lik, Ef, Varf, zt, prcty)
 %
 %  Description         
 %    PRCTY = LIK_T_PREDPRCTY(LIK, EF, VARF YT, ZT)
-%    Returns percentiles of the predictive density PY of YT.
+%    Returns percentiles of the predictive density PY of YT. This
+%    subfunction is needed when using function gp_predprcty.
 %
 %  See also 
 %    GP_PREDPCTY
@@ -1064,7 +1092,8 @@ function reclik = lik_t_recappend(reclik, ri, lik)
 %  Description
 %    RECCF = GPCF_SEXP_RECAPPEND(RECCF, RI, GPCF) takes old
 %    covariance function record RECCF, record index RI, RECAPPEND
-%    returns a structure RECCF.
+%    returns a structure RECCF. This subfunction is needed when 
+%    using MCMC sampling (gp_mc).
 
   if nargin == 2
     % Initialize the record
