@@ -1,5 +1,5 @@
 function prctys = gp_predprcty(gp, x, y, varargin) 
-%GP_PREPRCTY  Percentiles of the predictive distribution at test points
+%GP_PREDRCTY  Percentiles of the predictive distribution at test points
 %
 %  Description
 %    PRCTY = GP_PREDPRCTY(GP, X, Y, XT, OPTIONS)
