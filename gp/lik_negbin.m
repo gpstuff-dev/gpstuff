@@ -150,8 +150,8 @@ function lp = lik_negbin_lp(lik, varargin)
 %
 %  Description
 %    LP = LIK_NEGBIN_LP(LIK) takes a likelihood structure LIK and
-%    returns log(p(th)), where th collects the parameters. This is 
-%    a mandatory subfunction used for example in energy computations.
+%    returns log(p(th)), where th collects the parameters. This
+%    subfunction is needed if there are likelihood parameters.
 %
 %  See also
 %    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_E
@@ -173,8 +173,7 @@ function lpg = lik_negbin_lpg(lik)
 %  Description
 %    E = LIK_NEGBIN_LPG(LIK) takes a likelihood structure LIK and
 %    returns d log(p(th))/dth, where th collects the parameters.
-%    This is a mandatory subfunction used for example in gradient 
-%    computations.
+%    This subfunction is needed if there are likelihood parameters.
 %
 %  See also
 %    LIK_NEGBIN_LLG, LIK_NEGBIN_LLG3, LIK_NEGBIN_LLG2, GPLA_G
@@ -692,7 +691,7 @@ function mu = lik_negbin_invlink(lik, f, z)
 %  Description 
 %    MU = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values MU of inverse link function.
-%    This subfunction is neede dwhen using function gp_predprctmu.
+%    This subfunction is needed dwhen using function gp_predprctmu.
 %
 %     See also
 %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
