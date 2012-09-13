@@ -1,11 +1,12 @@
 function lik = lik_weibull(varargin)
-%LIK_WEIBULL    Create a Weibull likelihood structure 
+%LIK_WEIBULL    Create a right censored Weibull likelihood structure 
 %
 %  Description
 %    LIK = LIK_WEIBULL('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
-%    creates a likelihood structure for Weibull survival model in which the
-%    named parameters have the specified values. Any unspecified 
-%    parameters are set to default values.
+%    creates a likelihood structure for right censored Weibull
+%    survival model in which the named parameters have the
+%    specified values. Any unspecified parameters are set to
+%    default values.
 %  
 %    LIK = LIK_WEIBULL(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...)
 %    modify a likelihood structure with the named parameters
@@ -616,21 +617,21 @@ function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
 %    of the latent variable
 %
 %  See also
-%    GPLA_PRED, GPEP_PRED, GPMC_PRED
+%    GP_PREDCDF
 
   r = lik.shape;
   
   % Evaluate the posterior predictive cdf at given yt
   cdf = zeros(length(yt),1);
   for i1=1:length(yt)
-    % get a function handle of the likelihood times posterior
+    % Get a function handle of the likelihood times posterior
     % (likelihood * posterior = Weibull * Gaussian)
-    % and useful integration limits
-    % to evaluate predictive cdf yc=0
+    % and useful integration limits.
+    % yc=0 when evaluating predictive cdf
     [sf,minf,maxf]=init_weibull_norm(...
       yt(i1),Ef(i1),Varf(i1),0,r);
     % integrate over the f to get posterior predictive distribution
-    cdf(i1) = 1-(quadgk(sf, minf, maxf));
+    cdf(i1) = 1-quadgk(sf, minf, maxf);
   end
 end
 
