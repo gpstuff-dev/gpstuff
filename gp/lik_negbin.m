@@ -1,5 +1,5 @@
 function lik = lik_negbin(varargin)
-%LIK_NEGBIN    Create a Negative-binomial likelihood structure 
+%LIK_NEGBIN  Create a Negative-binomial likelihood structure 
 %
 %  Description
 %    LIK = LIK_NEGBIN('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
@@ -46,6 +46,7 @@ function lik = lik_negbin(varargin)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % inputParser checks the arguments and assigns some default values
   ip=inputParser;
   ip.FunctionName = 'LIK_NEGBIN';
   ip.addOptional('lik', [], @isstruct);
@@ -459,7 +460,7 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the incedence counts YT, expected counts ZT.
-%    This subfunction is needed when computing posterior preditive 
+%    This subfunction is needed when computing posterior predictive 
 %    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_NEGBIN_PREDY(LIK, EF, VARF) takes a
@@ -467,7 +468,7 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables. This subfunction
-%    is needed when computing posterior preditive distributions for 
+%    is needed when computing posterior predictive distributions for 
 %    future observations.
 %        
 
@@ -570,7 +571,7 @@ function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
 %    Negative-Binomial * Gaussian which is used for evaluating
 %    (likelihood * cavity) or (likelihood * posterior) Return
 %    also useful limits for integration. This is private function
-%    for lik_negbin. This subfunction is needed in sufunctions
+%    for lik_negbin. This subfunction is needed by subfunctions
 %    tiltedMoments, siteDeriv and predy.
 %  
 %  See also
@@ -691,7 +692,7 @@ function mu = lik_negbin_invlink(lik, f, z)
 %  Description 
 %    MU = LIK_NEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values MU of inverse link function.
-%    This subfunction is needed dwhen using function gp_predprctmu.
+%    This subfunction is needed when using function gp_predprctmu.
 %
 %     See also
 %     LIK_NEGBIN_LL, LIK_NEGBIN_PREDY
