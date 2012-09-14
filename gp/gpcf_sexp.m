@@ -39,6 +39,7 @@ function gpcf = gpcf_sexp(varargin)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+  % inputParser checks the arguments and assigns some default values
   ip=inputParser;
   ip.FunctionName = 'GPCF_SEXP';
   ip.addOptional('gpcf', [], @isstruct);
@@ -100,18 +101,10 @@ function gpcf = gpcf_sexp(varargin)
     end
   end
   
-  % selectedVariables options implemented using metric_euclidean
+  % selectedVariables 
   if ~ismember('selectedVariables',ip.UsingDefaults)
     if ~isfield(gpcf,'metric')
       gpcf.selectedVariables = ip.Results.selectedVariables;
-%       if ~isempty(ip.Results.selectedVariables)
-%         gpcf.metric=metric_euclidean('components',...
-%                                      num2cell(ip.Results.selectedVariables),...
-%                                      'lengthScale',gpcf.lengthScale,...
-%                                      'lengthScale_prior',gpcf.p.lengthScale);
-%         gpcf = rmfield(gpcf, 'lengthScale');
-%         gpcf.p = rmfield(gpcf.p, 'lengthScale');
-%       end
     elseif isfield(gpcf,'metric') 
       if ~isempty(ip.Results.selectedVariables)
         gpcf.metric=metric_euclidean(gpcf.metric,...
@@ -322,6 +315,138 @@ function lpg = gpcf_sexp_lpg(gpcf)
       lpg = [lpg lpgs(1:lll).*gpcf.lengthScale+1 lpgs(lll+1:end)];
     end
   end
+end
+
+function C = gpcf_sexp_cov(gpcf, x1, x2)
+%GP_SEXP_COV  Evaluate covariance matrix between two input vectors
+%
+%  Description         
+%    C = GP_SEXP_COV(GP, TX, X) takes in covariance function of a
+%    Gaussian process GP and two matrixes TX and X that contain
+%    input vectors to GP. Returns covariance matrix C. Every
+%    element ij of C contains covariance between inputs i in TX
+%    and j in X. This is a mandatory subfunction used for example in
+%    prediction and energy computations.
+%
+%  See also
+%    GPCF_SEXP_TRCOV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
+  
+  if isempty(x2)
+    x2=x1;
+  end
+
+  if size(x1,2)~=size(x2,2)
+    error('the number of columns of X1 and X2 has to be same')
+  end
+
+  if isfield(gpcf,'metric')
+    dist = gpcf.metric.fh.dist(gpcf.metric, x1, x2).^2;
+    dist(dist<eps) = 0;
+    C = gpcf.magnSigma2.*exp(-dist./2);            
+  else
+    if isfield(gpcf,'selectedVariables')
+      x1 = x1(:,gpcf.selectedVariables);
+      x2 = x2(:,gpcf.selectedVariables);
+    end
+    [n1,m1]=size(x1);
+    [n2,m2]=size(x2);
+    C=zeros(n1,n2);
+    ma2 = gpcf.magnSigma2;
+    
+    % Evaluate the covariance
+    if ~isempty(gpcf.lengthScale)
+      s2 = 1./gpcf.lengthScale.^2;
+      if m1==1 && m2==1
+        dd = bsxfun(@minus,x1,x2');
+        dist=dd.^2*s2;
+      else
+        % If ARD is not used make s a vector of
+        % equal elements
+        if size(s2)==1
+          s2 = repmat(s2,1,m1);
+        end
+        dist=zeros(n1,n2);
+        for j=1:m1
+          dd = bsxfun(@minus,x1(:,j),x2(:,j)');
+          dist = dist + dd.^2.*s2(:,j);
+        end
+      end
+      dist(dist<eps) = 0;
+      C = ma2.*exp(-dist./2);
+    end
+  end
+end
+
+function C = gpcf_sexp_trcov(gpcf, x)
+%GP_SEXP_TRCOV  Evaluate training covariance matrix of inputs
+%
+%  Description
+%    C = GP_SEXP_TRCOV(GP, TX) takes in covariance function of a
+%    Gaussian process GP and matrix TX that contains training
+%    input vectors. Returns covariance matrix C. Every element ij
+%    of C contains covariance between inputs i and j in TX.
+%    This is a mandatory subfunction used for example in
+%    prediction and energy computations.
+%
+%  See also
+%    GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
+
+  if isfield(gpcf,'metric')
+    % If other than scaled euclidean metric
+    ma2 = gpcf.magnSigma2;
+    C = gpcf.metric.fh.dist(gpcf.metric, x).^2./2;
+    C = ma2.*exp(-C);            
+  else
+    % If scaled euclidean metric
+    % Try to use the C-implementation
+    C = trcov(gpcf, x);
+%     C = NaN;
+    if isnan(C)
+      % If there wasn't C-implementation do here
+      if isfield(gpcf,'selectedVariables')
+        x = x(:,gpcf.selectedVariables);
+      end
+      [n, m] =size(x);
+      
+      s = 1./(gpcf.lengthScale);
+      s2 = s.^2;
+      if size(s)==1
+        s2 = repmat(s2,1,m);
+      end
+      ma2 = gpcf.magnSigma2;
+      
+      C = zeros(n,n);
+      for ii1=1:n-1
+        d = zeros(n-ii1,1);
+        col_ind = ii1+1:n;
+        for ii2=1:m
+          d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+        end
+        C(col_ind,ii1) = d./2;
+      end
+      C(C<eps)=0;
+      C = C+C';
+      C = ma2.*exp(-C);
+    end
+  end
+end
+
+function C = gpcf_sexp_trvar(gpcf, x)
+%GP_SEXP_TRVAR  Evaluate training variance vector
+%
+%  Description
+%    C = GP_SEXP_TRVAR(GPCF, TX) takes in covariance function of
+%    a Gaussian process GPCF and matrix TX that contains training
+%    inputs. Returns variance vector C. Every element i of C
+%    contains variance of input i in TX. This is a mandatory 
+%    subfunction used for example in prediction and energy computations.
+%  See also
+%    GPCF_SEXP_COV, GP_COV, GP_TRCOV
+
+  [n, m] =size(x);
+
+  C = ones(n,1).*gpcf.magnSigma2;
+  C(C<eps)=0;
 end
 
 function DKff = gpcf_sexp_cfg(gpcf, x, x2, mask, i1)
@@ -1109,138 +1234,6 @@ function DKff = gpcf_sexp_ginput4(gpcf, x, x2, i1)
       DKff{ii1} = DK;
     end
   end
-end
-
-function C = gpcf_sexp_cov(gpcf, x1, x2)
-%GP_SEXP_COV  Evaluate covariance matrix between two input vectors
-%
-%  Description         
-%    C = GP_SEXP_COV(GP, TX, X) takes in covariance function of a
-%    Gaussian process GP and two matrixes TX and X that contain
-%    input vectors to GP. Returns covariance matrix C. Every
-%    element ij of C contains covariance between inputs i in TX
-%    and j in X. This is a mandatory subfunction used for example in
-%    prediction and energy computations.
-%
-%  See also
-%    GPCF_SEXP_TRCOV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
-  
-  if isempty(x2)
-    x2=x1;
-  end
-
-  if size(x1,2)~=size(x2,2)
-    error('the number of columns of X1 and X2 has to be same')
-  end
-
-  if isfield(gpcf,'metric')
-    dist = gpcf.metric.fh.dist(gpcf.metric, x1, x2).^2;
-    dist(dist<eps) = 0;
-    C = gpcf.magnSigma2.*exp(-dist./2);            
-  else
-    if isfield(gpcf,'selectedVariables')
-      x1 = x1(:,gpcf.selectedVariables);
-      x2 = x2(:,gpcf.selectedVariables);
-    end
-    [n1,m1]=size(x1);
-    [n2,m2]=size(x2);
-    C=zeros(n1,n2);
-    ma2 = gpcf.magnSigma2;
-    
-    % Evaluate the covariance
-    if ~isempty(gpcf.lengthScale)
-      s2 = 1./gpcf.lengthScale.^2;
-      if m1==1 && m2==1
-        dd = bsxfun(@minus,x1,x2');
-        dist=dd.^2*s2;
-      else
-        % If ARD is not used make s a vector of
-        % equal elements
-        if size(s2)==1
-          s2 = repmat(s2,1,m1);
-        end
-        dist=zeros(n1,n2);
-        for j=1:m1
-          dd = bsxfun(@minus,x1(:,j),x2(:,j)');
-          dist = dist + dd.^2.*s2(:,j);
-        end
-      end
-      dist(dist<eps) = 0;
-      C = ma2.*exp(-dist./2);
-    end
-  end
-end
-
-function C = gpcf_sexp_trcov(gpcf, x)
-%GP_SEXP_TRCOV  Evaluate training covariance matrix of inputs
-%
-%  Description
-%    C = GP_SEXP_TRCOV(GP, TX) takes in covariance function of a
-%    Gaussian process GP and matrix TX that contains training
-%    input vectors. Returns covariance matrix C. Every element ij
-%    of C contains covariance between inputs i and j in TX.
-%    This is a mandatory subfunction used for example in
-%    prediction and energy computations.
-%
-%  See also
-%    GPCF_SEXP_COV, GPCF_SEXP_TRVAR, GP_COV, GP_TRCOV
-
-  if isfield(gpcf,'metric')
-    % If other than scaled euclidean metric
-    ma2 = gpcf.magnSigma2;
-    C = gpcf.metric.fh.dist(gpcf.metric, x).^2./2;
-    C = ma2.*exp(-C);            
-  else
-    % If scaled euclidean metric
-    % Try to use the C-implementation
-    C = trcov(gpcf, x);
-%     C = NaN;
-    if isnan(C)
-      % If there wasn't C-implementation do here
-      if isfield(gpcf,'selectedVariables')
-        x = x(:,gpcf.selectedVariables);
-      end
-      [n, m] =size(x);
-      
-      s = 1./(gpcf.lengthScale);
-      s2 = s.^2;
-      if size(s)==1
-        s2 = repmat(s2,1,m);
-      end
-      ma2 = gpcf.magnSigma2;
-      
-      C = zeros(n,n);
-      for ii1=1:n-1
-        d = zeros(n-ii1,1);
-        col_ind = ii1+1:n;
-        for ii2=1:m
-          d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-        end
-        C(col_ind,ii1) = d./2;
-      end
-      C(C<eps)=0;
-      C = C+C';
-      C = ma2.*exp(-C);
-    end
-  end
-end
-
-function C = gpcf_sexp_trvar(gpcf, x)
-%GP_SEXP_TRVAR  Evaluate training variance vector
-%
-%  Description
-%    C = GP_SEXP_TRVAR(GPCF, TX) takes in covariance function of
-%    a Gaussian process GPCF and matrix TX that contains training
-%    inputs. Returns variance vector C. Every element i of C
-%    contains variance of input i in TX. This is a mandatory 
-%    subfunction used for example in prediction and energy computations.
-%  See also
-%    GPCF_SEXP_COV, GP_COV, GP_TRCOV
-
-  [n, m] =size(x);
-
-  C = ones(n,1).*gpcf.magnSigma2;
-  C(C<eps)=0;
 end
 
 function reccf = gpcf_sexp_recappend(reccf, ri, gpcf)
