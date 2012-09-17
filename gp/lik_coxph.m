@@ -82,7 +82,6 @@ function lik = lik_coxph(varargin)
 %   lik.fh.lp = @lik_coxph_lp;
 %   lik.fh.lpg = @lik_coxph_lpg;
     lik.fh.ll = @lik_coxph_ll;
-    lik.fh.llsamps = @lik_coxph_llsamps;
     lik.fh.llg = @lik_coxph_llg;    
     lik.fh.llg2 = @lik_coxph_llg2;
     lik.fh.llg3 = @lik_coxph_llg3;
@@ -1305,7 +1304,8 @@ function lik = lik_coxph(varargin)
     else
         error('Size(yt,2) ~= 1');
     end
+    
+  end
 
-    end
 end
 
