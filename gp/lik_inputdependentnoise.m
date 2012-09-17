@@ -69,9 +69,10 @@ function lik = lik_inputdependentnoise(varargin)
   %
   %  Description 
   %    W = LIK_INPUTDEPENDENTNOISE_PAK(LIK) takes a likelihood structure LIK and
-  %    combines the parameters into a single row vector W.
+  %    combines the parameters into a single row vector W. This is a mandatory 
+  %    subfunction used for example in energy and gradient computations.
   %     
-  %       w = log(lik.disper)
+  %       w = log(lik.sigma2)
   %
   %   See also
   %   LIK_INPUTDEPENDENTNOISE_UNPAK, GP_PAK
@@ -94,10 +95,11 @@ function lik = lik_inputdependentnoise(varargin)
   %  Description
   %    [LIK, W] = LIK_INPUTDEPENDENTNOISE_UNPAK(W, LIK) takes a likelihood
   %    structure LIK and extracts the parameters from the vector W
-  %    to the LIK structure.
+  %    to the LIK structure. This is a mandatory subfunction used for 
+  %    example in energy and gradient computations.
   %     
   %   Assignment is inverse of  
-  %       w = log(lik.disper)
+  %       w = log(lik.sigma2)
   %
   %   See also
   %   LIK_INPUTDEPENDENTNOISE_PAK, GP_UNPAK
@@ -117,14 +119,15 @@ function lik = lik_inputdependentnoise(varargin)
   %LIK_INPUTDEPENDENTNOISE_LP  log(prior) of the likelihood parameters
   %
   %  Description
-  %    LP = LIK_INPUTDEPENDENTNOISE_LP(LIK) takes a likelihood structure LIK and
-  %    returns log(p(th)), where th collects the parameters.
+  %    LP = LIK_INPUTDEPENDENTNOISE_LP(LIK) takes a likelihood structure 
+  %    LIK and returns log(p(th)), where th collects the parameters. This
+  %    subfunction is needed when there are likelihood parameters.
   %
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_LLG, LIK_INPUTDEPENDENTNOISE_LLG3, LIK_INPUTDEPENDENTNOISE_LLG2, GPLA_E
     
 
-  % If prior for dispersion parameter, add its contribution
+  % If prior for sigma2 parameter, add its contribution
   lp = 0;
 
   if ~isempty(lik.p.sigma2)
@@ -140,8 +143,9 @@ function lik = lik_inputdependentnoise(varargin)
   %                parameters th
   %
   %  Description
-  %    E = LIK_INPUTDEPENDENTNOISE_LPG(LIK) takes a likelihood structure LIK and
-  %    returns d log(p(th))/dth, where th collects the parameters.
+  %    E = LIK_INPUTDEPENDENTNOISE_LPG(LIK) takes a likelihood structure 
+  %    LIK and returns d log(p(th))/dth, where th collects the parameters.
+  %    This subfunction is needed when there are likelihood parameters.
   %
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_LLG, LIK_INPUTDEPENDENTNOISE_LLG3, LIK_INPUTDEPENDENTNOISE_LLG2, GPLA_G
@@ -167,6 +171,10 @@ function lik = lik_inputdependentnoise(varargin)
   %    LL = LIK_INPUTDEPENDENTNOISE_LL(LIK, Y, F, Z) takes a likelihood
   %    structure LIK, incedence counts Y, expected counts Z, and
   %    latent values F. Returns the log likelihood, log p(y|f,z).
+  %    This subfunction is needed when using Laplace approximation 
+  %    or MCMC for inference with non-Gaussian likelihoods. This
+  %    subfunction is also used in information criteria (DIC, WAIC)
+  %    computations.
   %
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_LLG, LIK_INPUTDEPENDENTNOISE_LLG3, LIK_INPUTDEPENDENTNOISE_LLG2, GPLA_E
@@ -192,7 +200,8 @@ function lik = lik_inputdependentnoise(varargin)
   %    structure LIK, incedence counts Y, expected counts Z and
   %    latent values F. Returns the gradient of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be 'param' or
-  %    'latent'.
+  %    'latent'. This subfunction is needed when using Laplace
+  %    approximation or MCMC for inference with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_LL, LIK_INPUTDEPENDENTNOISE_LLG2, LIK_INPUTDEPENDENTNOISE_LLG3, GPLA_E
@@ -234,7 +243,9 @@ function lik = lik_inputdependentnoise(varargin)
   %    latent values F. Returns the Hessian of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be only
   %    'latent'. LLG2 is a vector with diagonal elements of the
-  %    Hessian matrix (off diagonals are zero).
+  %    Hessian matrix (off diagonals are zero). This subfunction
+  %    is needed when using Laplace approximation or EP for
+  %    inference with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_LL, LIK_INPUTDEPENDENTNOISE_LLG, LIK_INPUTDEPENDENTNOISE_LLG3, GPLA_E
@@ -282,7 +293,9 @@ function lik = lik_inputdependentnoise(varargin)
   %    structure LIK, incedence counts Y, expected counts Z and
   %    latent values F and returns the third gradients of the log
   %    likelihood with respect to PARAM. At the moment PARAM can be
-  %    only 'latent'. LLG3 is a vector with third gradients.
+  %    only 'latent'. LLG3 is a vector with third gradients. This
+  %    subfunction is needed when using Laplace approximation for
+  %    inference with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_LL, LIK_INPUTDEPENDENTNOISE_LLG, LIK_INPUTDEPENDENTNOISE_LLG2, GPLA_E, GPLA_G
@@ -344,7 +357,8 @@ function lik = lik_inputdependentnoise(varargin)
   %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
   %    variance M_2 of the posterior marginal (see Rasmussen and
   %    Williams (2006): Gaussian processes for Machine Learning,
-  %    page 55).
+  %    page 55). This subfunction is needed when using EP for
+  %    inference with non-Gaussian likelihoods.
   %
   %  See also
   %    GPEP_E
@@ -352,7 +366,7 @@ function lik = lik_inputdependentnoise(varargin)
     
 %     yy = y(i1);
 %     avgE = z(i1);
-%     r = lik.disper;
+%     r = lik.sigma2;
 %     
 %     % get a function handle of an unnormalized tilted distribution 
 %     % (likelihood * cavity = Negative-binomial * Gaussian)
@@ -394,7 +408,9 @@ function lik = lik_inputdependentnoise(varargin)
   %    marginal posterior. This term is needed when evaluating the
   %    gradients of the marginal likelihood estimate Z_EP with
   %    respect to the likelihood parameters (see Seeger (2008):
-  %    Expectation propagation for exponential families)
+  %    Expectation propagation for exponential families). This 
+  %    subfunction is needed when using EP for inference with
+  %    non-Gaussian likelihoods and there are likelihood parameters.
   %
   %  See also
   %    GPEP_G
@@ -408,7 +424,7 @@ function lik = lik_inputdependentnoise(varargin)
 % 
 %     yy = y(i1);
 %     avgE = z(i1);
-%     r = lik.disper;
+%     r = lik.sigma2;
 %     
 %     % get a function handle of an unnormalized tilted distribution 
 %     % (likelihood * cavity = Negative-binomial * Gaussian)
@@ -436,16 +452,19 @@ function lik = lik_inputdependentnoise(varargin)
   %LIK_INPUTDEPENDENTNOISE_PREDY  Returns the predictive mean, variance and density of y
   %
   %  Description         
-  %    [EY, VARY] = LIK_INPUTDEPENDENTNOISE_PREDY(LIK, EF, VARF) takes a
-  %    likelihood structure LIK, posterior mean EF and posterior
-  %    Variance VARF of the latent variable and returns the
-  %    posterior predictive mean EY and variance VARY of the
-  %    observations related to the latent variables
+  %    [LPY] = LIK_INPUTDEPENDENTNOISE_PREDY(LIK, EF, VARF, YT) takes a
+  %    likelihood structure LIK, posterior mean EF, posterior
+  %    variance VARF of the latent variable and observations YT and 
+  %    returns the logarithm of the predictive density PY of YT, that is 
+  %        p(yt | th) = \int p(yt | f, th) p(f|y) df.
+  %    This subfunction is needed when computing posterior predictive 
+  %    distributions for future observations.
   %        
-  %    [Ey, Vary, PY] = LIK_INPUTDEPENDENTNOISE_PREDY(LIK, EF, VARF YT, ZT)
-  %    Returns also the predictive density of YT, that is 
-  %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-  %    This requires also the incedence counts YT, expected counts ZT.
+  %    [LPY, EY, VARY] = LIK_INPUTDEPENDENTNOISE_PREDY(LIK, EF, VARF YT)
+  %    Returns also the posterior predictive mean EY and variance VARY of 
+  %    the observations related to the latent variables. This subfunction 
+  %    is needed when computing posterior predictive distributions for 
+  %    future observations.
   %
   %  See also
   %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -456,7 +475,11 @@ function lik = lik_inputdependentnoise(varargin)
     ntest = 0.5*size(Ef,1);
     Ef1=Ef(1:ntest); Ef2=Ef(ntest+1:end);
 %     Varf1=squeeze(Varf(1,1,:)); Varf2=squeeze(Varf(2,2,:));
-    Varf1=diag(Varf(1:ntest,1:ntest));Varf2=diag(Varf(ntest+1:end,ntest+1:end));
+    if size(Varf,2) == size(Varf,1)
+      Varf1=diag(Varf(1:ntest,1:ntest));Varf2=diag(Varf(ntest+1:end,ntest+1:end));
+    else
+      Varf1=Varf(:,1); Varf2=Varf(:,2);
+    end
     sigma2=lik.sigma2;
 %     if ntest ~= 0.5*numel(Ef)
 %       error('numel(Ef) must be 2*numel(yt)');
@@ -552,7 +575,8 @@ function lik = lik_inputdependentnoise(varargin)
   %    Negative-Binomial * Gaussian which is used for evaluating
   %    (likelihood * cavity) or (likelihood * posterior) Return
   %    also useful limits for integration. This is private function
-  %    for lik_inputdependentnoise.
+  %    for lik_inputdependentnoise. This subfunction is needed by subfunctions
+  %    tiltedMoments, siteDeriv and predy.
   %  
   %  See also
   %    LIK_INPUTDEPENDENTNOISE_TILTEDMOMENTS, LIK_INPUTDEPENDENTNOISE_SITEDERIV,
@@ -695,6 +719,7 @@ function lik = lik_inputdependentnoise(varargin)
   %  Description 
   %    P = LIK_INPUTDEPENDENTNOISE_INVLINK(LIK, F) takes a likelihood structure LIK and
   %    latent values F and returns the values of inverse link function P.
+  %    This subfunction is needed when using function gp_predprcty.
   %
   %     See also
   %     LIK_INPUTDEPENDENTNOISE_LL, LIK_INPUTDEPENDENTNOISE_PREDY
@@ -710,7 +735,8 @@ function lik = lik_inputdependentnoise(varargin)
   %    likelihood record structure RECLIK, record index RI and
   %    likelihood structure LIK with the current MCMC samples of
   %    the parameters. Returns RECLIK which contains all the old
-  %    samples and the current samples from LIK.
+  %    samples and the current samples from LIK. This subfunction 
+  %    is needed when using MCMC sampling (gp_mc).
   % 
   %  See also
   %    GP_MC
@@ -718,6 +744,7 @@ function lik = lik_inputdependentnoise(varargin)
   % Initialize record
     if nargin == 2
       reclik.type = 'Inputdependentnoise';
+      reclik.nondiagW=true;
 
       % Initialize parameter
 
@@ -735,18 +762,15 @@ function lik = lik_inputdependentnoise(varargin)
       reclik.fh.invlink = @lik_inputdependentnoise_invlink;
       reclik.fh.recappend = @lik_inputdependentnoise_recappend;
       reclik.p=[];
+      if ~isempty(ri.p.sigma2)
+        reclik.p.sigma2 = ri.p.sigma2;
+      end
       return
     end
-  end
-end
-
-function c=addlogs(a,b)
-% Add numbers represented by their logarithms.
-% Computes log(exp(a)+exp(b)) in such a fashion that it works even
-% when a and b have large magnitude.
-  if a>b
-    c = a + log(1+exp(b-a));
-  else
-    c = b + log(1+exp(a-b));
+    
+    reclik.sigma2(ri,:)=lik.sigma2;
+    if ~isempty(lik.p.sigma2)
+      reclik.p.sigma2 = feval(lik.p.sigma2.fh.recappend, reclik.p.sigma2, ri, lik.p.sigma2);
+    end
   end
 end

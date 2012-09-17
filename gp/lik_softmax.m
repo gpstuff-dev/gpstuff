@@ -56,7 +56,8 @@ function [w,s] = lik_softmax_pak(lik)
 %    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
 %    returns an empty verctor W. If Logit likelihood had
 %    parameters this would combine them into a single row vector
-%    W (see e.g. lik_negbin).
+%    W (see e.g. lik_negbin). This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %     
 %
 %  See also
@@ -73,7 +74,9 @@ function [lik, w] = lik_softmax_unpak(lik, w)
 %    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
 % 
 %    If Logit likelihood had parameters this would extracts them
-%    parameters from the vector W to the LIK structure.
+%    parameters from the vector W to the LIK structure. This is a 
+%    mandatory subfunction used for example in energy and gradient 
+%    computations.
 %     
 %
 %  See also
@@ -90,7 +93,11 @@ function ll = lik_softmax_ll(lik, y, f2, z)
 %  Description
 %    LL = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
 %    LIK, class labels Y (NxC matrix), and latent values F (NxC
-%    matrix). Returns the log likelihood, log p(y|f,z).
+%    matrix). Returns the log likelihood, log p(y|f,z). This 
+%    subfunction is needed when using Laplace approximation or 
+%    MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC) 
+%    computations.
 %
 %  See also
 %    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
@@ -112,7 +119,9 @@ function llg = lik_softmax_llg(lik, y, f2, param, z)
 %    LLG = LIK_LOGIT_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F. Returns
 %    the gradient of the log likelihood with respect to PARAM. At
-%    the moment PARAM can be 'param' or 'latent'.
+%    the moment PARAM can be 'param' or 'latent'.  This subfunction 
+%    is needed when using Laplace approximation or MCMC for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG2, LIK_LOGIT_LLG3, GPLA_E
@@ -138,7 +147,8 @@ function [pi_vec, pi_mat] = lik_softmax_llg2(lik, y, f2, param, z)
 %    the Hessian of the log likelihood with respect to PARAM. At
 %    the moment PARAM can be only 'latent'. LLG2 is a vector with
 %    diagonal elements of the Hessian matrix (off diagonals are
-%    zero).
+%    zero). This subfunction is needed when using Laplace 
+%    approximation or EP for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
@@ -165,7 +175,9 @@ function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
 %    structure LIK, class labels Y, and latent values F and
 %    returns the third gradients of the log likelihood with
 %    respect to PARAM. At the moment PARAM can be only 'latent'. 
-%    LLG3 is a vector with third gradients.
+%    LLG3 is a vector with third gradients. This subfunction is 
+%    needed when using Laplace approximation for inference with 
+%    non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
@@ -225,12 +237,16 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the succes counts YT, numbers of trials ZT.
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %
 %    [EY, VARY] = LIK_SOFTMAX_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
+%    observations related to the latent variables. This 
+%    subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %        
 %
 %  See also 
@@ -279,7 +295,8 @@ function reclik = lik_softmax_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK. This subfunction
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

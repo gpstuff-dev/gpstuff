@@ -60,7 +60,8 @@ function [w,s] = lik_lgp_pak(lik)
 %    W = LIK_LGP_PAK(LIK) takes a likelihood structure LIK
 %    and returns an empty verctor W. If LGP likelihood had
 %    parameters this would combine them into a single row vector
-%    W (see e.g. lik_negbin).
+%    W (see e.g. lik_negbin). This is a mandatory subfunction 
+%    used for example in energy and gradient computations.
 %     
 %  See also
 %    LIK_NEGBIN_UNPAK, GP_PAK
@@ -76,7 +77,9 @@ function [lik, w] = lik_lgp_unpak(lik, w)
 %    W = LIK_LGP_UNPAK(W, LIK) Doesn't do anything.
 %
 %    If LGP likelihood had parameters this would extract them
-%    parameters from the vector W to the LIK structure.
+%    parameters from the vector W to the LIK structure. This 
+%    is a mandatory subfunction used for example in energy 
+%    and gradient computations.
 %     
 %
 %  See also
@@ -95,6 +98,10 @@ function logLik = lik_lgp_ll(lik, y, f, z)
 %    E = LIK_LGP_LL(LIK, Y, F, Z) takes a likelihood data
 %    structure LIK, incedence counts Y, expected counts Z, and
 %    latent values F. Returns the log likelihood, log p(y|f,z).
+%    This subfunction is needed when using Laplace approximation 
+%    or MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC) 
+%    computations.
 %
 %  See also
 %    LIK_LGP_LLG, LIK_LGP_LLG3, LIK_LGP_LLG2, GPLA_E
@@ -113,7 +120,8 @@ function deriv = lik_lgp_llg(lik, y, f, param, z)
 %    structure LIK, incedence counts Y, expected counts Z
 %    and latent values F. Returns the gradient of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
-%    'param' or 'latent'.
+%    'param' or 'latent'. This subfunction is needed when using Laplace 
+%    approximation or MCMC for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LGP_LL, LIK_LGP_LLG2, LIK_LGP_LLG3, GPLA_E
@@ -138,7 +146,9 @@ function g2 = lik_lgp_llg2(lik, y, f, param, z)
 %    and latent values F. Returns the Hessian of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
 %    only 'latent'. G2 is a vector with diagonal elements of the
-%    Hessian matrix (off diagonals are zero).
+%    Hessian matrix (off diagonals are zero). This subfunction 
+%    is needed when using Laplace approximation or EP for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LGP_LL, LIK_LGP_LLG, LIK_LGP_LLG3, GPLA_E
@@ -163,6 +173,8 @@ function g3 = lik_lgp_llg3(lik, y, f, param, z)
 %    and latent values F and returns the third gradients of the
 %    log likelihood with respect to PARAM. At the moment PARAM
 %    can be only 'latent'. G3 is a vector with third gradients.
+%    This subfunction is needed when using Laplace approximation 
+%    for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LGP_LL, LIK_LGP_LLG, LIK_LGP_LLG2, GPLA_E, GPLA_G
@@ -198,7 +210,8 @@ function [logM_0, m_1, sigm2hati1] = lik_lgp_tiltedMoments(lik, y, i1, sigm2_i, 
 %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
 %    variance M_2 of the posterior marginal (see Rasmussen and
 %    Williams (2006): Gaussian processes for Machine Learning,
-%    page 55).
+%    page 55). This subfunction is needed when using EP for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -249,12 +262,16 @@ function [lpy, Ey, Vary] = lik_lgp_predy(lik, Ef, Varf, yt, zt)
 %    Returns also the predictive density of YT, that is 
 %        p(yt | y,zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the incedence counts YT, expected counts ZT.
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_LGP_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
+%    observations related to the latent variables. This 
+%    subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %        
 
 %
@@ -313,7 +330,9 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
 %    Return function handle to a function evaluating LGP *
 %    Gaussian which is used for evaluating (likelihood * cavity)
 %    or (likelihood * posterior) Return also useful limits for
-%    integration. This is private function for lik_lgp.
+%    integration. This is private function for lik_lgp. This 
+%    subfunction is needed by sufunctions tiltedMoments, siteDeriv 
+%    and predy.
 %  
 %  See also
 %    LIK_LGP_TILTEDMOMENTS, LIK_LGP_PREDY
@@ -432,6 +451,7 @@ function mu = lik_lgp_invlink(lik, f, z)
 %  Description 
 %    P = LIK_LGP_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values MU of inverse link function.
+%    This subfunction is needed when using function gp_predprctmu.
 %
 %     See also
 %     LIK_LGP_LL, LIK_LGP_PREDY
@@ -447,7 +467,8 @@ function reclik = lik_lgp_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK. This subfunction 
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

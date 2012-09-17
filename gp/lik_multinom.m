@@ -58,11 +58,12 @@ function [w,s] = lik_multinom_pak(lik)
 %    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
 %    returns an empty verctor W. If Logit likelihood had
 %    parameters this would combine them into a single row vector
-%    W (see e.g. lik_negbin).
+%    W (see e.g. lik_negbin). This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %     
 %
 %  See also
-%    LIK_NEGBIN_UNPAK, GP_PAK
+%    LIK_MULTINOM_UNPAK, GP_PAK
   
   w = []; s = {};
 end
@@ -75,7 +76,9 @@ function [lik, w] = lik_multinom_unpak(lik, w)
 %    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
 % 
 %    If Logit likelihood had parameters this would extracts them
-%    parameters from the vector W to the LIK structure.
+%    parameters from the vector W to the LIK structure. This is a 
+%    mandatory subfunction used for example in energy and gradient 
+%    computations.
 %     
 %
 %  See also
@@ -92,11 +95,16 @@ function ll = lik_multinom_ll(lik, y, f, z)
 %  Description
 %    LL = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
 %    LIK, class counts Y (NxC matrix), and latent values F (NxC
-%    matrix). Returns the log likelihood, log p(y|f,z).
+%    matrix). Returns the log likelihood, log p(y|f,z). This 
+%    subfunction is needed when using Laplace approximation or 
+%    MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria 
+%    (DIC, WAIC) computations.
 %
 %  See also
 %    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
   
+  f=reshape(f,size(y));
   expf = exp(f);
   p = expf ./ repmat(sum(expf,2),1,size(expf,2));
   N = sum(y,2);
@@ -113,7 +121,9 @@ function llg = lik_multinom_llg(lik, y, f, param, z)
 %    LLG = LIK_MULTINOM_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F. Returns
 %    the gradient of the log likelihood with respect to PARAM. At
-%    the moment PARAM can be 'param' or 'latent'.
+%    the moment PARAM can be 'param' or 'latent'. This subfunction 
+%    is needed when using Laplace approximation or MCMC for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_MULTINOM_LL, LIK_MULTINOM_LLG2, LIK_MULTINOM_LLG3, GPLA_E
@@ -137,7 +147,8 @@ function [pi_vec, pi_mat] = lik_multinom_llg2(lik, y, f, param, z)
 %    the Hessian of the log likelihood with respect to PARAM. At
 %    the moment PARAM can be only 'latent'. LLG2 is a vector with
 %    diagonal elements of the Hessian matrix (off diagonals are
-%    zero).
+%    zero). This subfunction is needed when using Laplace 
+%    approximation or EP for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
@@ -167,7 +178,9 @@ function [dw_mat] = lik_multinom_llg3(lik, y, f, param, z)
 %    structure LIK, class labels Y, and latent values F and
 %    returns the third gradients of the log likelihood with
 %    respect to PARAM. At the moment PARAM can be only 'latent'. 
-%    LLG3 is a vector with third gradients.
+%    LLG3 is a vector with third gradients. This subfunction is 
+%    needed when using Laplace approximation for inference with 
+%    non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
@@ -218,6 +231,28 @@ function [logM_0, m_1, sigm2hati1] = lik_multinom_tiltedMoments(lik, y, i1, sigm
 end
 
 function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
+%LIK_MULTINOM_PREDY  Returns the predictive mean, variance and density of y
+%
+%  Description
+%    LPY = LIK_MULTINOM_PREDY(LIK, EF, VARF YT)
+%    Returns logarithm of the predictive density PY of YT, that is
+%        p(yt | y) = \int p(yt | f) p(f|y) df.
+%    This requires also the incedence counts YT. This subfunction 
+%    is needed when computing posterior predictive distributions for 
+%    future observations.
+%
+%    [LPY, EY, VARY] = LIK_MULTINOM_PREDY(LIK, EF, VARF, YT) takes a
+%    likelihood structure LIK, posterior mean EF and posterior
+%    Variance VARF of the latent variable and returns the
+%    posterior predictive mean EY and variance VARY of the
+%    observations related to the latent variables. This subfunction
+%    is needed when computing posterior predictive distributions for
+%    future observations.
+%
+
+%
+%  See also
+%    GPLA_PRED, GPEP_PRED, GPMC_PRED
   
   N=sum(yt,2);
   S=10000;
@@ -267,6 +302,7 @@ function p = lik_multinom_invlink(lik, f, z)
 %  Description 
 %    P = LIK_MULTINOM_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values of inverse link function P.
+%    This subfunction is needed when using function gp_predprctmu.
 %
 %     See also
 %     LIK_MULTINOM_LL, LIK_MULTINOM_PREDY
@@ -281,7 +317,8 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK. This subfunction 
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

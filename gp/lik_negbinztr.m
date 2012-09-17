@@ -105,7 +105,9 @@ function [w,s] = lik_negbinztr_pak(lik)
 %
 %  Description 
 %    W = LIK_NEGBINZTR_PAK(LIK) takes a likelihood structure LIK and
-%    combines the parameters into a single row vector W.
+%    combines the parameters into a single row vector W. This is a 
+%    mandatory subfunction used for example in energy and gradient 
+%    computations.
 %     
 %       w = log(lik.disper)
 %
@@ -129,7 +131,8 @@ function [lik, w] = lik_negbinztr_unpak(lik, w)
 %  Description
 %    [LIK, W] = LIK_NEGBINZTR_UNPAK(W, LIK) takes a likelihood
 %    structure LIK and extracts the parameters from the vector W
-%    to the LIK structure.
+%    to the LIK structure. This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %     
 %   Assignment is inverse of  
 %       w = log(lik.disper)
@@ -151,7 +154,8 @@ function lp = lik_negbinztr_lp(lik, varargin)
 %
 %  Description
 %    LP = LIK_NEGBINZTR_LP(LIK) takes a likelihood structure LIK and
-%    returns log(p(th)), where th collects the parameters.
+%    returns log(p(th)), where th collects the parameters. This subfunction
+%    is needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG3, LIK_NEGBINZTR_LLG2, GPLA_E
@@ -172,7 +176,8 @@ function lpg = lik_negbinztr_lpg(lik)
 %
 %  Description
 %    E = LIK_NEGBINZTR_LPG(LIK) takes a likelihood structure LIK and
-%    returns d log(p(th))/dth, where th collects the parameters.
+%    returns d log(p(th))/dth, where th collects the parameters. This 
+%    subfunction is needed when there are likelihood parameters. 
 %
 %  See also
 %    LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG3, LIK_NEGBINZTR_LLG2, GPLA_G
@@ -195,6 +200,10 @@ function ll = lik_negbinztr_ll(lik, y, f, z)
 %    LL = LIK_NEGBINZTR_LL(LIK, Y, F, Z) takes a likelihood
 %    structure LIK, incedence counts Y, expected counts Z, and
 %    latent values F. Returns the log likelihood, log p(y|f,z).
+%    This subfunction is needed when using Laplace approximation 
+%    or MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC) 
+%    computations.
 %
 %  See also
 %    LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG3, LIK_NEGBINZTR_LLG2, GPLA_E
@@ -220,7 +229,8 @@ function llg = lik_negbinztr_llg(lik, y, f, param, z)
 %    structure LIK, incedence counts Y, expected counts Z and
 %    latent values F. Returns the gradient of the log likelihood
 %    with respect to PARAM. At the moment PARAM can be 'param' or
-%    'latent'.
+%    'latent'. This subfunction is needed when using Laplace 
+%    approximation or MCMC for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_NEGBINZTR_LL, LIK_NEGBINZTR_LLG2, LIK_NEGBINZTR_LLG3, GPLA_E
@@ -272,7 +282,9 @@ function llg2 = lik_negbinztr_llg2(lik, y, f, param, z)
 %    latent values F. Returns the Hessian of the log likelihood
 %    with respect to PARAM. At the moment PARAM can be only
 %    'latent'. LLG2 is a vector with diagonal elements of the
-%    Hessian matrix (off diagonals are zero).
+%    Hessian matrix (off diagonals are zero). This subfunction 
+%    is needed when using Laplace approximation or EP for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_NEGBINZTR_LL, LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG3, GPLA_E
@@ -316,7 +328,9 @@ function llg3 = lik_negbinztr_llg3(lik, y, f, param, z)
 %    structure LIK, incedence counts Y, expected counts Z and
 %    latent values F and returns the third gradients of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
-%    only 'latent'. LLG3 is a vector with third gradients.
+%    only 'latent'. LLG3 is a vector with third gradients.  This 
+%    subfunction is needed when using Laplace approximation for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_NEGBINZTR_LL, LIK_NEGBINZTR_LLG, LIK_NEGBINZTR_LLG2, GPLA_E, GPLA_G
@@ -362,7 +376,8 @@ function [logM_0, m_1, sigm2hati1] = lik_negbinztr_tiltedMoments(lik, y, i1, sig
 %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
 %    variance M_2 of the posterior marginal (see Rasmussen and
 %    Williams (2006): Gaussian processes for Machine Learning,
-%    page 55).
+%    page 55). This subfunction is needed when using EP for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -419,7 +434,9 @@ function [g_i] = lik_negbinztr_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    marginal posterior. This term is needed when evaluating the
 %    gradients of the marginal likelihood estimate Z_EP with
 %    respect to the likelihood parameters (see Seeger (2008):
-%    Expectation propagation for exponential families)
+%    Expectation propagation for exponential families). This 
+%    subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods and there are likelihood parameters.
 %
 %  See also
 %    GPEP_G
@@ -481,12 +498,16 @@ function [lpy, Ey, Vary] = lik_negbinztr_predy(lik, Ef, Varf, yt, zt)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the incedence counts YT, expected counts ZT.
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_NEGBINZTR_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
+%    observations related to the latent variables. This subfunction 
+%    is needed when computing posterior predictive distributions for 
+%    future observations.
 %        
 
 %
@@ -550,7 +571,8 @@ function [df,minf,maxf] = init_negbinztr_norm(yy,myy_i,sigm2_i,avgE,r)
 %    Negative-Binomial * Gaussian which is used for evaluating
 %    (likelihood * cavity) or (likelihood * posterior) Return
 %    also useful limits for integration. This is private function
-%    for lik_negbinztr.
+%    for lik_negbinztr. This subfunction is needed by subfunctions
+%    tiltedMoments, siteDeriv and predy.
 %  
 %  See also
 %    LIK_NEGBINZTR_TILTEDMOMENTS, LIK_NEGBINZTR_SITEDERIV,
@@ -718,6 +740,7 @@ function prctys = lik_negbinztr_predprcty(lik, Ef, Varf, zt, prcty)
 %    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
 %    Returns percentiles of the predictive density PY of YT, that is 
 %    This requires also the succes counts YT, numbers of trials ZT.
+%    This subfunction is needed when using function gp_predprcty.
 %
 %  See also 
 %    GP_PREDPCTY
@@ -791,6 +814,7 @@ function mu = lik_negbinztr_invlink(lik, f, z)
 %  Description 
 %    MU = LIK_NEGBINZTR_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values MU of inverse link function.
+%    This subfunction is needed when using function gp_predprctmu.
 %
 %     See also
 %     LIK_NEGBINZTR_LL, LIK_NEGBINZTR_PREDY
@@ -806,7 +830,8 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK.  This subfunction
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

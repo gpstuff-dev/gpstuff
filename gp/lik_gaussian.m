@@ -152,8 +152,8 @@ function lp = lik_gaussian_lp(lik)
 %  Description
 %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters.
-%    This is a mandatory subfunction used for example in energy 
-%    computations.
+%    This subfunctions is needed when there are likelihood
+%    parameters.
 %
 %  See also
 %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_G, GP_E
@@ -173,8 +173,8 @@ function lpg = lik_gaussian_lpg(lik)
 %  Description
 %    LPG = LIK_GAUSSIAN_LPG(LIK) takes a Gaussian likelihood
 %    function structure LIK and returns LPG = d log (p(th))/dth,
-%    where th is the vector of parameters. This is a mandatory 
-%    subfunction used for example in gradient computations.
+%    where th is the vector of parameters. This subfunction is 
+%    needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_GAUSSIAN_PAK, LIK_GAUSSIAN_UNPAK, LIK_GAUSSIAN_E, GP_G

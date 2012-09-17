@@ -174,7 +174,7 @@ function lp = lik_t_lp(lik)
 %  Description
 %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters.
-%    This subfunction is needed if there are likelihood parameters.
+%    This subfunction is needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_T_LLG, LIK_T_LLG3, LIK_T_LLG2, GPLA_E
@@ -197,7 +197,7 @@ function lpg = lik_t_lpg(lik)
 %  Description
 %    LPG = LIK_T_LPG(LIK) takes a likelihood structure LIK
 %    and returns d log(p(th))/dth, where th collects the
-%    parameters. This subfunction is needed if there are 
+%    parameters. This subfunction is needed when there are 
 %    likelihood parameters.
 %
 %  See also

@@ -972,19 +972,26 @@ function DKff = gpcf_sexp_ginput(gpcf, x, x2, i1)
 %                  respect to x.
 %
 %  Description
-%    DKff = GPCF_SEXP_GHYPER(GPCF, X) takes a covariance function
+%    DKff = GPCF_SEXP_GINPUT(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
 %    respect to X (cell array with matrix elements). This subfunction
 %    is needed when computing gradients with respect to inducing
 %    inputs in sparse approximations.
 %
-%    DKff = GPCF_SEXP_GHYPER(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_SEXP_GINPUT(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
 %    This subfunction is needed when computing gradients with 
 %    respect to inducing inputs in sparse approximations.
+% 
+%    DKff = GPCF_SEXP_GINPUT(GPCF, X, X2, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    covariate in X. This subfunction is needed when using 
+%    memory save option in gp_set.
 %
 %  See also
 %   GPCF_SEXP_PAK, GPCF_SEXP_UNPAK, GPCF_SEXP_LP, GP_G

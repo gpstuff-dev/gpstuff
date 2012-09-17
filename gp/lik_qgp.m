@@ -106,6 +106,8 @@ function [w s] = lik_qgp_pak(lik)
 %  Description
 %    W = LIK_QGP_PAK(LIK) takes a likelihood structure LIK
 %    and combines the parameters into a single row vector W.
+%    This is a mandatory subfunction used for example in 
+%    energy and gradient computations.
 %
 %       w = [ log(lik.sigma2)
 %             (hyperparameters of lik.magnSigma2)]'
@@ -131,7 +133,8 @@ function [lik, w] = lik_qgp_unpak(lik, w)
 %  Description
 %    W = LIK_QGP_UNPAK(W, LIK) takes a likelihood structure
 %    LIK and extracts the parameters from the vector W to the LIK
-%    structure.
+%    structure. This is a mandatory subfunction used for example 
+%    in energy and gradient computations.
 %
 %    Assignment is inverse of  
 %       w = [ log(lik.sigma2)
@@ -155,7 +158,8 @@ function lp = lik_qgp_lp(lik)
 %
 %  Description
 %    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
-%    returns log(p(th)), where th collects the parameters.
+%    returns log(p(th)), where th collects the parameters. This
+%    subfunction is needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_QGP_PAK, LIK_QGP_UNPAK, LIK_QGP_G, GP_E
@@ -175,7 +179,8 @@ function lpg = lik_qgp_lpg(lik)
 %  Description
 %    LPG = LIK_QGP_LPG(LIK) takes a QGP likelihood
 %    function structure LIK and returns LPG = d log (p(th))/dth,
-%    where th is the vector of parameters.
+%    where th is the vector of parameters. This subfunction is 
+%    needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_QGP_PAK, LIK_QGP_UNPAK, LIK_QGP_E, GP_G
@@ -199,7 +204,10 @@ function ll = lik_qgp_ll(lik, y, f, z)
 %  Description
 %    LL = LIK_QGP_LL(LIK, Y, F, Z) takes a likelihood
 %    structure LIK, observations Y and latent values F. 
-%    Returns the log likelihood, log p(y|f,z).
+%    Returns the log likelihood, log p(y|f,z). This subfunction 
+%    is needed when using Laplace approximation or MCMC for 
+%    inference with non-Gaussian likelihoods. This subfunction 
+%    is also used in information criteria (DIC, WAIC) computations.
 %
 %  See also
 %    LIK_QGP_LLG, LIK_QGP_LLG3, LIK_QGP_LLG2, GPLA_E
@@ -216,7 +224,9 @@ function llg = lik_qgp_llg(lik, y, f, param, z)
 %    LLG = LIK_QGP_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, observations Y and latent values F. Returns 
 %    the gradient of the log likelihood with respect to PARAM. 
-%    At the moment PARAM can be 'param' or 'latent'.
+%    At the moment PARAM can be 'param' or 'latent'. This subfunction 
+%    is needed when using Laplace approximation or MCMC for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_QGP_LL, LIK_QGP_LLG2, LIK_QGP_LLG3, GPLA_E
@@ -244,7 +254,9 @@ function llg2 = lik_qgp_llg2(lik, y, f, param, z)
 %    the Hessian of the log likelihood with respect to PARAM. 
 %    At the moment PARAM can be 'param' or 'latent'. LLG2 is 
 %    a vector with diagonal elements of the Hessian matrix 
-%    (off diagonals are zero).
+%    (off diagonals are zero). This subfunction is needed 
+%    when using Laplace approximation or EP for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_QGP_LL, LIK_QGP_LLG, LIK_QGP_LLG3, GPLA_E
@@ -276,7 +288,9 @@ function llg3 = lik_qgp_llg3(lik, y, f, param, z)
 %    structure LIK, observations Y and latent values F and 
 %    returns the third gradients of the log likelihood with 
 %    respect to PARAM. At the moment PARAM can be 'param' or 
-%    'latent'. LLG3 is a vector with third gradients.
+%    'latent'. LLG3 is a vector with third gradients. This 
+%    subfunction is needed when using Laplace approximation for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_QGP_LL, LIK_QGP_LLG, LIK_QGP_LLG2, GPLA_E, GPLA_G
@@ -305,7 +319,9 @@ function [logM_0, m_1, sigm2hati1] = lik_qgp_tiltedMoments(lik, y, i1, sigm2_i, 
 %    Y, index I and cavity variance S2 and mean MYY. Returns 
 %    the zeroth moment M_0, mean M_1 and variance M_2 of the 
 %    posterior marginal (see Rasmussen and Williams (2006): 
-%    Gaussian processes for Machine Learning, page 55).
+%    Gaussian processes for Machine Learning, page 55). This 
+%    subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -354,7 +370,9 @@ function [g_i] = lik_qgp_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    This term is needed when evaluating the gradients of 
 %    the marginal likelihood estimate Z_EP with respect to 
 %    the likelihood parameters (see Seeger (2008):
-%    Expectation propagation for exponential families)
+%    Expectation propagation for exponential families).This 
+%    subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods and there are likelihood parameters.
 %
 %  See also
 %    GPEP_G
@@ -390,13 +408,16 @@ function [lpy, Ey, Vary] = lik_qgp_predy(lik, Ef, Varf, yt, zt)
 %    LPY = LIK_QGP_PREDY(LIK, EF, VARF YT, ZT)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
-%    
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_QGP_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
+%    observations related to the latent variables. This 
+%    subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %        
 
 %
@@ -457,7 +478,8 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
 %    Quantile-GP * Gaussian which is used for evaluating
 %    (likelihood * cavity) or (likelihood * posterior) Return
 %    also useful limits for integration. This is private function
-%    for lik_qgp.
+%    for lik_qgp. This subfunction is needed by subfunctions
+%    tiltedMoments, siteDeriv and predy.
 %  
 %  See also
 %    LIK_QGP_TILTEDMOMENTS, LIK_QGP_SITEDERIV,
@@ -573,6 +595,7 @@ function mu = lik_qgp_invlink(lik, f, z)
 %  Description 
 %    MU = LIK_QGP_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values MU of inverse link function.
+%    This subfunction is needed when using function gp_predprctmu.
 %
 %     See also
 %     LIK_QGP_LL, LIK_QGP_PREDY
@@ -588,7 +611,8 @@ function reclik = lik_qgp_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK.  This subfunction
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

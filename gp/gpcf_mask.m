@@ -78,7 +78,8 @@ function [w,s] = gpcf_mask_pak(gpcf, w)
 %    W = GPCF_MASK_PAK(GPCF) takes a covariance function
 %    structure GPCF and combines the covariance function
 %    parameters and their hyperparameters into a single row
-%    vector W.
+%    vector W. This is a mandatory subfunction used for 
+%    example in energy and gradient computations.
 %
 %       w = []
 %
@@ -98,7 +99,8 @@ function [gpcf, w] = gpcf_mask_unpak(gpcf, w)
 %    returns a covariance function structure identical to the
 %    input, except that the covariance parameters have been set
 %    to the values in W. Deletes the values set to GPCF from W
-%    and returns the modified W.
+%    and returns the modified W. This is a mandatory subfunction 
+%    used for example in energy and gradient computations.
 %
 %    Assignment is inverse of  
 %       w = []
@@ -114,7 +116,8 @@ function lp = gpcf_mask_lp(gpcf)
 %  Description
 %    LP = GPCF_MASK_LP(GPCF) takes a covariance function
 %    structure GPCF and returns log(p(th)), where th collects the
-%    parameters.
+%    parameters. This is a mandatory subfunction used for example 
+%    in energy computations.
 %
 %  See also
 %    GPCF_MASK_PAK, GPCF_MASK_UNPAK, GPCF_MASK_LPG, GP_E
@@ -130,7 +133,8 @@ function lpg = gpcf_mask_lpg(gpcf)
 %  Description
 %    LPG = GPCF_MASK_LPG(GPCF) takes a covariance function
 %    structure GPCF and returns LPG = d log (p(th))/dth, where th
-%    is the vector of parameters.
+%    is the vector of parameters. This is a mandatory subfunction 
+%    used for example in gradient computations.
 %
 %  See also
 %    GPCF_MASK_PAK, GPCF_MASK_UNPAK, GPCF_MASK_LP, GP_G
@@ -147,24 +151,27 @@ function DKff = gpcf_mask_cfg(gpcf, x, x2, mask,i1)
 %    DKff = GPCF_MASK_CFG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to th (cell array with matrix elements).
+%    respect to th (cell array with matrix elements). This is a 
+%    mandatory subfunction used in gradient computations.
 %
 %    DKff = GPCF_MASK_CFG(GPCF, X, X2) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X2) with
-%    respect to th (cell array with matrix elements).
+%    respect to th (cell array with matrix elements). This subfunction 
+%    is needed when using sparse approximations (e.g. FIC).
 %
 %    DKff = GPCF_MASK_CFG(GPCF, X, [], MASK) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the diagonal of gradients of covariance matrix
 %    Kff = k(X,X2) with respect to th (cell array with matrix
-%    elements). This is needed for example with FIC sparse
-%    approximation.
+%    elements). This subfunction is needed when using sparse 
+%    approximations (e.g. FIC).
 %
 %    DKff = GPCF_MASK_CFG(GPCF, X, X2, [], i) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X2), or k(X,X)
-%    if X2 is empty, with respect to ith hyperparameter.
+%    if X2 is empty, with respect to ith hyperparameter. This subfunction
+%    is needed when using memory save option in gp_set.
 %
 %  See also
 %    GPCF_MASK_PAK, GPCF_MASK_UNPAK, GPCF_MASK_LP, GP_G
@@ -181,18 +188,23 @@ function [DKff, lpg]  = gpcf_mask_ginput(gpcf, x, x2, i1)
 %    DKff = GPCF_MASK_GINPUT(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to X (cell array with matrix elements)
+%    respect to X (cell array with matrix elements). This subfunction
+%    is needed when computing gradients with respect to inducing
+%    inputs in sparse approximations.
 %
 %    DKff = GPCF_MASK_GINPUT(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors
 %    and returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
+%    This subfunction is needed when computing gradients with 
+%    respect to inducing inputs in sparse approximations.
 %
-%    DKff = GPCF_MASK_GINPUT(GPCF, X, X2) takes a covariance
+%    DKff = GPCF_MASK_GINPUT(GPCF, X, X2, i) takes a covariance
 %    function structure GPCF, a matrix X of input vectors
 %    and returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2), or k(X,X) if X2 is empty, with respect to ith covariate
-%    in X.
+%    in X. This subfunction is needed when using memory saving option
+%    in gp_set.
 %
 %  See also
 %   GPCF_MASK_PAK, GPCF_MASK_UNPAK, GPCF_MASK_LP, GP_G
@@ -231,7 +243,8 @@ function C = gpcf_mask_cov(gpcf, x1, x2, varargin)
 %    Gaussian process GP and two matrixes TX and X that contain
 %    input vectors to GP. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i in TX
-%    and j in X.
+%    and j in X. This is a mandatory subfunction used for example in
+%    prediction and energy computations.
 %
 %  See also
 %    GPCF_MASK_TRCOV, GPCF_MASK_TRVAR, GP_COV, GP_TRCOV
@@ -268,7 +281,9 @@ function C = gpcf_mask_trcov(gpcf, x)
 %    C = GP_MASK_TRCOV(GP, TX) takes in covariance function of a
 %    Gaussian process GP and matrix TX that contains training
 %    input vectors. Returns covariance matrix C. Every element ij
-%    of C contains covariance between inputs i and j in TX.
+%    of C contains covariance between inputs i and j in TX. This 
+%    is a mandatory subfunction used for example in prediction 
+%    and energy computations.
 %
 %  See also
 %    GPCF_MASK_COV, GPCF_MASK_TRVAR, GP_COV, GP_TRCOV
@@ -297,7 +312,9 @@ function C = gpcf_mask_trvar(gpcf, x)
 %    C = GP_MASK_TRVAR(GPCF, TX) takes in covariance function of a
 %    Gaussian process GPCF and matrix TX that contains training
 %    inputs. Returns variance vector C. Every element i of C
-%    contains variance of input i in TX.
+%    contains variance of input i in TX. This is a mandatory 
+%    subfunction used for example in prediction and energy 
+%    computations.
 %
 %  See also
 %    GPCF_MASK_COV, GP_COV, GP_TRCOV
@@ -326,7 +343,8 @@ function reccf = gpcf_mask_recappend(reccf, ri, gpcf)
 %    covariance function record structure RECCF, record index RI
 %    and covariance function structure GPCF with the current MCMC
 %    samples of the parameters. Returns RECCF which contains
-%    all the old samples and the current samples from GPCF .
+%    all the old samples and the current samples from GPCF.
+%    This subfunction is needed when using MCMC sampling (gp_mc).
 %
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND

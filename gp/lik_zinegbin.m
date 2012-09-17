@@ -113,7 +113,9 @@ function lik = lik_zinegbin(varargin)
   %
   %  Description 
   %    W = LIK_ZINEGBIN_PAK(LIK) takes a likelihood structure LIK and
-  %    combines the parameters into a single row vector W.
+  %    combines the parameters into a single row vector W. This is a 
+  %    mandatory subfunction used for example in energy and gradient 
+  %    computations.
   %     
   %       w = log(lik.disper)
   %
@@ -137,7 +139,8 @@ function lik = lik_zinegbin(varargin)
   %  Description
   %    [LIK, W] = LIK_ZINEGBIN_UNPAK(W, LIK) takes a likelihood
   %    structure LIK and extracts the parameters from the vector W
-  %    to the LIK structure.
+  %    to the LIK structure. This is a mandatory subfunction used for 
+  %    example in energy and gradient computations.
   %     
   %   Assignment is inverse of  
   %       w = log(lik.disper)
@@ -159,7 +162,8 @@ function lik = lik_zinegbin(varargin)
   %
   %  Description
   %    LP = LIK_ZINEGBIN_LP(LIK) takes a likelihood structure LIK and
-  %    returns log(p(th)), where th collects the parameters.
+  %    returns log(p(th)), where th collects the parameters. This 
+  %    subfunction is needed when there are likelihood parameters.
   %
   %  See also
   %    LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, LIK_ZINEGBIN_LLG2, GPLA_E
@@ -180,7 +184,8 @@ function lik = lik_zinegbin(varargin)
   %
   %  Description
   %    E = LIK_ZINEGBIN_LPG(LIK) takes a likelihood structure LIK and
-  %    returns d log(p(th))/dth, where th collects the parameters.
+  %    returns d log(p(th))/dth, where th collects the parameters. This
+  %    subfunction is needed when there are likelihood parameters.
   %
   %  See also
   %    LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, LIK_ZINEGBIN_LLG2, GPLA_G
@@ -203,6 +208,10 @@ function lik = lik_zinegbin(varargin)
   %    LL = LIK_ZINEGBIN_LL(LIK, Y, F, Z) takes a likelihood
   %    structure LIK, incedence counts Y, expected counts Z, and
   %    latent values F. Returns the log likelihood, log p(y|f,z).
+  %    This subfunction is needed when using Laplace approximation
+  %    or MCMC for inference with non-Gaussian likelihoods. This
+  %    subfunction is also used in information criteria (DIC, WAIC)
+  %    computations.
   %
   %  See also
   %    LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, LIK_ZINEGBIN_LLG2, GPLA_E
@@ -241,7 +250,8 @@ function lik = lik_zinegbin(varargin)
   %    structure LIK, incedence counts Y, expected counts Z and
   %    latent values F. Returns the gradient of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be 'param' or
-  %    'latent'.
+  %    'latent'. This subfunction is needed when using Laplace 
+  %    approximation or MCMC for inference with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG2, LIK_ZINEGBIN_LLG3, GPLA_E
@@ -307,7 +317,9 @@ function lik = lik_zinegbin(varargin)
   %    [diag(LLG2_11) diag(LLG2_12); diag(LLG2_12) diag(LLG2_22)],
   %    but the function returns only vectors of diagonal elements as
   %    LLG2 = [LLG2_11 LLG2_12; LLG2_12 LLG2_22] (2Nx2 matrix) since off
-  %    diagonals of the blocks are zero.  
+  %    diagonals of the blocks are zero. This subfunction is needed when 
+  %    using Laplace approximation or EP for inference with non-Gaussian 
+  %    likelihoods.
   %
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG3, GPLA_E
@@ -397,7 +409,8 @@ function lik = lik_zinegbin(varargin)
   %    only 'latent'. LLG3 is a 2-by-2-by-2-by-N array of with third
   %    gradients, where LLG3(:,:,1,i) is the third derivative wrt f1 for
   %    the i'th observation and LLG3(:,:,2,i) is the third derivative wrt
-  %    f2 for the i'th observation.   
+  %    f2 for the i'th observation. This subfunction is needed when using 
+  %    Laplace approximation for inference with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_ZINEGBIN_LL, LIK_ZINEGBIN_LLG, LIK_ZINEGBIN_LLG2, GPLA_E, GPLA_G
@@ -507,7 +520,8 @@ function lik = lik_zinegbin(varargin)
   %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
   %    variance M_2 of the posterior marginal (see Rasmussen and
   %    Williams (2006): Gaussian processes for Machine Learning,
-  %    page 55).
+  %    page 55). This subfunction is needed when using EP for 
+  %    inference with non-Gaussian likelihoods.
   %
   %  See also
   %    GPEP_E
@@ -563,7 +577,9 @@ function lik = lik_zinegbin(varargin)
   %    marginal posterior. This term is needed when evaluating the
   %    gradients of the marginal likelihood estimate Z_EP with
   %    respect to the likelihood parameters (see Seeger (2008):
-  %    Expectation propagation for exponential families)
+  %    Expectation propagation for exponential families). This
+  %    subfunction is needed when using EP for inference with
+  %    non-Gaussian likelihoods and there are likelihood parameters.
   %
   %  See also
   %    GPEP_G
@@ -609,12 +625,16 @@ function lik = lik_zinegbin(varargin)
   %    likelihood structure LIK, posterior mean EF and posterior
   %    covariance COVF of the latent variable and returns the
   %    posterior predictive mean EY and variance VARY of the
-  %    observations related to the latent variables
+  %    observations related to the latent variables. This 
+  %    subfunction is needed when computing posterior predictive 
+  %    distributions for future observations.
   %        
   %    [Ey, Vary, PY] = LIK_ZINEGBIN_PREDY(LIK, EF, VARF YT, ZT)
   %    Returns also the predictive density of YT, that is 
   %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
   %    This requires also the incedence counts YT, expected counts ZT.
+  %    This subfunction is needed when computing posterior predictive 
+  %    distributions for future observations.
   %
   %  See also
   %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -803,6 +823,7 @@ function lik = lik_zinegbin(varargin)
   %  Description 
   %    P = LIK_ZINEGBIN_INVLINK(LIK, F) takes a likelihood structure LIK and
   %    latent values F and returns the values of inverse link function P.
+  %    This subfunction is needed when using function gp_predprctmu.
   %
   %     See also
   %     LIK_ZINEGBIN_LL, LIK_ZINEGBIN_PREDY
@@ -818,7 +839,8 @@ function lik = lik_zinegbin(varargin)
   %    likelihood record structure RECLIK, record index RI and
   %    likelihood structure LIK with the current MCMC samples of
   %    the parameters. Returns RECLIK which contains all the old
-  %    samples and the current samples from LIK.
+  %    samples and the current samples from LIK. This subfunction
+  %    is needed when using MCMC sampling (gp_mc).
   % 
   %  See also
   %    GP_MC
@@ -826,6 +848,7 @@ function lik = lik_zinegbin(varargin)
   % Initialize record
     if nargin == 2
       reclik.type = 'Zinegbin';
+      reclik.nondiagW=true;
 
       % Initialize parameter
       reclik.disper = [];
@@ -852,7 +875,7 @@ function lik = lik_zinegbin(varargin)
     end
     
     reclik.disper(ri,:)=lik.disper;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.disper)
         reclik.p.disper = feval(lik.p.disper.fh.recappend, reclik.p.disper, ri, lik.p.disper);
     end
   end

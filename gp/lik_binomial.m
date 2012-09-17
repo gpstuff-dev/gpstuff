@@ -68,7 +68,8 @@ function [w,s] = lik_binomial_pak(lik)
 %    W = LIK_BINOMIAL_PAK(LIK) takes a likelihood structure LIK
 %    and returns an empty verctor W. If Binomial likelihood had
 %    parameters this would combine them into a single row vector
-%    W (see e.g. likelih_negbin).
+%    W (see e.g. likelih_negbin). This is a mandatory subfunction 
+%    used for example in energy and gradient computations.
 %
 %  See also
 %    LIK_NEGBIN_UNPAK, GP_PAK
@@ -84,7 +85,9 @@ function [lik, w] = lik_binomial_unpak(lik, w)
 %    W = LIK_BINOMIAL_UNPAK(W, LIK) Doesn't do anything.
 % 
 %    If Binomial likelihood had parameters this would extracts
-%    them parameters from the vector W to the LIK structure.
+%    them parameters from the vector W to the LIK structure. 
+%    This is a mandatory subfunction used for example in energy 
+%    and gradient computations.
 %
 %  See also
 %    LIK_BINOMIAL_PAK, GP_UNPAK
@@ -103,6 +106,10 @@ function ll = lik_binomial_ll(lik, y, f, z)
 %    LL = LIK_BINOMIAL_LL(LIK, Y, F, Z) takes a likelihood
 %    structure LIK, succes counts Y, numbers of trials Z, and
 %    latent values F. Returns the log likelihood, log p(y|f,z).
+%    This subfunction is needed when using Laplace approximation
+%    or MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC)
+%    computations.
 %
 %  See also
 %    LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, LIK_BINOMIAL_LLG2, GPLA_E
@@ -129,7 +136,9 @@ function llg = lik_binomial_llg(lik, y, f, param, z)
 %    structure LIK, succes counts Y, numbers of trials Z and
 %    latent values F. Returns the gradient of the log likelihood
 %    with respect to PARAM. At the moment PARAM can be 'param' or
-%    'latent'.
+%    'latent'. This subfunction is needed when using Laplace 
+%    approximation or MCMC for inference with non-Gaussian 
+%    likelihoods.
 %
 %  See also
 %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG2, LIK_BINOMIAL_LLG3, GPLA_E
@@ -160,7 +169,9 @@ function llg2 = lik_binomial_llg2(lik, y, f, param, z)
 %    Z, and latent values F. Returns the Hessian of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
 %    only 'latent'. G2 is a vector with diagonal elements of the
-%    Hessian matrix (off diagonals are zero).
+%    Hessian matrix (off diagonals are zero). This subfunction
+%    is needed when using Laplace approximation or EP for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG3, GPLA_E
@@ -191,6 +202,8 @@ function llg3 = lik_binomial_llg3(lik, y, f, param, z)
 %    Z and latent values F and returns the third gradients of the
 %    log likelihood with respect to PARAM. At the moment PARAM
 %    can be only 'latent'. G3 is a vector with third gradients.
+%    This subfunction is needed when using Laplace appoximation 
+%    for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_BINOMIAL_LL, LIK_BINOMIAL_LLG, LIK_BINOMIAL_LLG2, GPLA_E, GPLA_G
@@ -220,6 +233,8 @@ function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm
 %    MYY. Returns the zeroth moment M_0, mean M_1 and variance
 %    M_2 of the posterior marginal (see Rasmussen and Williams
 %    (2006): Gaussian processes for Machine Learning, page 55).
+%    This subfunction is needed when using EP for inference with
+%    non-Gaussian likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -325,12 +340,16 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %        p(yt | y, zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the succes counts YT, numbers of trials ZT.
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_BINOMIAL_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables.
+%    observations related to the latent variables. This subfunction 
+%    is needed when computing posterior predictive distributions for 
+%    future observations.
 %        
 %
 %  See also 
@@ -378,7 +397,8 @@ function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)
 %  Description         
 %    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
 %    Returns percentiles of the predictive density PY of YT, that is 
-%    This requires also the succes counts YT, numbers of trials ZT.
+%    This requires also the succes counts YT, numbers of trials ZT. This
+%    subfunction is needed when using function gp_predprcty.
 %
 %  See also 
 %    GP_PREDPCTY
@@ -413,7 +433,8 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %    Return function handle to a function evaluating Binomial *
 %    Gaussian which is used for evaluating (likelihood * cavity)
 %    or (likelihood * posterior) Return also useful limits for
-%    integration. This is private function for lik_binomial.
+%    integration. This is private function for lik_binomial. This
+%    subfunction is needed by subfunctions tiltedMoments and predy.
 %  
 % See also
 %   LIK_BINOMIAL_TILTEDMOMENTS, LIK_BINOMIAL_PREDY
@@ -545,6 +566,7 @@ function p = lik_binomial_invlink(lik, f, z)
 %  Description 
 %    P = LIK_BINOMIAL_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values of inverse link function P.
+%    This subfunction is needed when using gp_predprctmu. 
 %
 %     See also
 %     LIK_BINOMIAL_LL, LIK_BINOMIAL_PREDY
@@ -560,7 +582,8 @@ function reclik = lik_binomial_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK. This subfunction 
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

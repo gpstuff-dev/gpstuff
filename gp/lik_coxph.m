@@ -98,7 +98,9 @@ function lik = lik_coxph(varargin)
   %
   %  Description 
   %    W = LIK_COXPH_PAK(LIK) takes a likelihood structure LIK and
-  %    combines the parameters into a single row vector W.
+  %    combines the parameters into a single row vector W. This is 
+  %    a mandatory subfunction used for example in energy and 
+  %    gradient computations.
   %     
   %       w = log(lik.disper)
   %
@@ -115,7 +117,8 @@ function lik = lik_coxph(varargin)
   %  Description
   %    [LIK, W] = LIK_COXPH_UNPAK(W, LIK) takes a likelihood
   %    structure LIK and extracts the parameters from the vector W
-  %    to the LIK structure.
+  %    to the LIK structure. This is a mandatory subfunction used 
+  %    for example in energy and gradient computations.
   %     
   %   Assignment is inverse of  
   %       w = log(lik.disper)
@@ -135,6 +138,10 @@ function lik = lik_coxph(varargin)
   %    LL = LIK_COXPH_LL(LIK, Y, F, Z) takes a likelihood
   %    structure LIK, incedence counts Y, expected counts Z, and
   %    latent values F. Returns the log likelihood, log p(y|f,z).
+  %    This subfunction is needed when using Laplace approximation
+  %    or MCMC for inference with non-Gaussian likelihoods. This 
+  %    subfunction is also used in information criteria (DIC, WAIC)
+  %    computations.
   %
   %  See also
   %    LIK_COXPH_LLG, LIK_COXPH_LLG3, LIK_COXPH_LLG2, GPLA_E
@@ -189,45 +196,6 @@ function lik = lik_coxph(varargin)
     end
   end
 
-  function ll = lik_coxph_llsamps(lik, y, f, z)
-  %LIK_COXPH_LL  Log likelihood
-  %
-  %  Description
-  %    LL = LIK_COXPH_LL(LIK, Y, F, Z) takes a likelihood
-  %    structure LIK, incedence counts Y, expected counts Z, and
-  %    latent values F. Returns the log likelihood, log p(y|f,z).
-  %
-  %  See also
-  %    LIK_COXPH_LLG, LIK_COXPH_LLG3, LIK_COXPH_LLG2, GPLA_E
-    
-    if isempty(z)
-      error(['lik_coxph -> lik_coxph_ll: missing z!    '... 
-             'Coxph likelihood needs the expected number of    '...
-             'occurrences as an extra input z. See, for         '...
-             'example, lik_coxph and gpla_e.               ']);
-    end
-    
-    ntime=size(lik.xtime,1);
-    [n,ny]=size(y);
-    
-    i1=1;
-    si=sum(y(i1)>lik.stime);
-    
-    f1=f(1:si);
-    f2=f(end);
-    
-    la1=exp(f1);
-    eta2=exp(f2);
-    
-    nu=1-z;
-    sd=lik.stime(2)-lik.stime(1);
-
-    
-    ll=nu(i1).*(f1(si)+f2(i1)) - (y(i1)-lik.stime(si)).*la1(si).*eta2(i1) - sum(sd.*la1(1:(si-1)).*eta2(i1));
-  end
-
-
-
   function llg = lik_coxph_llg(lik, y, f, param, z)
   %LIK_COXPH_LLG  Gradient of the log likelihood
   %
@@ -236,7 +204,9 @@ function lik = lik_coxph(varargin)
   %    structure LIK, incedence counts Y, expected counts Z and
   %    latent values F. Returns the gradient of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be 'param' or
-  %    'latent'.
+  %    'latent'. This subfunction is needed when using Laplace 
+  %    approximation or MCMC for inference with non-Gaussian 
+  %    likelihoods.
   %
   %  See also
   %    LIK_COXPH_LL, LIK_COXPH_LLG2, LIK_COXPH_LLG3, GPLA_E
@@ -328,7 +298,9 @@ function lik = lik_coxph(varargin)
   %    latent values F. Returns the Hessian of the log likelihood
   %    with respect to PARAM. At the moment PARAM can be only
   %    'latent'. LLG2 is a vector with diagonal elements of the
-  %    Hessian matrix (off diagonals are zero).
+  %    Hessian matrix (off diagonals are zero). This subfunction
+  %    is needed when using Laplace approximation or EP for inference 
+  %    with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_COXPH_LL, LIK_COXPH_LLG, LIK_COXPH_LLG3, GPLA_E
@@ -473,7 +445,9 @@ function lik = lik_coxph(varargin)
   %    structure LIK, incedence counts Y, expected counts Z and
   %    latent values F and returns the third gradients of the log
   %    likelihood with respect to PARAM. At the moment PARAM can be
-  %    only 'latent'. LLG3 is a vector with third gradients.
+  %    only 'latent'. LLG3 is a vector with third gradients. This 
+  %    subfunction is needed when using Laplace approximation for 
+  %    inference with non-Gaussian likelihoods.
   %
   %  See also
   %    LIK_COXPH_LL, LIK_COXPH_LLG, LIK_COXPH_LLG2, GPLA_E, GPLA_G
@@ -704,9 +678,23 @@ function lik = lik_coxph(varargin)
 
   
   function [logM_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, S2_i, M_i, z)
-      
+    %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+    %
+    %  Description
+    %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
+    %    MYY, Z) takes a likelihood structure LIK, incedence counts
+    %    Y, expected counts Z, index I and cavity variance S2 and
+    %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
+    %    variance M_2 of the posterior marginal (see Rasmussen and
+    %    Williams (2006): Gaussian processes for Machine Learning,
+    %    page 55). This subfunction is needed when using EP for 
+    %    inference with non-Gaussian likelihoods.
+    %
+    %  See also
+    %    GPEP_E
+    
       [n,ny]=size(y);
-      
+    
       % M_i(end);
       % S2_i(end,end);
       fgrid=M_i(end)+sqrt(S2_i(end,end))*[-6 6];
@@ -947,12 +935,16 @@ function lik = lik_coxph(varargin)
   %    likelihood structure LIK, posterior mean EF and posterior
   %    Variance VARF of the latent variable and returns the
   %    posterior predictive mean EY and variance VARY of the
-  %    observations related to the latent variables
+  %    observations related to the latent variables. This 
+  %    subfunction is needed when computing posterior predictive 
+  %    distributions for future observations.
   %        
   %    [Ey, Vary, PY] = LIK_COXPH_PREDY(LIK, EF, VARF YT, ZT)
   %    Returns also the predictive density of YT, that is 
   %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
   %    This requires also the incedence counts YT, expected counts ZT.
+  %    This subfunction is needed when computing posterior predictive 
+  %    distributions for future observations.
   %
   %  See also
   %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -1223,6 +1215,7 @@ function lik = lik_coxph(varargin)
   %  Description 
   %    P = LIK_COXPH_INVLINK(LIK, F) takes a likelihood structure LIK and
   %    latent values F and returns the values of inverse link function P.
+  %    This subfunction is needed when using function gp_predprcty.
   %
   %     See also
   %     LIK_COXPH_LL, LIK_COXPH_PREDY
@@ -1238,7 +1231,8 @@ function lik = lik_coxph(varargin)
   %    likelihood record structure RECLIK, record index RI and
   %    likelihood structure LIK with the current MCMC samples of
   %    the parameters. Returns RECLIK which contains all the old
-  %    samples and the current samples from LIK.
+  %    samples and the current samples from LIK. This subfunction 
+  %    is needed when using MCMC sampling (gp_mc).
   % 
   %  See also
   %    GP_MC
@@ -1264,15 +1258,20 @@ function lik = lik_coxph(varargin)
     end
 
   end
+
   function [cdf,Ey,Vary] = lik_coxph_predcdf(lik,Ef,Covf,yt)
-        
-%      if isempty(zt)
-%         error(['lik_coxph -> lik_coxph_predy: missing zt!'... 
-%         'Coxph likelihood needs the expected number of    '...
-%         'occurrences as an extra input zt. See, for         '...
-%         'example, lik_coxph and gpla_e.               ']);
-%      end           
-        
+  %LIK_LOGLOGISTIC_PREDCDF  Returns the predictive cdf evaluated at yt
+  %
+  %  Description
+  %    CDF = LIK_LOGLOGISTIC_PREDCDF(LIK, EF, VARF, YT)
+  %    Returns the predictive cdf evaluated at YT given likelihood
+  %    structure LIK, posterior mean EF and posterior Variance VARF
+  %    of the latent variable. This subfunction is needed when using
+  %    functions gp_predcdf or gp_kfcv_cdf.
+  %
+  %  See also
+  %    GP_PREDCDF
+  
     
     ntime = size(lik.stime,2)-1;
     Ef1 = Ef(1:ntime); Ef(1:ntime) = []; Ef2 = Ef;    

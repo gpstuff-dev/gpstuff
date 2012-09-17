@@ -68,7 +68,9 @@ function [w, s] = gpcf_sum_pak(gpcf)
 %  Description
 %    W = GPCF_SUM_PAK(GPCF, W) loops through all the covariance
 %    functions and packs their parameters into one vector as
-%    described in the respective functions.
+%    described in the respective functions. This is a mandatory 
+%    subfunction used for example in energy and gradient computations.
+
 %
 %  See also
 %    GPCF_SUM_UNPAK
@@ -91,7 +93,9 @@ function [gpcf, w] = gpcf_sum_unpak(gpcf, w)
 %  Description
 %    [GPCF, W] = GPCF_SUM_UNPAK(GPCF, W) loops through all the
 %    covariance functions and unpacks their parameters from W to
-%    each covariance function structure.
+%    each covariance function structure. This is a mandatory 
+%    subfunction used for example in energy and gradient computations.
+
 %
 %  See also
 %    GPCF_SUM_PAK
@@ -112,7 +116,8 @@ function lp = gpcf_sum_lp(gpcf)
 %  Description
 %    LP = GPCF_SUM_LP(GPCF, X, T) takes a covariance function
 %    structure GPCF and returns log(p(th)), where th collects the
-%    parameters.
+%    parameters. This is a mandatory subfunction used for example 
+%    in energy computations.
 %
 %  See also
 %    GPCF_SUM_PAK, GPCF_SUM_UNPAK, GPCF_SUM_LPG, GP_E
@@ -133,7 +138,9 @@ function lpg = gpcf_sum_lpg(gpcf)
 %  Description
 %    LPG = GPCF_SUM_LPG(GPCF) takes a covariance function
 %    structure GPCF and returns LPG = d log (p(th))/dth, where th
-%    is the vector of parameters.
+%    is the vector of parameters. This is a mandatory subfunction 
+%    used for example in gradient computations.
+
 %
 %  See also
 %    GPCF_SUM_PAK, GPCF_SUM_UNPAK, GPCF_SUM_LP, GP_G
@@ -156,27 +163,29 @@ function DKff = gpcf_sum_cfg(gpcf, x, x2, mask, i1)
 %    DKff = GPCF_SUM_CFG(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to th (cell array with matrix elements).
+%    respect to th (cell array with matrix elements). This is a
+%    mandatory subfunction used in gradient computations.
 %
 %    DKff = GPCF_SUM_CFG(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to th (cell array with matrix
-%    elements).
+%    elements). This subfunction is needed when using sparse 
+%    approximations (e.g. FIC).
 %
 %    DKff = GPCF_SUM_CFG(GPCF, X, [], MASK) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the diagonal of gradients of covariance matrix
 %    Kff = k(X,X2) with respect to th (cell array with matrix
-%    elements). This is needed for example with FIC sparse
-%    approximation.
+%    elements). This subfunction is needed when using sparse 
+%    approximations (e.g. FIC).
 %
 %    DKff = GPCF_SUM_CFG(GPCF, X, X2, [], i) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
-%    hyperparameter.
-%    elements).
+%    hyperparameter. This subfunction is needed when using 
+%    memory save option in gp_set.
 %
 %  See also
 %    GPCF_SUM_PAK, GPCF_SUM_UNPAK, GPCF_SUM_LP, GP_G
@@ -291,12 +300,23 @@ function DKff = gpcf_sum_ginput(gpcf, x, x2, i1)
 %    DKff = GPCF_SUM_GINPUT(GPCF, X) takes a covariance function
 %    structure GPCF, a matrix X of input vectors and returns
 %    DKff, the gradients of covariance matrix Kff = k(X,X) with
-%    respect to X (cell array with matrix elements).
+%    respect to X (cell array with matrix elements). This subfunction 
+%    is needed when computing gradients with respect to inducing 
+%    inputs in sparse approximations.
 %
 %    DKff = GPCF_SUM_GINPUT(GPCF, X, X2) takes a covariance
 %    function structure GPCF, a matrix X of input vectors and
 %    returns DKff, the gradients of covariance matrix Kff =
 %    k(X,X2) with respect to X (cell array with matrix elements).
+%    This subfunction is needed when computing gradients with 
+%    respect to inducing inputs in sparse approximations.
+%
+%    DKff = GPCF_SUM_GINPUT(GPCF, X, X2, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    covariate in X. This subfunction is needed when using 
+%    memory save option in gp_set.
 %
 %  See also
 %    GPCF_SUM_PAK, GPCF_SUM_UNPAK, GPCF_SUM_LP, GP_G
@@ -373,7 +393,8 @@ function C = gpcf_sum_cov(gpcf, x1, x2)
 %    Gaussian process GP and two matrixes TX and X that contain
 %    input vectors to GP. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i in TX
-%    and j in X.
+%    and j in X. This is a mandatory subfunction used for example in
+%    prediction and energy computations.
 %
 %
 %  See also
@@ -406,7 +427,9 @@ function C = gpcf_sum_trcov(gpcf, x)
 %    C = GP_SUM_TRCOV(GP, TX) takes in covariance function of a
 %    Gaussian process GP and matrix TX that contains training
 %    input vectors. Returns covariance matrix C. Every element ij
-%    of C contains covariance between inputs i and j in TX.
+%    of C contains covariance between inputs i and j in TX. This 
+%    is a mandatory subfunction used for example in prediction and 
+%    energy computations.
 %
 %  See also
 %    GPCF_SUM_COV, GPCF_SUM_TRVAR, GP_COV, GP_TRCOV
@@ -427,7 +450,8 @@ function C = gpcf_sum_trvar(gpcf, x)
 %    C = GP_SUM_TRVAR(GPCF, TX) takes in covariance function of
 %    a Gaussian process GPCF and matrix TX that contains training
 %    inputs. Returns variance vector C. Every element i of C
-%    contains variance of input i in TX.
+%    contains variance of input i in TX. This is a mandatory 
+%    subfunction used for example in prediction and energy computations.
 %
 %  See also
 %    GPCF_SUM_COV, GP_COV, GP_TRCOV
@@ -451,7 +475,8 @@ function reccf = gpcf_sum_recappend(reccf, ri, gpcf)
 %    covariance function record structure RECCF, record index RI
 %    and covariance function structure GPCF with the current MCMC
 %    samples of the parameters. Returns RECCF which contains all
-%    the old samples and the current samples from GPCF .
+%    the old samples and the current samples from GPCF. This 
+%    subfunction is needed when using MCMC sampling (gp_mc).
 %
 %  See also
 %    GP_MC, GP_MC->RECAPPEND

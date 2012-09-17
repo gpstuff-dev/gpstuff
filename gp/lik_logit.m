@@ -60,7 +60,8 @@ function [w,s] = lik_logit_pak(lik)
 %    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
 %    returns an empty verctor W. If Logit likelihood had
 %    parameters this would combine them into a single row vector
-%    W (see e.g. lik_negbin).
+%    W (see e.g. lik_negbin). This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %       
 %  See also
 %    LIK_NEGBIN_UNPAK, GP_PAK
@@ -76,7 +77,9 @@ function [lik, w] = lik_logit_unpak(lik, w)
 %    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
 % 
 %    If Logit likelihood had parameters this would extracts them
-%    parameters from the vector W to the LIK structure.
+%    parameters from the vector W to the LIK structure. This is a 
+%    mandatory subfunction used for example in energy and gradient 
+%    computations.
 %       
 %  See also
 %    LIK_LOGIT_PAK, GP_UNPAK
@@ -92,7 +95,8 @@ function ll = lik_logit_ll(lik, y, f, z)
 %  Description
 %    E = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
 %    LIK, class labels Y, and latent values F. Returns the log
-%    likelihood, log p(y|f,z).
+%    likelihood, log p(y|f,z). This subfunction is also used in 
+%    information criteria (DIC, WAIC) computations.
 %
 %  See also
 %    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
@@ -112,7 +116,9 @@ function llg = lik_logit_llg(lik, y, f, param, z)
 %    G = LIK_LOGIT_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F. Returns
 %    the gradient of the log likelihood with respect to PARAM. At the
-%    moment PARAM can be 'param' or 'latent'.
+%    moment PARAM can be 'param' or 'latent'.  This subfunction is 
+%    needed when using Laplace approximation or MCMC for inference 
+%    with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG2, LIK_LOGIT_LLG3, GPLA_E
@@ -138,7 +144,8 @@ function llg2 = lik_logit_llg2(lik, y, f, param, z)
 %    the Hessian of the log likelihood with respect to PARAM. At
 %    the moment PARAM can be only 'latent'. LLG2 is a vector with
 %    diagonal elements of the Hessian matrix (off diagonals are
-%    zero).
+%    zero). This subfunction is needed when using Laplace approximation 
+%    or EP for inference with non-Gaussian likelihoods.
 %
 %   See also
 %   LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
@@ -155,7 +162,9 @@ function llg3 = lik_logit_llg3(lik, y, f, param, z)
 %    structure LIK, class labels Y, and latent values F and
 %    returns the third gradients of the log likelihood with
 %    respect to PARAM. At the moment PARAM can be only 'latent'. 
-%    LLG3 is a vector with third gradients.
+%    LLG3 is a vector with third gradients. This subfunction is 
+%    needed when using Laplace approximation for inference with 
+%    non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
@@ -179,7 +188,9 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
 %    and cavity variance S2 and mean MYY. Returns the zeroth
 %    moment M_0, mean M_1 and variance M_2 of the posterior
 %    marginal (see Rasmussen and Williams (2006): Gaussian
-%    processes for Machine Learning, page 55).
+%    processes for Machine Learning, page 55). This subfunction 
+%    is needed when using EP for inference with non-Gaussian 
+%    likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -228,15 +239,17 @@ function [lpy, Ey, Vary] = lik_logit_predy(lik, Ef, Varf, yt, zt)
 %    LPY = LIK_LOGIT_PREDY(LIK, EF, VARF, YT)
 %    Returns logarithm of the predictive density of YT, that is 
 %        p(yt | y) = \int p(yt | f) p(f|y) df.
-%    This requires also the class labels YT.
+%    This requires also the class labels YT. This subfunction 
+%    is needed when computing posterior predictive distributions 
+%    for future observations.
 %
 %    [LPY, EY, VARY] = LIK_LOGIT_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns also the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
-%        
-
+%    observations related to the latent variables. This subfunction 
+%    is needed when computing posterior predictive distributions for 
+%    future observations.
 %
 %  See also 
 %    GPLA_PRED, GPEP_PRED, GPMC_PRED
@@ -280,7 +293,9 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
 %    Return function handle to a function evaluating Logit *
 %    Gaussian which is used for evaluating (likelihood * cavity)
 %    or (likelihood * posterior) Return also useful limits for
-%    integration. This is private function for lik_logit.
+%    integration. This is private function for lik_logit. This 
+%    subfunction is needed by subfunctions tiltedMoments, siteDeriv
+%    and predy.
 %  
 % See also
 %   LIK_LOGIT_TILTEDMOMENTS, LIK_LOGIT_PREDY
@@ -394,6 +409,7 @@ function p = lik_logit_invlink(lik, f, z)
 %  Description 
 %    P = LIK_LOGIT_INVLINK(LIK, F) takes a likelihood structure LIK and
 %    latent values F and returns the values of inverse link function P.
+%    This subfunction is needed when using function gp_predprctmu.
 %
 %     See also
 %     LIK_LOGIT_LL, LIK_LOGIT_PREDY
@@ -409,7 +425,8 @@ function reclik = lik_logit_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK. This subfunction
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC

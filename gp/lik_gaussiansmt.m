@@ -194,7 +194,7 @@ function C = lik_gaussiansmt_trcov(lik, x)
 %    of a Gaussian process GP and matrix TX that contains
 %    training input vectors. Returns covariance matrix C. Every
 %    element ij of C contains covariance between inputs i and j
-%    in TX
+%    in TX. This subfunction is needed only in Gaussian likelihoods.
 %
 %  See also
 %    LIK_GAUSSIANSMT_COV, LIK_GAUSSIANSMT_TRVAR, GP_COV, GP_TRCOV
@@ -218,7 +218,8 @@ function C = lik_gaussiansmt_trvar(lik, x)
 %    C = LIK_GAUSSIANSMT_TRVAR(LIK, TX) takes in covariance function 
 %    of a Gaussian process LIK and matrix TX that contains
 %    training inputs. Returns variance vector C. Every
-%    element i of C contains variance of input i in TX
+%    element i of C contains variance of input i in TX. This
+%    subfunction is needed  only in Gaussian likelihoods.
 %
 %
 %  See also
@@ -237,7 +238,8 @@ function [lik, y] = lik_gaussiansmt_gibbs(gp, lik, x, y)
 %LIK_GAUSSIANSMT_GIBBS  Function for sampling the sigma2's
 %
 %  Description
-%    Perform Gibbs sampling for the scale mixture variances
+%    Perform Gibbs sampling for the scale mixture variances. This
+%    function is likelihood specific.
 
   [n,m] = size(x);
   
@@ -306,7 +308,8 @@ function reccf = lik_gaussiansmt_recappend(reccf, ri, lik)
 %    index RI and likelihood structure LIK with the
 %    current MCMC samples of the parameters. Returns
 %    RECCF which contains all the old samples and the
-%    current samples from LIK .
+%    current samples from LIK . This subfunction is 
+%    needed when using MCMC sampling (gp_mc).
 %
 %  See also
 %    GP_MC and GP_MC -> RECAPPEND

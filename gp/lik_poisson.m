@@ -277,7 +277,7 @@ function [lpy, Ey, Vary] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
 %    Returns also the predictive density of YT, that is 
 %        p(yt | y,zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the incedence counts YT, expected counts ZT.
-%    This subfunction is needed when computing posterior preditive 
+%    This subfunction is needed when computing posterior predictive 
 %    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_POISSON_PREDY(LIK, EF, VARF, YT, ZT) 
@@ -285,7 +285,7 @@ function [lpy, Ey, Vary] = lik_poisson_predy(lik, Ef, Varf, yt, zt)
 %    posterior variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
 %    observations related to the latent variables. This subfunction
-%    is needed when computing posterior preditive distributions for 
+%    is needed when computing posterior predictive distributions for 
 %    future observations.
 %        
 
@@ -382,7 +382,7 @@ function [df,minf,maxf] = init_poisson_norm(yy,myy_i,sigm2_i,avgE)
 %    Gaussian which is used for evaluating (likelihood * cavity)
 %    or (likelihood * posterior) Return also useful limits for
 %    integration. This is private function for lik_poisson. This
-%    subfunction is needed in subfunctions tiltedMoments and predy.
+%    subfunction is needed by subfunctions tiltedMoments and predy.
 %  
 %  See also
 %    LIK_POISSON_TILTEDMOMENTS, LIK_POISSON_PREDY

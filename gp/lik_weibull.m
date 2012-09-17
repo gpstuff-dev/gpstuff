@@ -101,7 +101,9 @@ function [w,s] = lik_weibull_pak(lik)
 %
 %  Description 
 %    W = LIK_WEIBULL_PAK(LIK) takes a likelihood structure LIK and
-%    combines the parameters into a single row vector W.
+%    combines the parameters into a single row vector W. This is a 
+%    mandatory subfunction used for example in energy and gradient 
+%    computations.
 %     
 %       w = log(lik.shape)
 %
@@ -125,7 +127,8 @@ function [lik, w] = lik_weibull_unpak(lik, w)
 %  Description
 %    [LIK, W] = LIK_WEIBULL_UNPAK(W, LIK) takes a likelihood
 %    structure LIK and extracts the parameters from the vector W
-%    to the LIK structure.
+%    to the LIK structure. This is a mandatory subfunction used 
+%    for example in energy and gradient computations.
 %     
 %   Assignment is inverse of  
 %       w = log(lik.shape)
@@ -147,7 +150,8 @@ function lp = lik_weibull_lp(lik, varargin)
 %
 %  Description
 %    LP = LIK_WEIBULL_LP(LIK) takes a likelihood structure LIK and
-%    returns log(p(th)), where th collects the parameters.
+%    returns log(p(th)), where th collects the parameters. This 
+%    subfunction is needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, LIK_WEIBULL_LLG2, GPLA_E
@@ -169,6 +173,7 @@ function lpg = lik_weibull_lpg(lik)
 %  Description
 %    E = LIK_WEIBULL_LPG(LIK) takes a likelihood structure LIK and
 %    returns d log(p(th))/dth, where th collects the parameters.
+%    This subfunction is needed when there are likelihood parameters.
 %
 %  See also
 %    LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, LIK_WEIBULL_LLG2, GPLA_G
@@ -191,6 +196,10 @@ function ll = lik_weibull_ll(lik, y, f, z)
 %    LL = LIK_WEIBULL_LL(LIK, Y, F, Z) takes a likelihood
 %    structure LIK, survival times Y, censoring indicators Z, and
 %    latent values F. Returns the log likelihood, log p(y|f,z).
+%    This subfunction is needed when using Laplace approximation 
+%    or MCMC for inference with non-Gaussian likelihoods. This 
+%    subfunction is also used in information criteria (DIC, WAIC) 
+%    computations.
 %
 %  See also
 %    LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, LIK_WEIBULL_LLG2, GPLA_E
@@ -215,7 +224,8 @@ function llg = lik_weibull_llg(lik, y, f, param, z)
 %    structure LIK, survival times Y, censoring indicators Z and
 %    latent values F. Returns the gradient of the log likelihood
 %    with respect to PARAM. At the moment PARAM can be 'param' or
-%    'latent'.
+%    'latent'. This subfunction is needed when using Laplace 
+%    approximation or MCMC for inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG2, LIK_WEIBULL_LLG3, GPLA_E
@@ -247,7 +257,9 @@ function llg2 = lik_weibull_llg2(lik, y, f, param, z)
 %    latent values F. Returns the hessian of the log likelihood
 %    with respect to PARAM. At the moment PARAM can be only
 %    'latent'. LLG2 is a vector with diagonal elements of the
-%    Hessian matrix (off diagonals are zero).
+%    Hessian matrix (off diagonals are zero). This subfunction 
+%    is needed when using Laplace approximation or EP for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG, LIK_WEIBULL_LLG3, GPLA_E
@@ -280,7 +292,9 @@ function llg3 = lik_weibull_llg3(lik, y, f, param, z)
 %    structure LIK, survival times Y, censoring indicators Z and
 %    latent values F and returns the third gradients of the log
 %    likelihood with respect to PARAM. At the moment PARAM can be
-%    only 'latent'. LLG3 is a vector with third gradients.
+%    only 'latent'. LLG3 is a vector with third gradients. This 
+%    subfunction is needed when using Laplace approximation for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    LIK_WEIBULL_LL, LIK_WEIBULL_LLG, LIK_WEIBULL_LLG2, GPLA_E, GPLA_G
@@ -315,7 +329,8 @@ function [logM_0, m_1, sigm2hati1] = lik_weibull_tiltedMoments(lik, y, i1, sigm2
 %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
 %    variance M_2 of the posterior marginal (see Rasmussen and
 %    Williams (2006): Gaussian processes for Machine Learning,
-%    page 55).
+%    page 55). This subfunction is needed when using EP for 
+%    inference with non-Gaussian likelihoods.
 %
 %  See also
 %    GPEP_E
@@ -372,7 +387,9 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %    marginal posterior. This term is needed when evaluating the
 %    gradients of the marginal likelihood estimate Z_EP with
 %    respect to the likelihood parameters (see Seeger (2008):
-%    Expectation propagation for exponential families)
+%    Expectation propagation for exponential families). This 
+%    subfunction is needed when using EP for inference with 
+%    non-Gaussian likelihoods and there are likelihood parameters.
 %
 %  See also
 %    GPEP_G
@@ -405,19 +422,6 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   end
 end
 
-function p = lik_weibull_invlink(lik, f)
-%LIK_WEIBULL Returns values of inverse link function
-%             
-%  Description 
-%    P = LIK_WEIBULL_INVLINK(LIK, F) takes a likelihood structure LIK and
-%    latent values F and returns the values of inverse link function P.
-%
-%     See also
-%     LIK_WEIBULL_LL, LIK_WEIBULL_PREDY
-
-p = exp(f);
-end
-
 function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %LIK_WEIBULL_PREDY  Returns the predictive mean, variance and density of y
 %
@@ -426,12 +430,16 @@ function [lpy, Ey, Vary] = lik_weibull_predy(lik, Ef, Varf, yt, zt)
 %    Returns logarithm of the predictive density PY of YT, that is 
 %        p(yt | zt) = \int p(yt | f, zt) p(f|y) df.
 %    This requires also the survival times YT, censoring indicators ZT.
+%    This subfunction is needed when computing posterior predictive 
+%    distributions for future observations.
 %
 %    [LPY, EY, VARY] = LIK_WEIBULL_PREDY(LIK, EF, VARF) takes a
 %    likelihood structure LIK, posterior mean EF and posterior
 %    Variance VARF of the latent variable and returns the
 %    posterior predictive mean EY and variance VARY of the
-%    observations related to the latent variables
+%    observations related to the latent variables. This subfunction
+%    is needed when computing posterior predictive distributions for 
+%    future observations.
 %        
 %
 %  See also
@@ -495,7 +503,8 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
 %    Weibull * Gaussian which is used for evaluating
 %    (likelihood * cavity) or (likelihood * posterior) Return
 %    also useful limits for integration. This is private function
-%    for lik_weibull.
+%    for lik_weibull. This subfunction is needed by subfunctions
+%    tiltedMoments, siteDeriv and predy.
 %  
 %  See also
 %    LIK_WEIBULL_TILTEDMOMENTS, LIK_WEIBULL_SITEDERIV,
@@ -614,7 +623,8 @@ function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
 %    CDF = LIK_WEIBULL_PREDCDF(LIK, EF, VARF, YT)
 %    Returns the predictive cdf evaluated at YT given likelihood
 %    structure LIK, posterior mean EF and posterior Variance VARF
-%    of the latent variable
+%    of the latent variable. This subfunction is needed when using
+%    functions gp_predcdf or gp_kfcv_cdf.
 %
 %  See also
 %    GP_PREDCDF
@@ -635,6 +645,20 @@ function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
   end
 end
 
+function p = lik_weibull_invlink(lik, f)
+%LIK_WEIBULL Returns values of inverse link function
+%             
+%  Description 
+%    P = LIK_WEIBULL_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values of inverse link function P.
+%    This subfunction is needed when using function gp_predprctmu.
+%
+%     See also
+%     LIK_WEIBULL_LL, LIK_WEIBULL_PREDY
+
+p = exp(f);
+end
+
 function reclik = lik_weibull_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
@@ -643,7 +667,8 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
-%    samples and the current samples from LIK.
+%    samples and the current samples from LIK. This subfunction
+%    is needed when using MCMC sampling (gp_mc).
 % 
 %  See also
 %    GP_MC
