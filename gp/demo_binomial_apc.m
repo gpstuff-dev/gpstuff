@@ -57,7 +57,7 @@
 
 % First load data
 S = which('demo_binomial_apc');
-L = strrep(S,'demo_binomial_apc.m','demos/binodata.txt');
+L = strrep(S,'demo_binomial_apc.m','demodata/binodata.txt');
 binodata=load(L);
 
 f = binodata(:,1);

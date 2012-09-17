@@ -10,7 +10,7 @@ numwarn = 0;
 %% Regression models
 
 S = which('test_package');
-L = strrep(S,'test_package.m','demos/dat.1');
+L = strrep(S,'test_package.m','demodata/dat.1');
 data=load(L);
 data = data(1:2:end,:);
 x = [data(:,1) data(:,2)];
@@ -521,7 +521,7 @@ end
 
 
 S = which('test_package');
-L = strrep(S,'test_package.m','demos/dat.1');
+L = strrep(S,'test_package.m','demodata/dat.1');
 data=load(L);
 data = data(1:2:end,:);
 x = [data(:,1) data(:,2)];
@@ -620,7 +620,7 @@ end
 % ===========================
 
 S = which('test_package');
-L = strrep(S,'test_package.m','demos/dat.1');
+L = strrep(S,'test_package.m','demodata/dat.1');
 data=load(L);
 data = data(1:2:end,:);
 x = [data(:,1) data(:,2)];
@@ -702,7 +702,7 @@ end
 fprintf(' \n ================================= \n \n Check the probit model \n \n =================================\n')
 
 S = which('demo_classific1');
-L = strrep(S,'demo_classific1.m','demos/synth.tr');
+L = strrep(S,'demo_classific1.m','demodata/synth.tr');
 x=load(L);
 y=x(:,end);
 y = 2.*y-1;
@@ -1291,7 +1291,7 @@ fprintf(' \n ================================= \n \n Check the poisson model \n 
 
 
 S = which('demo_spatial1');
-L = strrep(S,'demo_spatial1.m','demos/spatial.mat');
+L = strrep(S,'demo_spatial1.m','demodata/spatial.mat');
 load(L)
 
 x = xx;

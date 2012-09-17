@@ -22,7 +22,7 @@
 % License.txt, included with the software, for details.
 
 S = which('demo_regression_hier');
-L = strrep(S,'demo_regression_hier.m','demos/rats.mat');
+L = strrep(S,'demo_regression_hier.m','demodata/rats.mat');
 data=load(L);
 xx = data.x;
 yy = data.y;
@@ -251,7 +251,7 @@ drawnow
 
 disp('10) Missing data example')
 S = which('demo_regression_hier');
-L = strrep(S,'demo_regression_hier.m','demos/rats.mat');
+L = strrep(S,'demo_regression_hier.m','demodata/rats.mat');
 data=load(L);
 xx = data.x;
 yy = data.y;

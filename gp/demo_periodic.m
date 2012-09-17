@@ -80,7 +80,7 @@
 
 % Load the data
 S = which('demo_periodic');
-L = strrep(S,'demo_periodic.m','demos/maunaloa_data.txt');
+L = strrep(S,'demo_periodic.m','demodata/maunaloa_data.txt');
 
 data=load(L);
 y = data(:, 2:13);
@@ -246,7 +246,7 @@ title('The long and short term latent component')
 % Load the data
 
 S = which('demo_periodic');
-L = strrep(S,'demo_periodic.m','demos/drowning.txt');
+L = strrep(S,'demo_periodic.m','demodata/drowning.txt');
 data=load(L);
 y = data(:, 2:13);
 y=y';

@@ -76,7 +76,7 @@
 % load the data. First 100 variables are for training
 % and last 100 for test
 S = which('demo_regression_robust');
-L = strrep(S,'demo_regression_robust.m','demos/odata.txt');
+L = strrep(S,'demo_regression_robust.m','demodata/odata.txt');
 x = load(L);
 y = x(1:100,2);
 x = x(1:100,1);

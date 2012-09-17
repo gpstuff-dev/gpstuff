@@ -44,7 +44,7 @@ fprintf(['Coal disaster data with EP integration over the latent values\n'])
 figure
 % Coal disaster data
 S = which('demo_lgcp');
-L = strrep(S,'demo_lgcp.m','demos/coal.txt');
+L = strrep(S,'demo_lgcp.m','demodata/coal.txt');
 x=load(L);
 lgcp(x,[1850:1963]','gpcf',@gpcf_exp)
 line([x x],[5 5.3],'color','k')
@@ -62,7 +62,7 @@ fprintf(['Redwood data with Laplace integration over the latent\n' ...
          'values and MAP estimate for the parameters\n'])
 figure
 S = which('demo_lgcp');
-L = strrep(S,'demo_lgcp.m','demos/redwoodfull.txt');
+L = strrep(S,'demo_lgcp.m','demodata/redwoodfull.txt');
 x=load(L);
 lgcp(x,'range',[0 1 0 1],'latent_method','Laplace','gridn',20)
 h=line(x(:,1),x(:,2),'marker','.','linestyle','none','color','k','markersize',10);

@@ -17,7 +17,7 @@
 % ---------------------------
 tic
 S = which('demo_improvemarginals');
-L = strrep(S,'demo_improvemarginals.m','demos/synth.tr');
+L = strrep(S,'demo_improvemarginals.m','demodata/synth.tr');
 x=load(L);
 y=x(:,end);
 y = 2.*y-1;
@@ -25,7 +25,7 @@ x(:,end)=[];
 [n, nin] = size(x);
 
 % Load sampled results so the demo wont take hours or days to finish..
-L = strrep(S,'demo_improvemarginals.m','demos/samples_marginal.mat');
+L = strrep(S,'demo_improvemarginals.m','demodata/samples_marginal.mat');
 load(L);
 
 % Test data

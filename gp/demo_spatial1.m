@@ -52,7 +52,7 @@
 %    See also  DEMO_REGRESSION1, DEMO_CLASSIFIC1
 %
 %  References:
-%    Vanhatalo, J., Pietiläinen V. and Vehtari, A. (2010). 
+%    Vanhatalo, J., Pietilï¿½inen V. and Vehtari, A. (2010). 
 %    Approximate inference for disease mapping with sparse Gaussian
 %    processes. Statistics in Medicine, 29(15):.
 %
@@ -75,7 +75,7 @@
 
 % load the data
 S = which('demo_spatial1');
-data = load(strrep(S,'demo_spatial1.m','demos/spatial1.txt'));
+data = load(strrep(S,'demo_spatial1.m','demodata/spatial1.txt'));
 
 x = data(:,1:2);
 ye = data(:,3);

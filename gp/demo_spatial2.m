@@ -51,7 +51,7 @@
 
 % load the data
 S = which('demo_spatial2');
-data = load(strrep(S,'demo_spatial2.m','demos/spatial2.txt'));
+data = load(strrep(S,'demo_spatial2.m','demodata/spatial2.txt'));
 
 x = data(:,1:2);
 ye = data(:,3);

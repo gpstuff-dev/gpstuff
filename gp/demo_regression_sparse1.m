@@ -73,7 +73,7 @@
 %    demo_regression1.)
 %
 %  References:
-%    Quiñonero-Candela, J. and Rasmussen, C. E. (2005). A unifying
+%    Quiï¿½onero-Candela, J. and Rasmussen, C. E. (2005). A unifying
 %    view of sparse approximate Gaussian process regression. 
 %    Journal of Machine Learning Re- search, 6(3):1939-1959.
 %
@@ -106,7 +106,7 @@
 
 % Load the data
 S = which('demo_regression_sparse1');
-L = strrep(S,'demo_regression_sparse1.m','demos/dat.1');
+L = strrep(S,'demo_regression_sparse1.m','demodata/dat.1');
 data=load(L);
 x = [data(:,1) data(:,2)];
 y = data(:,3);

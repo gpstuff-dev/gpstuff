@@ -33,7 +33,7 @@ disp('Full GP model with Gaussian noise model')
 
 % Load the data
 S = which('demo_regression1');
-L = strrep(S,'demo_regression1.m','demos/dat.1');
+L = strrep(S,'demo_regression1.m','demodata/dat.1');
 data=load(L);
 x = [data(:,1) data(:,2)];
 y = data(:,3);

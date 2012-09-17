@@ -31,7 +31,7 @@
 
 %% First load data
 S = which('demo_survival_weibull');
-L = strrep(S,'demo_survival_weibull.m','demos/leukemia.txt');
+L = strrep(S,'demo_survival_weibull.m','demodata/leukemia.txt');
 leukemiadata=load(L);
 
 % leukemiadata consists of:

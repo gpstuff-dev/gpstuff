@@ -56,7 +56,7 @@
 
 % Training data
 S = which('demo_classific');
-L = strrep(S,'demo_classific.m','demos/synth.tr');
+L = strrep(S,'demo_classific.m','demodata/synth.tr');
 x=load(L);
 y=x(:,end);
 y = 2.*y-1;

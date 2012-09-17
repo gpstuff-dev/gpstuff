@@ -33,7 +33,7 @@
 disp('Data analysis with probit likelihood')
 
 S = which('demo_classific');
-L = strrep(S,'demo_classific.m','demos/synth.tr');
+L = strrep(S,'demo_classific.m','demodata/synth.tr');
 x=load(L);
 y=x(:,end);
 y = 2.*y-1;
@@ -176,7 +176,7 @@ mrmse_cv(4) = cvres.mrmse_cv;
 disp('Data analysis with logit likelihood')
 
 S = which('demo_classific');
-L = strrep(S,'demo_classific.m','demos/synth.tr');
+L = strrep(S,'demo_classific.m','demodata/synth.tr');
 x=load(L);
 y=x(:,end);
 y = 2.*y-1;
@@ -399,7 +399,7 @@ S = sprintf([S '\n '])
 % 
 % 
 % S = which('demo_classific');
-% L = strrep(S,'demo_classific.m','demos/synth.tr');
+% L = strrep(S,'demo_classific.m','demodata/synth.tr');
 % x=load(L);
 % y=x(:,end);
 % y = 2.*y-1;
@@ -558,7 +558,7 @@ S = sprintf([S '\n '])
 % 
 % 
 % S = which('demo_classific1');
-% L = strrep(S,'demo_classific1.m','demos/synth.tr');
+% L = strrep(S,'demo_classific1.m','demodata/synth.tr');
 % x=load(L);
 % y=x(:,end);
 % y = 2.*y-1;
@@ -736,7 +736,7 @@ S = sprintf([S '\n '])
 % % =============================================
 % 
 % S = which('demo_classific1');
-% L = strrep(S,'demo_classific1.m','demos/synth.tr');
+% L = strrep(S,'demo_classific1.m','demodata/synth.tr');
 % x=load(L);
 % y=x(:,end);
 % y = 2.*y-1;

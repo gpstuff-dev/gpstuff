@@ -42,7 +42,7 @@
 
 % Load the data
 S = which('demo_multiclass');
-L = strrep(S,'demo_multiclass.m','demos/cdata.txt');
+L = strrep(S,'demo_multiclass.m','demodata/cdata.txt');
 x=load(L);
 y=repmat(0,size(x,1),3);
 y(x(:,5)==0,1) = 1;
