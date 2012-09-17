@@ -343,7 +343,7 @@ function llg3 = lik_negbin_llg3(lik, y, f, param, z)
 end
 
 function [logM_0, m_1, sigm2hati1] = lik_negbin_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-%LIK_NEGBIN_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
+%LIK_NEGBIN_TILTEDMOMENTS  Returns the marginal moments for EP
 %
 %  Description
 %    [M_0, M_1, M2] = LIK_NEGBIN_TILTEDMOMENTS(LIK, Y, I, S2,
@@ -526,7 +526,7 @@ function [lpy, Ey, Vary] = lik_negbin_predy(lik, Ef, Varf, yt, zt)
 end
 
 function prctys = lik_negbin_predprcty(lik, Ef, Varf, zt, prcty)
-%LIK_BINOMIAL_PREDPRCTY  Returns the percentiled of predictive density of y
+%LIK_BINOMIAL_PREDPRCTY  Returns the percentiles of predictive density of y
 %
 %  Description         
 %    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
