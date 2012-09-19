@@ -119,19 +119,9 @@ if isfield(gp.lik.fh,'trcov')
   end
 else
   % non-Gaussian likelihood
-  switch gp.latent_method
-    case 'Laplace'
-      e=gpla_looe(w, gp, x, y, varargin{:});
-    case 'EP'
-      e=gpep_looe(w, gp, x, y, varargin{:});
-  end
+  e=gp.fh.looe(w, gp, x, y, varargin{:});
   if nargout>1
-    switch gp.latent_method
-      case 'Laplace'
-        error('Laplace leave-one-out does not have gradients yet, use gradient-free optimization.')
-      case 'EP'
-        g=gpep_loog(w,gp,x,y);
-    end;
+    g=gp.fh.loog(w,gp,x,y);
   end
   if isnan(e)
     e=realmax;

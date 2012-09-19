@@ -75,17 +75,24 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
     
     % return function handle to the nested function ep_algorithm
     % this way each gp has its own peristent memory for EP
-    gp.fh.e = @ep_algorithm;
+    gp.fh.ne = @ep_algorithm;
+    % set other function handles
+    gp.fh.e=@gpep_e;
+    gp.fh.g=@gpep_g;
+    gp.fh.pred=@gpep_pred;
+    gp.fh.jpred=@gpep_jpred;
+    gp.fh.looe=@gpep_looe;
+    gp.fh.loog=@gpep_loog;
     e = gp;
     % remove clutter from the nested workspace
     clear w gp varargin ip x y z
   elseif strcmp(w, 'clearcache')
     % clear the cache
-    gp.fh.e('clearcache');
+    gp.fh.ne('clearcache');
   else
     % call ep_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for EP
-    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta] = gp.fh.e(w, gp, x, y, z);
+    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta] = gp.fh.ne(w, gp, x, y, z);
   end
 
   function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta] = ep_algorithm(w, gp, x, y, z)

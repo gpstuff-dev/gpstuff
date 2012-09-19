@@ -79,29 +79,13 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gp_jpred(gp, x, y, varargin)
 % License.txt, included with the software, for details.
 
 if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
-  % use inference specific methods
+  % use an inference specific method
   if iscell(gp)
     fh_pred=@gpia_jpred;
   elseif numel(gp.jitterSigma2)>1
     fh_pred=@gpmc_jpred;
   elseif isfield(gp,'latent_method')
-    switch gp.latent_method
-      case 'Laplace'
-        if isfield(gp.lik, 'type_nd')
-          fh_pred=@gpla_nd_pred;
-        else
-          fh_pred = @gpla_jpred;
-        end
-      case {'EP' 'robust-EP'}
-        fh_pred=@gpep_jpred;
-      case 'MCMC'
-        switch gp.lik.type
-          case {'Multinom' 'Softmax'}
-            fh_pred=@gpmc_mo_jpred;
-          otherwise
-            fh_pred=@gpmc_jpred;
-        end        
-    end
+    fh_pred=gp.fh.jpred;
   else
     error('Logical error by coder of this function!')
   end

@@ -1,21 +1,23 @@
 function gloo = gpep_loog(w, gp, x, y, varargin)
-%GP_LOOG  Evaluate the gradient of the mean negative log
-%         leave-one-out predictive density
+%GPEP_LOOG  Evaluate the gradient of the mean negative log
+%           leave-one-out predictive density
 %
-%   Description
-%     LOOG = GP_LOOG(W, GP, X, Y) takes a parameter vector W,
-%     Gaussian process structure GP, a matrix X of input vectors
-%     and a matrix Y of targets, and evaluates the gradient of the
-%     mean negative log leave-one-out predictive density (see
-%     GP_LOOE).
+%  Description
+%    LOOG = GPEP_LOOG(W, GP, X, Y) takes a parameter vector W,
+%    Gaussian process structure GP, a matrix X of input vectors and
+%    a matrix Y of targets, and evaluates the gradient of the mean
+%    negative log leave-one-out predictive density (see GPEP_LOOE).
 %
-%   References:
-%     S. Sundararajan and S. S. Keerthi (2008). Predictive
-%     Approaches for Gaussian Process Classifier Model Selection.
-%     Tech report.
+%  References:
+%    Manfred Opper and Ole Winther (2000). Gaussian Processes for
+%    Classification: Mean-Field Algorithms. Neural Computation,
+%    12(11):2655-2684.
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
 %
 %  See also
-%    GP_LOOE, GP_SET, GP_PAK, GP_UNPAK
+%    GP_EPLOOE, GP_SET, GP_PAK, GP_UNPAK
 %
 
 % Copyright (c) 2012 Ville Tolvanen

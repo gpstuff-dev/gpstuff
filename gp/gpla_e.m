@@ -75,19 +75,26 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
     % Initialize cache
     ch = [];
 
-    % return function handle to the nested function ep_algorithm
+    % set function handle to the nested function laplace_algorithm
     % this way each gp has its own peristent memory for EP
-    gp.fh.e = @laplace_algorithm;
+    gp.fh.ne = @laplace_algorithm;
+    % set other function handles
+    gp.fh.e=@gpla_e;
+    gp.fh.g=@gpla_g;
+    gp.fh.pred=@gpla_pred;
+    gp.fh.jpred=@gpla_jpred;
+    gp.fh.looe=@gpla_looe;
+    gp.fh.loog=@gpla_loog;
     e = gp;
     % remove clutter from the nested workspace
     clear w gp varargin ip x y z
   elseif strcmp(w, 'clearcache')
     % clear the cache
-    gp.fh.e('clearcache');
+    gp.fh.ne('clearcache');
   else
     % call laplace_algorithm using the function handle to the nested function
     % this way each gp has its own peristent memory for Laplace
-    [e, edata, eprior, f, L, a, La2, p] = gp.fh.e(w, gp, x, y, z);
+    [e, edata, eprior, f, L, a, La2, p] = gp.fh.ne(w, gp, x, y, z);
   end
 
   function [e, edata, eprior, f, L, a, La2, p] = laplace_algorithm(w, gp, x, y, z)

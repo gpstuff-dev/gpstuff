@@ -344,6 +344,10 @@ function gp = gp_set(varargin)
     if isfield(gp,'latent_method')
       gp=rmfield(gp,'latent_method')
     end
+    gp.fh.e=@gp_e;
+    gp.fh.g=@gp_g;
+    gp.fh.pred=@gp_pred;
+    gp.fh.jpred=@gp_jpred;
   else
     if init || ~ismember('latent_method',ip.UsingDefaults) || ~isfield(gp,'latent_method')
       latent_method=ip.Results.latent_method;
@@ -351,11 +355,18 @@ function gp = gp_set(varargin)
         case 'MCMC'
           % Remove traces of other latent methods
           if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
-          if isfield(gp,'fh') && isfield(gp.fh,'e')
-            gp.fh=rmfield(gp.fh,'e'); 
+          if isfield(gp,'fh') && isfield(gp.fh,'ne')
+            gp.fh=rmfield(gp.fh,{'ne' 'e' 'g' 'pred' 'jpred' 'looe' 'loog'}); 
           end
           % Set latent method
           gp.latent_method=latent_method;
+          if isfield(gp.lik, 'nondiagW')
+            gp.fh.pred=@gpmc2_pred;
+            gp.fh.jpred=@gpmc2_jpred;
+          else
+            gp.fh.pred=@gpmc_pred;
+            gp.fh.jpred=@gpmc_jpred;
+          end
         case 'EP'
           % Remove traces of other latent methods
           if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')

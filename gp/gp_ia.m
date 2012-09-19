@@ -150,33 +150,15 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
   if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
 
-  % ===============================
-  % Which latent method is used
-  % ===============================
-  if isfield(gp, 'latent_method')
-    switch gp.latent_method
-      case 'EP'
-        fh_e = @gpep_e;
-        fh_g = @gpep_g;
-        fh_p = @gpep_pred;
-      case 'Laplace'
-        if isfield(gp.lik, 'type_nd')
-          fh_e=@gpla_nd_e;
-          fh_g=@gpla_nd_g;
-          fh_p=@gpla_nd_pred;
-        else
-          fh_e = @gpla_e;
-          fh_g = @gpla_g;
-          fh_p = @gpla_pred;
-        end
-      case 'MCMC'
-        error('GP_IA: Use GP_MC for inference when latent method is MCMC')
-    end
-  else
-    fh_e = @gp_e;
-    fh_g = @gp_g;
-    fh_p = @gp_pred;
+  % ================================
+  % use an inference specific method
+  % ================================
+  if isfield(gp, 'latent_method') && strcmp(gp.latent_method,'MCMC')
+    error('GP_IA: Use GP_MC for inference when latent method is MCMC')
   end
+  fh_e = gp.fh.e;
+  fh_g = gp.fh.g;
+  fh_p = gp.fh.pred;
 
   optdefault.GradObj='on';
   optdefault.LargeScale='off';

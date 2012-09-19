@@ -21,6 +21,14 @@ function eloo = gpep_looe(w, gp, x, y, varargin)
 %          Poisson likelihood we have z_i=E_i, that is, expected
 %          value for ith case.
 %
+%  References:
+%    Manfred Opper and Ole Winther (2000). Gaussian Processes for
+%    Classification: Mean-Field Algorithms. Neural Computation,
+%    12(11):2655-2684.
+%
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
 %  See also
 %    GP_LOOE, GPEP_LOOPRED, GPEP_E
 %

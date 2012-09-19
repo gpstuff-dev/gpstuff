@@ -1,5 +1,5 @@
 function eloo = gpla_looe(w, gp, x, y, varargin)
-% GPLA_LOOE Evaluate the mean negative log leave-one-out predictive 
+%GPLA_LOOE  Evaluate the mean negative log leave-one-out predictive 
 %           density with Laplace approximation.
 %
 %  Description

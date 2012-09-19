@@ -1,10 +1,10 @@
 function [p, pc, c] = gpla_fact(gp, x, y, fvec,varargin) 
-%GPEP_FACT  Factorized correction for marginal likelihood using laplace
+%GPLA_FACT  Factorized correction for marginal likelihood using Laplace
 %           approximation
 % 
 %  Description
-%    [P, PC, C]Â = GPLA_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
-%    at given grind points FVEC for given indices. Returns tilted
+%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
+%    at given grid points FVEC for given indices. Returns tilted
 %    distribution without any correction P, with factorized correction
 %    terms PC and the corrections terms C.
 %
@@ -59,7 +59,7 @@ if size(ind,1)==1
   ind=ind';
 end
 if size(ind,1) ~= n_ind
-  error('given latent grid matrix fvec must be size n x m, where m is the length of ind vector');
+  error('Given latent grid matrix fvec must be size n x m, where m is the length of ind vector');
 end
 if ~isempty(xt) && ~isequal(xt, x)
   % Predictive equations if given xt, mind that if xt(ind) is in training

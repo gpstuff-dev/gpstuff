@@ -326,14 +326,8 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 
     % Define the error and prediction functions
     if isstruct(gp{1}.lik) && isfield(gp{1}, 'latent_method')
-      switch gp{1}.latent_method
-        case 'Laplace'
-          fh_pred = @gpla_pred;
-          fh_e = @gpla_e;
-        case 'EP'
-          fh_pred = @gpep_pred;
-          fh_e = @gpep_e;
-      end
+      fh_pred = gp{1}.fh.pred;
+      fh_e = gp{1}.fh.e;
     else
       fh_e = @gp_e;
       fh_pred = @gp_pred;

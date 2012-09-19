@@ -37,16 +37,8 @@ function [e, edata, eprior] = gp2_e(w, gp, x, y, varargin)
 % License.txt, included with the software, for details.
 
 if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
-  switch gp.latent_method
-    case 'Laplace'
-      if isfield(gp.lik, 'nondiagW')
-        fh_e=@gpla2_e;
-      else
-        fh_e=@gpla_e;
-      end
-    case 'EP'
-      fh_e=@gpep_e;
-  end
+  % use an inference specific method
+  fh_e=gp.fh.e;
   switch nargout 
     case {0 1}
       [e] = fh_e(w, gp, x, y, varargin{:});

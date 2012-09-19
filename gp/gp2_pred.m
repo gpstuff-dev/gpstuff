@@ -83,21 +83,14 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   elseif numel(gp.jitterSigma2)>1
     fh_pred=@gpmc_pred;
   elseif isfield(gp,'latent_method')
-    switch gp.latent_method
-      case 'Laplace'
-        if isfield(gp.lik, 'nondiagW')
-          fh_pred=@gpla2_pred;
-        else
-          fh_pred=@gpla_pred;
-        end
-      case 'EP'
-        fh_pred=@gpep_pred;
-      case 'MCMC'
-        if isfield(gp.lik, 'nondiagW')
-          fh_pred=@gpmc2_pred;
-        else
-          fh_pred=@gpmc_pred;
-        end
+    if latent_method strcmp(gp.latent_method,'MCMC')
+      if isfield(gp, 'nondiagW')
+        fh_pred = @gpmc2_pred;
+      else
+        fh_pred = @gpmc_pred;
+      end
+    else
+      fh_pred = gp.fh.pred;
     end
   else
     error('Logical error by coder of this function!')

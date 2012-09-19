@@ -26,6 +26,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
 %    Classification: Mean-Field Algorithms. Neural Computation,
 %    12(11):2655-2684.
 %
+%    Rasmussen, C. E. and Williams, C. K. I. (2006). Gaussian
+%    Processes for Machine Learning. The MIT Press.
+%
 %  See also
 %    GP_LOOPRED, GP_PRED
   

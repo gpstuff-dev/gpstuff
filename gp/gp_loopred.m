@@ -67,19 +67,12 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   elseif isfield(gp,'latent_method')
     latent_method=gp.latent_method;
     gplik=gp.lik;
-    switch latent_method
-      case 'Laplace'
-        if isfield(gplik, 'type_nd')
-          error('Laplace leave-one-out not yet supported for likelihoods with non-diagonal W')
-        else
-          fh_pred=@gpla_loopred;
-        end
-      case 'EP'
-        fh_pred=@gpep_loopred;
-      case 'MCMC'
-        % single MCMC sample from the posterior does not allow LOO computation
-        % LOO using several MCMC samples is done in gpmc_loopred
-        fh_pred=@gp_pred;
+    if latent_method strcmp(gp.latent_method,'MCMC')
+      % single MCMC sample from the posterior does not allow LOO computation
+      % LOO using several MCMC samples is done in gpmc_loopred
+      fh_pred=@gp_pred;
+    else
+      fh_pred=gp.fh.pred;
     end
   else
     error('Logical error by coder of this function!')

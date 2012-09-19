@@ -139,32 +139,13 @@ if isempty(xt)
 end
 
 if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
-  % use inference specific methods
+  % use an inference specific method
   if iscell(gp)
     fh_pred=@gpia_pred;
   elseif numel(gp.jitterSigma2)>1
-    if isfield(gp.lik, 'nondiagW')
-      fh_pred=@gpmc2_pred;
-    else
-      fh_pred=@gpmc_pred;
-    end
+    fh_pred=@gpmc_pred;
   elseif isfield(gp,'latent_method')
-    switch gp.latent_method
-      case 'Laplace'
-        if isfield(gp.lik, 'nondiagW')
-          fh_pred = @gpla2_pred;
-        else
-          fh_pred = @gpla_pred;
-        end
-      case {'EP' 'robust-EP'}
-        fh_pred=@gpep_pred;
-      case 'MCMC'
-        if isfield(gp, 'nondiagW')
-          fh_pred = @gpmc2_pred;
-        else
-          fh_pred = @gpmc_pred;
-        end
-    end
+    fh_pred=gp.fh.pred;
   else
     error('Logical error by the coder of this function!')
   end
