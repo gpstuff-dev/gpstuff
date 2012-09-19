@@ -440,6 +440,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask, i1)
     
     if isfield(gpcf,'metric')
       % Compute the sparse distance matrix and its gradient.
+      [n, m] =size(x);
       ntriplets = (nnz(Cdm)-n)./2;
       I = zeros(ntriplets,1);
       J = zeros(ntriplets,1);
@@ -450,9 +451,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask, i1)
       ntriplets = 0;                
       for ii=1:n-1
         col_ind = ii + find(Cdm(ii+1:n,ii));
-        d = zeros(length(col_ind),1);
         d = gpcf.metric.fh.dist(gpcf.metric, x(col_ind,:), x(ii,:));
-        
         gd = gpcf.metric.fh.distg(gpcf.metric, x(col_ind,:), x(ii,:));
 
         ntrip_prev = ntriplets;
