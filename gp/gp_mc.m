@@ -23,8 +23,10 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with hmc2
 %                    (respecting infer_params option). If optional
-%                    argument hmc_opt.nuts = 1, No-U-Turn HMC is used (see
-%                    hmc_nuts) instead.
+%                    argument hmc_opt.nuts = 1, No-U-Turn HMC is used 
+%                    instead. With NUTS, only mandatory parameter is
+%                    number of adaptation steps hmc_opt.nadapt of step-size 
+%                    parameter. For additional info, see hmc_nuts.
 %      sls_opt     - Options structure for slice sampler (see sls_opt). 
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with sls
