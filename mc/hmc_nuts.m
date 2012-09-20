@@ -17,7 +17,8 @@ function [samples, logp, diagn] = hmc_nuts(f, theta0, opt)
 %    opt.M       is the number of samples to generate.
 %    opt.Madapt  is the number of steps of burn-in/how long to run
 %                the dual averaging algorithm to fit the step size
-%                epsilon.
+%                epsilon. Note that epsilon should be provided only
+%                when theres no adaptation (Madapt = 0).
 %    opt.theta0  is a 1-by-D vector with the desired initial setting
 %                of the parameters.
 %    opt.delta   should be between 0 and 1, and is a target HMC
