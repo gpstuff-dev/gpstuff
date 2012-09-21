@@ -186,7 +186,7 @@ function llg2 = lik_probit_llg2(lik, y, f, param, z)
         % log of asymptotic expansion of cumulative gaussian for higher accuracy
         % for small p.  Idea to use this method originated from lightspeed
         % toolbox by T. Minka
-        i = find(p<-10);
+        i = find(z<-10);
         c = 1 - 1./z(i).^2.*(1-3./z(i).^2.*(1-5./z(i).^2.*(1-7./z(i).^2)));
         ncdf(i) = -0.5*log(2*pi)-z(i).^2./2-log(-z(i))+log(c);
       end
