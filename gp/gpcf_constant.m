@@ -214,7 +214,6 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask, i1)
 
   [n, m] =size(x);
 
-  i1=0;
   DKff = {};
   
   if nargin==5
