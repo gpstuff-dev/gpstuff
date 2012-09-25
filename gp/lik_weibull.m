@@ -22,9 +22,9 @@ function lik = lik_weibull(varargin)
 %
 %    The likelihood is defined as follows:
 %                  __ n
-%      p(y|f, z) = || i=1 [ r^(1-z_i) exp( (1-z_i)*f_i
+%      p(y|f, z) = || i=1 [ r^(1-z_i) exp( (1-z_i)*(-f_i)
 %                           +(1-z_i)*(r-1)*log(y_i)
-%                           -exp(f_i)*y_i^r) ]
+%                           -exp(-f_i)*y_i^r) ]
 %
 %    where r is the shape parameter of Weibull distribution.
 %    z is a vector of censoring indicators with z = 0 for uncensored event
@@ -212,7 +212,7 @@ function ll = lik_weibull_ll(lik, y, f, z)
   end
 
   a = lik.shape;
-  ll = sum((1-z).*(log(a) + (a-1).*log(y)+f) - exp(f).*y.^a);
+  ll = sum((1-z).*(log(a) + (a-1).*log(y)-f) - exp(-f).*y.^a);
 
 end
 
@@ -240,11 +240,11 @@ function llg = lik_weibull_llg(lik, y, f, param, z)
   a = lik.shape;
   switch param
     case 'param'      
-      llg = sum((1-z).*(1./a + log(y)) - exp(f).*y.^a.*log(y));
+      llg = sum((1-z).*(1./a + log(y)) - exp(-f).*y.^a.*log(y));
       % correction for the log transformation
       llg = llg.*lik.shape;
     case 'latent'
-      llg = (1-z) - exp(f).*y.^a;
+      llg = -(1-z) + exp(-f).*y.^a;
   end
 end
 
@@ -276,9 +276,9 @@ function llg2 = lik_weibull_llg2(lik, y, f, param, z)
     case 'param'
       
     case 'latent'
-      llg2 = -exp(f).*y.^a;
+      llg2 = -exp(-f).*y.^a;
     case 'latent+param'
-      llg2 = -exp(f).*y.^a.*log(y);
+      llg2 = exp(-f).*y.^a.*log(y);
       % correction due to the log transformation
       llg2 = llg2.*lik.shape;
   end
@@ -311,9 +311,9 @@ function llg3 = lik_weibull_llg3(lik, y, f, param, z)
     case 'param'
       
     case 'latent'
-      llg3 = -exp(f).*y.^a;
+      llg3 = exp(-f).*y.^a;
     case 'latent2+param'
-      llg3 = -exp(f).*y.^a.*log(y);
+      llg3 = -exp(-f).*y.^a.*log(y);
       % correction due to the log transformation
       llg3 = llg3.*lik.shape;
   end
@@ -418,7 +418,7 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   g_i = g_i.*r;
 
   function g = deriv(f)
-    g = yc.*(1./r + log(yy)) - exp(f).*yy.^r.*log(yy);
+    g = yc.*(1./r + log(yy)) - exp(-f).*yy.^r.*log(yy);
   end
 end
 
@@ -531,7 +531,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   else
     % use precision weighted mean of the Gaussian approximation
     % of the Weibull likelihood and Gaussian
-    mu=log(yc./(yy.^r));
+    mu=-log(yc./(yy.^r));
     %s2=1./(yc+1./sigm2_i);
     s2=1./yc;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
@@ -587,7 +587,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   function integrand = weibull_norm(f)
   % Weibull * Gaussian
     integrand = exp(ldconst ...
-                    +yc.*f -exp(f).*yy.^r ...
+                    -yc.*f -exp(-f).*yy.^r ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
@@ -596,21 +596,21 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   % log_weibull_norm is used to avoid underflow when searching
   % integration interval
     log_int = ldconst ...
-              +yc.*f -exp(f).*yy.^r ...
+              -yc.*f -exp(-f).*yy.^r ...
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
   function g = log_weibull_norm_g(f)
   % d/df log(Weibull * Gaussian)
   % derivative of log_weibull_norm
-    g = yc - exp(f).*yy.^r ...
+    g = -yc + exp(-f).*yy.^r ...
         + (myy_i - f)./sigm2_i;
   end
 
   function g2 = log_weibull_norm_g2(f)
   % d^2/df^2 log(Weibull * Gaussian)
   % second derivate of log_weibull_norm
-    g2 = - exp(f).*yy.^r ...
+    g2 = - exp(-f).*yy.^r ...
          -1/sigm2_i;
   end
 

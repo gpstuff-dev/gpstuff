@@ -217,7 +217,9 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask, i1)
   DKff = {};
   
   if nargin==5
+    % Use memory save option
     if i1==0
+      % Return number of hyperparameters
       DKff=1;
       return
     end
@@ -279,13 +281,26 @@ function DKff = gpcf_constant_ginput(gpcf, x, x2, i1)
 %    This subfunction is needed when computing gradients with 
 %    respect to inducing inputs in sparse approximations.
 %
+%    DKff = GPCF_CONSTANT_GINPUT(GPCF, X, X2, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    covariate in X. This subfunction is needed when using 
+%    memory save option in gp_set.
+%
 %  See also
 %    GPCF_CONSTANT_PAK, GPCF_CONSTANT_UNPAK, GPCF_CONSTANT_LP, GP_G
   
   [n, m] =size(x);
-  if nargin==5
+  if nargin==4
+    % Use memory save option
     if i1==0
-      DKff=m;
+      % Return number of covariates
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
       return
     end
   end

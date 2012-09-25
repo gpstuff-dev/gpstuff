@@ -402,8 +402,10 @@ function DKff = gpcf_ppcs0_cfg(gpcf, x, x2, mask,i1)
   gprior = [];
   
   if nargin==5
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of hyperparameters
       i=0;
       if ~isempty(gpcf.p.magnSigma2)
         i=i+1;
@@ -411,6 +413,8 @@ function DKff = gpcf_ppcs0_cfg(gpcf, x, x2, mask,i1)
       if ~isempty(gpcf.p.lengthScale)
         i=i+length(gpcf.lengthScale);
       end
+      DKff=i;
+      return;
     end
   else
     savememory=0;
@@ -748,7 +752,9 @@ function DKff = gpcf_ppcs0_ginput(gpcf, x, x2, i1)
   [n, m] =size(x);
   ii1 = 0;
   if nargin==4
+    % Use memory save option
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

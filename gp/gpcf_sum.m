@@ -194,17 +194,22 @@ function DKff = gpcf_sum_cfg(gpcf, x, x2, mask, i1)
   ncf = length(gpcf.cf);
 
   DKff = {};
+ 
   if nargin==5
+    % Use memory save option
     savememory=1;
     i3=0;
     for k=1:ncf
+      % Number of hyperparameters for each covariance funtion
       cf=gpcf.cf{k};
       i3(k)=cf.fh.cfg(cf,[],[],[],0);
     end
     if i1==0
+      % Return number of hyperparameters
       DKff=sum(i3);
       return
     end
+    % Help indices
     i3=cumsum(i3);
     ind=find(cumsum(i3 >= i1)==1);
     if ind>1
@@ -326,8 +331,10 @@ function DKff = gpcf_sum_ginput(gpcf, x, x2, i1)
   ncf = length(gpcf.cf);
   
   if nargin==4
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

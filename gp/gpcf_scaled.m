@@ -193,8 +193,10 @@ function DKff = gpcf_scaled_cfg(gpcf, x, x2, mask, i1)
 
   [n, m] =size(x);
   if nargin==5
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of hyperparameters
       DKff=gpcf.cf{1}.fh.cfg(gpcf.cf{1},[],[],[],0);
       return
     end
@@ -304,8 +306,10 @@ function DKff = gpcf_scaled_ginput(gpcf, x, x2,i1)
   
   [n, m] =size(x);
   if nargin==4
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

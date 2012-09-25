@@ -365,8 +365,10 @@ function DKff = gpcf_exp_cfg(gpcf, x, x2, mask, i1)
   DKff = {};
   
   if nargin==5
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of hyperparameters
       i=0;
       if ~isempty(gpcf.p.magnSigma2)
         i=1;
@@ -580,7 +582,9 @@ function DKff = gpcf_exp_ginput(gpcf, x, x2, i1)
   ii1 = 0;
   
   if nargin==4
+    % Use memory save option
     if i1==0
+      % Return number of hyperparameters
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

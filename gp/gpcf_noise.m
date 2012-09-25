@@ -224,7 +224,9 @@ function DKff = gpcf_noise_cfg(gpcf, x, x2, mask, i1)
     DKff{1}=gpcf.noiseSigma2;
   end
   if nargin==4
+    % Use memory save option
     if i1==0
+      % Return number of hyperparameters
       DKff=1;
       return
     end

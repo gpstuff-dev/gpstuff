@@ -370,8 +370,10 @@ function DKff = gpcf_matern32_cfg(gpcf, x, x2, mask,i1)
   gprior = [];
 
   if nargin==5
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of hyperparameters
       if ~isempty(gpcf.p.magnSigma2)
         i=1;
       end
@@ -584,8 +586,10 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
   ma2 = gpcf.magnSigma2;
   ii1 = 0;
   if nargin==4
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

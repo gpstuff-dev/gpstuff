@@ -299,7 +299,9 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask, i1)
   [n, m] =size(x);
   
   if nargin==5
+    % Use memory save option
     if i1==0
+      % Return number of hyperparameters
       if ~isempty(gpcf.p.biasSigma2)
         i=1;
       end
@@ -557,7 +559,9 @@ function DKff = gpcf_neuralnetwork_ginput(gpcf, x, x2, i1)
   [n, m] =size(x);
   
   if nargin==4
+    % Use memory save option
     if i1==0
+      % Return number of covariates
       DKff=m;
       return
     end

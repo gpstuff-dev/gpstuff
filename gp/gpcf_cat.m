@@ -167,9 +167,24 @@ function DKff = gpcf_cat_cfg(gpcf, x, x2, mask, i1)
 %    elements). This subfunction is needed when using sparse 
 %    approximations (e.g. FIC).
 %
+%    DKff = GPCF_CAT_CFG(GPCF, X, X2, MASK, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors and
+%    returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    hyperparameter. This subfunction is needed when using 
+%    memory save option in gp_set.
+%
 %  See also
 %    GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
 
+  if nargin==5
+    % Use memory save option
+    if i1==0
+      % Return number of hyperparameters
+      DKff=0;
+      return
+    end
+  end
   DKff = {};
   
 end
@@ -193,10 +208,30 @@ function [DKff, lpg]  = gpcf_cat_ginput(gpcf, x, x2, i1)
 %    This subfunction is needed when computing gradients with 
 %    respect to inducing inputs in sparse approximations.
 %
+%    DKff = GPCF_CAT_GINPUT(GPCF, X, X2, i) takes a covariance
+%    function structure GPCF, a matrix X of input vectors
+%    and returns DKff, the gradients of covariance matrix Kff =
+%    k(X,X2), or k(X,X) if X2 is empty, with respect to ith 
+%    covariate in X. This subfunction is needed when using 
+%    memory save option in gp_set.
+%
 %  See also
 %   GPCF_CAT_PAK, GPCF_CAT_UNPAK, GPCF_CAT_LP, GP_G
   
   [n, m] =size(x);
+  
+  if nargin==4
+    % Use memory save option
+    if i1==0
+      % Return number of covariates
+      if isfield(gpcf,'selectedVariables')
+        DKff=length(gpcf.selectedVariables);
+      else
+        DKff=m;
+      end
+      return
+    end
+  end
   
   if nargin == 2 || isempty(x2)
     ii1 = 0;

@@ -193,16 +193,20 @@ function DKff = gpcf_prod_cfg(gpcf, x, x2, mask, i1)
   DKff = {};
 
   if nargin==5
+    % Use memory save option
     savememory=1;
     i3=0;
     for k=1:ncf
+      % Number of hyperparameters for each covariance function
       cf=gpcf.cf{k};
       i3(k)=cf.fh.cfg(cf,[],[],[],0);
     end
     if i1==0
+      % Return number of hyperparameters
       DKff=sum(i3);
       return
     end
+    % Help indices
     i3=cumsum(i3);
     ind=find(cumsum(i3 >= i1)==1);
     if ind>1
@@ -368,8 +372,10 @@ function DKff = gpcf_prod_ginput(gpcf, x, x2, i1)
   [n, m] =size(x);
 
   if nargin==4
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

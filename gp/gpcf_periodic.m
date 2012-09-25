@@ -398,8 +398,10 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
   gprior=[];
   
   if nargin==5
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of hyperparameters
       i=0;
       if ~isempty(gpcf.p.magnSigma2)
         i=1;
@@ -758,7 +760,9 @@ function DKff = gpcf_periodic_ginput(gpcf, x, x2, i1)
   if nargin<4
     i1=1:m;
   else
+    % Use memory save option
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else

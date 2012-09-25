@@ -243,8 +243,10 @@ function DKff = gpcf_linear_cfg(gpcf, x, x2, mask, ii1)
   DKff = {};
   
   if nargin==5
+    % Use memory save option
     savememory=1;
     if ii1==0
+      % Return number of hyperparameters
       DKff=0;
       if ~isempty(gpcf.p.coeffSigma2)
         DKff=length(gpcf.coeffSigma2);
@@ -404,8 +406,10 @@ function DKff = gpcf_linear_ginput(gpcf, x, x2, i1)
   [n, m] =size(x);
   
   if nargin==4
+    % Use memory save option
     savememory=1;
     if i1==0
+      % Return number of covariates
       if isfield(gpcf,'selectedVariables')
         DKff=length(gpcf.selectedVariables);
       else
