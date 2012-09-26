@@ -49,8 +49,13 @@
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-fprintf(['Note! Since data and initial placement of the inducing points\n'...
-         '      is random, there is variation in the results for each run.\n'])
+% Set randomstream for reproducing same results
+stream0 = RandStream('mt19937ar','Seed',0);
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  prevstream = RandStream.setDefaultStream(stream0);
+else
+  prevstream = RandStream.setGlobalStream(stream0);
+end
 
 % Start by creating 1D data
 xx=linspace(1,10,901);
@@ -194,3 +199,10 @@ plot(Xu, -2.8, 'bx', 'MarkerSize', 5, 'LineWidth', 2)
 %plot(XuSorted(1:end-1),dXuSorted,'ko');
 %plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')
 title('DTC')
+
+% Set back initial random stream
+if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  RandStream.setDefaultStream(prevstream);
+else
+  RandStream.setGlobalStream(prevstream);
+end

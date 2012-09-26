@@ -121,13 +121,21 @@ y = data(:,3);
 % 
 % First create a piece wise polynomial covariance function with ARD and 
 % Gaussian noise structures...
-gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
 lik = lik_gaussian('sigma2', 0.2^2);
 
 pl = prior_t('s2', 0.5);               % a prior structure
 pm = prior_sqrtt('s2', 0.3);               % a prior structure
 pn = prior_logunif();
-gpcf = gpcf_ppcs2(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+if ~exist('ldlchol')
+  warning('GPstuff:SuiteSparseMissing',...
+  ['SuiteSparse is not properly installed. \n' ...
+   'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
+ gpcf = gpcf_sexp('lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
+ gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+else
+  gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
+  gpcf = gpcf_ppcs2(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+end
 
 gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8);
 
