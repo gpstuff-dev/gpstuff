@@ -1,12 +1,15 @@
-function [c,bb] = hcs(crit,y,z,t,varargin)
-%HCS Compute Harrel's C for survival model at given time
+function [c,bb] = hcs_new(riskscore,y,z,t,varargin)
+%HCS Compute Harrell's C for survival model at given time
 %
 %  Description
-%    [C, BB] = HCS(CRIT,Y,Z,T,OPTIONS) Given a criteria vector
-%    CRIT, an observed time vector Y, a censoring indicator column
-%    vector Z at time t (0=event, 1=censored) and time T, returns
-%    Harrel's C at time T and it's estimated density using
-%    Bayesian Bootstrap method
+%    [C, BB] = HCS(RISKSCORE,Y,Z,T,OPTIONS) Given a risk score vector
+%    RISKSCORE, an observed time vector Y, a censoring indicator column
+%    vector Z (0=event, 1=censored) and time T, returns
+%    Harrell's C at time T and its estimated density using
+%    Bayesian Bootstrap method. Large value of RISKSCORE should predict
+%    early event.
+%
+%    The implemented estimator is called ExtAUC(t)_Count in the reference.
 %
 %    OPTIONS is optional parameter-value pair
 %      rsubstream - number of a random stream to be used for
@@ -20,50 +23,83 @@ function [c,bb] = hcs(crit,y,z,t,varargin)
 %    Extension to survival analysis. Statistics in Medicine
 %    30(1):22-38.
 
-% Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
+% Copyright (C) 2012 Tomi Peltola, Ernesto Ulloa, Aki Vehtari
 
 ip=inputParser;
-ip.addRequired('crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip.addRequired('riskscore',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
 ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('t', @(x) isreal(x) && all(isfinite(x(:))))
+ip.addRequired('t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
 ip.addParamValue('rsubstream',0,@(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-ip.parse(crit,y,z,t,varargin{:})
+ip.parse(riskscore,y,z,t,varargin{:})
 rsubstream=ip.Results.rsubstream;
 
-n=size(crit,1);
-comp=bsxfun(@times,bsxfun(@and,bsxfun(@lt,y,y'),y<t),z==0);
-conc=bsxfun(@gt,crit,crit').*comp;
-c=sum(conc(:))./sum(comp(:));
 
-if nargin<5
-  for i=1:100
-    qr=dirrand(n);
-    qqr=bsxfun(@times,qr,qr');
-    bb(i,1)=sum(sum(conc.*qqr))./sum(sum(comp.*qqr));
-  end
+n=size(riskscore,1);
+
+if nargout < 2
+    % no bootstrapping
+    numer = 0;
+    denom = 0;
+    for i = 1:n
+        % i should have had event before or at t
+        if z(i) == 1 || y(i) > t
+            continue;
+        end
+        for j = 1:n
+            % require y(i) < y(j) and check if the pair is concordant
+            if y(i) >= y(j), continue, end;
+            numer = numer + (riskscore(i) > riskscore(j));
+            denom = denom + 1;
+        end
+    end
+    c = numer / denom;
+else
+    % with bootstrapping
+    n_replicates = 1000;
+    
+    % get substream
+    if rsubstream > 0
+        stream = RandStream('mrg32k3a');
+        
+        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+            prevstream=RandStream.setDefaultStream(stream);
+        else
+            prevstream=RandStream.setGlobalStream(stream);
+        end
+        stream.Substream = rsubstream;
+    end
+    
+    % bootstrap weights (first column is unit weights)
+    w = [ones(n, 1) dirrand(n, n_replicates)];
+    
+    % set RandStream back to previous
+    if rsubstream > 0
+        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+            RandStream.setDefaultStream(prevstream);
+        else
+            RandStream.setGlobalStream(prevstream);
+        end;
+    end
+    
+    % same algorithm as above, now with weights
+    numer = zeros(1, size(w, 2));
+    denom = zeros(1, size(w, 2));
+    for i = 1:n
+        if z(i) == 1 || y(i) > t
+            continue;
+        end
+        for j = 1:n
+            if y(i) >= y(j), continue, end;
+            w_ = w(i, :) .* w(j, :);
+            numer = numer + w_ * (riskscore(i) > riskscore(j));
+            denom = denom + w_;
+        end
+    end
+    bb = numer ./ denom;
+    c = bb(1);  % first replicate is with unit weights
+    bb(1) = []; % others are the bootstrap replicates
 end
-if rsubstream>0
-  stream = RandStream('mrg32k3a');
 
-  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-    prevstream=RandStream.setDefaultStream(stream);
-  else
-    prevstream=RandStream.setGlobalStream(stream);
-  end
-  stream.Substream = rsubstream;
-
-  for i=1:100
-    qr=dirrand(n);
-    qqr=bsxfun(@times,qr,qr');
-    bb(i,1)=sum(sum(conc.*qqr))./sum(sum(comp.*qqr));
-  end
-
-  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-    RandStream.setDefaultStream(prevstream);
-  else
-    RandStream.setGlobalStream(prevstream);
-  end;
-end
 end
 

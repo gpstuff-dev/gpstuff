@@ -1,11 +1,11 @@
 function ea = ext_auc(P,tt,t)
-%EXT_AUC Compute EXT_AUC proposed by Chambless et al (2011)
+%EXT_AUC Compute Extended AUC proposed by Chambless et al (2011)
 %
 %  Description
-%    EA=EXT_AUC(P,TT,T) Compute EXT_AUC(T) proposed by Chambless et
-%    al (2011) given probability matrix P of size n x size(tt,2),
-%    time vector TT and time T. Time T has to be one of values in
-%    time vector TT.
+%    EA=EXT_AUC(P,TT,T) Compute Extended AUC(T) proposed by
+%    Chambless et al (2011) given probability matrix P of size n x
+%    size(tt,2), time vector TT and time T. Time T has to be one of
+%    values in time vector TT.
 %
 %  Reference
 %    L. E. Chambless, C. P. Cummiskey, and G. Cui (2011). Several
