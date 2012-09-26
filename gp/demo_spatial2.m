@@ -67,10 +67,18 @@ fprintf(['GP with negative-binomial observation model, Laplace\n' ...
          'for the parameters\n']);
 
 % Create the covariance functions
-gpcf1 = gpcf_ppcs2('nin', 2, 'lengthScale', 5, 'magnSigma2', 0.05);
 pl = prior_t();
 pm = prior_sqrtt('s2', 0.3);
-gpcf1 = gpcf_ppcs2(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+if ~exist('ldlchol')
+  warning('GPstuff:SuiteSparseMissing',...
+    ['SuiteSparse is not properly installed. \n' ...
+    'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
+  gpcf = gpcf_sexp('lengthScale', 'lengthScale', 5, 'magnSigma2', 0.05);
+  gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+else
+  gpcf1 = gpcf_ppcs2('nin', 2, 'lengthScale', 5, 'magnSigma2', 0.05);
+  gpcf1 = gpcf_ppcs2(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+end
 
 % Create the likelihood structure
 lik = lik_negbin();
