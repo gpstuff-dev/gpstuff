@@ -86,7 +86,7 @@ lik = lik_coxph('S', S);
 % lik.xtime=xtmp;
 % lik.stime=S;
 
-% NOTE! if Multible covariance functions per latent is used, define
+% NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
 % where [1 2] are for hazard function, and [5 6] for proportional part
@@ -154,7 +154,7 @@ x2(:,1)=[];
 % covariance for proportional part
 gpcf = gpcf_sexp('lengthScale', ones(1,size(x2,2)), 'magnSigma2', .5, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
-% NOTE! if Multible covariance functions per latent is used, define
+% NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp = gp_set(..., 'comp_cf', {[1 2] [5 6]});
 % where [1 2] are for hazard function, and [5 6] for proportional part

@@ -51,7 +51,7 @@ gpcf3 = gpcf_neuralnetwork('weightSigma2', [0.9 0.7], 'biasSigma2', 1.2, 'weight
 % Create the likelihood structure
 lik = lik_zinegbin('disper_prior', prior_fixed());
 
-% NOTE! if Multible covariance functions per latent is used, define
+% NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
 gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-6, 'comp_cf', {[1 2] [1 3]});

@@ -74,7 +74,7 @@ gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 % function magnitude for noise process has prior.
 lik = lik_inputdependentnoise('sigma2', 0.1, 'sigma2_prior', prior_fixed());
 
-% NOTE! if Multible covariance functions per latent is used, define
+% NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
 gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-9, 'comp_cf', {[1] [2]});

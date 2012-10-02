@@ -75,7 +75,7 @@ gp = gp_set('lik', lik_multinom, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-4
 gp.comp_cf = {1 2 3};   
 
 %
-% NOTE! if Multible covariance functions per output is used define
+% NOTE! if multiple covariance functions per output is used define
 % gp.comp_cf as follows:
 % gp.comp_cf = {[1 2] [3 4] [5 6]};   
 %
