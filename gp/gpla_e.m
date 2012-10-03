@@ -247,6 +247,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 else
                   a = b - sW.*(L\(L'\(sW.*(K*b))));
                 end
+                if any(isnan(a))
+                  [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                  return
+                end
                 f = K*a;
                 lp = gp.lik.fh.ll(gp.lik, y, f, z);
                 if ~isfield(gp,'meanf')
@@ -255,7 +259,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   lp_new = -(f-H'*b_m)'*(a-K\(H'*b_m))/2 + lp; %f^=f-H'*b_m,
                 end
                 i = 0;
-                while i < 10 && lp_new < lp_old  || isnan(sum(f))
+                while i < 10 && (lp_new < lp_old  || isnan(sum(f)))
                   % reduce step size by half
                   a = (a_old+a)/2;                                  
                   f = K*a;
