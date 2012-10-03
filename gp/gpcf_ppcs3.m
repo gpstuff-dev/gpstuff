@@ -1038,45 +1038,6 @@ function C = gpcf_ppcs3_cov(gpcf, x1, x2, varargin)
     % If other than scaled euclidean metric
     [n1,m1]=size(x1);
     [n2,m2]=size(x2);
-    
-    ma2 = gpcf.magnSigma2;
-    l = gpcf.l;
-    
-    % Compute the sparse distance matrix.
-    ntriplets = max(1,floor(0.03*n1*n2));
-    I = zeros(ntriplets,1);
-    J = zeros(ntriplets,1);
-    R = zeros(ntriplets,1);
-    ntriplets = 0;
-    I0=zeros(ntriplets,1);
-    J0=zeros(ntriplets,1);
-    nn0=0;
-    for ii1=1:n2
-      d = zeros(n1,1);
-      d = gpcf.metric.fh.dist(gpcf.metric, x1, x2(ii1,:));
-      I0t = find(d==0);
-      d(d >= 1) = 0;
-      [I2,J2,R2] = find(d);
-      len = length(R);
-      ntrip_prev = ntriplets;
-      ntriplets = ntriplets + length(R2);
-
-      I(ntrip_prev+1:ntriplets) = I2;
-      J(ntrip_prev+1:ntriplets) = ii1;
-      R(ntrip_prev+1:ntriplets) = R2;
-      I0(nn0+1:nn0+length(I0t)) = I0t;
-      J0(nn0+1:nn0+length(I0t)) = ii1;
-      nn0 = nn0+length(I0t);
-    end
-    r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
-    [I,J,r] = find(r);
-    cs = full(sparse(max(0, 1-r)));
-    
-    const1 = l^3 + 9*l^2 + 23*l + 15;
-    const2 = 6*l^2 + 36*l + 45;
-    const3 = 15*l + 45;
-    C = ma2.*cs.^(l+3).*(const1.*r.^3 + const2.*r.^2 + const3.*r + 15)/15;
-    C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma2,n1,n2);
   else
     % If scaled euclidean metric
     if isfield(gpcf, 'selectedVariables')
@@ -1091,50 +1052,54 @@ function C = gpcf_ppcs3_cov(gpcf, x1, x2, varargin)
     if size(s)==1
       s2 = repmat(s2,1,m1);
     end
-    ma2 = gpcf.magnSigma2;
-    l = gpcf.l;
-    
-    % Compute the sparse distance matrix.
-    ntriplets = max(1,floor(0.03*n1*n2));
-    I = zeros(ntriplets,1);
-    J = zeros(ntriplets,1);
-    R = zeros(ntriplets,1);
-    ntriplets = 0;
-    I0=zeros(ntriplets,1);
-    J0=zeros(ntriplets,1);
-    nn0=0;
-    for ii1=1:n2
-      d = zeros(n1,1);
+  end
+  ma2 = gpcf.magnSigma2;
+  l = gpcf.l;
+  
+  % Compute the sparse distance matrix.
+  ntriplets = max(1,floor(0.03*n1*n2));
+  I = zeros(ntriplets,1);
+  J = zeros(ntriplets,1);
+  R = zeros(ntriplets,1);
+  ntriplets = 0;
+  I0=zeros(ntriplets,1);
+  J0=zeros(ntriplets,1);
+  nn0=0;
+  for ii1=1:n2
+    d = zeros(n1,1);
+    if isfield(gpcf, 'metric')
+      d = gpcf.metric.fh.dist(gpcf.metric, x1, x2(ii1,:));
+    else
       for j=1:m1
         d = d + s2(j).*(x1(:,j)-x2(ii1,j)).^2;
       end
-      %d = sqrt(d);
-      I0t = find(d==0);
-      d(d >= 1) = 0;
-      [I2,J2,R2] = find(d);
-      R2=sqrt(R2);
-      %len = length(R);
-      ntrip_prev = ntriplets;
-      ntriplets = ntriplets + length(R2);
-
-      I(ntrip_prev+1:ntriplets) = I2;
-      J(ntrip_prev+1:ntriplets) = ii1;
-      R(ntrip_prev+1:ntriplets) = R2;
-      I0(nn0+1:nn0+length(I0t)) = I0t;
-      J0(nn0+1:nn0+length(I0t)) = ii1;
-      nn0 = nn0+length(I0t);
     end
-    r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
-    [I,J,r] = find(r);
-    cs = full(sparse(max(0, 1-r)));
+    %d = sqrt(d);
+    I0t = find(d==0);
+    d(d >= 1) = 0;
+    [I2,J2,R2] = find(d);
+    R2=sqrt(R2);
+    %len = length(R);
+    ntrip_prev = ntriplets;
+    ntriplets = ntriplets + length(R2);
     
-    const1 = l^3 + 9*l^2 + 23*l + 15;
-    const2 = 6*l^2 + 36*l + 45;
-    const3 = 15*l + 45;
-    C = ma2.*cs.^(l+3).*(const1.*r.^3 + const2.*r.^2 + const3.*r + 15)/15;
-    
-    C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma2,n1,n2);
+    I(ntrip_prev+1:ntriplets) = I2;
+    J(ntrip_prev+1:ntriplets) = ii1;
+    R(ntrip_prev+1:ntriplets) = R2;
+    I0(nn0+1:nn0+length(I0t)) = I0t;
+    J0(nn0+1:nn0+length(I0t)) = ii1;
+    nn0 = nn0+length(I0t);
   end
+  r = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets));
+  [I,J,r] = find(r);
+  cs = full(sparse(max(0, 1-r)));
+  
+  const1 = l^3 + 9*l^2 + 23*l + 15;
+  const2 = 6*l^2 + 36*l + 45;
+  const3 = 15*l + 45;
+  C = ma2.*cs.^(l+3).*(const1.*r.^3 + const2.*r.^2 + const3.*r + 15)/15;
+  
+  C = sparse(I,J,C,n1,n2) + sparse(I0,J0,ma2,n1,n2);
 end
 
 function C = gpcf_ppcs3_trcov(gpcf, x)
@@ -1151,49 +1116,9 @@ function C = gpcf_ppcs3_trcov(gpcf, x)
 %  See also
 %    GPCF_PPCS3_COV, GPCF_PPCS3_TRVAR, GP_COV, GP_TRCOV
 
-  if isfield(gpcf,'metric')
+  if isfield(gpcf,'metric') 
     % If other than scaled euclidean metric
     [n, m] =size(x);            
-    ma2 = gpcf.magnSigma2;
-    l = gpcf.l;
-    
-    % Compute the sparse distance matrix.
-    ntriplets = max(1,floor(0.03*n*n));
-    I = zeros(ntriplets,1);
-    J = zeros(ntriplets,1);
-    R = zeros(ntriplets,1);
-    ntriplets = 0;
-    for ii1=1:n-1
-      d = zeros(n-ii1,1);
-      col_ind = ii1+1:n;
-      d = gpcf.metric.fh.dist(gpcf.metric, x(col_ind,:), x(ii1,:));
-      d(d >= 1) = 0;
-      [I2,J2,R2] = find(d);
-      len = length(R);
-      ntrip_prev = ntriplets;
-      ntriplets = ntriplets + length(R2);
-      if (ntriplets > len)
-        I(2*len) = 0;
-        J(2*len) = 0;
-        R(2*len) = 0;
-      end
-      ind_tr = ntrip_prev+1:ntriplets;
-      I(ind_tr) = ii1+I2;
-      J(ind_tr) = ii1;
-      R(ind_tr) = R2;
-    end
-    R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
-    
-    % Find the non-zero elements of R.
-    [I,J,rn] = find(R);
-    const1 = l^3 + 9*l^2 + 23*l + 15;
-    const2 = 6*l^2 + 36*l + 45;
-    const3 = 15*l + 45;
-    cs = max(0,1-rn);
-    C = ma2.*cs.^(l+3).*(const1.*rn.^3 + const2.*rn.^2 + const3.*rn + 15)/15;
-    C = sparse(I,J,C,n,n);
-    C = C + C' + sparse(1:n,1:n,ma2,n,n);
-    
   else
     % If a scaled euclidean metric try first mex-implementation 
     % and if there is not such... 
@@ -1210,50 +1135,84 @@ function C = gpcf_ppcs3_trcov(gpcf, x)
       if size(s)==1
         s2 = repmat(s2,1,m);
       end
-      ma2 = gpcf.magnSigma2;
-      l = gpcf.l;
-      
-      % Compute the sparse distance matrix.
-      ntriplets = max(1,floor(0.03*n*n));
-      I = zeros(ntriplets,1);
-      J = zeros(ntriplets,1);
-      R = zeros(ntriplets,1);
-      ntriplets = 0;
-      for ii1=1:n-1
-        d = zeros(n-ii1,1);
-        col_ind = ii1+1:n;
-        for ii2=1:m
-          d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
-        end
-        %d = sqrt(d);
-        d(d >= 1) = 0;
-        [I2,J2,R2] = find(d);
-        len = length(R);
-        ntrip_prev = ntriplets;
-        ntriplets = ntriplets + length(R2);
-        if (ntriplets > len)
-          I(2*len) = 0;
-          J(2*len) = 0;
-          R(2*len) = 0;
-        end
-        ind_tr = ntrip_prev+1:ntriplets;
-        I(ind_tr) = ii1+I2;
-        J(ind_tr) = ii1;
-        R(ind_tr) = sqrt(R2);
-      end
-      R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
-      
-      % Find the non-zero elements of R.
-      [I,J,rn] = find(R);
-      const1 = l^3 + 9*l^2 + 23*l + 15;
-      const2 = 6*l^2 + 36*l + 45;
-      const3 = 15*l + 45;
-      cs = max(0,1-rn);
-      C = ma2.*cs.^(l+3).*(const1.*rn.^3 + const2.*rn.^2 + const3.*rn + 15)/15;
-      C = sparse(I,J,C,n,n);
-      C = C + C' + sparse(1:n,1:n,ma2,n,n);
+    else
+      return
     end
   end
+  ma2 = gpcf.magnSigma2;
+  l = gpcf.l;
+  
+  % Compute the sparse distance matrix.
+  ntriplets = max(1,floor(0.03*n*n));
+  I = zeros(ntriplets,1);
+  J = zeros(ntriplets,1);
+  R = zeros(ntriplets,1);
+  ntriplets = 0;
+  ntripletsz = max(1,floor(0.03.^2*n*n));
+  Iz = zeros(ntripletsz,1);
+  Jz = zeros(ntripletsz,1);
+  ntripletsz = 0;
+  for ii1=1:n-1
+    d = zeros(n-ii1,1);
+    col_ind = ii1+1:n;
+    if isfield(gpcf,'metric')
+      d = gpcf.metric.fh.dist(gpcf.metric, x(col_ind,:), x(ii1,:));
+    else
+      for ii2=1:m
+        d = d+s2(ii2).*(x(col_ind,ii2)-x(ii1,ii2)).^2;
+      end
+    end
+    %d = sqrt(d);
+    % store zero distance index
+    [I2z,J2z] = find(d==0);
+    % create triplets for distances 0<d<1
+    d(d >= 1) = 0;
+    [I2,J2,R2] = find(d);
+    len = length(R);
+    ntrip_prev = ntriplets;
+    ntriplets = ntriplets + length(R2);
+    if (ntriplets > len)
+      I(2*len) = 0;
+      J(2*len) = 0;
+      R(2*len) = 0;
+    end
+    ind_tr = ntrip_prev+1:ntriplets;
+    I(ind_tr) = ii1+I2;
+    J(ind_tr) = ii1;
+    R(ind_tr) = sqrt(R2);
+    % create triplets for distances d==0 (i~=j)
+    lenz = length(Iz);
+    ntrip_prevz = ntripletsz;
+    ntripletsz = ntripletsz + length(I2z);
+    if (ntripletsz > lenz)
+      Iz(2*lenz) = 0;
+      Jz(2*lenz) = 0;
+    end
+    ind_trz = ntrip_prevz+1:ntripletsz;
+    Iz(ind_trz) = ii1+I2z;
+    Jz(ind_trz) = ii1;
+  end
+  % create a lower triangular sparse distance matrix from the triplets for distances 0<d<1
+  R = sparse(I(1:ntriplets),J(1:ntriplets),R(1:ntriplets),n,n);
+  % create a lower triangular sparse covariance matrix from the
+  % triplets for distances d==0 (i~=j)
+  Rz = sparse(Iz(1:ntripletsz),Jz(1:ntripletsz),repmat(ma2,1,ntripletsz),n,n);
+  
+  % Find the non-zero elements of R.
+  [I,J,rn] = find(R);
+  % Compute covariances for distances 0<d<1
+  const1 = l^3 + 9*l^2 + 23*l + 15;
+  const2 = 6*l^2 + 36*l + 45;
+  const3 = 15*l + 45;
+  cs = max(0,1-rn);
+  C = ma2.*cs.^(l+3).*(const1.*rn.^3 + const2.*rn.^2 + const3.*rn + 15)/15;
+  % create a lower triangular sparse covariance matrix from the triplets for distances 0<d<1
+  C = sparse(I,J,C,n,n);
+  % add the lower triangular covariance matrix for distances d==0 (i~=j)
+  C = C + Rz;
+  % form a square covariance matrix and add the covariance matrix for i==j (d==0)
+  C = C + C' + sparse(1:n,1:n,ma2,n,n);
+
 end
 
 function C = gpcf_ppcs3_trvar(gpcf, x)
@@ -1345,3 +1304,4 @@ function reccf = gpcf_ppcs3_recappend(reccf, ri, gpcf)
   
   end
 end
+
