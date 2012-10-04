@@ -1,25 +1,19 @@
-function matlab_install(suiteSparse_path)
+function matlab_install(SuiteSparse_path)
 %  Matlab function to compile all the c-files to mex in the GPstuff toolbox.
 %
 %  Some of the sparse GP functionalities in the toolbox require 
-%  SuiteSparse toolbox by Tim Davis. First install SuiteSparse from: 
+%  SuiteSparse toolbox by Tim Davis:
 %    http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
 %
-%  Note! Install also Metis 4.0.1 as mentioned under header "Other
-%        packages required:".           
-%
-%  After this, install the GPstuff package:
-%
-%   Run matlab_install( suitesparse_path ) in the present directory. 
-%   Here suitesparse_path is a string telling the path to SuiteSparse 
-%   package (for example, '/matlab/toolbox/SuiteSparse/'). Note! It is
-%   important that suitesparse_path is in right format. Include also
-%   the last '/' sign in it.
+%  This package includes the SuiteSparse version 3.4. 
 % 
+%  * To install without SuiteSparse run matlab_install
+%  * To install with SuiteSparse run matlab_install('SuiteSparseOn')
+%
 %   The function matlab_install compiles the mex-files and prints on
 %   the screen, which directories should be added to Matlab paths. 
     
-% Copyright (c) 2008-2010 Jarno Vanhatalo
+% Copyright (c) 2008-2012 Jarno Vanhatalo
     
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -28,13 +22,27 @@ function matlab_install(suiteSparse_path)
 
     
     if nargin < 1
-        suiteSparse_path = [];
+        SuiteSparse_path = [];
         fprintf('\n The path to the SuiteSparse package is not provided. \n')
         fprintf('\n Installing GPstuff without compactly supported covariance functions. \n')
         fprintf(' You are not able to use the following covariance functions:  \n')
         fprintf(' gpcf_ppcs0  \n gpcf_ppcs1 \n gpcf_ppcs2 \n gpcf_ppcs3 \n\n\n')
+    elseif strcmp(SuiteSparse_path, 'SuiteSparseOn')
+        cdir = pwd;        
+        cd SuiteSparse
+        SuiteSparse_path = [pwd '/'];
+        
+        % Compile SuiteSparse
+        fprintf('Compiling SuiteSparse. This may take a while \n \n')
+        paths = SuiteSparse_install(false);
+        
+        cd(cdir)
+        fprintf('Compiling GPstuff. This may take a while \n \n')
+    else 
+        error('Unknown input argument. See help matlab_install for usage.')
     end
-    
+    cd GPstuff
+            
     % Go to diag/ and compile the mex-functions
     fprintf('\n Compiling files in diag.\n \n')
     cd('diag')
@@ -50,7 +58,7 @@ function matlab_install(suiteSparse_path)
     % Go to gp/ and compile the mex-functions        
     fprintf('\n Compiling files in gp.\n \n')
     cd('gp')
-    gp_install(suiteSparse_path)    
+    gp_install(SuiteSparse_path)    
     cd('..')       
         
     % Go to mc/ and compile the mex-functions
@@ -73,12 +81,19 @@ function matlab_install(suiteSparse_path)
    
     fprintf ('\n The following paths have been added.  You may wish to add them\n') ;
     fprintf ('permanently, using the MATLAB pathtool command or copying the below\n') ;
-    fprintf ('lines to your startup.m file. \n');
+    fprintf ('lines to your startup.m file. \n\n');
     fprintf ('addpath %s\n', S{1}) ;
     fprintf ('addpath %s\n', S{2}) ;
     fprintf ('addpath %s\n', S{3}) ;
     fprintf ('addpath %s\n', S{4}) ;
     fprintf ('addpath %s\n', S{5}) ;
     fprintf ('addpath %s\n', S{6}) ;
-            
+   
+    if nargin==1
+        fprintf ('\n')
+        for k = 1:length (paths)
+            fprintf ('addpath %s\n', paths {k}) ;
+        end
+    end
+    cd('..')
 end
