@@ -74,20 +74,15 @@ function matlab_install(SuiteSparse_path)
     S{4} = [PP '/mc']; 
     S{5} = [PP '/misc']; 
     S{6} = [PP '/optim']; 
+    S{7} = [PP '/xunit']; 
     
-    for i = 1:length(S)
-       addpath(S{i}); 
-    end
-   
     fprintf ('\n The following paths have been added.  You may wish to add them\n') ;
     fprintf ('permanently, using the MATLAB pathtool command or copying the below\n') ;
     fprintf ('lines to your startup.m file. \n\n');
-    fprintf ('addpath %s\n', S{1}) ;
-    fprintf ('addpath %s\n', S{2}) ;
-    fprintf ('addpath %s\n', S{3}) ;
-    fprintf ('addpath %s\n', S{4}) ;
-    fprintf ('addpath %s\n', S{5}) ;
-    fprintf ('addpath %s\n', S{6}) ;
+    for i = 1:length(S)
+       addpath(S{i}); 
+       fprintf ('addpath %s\n', S{i}) ;
+    end
    
     if nargin==1
         fprintf ('\n')
