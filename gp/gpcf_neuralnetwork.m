@@ -289,6 +289,14 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask, i1)
   
   gpp=gpcf.p;
   
+  if isfield(gpcf, 'selectedVariables')
+    x=x(:,gpcf.selectedVariables);
+    if nargin == 3
+      x2=x2(:,gpcf.selectedVariables);
+    end
+  end
+  [n, m] =size(x);
+    
   if nargin==5
     % Use memory save option
     if i1==0
@@ -306,16 +314,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask, i1)
   else
     savememory=0;
     i1=1:m;
-  end
-  
-  if isfield(gpcf, 'selectedVariables')
-    x=x(:,gpcf.selectedVariables); 
-    if nargin == 3
-      x2=x2(:,gpcf.selectedVariables); 
-    end
-  end
-  
-  [n, m] =size(x);
+  end  
   
   DKff = {};
   gprior = [];
