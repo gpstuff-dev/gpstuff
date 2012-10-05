@@ -62,13 +62,7 @@ initTestSuite;
   function testPeffLatentsMarginalized
     values.real = load('realValuesModelAssesment2.mat', 'p_eff');
     values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'), 'p_eff');
-    assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.4);
-
-        
-  function testPeffAll
-    values.real = load('realValuesModelAssesment2.mat', 'p_eff2');
-    values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'), 'p_eff2');
-    assertVectorsAlmostEqual(values.real.p_eff2, values.test.p_eff2, 'relative', 0.1);
+    assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.4);        
         
         
 	function testPeffLatent
