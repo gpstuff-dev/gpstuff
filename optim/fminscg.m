@@ -65,13 +65,13 @@ function [x, fval, exitflag, output, grad] = fminscg(fun, x, opt)
 %  See also OPTIMSET
 
 % Copyright (c) 1996,1997 Christopher M Bishop, Ian T Nabney
-% Copyright (c) 2005,2010 Aki Vehtari
+% Copyright (c) 2005,2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-% Set empty omptions to default values
+% Set empty options to default values
 defaultopt = struct( ...
     'DerivativeCheck','off', ...   
     'Display','final', ...
@@ -111,12 +111,15 @@ nparams = length(x);
 
 %  Check gradients
 if isequal(optimget(opt,'DerivativeCheck',defaultopt,'fast'),'on');
+  if display
+    disp('Checking gradients')
+  end
   derivativecheck(x, fun);
 end
 
 sigma0 = 1.0e-4;
 iter = 0;
-[fold,gradold] = feval(fun, x); % Initial function value and gradient
+[fold,gradold] = fun(x); % Initial function value and gradient
 gradnew = gradold;
 d = - gradnew;                  % Initial search direction.
 success = 1;                    % Force calculation of directional derivs.
@@ -125,11 +128,16 @@ nsuccess = 0;                   % nsuccess counts number of successes.
 lambdamin = 1.0e-15; 
 lambdamax = 1.0e100;
 j = 1;                          % j counts number of iterations.
+funcCount=1;
 if nargout >= 4
   output.f(j, :) = fold;
   output.x(j, :) = x;
   output.algorithm='fminscg';
-  output.funcCount=1;
+end
+
+if (display >= 3)
+  fprintf('  Iteration  Func-count     f(x)      Lambda\n');
+  fprintf('  %5.0f       %5.0f  %12.4g    \n',0,funcCount,fold);
 end
 
 % Main optimization loop.
@@ -148,14 +156,15 @@ while (j <= maxiter)
         disp('Gradient smaller than eps');
       end
       exitflag=1;
+      if nargin>4
+        output.funcCount=funcCount;
+      end
       return
     end
     sigma = sigma0/sqrt(kappa);
     xplus = x + sigma*d;
-    [tmp,gplus] = feval(fun, xplus);
-    if nargin>4
-      output.funcCount=output.funcCount+1;
-    end
+    [tmp,gplus] = fun(xplus);
+    funcCount=funcCount+1;
     gamma = (d*(gplus' - gradnew'))/sigma;
   end
 
@@ -169,13 +178,11 @@ while (j <= maxiter)
   
   % Calculate the comparison ratio.
   xnew = x + alpha*d;
-  fnew = feval(fun, xnew);
+  [fnew,gnew] = fun(xnew);
   if isinf(fnew) || isnan(fnew)
     warning('Function value at xnew not finite or a number')
   end
-  if nargin>4
-    output.funcCount=output.funcCount+1;
-  end
+  funcCount=funcCount+1;
   iter = iter + 1;
   Delta = 2*(fnew - fold)/(alpha*mu);
   if (Delta  >= 0)
@@ -194,7 +201,10 @@ while (j <= maxiter)
     output.x(j,:) = x;      % Current position
   end    
   if display >= 3
-    fprintf(1, 'Iter %4d  f(x) %10.5f  Scale %1.1e\n', j, fnow, lambda);
+    if rem(j,20)==0
+      fprintf('  Iteration  Func-count     f(x)      Lambda\n');
+    end
+    fprintf('  %5.0f       %5.0f  %12.4g  %12.4g    \n',j,funcCount,fnow,lambda);
   end
   
   if (success == 1)
@@ -207,12 +217,13 @@ while (j <= maxiter)
       if nargin <5
         fval=fnew;
       else
-        [fval,grad]=feval(fun, x);
-        if nargin>4
-          output.funcCount=output.funcCount+1;
-        end
+        [fval,grad]=fun(x);
+        funcCount=funcCount+1;
       end
       exitflag=2;
+      if nargin>4
+        output.funcCount=funcCount;
+      end
       return
       
     elseif max(abs(fnew-fold)) < tolfun
@@ -222,22 +233,19 @@ while (j <= maxiter)
       if nargin <5
         fval=fnew;
       else
-        [fval,grad]=feval(fun, x);
-        if nargin>4
-          output.funcCount=output.funcCount+1;
-        end
+        [fval,grad]=fun(x);
+        funcCount=funcCount+1;
       end
       exitflag=3;
+      if nargin>4
+        output.funcCount=funcCount;
+      end
       return
 
     else
       % Update variables for new position
-      fold = fnew;
-      gradold = gradnew;
-      [fval,gradnew] = feval(fun, x);
-      if nargin>4
-        output.funcCount=output.funcCount+1;
-      end
+      fval=fnow;
+      gradnew=gnew;
       % If the gradient is zero then we are done.
       if (gradnew*gradnew' < eps) && all(isreal(gradnew))
         if (display >= 2)
@@ -245,6 +253,9 @@ while (j <= maxiter)
         end
         grad=gradnew;
         exitflag=1;
+        if nargin>4
+          output.funcCount=funcCount;
+        end
         return
       end
     end
@@ -275,8 +286,12 @@ while (j <= maxiter)
       d = beta*d - gradnew;
     end
   end
+  
   j = j + 1;
   output.iterations=j;
+  fold = fnew;
+  gradold = gradnew;
+  
 end
 
 % If we get here, then we haven't terminated in the given number of 
@@ -286,10 +301,8 @@ if (display >= 1)
   if lambda<lambdalim
     disp('Warning: Maximum number of iterations has been exceeded');
   else
-    disp('Warning: Optimization stopped because scale parameter reached limit');
-  end
-  if lambda>1e5
-    warning('Scale > 1e5: Check that the analytic gradients are correct!')
+    disp(['Warning: Optimization stopped because scale parameter reached limit';...
+          '         Check that the analytic gradients are correct!            ']);
   end
 end
 grad=gradnew;
