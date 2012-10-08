@@ -62,8 +62,6 @@ function gp = gp_set(varargin)
 %                     defining covariance functions for ith latent process.
 %      savememory   - Option for memory saving. Used in gradient
 %                     calculations. The defaults is 'off'.
-%      selectedVariables - Defining used covariates for single latent
-%                     models. The default is all covariates.
 %
 %    The additional fields when the likelihood is not Gaussian
 %    (lik is not lik_gaussian or lik_gaussiansm) are:
