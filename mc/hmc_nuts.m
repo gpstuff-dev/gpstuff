@@ -17,8 +17,8 @@ function [samples, logp, diagn] = hmc_nuts(f, theta0, opt)
 %    opt.M       is the number of samples to generate.
 %    opt.Madapt  is the number of steps of burn-in/how long to run
 %                the dual averaging algorithm to fit the step size
-%                epsilon. Note that epsilon should be provided only
-%                when theres no adaptation (Madapt = 0).
+%                epsilon. Note that there is no need to provide
+%                opt.epsilon if doing adaptation.
 %    opt.theta0  is a 1-by-D vector with the desired initial setting
 %                of the parameters.
 %    opt.delta   should be between 0 and 1, and is a target HMC
@@ -106,8 +106,10 @@ kappa = 0.75;
 epsilonbar = 1;
 Hbar = 0;
 
-if isfield(opt, 'epsilon')
+if isfield(opt, 'epsilon') && ~isempty(opt.epsilon)
   epsilon = opt.epsilon(end);
+  
+  % Hbar & epsilonbar are needed when doing adaptation of step-length
   if isfield(opt, 'Hbar') && ~isempty(opt.Hbar)
     Hbar = opt.Hbar;
   end
@@ -267,11 +269,17 @@ end
 end
 
 function epsilon = find_reasonable_epsilon(theta0, grad0, logp0, f)
-epsilon = 1;
+epsilon = 0.1;
 r0 = randn(1, length(theta0));
 % Figure out what direction we should be moving epsilon.
 [tmp, rprime, tmp, logpprime] = leapfrog(theta0, r0, grad0, epsilon, f);
 acceptprob = exp(logpprime - logp0 - 0.5 * (rprime * rprime' - r0 * r0'));
+
+% Here we presume that energy function returns NaN, if energy cannot be
+% evaluated at the suggested hyperparameters so that we need smalled epsilon
+if isnan(acceptprob)
+  acceptprob=0;
+end
 a = 2 * (acceptprob > 0.5) - 1;
 % Keep moving epsilon in that direction until acceptprob crosses 0.5.
 while (acceptprob^a > 2^(-a))
