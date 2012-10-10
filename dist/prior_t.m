@@ -164,7 +164,7 @@ function lpg = prior_t_lpg(x, p)
     lpg = [lpg lpgmu];
   end
   if ~isempty(p.p.s2)
-    lpgs2 = (sum( -1./(2.*p.s2) +((p.nu + 1)*(p.mu - x)^2)./(2*p.s2*((p.mu-x)^2 + p.nu*p.s2))) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
+    lpgs2 = (sum( -1./(2.*p.s2) +((p.nu + 1).*(p.mu - x).^2)./(2.*p.s2.*((p.mu-x).^2 + p.nu.*p.s2))) + p.p.s2.fh.lpg(p.s2, p.p.s2)).*p.s2 + 1;
     lpg = [lpg lpgs2];
   end
   if ~isempty(p.p.nu)
