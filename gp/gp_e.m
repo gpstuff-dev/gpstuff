@@ -132,7 +132,11 @@ switch gp.type
       
       A = B\eye(size(B)) + H*KH;
       M = H'*b-y;
-      LN = chol(C + H'*B*H,'lower');
+      [LN, notpositivedefinite] = chol(C + H'*B*H,'lower');
+      if notpositivedefinite
+        [edata, eprior, e] = set_output_for_notpositivedefinite;
+        return
+      end
       MNM = LN\M;
       MNM = MNM'*MNM;
 %       N = C + H'*B*H;

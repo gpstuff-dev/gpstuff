@@ -338,7 +338,12 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu,'lower');
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -354,7 +359,12 @@ switch gp.type
     % A = K_uu+K_uf*inv(La)*K_fu
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;               % Ensure symmetry
-    A = chol(A,'upper');
+    [A, notpositivedefinite] = chol(A,'upper');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
     L = iLaKfu/A;
     b = y'./Lav' - (y'*L)*L';
     iKuuKuf = Luu'\(Luu\K_fu');
@@ -518,7 +528,12 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu,'lower');
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -537,7 +552,13 @@ switch gp.type
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
 
-    L = iLaKfu/chol(A,'upper');
+    [LA, notpositivedefinite] = chol(A,'upper');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
+    L = iLaKfu/LA;
     b = zeros(1,n);
     b_apu=(y'*L)*L';
     for i=1:length(ind)
@@ -737,7 +758,12 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu,'lower');
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -758,7 +784,13 @@ switch gp.type
     % A = chol(K_uu+K_uf*inv(La)*K_fu))
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
-    L = iLaKfu/chol(A,'upper');
+    [LA, notpositivedefinite] = chol(A,'upper');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
+    L = iLaKfu/LA;
     %b = y'/La - (y'*L)*L';
     b = ldlsolve(LD,y)' - (y'*L)*L';
     
@@ -964,7 +996,12 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    Luu = chol(K_uu)';
+    [Luu, notpositivedefinite] = chol(K_uu)';
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
     % Evaluate the Lambda (La)
     % Q_ff = K_fu*inv(K_uu)*K_fu'
     % Here we need only the diag(Q_ff), which is evaluated below
@@ -980,8 +1017,13 @@ switch gp.type
     % A = K_uu+K_uf*inv(La)*K_fu
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;               % Ensure symmetry
-    A = chol(A);
-    L = iLaKfu/A;
+    [LA, notpositivedefinite] = chol(A);
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
+    L = iLaKfu/LA;
     b = y'./Lav' - (y'*L)*L';
     iKuuKuf = Luu'\(Luu\K_fu');
     La = Lav;
@@ -1154,7 +1196,12 @@ switch gp.type
     m = size(Phi,2);
     
     A = eye(m,m) + Phi'*(S\Phi);
-    A = chol(A,'lower');
+    [LA, notpositivedefinite] = chol(A,'lower');
+    if notpositivedefinite
+      % If not positive definite, return NaN
+      g=NaN; gdata=NaN; gprior=NaN;
+      return;
+    end
     L = (S\Phi)/A';
 
     b = y'./Sv' - (y'*L)*L';
