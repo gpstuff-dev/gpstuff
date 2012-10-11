@@ -61,8 +61,8 @@ gpc=gp_set('lik',likc,'cf',cf,'jitterSigma2',1e-6,'latent_method','EP','latent_o
 
 % Set the options for the scaled conjugate optimization
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','MaxIter',100);
-gpz=gp_optim(gpz,x,yz,'opt',opt);
-gpc=gp_optim(gpc,xc,yc,'z',yec,'opt',opt);
+gpz=gp_optim(gpz,x,yz,'opt',opt,'optimf',@fminlbfgs);
+gpc=gp_optim(gpc,xc,yc,'z',yec,'opt',opt,'optimf',@fminlbfgs);
 
 % make prediction to the data points
 [Efz, Varfz] = gp_pred(gpz, x, yz, x);
@@ -78,20 +78,16 @@ subplot(1,2,1)
 G=repmat(NaN,size(X1));
 G(xii)=Efz(:);
 pcolor(X1,X2,G),shading flat
-%colormap(mapcolor(G)),
 colorbar
-%set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
 title('Posterior mean of latent zero process')
 
 subplot(1,2,2)
 G=repmat(NaN,size(X1));
-G(xii)=Efc(:);
+G(xii(ci))=Efc(:);
 pcolor(X1,X2,G),shading flat
-%colormap(mapcolor(G)),
 colorbar
-%set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
 title('Posterior mean of latent count process')

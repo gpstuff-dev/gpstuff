@@ -120,23 +120,6 @@ gpcf3 = gpcf_sexp('selectedVariables', 3,'lengthScale',[4], ...
 gpcf4 = gpcf_sexp('selectedVariables', [1 2],'lengthScale',[10 2], ...
                   'lengthScale_prior', pl, 'magnSigma2', 1, ...
                   'magnSigma2_prior', pm);
-% Internally selectedVariables feature has been implemented using
-% euclidean metric function and following lines would produce same model
-% Note that lengthScales are now stored in metric structure
-%metric1 = metric_euclidean('components', 1,'lengthScale',[10], ...
-%                           'lengthScale_prior', pl);
-%gpcf1 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric1);
-%metric2 = metric_euclidean('components', 2,'lengthScale',[10], ...
-%                           'lengthScale_prior', pl);
-%gpcf2 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric2);
-
-%metric3 = metric_euclidean('components', 3,'lengthScale',[4], ...
-%                           'lengthScale_prior', pl);
-%gpcf3 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric3);
-
-%metric4 = metric_euclidean('components',  [1 2],'lengthScale',[10  2], ...
-%                           'lengthScale_prior', pl);
-%gpcf4 = gpcf_sexp('magnSigma2', 1, 'magnSigma2_prior',pm, 'metric', metric4);
 
 % Initialize the likelihood structure
 lik = lik_binomial;

@@ -119,7 +119,6 @@ Eft2=Eft2(1:nt);Varft2=Varft2(1:nt);
 % PLOT THE DATA
 % plot lines indicating the derivative
 
-%m=shadedErrorBar(xt,Eft2(1:size(xt)),2*sqrt(Varft2(1:size(xt))),{'k','lineWidth',2});
 subplot(2,1,2)
 m=plot(xt,Eft2,'k','lineWidth',2);
 hold on
@@ -152,6 +151,5 @@ for i=1:2:length(ddx)
   hold on
   dhav=plot(ddx(i:i+1), ddy(i:i+1),'r','lineWidth',2);
 end
-%legend([m.mainLine m.patch h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
 legend([m m95 h hav dhav],'prediction','95%','f(x)','observations','der. obs.');
 

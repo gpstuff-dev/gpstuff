@@ -99,6 +99,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % Make predictions
 [Eft_la, Varft_la, lpyt_la, Eyt_la, Varyt_la] = ...
     gp_pred(gp, x, y, xt, 'yt', ones(size(xt,1),1) );
+
 % Plot some nice figures that show results
 
 % Visualise predictive probability p(ystar = 1) with grayscale
@@ -177,7 +178,7 @@ gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-6);
 
 % Sample using default method, that is, surrogate and elliptical slice samplers
 % these samplers are quite robust with default options
-[gp_rec,g,opt]=gp_mc(gp, x, y, 'nsamples', 220);
+[gp_rec,g,opt]=gp_mc(gp, x, y, 'nsamples', 220, 'display', 0);
 % Remove burn-in
 gp_rec=thin(gp_rec,21,2);
 

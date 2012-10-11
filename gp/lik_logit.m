@@ -207,6 +207,11 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
   RTOL = 1.e-6;
   ATOL = 1.e-10;
   
+  if isnan(minf) || isnan(maxf)
+    logM_0=NaN; m_1=NaN; sigm2hati1=NaN;
+    return
+  end
+  
   % Integrate with an adaptive Gauss-Kronrod quadrature
   % (Rasmussen and Nickish use in GPML interpolation between
   % a cumulative Gaussian scale mixture and linear tail
@@ -225,7 +230,7 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
     sigm2hati1 = m_2 - m_1.^2;
     if sigm2hati1 >= sigm2_i
-      warning('lik_logit_tilted_moments: sigm2hati1 >= sigm2_i');
+      %warning('lik_logit_tilted_moments: sigm2hati1 >= sigm2_i');
       sigm2hati1=sigm2_i-eps;
     end
   end
@@ -340,6 +345,10 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
   minf=modef-8*modes;
   maxf=modef+8*modes;
   modeld=ld(modef);
+  if isinf(modeld) || isnan(modeld)
+    minf=NaN;maxf=NaN;
+    return
+  end
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points

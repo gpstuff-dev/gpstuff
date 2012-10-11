@@ -477,40 +477,21 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
   
   Ey=[];
   Vary=[];
-  lpy = zeros(size(Ef));
-%   Ey = zeros(size(Ef));
-%   EVary = zeros(size(Ef));
-%   VarEy = zeros(size(Ef));
-%   
-% %   Evaluate Ey and Vary
-%   for i1=1:length(Ef)
-%     %%% With quadrature
-%     myy_i = Ef(i1);
-%     sigm_i = sqrt(Varf(i1));
-%     minf=myy_i-6*sigm_i;
-%     maxf=myy_i+6*sigm_i;
-%     
-%     F = @(f) exp(log(yc(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-%     Ey(i1) = quadgk(F,minf,maxf);
-%     
-%     F2 = @(f) exp(log(yc(i1).*exp(f)+((yc(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-%     EVary(i1) = quadgk(F2,minf,maxf);
-%     
-%     F3 = @(f) exp(2*log(yc(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-%     VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
-%   end
-%   Vary = EVary + VarEy;
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
   for i1=1:length(yt)
-    % get a function handle of the likelihood times posterior
-    % (likelihood * posterior = Negative-binomial * Gaussian)
-    % and useful integration limits
-    [pdf,minf,maxf]=init_loggaussian_norm(...
-      yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
-    % integrate over the f to get posterior predictive distribution
-    lpy(i1) = log(quadgk(pdf, minf, maxf));
+    if abs(Ef(i1))>700
+      lpy(i1) = NaN;
+    else
+      % get a function handle of the likelihood times posterior
+      % (likelihood * posterior = Negative-binomial * Gaussian)
+      % and useful integration limits
+      [pdf,minf,maxf]=init_loggaussian_norm(...
+        yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
+      % integrate over the f to get posterior predictive distribution
+      lpy(i1) = log(quadgk(pdf, minf, maxf));
+    end
   end
 end
 

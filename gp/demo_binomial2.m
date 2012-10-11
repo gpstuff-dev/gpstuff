@@ -237,21 +237,6 @@ fprintf('MCMC approximation         ')
 
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 
-% % set MC options
-% hmc_opt=hmc2_opt;
-% hmc_opt.steps=10;
-% hmc_opt.stepadj=0.5;
-% hmc_opt.nsamples=1;
-% hmc_opt.display=0;
-% latent_opt.display=0;
-% latent_opt.repeat = 5;
-% latent_opt.sample_latent_scale = 0.5;
-% hmc2('state', sum(100*clock))
-% 
-% % obtain MC samples
-% [rgp,g,opt]=gp_mc(gp, x, y, 'z', N, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 500, 'repeat', 2, 'display', 0);
-% rgp=thin(rgp,101);
-
 [rgp,g,opt] = gp_mc(gp, x, y, 'z', N, 'nsamples', 500, 'repeat', 4, 'display', 0);
 rgp=thin(rgp,101);
 
@@ -274,7 +259,6 @@ fs=Efts+randn(size(Efts)).*sqrt(Varfts);
 
 % Visualise the predictions
 
-figure;
 % Latent function
 subplot('Position',[0.69 0.7 0.3 0.25])
 hold on
