@@ -27,7 +27,6 @@ ntime=size(gp.lik.stime,2)-1;
 sd=gp.lik.stime(2)-gp.lik.stime(1);
 Sigm_tmp=Covf;
 Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
-% f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
 f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
 
 f1=f_star(:,1:ntime);
@@ -40,19 +39,26 @@ mST=zeros(size(eta2,2),1);
 if size(y,2) == 1
   % Integrate from zero to yt
   cumsumtmp=cumsum(la1'*sd)';
-  %   t=binsgeq(gp.lik.xtime,yt(i));
   for i1=1:size(eta2,2)
     Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
     mStime=mean(Stime);
-    for i=1:size(yt,1)
-      mST(i1,i)=1-mStime(binsgeq(gp.lik.xtime,yt(i)));
+    if size(yt,1)==size(y,1) && size(yt,2)==size(y,2)
+      % regular case y and yt are equal size
+      mST(i1,1)=1-mStime(binsgeq(gp.lik.xtime,yt(i1)));
+    elseif size(yt,1)==1 && size(yt,2)>=1
+      % evaluate each individual using multiple time points
+      for i=1:size(yt,2)
+        mST(i1,i)=1-mStime(binsgeq(gp.lik.xtime,yt(1,i)));
+      end
+    else
+      error('Size of yt is not equal to size of y or 1xT')
     end
   end
   p = mST;
 
 else
   if size(y,2) ~= size(yt,2)
-    error('Size(y,2) ~= Size(yt,2)');
+    error('size(y,2) ~= size(yt,2)');
   end
   
   % Integrate from yt(:,1) to yt(:,2)
@@ -61,25 +67,15 @@ else
   
   for i1 =1:size(eta2,2)
     if sb(i1) ~= se(i1)
-      % (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1)
       hb=(la1(:,sb(i1)+1:se(i1)-1)'*sd);
-      %   hb=[((gp.lik.stime(sb(i1)+1)-yt(i1,1)).*la1(:,sb(i1)))'; hb(1:se(i1)-1,:); ((yt(i1,2)-gp.lik.stime(se(i1))).*la1(:,se(i1)))'; hb(se(i1):end,:)];
       hb=[((gp.lik.stime(sb(i1)+1)-yt(i1,1)).*la1(:,sb(i1)))'; hb; ((yt(i1,2)-gp.lik.stime(se(i1))).*la1(:,se(i1)))'];
     else
       hb = la1(:, se(i1))'*(yt(i1,2) - yt(i1,1));
     end
     cumsumtmp=[zeros(nsamps, sb(i1)) cumsum(hb)'];
-    %- (lik.stime(sb(i1)+1)-yt(i1,1)).*la1(sb(i1)).*eta2(i1);
-    %   ind = binsgeq(gp.lik.xtime,yt(i1));
-    %   t=binsgeq(gp.lik.xtime,pp(i));
-    % for i1=1:size(eta2,2)
-    %   mh(i1,:)=mean(bsxfun(@times,hb',eta2(:,i1)));
     Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
     mStime=mean(Stime);
-    %   for i=1:size(pp,1)
-    %   mST(i1,1)=1-mStime(binsgeq(gp.lik.xtime,yt(i1,2)));
     mST(i1,1)=1-mStime(end);
-    %   end
   end
   p = mST;
   
