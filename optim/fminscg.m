@@ -79,7 +79,8 @@ defaultopt = struct( ...
     'TolFun',1e-6, ...
     'TolX',1e-6, ...
     'lambda', 10, ...
-    'lambdalim', 1e101); 
+    'lambdalim', 1e101, ...
+    'GradConstr', 'off'); 
 
 % If just 'defaults' passed in, return the default options in X
 if nargin==1 && nargout <= 1 && isequal(fun,'defaults')
@@ -106,6 +107,7 @@ tolfun = optimget(opt,'TolFun',defaultopt,'fast');
 tolx = optimget(opt,'TolX',defaultopt,'fast');
 lambda = optimget(opt,'lambda', defaultopt, 'fast');
 lambdalim = optimget(opt, 'lambdalim', defaultopt, 'fast');
+GradConstr = optimget(opt, 'GradConstr', defaultopt, 'fast');
 
 nparams = length(x);
 
@@ -118,26 +120,31 @@ if isequal(optimget(opt,'DerivativeCheck',defaultopt,'fast'),'on');
 end
 
 sigma0 = 1.0e-4;
-iter = 0;
 [fold,gradold] = fun(x); % Initial function value and gradient
+funcCount=1;
+gradCount=1;
 gradnew = gradold;
-d = - gradnew;                  % Initial search direction.
-success = 1;                    % Force calculation of directional derivs.
-nsuccess = 0;                   % nsuccess counts number of successes.
-% lambda = 10.0;                  % Initial scale parameter.
+d = - gradnew;           % Initial search direction.
+success = 1;             % Force calculation of directional derivs.
+nsuccess = 0;            % nsuccess counts number of successes.
 lambdamin = 1.0e-15; 
 lambdamax = 1.0e100;
-j = 1;                          % j counts number of iterations.
-funcCount=1;
+
+if (display >= 3)
+  if isequal(GradConstr,'on')
+    fprintf('  Iteration  Func-count  Grad-count    f(x)    Lambda\n');
+    fprintf('  %5.0f      %5.0f       %5.0f  %12.5g    \n',0,funcCount,gradCount,fold);
+  else
+    fprintf('  Iteration  Func-count      f(x)      Lambda\n');
+    fprintf('  %5.0f      %5.0f    %12.5g    \n',0,funcCount,fold);
+  end
+end
+
+j = 1;                   % j counts number of iterations.
 if nargout >= 4
   output.f(j, :) = fold;
   output.x(j, :) = x;
   output.algorithm='fminscg';
-end
-
-if (display >= 3)
-  fprintf('  Iteration  Func-count     f(x)      Lambda\n');
-  fprintf('  %5.0f       %5.0f  %12.4g    \n',0,funcCount,fold);
 end
 
 % Main optimization loop.
@@ -165,6 +172,7 @@ while (j <= maxiter)
     xplus = x + sigma*d;
     [tmp,gplus] = fun(xplus);
     funcCount=funcCount+1;
+    gradCount=gradCount+1;
     gamma = (d*(gplus' - gradnew'))/sigma;
   end
 
@@ -178,12 +186,33 @@ while (j <= maxiter)
   
   % Calculate the comparison ratio.
   xnew = x + alpha*d;
-  [fnew,gnew] = fun(xnew);
-  if isinf(fnew) || isnan(fnew)
-    warning('Function value at xnew not finite or a number')
+  if isequal(GradConstr,'on')
+    fnew = fun(xnew);
+    funcCount=funcCount+1;
+  else
+    [fnew,gnew] = fun(xnew);
+    funcCount=funcCount+1;
+    gradCount=gradCount+1;
   end
-  funcCount=funcCount+1;
-  iter = iter + 1;
+  while isinf(fnew) || isnan(fnew)
+    warning('Function value at xnew not finite or a number')
+    lambda = min(4.0*lambda, lambdamax);
+    delta = gamma + lambda*kappa;
+    if (delta <= 0)
+      delta = lambda*kappa;
+      lambda = lambda - gamma/kappa;
+    end
+    alpha = - mu/delta;
+    xnew = x + alpha*d;
+    if isequal(GradConstr,'on')
+      fnew = fun(xnew);
+      funcCount=funcCount+1;
+    else
+      [fnew,gnew] = fun(xnew);
+      funcCount=funcCount+1;
+      gradCount=gradCount+1;
+    end
+  end
   Delta = 2*(fnew - fold)/(alpha*mu);
   if (Delta  >= 0)
     success = 1;
@@ -202,9 +231,17 @@ while (j <= maxiter)
   end    
   if display >= 3
     if rem(j,20)==0
-      fprintf('  Iteration  Func-count     f(x)      Lambda\n');
+      if isequal(GradConstr,'on')
+        fprintf('  Iteration  Func-count  Grad-count    f(x)    Lambda\n');
+      else
+        fprintf('  Iteration  Func-count      f(x)    Lambda\n');
+      end
     end
-    fprintf('  %5.0f       %5.0f  %12.4g  %12.4g    \n',j,funcCount,fnow,lambda);
+    if isequal(GradConstr,'on')
+      fprintf('  %5.0f      %5.0f       %5.0f  %12.6g   %6.3g\n',j,funcCount,gradCount,fnow,lambda);
+    else
+      fprintf('  %5.0f      %5.0f    %12.6g   %6.3g\n',j,funcCount,fnow,lambda);
+    end
   end
   
   if (success == 1)
@@ -219,6 +256,7 @@ while (j <= maxiter)
       else
         [fval,grad]=fun(x);
         funcCount=funcCount+1;
+        gradCount=gradCount+1;
       end
       exitflag=2;
       if nargin>4
@@ -235,6 +273,7 @@ while (j <= maxiter)
       else
         [fval,grad]=fun(x);
         funcCount=funcCount+1;
+        gradCount=gradCount+1;
       end
       exitflag=3;
       if nargin>4
@@ -244,8 +283,18 @@ while (j <= maxiter)
 
     else
       % Update variables for new position
-      fval=fnow;
-      gradnew=gnew;
+      if isequal(GradConstr,'on')
+        fold = fnew;
+        gradold = gradnew;
+        [fval,gradnew] = feval(fun, x);
+        funcCount=funcCount+1;
+        gradCount=gradCount+1;
+      else
+        fold = fnew;
+        fval = fnew;
+        gradold = gradnew;
+        gradnew = gnew;
+      end
       % If the gradient is zero then we are done.
       if (gradnew*gradnew' < eps) && all(isreal(gradnew))
         if (display >= 2)
@@ -262,8 +311,7 @@ while (j <= maxiter)
   end
 
   % Adjust lambda according to comparison ratio.
-  % Adjust also, if fnew is not a number or finite
-  if (Delta < 0.25) || isnan(fnew) || isinf(fnew)
+  if (Delta < 0.25)
     lambda = min(4.0*lambda, lambdamax);
   end
   if (Delta > 0.75)
@@ -289,8 +337,6 @@ while (j <= maxiter)
   
   j = j + 1;
   output.iterations=j;
-  fold = fnew;
-  gradold = gradnew;
   
 end
 
