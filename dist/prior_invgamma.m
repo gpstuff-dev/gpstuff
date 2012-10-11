@@ -139,9 +139,9 @@ function rec = prior_invgamma_recappend(rec, ri, p)
 % The parameters are not sampled in any case.
   rec = rec;
   if ~isempty(p.p.sh)
-    rec.sh(ri) = p.sh;
+    rec.sh(ri,:) = p.sh;
   end
   if ~isempty(p.p.s)
-    rec.s(ri) = p.s;
+    rec.s(ri,:) = p.s;
   end
 end

@@ -139,9 +139,9 @@ function rec = prior_loggaussian_recappend(rec, ri, p)
 % The parameters are not sampled in any case.
   rec = rec;
   if ~isempty(p.p.mu)
-    rec.mu(ri) = p.mu;
+    rec.mu(ri,:) = p.mu;
   end
   if ~isempty(p.p.s2)
-    rec.s2(ri) = p.s2;
+    rec.s2(ri,:) = p.s2;
   end
 end    

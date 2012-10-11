@@ -134,9 +134,9 @@ function rec = prior_laplace_recappend(rec, ri, p)
 % The parameters are not sampled in any case.
   rec = rec;
   if ~isempty(p.p.mu)
-    rec.mu(ri) = p.mu;
+    rec.mu(ri,:) = p.mu;
   end
   if ~isempty(p.p.s)
-    rec.s(ri) = p.s;
+    rec.s(ri,:) = p.s;
   end
 end    
