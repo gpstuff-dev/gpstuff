@@ -438,6 +438,16 @@ if ~isempty(strfind(gp.infer_params, 'inducing'))
   end
 end
 
+% ============================================================
+% Evaluate the prior contribution to the error from mean functions
+% ============================================================
+if ~isempty(strfind(gp.infer_params, 'mean'))
+  for i=1:length(gp.meanf)
+    gpmf = gp.meanf{i};
+    eprior = eprior - gpmf.fh.lp(gpmf);
+  end
+end
+
 e = edata + eprior;
 
 function [edata, eprior, e] = set_output_for_notpositivedefinite()
