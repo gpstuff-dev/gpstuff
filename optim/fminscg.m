@@ -79,7 +79,7 @@ defaultopt = struct( ...
     'TolFun',1e-6, ...
     'TolX',1e-6, ...
     'lambda', 10, ...
-    'lambdalim', 1e101, ...
+    'lambdalim', 1e20, ...
     'GradConstr', 'off'); 
 
 % If just 'defaults' passed in, return the default options in X
@@ -119,6 +119,14 @@ if isequal(optimget(opt,'DerivativeCheck',defaultopt,'fast'),'on');
   derivativecheck(x, fun);
 end
 
+if (display >= 3)
+  if isequal(GradConstr,'on')
+    fprintf('  Iteration  Func-count  Grad-count    f(x)    Lambda\n');
+  else
+    fprintf('  Iteration  Func-count      f(x)      Lambda\n');
+  end
+end
+
 sigma0 = 1.0e-4;
 [fold,gradold] = fun(x); % Initial function value and gradient
 funcCount=1;
@@ -132,10 +140,8 @@ lambdamax = 1.0e100;
 
 if (display >= 3)
   if isequal(GradConstr,'on')
-    fprintf('  Iteration  Func-count  Grad-count    f(x)    Lambda\n');
     fprintf('  %5.0f      %5.0f       %5.0f  %12.5g    \n',0,funcCount,gradCount,fold);
   else
-    fprintf('  Iteration  Func-count      f(x)      Lambda\n');
     fprintf('  %5.0f      %5.0f    %12.5g    \n',0,funcCount,fold);
   end
 end
@@ -320,7 +326,14 @@ while (j <= maxiter)
   
   % If scale parameter is at its limit, stop optimization
   if lambda >= lambdalim
-    break;
+    exitflag=0;
+    if (display >= 1)
+      disp(['Warning: Optimization stopped because lambda parameter reached limit';...
+            '         Check that the analytic gradients are correct!             ']);
+    end
+    grad=gradnew;
+    fval=fnew;
+    return
   end
 
   % Update search direction using Polak-Ribiere formula, or re-start 
@@ -344,12 +357,7 @@ end
 % iterations.
 exitflag=0;
 if (display >= 1)
-  if lambda<lambdalim
-    disp('Warning: Maximum number of iterations has been exceeded');
-  else
-    disp(['Warning: Optimization stopped because scale parameter reached limit';...
-          '         Check that the analytic gradients are correct!            ']);
-  end
+  disp('Warning: Maximum number of iterations has been exceeded');
 end
 grad=gradnew;
 fval=fnew;
