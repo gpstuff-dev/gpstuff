@@ -432,7 +432,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   end
   % First optimise hyperparameters using Laplace approximation
   gp = gp_set(gp, 'latent_method', 'Laplace');
-  opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display',display);
+  opt=optimset('TolFun',1e-2,'TolX',1e-3,'Display',display);
   
   if ~isempty(speedup) && strcmp(speedup, 'on')
     gp.latent_opt.gridn=gridn;
@@ -453,7 +453,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     end
   end
   
-  gp=gp_optim(gp,xx,yy,'opt',opt);
+  gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
   
   if strcmpi(latent_method,'MCMC')

@@ -249,7 +249,9 @@ end
                   iKHb_m=zeros(n,1);
                 else
                   K=K+H'*B_m*H;
+                  ws=warning('off','MATLAB:singularMatrix');
                   iKHb_m=K\Hb_m;
+                  warning(ws);
                 end
               end
               
@@ -342,7 +344,11 @@ end
                   Ltmp=bsxfun(@times,Ztsq.*sqrt(ny).*g2sq,bsxfun(@times,Vt,sqrt(Dt)'));
                   Ltmp=Ltmp'*Ltmp;
                   Ltmp(1:(size(Dt,1)+1):end)=Ltmp(1:(size(Dt,1)+1):end)+1;
-                  L=chol(Ltmp,'lower');
+                  [L,notpositivedefinite] = chol(Ltmp,'lower');
+                  if notpositivedefinite
+                    [edata,e,eprior,f,L,a,E,M,p,ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
                   
                   EKg=ny*g2.*(Zt.*Kg)-sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*(Vt*(Dtsq.*(L'\(L\(Dtsq.*(Vt'*(sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*Kg)))))))))));
                   E1=ny*g2.*(Zt.*ones(n,1))-sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*(Vt*(Dtsq.*(L'\(L\(Dtsq.*(Vt'*(sqrt(ny)*g2sq.*(Zt.*(sqrt(ny)*g2sq.*ones(n,1))))))))))));
