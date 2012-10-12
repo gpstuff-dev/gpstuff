@@ -95,6 +95,7 @@ function lik = lik_t(varargin)
     lik.fh.siteDeriv2 = @lik_t_siteDeriv2;    
     lik.fh.optimizef = @lik_t_optimizef;
     lik.fh.upfact = @lik_t_upfact;
+    lik.fh.invlink = @lik_t_invlink;
     lik.fh.predy = @lik_t_predy;
     lik.fh.predprcty = @lik_t_predprcty;
     lik.fh.recappend = @lik_t_recappend;
@@ -905,6 +906,10 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
   
   iter = 1;
   sigma2 = gp.lik.sigma2;
+%  if sigma2==0
+%    f=NaN;a=NaN;
+%    return
+%  end
   nu = gp.lik.nu;
   n = length(y);
   
@@ -913,7 +918,12 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
       iV = ones(n,1)./sigma2;
       siV = sqrt(iV);
       B = eye(n) + siV*siV'.*K;
-      L = chol(B)';
+      [L,notpositivedefinite] = chol(B);
+      if notpositivedefinite
+        f=NaN;a=NaN;
+        return
+      end
+      B=B';
       b = iV.*y;
       a = b - siV.*(L'\(L\(siV.*(K*b))));
       f = K*a;
@@ -1085,6 +1095,19 @@ function prctys = lik_t_predprcty(lik, Ef, Varf, zt, prcty)
   end
 end
 
+function mu = lik_t_invlink(lik, f, z)
+%LIK_T_INVLINK  Returns values of inverse link function
+%             
+%  Description 
+%    P = LIK_T_INVLINK(LIK, F) takes a likelihood structure LIK and
+%    latent values F and returns the values MU of inverse link function.
+%    This subfunction is needed when using gp_predprctmu. 
+%
+%     See also
+%     LIK_T_LL, LIK_T_PREDY
+  
+  mu = f;
+end
 
 function reclik = lik_t_recappend(reclik, ri, lik)
 %RECAPPEND  Record append
@@ -1117,6 +1140,7 @@ function reclik = lik_t_recappend(reclik, ri, lik)
     reclik.fh.siteDeriv2 = @lik_t_siteDeriv2;
     reclik.fh.optimizef = @lik_t_optimizef;
     reclik.fh.upfact = @lik_t_upfact;
+    reclik.fh.invlink = @lik_t_invlink;
     reclik.fh.predy = @lik_t_predy;
     reclik.fh.predprcty = @lik_t_predprcty;
     reclik.fh.recappend = @lik_t_recappend;

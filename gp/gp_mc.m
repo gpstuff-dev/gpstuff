@@ -18,7 +18,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                    (that is every repeat'th sample is stored). Default 1.
 %      nsamples    - Number of samples to be returned
 %      display     - Defines if sampling information is printed, 1=yes, 0=no.
-%                    Default 1.
+%                    Default 1. If >1, only every nth iteration is displayed.
 %      hmc_opt     - Options structure for HMC sampler (see hmc2_opt). 
 %                    When this is given the covariance function and
 %                    likelihood parameters are sampled with hmc2
@@ -405,7 +405,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     record=recappend(record);
     
     % Display some statistics  THIS COULD BE DONE NICER ALSO...
-    if opt.display
+    if opt.display && rem(ri,opt.display)==0
       fprintf(' %4d  %.3f  ',ri, record.etr(ri,1));
       if ~isempty(opt.hmc_opt)
         fprintf(' %.1e  ',record.hmcrejects(ri));

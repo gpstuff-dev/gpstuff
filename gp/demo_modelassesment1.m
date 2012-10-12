@@ -16,7 +16,7 @@
 %     2) data analysis with FIC approximation
 %     3) data analysis with PIC approximation
 %
-%  See also DEMO_REGRESSION1, DEMO_SPARSERE1
+%  See also DEMO_REGRESSION1, DEMO_REGRESSION_SPARSE1
 
 % Copyright (c) 2009-2010 Jarno Vanhatalo
 % Copyright (c) 2010-2012 Aki Vehtari
@@ -83,7 +83,7 @@ mrmse_cv(1) = cvres.mrmse_cv;
 disp(' MCMC integration over the parameters')
 
 % Do the sampling (this takes about 1 minute)
-[rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 220);
+[rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 220, 'display', 20);
 
 % After sampling delete the burn-in and thin the sample chain
 rfull = thin(rfull, 21, 2);
@@ -178,7 +178,7 @@ mrmse_cv(4) = cvres.mrmse_cv;
 disp(' MCMC integration over the parameters')
 
 % Do the sampling (this takes about 1 minute)
-rfic = gp_mc(gp_fic, x, y, 'nsamples', 220);
+rfic = gp_mc(gp_fic, x, y, 'nsamples', 220, 'display', 20);
 
 % After sampling we delete the burn-in and thin the sample chain
 rfic = thin(rfic, 21, 2);
@@ -196,7 +196,7 @@ WAICG(5) = gp_waic(rfic,x,y, 'method', 'G');
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 clear opt
-opt.nsamples= 50; 
+opt.nsamples= 50; opt.display=20; 
 disp(' MCMC integration over the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt);
 mlpd_cv(5) = cvres.mlpd_cv;
@@ -282,7 +282,7 @@ mrmse_cv(7) = cvres.mrmse_cv;
 disp(' MCMC integration over the parameters')
 
 % Do the sampling (this takes about 1 minute)
-rpic = gp_mc(gp_pic, x, y, 'nsamples', 220);
+rpic = gp_mc(gp_pic, x, y, 'nsamples', 220, 'display', 20);
 
 % After sampling we delete the burn-in and thin the sample chain
 rpic = rmfield(rpic, 'tr_index');
@@ -302,7 +302,7 @@ WAICG(8) = gp_waic(rpic, x, y, 'method', 'G');
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size. We also set the save option to 0.
 clear opt
-opt.nsamples= 50; 
+opt.nsamples= 50; opt.display=20;
 disp(' MCMC integration over the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt);
 mlpd_cv(8) = cvres.mlpd_cv;
@@ -332,26 +332,31 @@ mrmse_cv(9) = cvres.mrmse_cv;
 % PART 4 Print the results
 %========================================================
 disp('Summary of the results')
-S = '       ';
+S = '      ';
 for i = 1:length(models)
     S = [S '  ' models{i}];
 end
 
-S = sprintf([S '\n DIC_h   %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], DIC);
-S = sprintf([S '\n DIC_a   %.2f     %.2f     %.2f    %.2f     %.2f   %.2f   %.2f    %.2f     %.2f'], DIC2);
-S = sprintf([S '\n DIC_l  %.2f      %.2f      %.2f    %.2f    %.2f      %.2f   %.2f     %.2f     %.2f'], DIC_latent);
-S = sprintf([S '\n peff_h  %.2f       %.2f      %.2f     %.2f     %.2f      %.2f    %.2f      %.2f     %.2f'], p_eff);
-S = sprintf([S '\n peff_a  %.2f      %.2f     %.2f     %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], p_eff2);
-S = sprintf([S '\n peff_l  %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent);
-S = sprintf([S '\n peff_l2 %.2f      %.2f      %.2f     %.2f    %.2f      %.2f    %.2f     %.2f     %.2f'], p_eff_latent2);
-S = sprintf([S '\n WAIC_V  %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAICV);
-S = sprintf([S '\n WAIC_G  %.2f      %.2f      %.2f    %.2f     %.2f     %.2f   %.2f     %.2f     %.2f'], WAICG);
+S = sprintf([S '\n mlpd    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], mlpd_cv);
+S = sprintf([S '\n rmse    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], mrmse_cv);
 S = sprintf([S '\n ']);
-S = sprintf([S '\n mlpd    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f    %.2f    %.2f    %.2f'], mlpd_cv);
-S = sprintf([S '\n rmse    %.2f       %.2f      %.2f     %.2f     %.2f      %.2f     %.2f     %.2f     %.2f'], mrmse_cv);
+S = sprintf([S '\n WAIC_V  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], WAICV);
+S = sprintf([S '\n WAIC_G  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], WAICG);
+S = sprintf([S '\n ']);
+S = sprintf([S '\n DIC_h   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC);
+S = sprintf([S '\n DIC_a   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC2);
+S = sprintf([S '\n DIC_l   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC_latent);
+S = sprintf([S '\n peff_h  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff);
+S = sprintf([S '\n peff_a  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff2);
+S = sprintf([S '\n peff_l  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff_latent);
+S = sprintf([S '\n peff_l2 %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff_latent2);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n The notation is as follows:']);
+S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
+S = sprintf([S '\n mrmse   = mean root mean squared error from the 10-fold CV. ']);
+S = sprintf([S '\n WAIC_V  = WAIC via variance method ']);
+S = sprintf([S '\n WAIC_G  = WAIC via Gibbs training utility method ']);
 S = sprintf([S '\n DIC_h   = DIC with focus on parameters. ']);
 S = sprintf([S '\n DIC_a   = DIC with focus on parameters and latent variables (all). ']);
 S = sprintf([S '\n DIC_l   = DIC with focus on latent variables. ']);
@@ -359,8 +364,4 @@ S = sprintf([S '\n peff_h  = effective number of parameters (latent variables ma
 S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
 S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
 S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
-S = sprintf([S '\n WAIC_V  = WAIC via variance method ']);
-S = sprintf([S '\n WAIC_G  = WAIC via Gibbs training utility method ']);
-S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
-S = sprintf([S '\n mrmse   = mean root mean squared error from the 10-fold CV. ']);
 S = sprintf([S '\n '])

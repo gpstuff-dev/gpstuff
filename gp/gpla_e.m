@@ -377,6 +377,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               % lik_t file.
             case 'lik_specific'
               [f, a] = gp.lik.fh.optimizef(gp, y, K);
+              if isnan(f)
+                [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                return
+              end
             otherwise 
               error('gpla_e: Unknown optimization method ! ')
           end
@@ -562,6 +566,10 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               % lik_t file.
             case 'lik_specific'
               [f, a] = gp.lik.fh.optimizef(gp, y, K_uu, Lav, K_fu);
+              if isnan(f)
+                [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                return
+              end
             otherwise 
               error('gpla_e: Unknown optimization method ! ')
           end

@@ -251,7 +251,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       nu_i=Sigm(i1,i1)^-1*mf(i1)-nutilde(i1);
                       
                       if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
-                        fprintf('negative cavity at site %d \n', i1)
+                        fprintf('GPEP_E: negative cavity at site %d \n', i1)
                       end
                     end
                     mu_i=nu_i/tau_i;
@@ -259,7 +259,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     
                     % marginal moments
                     [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                    
+                    if isnan(logM0(i1))
+                      [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                      return
+                    end
                     % update site parameters
                     deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
                     tautilde(i1)=tautilde(i1)+deltatautilde;
@@ -1453,7 +1456,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           
           % The last things to do
           if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
-            fprintf('   Number of iterations in EP: %d \n', iter-1)
+            fprintf('GPEP_E: Number of iterations in EP: %d \n', iter-1)
           end
           
           e = edata + eprior;
@@ -1790,6 +1793,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               % check cavity
               pcavity=all( (1./Vf2-eta.*tau_q2 )>=tauc_min);
               
+              g2=NaN;
               if isempty(L2)
                 % the q-distribution not defined (the posterior covariance
                 % not positive definite)
@@ -1892,12 +1896,12 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 df_new=0;
                 if size(rec_sadj,1)>1
                   if exist('csape','file')==2
-                    if g2>0
+                    if g2>0 
                       % adjust the step size with spline interpolation
                       pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' rec_sadj(end,3)],[1 1]);
                       [tmp,df_new]=fnmin(pp,[0 df]);
                       
-                    else
+                    elseif isfinite(g2)
                       % extrapolate with Hessian end-conditions
                       H=(rec_sadj(end,3)-rec_sadj(end-1,3))/(rec_sadj(end,1)-rec_sadj(end-1,1));
                       pp=csape(rec_sadj(:,1)',[rec_sadj(1,3) rec_sadj(:,2)' H],[1 2]);
@@ -2157,10 +2161,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           
           % the current energy is not finite or no convergence
           if ~isfinite(e)
-            fprintf('Initial energy not defined, check the hyperparameters\n')
+            fprintf('GPEP_E: Initial energy not defined, check the hyperparameters\n')
           elseif ~convergence
-            fprintf('No convergence, %d iter, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
-            fprintf('Check the hyperparameters, increase maxiter and/or max_ninner, or decrease tolInner\n')
+            fprintf('GPEP_E: No convergence, %d iter, e=%.6f, dm=%.4f, dV=%.4f, df=%6f, eta=%.2f\n',i1,e,tol_m(1),tol_m(2),df,eta(1))
+            fprintf('GPEP_E: Check the hyperparameters, increase maxiter and/or max_ninner, or decrease tolInner\n')
           end
           edata=-e; % the data contribution to the marginal posterior density
           
