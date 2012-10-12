@@ -117,12 +117,7 @@ for i1=find(deltadist)
   covx(i1,i1)=pdi*(1-pdi);
 end
 
-stream = RandStream('mrg32k3a');
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  prevstream = RandStream.setDefaultStream(stream);
-else
-  prevstream = RandStream.setGlobalStream(stream);
-end
+prevstream=setrandstream(0, 'mrg32k3a');
 
 % loop through the input variables
 for k1=1:nin
@@ -261,8 +256,4 @@ if nargout>1
   end
 end
 
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(prevstream);
-else
-  RandStream.setGlobalStream(prevstream);
-end
+setrandstream(prevstream);
