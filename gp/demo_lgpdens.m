@@ -28,13 +28,7 @@
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
-stream = RandStream('mrg32k3a');
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(stream);
-else
-  RandStream.setGlobalStream(stream);
-end
-
+prevstream=setrandstream(0,'mrg32k3a');
 
 % =====================================
 % 1) 1D-examples
@@ -210,3 +204,5 @@ disp(['Laplace: ' num2str(sum(p0.*log(pla)))])
 disp(['MCMC: ' num2str(sum(p0.*log(pmc)))])
 disp(['ksdensity: ' num2str(sum(p0.*log(pks)))])
 
+% Set back initial random stream
+setrandstream(prevstream);

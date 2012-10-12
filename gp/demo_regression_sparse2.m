@@ -50,12 +50,7 @@
 % License.txt, included with the software, for details.
 
 % Set randomstream for reproducing same results
-stream0 = RandStream('mt19937ar','Seed',0);
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  prevstream = RandStream.setDefaultStream(stream0);
-else
-  prevstream = RandStream.setGlobalStream(stream0);
-end
+prevstream=setrandstream();
 
 % Start by creating 1D data
 xx=linspace(1,10,901);
@@ -201,8 +196,4 @@ plot(Xu, -2.8, 'bx', 'MarkerSize', 5, 'LineWidth', 2)
 title('DTC')
 
 % Set back initial random stream
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(prevstream);
-else
-  RandStream.setGlobalStream(prevstream);
-end
+setrandstream([],prevstream);
