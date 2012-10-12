@@ -60,7 +60,7 @@ else
     
     % get substream
     if rsubstream > 0
-        prevstream(0,'mrg32k3a');
+        prevstream=setrandstream(0,'mrg32k3a');
         stream.Substream = rsubstream;
     end
     
