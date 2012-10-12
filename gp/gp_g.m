@@ -996,7 +996,7 @@ switch gp.type
     K_fu = gp_cov(gp, x, u);         % f x u
     K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
     K_uu = (K_uu+K_uu')./2;          % ensure the symmetry of K_uu
-    [Luu, notpositivedefinite] = chol(K_uu)';
+    [Luu, notpositivedefinite] = chol(K_uu,'lower');
     if notpositivedefinite
       % If not positive definite, return NaN
       g=NaN; gdata=NaN; gprior=NaN;
