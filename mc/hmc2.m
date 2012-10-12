@@ -328,11 +328,7 @@ function state = get_state(f)
 %                    (including momentum)
 
 global HMC_MOM
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  state.stream=RandStream.getDefaultStream;
-else
-  state.stream=RandStream.getGlobalStream;
-end
+state.stream=setrandstream();
 state.streamstate = state.stream.State;
 state.mom = HMC_MOM;
 return
@@ -346,12 +342,7 @@ function set_state(f, x)
 %          or just set randn and rand with integer argument.
 global HMC_MOM
 if isnumeric(x)
-  s = RandStream('mt19937ar','Seed',x);
-  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-    RandStream.setDefaultStream(s);
-  else
-    RandStream.setGlobalStream(s);
-  end
+  setrandstream(x);
 else
   if ~isstruct(x)
     error('Second argument to hmc must be number or state structure');
@@ -360,11 +351,7 @@ else
       | ~isfield(x, 'mom'))
     error('Second argument to hmc must contain correct fields')
   end
-  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-    RandStream.setDefaultStream(x.stream);
-  else
-    RandStream.setGlobalStream(x.stream);
-  end
+  setrandstream(x.stream);
   x.State=x.streamstate;
   HMC_MOM = x.mom;
 end
