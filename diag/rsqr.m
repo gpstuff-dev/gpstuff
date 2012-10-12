@@ -74,12 +74,7 @@ if model_based_estimator
         
         % get substream
         if rsubstream > 0
-            stream = RandStream('mrg32k3a');
-            if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-                prevstream=RandStream.setDefaultStream(stream);
-            else
-                prevstream=RandStream.setGlobalStream(stream);
-            end
+            prevstream=setrandstream(0,'mrg32k3a');
             stream.Substream = rsubstream;
         end
         
@@ -94,11 +89,7 @@ if model_based_estimator
         
         % set RandStream back to previous
         if rsubstream > 0
-            if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-                RandStream.setDefaultStream(prevstream);
-            else
-                RandStream.setGlobalStream(prevstream);
-            end
+            setrandstream(prevstream);
         end
     end
 else
@@ -129,13 +120,7 @@ else
         
         % get substream
         if rsubstream > 0
-            stream = RandStream('mrg32k3a');
-            
-            if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-                prevstream=RandStream.setDefaultStream(stream);
-            else
-                prevstream=RandStream.setGlobalStream(stream);
-            end
+            prevstream=setrandstream(0,'mrg32k3a');
             stream.Substream = rsubstream;
         end
         
@@ -144,11 +129,7 @@ else
         
         % set RandStream back to previous
         if rsubstream > 0
-            if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-                RandStream.setDefaultStream(prevstream);
-            else
-                RandStream.setGlobalStream(prevstream);
-            end
+            setrandstream(prevstream);
         end
         
         % weights over n sum to one, but we need means over n_events and n_nonevents

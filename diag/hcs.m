@@ -60,13 +60,7 @@ else
     
     % get substream
     if rsubstream > 0
-        stream = RandStream('mrg32k3a');
-        
-        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-            prevstream=RandStream.setDefaultStream(stream);
-        else
-            prevstream=RandStream.setGlobalStream(stream);
-        end
+        prevstream(0,'mrg32k3a');
         stream.Substream = rsubstream;
     end
     
@@ -75,11 +69,7 @@ else
     
     % set RandStream back to previous
     if rsubstream > 0
-        if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-            RandStream.setDefaultStream(prevstream);
-        else
-            RandStream.setGlobalStream(prevstream);
-        end;
+        setrandstream(prevstream);
     end
     
     % same algorithm as above, now with weights
