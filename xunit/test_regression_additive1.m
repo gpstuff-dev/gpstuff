@@ -10,12 +10,7 @@ initTestSuite;
 function testDemo
    % Set random number stream so that test failing isn't because randomness.
    % Run demo & save test values.
-   stream0 = RandStream('mt19937ar','Seed',0);
-   if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-     prevstream = RandStream.setDefaultStream(stream0);
-   else
-     prevstream = RandStream.setGlobalStream(stream0);
-   end
+   prevstream=setrandstream(0);
    
    disp('Running: demo_regression_additive1')
    demo_regression_additive1
@@ -29,11 +24,7 @@ function testDemo
      'Eft_csfic', 'Varft_csfic');
    
    % Set back initial random stream
-   if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-     RandStream.setDefaultStream(prevstream);
-   else
-     RandStream.setGlobalStream(prevstream);
-   end
+   setrandstream(prevstream);
    drawnow;clear;close all
     
 % Compare test values to real values.

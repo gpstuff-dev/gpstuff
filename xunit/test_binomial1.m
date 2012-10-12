@@ -13,13 +13,7 @@ initTestSuite;
   function testDemo
     % Set random number stream so that the test failing isn't because
     % randomness. Run demo & save test values.
-    stream0 = RandStream('mt19937ar','Seed',0);
-    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-      prevstream = RandStream.setDefaultStream(stream0);
-    else
-      prevstream = RandStream.setGlobalStream(stream0);
-    end
-    
+    prevstream=setrandstream(0);    
     disp('Running: demo_binomial1')
     demo_binomial1
     path = which('test_binomial1');
@@ -31,11 +25,7 @@ initTestSuite;
     save(path, 'Eyt_la', 'Varyt_la', 'lpyt_la');
     
     % Set back initial random stream
-    if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-      RandStream.setDefaultStream(prevstream);
-    else
-      RandStream.setGlobalStream(prevstream);
-    end
+    setrandstream(prevstream);
     drawnow;clear;close all
 
 

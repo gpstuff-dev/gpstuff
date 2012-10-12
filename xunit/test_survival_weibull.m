@@ -12,12 +12,7 @@ initTestSuite;
 function testDemo
 % Set random number stream so that failing isn't because randomness. Run
 % demo & save test values.
-stream0 = RandStream('mt19937ar','Seed',0);
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  prevstream = RandStream.setDefaultStream(stream0);
-else
-  prevstream = RandStream.setGlobalStream(stream0);
-end
+prevstream=setrandstream(0);
 
 disp('Running: demo_survival_weibull')
 demo_survival_weibull;
@@ -30,11 +25,7 @@ path = strcat(path, '/testSurvival_weibull');
 save(path, 'Ef1', 'Ef2', 'Varf1', 'Varf2');
 
 % Set back initial random stream
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(prevstream);
-else
-  RandStream.setGlobalStream(prevstream);
-end
+setrandstream(prevstream);
 drawnow;clear;close all
 
 % Compare test values to real values.

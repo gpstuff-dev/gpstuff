@@ -11,12 +11,7 @@ initTestSuite;
 function testDemo
 % Set random number stream so that failing isn't because randomness. Run
 % demo & save test values.
-stream0 = RandStream('mt19937ar','Seed',0);
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  prevstream = RandStream.setDefaultStream(stream0);
-else
-  prevstream = RandStream.setGlobalStream(stream0);
-end
+prevstream=setrandstream(0);
 
 disp('Running: demo_spatial1')
 demo_spatial1
@@ -31,12 +26,7 @@ path = strcat(path, '/testSpatial1');
 save(path, 'Elth', 'Elth2', 'Ef', 'Varf');
 
 % Set back initial random stream
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(prevstream);
-else
-  RandStream.setGlobalStream(prevstream);
-end
-drawnow;clear;close all
+setrandstream(prevstream);
 
 % Compare test values to real values.
 

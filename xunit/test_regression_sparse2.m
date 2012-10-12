@@ -10,12 +10,7 @@ initTestSuite;
 function testDemo
 % Set random number stream so that failing isn't because randomness. Run
 % demo & save test values.
-stream0 = RandStream('mt19937ar','Seed',0);
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  prevstream = RandStream.setDefaultStream(stream0);
-else
-  prevstream = RandStream.setGlobalStream(stream0);
-end
+prevstream=setrandstream(0);
 
 disp('Running: demo_regression_sparse2')
 demo_regression_sparse2
@@ -32,11 +27,7 @@ path = strcat(path, '/testRegression_sparse2');
 save(path, 'Eft_full', 'Eft_var', 'Varft_full', 'Varft_var');
 
 % Set back initial random stream
-if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
-  RandStream.setDefaultStream(prevstream);
-else
-  RandStream.setGlobalStream(prevstream);
-end
+setrandstream(prevstream);
 drawnow;clear;close all
 
 % Compare test values to real values.
