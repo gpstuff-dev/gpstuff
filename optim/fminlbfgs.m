@@ -93,8 +93,7 @@ function [x,fval,exitflag,output,grad]=fminlbfgs(funfcn,x_init,optim)
 %    EXITFLAG,
 %      Possible values of EXITFLAG, and the corresponding exit
 %      conditions are
-%        1, 'Change in the objective function value was less than
-%            the specified tolerance TolFun.';
+%        1, 'Change in the objective function value was less than TolFun.';
 %        2, 'Change in x was smaller than the specified tolerance TolX.';
 %        3, 'Magnitude of gradient smaller than the specified tolerance';
 %        4, 'Boundary fminimum reached.';
@@ -103,7 +102,7 @@ function [x,fval,exitflag,output,grad]=fminlbfgs(funfcn,x_init,optim)
 %            options.FunEvals.';
 %       -1, 'Algorithm was terminated by the output function.';
 %       -2, 'Line search cannot find an acceptable point along the
-%            current search';
+%            current search direction';
 %
 %   Examples
 %       options = optimset('GradObj','on');
@@ -116,7 +115,7 @@ function [x,fval,exitflag,output,grad]=fminlbfgs(funfcn,x_init,optim)
 %
 %  See also OPTIMSET, FMINSEARCH, FMINBND, FMINCON, FMINUNC, @, INLINE.
 %
-%  Function is written by D.Kroon University of Twente (March 2009)
+%  Function is written by D.Kroon University of Twente (Updated Nov. 2010)
 
 % 2010-10-29 Aki Vehtari : GradConstr is 'off' by default.
 % 2011-9-28 Ville Tolvanen : Reduce step size until function returns finite
@@ -204,16 +203,30 @@ data.timeTotal=tic;
   end
 
   if(optim.HessUpdate(1)=='l')
-    data.deltaX=zeros(data.numberOfVariables,optim.StoreN);
-    data.deltaG=zeros(data.numberOfVariables,optim.StoreN);
-    data.saveD=zeros(data.numberOfVariables,optim.StoreN);
+    succes=false;
+    while(~succes)
+      try
+        data.deltaX=zeros(data.numberOfVariables,optim.StoreN);
+        data.deltaG=zeros(data.numberOfVariables,optim.StoreN);
+        data.saveD=zeros(data.numberOfVariables,optim.StoreN);
+        succes=true;
+      catch ME
+        warning('fminlbfgs:memory','Decreasing StoreN value because out of memory');
+        succes=false;
+        data.deltaX=[]; data.deltaG=[]; data.saveD=[];
+        optim.StoreN=optim.StoreN-1;
+        if(optim.StoreN<1)
+          rethrow(ME);
+        end
+      end
+    end
   end
 
   exitflag=[];
 
   % Display column headers
   if(strcmp(optim.Display,'iter'))
-    disp('     Iteration  Func-count   Grad-count         f(x)         Step-size');
+    disp(' Iteration  Func-count   Grad-count         f(x)         Step-size');
   end
 
   % Calculate the initial error and gradient
@@ -232,7 +245,7 @@ data.timeTotal=tic;
 
   % Show the current iteration
   if(strcmp(optim.Display,'iter'))
-    s=sprintf('     %5.0f       %5.0f       %5.0f       %13.6g    ',data.iteration,data.funcCount,data.gradCount,data.fInitial); disp(s);
+    s=sprintf(' %5.0f       %5.0f       %5.0f       %13.6g    ',data.iteration,data.funcCount,data.gradCount,data.fInitial); disp(s);
   end
 
   % Hessian intialization
@@ -325,7 +338,7 @@ data.timeTotal=tic;
 
     % Show the current iteration
     if(strcmp(optim.Display(1),'i')||strcmp(optim.Display(1),'p'))
-      s=sprintf('     %5.0f       %5.0f       %5.0f       %13.6g   %13.6g',data.iteration,data.funcCount,data.gradCount,data.fInitial,data.alpha); disp(s);
+      s=sprintf(' %5.0f       %5.0f       %5.0f       %13.6g   %13.6g',data.iteration,data.funcCount,data.gradCount,data.fInitial,data.alpha); disp(s);
     end
 
     % Keep the variables for next iteration
@@ -362,25 +375,25 @@ data.timeTotal=tic;
   output.timeIntern=output.timeTotal-output.timeExtern;
   % Display final results
   if(~strcmp(optim.Display,'off'))
-    disp('    Optimizer Results')
-    disp(['        Algorithm Used: ' output.algorithm]);
-    disp(['        Exit message : ' output.message]);
-    disp(['        Iterations : '  int2str(data.iteration)]);
-    disp(['        Function Count : ' int2str(data.funcCount)]);
-    disp(['        Minimum found : ' num2str(fval)]);
-    disp(['        Intern Time : ' num2str(output.timeIntern) ' seconds']);
-    disp(['        Total Time : ' num2str(output.timeTotal) ' seconds']);
+    disp(' Optimizer Results')
+    disp(['  Algorithm Used: ' output.algorithm]);
+    disp(['  Exit message : ' output.message]);
+    disp(['  Iterations : '  int2str(data.iteration)]);
+    disp(['  Function Count : ' int2str(data.funcCount)]);
+    disp(['  Minimum found : ' num2str(fval)]);
+    disp(['  Intern Time : ' num2str(output.timeIntern) ' seconds']);
+    disp(['  Total Time : ' num2str(output.timeTotal) ' seconds']);
   end
 
 function message=getexitmessage(exitflag)
 switch(exitflag)
-  case 1, message='Change in the objective function value was less than the specified tolerance TolFun.';
+  case 1, message='Change in the objective function value was less than TolFun.';
   case 2, message='Change in x was smaller than the specified tolerance TolX.';
   case 3, message='Magnitude of gradient smaller than the specified tolerance';
   case 4, message='Boundary fminimum reached.';
   case 0, message='Number of iterations exceeded options.MaxIter or number of function evaluations exceeded options.FunEvals.';
   case -1, message='Algorithm was terminated by the output function.';
-  case -2, message='Line search cannot find an acceptable point along the current search';
+  case -2, message='Line search cannot find an acceptable point along the current search direction';
   otherwise, message='Undefined exit code';
 end
 
@@ -565,9 +578,9 @@ function data=linesearch(funfcn, data, optim)
 
 % Find a bracket of acceptable points
 data = bracketingPhase(funfcn, data,optim);
-if abs(data.a-data.b)<eps
-  data = bracketingPhase_simple(funfcn, data,optim);
-end
+%if abs(data.a-data.b)<eps
+%  data = bracketingPhase_simple(funfcn, data,optim);
+%end
 
 if (data.bracket_exitflag  == 2)
   % BracketingPhase found a bracket containing acceptable points;
@@ -646,10 +659,10 @@ while(true)
     end
   end
 
-  % No acceptable point could be found?
+  % No acceptable point could be found
   if (abs(data.b-data.a) < eps)
     if f_alpha<data.fInitial;
-      % point with smaller function value found
+      % however, point with a smaller function value found
       data.alpha=alpha; data.fPrime_alpha= fPrime_alpha; data.f_alpha= f_alpha;
       data.grad=grad;
       data.section_exitflag = []; return
@@ -735,6 +748,7 @@ while(true)
 
   % Bracket located - case 0 (near NaN or Inf switch to safe solution)
   if here_be_dragons && (f_alpha >= fPrev)
+    % a smaller function value was found on previous step
     data.a = 0; data.f_a = data.fInitial;  data.fPrime_a = data.fPrimeInitial;
     data.b = alpha; data.f_b = f_alpha;  data.fPrime_b = fPrime_alpha;
     % Finished bracketing phase

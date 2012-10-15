@@ -113,9 +113,6 @@ nparams = length(x);
 
 %  Check gradients
 if isequal(optimget(opt,'DerivativeCheck',defaultopt,'fast'),'on');
-  if display
-    disp('Checking gradients')
-  end
   derivativecheck(x, fun);
 end
 
