@@ -78,14 +78,6 @@ gpcf = gpcf_sexp('lengthScale', ones(1,size(x,2)), 'magnSigma2', 1.2, 'lengthSca
 % Create the likelihood structure
 lik = lik_coxph('S', S);
 
-% % use mean of time intervals in hazard function
-% xtmp=zeros(length(S)-1,1);
-% for i1=1:(length(S)-1)
-%     xtmp(i1,1)=mean([S(i1) S(i1+1)]);
-% end
-% lik.xtime=xtmp;
-% lik.stime=S;
-
 % NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
@@ -95,10 +87,7 @@ gp = gp_set('lik', lik, 'cf', {gpcfh gpcf}, 'jitterSigma2', 1e-6, 'comp_cf', {1 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-%gpla_nd_e(gp_pak(gp),gp,x,y,'z',ye)
-%gpla_nd_g(gp_pak(gp),gp,x,y,'z',ye);
-
-opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
+opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
 gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
 % Make prediction
@@ -146,7 +135,7 @@ title('effect of age for both sexes')
 y=[x0(:,1) x0(:,1)+leukemiadata(:,1)/365];
 y2=y;
 % normalise ages
-y2=y2-min(y2(:)); y2=y2./max(y2(:));
+y2=y2-min(y2(:)); y2=y2./max(y(:));
 
 x2=x;
 x2(:,1)=[];
@@ -163,7 +152,7 @@ gp = gp_set('lik', lik, 'cf', {gpcfh gpcf}, 'jitterSigma2', 1e-6, 'comp_cf', {[1
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
+opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
 gp=gp_optim(gp,x2,y2,'z',ye,'opt',opt);
 
 [Ef1, Covf1] = gp_pred(gp, x2, y2, x2, 'z', ye);

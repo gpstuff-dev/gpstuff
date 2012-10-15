@@ -44,9 +44,10 @@ pl = prior_t('s2',10);
 pm = prior_t('s2',10); 
 % pm = prior_sqrtunif();
 
-gpcf1 = gpcf_neuralnetwork('weightSigma2', [1 1], 'biasSigma2', 1, 'weightSigma2_prior', pl, 'biasSigma2_prior', pm);
-gpcf2 = gpcf_neuralnetwork('weightSigma2', [1.2 2.1], 'biasSigma2', 0.8, 'weightSigma2_prior', pl, 'biasSigma2_prior', pm);
-gpcf3 = gpcf_neuralnetwork('weightSigma2', [0.9 0.7], 'biasSigma2', 1.2, 'weightSigma2_prior', pl, 'biasSigma2_prior', pm);
+pl = prior_t('s2',10);
+pm = prior_sqrtunif();
+cf = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05, ...
+                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
 lik = lik_zinegbin('disper_prior', prior_fixed());
@@ -54,17 +55,15 @@ lik = lik_zinegbin('disper_prior', prior_fixed());
 % NOTE! if multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp = gp_set(..., 'comp_cf' {[1 2] [5 6]};
-gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-6, 'comp_cf', {[1 2] [1 3]});
-
+gp = gp_set('lik', lik, 'cf', {cf cf}, 'jitterSigma2', 1e-6, 'comp_cf', {[1] [2]});
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','MaxIter',100,'Derivativecheck','off');
-%opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'z',ye,'opt',opt, 'optimf', @fminlbfgs);
 
 % make prediction to the data points
 [Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye);
@@ -78,9 +77,7 @@ figure
 G=repmat(NaN,size(X1));
 G(xii)=Ef(1:size(x,1));
 pcolor(X1,X2,G),shading flat
-%colormap(mapcolor(G)),
 colorbar
-%set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
 title('Posterior mean of latent (classification process)')
@@ -90,9 +87,7 @@ figure
 G=repmat(NaN,size(X1));
 G(xii)=(Ef((size(x,1)+1):end));
 pcolor(X1,X2,G),shading flat
-%colormap(mapcolor(G)),
 colorbar
-%set(gca, 'Clim', [0.6    1.5])
 axis equal
 axis([0 35 0 60])
 title('Posterior mean of latent (count process)')
