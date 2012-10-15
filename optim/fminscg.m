@@ -71,6 +71,7 @@ function [x, fval, exitflag, output, grad] = fminscg(fun, x, opt)
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+tic
 % Set empty options to default values
 defaultopt = struct( ...
     'DerivativeCheck','off', ...   
@@ -251,9 +252,6 @@ while (j <= maxiter)
     
     % Test for termination
     if max(abs(alpha*d)) < tolx
-      if (display >= 2)
-        disp('TolX reached')
-      end
       if nargin <5
         fval=fnew;
       else
@@ -265,12 +263,16 @@ while (j <= maxiter)
       if nargin>4
         output.funcCount=funcCount;
       end
+      if (display >= 2)
+        if isequal(GradConstr,'on')
+          fprintf(' TolX reached. Func-count %d. Grad-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,gradCount,fval,toc)
+        else
+          fprintf(' TolX reached. Func-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,fval,toc)
+        end
+      end
       return
       
     elseif max(abs(fnew-fold)) < tolfun
-      if (display >= 2)
-        disp('TolFun reached')
-      end
       if nargin <5
         fval=fnew;
       else
@@ -281,6 +283,13 @@ while (j <= maxiter)
       exitflag=3;
       if nargin>4
         output.funcCount=funcCount;
+      end
+      if (display >= 2)
+        if isequal(GradConstr,'on')
+          fprintf(' TolFun reached. Func-count %d. Grad-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,gradCount,fval,toc)
+        else
+          fprintf(' TolFun reached. Func-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,fval,toc)
+        end
       end
       return
 
@@ -300,14 +309,18 @@ while (j <= maxiter)
       end
       % If the gradient is zero then we are done.
       if (gradnew*gradnew' < eps) && all(isreal(gradnew))
-        if (display >= 2)
-          disp('Gradient smaller than eps');
-        end
         grad=gradnew;
         exitflag=1;
         if nargin>4
           output.funcCount=funcCount;
         end
+      if (display >= 2)
+        if isequal(GradConstr,'on')
+          fprintf(' Gradient smaller than eps. Func-count %d. Grad-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,gradCount,fval,toc)
+        else
+          fprintf(' Gradient smaller than eps. Func-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,fval,toc)
+        end
+      end
         return
       end
     end
@@ -354,7 +367,14 @@ end
 % iterations.
 exitflag=0;
 if (display >= 1)
-  disp('Warning: Maximum number of iterations has been exceeded');
+  disp('Maximum number of iterations has been exceeded.');
 end
 grad=gradnew;
 fval=fnew;
+if (display >= 2)
+  if isequal(GradConstr,'on')
+    fprintf(' Func-count %d. Grad-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,gradCount,fval,toc)
+  else
+    fprintf(' Func-count %d. Final f(x)=%6.6g. Elapsed time %.2f\n',funcCount,fval,toc)
+  end
+end
