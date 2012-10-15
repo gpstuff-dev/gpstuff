@@ -72,7 +72,7 @@ gpcf = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', .5, ...
 % Use default Gaussian likelihood
 gp = gp_set('cf', gpcf);
 
-% Set the options for the scaled conjugate optimization
+% Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
@@ -107,8 +107,8 @@ disp('GP model with derivative obs')
 % Option derivobs set so that the derivatives are in use
 gp = gp_set('cf', gpcf, 'derivobs', 'on');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','DerivativeCheck','on');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y2,'opt',opt);
 % Do the prediction

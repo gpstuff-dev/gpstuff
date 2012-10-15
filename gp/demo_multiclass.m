@@ -74,17 +74,17 @@ fprintf(['Softmax model with Laplace integration over the latent\n' ...
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
-[Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
+%[Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
 
 % gp2 = gp_set('lik', lik_softmax, 'cf', {gpcf1 gpcf1 gpcf1}, 'jitterSigma2', 1e-2);
 % gp2 = gp_set(gp2, 'latent_method', 'Laplace');
 % gp2.comp_cf = {1 2 3};
 % [Eft2, Varft2, ~, ~, pyt2] = gp_pred(gp2, x, y, xt, 'yt', ones(size(yt)));
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % make the prediction for test points
 [Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
@@ -134,6 +134,9 @@ hmc2('state', sum(100*clock))
 
 % Sample
 [r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+% sampling with defualt options does not work yet
+%[r,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'repeat', 15);
+%[r,g,opt]=gp2_mc(gp, x, y, 'nsamples', 4);
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;

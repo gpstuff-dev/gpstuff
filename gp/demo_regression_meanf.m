@@ -52,7 +52,7 @@ gpmf3 = gpmf_squared('prior_mean',.3,'prior_cov',1);
 % Initialize gp structure
 gp = gp_set('lik', lik, 'cf', gpcf, 'meanf', {gpmf1,gpmf2,gpmf3});
 
-% Set the options for the scaled conjugate optimization
+% Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'DerivativeCheck','on');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
@@ -64,7 +64,6 @@ xt=[-3:0.1:3]';
 % PLOT THE DATA
 
 figure
-%m=shadedErrorBar(p,Eft),2*sqrt(Varft)),{'k','lineWidth',2});
 m=plot(xt,Eft,'k','lineWidth',2);
 hold on
 plot(xt,Eft+2*sqrt(Varft),'k--')
@@ -77,7 +76,6 @@ h=plot(xt,2+xt+xt.^2+4*cos(xt).*sin(xt),'b--','lineWidth',2);
 hold on
 mmmean=plot(xt,2+xt+xt.^2,'r--','lineWidth',1);
 legend([m m95 h mmmean hav],'prediction','95%','f(x)','mean function','observations');
-%legend([m.mainLine m.patch h mmmean hav],'prediction','95%','f(x)','meanfunction','observations');
 xlabel('input x')
 ylabel('output y')
 title('GP regression with a mean function')

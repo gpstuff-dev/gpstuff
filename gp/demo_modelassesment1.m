@@ -39,6 +39,9 @@ x = [data(:,1) data(:,2)];
 y = data(:,3);
 [n, nin] = size(x);
 
+DIC=repmat(NaN,1,9);DIC2=repmat(NaN,1,9);DIC_latent=repmat(NaN,1,9);
+p_eff=repmat(NaN,1,9);p_eff2=repmat(NaN,1,9);p_eff_latent=repmat(NaN,1,9);p_eff_latent2=repmat(NaN,1,9);
+
 % ---------------------------
 % --- Construct the model ---
 gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
@@ -52,15 +55,15 @@ gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9);
 % for the parameters via gradient based optimization. After this we will
 % perform an extensive Markov chain Monte Carlo sampling for the parameters.
 % 
-disp(' MAP estimate for the parameters')
+disp('MAP estimate for the parameters')
 
-% --- MAP estimate using scaled conjugate gradient algorithm ---
+% --- MAP estimate ---
 %     (see gp_optim for more details)
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Evaluate the effective number of parameters, DIC and WAIC with focus on
 % latent variables. 
@@ -74,13 +77,13 @@ WAICG(1) = gp_waic(gp,x,y, 'method', 'G');
 
 
 % Evaluate the 10-fold cross-validation results.
-disp(' MAP estimate for the parameters - k-fold-CV')
-cvres =  gp_kfcv(gp, x, y);
+disp('MAP estimate for the parameters - k-fold-CV')
+cvres =  gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(1) = cvres.mlpd_cv;
 mrmse_cv(1) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
-disp(' MCMC integration over the parameters')
+disp('MCMC integration over the parameters')
 
 % Do the sampling (this takes about 1 minute)
 [rfull,g,opt] = gp_mc(gp, x, y, 'nsamples', 220, 'display', 20);
@@ -102,14 +105,14 @@ WAICG(2) = gp_waic(rfull,x,y, 'method', 'G');
 % We reduce the number of samples so that the sampling takes less time. 
 % 50 is too small sample size, though, and for reliable results the 10-CV 
 % should be run with larger sample size.
-disp(' MCMC integration over the parameters - k-fold-CV')
+disp('MCMC integration over the parameters - k-fold-CV')
 opt.nsamples= 50; 
-cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'rstream', 1);
+cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'rstream', 1, 'display', 'fold');
 mlpd_cv(2) = cvres.mlpd_cv;
 mrmse_cv(2) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
-disp(' Grid integration over the parameters')
+disp('Grid integration over the parameters')
 
 gp_array = gp_ia(gp, x, y, 'int_method', 'grid');
 
@@ -122,10 +125,10 @@ WAICV(3) = gp_waic(gp_array,x,y);
 WAICG(3) = gp_waic(gp_array,x,y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
-disp(' Grid integration over the parameters - k-fold-CV')
+disp('Grid integration over the parameters - k-fold-CV')
 clear opt
 opt.int_method = 'grid';
-cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
+cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(3) = cvres.mlpd_cv;
 mrmse_cv(3) = cvres.mrmse_cv;
 
@@ -152,12 +155,12 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6, 'X_
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-disp(' MAP estimate for the parameters')
+disp('MAP estimate for the parameters')
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',40);
-% Optimize with the scaled conjugate gradient method
-gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp_fic=gp_optim(gp_fic,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -168,14 +171,14 @@ WAICV(4) = gp_waic(gp_fic,x,y);
 WAICG(4) = gp_waic(gp_fic,x,y, 'method', 'G');
 
 % Evaluate the 10-fold cross validation results. 
-disp(' MAP estimate for the parameters - k-fold-CV')
-cvres = gp_kfcv(gp_fic, x, y);
+disp('MAP estimate for the parameters - k-fold-CV')
+cvres = gp_kfcv(gp_fic, x, y, 'display', 'fold');
 mlpd_cv(4) = cvres.mlpd_cv;
 mrmse_cv(4) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
 % (the inducing inputs are fixed)
-disp(' MCMC integration over the parameters')
+disp('MCMC integration over the parameters')
 
 % Do the sampling (this takes about 1 minute)
 rfic = gp_mc(gp_fic, x, y, 'nsamples', 220, 'display', 20);
@@ -197,14 +200,14 @@ WAICG(5) = gp_waic(rfic,x,y, 'method', 'G');
 % should be run with larger sample size. We also set the save option to 0.
 clear opt
 opt.nsamples= 50; opt.display=20; 
-disp(' MCMC integration over the parameters - k-fold-CV')
-cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt);
+disp('MCMC integration over the parameters - k-fold-CV')
+cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'display', 'fold');
 mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
 
 
 % --- Integration approximation approach ---
-disp(' Grid integration over the parameters')
+disp('Grid integration over the parameters')
 gpfic_array = gp_ia(gp_fic, x, y, 'int_method', 'grid');
 
 models{6} = 'FIC_IA'; 
@@ -214,10 +217,10 @@ WAICV(6) = gp_waic(gpfic_array,x,y);
 WAICG(6) = gp_waic(gpfic_array,x,y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
-disp(' Grid integration over the parameters - k-fold-CV')
+disp('Grid integration over the parameters - k-fold-CV')
 clear opt
 opt.int_method = 'grid';
-cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt);
+cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(6) = cvres.mlpd_cv;
 mrmse_cv(6) = cvres.mrmse_cv;
 
@@ -259,12 +262,12 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 % --- Conduct the inference ---
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-disp(' MAP estimate for the parameters')
+disp('MAP estimate for the parameters')
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',40);
-% Optimize with the scaled conjugate gradient method
-gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp_pic=gp_optim(gp_pic,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);
@@ -273,13 +276,13 @@ WAICV(7) = gp_waic(gp_pic, x, y);
 WAICG(7) = gp_waic(gp_pic, x, y, 'method', 'G');
 
 % Evaluate the 10-fold cross validation results. 
-disp(' MAP estimate for the parameters - k-fold-CV')
-cvres = gp_kfcv(gp_pic, x, y);
+disp('MAP estimate for the parameters - k-fold-CV')
+cvres = gp_kfcv(gp_pic, x, y, 'display', 'fold');
 mlpd_cv(7) = cvres.mlpd_cv;
 mrmse_cv(7) = cvres.mrmse_cv;
 
 % --- MCMC approach ---
-disp(' MCMC integration over the parameters')
+disp('MCMC integration over the parameters')
 
 % Do the sampling (this takes about 1 minute)
 rpic = gp_mc(gp_pic, x, y, 'nsamples', 220, 'display', 20);
@@ -303,13 +306,13 @@ WAICG(8) = gp_waic(rpic, x, y, 'method', 'G');
 % should be run with larger sample size. We also set the save option to 0.
 clear opt
 opt.nsamples= 50; opt.display=20;
-disp(' MCMC integration over the parameters - k-fold-CV')
-cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt);
+disp('MCMC integration over the parameters - k-fold-CV')
+cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'display', 'fold');
 mlpd_cv(8) = cvres.mlpd_cv;
 mrmse_cv(8) = cvres.mrmse_cv;
 
 % --- Integration approximation approach ---
-disp(' Grid integration over the parameters')
+disp('Grid integration over the parameters')
 
 gppic_array = gp_ia(gp_pic, x, y, 'int_method', 'grid');
 
@@ -320,10 +323,10 @@ WAICV(9) = gp_waic(gppic_array, x, y);
 WAICG(9) = gp_waic(gppic_array, x, y, 'method', 'G');
 
 % Then the 10 fold cross-validation.
-disp(' Grid integration over the parameters - k-fold-CV')
+disp('Grid integration over the parameters - k-fold-CV')
 clear opt
 opt.int_method = 'grid';
-cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt);
+cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(9) = cvres.mlpd_cv;
 mrmse_cv(9) = cvres.mrmse_cv;
 

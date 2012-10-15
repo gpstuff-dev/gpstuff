@@ -68,8 +68,8 @@ gp2 = gp_set('lik', lik, 'cf', gpcf2);
 % --- MAP estimate using scaled conjugate gradient algorithm ---
 %     (see scg for more details)
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 gp2=gp_optim(gp2,x,y,'opt',opt);
@@ -114,10 +114,10 @@ gp = gp_set('lik', lik, 'cf', gpcf1);
 gp2 = gp_set('lik', lik, 'cf', gpcf2);
 
 % --- MAP estimate using scaled conjugate gradient algorithm ---
-%     (see scg for more details)
+%     (see fminscg for more details)
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 gp2=gp_optim(gp2,x,y,'opt',opt);
@@ -150,4 +150,3 @@ h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 h4=plot(xgrid, norm_pdf(4*xgrid), 'color', 'r', 'linewidth', 2);
 legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
 title('GP (neural network) predictions and the data points');
-

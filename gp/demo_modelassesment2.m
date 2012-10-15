@@ -62,10 +62,10 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 
 n=length(y);
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','MaxIter',20);
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -75,7 +75,7 @@ p_eff_latent(1) = gp_peff(gp, x, y);
 WAIC(1) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
-cvres = gp_kfcv(gp, x, y);
+cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(1) = cvres.mlpd_cv;
 mrmse_cv(1) = cvres.mrmse_cv;
 
@@ -86,10 +86,10 @@ disp([' Probit with EP integration over the latent values and MAP '; ...
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -99,7 +99,7 @@ p_eff_latent(2) = gp_peff(gp, x, y) ;
 WAIC(2) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
-cvres = gp_kfcv(gp, x, y);
+cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(2) = cvres.mlpd_cv;
 mrmse_cv(2) = cvres.mrmse_cv;
 
@@ -124,7 +124,7 @@ WAIC(3) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 mcopt.nsamples=50;mcopt.display=20;
-cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', mcopt);
+cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', mcopt, 'display', 'fold');
 mlpd_cv(3) = cvres.mlpd_cv;
 mrmse_cv(3) = cvres.mrmse_cv;
 
@@ -135,10 +135,10 @@ disp([' Probit with EP integration over the latent values and '; ...
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % now perform the integration
 clear opt
@@ -152,7 +152,7 @@ models{4} = 'pr_IA';
 WAIC(4) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
-cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
+cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(4) = cvres.mlpd_cv;
 mrmse_cv(4) = cvres.mrmse_cv;
 
@@ -190,10 +190,10 @@ disp([' Logit with Laplace integration over the latent values and '; ...
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',20);
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -203,7 +203,7 @@ p_eff_latent(5) = gp_peff(gp, x, y);
 WAIC(5) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
-cvres = gp_kfcv(gp, x, y);
+cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(5) = cvres.mlpd_cv;
 mrmse_cv(5) = cvres.mrmse_cv;
 
@@ -214,10 +214,10 @@ disp([' Logit with EP integration over the latent values and MAP'; ...
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Evaluate the effective number of parameters and DIC with focus on
 % latent variables.
@@ -227,7 +227,7 @@ p_eff_latent(6) = gp_peff(gp, x, y) ;
 WAIC(6) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
-cvres = gp_kfcv(gp, x, y);
+cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(6) = cvres.mlpd_cv;
 mrmse_cv(6) = cvres.mrmse_cv;
 
@@ -252,7 +252,7 @@ WAIC(7) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross validation results. 
 mcopt.nsamples=50;mcopt.display=20;
-cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', mcopt);
+cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', mcopt, 'display', 'fold');
 mlpd_cv(7) = cvres.mlpd_cv;
 mrmse_cv(7) = cvres.mrmse_cv;
 
@@ -263,10 +263,10 @@ disp([' Logit with EP integration over the latent values and grid '; ...
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % now perform the integration
 clear opt
@@ -280,7 +280,7 @@ models{8} = 'lo_IA';
 WAIC(8) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
-cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt);
+cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(8) = cvres.mlpd_cv;
 mrmse_cv(8) = cvres.mrmse_cv;
 

@@ -121,23 +121,23 @@ y = data(:,3);
 % 
 % First create a piece wise polynomial covariance function with ARD and 
 % Gaussian noise structures...
-lik = lik_gaussian('sigma2', 0.2^2);
+pn = prior_sinvchi2('s2',0.2^2,'nu',1);
+lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
 
-pl = prior_t('s2', 0.5);               % a prior structure
-pm = prior_sqrtt('s2', 0.3);               % a prior structure
-pn = prior_logunif();
+pl = prior_t('s2', 1);               % a prior structure
+pm = prior_sqrtt('s2', 1);           % a prior structure
 if ~exist('ldlchol')
   warning('GPstuff:SuiteSparseMissing',...
   ['SuiteSparse is not properly installed. \n' ...
    'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
- gpcf = gpcf_sexp('lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
- gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
+                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 else
-  gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [0.8 0.6], 'magnSigma2', 0.2^2);
-  gpcf = gpcf_ppcs2(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+  gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
+                    'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 end
 
-gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8);
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8)
 
 % We have now constructed a GP model with gpcf_ppcs2 covariance
 % function. This is a compact support function which produces
@@ -153,9 +153,9 @@ gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8);
 
 % MAP estimate for the parameters using scaled conjugate
 % gradient algorithm
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
+% Set the options for the quasi-Newton optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the quasi-Newton method
 gp=gp_optim(gp,x,y,'opt',opt);
 
 % for the last make prections of the underlying function on a dense
@@ -186,8 +186,9 @@ title('The predicted underlying function and the data points (MAP solution)');
 % First we create the GP structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
-lik = lik_gaussian('sigma2', 0.2^2);
-gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
+                 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Next we initialize the inducing inputs and set them in GP
 % structure. We have to give a prior for the inducing inputs also,
@@ -205,8 +206,8 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, ...
 % or iii) only the inducing inputs. Which option is used is defined
 % by a string that is given to the gp_pak, gp_unpak, gp_e and gp_g
 % functions. The strings for the different options are:
-% 'covariance' (i), 'covariance+inducing' (ii), 'inducing' (iii).
-%
+% 'covariance+likelihood' (i), 'covariance+likelihood+inducing' (ii),
+% 'inducing' (iii).
 
 % Now you can choose, if you want to optimize only parameters
 % or optimize simultaneously parameters and inducing inputs. 
@@ -214,13 +215,13 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, ...
 % logarithm when packed
 
 % optimize parameters and inducing inputs
-gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');  
+%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');  
 % optimize only parameters
-%gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');           
+gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood');           
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
-% Optimize with the scaled conjugate gradient method
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the quasi-Newton method
 gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
 % To optimize the parameters and inducing inputs sequentially
@@ -290,11 +291,12 @@ for i1=1:4
 end
 
 % Create the PIC GP structure and set the inducing inputs and block indeces
-gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
-lik = lik_gaussian('sigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
+                 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf, ...
-                'X_u', X_u, 'tr_index', trindex, 'jitterSigma2', 1e-4);
+                'X_u', X_u, 'tr_index', trindex, 'jitterSigma2', 1e-4)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -308,13 +310,13 @@ gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf, ...
 % packed
 
 % optimize parameters and inducing inputs
-gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+inducing');  
+%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood+inducing');  
 % optimize only parameters
-%gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           
+gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
-% Optimize with the scaled conjugate gradient method
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the quasi-Newton method
 gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
 
 % Make the prediction. 
@@ -351,8 +353,9 @@ xlim([-2 2]), ylim([-2 2])
 % First we create the GP structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
-lik = lik_gaussian('sigma2', 0.2^2);
-gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
+                 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Next we initialize the inducing inputs and set them in GP
 % structure. We have to give a prior for the inducing inputs also,
@@ -370,7 +373,7 @@ gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', gpcf, ...
 % or iii) only the inducing inputs. Which option is used is defined
 % by a string that is given to the gp_pak, gp_unpak, gp_e and gp_g
 % functions. The strings for the different options are:
-% 'covariance+likelihood' (i), 'covariance+inducing' (ii),
+% 'covariance+likelihood' (i), 'covariance+likelihood+inducing' (ii),
 % 'inducing' (iii).
 %
 
@@ -380,13 +383,13 @@ gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', gpcf, ...
 % packed
 
 % optimize parameters and inducing inputs
-gp_var = gp_set(gp_var, 'infer_params', 'covariance+inducing');  
+gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood+inducing')
 % optimize only parameters
 %gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');           
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
-% Optimize with the scaled conjugate gradient method
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the quasi-Newton method
 gp_var=gp_optim(gp_var,x,y,'opt',opt);
 
 % To optimize the parameters and inducing inputs sequentially uncomment the below lines
@@ -433,8 +436,10 @@ xlim([-2 2]), ylim([-2 2])
 % First we create the GP structure. Notice here that if we do
 % not explicitly set the priors for the covariance function
 % parameters they are given a uniform prior.
-lik = lik_gaussian('sigma2', 0.2^2);
-gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
+lik = lik_gaussian('sigma2', 0.2^2, 'sigma2_prior', pn);
+gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
+                 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+
 
 % Next we initialize the inducing inputs and set them in GP
 % structure. We have to give a prior for the inducing inputs also,
@@ -442,7 +447,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2);
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, ...
-                'X_u', X_u, 'jitterSigma2', 0.001);
+                'X_u', X_u, 'jitterSigma2', 1e-4)
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -452,7 +457,7 @@ gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, ...
 % or iii) only the inducing inputs. Which option is used is defined
 % by a string that is given to the gp_pak, gp_unpak, gp_e and gp_g
 % functions. The strings for the different options are:
-% 'covariance+likelihood' (i), 'covariance+inducing' (ii),
+% 'covariance+likelihood' (i), 'covariance+likelihood+inducing' (ii),
 % 'inducing' (iii).
 %
 
@@ -462,13 +467,13 @@ gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, ...
 % packed
 
 % optimize parameters and inducing inputs
-gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+inducing');  
+%gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood+inducing');  
 % optimize only parameters
-%gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');           
+gp_dtc = gp_set(gp_dtc, 'infer_params', 'covariance+likelihood');           
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter','Maxiter',80);
-% Optimize with the scaled conjugate gradient method
+% Set the options for the optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4);
+% Optimize with the quasi-Newton method
 gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 
 % To optimize the parameters and inducing inputs sequentially uncomment the below lines

@@ -138,10 +138,10 @@ example_x = [-1 -1 ; 0 0 ; 1 1];
 % Carlo sampling to integrate over the parameters.
  
 
-% --- MAP estimate using scaled conjugate gradient algorithm ---
+% --- MAP estimate  ---
 disp(' MAP estimate for the parameters')
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -185,7 +185,8 @@ plot(x_ia(400,:), fx_ia(400,:))
 title('p(f|D) at input location (-0.8, 1.1)');
 
 % --- MCMC ---
-[gp_rec,g,opt] = gp_mc(gp, x, y, 'nsamples', 220);
+disp(' MCMC integration over the parameters')
+[gp_rec,g,opt] = gp_mc(gp, x, y, 'nsamples', 220,'display',20);
 
 % After sampling we delete the burn-in and thin the sample chain
 gp_rec = thin(gp_rec, 21, 2);
@@ -280,7 +281,7 @@ set(gca, 'Ytick', [])
 title('p(f|D) at input location (-0.8, 1.1)');
 xlim([-1.2 -0.6])
 
-
+disp('Done')
 
 
 % ========================

@@ -68,8 +68,8 @@ lik = lik_gaussian('sigma2', 0.2^2);
 % Set a small amount of jitter 
 jitter=1e-4;
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 
 % CONSTANT + LINEAR COVARIANCE FUNCTION
 disp('Constant + linear covariance function')

@@ -107,13 +107,14 @@ xt = [0:0.5:565]';
 % covariance functions and Gaussian noise structures and set
 % priors for their parameters (if SuiteSparse is not
 % installed, use gpcf_sexp instead of gpcf_ppcs2)
-pl1 = prior_t('s2', 500, 'nu', 10);
+pl1 = prior_t('s2', 100, 'nu', 10);
 pl2 = prior_t('s2', 10, 'nu', 10);
-pm = prior_sqrtt('s2',50);
+pm1 = prior_sqrtt('s2',300);
+pm2 = prior_sqrtt('s2',10);
 pn = prior_logunif();
-gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 1, 'lengthScale_prior', pl1, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_sexp('lengthScale', 100, 'magnSigma2', 200, 'lengthScale_prior', pl1, 'magnSigma2_prior', pm1);
 if exist('ldlchol')
-  gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+  gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', 5, 'magnSigma2', 5, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
 else
   warning('GPstuff:SuiteSparseMissing',...
   ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
@@ -129,8 +130,8 @@ gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9)
 % --- Conduct the inference ---
 %
 % --- MAP estimate -----------
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -192,8 +193,8 @@ gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 
 %gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood+inducing');  % optimize parameters and inducing inputs
 gp_fic = gp_set(gp_fic, 'infer_params', 'covariance+likelihood'); % optimize only parameters
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
@@ -226,7 +227,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP structure
-gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-6, 'X_u', Xu)
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -241,10 +242,11 @@ gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 %gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood+inducing');  % optimize parameters and inducing inputs
 gp_pic = gp_set(gp_pic, 'infer_params', 'covariance+likelihood');           % optimize only parameters
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp_pic=gp_optim(gp_pic,x,y,'opt',opt);
+gp_pic=gp_optim(gp_pic,x,y,'opt',opt,'optimf',@fminscg);
 
 % Make the prediction
 [Eft_pic, Varft_pic, lpyt_pic, Eyt_pic, Varyt_pic] = gp_pred(gp_pic, x, y, x, 'tstind', trindex, 'yt', y);
@@ -297,8 +299,8 @@ gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigm
 % optimize only parameters (default)
 %gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood');           
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp_csfic=gp_optim(gp_csfic,x,y,'opt',opt);
 

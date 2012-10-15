@@ -80,8 +80,8 @@ gp = gp_set('lik', lik_binomial(), 'cf', gpcf, 'jitterSigma2', 1e-8);
 % could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'z',N,'opt',opt);
 

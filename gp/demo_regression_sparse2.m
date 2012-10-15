@@ -18,7 +18,9 @@
 %      - FIC, fully independent conditional
 %      - DTC, deterministic training conditional
 %      - VAR, variational approach
-%    and inducing variables are optimised.
+%    For illustration purposes the hyperparameters from the full GP
+%    are used for the sparse models and only the inducing variables
+%    are optimised.
 %     
 %    For technical details, see Quinonero-Candela and Rasmussen
 %    (2005) for the FIC and DTC models and Titsias (2009) for the
@@ -65,19 +67,20 @@ y=2*sin(4*x)+0.2*randn(size(x));
 xt=[1:0.01:14]';
 [n,nin] = size(x);
 
+fprintf('Full GP\n')
 % Initialize full GP with a squared exponential component and set
 % priors for their parameters.
-pl = prior_t('s2', 2);
-pm = prior_sqrtt();
+pl = prior_t('s2', 1);
+pm = prior_logunif();
 pn = prior_logunif();
 
-gpcfse = gpcf_sexp('lengthScale',5,'magnSigma2',10, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcfse = gpcf_sexp('lengthScale',0.5,'magnSigma2',1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
 gp = gp_set('lik', lik, 'cf', gpcfse, 'jitterSigma2', 1e-6);
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -94,8 +97,10 @@ plot(xt,Eft_full,'k', 'LineWidth', 2)
 plot(xt,Eft_full-2.*sqrt(Varft_full),'--','Color',[0 0.5 0])
 plot(xt,Eft_full+2.*sqrt(Varft_full),'--','Color',[0 0.5 0])
 plot(x,y,'.', 'MarkerSize',7)
+ylim([-3 3])
 title('FULL GP')
 
+fprintf('FIC GP\n')
 % Run FIC approximation for the same data: choose the inducing
 % inputs Xu, then proceed with the inference with the optimized
 % parameters from the full GP: here, we optimize only the locations
@@ -105,8 +110,8 @@ Xu=round(10+90*rand(18,1))/10; % Random placement
 % Change type to FIC, add inducing inputs, and optimize only inducing inputs
 gp_fic = gp_set(gp, 'type','FIC','X_u',Xu,'infer_params','inducing');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4);
 % Optimize with the scaled conjugate gradient method
 gp_fic=gp_optim(gp_fic,x,y,'opt',opt);
 
@@ -129,9 +134,11 @@ legend([h1  h2 h3 h4(1) h5(1)],'Ef','95% CI','Data','Initial X_u','Optimized X_u
 %plotbb=bb(1)+(min(XuSorted):0.1:max(XuSorted))*bb(2);
 %plot(XuSorted(1:end-1),dXuSorted,'ko');
 %plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')
+ylim([-3 3])
 title('FIC')
 
 
+fprintf('VAR GP\n')
 % Run the VAR model similarly to the FIC model with the same
 % starting inducing inputs. The difference in the optimized results
 % is notable. The VAR model places the inducing inputs quite evenly
@@ -140,8 +147,8 @@ title('FIC')
 % sparse approximations yield less reliable results.
 gp_var = gp_set(gp,'type','VAR','X_u',Xu,'infer_params','inducing');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4);
 % Optimize with the scaled conjugate gradient method
 gp_var=gp_optim(gp_var,x,y,'opt',opt);
 
@@ -164,15 +171,17 @@ plot(Xu, -2.8, 'bx', 'MarkerSize', 5, 'LineWidth', 2)
 %plotbb=bb(1)+(min(XuSorted):0.1:max(XuSorted))*bb(2);
 %plot(XuSorted(1:end-1),dXuSorted,'ko');
 %plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')
+ylim([-3 3])
 title('VAR')
 
 
+fprintf('DTC GP\n')
 % Run the DTC model similarly to the FIC model with the same starting
 % inducing inputs. The difference in the optimized results is notable.
 gp_dtc = gp_set(gp,'type','DTC','X_u',Xu,'infer_params','inducing');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4);
 % Optimize with the scaled conjugate gradient method
 gp_dtc=gp_optim(gp_dtc,x,y,'opt',opt);
 
@@ -193,6 +202,7 @@ plot(Xu, -2.8, 'bx', 'MarkerSize', 5, 'LineWidth', 2)
 %plotbb=bb(1)+(min(XuSorted):0.1:max(XuSorted))*bb(2);
 %plot(XuSorted(1:end-1),dXuSorted,'ko');
 %plot(min(XuSorted):0.1:max(XuSorted),plotbb,'k--')
+ylim([-3 3])
 title('DTC')
 
 % Set back initial random stream

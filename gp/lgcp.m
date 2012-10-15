@@ -219,7 +219,7 @@ function [Ef,Varf,gp] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
   if exist('fminunc')
     gp = gp_optim(gp, xx, yy, 'z', ye, 'optimf', @fminunc, 'opt', opt);
   else
-    gp = gp_optim(gp, xx, yy, 'z', ye, 'optimf', @fminscg, 'opt', opt);
+    gp = gp_optim(gp, xx, yy, 'z', ye, 'optimf', @fminlbfgs, 'opt', opt);
   end
 
   % Make prediction for the test points

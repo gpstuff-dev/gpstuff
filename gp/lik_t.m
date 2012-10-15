@@ -934,7 +934,9 @@ function [f, a] = lik_t_optimizef(gp, y, K, Lav, K_fu)
         B = eye(n) + siV*siV'.*K;
         L = chol(B)';
         b = iV.*y;
+        ws=warning('off','MATLAB:nearlySingularMatrix');
         a = b - siV.*(L'\(L\(siV.*(K*b))));
+        warning(ws);
         f = K*a;
         
         if max(abs(f-fold)) < 1e-8

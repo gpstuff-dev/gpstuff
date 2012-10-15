@@ -113,22 +113,22 @@ plot(xx(:,1),xx(:,2),'k.')
 title('Inputs where to predict')
 
 % Create covariance function
-pn = prior_t('nu', 4, 's2', 0.3);
+pn = prior_logunif();
 lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
-pl2 = prior_gamma('sh', 5, 'is', 1);
-pm2 = prior_sqrtt('nu', 1, 's2', 150);
-gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3, ...
-                   'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
+pl = prior_gaussian('s2', 1);
+pm = prior_logunif();
+gpcf = gpcf_ppcs2('nin', nin, 'lengthScale', [1 1], 'magnSigma2', 10, ...
+                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 
 % MAP ESTIMATE
 % ============================================
-gp = gp_set('lik', lik, 'cf', gpcf2, 'jitterSigma2', 1e-6);
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6);
 
 % Optimize the parameters
 % ---------------------------------
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the scaled conjugate gradient optimization
+opt=optimset('TolFun',1e-2,'TolX',1e-3,'Display','iter');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 

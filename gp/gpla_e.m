@@ -457,7 +457,11 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               end
             end
             if upfact > 0
-              L = cholupdate(L, l.*sqrt(upfact), '-');
+              [L,notpositivedefinite] = cholupdate(L, l.*sqrt(upfact), '-');
+              if notpositivedefinite
+                [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                return
+              end
             else
               L = cholupdate(L, l.*sqrt(-upfact));
             end

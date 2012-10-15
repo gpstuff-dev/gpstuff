@@ -103,12 +103,16 @@ switch gp.type
       end
     else
       % evaluate the full inverse
+      ws1=warning('off','MATLAB:nearlySingularMatrix');
+      ws2=warning('off','MATLAB:SingularMatrix');
       invC = inv(C);        
       if  ~isfield(gp,'meanf')
           b = C\y;
       else
           [invNM invAt HinvC]=mean_gf(gp,x,C,invC,[],[],y,'gaussian');
       end
+      warning(ws1);
+      warning(ws2);
     end
 
     % =================================================================
@@ -552,10 +556,10 @@ switch gp.type
     A = K_uu+K_fu'*iLaKfu;
     A = (A+A')./2;            % Ensure symmetry
 
-    [LA, notpositivedefinite] = chol(A,'upper');
+    [LA,notpositivedefinite]=chol(A,'upper');
     if notpositivedefinite
-      % If not positive definite, return NaN
-      g=NaN; gdata=NaN; gprior=NaN;
+      % instead of stopping to chol error, return NaN
+      g=NaN; gdata = NaN; gprior = NaN;
       return;
     end
     L = iLaKfu/LA;

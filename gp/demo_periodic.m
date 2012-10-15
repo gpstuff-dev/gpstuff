@@ -117,7 +117,7 @@ gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp(gpcf2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2})
+gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2});
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -125,17 +125,17 @@ gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2})
 % We will make the inference first by finding a maximum a posterior estimate 
 % for the parameters via gradient based optimization.  
 
-% --- MAP estimate using scaled conjugate gradient method ---
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% --- MAP estimate ---
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-4);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Make predictions. Below Eyt_full is the predictive mean and
 % Varyt_full the predictive variance.
-xt=[1:800]';
+xt=[1:650]';
 
-[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(800,1));
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(650,1));
 
 % Plot the prediction and data
 figure;hold on
@@ -179,7 +179,7 @@ gpcfp = gpcf_periodic(gpcfp, 'lengthScale_sexp_prior', pl, 'period_prior', pn);
 lik = lik_gaussian(lik, 'sigma2_prior', pn);
 
 % ... Finally create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2}) 
+gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2});
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -187,17 +187,17 @@ gp = gp_set('lik', lik, 'cf', {gpcf1, gpcfp, gpcf2})
 % We will make the inference first by finding a maximum a posterior
 % estimate for the parameters via gradient based optimization.
 
-% --- MAP estimate using scaled conjugate gradient algorithm ---
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'opt',opt);
+% --- MAP estimate ---
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-4,'Display','iter');
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % Make predictions. Below Eft_full is the predictive mean and
 % Varft_full the predictive variance.
-xt=[1:800]';
+xt=[1:650]';
 
-[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(800,1));
+[Eft_full, Varft_full, lpyt_full, Eyt_full, Varyt_full] = gp_pred(gp, x, y, xt, 'yt', ones(650,1));
 
 % Plot the prediction and data
 figure;hold on
@@ -293,28 +293,28 @@ lik = lik_gaussian(lik, 'sigma2_prior', pn);
 % ... Create the GP structure, Poisson likelihood with
 % Expectation Propagation as approximation method
 z=repmat(mean(y),length(y),1);
-gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1,gpcfp,gpcf2,likn})   
+gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1,gpcfp,gpcf2,likn});
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
-gp=gp_optim(gp,x,y,'z', z,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-4);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'z', z,'opt',opt,'optimf',@fminlbfgs);
 
 % Predictions
 xt=[1:96]';
+xt=[1:132]';
 [Eft_full, Varft_full] = gp_pred(gp, x, y, xt, 'z', z);
 
 % Plot results
 xtt=2001+23/24+1/12*xt;
 figure;hold on
-plot(xtt(1:length(y),1),y,'k.', 'MarkerSize',20)
-plot(xtt(length(y)+1:length(y1),1),y1(length(y)+1:length(y1)),'k*', 'MarkerSize',7)
-plot(xtt(:,1),exp(Eft_full).*mean(y),'k', 'LineWidth', 2)
-plot(xtt(:,1),exp(Eft_full-2.*sqrt(Varft_full)).*mean(y),'k--')
-plot(xtt(:,1),exp(Eft_full+2.*sqrt(Varft_full)).*mean(y),'k--')
+plot(xtt(1:length(y),1),y,'b.', 'MarkerSize',20)
+plot(xtt(length(y)+1:length(y1),1),y1(length(y)+1:length(y1)),'b*', 'MarkerSize',7)
+plot(xtt(:,1),exp(Eft_full).*mean(y),'b', 'LineWidth', 2)
+plot(xtt(:,1),exp(Eft_full-1.96.*sqrt(Varft_full)).*mean(y),'b--')
+plot(xtt(:,1),exp(Eft_full+1.96.*sqrt(Varft_full)).*mean(y),'b--')
 
-
-legend('Training data', 'Validation data','Predicted mean','2\sigma-error', 'Location', 'NorthWest')
+legend('Training data', 'Validation data','Predicted mean','95% CI', 'Location', 'NorthWest')
 line(2008,0:80,'LineWidth',2)
 axis tight

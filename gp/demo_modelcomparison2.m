@@ -2,23 +2,25 @@
 %
 %  Description: 
 %    
-%    By using kfc-validation and bayesian bootstrap we compare the predictive 
-%    ability of different models by estimating various assessment
-%    statistics such as Harrel's C or IDI
+%    we compare the predictive ability of different models by
+%    estimating various assessment statistics such as Harrel's C or
+%    IDI. Predictions are made using k-fold-CV and uncertainty
+%    using Bayesian bootstrap.
 %
 %    We will compare four different models: Cox proportional hazards,
-%    weibull,log-gaussian and log-logistic model.   
+%    Weibull, log-Gaussian and log-logistic model.   
 %   
 %    The censoring indicator ye is
 %    
 %      ye = 0 for uncensored event
 %      ye = 1 for right censored event.
 % 
-%    Example data set is leukemia survival data in Northwest England
-%    presented in (Henderson, R., Shimakura, S., and Gorst, D. (2002).
-%    Modeling spatial variation in leukemia survival data. Journal of the
-%    American Statistical Association, 97:965–972). Data set was downloaded
-%    from http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
+%    Example data set is leukemia survival data in Northwest
+%    England presented in (Henderson, R., Shimakura, S., and Gorst,
+%    D. (2002). Modeling spatial variation in leukemia survival
+%    data. Journal of the American Statistical Association,
+%    97:965-972). Data set was downloaded from
+%    http://www.math.ntnu.no/%7Ehrue/r-inla.org/examples/leukemia/leuk.dat
 %
 %  See also  DEMO_MODELCOMPARISON, DEMO_SURVIVAL_COXPH
 %
@@ -26,14 +28,9 @@
 % Copyright (c) 2012 Ernesto Ulloa
 % Copyright (c) 2012 Aki Vehtari
 
-% This software is distributed under the GNU General Public
-% License (version 3 or later); please refer to the file
-% License.txt, included with the software, for details.
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
-
-%% load data
 
 % First load data
 S = which('demo_survival_weibull');
@@ -50,8 +47,9 @@ y=y/max(y);
 
 ye=1-leukemiadata(:,2); % event indicator, ye = 0 for uncensored event
                         %                  ye = 1 for right censored event
-                        
-%  we choose for the new model (for example): 'age', 'sex', 'wbc', and 'tpi' covariates
+
+%  we choose for the new model: 'age', 'sex', 'wbc', and 'tpi'
+%  covariates
 x0=leukemiadata(:,5:8);
 x=x0;
 
@@ -59,53 +57,40 @@ x=x0;
 x(:,[1 3:4])=bsxfun(@rdivide,bsxfun(@minus,x0(:,[1 3:4]),mean(x0(:,[1 3:4]),1)),std(x0(:,[1 3:4]),1));
 [n, nin]=size(x);
 
-
 %* set tau
 tt=0.1:.1:1;
 
 % set D event indicator vector for each time in tt (Di=0 if i experienced
 % the event before tau and Di=1 otherwise
 
-
 % Also we set YY, the observed time vector for each time value in tt 
-
 for i=1:size(tt,2)
-    for i2=1:size(ye,1)
-        if y(i2)>tt(i)
-        yytemp(i2)=tt(i);
-        Dtemp(i2)=1;   
-        else
-            if ye(i2)==1
-            Dtemp(i2)=1;
-            else  
-            Dtemp(i2)=0;
-            end
-        yytemp(i2)=y(i2);
-        end
+  for i2=1:size(ye,1)
+    if y(i2)>tt(i)
+      yytemp(i2)=tt(i);
+      Dtemp(i2)=1;   
+    else
+      if ye(i2)==1
+        Dtemp(i2)=1;
+      else  
+        Dtemp(i2)=0;
+      end
+      yytemp(i2)=y(i2);
     end
-    yyi{i}=yytemp';
-    Di{i}=Dtemp';
+  end
+  yyi{i}=yytemp';
+  Di{i}=Dtemp';
 end
-
-
 for i=1:size(Di,2)
-    D(:,i)=Di{i};
+  D(:,i)=Di{i};
 end
-
 for i=1:size(yyi,2)
-    yy(:,i)=yyi{i};
+  yy(:,i)=yyi{i};
 end
-
-
-
-
-%  First we obtain predictions for all four models using kfc-validation
 
 % set time vector to make predictions
 yt=bsxfun(@times,ones(size(y)),tt);
 
-
-%% Cox Ph Predictions 
 % *** Cox proportional Harzards model ***
 
 % number of time intervals for Cox proportional hazards model
@@ -128,14 +113,6 @@ gpcf2 = gpcf_sexp('lengthScale', ones(1,size(x,2)), 'magnSigma2', 1.2, 'lengthSc
 % Create the likelihood structure
 lik = lik_coxph('S', S);
 
-% use mean of time intervals in hazard function
-% xtmp=zeros(length(S)-1,1);
-% for i1=1:(length(S)-1)
-%     xtmp(i1,1)=mean([S(i1) S(i1+1)]);
-% end
-% lik.xtime=xtmp;
-% lik.stime=S;
-
 % NOTE! if Multiple covariance functions per latent is used, define
 % gp.comp_cf as follows:
 % gp.comp_cf = {[1 2] [5 6]}
@@ -146,20 +123,12 @@ gpcph.comp_cf = {[1] [2]};
 % Set the approximate inference method to Laplace
 gpcph = gp_set(gpcph, 'latent_method', 'Laplace');
 
-%gpla_nd_e(gp_pak(gp),gp,x,y,'z',ye)
-%gpla_nd_g(gp_pak(gp),gp,x,y,'z',ye);
-
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
 
-%pcph=pred_distrf(gpcph,x,y,ye,opt);
-%critcph=pcph;
-
-
+%  First obtain predictions using k-fold-CV
 [cdf]=gp_kfcv_cdf(gpcph,x,y,'z',D,'yt',yt,'opt',opt);
 critcph=cdf;
 
-
-%% Weibull predictions
 % *** Weibull model ***
 
 % Create the likelihood structure
@@ -178,15 +147,10 @@ gpw = gp_set(gpw, 'latent_method', 'Laplace');
 
 % Obtain predictions
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
-% pw=pred_distrf(gpw,x,y,ye,opt);
-% critw=pw;
-
 
 [cdf]=gp_kfcv_cdf(gpw,x,y,'z',D,'yt',yt,'opt',opt);
 critw=cdf;
 
-
-%% Log Gaussian predictions
 % *** Log Gaussian model ***
 
 % Create the likelihood structure
@@ -197,7 +161,6 @@ pl = prior_gaussian('s2',1);
 pm = prior_gaussian('s2',1);
 gpcf1 = gpcf_neuralnetwork('weightSigma2', 1*ones(1,nin), 'biasSigma2', 0.05, 'weightSigma2_prior', pl, 'biasSigma2_prior', pm);
 
-
 % Create the GP structure
 gplg = gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-6);
 
@@ -207,16 +170,9 @@ gplg = gp_set(gplg, 'latent_method', 'Laplace');
 % Obtain predictions
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
 
-
-% plg=pred_distrf(gplg,x,y,ye,opt);
-% critlg=plg;
-
-
 [cdf]=gp_kfcv_cdf(gplg,x,y,'z',D,'yt',yt,'opt',opt);
 critlg=cdf;
 
-
-%% Log Logistic predictions
 % *** Log Logistic model ***
 
 % Create the likelihood structure
@@ -235,18 +191,12 @@ gpll = gp_set(gpll, 'latent_method', 'Laplace');
 
 % Obtain predictions
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','Derivativecheck','off');
-% pll=pred_distrf(gpll,x,y,ye,opt);
-% critll=pll;
 
 [cdf]=gp_kfcv_cdf(gpll,x,y,'z',D,'yt',yt,'opt',opt);
 critll=cdf;
 
-
-
-
 %% Calculate statics and compare models 
 % MODEL COMPARISON
-
 
 %% AUC 
 % AUC for Binary outcomes P(Pi>Pj | Di=1,Dj=0)
@@ -255,16 +205,12 @@ critll=cdf;
 [aucll,fpsll,tpsll]=aucs(critll(:,length(tt)),D(:,length(tt)));
 [auclg,fpslg,tpslg]=aucs(critlg(:,length(tt)),D(:,length(tt)));
 
-stcph=sprintf(['\n AUC at end of study for Cph:   ', num2str(auccph)]);
-stw=sprintf(['\n AUC at end of study for Weibull:   ', num2str(aucw)]);
-stlg=sprintf(['\n AUC at end of study for Log Gaussian:   ', num2str(auclg)]);
-stll=sprintf(['\n AUC at end of study for Log Logistic:   ', num2str(aucll)]);
+fprintf(['\n AUC at end of study for Cox-ph:   ', num2str(auccph)]);
+fprintf(['\n AUC at end of study for Weibull:   ', num2str(aucw)]);
+fprintf(['\n AUC at end of study for log-Gaussian:   ', num2str(auclg)]);
+fprintf(['\n AUC at end of study for log-logistic:   ', num2str(aucll)]);
 
-display(stcph)
-display(stw)
-display(stlg)
-display(stll)
-
+figure
 hold on
 subplot(2,2,1);
 plot(fpscph,tpscph,'b')
@@ -281,7 +227,6 @@ title('ROC curve')
 legend('Log Gaussian')
 hold off
 
-
 %% Harrell's C 
 %Harrel's C(t) = P(Pi>Pj | Di(ti)=1, ti<tj, ti<tt) at end of study
 ccph=hct(critcph(:,length(tt)),y,D(:,length(tt)),tt(length(tt)));
@@ -289,21 +234,15 @@ cw=hct(critw(:,length(tt)),y,D(:,length(tt)),tt(length(tt)));
 cll=hct(critll(:,length(tt)),y,D(:,length(tt)),tt(length(tt)));
 clg=hct(critlg(:,length(tt)),y,D(:,length(tt)),tt(length(tt)));
 
-stcph=sprintf(['\n Harrells C at end of study for Cph:   ', num2str(ccph)]);
-stw=sprintf(['\n Harrells C at end of study for Weibull:   ', num2str(cw)]);
-stlg=sprintf(['\n Harrells C at end of study for Log Gaussian:   ', num2str(cll)]);
-stll=sprintf(['\n Harrells C at end of study for Log Logistic:   ', num2str(clg)]);
-
-display(stcph)
-display(stw)
-display(stlg)
-display(stll)
+fprintf(['\n Harrells C at end of study for Cox-ph:   ', num2str(ccph)]);
+fprintf(['\n Harrells C at end of study for Weibull:   ', num2str(cw)]);
+fprintf(['\n Harrells C at end of study for log-Gaussian:   ', num2str(cll)]);
+fprintf(['\n Harrells C at end of study for log-logistic:   ', num2str(clg)]);
 
 % Obtain for Log Gaussian and Log Logistic models Binary AUC(t) = P(Pi>Pj | Di(t)=1,Dj(t)=0) and
-% Harrel's C(t) = P(Pi>Pj | Di(ti)=1, ti<tj, ti<tt) for every element of tt  
 [autlgll,clgll]=assess(critlg,critll,yy,D,tt);
 
-% Again, but for CoX Proportional Hazards and weibull models
+% Again, but for Cox-ph and Weibull models
 [autcphw,ccphw]=assess(critcph,critw,yy,D,tt);
 
 % Plot Harrells C in function of time for all four models, time interval:(0,1) 
@@ -318,8 +257,8 @@ xlabel('Time');
 ylabel('Harrolds C');
 hold off;
 
-
-% Use bayesian bootsrap to obtain Harrells (CLG-CLL) statistic density at tt=1
+% Use Bayesian bootsrap to obtain Harrells (CLG-CLL) statistic
+% density at tt=1
 [clg,bbll]=hcs(critll(:,size(tt,2)),y,D(:,size(tt,2)),tt(size(tt,2)),'rsubstream',1);
 [cll,bblg]=hcs(critlg(:,size(tt,2)),y,D(:,size(tt,2)),tt(size(tt,2)),'rsubstream',1);
 title('Estimated density of CLG-CLL')
@@ -329,13 +268,11 @@ hold off
 
 % We integrate the (CLG-CLL) estimated density in the (0,inf) interval
 zc=lgpdens_cum(bblg-bbll,0,inf);
-st1=sprintf(['Estimated c statistics for Log Gaussian and Log Logistic respectively:   ', num2str(clg) '  ' num2str(cll)]);
-st2=sprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
-display(st1);
-display(st2);
+fprintf(['Estimated c statistics for Log Gaussian and Log Logistic respectively:   ', num2str(clg) '  ' num2str(cll)]);
+fprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
 
-
-% Again, use bayesian bootsrap to obtain Harrells (CW-CCPH) statistic density at tt=1
+% Again, use Bayesian bootsrap to obtain Harrells (CW-CCPH)
+% statistic density at tt=1
 [cw,bbw]=hcs(critw(:,size(tt,2)),y,D(:,size(tt,2)),tt(size(tt,2)),'rsubstream',1);
 [ccph,bbcph]=hcs(critcph(:,size(tt,2)),y,D(:,size(tt,2)),tt(size(tt,2)),'rsubstream',1);
 title('Estimated density of CCW-CCPH')
@@ -345,33 +282,30 @@ hold off
 
 % We integrate the (CW-CCPH) estimated density in the (0,inf) interval
 zc=lgpdens_cum(bbw-bbcph,0,inf);
-st1=sprintf(['Estimated c statistics for Weibull and CoxPh respectively:   ', num2str(cw) '  ' num2str(ccph)]);
-st2=sprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
-display(st1);
-display(st2);
-
+fprintf(['Estimated C-statistics for Weibull and Cox-ph respectively:   ', num2str(cw) '  ' num2str(ccph)]);
+fprintf(['Cumulative probability in the (0,inf) interval:   ', num2str(zc)]);
 
 %% IDI
 
-% Estimate r² for all four models, We calculate idi between log logistic and loggaussian
-% and idi between weibull and coxph. Also we estimate the densities and the cumulative
-% probability in the (0,inf) interval at time 1
-
+% Estimate R^2 for all four models, We calculate IDI between log
+% logistic and loggaussian and IDI between weibull and coxph. Also
+% we estimate the densities and the cumulative probability in the
+% (0,inf) interval at time 1
 
 [idi1,bbid1,rll,rlg] = idis(critll(:,size(tt,2)),critlg(:,size(tt,2)),'rsubstream',1);
 zidi1=lgpdens_cum(bbid1,0,inf);
 
-stll=sprintf(['\n R² statistic for Log Logistic model:', num2str(rll)]);
-stlg=sprintf(['\n R² statistic for Log Gaussian model:', num2str(rlg)]);
+fprintf(['\n R^2 statistic for log-logistic model:', num2str(rll)]);
+fprintf(['\n R^2 statistic for log-Gaussian model:', num2str(rlg)]);
 display(stll)
 display(stlg)
 
-st1=sprintf(['Estimated idi between Log Logistic and Loggaussian : ', num2str(idi1)]);
-st2=sprintf(['cumulative probability in the (0,inf) interval: ', num2str(zidi1)]);
+fprintf(['Estimated IDI between log-logistic and log-Gaussian : ', num2str(idi1)]);
+fprintf(['cumulative probability in the (0,inf) interval: ', num2str(zidi1)]);
 display(st1)
 display(st2)
 
-title('IDI estimated density between Log Logistic and Loggaussian')
+title('IDI estimated density between log-logistic and log-Gaussian')
 hold on 
 lgpdens(bbid1)
 hold off 
@@ -380,17 +314,17 @@ hold off
 zidi2=lgpdens_cum(bbid2,0,inf);
 
 
-st1=sprintf(['\n R² statistic for Weibull model:', num2str(rw)]);
-st2=sprintf(['\n R² statistic for Cox Proportinal model:', num2str(rcph)]);
+fprintf(['\n R^2 statistic for Weibull model:', num2str(rw)]);
+fprintf(['\n R^2 statistic for Cox-ph model:', num2str(rcph)]);
 display(st1)
 display(st2)
 
-st1=sprintf(['Estimated idi between Weibull and CoxPh : ', num2str(idi2)]);
-st2=sprintf(['cumulative probability in the (0,inf) interval: ', num2str(zidi2)]);
+fprintf(['Estimated idi between Weibull and Cox-ph : ', num2str(idi2)]);
+fprintf(['cumulative probability in the (0,inf) interval: ', num2str(zidi2)]);
 display(st1)
 display(st2)
 
-title('IDI estimated density between Weibull and CoxPh')
+title('IDI estimated density between Weibull and Cox-ph')
 hold on 
 lgpdens(bbid2)
 hold off 
@@ -403,24 +337,23 @@ Indx{1}=1:1:size(tt,2);
 j=2;
 k=round(size(tt,2)/2); 
 for i=2:k
-    Indxtmp{i}=1:i:size(tt,2);
-    if length(Indxtmp{i})~=length(Indxtmp{i-1})
-        Indx{j}=Indxtmp{i};
-        j=j+1;
-    end
-    
-end
-
-
-for i=1:size(Indx,2)
-l(i)=length(Indx{i});
+  Indxtmp{i}=1:i:size(tt,2);
+  if length(Indxtmp{i})~=length(Indxtmp{i-1})
+    Indx{j}=Indxtmp{i};
+    j=j+1;
+  end
+  
 end
 
 for i=1:size(Indx,2)
-eacph(i) = ext_auc(critcph(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
-eaw(i) = ext_auc(critw(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
-ealg(i) = ext_auc(critlg(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
-eall(i) = ext_auc(critll(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
+  l(i)=length(Indx{i});
+end
+
+for i=1:size(Indx,2)
+  eacph(i) = ext_auc(critcph(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
+  eaw(i) = ext_auc(critw(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
+  ealg(i) = ext_auc(critlg(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
+  eall(i) = ext_auc(critll(:,Indx{i}),tt(:,Indx{i}),tt(:,Indx{i}(size(Indx{i},2))));
 end
 
 hold on
@@ -430,7 +363,7 @@ plot(wrev(l),eacph,'r')
 plot(wrev(l),eaw,'b')
 plot(wrev(l),ealg,'g')
 plot(wrev(l),eall,'y')
-legend('CPH', 'Weibull','Log Gaussian','Log Logistic')
+legend('Cox-ph', 'Weibull','Log-Gaussian','Log-Logistic')
 hold off
 
 stcph=sprintf(['\n ExtAUC at end of study for model 1:   ', num2str(eacph(size(Indx,2)))]);
@@ -491,7 +424,7 @@ fs_lg = gp_rnd(gplg, x, y, xa , 'z', ye,'nsamp',1000);
 
 %zz = 0.001:.001:max(y);
 for i=1:size(zz,2)   
-yylg(i) =1. - mean(norm_cdf(log(zz(i)), fs_lg, sqrt(gplg.lik.sigma2)),2);
+  yylg(i) =1. - mean(norm_cdf(log(zz(i)), fs_lg, sqrt(gplg.lik.sigma2)),2);
 end
 
 % Log Logistic model 
@@ -505,7 +438,7 @@ fs_ll = gp_rnd(gpll, x, y, xa , 'z', ye,'nsamp',1000);
 
 %zz = 0.001:.001:max(y);
 for i=1:size(zz,2)
-yyll(i)=1.-mean(1./(1.+exp(-(-(fs_ll)+log(zz(i)))/gpll.lik.shape)),2);
+  yyll(i)=1.-mean(1./(1.+exp(-(-(fs_ll)+log(zz(i)))/gpll.lik.shape)),2);
 end
 %yyll=(1+(zz/exp(mean(fs_ll))).^gpll.lik.shape).^(-1);
 

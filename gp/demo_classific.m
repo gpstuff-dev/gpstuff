@@ -91,8 +91,8 @@ fprintf(['%s model with Laplace integration over the latent values and\n' ...
 % (Laplace is the default, so this could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'MaxIter',100,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -131,10 +131,10 @@ fprintf(['%s model with EP integration over the latent values and\n' ...
          'MAP estimate for the parameters\n'],gp.lik.type)
 
 % Set the approximate inference method
-gp = gp_set(gp, 'latent_method', 'EP');
+gp = gp_set(gp, 'latent_method', 'EP','latent_opt',struct('parallel','on'));
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
+% Set the options for the optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -178,7 +178,7 @@ gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-6);
 
 % Sample using default method, that is, surrogate and elliptical slice samplers
 % these samplers are quite robust with default options
-[gp_rec,g,opt]=gp_mc(gp, x, y, 'nsamples', 220, 'display', 0);
+[gp_rec,g,opt]=gp_mc(gp, x, y, 'nsamples', 220, 'display', 20);
 % Remove burn-in
 gp_rec=thin(gp_rec,21,2);
 

@@ -1,7 +1,7 @@
 % DEMO_LGPDENS  Demonstration of Logistic-Gaussian Process density estimate
 %               for 1D and 2D data 
 %
-%    Description 
+%  Description 
 %
 %    Logistic Gaussian Process (LGPDENS) is a model for density
 %    estimation. For the samples from continuous distribution, the
@@ -149,25 +149,24 @@ figure(4)
 x=load('demodata/galaxy.txt');
 xt=linspace(0,40000,800)';
 subplot(2,2,1)
-t0=cputime; lgpdens(x,xt,'speedup', 'off'); t0=cputime-t0;
+tic,lgpdens(x,xt,'speedup', 'off');t0=toc;
 axis tight
-title(['Galaxy, no speed-up, cpu-time: ' num2str(t0)])
+title(['Galaxy, no speed-up, elapsed time: ' num2str(t0)])
 subplot(2,2,2)
-t1=cputime; lgpdens(x,xt,'speedup', 'on'); t1=cputime-t1;
+tic,lgpdens(x,xt,'speedup', 'on');t1=toc;
 axis tight
-title(['Galaxy, FFT speed-up, cpu-time: ' num2str(t1)])
+title(['Galaxy, FFT speed-up, elapsed time: ' num2str(t1)])
 
 % Old faithful, 2D
 x=load('demodata/faithful.txt');
 subplot(2,2,3)
-t0=cputime; lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'off'); t0=cputime-t0;
+tic,lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'off');t0=toc;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-title(['Old faithful, no speed-up, cpu-time: ' num2str(t0)])
+title(['Old faithful, no speed-up, elapsed time: ' num2str(t0)])
 subplot(2,2,4)
-t1=cputime; lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'on'); t1=cputime-t1;
+tic,lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'on');t1=toc;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
-title(['Old faithful, KRON speed-up, cpu-time: ' num2str(t1)])
-
+title(['Old faithful, KRON speed-up, elapsed time: ' num2str(t1)])
 
 % =====================================
 % 1) 1D-example MCMC vs Laplace

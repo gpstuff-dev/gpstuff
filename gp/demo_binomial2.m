@@ -77,7 +77,7 @@ fprintf('Laplace+grid approximation ')
 % (Laplace is default, so this could be skipped)
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for the scaled conjugate optimization
+% Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','off');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'z',N,'opt',opt);
@@ -160,7 +160,7 @@ fprintf('EP+grid approximation      ')
 
 gp = gp_set(gp, 'latent_method', 'EP');
 
-% Set the options for the scaled conjugate optimization
+% Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','off');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'z',N,'opt',opt);

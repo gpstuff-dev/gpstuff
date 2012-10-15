@@ -59,8 +59,8 @@ likc=lik_negbinztr();
 gpc=gp_set('lik',likc,'cf',cf,'jitterSigma2',1e-6,'latent_method','EP','latent_opt',struct('parallel','on'));
 % Note that although both parts use 'cf', they have separate hyperparameters
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter','MaxIter',100);
+% Set the options for the quasi-Newton optimization
+opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
 gpz=gp_optim(gpz,x,yz,'opt',opt,'optimf',@fminlbfgs);
 gpc=gp_optim(gpc,xc,yc,'z',yec,'opt',opt,'optimf',@fminlbfgs);
 

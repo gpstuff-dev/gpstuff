@@ -68,7 +68,7 @@ gp = gp_set('lik', lik_multinom, 'cf', gpcf1, 'jitterSigma2', 1e-4);
 %opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100);
 
-% Optimize with the scaled conjugate gradient method
+% Optimize with the quasi-Newton method
 gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminunc);
 
 % make the prediction for test points

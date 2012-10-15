@@ -38,9 +38,9 @@ yt= f1;
 x=x(:); y=y(:); xt=xt(:);
 
 % Create the covariance functions
-pl = prior_logunif();
-pm = prior_logunif(); 
-gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', 0.1, ...
+pl = prior_t('s2',10);
+pm = prior_t('s2',10); 
+gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', 0.5, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_exp('lengthScale', 1, 'magnSigma2', 0.1, ...
                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
@@ -59,12 +59,10 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 % For more complex problems, maxiter in latent_opt should be increased.
 % gp.latent_opt.maxiter=1e6;
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','on');
-
+% Set the options for the optimization
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Derivativecheck','on');
 % Optimize with the scaled conjugate gradient method
-% gp=gpla_nd_e('init',gp); gp.lik.structW=false;gp.lik.fullW=false;
-gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 % make prediction to the data points
 [Ef, Varf,lpyt] = gp_pred(gp, x, y, xt, 'yt', yt);
@@ -75,10 +73,10 @@ prctmus=[Ef11-1.645*sqrt(Varf11) Ef11 Ef11+1.645*sqrt(Varf11)];
 fprintf('mlpd inputdependentnoise: %.2f\n', mean(lpyt));
 
 % Gaussian for comparison
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Derivativecheck','off');
 lik2 = lik_gaussian();
 gp2 = gp_set('lik', lik2, 'cf', gpcf1, 'jitterSigma2', 1e-9);
-gp2 = gp_optim(gp2,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp2 = gp_optim(gp2,x,y,'opt',opt);
 [Ef2, Varf2, lpyt2] = gp_pred(gp2, x, y, xt,'yt',yt);
 prctmus2 = gp_predprctmu(gp2, x, y, xt);
 fprintf('mlpd gaussian: %.2f\n', mean(lpyt2));
@@ -86,9 +84,9 @@ fprintf('mlpd gaussian: %.2f\n', mean(lpyt2));
 % Student-t for comparison
 lik=lik_t();
 gp3=gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-9);
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Derivativecheck','off');
 gp3 = gp_set(gp3, 'latent_method', 'Laplace');
-gp3=gp_optim(gp3,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp3=gp_optim(gp3,x,y,'opt',opt);
 [Ef3, Varf3,lpyt3] = gp_pred(gp3, x, y, xt, 'yt', yt);
 prctmus3 = gp_predprctmu(gp3, x, y, xt);
 fprintf('mlpd student-t: %.2f\n', mean(lpyt3));
@@ -111,6 +109,7 @@ plot(xt, Ef3,'b',xt,prctmus3(:,1),'r',xt,prctmus3(:,3),'r', x, f1, 'k')
 ylim([-3 3]), title('Student-t noise model')
 
 figure
+s2=gp.lik.sigma2;
 plot(xt, s2.*exp(Ef12), '-b',x, sigma2.*exp(f2), '-k', xt, s2.*exp(Ef12 + 1.96.*sqrt(diag(Varf(nt+1:end, nt+1:end)))), '-r', xt,s2.*exp(Ef12 - 1.96.*sqrt(diag(Varf(nt+1:end, nt+1:end)))), '-r')
 legend('Predicted noise variance', 'Real noise variance','95% CI',2);
 
@@ -149,7 +148,7 @@ lik=lik_inputdependentnoise('sigma2', 0.1, 'sigma2_prior', prior_fixed());
 gp=gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-6, 'comp_cf', {[1] [2]});
 gp = gp_set(gp, 'latent_method', 'Laplace');
 opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
-gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,x,y,'opt',opt);
 % Increase maxiter for predictions in case of slow convergence
 gp.latent_opt.maxiter=1e6;
 [Ef,Varf,lpyt]=gp_pred(gp,x,y,xt, 'yt',yt);
@@ -158,14 +157,14 @@ fprintf('mlpd inputdependentnoise: %.2f\n', mean(lpyt));
 % Gaussian for comparison
 lik2 = lik_gaussian('sigma2', sigma2);
 gp2 = gp_set('lik', lik2, 'cf', gpcf1, 'jitterSigma2', 1e-6);
-gp2 = gp_optim(gp2,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp2 = gp_optim(gp2,x,y,'opt',opt);
 [Ef2,Varf2,lpyt2]=gp_pred(gp2,x,y,xt,'yt',yt);
 fprintf('mlpd gaussian: %.2f\n', mean(lpyt2));
 
 % Student-t for comparison
 lik3=lik_t('sigma2', sigma2);
 gp3=gp_set('lik', lik3, 'cf', gpcf1, 'jitterSigma2', 1e-6, 'latent_method', 'Laplace');
-gp3=gp_optim(gp3,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp3=gp_optim(gp3,x,y,'opt',opt);
 [Ef3,Varf3,lpyt3]=gp_pred(gp3,x,y,xt,'yt',yt);
 fprintf('mlpd student-t: %.2f\n', mean(lpyt3));
 
@@ -208,11 +207,11 @@ y = f1 + sqrt(sigma2).*randn(size(x));yt=f1;
 x=x(:); y=y(:); xt=xt(:);
 
 % Create the covariance functions
-pl = prior_t('s2',20);
-pm = prior_t('s2',20); 
+pl = prior_t('s2',10);
+pm = prior_t('s2',10); 
 gpcf1 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2', 0.5, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
-gpcf2 = gpcf_sexp('lengthScale', 0.5, 'magnSigma2',0.1, ...
+gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2',0.1, ...
                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the the model
@@ -221,14 +220,14 @@ gp = gp_set('lik', lik, 'cf', {gpcf1 gpcf2}, 'jitterSigma2', 1e-9, 'comp_cf', {[
 
 % Set the approximate inference method to Laplace
 gp = gp_set(gp, 'latent_method', 'Laplace');
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter','MaxIter',100,'Derivativecheck','off');
+opt=optimset('TolFun',1e-4,'TolX',1e-4);
 
 % if flat priors are used, there might be need to increase
 % gp.latent_opt.maxiter for laplace algorithm to converge properly
 
 % gp.latent_opt.maxiter=1e6;
 
-gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,x,y,'opt',opt);
 
 [Ef, Varf,lpyt] = gp_pred(gp, x, y, xt,'yt',yt);
 Ef11=Ef(1:nt);Ef12=Ef(nt+1:end);

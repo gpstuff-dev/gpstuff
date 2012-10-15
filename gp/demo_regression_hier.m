@@ -64,7 +64,7 @@ cfl=gpcf_linear('coeffSigma2',1,'selectedVariables',1,...
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfl});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -84,7 +84,7 @@ cfci=gpcf_prod('cf',{cfc cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -106,7 +106,7 @@ cfli=gpcf_prod('cf',{cfl cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfli});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -129,7 +129,7 @@ cfs=gpcf_sexp('selectedVariables',1);
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfs});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -157,7 +157,7 @@ cfsi=gpcf_prod('cf',{cfs cc});
 gp=gp_set('lik',lik,'cf',{cfc cfci cfl cfli cfs cfsi},...
           'jitterSigma2',1e-6);
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -194,7 +194,7 @@ cfs=gpcf_sexp('metric',metric_euclidean('components',{[1] [2]},...
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfs});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % predict and plot
 Ef=gp_pred(gp,xn,yn,xn);
 Eff=reshape(denormdata(Ef,ymean,ystd),nrats,ntime);
@@ -231,7 +231,7 @@ cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP
 gp=gp_set('lik',lik,'cf',{cfc cfci cfnn cfnni});
 % optimize
-gp=gp_optim(gp,xn,yn,'opt',opt,'optimf',@fminlbfgs);
+gp=gp_optim(gp,xn,yn,'opt',opt);
 % integrate over parameters
 gps=gp_ia(gp,xn,yn);
 % predict and plot
@@ -282,11 +282,11 @@ ymn(missi,:)=[];
 xmn(missi,:)=[];
 
 % 10) neuralnetwork covariance, IA and missing data
-cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_t());
+cfc=gpcf_constant('constSigma2',1,'constSigma2_prior',prior_gaussian());
 % own constant term for each rat
 cfci=gpcf_prod('cf',{cfc cc});
 % nonlinear part with neuralnetwork covariance
-cfnn=gpcf_neuralnetwork('selectedVariables',1);
+cfnn=gpcf_neuralnetwork('selectedVariables',1,'biasSigma2_prior',prior_gaussian('s2',10));
 % nonlinear covariance term for each rat
 cfnni=gpcf_prod('cf',{cfnn cc});
 % construct GP

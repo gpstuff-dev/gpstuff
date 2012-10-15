@@ -245,6 +245,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
   if isempty(trindex) || isempty(tstindex)
     [trindex, tstindex] = cvit(n, k, rstream);
+  else
+    k=length(trindex);
   end
   parent_folder = pwd;
 
@@ -252,7 +254,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   trw=[];
   % loop over the crossvalidation sets
   if ismember(display,{'iter'})
-    fprintf('\n Evaluating the CV utility\n')
+    fprintf('Evaluating the CV utility. The inference method is %s.\n',inf_method)
   end
   nargout2 = nargout;
   
@@ -293,15 +295,15 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     
 
   % parfor enables parallel loop
-  % parfor i=1:length(trindex)
+  % parfor i=1:k
   
-  for i=1:length(trindex)
+  for i=1:k
         if isempty(tstindex{i})
           continue
         end
 
         if isequal(display,'iter')
-          fprintf('The CV-iteration number: %d \n', i)
+          fprintf(' The CV-fold number: %d/%d \n', i, k)
         end
 
         % Set the training and test sets for i'th cross-validation set
@@ -623,7 +625,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
                         
   
-                        %   for i=1:length(trindex)
+                        %   for i=1:k
                         %     if isempty(tstindex{i})
                         %       continue
                         %     end
@@ -649,9 +651,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
                         %   mrmse_cv = sqrt(mean(rmse_cv));
                         %   mabs_cv = mean(abs_cv);
                         % 
-                        %   Var_lpd_cv = var(lpd_cvm)./length(trindex);
-                        %   Var_rmse_cv = var(rmse_cvm)./length(trindex);
-                        %   Var_abs_cv = var(abs_cvm)./length(trindex);
+                        %   Var_lpd_cv = var(lpd_cvm)./k;
+                        %   Var_rmse_cv = var(rmse_cvm)./k;
+                        %   Var_abs_cv = var(abs_cvm)./k;
                         % 
                         %   criteria.mlpd_cv=mlpd_cv;
                         %   criteria.Var_lpd_cv=Var_lpd_cv;
@@ -660,7 +662,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
                         %   criteria.mabs_cv=mabs_cv;
                         %   criteria.Var_abs_cv=Var_abs_cv;
   
-  for i=1:length(trindex)
+  for i=1:k
 
         if isempty(tstindex{i})
           continue
@@ -735,7 +737,7 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
            if predlpyt && ~emptylp
               mlpd_cv = mean(lpd_cv);
-              Var_lpd_cv = var(lpd_cvm)./length(trindex);
+              Var_lpd_cv = var(lpd_cvm)./k;
               else
               mlpd_cv = [];
               Var_lpd_cv = [];
@@ -745,8 +747,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
           if predyt && ~emptyt
             mrmse_cv = sqrt(mean(rmse_cv));
             mabs_cv = mean(abs_cv);
-            Var_rmse_cv = var(rmse_cvm)./length(trindex);
-            Var_abs_cv = var(abs_cvm)./length(trindex);
+            Var_rmse_cv = var(rmse_cvm)./k;
+            Var_abs_cv = var(abs_cvm)./k;
           else
             mrmse_cv = [];
             mabs_cv = [];

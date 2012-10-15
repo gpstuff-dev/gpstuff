@@ -101,7 +101,9 @@ switch gp.type
           [edata, eprior, e] = set_output_for_notpositivedefinite;
           return
         end
+        ws=warning('off','MATLAB:singularMatrix');
         b=L\y;
+        warning(ws);
         edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
       end
     else
@@ -223,7 +225,12 @@ switch gp.type
       [Kbl_ff, Cbl_ff] = gp_trcov(gp, x(ind{i},:));
       Labl{i} = Cbl_ff - Qbl_ff;
       iLaKfu(ind{i},:) = Labl{i}\K_fu(ind{i},:);
-      edata = edata + 2*sum(log(diag(chol(Labl{i},'upper')))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
+      [Ltmp, notpositivedefinite]=chol(Labl{i},'upper');
+      if notpositivedefinite
+        [edata, eprior, e] = set_output_for_notpositivedefinite;
+        return
+      end
+      edata = edata + 2*sum(log(diag(Ltmp))) + y(ind{i},:)'*(Labl{i}\y(ind{i},:));
     end
     % The data contribution to the error is
     % E = n/2*log(2*pi) + 0.5*log(det(Q_ff+La)) + 0.5*y'inv(Q_ff+La)y

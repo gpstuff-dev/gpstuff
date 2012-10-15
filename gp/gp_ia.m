@@ -165,7 +165,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   optdefault.Display='off';
   opt_optim=optimset(optdefault,opt_optim);
 
-  tic
+  tall=tic;
     
   % ===============================
   % Find the mode of the parameters
@@ -173,12 +173,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   w = gp_pak(gp);
   if isa(optimf,'function_handle')
     if ismember(opt.display,{'on','iter'})
-      fprintf('%s: finding the mode\n',int_method);
+      fprintf(' IA-%s: finding the mode\n',int_method);
     end
-    w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
-    gp = gp_unpak(gp,w);
-    if ismember(opt.display,{'on','iter'})
-      fprintf('  Elapsed time %.2f seconds\n',toc);
+    tic
+      w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
+      gp = gp_unpak(gp,w);
+    et=toc;
+    if ismember(opt.display,{'on','iter'}) && et > 1
+      fprintf('    Elapsed time %.2f seconds\n',et);
     end
   end
   
@@ -200,21 +202,25 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 
       H = eye(nParam);
       if ismember(opt.display,{'on','iter'})
-        fprintf('%s: computing Hessian using multiplication\n',int_method);
+        fprintf(' IA-%s: computing Hessian using multiplication\n',int_method);
       end
-      for i2 = 1:nParam
-        H(:,i2) = hessianMultiplication(w, H(:,i2));
-      end
-      if ismember(opt.display,{'on','iter'})
-        fprintf('  Elapsed time %.2f seconds\n',toc);
+      tic
+        for i2 = 1:nParam
+          H(:,i2) = hessianMultiplication(w, H(:,i2));
+        end
+      et=toc;
+      if ismember(opt.display,{'on','iter'}) && et > 1
+        fprintf('    Elapsed time %.2f seconds\n',et);
       end
       if any(eig(H))<0
         if ismember(opt.display,{'on','iter'});
-          fprintf('%s: computing Hessian using finite difference\n',int_method);
+          fprintf(' IA-%s: computing Hessian using finite difference\n',int_method);
         end
-        H = hessian(w);
-        if ismember(opt.display,{'on','iter'})
-          fprintf('  Elapsed time %.2f seconds\n',toc);
+        tic
+          H = hessian(w);
+        et=toc;
+        if ismember(opt.display,{'on','iter'}) && et > 1
+          fprintf('    Elapsed time %.2f seconds\n',et);
         end
       end
       Sigma = inv(H);
@@ -245,8 +251,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       switch int_method
         case 'grid'
           if ismember(opt.display,{'on','iter'})
-            fprintf('grid: evaluating density in a grid\n');
+            fprintf(' IA-grid: evaluating density in a grid\n');
           end
+          tic
           if ismember(opt.display,{'iter'})
             fprintf('1 ');
           end
@@ -337,9 +344,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             candidates(1,:)=[];
           end
           
+          et=toc;
           if ismember(opt.display,{'on','iter'})
-            fprintf('grid: evaluated density at %d points\n',numel(p_th));
-            fprintf('  Elapsed time %.2f seconds\n',toc);
+            fprintf(' IA-grid: evaluated density at %d points\n',numel(p_th));
+            if et > 1
+              fprintf('    Elapsed time %.2f seconds\n',et);
+            end
           end
           % Convert densities from the log-space and normalize them
           p_th = p_th(:)-min(p_th);
@@ -391,7 +401,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             points(end,i1)=-sqrt(nParam);
           end
           if ismember(opt.display,{'on','iter'})
-            fprintf('CCD: %d points for %d parameters\n', ...
+            fprintf(' IA-CCD: %d points for %d parameters\n', ...
                     size(points,1),size(points,2));
           end
 
@@ -401,8 +411,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             case 'on'
               % automatic scaling along main axes
               if ismember(opt.display,{'on','iter'})
-                fprintf('CCD: autoscaling in %d directions\n',nParam*2);
+                fprintf(' IA-CCD: autoscaling in %d directions\n',nParam*2);
               end
+              tic
               % log-density at mode
               l0=-fh_e(w,gp,x,y,options);
               for j = 1 : nParam*2
@@ -443,9 +454,12 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %              sd(points(:,ind)*dir>0, ind) = t/sqrt(2);
               end
               if ismember(opt.display,{'iter'}),fprintf('\n');end
+              et=toc;
               if ismember(opt.display,{'on','iter'})
-                fprintf('CCD: scaling minmax [%.2f %.2f]\n',min(ts),max(ts));
-                fprintf('  Elapsed time %.2f seconds\n',toc);
+                fprintf(' IA-CCD: scaling minmax [%.2f %.2f]\n',min(ts),max(ts));
+                if et>1
+                  fprintf('    Elapsed time %.2f seconds\n',et);
+                end
               end
               
               % Each point is scaled with corresponding scaling parameter
@@ -455,9 +469,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             case 'full'
               % automatic scaling along each design direction
               if ismember(opt.display,{'on','iter'})
-                fprintf('CCD: autoscaling in %d directions\n',size(points,1));
+                fprintf(' IA-CCD: autoscaling in %d directions\n',size(points,1));
               end
-              
+              tic
               % log-density at mode
               l0=-fh_e(w,gp,x,y,options);
               if ismember(opt.display,{'iter'})
@@ -481,17 +495,20 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
                 points(i1,:)=t*f0*points(i1,:);
               end
               if ismember(opt.display,{'on','iter'})
-                fprintf('CCD: scaling minmax [%.2f %.2f]\n',min(ts),max(ts));
-                fprintf('  Elapsed time %.2f seconds\n',toc);
+                fprintf(' IA-CCD: scaling minmax [%.2f %.2f]\n',min(ts),max(ts));
+                et=toc;
+                if et>1
+                  fprintf('    Elapsed time %.2f seconds\n',et);
+                end
               end
           end
         
           % Put the points into parameter-space
           th = points*z+repmat(w,size(points,1),1);
           if ismember(opt.display,{'on','iter'})
-            fprintf('%s: evaluating density at %d points\n',int_method,size(th,1));
+            fprintf(' IA-%s: evaluating density at %d points\n',int_method,size(th,1));
           end
-          
+          tic
           p_th=[]; gp_array={};
           if ismember(opt.display,{'iter'}),fprintf('1 ');end
           gp = gp_unpak(gp,th(1,:));
@@ -511,8 +528,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             p_th(i1) = -fh_e(th(i1,:),gp,x,y,options);
             if ismember(opt.display,{'iter'}),fprintf('lp=%.2f\n',p_th(i1));end
           end
-          if ismember(opt.display,{'on','iter'})
-            fprintf('  Elapsed time %.2f seconds\n',toc);
+          et = toc;
+          if ismember(opt.display,{'on','iter'}) && et>1
+            fprintf('    Elapsed time %.2f seconds\n',et);
           end
           
           % Remove points with NaN density
@@ -555,7 +573,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           P_TH=p_th./sum(p_th);
           P_TH=P_TH(:);
           if ~all(isreal(P_TH))
-            error('CCD: Imaginary evaluations')
+            error(' IA-CCD: Imaginary evaluations')
           end
           
           if ~isempty(xt)
@@ -950,6 +968,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   % Add the integration weights into the gp_array
   for i = 1:length(gp_array)
     gp_array{i}.ia_weight = P_TH(i);
+  end
+  
+  et = toc(tall);
+  if ismember(opt.display,{'on','iter'}) && et>1
+    fprintf(' IA-%s: Total elapsed time %.2f seconds\n',int_method,et);
   end
 
   function p = mt_pdf(x,Sigma,nu)

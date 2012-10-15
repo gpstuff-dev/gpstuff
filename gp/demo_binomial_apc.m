@@ -130,11 +130,10 @@ gp = gp_set('lik', lik, 'cf', {gpcf1,gpcf2,gpcf3,gpcf4}, 'jitterSigma2', 1e-6);
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for scaled conjugate optimization
-opt=optimset('TolFun',5e-2,'TolX',1e-2,'Display','iter');
-
-% Optimize with scaled conjugate gradient method
-gp=gp_optim(gp,xx,yy,'z',nn,'opt',opt);
+% Set the options for the optimization
+opt=optimset('TolFun',1e-2,'TolX',1e-3,'Display','iter');
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,xx,yy,'z',nn,'opt',opt,'optimf',@fminlbfgs);
 
 % Making predictions
 
