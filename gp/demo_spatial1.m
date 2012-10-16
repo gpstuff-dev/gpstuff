@@ -265,7 +265,7 @@ axis equal
 axis([0 35 0 60])
 title('relative risk')
 while length(rgp.edata)<500 %
-  [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt, 'display', 'off');
+  [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt, 'display', 0);
   fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
   set(h1(1),'XData',rgp.cf{1}.lengthScale,'YData',sqrt(rgp.cf{1}.magnSigma2));
   set(h1(2),'XData',rgp.cf{1}.lengthScale(end),'YData',sqrt(rgp.cf{1}.magnSigma2(end)));
