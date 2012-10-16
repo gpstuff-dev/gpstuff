@@ -46,10 +46,10 @@ xc=x(ci,:);
 yec=ye(ci,:);
 
 % Create the covariance functions
-cf = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05);
 pl = prior_t('s2',10);
 pm = prior_sqrtunif();
-cf = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+cf = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05, ...
+                   'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the zero part
 likz=lik_logit();

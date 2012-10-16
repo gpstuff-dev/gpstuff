@@ -1,5 +1,6 @@
 %DEMO_SPATIAL1  Demonstration for a disease mapping problem
-%               with Gaussian process prior and Poisson likelihood
+%               with Gaussian process prior and negative-Binomial
+%               likelihood
 %
 %  Description
 %    The disease mapping problem consist of a data with number of
@@ -14,11 +15,12 @@
 %
 %    The number of death cases Y_i in area i is assumed to satisfy
 %
-%         Y_i ~ Poisson(Y_i| E_i * r_i)
+%         Y_i ~ Neg-Bin(Y_i| d, E_i * r_i)
 %
 %    where E_i is the expected number of deaths (see Vanhatalo and
-%    Vehtari (2007, 2010), how E_i is evaluated) at area i and r_i
-%    is the relative risk.
+%    Vehtari (2007, 2010), how E_i is evaluated) at area i, r_i is the
+%    relative risk and d is the dispersion parameter coverning the
+%    variance.
 %
 %    We place a zero mean Gaussian process prior for log(R), R =
 %    [r_1, r_2,...,r_n], which implies that at the observed input
@@ -87,7 +89,7 @@ y = data(:,4);
 % ye = the expexted number of deaths
 
 % Set the inducing inputs in a regular grid.  Set_PIC returns the
-% induving inputs and blockindeces for PIC. It also plots the data
+% inducing inputs and block indeces for PIC. It also plots the data
 % points, inducing inputs and blocks.
 dims = [1    60     1    35];
 [trindex, Xu] = set_PIC(x, dims, 5, 'corners', 0);
@@ -97,11 +99,15 @@ dims = [1    60     1    35];
 % Create the covariance functions
 pl = prior_t('s2',10);
 pm = prior_sqrtunif();
-gpcf1 = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+gpcf1 = gpcf_matern32('lengthScale', 1, 'magnSigma2', 0.1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 %gpcf2 = gpcf_ppcs3('nin',nin,'lengthScale', 5, 'magnSigma2', 0.05, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the likelihood structure
-lik = lik_poisson();
+% The data is overdispersed compared to Poisson-model, and with
+% with Poisson model the posterior of the hyperparameters is
+% multimodal. Negative-Binomial is more robust alternative.
+% lik = lik_poisson(); 
+lik = lik_negbin();
 
 % Create the FIC GP structure so that inducing inputs are not optimized
 gp = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
@@ -118,9 +124,9 @@ gp = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
 % Set the approximate inference method to Laplace approximation
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
-% Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3,'Display','iter');
-% Optimize with the scaled conjugate gradient method
+% Set the options for the quasi-Newton optimization
+opt=optimset('TolFun',1e-3,'TolX',1e-3);
+% Optimize with the quasi-Newton method
 gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
 % make prediction to the data points
@@ -143,20 +149,20 @@ G=repmat(NaN,size(X1));
 G(xii)=exp(Ef);
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-%set(gca, 'Clim', [0.6    1.5])
+set(gca, 'Clim', [0.8    1.25])
 axis equal
 axis([0 35 0 60])
 title('Posterior median of the relative risk, FIC')
 
 figure
 G=repmat(NaN,size(X1));
-G(xii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
+G(xii)=sqrt((exp(Varf) - 1).*exp(2*Ef+Varf));
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-%set(gca, 'Clim', [0.005    0.03])
+set(gca, 'Clim', [0.035    0.125])
 axis equal
 axis([0 35 0 60])
-title('Posterior variance of the relative risk, FIC')
+title('Posterior std of the relative risk, FIC')
 
 % the MAP estimate of the parameters. 
 S1=sprintf('MAP: length-scale: %.1f, magnSigma: %.3f \n', gp.cf{1}.lengthScale, sqrt(gp.cf{1}.magnSigma2))
@@ -171,20 +177,20 @@ G=repmat(NaN,size(X1));
 G(xii)=exp(Ef);
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-%set(gca, 'Clim', [0.6    1.5])
+set(gca, 'Clim', [0.8    1.25])
 axis equal
 axis([0 35 0 60])
 title('Posterior median of the relative risk, FIC')
 
 figure
 G=repmat(NaN,size(X1));
-G(xii)=(exp(Varf) - 1).*exp(2*Ef+Varf);
+G(xii)=sqrt((exp(Varf) - 1).*exp(2*Ef+Varf));
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-%set(gca, 'Clim', [0.005    0.03])
+set(gca, 'Clim', [0.035    0.125])
 axis equal
 axis([0 35 0 60])
-title('Posterior variance of the relative risk, FIC')
+title('Posterior std of the relative risk, FIC')
 
 % the IA estimate of the parameters 
 % in real life
@@ -218,7 +224,7 @@ latent_opt.window=5;
 
 % Here we make an initialization with 
 % slow sampling parameters
-[rgp,gp,opt]=gp_mc(gp, x, y, 'z', ye, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt);
+[rgp,gp,opt]=gp_mc(gp, x, y, 'z', ye, 'repeat',5, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt);
 
 % Now we reset the sampling parameters to 
 % achieve faster sampling
@@ -258,14 +264,15 @@ colormap(mapcolor(G)),colorbar
 axis equal
 axis([0 35 0 60])
 title('relative risk')
-while length(rgp.edata)<1000 %   1000
-  [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt);
+while length(rgp.edata)<500 %
+  [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt, 'display', 'off');
   fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
   set(h1(1),'XData',rgp.cf{1}.lengthScale,'YData',sqrt(rgp.cf{1}.magnSigma2));
   set(h1(2),'XData',rgp.cf{1}.lengthScale(end),'YData',sqrt(rgp.cf{1}.magnSigma2(end)));
   G=repmat(NaN,size(X1));
   G(xii)=exp(gp.latentValues);
   set(h2,'XData',X1,'YData',X2,'CData',G);
+  set(gca,'clim',[0.8 1.25])
   drawnow
 end
 
@@ -275,21 +282,20 @@ G=repmat(NaN,size(X1));
 G(xii)=median(exp(rgp.latentValues));
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.6    1.5])
+set(gca, 'Clim', [0.8    1.25])
 axis equal
 axis([0 35 0 60])
 title('Posterior median of relative risk, FIC GP')
 
-figure(4)
+figure
 G=repmat(NaN,size(X1));
-G(xii)=std(exp(rgp.latentValues), [], 1).^2;
+G(xii)=std(exp(rgp.latentValues), [], 1);
 pcolor(X1,X2,G),shading flat
 colormap(mapcolor(G)),colorbar
-set(gca, 'Clim', [0.005    0.03])
+set(gca, 'Clim', [0.035    0.125])
 axis equal
 axis([0 35 0 60])
-title('Posterior variance of relative risk, FIC GP')
-
+title('Posterior std of relative risk, FIC GP')
 
 S3=sprintf('MCMC: 90%% CI - length-scale: [%.1f,%.1f], magnSigma: [%.3f,%.3f] \n',prctile(rgp.cf{1}.lengthScale(56:end),5),prctile(rgp.cf{1}.lengthScale(56:end),95),prctile(sqrt(rgp.cf{1}.magnSigma2(56:end)),5),prctile(sqrt(rgp.cf{1}.magnSigma2(56:end)),95))
 
