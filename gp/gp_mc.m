@@ -112,12 +112,15 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   
   % Default samplers and some checking
   if isfield(gp,'latent_method') && isequal(gp.latent_method,'MCMC')
-    % If no options structures, use SSLS as a default sampler for parameters
+    % If no options structures, use SSLS as a default sampler for hyperparameters
     % and ESLS for latent values
     if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
         isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
         isempty(opt.lik_gibbs_opt)
       opt.ssls_opt.latent_opt.repeat = 20;
+      if opt.display>0
+        fprintf(' Using SSLS sampler for hyperparameters and ESLS for latent values\n')
+      end
     end
     % Set latent values
     if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
@@ -128,11 +131,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     % latent method is not MCMC
     % If no options structures, use SLS as a default sampler for parameters
     if ~isempty(opt.ssls_opt)
-      warning('Latent method is not MCMC. ssls_opt ignored')
+      warning(' Latent method is not MCMC. ssls_opt ignored')
       opt.ssls_opt=[];
     end
     if ~isempty(opt.latent_opt)
-      warning('Latent method is not MCMC. latent_opt ignored')
+      warning(' Latent method is not MCMC. latent_opt ignored')
       opt.latent_opt=[];
     end
     if isempty(opt.hmc_opt) && isempty(opt.sls_opt) && ...
@@ -145,6 +148,13 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       opt.sls_opt.plimit = 5;
       opt.sls_opt.unimodal = 0;
       opt.sls_opt.mmlimits = [-10; 10];
+      if opt.display>0
+        if isfield(gp,'latent_method')
+          fprintf(' Using SLS sampler for hyperparameters and %s for latent values\n',gp.latent_method)
+        else
+          fprintf(' Using SLS sampler for hyperparameters\n')
+        end
+      end
     end
   end
     
