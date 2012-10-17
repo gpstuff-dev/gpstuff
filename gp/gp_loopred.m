@@ -61,33 +61,33 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_loopred(gp, x, y, varargin)
 if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
   % use inference specific methods
   if iscell(gp)
-    fh_pred=@gpia_loopred;
+    fh_loopred=@gpia_loopred;
   elseif numel(gp.jitterSigma2)>1
-    fh_pred=@gpmc_loopred;
+    fh_loopred=@gpmc_loopred;
   elseif isfield(gp,'latent_method')
     latent_method=gp.latent_method;
     gplik=gp.lik;
-    if latent_method strcmp(gp.latent_method,'MCMC')
+    if strcmp(gp.latent_method,'MCMC')
       % single MCMC sample from the posterior does not allow LOO computation
       % LOO using several MCMC samples is done in gpmc_loopred
-      fh_pred=@gp_pred;
+      fh_loopred=@gp_loopred;
     else
-      fh_pred=gp.fh.pred;
+      fh_loopred=gp.fh.loopred;
     end
   else
     error('Logical error by coder of this function!')
   end
   switch nargout
     case 1
-      [Eft] = fh_pred(gp, x, y, varargin{:});
+      [Eft] = fh_loopred(gp, x, y, varargin{:});
     case 2
-      [Eft, Varft] = fh_pred(gp, x, y, varargin{:});
+      [Eft, Varft] = fh_loopred(gp, x, y, varargin{:});
     case 3
-      [Eft, Varft, lpyt] = fh_pred(gp, x, y, varargin{:});
+      [Eft, Varft, lpyt] = fh_loopred(gp, x, y, varargin{:});
     case 4
-      [Eft, Varft, lpyt, Eyt] = fh_pred(gp, x, y, varargin{:});
+      [Eft, Varft, lpyt, Eyt] = fh_loopred(gp, x, y, varargin{:});
     case 5
-      [Eft, Varft, lpyt, Eyt, Varyt] = fh_pred(gp, x, y, varargin{:});
+      [Eft, Varft, lpyt, Eyt, Varyt] = fh_loopred(gp, x, y, varargin{:});
   end
   return
 end
