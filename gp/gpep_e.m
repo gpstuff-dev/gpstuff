@@ -83,6 +83,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
     gp.fh.jpred=@gpep_jpred;
     gp.fh.looe=@gpep_looe;
     gp.fh.loog=@gpep_loog;
+    gp.fh.loopred=@gpep_loopred;
     e = gp;
     % remove clutter from the nested workspace
     clear w gp varargin ip x y z

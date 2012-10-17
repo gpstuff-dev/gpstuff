@@ -85,6 +85,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
     gp.fh.jpred=@gpla_jpred;
     gp.fh.looe=@gpla_looe;
     gp.fh.loog=@gpla_loog;
+    gp.fh.loopred=@gpla_loopred;
     e = gp;
     % remove clutter from the nested workspace
     clear w gp varargin ip x y z
