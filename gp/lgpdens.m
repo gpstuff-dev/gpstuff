@@ -198,7 +198,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
         x1min=min(x1min,mean(x(:,1))-3*std(x(:,1)));
         x1max=max(x1max,mean(x(:,1))+3*std(x(:,1)));
         x2min=min(x2min,mean(x(:,2))-3*std(x(:,2)));
-        x2max=max(x2max,mean(x(:,1))+3*std(x(:,2)));
+        x2max=max(x2max,mean(x(:,2))+3*std(x(:,2)));
       end
       
       % Discretize the data
