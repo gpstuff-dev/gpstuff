@@ -5,11 +5,12 @@
 %    We will consider the regression problem in demo_regression1. 
 %    The analysis is conducted with full Gaussian process, and FIC
 %    and PIC sparse approximations. The performance of these models
-%    are compared by evaluating WAIC, DIC, the number of effective
-%    parameters and ten-fold cross validation. The inference will
-%    be conducted using maximum a posterior (MAP) estimate for the
-%    parameters, via full Markov chain Monte Carlo (MCMC) and with
-%    an integration approximation (IA) for the parameters.
+%    are compared by evaluating ten-fold cross validation,
+%    leave-one-out cross-validation, WAIC, DIC and the number of
+%    effective parameters. The inference will be conducted using
+%    maximum a posterior (MAP) estimate for the parameters, via
+%    full Markov chain Monte Carlo (MCMC) and with an integration
+%    approximation (IA) for the parameters.
 %
 %    This demo is organised in three parts:
 %     1) data analysis with full GP model
@@ -80,7 +81,12 @@ WAICG(1) = gp_waic(gp,x,y, 'method', 'G');
 disp('MAP estimate for the parameters - k-fold-CV')
 cvres =  gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(1) = cvres.mlpd_cv;
-mrmse_cv(1) = cvres.mrmse_cv;
+rmse_cv(1) = cvres.mrmse_cv;
+
+disp('MAP estimate for the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(gp, x, y);
+mlpd_loo(1) = mean(lpy);
+rmse_loo(1) = sqrt(mean((y-Ef).^2));
 
 % --- MCMC approach ---
 disp('MCMC integration over the parameters')
@@ -109,7 +115,12 @@ disp('MCMC integration over the parameters - k-fold-CV')
 opt.nsamples= 50; 
 cvres =  gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', opt, 'rstream', 1, 'display', 'fold');
 mlpd_cv(2) = cvres.mlpd_cv;
-mrmse_cv(2) = cvres.mrmse_cv;
+rmse_cv(2) = cvres.mrmse_cv;
+
+disp('MCMC integration over the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(rfull, x, y);
+mlpd_loo(2) = mean(lpy);
+rmse_loo(2) = sqrt(mean((y-Ef).^2));
 
 % --- Integration approximation approach ---
 disp('Grid integration over the parameters')
@@ -130,8 +141,12 @@ clear opt
 opt.int_method = 'grid';
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(3) = cvres.mlpd_cv;
-mrmse_cv(3) = cvres.mrmse_cv;
+rmse_cv(3) = cvres.mrmse_cv;
 
+disp('Grid integration over the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(gp_array, x, y);
+mlpd_loo(3) = mean(lpy);
+rmse_loo(3) = sqrt(mean((y-Ef).^2));
 
 %========================================================
 % PART 2 data analysis with FIC GP
@@ -174,7 +189,12 @@ WAICG(4) = gp_waic(gp_fic,x,y, 'method', 'G');
 disp('MAP estimate for the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y, 'display', 'fold');
 mlpd_cv(4) = cvres.mlpd_cv;
-mrmse_cv(4) = cvres.mrmse_cv;
+rmse_cv(4) = cvres.mrmse_cv;
+
+disp('MAP estimate for the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(gp_fic, x, y);
+mlpd_loo(4) = mean(lpy);
+rmse_loo(4) = sqrt(mean((y-Ef).^2));
 
 % --- MCMC approach ---
 % (the inducing inputs are fixed)
@@ -203,8 +223,12 @@ opt.nsamples= 50; opt.display=20;
 disp('MCMC integration over the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'display', 'fold');
 mlpd_cv(5) = cvres.mlpd_cv;
-mrmse_cv(5) = cvres.mrmse_cv;
+rmse_cv(5) = cvres.mrmse_cv;
 
+disp('MCMC integration over the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(rfic, x, y);
+mlpd_loo(5) = mean(lpy);
+rmse_loo(5) = sqrt(mean((y-Ef).^2));
 
 % --- Integration approximation approach ---
 disp('Grid integration over the parameters')
@@ -222,7 +246,12 @@ clear opt
 opt.int_method = 'grid';
 cvres = gp_kfcv(gp_fic, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(6) = cvres.mlpd_cv;
-mrmse_cv(6) = cvres.mrmse_cv;
+rmse_cv(6) = cvres.mrmse_cv;
+
+disp('Grid integration over the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(gpfic_array, x, y);
+mlpd_loo(6) = mean(lpy);
+rmse_loo(6) = sqrt(mean((y-Ef).^2));
 
 %========================================================
 % PART 3 data analysis with PIC approximation
@@ -279,7 +308,12 @@ WAICG(7) = gp_waic(gp_pic, x, y, 'method', 'G');
 disp('MAP estimate for the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y, 'display', 'fold');
 mlpd_cv(7) = cvres.mlpd_cv;
-mrmse_cv(7) = cvres.mrmse_cv;
+rmse_cv(7) = cvres.mrmse_cv;
+
+disp('MAP estimate for the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(gp_pic, x, y);
+mlpd_loo(7) = mean(lpy);
+rmse_loo(7) = sqrt(mean((y-Ef).^2));
 
 % --- MCMC approach ---
 disp('MCMC integration over the parameters')
@@ -309,7 +343,12 @@ opt.nsamples= 50; opt.display=20;
 disp('MCMC integration over the parameters - k-fold-CV')
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'MCMC', 'opt', opt, 'display', 'fold');
 mlpd_cv(8) = cvres.mlpd_cv;
-mrmse_cv(8) = cvres.mrmse_cv;
+rmse_cv(8) = cvres.mrmse_cv;
+
+disp('MCMC integration over the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(rpic, x, y);
+mlpd_loo(8) = mean(lpy);
+rmse_loo(8) = sqrt(mean((y-Ef).^2));
 
 % --- Integration approximation approach ---
 disp('Grid integration over the parameters')
@@ -328,8 +367,12 @@ clear opt
 opt.int_method = 'grid';
 cvres = gp_kfcv(gp_pic, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(9) = cvres.mlpd_cv;
-mrmse_cv(9) = cvres.mrmse_cv;
+rmse_cv(9) = cvres.mrmse_cv;
 
+disp('Grid integration over the parameters - LOO-CV')
+[Ef,Varf,lpy] =  gp_loopred(gppic_array, x, y);
+mlpd_loo(9) = mean(lpy);
+rmse_loo(9) = sqrt(mean((y-Ef).^2));
 
 %========================================================
 % PART 4 Print the results
@@ -340,31 +383,35 @@ for i = 1:length(models)
     S = [S '  ' models{i}];
 end
 
-S = sprintf([S '\n mlpd    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], mlpd_cv);
-S = sprintf([S '\n rmse    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], mrmse_cv);
+S = sprintf([S '\n CV-mlpd  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], mlpd_cv);
+S = sprintf([S '\n CV-rmse  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], rmse_cv);
+S = sprintf([S '\n LOO-mlpd %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], mlpd_loo);
+S = sprintf([S '\n LOO-rmse %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], rmse_loo);
 S = sprintf([S '\n ']);
-S = sprintf([S '\n WAIC_V  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], WAICV);
-S = sprintf([S '\n WAIC_G  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], WAICG);
+S = sprintf([S '\n WAIC_V   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], WAICV);
+S = sprintf([S '\n WAIC_G   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], WAICG);
 S = sprintf([S '\n ']);
-S = sprintf([S '\n DIC_h   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC);
-S = sprintf([S '\n DIC_a   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC2);
-S = sprintf([S '\n DIC_l   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC_latent);
-S = sprintf([S '\n peff_h  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff);
-S = sprintf([S '\n peff_a  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff2);
-S = sprintf([S '\n peff_l  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff_latent);
-S = sprintf([S '\n peff_l2 %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff_latent2);
+S = sprintf([S '\n DIC_h    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC);
+S = sprintf([S '\n DIC_a    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC2);
+S = sprintf([S '\n DIC_l    %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], DIC_latent);
+S = sprintf([S '\n peff_h   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff);
+S = sprintf([S '\n peff_a   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff2);
+S = sprintf([S '\n peff_l   %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff_latent);
+S = sprintf([S '\n peff_l2  %5.2f     %5.2f     %5.2f     %5.2f    %5.2f     %5.2f    %5.2f    %5.2f    %5.2f'], p_eff_latent2);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n The notation is as follows:']);
-S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
-S = sprintf([S '\n mrmse   = mean root mean squared error from the 10-fold CV. ']);
-S = sprintf([S '\n WAIC_V  = WAIC via variance method ']);
-S = sprintf([S '\n WAIC_G  = WAIC via Gibbs training utility method ']);
-S = sprintf([S '\n DIC_h   = DIC with focus on parameters. ']);
-S = sprintf([S '\n DIC_a   = DIC with focus on parameters and latent variables (all). ']);
-S = sprintf([S '\n DIC_l   = DIC with focus on latent variables. ']);
-S = sprintf([S '\n peff_h  = effective number of parameters (latent variables marginalized). ']);
-S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
-S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
-S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
+S = sprintf([S '\n CV-mlpd  = mean log predictive density from the 10-fold CV. ']);
+S = sprintf([S '\n CV-rmse  = root mean squared error from the 10-fold LOO-CV. ']);
+S = sprintf([S '\n LOO-mlpd = mean log predictive density from the LOO-CV. ']);
+S = sprintf([S '\n LOO-rmse = root mean squared error from the 10-fold CV. ']);
+S = sprintf([S '\n WAIC_V   = WAIC via variance method ']);
+S = sprintf([S '\n WAIC_G   = WAIC via Gibbs training utility method ']);
+S = sprintf([S '\n DIC_h    = DIC with focus on parameters. ']);
+S = sprintf([S '\n DIC_a    = DIC with focus on parameters and latent variables (all). ']);
+S = sprintf([S '\n DIC_l    = DIC with focus on latent variables. ']);
+S = sprintf([S '\n peff_h   = effective number of parameters (latent variables marginalized). ']);
+S = sprintf([S '\n peff_a   = effective number of parameters and latent variables. ']);
+S = sprintf([S '\n peff_l   = effective number of latent variables evaluated with gp_peff. ']);
+S = sprintf([S '\n peff_l2  = effective number of latent variables evaluated with gp_dic. ']);
 S = sprintf([S '\n '])

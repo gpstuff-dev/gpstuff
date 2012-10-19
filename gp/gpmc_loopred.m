@@ -61,12 +61,31 @@ if isfield(gp,'meanf') & ~isempty(gp.meanf)
 end
 
 nmc=size(gp.jitterSigma2,1);
-n=size(x,1);
+[n,nin]=size(x);
 
+if strcmp(gp.type, 'PIC_BLOCK') || strcmp(gp.type, 'PIC')
+  ind = gp.tr_index;           % block indeces for training points
+  gp = rmfield(gp,'tr_index');
+end
+  
 for i1=1:nmc
   % compute leave-one-out predictions for each hyperparameter sample
   % if latent method is MCMC, then these samples are for latent values, too
   Gp = take_nth(gp,i1);
+  switch gp.type            
+    case 'FULL' 
+      
+    case {'FIC' 'CS+FIC'} 
+      % Reformat the inducing inputs 
+      u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+      Gp.X_u = u;
+      
+    case {'PIC' 'PIC_BLOCK'}
+      % Reformat the inducing inputs 
+      u = reshape(Gp.X_u,length(Gp.X_u)/nin,nin);
+      Gp.X_u = u;
+      Gp.tr_index = ind;
+  end
   if nargout <= 3
     [Efts(:,i1), Varfts(:,i1), lpyts(:,i1)] = gp_loopred(Gp, x, y, 'z', z);
   else
