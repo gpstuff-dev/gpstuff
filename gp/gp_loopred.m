@@ -70,7 +70,7 @@ if iscell(gp) || numel(gp.jitterSigma2)>1 || isfield(gp,'latent_method')
     if strcmp(gp.latent_method,'MCMC')
       % single MCMC sample from the posterior does not allow LOO computation
       % LOO using several MCMC samples is done in gpmc_loopred
-      fh_loopred=@gp_loopred;
+      fh_loopred=@gp_pred;
     else
       fh_loopred=gp.fh.loopred;
     end

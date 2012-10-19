@@ -5,12 +5,13 @@
 %    We will consider the classification problem in demo_classific. 
 %    The analysis is conducted with full Gaussian process using
 %    both probit and logit likelihood. The performance of these two
-%    models are compared by evaluating the DIC statistics, number
-%    of efficient parameters, WAIC and ten-fold cross validation. The
-%    inference will be conducted using maximum a posterior (MAP)
-%    estimate for the parameters using EP and Laplace
-%    approximation, via full Markov chain Monte Carlo (MCMC) and
-%    with an integration approximation (IA) for the parameters.
+%    models are compared by evaluating the ten-fold
+%    cross-validation, leave-one-out cross-validation, WAIC, DIC
+%    and the effective number of parameters The inference will be
+%    conducted using maximum a posterior (MAP) estimate for the
+%    parameters using EP and Laplace approximation, via full Markov
+%    chain Monte Carlo (MCMC) and with an integration approximation
+%    (IA) for the parameters.
 %
 %    This demo is organised in two parts:
 %     1) data analysis with with probit likelihood
@@ -54,8 +55,8 @@ gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pl); %
 gp = gp_set('lik', lik_probit, 'cf', gpcf, 'jitterSigma2', 1e-4);
 
 % ------- Laplace approximation --------
-disp([' Probit with Laplace integration over the latent values '; ...
-      ' and MAP estimate for the parameters                    '])
+disp(['Probit with Laplace integration over the latent values '; ...
+      'and MAP estimate for the parameters                    '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -74,14 +75,17 @@ p_eff_latent(1) = gp_peff(gp, x, y);
 [DIC_latent(1), p_eff_latent2(1)] = gp_dic(gp, x, y, 'latent');
 WAIC(1) = gp_waic(gp,x,y);
 
-% Evaluate the 10-fold cross validation results. 
+% Evaluate the 10-fold cross-validation results. 
 cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(1) = cvres.mlpd_cv;
-mrmse_cv(1) = cvres.mrmse_cv;
+
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(gp, x, y);
+mlpd_loo(1) = mean(lpy);
 
 % ------- Expectation propagation --------
-disp([' Probit with EP integration over the latent values and MAP '; ...
-      ' estimate for the parameters                               '])
+disp(['Probit with EP integration over the latent values and MAP '; ...
+      'estimate for the parameters                               '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -98,14 +102,17 @@ p_eff_latent(2) = gp_peff(gp, x, y) ;
 [DIC_latent(2), p_eff_latent2(2)] = gp_dic(gp, x, y, 'latent');
 WAIC(2) = gp_waic(gp,x,y);
 
-% Evaluate the 10-fold cross validation results. 
+% Evaluate the 10-fold cross-validation results. 
 cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(2) = cvres.mlpd_cv;
-mrmse_cv(2) = cvres.mrmse_cv;
+
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(gp, x, y);
+mlpd_loo(2) = mean(lpy);
 
 % ------- MCMC ---------------
-disp([' Probit with MCMC integration over the latent values and '; ...
-      ' the parameters                                          '])
+disp(['Probit with MCMC integration over the latent values and '; ...
+      'the parameters                                          '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
@@ -122,15 +129,18 @@ models{3} = 'pr_MCMC';
 [DIC2(3), p_eff2(3)] =  gp_dic(rgp, x, y, 'focus', 'all');
 WAIC(3) = gp_waic(rgp,x,y);
 
-% Evaluate the 10-fold cross validation results. 
+% Evaluate the 10-fold cross-validation results. 
 mcopt.nsamples=50;mcopt.display=20;
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', mcopt, 'display', 'fold');
 mlpd_cv(3) = cvres.mlpd_cv;
-mrmse_cv(3) = cvres.mrmse_cv;
+
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(rgp, x, y);
+mlpd_loo(3) = mean(lpy);
 
 % --- Integration approximation approach ---
-disp([' Probit with EP integration over the latent values and '; ...
-      ' grid integration over the parameters                  '])
+disp(['Probit with EP integration over the latent values and '; ...
+      'grid integration over the parameters                  '])
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -154,7 +164,10 @@ WAIC(4) = gp_waic(gp_array,x,y);
 % Then the 10 fold cross-validation.
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(4) = cvres.mlpd_cv;
-mrmse_cv(4) = cvres.mrmse_cv;
+
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(gp_array, x, y);
+mlpd_loo(4) = mean(lpy);
 
 % =====================================
 % 2) data analysis with logit likelihood
@@ -184,8 +197,8 @@ gp = gp_set('lik', lik_logit, 'cf', gpcf, 'jitterSigma2', 1e-4);
 
 
 % ------- Laplace approximation --------
-disp([' Logit with Laplace integration over the latent values and '; ...
-      ' MAP estimate for the parameters                           '])
+disp(['Logit with Laplace integration over the latent values and '; ...
+      'MAP estimate for the parameters                           '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
@@ -202,14 +215,17 @@ p_eff_latent(5) = gp_peff(gp, x, y);
 [DIC_latent(5), p_eff_latent2(5)] = gp_dic(gp, x, y, 'focus', 'latent');
 WAIC(5) = gp_waic(gp,x,y);
 
-% Evaluate the 10-fold cross validation results. 
+% Evaluate the 10-fold cross-validation results. 
 cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(5) = cvres.mlpd_cv;
-mrmse_cv(5) = cvres.mrmse_cv;
+
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(gp, x, y);
+mlpd_loo(5) = mean(lpy);
 
 % ------- Expectation propagation --------
-disp([' Logit with EP integration over the latent values and MAP'; ...
-      ' estimate for the parameters                             '])
+disp(['Logit with EP integration over the latent values and MAP'; ...
+      'estimate for the parameters                             '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -226,15 +242,17 @@ p_eff_latent(6) = gp_peff(gp, x, y) ;
 [DIC_latent(6), p_eff_latent2(6)] = gp_dic(gp, x, y, 'latent');
 WAIC(6) = gp_waic(gp,x,y);
 
-% Evaluate the 10-fold cross validation results. 
+% Evaluate the 10-fold cross-validation results. 
 cvres = gp_kfcv(gp, x, y, 'display', 'fold');
 mlpd_cv(6) = cvres.mlpd_cv;
-mrmse_cv(6) = cvres.mrmse_cv;
 
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(gp, x, y);
+mlpd_loo(6) = mean(lpy);
 
 % ------- MCMC ---------------
-disp([' Logit with MCMC integration over the latent values and '; ...
-      ' the parameters                                         '])
+disp(['Logit with MCMC integration over the latent values and '; ...
+      'the parameters                                         '])
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'MCMC');
@@ -250,15 +268,18 @@ models{7} = 'lo_MCMC';
 [DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'all');
 WAIC(7) = gp_waic(rgp,x,y);
 
-% Evaluate the 10-fold cross validation results. 
+% Evaluate the 10-fold cross-validation results. 
 mcopt.nsamples=50;mcopt.display=20;
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'MCMC', 'opt', mcopt, 'display', 'fold');
 mlpd_cv(7) = cvres.mlpd_cv;
-mrmse_cv(7) = cvres.mrmse_cv;
+
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(rgp, x, y);
+mlpd_loo(7) = mean(lpy);
 
 % --- Integration approximation approach ---
-disp([' Logit with EP integration over the latent values and grid '; ...
-      ' integration over the parameters                           '])
+disp(['Logit with EP integration over the latent values and grid '; ...
+      'integration over the parameters                           '])
 
 % Use EP
 gp = gp_set(gp, 'latent_method', 'EP');
@@ -282,8 +303,10 @@ WAIC(8) = gp_waic(gp_array,x,y);
 % Then the 10 fold cross-validation.
 cvres = gp_kfcv(gp, x, y, 'inf_method', 'IA', 'opt', opt, 'display', 'fold');
 mlpd_cv(8) = cvres.mlpd_cv;
-mrmse_cv(8) = cvres.mrmse_cv;
 
+% Evaluate the leave-one-out cross-validation results. 
+[Ef,Varf,lpy] =  gp_loopred(gp_array, x, y);
+mlpd_loo(8) = mean(lpy);
 
 %========================================================
 % PART 4 Print the results
@@ -295,7 +318,8 @@ for i = 1:length(models)
     S = [S '  ' models{i}];
 end
 
-S = sprintf([S '\n mlpd     %6.2f    %6.2f  %6.2f  %6.2f   %6.2f    %6.2f  %6.2f  %6.2f'], mlpd_cv);
+S = sprintf([S '\n CV-mlpd  %6.2f    %6.2f  %6.2f  %6.2f   %6.2f    %6.2f  %6.2f  %6.2f'], mlpd_cv);
+S = sprintf([S '\n LOO-mlpd %6.2f    %6.2f  %6.2f  %6.2f   %6.2f    %6.2f  %6.2f  %6.2f'], mlpd_loo);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n WAIC     %6.2f    %6.2f  %6.2f  %6.2f   %6.2f    %6.2f  %6.2f  %6.2f'], WAIC);
 S = sprintf([S '\n ']);
@@ -308,15 +332,16 @@ S = sprintf([S '\n peff_l   %6.2f    %6.2f  %6.2f  %6.2f   %6.2f    %6.2f  %6.2f
 S = sprintf([S '\n peff_l2  %6.2f    %6.2f  %6.2f  %6.2f   %6.2f    %6.2f  %6.2f  %6.2f'], p_eff_latent2);
 S = sprintf([S '\n ']);
 S = sprintf([S '\n The notation is as follows:']);
-S = sprintf([S '\n pr_*    = probit likelihood and inference method']);
-S = sprintf([S '\n lo_*    = logit likelihood and inference method']);
-S = sprintf([S '\n mlpd    = mean log predictive density from the 10-fold CV. ']);
-S = sprintf([S '\n WAIC    = Widely applicable information criterion. ']);
-S = sprintf([S '\n DIC_h   = DIC with focus on parameters. ']);
-S = sprintf([S '\n DIC_a   = DIC with focus on parameters and laten variables (all). ']);
-S = sprintf([S '\n DIC_l   = DIC with focus on latent variables. ']);
-S = sprintf([S '\n peff_h  = effective number of parameters (latent variables marginalized). ']);
-S = sprintf([S '\n peff_a  = effective number of parameters and latent variables. ']);
-S = sprintf([S '\n peff_l  = effective number of latent variables evaluated with gp_peff. ']);
-S = sprintf([S '\n peff_l2 = effective number of latent variables evaluated with gp_dic. ']);
+S = sprintf([S '\n pr_*     = probit likelihood and inference method']);
+S = sprintf([S '\n lo_*     = logit likelihood and inference method']);
+S = sprintf([S '\n CV-mlpd  = mean log predictive density from the 10-fold CV. ']);
+S = sprintf([S '\n LOO-mlpd = mean log predictive density from the 10-fold CV. ']);
+S = sprintf([S '\n WAIC     = Widely applicable information criterion. ']);
+S = sprintf([S '\n DIC_h    = DIC with focus on parameters. ']);
+S = sprintf([S '\n DIC_a    = DIC with focus on parameters and laten variables (all). ']);
+S = sprintf([S '\n DIC_l    = DIC with focus on latent variables. ']);
+S = sprintf([S '\n peff_h   = effective number of parameters (latent variables marginalized). ']);
+S = sprintf([S '\n peff_a   = effective number of parameters and latent variables. ']);
+S = sprintf([S '\n peff_l   = effective number of latent variables evaluated with gp_peff. ']);
+S = sprintf([S '\n peff_l2  = effective number of latent variables evaluated with gp_dic. ']);
 S = sprintf([S '\n '])

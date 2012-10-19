@@ -109,7 +109,12 @@ else
   % check the effective sample size
   m_eff=1./sum(w.^2,2);
   if min(m_eff)<n/10
-    warning(sprintf('For %d folds the effective sample size in IS is less than n/10',sum(m_eff<(n/10))))
+    mn=sum(m_eff<(n/10));
+    if mn==1
+      warning(sprintf('For %d data point the effective sample size in IS is less than n/10',mn))
+    else
+      warning(sprintf('For %d data points the effective sample size in IS is less than n/10',mn))
+    end
   end
 end
 

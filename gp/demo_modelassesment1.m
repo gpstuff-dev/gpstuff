@@ -6,8 +6,8 @@
 %    The analysis is conducted with full Gaussian process, and FIC
 %    and PIC sparse approximations. The performance of these models
 %    are compared by evaluating ten-fold cross validation,
-%    leave-one-out cross-validation, WAIC, DIC and the number of
-%    effective parameters. The inference will be conducted using
+%    leave-one-out cross-validation, WAIC, DIC and the effective
+%    number of parameters. The inference will be conducted using
 %    maximum a posterior (MAP) estimate for the parameters, via
 %    full Markov chain Monte Carlo (MCMC) and with an integration
 %    approximation (IA) for the parameters.
