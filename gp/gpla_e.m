@@ -986,6 +986,179 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           end
           
           % ============================================================
+          % DTC, SOR
+          % ============================================================
+        case {'DTC' 'VAR' 'SOR'}
+          u = gp.X_u;
+          m = length(u);
+
+          % First evaluate needed covariance matrices
+          % v defines that parameter is a vector
+          K_fu = gp_cov(gp, x, u);         % f x u                
+          K_uu = gp_trcov(gp, u);    % u x u, noiseles covariance K_uu
+          [Luu, notpositivedefinite] = chol(K_uu, 'lower');
+          if notpositivedefinite
+            [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+            return
+          end
+          % Evaluate the Lambda (La)
+          % Q_ff = K_fu*inv(K_uu)*K_fu'
+          B=Luu\(K_fu');       % u x f
+%           Qv_ff=sum(B.^2)';
+%           Lav = zeros(size(Qv_ff));
+%           Lav = Cv_ff-Qv_ff;   % f x 1, Vector of diagonal elements
+          La2 = [];
+          
+          switch gp.latent_opt.optim_method
+            % --------------------------------------------------------------------------------
+            % find the posterior mode of latent variables by fminunc large scale method
+            case 'fminunc_large'
+%               fhm = @(W, f, varargin) (f./repmat(Lav,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % hessian*f; %
+%               defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-8,'TolFun', 1e-8,'LargeScale', 'on','Display', 'off');
+%               if ~isfield(gp.latent_opt, 'fminunc_opt')
+%                 opt = optimset(defopts);
+%               else
+%                 opt = optimset(defopts,gp.latent_opt.fminunc_opt);
+%               end
+% 
+%               fe = @(f, varargin) (0.5*f*(f'./repmat(Lav,1,size(f',2)) - L*(L'*f')) - gp.lik.fh.ll(gp.lik, y, f', z));
+%               fg = @(f, varargin) (f'./repmat(Lav,1,size(f',2)) - L*(L'*f') - gp.lik.fh.llg(gp.lik, y, f', 'latent', z))';
+%               fh = @(f, varargin) (-gp.lik.fh.llg2(gp.lik, y, f', 'latent', z));
+%               mydeal = @(varargin)varargin{1:nargout};
+%               [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
+%               f = f';
+% 
+%               a = f./Lav - L*L'*f;
+              
+              % --------------------------------------------------------------------------------
+              % find the posterior mode of latent variables by Newton method
+            case 'newton'
+              tol = 1e-12;
+              a = f;
+              W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+              dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+              lp_new = gp.lik.fh.ll(gp.lik, y, f, z);
+              lp_old = -Inf;
+              
+              iter = 0;
+              while lp_new - lp_old > tol && iter < maxiter
+                iter = iter + 1;
+                lp_old = lp_new; a_old = a; 
+                sW = sqrt(W);
+                
+                sWKfu = repmat(sW,1,m).*K_fu;
+                A = K_uu + sWKfu'*sWKfu;   A = (A+A')./2;
+                [A, notpositivedefinite]=chol(A);
+                if notpositivedefinite
+                  [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                  return
+                end
+                Lb = sWKfu/A;
+                b = W.*f+dlp;
+                b2 = sW.*(B'*(B*b));
+                a = b - sW.*(b2 - Lb*(Lb'*b2));
+                
+                f = B'*(B*a);
+                
+                W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+                dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+                lp = gp.lik.fh.ll(gp.lik, y, f, z);
+                lp_new = -a'*f/2 + lp;
+                i = 0;
+                while i < 10 && lp_new < lp_old && ~isnan(sum(f))
+                  % reduce step size by half
+                  a = (a_old+a)/2;                                  
+                  f = B'*(B*a);
+                  W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+                  lp = gp.lik.fh.ll(gp.lik, y, f, z);
+                  lp_new = -a'*f/2 + lp;
+                  i = i+1;
+                end 
+              end
+              % --------------------------------------------------------------------------------
+              % find the posterior mode of latent variables with likelihood specific algorithm
+              % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
+              % lik_t file.
+            case 'lik_specific'
+              [f, a] = gp.lik.fh.optimizef(gp, y, K_uu, zeros(n,1), K_fu);
+            otherwise 
+              error('gpla_e: Unknown optimization method ! ')
+          end
+          
+          W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+          logZ = 0.5*f'*a - gp.lik.fh.ll(gp.lik, y, f, z);
+          
+          if W >= 0
+            sqrtW = sqrt(W);
+            
+%             L = chol(eye(n) + diag(sqrtW)*(B'*B)*diag(sqrtW), 'lower');
+%             edata = logZ + sum(log(diag(L)));
+            
+
+            sWKfu = bsxfun(@times, sqrtW, K_fu);
+            
+            A = K_uu + sWKfu'*sWKfu;   A = (A+A')./2;
+            [A, notpositivedefinite] = chol(A);
+            if notpositivedefinite
+              [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+              return
+            end
+            edata = -sum(log(diag(Luu))) + sum(log(diag(A)));
+            edata = logZ + edata;
+            
+            if strcmp(gp.type,'VAR')
+              Kv_ff = gp_trvar(gp, x); 
+              Qv_ff = sum(B.^2)';              
+              edata = edata + 0.5*sum((Kv_ff-Qv_ff).*W);
+              La2=Kv_ff-Qv_ff;
+            end
+          else
+            % This is with full matrices. Needs to be rewritten.
+%             K = diag(Lav) + B'*B;
+%   % $$$                         [W,I] = sort(W, 1, 'descend');
+%   % $$$                         K = K(I,I);
+%             [W2,I] = sort(W, 1, 'descend');
+%             
+%             [L, notpositivedefinite] = chol(K);
+%             if notpositivedefinite
+%               [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+%               return
+%             end
+%             L1 = L;
+%             for jj=1:size(K,1)
+%               i = I(jj);
+%               ll = sum(L(:,i).^2);
+%               l = L'*L(:,i);
+%               upfact = W(i)./(1 + W(i).*ll);
+%               
+%               % Check that Cholesky factorization will remain positive definite
+%               if 1 + W(i).*ll <= 0 | upfact > 1./ll
+%                 warning('gpla_e: 1 + W(i).*ll < 0')
+%                 
+%                 ind = 1:i-1;
+%                 if isempty(z)
+%                   mu = K(i,ind)*gp.lik.fh.llg(gp.lik, y(I(ind)), f(I(ind)), 'latent', z);
+%                 else
+%                   mu = K(i,ind)*gp.lik.fh.llg(gp.lik, y(I(ind)), f(I(ind)), 'latent', z(I(ind)));
+%                 end
+%                 upfact = gp.lik.fh.upfact(gp, y(I(i)), mu, ll);
+%                 
+%   % $$$                                 W2 = -1./(ll+1e-3);
+%   % $$$                                 upfact = W2./(1 + W2.*ll);
+%               end
+%               if upfact > 0
+%                 L = cholupdate(L, l.*sqrt(upfact), '-');
+%               else
+%                 L = cholupdate(L, l.*sqrt(-upfact));
+%               end
+%             end
+%             edata = logZ + sum(log(diag(L1))) - sum(log(diag(L)));  % sum(log(diag(chol(K)))) + sum(log(diag(chol((inv(K) + W)))));
+          end
+          
+          
+          L=A;
+          
+          % ============================================================
           % SSGP
           % ============================================================
         case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
@@ -1054,8 +1227,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       % Evaluate the prior contribution to the error from covariance functions
       % ======================================================================
       eprior = 0;
-      for i=1:ncf
-        gpcf = gp.cf{i};
+      for i1=1:ncf
+        gpcf = gp.cf{i1};
         eprior = eprior - gpcf.fh.lp(gpcf);
       end
 

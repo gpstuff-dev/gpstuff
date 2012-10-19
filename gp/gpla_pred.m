@@ -477,6 +477,64 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
           Varft = kstarstar - sum((KcssW(:,m)/chol(Lahat(m,m))).^2,2) + sum((KcssW*L2).^2, 2);
         end
       end
+      
+    case {'DTC' 'VAR' 'SOR'}
+      % ============================================================
+      % DTC, VAR, SOR
+      % ============================================================
+      % Predictions with DTC,VAR,SOR sparse approximation for GP
+      % Here tstind = 1 if the prediction is made for the training set
+      if nargin > 6
+        if ~isempty(tstind) && length(tstind) ~= size(x,1)
+          error('tstind (if provided) has to be of same lenght as x.')
+        end
+      else
+        tstind = [];
+      end
+      
+      u = gp.X_u;
+      K_fu = gp_cov(gp, x, u, predcf);         % f x u
+      K_uu = gp_trcov(gp, u, predcf);          % u x u, noiseles covariance K_uu
+      K_uu = (K_uu+K_uu')./2;                  % ensure the symmetry of K_uu
+      Luu = chol(K_uu)';
+      
+      m = size(u,1);
+      
+      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      
+      deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+      ntest=size(xt,1);
+      
+      K_nu=gp_cov(gp,xt,u,predcf);
+      Eft = K_nu*(Luu'\(Luu\(K_fu'*deriv)));            
+      
+      % Evaluate the variance
+      if nargout > 1
+        % re-evaluate matrices with training components
+        Kfu_tr = gp_cov(gp, x, u);
+        Kuu_tr = gp_trcov(gp, u);
+        Kuu_tr = (Kuu_tr+Kuu_tr')./2;
+        
+        W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+        B = bsxfun(@times, sqrt(W), Kfu_tr);
+        
+        % Components for (I + W^(1/2)*(Qff + La2)*W^(1/2))^(-1) = Lahat^(-1) - L2*L2'
+        % L = chol(Kuu_tr + Kfu_tr'*diag(W)*Kfu_tr)
+        L2 = B/L;
+        
+        % Set params for K_nf
+        BB=Luu\(B');
+        BB2=Luu\(K_nu');
+        
+        switch gp.type
+          case 'SOR'
+            Varft = sum((K_nu/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+          case {'VAR' 'DTC'}
+            kstarstar = gp_trvar(gp,xt,predcf);
+            Varft = kstarstar - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+        end                 
+      end
+      
   end
   
   % ============================================================

@@ -951,6 +951,251 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 
       g = gdata + gprior;
       
+    case {'DTC', 'VAR', 'SOR'}
+      % ============================================================
+      % DTC, VAR, SOR
+      % ============================================================
+      g_ind = zeros(1,numel(gp.X_u));
+      gdata_ind = zeros(1,numel(gp.X_u));
+      gprior_ind = zeros(1,numel(gp.X_u));
+      
+      u = gp.X_u;
+      m = size(u,1);
+      
+      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      
+      K_fu = gp_cov(gp, x, u);         % f x u
+      K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
+      Luu = chol(K_uu);
+      B=Luu'\(K_fu');       % u x f
+      iKuuKuf = Luu\B;
+      
+      W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
+      sqrtW = sqrt(W);
+      
+      % Components for trace( inv(inv(W) + K) * dK) )
+      sWKfu = bsxfun(@times, sqrtW, K_fu);
+      % L = chol(K_uu + sWKfu'*sWKfu)
+      L2 = repmat(sqrtW,1,m).*(sWKfu/L);
+      
+      LL = sum(L2.*L2,2);
+      BB = sum(B.^2)';
+            
+      % Evaluate s2
+      C1 = L2'*B'*B;
+      C2 = zeros(size(L2'));
+      
+      s2t = BB;
+      s2t = s2t - (sum(C2.^2)' + sum(B'.*((B*(repmat(W,1,m).*B'))*B)',2)...
+        - sum(C1.^2)');
+      
+      g3 = gp.lik.fh.llg3(gp.lik, y, f, 'latent', z);
+      s2 = 0.5*s2t.*g3;
+      b3 = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
+      
+      
+      % =================================================================
+      % Gradient with respect to covariance function parameters
+      if ~isempty(strfind(gp.infer_params, 'covariance'))
+        for i=1:ncf
+          i1=0;
+          if ~isempty(gprior)
+            i1 = length(gprior);
+          end
+          
+          % Get the gradients of the covariance matrices
+          % and gprior from gpcf_* structures
+          gpcf = gp.cf{i};
+          if savememory
+            % If savememory option is used, just get the number of
+            % hyperparameters and calculate gradients later
+            np=gpcf.fh.cfg(gpcf,[],[],[],0);
+          else
+            %             DKffc = gpcf.fh.cfg(gpcf, x, [], 1);
+            DKuuc = gpcf.fh.cfg(gpcf, u);
+            DKufc = gpcf.fh.cfg(gpcf, u, x);
+            if isequal(gp.type, 'VAR')
+              DKffc=gpcf.fh.cfg(gpcf,x,[],1);
+            end
+            np=length(DKuuc);
+          end
+          gprior_cf = -gpcf.fh.lpg(gpcf);
+          
+          for i2 = 1:np
+            i1 = i1+1;
+            if savememory
+              DKuu=gpcf.fh.cfg(gpcf,u,[],[],i2);
+              DKuf=gpcf.fh.cfg(gpcf,u,x,[],i2);
+            else
+              DKuu=DKuuc{i2};
+              DKuf=DKufc{i2};
+            end
+            % 0.5* a'*dK*a, where a = K\f
+            KfuiKuuDKuu = iKuuKuf'*DKuu;
+            gdata(i1) = -0.5.*((2.*a'*DKuf'-(a'*KfuiKuuDKuu))*(iKuuKuf*a));
+            
+            % trace( inv(inv(W) + K) * dQ) )
+            gdata(i1) = gdata(i1) - 0.5.*sum(sum(L2'.*(2.*L2'*DKuf'*iKuuKuf - L2'*KfuiKuuDKuu*iKuuKuf)));
+            gdata(i1) = gdata(i1) + 0.5.*(2.*sum(W.*sum(DKuf'.*iKuuKuf',2)) - sum(W.*sum(KfuiKuuDKuu.*iKuuKuf',2)));
+            
+            b = (2*DKuf' - KfuiKuuDKuu)*(iKuuKuf*b3);
+            bb = sqrtW.*sqrtW.*b - L2*(L2'*b);
+            s3 = b - (B'*(B*bb));
+            gdata(i1) = gdata(i1) - s2'*s3;
+
+            if isequal(gp.type, 'VAR')
+              % Derivative of tr(diag(K-Q).*W) (Titsias, 2009) wrt th            
+              % Here we have to also split in explicit and implicit
+              % derivatives
+              if savememory
+                DKff=gpcf.fh.cfg(gpcf,x,[],1,i2);
+              else
+                DKff=DKffc{i2};
+              end              
+              gdata(i1) = gdata(i1) + 0.5*sum(DKff.*W) - 0.5.*(2.*sum(W.*sum(DKuf'.*iKuuKuf',2)) - sum(W.*sum(KfuiKuuDKuu.*iKuuKuf',2)));
+              % La2 = diag(K - Q);
+              gdata(i1) = gdata(i1) - 0.5*(La2.*g3)'*s3;
+            end
+            
+            gprior(i1) = gprior_cf(i2);
+          end
+          
+          % Set the gradients of hyperparameter
+          if length(gprior_cf) > np
+            for i2=np+1:length(gprior_cf)
+              i1 = i1+1;
+              gdata(i1) = 0;
+              gprior(i1) = gprior_cf(i2);
+            end
+          end
+        end
+        
+      end
+      
+      % =================================================================
+      % Gradient with respect to likelihood function parameters
+      
+      if ~isempty(strfind(gp.infer_params, 'likelihood')) && ~isempty(gp.lik.fh.pak(gp.lik))
+        gdata_lik = 0;
+        lik = gp.lik;
+        
+        
+        DW_sigma = lik.fh.llg3(lik, y, f, 'latent2+param', z);
+        DL_sigma = lik.fh.llg(lik, y, f, 'param', z);
+        DL_f_sigma = lik.fh.llg2(lik, y, f, 'latent+param', z);
+        %         b = La1.*DL_f_sigma + B'*(B*DL_f_sigma);
+        %         bb = (iLa2W.*b - L2*(L2'*b));
+        %         s3 = b - (La1.*bb + B'*(B*bb));
+        
+        % b = Kfu*inv(Kuu)*Kfu'*dW/dth
+        b = B'*(B*DL_f_sigma);
+        % bb = Kfu*inv(Kuu+Kfu'*W*Kfu)*Kfu'*W
+        bb = repmat(1./W,1,size(DL_f_sigma,2)).*(L2*(L2'*b));
+        % s3 = df/dth
+        s3 = b - bb;        
+        %bb = (repmat(W,1,size(DL_f_sigma,2)).*b - L2*(L2'*b));
+        %s3 = b + B'*(B*bb);
+        
+        %         gdata_lik = - DL_sigma - 0.5.*sum(s2t.*DW_sigma) - s2'*s3;
+        gdata_lik = - DL_sigma - 0.5.*sum(repmat(s2t,1,size(DL_f_sigma,2)).*DW_sigma) - s2'*s3;
+        
+        if isequal(gp.type, 'VAR')
+          % Derivative of the trace term tr(diag(K-Q).*W)
+          % Explicit dW/dth
+          % La2 = diag(K-Q)
+          gdata_lik = gdata_lik - 0.5*sum(La2.*DW_sigma);
+          % Implicit dW/df*df/dth
+          gdata_lik = gdata_lik + 0.5.*(La2.*g3)'*s3;
+        end
+        
+        % evaluate prior contribution for the gradient
+        if isfield(gp.lik, 'p')
+          g_logPrior = -lik.fh.lpg(lik);
+        else
+          g_logPrior = zeros(size(gdata_lik));
+        end
+        % set the gradients into vectors that will be returned
+        gdata = [gdata gdata_lik];
+        gprior = [gprior g_logPrior];
+        i1 = length(gdata);
+      end
+      
+      % =================================================================
+      % Gradient with respect to inducing inputs
+      
+      if ~isempty(strfind(gp.infer_params, 'inducing'))
+        if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
+          m = size(gp.X_u,2);
+          st=0;
+          if ~isempty(gprior)
+            st = length(gprior);
+          end
+          
+          gdata(st+1:st+length(gp.X_u(:))) = 0;
+          i1 = st+1;
+          for i = 1:size(gp.X_u,1)
+            if iscell(gp.p.X_u) % Own prior for each inducing input
+              pr = gp.p.X_u{i};
+              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
+            else % One prior for all inducing inputs
+              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+            end
+            i1 = i1 + m;
+          end
+          
+          for i=1:ncf
+            i1=st;
+            
+            gpcf = gp.cf{i};
+            if savememory
+              % If savememory option is used, just get the number of
+              % covariates in X and calculate gradients later
+              np=gpcf.fh.ginput(gpcf,u,[],0);
+            else
+              np=1;
+              DKuu = gpcf.fh.ginput(gpcf, u);
+              DKuf = gpcf.fh.ginput(gpcf, u, x);
+            end
+            
+            for i3 = 1:np
+              if savememory
+                DKuu=gpcf.fh.ginput(gpcf,u,[],i3);
+                DKuf=gpcf.fh.ginput(gpcf,u,x,i3);
+              end
+              
+              for i2 = 1:length(DKuu)
+                i1 = i1+1;
+                
+                % 0.5* a'*dK*a, where a = K\f
+                KfuiKuuDKuu = iKuuKuf'*DKuu{i2};
+                gdata(i1) = -0.5.*((2.*a'*DKuf{i2}'-(a'*KfuiKuuDKuu))*(iKuuKuf*a));
+                  
+                % trace( inv(inv(W) + K) * dQ) )
+                gdata(i1) = gdata(i1) - 0.5.*sum(sum(L2'.*(2.*L2'*DKuf{i2}'*iKuuKuf - L2'*KfuiKuuDKuu*iKuuKuf)));
+                tt=0.5.*(2.*sum(W.*sum(DKuf{i2}'.*iKuuKuf',2)) - sum(W.*sum(KfuiKuuDKuu.*iKuuKuf',2)));
+                gdata(i1) = gdata(i1) + tt;
+                  
+                b = (2*DKuf{i2}' - KfuiKuuDKuu)*(iKuuKuf*b3);
+                bb = sqrtW.*sqrtW.*b - L2*(L2'*b);
+                s3 = b - (B'*(B*bb));
+                gdata(i1) = gdata(i1) - s2'*s3;
+                
+                if isequal(gp.type, 'VAR')
+                  % Derivative of 0.5.*tr(diag(K-Q).*W) (Titsias, 2009) wrt X_u
+                  % Here we have to also split in explicit and implicit
+                  % derivatives
+                  gdata(i1) = gdata(i1) + 0 - tt;
+                  % La2 = diag(K - Q);
+                  gdata(i1) = gdata(i1) - 0.5*(La2.*g3)'*s3;                             
+                end
+              end
+            end
+          end
+        end
+      end
+      
+      g = gdata + gprior;
+      
   end
   
   assert(isreal(gdata))
