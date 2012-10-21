@@ -34,7 +34,7 @@ if isfield(gp,'latent_method') && ~strcmp(gp.latent_method,'MCMC')
   % use an inference specific method
   fh_g = gp.fh.g;
   switch nargout 
-    case 1
+    case {0 1}
       [g] = fh_g(w, gp, x, y, varargin{:});
     case 2
       [g, gdata] = fh_g(w, gp, x, y, varargin{:});

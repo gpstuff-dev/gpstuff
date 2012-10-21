@@ -86,7 +86,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   ip.addParamValue('nsamples', 1, @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('repeat', 1, @(x) isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('display', 1, @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('record',[], @isstruct);
+  ip.addParamValue('record',[], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('hmc_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
   ip.addParamValue('ssls_opt', [], @(x) isstruct(x) || isempty(x));

@@ -35,10 +35,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, varargin)
 %               to which training block in *IC type sparse models. 
 %               Default is []. In case of PIC, a cell array
 %               containing index vectors specifying the blocking
-%               structure for test data. IN FIC and CS+FIC a
+%               structure for test data. In FIC and CS+FIC a
 %               vector of length n that points out the test inputs
 %               that are also in the training set (if none, set
-%               TSTIND = [])
+%               TSTIND = []).
 %      yt     - optional observed yt in test points (see below)
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
