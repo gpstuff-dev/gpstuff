@@ -97,7 +97,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             sampyt = Ef + predcov*randn(size(Ef));
           end        
         else
-          L = chol(C)';
+          L = chol(C,'lower');
           %    y=K'*(C\y);
           a = L'\(L\y);
           Ef = repmat( K'*a, 1, nsamp);
@@ -491,7 +491,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         end        
         
         Ef = repmat(Ef, 1, nsamp);
-        predcov = chol(Covf)';
+        predcov = chol(Covf,'lower');
         sampft = Ef + predcov*randn(size(Ef));
         
         if nargout > 1
@@ -569,8 +569,8 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
                 V = ldlsolve(L,sqrtWKfn);
                 Covf = K - sqrtWKfn'*V;
               else
-                W = diag(W);
-                V = L\(sqrt(W)*K_nf');
+                sW = diag(sqrt(W));
+                V = L\(sW*K_nf');
                 Covf = K - V'*V;
               end
             else
@@ -617,7 +617,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             end
         end
         
-        predcov = chol(Covf)';
+        predcov = chol(Covf,'lower');
         Ef = repmat(Ef,1,nsamp);
         sampft = Ef + predcov*randn(size(Ef));
         
@@ -700,7 +700,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             V = L\(sqrt(W)*K_nf');
             Covf = K - V'*V;
             
-            predcov = chol(Covf)';
+            predcov = chol(Covf,'lower');
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             
@@ -760,7 +760,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             Covf = Knn - Knf * ( diag(1./La) - L*L' ) * Knf';
             
-            predcov = chol(Covf)';
+            predcov = chol(Covf,'lower');
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             
@@ -833,7 +833,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             Covf = Knn - Knf * C * Knf';
             
-            predcov = chol(Covf)';
+            predcov = chol(Covf,'lower');
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
 
@@ -873,7 +873,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             Covf = Knn - Knf * C * Knf';
             
-            predcov = chol(Covf)';
+            predcov = chol(Covf,'lower');
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
         end
@@ -1010,7 +1010,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             V = L\(sqrt(W)*K_nf');
             Covf = K - V'*V;
             
-            predcov = chol(Covf)';
+            predcov = chol(Covf,'lower');
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             
@@ -1061,7 +1061,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             Covf = Knn - Knf * ( inv(La) - L*L' ) * Knf';
             
-            predcov = chol(Covf)';
+            predcov = chol(Covf,'lower');
             Ef = repmat(Ef,1,nsamp);
             sampft = Ef + predcov*randn(size(Ef));
             

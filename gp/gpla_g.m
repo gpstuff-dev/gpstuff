@@ -89,8 +89,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
           s2 = 0.5*C2.*gp.lik.fh.llg3(gp.lik, y, f, 'latent', z);
         else                                         % evaluate with full matrices
           sqrtW = diag(sqrt(W));
-          R = sqrtW*(L'\(L\sqrtW));
-          C2 = diag(K) - sum((L\(sqrtW*K)).^2,1)' ;
+          c = L\sqrtW;
+          R = c'*c;
+          C2 = diag(K) - sum((c*K).^2,1)' ;
           s2 = 0.5*C2.*gp.lik.fh.llg3(gp.lik, y, f, 'latent', z);
         end
       else                         % We might end up here if the likelihood is not log-concave
@@ -141,7 +142,6 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               s3 = b - K*(sqrtW*ldlsolve(L,sqrtW*b));
             else
               s3 = b - K*(R*b);
-              b = DKff * g1;
               %s3 = (1./W).*(R*b);
             end
             gdata(i1) = -(s1 + s2'*s3);
