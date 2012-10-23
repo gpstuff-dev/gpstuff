@@ -97,7 +97,7 @@ initTestSuite;
    function testMeanSquaredError10foldCV
      values.real = load('realValuesModelAssesment1.mat', 'rmse_cv');
      values.test = load(strrep(which('test_modelassesment1.m'), 'test_modelassesment1.m', 'testValues/testModelAssesment1.mat'), 'rmse_cv');
-     assertVectorsAlmostEqual(values.real.mrmse_cv, values.test.mrmse_cv, 'relative', 0.20);
+     assertVectorsAlmostEqual(values.real.rmse_cv, values.test.rmse_cv, 'relative', 0.20);
                  
    function testLogPredDensityLOOPRED
      values.real = load('realValuesModelAssesment1.mat', 'mlpd_loo');
