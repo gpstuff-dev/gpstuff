@@ -627,7 +627,7 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
       for i=i1
         for j = 1:n
           D1 = zeros(n,n);
-          D1(j,:) = sqrt(s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
+          D1(j,:) = (s(i)).*bsxfun(@minus,x(j,i),x(:,i)');
           D1 = D1 + D1';
           DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
           
@@ -663,7 +663,7 @@ function DKff = gpcf_matern32_ginput(gpcf, x, x2, i1)
       for i=i1
         for j = 1:n
           D1 = zeros(n,n2);
-          D1(j,:) = sqrt(s(i)).*bsxfun(@minus,x(j,i),x2(:,i)');
+          D1(j,:) = (s(i)).*bsxfun(@minus,x(j,i),x2(:,i)');
           DK = -3.*ma2.*exp(-sqrt(3.*dist)).*D1;
           ii1 = ii1 + 1;
           DKff{ii1} = DK;
