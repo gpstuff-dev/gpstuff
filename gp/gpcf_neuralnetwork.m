@@ -289,7 +289,7 @@ function DKff = gpcf_neuralnetwork_cfg(gpcf, x, x2, mask, i1)
   
   gpp=gpcf.p;
   
-  if isfield(gpcf, 'selectedVariables')
+  if isfield(gpcf, 'selectedVariables') && ~isempty(x)
     x=x(:,gpcf.selectedVariables);
     if nargin == 3
       x2=x2(:,gpcf.selectedVariables);

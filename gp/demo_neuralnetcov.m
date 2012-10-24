@@ -1,5 +1,5 @@
-%DEMO_NEURALNETWORK  Demonstration of Gaussian process with a neural
-%                    network covariance function
+%DEMO_NEURALNETCOV  Demonstration of Gaussian process with a neural
+%                   network covariance function
 %                    
 %  Description
 %    Infinite neural network solutions in 2D and 1D regression
