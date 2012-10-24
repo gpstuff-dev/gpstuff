@@ -32,7 +32,6 @@
 % 1) data analysis with probit likelihood
 % =====================================
 disp('Data analysis with probit likelihood')
-clear
 S = which('demo_classific');
 L = strrep(S,'demo_classific.m','demodata/synth.tr');
 x=load(L);
