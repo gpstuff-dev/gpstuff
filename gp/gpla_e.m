@@ -222,6 +222,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
               lp_new = gp.lik.fh.ll(gp.lik, y, f, z);
               lp_old = -Inf;
+              if issparse(K)
+                speyen=speye(n);
+              end
               
               iter=0;
               while abs(lp_new - lp_old) > tol && iter < maxiter
@@ -230,9 +233,12 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 sW = sqrt(W);    
                 if issparse(K)
                   sW = sparse(1:n, 1:n, sW, n, n);
-                  [L,notpositivedefinite] = ldlchol( speye(n)+sW*K*sW );
+                  [L,notpositivedefinite] = ldlchol(speyen+sW*K*sW );
                 else
-                  [L,notpositivedefinite] = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
+                  %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
+                  L=bsxfun(@times,bsxfun(@times,sW,K),sW');
+                  L(1:n+1:end)=L(1:n+1:end)+1;
+                  [L, notpositivedefinite] = chol(L);
                 end
                 if notpositivedefinite
                   [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
@@ -314,6 +320,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               lp_old = -Inf;
               f_old = f+1;
               ge = Inf; %max(abs(a-dlp));
+              if issparse(K)
+                speyen=speye(n);
+              end
               
               iter=0;
               % begin Newton's iterations
@@ -327,7 +336,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 sW = sqrt(W);
                 if issparse(K)
                   sW = sparse(1:n, 1:n, sW, n, n);
-                  [L, notpositivedefinite] = ldlchol( speye(n)+sW*K*sW );
+                  [L, notpositivedefinite] = ldlchol(speyen+sW*K*sW );
                 else
                   %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                   L=bsxfun(@times,bsxfun(@times,sW,K),sW');
@@ -338,7 +347,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
                   return
                 end
-                %L = chol(eye(n)+sW*sW'.*K); % L'*L=B=eye(n)+sW*K*sW
                 b = W.*f+dlp;
                 if issparse(K)
                   a = b - sW*ldlsolve(L,sW*(K*b));
@@ -405,8 +413,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               edata = logZ + 0.5.*sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %                        
             else
               sW = sqrt(W);
-              B = eye(size(K)) + sW*sW'.*K;
-              [L, notpositivedefinite] = chol(B, 'lower');
+              L=bsxfun(@times,bsxfun(@times,sW,K),sW');
+              L(1:n+1:end)=L(1:n+1:end)+1;
+              [L, notpositivedefinite] = chol(L, 'lower');
               edata = logZ + sum(log(diag(L))); % 0.5*log(det(eye(size(K)) + K*W)) ; %
             end
             if notpositivedefinite
