@@ -114,8 +114,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
     end
     if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && ...
           isequal(datahash,ch.datahash)
-      % The covariance function parameters or data haven't changed
-      % so we can return the energy and the site parameters that are saved
+      % The covariance function parameters or data haven't changed so we
+      % can return the energy and the site parameters that are
+      % saved in the cache
       e = ch.e;
       edata = ch.edata;
       eprior = ch.eprior;
@@ -422,8 +423,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
               return
             end
-          else                        % We may end up here if the likelihood is not log concace
-                                      % For example Student-t likelihood. 
+          else                        
+            % We may end up here if the likelihood is not log concave
+            % For example Student-t likelihood. 
           [W2,I] = sort(W, 1, 'descend');
 
           if issparse(K)
