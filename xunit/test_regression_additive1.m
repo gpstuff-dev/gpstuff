@@ -38,12 +38,12 @@ function testPredictionsFIC
 function testPredictionsPIC 
     values.real = load('realValuesRegression_additive1.mat', 'Eft_pic', 'Varft_pic');
     values.test = load(strrep(which('test_regression_additive1.m'), 'test_regression_additive1.m', 'testValues/testRegression_additive1.mat'), 'Eft_pic', 'Varft_pic');
-    assertElementsAlmostEqual(mean(values.real.Eft_pic), mean(values.test.Eft_pic), 'relative', 0.05);
-    assertElementsAlmostEqual(mean(values.real.Varft_pic), mean(values.test.Varft_pic), 'relative', 0.05);
+    assertElementsAlmostEqual((values.real.Eft_pic), (values.test.Eft_pic), 'relative', 0.1);
+    assertElementsAlmostEqual((values.real.Varft_pic), (values.test.Varft_pic), 'relative', 0.1);
     
 
 function testPredictionsSparse
     values.real = load('realValuesRegression_additive1.mat', 'Eft_csfic', 'Varft_csfic');
     values.test = load(strrep(which('test_regression_additive1.m'), 'test_regression_additive1.m', 'testValues/testRegression_additive1.mat'), 'Eft_csfic', 'Varft_csfic');
-    assertElementsAlmostEqual(mean(values.real.Eft_csfic), mean(values.test.Eft_csfic), 'relative', 0.05);
-    assertElementsAlmostEqual(mean(values.real.Varft_csfic), mean(values.test.Varft_csfic), 'relative', 0.05);
+    assertElementsAlmostEqual((values.real.Eft_csfic), (values.test.Eft_csfic), 'relative', 0.1);
+    assertElementsAlmostEqual((values.real.Varft_csfic), (values.test.Varft_csfic), 'relative', 0.1);

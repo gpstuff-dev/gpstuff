@@ -32,28 +32,28 @@ drawnow;clear;close all
 function testPredictionsCS
 values.real = load('realValuesRegression_sparse1', 'Eft_cs');
 values.test = load(strrep(which('test_regression_sparse1.m'), 'test_regression_sparse1.m', 'testValues/testRegression_sparse1'), 'Eft_cs');
-assertElementsAlmostEqual(mean(values.real.Eft_cs), mean(values.test.Eft_cs), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Eft_cs), (values.test.Eft_cs), 'absolute', 0.1);
 
 
 function testPredictionsFIC
 values.real = load('realValuesRegression_sparse1', 'Eft_fic');
 values.test = load(strrep(which('test_regression_sparse1.m'), 'test_regression_sparse1.m', 'testValues/testRegression_sparse1'), 'Eft_fic');
-assertElementsAlmostEqual(mean(values.real.Eft_fic), mean(values.test.Eft_fic), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Eft_fic), (values.test.Eft_fic), 'absolute', 0.1);
 
 
 function testPredictionsPIC
 values.real = load('realValuesRegression_sparse1', 'Eft_pic');
 values.test = load(strrep(which('test_regression_sparse1.m'), 'test_regression_sparse1.m', 'testValues/testRegression_sparse1'), 'Eft_pic');
-assertElementsAlmostEqual(mean(values.real.Eft_pic), mean(values.test.Eft_pic), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Eft_pic), (values.test.Eft_pic), 'absolute', 0.1);
 
 
 function testPredictionsVAR
 values.real = load('realValuesRegression_sparse1', 'Eft_var');
 values.test = load(strrep(which('test_regression_sparse1.m'), 'test_regression_sparse1.m', 'testValues/testRegression_sparse1'), 'Eft_var');
-assertElementsAlmostEqual(mean(values.real.Eft_var), mean(values.test.Eft_var), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Eft_var), (values.test.Eft_var), 'absolute', 0.1);
 
 
 function testPredictionsDTC
 values.real = load('realValuesRegression_sparse1', 'Eft_dtc');
 values.test = load(strrep(which('test_regression_sparse1.m'), 'test_regression_sparse1.m', 'testValues/testRegression_sparse1'), 'Eft_dtc');
-assertElementsAlmostEqual(mean(values.real.Eft_dtc), mean(values.test.Eft_dtc), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Eft_dtc), (values.test.Eft_dtc), 'absolute', 0.1);

@@ -42,5 +42,5 @@ assertElementsAlmostEqual(mean(values.real.Varft_full), mean(values.test.Varft_f
 function testPredictionsVar
 values.real = load('realValuesRegression_sparse2.mat', 'Eft_var', 'Varft_var');
 values.test = load(strrep(which('test_regression_sparse2.m'), 'test_regression_sparse2.m', 'testValues/testRegression_sparse2.mat'), 'Eft_var', 'Varft_var');
-assertElementsAlmostEqual(mean(values.real.Eft_var), mean(values.test.Eft_var), 'relative', 0.1);
-assertElementsAlmostEqual(mean(values.real.Varft_var), mean(values.test.Varft_var), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Eft_var), (values.test.Eft_var), 'relative', 0.1);
+assertElementsAlmostEqual((values.real.Varft_var), (values.test.Varft_var), 'relative', 0.1);
