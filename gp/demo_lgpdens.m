@@ -162,7 +162,8 @@ axis tight
 title(['Galaxy, FFT speed-up, elapsed time: ' num2str(t1)])
 
 % Old faithful, 2D
-x=load('demodata/faithful.txt');
+L = strrep(S,'demo_lgpdens.m','demodata/faithful.txt');
+x=load(L);
 subplot(2,2,3)
 tic,lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'off');t0=toc;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
