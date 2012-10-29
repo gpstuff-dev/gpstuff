@@ -422,13 +422,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
     if ~isfield(gplik.fh,'trcov')
       if predft && predyt && predlpyt
-        if strcmp(gp.type, 'PIC')
           [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
                                                    tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-        else
-          [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                                   tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-        end
       elseif predft && predlpyt
         [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ... 
                                     tstind2, 'z', ztr, 'yt', yt, 'zt', zt); 
