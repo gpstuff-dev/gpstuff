@@ -64,7 +64,9 @@ line(xt,p0,'color','k')
 
 subplot(2,2,3)
 % Galaxy data
-x=load('demodata/galaxy.txt');
+S = which('demo_lgpdens');
+L = strrep(S,'demo_lgpdens.m','demodata/galaxy.txt');
+x=load(L);
 xt=linspace(0,40000,200)';
 lgpdens(x,xt);
 axis tight
@@ -102,7 +104,8 @@ title('Student t_4')
 
 subplot(2,2,2)
 % Old faithful
-x=load('demodata/faithful.txt');
+L = strrep(S,'demo_lgpdens.m','demodata/faithful.txt');
+x=load(L);
 lgpdens(x,'range',[1 6 40 100]);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 title('Old faithful')
@@ -146,7 +149,8 @@ title('Ring - conditional density')
 % =====================================
 figure(4)
 % Galaxy data with finer grid, 1D
-x=load('demodata/galaxy.txt');
+L = strrep(S,'demo_lgpdens.m','demodata/galaxy.txt');
+x=load(L);
 xt=linspace(0,40000,800)';
 subplot(2,2,1)
 tic,lgpdens(x,xt,'speedup', 'off');t0=toc;
