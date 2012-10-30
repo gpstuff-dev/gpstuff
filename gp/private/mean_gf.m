@@ -64,7 +64,8 @@ trA  = cell(1,length(DKff));
 
 % help arguments
 if issparse(Ky)
-    KH = ldlsolve(invKy, H');   % in case of CS covariance function invKy contains the LDL Cholesky decomposition of the covariance function
+    % in case of CS covariance function invKy contains the LDL Cholesky decomposition of the covariance function
+    KH = ldlsolve(invKy, H');   
     HinvC = KH';
 else
     HinvC = H*invKy;

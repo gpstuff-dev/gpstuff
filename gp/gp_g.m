@@ -248,8 +248,8 @@ switch gp.type
           else 
             trK = DCff{i2}.*(trace(invC));
           end
-          dA = -1*HinvC*DCff{i2}*HinvC';                  % d A / d th
-          trA = sum(invAt(:).*dA(:));                 % d log(|A|) / dth
+          dA = -1*HinvC*DCff{i2}*HinvC';            % d A / d th
+          trA = sum(invAt(:).*dA(:));               % d log(|A|) / dth
           dMNM = invNM'*(DCff{i2}*invNM);           % d M'*N*M / d th
           gdata(i1)=0.5*(-1*dMNM + trA + trK);
         end

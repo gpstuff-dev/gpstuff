@@ -107,8 +107,8 @@ switch gp.type
         edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
       end
     else
-      [H,b,B]=mean_prep(gp,x,[]);                   
-      if isempty(C)  
+      [H,b,B]=mean_prep(gp,x,[]);
+      if isempty(C)
         L=1;
         C=0;
         logK=0;
@@ -120,7 +120,7 @@ switch gp.type
           return
         end
         logK = 0.5*sum(log(diag(L)));
-        KH = L'\(L\H');
+        KH = ldlsolve(L,H');
       else          
         [L,notpositivedefinite] = chol(C,'lower');
         if notpositivedefinite
@@ -131,20 +131,41 @@ switch gp.type
         KH = L'\(L\H');
       end
       
-      
       A = B\eye(size(B)) + H*KH;
-      M = H'*b-y;
-      [LN, notpositivedefinite] = chol(C + H'*B*H,'lower');
+      [LA, notpositivedefinite] = chol(A,'lower');
       if notpositivedefinite
         [edata, eprior, e] = set_output_for_notpositivedefinite;
         return
       end
-      MNM = LN\M;
-      MNM = MNM'*MNM;
-%       N = C + H'*B*H;
-%       MNM = M'*(N\M);
+      M = H'*b-y;
+      % When using CS-covariance function use matrix inversion lemma to
+      % calculate the inverse -> faster computation
+      if issparse(C)
+          MNM = LA\(KH'*M);
+          MNM = M'*ldlsolve(L,M) - MNM'*MNM;
+      else
+          [LN, notpositivedefinite] = chol(C + H'*B*H,'lower');
+          if notpositivedefinite
+              [edata, eprior, e] = set_output_for_notpositivedefinite;
+              return
+          end
+          MNM = LN\M;
+          MNM = MNM'*MNM;
+      end
       
-      edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
+      edata = 0.5*MNM + logK + 0.5*log(det(B)) + sum(log(diag(LA))) + 0.5*n*log(2*pi);
+      
+%       A = B\eye(size(B)) + H*KH;
+%       M = H'*b-y;
+%       [LN, notpositivedefinite] = chol(C + H'*B*H,'lower');
+%       if notpositivedefinite
+%         [edata, eprior, e] = set_output_for_notpositivedefinite;
+%         return
+%       end
+%       MNM = LN\M;
+%       MNM = MNM'*MNM;
+%       
+%       edata = 0.5*MNM + logK + 0.5*log(det(B)) + 0.5*log(det(A)) + 0.5*n*log(2*pi);
       
     end
     
