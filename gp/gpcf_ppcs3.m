@@ -728,7 +728,7 @@ function DKff = gpcf_ppcs3_cfg(gpcf, x, x2, mask, i1)
     ii1=0;
     [n, m] =size(x);
     
-    if ~isempty(gpcf.p.magnSigma2) && (~savememory && all(i1==1))
+    if ~isempty(gpcf.p.magnSigma2) && (~savememory || all(i1==1))
       ii1 = ii1+1;
       DKff{ii1} = gpcf.fh.trvar(gpcf, x);   % d mask(Kff,I) / d magnSigma2
     end

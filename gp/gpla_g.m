@@ -67,6 +67,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       end
       
       [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      if isnan(e)
+        g=NaN; gdata=NaN; gprior=NaN;
+        return;
+      end
       
       if W >= 0              % This is the usual case where likelihood is log concave
                              % for example, Poisson and probit

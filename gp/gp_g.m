@@ -485,7 +485,7 @@ switch gp.type
           if savememory
             % If savememory option is used, just get the number of
             % covariates in X and calculate gradients later
-            np=gpcf.fh.ginput(gpcf,[],[],0);
+            np=gpcf.fh.ginput(gpcf,u,[],0);
           else
             np=1;
             DKuu = gpcf.fh.ginput(gpcf, u);
