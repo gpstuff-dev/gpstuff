@@ -101,12 +101,7 @@ function h = gpmf_geth(gpmf, x)
   if ~isfield(gpmf,'selectedVariables')
     h=x';
   else
-    selectedVariables=gpmf.selectedVariables;
-    h=zeros(length(selectedVariables),length(x(:,1)));
-    
-    for i=1:length(selectedVariables)
-      h(i,:)=x(:,selectedVariables(i))';
-    end 
+    h=x(:,gpmf.selectedVariables)';
   end
   
 end

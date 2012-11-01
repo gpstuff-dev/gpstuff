@@ -87,8 +87,8 @@ switch gp.type
     
     if issparse(C)
       % evaluate the sparse inverse
-      invC = spinv(C);       
       [LD, notpositivedefinite] = ldlchol(C);
+      invC = spinv(LD,1);
       if notpositivedefinite
           % instead of stopping to chol error, return NaN
           g=NaN;
