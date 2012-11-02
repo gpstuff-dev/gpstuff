@@ -49,7 +49,7 @@ y=leukemiadata(:,1);
 y=y/max(y);
 
 ye=1-leukemiadata(:,2); % event indicator, ye = 0 for uncensored event
-                  %                        ye = 1 for right censored event
+                        %                  ye = 1 for right censored event
 
 % choose (for example) 'age', 'sex', 'wbc', and 'tpi' covariates
 x0=leukemiadata(:,5:8);
@@ -66,6 +66,8 @@ gpcf1 = gpcf_neuralnetwork('weightSigma2', 1*ones(1,nin), 'biasSigma2', 0.05, 'w
 
 % Create the likelihood structure
 lik = lik_weibull();
+%lik = lik_loglogistic();
+%lik = lik_loggaussian();
 
 % Create the GP structure
 gp = gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-6);
@@ -77,8 +79,10 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 %gradcheck(gp_pak(gp),@gpla_e,@gpla_g,gp,x,y,'z',ye)
 %gradcheck(gp_pak(gp),@gpep_e,@gpep_g,gp,x,y,'z',ye)
 
+% Set the options for the optimization
 opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
-gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
+% Optimize with the BFGS quasi-Newton method
+gp=gp_optim(gp,x,y,'z',ye,'opt',opt,'optimf',@fminlbfgs);
 
 % Make prediction
 xt1=zeros(200,nin); xt1(:,2)=1;
@@ -89,7 +93,6 @@ xt2(:,1)=linspace(min(x(:,1)), max(x(:,1)), 200);
 xt01(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 xt02(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 
-
 [Ef1, Varf1] = gp_pred(gp, x, y, xt1, 'z', ye);
 [Ef2, Varf2] = gp_pred(gp, x, y, xt2, 'z', ye);
 
@@ -98,13 +101,14 @@ xt02(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 col1=ones(1,3)*0.7;
 col2=ones(1,3)*0.3;
 figure, hold on, set(gcf, 'color', 'w'),
-plot(xt01(:,1), Ef1, 'color', col1, 'linewidth', 3)
-plot(xt01(:,1), Ef1+1.96*sqrt(Varf1), '--', 'color', col1, 'linewidth', 2)
-plot(xt01(:,1), Ef1-1.96*sqrt(Varf1), '--', 'color', col1, 'linewidth', 2)
+plot(xt01(:,1), exp(-Ef1), 'color', col1, 'linewidth', 3)
+plot(xt01(:,1), exp(-Ef1+1.96*sqrt(Varf1)), '--', 'color', col1, 'linewidth', 2)
+plot(xt01(:,1), exp(-Ef1-1.96*sqrt(Varf1)), '--', 'color', col1, 'linewidth', 2)
 
-plot(xt02(:,1), Ef2, 'color', col2, 'linewidth', 3)
-plot(xt02(:,1), Ef2+1.96*sqrt(Varf2), '--', 'color', col2, 'linewidth', 2)
-plot(xt02(:,1), Ef2-1.96*sqrt(Varf2), '--', 'color', col2, 'linewidth', 2)
+plot(xt02(:,1), exp(-Ef2), 'color', col2, 'linewidth', 3)
+plot(xt02(:,1), exp(-Ef2+1.96*sqrt(Varf2)), '--', 'color', col2, 'linewidth', 2)
+plot(xt02(:,1), exp(-Ef2-1.96*sqrt(Varf2)), '--', 'color', col2, 'linewidth', 2)
+set(gca,'YTick',[1:15])
 xlabel('age')
 title('effect of age for both sexes')
 
