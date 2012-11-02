@@ -1,5 +1,5 @@
 function [R] = ipsrf(varargin)
-%IPSRF Interavl Potential Scale Reduction Factor
+%IPSRF Interval Potential Scale Reduction Factor
 %
 %   [R] = IPSRF(X) or
 %   [R] = IPSRF(x1,x2,...,xs)
@@ -30,7 +30,7 @@ function [R] = ipsrf(varargin)
 %   See also
 %     CIPSRF, PSRF
 
-% Copyright (C) 1999 Simo Särkkä
+% Copyright (C) 1999 Simo Sï¿½rkkï¿½
 % Copyright (C) 2004 Aki Vehtari
 %
 % This software is distributed under the GNU General Public 
