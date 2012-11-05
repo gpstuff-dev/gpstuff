@@ -60,6 +60,7 @@ function lik = lik_inputdependentnoise(varargin)
 %     lik.fh.tiltedMoments = @lik_inputdependentnoise_tiltedMoments;
 %     lik.fh.siteDeriv = @lik_inputdependentnoise_siteDeriv;
     lik.fh.predy = @lik_inputdependentnoise_predy;
+    lik.fh.predprcty = @lik_inputdependentnoise_predprcty;
 %     lik.fh.invlink = @lik_inputdependentnoise_invlink;
     lik.fh.recappend = @lik_inputdependentnoise_recappend;
   end
@@ -567,6 +568,26 @@ function lik = lik_inputdependentnoise(varargin)
 %     end
   end
 
+  function prctys = lik_inputdependentnoise_predprcty(lik, Ef, Varf, zt, prcty)
+  %LIK_BINOMIAL_PREDPRCTY  Returns the percentiles of predictive density of y
+  %
+  %  Description
+  %    PRCTY = LIK_BINOMIAL_PREDPRCTY(LIK, EF, VARF YT, ZT)
+  %    Returns percentiles of the predictive density PY of YT, that is
+  %    This requires also the succes counts YT, numbers of trials ZT. This
+  %    subfunction is needed when using function gp_predprcty.
+  %
+  %  See also
+  %    GP_PREDPCTY
+  
+  n=size(Ef,1)./2;
+  prcty = prcty./100;
+  prcty = norminv(prcty, 0, 1);
+  prctys = bsxfun(@plus, Ef(1:n), bsxfun(@times, sqrt(Varf(1:n) + lik.sigma2.*exp(Ef(n+1:end))), prcty));
+  
+  end
+
+
   function [df,minf,maxf] = init_zeroinflatednegbin_norm(yy,myy_i,sigm2_i,avgE,r)
   %INIT_INPUTDEPENDENTNOISE_NORM
   %
@@ -759,6 +780,7 @@ function lik = lik_inputdependentnoise(varargin)
       reclik.fh.llg3 = @lik_inputdependentnoise_llg3;
 %       reclik.fh.tiltedMoments = @lik_inputdependentnoise_tiltedMoments;
       reclik.fh.predy = @lik_inputdependentnoise_predy;
+      reclik.fh.predprcty = @lik_inputdependentnoise_predprcty;
       reclik.fh.invlink = @lik_inputdependentnoise_invlink;
       reclik.fh.recappend = @lik_inputdependentnoise_recappend;
       reclik.p=[];
