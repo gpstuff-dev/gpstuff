@@ -79,6 +79,13 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 %                     pyt
 %       cvws      - parameter weight vectors for each CV fold
 %       trw       - parameter weight vector for training data
+%       cvtrpreds - training and test predictions structure for 
+%                   every cv fold including the following fields:
+%                     Eft
+%                     Varft
+%                     Eyt
+%                     Varyt
+%                     pyt
 %
 %     The K-fold cross validation is performed as follows: The data
 %     are divided into k groups D_k. For each group, we evaluate
@@ -255,7 +262,6 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   if ismember(display,{'iter'})
     fprintf('Evaluating the CV utility. The inference method is %s.\n',inf_method)
   end
-  nargout2 = nargout;
   
   % *** note: yt must be a scalar or a vector of size y
   
@@ -290,9 +296,22 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
   else
     predyt=0;
   end
-
-  % parfor enables parallel loop
-  % parfor i=1:k
+  
+  % Initialize empty structures
+  Eft=[]; Varft=[]; lpyt=[]; Eyt=[]; Varyt=[];
+  cvpreds.Eft=[]; cvpreds.Varft=[]; cvpreds.lpyt=[];
+  cvpreds.Eyt=[]; cvpreds.Varyt=[];
+  cvtrpreds.Eft=[]; cvtrpreds.Varft=[]; cvtrpreds.lpyt=[];
+  cvtrpreds.Eyt=[]; cvtrpreds.Varyt=[];
+  lpd_cv =[]; lpd_cvtr = []; lpd_cvm = [];
+  rmse_cv = []; rmse_cvtr = []; abs_cv= []; abs_cvtr = [];  
+  rmse_cvm = []; abs_cvm = [];
+  mlpd_cv = []; Var_lpd_cv = []; mrmse_cv = [];
+  mabs_cv = []; Var_rmse_cv = []; Var_abs_cv = [];
+  criteria.mlpd_cv=[]; criteria.Var_lpd_cv=[];
+  criteria.mrmse_cv=[]; criteria.Var_rmse_cv=[];
+  criteria.mabs_cv=[]; criteria.Var_abs_cv=[];
+  
   
   for i=1:k
     if isempty(tstindex{i})
@@ -332,39 +351,38 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     else
       gptype=gp.type;
     end
-    tstind2 = [];
+    tstind=[];
     switch gptype
       case {'FIC' 'CS+FIC'}
-        tstind2 = trindex{i};
+        tstind = trindex{i};
       case 'PIC'
-        % Set the block indices for the cv set of data points. Variable
-        % naming(e.g tstind2) because parfor loop.
+        % Set the block indices for the cv set of data points. 
         ntr = size(xtr,1);
         ntst = size(xtst,1);
-        trind2 = [];
+        trind = [];
         for i1=1:length(gp.tr_index)
-          tstind2{i1} = [];
-          trind2{i1} = [];
+          tstind{i1} = [];
+          trind{i1} = [];
           for j1 = 1:length(gp.tr_index{i1})
             indtmp = find(all(bsxfun(@minus,xtr,x(gp.tr_index{i1}(j1),:))==0,2));
             %find( sum((xtr - repmat(x(gp.tr_index{i1}(j1),:),ntr,1)).^2,2) == 0 );
             if isempty( indtmp )
               indtmp = find(all(bsxfun(@minus,xtst,x(gp.tr_index{i1}(j1),:))==0,2));
               %find( sum((xtst - repmat(x(gp.tr_index{i1}(j1),:),ntst,1)).^2,2) == 0 );
-              tstind2{i1} = [tstind2{i1} indtmp];
+              tstind{i1} = [tstind{i1} indtmp];
             else
-              trind2{i1} = [trind2{i1} indtmp];
+              trind{i1} = [trind{i1} indtmp];
             end
           end
         end
         if iscell(gp)
           for j=1:numel(gp)
-            gp{j}.tr_index=trind2;
+            gp{j}.tr_index=trind;
           end
         else
-          gp.tr_index = trind2;
+          gp.tr_index = trind;
         end
-        tstind2=gp_orig.tr_index;
+        tstind=gp_orig.tr_index;
     end
 
     % Conduct inference
@@ -413,110 +431,23 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       gplik=gp.lik;
     end
 
+    if predyt
+      [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+                                     tstind, 'z', ztr, 'yt', yt, 'zt', zt);
+    elseif predlpyt
+      [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+                        tstind, 'z', ztr, 'yt', yt, 'zt', zt);
+    elseif predft
+      [Eft,Varft] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
+                    tstind, 'z', ztr, 'yt', yt, 'zt', zt);
+    end
+    if ~predft
+      Eft=[]; Varft=[];
+    end
+    if ~predlpyt
+      lpyt=[];
+    end
 
-    %      if ~isfield(gplik.fh,'trcov')
-    %       [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-    %     else
-    %       [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', tstind2, 'yt', yt);
-    %     end
-
-    if ~isfield(gplik.fh,'trcov')
-      if predft && predyt && predlpyt
-          [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                                   tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-      elseif predft && predlpyt
-        [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ... 
-                                    tstind2, 'z', ztr, 'yt', yt, 'zt', zt); 
-        Eyt=[];
-        Varyt=[];
-      elseif predft && predyt
-        [Eft, Varft,tmp, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                               tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-        lpyt=[];
-      elseif predlpyt && predyt  
-        [tmp, tmp,lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                              tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-        Eft=[];
-        Varft=[];
-      elseif predft
-        [Eft,Varft] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                              tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-        Eyt=[];
-        Varyt=[];
-        lpyt=[];
-      elseif predlpyt
-        [tmp, tmp,lpyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                  tstind2, 'z', ztr, 'yt', yt, 'zt', zt);
-        Eyt=[];
-        Varyt=[];
-        Eft=[];
-        Varft=[];
-      else
-        [tmp, tmp, tmp,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, 'tstind', ...
-                                             tstind2, 'z', ztr, 'yt', yt, 'zt', zt); 
-        Eft=[];
-        Varft=[];
-        lpyt=[];
-      end
-
-    else
-      if predft && predyt && predlpyt
-        [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
-                                                 'tstind', tstind2, 'yt', yt); 
-      elseif predft && predlpyt
-        [Eft, Varft,lpyt] = gp_pred(gp, xtr, ytr, x, ...
-                                    'tstind', tstind2, 'yt', yt);
-      elseif predft && predyt
-        [Eft, Varft, tmp,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
-                                               'tstind', tstind2, 'yt', yt);
-      elseif predlpyt && predyt  
-        [tmp, tmp,lpyt, Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
-                                              'tstind', tstind2, 'yt', yt);
-      elseif predft
-        [Eft,Varft] = gp_pred(gp, xtr, ytr, x, ...
-                              'tstind', tstind2, 'yt', yt);
-      elseif predlpyt
-        [tmp, tmp,lpyt] = gp_pred(gp, xtr, ytr, x, ...
-                                  'tstind', tstind2, 'yt', yt);
-      else
-        [tmp,tmp, tmp,Eyt, Varyt] = gp_pred(gp, xtr, ytr, x, ...
-                                            'tstind', tstind2, 'yt', yt);
-      end
-
-    end 
-
-    % Because parfor loop, must use temporary cells *_cvt/cv, and save
-    % results later in cvtpreds and cvpreds structures.
-
-    %     if nargout2>=6
-    %       Eft_cvt{i}=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
-    %       Varft_cvt{i}=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
-    %       lpyt_cvt{i}=lpyt([trindex{i}(:) ; tstindex{i}(:)],:);      
-    %       Eyt_cvt{i}=Eyt([trindex{i}(:) ; tstindex{i}(:)],:);
-    %       Varyt_cvt{i}=Varyt([trindex{i}(:) ; tstindex{i}(:)],:);
-    %     end
-    %     if nargout2>=2
-    %       Eft_cv{i}=Eft(tstindex{i},:);
-    %       Varft_cv{i}=Varft(tstindex{i},:);
-    %       lpyt_cv{i}=lpyt(tstindex{i},:);      
-    %       Eyt_cv{i}=Eyt(tstindex{i},:);
-    %       Varyt_cv{i}=Varyt(tstindex{i},:);
-    %     end
-    % 
-    %     % Evaluate statistics
-    %     % Use temporary cells (lpd_cv2, rmse_cv2, abs_cv2) here also.
-    %     lpd_cv2{i} = log(mean(exp(lpyt(tstindex{i},:)),2));
-    %     lpd_cvtr(i) = mean(log(mean(exp(lpyt(trindex{i})),2)));
-    % 
-    %     rmse_cv2{i} = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
-    %     rmse_cvtr(i) = sqrt(mean((mean(Eyt(trindex{i},:),2) - ytr).^2));
-    % 
-    %     abs_cv2{i} = abs(mean(Eyt(tstindex{i},:),2) - ytst);
-    %     abs_cvtr(i) = mean(abs(mean(Eyt(trindex{i},:),2) - ytr));
-    % 
-    %     lpd_cvm(i) = mean(log(mean(exp(lpyt(tstindex{i},:)),2)));
-    %     rmse_cvm(i) = sqrt(mean((mean(Eyt(tstindex{i},:),2) - ytst).^2));
-    %     abs_cvm(i) = mean(abs(mean(Eyt(tstindex{i},:),2) - ytst));
 
     if predyt && (isempty(Eyt)||isempty(Varyt))
       warning('This likelihood does not return Eyt and/or Varyt. Empty values will be given');
@@ -544,202 +475,68 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     else
       emptylp=0;
     end
-
-
-    if nargout2>=6
+    
+    % Save results to structures
+    
+    if nargout>=6
 
       if predft && ~emptyft
-        Eft_cvt{i}=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
-        Varft_cvt{i}=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
+        cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft([trindex{i}(:) ; tstindex{i}(:)],:);
+        cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft([trindex{i}(:) ; tstindex{i}(:)],:);
       end
 
       if predlpyt && ~emptylp
-        lpyt_cvt{i}=lpyt([trindex{i}(:) ; tstindex{i}(:)],:); 
+        cvtrpreds.lpyt([trindex{i}(:) ; tstindex{i}(:)],i)=lpyt([trindex{i}(:) ; tstindex{i}(:)],:); 
       end
 
       if predyt && ~emptyyt
-        Eyt_cvt{i}=Eyt([trindex{i}(:) ; tstindex{i}(:)],:);
-        Varyt_cvt{i}=Varyt([trindex{i}(:) ; tstindex{i}(:)],:);   
+        cvtrpreds.Eyt([trindex{i}(:) ; tstindex{i}(:)],i)=Eyt([trindex{i}(:) ; tstindex{i}(:)],:);
+        cvtrpreds.Varyt([trindex{i}(:) ; tstindex{i}(:)],i)=Varyt([trindex{i}(:) ; tstindex{i}(:)],:);   
       end
 
-    end
-
-
-    if nargout2>=2
-
-      if predft  && ~emptyft
-        Eft_cv{i}=Eft(tstindex{i},:);
-        Varft_cv{i}=Varft(tstindex{i},:);
-      end
-
-      if predlpyt && ~emptylp
-        lpyt_cv{i}=lpyt(tstindex{i},:);               
-      end
-
-      if predyt && ~emptyyt 
-        Eyt_cv{i}=Eyt(tstindex{i},:);
-        Varyt_cv{i}=Varyt(tstindex{i}(:),:);
-      end
-
-    end
-    
-    % Evaluate statistics
-    % Use temporary cells (lpd_cv2, rmse_cv2, abs_cv2) here also.
-
-    if predlpyt && ~emptylp
-      lpd_cv2{i} = log(mean(exp(lpyt(tstindex{i},:)),2));
-      lpd_cvtr(i) = mean(log(mean(exp(lpyt(trindex{i})),2)));
-      lpd_cvm(i) = mean(log(mean(exp(lpyt(tstindex{i},:)),2)));
-    else
-      lpd_cv2 =[];
-      lpd_cvtr = [];
-      lpd_cvm = [];
-    end
-
-    if  predyt && ~emptyyt 
-      rmse_cv2{i} = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
-      rmse_cvtr(i) = sqrt(mean((mean(Eyt(trindex{i},:),2) - ytr).^2));
-
-      abs_cv2{i} = abs(mean(Eyt(tstindex{i},:),2) - ytst);
-      abs_cvtr(i) = mean(abs(mean(Eyt(trindex{i},:),2) - ytr));
-
-      rmse_cvm(i) = sqrt(mean((mean(Eyt(tstindex{i},:),2) - ytst).^2));
-      abs_cvm(i) = mean(abs(mean(Eyt(tstindex{i},:),2) - ytst));
-
-    else
-      rmse_cv2 = [];
-      rmse_cvtr = [];
-
-      abs_cv2= [];
-      abs_cvtr = [];
-
-      rmse_cvm = [];
-      abs_cvm = [];   
-
-    end
-
-  end
-  
-  % Save values from parfor loop to right indices.
-
-  
-  
-  %   for i=1:k
-  %     if isempty(tstindex{i})
-  %       continue
-  %     end
-  %     lpd_cv(tstindex{i}) = lpd_cv2{i};
-  %     rmse_cv(tstindex{i}) = rmse_cv2{i};
-  %     abs_cv(tstindex{i}) = abs_cv2{i};
-  %     if nargout>=6
-  %       cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft_cvt{i};
-  %       cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft_cvt{i};
-  %       cvtrpreds.lpyt([trindex{i}(:) ; tstindex{i}(:)],i)=lpyt_cvt{i};
-  %       cvtrpreds.Eyt([trindex{i}(:) ; tstindex{i}(:)],i)=Eyt_cvt{i};
-  %       cvtrpreds.Varyt([trindex{i}(:) ; tstindex{i}(:)],i)=Varyt_cvt{i};
-  %     end
-  %     if nargout>=2
-  %       cvpreds.Eft(tstindex{i},:)=Eft_cv{i};
-  %       cvpreds.Varft(tstindex{i},:)=Varft_cv{i};
-  %       cvpreds.lpyt(tstindex{i},:)=lpyt_cv{i};
-  %       cvpreds.Eyt(tstindex{i},:)=Eyt_cv{i};
-  %       cvpreds.Varyt(tstindex{i},:)=Varyt_cv{i};
-  %     end
-  %   end
-  %   mlpd_cv = mean(lpd_cv);
-  %   mrmse_cv = sqrt(mean(rmse_cv));
-  %   mabs_cv = mean(abs_cv);
-  % 
-  %   Var_lpd_cv = var(lpd_cvm)./k;
-  %   Var_rmse_cv = var(rmse_cvm)./k;
-  %   Var_abs_cv = var(abs_cvm)./k;
-  % 
-  %   criteria.mlpd_cv=mlpd_cv;
-  %   criteria.Var_lpd_cv=Var_lpd_cv;
-  %   criteria.mrmse_cv=mrmse_cv;
-  %   criteria.Var_rmse_cv=Var_rmse_cv;
-  %   criteria.mabs_cv=mabs_cv;
-  %   criteria.Var_abs_cv=Var_abs_cv;
-  
-  for i=1:k
-
-    if isempty(tstindex{i})
-      continue
-    end
-
-    if predlpyt && ~emptylp
-      lpd_cv(tstindex{i}) = lpd_cv2{i};
-    else
-      lpd_cv=[];
-    end
-
-    if ~emptyyt && predyt
-      rmse_cv(tstindex{i}) = rmse_cv2{i};
-      abs_cv(tstindex{i}) = abs_cv2{i};
-    else
-      rmse_cv=[];
-      abs_cv=[];
-    end
-    
-    if nargout>=6
-      
-      if predft && ~emptyft
-        cvtrpreds.Eft([trindex{i}(:) ; tstindex{i}(:)],i)=Eft_cvt{i};
-        cvtrpreds.Varft([trindex{i}(:) ; tstindex{i}(:)],i)=Varft_cvt{i};
-      else
-        cvtrpreds.Eft=[];
-        cvtrpreds.Varft=[];
-      end
-      
-      if predlpyt && emptylp
-        cvtrpreds.lpyt([trindex{i}(:) ; tstindex{i}(:)],i)=lpyt_cvt{i};
-      else
-        cvtrpreds.lpyt=[];
-      end
-      
-      if ~emptyyt && predyt
-        cvtrpreds.Eyt([trindex{i}(:) ; tstindex{i}(:)],i)=Eyt_cvt{i};
-        cvtrpreds.Varyt([trindex{i}(:) ; tstindex{i}(:)],i)=Varyt_cvt{i};
-      else
-        cvtrpreds.Eyt=[];
-        cvtrpreds.Varyt=[];
-      end
-      
     end
     
     if nargout>=2
-      
-      if predft && ~emptyft  
-        cvpreds.Eft(tstindex{i},:)=Eft_cv{i};
-        cvpreds.Varft(tstindex{i},:)=Varft_cv{i};
-      else
-        cvpreds.Eft=[];
-        cvpreds.Varft=[];
+
+      if predft  && ~emptyft
+        cvpreds.Eft(tstindex{i},:)=Eft(tstindex{i},:);
+        cvpreds.Varft(tstindex{i},:)=Varft(tstindex{i},:);
       end
-      
+
       if predlpyt && ~emptylp
-        cvpreds.lpyt(tstindex{i},:)=lpyt_cv{i};
-      else
-        cvpreds.lpyt=[];
+        cvpreds.lpyt(tstindex{i},:)=lpyt(tstindex{i},:);               
       end
-      
-      if predyt && ~emptyyt
-        cvpreds.Eyt(tstindex{i},:)=Eyt_cv{i};
-        cvpreds.Varyt(tstindex{i},:)=Varyt_cv{i};
-      else
-        cvpreds.Eyt=[];
-        cvpreds.Varyt=[];
+
+      if predyt && ~emptyyt 
+        cvpreds.Eyt(tstindex{i},:)=Eyt(tstindex{i},:);
+        cvpreds.Varyt(tstindex{i},:)=Varyt(tstindex{i}(:),:);
       end
+
     end
+
+    if predlpyt && ~emptylp
+      lpd_cv(tstindex{i}) = log(mean(exp(lpyt(tstindex{i},:)),2));
+      lpd_cvtr(i) = mean(log(mean(exp(lpyt(trindex{i})),2)));
+      lpd_cvm(i) = mean(log(mean(exp(lpyt(tstindex{i},:)),2)));
+    end
+
+    if predyt && ~emptyyt 
+      rmse_cv(tstindex{i}) = (mean(Eyt(tstindex{i},:),2) - ytst).^2;
+      rmse_cvtr(i) = sqrt(mean((mean(Eyt(trindex{i},:),2) - ytr).^2));
+
+      abs_cv(tstindex{i}) = abs(mean(Eyt(tstindex{i},:),2) - ytst);
+      abs_cvtr(i) = mean(abs(mean(Eyt(trindex{i},:),2) - ytr));
+
+      rmse_cvm(i) = sqrt(mean((mean(Eyt(tstindex{i},:),2) - ytst).^2));
+      abs_cvm(i) = mean(abs(mean(Eyt(tstindex{i},:),2) - ytst)); 
+
+    end
+
   end
-  
 
   if predlpyt && ~emptylp
     mlpd_cv = mean(lpd_cv);
     Var_lpd_cv = var(lpd_cvm)./k;
-  else
-    mlpd_cv = [];
-    Var_lpd_cv = [];
   end
   
   
@@ -747,44 +544,21 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     mrmse_cv = sqrt(mean(rmse_cv));
     mabs_cv = mean(abs_cv);
     Var_rmse_cv = var(rmse_cvm)./k;
-    Var_abs_cv = var(abs_cvm)./k;
-  else
-    mrmse_cv = [];
-    mabs_cv = [];
-    Var_rmse_cv = [];
-    Var_abs_cv = [];  
+    Var_abs_cv = var(abs_cvm)./k; 
   end
   
   % *** note: if user sends yt then criteria should be empty
   if ~ytflag
-
     if predlpyt
       criteria.mlpd_cv=mlpd_cv;
       criteria.Var_lpd_cv=Var_lpd_cv;
-    else
-      criteria.mlpd_cv=[];
-      criteria.Var_lpd_cv=[];
     end
-
     if ~emptyyt && predyt
       criteria.mrmse_cv=mrmse_cv;
       criteria.Var_rmse_cv=Var_rmse_cv;
       criteria.mabs_cv=mabs_cv;
       criteria.Var_abs_cv=Var_abs_cv; 
-    else 
-      criteria.mrmse_cv=[];
-      criteria.Var_rmse_cv=[];
-      criteria.mabs_cv=[];
-      criteria.Var_abs_cv=[]; 
     end 
-
-  else
-    criteria.mlpd_cv=[];
-    criteria.Var_lpd_cv=[];
-    criteria.mrmse_cv=[];
-    criteria.Var_rmse_cv=[];
-    criteria.mabs_cv=[];
-    criteria.Var_abs_cv=[];
   end
   
   if save_results || nargout >=4
@@ -824,6 +598,9 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     if ismember(display,{'iter'})
       fprintf('\n Evaluating the training utility \n')
     end
+    
+    % Initialize empty structures
+    
 
     % Conduct inference
     cpu_time = cputime;
@@ -847,37 +624,23 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
     end
     cpu_time = cputime - cpu_time;
 
-    % make the prediction
-    
-    %[Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-    
-    if predft && predyt && predlpyt
+    % Initialize empty structures
+    lpd_tr=[]; rmse_tr=[]; abs_tr=[]; mlpd_ccv=[]; 
+    mrmse_ccv=[]; mabs_ccv=[];
+    criteria.mlpd_ccv=[]; criteria.rmse_cvv=[]; criteria.mabs_ccv=[];
+        
+    % Make the predictions
+    if predyt
       [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst); 
-    elseif predft && predlpyt
+    elseif predlpyt
       [Eft, Varft,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-      Varyt=[];
-      Eyt=[];
-    elseif predft && predyt
-      [Eft, Varft, tmp,Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-      lpyt=[];
-    elseif predlpyt && predyt  
-      [tmp, tmp,lpyt, Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-      Eft=[];
-      Varft=[];
     elseif predft
       [Eft,Varft] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-      Varyt=[];
-      Eyt=[];
-    elseif predlpyt
-      [tmp, tmp,lpyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-      Varyt=[];
-      Eyt=[];
-      Eft=[];
-      Varft=[];
-    else
-      [tmp,tmp, tmp,Eyt, Varyt] = gp_pred(gp, x, y, x, 'tstind', tstind, opt_tr, opt_tst);
-      Eft=[];
-      Varft=[];
+    end
+    if ~predft
+      Eft=[]; Varft=[];
+    end
+    if ~predlpyt
       lpyt=[];
     end
     
@@ -908,31 +671,8 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
       emptylp=0;
     end
     
-
-    %     if nargout>=4
-    %       trpreds.Eft=Eft;
-    %       trpreds.Varft=Varft;
-    %       trpreds.lpyt=lpyt;      
-    %       trpreds.Eyt=Eyt;
-    %       trpreds.Varyt=Varyt;
-    %     end
-    % 
-    %     lpd_tr = mean(log(mean(exp(lpyt),2)));
-    %     rmse_tr = sqrt(mean((mean(Eyt,2) - y).^2));
-    %     abs_tr = mean(abs(mean(Eyt,2) - y));
-    % 
-    %     % compute bias corrected results
-    %     mlpd_ccv =  mlpd_cv +  mean(lpd_tr) -  mean(lpd_cvtr);
-    %     mrmse_ccv =  mrmse_cv +  mean(rmse_tr) -  mean(rmse_cvtr);
-    %     mabs_ccv =  mabs_cv +  mean(abs_tr) -  mean(abs_cvtr);
-    % 
-    %     criteria.mlpd_ccv=mlpd_ccv;
-    %     criteria.rmse_ccv=mrmse_ccv;
-    %     criteria.mabs_ccv=mabs_ccv;
-
-    
+    % Save predictions to structures
     if nargout>=4
-
       if predft && ~emptyft  
         trpreds.Eft=Eft;
         trpreds.Varft=Varft;
@@ -948,50 +688,31 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
 
     if predlpyt && ~emptylp
       lpd_tr = mean(log(mean(exp(lpyt),2)));
-    else
-      lpd_tr=[];
     end
     if predyt && ~emptyyt
       rmse_tr = sqrt(mean((mean(Eyt,2) - y).^2));
       abs_tr = mean(abs(mean(Eyt,2) - y));
-    else
-      rmse_tr=[];
-      abs_tr=[];
     end
 
     % compute bias corrected results
     if predlpyt && ~emptylp
       mlpd_ccv =  mlpd_cv +  mean(lpd_tr) -  mean(lpd_cvtr);
-    else
-      mlpd_ccv=[];
     end
     if predyt && ~emptyyt
       mrmse_ccv =  mrmse_cv +  mean(rmse_tr) -  mean(rmse_cvtr); 
       mabs_ccv =  mabs_cv +  mean(abs_tr) -  mean(abs_cvtr);
-    else
-      mrmse_ccv=[];
-      mabs_ccv=[];
     end
     
     % *** note: if user sends yt then criteria should be empty 
     if ~ytflag
       if predlpyt && ~emptylp
         criteria.mlpd_ccv=mlpd_ccv;
-      else
-        criteria.mlpd_ccv=[];
       end
 
       if predyt && ~emptyyt
         criteria.rmse_ccv=mrmse_ccv;
         criteria.mabs_ccv=mabs_ccv;
-      else
-        criteria.rmse_cvv=[];
-        criteria.mabs_ccv=[];
       end
-    else
-      criteria.mlpd_ccv=[];
-      criteria.rmse_cvv=[];
-      criteria.mabs_ccv=[];
     end
 
   end
