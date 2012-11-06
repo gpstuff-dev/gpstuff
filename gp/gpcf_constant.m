@@ -220,7 +220,11 @@ function DKff = gpcf_constant_cfg(gpcf, x, x2, mask, i1)
     % Use memory save option
     if i1==0
       % Return number of hyperparameters
-      DKff=1;
+      if ~isempty(gpcf.p.constSigma2)
+        DKff=1;
+      else
+        DKff=0;
+      end
       return
     end
   end
