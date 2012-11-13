@@ -78,9 +78,9 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
   ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
-  ip.addOptional('output', 'DIC', @(x) ismember(x,{'DIC', 'mlpd'}))
-  ip.addOptional('form', 'mean', @(x) ismember(x,{'mean','all'}))
+  ip.addParamValue('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
+  ip.addParamValue('output', 'DIC', @(x) ismember(x,{'DIC', 'mlpd'}))
+  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   focus=ip.Results.focus;
