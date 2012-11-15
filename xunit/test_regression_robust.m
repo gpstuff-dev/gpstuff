@@ -21,7 +21,8 @@ if ~(exist(path, 'dir') == 7)
     mkdir(path)
 end
 path = strcat(path, '/testRegression_robust'); 
-save(path, 'Eft', 'Varft')
+w=gp_pak(rr);
+save(path, 'Eft', 'Varft', 'w')
 
 % Set back initial random stream
 setrandstream(prevstream);
@@ -34,4 +35,10 @@ values.real = load('realValuesRegression_robust', 'Eft', 'Varft');
 values.test = load(strrep(which('test_regression_robust.m'), 'test_regression_robust.m', 'testValues/testRegression_robust'), 'Eft', 'Varft');
 assertElementsAlmostEqual(mean(values.real.Eft), mean(values.test.Eft), 'relative', 0.05);
 assertElementsAlmostEqual(mean(values.real.Varft), mean(values.test.Varft), 'relative', 0.05);
+
+function testMCMCSamples
+values.real = load('realValuesRegression_robust', 'w');
+values.test = load(strrep(which('test_regression_robust.m'), 'test_regression_robust.m', 'testValues/testRegression_robust'), 'w');
+assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'relative', 0.01);
+assertElementsAlmostEqual(mean(values.real.w), mean(values.test.w), 'relative', 0.01);
 
