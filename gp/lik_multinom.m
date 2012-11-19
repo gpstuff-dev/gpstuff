@@ -256,15 +256,17 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   
   N=sum(yt,2);
   S=10000;
-  [ntest,nout]=size(yt);
+  [ntest, nout]=size(yt);
   pi=zeros(ntest,nout);
   lpy=zeros(ntest,nout);
   Ey=zeros(ntest,nout);
+  Ef=reshape(Ef(:),ntest,nout);
   [notused,notused,c] =size(Varf);
   if c>1
     mcmc=false;
   else
     mcmc=true;
+    Varf=reshape(Varf(:), ntest, nout);
   end
   for i1=1:ntest
     if mcmc
@@ -324,7 +326,8 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
 %    GP_MC
 
   if nargin == 2
-    reclik.type = 'multinom';
+    reclik.type = 'Multinom';
+    reclik.nondiagW = true;
 
     % Set the function handles
     reclik.fh.pak = @lik_multinom_pak;

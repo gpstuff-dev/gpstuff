@@ -77,6 +77,46 @@ z=ip.Results.z;
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 n=size(x,1);
+multicf=false;
+
+if isfield(gp.lik, 'nondiagW') 
+  % Help parameters for non diagonizable likelihoods
+  switch gp.lik.type
+    case {'LGP', 'LGPC'}
+      % Do nothing
+    case {'Softmax', 'Multinom'}
+      if size(y,1)~=size(x,1)
+        y=reshape(y,size(x,1),size(y,1)/size(x,1));
+      end
+      [n,nout]=size(y);
+      nl=[0 repmat(n,1,nout)];
+      nl=cumsum(nl);
+    otherwise
+      if ~isfield(gp.lik,'xtime') && size(y,1)~=size(x,1)
+        y=reshape(y,size(x,1),size(y,1)/size(x,1));
+      end
+      n=size(y,1);
+      nout=length(gp.comp_cf);
+      
+      % Indices for looping over latent processes
+      if ~isfield(gp.lik, 'xtime')
+        nl=[0 repmat(n,1,nout)];
+        nl=cumsum(nl);
+      else
+        xtime=gp.lik.xtime;
+        ntime = size(xtime,1);
+        n=n-ntime;
+        nl=[0 ntime n];
+        nl=cumsum(nl);
+      end
+  end
+  if isfield(gp, 'comp_cf')  % own covariance for each ouput component
+    multicf = true;
+    if length(gp.comp_cf) ~= nout
+      error('GP2_E: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+    end
+  end
+end
 
 % First Evaluate the data contribution to the error
 switch gp.type
@@ -96,15 +136,50 @@ switch gp.type
         end
         edata = 0.5*(n.*log(2*pi) + sum(log(diag(LD))) + y'*ldlsolve(LD,y));
       else
-        [L,notpositivedefinite] = chol(C,'lower');
-        if notpositivedefinite
-          [edata, eprior, e] = set_output_for_notpositivedefinite;
-          return
+        if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
+          [L,notpositivedefinite] = chol(C,'lower');
+          if notpositivedefinite
+            [edata, eprior, e] = set_output_for_notpositivedefinite;
+            return
+          end
+          ws=warning('off','MATLAB:singularMatrix');
+          b=L\y;
+          warning(ws);
+          zc=sum(log(diag(L)));
+        else
+          b=zeros(nl(end),1);
+          zc=0;
+          y=y(:);
+          if multicf
+            for i1=1:nout
+              if i1==1 && isfield(gp.lik, 'xtime')
+                [tmp, C] = gp_trcov(gp, xtime, gp.comp_cf{i1});
+              else
+                [tmp, C] = gp_trcov(gp, x, gp.comp_cf{i1});
+              end
+              [L,notpositivedefinite]=chol(C,'lower');
+              if notpositivedefinite
+                [e, edata, eprior] = set_output_for_notpositivedefinite();
+                return
+              end
+              %         b(:,i1) = L\y(:,i1);
+              b(nl(i1)+1:nl(i1+1)) = L\y(nl(i1)+1:nl(i1+1));
+              zc = zc + sum(log(diag(L)));
+            end
+          else
+            [tmp, C] = gp_trcov(gp, x);
+            [L,notpositivedefinite]=chol(C,'lower');
+            if notpositivedefinite
+              [e, edata, eprior] = set_output_for_notpositivedefinite();
+              return
+            end
+            for i1=1:nout
+              b(nl(i1)+1:nl(i1+1)) = L\y(nl(i1)+1:nl(i1+1));
+              zc = zc + sum(log(diag(L)));
+            end
+          end
         end
-        ws=warning('off','MATLAB:singularMatrix');
-        b=L\y;
-        warning(ws);
-        edata = 0.5*n.*log(2*pi) + sum(log(diag(L))) + 0.5*b'*b;
+        edata = 0.5*n.*log(2*pi) + zc + 0.5*b'*b;
       end
     else
       [H,b,B]=mean_prep(gp,x,[]);

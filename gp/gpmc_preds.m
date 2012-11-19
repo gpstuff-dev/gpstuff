@@ -165,7 +165,6 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
   end
   
   nin  = size(x,2);
-  nout = 1;
   nmc=size(gp.jitterSigma2,1);
   
   if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
@@ -211,7 +210,7 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
       end
       if nargout >= 4
         [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
-      else
+      elseif nargout == 3
         lpy(:,i1) = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
       end
     else 

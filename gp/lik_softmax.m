@@ -261,11 +261,13 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
   [ntest,nout]=size(yt);
   pi=zeros(ntest,nout);
   lpy=zeros(ntest,nout);
+  Ef=reshape(Ef(:),ntest,nout);
   [notused,notused,c] =size(Varf);
   if c>1
     mcmc=false;
   else
     mcmc=true;
+    Varf=reshape(Varf(:),ntest,nout);
   end
   for i1=1:ntest
     if mcmc

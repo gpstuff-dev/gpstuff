@@ -64,7 +64,44 @@ end
 % unpak the parameters
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
-n=size(x,1);
+if isfield(gp.lik, 'nondiagW')
+  % Likelihoods with non-diagonalizable Hessian
+  switch gp.lik.type
+    case {'LGP', 'LGPC'}
+      % Do nothing
+    case {'Softmax', 'Multinom'}
+      n=size(x,1);
+      nout=size(y(:),1)./n;
+%       [n,nout]=size(y);
+      nl=cumsum([0 repmat(n,1,nout)]);
+    otherwise
+      n=size(x,1);
+      nout=length(gp.comp_cf);
+      
+      % Help indices for latent processes
+      if ~isfield(gp.lik, 'xtime')
+        nl=[0 repmat(n,1,nout)];
+        nl=cumsum(nl);
+      else
+        xtime=gp.lik.xtime;
+        ntime=size(xtime,1);
+        n=n-ntime;
+        nl=[0 ntime n];
+        nl=cumsum(nl);
+      end
+      nl=cumsum(nl);
+  end
+  if isfield(gp, 'comp_cf')  % own covariance for each ouput component
+    multicf = true;
+    if length(gp.comp_cf) ~= nout
+      error('GP2_G: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+    end
+  else
+    multicf = false;
+  end
+else
+  n=size(x,1);
+end
 
 g = [];
 gdata = [];
@@ -81,44 +118,85 @@ switch gp.type
     % ============================================================
     % FULL
     % ============================================================
-    % Evaluate covariance
-    [K, C] = gp_trcov(gp,x);
-    notpositivedefinite = 0;
     
-    if issparse(C)
-      % evaluate the sparse inverse
-      [LD, notpositivedefinite] = ldlchol(C);
-      invC = spinv(LD,1);
-      if notpositivedefinite
+    if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
+      % Evaluate covariance
+      [K, C] = gp_trcov(gp,x);
+      
+      
+      if issparse(C)
+        % evaluate the sparse inverse
+        [LD, notpositivedefinite] = ldlchol(C);
+        invC = spinv(LD,1);
+        if notpositivedefinite
           % instead of stopping to chol error, return NaN
           g=NaN;
           gdata = NaN;
           gprior = NaN;
           return;
-      end
-      if  (~isfield(gp,'meanf') && ~notpositivedefinite)
+        end
+        if  ~isfield(gp,'meanf')
           b = ldlsolve(LD,y);
-      else
+        else
           [invNM invAt HinvC]=mean_gf(gp,x,C,LD,[],[],y,'gaussian');
+        end
+      else
+        % evaluate the full inverse
+        ws1=warning('off','MATLAB:nearlySingularMatrix');
+        ws2=warning('off','MATLAB:SingularMatrix');
+        invC = inv(C);
+        if  ~isfield(gp,'meanf')
+          b = C\y;
+        else
+          [invNM invAt HinvC]=mean_gf(gp,x,C,invC,[],[],y,'gaussian');
+        end
+        warning(ws1);
+        warning(ws2);
       end
     else
-      % evaluate the full inverse
-      ws1=warning('off','MATLAB:nearlySingularMatrix');
-      ws2=warning('off','MATLAB:SingularMatrix');
-      invC = inv(C);        
-      if  ~isfield(gp,'meanf')
-          b = C\y;
-      else
-          [invNM invAt HinvC]=mean_gf(gp,x,C,invC,[],[],y,'gaussian');
+      b = zeros(nl(end),1);
+      y=y(:);
+      
+      switch gp.lik.type
+        case 'Coxph'
+          % In Cox-Ph, latent processes have different inputs so stacking in invC
+          % is not possible.
+          invC = zeros(nl(end),nl(end));
+          if multicf
+            [tmp, C] = gp_trcov(gp, xtime, gp.comp_cf{1});
+            invC(1+nl(1):nl(2),1+nl(1):nl(2)) = inv(C);
+            b(nl(1)+1:nl(2)) = C\y(nl(1)+1:nl(2));
+            [tmp, C] = gp_trcov(gp, x, gp.comp_cf{2});
+            invC(1+nl(2):nl(3),1+nl(2):nl(3)) = inv(C);
+            b(1+nl(2):nl(3)) = C\y(1+nl(2):nl(3));
+          else
+            error('Specify covariance function for time process and input process, when using Cox-Ph likelihood');
+          end
+        otherwise
+          invC = zeros(n,n,nout);
+          if multicf
+            for i1=1:nout
+              [tmp, C] = gp_trcov(gp, x, gp.comp_cf{i1});
+              invC(:,:,i1) = inv(C);
+              b(1+nl(i1):nl(i1+1)) = C\y(1+nl(i1):nl(i1+1));
+              %             b(:,i1) = C\y(:,i1);
+            end
+          else
+            [tmp, C] = gp_trcov(gp, x);
+            invCtmp = inv(C);
+            for i1=1:nout
+              invC(:,:,i1) = invCtmp;
+              b(1+nl(i1):nl(i1+1)) = C\y(1+nl(i1):nl(i1+1));
+              %             b(:,i1) = C\y(:,i1);
+            end
+          end
       end
-      warning(ws1);
-      warning(ws2);
     end
 
     % =================================================================
     % Gradient with respect to covariance function parameters
     i1=0;
-    if (~isempty(strfind(gp.infer_params, 'covariance')) && ~notpositivedefinite)
+    if ~isempty(strfind(gp.infer_params, 'covariance'))
       for i=1:ncf
         if ~isempty(gprior)
           i1 = length(gprior);
@@ -126,10 +204,29 @@ switch gp.type
         
         gpcf = gp.cf{i};
         
+        if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
+          % check in which components the covariance function is present
+          % with non-diagonalizable likelihoods
+          do = false(nout,1);
+          if multicf
+            for z1=1:nout
+              if any(gp.comp_cf{z1}==i)
+                do(z1) = true;
+              end
+            end
+          else
+            do = true(nout,1);
+          end         
+        end
+        
         if ~(isfield(gp,'derivobs') && gp.derivobs)
           % No derivative observations
           if ~savememory
-            DKffc = gpcf.fh.cfg(gpcf, x);
+            if isfield(gp.lik, 'nondiagW') && isfield(gp,'comp_cf') && ~isempty(intersect(gp.comp_cf{1},i)) && isfield(gp.lik, 'xtime')
+              DKffc = gpcf.fh.cfg(gpcf, xtime);
+            else
+              DKffc = gpcf.fh.cfg(gpcf, x);
+            end
             np=length(DKffc);
           else
             % If savememory option is used, just get the number of
@@ -185,13 +282,39 @@ switch gp.type
           % parameters
           for i2 = 1:np
             if savememory
-              DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+              if isfield(gp.lik, 'nondiagW') && isfield(gp,'comp_cf') && ~isempty(intersect(gp.comp_cf{1},i)) && isfield(gp.lik, 'xtime')
+                DKff=gpcf.fh.cfg(gpcf,xtime,[],[],i2);
+              else
+                DKff=gpcf.fh.cfg(gpcf,x,[],[],i2);
+              end
             else
               DKff=DKffc{i2};
             end
             i1 = i1+1;
-            Bdl = b'*(DKff*b);
-            Cdl = sum(sum(invC.*DKff)); % help arguments
+            if ~isfield(gp.lik, 'nondiagW')
+              Bdl = b'*(DKff*b);
+              Cdl = sum(sum(invC.*DKff)); % help arguments
+            else
+              % Non-diagonalizable likelihoods
+              Bdl=0; Cdl=0;
+              if isfield(gp.lik,'xtime');
+                if do(1)
+                  Bdl = Bdl + b(1:ntime)'*(DKff*b(1:ntime));
+                  Cdl = Cdl + sum(sum(invC(1:ntime,1:ntime).*DKff)); % help arguments
+                end
+                if do(2)
+                  Bdl = Bdl + b(ntime+1:end)'*(DKff*b(ntime+1:end));
+                  Cdl = Cdl + sum(sum(invC(ntime+1:end,ntime+1:end).*DKff)); % help arguments
+                end
+              else
+                for z1=1:nout
+                  if do(z1)
+                    Bdl = Bdl + b(1+nl(z1):nl(z1+1))'*(DKff*b(1+nl(z1):nl(z1+1)));
+                    Cdl = Cdl + sum(sum(invC(:,:,z1).*DKff)); % help arguments
+                  end
+                end
+              end
+            end
             gdata(i1)=0.5.*(Cdl - Bdl);
             gprior(i1) = gprior_cf(i2);
           end
@@ -225,7 +348,7 @@ switch gp.type
     
     % =================================================================
     % Gradient with respect to Gaussian likelihood function parameters
-    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') && ~notpositivedefinite
+    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
       % Evaluate the gradient from Gaussian likelihood
       DCff = gp.lik.fh.cfg(gp.lik, x);
       gprior_lik = -gp.lik.fh.lpg(gp.lik);
@@ -267,7 +390,7 @@ switch gp.type
     end
     
     
-    if ~isempty(strfind(gp.infer_params, 'mean')) && isfield(gp,'meanf') && ~notpositivedefinite
+    if ~isempty(strfind(gp.infer_params, 'mean')) && isfield(gp,'meanf')
         notpositivedefinite2 = 0; notpositivedefinite3 = 0;
         
         nmf=numel(gp.meanf);
@@ -294,7 +417,7 @@ switch gp.type
                 iNH = LN\(LN'\H');
             end
         end
-        if (~notpositivedefinite && ~notpositivedefinite2 && ~notpositivedefinite3)
+        if (~notpositivedefinite2 && ~notpositivedefinite3)
             Ha=H*a;
             g_bb = (-H*a)';     % b and B parameters are log transformed in packing 
             indB = find(B>0);

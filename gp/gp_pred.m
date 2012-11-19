@@ -176,77 +176,146 @@ if nargout > 2 && isempty(yt)
   lpyt=[];
 end
 
+if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
+  % Likelihoods with non-diagonalizable Hessian
+  y=y(:);
+  switch gp.type
+    case {'Softmax', 'Multinom'}
+      nout = size(y,1)./tn;
+    otherwise
+      nout=size(gp.latentValues,2)/tn;
+  end
+  
+  if isfield(gp, 'comp_cf')  % own covariance for each ouput component
+    multicf = true;
+    if length(gp.comp_cf) ~= nout
+      error('GP_PRED: the number of component vectors in gp.comp_cf must be the same as number of outputs or latent processes.')
+    end
+    if ~isempty(predcf)
+      if ~iscell(predcf) || length(predcf)~=nout
+        error(['GP_PRED: if own covariance for each output or latent process component is used,'...
+          'predcf has to be cell array and contain nout (vector) elements.   '])
+      end
+    else
+      predcf = gp.comp_cf;
+    end
+  else
+    multicf = false;
+    for i1=1:nout
+      predcf2{i1} = predcf;
+    end
+    predcf=predcf2;
+  end
+  y = reshape(y, tn, nout);
+end
+
 switch gp.type
   case 'FULL'
     
-    %evaluate a = C\y;
-    % -------------------
-    [tmp, C]=gp_trcov(gp,x);
-    
-    if issparse(C)
-      LD = ldlchol(C);
-      a = ldlsolve(LD,y);
-    elseif isempty(C)
-      C=0;
-      L=[];
-      a = zeros(length(y),1);
-    else
-      L = chol(C,'lower');
-      a = L'\(L\y);
-    end
-
-    % evaluate K*a
-    % -------------------
-    nxt = size(xt,1); nblock=10000;
-    ind = ceil(nxt./nblock);
-    Eft = zeros(nxt,1);    % Mean
-    if isfield(gp,'derivobs') && gp.derivobs==1
-      nderobs = length(y)./length(x);
-      Eft = zeros(nxt,1)*nderobs;    % Mean
-    end
-    Varft = zeros(nxt,1);    % Variance
-    
-    for i1=1:ind
-      % Do the prediction in blocks to save memory
-      xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
-      xtind2 = xtind;
-      K=gp_cov(gp,x,xt(xtind,:),predcf);
-      if isfield(gp,'derivobs') && gp.derivobs==1
-        for k2=2:nderobs
-          xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
-        end
-      end
-      if ~isempty(K)
-        Eft(xtind2) = K'*a;
-      end
-      if  isfield(gp,'meanf')
-        if issparse(C)
-          % terms with non-zero mean -prior
-          [RB, RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);    
-        else
-          % terms with non-zero mean -prior
-          [RB, RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);
-        end
-        Eft(xtind2) = Eft(xtind2) + RB;
+    if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
+      %evaluate a = C\y;
+      % -------------------
+      [tmp, C]=gp_trcov(gp,x);
+      
+      if issparse(C)
+        LD = ldlchol(C);
+        a = ldlsolve(LD,y);
+      elseif isempty(C)
+        C=0;
+        L=[];
+        a = zeros(length(y),1);
+      else
+        L = chol(C,'lower');
+        a = L'\(L\y);
       end
       
-      % Evaluate variance
-      % Vector of diagonal elements of covariance matrix
-      if nargout > 1
-        
-        V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
-        if issparse(C)
-          Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
-        else
-          v = L\K;
-          Varft(xtind2) = V - sum(v'.*v',2);
+      % evaluate K*a
+      % -------------------
+      nxt = size(xt,1); nblock=10000;
+      ind = ceil(nxt./nblock);
+      Eft = zeros(nxt,1);    % Mean
+      if isfield(gp,'derivobs') && gp.derivobs==1
+        nderobs = length(y)./length(x);
+        Eft = zeros(nxt,1)*nderobs;    % Mean
+      end
+      Varft = zeros(nxt,1);    % Variance
+      
+      for i1=1:ind
+        % Do the prediction in blocks to save memory
+        xtind = (i1-1)*nblock+1:min(i1*nblock,nxt);
+        xtind2 = xtind;
+        K=gp_cov(gp,x,xt(xtind,:),predcf);
+        if isfield(gp,'derivobs') && gp.derivobs==1
+          for k2=2:nderobs
+            xtind2 = [xtind2 xtind+length(xt)*(k2-1)];
+          end
+        end
+        if ~isempty(K)
+          Eft(xtind2) = K'*a;
+        end
+        if  isfield(gp,'meanf')
+          if issparse(C)
+            % terms with non-zero mean -prior
+            [RB, RAR] = mean_predf(gp,x,xt(xtind,:),K,LD,a,'gaussian',[]);
+          else
+            % terms with non-zero mean -prior
+            [RB, RAR] = mean_predf(gp,x,xt(xtind,:),K,L,a,'gaussian',[]);
+          end
+          Eft(xtind2) = Eft(xtind2) + RB;
         end
         
-        % If there are specified mean functions
-        if  isfield(gp,'meanf')
-          Varft(xtind2) = Varft(xtind2) + RAR;
+        % Evaluate variance
+        % Vector of diagonal elements of covariance matrix
+        if nargout > 1
+          
+          V = gp_trvar(gp,xt((i1-1)*nblock+1:min(i1*nblock,nxt),:),predcf);
+          if issparse(C)
+            Varft(xtind2) = V - diag(K'*ldlsolve(LD,K));
+          else
+            v = L\K;
+            Varft(xtind2) = V - sum(v'.*v',2);
+          end
+          
+          % If there are specified mean functions
+          if  isfield(gp,'meanf')
+            Varft(xtind2) = Varft(xtind2) + RAR;
+          end
         end
       end
+    else
+      % Likelihoods with non-diagnoalizable Hessian
+      L = zeros(tn,tn,nout);
+      ntest=size(xt,1);
+      K_nf = zeros(ntest,tn,nout);
+      if multicf
+        for i1=1:nout
+          [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
+          L(:,:,i1) = chol(C)';
+          K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+        end
+      else
+        for i1=1:nout
+          [tmp,C] = gp_trcov(gp, x);
+          L(:,:,i1) = chol(C)';
+          K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+        end
+      end
+      
+      
+      Eft = zeros(ntest,nout);
+      for i1=1:nout
+        Eft(:,i1) = K_nf(:,:,i1)*(L(:,:,i1)'\(L(:,:,i1)\y(:,i1)));
+      end
+      Varft = zeros(ntest,nout);
+      if nargout > 1
+        for i1=1:nout
+          v = L(:,:,i1)\K_nf(:,:,i1)';
+          V = gp_trvar(gp,xt,predcf{i1});
+          Varft(:,i1) = V - sum(v'.*v',2);
+        end
+      end
+      Eft=Eft(:);
+      Varft=Varft(:);
     end
     
     if nargout > 2

@@ -110,6 +110,19 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   opt.lik_gibbs_opt = ip.Results.lik_gibbs_opt;
   opt.persistence_reset = ip.Results.persistence_reset;
   
+%   if isfield(gp.lik, 'nondiagW');
+%     switch gp.lik.type
+%       case {'LGP', 'LGPC'}
+%         error('gp2_mc not implemented for this type of likelihood');
+%       case {'Softmax', 'Multinom'}
+%         [n,nout] = size(y);
+%       otherwise
+%         n = size(y,1);
+%         nout=length(gp.comp_cf);
+%     end
+%   end
+  
+  
   % Default samplers and some checking
   if isfield(gp,'latent_method') && isequal(gp.latent_method,'MCMC')
     % If no options structures, use SSLS as a default sampler for hyperparameters
@@ -131,11 +144,11 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     % latent method is not MCMC
     % If no options structures, use SLS as a default sampler for parameters
     if ~isempty(opt.ssls_opt)
-      warning(' Latent method is not MCMC. ssls_opt ignored')
+      warning('Latent method is not MCMC. ssls_opt ignored')
       opt.ssls_opt=[];
     end
     if ~isempty(opt.latent_opt)
-      warning(' Latent method is not MCMC. latent_opt ignored')
+      warning('Latent method is not MCMC. latent_opt ignored')
       opt.latent_opt=[];
     end
     if isempty(opt.hmc_opt) && isempty(opt.sls_opt) && ...
