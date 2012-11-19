@@ -195,9 +195,9 @@ latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp_mc(g, x, y, 'nsamples', 1000, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r, 'repeat', 2);
+[rgp,g,opt]=gp_mc(g, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
-rgp=thin(rgp,202,2);
+rgp=thin(rgp,102,2);
 
 % Make predictions
 Efs_mc = gpmc_preds(rgp, x, y, xt);
