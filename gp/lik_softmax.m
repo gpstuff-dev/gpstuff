@@ -304,7 +304,8 @@ function reclik = lik_softmax_recappend(reclik, ri, lik)
 %    GP_MC
 
   if nargin == 2
-    reclik.type = 'softmax';
+    reclik.type = 'Softmax';
+    reclik.nondiagW = true;
 
     % Set the function handles
     reclik.fh.pak = @lik_softmax_pak;
