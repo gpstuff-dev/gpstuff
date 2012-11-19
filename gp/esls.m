@@ -48,7 +48,29 @@ D = numel(f);
 if (nargin < 7) || isempty(angle_range)
   angle_range = 0;
 end
-[K, C] = gp_trcov(gp,x);
+
+if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'});
+  [K, C] = gp_trcov(gp,x);
+else
+  if ~isfield(gp.lik,'xtime')
+    nl=[0 repmat(size(y,1), 1, length(gp.comp_cf))];
+  else
+    xtime=gp.lik.xtime;
+    nl=[0 size(gp.lik.xtime,1) size(y,1)];
+  end
+  nl=cumsum(nl);
+  nlp=length(nl)-1;
+  
+  C = zeros(nl(end));
+  for i1=1:nlp
+    if i1==1 && isfield(gp.lik, 'xtime')
+      C((1+nl(i1)):nl(i1+1),(1+nl(i1)):nl(i1+1)) = gp_trcov(gp, xtime, gp.comp_cf{i1});
+    else
+      C((1+nl(i1)):nl(i1+1),(1+nl(i1)):nl(i1+1)) = gp_trcov(gp, x, gp.comp_cf{i1});
+    end
+  end
+end
+
 if isfield(gp,'meanf')
   [H_m,b_m,B_m]=mean_prep(gp,x,[]);
   C = C + H_m'*B_m*H_m;

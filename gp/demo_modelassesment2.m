@@ -71,7 +71,7 @@ gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 % latent variables.
 models{1} = 'pr_Laplace';
 p_eff_latent(1) = gp_peff(gp, x, y);
-[DIC_latent(1), p_eff_latent2(1)] = gp_dic(gp, x, y, 'latent');
+[DIC_latent(1), p_eff_latent2(1)] = gp_dic(gp, x, y, 'focus', 'latent');
 WAIC(1) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross-validation results. 
@@ -98,7 +98,7 @@ gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 % latent variables.
 models{2} = 'pr_EP';
 p_eff_latent(2) = gp_peff(gp, x, y) ;
-[DIC_latent(2), p_eff_latent2(2)] = gp_dic(gp, x, y, 'latent');
+[DIC_latent(2), p_eff_latent2(2)] = gp_dic(gp, x, y, 'focus', 'latent');
 WAIC(2) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross-validation results. 
@@ -156,8 +156,8 @@ opt.step_size = 2;
 gp_array = gp_ia(gp, x, y, opt);
 
 models{4} = 'pr_IA'; 
-[DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'param');
-[DIC2(4), p_eff2(4)] =  gp_dic(gp_array, x, y, 'all');
+[DIC(4), p_eff(4)] =  gp_dic(gp_array, x, y, 'focus', 'param');
+[DIC2(4), p_eff2(4)] =  gp_dic(gp_array, x, y, 'focus', 'all');
 WAIC(4) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.
@@ -238,7 +238,7 @@ gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 % latent variables.
 models{6} = 'lo_EP';
 p_eff_latent(6) = gp_peff(gp, x, y) ;
-[DIC_latent(6), p_eff_latent2(6)] = gp_dic(gp, x, y, 'latent');
+[DIC_latent(6), p_eff_latent2(6)] = gp_dic(gp, x, y, 'focus', 'latent');
 WAIC(6) = gp_waic(gp,x,y);
 
 % Evaluate the 10-fold cross-validation results. 
@@ -263,8 +263,8 @@ rgp=thin(rgp, 21, 2);
 
 % Evaluate the effective number of parameters and DIC with focus on latent variables.
 models{7} = 'lo_MCMC';
-[DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'param');
-[DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'all');
+[DIC(7), p_eff(7)] =  gp_dic(rgp, x, y, 'focus', 'param');
+[DIC2(7), p_eff2(7)] =  gp_dic(rgp, x, y, 'focus', 'all');
 WAIC(7) = gp_waic(rgp,x,y);
 
 % Evaluate the 10-fold cross-validation results. 
@@ -295,8 +295,8 @@ opt.step_size = 2;
 gp_array = gp_ia(gp, x, y, opt);
 
 models{8} = 'lo_IA'; 
-[DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'param');
-[DIC2(8), p_eff2(8)] =  gp_dic(gp_array, x, y, 'all');
+[DIC(8), p_eff(8)] =  gp_dic(gp_array, x, y, 'focus', 'param');
+[DIC2(8), p_eff2(8)] =  gp_dic(gp_array, x, y, 'focus', 'all');
 WAIC(8) = gp_waic(gp_array,x,y);
 
 % Then the 10 fold cross-validation.

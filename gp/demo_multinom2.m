@@ -71,8 +71,7 @@ lik = lik_multinom;
 gpcf1 = gpcf_sexp('lengthScale', 2, 'magnSigma2', 2, 'lengthScale_prior', prior_t('nu',4, 's2', 3));
 gpcf2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 3, 'lengthScale_prior', prior_t('nu',4, 's2', 3));
 gpcf3 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', prior_t('nu',4, 's2', 3));
-gp = gp_set('lik', lik_multinom, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-4);
-gp.comp_cf = {1 2 3};   
+gp = gp_set('lik', lik_multinom, 'cf', {gpcf1 gpcf2 gpcf3}, 'jitterSigma2', 1e-4, 'comp_cf', {1 2 3});
 
 %
 % NOTE! if multiple covariance functions per output is used define
@@ -172,9 +171,9 @@ gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
 gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh2));
 gp.latentValues = lat(:);
 
-gp2_e(gp_pak(gp), gp, x,y)
-gp2_g(gp_pak(gp), gp, x,y)
-gradcheck(randn(size(gp_pak(gp))), @gp2_e, @gp2_g, gp, x, y);
+gp_e(gp_pak(gp), gp, x,y)
+gp_g(gp_pak(gp), gp, x,y)
+gradcheck(randn(size(gp_pak(gp))), @gp_e, @gp_g, gp, x, y);
 
 % Set the parameters for MCMC...
 hmc_opt.steps=10;
@@ -186,7 +185,7 @@ latent_opt.sample_latent_scale = 0.05;
 hmc2('state', sum(100*clock))
 
 % Sample
-[r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+[r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;
@@ -196,12 +195,12 @@ latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+[rgp,g,opt]=gp_mc(g, x, y, 'nsamples', 1000, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r, 'repeat', 2);
 % Remove burn-in
-rgp=thin(rgp,102,2);
+rgp=thin(rgp,202,2);
 
 % Make predictions
-Efs_mc = gpmc2_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
+Efs_mc = gpmc_preds(rgp, x, y, xt);
 % [Efs_mc, Varfs_mc, lpgs_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),361,3);

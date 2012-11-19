@@ -223,7 +223,7 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
         
       else
         if nargout < 3
-          [Ef(:,i1), Covf(:,:,i1), ljpy(i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
+          [Ef(:,i1), Covf(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind);
         else
           [Ef(:,i1), Covf(:,:,i1), ljpy(i1), Ey(:,i1), Covy(:,:,i1)] = gp_jpred(Gp, x, y(:,i1), xt, 'predcf', predcf, 'tstind', tstind, 'yt', yt);
         end

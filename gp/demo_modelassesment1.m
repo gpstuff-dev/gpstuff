@@ -235,8 +235,8 @@ disp('Grid integration over the parameters')
 gpfic_array = gp_ia(gp_fic, x, y, 'int_method', 'grid');
 
 models{6} = 'FIC_IA'; 
-[DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'param', 'output', 'mlpd');
-[DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'all', 'output', 'mlpd');
+[DIC(6), p_eff(6)] =  gp_dic(gpfic_array, x, y, 'focus', 'param', 'output', 'mlpd');
+[DIC2(6), p_eff2(6)] =  gp_dic(gpfic_array, x, y, 'focus', 'all', 'output', 'mlpd');
 WAICV(6) = gp_waic(gpfic_array,x,y);
 WAICG(6) = gp_waic(gpfic_array,x,y, 'method', 'G');
 
@@ -300,7 +300,7 @@ gp_pic=gp_optim(gp_pic,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 models{7} = 'PIC_MAP';
 p_eff_latent(7) = gp_peff(gp_pic, x, y);
-[DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'latent', 'output', 'mlpd');
+[DIC_latent(7), p_eff_latent2(7)] = gp_dic(gp_pic, x, y, 'focus', 'latent', 'output', 'mlpd');
 WAICV(7) = gp_waic(gp_pic, x, y);
 WAICG(7) = gp_waic(gp_pic, x, y, 'method', 'G');
 
@@ -330,8 +330,8 @@ rpic.tr_index = trindex;
 % the effective number of parameters as a second output, but here 
 % we use explicitly the gp_peff function
 models{8} = 'PIC_MCMC'; 
-[DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'param', 'output', 'mlpd');
-[DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y, 'all', 'output', 'mlpd');
+[DIC(8), p_eff(8)] =  gp_dic(rpic, x, y, 'focus', 'param', 'output', 'mlpd');
+[DIC2(8), p_eff2(8)] =  gp_dic(rpic, x, y, 'focus', 'all', 'output', 'mlpd');
 WAICV(8) = gp_waic(rpic, x, y);
 WAICG(8) = gp_waic(rpic, x, y, 'method', 'G');
 
@@ -356,8 +356,8 @@ disp('Grid integration over the parameters')
 gppic_array = gp_ia(gp_pic, x, y, 'int_method', 'grid');
 
 models{9} = 'PIC_IA'; 
-[DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'param', 'output', 'mlpd');
-[DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'all', 'output', 'mlpd');
+[DIC(9), p_eff(9)] =  gp_dic(gppic_array, x, y, 'focus', 'param', 'output', 'mlpd');
+[DIC2(9), p_eff2(9)] =  gp_dic(gppic_array, x, y, 'focus', 'all', 'output', 'mlpd');
 WAICV(9) = gp_waic(gppic_array, x, y);
 WAICG(9) = gp_waic(gppic_array, x, y, 'method', 'G');
 

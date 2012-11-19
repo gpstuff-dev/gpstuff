@@ -50,7 +50,7 @@ x = x(:)';
 
 % Set up some variables
 nparams = length(x);
-n = size(xx,1);
+n = size(gp.latentValues,1);
 samples = zeros(opt.nsamples,nparams);
 samplesf = zeros(n,opt.nsamples);
 if nargout >= 2
@@ -710,12 +710,33 @@ if isempty(f) && (isempty(eta) || isempty(g))
 end
 
 gp = gp_unpak(gp, w);
-[K,C] = gp_trcov(gp, xx);
+if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'}) 
+  [K, C] = gp_trcov(gp, xx);
+else
+  if ~isfield(gp.lik,'xtime')
+    nl=[0 repmat(size(yy,1), 1, length(gp.comp_cf))];
+  else
+    xtime=gp.lik.xtime;
+    nl=[0 size(gp.lik.xtime,1) size(yy,1)];
+  end
+  nl=cumsum(nl);
+  nlp=length(nl)-1;
+  
+  K = zeros(nl(end));
+  for i1=1:nlp
+    if i1==1 && isfield(gp.lik, 'xtime')
+      K((1+nl(i1)):nl(i1+1),(1+nl(i1)):nl(i1+1)) = gp_trcov(gp, xtime, gp.comp_cf{i1});
+    else
+      K((1+nl(i1)):nl(i1+1),(1+nl(i1)):nl(i1+1)) = gp_trcov(gp, xx, gp.comp_cf{i1});
+    end
+  end
+  C=K;
+end
 % for ii=1:size(yy,1)
 %   [tmp,tmp, m2(ii,:)] = gp.lik.fh.tiltedMoments(gp.lik, yy, ii, C(ii,ii), 0, z);
 % end
 % S = diag(1./(1./m2 - 1./diag(C)));
-S = 10*eye(size(C));
+S = 10*eye(size(K));
 if isempty(eta) || isempty(g)
   g = mvnrnd(f,S)';
 end
