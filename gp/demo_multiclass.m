@@ -88,6 +88,8 @@ gp=gp_optim(gp,x,y,'opt',opt,'optimf',@fminlbfgs);
 
 % make the prediction for test points
 [Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
+Eft = reshape(Eft, size(xt,1), size(yt,2));
+lpyt = reshape(lpyt, size(xt,1), size(yt,2));
 
 % calculate the percentage of misclassified points
 tt = exp(lpyt)==repmat(max(exp(lpyt),[],2),1,size(exp(lpyt),2));
@@ -99,6 +101,8 @@ xtg2 = meshgrid(linspace(min(x(:,2))-.1, max(x(:,2))+.1, 30))';
 xtg=[xtg1(:) xtg2(:) repmat(mean(x(:,3:4)), size(xtg1(:),1),1)];
 
 [Eft, Covft, pg] = gp_pred(gp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+Eft = reshape(Eft, size(xtg,1), 3);
+pg=reshape(pg,size(xtg,1),3);
 
 % plot the train data o=0, x=1
 figure, set(gcf, 'color', 'w'), hold on
@@ -116,12 +120,12 @@ contour(xtg1, xtg2, reshape(exp(pg(:,3)),30,30),'k', 'linewidth', 2)
 % Note that MCMC for latent values requires often more jitter
 lat = gp_pred(gp, x, y, x);
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
-gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh2));
+gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh));
 gp.latentValues = lat(:);
 
-gp2_e(gp_pak(gp), gp, x,y)
-gp2_g(gp_pak(gp), gp, x,y)
-gradcheck(randn(size(gp_pak(gp))), @gp2_e, @gp2_g, gp, x, y);
+gp_e(gp_pak(gp), gp, x,y)
+gp_g(gp_pak(gp), gp, x,y)
+gradcheck(randn(size(gp_pak(gp))), @gp_e, @gp_g, gp, x, y);
 
 % Set the parameters for MCMC...
 hmc_opt.steps=10;
@@ -133,7 +137,7 @@ latent_opt.sample_latent_scale = 0.05;
 hmc2('state', sum(100*clock))
 
 % Sample
-[r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+[r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 % sampling with defualt options does not work yet
 %[r,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'repeat', 15);
 %[r,g,opt]=gp2_mc(gp, x, y, 'nsamples', 4);
@@ -146,13 +150,13 @@ latent_opt.repeat = 5;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
+[rgp,g,opt]=gp_mc(gp, x, y, 'nsamples', 400, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', r);
 % Remove burn-in
 rgp=thin(rgp,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, pgs_mc] = gpmc2_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, pgs_mc] = gpmc_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
 pg_mc = reshape(mean(exp(pgs_mc),2),900,3);
@@ -172,7 +176,7 @@ contour(xtg1, xtg2, reshape(pg_mc(:,3),30,30),'k', 'linewidth', 2)
 
 
 
-gp2 = gp_set(gp, 'latent_opt', struct('method',@scaled_hmc2));
+gp2 = gp_set(gp, 'latent_opt', struct('method',@scaled_hmc));
 gp2.latentValues = lat(:);
 
 % Set the parameters for MCMC...
@@ -193,7 +197,7 @@ hmc2('state', sum(100*clock))
 % Here we make an initialization with 
 % slow sampling parameters
 
-[rgp2,gp2,opt]=gp2_mc(gp2, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
+[rgp2,gp2,opt]=gp_mc(gp2, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
 % Sample
 % [r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
@@ -202,28 +206,28 @@ hmc2('state', sum(100*clock))
 hmc_opt.repeat=1;
 hmc_opt.steps=4;
 hmc_opt.stepadj=0.02;
-latent_opt.repeat = 5;
+latent_opt.repeat = 20;
 hmc2('state', sum(100*clock));
 
 % Sample 
-[rgp,g,opt]=gp2_mc(gp2, x, y, 'nsamples', 200, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', rgp2);
+[rgp2,g2,opt2]=gp_mc(gp2, x, y, 'nsamples', 200, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'record', rgp2);
 % Remove burn-in
-rgp=thin(rgp,102);
+rgp2=thin(rgp2,102);
 
 % Make predictions
 %[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
-[Efs_mc, Varfs_mc, pgs_mc] = gpmc2_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
+[Efs_mc, Varfs_mc, pgs_mc] = gpmc_preds(rgp2, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
-Ef_mc = reshape(mean(Efs_mc,2),900,3);
-pg_mc = reshape(mean(pgs_mc,2),900,3);
+Ef_mc2 = reshape(mean(Efs_mc,2),900,3);
+pg_mc2 = reshape(mean(exp(pgs_mc),2),900,3);
 
 figure, set(gcf, 'color', 'w'), hold on
 plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);
 plot(x(y(:,2)==1,1),x(y(:,2)==1,2),'x', 'linewidth', 2);
 plot(x(y(:,3)==1,1),x(y(:,3)==1,2),'kd', 'linewidth', 2);
 axis([-0.4 1.4 -0.4 1.4])
-contour(xtg1, xtg2, reshape(pg_mc(:,1),30,30),'r', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg_mc(:,2),30,30),'b', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg_mc(:,3),30,30),'k', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc2(:,1),30,30),'r', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc2(:,2),30,30),'b', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(pg_mc2(:,3),30,30),'k', 'linewidth', 2)
 
 

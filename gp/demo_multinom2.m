@@ -87,6 +87,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 
 % make the prediction for test points
 [Eft] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
+Eft = reshape(Eft, size(xt,1), size(yt,2));
 
 figure(1)
 subplot(2,3,4);contour(x1, x2, reshape(Eft(:,1),size(x1)),'r', 'linewidth', 2)
