@@ -65,7 +65,7 @@ end
 gp=gp_unpak(gp, w);
 ncf = length(gp.cf);
 if isfield(gp.lik, 'nondiagW')
-  % Likelihoods with non-diagonalizable Hessian
+  % Likelihoods with non-diagonal Hessian
   switch gp.lik.type
     case {'LGP', 'LGPC'}
       % Do nothing
@@ -81,13 +81,10 @@ if isfield(gp.lik, 'nondiagW')
       % Help indices for latent processes
       if ~isfield(gp.lik, 'xtime')
         nl=[0 repmat(n,1,nout)];
-        nl=cumsum(nl);
       else
         xtime=gp.lik.xtime;
         ntime=size(xtime,1);
-        n=n-ntime;
         nl=[0 ntime n];
-        nl=cumsum(nl);
       end
       nl=cumsum(nl);
   end
@@ -206,7 +203,7 @@ switch gp.type
         
         if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
           % check in which components the covariance function is present
-          % with non-diagonalizable likelihoods
+          % for likelihoods with non-diagonal Hessian
           do = false(nout,1);
           if multicf
             for z1=1:nout

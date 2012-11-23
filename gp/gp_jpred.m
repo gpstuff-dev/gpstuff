@@ -147,6 +147,51 @@ if isempty(xt)
 end
 
 tn = size(x,1);
+if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
+  switch gp.lik.type
+    case {'Softmax', 'Multinom'}
+      nout=size(y(:),1)/tn;
+    otherwise
+      if ~isfield(gp.lik,'xtime') && size(y,1)~=size(x,1)
+        y=reshape(y,size(x,1),size(y,1)/size(x,1));
+      end
+      nout=length(gp.comp_cf);
+      
+      % Indices for looping over latent processes
+      if ~isfield(gp.lik, 'xtime')
+        nl=[0 repmat(n,1,nout)];
+        nl=cumsum(nl);
+      else
+        xtime=gp.lik.xtime;
+        ntime = size(xtime,1);
+        n=tn-ntime;
+        nl=[0 ntime n];
+        nl=cumsum(nl);
+      end
+  end
+  y=reshape(y,tn,nout);
+  
+  if isfield(gp, 'comp_cf')  % own covariance for each ouput component
+    multicf = true;
+    if length(gp.comp_cf) ~= nout
+      error('GP2_PRED: the number of component vectors in gp.comp_cf must be the same as number of outputs or latent processes.')
+    end
+    if ~isempty(predcf)
+      if ~iscell(predcf) || length(predcf)~=nout
+        error(['GP2_PRED: if own covariance for each output or latent process component is used,'...
+          'predcf has to be cell array and contain nout (vector) elements.   '])
+      end
+    else
+      predcf = gp.comp_cf;
+    end
+  else
+    multicf = false;
+    for i1=1:nout
+      predcf2{i1} = predcf;
+    end
+    predcf=predcf2;
+  end
+end
 
 if nargout > 2 && isempty(yt)
   ljpyt=[];
@@ -156,85 +201,145 @@ end
 switch gp.type
   case 'FULL'
       
-      %evaluate a = C\y;
-      % -------------------
-      [c, C]=gp_trcov(gp,x);
-      
-      if issparse(C)
+    if ~isfield(gp.lik, 'nondiagW') && ismember(gp.lik.type, {'LGP', 'LGPC'})
+        %evaluate a = C\y;
+        % -------------------
+        [c, C]=gp_trcov(gp,x);
+        
+        if issparse(C)
           LD = ldlchol(C);
           a = ldlsolve(LD,y);
-      elseif isempty(C)
+        elseif isempty(C)
           C=0;
           L=[];
           a = zeros(length(y),1);
-      else
+        else
           L = chol(C)';
           a = L'\(L\y);
-      end
-
-    % evaluate K*a
-    % -------------------
-    K=gp_cov(gp,x,xt,predcf);
-    Eft = K'*a;
-    
-    if  isfield(gp,'meanf')
-        if issparse(C)
+        end
+        
+        % evaluate K*a
+        % -------------------
+        K=gp_cov(gp,x,xt,predcf);
+        Eft = K'*a;
+        
+        if  isfield(gp,'meanf')
+          if issparse(C)
             [RB RAR] = mean_jpredf(gp,x,xt,K,LD,a,'gaussian',[]);    % terms with non-zero mean -prior
-        else
+          else
             [RB RAR] = mean_jpredf(gp,x,xt,K,L,a,'gaussian',[]);    % terms with non-zero mean -prior
+          end
+          Eft = Eft + RB;
         end
-        Eft = Eft + RB;
-    end
-    
-    % Evaluate variance
-    % Vector of diagonal elements of covariance matrix
-    if nargout > 1
-
-        V = gp_trcov(gp,xt,predcf);            
-        if issparse(C)
-            Covft = (V - (K'*ldlsolve(LD,K)));  
-        else
+        
+        % Evaluate variance
+        % Vector of diagonal elements of covariance matrix
+        if nargout > 1
+          
+          V = gp_trcov(gp,xt,predcf);
+          if issparse(C)
+            Covft = (V - (K'*ldlsolve(LD,K)));
+          else
             v = L\K;
-            Covft = (V - (v'*v));            
+            Covft = (V - (v'*v));
+          end
+          
+          % If there are specified mean functions
+          if  isfield(gp,'meanf')
+            Covft = Covft + RAR;
+          end
         end
-            
-        % If there are specified mean functions
-        if  isfield(gp,'meanf')           
-            Covft = Covft + RAR; 
-        end
-    end     
-    
-    if nargout > 2
-        % Scale mixture model in lik_smt is a special case
-        % handle it separately
-        if ~strcmp(gp.lik.type, 'lik_smt')  
-          % normal case
+        
+        if nargout > 2
+          % Scale mixture model in lik_smt is a special case
+          % handle it separately
+          if ~strcmp(gp.lik.type, 'lik_smt')
+            % normal case
             [V, Cv] = gp_trvar(gp,xt,predcf);
             Eyt = Eft;
             apu = Cv - V;
             Covyt = Covft + diag(apu); % Utilize the Covft calculated above (faster!?) dimensions did not match here earlier!
             % Log joint predictive density
             if ~isempty(yt)
-              ljpyt = mnorm_lpdf(yt', Eyt', Covyt); 
+              ljpyt = mnorm_lpdf(yt', Eyt', Covyt);
             end
-        else 
-          % scale mixture case
+          else
+            % scale mixture case
             nu = gp.lik.nu;             % Not working at the moment. Probably.
             sigma2 = gp.lik.tau2.*gp.lik.alpha.^2;
             sigma = sqrt(sigma2);
             
             Eyt = Eft;
             Covyt = (nu./(nu-2).*sigma2);
-
+            
             for i2 = 1:length(Eft)
-                mean_app = Eft(i2);
-                sigm_app = sqrt(Covft(i2));
-
-                pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Covft(i2)));
-                pyt(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
-            end           
+              mean_app = Eft(i2);
+              sigm_app = sqrt(Covft(i2));
+              
+              pd = @(f) t_pdf(yt(i2), nu, f, sigma).*norm_pdf(f,Eft(i2),sqrt(Covft(i2)));
+              pyt(i2) = quadgk(pd, mean_app - 12*sigm_app, mean_app + 12*sigm_app);
+            end
+          end
         end
+    else
+      % Likelihoods with non-diagonal Hessian
+      L = zeros(tn,tn,nout);
+      ntest=size(xt,1);
+      K_nf = zeros(ntest,tn,nout);
+      if multicf
+        for i1=1:nout
+          [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
+          L(:,:,i1) = chol(C)';
+          K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+        end
+      else
+        for i1=1:nout
+          [tmp,C] = gp_trcov(gp, x);
+          L(:,:,i1) = chol(C)';
+          K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+        end
+      end
+            
+      Eft = zeros(ntest,nout);
+      for i1=1:nout
+        Eft(:,i1) = K_nf(:,:,i1)*(L(:,:,i1)'\(L(:,:,i1)\y(:,i1)));
+      end
+      
+      Covft = zeros(ntest*nout,ntest*nout);
+      if nargout > 1
+        if multicf
+          for i1=1:nout
+            v = L(:,:,i1)\K_nf(:,:,i1)';
+            V = gp_trcov(gp,xt,gp.comp_cf{i1});
+            Covft((i1-1)*ntest+1:i1*ntest,(i1-1)*ntest+1:i1*ntest) = V - v'*v;
+          end
+        else
+          for i1=1:nout
+            v = L(:,:,i1)\K_nf(:,:,i1)';
+            V = gp_trcov(gp,xt,predcf{i1});
+            Covft((i1-1)*ntest+1:i1*ntest,(i1-1)*ntest+1:i1*ntest) = V - v'*v;
+          end
+        end          
+      end
+      if nargout > 2
+        % normal case
+        Eyt = Eft;
+        Covyt=Covft;
+        ljpyt=0;
+        for i1=1:nout
+          [V, Cv] = gp_trvar(gp,xt,predcf{i1});
+          % Diagonal indices
+          i2=(i1-1)*(nout*ntest^2+ntest)+1:nout*ntest+1:i1*(nout*ntest^2+ntest);
+          Covyt(i2) = Covyt(i2) + Cv' - V';
+          if ~isempty(yt)
+            ljpyt = ljpyt + mnorm_lpdf(yt(:,i1)', Eyt(:,i1)', Covyt((i1-1)*ntest+1:i1*ntest,(i1-1)*ntest+1:i1*ntest));
+          end
+        end
+        Eyt=Eyt(:);
+      end
+      Eft=Eft(:);
     end
+
   case 'FIC'
     % Check the tstind vector
     if nargin > 5

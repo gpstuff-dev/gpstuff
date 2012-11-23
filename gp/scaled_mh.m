@@ -43,7 +43,29 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
     end
     return
   end
+  
+  [n,nout] = size(y);
+  if isfield(gp.lik, 'nondiagW')
+    switch gp.lik.type
+      case {'LGP', 'LGPC'}
+        % Do nothing
+      case {'Softmax', 'Multinom'}
+        % Do nothing
+      otherwise
+        nout=length(gp.comp_cf);        
+    end
+    if isfield(gp, 'comp_cf')  % own covariance for each ouput component
+      multicf = true;
+      if length(gp.comp_cf) ~= nout
+        error('SCALED_MH: the number of component vectors in gp.comp_cf must be the same as number of outputs.')
+      end
+    else
+      multicf = false;
+    end
+  end
+  f = reshape(f,n,nout);
 
+  
   maxcut = -log(eps);
   mincut = -log(1/realmin - 1);
   lvs=opt.sample_latent_scale;
@@ -52,20 +74,37 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
   switch gp.type
     case {'FULL'}
       
-      [K,C]=gp_trcov(gp, x);
-      if isfield(gp,'meanf')
-        [H_m,b_m,B_m]=mean_prep(gp,x,[]);
-        C = C + H_m'*B_m*H_m;
+      if ~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'LGP' 'LGPC'})
+        [K,C]=gp_trcov(gp, x);        
+        if isfield(gp,'meanf')
+          [H_m,b_m,B_m]=mean_prep(gp,x,[]);
+          C = C + H_m'*B_m*H_m;
+        end
+        L=chol(C)';
+      else
+        L = zeros(n,n,nout);
+        if multicf
+          for i1=1:nout
+            [tmp, C] = gp_trcov(gp, x, gp.comp_cf{i1});
+            L(:,:,i1)=chol(C, 'lower');
+          end
+        else
+          for i1=1:nout
+            [tmp, C] = gp_trcov(gp, x);
+            L(:,:,i1)=chol(C, 'lower');
+          end
+        end
       end
-      L=chol(C)';
-      n=length(y);
       e = -gp.lik.fh.ll(gp.lik, y, f, z);
+      ft = zeros(size(y));
       
       % Adaptive control algorithm to find such a value for lvs 
       % that the rejection rate of Metropolis is optimal. 
       slrej = 0;
       for li=1:100
-        ft=sqrt(1-lvs.^2).*f+lvs.*L*randn(n,1);
+        for i1 =1:nout
+          ft(:,i1)=sqrt(1-lvs.^2).*f(:,i1)+lvs.*L(:,:,i1)*randn(n,1);
+        end
         ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
@@ -79,7 +118,9 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       opt.sample_latent_scale=lvs;
       % Do the actual sampling 
       for li=1:(opt.repeat)
-        ft=sqrt(1-lvs.^2).*f+lvs.*L*randn(n,1);
+        for i1 =1:nout
+          ft(:,i1)=sqrt(1-lvs.^2).*f(:,i1)+lvs.*L(:,:,i1)*randn(n,1);
+        end
         ed = -gp.lik.fh.ll(gp.lik, y, ft, z);
         a=e-ed;
         if exp(a) > rand(1)
@@ -93,7 +134,7 @@ function [f, energ, diagn] = scaled_mh(f, opt, gp, x, y, z)
       diagn.lvs = lvs;
       diagn.opt=opt;
       energ=[];
-      f = f';
+      f = f(:)';
       
     case 'FIC'
       u = gp.X_u;

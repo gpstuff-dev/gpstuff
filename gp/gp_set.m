@@ -358,13 +358,8 @@ function gp = gp_set(varargin)
           end
           % Set latent method
           gp.latent_method=latent_method;
-          if isfield(gp.lik, 'nondiagW')
-            gp.fh.pred=@gpmc2_pred;
-            gp.fh.jpred=@gpmc2_jpred;
-          else
-            gp.fh.pred=@gpmc_pred;
-            gp.fh.jpred=@gpmc_jpred;
-          end
+          gp.fh.pred=@gpmc_pred;
+          gp.fh.jpred=@gpmc_jpred;
         case 'EP'
           % Remove traces of other latent methods
           if isfield(gp,'latent_method') && ~isequal(latent_method,gp.latent_method) && isfield(gp,'latent_opt')
@@ -384,11 +379,7 @@ function gp = gp_set(varargin)
           % Set latent method
           gp.latent_method=latent_method;
           % following sets gp.fh.e = @laplace_algorithm;
-          if isfield(gp.lik, 'nondiagW')
-            gp = gpla2_e('init', gp);
-          else
-            gp = gpla_e('init', gp);
-          end
+          gp = gpla_e('init', gp);
         case 'NA'
           % no latent method set
           if isfield(gp,'latent_method'); gp=rmfield(gp,'latent_method'); end

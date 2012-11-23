@@ -105,6 +105,8 @@ function ll = lik_softmax_ll(lik, y, f2, z)
   if ~isempty(find(y~=1 & y~=0))
     error('lik_softmax: The class labels have to be {0,1}')
   end
+  % Reshape to NxC matrix
+  f2=reshape(f2,size(y));
   
   % softmax:
   ll = y(:)'*f2(:) - sum(log(sum(exp(f2),2)));
@@ -129,6 +131,8 @@ function llg = lik_softmax_llg(lik, y, f2, param, z)
   if ~isempty(find(y~=1 & y~=0))
     error('lik_softmax: The class labels have to be {0,1}')
   end
+  % Reshape to NxC matrix
+  f2=reshape(f2,size(y));
 
   expf2 = exp(f2);
   pi2 = expf2./(sum(expf2, 2)*ones(1,size(y,2)));
@@ -154,6 +158,10 @@ function [pi_vec, pi_mat] = lik_softmax_llg2(lik, y, f2, param, z)
 %    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
 
 % softmax:    
+
+  % Reshape to NxC matrix
+  f2=reshape(f2,size(y));
+  
   expf2 = exp(f2);
   pi2 = expf2./(sum(expf2, 2)*ones(1,size(y,2)));
   pi_vec=pi2(:);
@@ -286,7 +294,10 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
   if nargout > 1
     Ey = 2*pi-1;
     Vary = 1-(2*pi-1).^2;
+    Ey=Ey(:);
+    Vary=Vary(:);
   end
+  lpy=lpy(:);
 end
 
 function reclik = lik_softmax_recappend(reclik, ri, lik)

@@ -80,7 +80,7 @@ n=size(x,1);
 multicf=false;
 
 if isfield(gp.lik, 'nondiagW') 
-  % Help parameters for non diagonizable likelihoods
+  % Help parameters for likelihoods with non-diagonal Hessian
   switch gp.lik.type
     case {'LGP', 'LGPC'}
       % Do nothing

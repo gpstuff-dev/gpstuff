@@ -160,9 +160,9 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
     error('Requires at least 4 arguments');
   end
 
-  if nargout > 2 && isempty(yt)
-    error('mc_pred -> If py is wanted you must provide the vector yt as an optional input.')
-  end
+%   if nargout > 2 && ~isempty(yt)
+%     error('mc_pred -> If py is wanted you must provide the vector yt as an optional input.')
+%   end
   
   nin  = size(x,2);
   nout = 1;

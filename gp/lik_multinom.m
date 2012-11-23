@@ -128,6 +128,7 @@ function llg = lik_multinom_llg(lik, y, f, param, z)
 %  See also
 %    LIK_MULTINOM_LL, LIK_MULTINOM_LLG2, LIK_MULTINOM_LLG3, GPLA_E
   
+  f=reshape(f,size(y));
   C = size(y,2);
   expf2 = exp(f);
   N=sum(y, 2);
@@ -156,6 +157,7 @@ function [pi_vec, pi_mat] = lik_multinom_llg2(lik, y, f, param, z)
 % multinom:
   [n,nout]=size(y);
   N = sum(y,2)*ones(1,nout);
+  f=reshape(f,n,nout);
   
   expf2 = exp(f);
   pi2 = expf2./(sum(expf2, 2)*ones(1,nout));
@@ -289,6 +291,8 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
             Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
           end
         end
+        Ey=Ey(:);
+        Vary=Vary(:);
     end
     lpy=[];
     if ~isempty(yt)
@@ -296,6 +300,7 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
       lpy(i1,:) = log(mean( mnpdf(ytmp,tmp) ));
     end
   end
+  lpy=lpy(:);
 end
 
 function p = lik_multinom_invlink(lik, f, z)
