@@ -3,11 +3,12 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 %
 %  Description
 %    [SAMPFT, SAMPYT] = GP_RND(GP, X, Y, XT, OPTIONS) takes a
-%    Gaussian process structure GP together with a matrix XT of
-%    input vectors, matrix X of training inputs and vector Y of
-%    training targets, and returns a random sample SAMPFT and
-%    SAMPYT from the posterior distribution p(ft|x,y,xt) and the
-%    predictive distribution p(yt|x,y,xt) at locations XT.
+%    Gaussian process structure, record structure (from gp_mc) or
+%    array (from gp_ia) GP together with a matrix XT of input
+%    vectors, matrix X of training inputs and vector Y of training
+%    targets, and returns a random sample SAMPFT and SAMPYT from
+%    the posterior distribution p(ft|x,y,xt) and the predictive
+%    distribution p(yt|x,y,xt) at locations XT.
 %
 %    OPTIONS is optional parameter-value pair
 %      nsamp  - determines the number of samples (default = 1).
@@ -1072,7 +1073,9 @@ elseif isstruct(gp) && numel(gp.jitterSigma2)>1
   % MCMC
   nmc=size(gp.jitterSigma2,1);
   % resample nsamp cases from nmc samples
-  gi=resampstr(ones(nmc,1),nsamp,1);
+  % deterministic resampling has low variance and small bias for
+  % equal weights
+  gi=resampdet(ones(nmc,1),nsamp,1);
   sampft=[];sampyt=[];
   for i1=1:nmc
     nsampi=sum(gi==i1);
@@ -1113,6 +1116,10 @@ elseif iscell(gp)
   else
     gw=ones(ngp,1);
   end
+  % resample nsamp cases from nmc samples
+  % strafied resampling has has higher variance than deterministic
+  % resapmling, but has smaller bias, and thus it shoould be more
+  % suitable for unequal weights
   gi=resampstr(gw,nsamp,1);
   sampft=[];sampyt=[];
   for i1 = 1:ngp
