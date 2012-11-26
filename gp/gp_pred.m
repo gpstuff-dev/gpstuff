@@ -177,7 +177,7 @@ if nargout > 2 && isempty(yt)
 end
 
 if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
-  % Likelihoods with non-diagonalizable Hessian
+  % Likelihoods with non-diagonal Hessian
   y=y(:);
   switch gp.type
     case {'Softmax', 'Multinom'}
