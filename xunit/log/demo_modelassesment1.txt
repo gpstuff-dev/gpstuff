@@ -1,761 +1,164 @@
 Running: demo_modelassesment1
 Full GP model with Gaussian noise model
- MAP estimate for the parameters
-Iter    1  f(x)  262.92782  Scale 1.0e+01
-Iter    2  f(x)   87.59203  Scale 5.0e+00
-Iter    3  f(x)   83.05425  Scale 2.5e+00
-Iter    4  f(x)   57.09838  Scale 1.2e+00
-Iter    5  f(x)   50.75986  Scale 6.2e-01
-Iter    6  f(x)   46.61843  Scale 3.1e-01
-Iter    7  f(x)   45.58404  Scale 1.6e-01
-Iter    8  f(x)   44.89349  Scale 7.8e-02
-Iter    9  f(x)   44.64585  Scale 3.9e-02
-Iter   10  f(x)   44.56150  Scale 2.0e-02
-Iter   11  f(x)   44.49639  Scale 9.8e-03
-Iter   12  f(x)   44.37554  Scale 4.9e-03
-Iter   13  f(x)   44.31664  Scale 2.4e-03
-Iter   14  f(x)   44.30011  Scale 1.2e-03
-Iter   15  f(x)   44.17708  Scale 6.1e-04
-Iter   16  f(x)   44.16804  Scale 3.1e-04
-Iter   17  f(x)   44.16622  Scale 1.5e-04
-Iter   18  f(x)   44.16564  Scale 7.6e-05
-TolFun reached
- MAP estimate for the parameters - k-fold-CV
- MCMC integration over the parameters
+MAP estimate for the parameters
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 16
+  Function Count : 24
+  Minimum found : 44.1644
+  Intern Time : 0.014683 seconds
+  Total Time : 0.58223 seconds
+MAP estimate for the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+MAP estimate for the parameters - LOO-CV
+MCMC integration over the parameters
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  45.719  sls  
-    3  45.737  sls  
-    4  44.804  sls  
-    5  44.377  sls  
-    6  45.095  sls  
-    7  45.569  sls  
-    8  46.262  sls  
-    9  46.064  sls  
-   10  47.393  sls  
-   11  47.592  sls  
-   12  45.872  sls  
-   13  45.264  sls  
-   14  45.180  sls  
-   15  44.886  sls  
-   16  44.548  sls  
-   17  45.150  sls  
-   18  44.992  sls  
-   19  44.923  sls  
    20  46.162  sls  
-   21  44.944  sls  
-   22  44.456  sls  
-   23  45.108  sls  
-   24  45.389  sls  
-   25  48.197  sls  
-   26  50.096  sls  
-   27  47.991  sls  
-   28  45.793  sls  
-   29  45.667  sls  
-   30  47.831  sls  
-   31  45.389  sls  
-   32  45.220  sls  
-   33  44.944  sls  
-   34  44.770  sls  
-   35  46.335  sls  
-   36  44.805  sls  
-   37  45.830  sls  
-   38  49.514  sls  
-   39  45.175  sls  
    40  44.536  sls  
-   41  46.525  sls  
-   42  47.772  sls  
-   43  47.100  sls  
-   44  47.255  sls  
-   45  46.706  sls  
-   46  44.471  sls  
-   47  44.714  sls  
-   48  46.543  sls  
-   49  44.939  sls  
-   50  45.030  sls  
-   51  45.169  sls  
-   52  45.738  sls  
-   53  45.278  sls  
-   54  44.370  sls  
-   55  45.124  sls  
-   56  46.963  sls  
-   57  46.545  sls  
-   58  44.826  sls  
-   59  45.998  sls  
    60  46.492  sls  
-   61  45.590  sls  
-   62  44.975  sls  
-   63  45.555  sls  
-   64  45.881  sls  
-   65  45.187  sls  
-   66  45.408  sls  
-   67  44.924  sls  
-   68  45.544  sls  
-   69  45.297  sls  
-   70  45.159  sls  
-   71  45.188  sls  
-   72  46.757  sls  
-   73  47.238  sls  
-   74  48.037  sls  
-   75  44.929  sls  
-   76  44.677  sls  
-   77  45.280  sls  
-   78  47.308  sls  
-   79  45.338  sls  
    80  44.724  sls  
-   81  46.703  sls  
-   82  47.044  sls  
-   83  46.364  sls  
-   84  45.581  sls  
-   85  46.860  sls  
-   86  47.623  sls  
-   87  44.897  sls  
-   88  45.659  sls  
-   89  45.919  sls  
-   90  44.823  sls  
-   91  44.495  sls  
-   92  45.079  sls  
-   93  48.377  sls  
-   94  45.585  sls  
-   95  44.454  sls  
-   96  44.419  sls  
-   97  44.399  sls  
-   98  44.749  sls  
-   99  45.024  sls  
   100  46.073  sls  
-  101  45.739  sls  
-  102  48.408  sls  
-  103  46.035  sls  
-  104  45.958  sls  
-  105  46.593  sls  
-  106  46.226  sls  
-  107  46.241  sls  
-  108  46.493  sls  
-  109  51.471  sls  
-  110  48.770  sls  
-  111  50.216  sls  
-  112  50.117  sls  
-  113  45.324  sls  
-  114  45.433  sls  
-  115  45.136  sls  
-  116  44.622  sls  
-  117  45.144  sls  
-  118  47.911  sls  
-  119  47.866  sls  
   120  48.356  sls  
-  121  46.348  sls  
-  122  46.944  sls  
-  123  49.237  sls  
-  124  47.912  sls  
-  125  48.174  sls  
-  126  46.172  sls  
-  127  45.097  sls  
-  128  45.494  sls  
-  129  44.588  sls  
-  130  44.540  sls  
-  131  47.387  sls  
-  132  44.763  sls  
-  133  45.455  sls  
-  134  45.164  sls  
-  135  46.032  sls  
-  136  45.106  sls  
-  137  45.287  sls  
-  138  45.489  sls  
-  139  47.046  sls  
   140  45.043  sls  
-  141  44.657  sls  
-  142  44.564  sls  
-  143  45.818  sls  
-  144  45.756  sls  
-  145  46.729  sls  
-  146  46.768  sls  
-  147  47.928  sls  
-  148  46.959  sls  
-  149  44.917  sls  
-  150  45.699  sls  
-  151  45.270  sls  
-  152  45.489  sls  
-  153  44.788  sls  
-  154  45.200  sls  
-  155  47.595  sls  
-  156  45.925  sls  
-  157  47.094  sls  
-  158  47.551  sls  
-  159  50.486  sls  
   160  44.583  sls  
-  161  44.586  sls  
-  162  44.368  sls  
-  163  45.128  sls  
-  164  48.384  sls  
-  165  47.786  sls  
-  166  45.683  sls  
-  167  44.964  sls  
-  168  45.992  sls  
-  169  46.895  sls  
-  170  44.490  sls  
-  171  44.789  sls  
-  172  46.420  sls  
-  173  47.562  sls  
-  174  45.557  sls  
-  175  44.581  sls  
-  176  44.853  sls  
-  177  44.774  sls  
-  178  44.389  sls  
-  179  45.564  sls  
   180  45.860  sls  
-  181  45.381  sls  
-  182  44.967  sls  
-  183  45.667  sls  
-  184  46.173  sls  
-  185  46.974  sls  
-  186  49.872  sls  
-  187  49.652  sls  
-  188  45.908  sls  
-  189  46.103  sls  
-  190  46.337  sls  
-  191  45.753  sls  
-  192  44.529  sls  
-  193  45.660  sls  
-  194  45.889  sls  
-  195  45.798  sls  
-  196  45.360  sls  
-  197  45.482  sls  
-  198  45.431  sls  
-  199  45.089  sls  
   200  45.606  sls  
-  201  45.516  sls  
-  202  44.757  sls  
-  203  44.477  sls  
-  204  45.067  sls  
-  205  45.846  sls  
-  206  46.920  sls  
-  207  47.120  sls  
-  208  48.301  sls  
-  209  45.000  sls  
-  210  44.563  sls  
-  211  45.251  sls  
-  212  45.426  sls  
-  213  45.488  sls  
-  214  44.967  sls  
-  215  45.181  sls  
-  216  44.988  sls  
-  217  44.940  sls  
-  218  46.613  sls  
-  219  47.555  sls  
   220  45.049  sls  
-  221  45.142  sls  
- MCMC integration over the parameters - k-fold-CV
+MCMC integration over the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is MCMC.
+ The CV-fold number: 1/10 
  cycle  etr      slsrej  
-    2  48.894  sls  
-    3  48.492  sls  
-    4  47.923  sls  
-    5  47.496  sls  
-    6  48.208  sls  
-    7  47.103  sls  
-    8  47.550  sls  
-    9  46.701  sls  
-   10  47.678  sls  
-   11  47.410  sls  
-   12  46.678  sls  
-   13  47.244  sls  
-   14  47.537  sls  
-   15  47.249  sls  
-   16  49.475  sls  
-   17  50.305  sls  
-   18  46.804  sls  
-   19  47.015  sls  
    20  47.365  sls  
-   21  48.476  sls  
-   22  48.909  sls  
-   23  48.519  sls  
-   24  49.319  sls  
-   25  52.263  sls  
-   26  49.466  sls  
-   27  49.453  sls  
-   28  47.450  sls  
-   29  48.590  sls  
-   30  50.092  sls  
-   31  46.822  sls  
-   32  48.564  sls  
-   33  48.718  sls  
-   34  49.415  sls  
-   35  46.965  sls  
-   36  46.911  sls  
-   37  47.727  sls  
-   38  47.945  sls  
-   39  47.920  sls  
    40  47.871  sls  
-   41  47.047  sls  
-   42  47.334  sls  
-   43  46.391  sls  
-   44  46.389  sls  
-   45  48.172  sls  
-   46  47.975  sls  
-   47  46.816  sls  
-   48  46.441  sls  
-   49  48.606  sls  
-   50  48.393  sls  
-   51  51.040  sls  
+ The CV-fold number: 2/10 
  cycle  etr      slsrej  
-    2  46.571  sls  
-    3  47.123  sls  
-    4  48.439  sls  
-    5  46.353  sls  
-    6  46.671  sls  
-    7  47.893  sls  
-    8  50.014  sls  
-    9  50.638  sls  
-   10  46.907  sls  
-   11  46.672  sls  
-   12  48.769  sls  
-   13  47.771  sls  
-   14  48.105  sls  
-   15  47.888  sls  
-   16  51.671  sls  
-   17  50.528  sls  
-   18  49.493  sls  
-   19  47.953  sls  
    20  48.040  sls  
-   21  48.273  sls  
-   22  49.536  sls  
-   23  47.739  sls  
-   24  47.090  sls  
-   25  47.387  sls  
-   26  47.680  sls  
-   27  48.146  sls  
-   28  48.703  sls  
-   29  51.134  sls  
-   30  46.945  sls  
-   31  47.940  sls  
-   32  46.336  sls  
-   33  47.401  sls  
-   34  47.376  sls  
-   35  49.389  sls  
-   36  48.175  sls  
-   37  48.642  sls  
-   38  46.477  sls  
-   39  46.144  sls  
    40  47.595  sls  
-   41  49.449  sls  
-   42  47.810  sls  
-   43  46.605  sls  
-   44  48.640  sls  
-   45  52.262  sls  
-   46  50.416  sls  
-   47  53.484  sls  
-   48  52.275  sls  
-   49  46.809  sls  
-   50  46.661  sls  
-   51  47.220  sls  
+ The CV-fold number: 3/10 
  cycle  etr      slsrej  
-    2  47.198  sls  
-    3  47.802  sls  
-    4  47.379  sls  
-    5  47.820  sls  
-    6  48.631  sls  
-    7  50.909  sls  
-    8  49.412  sls  
-    9  49.163  sls  
-   10  47.308  sls  
-   11  47.234  sls  
-   12  48.215  sls  
-   13  48.539  sls  
-   14  48.085  sls  
-   15  47.171  sls  
-   16  48.263  sls  
-   17  47.901  sls  
-   18  48.307  sls  
-   19  47.963  sls  
    20  47.035  sls  
-   21  48.331  sls  
-   22  50.828  sls  
-   23  47.640  sls  
-   24  48.186  sls  
-   25  48.758  sls  
-   26  47.530  sls  
-   27  48.127  sls  
-   28  47.480  sls  
-   29  48.295  sls  
-   30  49.405  sls  
-   31  49.279  sls  
-   32  47.569  sls  
-   33  48.778  sls  
-   34  48.671  sls  
-   35  48.183  sls  
-   36  46.815  sls  
-   37  47.554  sls  
-   38  47.294  sls  
-   39  47.686  sls  
    40  47.781  sls  
-   41  46.902  sls  
-   42  46.662  sls  
-   43  47.724  sls  
-   44  49.400  sls  
-   45  48.764  sls  
-   46  49.806  sls  
-   47  51.539  sls  
-   48  52.817  sls  
-   49  50.949  sls  
-   50  47.514  sls  
-   51  48.188  sls  
+ The CV-fold number: 4/10 
  cycle  etr      slsrej  
-    2  43.789  sls  
-    3  44.843  sls  
-    4  45.476  sls  
-    5  44.280  sls  
-    6  43.507  sls  
-    7  43.588  sls  
-    8  44.095  sls  
-    9  43.876  sls  
-   10  43.720  sls  
-   11  43.656  sls  
-   12  44.239  sls  
-   13  49.720  sls  
-   14  45.669  sls  
-   15  48.185  sls  
-   16  47.983  sls  
-   17  45.400  sls  
-   18  44.750  sls  
-   19  44.425  sls  
    20  46.956  sls  
-   21  49.068  sls  
-   22  49.391  sls  
-   23  46.867  sls  
-   24  45.998  sls  
-   25  43.715  sls  
-   26  44.630  sls  
-   27  44.319  sls  
-   28  44.118  sls  
-   29  45.041  sls  
-   30  46.119  sls  
-   31  45.443  sls  
-   32  45.341  sls  
-   33  44.120  sls  
-   34  43.958  sls  
-   35  45.015  sls  
-   36  43.990  sls  
-   37  43.604  sls  
-   38  44.002  sls  
-   39  43.834  sls  
    40  44.509  sls  
-   41  43.864  sls  
-   42  45.173  sls  
-   43  46.811  sls  
-   44  45.068  sls  
-   45  46.336  sls  
-   46  44.977  sls  
-   47  44.899  sls  
-   48  46.752  sls  
-   49  44.379  sls  
-   50  46.492  sls  
-   51  46.269  sls  
+ The CV-fold number: 5/10 
  cycle  etr      slsrej  
-    2  46.067  sls  
-    3  46.147  sls  
-    4  46.554  sls  
-    5  48.228  sls  
-    6  46.077  sls  
-    7  46.033  sls  
-    8  47.540  sls  
-    9  46.757  sls  
-   10  46.428  sls  
-   11  46.526  sls  
-   12  46.023  sls  
-   13  46.764  sls  
-   14  49.210  sls  
-   15  47.761  sls  
-   16  47.601  sls  
-   17  46.174  sls  
-   18  47.908  sls  
-   19  45.771  sls  
-   20  48.782  sls  
-   21  47.701  sls  
-   22  47.987  sls  
-   23  48.200  sls  
-   24  49.060  sls  
-   25  49.890  sls  
-   26  48.215  sls  
-   27  48.057  sls  
-   28  47.140  sls  
-   29  46.196  sls  
-   30  46.559  sls  
-   31  46.276  sls  
-   32  46.488  sls  
-   33  47.283  sls  
-   34  47.842  sls  
-   35  50.540  sls  
-   36  46.945  sls  
-   37  46.901  sls  
-   38  48.782  sls  
-   39  47.479  sls  
-   40  46.086  sls  
-   41  46.576  sls  
-   42  46.137  sls  
-   43  46.114  sls  
-   44  46.241  sls  
-   45  46.286  sls  
-   46  46.543  sls  
-   47  47.049  sls  
-   48  47.959  sls  
-   49  49.439  sls  
-   50  46.329  sls  
-   51  47.756  sls  
+   20  48.573  sls  
+   40  46.945  sls  
+ The CV-fold number: 6/10 
  cycle  etr      slsrej  
-    2  49.269  sls  
-    3  48.095  sls  
-    4  47.814  sls  
-    5  48.018  sls  
-    6  47.570  sls  
-    7  47.937  sls  
-    8  47.925  sls  
-    9  47.887  sls  
-   10  48.316  sls  
-   11  47.736  sls  
-   12  47.559  sls  
-   13  49.396  sls  
-   14  49.614  sls  
-   15  51.058  sls  
-   16  54.768  sls  
-   17  57.865  sls  
-   18  56.580  sls  
-   19  57.697  sls  
-   20  52.240  sls  
-   21  50.329  sls  
-   22  50.017  sls  
-   23  49.974  sls  
-   24  48.580  sls  
-   25  48.630  sls  
-   26  51.206  sls  
-   27  52.525  sls  
-   28  49.276  sls  
-   29  48.265  sls  
-   30  48.124  sls  
-   31  48.542  sls  
-   32  48.812  sls  
-   33  48.947  sls  
-   34  50.675  sls  
-   35  50.299  sls  
-   36  47.829  sls  
-   37  48.043  sls  
-   38  49.125  sls  
-   39  48.235  sls  
-   40  48.296  sls  
-   41  47.550  sls  
-   42  47.714  sls  
-   43  47.999  sls  
-   44  49.087  sls  
-   45  48.172  sls  
-   46  48.786  sls  
-   47  47.289  sls  
-   48  48.206  sls  
-   49  49.551  sls  
-   50  48.013  sls  
-   51  52.157  sls  
+   20  50.441  sls  
+   40  50.100  sls  
+ The CV-fold number: 7/10 
  cycle  etr      slsrej  
-    2  45.503  sls  
-    3  46.518  sls  
-    4  47.271  sls  
-    5  45.346  sls  
-    6  45.831  sls  
-    7  46.123  sls  
-    8  50.691  sls  
-    9  48.503  sls  
-   10  48.166  sls  
-   11  47.217  sls  
-   12  47.061  sls  
-   13  48.578  sls  
-   14  48.386  sls  
-   15  46.168  sls  
-   16  46.906  sls  
-   17  52.007  sls  
-   18  45.751  sls  
-   19  46.083  sls  
-   20  46.048  sls  
-   21  47.095  sls  
-   22  45.783  sls  
-   23  46.163  sls  
-   24  45.135  sls  
-   25  45.580  sls  
-   26  46.575  sls  
-   27  47.834  sls  
-   28  46.038  sls  
-   29  46.715  sls  
-   30  46.113  sls  
-   31  48.179  sls  
-   32  47.472  sls  
-   33  48.106  sls  
-   34  47.893  sls  
-   35  45.480  sls  
-   36  45.604  sls  
-   37  45.780  sls  
-   38  45.719  sls  
-   39  45.675  sls  
-   40  45.344  sls  
-   41  46.062  sls  
-   42  46.615  sls  
-   43  47.933  sls  
-   44  47.361  sls  
-   45  47.995  sls  
-   46  47.046  sls  
-   47  47.859  sls  
-   48  49.105  sls  
-   49  47.589  sls  
-   50  45.172  sls  
-   51  45.794  sls  
+   20  47.685  sls  
+   40  46.701  sls  
+ The CV-fold number: 8/10 
  cycle  etr      slsrej  
-    2  42.296  sls  
-    3  44.249  sls  
-    4  44.291  sls  
-    5  45.359  sls  
-    6  45.245  sls  
-    7  42.300  sls  
-    8  42.578  sls  
-    9  43.026  sls  
-   10  42.282  sls  
-   11  43.482  sls  
-   12  41.950  sls  
-   13  42.266  sls  
-   14  48.420  sls  
-   15  42.544  sls  
-   16  42.754  sls  
-   17  41.960  sls  
-   18  42.105  sls  
-   19  43.340  sls  
-   20  41.746  sls  
-   21  41.972  sls  
-   22  45.197  sls  
-   23  46.104  sls  
-   24  44.885  sls  
-   25  43.144  sls  
-   26  45.672  sls  
-   27  44.509  sls  
-   28  45.133  sls  
-   29  42.896  sls  
-   30  44.529  sls  
-   31  42.786  sls  
-   32  42.296  sls  
-   33  41.668  sls  
-   34  42.041  sls  
-   35  42.388  sls  
-   36  42.719  sls  
-   37  42.816  sls  
-   38  41.583  sls  
-   39  41.618  sls  
-   40  44.366  sls  
-   41  45.724  sls  
-   42  42.626  sls  
-   43  42.563  sls  
-   44  43.098  sls  
-   45  42.975  sls  
-   46  43.935  sls  
-   47  41.730  sls  
-   48  41.752  sls  
-   49  43.390  sls  
-   50  42.116  sls  
-   51  43.685  sls  
+   20  43.340  sls  
+   40  41.618  sls  
+ The CV-fold number: 9/10 
  cycle  etr      slsrej  
-    2  47.907  sls  
-    3  48.134  sls  
-    4  47.312  sls  
-    5  51.510  sls  
-    6  48.373  sls  
-    7  48.054  sls  
-    8  49.063  sls  
-    9  48.606  sls  
-   10  48.334  sls  
-   11  48.153  sls  
-   12  48.251  sls  
-   13  50.187  sls  
-   14  50.663  sls  
-   15  48.678  sls  
-   16  50.009  sls  
-   17  50.770  sls  
-   18  47.712  sls  
-   19  47.305  sls  
-   20  48.594  sls  
-   21  47.735  sls  
-   22  47.772  sls  
-   23  47.394  sls  
-   24  48.271  sls  
-   25  48.781  sls  
-   26  47.560  sls  
-   27  47.256  sls  
-   28  47.744  sls  
-   29  50.759  sls  
-   30  49.070  sls  
-   31  48.920  sls  
-   32  49.842  sls  
-   33  49.860  sls  
-   34  48.917  sls  
-   35  48.568  sls  
-   36  48.877  sls  
-   37  48.411  sls  
-   38  48.522  sls  
-   39  47.582  sls  
-   40  48.946  sls  
-   41  48.406  sls  
-   42  48.056  sls  
-   43  48.429  sls  
-   44  48.328  sls  
-   45  49.056  sls  
-   46  49.602  sls  
-   47  48.662  sls  
-   48  47.372  sls  
-   49  48.400  sls  
-   50  48.340  sls  
-   51  48.754  sls  
+   20  47.305  sls  
+   40  47.582  sls  
+ The CV-fold number: 10/10 
  cycle  etr      slsrej  
-    2  45.755  sls  
-    3  47.129  sls  
-    4  47.665  sls  
-    5  45.927  sls  
-    6  46.684  sls  
-    7  46.185  sls  
-    8  46.180  sls  
-    9  46.127  sls  
-   10  45.748  sls  
-   11  46.968  sls  
-   12  46.454  sls  
-   13  47.821  sls  
-   14  46.390  sls  
-   15  47.461  sls  
-   16  46.680  sls  
-   17  45.767  sls  
-   18  46.568  sls  
-   19  46.010  sls  
-   20  46.799  sls  
-   21  47.380  sls  
-   22  47.291  sls  
-   23  47.272  sls  
-   24  46.817  sls  
-   25  46.521  sls  
-   26  47.095  sls  
-   27  46.428  sls  
-   28  46.347  sls  
-   29  46.049  sls  
-   30  47.537  sls  
-   31  47.087  sls  
-   32  47.306  sls  
-   33  47.358  sls  
-   34  45.886  sls  
-   35  46.680  sls  
-   36  51.062  sls  
-   37  49.778  sls  
-   38  48.832  sls  
-   39  48.903  sls  
-   40  49.123  sls  
-   41  48.933  sls  
-   42  48.437  sls  
-   43  47.295  sls  
-   44  47.361  sls  
-   45  47.561  sls  
-   46  49.163  sls  
-   47  47.957  sls  
-   48  47.737  sls  
-   49  48.842  sls  
-   50  46.548  sls  
-   51  47.056  sls  
- Grid integration over the parameters
- Grid integration over the parameters - k-fold-CV
+   20  47.354  sls  
+   40  46.455  sls  
+MCMC integration over the parameters - LOO-CV
+Grid integration over the parameters
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 335 points
+    Elapsed time 1.79 seconds
+ IA-grid: Total elapsed time 2.02 seconds
+Grid integration over the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is IA.
+ The CV-fold number: 1/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 326 points
+    Elapsed time 1.51 seconds
+ IA-grid: Total elapsed time 2.16 seconds
+ The CV-fold number: 2/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 333 points
+    Elapsed time 1.58 seconds
+ IA-grid: Total elapsed time 2.25 seconds
+ The CV-fold number: 3/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 372 points
+    Elapsed time 1.76 seconds
+ IA-grid: Total elapsed time 2.21 seconds
+ The CV-fold number: 4/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 342 points
+    Elapsed time 1.60 seconds
+ IA-grid: Total elapsed time 2.36 seconds
+ The CV-fold number: 5/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 357 points
+    Elapsed time 1.67 seconds
+ IA-grid: Total elapsed time 2.14 seconds
+ The CV-fold number: 6/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 314 points
+    Elapsed time 1.47 seconds
+ IA-grid: Total elapsed time 2.31 seconds
+ The CV-fold number: 7/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 354 points
+    Elapsed time 1.60 seconds
+ IA-grid: Total elapsed time 2.27 seconds
+ The CV-fold number: 8/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 363 points
+    Elapsed time 1.66 seconds
+ IA-grid: Total elapsed time 2.61 seconds
+ The CV-fold number: 9/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 351 points
+    Elapsed time 1.65 seconds
+ IA-grid: Total elapsed time 1.99 seconds
+ The CV-fold number: 10/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 341 points
+    Elapsed time 1.58 seconds
+ IA-grid: Total elapsed time 2.05 seconds
+Grid integration over the parameters - LOO-CV
 GP with FIC sparse approximation
 
 gp_fic = 
@@ -768,1567 +171,397 @@ gp_fic =
              X_u: [36x2 double]
             nind: 36
                p: [1x1 struct]
+              fh: [1x1 struct]
 
- MAP estimate for the parameters
-Iter    1  f(x)  270.35833  Scale 1.0e+01
-Iter    2  f(x)   88.96902  Scale 5.0e+00
-Iter    3  f(x)   80.50146  Scale 2.5e+00
-Iter    4  f(x)   56.76124  Scale 1.2e+00
-Iter    5  f(x)   53.46413  Scale 6.2e-01
-Iter    6  f(x)   46.79435  Scale 3.1e-01
-Iter    7  f(x)   45.02557  Scale 1.6e-01
-Iter    8  f(x)   44.78672  Scale 7.8e-02
-Iter    9  f(x)   44.68615  Scale 3.9e-02
-Iter   10  f(x)   43.89811  Scale 2.0e-02
-Iter   11  f(x)   43.24570  Scale 9.8e-03
-Iter   12  f(x)   42.68988  Scale 4.9e-03
-Iter   13  f(x)   42.61924  Scale 2.4e-03
-Iter   14  f(x)   42.57681  Scale 1.2e-03
-Iter   15  f(x)   42.56832  Scale 6.1e-04
-Iter   16  f(x)   42.54308  Scale 3.1e-04
-Iter   17  f(x)   42.53987  Scale 1.5e-04
-Iter   18  f(x)   42.53146  Scale 7.6e-05
-Iter   19  f(x)   42.52267  Scale 3.8e-05
-Iter   20  f(x)   42.51968  Scale 1.9e-05
-Iter   21  f(x)   42.51752  Scale 9.5e-06
-Iter   22  f(x)   42.51080  Scale 4.8e-06
-Iter   23  f(x)   42.50563  Scale 2.4e-06
-Iter   24  f(x)   42.50429  Scale 1.2e-06
-Iter   25  f(x)   42.50361  Scale 6.0e-07
-TolFun reached
+MAP estimate for the parameters
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 19
+  Function Count : 30
+  Minimum found : 42.5028
+  Intern Time : 0.015807 seconds
+  Total Time : 0.39031 seconds
 
 n =
 
    225
 
- MAP estimate for the parameters - k-fold-CV
- MCMC integration over the parameters
+MAP estimate for the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+MAP estimate for the parameters - LOO-CV
+MCMC integration over the parameters
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  43.133  sls  
-    3  45.448  sls  
-    4  44.120  sls  
-    5  46.206  sls  
-    6  45.315  sls  
-    7  45.226  sls  
-    8  43.904  sls  
-    9  47.325  sls  
-   10  47.642  sls  
-   11  46.376  sls  
-   12  43.994  sls  
-   13  43.605  sls  
-   14  42.718  sls  
-   15  45.507  sls  
-   16  45.135  sls  
-   17  43.367  sls  
-   18  45.749  sls  
-   19  44.798  sls  
-   20  43.105  sls  
-   21  43.896  sls  
-   22  43.445  sls  
-   23  46.228  sls  
-   24  44.246  sls  
-   25  43.773  sls  
-   26  42.925  sls  
-   27  44.201  sls  
-   28  44.397  sls  
-   29  44.087  sls  
-   30  43.922  sls  
-   31  45.299  sls  
-   32  44.344  sls  
-   33  42.758  sls  
-   34  42.768  sls  
-   35  43.297  sls  
-   36  44.869  sls  
-   37  44.716  sls  
-   38  45.370  sls  
-   39  44.551  sls  
-   40  45.253  sls  
-   41  44.155  sls  
-   42  43.546  sls  
-   43  43.551  sls  
-   44  44.998  sls  
-   45  43.089  sls  
-   46  42.676  sls  
-   47  43.188  sls  
-   48  44.176  sls  
-   49  45.387  sls  
-   50  44.708  sls  
-   51  44.718  sls  
-   52  43.229  sls  
-   53  42.566  sls  
-   54  43.128  sls  
-   55  44.214  sls  
-   56  44.585  sls  
-   57  46.649  sls  
-   58  45.836  sls  
-   59  45.632  sls  
-   60  44.843  sls  
-   61  46.753  sls  
-   62  48.266  sls  
-   63  48.680  sls  
-   64  47.543  sls  
-   65  43.470  sls  
-   66  43.364  sls  
-   67  43.522  sls  
-   68  46.242  sls  
-   69  45.216  sls  
-   70  46.252  sls  
-   71  48.043  sls  
-   72  48.654  sls  
-   73  46.179  sls  
-   74  48.935  sls  
-   75  52.380  sls  
-   76  50.244  sls  
-   77  49.165  sls  
-   78  49.717  sls  
-   79  47.950  sls  
-   80  48.929  sls  
-   81  45.967  sls  
-   82  46.113  sls  
-   83  45.201  sls  
-   84  42.819  sls  
-   85  44.660  sls  
-   86  43.820  sls  
-   87  44.340  sls  
-   88  45.239  sls  
-   89  44.558  sls  
-   90  45.245  sls  
-   91  45.502  sls  
-   92  43.403  sls  
-   93  44.050  sls  
-   94  44.447  sls  
-   95  44.569  sls  
-   96  44.195  sls  
-   97  43.501  sls  
-   98  43.334  sls  
-   99  43.144  sls  
+   20  43.432  sls  
+   40  47.122  sls  
+   60  43.719  sls  
+   80  46.022  sls  
   100  43.813  sls  
-  101  43.528  sls  
-  102  44.604  sls  
-  103  46.983  sls  
-  104  45.925  sls  
-  105  45.906  sls  
-  106  45.888  sls  
-  107  43.028  sls  
-  108  43.052  sls  
-  109  46.915  sls  
-  110  47.285  sls  
-  111  44.101  sls  
-  112  43.718  sls  
-  113  43.384  sls  
-  114  43.685  sls  
-  115  43.587  sls  
-  116  42.752  sls  
-  117  43.774  sls  
-  118  43.044  sls  
-  119  43.646  sls  
   120  43.664  sls  
-  121  43.750  sls  
-  122  46.286  sls  
-  123  45.367  sls  
-  124  45.192  sls  
-  125  43.080  sls  
-  126  43.994  sls  
-  127  45.935  sls  
-  128  43.092  sls  
-  129  43.553  sls  
-  130  43.315  sls  
-  131  43.751  sls  
-  132  43.247  sls  
-  133  45.137  sls  
-  134  45.595  sls  
-  135  44.240  sls  
-  136  44.224  sls  
-  137  43.357  sls  
-  138  44.341  sls  
-  139  46.686  sls  
   140  45.968  sls  
-  141  47.164  sls  
-  142  45.782  sls  
-  143  44.615  sls  
-  144  47.051  sls  
-  145  47.241  sls  
-  146  47.664  sls  
-  147  50.679  sls  
-  148  47.004  sls  
-  149  48.987  sls  
-  150  47.430  sls  
-  151  46.145  sls  
-  152  43.532  sls  
-  153  43.546  sls  
-  154  43.052  sls  
-  155  45.123  sls  
-  156  45.459  sls  
-  157  45.921  sls  
-  158  43.616  sls  
-  159  42.823  sls  
   160  43.173  sls  
-  161  44.228  sls  
-  162  45.019  sls  
-  163  44.400  sls  
-  164  44.016  sls  
-  165  43.723  sls  
-  166  44.686  sls  
-  167  44.319  sls  
-  168  43.531  sls  
-  169  45.012  sls  
-  170  44.002  sls  
-  171  44.941  sls  
-  172  45.148  sls  
-  173  47.955  sls  
-  174  50.197  sls  
-  175  45.505  sls  
-  176  44.573  sls  
-  177  49.108  sls  
-  178  46.991  sls  
-  179  45.870  sls  
   180  45.430  sls  
-  181  43.804  sls  
-  182  45.696  sls  
-  183  48.806  sls  
-  184  47.540  sls  
-  185  46.563  sls  
-  186  45.796  sls  
-  187  45.576  sls  
-  188  45.856  sls  
-  189  44.894  sls  
-  190  44.235  sls  
-  191  44.653  sls  
-  192  45.001  sls  
-  193  45.946  sls  
-  194  47.390  sls  
-  195  44.362  sls  
-  196  43.627  sls  
-  197  43.706  sls  
-  198  43.282  sls  
-  199  44.262  sls  
   200  43.797  sls  
-  201  43.972  sls  
-  202  43.078  sls  
-  203  43.007  sls  
-  204  45.432  sls  
-  205  44.107  sls  
-  206  43.376  sls  
-  207  42.795  sls  
-  208  43.517  sls  
-  209  43.816  sls  
-  210  43.691  sls  
-  211  44.120  sls  
-  212  44.621  sls  
-  213  43.771  sls  
-  214  45.137  sls  
-  215  44.678  sls  
-  216  43.477  sls  
-  217  45.641  sls  
-  218  43.748  sls  
-  219  45.185  sls  
   220  45.146  sls  
-  221  44.458  sls  
- MCMC integration over the parameters - k-fold-CV
+MCMC integration over the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is MCMC.
+ The CV-fold number: 1/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  44.831  sls  
-    3  44.799  sls  
-    4  45.031  sls  
-    5  44.566  sls  
-    6  47.103  sls  
-    7  45.411  sls  
-    8  44.381  sls  
-    9  44.353  sls  
-   10  44.232  sls  
-   11  44.268  sls  
-   12  45.600  sls  
-   13  45.337  sls  
-   14  45.845  sls  
-   15  47.301  sls  
-   16  45.689  sls  
-   17  47.445  sls  
-   18  45.111  sls  
-   19  44.113  sls  
-   20  44.517  sls  
-   21  44.013  sls  
-   22  45.293  sls  
-   23  44.583  sls  
-   24  45.056  sls  
-   25  44.620  sls  
-   26  45.475  sls  
-   27  44.405  sls  
-   28  44.869  sls  
-   29  47.082  sls  
-   30  46.356  sls  
-   31  48.285  sls  
-   32  47.528  sls  
-   33  44.858  sls  
-   34  44.437  sls  
-   35  45.617  sls  
-   36  47.703  sls  
-   37  46.858  sls  
-   38  45.594  sls  
-   39  47.360  sls  
-   40  45.259  sls  
-   41  46.577  sls  
-   42  47.579  sls  
-   43  46.857  sls  
-   44  46.425  sls  
-   45  49.345  sls  
-   46  49.144  sls  
-   47  48.771  sls  
-   48  46.863  sls  
-   49  48.400  sls  
-   50  45.601  sls  
-   51  46.281  sls  
+   20  47.086  sls  
+   40  46.972  sls  
+ The CV-fold number: 2/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  45.614  sls  
-    3  47.232  sls  
-    4  45.578  sls  
-    5  45.881  sls  
-    6  46.769  sls  
-    7  48.889  sls  
-    8  46.844  sls  
-    9  45.334  sls  
-   10  47.398  sls  
-   11  46.876  sls  
-   12  46.813  sls  
-   13  46.539  sls  
-   14  45.878  sls  
-   15  46.775  sls  
-   16  45.449  sls  
-   17  45.741  sls  
-   18  45.679  sls  
-   19  45.519  sls  
-   20  45.464  sls  
-   21  45.244  sls  
-   22  45.613  sls  
-   23  45.859  sls  
-   24  46.328  sls  
-   25  46.294  sls  
-   26  45.599  sls  
-   27  47.789  sls  
-   28  47.066  sls  
-   29  46.410  sls  
-   30  46.862  sls  
-   31  47.917  sls  
-   32  49.822  sls  
-   33  49.459  sls  
-   34  46.579  sls  
-   35  46.056  sls  
-   36  47.380  sls  
-   37  45.516  sls  
-   38  45.918  sls  
-   39  46.519  sls  
-   40  45.579  sls  
-   41  46.111  sls  
-   42  47.620  sls  
-   43  47.599  sls  
-   44  48.936  sls  
-   45  47.241  sls  
-   46  47.510  sls  
-   47  45.966  sls  
-   48  46.623  sls  
-   49  48.505  sls  
-   50  46.947  sls  
-   51  46.098  sls  
+   20  46.050  sls  
+   40  46.532  sls  
+ The CV-fold number: 3/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  47.177  sls  
-    3  46.472  sls  
-    4  48.110  sls  
-    5  48.176  sls  
-    6  46.472  sls  
-    7  46.708  sls  
-    8  47.803  sls  
-    9  48.355  sls  
-   10  47.062  sls  
-   11  50.912  sls  
-   12  47.269  sls  
-   13  47.171  sls  
-   14  49.968  sls  
-   15  47.534  sls  
-   16  47.410  sls  
-   17  46.131  sls  
-   18  47.242  sls  
-   19  46.605  sls  
-   20  45.915  sls  
-   21  46.871  sls  
-   22  46.743  sls  
-   23  46.344  sls  
-   24  45.909  sls  
-   25  46.018  sls  
-   26  46.293  sls  
-   27  46.284  sls  
-   28  48.916  sls  
-   29  49.009  sls  
-   30  49.408  sls  
-   31  49.305  sls  
-   32  51.701  sls  
-   33  50.392  sls  
-   34  50.182  sls  
-   35  48.704  sls  
-   36  49.148  sls  
-   37  48.955  sls  
-   38  46.985  sls  
-   39  46.166  sls  
-   40  45.888  sls  
-   41  46.420  sls  
-   42  46.281  sls  
-   43  46.080  sls  
-   44  46.873  sls  
-   45  46.494  sls  
-   46  46.809  sls  
-   47  47.944  sls  
-   48  48.894  sls  
-   49  49.496  sls  
-   50  49.089  sls  
-   51  47.478  sls  
+   20  46.107  sls  
+   40  47.328  sls  
+ The CV-fold number: 4/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  42.285  sls  
-    3  42.353  sls  
-    4  42.678  sls  
-    5  42.475  sls  
-    6  43.969  sls  
-    7  44.422  sls  
-    8  44.541  sls  
-    9  42.305  sls  
-   10  42.928  sls  
-   11  44.795  sls  
-   12  43.787  sls  
-   13  42.450  sls  
-   14  42.989  sls  
-   15  48.334  sls  
-   16  43.508  sls  
-   17  43.738  sls  
-   18  44.440  sls  
-   19  43.434  sls  
-   20  43.767  sls  
-   21  42.665  sls  
-   22  45.000  sls  
-   23  44.173  sls  
-   24  44.025  sls  
-   25  44.078  sls  
-   26  43.931  sls  
-   27  45.087  sls  
-   28  44.114  sls  
-   29  45.434  sls  
-   30  44.572  sls  
-   31  42.877  sls  
-   32  42.007  sls  
-   33  42.969  sls  
-   34  42.488  sls  
-   35  42.812  sls  
-   36  44.413  sls  
-   37  45.232  sls  
-   38  44.140  sls  
-   39  44.324  sls  
-   40  42.247  sls  
-   41  43.506  sls  
-   42  42.937  sls  
-   43  43.165  sls  
-   44  43.510  sls  
-   45  44.186  sls  
-   46  42.704  sls  
-   47  43.040  sls  
-   48  43.225  sls  
-   49  42.892  sls  
-   50  42.659  sls  
-   51  42.688  sls  
+   20  48.334  sls  
+   40  42.812  sls  
+ The CV-fold number: 5/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  44.687  sls  
-    3  44.610  sls  
-    4  45.894  sls  
-    5  46.298  sls  
-    6  46.645  sls  
-    7  46.850  sls  
-    8  45.222  sls  
-    9  44.692  sls  
-   10  48.998  sls  
-   11  48.389  sls  
-   12  45.521  sls  
-   13  45.383  sls  
-   14  46.960  sls  
-   15  48.547  sls  
-   16  46.439  sls  
-   17  46.214  sls  
-   18  44.629  sls  
-   19  44.538  sls  
-   20  45.067  sls  
-   21  44.174  sls  
-   22  46.980  sls  
-   23  48.775  sls  
-   24  47.018  sls  
-   25  46.203  sls  
-   26  45.230  sls  
-   27  45.365  sls  
-   28  44.541  sls  
-   29  45.979  sls  
-   30  45.633  sls  
-   31  46.058  sls  
-   32  46.103  sls  
-   33  46.528  sls  
-   34  45.814  sls  
-   35  45.759  sls  
-   36  45.841  sls  
-   37  45.767  sls  
-   38  46.636  sls  
-   39  46.134  sls  
-   40  45.346  sls  
-   41  44.721  sls  
-   42  45.795  sls  
-   43  45.662  sls  
-   44  45.897  sls  
-   45  45.469  sls  
-   46  44.934  sls  
-   47  44.438  sls  
-   48  45.872  sls  
-   49  44.707  sls  
-   50  46.018  sls  
-   51  44.401  sls  
+   20  46.991  sls  
+   40  45.679  sls  
+ The CV-fold number: 6/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  46.294  sls  
-    3  45.764  sls  
-    4  47.734  sls  
-    5  46.417  sls  
-    6  48.877  sls  
-    7  45.157  sls  
-    8  47.099  sls  
-    9  47.706  sls  
-   10  46.496  sls  
-   11  45.478  sls  
-   12  46.371  sls  
-   13  46.548  sls  
-   14  47.880  sls  
-   15  46.842  sls  
-   16  46.912  sls  
-   17  46.676  sls  
-   18  45.281  sls  
-   19  45.270  sls  
-   20  45.831  sls  
-   21  46.451  sls  
-   22  47.261  sls  
-   23  45.421  sls  
-   24  45.141  sls  
-   25  45.831  sls  
-   26  46.410  sls  
-   27  47.963  sls  
-   28  46.857  sls  
-   29  48.521  sls  
-   30  47.470  sls  
-   31  48.486  sls  
-   32  47.772  sls  
-   33  46.623  sls  
-   34  46.359  sls  
-   35  46.800  sls  
-   36  45.501  sls  
-   37  46.180  sls  
-   38  46.066  sls  
-   39  47.905  sls  
-   40  45.293  sls  
-   41  45.598  sls  
-   42  45.143  sls  
-   43  45.809  sls  
-   44  48.568  sls  
-   45  48.083  sls  
-   46  47.151  sls  
-   47  47.427  sls  
-   48  46.514  sls  
-   49  47.009  sls  
-   50  46.517  sls  
-   51  47.270  sls  
+   20  46.842  sls  
+   40  46.800  sls  
+ The CV-fold number: 7/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  45.063  sls  
-    3  45.485  sls  
-    4  45.055  sls  
-    5  45.569  sls  
-    6  47.955  sls  
-    7  45.276  sls  
-    8  45.939  sls  
-    9  47.834  sls  
-   10  46.735  sls  
-   11  45.773  sls  
-   12  45.864  sls  
-   13  47.544  sls  
-   14  51.664  sls  
-   15  48.646  sls  
-   16  47.804  sls  
-   17  48.032  sls  
-   18  45.013  sls  
-   19  44.838  sls  
-   20  46.671  sls  
-   21  46.305  sls  
-   22  46.527  sls  
-   23  44.992  sls  
-   24  44.416  sls  
-   25  45.585  sls  
-   26  45.896  sls  
-   27  44.891  sls  
-   28  45.158  sls  
-   29  45.193  sls  
-   30  46.449  sls  
-   31  48.766  sls  
-   32  47.080  sls  
-   33  47.606  sls  
-   34  47.614  sls  
-   35  48.292  sls  
-   36  47.539  sls  
-   37  47.465  sls  
-   38  47.291  sls  
-   39  47.356  sls  
-   40  48.857  sls  
-   41  46.171  sls  
-   42  48.885  sls  
-   43  49.153  sls  
-   44  49.665  sls  
-   45  49.775  sls  
-   46  50.406  sls  
-   47  49.314  sls  
-   48  50.497  sls  
-   49  49.372  sls  
-   50  50.085  sls  
-   51  46.028  sls  
+   20  46.764  sls  
+   40  46.945  sls  
+ The CV-fold number: 8/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  39.325  sls  
-    3  41.707  sls  
-    4  41.651  sls  
-    5  40.063  sls  
-    6  39.473  sls  
-    7  39.216  sls  
-    8  39.386  sls  
-    9  39.058  sls  
-   10  39.895  sls  
-   11  43.572  sls  
-   12  42.847  sls  
-   13  39.479  sls  
-   14  40.617  sls  
-   15  39.511  sls  
-   16  39.709  sls  
-   17  39.740  sls  
-   18  39.580  sls  
-   19  40.686  sls  
-   20  40.787  sls  
-   21  39.678  sls  
-   22  39.435  sls  
-   23  39.673  sls  
-   24  40.440  sls  
-   25  39.671  sls  
-   26  40.109  sls  
-   27  40.082  sls  
-   28  40.466  sls  
-   29  41.349  sls  
-   30  42.100  sls  
-   31  41.954  sls  
-   32  41.494  sls  
-   33  41.284  sls  
-   34  44.339  sls  
-   35  41.234  sls  
-   36  40.142  sls  
-   37  41.271  sls  
-   38  39.203  sls  
-   39  39.798  sls  
-   40  39.913  sls  
-   41  39.868  sls  
-   42  40.110  sls  
-   43  41.104  sls  
-   44  39.706  sls  
-   45  40.853  sls  
-   46  40.377  sls  
-   47  39.227  sls  
-   48  39.117  sls  
-   49  40.143  sls  
-   50  40.641  sls  
-   51  41.538  sls  
+   20  39.821  sls  
+   40  41.284  sls  
+ The CV-fold number: 9/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  46.508  sls  
-    3  46.407  sls  
-    4  47.919  sls  
-    5  47.073  sls  
-    6  48.663  sls  
-    7  49.845  sls  
-    8  49.243  sls  
-    9  46.754  sls  
-   10  46.680  sls  
-   11  48.799  sls  
-   12  46.582  sls  
-   13  46.811  sls  
-   14  47.408  sls  
-   15  48.282  sls  
-   16  47.877  sls  
-   17  46.711  sls  
-   18  46.561  sls  
-   19  47.725  sls  
-   20  47.245  sls  
-   21  47.274  sls  
-   22  47.203  sls  
-   23  47.388  sls  
-   24  49.099  sls  
-   25  47.489  sls  
-   26  48.106  sls  
-   27  48.161  sls  
-   28  52.360  sls  
-   29  48.210  sls  
-   30  46.968  sls  
-   31  46.454  sls  
-   32  47.333  sls  
-   33  49.039  sls  
-   34  47.458  sls  
-   35  46.852  sls  
-   36  46.742  sls  
-   37  46.543  sls  
-   38  46.796  sls  
-   39  46.328  sls  
-   40  46.604  sls  
-   41  47.530  sls  
-   42  48.143  sls  
-   43  47.298  sls  
-   44  50.081  sls  
-   45  48.624  sls  
-   46  47.127  sls  
-   47  51.376  sls  
-   48  49.379  sls  
-   49  48.431  sls  
-   50  47.496  sls  
-   51  48.061  sls  
+   20  47.632  sls  
+   40  47.333  sls  
+ The CV-fold number: 10/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  46.200  sls  
-    3  47.814  sls  
-    4  45.677  sls  
-    5  46.208  sls  
-    6  47.525  sls  
-    7  46.900  sls  
-    8  45.808  sls  
-    9  44.442  sls  
-   10  44.425  sls  
-   11  44.989  sls  
-   12  46.516  sls  
-   13  44.816  sls  
-   14  44.206  sls  
-   15  43.913  sls  
-   16  45.028  sls  
-   17  47.349  sls  
-   18  44.877  sls  
-   19  48.557  sls  
-   20  47.050  sls  
-   21  47.202  sls  
-   22  45.791  sls  
-   23  45.288  sls  
-   24  44.541  sls  
-   25  44.616  sls  
-   26  46.039  sls  
-   27  46.325  sls  
-   28  46.015  sls  
-   29  47.178  sls  
-   30  44.476  sls  
-   31  43.862  sls  
-   32  45.069  sls  
-   33  46.620  sls  
-   34  47.076  sls  
-   35  44.835  sls  
-   36  45.035  sls  
-   37  45.631  sls  
-   38  46.988  sls  
-   39  44.547  sls  
-   40  44.269  sls  
-   41  44.541  sls  
-   42  44.684  sls  
-   43  44.184  sls  
-   44  46.002  sls  
-   45  44.539  sls  
-   46  45.392  sls  
-   47  46.590  sls  
-   48  47.444  sls  
-   49  45.818  sls  
-   50  45.184  sls  
-   51  44.714  sls  
- Grid integration over the parameters
- Grid integration over the parameters - k-fold-CV
+   20  45.015  sls  
+   40  44.994  sls  
+MCMC integration over the parameters - LOO-CV
+Grid integration over the parameters
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 348 points
+    Elapsed time 1.48 seconds
+ IA-grid: Total elapsed time 1.60 seconds
+Grid integration over the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is IA.
+ The CV-fold number: 1/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 296 points
+    Elapsed time 1.22 seconds
+ IA-grid: Total elapsed time 1.83 seconds
+ The CV-fold number: 2/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 341 points
+    Elapsed time 1.48 seconds
+ IA-grid: Total elapsed time 1.88 seconds
+ The CV-fold number: 3/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 385 points
+    Elapsed time 1.60 seconds
+ IA-grid: Total elapsed time 2.07 seconds
+ The CV-fold number: 4/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 312 points
+    Elapsed time 1.39 seconds
+ IA-grid: Total elapsed time 1.98 seconds
+ The CV-fold number: 5/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 348 points
+    Elapsed time 1.47 seconds
+ IA-grid: Total elapsed time 1.78 seconds
+ The CV-fold number: 6/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 350 points
+    Elapsed time 1.57 seconds
+ IA-grid: Total elapsed time 2.05 seconds
+ The CV-fold number: 7/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 336 points
+    Elapsed time 1.39 seconds
+ IA-grid: Total elapsed time 2.42 seconds
+ The CV-fold number: 8/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 353 points
+    Elapsed time 1.50 seconds
+ IA-grid: Total elapsed time 2.04 seconds
+ The CV-fold number: 9/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 337 points
+    Elapsed time 1.43 seconds
+ IA-grid: Total elapsed time 1.78 seconds
+ The CV-fold number: 10/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 324 points
+    Elapsed time 1.36 seconds
+ IA-grid: Total elapsed time 1.80 seconds
+Grid integration over the parameters - LOO-CV
 GP with PIC sparse approximation
- MAP estimate for the parameters
-Iter    1  f(x)  263.75769  Scale 1.0e+01
-Iter    2  f(x)   84.11122  Scale 5.0e+00
-Iter    3  f(x)   78.07898  Scale 2.5e+00
-Iter    4  f(x)   54.09205  Scale 1.2e+00
-Iter    5  f(x)   50.46877  Scale 6.2e-01
-Iter    6  f(x)   44.39414  Scale 3.1e-01
-Iter    7  f(x)   42.89228  Scale 1.6e-01
-Iter    8  f(x)   42.05636  Scale 7.8e-02
-Iter    9  f(x)   41.85324  Scale 3.9e-02
-Iter   10  f(x)   41.74089  Scale 2.0e-02
-Iter   11  f(x)   41.63354  Scale 9.8e-03
-Iter   12  f(x)   41.45070  Scale 4.9e-03
-Iter   13  f(x)   41.41880  Scale 2.4e-03
-Iter   14  f(x)   41.40800  Scale 1.2e-03
-Iter   15  f(x)   41.40347  Scale 6.1e-04
-Iter   16  f(x)   41.39469  Scale 3.1e-04
-Iter   17  f(x)   41.39113  Scale 1.5e-04
-Iter   18  f(x)   41.39030  Scale 7.6e-05
-TolFun reached
- MAP estimate for the parameters - k-fold-CV
- MCMC integration over the parameters
+MAP estimate for the parameters
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 14
+  Function Count : 22
+  Minimum found : 41.3886
+  Intern Time : 0.010499 seconds
+  Total Time : 0.73232 seconds
+MAP estimate for the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is MAP.
+ The CV-fold number: 1/10 
+ The CV-fold number: 2/10 
+ The CV-fold number: 3/10 
+ The CV-fold number: 4/10 
+ The CV-fold number: 5/10 
+ The CV-fold number: 6/10 
+ The CV-fold number: 7/10 
+ The CV-fold number: 8/10 
+ The CV-fold number: 9/10 
+ The CV-fold number: 10/10 
+MAP estimate for the parameters - LOO-CV
+MCMC integration over the parameters
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  42.510  sls  
-    3  42.171  sls  
-    4  44.275  sls  
-    5  43.799  sls  
-    6  43.574  sls  
-    7  45.204  sls  
-    8  41.894  sls  
-    9  41.973  sls  
-   10  44.572  sls  
-   11  42.906  sls  
-   12  41.757  sls  
-   13  43.502  sls  
-   14  47.577  sls  
-   15  44.076  sls  
-   16  42.500  sls  
-   17  43.150  sls  
-   18  44.343  sls  
-   19  46.028  sls  
-   20  43.684  sls  
-   21  45.318  sls  
-   22  43.086  sls  
-   23  43.475  sls  
-   24  42.022  sls  
-   25  42.043  sls  
-   26  41.894  sls  
-   27  41.665  sls  
-   28  41.971  sls  
-   29  43.922  sls  
-   30  42.229  sls  
-   31  42.201  sls  
-   32  42.220  sls  
-   33  42.261  sls  
-   34  43.080  sls  
-   35  41.873  sls  
-   36  41.928  sls  
-   37  42.404  sls  
-   38  41.502  sls  
-   39  41.856  sls  
-   40  41.599  sls  
-   41  44.642  sls  
-   42  42.629  sls  
-   43  42.949  sls  
-   44  41.772  sls  
-   45  41.709  sls  
-   46  41.848  sls  
-   47  42.428  sls  
-   48  41.843  sls  
-   49  42.955  sls  
-   50  45.166  sls  
-   51  44.357  sls  
-   52  43.748  sls  
-   53  44.799  sls  
-   54  42.595  sls  
-   55  43.743  sls  
-   56  43.408  sls  
-   57  42.545  sls  
-   58  43.056  sls  
-   59  44.051  sls  
-   60  43.336  sls  
-   61  41.959  sls  
-   62  41.756  sls  
-   63  42.480  sls  
-   64  43.782  sls  
-   65  43.678  sls  
-   66  44.262  sls  
-   67  43.467  sls  
-   68  42.276  sls  
-   69  43.042  sls  
-   70  44.017  sls  
-   71  44.970  sls  
-   72  43.088  sls  
-   73  42.824  sls  
-   74  42.580  sls  
-   75  42.990  sls  
-   76  42.299  sls  
-   77  43.766  sls  
-   78  43.077  sls  
-   79  42.701  sls  
-   80  43.134  sls  
-   81  43.037  sls  
-   82  43.797  sls  
-   83  43.848  sls  
-   84  43.643  sls  
-   85  42.759  sls  
-   86  43.597  sls  
-   87  45.974  sls  
-   88  42.279  sls  
-   89  43.310  sls  
-   90  42.363  sls  
-   91  42.996  sls  
-   92  42.841  sls  
-   93  44.440  sls  
-   94  42.209  sls  
-   95  42.186  sls  
-   96  42.582  sls  
-   97  43.068  sls  
-   98  45.078  sls  
-   99  44.150  sls  
-  100  42.260  sls  
-  101  44.589  sls  
-  102  48.364  sls  
-  103  42.391  sls  
-  104  43.543  sls  
-  105  43.180  sls  
-  106  43.803  sls  
-  107  41.566  sls  
-  108  43.625  sls  
-  109  42.265  sls  
-  110  42.763  sls  
-  111  42.035  sls  
-  112  43.789  sls  
-  113  43.083  sls  
-  114  42.570  sls  
-  115  42.937  sls  
-  116  43.012  sls  
-  117  42.751  sls  
-  118  43.035  sls  
-  119  42.054  sls  
-  120  42.249  sls  
-  121  43.712  sls  
-  122  42.845  sls  
-  123  44.235  sls  
-  124  42.785  sls  
-  125  42.145  sls  
-  126  41.834  sls  
-  127  41.878  sls  
-  128  41.715  sls  
-  129  42.855  sls  
-  130  42.066  sls  
-  131  42.188  sls  
-  132  43.469  sls  
-  133  43.918  sls  
-  134  41.681  sls  
-  135  41.896  sls  
-  136  44.952  sls  
-  137  41.850  sls  
-  138  42.016  sls  
-  139  42.092  sls  
-  140  42.117  sls  
-  141  41.980  sls  
-  142  42.391  sls  
-  143  42.410  sls  
-  144  44.019  sls  
-  145  46.069  sls  
-  146  44.014  sls  
-  147  43.873  sls  
-  148  46.892  sls  
-  149  44.207  sls  
-  150  47.091  sls  
-  151  44.527  sls  
-  152  44.774  sls  
-  153  44.492  sls  
-  154  41.755  sls  
-  155  44.149  sls  
-  156  44.845  sls  
-  157  42.821  sls  
-  158  41.890  sls  
-  159  41.831  sls  
-  160  44.421  sls  
-  161  42.828  sls  
-  162  41.764  sls  
-  163  41.647  sls  
-  164  45.105  sls  
-  165  44.356  sls  
-  166  43.281  sls  
-  167  44.685  sls  
-  168  44.317  sls  
-  169  43.960  sls  
-  170  42.438  sls  
-  171  43.192  sls  
-  172  42.944  sls  
-  173  42.756  sls  
-  174  42.976  sls  
-  175  44.309  sls  
-  176  41.939  sls  
-  177  42.379  sls  
-  178  41.805  sls  
-  179  42.870  sls  
-  180  43.976  sls  
-  181  42.220  sls  
-  182  43.811  sls  
-  183  44.164  sls  
-  184  45.783  sls  
-  185  41.840  sls  
-  186  41.828  sls  
-  187  43.351  sls  
-  188  42.993  sls  
-  189  42.258  sls  
-  190  41.562  sls  
-  191  43.262  sls  
-  192  43.808  sls  
-  193  42.510  sls  
-  194  45.913  sls  
-  195  45.835  sls  
-  196  46.613  sls  
-  197  43.298  sls  
-  198  44.711  sls  
-  199  43.047  sls  
-  200  43.771  sls  
-  201  48.226  sls  
-  202  46.066  sls  
-  203  42.358  sls  
-  204  42.308  sls  
-  205  41.969  sls  
-  206  43.338  sls  
-  207  45.126  sls  
-  208  44.236  sls  
-  209  43.744  sls  
-  210  42.929  sls  
-  211  42.441  sls  
-  212  43.064  sls  
-  213  44.495  sls  
-  214  43.838  sls  
-  215  43.037  sls  
-  216  43.124  sls  
-  217  41.677  sls  
-  218  42.481  sls  
-  219  42.216  sls  
-  220  41.686  sls  
-  221  41.817  sls  
- MCMC integration over the parameters - k-fold-CV
+   20  43.063  sls  
+   40  43.080  sls  
+   60  42.595  sls  
+   80  42.580  sls  
+  100  42.209  sls  
+  120  42.570  sls  
+  140  41.681  sls  
+  160  41.755  sls  
+  180  42.976  sls  
+  200  45.913  sls  
+  220  43.838  sls  
+MCMC integration over the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is MCMC.
+ The CV-fold number: 1/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  44.333  sls  
-    3  44.569  sls  
-    4  44.587  sls  
-    5  44.676  sls  
-    6  44.145  sls  
-    7  44.437  sls  
-    8  45.083  sls  
-    9  45.495  sls  
-   10  43.787  sls  
-   11  44.010  sls  
-   12  45.834  sls  
-   13  44.856  sls  
-   14  43.891  sls  
-   15  44.577  sls  
-   16  44.839  sls  
-   17  44.303  sls  
-   18  45.529  sls  
-   19  43.740  sls  
-   20  44.440  sls  
-   21  44.139  sls  
-   22  44.266  sls  
-   23  46.016  sls  
-   24  44.583  sls  
-   25  46.672  sls  
-   26  45.157  sls  
-   27  46.375  sls  
-   28  44.601  sls  
-   29  44.548  sls  
-   30  45.513  sls  
-   31  45.072  sls  
-   32  45.199  sls  
-   33  44.547  sls  
-   34  44.747  sls  
-   35  44.882  sls  
-   36  46.735  sls  
-   37  45.465  sls  
-   38  46.261  sls  
-   39  45.938  sls  
-   40  45.631  sls  
-   41  45.587  sls  
-   42  44.401  sls  
-   43  44.085  sls  
-   44  44.969  sls  
-   45  44.018  sls  
-   46  45.509  sls  
-   47  47.429  sls  
-   48  44.750  sls  
-   49  44.711  sls  
-   50  49.913  sls  
-   51  45.644  sls  
+   20  44.577  sls  
+   40  44.882  sls  
+ The CV-fold number: 2/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  44.442  sls  
-    3  44.500  sls  
-    4  45.874  sls  
-    5  47.345  sls  
-    6  44.228  sls  
-    7  44.653  sls  
-    8  44.268  sls  
-    9  46.048  sls  
-   10  47.186  sls  
-   11  45.777  sls  
-   12  45.244  sls  
-   13  44.616  sls  
-   14  45.885  sls  
-   15  46.252  sls  
-   16  45.445  sls  
-   17  45.165  sls  
-   18  45.302  sls  
-   19  46.562  sls  
-   20  44.188  sls  
-   21  46.092  sls  
-   22  45.613  sls  
-   23  47.568  sls  
-   24  47.045  sls  
-   25  49.722  sls  
-   26  46.377  sls  
-   27  45.712  sls  
-   28  45.362  sls  
-   29  44.674  sls  
-   30  45.755  sls  
-   31  46.460  sls  
-   32  47.329  sls  
-   33  49.113  sls  
-   34  49.447  sls  
-   35  47.597  sls  
-   36  47.048  sls  
-   37  46.237  sls  
-   38  45.033  sls  
-   39  43.940  sls  
-   40  44.565  sls  
-   41  44.550  sls  
-   42  44.156  sls  
-   43  46.034  sls  
-   44  46.342  sls  
-   45  44.568  sls  
-   46  49.424  sls  
-   47  50.352  sls  
-   48  51.779  sls  
-   49  53.888  sls  
-   50  54.717  sls  
-   51  48.943  sls  
+   20  45.445  sls  
+   40  47.048  sls  
+ The CV-fold number: 3/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  45.504  sls  
-    3  46.117  sls  
-    4  46.486  sls  
-    5  44.567  sls  
-    6  45.383  sls  
-    7  45.748  sls  
-    8  46.501  sls  
-    9  45.106  sls  
-   10  45.733  sls  
-   11  44.987  sls  
-   12  45.838  sls  
-   13  45.737  sls  
-   14  46.541  sls  
-   15  44.688  sls  
-   16  47.078  sls  
-   17  44.406  sls  
-   18  44.331  sls  
-   19  44.249  sls  
-   20  45.697  sls  
-   21  44.308  sls  
-   22  49.841  sls  
-   23  45.544  sls  
-   24  44.938  sls  
-   25  45.119  sls  
-   26  44.618  sls  
-   27  44.377  sls  
-   28  44.596  sls  
-   29  44.929  sls  
-   30  45.067  sls  
-   31  44.206  sls  
-   32  44.978  sls  
-   33  45.467  sls  
-   34  45.059  sls  
-   35  44.763  sls  
-   36  45.021  sls  
-   37  45.097  sls  
-   38  45.713  sls  
-   39  46.150  sls  
-   40  49.536  sls  
-   41  47.267  sls  
-   42  48.034  sls  
-   43  51.373  sls  
-   44  49.798  sls  
-   45  49.504  sls  
-   46  49.187  sls  
-   47  46.154  sls  
-   48  49.453  sls  
-   49  51.650  sls  
-   50  50.131  sls  
-   51  46.039  sls  
+   20  49.586  sls  
+   40  45.713  sls  
+ The CV-fold number: 4/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  43.417  sls  
-    3  43.203  sls  
-    4  43.495  sls  
-    5  45.014  sls  
-    6  42.529  sls  
-    7  43.439  sls  
-    8  43.834  sls  
-    9  44.975  sls  
-   10  44.079  sls  
-   11  43.026  sls  
-   12  44.507  sls  
-   13  43.451  sls  
-   14  42.799  sls  
-   15  43.236  sls  
-   16  43.497  sls  
-   17  42.504  sls  
-   18  42.448  sls  
-   19  42.779  sls  
-   20  43.543  sls  
-   21  43.452  sls  
-   22  45.599  sls  
-   23  43.134  sls  
-   24  42.775  sls  
-   25  42.580  sls  
-   26  44.522  sls  
-   27  43.464  sls  
-   28  44.435  sls  
-   29  43.112  sls  
-   30  44.301  sls  
-   31  45.360  sls  
-   32  42.254  sls  
-   33  44.078  sls  
-   34  43.304  sls  
-   35  43.797  sls  
-   36  43.986  sls  
-   37  43.902  sls  
-   38  44.822  sls  
-   39  46.020  sls  
-   40  44.695  sls  
-   41  44.547  sls  
-   42  46.288  sls  
-   43  45.852  sls  
-   44  43.809  sls  
-   45  42.279  sls  
-   46  45.246  sls  
-   47  43.815  sls  
-   48  42.843  sls  
-   49  42.775  sls  
-   50  44.893  sls  
-   51  43.608  sls  
+   20  42.448  sls  
+   40  44.822  sls  
+ The CV-fold number: 5/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  43.260  sls  
-    3  44.545  sls  
-    4  44.414  sls  
-    5  44.922  sls  
-    6  45.507  sls  
-    7  44.121  sls  
-    8  45.393  sls  
-    9  43.888  sls  
-   10  44.668  sls  
-   11  48.501  sls  
-   12  47.895  sls  
-   13  43.617  sls  
-   14  43.496  sls  
-   15  42.986  sls  
-   16  45.354  sls  
-   17  44.184  sls  
-   18  45.377  sls  
-   19  43.743  sls  
-   20  44.264  sls  
-   21  43.604  sls  
-   22  43.804  sls  
-   23  44.201  sls  
-   24  45.650  sls  
-   25  43.398  sls  
-   26  42.947  sls  
-   27  43.227  sls  
-   28  44.408  sls  
-   29  43.264  sls  
-   30  42.968  sls  
-   31  43.620  sls  
-   32  44.209  sls  
-   33  43.823  sls  
-   34  43.231  sls  
-   35  43.453  sls  
-   36  45.993  sls  
-   37  45.917  sls  
-   38  45.534  sls  
-   39  45.220  sls  
-   40  46.211  sls  
-   41  46.887  sls  
-   42  48.244  sls  
-   43  45.505  sls  
-   44  45.604  sls  
-   45  43.674  sls  
-   46  46.926  sls  
-   47  43.347  sls  
-   48  45.258  sls  
-   49  43.772  sls  
-   50  43.631  sls  
-   51  45.417  sls  
+   20  45.504  sls  
+   40  43.310  sls  
+ The CV-fold number: 6/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  44.475  sls  
-    3  45.328  sls  
-    4  44.917  sls  
-    5  45.461  sls  
-    6  45.666  sls  
-    7  44.347  sls  
-    8  45.279  sls  
-    9  44.764  sls  
-   10  44.440  sls  
-   11  44.257  sls  
-   12  44.237  sls  
-   13  45.039  sls  
-   14  45.137  sls  
-   15  44.700  sls  
-   16  45.346  sls  
-   17  46.029  sls  
-   18  45.994  sls  
-   19  45.655  sls  
-   20  47.728  sls  
-   21  49.613  sls  
-   22  48.347  sls  
-   23  46.818  sls  
-   24  46.806  sls  
-   25  48.720  sls  
-   26  51.786  sls  
-   27  45.109  sls  
-   28  44.510  sls  
-   29  46.829  sls  
-   30  44.466  sls  
-   31  46.346  sls  
-   32  47.278  sls  
-   33  46.200  sls  
-   34  45.590  sls  
-   35  45.180  sls  
-   36  45.889  sls  
-   37  44.768  sls  
-   38  44.837  sls  
-   39  44.521  sls  
-   40  44.801  sls  
-   41  44.332  sls  
-   42  44.959  sls  
-   43  44.503  sls  
-   44  45.031  sls  
-   45  44.820  sls  
-   46  44.903  sls  
-   47  44.319  sls  
-   48  44.546  sls  
-   49  45.003  sls  
-   50  46.278  sls  
-   51  45.474  sls  
+   20  46.215  sls  
+   40  44.736  sls  
+ The CV-fold number: 7/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  46.366  sls  
-    3  45.740  sls  
-    4  44.519  sls  
-    5  43.691  sls  
-    6  44.123  sls  
-    7  44.574  sls  
-    8  45.187  sls  
-    9  44.679  sls  
-   10  46.361  sls  
-   11  47.423  sls  
-   12  44.650  sls  
-   13  44.222  sls  
-   14  44.396  sls  
-   15  45.618  sls  
-   16  44.564  sls  
-   17  44.355  sls  
-   18  44.343  sls  
-   19  43.630  sls  
    20  45.338  sls  
-   21  45.408  sls  
-   22  46.417  sls  
-   23  45.575  sls  
-   24  44.617  sls  
-   25  43.924  sls  
-   26  44.582  sls  
-   27  44.602  sls  
-   28  44.851  sls  
-   29  45.775  sls  
-   30  46.822  sls  
-   31  46.416  sls  
-   32  46.211  sls  
-   33  44.275  sls  
-   34  44.285  sls  
-   35  44.852  sls  
-   36  45.916  sls  
-   37  45.917  sls  
-   38  44.505  sls  
-   39  44.738  sls  
    40  45.546  sls  
-   41  43.994  sls  
-   42  43.874  sls  
-   43  44.265  sls  
-   44  43.802  sls  
-   45  44.336  sls  
-   46  44.400  sls  
-   47  44.872  sls  
-   48  47.321  sls  
-   49  46.093  sls  
-   50  44.520  sls  
-   51  45.553  sls  
+ The CV-fold number: 8/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  41.083  sls  
-    3  40.745  sls  
-    4  40.228  sls  
-    5  40.318  sls  
-    6  40.698  sls  
-    7  40.843  sls  
-    8  40.406  sls  
-    9  40.526  sls  
-   10  40.843  sls  
-   11  40.693  sls  
-   12  41.772  sls  
-   13  41.173  sls  
-   14  40.921  sls  
-   15  41.557  sls  
-   16  40.808  sls  
-   17  43.531  sls  
-   18  41.474  sls  
-   19  42.836  sls  
    20  41.780  sls  
-   21  41.801  sls  
-   22  41.439  sls  
-   23  41.855  sls  
-   24  40.766  sls  
-   25  40.515  sls  
-   26  40.770  sls  
-   27  41.487  sls  
-   28  41.083  sls  
-   29  41.292  sls  
-   30  41.172  sls  
-   31  41.208  sls  
-   32  40.878  sls  
-   33  40.229  sls  
-   34  41.076  sls  
-   35  42.108  sls  
-   36  41.489  sls  
-   37  40.820  sls  
-   38  41.537  sls  
-   39  40.660  sls  
    40  41.196  sls  
-   41  39.960  sls  
-   42  40.815  sls  
-   43  41.735  sls  
-   44  42.854  sls  
-   45  43.099  sls  
-   46  43.049  sls  
-   47  42.900  sls  
-   48  47.017  sls  
-   49  46.954  sls  
-   50  41.797  sls  
-   51  41.968  sls  
+ The CV-fold number: 9/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  48.378  sls  
-    3  45.547  sls  
-    4  45.399  sls  
-    5  46.703  sls  
-    6  47.691  sls  
-    7  48.175  sls  
-    8  51.097  sls  
-    9  48.630  sls  
-   10  50.120  sls  
-   11  47.828  sls  
-   12  46.619  sls  
-   13  45.242  sls  
-   14  45.415  sls  
-   15  45.367  sls  
-   16  46.281  sls  
-   17  45.855  sls  
-   18  46.644  sls  
-   19  47.937  sls  
    20  46.193  sls  
-   21  46.781  sls  
-   22  46.206  sls  
-   23  44.794  sls  
-   24  44.872  sls  
-   25  44.735  sls  
-   26  47.732  sls  
-   27  46.045  sls  
-   28  48.925  sls  
-   29  45.813  sls  
-   30  46.180  sls  
-   31  45.680  sls  
-   32  45.731  sls  
-   33  45.012  sls  
-   34  45.429  sls  
-   35  45.118  sls  
-   36  45.756  sls  
-   37  45.985  sls  
-   38  46.192  sls  
-   39  45.997  sls  
    40  46.335  sls  
-   41  45.670  sls  
-   42  44.918  sls  
-   43  44.889  sls  
-   44  44.598  sls  
-   45  44.777  sls  
-   46  47.722  sls  
-   47  48.124  sls  
-   48  46.849  sls  
-   49  49.939  sls  
-   50  47.833  sls  
-   51  47.051  sls  
+ The CV-fold number: 10/10 
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  43.075  sls  
-    3  44.178  sls  
-    4  42.375  sls  
-    5  42.433  sls  
-    6  42.905  sls  
-    7  42.521  sls  
-    8  42.677  sls  
-    9  42.957  sls  
-   10  43.288  sls  
-   11  42.784  sls  
-   12  44.828  sls  
-   13  42.635  sls  
-   14  42.372  sls  
-   15  45.275  sls  
-   16  42.377  sls  
-   17  44.419  sls  
-   18  44.444  sls  
-   19  43.138  sls  
-   20  44.223  sls  
-   21  44.580  sls  
-   22  43.359  sls  
-   23  43.327  sls  
-   24  43.983  sls  
-   25  42.471  sls  
-   26  44.074  sls  
-   27  42.281  sls  
-   28  43.508  sls  
-   29  42.599  sls  
-   30  42.176  sls  
-   31  45.470  sls  
-   32  44.069  sls  
-   33  44.491  sls  
-   34  45.017  sls  
-   35  45.848  sls  
-   36  42.817  sls  
-   37  42.619  sls  
-   38  42.725  sls  
-   39  42.920  sls  
+   20  43.116  sls  
    40  43.045  sls  
-   41  46.365  sls  
-   42  43.993  sls  
-   43  44.655  sls  
-   44  43.640  sls  
-   45  43.899  sls  
-   46  42.289  sls  
-   47  42.951  sls  
-   48  44.410  sls  
-   49  43.043  sls  
-   50  43.167  sls  
-   51  42.429  sls  
- Grid integration over the parameters
- Grid integration over the parameters - k-fold-CV
+MCMC integration over the parameters - LOO-CV
+Grid integration over the parameters
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 338 points
+    Elapsed time 3.30 seconds
+ IA-grid: Total elapsed time 3.67 seconds
+Grid integration over the parameters - k-fold-CV
+Evaluating the CV utility. The inference method is IA.
+ The CV-fold number: 1/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 347 points
+    Elapsed time 3.35 seconds
+ IA-grid: Total elapsed time 4.29 seconds
+ The CV-fold number: 2/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 337 points
+    Elapsed time 3.29 seconds
+ IA-grid: Total elapsed time 4.32 seconds
+ The CV-fold number: 3/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 355 points
+    Elapsed time 3.42 seconds
+ IA-grid: Total elapsed time 4.54 seconds
+ The CV-fold number: 4/10 
+ IA-grid: finding the mode
+    Elapsed time 1.11 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 348 points
+    Elapsed time 3.34 seconds
+ IA-grid: Total elapsed time 4.70 seconds
+ The CV-fold number: 5/10 
+ IA-grid: finding the mode
+    Elapsed time 1.09 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 352 points
+    Elapsed time 3.39 seconds
+ IA-grid: Total elapsed time 4.71 seconds
+ The CV-fold number: 6/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 336 points
+    Elapsed time 3.20 seconds
+ IA-grid: Total elapsed time 4.09 seconds
+ The CV-fold number: 7/10 
+ IA-grid: finding the mode
+    Elapsed time 1.65 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 347 points
+    Elapsed time 3.32 seconds
+ IA-grid: Total elapsed time 5.22 seconds
+ The CV-fold number: 8/10 
+ IA-grid: finding the mode
+    Elapsed time 1.09 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 342 points
+    Elapsed time 3.25 seconds
+ IA-grid: Total elapsed time 4.58 seconds
+ The CV-fold number: 9/10 
+ IA-grid: finding the mode
+    Elapsed time 1.30 seconds
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 335 points
+    Elapsed time 3.20 seconds
+ IA-grid: Total elapsed time 4.74 seconds
+ The CV-fold number: 10/10 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 344 points
+    Elapsed time 3.30 seconds
+ IA-grid: Total elapsed time 4.41 seconds
+Grid integration over the parameters - LOO-CV
 Summary of the results
 
 S =
 
-         full_MAP  full_MCMC  full_IA  FIC_MAP  FIC_MCMC  FIC_IA  PIC_MAP  PIC_MCMC  PIC_IA
- DIC_h   0.00      -0.20      -0.20    0.00     -0.20     -0.19   0.00     -0.19     -0.18
- DIC_a   0.00     0.05     0.07    0.00     0.12   0.12   0.00    0.09     0.09
- DIC_l  0.07      0.00      0.00    0.11    0.00      0.00   0.09     
- peff_h  0.00       3.47      3.25     0.00     4.68      3.21    0.00      3.59     3.34
- peff_a  0.00      43.12     39.79     0.00     81.86     82.94   0.00     47.25     47.16
- peff_l  37.54      0.00      0.00     76.01    0.00      0.00    45.26     
- peff_l2 37.71      0.00      0.00     76.30    0.00      0.00    45.30     
- WAIC_V  0.07      0.06      0.07    0.11     -0.11     -0.11   0.09     0.08     0.08
- WAIC_G  0.10      0.09      0.09    0.17     0.41     0.42   0.12     0.12     0.12
+        full_MAP  full_MCMC  full_IA  FIC_MAP  FIC_MCMC  FIC_IA  PIC_MAP  PIC_MCMC  PIC_IA
+ CV-mlpd   0.05      0.06      0.05      0.06     0.06      0.06     0.07     0.08     0.08
+ CV-rmse   0.24      0.24      0.24      0.23     0.23      0.23     0.23     0.23     0.23
+ LOO-mlpd  0.06      0.05      0.05      0.06     0.05      0.05     0.07     0.06     0.06
+ LOO-rmse  0.24      0.24      0.24      0.23     0.23      0.23     0.23     0.23     0.23
  
- mlpd    0.05       0.06      0.05     0.06     0.06      0.06    -1.30    -1.34    -1.30
- rmse    0.24       0.24      0.24     0.23     0.23      0.23     0.23     0.23     0.23
+ WAIC_V    0.07      0.06      0.07      0.11    -0.11     -0.11     0.09     0.08     0.08
+ WAIC_G    0.10      0.09      0.09      0.17     0.41      0.42     0.12     0.12     0.12
+ 
+ DIC_h      NaN     -0.20     -0.20       NaN    -0.19     -0.19      NaN    -0.19    -0.18
+ DIC_a      NaN      0.05      0.07       NaN     0.12      0.12      NaN     0.09     0.09
+ DIC_l     0.07      0.00      0.00      0.11     0.00      0.00     0.09    
+ peff_h     NaN      3.47      3.25       NaN     4.20      3.21      NaN     3.64     3.34
+ peff_a     NaN     43.12     39.79       NaN    81.90     82.93      NaN    46.67    47.16
+ peff_l   37.44      0.00      0.00     76.09     0.00      0.00    45.15    
+ peff_l2  37.61      0.00      0.00     76.28     0.00      0.00    45.22    
  
  
  The notation is as follows:
- DIC_h   = DIC with focus on parameters. 
- DIC_a   = DIC with focus on parameters and latent variables (all). 
- DIC_l   = DIC with focus on latent variables. 
- peff_h  = effective number of parameters (latent variables marginalized). 
- peff_a  = effective number of parameters and latent variables. 
- peff_l  = effective number of latent variables evaluated with gp_peff. 
- peff_l2 = effective number of latent variables evaluated with gp_dic. 
- WAIC_V  = WAIC via variance method 
- WAIC_G  = WAIC via Gibbs training utility method 
- mlpd    = mean log predictive density from the 10-fold CV. 
- mrmse   = mean root mean squared error from the 10-fold CV. 
+ CV-mlpd  = mean log predictive density from the 10-fold CV. 
+ CV-rmse  = root mean squared error from the 10-fold LOO-CV. 
+ LOO-mlpd = mean log predictive density from the LOO-CV. 
+ LOO-rmse = root mean squared error from the 10-fold CV. 
+ WAIC_V   = WAIC via variance method 
+ WAIC_G   = WAIC via Gibbs training utility method 
+ DIC_h    = DIC with focus on parameters. 
+ DIC_a    = DIC with focus on parameters and latent variables (all). 
+ DIC_l    = DIC with focus on latent variables. 
+ peff_h   = effective number of parameters (latent variables marginalized). 
+ peff_a   = effective number of parameters and latent variables. 
+ peff_l   = effective number of latent variables evaluated with gp_peff. 
+ peff_l2  = effective number of latent variables evaluated with gp_dic. 
  
 
 
  gp hyperparameters (gp_pak(gp)): 
  
-    1.0487   -0.1708   -0.2248   -3.1547
+    1.0742   -0.1662   -0.2199   -3.1540
 

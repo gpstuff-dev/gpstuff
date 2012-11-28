@@ -1,18 +1,15 @@
 Running: demo_regression_sparse1
-Iter    1  f(x)  199.69237  Scale 1.0e+01
-Iter    2  f(x)   99.99361  Scale 5.0e+00
-Iter    3  f(x)   81.09795  Scale 2.5e+00
-Iter    4  f(x)   64.78712  Scale 1.2e+00
-Iter    5  f(x)   60.88927  Scale 6.2e-01
-Iter    6  f(x)   55.70742  Scale 3.1e-01
-Iter    7  f(x)   54.35715  Scale 1.6e-01
-Iter    8  f(x)   53.83337  Scale 7.8e-02
-Iter    9  f(x)   53.76201  Scale 3.9e-02
-Iter   10  f(x)   53.75015  Scale 2.0e-02
-Iter   11  f(x)   53.74332  Scale 9.8e-03
-Iter   12  f(x)   53.73541  Scale 4.9e-03
-Iter   13  f(x)   53.73524  Scale 2.4e-03
-TolFun reached
+
+gp = 
+
+            type: 'FULL'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-08
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 27. Final f(x)=52.5982. Elapsed time 12.12
 
 gp_fic = 
 
@@ -24,301 +21,54 @@ gp_fic =
              X_u: [36x2 double]
             nind: 36
                p: [1x1 struct]
+              fh: [1x1 struct]
 
-Iter    1  f(x)  268.51195  Scale 1.0e+01
-Iter    2  f(x)   88.57242  Scale 5.0e+00
-Iter    3  f(x)   78.60087  Scale 2.5e+00
-Iter    4  f(x)   59.80505  Scale 1.2e+00
-Iter    5  f(x)   48.86123  Scale 6.2e-01
-Iter    6  f(x)   39.00195  Scale 6.2e-01
-Iter    7  f(x)   35.41830  Scale 6.2e-01
-Iter    8  f(x)   32.68001  Scale 3.1e-01
-Iter    9  f(x)   31.62892  Scale 1.6e-01
-Iter   10  f(x)   30.54258  Scale 1.6e-01
-Iter   11  f(x)   29.69252  Scale 7.8e-02
-Iter   12  f(x)   28.85836  Scale 3.9e-02
-Iter   13  f(x)   28.06757  Scale 2.0e-02
-Iter   14  f(x)   27.81290  Scale 2.0e-02
-Iter   15  f(x)   26.59921  Scale 9.8e-03
-Iter   16  f(x)   26.03948  Scale 4.9e-03
-Iter   17  f(x)   25.63372  Scale 2.4e-03
-Iter   18  f(x)   25.15694  Scale 1.2e-03
-Iter   19  f(x)   24.59385  Scale 6.1e-04
-Iter   20  f(x)   24.24203  Scale 3.1e-04
-Iter   21  f(x)   23.40065  Scale 1.5e-04
-Iter   22  f(x)   22.90567  Scale 7.6e-05
-Iter   23  f(x)   22.40285  Scale 7.6e-05
-Iter   24  f(x)   20.63507  Scale 3.8e-05
-Iter   25  f(x)   19.95036  Scale 1.9e-05
-Iter   26  f(x)   19.61145  Scale 9.5e-06
-Iter   27  f(x)   18.64417  Scale 4.8e-06
-Iter   28  f(x)   18.18773  Scale 2.4e-06
-Iter   29  f(x)   17.33011  Scale 1.2e-06
-Iter   30  f(x)   16.47923  Scale 6.0e-07
-Iter   31  f(x)   15.95701  Scale 3.0e-07
-Iter   32  f(x)   14.80890  Scale 1.5e-07
-Iter   33  f(x)   14.40334  Scale 7.5e-08
-Iter   34  f(x)   13.99188  Scale 3.7e-08
-Iter   35  f(x)   13.24357  Scale 1.9e-08
-Iter   36  f(x)   12.87248  Scale 9.3e-09
-Iter   37  f(x)   12.64230  Scale 4.7e-09
-Iter   38  f(x)   12.30607  Scale 2.3e-09
-Iter   39  f(x)   12.12710  Scale 1.2e-09
-Iter   40  f(x)   12.00381  Scale 5.8e-10
-Iter   41  f(x)   11.65381  Scale 2.9e-10
-Iter   42  f(x)   11.51099  Scale 1.5e-10
-Iter   43  f(x)   11.26620  Scale 7.3e-11
-Iter   44  f(x)   11.04376  Scale 3.6e-11
-Iter   45  f(x)   10.73272  Scale 1.8e-11
-Iter   46  f(x)   10.62704  Scale 9.1e-12
-Iter   47  f(x)   10.52957  Scale 9.1e-12
-Iter   48  f(x)   10.37802  Scale 4.5e-12
-Iter   49  f(x)   10.18066  Scale 2.3e-12
-Iter   50  f(x)    9.96874  Scale 1.1e-12
-Iter   51  f(x)    9.90004  Scale 5.7e-13
-Iter   52  f(x)    9.74684  Scale 2.8e-13
-Iter   53  f(x)    9.70343  Scale 1.4e-13
-Iter   54  f(x)    9.63230  Scale 7.1e-14
-Iter   55  f(x)    9.59234  Scale 3.6e-14
-Iter   56  f(x)    9.54601  Scale 1.8e-14
-Iter   57  f(x)    9.51986  Scale 8.9e-15
-Iter   58  f(x)    9.35206  Scale 4.4e-15
-Iter   59  f(x)    9.30427  Scale 2.2e-15
-Iter   60  f(x)    9.16951  Scale 1.1e-15
-Iter   61  f(x)    9.10976  Scale 1.0e-15
-Iter   62  f(x)    9.05956  Scale 1.0e-15
-Iter   63  f(x)    8.98240  Scale 1.0e-15
-Iter   64  f(x)    8.89215  Scale 1.0e-15
-Iter   65  f(x)    8.86266  Scale 1.0e-15
-Iter   66  f(x)    8.71497  Scale 1.0e-15
-Iter   67  f(x)    8.68004  Scale 1.0e-15
-Iter   68  f(x)    8.58537  Scale 1.0e-15
-Iter   69  f(x)    8.49651  Scale 1.0e-15
-Iter   70  f(x)    8.42536  Scale 1.0e-15
-Iter   71  f(x)    8.38341  Scale 1.0e-15
-Iter   72  f(x)    8.33142  Scale 1.0e-15
-Iter   73  f(x)    8.29262  Scale 1.0e-15
-Iter   74  f(x)    8.25151  Scale 1.0e-15
-Iter   75  f(x)    8.21454  Scale 1.0e-15
-Iter   76  f(x)    8.20039  Scale 1.0e-15
-Iter   77  f(x)    8.19333  Scale 1.0e-15
-Iter   78  f(x)    8.18228  Scale 1.0e-15
-Iter   79  f(x)    8.14434  Scale 1.0e-15
-Iter   80  f(x)    8.09443  Scale 1.0e-15
-Warning: Maximum number of iterations has been exceeded
-Iter    1  f(x)  219.30539  Scale 1.0e+01
-Iter    2  f(x)  102.20786  Scale 5.0e+00
-Iter    3  f(x)   83.10329  Scale 2.5e+00
-Iter    4  f(x)   56.21915  Scale 1.2e+00
-Iter    5  f(x)   49.85494  Scale 6.2e-01
-Iter    6  f(x)   41.27839  Scale 3.1e-01
-Iter    7  f(x)   37.47066  Scale 1.6e-01
-Iter    8  f(x)   36.28958  Scale 7.8e-02
-Iter    9  f(x)   35.60806  Scale 3.9e-02
-Iter   10  f(x)   35.15236  Scale 2.0e-02
-Iter   11  f(x)   34.66590  Scale 9.8e-03
-Iter   12  f(x)   34.14980  Scale 4.9e-03
-Iter   13  f(x)   33.91865  Scale 2.4e-03
-Iter   14  f(x)   33.65810  Scale 1.2e-03
-Iter   15  f(x)   33.47115  Scale 6.1e-04
-Iter   16  f(x)   33.36450  Scale 3.1e-04
-Iter   17  f(x)   33.13704  Scale 1.5e-04
-Iter   18  f(x)   33.00939  Scale 7.6e-05
-Iter   19  f(x)   32.84505  Scale 3.8e-05
-Iter   20  f(x)   32.68344  Scale 1.9e-05
-Iter   21  f(x)   32.54414  Scale 9.5e-06
-Iter   22  f(x)   32.32834  Scale 4.8e-06
-Iter   23  f(x)   32.19117  Scale 2.4e-06
-Iter   24  f(x)   32.12377  Scale 1.2e-06
-Iter   25  f(x)   32.08691  Scale 6.0e-07
-Iter   26  f(x)   31.98876  Scale 3.0e-07
-Iter   27  f(x)   31.96583  Scale 1.5e-07
-Iter   28  f(x)   31.93500  Scale 7.5e-08
-Iter   29  f(x)   31.89227  Scale 3.7e-08
-Iter   30  f(x)   31.86837  Scale 1.9e-08
-Iter   31  f(x)   31.84984  Scale 9.3e-09
-Iter   32  f(x)   31.81873  Scale 4.7e-09
-Iter   33  f(x)   31.80495  Scale 2.3e-09
-Iter   34  f(x)   31.78107  Scale 1.2e-09
-Iter   35  f(x)   31.76353  Scale 5.8e-10
-Iter   36  f(x)   31.74132  Scale 2.9e-10
-Iter   37  f(x)   31.72187  Scale 1.5e-10
-Iter   38  f(x)   31.70794  Scale 7.3e-11
-Iter   39  f(x)   31.68673  Scale 3.6e-11
-Iter   40  f(x)   31.67481  Scale 1.8e-11
-Iter   41  f(x)   31.66578  Scale 9.1e-12
-Iter   42  f(x)   31.65799  Scale 4.5e-12
-Iter   43  f(x)   31.64795  Scale 2.3e-12
-Iter   44  f(x)   31.64219  Scale 1.1e-12
-Iter   45  f(x)   31.63283  Scale 5.7e-13
-Iter   46  f(x)   31.62707  Scale 2.8e-13
-Iter   47  f(x)   31.62177  Scale 1.4e-13
-Iter   48  f(x)   31.61317  Scale 7.1e-14
-Iter   49  f(x)   31.60309  Scale 3.6e-14
-Iter   50  f(x)   31.59834  Scale 1.8e-14
-Iter   51  f(x)   31.58823  Scale 8.9e-15
-Iter   52  f(x)   31.58207  Scale 4.4e-15
-Iter   53  f(x)   31.56728  Scale 2.2e-15
-Iter   54  f(x)   31.56070  Scale 1.1e-15
-Iter   55  f(x)   31.55553  Scale 1.0e-15
-Iter   56  f(x)   31.54318  Scale 1.0e-15
-Iter   57  f(x)   31.53035  Scale 1.0e-15
-Iter   58  f(x)   31.52704  Scale 1.0e-15
-Iter   59  f(x)   31.51145  Scale 1.0e-15
-Iter   60  f(x)   31.49983  Scale 1.0e-15
-Iter   61  f(x)   31.48999  Scale 1.0e-15
-Iter   62  f(x)   31.47526  Scale 1.0e-15
-Iter   63  f(x)   31.46718  Scale 1.0e-15
-Iter   64  f(x)   31.45704  Scale 1.0e-15
-Iter   65  f(x)   31.44815  Scale 1.0e-15
-Iter   66  f(x)   31.44271  Scale 1.0e-15
-Iter   67  f(x)   31.43567  Scale 1.0e-15
-Iter   68  f(x)   31.42863  Scale 1.0e-15
-Iter   69  f(x)   31.42317  Scale 1.0e-15
-Iter   70  f(x)   31.41812  Scale 1.0e-15
-Iter   71  f(x)   31.41178  Scale 1.0e-15
-Iter   72  f(x)   31.39752  Scale 1.0e-15
-Iter   73  f(x)   31.38979  Scale 1.0e-15
-Iter   74  f(x)   31.38461  Scale 1.0e-15
-Iter   75  f(x)   31.37069  Scale 1.0e-15
-Iter   76  f(x)   31.36128  Scale 1.0e-15
-Iter   77  f(x)   31.35972  Scale 1.0e-15
-Iter   78  f(x)   31.35344  Scale 1.0e-15
-Iter   79  f(x)   31.35055  Scale 1.0e-15
-Iter   80  f(x)   31.34665  Scale 1.0e-15
-Warning: Maximum number of iterations has been exceeded
-Iter    1  f(x)  262.66825  Scale 1.0e+01
-Iter    2  f(x)  165.62270  Scale 5.0e+00
-Iter    3  f(x)  144.68850  Scale 2.5e+00
-Iter    4  f(x)   99.01743  Scale 1.2e+00
-Iter    5  f(x)   79.79436  Scale 6.2e-01
-Iter    6  f(x)   66.24894  Scale 3.1e-01
-Iter    7  f(x)   55.55509  Scale 1.6e-01
-Iter    8  f(x)   52.24028  Scale 7.8e-02
-Iter    9  f(x)   49.98946  Scale 3.9e-02
-Iter   10  f(x)   49.17867  Scale 2.0e-02
-Iter   11  f(x)   48.99565  Scale 9.8e-03
-Iter   12  f(x)   48.40545  Scale 4.9e-03
-Iter   13  f(x)   48.14007  Scale 2.4e-03
-Iter   14  f(x)   48.11500  Scale 1.2e-03
-Iter   15  f(x)   48.00873  Scale 6.1e-04
-Iter   16  f(x)   47.88426  Scale 3.1e-04
-Iter   17  f(x)   47.84434  Scale 1.5e-04
-Iter   18  f(x)   47.79590  Scale 7.6e-05
-Iter   19  f(x)   47.73527  Scale 3.8e-05
-Iter   20  f(x)   47.68962  Scale 1.9e-05
-Iter   21  f(x)   47.64194  Scale 9.5e-06
-Iter   22  f(x)   47.57651  Scale 4.8e-06
-Iter   23  f(x)   47.54708  Scale 2.4e-06
-Iter   24  f(x)   47.53164  Scale 1.2e-06
-Iter   25  f(x)   47.47659  Scale 6.0e-07
-Iter   26  f(x)   47.44292  Scale 3.0e-07
-Iter   27  f(x)   47.43951  Scale 1.5e-07
-Iter   28  f(x)   47.40944  Scale 7.5e-08
-Iter   29  f(x)   47.39695  Scale 3.7e-08
-Iter   30  f(x)   47.39228  Scale 1.9e-08
-Iter   31  f(x)   47.38813  Scale 9.3e-09
-Iter   32  f(x)   47.37446  Scale 4.7e-09
-Iter   33  f(x)   47.36330  Scale 2.3e-09
-Iter   34  f(x)   47.36088  Scale 1.2e-09
-Iter   35  f(x)   47.35692  Scale 5.8e-10
-Iter   36  f(x)   47.34915  Scale 2.9e-10
-Iter   37  f(x)   47.34739  Scale 1.5e-10
-Iter   38  f(x)   47.34525  Scale 7.3e-11
-Iter   39  f(x)   47.34117  Scale 3.6e-11
-Iter   40  f(x)   47.33899  Scale 1.8e-11
-Iter   41  f(x)   47.33789  Scale 9.1e-12
-Iter   42  f(x)   47.33560  Scale 4.5e-12
-Iter   43  f(x)   47.33239  Scale 2.3e-12
-Iter   44  f(x)   47.33181  Scale 1.1e-12
-TolFun reached
+ TolFun reached. Func-count 53. Final f(x)=46.3892. Elapsed time 0.75
 
-n =
+gp_pic = 
 
-   225
+            type: 'PIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+        tr_index: {1x16 cell}
+              fh: [1x1 struct]
 
-Iter    1  f(x)  248.89691  Scale 1.0e+01
-Iter    2  f(x)  149.40490  Scale 1.0e+01
-Iter    3  f(x)  115.17940  Scale 5.0e+00
-Iter    4  f(x)   82.67326  Scale 2.5e+00
-Iter    5  f(x)   60.95273  Scale 1.2e+00
-Iter    6  f(x)   47.17287  Scale 6.2e-01
-Iter    7  f(x)   42.10054  Scale 3.1e-01
-Iter    8  f(x)   36.50074  Scale 1.6e-01
-Iter    9  f(x)   32.87439  Scale 7.8e-02
-Iter   10  f(x)   32.24818  Scale 7.8e-02
-Iter   11  f(x)   30.28844  Scale 3.9e-02
-Iter   12  f(x)   29.34499  Scale 2.0e-02
-Iter   13  f(x)   28.19178  Scale 9.8e-03
-Iter   14  f(x)   27.35502  Scale 4.9e-03
-Iter   15  f(x)   26.39286  Scale 4.9e-03
-Iter   16  f(x)   24.27489  Scale 2.4e-03
-Iter   17  f(x)   23.45621  Scale 1.2e-03
-Iter   18  f(x)   22.23421  Scale 6.1e-04
-Iter   19  f(x)   21.53708  Scale 3.1e-04
-Iter   20  f(x)   20.22858  Scale 1.5e-04
-Iter   21  f(x)   19.34062  Scale 7.6e-05
-Iter   22  f(x)   18.52595  Scale 3.8e-05
-Iter   23  f(x)   17.88035  Scale 1.9e-05
-Iter   24  f(x)   17.06946  Scale 9.5e-06
-Iter   25  f(x)   16.47126  Scale 4.8e-06
-Iter   26  f(x)   16.31930  Scale 2.4e-06
-Iter   27  f(x)   16.11776  Scale 1.2e-06
-Iter   28  f(x)   15.78325  Scale 6.0e-07
-Iter   29  f(x)   15.43972  Scale 3.0e-07
-Iter   30  f(x)   15.11869  Scale 1.5e-07
-Iter   31  f(x)   14.45732  Scale 7.5e-08
-Iter   32  f(x)   14.12119  Scale 3.7e-08
-Iter   33  f(x)   13.54261  Scale 1.9e-08
-Iter   34  f(x)   12.92324  Scale 9.3e-09
-Iter   35  f(x)   12.01781  Scale 4.7e-09
-Iter   36  f(x)   11.32254  Scale 2.3e-09
-Iter   37  f(x)   11.00917  Scale 1.2e-09
-Iter   38  f(x)   10.51303  Scale 5.8e-10
-Iter   39  f(x)   10.17086  Scale 2.9e-10
-Iter   40  f(x)    9.52062  Scale 1.5e-10
-Iter   41  f(x)    9.24133  Scale 7.3e-11
-Iter   42  f(x)    9.03053  Scale 3.6e-11
-Iter   43  f(x)    8.76852  Scale 1.8e-11
-Iter   44  f(x)    8.66718  Scale 9.1e-12
-Iter   45  f(x)    8.30096  Scale 4.5e-12
-Iter   46  f(x)    8.13075  Scale 2.3e-12
-Iter   47  f(x)    7.78678  Scale 1.1e-12
-Iter   48  f(x)    7.35518  Scale 5.7e-13
-Iter   49  f(x)    7.19353  Scale 2.8e-13
-Iter   50  f(x)    6.80718  Scale 1.4e-13
-Iter   51  f(x)    6.71752  Scale 7.1e-14
-Iter   52  f(x)    6.53509  Scale 3.6e-14
-Iter   53  f(x)    6.38407  Scale 1.8e-14
-Iter   54  f(x)    6.18297  Scale 8.9e-15
-Iter   55  f(x)    5.87920  Scale 4.4e-15
-Iter   56  f(x)    5.75964  Scale 2.2e-15
-Iter   57  f(x)    5.38909  Scale 1.1e-15
-Iter   58  f(x)    5.22065  Scale 1.0e-15
-Iter   59  f(x)    5.03375  Scale 1.0e-15
-Iter   60  f(x)    4.88032  Scale 1.0e-15
-Iter   61  f(x)    4.74793  Scale 1.0e-15
-Iter   62  f(x)    4.60301  Scale 1.0e-15
-Iter   63  f(x)    4.42957  Scale 1.0e-15
-Iter   64  f(x)    4.30205  Scale 1.0e-15
-Iter   65  f(x)    4.17294  Scale 1.0e-15
-Iter   66  f(x)    4.06085  Scale 1.0e-15
-Iter   67  f(x)    3.98202  Scale 1.0e-15
-Iter   68  f(x)    3.91441  Scale 1.0e-15
-Iter   69  f(x)    3.75315  Scale 1.0e-15
-Iter   70  f(x)    3.60000  Scale 1.0e-15
-Iter   71  f(x)    3.54067  Scale 1.0e-15
-Iter   72  f(x)    3.48939  Scale 1.0e-15
-Iter   73  f(x)    3.43048  Scale 1.0e-15
-Iter   74  f(x)    3.40635  Scale 1.0e-15
-TolX reached
+ TolFun reached. Func-count 29. Final f(x)=45.3107. Elapsed time 1.14
 
-n =
+gp_var = 
 
-   225
+            type: 'VAR'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood+inducing'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+              fh: [1x1 struct]
 
+ TolFun reached. Func-count 40. Final f(x)=51.8727. Elapsed time 5.13
+
+gp_dtc = 
+
+            type: 'DTC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 65. Final f(x)=46.3104. Elapsed time 0.86
 
  gp hyperparameters (gp_pak(gp)): 
  
-    0.3352    1.1545    1.0328   -3.2359
+    0.4291    1.1773    1.0540   -3.2363
 

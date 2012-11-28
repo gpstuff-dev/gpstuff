@@ -1,3041 +1,542 @@
 Running: demo_spatial1
-Iter    1  f(x) 2695.74874  Scale 1.0e+01
-Iter    2  f(x) 2695.52375  Scale 5.0e+00
-Iter    3  f(x) 2695.51988  Scale 2.5e+00
-Iter    4  f(x) 2695.50583  Scale 1.2e+00
-Iter    5  f(x) 2695.50583  Scale 6.2e-01
-Iter    6  f(x) 2695.50583  Scale 2.5e+00
-Iter    7  f(x) 2695.50583  Scale 1.0e+01
-Iter    8  f(x) 2695.50583  Scale 4.0e+01
-TolX reached
+ TolFun reached. Func-count 35. Final f(x)=  2843. Elapsed time 1.84
 
 S1 =
 
-MAP: length-scale: 4.4, magnSigma: 0.203 
+MAP: length-scale: 14.3, magnSigma: 0.153 
 
 
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 12 points
+ IA-grid: Total elapsed time 2.73 seconds
 
 S2 =
 
-IA-GRID: 90% CI - length-scale: [3.7,5.8], magnSigma: [0.171,0.258] 
+IA-GRID: 90% CI - length-scale: [8.8,33.1], magnSigma: [0.099,0.325] 
 
 
  cycle  etr      hrej     lrej 
-    2  1744.068   0.0e+00  0.0e+00  0.179264
+    2  784.636   0.0e+00  1.1e-01  0.365678
 
 h1 =
 
-  986.0192
-  987.0187
+  986.2429
+  987.2424
 
- cycle  etr      hrej     lrej 
-    3  1742.078   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.00
- cycle  etr      hrej     lrej 
-    4  1753.515   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.00
- cycle  etr      hrej     lrej 
-    5  1705.471   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.00
- cycle  etr      hrej     lrej 
-    6  1667.063   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.00
- cycle  etr      hrej     lrej 
-    7  1666.263   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.14
- cycle  etr      hrej     lrej 
-    8  1720.219   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.12
- cycle  etr      hrej     lrej 
-    9  1700.794   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.11
- cycle  etr      hrej     lrej 
-   10  1648.355   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.10
- cycle  etr      hrej     lrej 
-   11  1682.761   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.09
- cycle  etr      hrej     lrej 
-   12  1652.204   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.08
- cycle  etr      hrej     lrej 
-   13  1675.532   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.00 latrej: 0.08
- cycle  etr      hrej     lrej 
-   14  1668.473   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.07
- cycle  etr      hrej     lrej 
-   15  1660.598   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.07
- cycle  etr      hrej     lrej 
-   16  1639.957   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   17  1650.886   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   18  1658.054   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   19  1652.934   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   20  1640.809   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   21  1629.824   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   22  1644.383   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   23  1662.609   0.0e+00  0.0e+00  0.150000
+        mean hmcrej: 0.00 latrej: 0.04
+        mean hmcrej: 0.00 latrej: 0.03
+        mean hmcrej: 0.04 latrej: 0.02
+        mean hmcrej: 0.03 latrej: 0.02
+        mean hmcrej: 0.03 latrej: 0.04
+        mean hmcrej: 0.03 latrej: 0.06
+        mean hmcrej: 0.02 latrej: 0.06
+        mean hmcrej: 0.02 latrej: 0.05
+        mean hmcrej: 0.02 latrej: 0.05
+        mean hmcrej: 0.03 latrej: 0.04
+        mean hmcrej: 0.03 latrej: 0.05
+        mean hmcrej: 0.03 latrej: 0.05
+        mean hmcrej: 0.04 latrej: 0.05
         mean hmcrej: 0.04 latrej: 0.04
- cycle  etr      hrej     lrej 
-   24  1644.617   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.04
- cycle  etr      hrej     lrej 
-   25  1653.463   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-   26  1653.771   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.08
- cycle  etr      hrej     lrej 
-   27  1662.357   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.07
- cycle  etr      hrej     lrej 
-   28  1672.383   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.07
- cycle  etr      hrej     lrej 
-   29  1660.817   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.07
- cycle  etr      hrej     lrej 
-   30  1682.512   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.07
- cycle  etr      hrej     lrej 
-   31  1670.953   0.0e+00  0.0e+00  0.150000
+        mean hmcrej: 0.05 latrej: 0.04
+        mean hmcrej: 0.04 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
         mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   32  1651.018   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   33  1637.435   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   34  1644.682   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   35  1646.649   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   36  1610.096   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   37  1606.385   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   38  1636.600   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   39  1636.901   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.08
- cycle  etr      hrej     lrej 
-   40  1624.441   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   41  1645.488   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   42  1624.946   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   43  1624.539   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.09
- cycle  etr      hrej     lrej 
-   44  1685.215   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.09
- cycle  etr      hrej     lrej 
-   45  1697.200   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.09
- cycle  etr      hrej     lrej 
-   46  1679.928   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.09
- cycle  etr      hrej     lrej 
-   47  1692.094   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.09
- cycle  etr      hrej     lrej 
-   48  1717.070   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.08
- cycle  etr      hrej     lrej 
-   49  1733.443   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.08
- cycle  etr      hrej     lrej 
-   50  1741.795   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.08
- cycle  etr      hrej     lrej 
-   51  1754.456   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.08
- cycle  etr      hrej     lrej 
-   52  1759.602   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.08
- cycle  etr      hrej     lrej 
-   53  1769.688   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.08
- cycle  etr      hrej     lrej 
-   54  1761.903   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.07
- cycle  etr      hrej     lrej 
-   55  1809.085   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   56  1792.430   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   57  1786.503   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   58  1755.844   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   59  1687.535   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   60  1704.734   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   61  1693.904   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.07
- cycle  etr      hrej     lrej 
-   62  1682.038   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.06
- cycle  etr      hrej     lrej 
-   63  1672.072   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.06
- cycle  etr      hrej     lrej 
-   64  1690.865   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.06
- cycle  etr      hrej     lrej 
-   65  1690.578   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.06
- cycle  etr      hrej     lrej 
-   66  1661.274   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.06
- cycle  etr      hrej     lrej 
-   67  1668.144   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.06
- cycle  etr      hrej     lrej 
-   68  1678.389   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.04 latrej: 0.06
- cycle  etr      hrej     lrej 
-   69  1673.480   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   70  1672.421   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   71  1710.461   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   72  1723.770   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   73  1748.907   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   74  1741.960   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   75  1717.693   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   76  1683.639   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   77  1697.956   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   78  1681.968   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   79  1661.082   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   80  1655.150   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   81  1620.366   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   82  1627.985   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   83  1620.265   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   84  1593.099   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   85  1589.891   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.05 latrej: 0.05
- cycle  etr      hrej     lrej 
-   86  1589.891   1.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   87  1653.821   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   88  1648.974   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   89  1623.110   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.06
- cycle  etr      hrej     lrej 
-   90  1664.926   1.0e+00  0.0e+00  0.150000
+        mean hmcrej: 0.08 latrej: 0.05
+        mean hmcrej: 0.07 latrej: 0.05
         mean hmcrej: 0.07 latrej: 0.06
- cycle  etr      hrej     lrej 
-   91  1716.949   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-   92  1680.204   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-   93  1687.233   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-   94  1707.062   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-   95  1722.324   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-   96  1760.155   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-   97  1799.423   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-   98  1808.208   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-   99  1830.196   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  100  1835.621   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  101  1842.808   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  102  1827.666   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  103  1794.206   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  104  1811.640   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  105  1834.737   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  106  1833.669   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  107  1835.533   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  108  1828.152   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  109  1779.966   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  110  1767.669   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  111  1726.067   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  112  1658.427   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  113  1665.829   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  114  1665.180   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  115  1691.421   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  116  1676.041   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  117  1641.231   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  118  1662.361   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  119  1661.794   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  120  1692.861   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  121  1683.630   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  122  1647.793   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  123  1626.370   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  124  1658.802   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  125  1658.958   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  126  1661.366   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  127  1635.098   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  128  1612.661   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  129  1645.706   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  130  1629.390   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  131  1642.842   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  132  1658.074   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  133  1627.768   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  134  1636.023   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  135  1635.669   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  136  1631.462   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  137  1664.023   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  138  1642.345   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  139  1650.323   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  140  1744.973   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  141  1754.683   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  142  1787.824   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  143  1792.058   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  144  1753.205   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  145  1725.478   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  146  1748.564   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  147  1773.821   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  148  1792.825   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  149  1751.899   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  150  1692.329   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  151  1700.133   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  152  1686.501   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  153  1676.553   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  154  1699.170   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  155  1688.510   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  156  1622.189   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  157  1618.643   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  158  1655.137   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  159  1659.695   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  160  1682.961   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  161  1714.806   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  162  1706.083   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  163  1703.789   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  164  1681.683   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  165  1669.456   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  166  1673.251   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  167  1669.291   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  168  1668.286   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  169  1673.369   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  170  1673.438   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  171  1683.132   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  172  1713.872   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  173  1731.670   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  174  1731.178   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  175  1732.351   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  176  1732.069   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  177  1751.867   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  178  1759.128   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  179  1739.826   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  180  1724.067   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  181  1707.761   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  182  1680.628   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  183  1648.072   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  184  1619.271   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  185  1656.406   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  186  1716.000   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  187  1728.766   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  188  1716.905   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  189  1716.524   0.0e+00  1.0e+00  0.150000
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.08
+        mean hmcrej: 0.06 latrej: 0.08
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.08
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.04 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.04 latrej: 0.07
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.06
+        mean hmcrej: 0.05 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  190  1712.982   0.0e+00  0.0e+00  0.150000
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  191  1682.756   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  192  1698.209   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  193  1666.270   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  194  1682.647   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  195  1715.208   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  196  1682.236   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  197  1654.732   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  198  1665.015   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  199  1656.969   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  200  1687.734   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  201  1648.935   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  202  1639.064   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  203  1679.030   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  204  1672.347   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  205  1674.414   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  206  1711.803   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  207  1739.060   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  208  1719.543   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  209  1693.535   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  210  1721.670   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  211  1723.221   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  212  1743.371   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  213  1768.069   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  214  1766.172   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  215  1717.903   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  216  1718.008   0.0e+00  1.0e+00  0.150000
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  217  1732.822   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  218  1698.298   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  219  1703.087   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  220  1760.270   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  221  1753.626   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  222  1734.272   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  223  1723.829   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  224  1715.567   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  225  1707.704   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  226  1661.512   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  227  1665.948   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  228  1681.042   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  229  1674.257   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  230  1665.896   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  231  1694.604   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  232  1696.445   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  233  1660.947   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  234  1647.431   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.06 latrej: 0.04
- cycle  etr      hrej     lrej 
-  235  1689.981   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  236  1714.459   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  237  1745.254   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  238  1708.734   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  239  1733.547   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  240  1758.930   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  241  1714.365   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  242  1714.637   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  243  1681.354   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  244  1750.683   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  245  1722.214   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  246  1706.170   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  247  1731.900   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  248  1749.297   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  249  1743.250   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  250  1731.979   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  251  1725.406   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  252  1735.734   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  253  1715.719   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  254  1722.086   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  255  1681.951   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  256  1717.218   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  257  1706.841   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  258  1627.196   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  259  1661.591   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  260  1718.763   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  261  1728.672   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  262  1664.192   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  263  1640.147   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  264  1626.877   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  265  1631.216   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  266  1639.829   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  267  1628.353   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  268  1639.071   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  269  1687.727   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  270  1688.030   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  271  1692.537   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  272  1734.518   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  273  1720.594   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  274  1732.382   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  275  1719.673   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  276  1700.006   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  277  1700.205   0.0e+00  1.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  278  1707.928   0.0e+00  0.0e+00  0.150000
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  279  1683.492   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  280  1671.446   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  281  1706.882   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  282  1735.658   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  283  1739.162   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  284  1735.146   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  285  1758.891   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  286  1755.263   0.0e+00  0.0e+00  0.150000
         mean hmcrej: 0.06 latrej: 0.05
- cycle  etr      hrej     lrej 
-  287  1728.805   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  288  1698.378   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.05
- cycle  etr      hrej     lrej 
-  289  1673.919   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  290  1659.514   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  291  1698.010   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  292  1715.449   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  293  1706.757   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  294  1734.250   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  295  1793.051   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  296  1733.029   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.07 latrej: 0.04
- cycle  etr      hrej     lrej 
-  297  1732.512   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  298  1739.200   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  299  1740.842   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  300  1715.330   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.04
- cycle  etr      hrej     lrej 
-  301  1715.264   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  302  1708.221   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  303  1703.615   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  304  1711.635   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  305  1669.550   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  306  1669.512   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  307  1671.417   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  308  1680.491   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  309  1707.103   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  310  1706.921   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  311  1692.210   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  312  1650.552   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  313  1688.615   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  314  1674.156   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  315  1644.270   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  316  1685.026   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  317  1724.913   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  318  1724.921   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  319  1721.971   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  320  1713.304   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  321  1690.514   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  322  1686.788   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  323  1674.987   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  324  1677.685   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  325  1677.957   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  326  1698.431   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  327  1698.385   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  328  1708.140   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  329  1700.240   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  330  1702.425   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  331  1734.361   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  332  1718.837   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  333  1668.083   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  334  1664.491   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  335  1650.737   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  336  1623.402   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  337  1657.447   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  338  1718.540   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  339  1757.325   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  340  1760.944   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  341  1775.047   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  342  1742.101   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  343  1741.958   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  344  1752.514   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  345  1723.299   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  346  1701.190   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  347  1733.586   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  348  1766.118   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  349  1784.081   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  350  1738.287   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  351  1719.681   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  352  1707.009   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  353  1652.024   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  354  1651.857   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  355  1643.386   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  356  1693.809   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  357  1724.575   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  358  1696.199   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  359  1719.705   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  360  1746.023   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  361  1738.914   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  362  1745.701   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  363  1743.954   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  364  1763.457   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  365  1786.622   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  366  1800.881   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  367  1819.367   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  368  1830.011   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  369  1820.588   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  370  1824.944   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  371  1820.143   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  372  1805.722   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  373  1760.445   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  374  1727.975   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  375  1741.603   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  376  1741.609   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  377  1748.503   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  378  1741.046   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  379  1726.190   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  380  1781.491   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  381  1766.560   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  382  1752.636   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  383  1733.261   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  384  1768.472   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  385  1755.212   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  386  1760.269   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  387  1763.876   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  388  1754.292   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  389  1775.557   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  390  1751.692   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  391  1751.692   1.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  392  1787.625   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  393  1800.043   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  394  1808.526   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  395  1777.815   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  396  1837.236   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  397  1856.770   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  398  1848.013   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  399  1823.905   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  400  1812.846   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  401  1826.819   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  402  1818.165   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  403  1803.158   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  404  1755.647   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  405  1754.417   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  406  1807.584   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  407  1821.383   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  408  1823.489   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  409  1843.243   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  410  1829.041   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  411  1821.210   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  412  1817.631   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  413  1840.450   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  414  1812.267   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  415  1806.189   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  416  1762.192   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  417  1762.135   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  418  1810.050   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  419  1792.294   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  420  1792.386   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  421  1795.081   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  422  1800.495   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  423  1800.147   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  424  1797.564   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  425  1779.561   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  426  1763.525   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  427  1820.460   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  428  1832.461   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  429  1837.993   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  430  1771.914   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  431  1768.743   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  432  1743.704   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  433  1754.869   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  434  1774.127   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  435  1760.536   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  436  1758.348   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  437  1782.701   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  438  1783.329   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  439  1764.337   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  440  1701.600   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  441  1675.139   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  442  1630.279   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  443  1608.468   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  444  1600.569   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  445  1575.018   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  446  1575.031   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  447  1596.891   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  448  1626.997   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  449  1631.101   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  450  1631.240   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  451  1657.814   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  452  1665.057   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  453  1621.968   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  454  1626.497   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  455  1639.796   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  456  1600.376   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  457  1638.643   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  458  1644.954   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  459  1633.178   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  460  1632.190   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  461  1652.066   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  462  1646.201   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  463  1637.190   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  464  1638.548   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  465  1622.907   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  466  1628.284   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  467  1670.468   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  468  1678.794   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  469  1678.747   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  470  1675.100   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  471  1688.212   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  472  1691.225   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  473  1705.849   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  474  1707.077   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  475  1785.130   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  476  1791.853   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  477  1833.943   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  478  1825.065   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  479  1837.267   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  480  1810.306   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  481  1800.048   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  482  1840.874   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  483  1811.447   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  484  1792.041   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  485  1815.184   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  486  1849.869   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  487  1880.551   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  488  1868.211   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  489  1898.679   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  490  1858.393   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  491  1833.448   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  492  1834.535   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  493  1834.679   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  494  1846.745   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  495  1855.113   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  496  1824.504   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  497  1827.338   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  498  1825.726   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  499  1832.435   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  500  1826.003   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  501  1873.589   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  502  1830.541   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  503  1798.957   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  504  1778.176   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  505  1794.673   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  506  1774.166   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  507  1748.597   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  508  1755.610   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  509  1702.866   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  510  1706.143   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  511  1688.339   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  512  1684.814   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  513  1683.910   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  514  1680.017   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  515  1660.873   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  516  1702.829   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  517  1701.336   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  518  1697.558   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  519  1692.979   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  520  1713.121   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  521  1669.196   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  522  1655.705   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  523  1616.127   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  524  1587.102   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  525  1607.621   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  526  1622.362   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  527  1596.604   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  528  1599.530   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  529  1620.776   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  530  1605.406   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  531  1610.958   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  532  1622.648   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  533  1622.706   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  534  1605.686   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  535  1589.879   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  536  1554.654   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  537  1550.126   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  538  1581.934   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  539  1615.651   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  540  1567.306   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  541  1542.478   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  542  1531.167   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  543  1563.941   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  544  1614.976   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  545  1651.040   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  546  1646.548   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  547  1617.341   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  548  1656.846   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  549  1721.110   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  550  1717.718   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  551  1708.639   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  552  1703.717   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  553  1742.316   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  554  1739.920   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  555  1795.189   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  556  1816.953   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  557  1837.923   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  558  1841.857   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  559  1834.843   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  560  1823.442   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  561  1788.248   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  562  1785.455   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  563  1765.952   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  564  1749.802   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  565  1757.912   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  566  1757.894   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  567  1784.237   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  568  1783.814   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  569  1748.293   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  570  1741.468   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  571  1775.649   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  572  1781.563   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  573  1769.500   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  574  1759.802   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  575  1775.849   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  576  1787.796   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  577  1779.141   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  578  1736.040   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  579  1662.640   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  580  1686.732   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  581  1751.949   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  582  1754.046   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  583  1773.729   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  584  1722.520   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  585  1695.626   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  586  1672.872   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  587  1722.686   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  588  1697.942   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  589  1738.622   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  590  1746.682   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  591  1747.506   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  592  1740.713   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  593  1728.885   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  594  1715.067   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  595  1705.512   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  596  1706.377   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  597  1740.430   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  598  1733.487   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  599  1765.556   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  600  1758.023   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  601  1718.944   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  602  1775.425   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  603  1775.023   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  604  1757.145   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  605  1744.331   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  606  1732.606   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  607  1741.005   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  608  1737.018   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  609  1701.870   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  610  1720.778   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  611  1775.223   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  612  1764.155   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  613  1764.278   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  614  1776.051   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  615  1774.835   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  616  1769.667   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  617  1739.542   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  618  1769.782   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  619  1765.963   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  620  1737.034   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  621  1703.256   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  622  1662.695   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  623  1651.360   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  624  1670.479   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  625  1710.429   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  626  1712.314   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  627  1734.874   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  628  1772.625   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  629  1760.679   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  630  1736.824   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  631  1731.551   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  632  1728.253   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  633  1737.231   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  634  1725.491   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  635  1708.522   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  636  1690.032   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  637  1632.034   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  638  1629.710   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  639  1631.272   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  640  1657.937   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  641  1679.985   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  642  1625.064   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  643  1653.621   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  644  1697.921   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  645  1670.984   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  646  1674.842   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  647  1733.694   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  648  1733.718   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  649  1733.330   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  650  1731.904   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  651  1706.241   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  652  1680.160   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  653  1680.175   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  654  1669.242   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  655  1670.208   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  656  1653.702   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  657  1654.050   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  658  1594.251   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  659  1587.423   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  660  1604.627   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  661  1629.205   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  662  1647.720   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  663  1644.988   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  664  1620.029   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  665  1638.138   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  666  1655.151   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  667  1634.561   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  668  1657.638   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  669  1659.370   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  670  1640.966   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  671  1641.292   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  672  1660.941   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  673  1647.654   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  674  1648.294   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  675  1655.266   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  676  1676.768   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  677  1684.005   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  678  1744.372   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  679  1722.946   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  680  1722.946   1.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  681  1765.283   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  682  1688.538   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  683  1719.707   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  684  1730.377   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  685  1712.079   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  686  1704.371   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  687  1732.608   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  688  1753.241   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  689  1779.909   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  690  1778.592   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  691  1739.281   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  692  1755.219   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  693  1753.132   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  694  1745.059   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  695  1712.429   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  696  1730.724   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  697  1730.457   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  698  1721.927   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  699  1751.129   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  700  1745.036   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  701  1749.463   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  702  1792.797   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  703  1793.870   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  704  1846.772   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  705  1801.975   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  706  1768.121   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  707  1783.022   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  708  1731.296   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  709  1716.907   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  710  1763.096   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  711  1726.197   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  712  1752.413   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  713  1774.304   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  714  1761.594   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  715  1732.767   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  716  1755.903   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  717  1740.195   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  718  1734.027   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  719  1751.106   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  720  1749.667   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  721  1697.796   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  722  1698.950   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  723  1719.576   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  724  1736.725   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  725  1726.563   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  726  1712.685   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  727  1676.559   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  728  1706.375   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  729  1714.473   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  730  1717.353   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  731  1655.961   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  732  1656.004   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  733  1640.496   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  734  1624.580   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  735  1632.933   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  736  1637.138   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  737  1608.522   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  738  1584.123   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.05
- cycle  etr      hrej     lrej 
-  739  1584.836   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  740  1595.964   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  741  1605.271   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  742  1648.472   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  743  1608.387   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  744  1609.009   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  745  1614.429   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  746  1633.199   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  747  1617.159   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  748  1635.082   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  749  1635.070   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  750  1625.721   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  751  1635.963   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  752  1679.551   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  753  1697.312   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  754  1738.730   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.05
- cycle  etr      hrej     lrej 
-  755  1738.177   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  756  1713.576   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  757  1726.768   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  758  1727.675   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  759  1729.081   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  760  1740.475   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  761  1779.867   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  762  1741.764   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  763  1746.075   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  764  1746.702   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  765  1715.974   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  766  1792.759   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  767  1769.260   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  768  1796.368   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  769  1736.918   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  770  1741.908   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  771  1741.603   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  772  1762.857   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  773  1777.800   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  774  1755.058   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  775  1740.361   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  776  1732.836   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  777  1757.113   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  778  1785.547   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  779  1750.475   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  780  1756.240   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  781  1779.727   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  782  1777.663   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  783  1740.221   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  784  1690.142   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  785  1727.493   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  786  1727.386   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  787  1711.283   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  788  1738.672   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  789  1711.330   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  790  1705.985   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  791  1690.303   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  792  1637.516   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  793  1629.080   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  794  1629.200   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  795  1634.991   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  796  1654.587   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  797  1632.747   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  798  1622.245   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  799  1657.649   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  800  1728.972   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  801  1746.126   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  802  1750.036   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  803  1744.124   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  804  1789.878   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  805  1735.476   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  806  1710.137   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  807  1718.898   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  808  1718.588   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  809  1747.537   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  810  1746.794   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  811  1733.149   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  812  1733.119   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  813  1724.038   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  814  1739.742   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  815  1719.826   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  816  1677.736   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  817  1694.867   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  818  1694.530   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  819  1703.948   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  820  1738.357   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  821  1745.424   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  822  1748.104   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  823  1748.862   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  824  1756.915   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  825  1758.483   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  826  1800.206   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  827  1798.771   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  828  1720.502   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  829  1752.443   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  830  1742.658   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  831  1722.454   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  832  1715.811   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  833  1695.820   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  834  1711.276   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  835  1710.463   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  836  1745.320   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  837  1749.918   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  838  1753.413   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  839  1770.927   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  840  1742.516   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  841  1740.236   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  842  1749.576   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  843  1776.498   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  844  1778.711   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  845  1781.600   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  846  1788.471   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  847  1730.475   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  848  1738.062   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  849  1749.394   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  850  1715.169   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  851  1713.553   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  852  1755.601   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  853  1755.553   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  854  1775.550   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  855  1778.571   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  856  1763.914   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  857  1786.761   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  858  1787.300   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.09 latrej: 0.06
- cycle  etr      hrej     lrej 
-  859  1743.329   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  860  1722.123   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  861  1699.333   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  862  1699.428   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  863  1699.196   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  864  1706.942   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  865  1719.475   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  866  1720.911   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  867  1716.870   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  868  1659.452   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  869  1608.020   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  870  1592.816   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  871  1587.345   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  872  1563.866   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  873  1563.930   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  874  1573.246   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  875  1575.072   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  876  1574.809   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  877  1632.398   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  878  1632.804   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  879  1625.129   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  880  1666.240   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  881  1666.972   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  882  1674.039   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  883  1677.860   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  884  1665.350   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  885  1685.645   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  886  1702.389   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  887  1698.238   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  888  1699.908   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  889  1694.997   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  890  1674.463   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  891  1681.760   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  892  1700.870   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  893  1720.336   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  894  1719.875   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  895  1720.352   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  896  1744.808   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  897  1787.848   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  898  1788.318   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  899  1780.341   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  900  1770.428   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  901  1757.381   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  902  1713.656   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  903  1727.047   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  904  1752.304   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  905  1725.877   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  906  1704.255   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  907  1741.007   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  908  1767.302   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  909  1746.124   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  910  1752.735   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  911  1747.057   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  912  1729.022   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  913  1775.575   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  914  1726.597   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  915  1726.626   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  916  1725.954   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  917  1729.997   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  918  1746.239   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  919  1772.562   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  920  1831.272   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  921  1823.824   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  922  1807.414   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  923  1803.264   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.07
- cycle  etr      hrej     lrej 
-  924  1812.687   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  925  1847.574   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  926  1839.844   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  927  1797.969   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  928  1784.153   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  929  1756.212   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  930  1766.116   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  931  1725.031   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  932  1731.535   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  933  1764.651   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  934  1762.342   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  935  1748.741   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  936  1739.007   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  937  1715.681   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  938  1718.499   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  939  1761.511   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  940  1688.987   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  941  1679.404   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  942  1675.538   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  943  1645.021   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  944  1668.953   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  945  1698.355   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  946  1699.255   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  947  1700.995   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  948  1726.256   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  949  1700.704   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  950  1715.245   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  951  1727.609   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  952  1703.436   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  953  1696.469   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  954  1707.322   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  955  1680.652   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  956  1672.492   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  957  1693.964   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  958  1720.484   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  959  1744.922   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  960  1732.085   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  961  1732.105   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  962  1732.456   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  963  1730.898   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  964  1717.743   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  965  1714.379   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  966  1700.207   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  967  1679.942   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  968  1653.521   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  969  1705.720   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  970  1669.186   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  971  1660.880   1.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  972  1621.592   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  973  1613.994   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  974  1645.982   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  975  1667.699   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  976  1668.514   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  977  1703.921   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  978  1685.874   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  979  1645.413   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  980  1692.919   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  981  1681.176   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  982  1662.939   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  983  1652.507   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  984  1630.037   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  985  1654.783   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  986  1654.344   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  987  1668.454   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  988  1669.020   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  989  1663.908   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  990  1705.144   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  991  1710.295   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  992  1710.181   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  993  1710.218   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  994  1695.034   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  995  1695.056   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  996  1715.289   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  997  1711.821   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  998  1700.236   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
-  999  1700.562   0.0e+00  1.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
- cycle  etr      hrej     lrej 
- 1000  1735.587   0.0e+00  0.0e+00  0.150000
-        mean hmcrej: 0.08 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.05
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.07
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.07
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.07 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
+        mean hmcrej: 0.06 latrej: 0.06
 
 S3 =
 
-MCMC: 90% CI - length-scale: [3.6,5.8], magnSigma: [0.167,0.256] 
+MCMC: 90% CI - length-scale: [7.1,30.2], magnSigma: [0.076,0.351] 
 
 
-MAP: length-scale: 4.4, magnSigma: 0.203 
+MAP: length-scale: 14.3, magnSigma: 0.153 
 
-IA-GRID: 90% CI - length-scale: [3.7,5.8], magnSigma: [0.171,0.258] 
+IA-GRID: 90% CI - length-scale: [8.8,33.1], magnSigma: [0.099,0.325] 
 
-MCMC: 90% CI - length-scale: [3.6,5.8], magnSigma: [0.167,0.256] 
+MCMC: 90% CI - length-scale: [7.1,30.2], magnSigma: [0.076,0.351] 
 
 
  gp hyperparameters (gp_pak(gp)): 
  
-   -3.0378    1.5628
+   -4.8189    3.4074
 

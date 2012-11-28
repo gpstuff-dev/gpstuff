@@ -1,124 +1,18 @@
 Running: demo_regression_additive2
 Constant + linear covariance function
-Iter    1  f(x)  121.74061  Scale 1.0e+01
-Iter    2  f(x)  105.96498  Scale 5.0e+00
-Iter    3  f(x)  104.94877  Scale 2.5e+00
-Iter    4  f(x)  104.48399  Scale 1.2e+00
-Iter    5  f(x)  103.36408  Scale 6.2e-01
-Iter    6  f(x)  103.33685  Scale 3.1e-01
-Iter    7  f(x)  103.32433  Scale 1.6e-01
-Iter    8  f(x)  103.24339  Scale 7.8e-02
-Iter    9  f(x)  103.23610  Scale 3.9e-02
-Iter   10  f(x)  103.22978  Scale 2.0e-02
-Iter   11  f(x)  103.20004  Scale 9.8e-03
-Iter   12  f(x)  103.19756  Scale 4.9e-03
-Iter   13  f(x)  103.19557  Scale 2.4e-03
-Iter   14  f(x)  103.18979  Scale 1.2e-03
-Iter   15  f(x)  103.18923  Scale 6.1e-04
-TolFun reached
+ TolFun reached. Func-count 31. Final f(x)=103.189. Elapsed time 0.84
 Constant + squared exponential covariance function
 (w.r.t. the first input dimension) + linear (w.r.t.
 the second input dimension)
-Iter    1  f(x)   63.91028  Scale 1.0e+01
-Iter    2  f(x)   60.25074  Scale 5.0e+00
-Iter    3  f(x)   56.93948  Scale 2.5e+00
-Iter    4  f(x)   56.33754  Scale 1.2e+00
-Iter    5  f(x)   54.69177  Scale 6.2e-01
-Iter    6  f(x)   54.63017  Scale 3.1e-01
-Iter    7  f(x)   54.38111  Scale 1.6e-01
-Iter    8  f(x)   54.13540  Scale 7.8e-02
-Iter    9  f(x)   54.12134  Scale 3.9e-02
-Iter   10  f(x)   54.11265  Scale 2.0e-02
-Iter   11  f(x)   54.10803  Scale 9.8e-03
-Iter   12  f(x)   54.09629  Scale 4.9e-03
-Iter   13  f(x)   54.04188  Scale 2.4e-03
-Iter   14  f(x)   54.03986  Scale 1.2e-03
-Iter   15  f(x)   54.03536  Scale 6.1e-04
-Iter   16  f(x)   54.03445  Scale 3.1e-04
-TolFun reached
+ TolFun reached. Func-count 33. Final f(x)=54.0344. Elapsed time 1.00
 Additive squared exponential covariance function
-Iter    1  f(x)   44.43040  Scale 1.0e+01
-Iter    2  f(x)   35.83176  Scale 5.0e+00
-Iter    3  f(x)   31.53718  Scale 2.5e+00
-Iter    4  f(x)   30.20333  Scale 1.2e+00
-Iter    5  f(x)   28.56978  Scale 6.2e-01
-Iter    6  f(x)   27.81867  Scale 3.1e-01
-Iter    7  f(x)   27.71900  Scale 1.6e-01
-Iter    8  f(x)   27.50975  Scale 7.8e-02
-Iter    9  f(x)   27.17477  Scale 3.9e-02
-Iter   10  f(x)   27.05560  Scale 2.0e-02
-Iter   11  f(x)   26.94752  Scale 9.8e-03
-Iter   12  f(x)   26.94529  Scale 4.9e-03
-Iter   13  f(x)   26.94198  Scale 2.4e-03
-Iter   14  f(x)   26.93554  Scale 1.2e-03
-Iter   15  f(x)   26.92344  Scale 6.1e-04
-Iter   16  f(x)   26.92077  Scale 3.1e-04
-Iter   17  f(x)   26.92071  Scale 1.5e-04
-TolFun reached
+ TolFun reached. Func-count 35. Final f(x)=26.9207. Elapsed time 1.00
 Squared exponential covariance function
-Iter    1  f(x)  102.83607  Scale 1.0e+01
-Iter    2  f(x)   67.05445  Scale 5.0e+00
-Iter    3  f(x)   52.53895  Scale 2.5e+00
-Iter    4  f(x)   39.24562  Scale 1.2e+00
-Iter    5  f(x)   36.47200  Scale 6.2e-01
-Iter    6  f(x)   33.49319  Scale 3.1e-01
-Iter    7  f(x)   31.26188  Scale 1.6e-01
-Iter    8  f(x)   30.81629  Scale 7.8e-02
-Iter    9  f(x)   30.75713  Scale 3.9e-02
-Iter   10  f(x)   30.72257  Scale 2.0e-02
-Iter   11  f(x)   30.62070  Scale 9.8e-03
-Iter   12  f(x)   30.61367  Scale 4.9e-03
-Iter   13  f(x)   30.61243  Scale 2.4e-03
-Iter   14  f(x)   30.61205  Scale 1.2e-03
-TolFun reached
+ TolFun reached. Func-count 29. Final f(x)=30.6121. Elapsed time 0.77
 Additive neural network covariance function
-Iter    1  f(x)   35.64401  Scale 1.0e+01
-Iter    2  f(x)   28.29122  Scale 5.0e+00
-Iter    3  f(x)   27.40784  Scale 2.5e+00
-Iter    4  f(x)   25.22978  Scale 1.2e+00
-Iter    5  f(x)   25.09668  Scale 6.2e-01
-Iter    6  f(x)   25.01739  Scale 3.1e-01
-Iter    7  f(x)   24.59884  Scale 1.6e-01
-Iter    8  f(x)   24.58793  Scale 7.8e-02
-Iter    9  f(x)   24.53935  Scale 3.9e-02
-Iter   10  f(x)   24.51295  Scale 2.0e-02
-Iter   11  f(x)   24.49907  Scale 9.8e-03
-Iter   12  f(x)   24.47285  Scale 4.9e-03
-Iter   13  f(x)   24.45765  Scale 2.4e-03
-Iter   14  f(x)   24.41735  Scale 1.2e-03
-Iter   15  f(x)   24.41624  Scale 6.1e-04
-Iter   16  f(x)   24.41572  Scale 3.1e-04
-TolFun reached
+ TolFun reached. Func-count 33. Final f(x)=24.4157. Elapsed time 1.63
 Neural network covariance function
-Iter    1  f(x)   40.70963  Scale 1.0e+01
-Iter    2  f(x)   31.38835  Scale 5.0e+00
-Iter    3  f(x)   29.33736  Scale 2.5e+00
-Iter    4  f(x)   25.85004  Scale 1.2e+00
-Iter    5  f(x)   25.64378  Scale 6.2e-01
-Iter    6  f(x)   25.16671  Scale 3.1e-01
-Iter    7  f(x)   25.15964  Scale 1.6e-01
-Iter    8  f(x)   25.11118  Scale 7.8e-02
-Iter    9  f(x)   25.09237  Scale 3.9e-02
-Iter   10  f(x)   25.06172  Scale 2.0e-02
-Iter   11  f(x)   24.95350  Scale 9.8e-03
-Iter   12  f(x)   24.95350  Scale 4.9e-03
-Iter   13  f(x)   24.95350  Scale 2.0e-02
-Iter   14  f(x)   24.95350  Scale 7.8e-02
-Iter   15  f(x)   24.66798  Scale 3.1e-01
-Iter   16  f(x)   24.61224  Scale 1.6e-01
-Iter   17  f(x)   24.49447  Scale 7.8e-02
-Iter   18  f(x)   24.48241  Scale 3.9e-02
-Iter   19  f(x)   24.45861  Scale 2.0e-02
-Iter   20  f(x)   24.44975  Scale 9.8e-03
-Iter   21  f(x)   24.41285  Scale 4.9e-03
-Iter   22  f(x)   24.33362  Scale 2.4e-03
-Iter   23  f(x)   24.32176  Scale 1.2e-03
-Iter   24  f(x)   24.28474  Scale 6.1e-04
-Iter   25  f(x)   24.25366  Scale 3.1e-04
-Iter   26  f(x)   24.24833  Scale 1.5e-04
-Iter   27  f(x)   24.24733  Scale 7.6e-05
-Iter   28  f(x)   24.24669  Scale 3.8e-05
-TolFun reached
+ TolFun reached. Func-count 54. Final f(x)=24.2467. Elapsed time 2.00
 
  gp hyperparameters (gp_pak(gp)): 
  

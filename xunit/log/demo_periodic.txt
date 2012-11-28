@@ -1,99 +1,47 @@
 Running: demo_periodic
-
-gp = 
-
-            type: 'FULL'
-             lik: [1x1 struct]
-              cf: {[1x1 struct]  [1x1 struct]}
-    infer_params: 'covariance+likelihood'
-    jitterSigma2: 0
-
-Iter    1  f(x) 1929.52377  Scale 1.0e+01
-Iter    2  f(x)  990.89245  Scale 5.0e+00
-Iter    3  f(x)  853.19261  Scale 2.5e+00
-Iter    4  f(x)  672.42796  Scale 1.2e+00
-Iter    5  f(x)  644.67186  Scale 6.2e-01
-Iter    6  f(x)  629.88758  Scale 3.1e-01
-Iter    7  f(x)  619.23738  Scale 1.6e-01
-Iter    8  f(x)  606.75435  Scale 7.8e-02
-Iter    9  f(x)  602.79038  Scale 3.9e-02
-Iter   10  f(x)  601.47575  Scale 2.0e-02
-Iter   11  f(x)  600.82863  Scale 9.8e-03
-Iter   12  f(x)  597.64314  Scale 4.9e-03
-Iter   13  f(x)  597.59266  Scale 2.4e-03
-Iter   14  f(x)  596.79484  Scale 1.2e-03
-Iter   15  f(x)  596.64851  Scale 6.1e-04
-Iter   16  f(x)  596.52252  Scale 3.1e-04
-Iter   17  f(x)  595.80383  Scale 1.5e-04
-Iter   18  f(x)  595.77724  Scale 7.6e-05
-Iter   19  f(x)  595.38633  Scale 3.8e-05
-Iter   20  f(x)  594.70153  Scale 1.9e-05
-Iter   21  f(x)  594.31864  Scale 9.5e-06
-Iter   22  f(x)  594.15255  Scale 4.8e-06
-Iter   23  f(x)  594.14370  Scale 2.4e-06
-Iter   24  f(x)  593.92148  Scale 1.2e-06
-Iter   25  f(x)  592.38544  Scale 6.0e-07
-Iter   26  f(x)  592.36559  Scale 3.0e-07
-Iter   27  f(x)  592.30233  Scale 1.5e-07
-Iter   28  f(x)  592.29057  Scale 7.5e-08
-Iter   29  f(x)  592.28025  Scale 3.7e-08
-Iter   30  f(x)  592.23047  Scale 1.9e-08
-Iter   31  f(x)  592.22653  Scale 9.3e-09
-Iter   32  f(x)  592.21271  Scale 4.7e-09
-Iter   33  f(x)  592.20248  Scale 2.3e-09
-Iter   34  f(x)  592.14507  Scale 1.2e-09
-Iter   35  f(x)  592.12786  Scale 5.8e-10
-Iter   36  f(x)  592.12269  Scale 2.9e-10
-Iter   37  f(x)  592.11615  Scale 1.5e-10
-Iter   38  f(x)  592.09746  Scale 7.3e-11
-Iter   39  f(x)  592.08816  Scale 3.6e-11
-Iter   40  f(x)  592.08465  Scale 1.8e-11
-Iter   41  f(x)  592.08390  Scale 9.1e-12
-TolX reached
-
-gp = 
-
-            type: 'FULL'
-             lik: [1x1 struct]
-              cf: {[1x1 struct]  [1x1 struct]  [1x1 struct]}
-    infer_params: 'covariance+likelihood'
-    jitterSigma2: 0
-
-Iter    1  f(x)  594.69325  Scale 1.0e+01
-TolX reached
-
-gp = 
-
-             type: 'FULL'
-              lik: [1x1 struct]
-               cf: {[1x1 struct]  [1x1 struct]  [1x1 struct]  [1x1 struct]}
-     infer_params: 'covariance+likelihood'
-     jitterSigma2: 0
-    latent_method: 'Laplace'
-               fh: [1x1 struct]
-       latent_opt: [1x1 struct]
-
-Iter    1  f(x)  269.20562  Scale 1.0e+01
-Iter    2  f(x)  254.33279  Scale 5.0e+00
-Iter    3  f(x)  250.68796  Scale 2.5e+00
-Iter    4  f(x)  247.24355  Scale 1.2e+00
-Iter    5  f(x)  246.87531  Scale 6.2e-01
-Iter    6  f(x)  246.18753  Scale 3.1e-01
-Iter    7  f(x)  246.10892  Scale 1.6e-01
-Iter    8  f(x)  246.01906  Scale 7.8e-02
-Iter    9  f(x)  246.00012  Scale 3.9e-02
-Iter   10  f(x)  245.98465  Scale 2.0e-02
-Iter   11  f(x)  245.93921  Scale 9.8e-03
-Iter   12  f(x)  245.89906  Scale 4.9e-03
-Iter   13  f(x)  245.88887  Scale 2.4e-03
-Iter   14  f(x)  245.84975  Scale 1.2e-03
-Iter   15  f(x)  245.84438  Scale 6.1e-04
-Iter   16  f(x)  245.83971  Scale 3.1e-04
-Iter   17  f(x)  245.83830  Scale 1.5e-04
-Iter   18  f(x)  245.83813  Scale 7.6e-05
-TolFun reached
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 27
+  Function Count : 47
+  Minimum found : 592.0151
+  Intern Time : 0.029977 seconds
+  Total Time : 7.7959 seconds
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             594.839    
+     1           6           6             594.693      3.3339e-07
+     2          12          12             212.954      0.00863052
+     3          16          16             204.308      0.00634928
+     4          18          18             201.028             0.1
+     5          21          21             200.216       0.0234747
+     6          25          25             198.293           0.025
+     7          28          28             184.818            0.25
+     8          30          30              183.63             0.1
+     9          31          31             182.288               1
+    10          33          33             181.886        0.347089
+    11          35          35              181.51        0.338729
+    12          37          37             181.175         0.42325
+    13          39          39             181.069         0.44846
+    14          42          42             181.065       0.0412808
+    15          44          44              181.06        0.194428
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Line search cannot find an acceptable point along the current search direction
+  Iterations : 16
+  Function Count : 62
+  Minimum found : 181.0597
+  Intern Time : 0.039376 seconds
+  Total Time : 15.7249 seconds
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 17
+  Function Count : 25
+  Minimum found : 245.8374
+  Intern Time : 0.013333 seconds
+  Total Time : 4.0708 seconds
 
  gp hyperparameters (gp_pak(gp)): 
  
-   -1.7149    3.9789   -0.4828   -0.1299    4.6408   -2.9777   -0.4417    0.9194    2.4354
+   -1.7857    3.9625   -0.4798   -0.1300    4.6376   -2.9785   -0.4421    0.9111    2.4305
 

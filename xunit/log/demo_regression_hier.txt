@@ -1,387 +1,51 @@
 Running: demo_regression_hier
 1) Linear model with intercept and slope wrt time
-Iter    1  f(x)   16.43749  Scale 1.0e+01
-Iter    2  f(x)   16.42347  Scale 5.0e+00
-Iter    3  f(x)   16.36424  Scale 2.5e+00
-Iter    4  f(x)   16.35728  Scale 1.2e+00
-Iter    5  f(x)   15.95923  Scale 6.2e-01
-Iter    6  f(x)   15.93272  Scale 3.1e-01
-Iter    7  f(x)   15.91030  Scale 1.6e-01
-Iter    8  f(x)   13.02720  Scale 7.8e-02
-Iter    9  f(x)   12.99948  Scale 3.9e-02
-Iter   10  f(x)   12.99397  Scale 2.0e-02
-Iter   11  f(x)   12.62883  Scale 9.8e-03
-Iter   12  f(x)   12.62744  Scale 4.9e-03
-Iter   13  f(x)   12.62717  Scale 2.4e-03
-Iter   14  f(x)   12.60938  Scale 1.2e-03
-Iter   15  f(x)   12.60851  Scale 6.1e-04
-Iter   16  f(x)   12.60766  Scale 3.1e-04
-Iter   17  f(x)   12.59726  Scale 1.5e-04
-Iter   18  f(x)   12.59671  Scale 7.6e-05
-Iter   19  f(x)   12.59618  Scale 3.8e-05
-Iter   20  f(x)   12.58733  Scale 1.9e-05
-Iter   21  f(x)   12.58601  Scale 9.5e-06
-Iter   22  f(x)   12.58478  Scale 4.8e-06
-Iter   23  f(x)   12.57922  Scale 2.4e-06
-Iter   24  f(x)   12.57905  Scale 1.2e-06
-Iter   25  f(x)   12.57888  Scale 6.0e-07
-Iter   26  f(x)   12.57266  Scale 3.0e-07
-Iter   27  f(x)   12.57111  Scale 1.5e-07
-Iter   28  f(x)   12.56974  Scale 7.5e-08
-Iter   29  f(x)   12.56658  Scale 3.7e-08
-Iter   30  f(x)   12.56654  Scale 1.9e-08
-TolFun reached
+ TolFun reached. Func-count 19. Final f(x)=19.4149. Elapsed time 0.19
 2) Linear model with hierarchical intercept
-Iter    1  f(x)    0.08378  Scale 1.0e+01
-Iter    2  f(x)  -23.29159  Scale 1.0e+01
-Iter    3  f(x)  -34.84393  Scale 5.0e+00
-Iter    4  f(x)  -43.52508  Scale 2.5e+00
-Iter    5  f(x)  -44.29728  Scale 1.2e+00
-Iter    6  f(x)  -44.36424  Scale 6.2e-01
-Iter    7  f(x)  -44.49036  Scale 3.1e-01
-Iter    8  f(x)  -45.55754  Scale 1.6e-01
-Iter    9  f(x)  -45.66181  Scale 7.8e-02
-Iter   10  f(x)  -45.72367  Scale 3.9e-02
-Iter   11  f(x)  -45.75385  Scale 2.0e-02
-Iter   12  f(x)  -46.39052  Scale 9.8e-03
-Iter   13  f(x)  -46.84024  Scale 4.9e-03
-Iter   14  f(x)  -46.88988  Scale 2.4e-03
-Iter   15  f(x)  -46.90160  Scale 1.2e-03
-Iter   16  f(x)  -46.90873  Scale 6.1e-04
-Iter   17  f(x)  -46.91539  Scale 3.1e-04
-Iter   18  f(x)  -46.93176  Scale 1.5e-04
-Iter   19  f(x)  -47.21606  Scale 7.6e-05
-Iter   20  f(x)  -47.31671  Scale 3.8e-05
-Iter   21  f(x)  -47.31920  Scale 1.9e-05
-Iter   22  f(x)  -47.32788  Scale 9.5e-06
-Iter   23  f(x)  -47.36282  Scale 4.8e-06
-Iter   24  f(x)  -47.36318  Scale 2.4e-06
-Iter   25  f(x)  -47.36332  Scale 1.2e-06
-Iter   26  f(x)  -47.36516  Scale 6.0e-07
-Iter   27  f(x)  -47.40471  Scale 3.0e-07
-Iter   28  f(x)  -47.40529  Scale 1.5e-07
-Iter   29  f(x)  -47.40539  Scale 7.5e-08
-TolFun reached
+ TolFun reached. Func-count 25. Final f(x)=-37.2922. Elapsed time 0.42
 3) Linear model with hierarchical intercept and slope
-Iter    1  f(x)   10.04313  Scale 1.0e+01
-Iter    2  f(x)   -6.72413  Scale 5.0e+00
-Iter    3  f(x)  -46.87077  Scale 2.5e+00
-Iter    4  f(x)  -47.06689  Scale 1.2e+00
-Iter    5  f(x)  -58.77556  Scale 6.2e-01
-Iter    6  f(x)  -59.27965  Scale 3.1e-01
-Iter    7  f(x)  -59.44081  Scale 1.6e-01
-Iter    8  f(x)  -59.45387  Scale 7.8e-02
-Iter    9  f(x)  -59.63310  Scale 3.9e-02
-Iter   10  f(x)  -60.48701  Scale 2.0e-02
-Iter   11  f(x)  -61.06191  Scale 9.8e-03
-Iter   12  f(x)  -61.24278  Scale 4.9e-03
-Iter   13  f(x)  -61.26117  Scale 2.4e-03
-Iter   14  f(x)  -61.29807  Scale 1.2e-03
-Iter   15  f(x)  -61.88024  Scale 6.1e-04
-Iter   16  f(x)  -62.31138  Scale 6.1e-04
-Iter   17  f(x)  -62.33063  Scale 3.1e-04
-Iter   18  f(x)  -62.34229  Scale 1.5e-04
-Iter   19  f(x)  -62.34847  Scale 7.6e-05
-Iter   20  f(x)  -62.36890  Scale 3.8e-05
-Iter   21  f(x)  -62.38088  Scale 1.9e-05
-Iter   22  f(x)  -62.38512  Scale 9.5e-06
-Iter   23  f(x)  -62.38773  Scale 4.8e-06
-Iter   24  f(x)  -62.39636  Scale 2.4e-06
-Iter   25  f(x)  -62.43231  Scale 1.2e-06
-Iter   26  f(x)  -62.44006  Scale 6.0e-07
-Iter   27  f(x)  -62.44079  Scale 3.0e-07
-Iter   28  f(x)  -62.45175  Scale 1.5e-07
-Iter   29  f(x)  -62.45492  Scale 7.5e-08
-Iter   30  f(x)  -62.45603  Scale 3.7e-08
-Iter   31  f(x)  -62.45639  Scale 1.9e-08
-Iter   32  f(x)  -62.45669  Scale 9.3e-09
-Iter   33  f(x)  -62.46656  Scale 4.7e-09
-Iter   34  f(x)  -62.47016  Scale 2.3e-09
-Iter   35  f(x)  -62.47052  Scale 1.2e-09
-Iter   36  f(x)  -62.47088  Scale 5.8e-10
-Iter   37  f(x)  -62.47419  Scale 2.9e-10
-Iter   38  f(x)  -62.47847  Scale 1.5e-10
-Iter   39  f(x)  -62.47869  Scale 7.3e-11
-Iter   40  f(x)  -62.47884  Scale 3.6e-11
-Iter   41  f(x)  -62.47898  Scale 1.8e-11
-Iter   42  f(x)  -62.47913  Scale 9.1e-12
-Iter   43  f(x)  -62.48203  Scale 4.5e-12
-Iter   44  f(x)  -62.48664  Scale 2.3e-12
-Iter   45  f(x)  -62.48818  Scale 1.1e-12
-Iter   46  f(x)  -62.48954  Scale 5.7e-13
-Iter   47  f(x)  -62.49098  Scale 2.8e-13
-Iter   48  f(x)  -62.49292  Scale 1.4e-13
-Iter   49  f(x)  -62.49313  Scale 7.1e-14
-Iter   50  f(x)  -62.49320  Scale 3.6e-14
-TolFun reached
+ TolFun reached. Func-count 33. Final f(x)=-46.4251. Elapsed time 0.65
 4) Nonlinear model with hierarchical intercept
-Iter    1  f(x)   -1.39399  Scale 1.0e+01
-Iter    2  f(x)  -30.76764  Scale 1.0e+01
-Iter    3  f(x)  -41.91875  Scale 5.0e+00
-Iter    4  f(x)  -51.41639  Scale 2.5e+00
-Iter    5  f(x)  -51.61471  Scale 1.2e+00
-Iter    6  f(x)  -52.39734  Scale 6.2e-01
-Iter    7  f(x)  -52.39734  Scale 1.2e+00
-Iter    8  f(x)  -52.67922  Scale 4.7e+00
-Iter    9  f(x)  -52.80937  Scale 2.4e+00
-Iter   10  f(x)  -52.87166  Scale 1.2e+00
-Iter   11  f(x)  -52.95474  Scale 5.9e-01
-Iter   12  f(x)  -53.28698  Scale 2.9e-01
-Iter   13  f(x)  -53.67901  Scale 1.5e-01
-Iter   14  f(x)  -53.75664  Scale 7.4e-02
-Iter   15  f(x)  -53.77554  Scale 3.7e-02
-Iter   16  f(x)  -53.82675  Scale 1.8e-02
-Iter   17  f(x)  -54.39310  Scale 9.2e-03
-Iter   18  f(x)  -54.42070  Scale 4.6e-03
-Iter   19  f(x)  -54.44396  Scale 2.3e-03
-Iter   20  f(x)  -54.45135  Scale 1.2e-03
-Iter   21  f(x)  -54.45490  Scale 5.8e-04
-Iter   22  f(x)  -54.50310  Scale 2.9e-04
-Iter   23  f(x)  -54.51007  Scale 1.4e-04
-{Warning: Function value at xnew not finite or a number} 
-{> In fminscg at 166
-  In gp_optim at 119
-  In demo_regression_hier at 128
-  In create_files at 219} 
-Iter   24  f(x)  -54.51007  Scale 2.8e-01
-Iter   25  f(x)  -54.53777  Scale 1.1e+00
-Iter   26  f(x)  -54.57926  Scale 5.5e-01
-Iter   27  f(x)  -54.62078  Scale 2.8e-01
-Iter   28  f(x)  -54.62078  Scale 1.6e+00
-Iter   29  f(x)  -54.78182  Scale 6.6e+00
-Iter   30  f(x)  -54.80525  Scale 3.3e+00
-Iter   31  f(x)  -54.83740  Scale 1.6e+00
-Iter   32  f(x)  -54.87158  Scale 8.2e-01
-Iter   33  f(x)  -54.98880  Scale 4.1e-01
-Iter   34  f(x)  -54.99512  Scale 2.0e-01
-Iter   35  f(x)  -55.00341  Scale 1.0e-01
-Iter   36  f(x)  -55.03379  Scale 5.1e-02
-Iter   37  f(x)  -55.03944  Scale 2.6e-02
-Iter   38  f(x)  -55.05281  Scale 1.3e-02
-Iter   39  f(x)  -55.07015  Scale 6.4e-03
-Iter   40  f(x)  -55.07664  Scale 3.2e-03
-Iter   41  f(x)  -55.08046  Scale 1.6e-03
-Iter   42  f(x)  -55.08319  Scale 8.0e-04
-Iter   43  f(x)  -55.08422  Scale 4.0e-04
-Iter   44  f(x)  -55.13103  Scale 2.0e-04
-Iter   45  f(x)  -55.14424  Scale 1.0e-04
-Iter   46  f(x)  -55.14520  Scale 5.0e-05
-Iter   47  f(x)  -55.14679  Scale 2.5e-05
-Iter   48  f(x)  -55.15056  Scale 1.3e-05
-Iter   49  f(x)  -55.15179  Scale 6.3e-06
-Iter   50  f(x)  -55.15355  Scale 3.1e-06
-Iter   51  f(x)  -55.15462  Scale 1.6e-06
-Iter   52  f(x)  -55.15520  Scale 7.8e-07
-Iter   53  f(x)  -55.15549  Scale 3.9e-07
-Iter   54  f(x)  -55.15599  Scale 2.0e-07
-Iter   55  f(x)  -55.15669  Scale 9.8e-08
-Iter   56  f(x)  -55.16730  Scale 4.9e-08
-Iter   57  f(x)  -55.17075  Scale 2.4e-08
-Iter   58  f(x)  -55.17128  Scale 1.2e-08
-Iter   59  f(x)  -55.17182  Scale 6.1e-09
-Iter   60  f(x)  -55.17473  Scale 3.1e-09
-Iter   61  f(x)  -55.17474  Scale 1.5e-09
-TolFun reached
+ TolFun reached. Func-count 40. Final f(x)=-45.8041. Elapsed time 0.70
 5) Non-linear hierarchical model 1 with MAP
-Iter    1  f(x)  -24.98781  Scale 1.0e+01
-Iter    2  f(x)  -30.55564  Scale 5.0e+00
-Iter    3  f(x)  -71.95062  Scale 2.5e+00
-Iter    4  f(x)  -81.16400  Scale 1.2e+00
-Iter    5  f(x)  -82.88082  Scale 6.2e-01
-Iter    6  f(x)  -85.13574  Scale 6.2e-01
-Iter    7  f(x)  -86.66301  Scale 3.1e-01
-Iter    8  f(x)  -87.08081  Scale 1.6e-01
-Iter    9  f(x)  -87.42481  Scale 7.8e-02
-Iter   10  f(x)  -87.53231  Scale 3.9e-02
-Iter   11  f(x)  -87.53231  Scale 9.4e+00
-Iter   12  f(x)  -87.70616  Scale 3.7e+01
-Iter   13  f(x)  -87.70616  Scale 1.9e+01
-Iter   14  f(x)  -88.07889  Scale 7.5e+01
-Iter   15  f(x)  -88.07889  Scale 3.7e+01
-Iter   16  f(x)  -88.44925  Scale 1.5e+02
-Iter   17  f(x)  -90.37185  Scale 7.5e+01
-Iter   18  f(x)  -91.24459  Scale 3.7e+01
-Iter   19  f(x)  -91.53156  Scale 1.9e+01
-Iter   20  f(x)  -91.58091  Scale 9.4e+00
-Iter   21  f(x)  -91.62334  Scale 4.7e+00
-Iter   22  f(x)  -91.63922  Scale 2.3e+00
-Iter   23  f(x)  -91.74587  Scale 1.2e+00
-Iter   24  f(x)  -92.10495  Scale 5.8e-01
-Iter   25  f(x)  -92.20106  Scale 2.9e-01
-Iter   26  f(x)  -92.61164  Scale 1.5e-01
-Iter   27  f(x)  -93.04711  Scale 7.3e-02
-Iter   28  f(x)  -93.27028  Scale 3.7e-02
-Iter   29  f(x)  -93.63078  Scale 1.8e-02
-Iter   30  f(x)  -93.66006  Scale 9.1e-03
-Iter   31  f(x)  -93.67673  Scale 4.6e-03
-Iter   32  f(x)  -93.92347  Scale 2.3e-03
-Iter   33  f(x)  -94.19764  Scale 1.1e-03
-Iter   34  f(x)  -94.20342  Scale 1.1e-03
-Iter   35  f(x)  -94.34713  Scale 5.7e-04
-Iter   36  f(x)  -94.36338  Scale 2.9e-04
-Iter   37  f(x)  -94.37045  Scale 1.4e-04
-Iter   38  f(x)  -94.38121  Scale 7.1e-05
-Iter   39  f(x)  -94.39151  Scale 3.6e-05
-Iter   40  f(x)  -94.39754  Scale 1.8e-05
-Iter   41  f(x)  -94.41289  Scale 8.9e-06
-Iter   42  f(x)  -94.42924  Scale 4.5e-06
-Iter   43  f(x)  -94.49898  Scale 2.2e-06
-Iter   44  f(x)  -94.70099  Scale 1.1e-06
-Iter   45  f(x)  -94.78186  Scale 5.6e-07
-Iter   46  f(x)  -94.79373  Scale 2.8e-07
-Iter   47  f(x)  -94.82937  Scale 1.4e-07
-Iter   48  f(x)  -94.84266  Scale 7.0e-08
-Iter   49  f(x)  -94.84926  Scale 3.5e-08
-Iter   50  f(x)  -94.86341  Scale 1.7e-08
-Iter   51  f(x)  -94.87753  Scale 8.7e-09
-Iter   52  f(x)  -94.88940  Scale 4.4e-09
-Iter   53  f(x)  -94.90133  Scale 2.2e-09
-Iter   54  f(x)  -94.90351  Scale 1.1e-09
-Iter   55  f(x)  -94.90429  Scale 5.4e-10
-Iter   56  f(x)  -94.90601  Scale 2.7e-10
-Iter   57  f(x)  -94.90714  Scale 1.4e-10
-Iter   58  f(x)  -94.90758  Scale 6.8e-11
-Iter   59  f(x)  -94.90875  Scale 3.4e-11
-Iter   60  f(x)  -94.91139  Scale 1.7e-11
-Iter   61  f(x)  -94.91466  Scale 8.5e-12
-Iter   62  f(x)  -94.91550  Scale 4.3e-12
-Iter   63  f(x)  -94.91737  Scale 2.1e-12
-Iter   64  f(x)  -94.92410  Scale 1.1e-12
-Iter   65  f(x)  -94.92678  Scale 5.3e-13
-Iter   66  f(x)  -94.93043  Scale 2.7e-13
-Iter   67  f(x)  -94.93242  Scale 1.3e-13
-Iter   68  f(x)  -94.93524  Scale 6.6e-14
-Iter   69  f(x)  -94.93624  Scale 3.3e-14
-Iter   70  f(x)  -94.93817  Scale 1.7e-14
-Iter   71  f(x)  -94.93832  Scale 8.3e-15
-Iter   72  f(x)  -94.93860  Scale 4.2e-15
-Iter   73  f(x)  -94.93936  Scale 2.1e-15
-Iter   74  f(x)  -94.94117  Scale 1.0e-15
-Iter   75  f(x)  -94.94343  Scale 1.0e-15
-Iter   76  f(x)  -94.94411  Scale 1.0e-15
-Iter   77  f(x)  -94.94465  Scale 1.0e-15
-Iter   78  f(x)  -94.94579  Scale 1.0e-15
-Iter   79  f(x)  -94.94674  Scale 1.0e-15
-Iter   80  f(x)  -94.94697  Scale 1.0e-15
-Iter   81  f(x)  -94.94723  Scale 1.0e-15
-Iter   82  f(x)  -94.94839  Scale 1.0e-15
-Iter   83  f(x)  -94.94848  Scale 1.0e-15
-TolFun reached
+ TolFun reached. Func-count 88. Final f(x)=-77.8152. Elapsed time 2.33
 6) Non-linear hierarchical model 1 with IA
-{Warning: Some of CCD density evaluations were NaN} 
-{> In gp_ia at 394
-  In demo_regression_hier at 169
-  In create_files at 219} 
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 147 points for 9 parameters
+ IA-CCD: autoscaling in 18 directions
+ IA-CCD: scaling minmax [0.55 1.61]
+ IA-CCD: evaluating density at 147 points
+    Elapsed time 1.62 seconds
+ IA-CCD: Total elapsed time 2.92 seconds
 7) Non-linear hierarchical model 2 with MAP
-Iter    1  f(x)   10.06874  Scale 1.0e+01
-Iter    2  f(x)  -61.52826  Scale 5.0e+00
-Iter    3  f(x)  -69.55816  Scale 2.5e+00
-Iter    4  f(x)  -71.74711  Scale 1.2e+00
-Iter    5  f(x)  -83.21373  Scale 6.2e-01
-Iter    6  f(x)  -85.55199  Scale 3.1e-01
-Iter    7  f(x)  -86.04328  Scale 1.6e-01
-Iter    8  f(x)  -86.09203  Scale 7.8e-02
-Iter    9  f(x)  -86.15641  Scale 3.9e-02
-Iter   10  f(x)  -86.26843  Scale 2.0e-02
-Iter   11  f(x)  -86.33152  Scale 9.8e-03
-Iter   12  f(x)  -86.37049  Scale 4.9e-03
-Iter   13  f(x)  -86.37327  Scale 2.4e-03
-Iter   14  f(x)  -86.37703  Scale 1.2e-03
-Iter   15  f(x)  -86.37921  Scale 6.1e-04
-Iter   16  f(x)  -86.38116  Scale 3.1e-04
-Iter   17  f(x)  -86.41300  Scale 1.5e-04
-Iter   18  f(x)  -86.41592  Scale 7.6e-05
-Iter   19  f(x)  -86.41792  Scale 3.8e-05
-Iter   20  f(x)  -86.43548  Scale 1.9e-05
-Iter   21  f(x)  -86.44337  Scale 9.5e-06
-Iter   22  f(x)  -86.44372  Scale 4.8e-06
-Iter   23  f(x)  -86.44615  Scale 2.4e-06
-Iter   24  f(x)  -86.44866  Scale 1.2e-06
-Iter   25  f(x)  -86.45040  Scale 6.0e-07
-Iter   26  f(x)  -86.45178  Scale 3.0e-07
-Iter   27  f(x)  -86.45384  Scale 1.5e-07
-Iter   28  f(x)  -86.45845  Scale 7.5e-08
-Iter   29  f(x)  -86.46394  Scale 3.7e-08
-Iter   30  f(x)  -86.46734  Scale 1.9e-08
-Iter   31  f(x)  -86.46928  Scale 9.3e-09
-Iter   32  f(x)  -86.47042  Scale 4.7e-09
-Iter   33  f(x)  -86.47467  Scale 2.3e-09
-Iter   34  f(x)  -86.47706  Scale 1.2e-09
-Iter   35  f(x)  -86.47865  Scale 5.8e-10
-Iter   36  f(x)  -86.50566  Scale 2.9e-10
-Iter   37  f(x)  -86.51375  Scale 1.5e-10
-Iter   38  f(x)  -86.51883  Scale 7.3e-11
-Iter   39  f(x)  -86.51982  Scale 3.6e-11
-Iter   40  f(x)  -86.52001  Scale 1.8e-11
-Iter   41  f(x)  -86.52237  Scale 9.1e-12
-Iter   42  f(x)  -86.52359  Scale 4.5e-12
-Iter   43  f(x)  -86.52369  Scale 2.3e-12
-TolFun reached
+ TolFun reached. Func-count 39. Final f(x)=-80.2512. Elapsed time 0.79
 8) Non-linear hierarchical model 2 with IA
-{Warning: Some of CCD density evaluations were NaN} 
-{> In gp_ia at 394
-  In demo_regression_hier at 206
-  In create_files at 219} 
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 45 points for 6 parameters
+ IA-CCD: autoscaling in 12 directions
+ IA-CCD: scaling minmax [0.82 1.37]
+ IA-CCD: evaluating density at 45 points
 9) Non-linear hierarchical model 3 with IA
-Iter    1  f(x)   34.14038  Scale 1.0e+01
-Iter    2  f(x)   -9.01440  Scale 5.0e+00
-Iter    3  f(x)  -16.48328  Scale 2.5e+00
-Iter    4  f(x)  -22.17149  Scale 1.2e+00
-Iter    5  f(x)  -66.53665  Scale 5.0e+00
-Iter    6  f(x)  -79.21441  Scale 2.5e+00
-Iter    7  f(x)  -83.21686  Scale 1.2e+00
-Iter    8  f(x)  -83.70920  Scale 6.2e-01
-Iter    9  f(x)  -83.86419  Scale 3.1e-01
-Iter   10  f(x)  -84.28377  Scale 1.6e-01
-Iter   11  f(x)  -84.53848  Scale 7.8e-02
-Iter   12  f(x)  -84.57508  Scale 3.9e-02
-Iter   13  f(x)  -84.59588  Scale 2.0e-02
-Iter   14  f(x)  -84.61315  Scale 9.8e-03
-Iter   15  f(x)  -84.61830  Scale 4.9e-03
-Iter   16  f(x)  -84.63000  Scale 2.4e-03
-Iter   17  f(x)  -84.73618  Scale 1.2e-03
-Iter   18  f(x)  -84.74710  Scale 6.1e-04
-Iter   19  f(x)  -84.75811  Scale 3.1e-04
-Iter   20  f(x)  -84.77570  Scale 1.5e-04
-Iter   21  f(x)  -84.77757  Scale 7.6e-05
-Iter   22  f(x)  -84.77861  Scale 3.8e-05
-Iter   23  f(x)  -84.78122  Scale 1.9e-05
-Iter   24  f(x)  -84.81037  Scale 9.5e-06
-Iter   25  f(x)  -84.82127  Scale 4.8e-06
-Iter   26  f(x)  -84.82467  Scale 2.4e-06
-Iter   27  f(x)  -84.84531  Scale 1.2e-06
-Iter   28  f(x)  -84.84878  Scale 6.0e-07
-Iter   29  f(x)  -84.85057  Scale 3.0e-07
-Iter   30  f(x)  -84.85296  Scale 1.5e-07
-Iter   31  f(x)  -84.86155  Scale 7.5e-08
-Iter   32  f(x)  -84.86316  Scale 3.7e-08
-Iter   33  f(x)  -84.86405  Scale 1.9e-08
-Iter   34  f(x)  -84.86583  Scale 9.3e-09
-Iter   35  f(x)  -84.86696  Scale 4.7e-09
-Iter   36  f(x)  -84.86739  Scale 2.3e-09
-Iter   37  f(x)  -84.86770  Scale 1.2e-09
-Iter   38  f(x)  -84.86907  Scale 5.8e-10
-Iter   39  f(x)  -84.87313  Scale 2.9e-10
-Iter   40  f(x)  -84.87413  Scale 1.5e-10
-Iter   41  f(x)  -84.88351  Scale 7.3e-11
-Iter   42  f(x)  -84.88801  Scale 3.6e-11
-Iter   43  f(x)  -84.88918  Scale 1.8e-11
-Iter   44  f(x)  -84.89123  Scale 9.1e-12
-Iter   45  f(x)  -84.89533  Scale 4.5e-12
-Iter   46  f(x)  -84.89535  Scale 2.3e-12
-TolFun reached
-{Warning: Some of CCD density evaluations were NaN} 
-{> In gp_ia at 394
-  In demo_regression_hier at 230
-  In create_files at 219} 
+ TolFun reached. Func-count 43. Final f(x)=-64.4989. Elapsed time 1.27
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 79 points for 7 parameters
+ IA-CCD: autoscaling in 14 directions
+ IA-CCD: scaling minmax [0.63 1.40]
+ IA-CCD: evaluating density at 79 points
+ IA-CCD: Total elapsed time 1.72 seconds
 10) Missing data example
-TolFun reached
-{Warning: Some of CCD density evaluations were NaN} 
-{> In gp_ia at 394
-  In demo_regression_hier at 291
-  In create_files at 219} 
+ TolFun reached. Func-count 49. Final f(x)=-4.10284. Elapsed time 0.87
+ IA-CCD: finding the mode
+ IA-CCD: computing Hessian using multiplication
+ IA-CCD: 79 points for 7 parameters
+ IA-CCD: autoscaling in 14 directions
+ IA-CCD: scaling minmax [0.50 1.44]
+ IA-CCD: evaluating density at 79 points
 
  gp hyperparameters (gp_pak(gp)): 
  
-   -7.8579   -8.7101    0.5730    0.1790   -2.9429   -4.7518   -4.8726
+   -0.1987   -3.4072    1.0782    0.4515   -3.4082   -4.7715   -4.8805
 

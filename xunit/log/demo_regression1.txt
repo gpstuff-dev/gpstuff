@@ -24,23 +24,7 @@ C =
     0.0019    0.0187    0.0800
 
  MAP estimate for the parameters
-Iter    1  f(x)  269.77937  Scale 1.0e+01
-Iter    2  f(x)  127.81075  Scale 5.0e+00
-Iter    3  f(x)  107.86132  Scale 2.5e+00
-Iter    4  f(x)   64.80127  Scale 1.2e+00
-Iter    5  f(x)   52.54817  Scale 6.2e-01
-Iter    6  f(x)   46.81279  Scale 3.1e-01
-Iter    7  f(x)   44.79395  Scale 1.6e-01
-Iter    8  f(x)   42.48964  Scale 7.8e-02
-Iter    9  f(x)   41.98543  Scale 3.9e-02
-Iter   10  f(x)   41.88766  Scale 2.0e-02
-Iter   11  f(x)   41.83988  Scale 9.8e-03
-Iter   12  f(x)   41.61258  Scale 4.9e-03
-Iter   13  f(x)   41.54405  Scale 2.4e-03
-Iter   14  f(x)   41.53973  Scale 1.2e-03
-Iter   15  f(x)   41.49099  Scale 6.1e-04
-Iter   16  f(x)   41.49017  Scale 3.1e-04
-TolFun reached
+ TolFun reached. Func-count 33. Final f(x)=41.4902. Elapsed time 0.86
     'log(sexp.magnSigma2)'
     'log(sexp.lengthScale x 2)'
     'log(gaussian.sigma2)'
@@ -48,228 +32,27 @@ TolFun reached
     3.5983    0.8838    0.8323    0.0428
 
  Grid integration over the parameters
+ IA-grid: finding the mode
+ IA-grid: computing Hessian using multiplication
+ IA-grid: evaluating density in a grid
+ IA-grid: evaluated density at 341 points
+    Elapsed time 14.22 seconds
+ IA-grid: Total elapsed time 30.19 seconds
  MCMC integration over the parameters
+ Using SLS sampler for hyperparameters
  cycle  etr      slsrej  
-    2  42.253  sls  
-    3  47.685  sls  
-    4  44.944  sls  
-    5  45.247  sls  
-    6  45.937  sls  
-    7  43.773  sls  
-    8  42.605  sls  
-    9  43.168  sls  
-   10  42.733  sls  
-   11  43.276  sls  
-   12  42.845  sls  
-   13  43.168  sls  
-   14  43.484  sls  
-   15  41.975  sls  
-   16  42.284  sls  
-   17  42.494  sls  
-   18  43.708  sls  
-   19  43.388  sls  
    20  44.827  sls  
-   21  45.045  sls  
-   22  43.834  sls  
-   23  43.735  sls  
-   24  44.298  sls  
-   25  44.703  sls  
-   26  42.201  sls  
-   27  43.739  sls  
-   28  45.253  sls  
-   29  43.538  sls  
-   30  45.595  sls  
-   31  49.920  sls  
-   32  50.258  sls  
-   33  46.456  sls  
-   34  43.950  sls  
-   35  45.084  sls  
-   36  42.122  sls  
-   37  42.610  sls  
-   38  42.216  sls  
-   39  42.241  sls  
    40  42.705  sls  
-   41  42.650  sls  
-   42  41.900  sls  
-   43  42.654  sls  
-   44  42.453  sls  
-   45  41.890  sls  
-   46  42.342  sls  
-   47  43.976  sls  
-   48  42.601  sls  
-   49  42.539  sls  
-   50  44.242  sls  
-   51  43.569  sls  
-   52  43.268  sls  
-   53  45.278  sls  
-   54  46.019  sls  
-   55  42.299  sls  
-   56  41.813  sls  
-   57  42.139  sls  
-   58  42.017  sls  
-   59  42.154  sls  
    60  42.124  sls  
-   61  42.705  sls  
-   62  42.453  sls  
-   63  43.127  sls  
-   64  42.483  sls  
-   65  41.811  sls  
-   66  42.160  sls  
-   67  42.161  sls  
-   68  42.449  sls  
-   69  42.660  sls  
-   70  43.101  sls  
-   71  42.013  sls  
-   72  42.035  sls  
-   73  41.925  sls  
-   74  42.004  sls  
-   75  43.240  sls  
-   76  46.005  sls  
-   77  45.623  sls  
-   78  44.323  sls  
-   79  44.312  sls  
    80  44.214  sls  
-   81  46.492  sls  
-   82  43.811  sls  
-   83  42.821  sls  
-   84  41.730  sls  
-   85  42.640  sls  
-   86  42.570  sls  
-   87  41.688  sls  
-   88  44.763  sls  
-   89  45.379  sls  
-   90  44.658  sls  
-   91  44.489  sls  
-   92  47.354  sls  
-   93  43.120  sls  
-   94  44.754  sls  
-   95  43.474  sls  
-   96  42.446  sls  
-   97  42.469  sls  
-   98  42.779  sls  
-   99  42.360  sls  
   100  42.966  sls  
-  101  44.518  sls  
-  102  43.725  sls  
-  103  44.700  sls  
-  104  43.867  sls  
-  105  43.857  sls  
-  106  41.820  sls  
-  107  42.381  sls  
-  108  43.038  sls  
-  109  43.059  sls  
-  110  43.549  sls  
-  111  42.997  sls  
-  112  42.040  sls  
-  113  43.796  sls  
-  114  44.727  sls  
-  115  44.431  sls  
-  116  50.084  sls  
-  117  46.038  sls  
-  118  44.432  sls  
-  119  43.929  sls  
   120  43.217  sls  
-  121  43.759  sls  
-  122  44.001  sls  
-  123  44.634  sls  
-  124  43.510  sls  
-  125  42.329  sls  
-  126  44.212  sls  
-  127  47.255  sls  
-  128  48.416  sls  
-  129  48.036  sls  
-  130  44.817  sls  
-  131  42.538  sls  
-  132  42.471  sls  
-  133  43.379  sls  
-  134  43.267  sls  
-  135  43.215  sls  
-  136  42.166  sls  
-  137  41.543  sls  
-  138  42.999  sls  
-  139  42.274  sls  
   140  41.865  sls  
-  141  42.305  sls  
-  142  43.234  sls  
-  143  42.807  sls  
-  144  42.548  sls  
-  145  41.772  sls  
-  146  42.347  sls  
-  147  43.506  sls  
-  148  43.377  sls  
-  149  43.980  sls  
-  150  42.502  sls  
-  151  43.686  sls  
-  152  43.319  sls  
-  153  45.124  sls  
-  154  46.245  sls  
-  155  47.320  sls  
-  156  45.308  sls  
-  157  45.956  sls  
-  158  45.158  sls  
-  159  44.817  sls  
   160  44.764  sls  
-  161  45.649  sls  
-  162  44.183  sls  
-  163  42.764  sls  
-  164  42.320  sls  
-  165  42.385  sls  
-  166  43.118  sls  
-  167  42.847  sls  
-  168  43.883  sls  
-  169  43.571  sls  
-  170  44.509  sls  
-  171  43.888  sls  
-  172  43.415  sls  
-  173  42.248  sls  
-  174  44.529  sls  
-  175  42.368  sls  
-  176  43.250  sls  
-  177  42.896  sls  
-  178  42.702  sls  
-  179  43.857  sls  
   180  42.241  sls  
-  181  42.580  sls  
-  182  42.850  sls  
-  183  43.182  sls  
-  184  44.133  sls  
-  185  44.568  sls  
-  186  42.644  sls  
-  187  45.190  sls  
-  188  43.335  sls  
-  189  44.172  sls  
-  190  46.226  sls  
-  191  43.862  sls  
-  192  42.781  sls  
-  193  43.004  sls  
-  194  42.945  sls  
-  195  42.386  sls  
-  196  43.648  sls  
-  197  42.903  sls  
-  198  42.167  sls  
-  199  43.601  sls  
   200  41.686  sls  
-  201  43.735  sls  
-  202  43.037  sls  
-  203  42.117  sls  
-  204  42.374  sls  
-  205  43.635  sls  
-  206  43.903  sls  
-  207  42.986  sls  
-  208  42.069  sls  
-  209  43.594  sls  
-  210  45.053  sls  
-  211  42.415  sls  
-  212  42.728  sls  
-  213  44.144  sls  
-  214  42.194  sls  
-  215  41.946  sls  
-  216  42.249  sls  
-  217  42.311  sls  
-  218  43.011  sls  
-  219  43.914  sls  
   220  42.983  sls  
-  221  46.532  sls  
+Done
 
  gp hyperparameters (gp_pak(gp)): 
  

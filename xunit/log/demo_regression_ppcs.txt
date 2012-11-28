@@ -1,21 +1,25 @@
 Running: demo_regression_ppcs
-Iter    1  f(x) 14318.21166  Scale 1.0e+01
-Iter    2  f(x) 13408.83961  Scale 5.0e+00
-Iter    3  f(x) 13315.31958  Scale 2.5e+00
-Iter    4  f(x) 13277.93508  Scale 1.2e+00
-Iter    5  f(x) 13256.41297  Scale 1.2e+00
-Iter    6  f(x) 13252.83191  Scale 6.2e-01
-Iter    7  f(x) 13251.16103  Scale 3.1e-01
-Iter    8  f(x) 13249.95721  Scale 1.6e-01
-Iter    9  f(x) 13249.42242  Scale 7.8e-02
-Iter   10  f(x) 13249.15597  Scale 3.9e-02
-Iter   11  f(x) 13248.86475  Scale 2.0e-02
-Iter   12  f(x) 13248.86079  Scale 9.8e-03
-Iter   13  f(x) 13248.86072  Scale 4.9e-03
-TolX reached
-Proportion of non-zeros is 0.0489
+  Iteration  Func-count      f(x)      Lambda
+      0          1           15150    
+      1          3         14366.9       10
+      2          5         14366.9        5
+      3          6         14366.9       20
+      4          7         14366.9       80
+      5          8         13860.1      320
+      6         10         13859.9      320
+      7         12         13449.3      160
+      8         14         13274.3      160
+      9         16         13257.4       80
+     10         18           13254       40
+     11         20         13253.7       20
+     12         22         13253.6       10
+     13         24         13253.4        5
+     14         26         13253.4      2.5
+     15         28         13253.4     1.25
+ TolX reached. Func-count 28. Final f(x)=13253.4. Elapsed time 49685.06
+Proportion of non-zeros is 0.0475
 
  gp hyperparameters (gp_pak(gp)): 
  
-    2.7740    1.1253    1.5032    1.3187
+    2.7497    1.1142    1.4814    1.3157
 

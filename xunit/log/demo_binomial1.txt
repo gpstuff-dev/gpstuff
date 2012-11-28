@@ -1,26 +1,7 @@
 Running: demo_binomial1
-demo_binomial1
-Iter    1  f(x)  172.81081  Scale 1.0e+01
-Iter    2  f(x)  172.59471  Scale 5.0e+00
-Iter    3  f(x)  172.52858  Scale 2.5e+00
-Iter    4  f(x)  172.52858  Scale 1.2e+00
-Iter    5  f(x)  172.09215  Scale 5.0e+00
-Iter    6  f(x)  172.09215  Scale 4.4e+01
-Iter    7  f(x)  171.84720  Scale 1.8e+02
-Iter    8  f(x)  170.77468  Scale 8.8e+01
-Iter    9  f(x)  170.02710  Scale 4.4e+01
-Iter   10  f(x)  169.95057  Scale 2.2e+01
-Iter   11  f(x)  169.93719  Scale 1.1e+01
-Iter   12  f(x)  169.87695  Scale 5.5e+00
-Iter   13  f(x)  169.85456  Scale 2.8e+00
-Iter   14  f(x)  169.73732  Scale 1.4e+00
-Iter   15  f(x)  169.72611  Scale 6.9e-01
-Iter   16  f(x)  169.58495  Scale 3.5e-01
-Iter   17  f(x)  169.58199  Scale 1.7e-01
-Iter   18  f(x)  169.56888  Scale 8.6e-02
-Iter   19  f(x)  169.56879  Scale 4.3e-02
-TolFun reached
+ TolFun reached. Func-count 37. Final f(x)=169.569. Elapsed time 0.40
 
  gp hyperparameters: 
  
    -0.7903   -1.0035
+

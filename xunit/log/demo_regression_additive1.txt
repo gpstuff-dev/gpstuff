@@ -7,34 +7,9 @@ gp =
               cf: {[1x1 struct]  [1x1 struct]}
     infer_params: 'covariance+likelihood'
     jitterSigma2: 1.0000e-09
+              fh: [1x1 struct]
 
-Iter    1  f(x) 1094.95807  Scale 1.0e+01
-Iter    2  f(x)  944.97002  Scale 5.0e+00
-Iter    3  f(x)  736.22362  Scale 2.5e+00
-Iter    4  f(x)  696.55525  Scale 1.2e+00
-Iter    5  f(x)  622.66647  Scale 6.2e-01
-Iter    6  f(x)  620.33636  Scale 3.1e-01
-Iter    7  f(x)  605.12408  Scale 1.6e-01
-Iter    8  f(x)  601.74331  Scale 7.8e-02
-Iter    9  f(x)  599.94726  Scale 3.9e-02
-Iter   10  f(x)  599.50764  Scale 2.0e-02
-Iter   11  f(x)  599.15203  Scale 9.8e-03
-Iter   12  f(x)  597.11300  Scale 4.9e-03
-Iter   13  f(x)  597.07540  Scale 2.4e-03
-Iter   14  f(x)  596.39084  Scale 1.2e-03
-Iter   15  f(x)  596.30710  Scale 6.1e-04
-Iter   16  f(x)  596.23309  Scale 3.1e-04
-Iter   17  f(x)  595.88713  Scale 1.5e-04
-Iter   18  f(x)  595.86670  Scale 7.6e-05
-Iter   19  f(x)  595.38546  Scale 3.8e-05
-Iter   20  f(x)  595.02323  Scale 1.9e-05
-Iter   21  f(x)  595.00997  Scale 9.5e-06
-Iter   22  f(x)  594.99463  Scale 4.8e-06
-Iter   23  f(x)  594.99334  Scale 2.4e-06
-Iter   24  f(x)  594.99060  Scale 1.2e-06
-Iter   25  f(x)  594.98492  Scale 6.0e-07
-Iter   26  f(x)  594.98477  Scale 3.0e-07
-TolX reached
+ TolX reached. Func-count 56. Final f(x)=600.635. Elapsed time 8.77
 
 gp_fic = 
 
@@ -46,32 +21,9 @@ gp_fic =
              X_u: [24x1 double]
             nind: 24
                p: [1x1 struct]
+              fh: [1x1 struct]
 
-Iter    1  f(x) 2295.11247  Scale 1.0e+01
-Iter    2  f(x) 1613.70050  Scale 5.0e+00
-Iter    3  f(x) 1466.74823  Scale 2.5e+00
-Iter    4  f(x) 1363.67379  Scale 1.2e+00
-Iter    5  f(x) 1322.44195  Scale 6.2e-01
-Iter    6  f(x) 1301.84575  Scale 3.1e-01
-Iter    7  f(x) 1285.75117  Scale 1.6e-01
-Iter    8  f(x) 1275.33961  Scale 7.8e-02
-Iter    9  f(x) 1264.99276  Scale 3.9e-02
-Iter   10  f(x) 1260.52067  Scale 2.0e-02
-Iter   11  f(x) 1258.56952  Scale 9.8e-03
-Iter   12  f(x) 1255.43843  Scale 4.9e-03
-Iter   13  f(x) 1252.83797  Scale 4.9e-03
-Iter   14  f(x) 1252.69361  Scale 2.4e-03
-Iter   15  f(x) 1252.67482  Scale 2.4e-03
-Iter   16  f(x) 1252.38898  Scale 1.2e-03
-Iter   17  f(x) 1252.37322  Scale 6.1e-04
-Iter   18  f(x) 1252.33471  Scale 3.1e-04
-Iter   19  f(x) 1252.22851  Scale 1.5e-04
-Iter   20  f(x) 1252.21689  Scale 7.6e-05
-Iter   21  f(x) 1252.21321  Scale 3.8e-05
-Iter   22  f(x) 1252.21103  Scale 1.9e-05
-Iter   23  f(x) 1252.20329  Scale 9.5e-06
-Iter   24  f(x) 1252.20246  Scale 4.8e-06
-TolFun reached
+ TolFun reached. Func-count 45. Final f(x)=1257.57. Elapsed time 1.90
 
 gp_pic = 
 
@@ -79,41 +31,15 @@ gp_pic =
              lik: [1x1 struct]
               cf: {[1x1 struct]  [1x1 struct]}
     infer_params: 'covariance+likelihood'
-    jitterSigma2: 1.0000e-09
+    jitterSigma2: 1.0000e-06
              X_u: [24x1 double]
             nind: 24
                p: [1x1 struct]
         tr_index: []
+              fh: [1x1 struct]
 
-Iter    1  f(x) 1174.71404  Scale 1.0e+01
-Iter    2  f(x) 1051.58937  Scale 5.0e+00
-Iter    3  f(x)  843.15765  Scale 2.5e+00
-Iter    4  f(x)  693.42857  Scale 1.2e+00
-Iter    5  f(x)  690.37877  Scale 6.2e-01
-Iter    6  f(x)  687.01510  Scale 3.1e-01
-Iter    7  f(x)  669.58756  Scale 1.6e-01
-Iter    8  f(x)  646.43631  Scale 7.8e-02
-Iter    9  f(x)  644.89748  Scale 3.9e-02
-Iter   10  f(x)  641.30775  Scale 2.0e-02
-Iter   11  f(x)  639.44773  Scale 9.8e-03
-Iter   12  f(x)  634.70835  Scale 4.9e-03
-Iter   13  f(x)  634.55015  Scale 2.4e-03
-Iter   14  f(x)  632.57366  Scale 1.2e-03
-Iter   15  f(x)  632.50929  Scale 6.1e-04
-Iter   16  f(x)  632.46409  Scale 3.1e-04
-Iter   17  f(x)  632.00091  Scale 1.5e-04
-Iter   18  f(x)  631.97324  Scale 7.6e-05
-Iter   19  f(x)  631.70344  Scale 3.8e-05
-Iter   20  f(x)  631.66547  Scale 1.9e-05
-Iter   21  f(x)  631.63681  Scale 9.5e-06
-Iter   22  f(x)  631.43507  Scale 4.8e-06
-Iter   23  f(x)  631.39876  Scale 2.4e-06
-Iter   24  f(x)  631.36085  Scale 1.2e-06
-Iter   25  f(x)  631.26601  Scale 6.0e-07
-Iter   26  f(x)  631.25517  Scale 3.0e-07
-Iter   27  f(x)  631.22872  Scale 1.5e-07
-Iter   28  f(x)  631.22785  Scale 7.5e-08
-TolFun reached
+ TolX reached. Func-count 45. Final f(x)=636.321. Elapsed time 4.28
+ TolFun reached. Func-count 3. Final f(x)=636.321. Elapsed time 0.28
 
 gp_csfic = 
 
@@ -125,74 +51,11 @@ gp_csfic =
              X_u: [24x1 double]
             nind: 24
                p: [1x1 struct]
+              fh: [1x1 struct]
 
-Iter    1  f(x) 1094.95805  Scale 1.0e+01
-Iter    2  f(x)  944.96999  Scale 5.0e+00
-Iter    3  f(x)  736.22390  Scale 2.5e+00
-Iter    4  f(x)  696.55471  Scale 1.2e+00
-Iter    5  f(x)  622.66166  Scale 6.2e-01
-Iter    6  f(x)  620.33859  Scale 3.1e-01
-Iter    7  f(x)  605.13904  Scale 1.6e-01
-Iter    8  f(x)  601.72628  Scale 7.8e-02
-Iter    9  f(x)  600.04950  Scale 3.9e-02
-Iter   10  f(x)  599.44402  Scale 2.0e-02
-Iter   11  f(x)  599.09367  Scale 9.8e-03
-Iter   12  f(x)  597.19443  Scale 4.9e-03
-Iter   13  f(x)  597.00684  Scale 2.4e-03
-Iter   14  f(x)  596.57016  Scale 1.2e-03
-Iter   15  f(x)  596.38357  Scale 1.2e-03
-Iter   16  f(x)  596.26246  Scale 6.1e-04
-Iter   17  f(x)  595.77292  Scale 3.1e-04
-Iter   18  f(x)  595.77292  Scale 1.5e-04
-Iter   19  f(x)  595.70342  Scale 6.1e-04
-Iter   20  f(x)  595.41580  Scale 3.1e-04
-Iter   21  f(x)  594.85974  Scale 3.1e-04
-Iter   22  f(x)  594.30288  Scale 1.5e-04
-Iter   23  f(x)  594.30288  Scale 7.6e-05
-Iter   24  f(x)  594.30288  Scale 3.1e-04
-Iter   25  f(x)  593.46608  Scale 1.2e-03
-Iter   26  f(x)  593.46608  Scale 6.1e-04
-Iter   27  f(x)  593.46608  Scale 2.4e-03
-Iter   28  f(x)  593.46608  Scale 9.8e-03
-Iter   29  f(x)  593.34649  Scale 3.9e-02
-Iter   30  f(x)  593.34649  Scale 2.0e-02
-Iter   31  f(x)  593.34649  Scale 7.8e-02
-Iter   32  f(x)  593.34649  Scale 3.1e-01
-Iter   33  f(x)  593.34649  Scale 1.2e+00
-Iter   34  f(x)  593.34649  Scale 5.0e+00
-Iter   35  f(x)  593.34649  Scale 2.0e+01
-Iter   36  f(x)  593.34649  Scale 8.0e+01
-Iter   37  f(x)  593.34649  Scale 3.2e+02
-Iter   38  f(x)  593.34649  Scale 1.3e+03
-Iter   39  f(x)  593.34649  Scale 5.1e+03
-Iter   40  f(x)  593.34649  Scale 2.0e+04
-Iter   41  f(x)  593.34649  Scale 8.2e+04
-Iter   42  f(x)  593.34649  Scale 3.3e+05
-{Warning: Function value at xnew not finite or a number} 
-{> In fminscg at 166
-  In gp_optim at 119
-  In demo_regression_additive1 at 303
-  In create_files at 187} 
-Iter   43  f(x)  593.34649  Scale 1.3e+06
-Iter   44  f(x)  593.34649  Scale 5.2e+06
-Iter   45  f(x)  593.34649  Scale 2.1e+07
-Iter   46  f(x)  593.34649  Scale 8.4e+07
-Iter   47  f(x)  593.34649  Scale 3.4e+08
-Iter   48  f(x)  593.34649  Scale 1.3e+09
-Iter   49  f(x)  593.34649  Scale 5.4e+09
-Iter   50  f(x)  593.34649  Scale 2.1e+10
-Iter   51  f(x)  593.34649  Scale 8.6e+10
-Iter   52  f(x)  593.34649  Scale 3.4e+11
-Iter   53  f(x)  593.34649  Scale 1.4e+12
-Iter   54  f(x)  593.34649  Scale 5.5e+12
-Iter   55  f(x)  593.34649  Scale 2.2e+13
-Iter   56  f(x)  593.34649  Scale 8.8e+13
-Iter   57  f(x)  593.34649  Scale 3.5e+14
-Iter   58  f(x)  593.34649  Scale 1.4e+15
-Iter   59  f(x)  593.34649  Scale 5.6e+15
-TolX reached
+ TolX reached. Func-count 41. Final f(x)=600.526. Elapsed time 3.36
 
  gp hyperparameters (gp_pak(gp)): 
  
-    5.6126    4.9434    1.6325    2.0966   -3.5377
+    5.7476    4.8844    1.6333    2.0965   -3.5407
 

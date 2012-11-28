@@ -1,16 +1,26 @@
 Running: demo_survival_weibull
-Iter    1  f(x) -1350.01754  Scale 1.0e+01
-Iter    2  f(x) -1390.28644  Scale 5.0e+00
-Iter    3  f(x) -1438.96273  Scale 2.5e+00
-Iter    4  f(x) -1440.81990  Scale 1.2e+00
-Iter    5  f(x) -1455.33203  Scale 6.2e-01
-Iter    6  f(x) -1456.92563  Scale 3.1e-01
-Iter    7  f(x) -1457.01034  Scale 1.6e-01
-Iter    8  f(x) -1461.05798  Scale 7.8e-02
-Iter    9  f(x) -1461.08540  Scale 7.8e-02
-TolX reached
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1            -980.812    
+     1           2           2            -1305.26     0.000680212
+     2           6           6            -1428.27          0.0625
+     3           8           8            -1447.95             0.5
+     4          10          10            -1458.77        0.359102
+     5          12          12            -1460.06        0.365497
+     6          13          13            -1461.48               1
+     7          14          14             -1462.2               1
+     8          16          16            -1462.43        0.428259
+     9          17          17            -1462.51               1
+    10          18          18            -1462.52               1
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in x was smaller than the specified tolerance TolX.
+  Iterations : 11
+  Function Count : 19
+  Minimum found : -1462.5191
+  Intern Time : 0.016215 seconds
+  Total Time : 22.6051 seconds
 
  gp hyperparameters (gp_pak(gp)): 
  
-    1.1211   -0.5256   -0.4870   -0.0482   -1.5267   -0.5330
+    0.7765   -0.3490   -1.2271    0.1221   -1.5384   -0.5387
 
