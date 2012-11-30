@@ -24,37 +24,73 @@ function p = pred_coxphp(gp, x, y, xt, yt, varargin)
 [Ef1, Ef2, Covf] = pred_coxph(gp,x,y,xt, varargin{:});
 nsamps = 10000;
 ntime=size(gp.lik.stime,2)-1;
+if isfield(gp.lik, 'stratificationVariables')
+  ind_ebc=gp.lik.ExtraBaselineCovariates;
+  ux=unique([x(:,ind_ebc); xt(:,ind_ebc)],'rows');
+  nu=size(ux,1);
+  for i1=1:size(ux,1)
+    uind{i1}=find(xt(:,ind_ebc)==ux(i1,:));
+  end
+  nf1=ntime*nu;
+else
+  nf1=ntime;
+end
 sd=gp.lik.stime(2)-gp.lik.stime(1);
 Sigm_tmp=Covf;
 Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
 f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
 
-f1=f_star(:,1:ntime);
-f2=f_star(:,(ntime+1):end);
+f1=f_star(:,1:nf1);
+f2=f_star(:,(nf1+1):end);
 
 la1=exp(f1);
 eta2=exp(f2);
 
 mST=zeros(size(eta2,2),1);
 if size(y,2) == 1
-  % Integrate from zero to yt
-  cumsumtmp=cumsum(la1'*sd)';
-  for i1=1:size(eta2,2)
-    Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
-    mStime=mean(Stime);
-    if size(yt,1)==size(y,1) && size(yt,2)==size(y,2)
-      % regular case y and yt are equal size
-      mST(i1,1)=1-mStime(binsgeq(gp.lik.xtime,yt(i1)));
-    elseif size(yt,1)==1 && size(yt,2)>=1
-      % evaluate each individual using multiple time points
-      for i=1:size(yt,2)
-        mST(i1,i)=1-mStime(binsgeq(gp.lik.xtime,yt(1,i)));
+  if ~isfield(gp.lik,'stratificationVariables')
+    % Integrate from zero to yt
+    cumsumtmp=cumsum(la1'*sd)';
+    for i1=1:size(eta2,2)
+      Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
+      mStime=mean(Stime);
+      if size(yt,1)==size(y,1) && size(yt,2)==size(y,2)
+        % Individual integration limits for each input
+        mST(i1,1)=1-mStime(binsgeq(gp.lik.xtime,yt(i1)));
+      elseif size(yt,1)==1 && size(yt,2)>=1
+        % Multiple, but same, integration limits for all of the inputs
+        for i=1:size(yt,2)
+          mST(i1,i)=1-mStime(binsgeq(gp.lik.xtime,yt(1,i)));
+        end
+      else
+        error('Size of yt is not equal to size of y or 1xT')
       end
-    else
-      error('Size of yt is not equal to size of y or 1xT')
     end
+    p = mST;
+  else
+    % Integrate from zero to yt
+    for i2=1:nu
+      hb=(la1(:,(i2-1)*ntime+1:i2*ntime)'*sd);
+      cumsumtmp=cumsum(hb)';
+      for i1=1:length(uind{i2})
+        ind=uind{i2}(i1);
+        Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,ind)));
+        mStime=mean(Stime);
+        if size(yt,1)==size(y,1) && size(yt,2)==size(y,2)
+          % Individual integration limits for each input
+          mST(ind,1)=1-mStime(binsgeq(gp.lik.xtime,yt(ind)));
+        elseif size(yt,1)==1 && size(yt,2)>=1
+          % Multiple, but same, integration limits for all of the inputs
+          for i=1:size(yt,2)
+            mST(ind,i)=1-mStime(binsgeq(gp.lik.xtime,yt(1,i)));
+          end
+        else
+          error('Size of yt is not equal to size of y or 1xT')
+        end
+      end
+    end
+    p = mST;
   end
-  p = mST;
 
 else
   if size(y,2) ~= size(yt,2)
@@ -65,20 +101,39 @@ else
   sb=sum(bsxfun(@gt,yt(:,1),gp.lik.stime),2);
   se=sum(bsxfun(@gt,yt(:,2),gp.lik.stime),2);
   
-  for i1 =1:size(eta2,2)
-    if sb(i1) ~= se(i1)
-      hb=(la1(:,sb(i1)+1:se(i1)-1)'*sd);
-      hb=[((gp.lik.stime(sb(i1)+1)-yt(i1,1)).*la1(:,sb(i1)))'; hb; ((yt(i1,2)-gp.lik.stime(se(i1))).*la1(:,se(i1)))'];
-    else
-      hb = la1(:, se(i1))'*(yt(i1,2) - yt(i1,1));
+  if ~isfield(gp.lik, 'stratificationVariables')
+    for i1 =1:size(eta2,2)
+      if sb(i1) ~= se(i1)
+        hb=(la1(:,sb(i1)+1:se(i1)-1)'*sd);
+        hb=[((gp.lik.stime(sb(i1)+1)-yt(i1,1)).*la1(:,sb(i1)))'; hb; ((yt(i1,2)-gp.lik.stime(se(i1))).*la1(:,se(i1)))'];
+      else
+        hb = la1(:, se(i1))'*(yt(i1,2) - yt(i1,1));
+      end
+      cumsumtmp=[zeros(nsamps, sb(i1)) cumsum(hb)'];
+      Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
+      mStime=mean(Stime);
+      mST(i1,1)=1-mStime(end);
     end
-    cumsumtmp=[zeros(nsamps, sb(i1)) cumsum(hb)'];
-    Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
-    mStime=mean(Stime);
-    mST(i1,1)=1-mStime(end);
+    p = mST;
+  else
+    for i2=1:nu
+      for i1=1:size(uind{i2},2)
+        ind=uind{i2}(i1);
+        nft=(i2-1)*ntime;
+        if sb(ind) ~= se(ind)
+          hb=(la1(:,(sb(i1)+1+nft):(se(i1)-1+nft))'*sd);
+          hb=[((gp.lik.stime(sb(i1)+1)-yt(ind,1)).*la1(:,sb(i1)+nft))'; hb; ((yt(ind,2)-gp.lik.stime(se(i1))).*la1(:,se(i1)+nft))'];
+        else
+          hb = la1(:, se(i1)+nft)'*(yt(ind,2) - yt(ind,1));
+        end
+        cumsumtmp=[zeros(nsamps, sb(ind)) cumsum(hb)'];
+        Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,ind)));
+        mStime=mean(Stime);
+        mST(ind,1)=1-mStime(end);
+      end
+    end
+    p = mST;
   end
-  p = mST;
-  
 end
 
 
