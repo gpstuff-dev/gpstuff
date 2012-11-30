@@ -31,9 +31,9 @@ else
   [Ef, Covf] = gpla_pred(gp, x, y, xt, varargin{:});
 end
 ntime=size(gp.lik.xtime,1);
-if isfield(gp.lik, 'ExtraBaselineCovariates')
-  ind_ebc=gp.lik.ExtraBaselineCovariates;
-  nf1=ntime.*unique([x(:,ind_ebc); xt(:,ind_ebc)], 'rows');
+if isfield(gp.lik, 'stratificationVariables')
+  ind_str=gp.lik.stratificationVariables;
+  nf1=ntime.*unique([x(:,ind_str); xt(:,ind_str)], 'rows');
 else
   nf1=ntime;
 end

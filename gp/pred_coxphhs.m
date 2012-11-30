@@ -15,11 +15,11 @@ function [mh,mS] = pred_coxphhs(gp, x, y, xt, varargin)
 nsamps = 10000;
 ntime=size(gp.lik.xtime,1);
 if isfield(gp.lik, 'stratificationVariables')
-  ind_ebc=gp.lik.ExtraBaselineCovariates;
-  ux=unique([x(:,ind_ebc); xt(:,ind_ebc)],'rows');
+  ind_str=gp.lik.stratificationVariables;
+  ux=unique([x(:,ind_str); xt(:,ind_str)],'rows');
   nu=size(ux,1);
   for i1=1:size(ux,1)
-    uind{i1}=find(xt(:,ind_ebc)==ux(i1,:));
+    uind{i1}=find(xt(:,ind_str)==ux(i1,:));
   end
   nf1=ntime*nu;
 else
