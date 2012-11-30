@@ -26,12 +26,19 @@ if ~strcmp(gp.lik.type, 'Coxph')
   error('Likelihood not Coxph')
 end
 if nargout > 3
-  [Ef, Covf, lpyt] = gpla2_pred(gp, x, y, xt, varargin{:});
+  [Ef, Covf, lpyt] = gpla_pred(gp, x, y, xt, varargin{:});
 else
-  [Ef, Covf] = gpla2_pred(gp, x, y, xt, varargin{:});
+  [Ef, Covf] = gpla_pred(gp, x, y, xt, varargin{:});
 end
-ntime = size(gp.lik.stime,2)-1;
-Eft1 = Ef(1:ntime); Ef(1:ntime) = []; Eft2 = Ef;
+ntime=size(gp.lik.xtime,1);
+if isfield(gp.lik, 'ExtraBaselineCovariates')
+  ind_ebc=gp.lik.ExtraBaselineCovariates;
+  nf1=ntime.*unique([x(:,ind_ebc); xt(:,ind_ebc)], 'rows');
+else
+  nf1=ntime;
+end
+
+Eft1 = Ef(1:nf1); Ef(1:nf1) = []; Eft2 = Ef;
 
 end
 

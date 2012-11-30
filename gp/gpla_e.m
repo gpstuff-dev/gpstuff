@@ -1137,13 +1137,17 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 
                 if isfield(gp.lik,'xtime')
                   xtime=gp.lik.xtime;
-                  if isfield(gp.lik, 'ExtraBaselineCovariates')
-                    ux = unique(x(:,gp.lik.ExtraBaselineCovariates), 'rows');
+                  if isfield(gp.lik, 'stratificationVariables')
+                    ebc_ind=gp.lik.stratificationVariables;
+                    ux = unique(x(:,ebc_ind), 'rows');
                     gp.lik.n_u = size(ux,1);
+                    for i1=1:size(ux,1)
+                      gp.lik.stratind{i1}=(x(:,ebc_ind)==ux(i1));
+                    end
                     [xtime1, xtime2] = meshgrid(ux, xtime);
                     xtime = [xtime2(:) xtime1(:)];
-                    if isfield(gp.lik, 'removeExtraCovariates') && gp.lik.removeExtraCovariates
-                      x(:,gp.lik.ExtraBaselineCovariates)=[];
+                    if isfield(gp.lik, 'removeStratificationVariables') && gp.lik.removeStratificationVariables
+                      x(:,ebc_ind)=[];
                     end
                   end
                   ntime = size(xtime,1);

@@ -422,15 +422,19 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
             ntest=size(xt,1);
             if isfield(gp.lik,'xtime')
               xtime=gp.lik.xtime;
-              if isfield(gp.lik, 'ExtraBaselineCovariates')
-                ind_ebc=gp.lik.ExtraBaselineCovariates;
-                ux = unique([x(:,ind_ebc); xt(:,ind_ebc)], 'rows');
+              if isfield(gp.lik, 'stratificationVariables')
+                ebc_ind=gp.lik.stratificationVariables;
+                ux = unique([x(:,ebc_ind); xt(:,ebc_ind)], 'rows');
                 gp.lik.n_u = size(ux,1);
+                for i1=1:size(ux,1)
+                  gp.lik.stratind{i1}=(x(:,ebc_ind)==ux(i1));
+                  gp.lik.stratindt{i1}=(xt(:,ebc_ind)==ux(i1));
+                end
                 [xtime1, xtime2] = meshgrid(ux, xtime);
                 xtime = [xtime2(:) xtime1(:)];
-                if isfield(gp.lik, 'removeExtraCovariates') && gp.lik.removeExtraCovariates
-                  x(:,ind_ebc)=[];
-                  xt(:,ind_ebc)=[];
+                if isfield(gp.lik, 'removeStratificationVariables') && gp.lik.removeStratificationVariables
+                  x(:,ebc_ind)=[];
+                  xt(:,ebc_ind)=[];
                 end
               end
               ntime = size(xtime,1);
@@ -443,7 +447,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
             nlp=length(nl); % number of latent processes
             
             if isfield(gp.lik,'xtime')
-              [llg2diag, llg2mat] = feval(gp.lik.fh.llg2, gp.lik, y, f, 'latent', z);
+              [llg2diag, llg2mat] = gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
               % W = [diag(Wdiag(1:ntime)) Wmat; Wmat' diag(Wdiag(ntime+1:end))]
               Wdiag=-llg2diag; Wmat=-llg2mat;
             else
@@ -480,7 +484,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
               end
             end
             
-            deriv = feval(gp.lik.fh.llg, gp.lik, y, f, 'latent', z);
+            deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             Eft = K_nf*deriv;
             if isfield(gp,'meanf')
               Eft=Eft + K_nf*(K\H'*b_m);

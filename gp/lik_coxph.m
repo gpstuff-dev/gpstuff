@@ -51,6 +51,8 @@ function lik = lik_coxph(varargin)
   ip.FunctionName = 'LIK_COXPH';
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('S', linspace(0,1.001,50), @(x) isvector(x));
+  ip.addParamValue('stratificationVariables', [], @(x) isvector(x) && all(rem(x,1)==0));
+  ip.addParamValue('removeStratificationVariables', [], @(x) ismember(x, {'on' 'off'}));
   ip.parse(varargin{:});
   lik=ip.Results.lik;
   
@@ -73,6 +75,15 @@ function lik = lik_coxph(varargin)
     end
     lik.xtime=xtmp;
     lik.stime=s;
+  end
+  
+  if ~ismember('stratificationVariables', ip.UsingDefaults)
+    lik.stratificationVariables = ip.Results.stratificationVariables;
+    if ~ismember('stratificationVariables', ip.UsingDefaults)
+      if isequal(ip.Results.removeStratificationVariables, 'on')
+        lik.removeStratificationVariables=true;
+      end
+    end
   end
   
   if init
@@ -152,12 +163,19 @@ function lik = lik_coxph(varargin)
              'example, lik_coxph and gpla_e.               ']);
     end
     
+    [n,ny]=size(y);    
     ntime=size(lik.xtime,1);
-    
-    [n,ny]=size(y);
-    
-    f1=f(1:ntime);
-    f2=f((ntime+1):(ntime+n));
+    i3v=ones(size(y,1),1);
+    if isfield(lik, 'stratificationVariables')
+      f1=f(1:ntime*lik.n_u);
+      f2=f((ntime*lik.n_u+1):(ntime*lik.n_u+n));
+      for i=1:lik.n_u
+        i3v(lik.stratind{i})=i;
+      end
+    else
+      f1=f(1:ntime);
+      f2=f((ntime+1):(ntime+n));
+    end    
     
     la1=exp(f1);
     eta2=exp(f2);
@@ -168,27 +186,30 @@ function lik = lik_coxph(varargin)
     if ny==1
       ll=0;
       for i1=1:n
+        i3=i3v(i1);
+        nft=(i3-1)*ntime;
         si=sum(y(i1)>lik.stime);
-        ll=ll + nu(i1).*(f1(si)+f2(i1)) - (y(i1)-lik.stime(si)).*la1(si).*eta2(i1) - sum(sd.*la1(1:(si-1)).*eta2(i1));
+        ll=ll + nu(i1).*(f1(si+nft)+f2(i1)) - (y(i1)-lik.stime(si)).*la1(si+nft).*eta2(i1) ...
+              - sum(sd.*la1((1+nft):(si-1+nft)).*eta2(i1));
       end
     else
       
       ll=0;
       sb=sum(bsxfun(@gt,y(:,1),lik.stime),2);
       se=sum(bsxfun(@gt,y(:,2),lik.stime),2);
-      for i1=1:n
-        %sb=sum(y(i1,1)>lik.stime); % begin
-        %se=sum(y(i1,2)>lik.stime); % end
-        %[i1 sb se se-sb]
-        
+      for i1=1:n        
+        i3=i3v(i1);        
+        nft=(i3-1)*ntime;
         if sb(i1)==0
-          ll=ll + nu(i1).*(f1(se(i1))+f2(i1)) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1) - sum(sd.*la1(1:(se(i1)-1)).*eta2(i1));
+          ll=ll + nu(i1).*(f1(se(i1)+nft)+f2(i1)) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)+nft).*eta2(i1) ...
+                - sum(sd.*la1((1+nft):(se(i1)-1+nft)).*eta2(i1));
         else
           
           if se(i1)==sb(i1)
-            ll=ll + nu(i1).*(f1(se(i1))+f2(i1)) - (y(i1,2)-y(i1,1)).*la1(se(i1)).*eta2(i1);
+            ll=ll + nu(i1).*(f1(se(i1)+nft)+f2(i1)) - (y(i1,2)-y(i1,1)).*la1(se(i1)+nft).*eta2(i1);
           else
-            ll=ll + nu(i1).*(f1(se(i1))+f2(i1)) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1) - sum(sd.*la1((sb(i1)+1):(se(i1)-1)).*eta2(i1)) - (lik.stime(sb(i1)+1)-y(i1,1)).*la1(sb(i1)).*eta2(i1);
+            ll=ll + nu(i1).*(f1(se(i1)+nft)+f2(i1)) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)+nft).*eta2(i1) ...
+                - sum(sd.*la1((sb(i1)+1+nft):(se(i1)-1+nft)).*eta2(i1)) - (lik.stime(sb(i1)+1)-y(i1,1)).*la1(sb(i1)+nft).*eta2(i1);
           end
         end
       end
@@ -216,31 +237,55 @@ function lik = lik_coxph(varargin)
              'occurrences as an extra input z. See, for         '...
              'example, lik_coxph and gpla_e.               ']);
     end
-
-    ntime=size(lik.xtime,1);
+    
+    ntime=size(lik.xtime,1);    
     
     [n,ny]=size(y);
-    f1=f(1:ntime);
-    f2=f((ntime+1):(ntime+n));
+    i3v=ones(size(y));
+    if isfield(lik, 'stratificationVariables')
+      f1=f(1:ntime*lik.n_u);
+      f2=f((ntime*lik.n_u+1):(ntime*lik.n_u+n));
+      llg=zeros(ntime*lik.n_u+n,1);
+      for i=1:lik.n_u
+        i3v(lik.stratind{i})=i;
+      end
+      nf1=lik.n_u*ntime;
+    else
+      f1=f(1:ntime);
+      f2=f((ntime+1):(ntime+n));
+      llg=zeros(ntime+n,1);
+      nf1=ntime;
+    end
     
     la1=exp(f1(:));
     eta2=exp(f2(:));
     
     nu=1-z;
     sd=lik.stime(2)-lik.stime(1);
-    llg=zeros(ntime+n,1);
     
     switch param
       case 'latent'
           
       if ny==1
-        for i1=1:ntime
-          ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
-          llg(i1)= sum(nu(ind) - (y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
+        if ~isfield(lik, 'stratificationVariables')
+          for i1=1:ntime
+            ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
+            llg(i1)= sum(nu(ind) - (y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
+          end
+        else
+          for j=1:lik.n_u
+            for i1=1:ntime
+              ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
+              ind2=lik.stratind{j};
+              llg(i1+(j-1)*ntime)= sum(nu(ind & ind2) - (y(ind & ind2)-lik.stime(i1)).*la1(i1+(j-1)*ntime).*eta2(ind & ind2)) - sum(sum(sd.*la1(i1+(j-1)*ntime)).*eta2((~ind & ind2) & y>=lik.stime(i1+1)));
+            end
+          end
         end
         for i1=1:n
+          i3=i3v(i1);
+          nft=(i3-1)*ntime;
           si=sum(y(i1)>lik.stime);
-          llg(i1+ntime)= nu(i1) - (y(i1)-lik.stime(si)).*la1(si).*eta2(i1) - sum(sd.*la1(1:(si-1)).*eta2(i1));
+          llg(i1+nf1)= nu(i1) - (y(i1)-lik.stime(si)).*la1(si+nft).*eta2(i1) - sum(sd.*la1((1+nft):(si-1+nft)).*eta2(i1));
         end
       else
         for i1=1:ntime
@@ -254,30 +299,48 @@ function lik = lik_coxph(varargin)
           % follow-up exit: (4)
           ind_sp = y(:,1)<lik.stime(i1) & y(:,2)>=lik.stime(i1) & y(:,2)<lik.stime(i1+1);
           
-          % (1)
-          s2b=sum(-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst));
-          % (2)
-          s3b=sum(nu(ind_stsp)) - sum((y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp));
-          % (3)
-          s4= - sum(sd.*la1(i1).*eta2(ind_s));
-          % (4)
-          s5=sum(nu(ind_sp)) - sum((y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp));
+          if ~isfield(lik, 'stratificationVariables')
+            % (1)
+            s2b=sum(-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst));
+            % (2)
+            s3b=sum(nu(ind_stsp)) - sum((y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp));
+            % (3)
+            s4= - sum(sd.*la1(i1).*eta2(ind_s));
+            % (4)
+            s5=sum(nu(ind_sp)) - sum((y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp));
+            
+            llg(i1) = s2b+s3b+s4+s5;
+          else
+            for j=1:lik.n_u
+              ind2 = lik.stratind{j};
+              nft=(j-1)*ntime;
+              % (1)
+              s2b=sum(-(lik.stime(i1+1)-y(ind_vkst & ind2,1)).*la1(i1+nft).*eta2(ind_vkst & ind2));
+              % (2)
+              s3b=sum(nu(ind_stsp & ind2)) - sum((y(ind_stsp & ind2,2)-y(ind_stsp & ind2,1)).*la1(i1+nft).*eta2(ind_stsp & ind2));
+              % (3)
+              s4= - sum(sd.*la1(i1+nft).*eta2(ind_s & ind2));
+              % (4)
+              s5=sum(nu(ind_sp & ind2)) - sum((y(ind_sp & ind2,2)-lik.stime(i1)).*la1(i1+nft).*eta2(ind_sp & ind2));
+              
+              llg(i1+nft) = s2b+s3b+s4+s5;
+            end
+          end
           
-          llg(i1) = s2b+s3b+s4+s5;
         end
         
         sb=sum(bsxfun(@gt,y(:,1),lik.stime),2);
         se=sum(bsxfun(@gt,y(:,2),lik.stime),2);
         for i1=1:n
-          %sb=sum(y(i1,1)>lik.stime); % begin
-          %se=sum(y(i1,2)>lik.stime); % end
+          i3=i3v(i1);
+          nft=(i3-1)*ntime;
           if sb(i1)==0
-            llg(i1+ntime)= nu(i1) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1) - sum(sd.*la1(1:(se(i1)-1)).*eta2(i1));
+            llg(i1+nf1)= nu(i1) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)+nft).*eta2(i1) - sum(sd.*la1((1+nft):(se(i1)-1+nft)).*eta2(i1));
           else
             if se(i1)==sb(i1)
-              llg(i1+ntime) = nu(i1) - (y(i1,2)-y(i1,1)).*la1(se(i1)).*eta2(i1);
+              llg(i1+nf1) = nu(i1) - (y(i1,2)-y(i1,1)).*la1(se(i1)+nft).*eta2(i1);
             else
-              llg(i1+ntime) = nu(i1) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1) - sum(sd.*la1((sb(i1)+1):(se(i1)-1)).*eta2(i1)) - (lik.stime(sb(i1)+1)-y(i1,1)).*la1(sb(i1)).*eta2(i1);
+              llg(i1+nf1) = nu(i1) - (y(i1,2)-lik.stime(se(i1))).*la1(se(i1)+nft).*eta2(i1) - sum(sd.*la1((sb(i1)+1+nft):(se(i1)-1+nft)).*eta2(i1)) - (lik.stime(sb(i1)+1)-y(i1,1)).*la1(sb(i1)+nft).*eta2(i1);
             end
           end
         end
@@ -311,51 +374,88 @@ function lik = lik_coxph(varargin)
              'example, lik_coxph and gpla_e.               ']);
     end
     
-    ntime=size(lik.xtime,1);
     [n,ny]=size(y);
-    f1=f(1:ntime);
-    f2=f((ntime+1):(ntime+n));
-    
+    ntime=size(lik.xtime,1);
+    i3v=ones(size(y,1),1);
+    if isfield(lik, 'stratificationVariables')
+      f1=f(1:ntime*lik.n_u);
+      f2=f((ntime*lik.n_u+1):(ntime*lik.n_u+n));
+      llg2=zeros(ntime*lik.n_u+n,1);
+      llg2mat=zeros(ntime*lik.n_u,n);
+      for i=1:lik.n_u
+        i3v(lik.stratind{i})=i;
+      end
+      nf1=ntime*lik.n_u;
+    else
+      f1=f(1:ntime);
+      f2=f((ntime+1):(ntime+n));
+      llg2=zeros(ntime+n,1);
+      llg2mat=zeros(ntime,n);
+      nf1=ntime;
+    end
+   
     la1=exp(f1);
     eta2=exp(f2);
     
     %nu=1-z;
     sd=lik.stime(2)-lik.stime(1);
-    
     switch param
       case 'latent'
         
         if ny==1
-          llg2=zeros(ntime+n,1);
-          llg2mat=zeros(ntime,n);
           % 11
-          for i1=1:ntime
-            ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
-            llg2(i1)= sum(-(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
-            %llg2(i1,i1)= sum(-(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
+          if ~isfield(lik, 'stratificationVariables')
+            for i1=1:ntime
+              ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
+              llg2(i1)= sum(-(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
+              %llg2(i1,i1)= sum(-(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
+            end
+          else
+            for j=1:lik.n_u
+              for i1=1:ntime                
+                ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
+                ind2=lik.stratind{j};
+                llg2(i1+(j-1)*ntime)= sum(-(y(ind & ind2)-lik.stime(i1)).*la1(i1+ntime*(j-1)).*eta2(ind & ind2)) - sum(sum(sd.*la1(i1+ntime*(j-1))).*eta2((~ind & ind2) & y>=lik.stime(i1+1)));
+                %llg2(i1,i1)= sum(-(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind)) - sum(sum(sd.*la1(i1)).*eta2(~ind & y>=lik.stime(i1+1)));
+              end
+            end
           end
           
           % 22
           for i1=1:n
             si=sum(y(i1)>lik.stime);
-            llg2(i1+ntime)= -(y(i1)-lik.stime(si)).*la1(si).*eta2(i1) - sum(sd.*la1(1:(si-1)).*eta2(i1));
+            i3=i3v(i1);
+            llg2(i1+nf1)= -(y(i1)-lik.stime(si)).*la1(si+(i3-1)*ntime).*eta2(i1) - sum(sd.*la1((1+(i3-1)*ntime):(si-1+(i3-1)*ntime)).*eta2(i1));
             %llg2(i1+ntime,i1+ntime)= -(y(i1)-lik.stime(si)).*la1(si).*eta2(i1) - sum(sd.*la1(1:(si-1)).*eta2(i1));
           end
           
           % derivative wrt f1 and f2:
-          for i1=1:ntime
-            ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
-            llg2mat(i1,find(ind))= -(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind);
-            llg2mat(i1,find((~ind & y>=lik.stime(i1+1)))) = - sd.*la1(i1).*eta2((~ind & y>=lik.stime(i1+1)));
-            %llg2(i1,ntime+find(ind))= -(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind);
-            %llg2(i1,ntime+find((~ind & y>=lik.stime(i1+1)))) = - sd.*la1(i1).*eta2((~ind & y>=lik.stime(i1+1)));
-            %llg2(ntime+find(ind),i1)=llg2(i1,ntime+find(ind));
-            %llg2(ntime+find((~ind & y>=lik.stime(i1+1))),i1)=llg2(i1,ntime+find((~ind & y>=lik.stime(i1+1))));
+          if ~isfield(lik, 'stratificationVariables')
+            for i1=1:ntime
+              ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
+              llg2mat(i1,find(ind))= -(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind);
+              llg2mat(i1,find((~ind & y>=lik.stime(i1+1)))) = - sd.*la1(i1).*eta2((~ind & y>=lik.stime(i1+1)));
+              %llg2(i1,ntime+find(ind))= -(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind);
+              %llg2(i1,ntime+find((~ind & y>=lik.stime(i1+1)))) = - sd.*la1(i1).*eta2((~ind & y>=lik.stime(i1+1)));
+              %llg2(ntime+find(ind),i1)=llg2(i1,ntime+find(ind));
+              %llg2(ntime+find((~ind & y>=lik.stime(i1+1))),i1)=llg2(i1,ntime+find((~ind & y>=lik.stime(i1+1))));
+            end
+          else
+            for j=1:lik.n_u
+              ind2=lik.stratind{j};
+              for i1=1:ntime
+                ind=y>=lik.stime(i1) & y<lik.stime(i1+1);
+                llg2mat(i1+(j-1)*ntime,find(ind & ind2))= -(y(ind & ind2)-lik.stime(i1)).*la1(i1+(j-1)*ntime).*eta2(ind & ind2);
+                llg2mat(i1+(j-1)*ntime,find(((~ind & ind2) & y>=lik.stime(i1+1)))) = - sd.*la1(i1+(j-1)*ntime).*eta2(((~ind & ind2) & y>=lik.stime(i1+1)));
+                %llg2(i1,ntime+find(ind))= -(y(ind)-lik.stime(i1)).*la1(i1).*eta2(ind);
+                %llg2(i1,ntime+find((~ind & y>=lik.stime(i1+1)))) = - sd.*la1(i1).*eta2((~ind & y>=lik.stime(i1+1)));
+                %llg2(ntime+find(ind),i1)=llg2(i1,ntime+find(ind));
+                %llg2(ntime+find((~ind & y>=lik.stime(i1+1))),i1)=llg2(i1,ntime+find((~ind & y>=lik.stime(i1+1))));
+              end
+            end
           end
           
         else
-          llg2=zeros(ntime+n,1);
-          llg2mat=zeros(ntime,n);
           
           % 11
           for i1=1:ntime
@@ -369,35 +469,48 @@ function lik = lik_coxph(varargin)
             % follow-up exit: (4)
             ind_sp = y(:,1)<lik.stime(i1) & y(:,2)>=lik.stime(i1) & y(:,2)<lik.stime(i1+1);
             
-            
-            % (1)
-            s2b=sum(-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst));
-            % (2)
-            s3b=-sum((y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp));
-            % (3)
-            s4=-sum(sd.*la1(i1).*eta2(ind_s));
-            % (4)
-            s5=-sum((y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp));
-            llg2(i1) = s2b+s3b+s4+s5;
-            %llg2(i1,i1) = s2b+s3b+s4+s5;
+            if ~isfield(lik, 'stratificationVariables')
+              % (1)
+              s2b=sum(-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst));
+              % (2)
+              s3b=-sum((y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp));
+              % (3)
+              s4=-sum(sd.*la1(i1).*eta2(ind_s));
+              % (4)
+              s5=-sum((y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp));
+              llg2(i1) = s2b+s3b+s4+s5;
+            else
+              for j=1:lik.n_u
+                ind2=lik.stratind{j};
+                nft=(j-1)*ntime;
+                % (1)
+                s2b=sum(-(lik.stime(i1+1)-y(ind_vkst & ind2,1)).*la1(i1+nft).*eta2(ind_vkst & ind2));
+                % (2)
+                s3b=-sum((y(ind_stsp & ind2,2)-y(ind_stsp & ind2,1)).*la1(i1+nft).*eta2(ind_stsp & ind2));
+                % (3)
+                s4=-sum(sd.*la1(i1+nft).*eta2(ind_s & ind2));
+                % (4)
+                s5=-sum((y(ind_sp & ind2,2)-lik.stime(i1)).*la1(i1+nft).*eta2(ind_sp & ind2));
+                llg2(i1+nft) = s2b+s3b+s4+s5;
+              end
+            end
           end
           
           % 22
           sb=sum(bsxfun(@gt,y(:,1),lik.stime),2);
           se=sum(bsxfun(@gt,y(:,2),lik.stime),2);
           for i1=1:n
-            %sb=sum(y(i1,1)>lik.stime); % begin
-            %se=sum(y(i1,2)>lik.stime); % end
-            
+            i3=i3v(i1);
+            nft=(i3-1)*ntime;
             if sb(i1)==0
-              llg2(i1+ntime)= -(y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1) - sum(sd.*la1(1:(se(i1)-1)).*eta2(i1));
+              llg2(i1+nf1)= -(y(i1,2)-lik.stime(se(i1))).*la1(se(i1)+nft).*eta2(i1) - sum(sd.*la1((1+nft):(se(i1)-1+nft)).*eta2(i1));
               %llg2(i1+ntime,i1+ntime)= -(y(i1,2)-lik.stime(se)).*la1(se).*eta2(i1) - sum(sd.*la1(1:(se-1)).*eta2(i1));
             else
               if se(i1)==sb(i1)
-                llg2(i1+ntime) = -(y(i1,2)-y(i1,1)).*la1(se(i1)).*eta2(i1);
+                llg2(i1+nf1) = -(y(i1,2)-y(i1,1)).*la1(se(i1)+nft).*eta2(i1);
                 %llg2(i1+ntime,i1+ntime) = -(y(i1,2)-y(i1,1)).*la1(se).*eta2(i1);
               else
-                llg2(i1+ntime) = -(y(i1,2)-lik.stime(se(i1))).*la1(se(i1)).*eta2(i1) - sum(sd.*la1((sb(i1)+1):(se(i1)-1)).*eta2(i1)) - (lik.stime(sb(i1)+1)-y(i1,1)).*la1(sb(i1)).*eta2(i1);
+                llg2(i1+nf1) = -(y(i1,2)-lik.stime(se(i1))).*la1(se(i1)+nft).*eta2(i1) - sum(sd.*la1((sb(i1)+1+nft):(se(i1)-1+nft)).*eta2(i1)) - (lik.stime(sb(i1)+1)-y(i1,1)).*la1(sb(i1)+nft).*eta2(i1);
                 %llg2(i1+ntime,i1+ntime) = -(y(i1,2)-lik.stime(se)).*la1(se).*eta2(i1) - sum(sd.*la1((sb+1):(se-1)).*eta2(i1)) - (lik.stime(sb+1)-y(i1,1)).*la1(sb).*eta2(i1);
               end
             end
@@ -414,23 +527,31 @@ function lik = lik_coxph(varargin)
             ind_s = y(:,1)<lik.stime(i1) & y(:,2)>=lik.stime(i1+1);
             % follow-up exit: (4)
             ind_sp = y(:,1)<lik.stime(i1) & y(:,2)>=lik.stime(i1) & y(:,2)<lik.stime(i1+1);
-            % (1)
-            %llg2mat(i1,find(ind_vkst))=-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst);
-            llg2mat(i1,ind_vkst)=-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst);
-            %llg2mat(find(ind_vkst),i1)=llg2mat(i1,find(ind_vkst));
+
             
-            % (2)
-            %llg2mat(i1,find(ind_stsp))=-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp);
-            llg2mat(i1,ind_stsp)=-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp);
-            %llg2mat(find(ind_stsp),i1)=llg2mat(i1,find(ind_stsp));
-            % (3)
-            %llg2mat(i1,find(ind_s))= -sd.*la1(i1).*eta2(ind_s);
-            llg2mat(i1,ind_s)= -sd.*la1(i1).*eta2(ind_s);
-            %llg2mat(find(ind_s),i1)=llg2mat(i1,find(ind_s));
-            % (4)
-            %llg2mat(i1,find(ind_sp))=-(y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp);
-            llg2mat(i1,ind_sp)=-(y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp);
-            %llg2mat(find(ind_sp),i1)=llg2mat(i1,find(ind_sp));
+            if ~isfield(lik, 'stratificationVariables')
+              % (1)
+              llg2mat(i1,ind_vkst)=-(lik.stime(i1+1)-y(ind_vkst,1)).*la1(i1).*eta2(ind_vkst);
+              % (2)
+              llg2mat(i1,ind_stsp)=-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(i1).*eta2(ind_stsp);
+              % (3)
+              llg2mat(i1,ind_s)= -sd.*la1(i1).*eta2(ind_s);
+              % (4)
+              llg2mat(i1,ind_sp)=-(y(ind_sp,2)-lik.stime(i1)).*la1(i1).*eta2(ind_sp);
+            else
+              for j=1:lik.n_u
+                ind2=lik.stratind{j};
+                nft=(j-1)*ntime;
+                % (1)
+                llg2mat(i1+nft,ind_vkst & ind2)=-(lik.stime(i1+1)-y(ind_vkst & ind2,1)).*la1(i1+nft).*eta2(ind_vkst & ind2);
+                % (2)
+                llg2mat(i1+nft,ind_stsp & ind2)=-(y(ind_stsp & ind2,2)-y(ind_stsp & ind2,1)).*la1(i1+nft).*eta2(ind_stsp & ind2);
+                % (3)
+                llg2mat(i1+nft,ind_s & ind2)= -sd.*la1(i1+nft).*eta2(ind_s & ind2);
+                % (4)
+                llg2mat(i1+nft,ind_sp & ind2)=-(y(ind_sp & ind2,2)-lik.stime(i1)).*la1(i1+nft).*eta2(ind_sp & ind2);
+              end
+            end
           end
       end
     end
@@ -457,216 +578,202 @@ function lik = lik_coxph(varargin)
              'occurrences as an extra input z. See, for         '...
              'example, lik_coxph and gpla_e.               ']);
     end
-
+    
     ntime=size(lik.xtime,1);
     
     [n,ny]=size(y);
-    f1=f(1:ntime);
-    f2=f((ntime+1):(ntime+n));
+    if isfield(lik, 'stratificationVariables')
+      f1=f(1:ntime*lik.n_u);
+      f2=f((ntime*lik.n_u+1):(ntime*lik.n_u+n));
+      llg3=zeros(ntime*lik.n_u+n,1);
+      llg3mat=zeros(ntime*lik.n_u,n);
+      nf1=ntime*lik.n_u;
+      if j1>nf1
+        for j=1:lik.n_u
+          if lik.stratind{j}(j1-nf1)==1;
+            i3=j;
+            break;
+          end
+        end
+      end
+    else
+      f1=f(1:ntime);
+      f2=f((ntime+1):(ntime+n));
+      llg3=zeros(ntime+n,1);
+      llg3mat=zeros(ntime,n);
+      nf1=ntime;
+      i3=1;
+    end
     
     la1=exp(f1);
     eta2=exp(f2);
     
     %nu=1-z;
     sd=lik.stime(2)-lik.stime(1);
+   
     
     switch param
       case 'latent'
         
         if ny==1
-          %llg3=sparse(ntime+n,ntime+n);
-          %llg3=zeros(ntime+n,ntime+n);
-          llg3=zeros(ntime+n,1);
-          llg3mat=zeros(ntime,n);
           
-          if j1<=ntime
+          if j1<=nf1
+            
+            indt=rem(j1,ntime);
+            if indt==0
+              indt=ntime;
+            end
             
             % 11
-            ind=y>=lik.stime(j1) & y<lik.stime(j1+1);
-            fi=find(ind);
-            fni=find(~ind & y>=lik.stime(j1+1));
+            ind=y>=lik.stime(indt) & y<lik.stime(indt+1);
             
-            llg3(j1) = sum(-(y(ind)-lik.stime(j1)).*la1(j1).*eta2(ind)) - sum(sum(sd.*la1(j1)).*eta2(~ind & y>=lik.stime(j1+1)));
-            %llg3(j1,j1) = sum(-(y(ind)-lik.stime(j1)).*la1(j1).*eta2(ind)) - sum(sum(sd.*la1(j1)).*eta2(~ind & y>=lik.stime(j1+1)));
+            if isfield(lik, 'stratificationVariables')
+              ind2=lik.stratind{(j1-indt)/ntime+1};
+            else
+              ind2=ones(size(ind));
+            end
             
-            % 22
-            %              llg3(ntime+fi,ntime+fi) = diag(-(y(ind)-lik.stime(j1)).*la1(j1).*eta2(ind));
-            %              llg3(ntime+fni,ntime+fni) = diag(-sd.*la1(j1).*eta2((~ind & y>=lik.stime(j1+1))));
+            fi=find(ind & ind2);
+            fni=find((~ind & ind2) & y>=lik.stime(indt));
             
+            llg3(j1) = sum(-(y(ind & ind2)-lik.stime(indt)).*la1(j1).*eta2(ind & ind2)) - sum(sum(sd.*la1(j1)).*eta2((~ind & ind2) & y>=lik.stime(indt+1)));
+
             if ~isempty(fi)
-              valtmp=(-(y(ind)-lik.stime(j1)).*la1(j1).*eta2(ind));
+              valtmp=(-(y(ind & ind2)-lik.stime(indt)).*la1(j1).*eta2(ind & ind2));
               for m2i=1:length(valtmp)
-                llg3( ntime+fi(m2i))  = valtmp(m2i);
-                %llg3( ntime+fi(m2i), ntime+fi(m2i))  = valtmp(m2i);
+                llg3( nf1+fi(m2i))  = valtmp(m2i);
               end
             end
             if ~isempty(fni)
-              valtmp2=(-sd.*la1(j1).*eta2((~ind & y>=lik.stime(j1+1))));
+              valtmp2=(-sd.*la1(j1).*eta2(((~ind & ind2) & y>=lik.stime(indt+1))));
               for m2i=1:length(valtmp2)
-                llg3( ntime+fni(m2i))  = valtmp2(m2i);
-                %llg3( ntime+fni(m2i), ntime+fni(m2i))  = valtmp2(m2i);
+                llg3( nf1+fni(m2i))  = valtmp2(m2i);
               end
             end
             
             % 12/21
             % derivative wrt f1 and f2:
-            val1tmp=-(y(ind)-lik.stime(j1)).*la1(j1).*eta2(ind);
+            val1tmp=-(y(ind & ind2)-lik.stime(indt)).*la1(j1).*eta2(ind & ind2);
             llg3mat(j1,fi)= val1tmp;
-            %llg3(j1,ntime+fi)= val1tmp;
-            %llg3(ntime+fi,j1)=val1tmp;
             
-            val2tmp = - sd.*la1(j1).*eta2((~ind & y>=lik.stime(j1+1)));
+            val2tmp = - sd.*la1(j1).*eta2(((~ind & ind2) & y>=lik.stime(indt+1)));
             llg3mat(j1,fni) = val2tmp;
-            %llg3(j1,ntime+fni) = val2tmp;
-            %llg3(ntime+fni,j1)=val2tmp;
             
-          else
+          else            
             
             % 11
-            s1=sum(y(j1-ntime)>lik.stime);
-            llg3(1:(s1-1)) = - sd.*la1(1:(s1-1)).*eta2(j1-ntime);
-            llg3(s1) = -(y(j1-ntime)-lik.stime(s1)).*la1(s1).*eta2(j1-ntime);
-            %llg3(1:(s1-1),1:(s1-1)) = diag( - sd.*la1(1:(s1-1)).*eta2(j1-ntime));
-            %llg3(s1,s1) = -(y(j1-ntime)-lik.stime(s1)).*la1(s1).*eta2(j1-ntime);
+            s1=sum(y(j1-nf1)>lik.stime);
+            llg3((1+(i3-1)*ntime):(s1-1+(i3-1)*ntime)) = - sd.*la1((1+(i3-1)*ntime):(s1-1+(i3-1)*ntime)).*eta2(j1-nf1);
+            llg3(s1+(i3-1)*ntime) = -(y(j1-nf1)-lik.stime(s1)).*la1(s1+(i3-1)*ntime).*eta2(j1-nf1);
             
             % 22
-            llg3(j1) = -(y(j1-ntime)-lik.stime(s1)).*la1(s1).*eta2(j1-ntime) - sum(sd.*la1(1:(s1-1)).*eta2(j1-ntime));
-            %llg3(j1,j1) = -(y(j1-ntime)-lik.stime(s1)).*la1(s1).*eta2(j1-ntime) - sum(sd.*la1(1:(s1-1)).*eta2(j1-ntime));
+            llg3(j1) = -(y(j1-nf1)-lik.stime(s1)).*la1(s1+(i3-1)*ntime).*eta2(j1-nf1) ...
+                        - sum(sd.*la1((1+(i3-1)*ntime):(s1-1+(i3-1)*ntime)).*eta2(j1-nf1));
             
             % 12/21
             % derivative wrt f1 and f2:
-            val3tmp = - sd.*la1(1:(s1-1)).*eta2(j1-ntime);
-            llg3mat(1:(s1-1),j1-ntime)= val3tmp;
-            %llg3(1:(s1-1),j1)= val3tmp;
-            %llg3(j1,1:(s1-1))=val3tmp;
-            
-            llg3mat(s1,j1-ntime) = -(y(j1-ntime)-lik.stime(s1)).*la1(s1).*eta2(j1-ntime);
-            %llg3(s1,j1) = -(y(j1-ntime)-lik.stime(s1)).*la1(s1).*eta2(j1-ntime);
-            %llg3(j1,s1)=llg3(s1,j1);
+            val3tmp = - sd.*la1((1+(i3-1)*ntime):(s1-1+(i3-1)*ntime)).*eta2(j1-nf1);
+            llg3mat((1+(i3-1)*ntime):(s1-1+(i3-1)*ntime),j1-nf1)= val3tmp;
+            llg3mat(s1+(i3-1)*ntime,j1-nf1) = -(y(j1-nf1)-lik.stime(s1)).*la1(s1+(i3-1)*ntime).*eta2(j1-nf1);
             
           end
           
         else
-          llg3=zeros(ntime+n,1);
-          llg3mat=zeros(ntime,n);
           
-          if j1<=ntime
+          if j1<=nf1
+            
+            indt=rem(j1,ntime);
+            if indt==0
+              indt=ntime;
+            end                      
+            if isfield(lik, 'stratificationVariables')
+              ind2=lik.stratind{(j1-indt)/ntime+1};
+            else
+              ind2=ones(size(y,1),1);
+            end
             
             % 11
             % left truncated + follow-up entry: (1)
-            ind_vkst = y(:,1)>=lik.stime(j1) & y(:,1)<lik.stime(j1+1) & y(:,2)>=lik.stime(j1+1);
+            ind_vkst = y(:,1)>=lik.stime(indt) & y(:,1)<lik.stime(indt+1) & y(:,2)>=lik.stime(indt+1);
             % follow-up entry + follow-up exit: (2)
-            ind_stsp = y(:,1)>=lik.stime(j1) & y(:,1)<lik.stime(j1+1) & y(:,2)>=lik.stime(j1) & y(:,2)<lik.stime(j1+1);
+            ind_stsp = y(:,1)>=lik.stime(indt) & y(:,1)<lik.stime(indt+1) & y(:,2)>=lik.stime(indt) & y(:,2)<lik.stime(indt+1);
             % follow-up: (3)
-            ind_s = y(:,1)<lik.stime(j1) & y(:,2)>=lik.stime(j1+1);
+            ind_s = y(:,1)<lik.stime(indt) & y(:,2)>=lik.stime(indt+1);
             % follow-up exit: (4)
-            ind_sp = y(:,1)<lik.stime(j1) & y(:,2)>=lik.stime(j1) & y(:,2)<lik.stime(j1+1);
+            ind_sp = y(:,1)<lik.stime(indt) & y(:,2)>=lik.stime(indt) & y(:,2)<lik.stime(indt+1);
+            
             
             % (1)
-            s2b=sum(-(lik.stime(j1+1)-y(ind_vkst,1)).*la1(j1).*eta2(ind_vkst));
+            s2b=sum(-(lik.stime(indt+1)-y(ind_vkst & ind2,1)).*la1(j1).*eta2(ind_vkst & ind2));
             % (2)
-            s3b=-sum((y(ind_stsp,2)-y(ind_stsp,1)).*la1(j1).*eta2(ind_stsp));
+            s3b=-sum((y(ind_stsp & ind2,2)-y(ind_stsp & ind2,1)).*la1(j1).*eta2(ind_stsp & ind2));
             % (3)
-            s4=-sum(sd.*la1(j1).*eta2(ind_s));
+            s4=-sum(sd.*la1(j1).*eta2(ind_s & ind2));
             % (4)
-            s5=-sum((y(ind_sp,2)-lik.stime(j1)).*la1(j1).*eta2(ind_sp));
+            s5=-sum((y(ind_sp & ind2,2)-lik.stime(indt)).*la1(j1).*eta2(ind_sp & ind2));
             
             llg3(j1) = s2b+s3b+s4+s5;
-            %llg3(j1,j1) = s2b+s3b+s4+s5;
             
             % 22
             % (1)
-            llg3(ntime+find(ind_vkst))=-(lik.stime(j1+1)-y(ind_vkst,1)).*la1(j1).*eta2(ind_vkst);
-            %llg3(ntime+find(ind_vkst),ntime+find(ind_vkst))=diag(-(lik.stime(j1+1)-y(ind_vkst,1)).*la1(j1).*eta2(ind_vkst));
+            llg3(nf1+find(ind_vkst & ind2))=-(lik.stime(indt+1)-y(ind_vkst & ind2,1)).*la1(j1).*eta2(ind_vkst & ind2);
             % (2)
-            llg3(ntime+find(ind_stsp))=-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(j1).*eta2(ind_stsp);
-            %llg3(ntime+find(ind_stsp),ntime+find(ind_stsp))=diag(-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(j1).*eta2(ind_stsp));
+            llg3(nf1+find(ind_stsp & ind2))=-(y(ind_stsp & ind2,2)-y(ind_stsp & ind2,1)).*la1(j1).*eta2(ind_stsp & ind2);
             % (3)
-            llg3(ntime+find(ind_s))= -sd.*la1(j1).*eta2(ind_s);
-            %llg3(ntime+find(ind_s),ntime+find(ind_s))= diag(-sd.*la1(j1).*eta2(ind_s));
+            llg3(nf1+find(ind_s & ind2))= -sd.*la1(j1).*eta2(ind_s & ind2);
             % (4)
-            llg3(ntime+find(ind_sp))=-(y(ind_sp,2)-lik.stime(j1)).*la1(j1).*eta2(ind_sp);
-            %llg3(ntime+find(ind_sp),ntime+find(ind_sp))=diag(-(y(ind_sp,2)-lik.stime(j1)).*la1(j1).*eta2(ind_sp));
+            llg3(nf1+find(ind_sp & ind2))=-(y(ind_sp & ind2,2)-lik.stime(indt)).*la1(j1).*eta2(ind_sp & ind2);
             
             % 12/21
-            llg3mat(j1,find(ind_vkst))=-(lik.stime(j1+1)-y(ind_vkst,1)).*la1(j1).*eta2(ind_vkst);
-            %llg3(j1,ntime+find(ind_vkst))=-(lik.stime(j1+1)-y(ind_vkst,1)).*la1(j1).*eta2(ind_vkst);
-            %llg3(ntime+find(ind_vkst),j1)=llg3(j1,ntime+find(ind_vkst));
+            llg3mat(j1,find(ind_vkst & ind2))=-(lik.stime(indt+1)-y(ind_vkst & ind2,1)).*la1(j1).*eta2(ind_vkst & ind2);
             % (2)
-            llg3mat(j1,find(ind_stsp))=-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(j1).*eta2(ind_stsp);
-            %llg3(j1,ntime+find(ind_stsp))=-(y(ind_stsp,2)-y(ind_stsp,1)).*la1(j1).*eta2(ind_stsp);
-            %llg3(ntime+find(ind_stsp),j1)=llg3(j1,ntime+find(ind_stsp));
+            llg3mat(j1,find(ind_stsp & ind2))=-(y(ind_stsp & ind2,2)-y(ind_stsp & ind2,1)).*la1(j1).*eta2(ind_stsp & ind2);
             % (3)
-            llg3mat(j1,find(ind_s))= -sd.*la1(j1).*eta2(ind_s);
-            %llg3(j1,ntime+find(ind_s))= -sd.*la1(j1).*eta2(ind_s);
-            %llg3(ntime+find(ind_s),j1)=llg3(j1,ntime+find(ind_s));
+            llg3mat(j1,find(ind_s & ind2))= -sd.*la1(j1).*eta2(ind_s & ind2);
             % (4)
-            llg3mat(j1,find(ind_sp))=-(y(ind_sp,2)-lik.stime(j1)).*la1(j1).*eta2(ind_sp);
-            %llg3(j1,ntime+find(ind_sp))=-(y(ind_sp,2)-lik.stime(j1)).*la1(j1).*eta2(ind_sp);
-            %llg3(ntime+find(ind_sp),j1)=llg3(j1,ntime+find(ind_sp));
+            llg3mat(j1,find(ind_sp & ind2))=-(y(ind_sp & ind2,2)-lik.stime(indt)).*la1(j1).*eta2(ind_sp & ind2);
           else
             
-            sb=sum(y(j1-ntime,1)>lik.stime); % begin
-            se=sum(y(j1-ntime,2)>lik.stime); % end
+            sb=sum(y(j1-nf1,1)>lik.stime); % begin
+            se=sum(y(j1-nf1,2)>lik.stime); % end
             
+            nft=(i3-1)*ntime;
             % 11
             if sb==0
-              llg3(1:(se-1))= -sd.*la1(1:(se-1)).*eta2(j1-ntime);
-              llg3(se)= -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
-              %llg3(1:(se-1),1:(se-1))= diag( -sd.*la1(1:(se-1)).*eta2(j1-ntime));
-              %llg3(se,se)= -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
+              llg3((1+nft):(se-1+nft))= -sd.*la1((1+nft):(se-1+nft)).*eta2(j1-nf1);
+              llg3(se+nft)= -(y(j1-nf1,2)-lik.stime(se)).*la1(se+nft).*eta2(j1-nf1);
             else
               if se==sb
-                llg3(se) = -(y(j1-ntime,2)-y(j1-ntime,1)).*la1(se).*eta2(j1-ntime);
-                %llg3(se,se) = -(y(j1-ntime,2)-y(j1-ntime,1)).*la1(se).*eta2(j1-ntime);
+                llg3(se+nft) = -(y(j1-nf1,2)-y(j1-nf1,1)).*la1(se+nft).*eta2(j1-nf1);
               else
-                llg3(sb) = - (lik.stime(sb+1)-y(j1-ntime,1)).*la1(sb).*eta2(j1-ntime);
-                llg3((sb+1):(se-1)) = - sd.*la1((sb+1):(se-1)).*eta2(j1-ntime);
-                llg3(se) = -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
-                %llg3(sb,sb) = - (lik.stime(sb+1)-y(j1-ntime,1)).*la1(sb).*eta2(j1-ntime);
-                %llg3((sb+1):(se-1),(sb+1):(se-1)) = diag(- sd.*la1((sb+1):(se-1)).*eta2(j1-ntime));
-                %llg3(se,se) = -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
+                llg3(sb+nft) = - (lik.stime(sb+1)-y(j1-nf1,1)).*la1(sb+nft).*eta2(j1-nf1);
+                llg3((sb+1+nft):(se-1+nft)) = - sd.*la1((sb+1+nft):(se-1+nft)).*eta2(j1-nf1);
+                llg3(se+nft) = -(y(j1-nf1,2)-lik.stime(se)).*la1(se+nft).*eta2(j1-nf1);
               end
             end
             
             % 12/21
             if sb==0
-              llg3mat(1:(se-1),j1-ntime) = -sd.*la1(1:(se-1)).*eta2(j1-ntime);
-              %llg3(1:(se-1),j1) = -sd.*la1(1:(se-1)).*eta2(j1-ntime);
-              %llg3(j1,1:(se-1)) = llg3(1:(se-1),j1);
-              
-              llg3mat(se,j1-ntime)= -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
-              %llg3(se,j1)= -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
-              %llg3(j1,se) = llg3(se,j1);
+              llg3mat((1+nft):(se-1+nft),j1-nf1) = -sd.*la1((1+nft):(se-1+nft)).*eta2(j1-nf1);              
+              llg3mat(se+nft,j1-nf1)= -(y(j1-nf1,2)-lik.stime(se)).*la1(se+nft).*eta2(j1-nf1);
             else
               if se==sb
-                llg3mat(se,j1-ntime) = -(y(j1-ntime,2)-y(j1-ntime,1)).*la1(se).*eta2(j1-ntime);
-                %llg3(se,j1) = -(y(j1-ntime,2)-y(j1-ntime,1)).*la1(se).*eta2(j1-ntime);
-                %llg3(j1,se) = llg3(se,j1);
+                llg3mat(se+nft,j1-nf1) = -(y(j1-nf1,2)-y(j1-nf1,1)).*la1(se+nft).*eta2(j1-nf1);
               else
-                llg3mat(sb,j1-ntime) = - (lik.stime(sb+1)-y(j1-ntime,1)).*la1(sb).*eta2(j1-ntime);
-                llg3mat((sb+1):(se-1),j1-ntime) = - sd.*la1((sb+1):(se-1)).*eta2(j1-ntime);
-                llg3mat(se,j1-ntime) = -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
-                %llg3(sb,j1) = - (lik.stime(sb+1)-y(j1-ntime,1)).*la1(sb).*eta2(j1-ntime);
-                %llg3(j1,sb) = llg3(sb,j1);
-                %llg3((sb+1):(se-1),j1) = - sd.*la1((sb+1):(se-1)).*eta2(j1-ntime);
-                %llg3(j1,(sb+1):(se-1)) = llg3((sb+1):(se-1),j1);
-                %llg3(se,j1) = -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime);
-                %llg3(j1,se) = llg3(se,j1);
+                llg3mat(sb+nft,j1-nf1) = - (lik.stime(sb+1)-y(j1-nf1,1)).*la1(sb+nft).*eta2(j1-nf1);
+                llg3mat((sb+1+nft):(se-1+nft),j1-nf1) = - sd.*la1((sb+1+nft):(se-1+nft)).*eta2(j1-nf1);
+                llg3mat(se+nft,j1-nf1) = -(y(j1-nf1,2)-lik.stime(se)).*la1(se+nft).*eta2(j1-nf1);
               end
             end
             
             % 22
             if sb==0
-              llg3(j1)= -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime) - sum(sd.*la1(1:(se-1)).*eta2(j1-ntime));
-              %llg3(j1,j1)= -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime) - sum(sd.*la1(1:(se-1)).*eta2(j1-ntime));
+              llg3(j1)= -(y(j1-nf1,2)-lik.stime(se)).*la1(se+nft).*eta2(j1-nf1) - sum(sd.*la1((1+nft):(se-1+nft)).*eta2(j1-nf1));
             else
               if se==sb
-                llg3(j1) = -(y(j1-ntime,2)-y(j1-ntime,1)).*la1(se).*eta2(j1-ntime);
-                %llg3(j1,j1) = -(y(j1-ntime,2)-y(j1-ntime,1)).*la1(se).*eta2(j1-ntime);
+                llg3(j1) = -(y(j1-nf1,2)-y(j1-nf1,1)).*la1(se+nft).*eta2(j1-nf1);
               else
-                llg3(j1) = -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime) - sum(sd.*la1((sb+1):(se-1)).*eta2(j1-ntime)) - (lik.stime(sb+1)-y(j1-ntime,1)).*la1(sb).*eta2(j1-ntime);
-                %llg3(j1,j1) = -(y(j1-ntime,2)-lik.stime(se)).*la1(se).*eta2(j1-ntime) - sum(sd.*la1((sb+1):(se-1)).*eta2(j1-ntime)) - (lik.stime(sb+1)-y(j1-ntime,1)).*la1(sb).*eta2(j1-ntime);
+                llg3(j1) = -(y(j1-nf1,2)-lik.stime(se)).*la1(se+nft).*eta2(j1-nf1) - sum(sd.*la1((sb+1+nft):(se-1+nft)).*eta2(j1-nf1)) - (lik.stime(sb+1)-y(j1-nf1,1)).*la1(sb+nft).*eta2(j1-nf1);
               end
             end
             
@@ -700,7 +807,11 @@ function lik = lik_coxph(varargin)
       fg=linspace(fgrid(1),fgrid(2),15);
       ng=length(fg);
       
-      ntime=size(lik.xtime,1);
+      if isfield(gp.lik, 'stratificationVariables')
+        ntime=size(lik.xtime,1)*gp.lik.n_u;
+      else
+        ntime=size(lik.xtime,1);
+      end
       
       %f11=f(1:ntime);
       %f2=f((ntime+1):(ntime+n));
@@ -954,10 +1065,21 @@ function lik = lik_coxph(varargin)
              'occurrences as an extra input zt. See, for         '...
              'example, lik_coxph and gpla_e.               ']);
     end
-    
     ntime=size(lik.xtime,1);
+    
     ntest=size(zt,1);
     ny=size(yt,2);
+    
+    if isfield(lik, 'stratificationVariables')
+      nf1=lik.n_u*ntime;
+      i3v=zeros(ntest,1);
+      for ii=1:length(lik.stratindt)
+        i3v(lik.stratindt{ii})=ii;
+      end
+    else
+      nf1=ntime;
+      i3v=ones(ntest,1);
+    end
     
     Py = zeros(size(zt));
     %Ey = zeros(size(zt));
@@ -969,9 +1091,10 @@ function lik = lik_coxph(varargin)
     nu=1-zt;
     
     for i1=1:ntest
-      Sigm_tmp=Covf([1:ntime i1+ntime],[1:ntime i1+ntime]);
+      i3=i3v(i1);
+      Sigm_tmp=Covf([(1+(i3-1)*ntime):(i3*ntime) i1+nf1],[(1+(i3-1)*ntime):(i3*ntime) i1+nf1]);
       Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
-      f_star=mvnrnd(Ef([1:ntime i1+ntime]), Sigm_tmp, S);
+      f_star=mvnrnd(Ef([(1+(i3-1)*ntime):(i3*ntime) i1+nf1]), Sigm_tmp, S);
       
       f1=f_star(:,1:ntime);
       f2=f_star(:,(ntime+1):end);
@@ -981,7 +1104,8 @@ function lik = lik_coxph(varargin)
       
       if ny==1
         si=sum(yt(i1)>lik.stime);
-        Py(i1)=mean(exp(nu(i1).*(f1(:,si)+f2) - (yt(i1)-lik.stime(si)).*la1(:,si).*eta2 - sum(sd.*la1(:,1:(si-1)),2).*eta2));
+        Py(i1)=mean(exp(nu(i1).*(f1(:,si)+f2) - (yt(i1)-lik.stime(si)).*la1(:,si).*eta2 ...
+                     - sum(sd.*la1(:,1:(si-1)),2).*eta2));
       else
         
         sb=sum(bsxfun(@gt,yt(i1,1),lik.stime),2);
@@ -1272,8 +1396,12 @@ function lik = lik_coxph(varargin)
   %    GP_PREDCDF
   
     
-    ntime = size(lik.stime,2)-1;
-    Ef1 = Ef(1:ntime); Ef(1:ntime) = []; Ef2 = Ef;    
+    if isfield(gp.lik, 'stratificationVariables')
+      ntime=size(lik.xtime,1)*gp.lik.n_u;
+    else
+      ntime=size(lik.xtime,1);
+    end
+    Ef1 = Ef(1:ntime); Ef(1:ntime) = []; Ef2 = Ef;
     nsamps = 10000;
     sd=lik.stime(2)-lik.stime(1);
     Sigm_tmp=Covf;
