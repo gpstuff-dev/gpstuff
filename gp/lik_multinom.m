@@ -262,6 +262,7 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   pi=zeros(ntest,nout);
   lpy=zeros(ntest,nout);
   Ey=zeros(ntest,nout);
+  Vary=zeros(size(Varf));
   Ef=reshape(Ef(:),ntest,nout);
   [notused,notused,c] =size(Varf);
   if c>1
@@ -291,8 +292,6 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
             Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
           end
         end
-        Ey=Ey(:);
-        Vary=Vary(:);
     end
     lpy=[];
     if ~isempty(yt)
@@ -301,6 +300,7 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
     end
   end
   lpy=lpy(:);
+  Ey=Ey(:);
 end
 
 function p = lik_multinom_invlink(lik, f, z)

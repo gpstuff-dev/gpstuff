@@ -169,7 +169,7 @@ hold on; plot(x(:,1),x(:,2),'k.'), title('Model prediction 3')
 % Note that MCMC for latent values requires often more jitter
 lat = gp_pred(gp, x, y, x);
 gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-4);
-gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh2));
+gp = gp_set(gp, 'latent_opt', struct('method',@scaled_mh));
 gp.latentValues = lat(:);
 
 gp_e(gp_pak(gp), gp, x,y)
