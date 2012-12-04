@@ -87,7 +87,6 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       mexErrMsgTxt( "gpcf.type must be a string." );
     type = mxArrayToString(field);
     
-    
     /*
      * squared exponential covariance
      */
@@ -129,7 +128,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       C = mxGetPr(plhs[0]);
       eps=mxGetEps();
       
-      for (i=0;i<n;i++, x+=m) {
+      for (i=0;i<n;i++) {
         rr=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);
         for (j=0;j<m;j++) {
           for (k=0;k<j;k++) {
@@ -659,7 +658,6 @@ void mexFunction(const int nlhs, mxArray *plhs[],
       plhs[0]=mxCreateDoubleMatrix(m, m, mxREAL);
       C = mxGetPr(plhs[0]);
       eps=mxGetEps();
-      
       for (i=0;i<n;i++) {
         rr=(lr>1)?(l[i]*l[i]):(l[0]*l[0]);    
         for (j=0;j<m;j++) {
@@ -669,7 +667,7 @@ void mexFunction(const int nlhs, mxArray *plhs[],
             }else{
             d=x[j]-x[k];
             }
-            C[j*m+k]+=d*d/rr;
+            C[j*m+k]+=d*d/(2.0*alpha*rr);
           }
         }
         if(cc==NULL)

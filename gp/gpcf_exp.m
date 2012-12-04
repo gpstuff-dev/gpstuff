@@ -748,6 +748,7 @@ function C = gpcf_exp_trcov(gpcf, x)
     % If scaled euclidean metric
     % Try to use the C-implementation            
     C = trcov(gpcf, x);
+%     C = NaN;
     if isnan(C)
       % If there wasn't C-implementation do here
       if isfield(gpcf, 'selectedVariables')

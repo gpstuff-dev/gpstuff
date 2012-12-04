@@ -295,7 +295,6 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
     Ey = 2*pi-1;
     Vary = 1-(2*pi-1).^2;
     Ey=Ey(:);
-    Vary=Vary(:);
   end
   lpy=lpy(:);
 end

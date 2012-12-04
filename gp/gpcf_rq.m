@@ -489,7 +489,7 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask, i1)
         for i=1:m
           dist2 = dist2 + (bsxfun(@minus,x(:,i),x(:,i)')).^2;
         end
-        if ~isempty(gpcf.p.lengthScale) && all(i1 <= m)
+        if ~isempty(gpcf.p.lengthScale) && (~savememory || i1==1)
           % dlengthscale
           ii1 = ii1+1;
           DKff{ii1} = Cdm.^a.*s.*dist2.*gpcf.magnSigma2^(-a+1);
@@ -576,7 +576,7 @@ function DKff = gpcf_rq_cfg(gpcf, x, x2, mask, i1)
         DKff{ii1} = DK_l;
         if ~isempty(gpcf.p.alpha) && (~savememory || length(DKff) == 1)
           % dalpha
-          ii1=ii1+1;
+          ii1=ii1+(1-savememory);
           DKff{ii1} = (gpcf.magnSigma2^(1-a).*.5.*dist.*s.*K.^a - gpcf.alpha.*log(K.^(-1/gpcf.alpha)./gpcf.magnSigma2^(-1/gpcf.alpha)).*K).*log(gpcf.alpha);
         end
       else
@@ -836,7 +836,6 @@ function C = gpcf_rq_trcov(gpcf, x)
     % If scaled euclidean metric
     % Try to use the C-implementation
     C=trcov(gpcf, x);
-
     if isnan(C)
       % If there wasn't C-implementation do here
       if isfield(gpcf, 'selectedVariables')
