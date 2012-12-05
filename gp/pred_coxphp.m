@@ -117,14 +117,14 @@ else
     p = mST;
   else
     for i2=1:nu
-      for i1=1:size(uind{i2},2)
+      for i1=1:size(uind{i2},1)
         ind=uind{i2}(i1);
         nft=(i2-1)*ntime;
         if sb(ind) ~= se(ind)
-          hb=(la1(:,(sb(i1)+1+nft):(se(i1)-1+nft))'*sd);
-          hb=[((gp.lik.stime(sb(i1)+1)-yt(ind,1)).*la1(:,sb(i1)+nft))'; hb; ((yt(ind,2)-gp.lik.stime(se(i1))).*la1(:,se(i1)+nft))'];
+          hb=(la1(:,(sb(ind)+1+nft):(se(ind)-1+nft))'*sd);
+          hb=[((gp.lik.stime(sb(ind)+1)-yt(ind,1)).*la1(:,sb(ind)+nft))'; hb; ((yt(ind,2)-gp.lik.stime(se(ind))).*la1(:,se(ind)+nft))'];
         else
-          hb = la1(:, se(i1)+nft)'*(yt(ind,2) - yt(ind,1));
+          hb = la1(:, se(ind)+nft)'*(yt(ind,2) - yt(ind,1));
         end
         cumsumtmp=[zeros(nsamps, sb(ind)) cumsum(hb)'];
         Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,ind)));
