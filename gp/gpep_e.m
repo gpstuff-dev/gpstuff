@@ -45,7 +45,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
 % Copyright (c) 2007  Jaakko Riihim�ki
 % Copyright (c) 2007-2010  Jarno Vanhatalo
 % Copyright (c) 2010 Heikki Peura
-% Copyright (c) 2010-2011 Aki Vehtari
+% Copyright (c) 2010-2012 Aki Vehtari
 % Copyright (c) 2011 Pasi Jyl�nki
 
 % This software is distributed under the GNU General Public
@@ -140,9 +140,10 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           iter=1;
           maxiter = gp.latent_opt.maxiter;
           tol = gp.latent_opt.tol;
+          df = gp.latent_opt.df;
           nutilde = zeros(size(y));
           tautilde = zeros(size(y));
-          logZep_tmp=0; logZep=Inf;
+          logZep_old=0; logZep=Inf;
           if ~isfield(gp,'meanf')
             mf = zeros(size(y));
           else
@@ -150,7 +151,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
             mf = H'*b_m;
           end
           
-          logM0 = [];
+          logM0 = zeros(n,1);
+          muhat = zeros(n,1);
+          sigm2hat = zeros(n,1);
           
           % =================================================
           % First Evaluate the data contribution to the error
@@ -160,120 +163,130 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
             % ============================================================
             case 'FULL'   % A full GP
               [K,C] = gp_trcov(gp, x);
-              
-              % The EP algorithm for full support covariance function
-              %------------------------------------------------------
               if ~issparse(C)
+                % The EP algorithm for full support covariance function
                 if ~isfield(gp,'meanf')
                   Sigm = C;
+                  meanfp=false;
                 else
                   Sigm = C + H'*B_m*H;
+                  meanfp=true;
                 end
-                [Ls, notpositivedefinite] = chol(Sigm);
-                if notpositivedefinite
-                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                  return
-                end
-                Stildesqroot=zeros(n);
                 
-                % If Student-t likelihood is used, sort the update order so that
-                % the problematic updates are left for last
-                if strcmp(gp.lik.type,'Student-t')
-                  f=gp.lik.fh.optimizef(gp,y,K);
-                  W=-gp.lik.fh.llg2(gp.lik,y,f,'latent');
-                  [foo,I]=sort(W,'descend');
-                else
-                  I=1:n;
+                if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
+                  tautilde = ch.tautilde;
+                  nutilde = ch.nutilde;
+                  Stilde=tautilde;
+                  Stildesqr=sqrt(Stilde);
+                  B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
+                  B(1:n+1:end)=B(1:n+1:end)+1;
+                  [L,notpositivedefinite] = chol(B,'lower');
+                  if notpositivedefinite
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  V=L\bsxfun(@times,Stildesqr,C);
+                  Sigm=C-V'*V;
+                  mf=Sigm*nutilde;
                 end
                 
                 % The EP -algorithm
-                while iter<=maxiter && abs(logZep_tmp-logZep)>tol
-                  logZep_tmp=logZep;
-                  muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                convergence=false;
+                while iter<=maxiter && ~convergence
+                  logZep_old=logZep;
+                  logM0_old=logM0;
                   
-                  for ii=1:n
-                    i1 = I(ii);
-                    % Algorithm utilizing Cholesky updates
-                    % This is numerically more stable but slower
-                    % $$$                             % approximate cavity parameters
-                    % $$$                             S11 = sum(Ls(:,i1).^2);
-                    % $$$                             S1 = Ls'*Ls(:,i1);
-                    % $$$                             tau_i=S11^-1-tautilde(i1);
-                    % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
-                    % $$$
-                    % $$$                             mu_i=nu_i/tau_i;
-                    % $$$                             sigm2_i=tau_i^-1;
-                    % $$$
-                    % $$$                             if sigm2_i < 0
-                    % $$$                                 [ii i1]
-                    % $$$                             end
-                    % $$$
-                    % $$$                             % marginal moments
-                    % $$$                             [M0(i1), muhati, sigm2hati] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, mu_i, z);
-                    % $$$
-                    % $$$                             % update site parameters
-                    % $$$                             deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                    % $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
-                    % $$$                             nutilde(i1) = sigm2hati^-1*muhati-nu_i;
-                    % $$$
-                    % $$$                             upfact = 1./(deltatautilde^-1+S11);
-                    % $$$                             if upfact > 0
-                    % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
-                    % $$$                             else
-                    % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
-                    % $$$                             end
-                    % $$$                             Sigm = Ls'*Ls;
-                    % $$$                             mf=Sigm*nutilde;
-                    % $$$
-                    % $$$                             muvec_i(i1,1)=mu_i;
-                    % $$$                             sigm2vec_i(i1,1)=sigm2_i;
+                  if isequal(gp.latent_opt.parallel,'on')
+                    % parallel-EP
+                    % compute marginal and cavity parameters
+                    dSigm=diag(Sigm);
+                    tau=1./dSigm-tautilde;
+                    nu = 1./dSigm.*mf-nutilde;
+                    muvec_i=nu./tau;
+                    sigm2vec_i=1./tau;
                     
-                    % Algorithm as in Rasmussen and Williams 2006
-                    % approximate cavity parameters
-                    tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                    nu_i = Sigm(i1,i1)^-1*mf(i1)-nutilde(i1);
-                    
-                    if tau_i < 0
-                      tautilde(find(tautilde<0)) = 0;
-                      
-                      Stilde=tautilde;
-                      Stildesqroot=diag(sqrt(tautilde));
-                      B=eye(n)+Stildesqroot*C*Stildesqroot;
-                      [L, notpositivedefinite]=chol(B,'lower');
-                      if notpositivedefinite
-                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
-                      V=(L\Stildesqroot)*C;
-                      Sigm=C-V'*V;
-                      nutilde=Sigm\mf;
-                      
-                      tau_i=Sigm(i1,i1)^-1-tautilde(i1);
-                      nu_i=Sigm(i1,i1)^-1*mf(i1)-nutilde(i1);
-                      
-                      if isfield(gp.latent_opt, 'display') && ismember(gp.latent_opt.display,{'final','iter'})
-                        fprintf('GPEP_E: negative cavity at site %d \n', i1)
+                    % compute moments of tilted distributions
+                    if isequal(gp.lik.type,'Probit')
+                      [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                    else
+                      for i1=1:n
+                        [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
                       end
                     end
-                    mu_i=nu_i/tau_i;
-                    sigm2_i=tau_i^-1;
-                    
-                    % marginal moments
-                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                    if isnan(logM0(i1))
+                    if any(isnan(logM0))
                       [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
                       return
                     end
-                    % update site parameters
-                    deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
-                    tautilde(i1)=tautilde(i1)+deltatautilde;
-                    nutilde(i1)=sigm2hati^-1*muhati-nu_i;
                     
-                    % Update mean and variance after each site update (standard EP)
-                    if isequal(gp.latent_opt.parallel,'off')
-                      ds = deltatautilde/(1+deltatautilde*Sigm(i1,i1));
-                      Sigm = Sigm - ds*(Sigm(:,i1)*Sigm(:,i1)');
+                    % update site parameters
+                    deltatautilde=1./sigm2hat-tau-tautilde;
+                    tautilde=tautilde+df.*deltatautilde;
+                    deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                    nutilde=nutilde+df.*deltanutilde;
+                  else
+                    % sequential-EP
+                    muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                    for i1=1:n
+                      % Algorithm utilizing Cholesky updates
+                      % This is numerically more stable but slower
+  % $$$                             % approximate cavity parameters
+  % $$$                             S11 = sum(Ls(:,i1).^2);
+  % $$$                             S1 = Ls'*Ls(:,i1);
+  % $$$                             tau_i=S11^-1-tautilde(i1);
+  % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
+  % $$$
+  % $$$                             mu_i=nu_i/tau_i;
+  % $$$                             sigm2_i=tau_i^-1;
+  % $$$
+  % $$$                             if sigm2_i < 0
+  % $$$                                 [ii i1]
+  % $$$                             end
+  % $$$
+  % $$$                             % marginal moments
+  % $$$                             [M0(i1), muhat, sigm2hat] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, mu_i, z);
+  % $$$
+  % $$$                             % update site parameters
+  % $$$                             deltatautilde = sigm2hat^-1-tau_i-tautilde(i1);
+  % $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
+  % $$$                             nutilde(i1) = sigm2hat^-1*muhat-nu_i;
+  % $$$
+  % $$$                             upfact = 1./(deltatautilde^-1+S11);
+  % $$$                             if upfact > 0
+  % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
+  % $$$                             else
+  % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
+  % $$$                             end
+  % $$$                             Sigm = Ls'*Ls;
+  % $$$                             mf=Sigm*nutilde;
+  % $$$
+  % $$$                             muvec_i(i1,1)=mu_i;
+  % $$$                             sigm2vec_i(i1,1)=sigm2_i;
                       
+                      % Algorithm as in Rasmussen and Williams 2006
+                      % approximate cavity parameters
+                      Sigmi=Sigm(:,i1);
+                      Sigmii=Sigmi(i1);
+                      tau_i=1/Sigmii-tautilde(i1);
+                      nu_i = 1/Sigmii*mf(i1)-nutilde(i1);
+                      mu_i=nu_i/tau_i;
+                      sigm2_i=1/tau_i;
+                      
+                      % marginal moments
+                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                      if isnan(logM0(i1))
+                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                        return
+                      end
+                      % update site parameters
+                      deltatautilde=sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                      tautilde(i1)=tautilde(i1)+df*deltatautilde;
+                      deltanutilde=sigm2hat(i1)^-1*muhat(i1)-nu_i-nutilde(i1);
+                      nutilde(i1)=nutilde(i1)+df*deltanutilde;
+                      
+                      % Update mean and variance after each site update (standard EP)
+                      ds = deltatautilde/(1+deltatautilde*Sigmii);
+                      Sigm = Sigm - ((ds*Sigmi)*Sigmi');
+                      %Sigm = Sigm - ((ds*Sigm(:,i1))*Sigm(:,i1)');
                       % The below is how Rasmussen and Williams
                       % (2006) do the update. The above version is
                       % more robust.
@@ -281,161 +294,58 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       %ds = (Sigm(:,i1)/ds)*Sigm(:,i1)';
                       %Sigm = Sigm - ds;
                       %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
-                      if ~isfield(gp,'meanf')
+                        
+                      if ~meanfp
                         mf=Sigm*nutilde;
                       else
                         mf=Sigm*(C\(H'*b_m)+nutilde);
                       end
-                    else
-                      % Parallel EP
-                      % Update mf & Sigm after all site parameters are
-                      % calculated
+                      
+                      muvec_i(i1)=mu_i;
+                      sigm2vec_i(i1)=sigm2_i;
                     end
-                    
-                    muvec_i(i1,1)=mu_i;
-                    sigm2vec_i(i1,1)=sigm2_i;
                   end
+                  
                   % Recompute the approximate posterior parameters
-                  if tautilde > 0
-                    % This is the usual case where likelihood is log concave
-                    % for example, Poisson and probit
+                  % parallel- and sequential-EP
+                  Stilde=tautilde;
+                  Stildesqr=sqrt(Stilde);
+                  
+                  if ~meanfp % zero mean function used
+                    % NOTICE! upper triangle matrix! cf. to
+                    % line 13 in the algorithm 3.5, p. 58.
                     
-                    Stilde=tautilde;
-                    Stildesqroot=diag(sqrt(tautilde));
-                    
-                    if ~isfield(gp,'meanf')  % zero mean function used
-                      
-                      % NOTICE! upper triangle matrix! cf. to
-                      % line 13 in the algorithm 3.5, p. 58.
-                      
-                      B=eye(n)+Stildesqroot*C*Stildesqroot;
-                      [L,notpositivedefinite] = chol(B,'lower');
-                      if notpositivedefinite
-                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
-                      V=(L\Stildesqroot)*C;
-                      Sigm=C-V'*V; mf=Sigm*nutilde;
-                      [Ls, notpositivedefinite] = chol(Sigm);
-                      if notpositivedefinite
-                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
-                      
-                      % Compute the marginal likelihood
-                      % Direct formula (3.65):
-                      % Sigmtilde=diag(1./tautilde);
-                      % mutilde=inv(Stilde)*nutilde;
-                      %
-                      % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
-                      %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
-                      %         0.5*sum(log(sigm2vec_i+1./tautilde))+
-                      %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
-                      
-                      % 4. term & 1. term
-                      term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
-                      
-                      % 5. term (1/2 element) & 2. term
-                      T=1./sigm2vec_i;
-                      Cnutilde = C*nutilde;
-                      L2 = V*nutilde;
-                      term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
-                      term52 = term52.*0.5;
-                      
-                      % 5. term (2/2 element)
-                      term5=0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                      
-                      % 3. term
-                      term3 = sum(logM0);
-                      
-                      logZep = -(term41+term52+term5+term3);
-                      iter=iter+1;
-                      
-                    else
-                      % mean function used
-                      % help variables
-                      hBh = H'*B_m*H;
-                      C_t = C + hBh;
-                      CHb  = C\H'*b_m;
-                      S   = Stildesqroot.^2;
-                      B = eye(n)+Stildesqroot*C*Stildesqroot;
-                      B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
-                      % L to return, without the hBh term
-                      [L,notpositivedefinite]=chol(B,'lower');
-                      if notpositivedefinite
-                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
-                      % L for the calculation with mean term
-                      [L_m,notpositivedefinite]=chol(B_h,'lower');
-                      if notpositivedefinite
-                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
-                      
-                      % Recompute the approximate posterior
-                      % parameters
-                      V=(L_m\Stildesqroot)*C_t;
-                      Sigm=C_t-V'*V; mf=Sigm*(CHb+nutilde);
-                      
-                      
-                      [Ls, notpositivedefinite] = chol(Sigm);
-                      if notpositivedefinite
-                        [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                        return
-                      end
-                      T=1./sigm2vec_i;
-                      Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
-                      L2 = V*(S*H'*b_m-nutilde);
-                      
-                      zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
-                      % inv(K + S^-1)*S^-1
-                      Ks  = eye(size(zz)) - zz;
-                      
-                      % 5. term (1/2 element)
-                      term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);
-                      % 2. term
-                      term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);
-                      % 4. term
-                      term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));
-                      % 1. term
-                      term1    = -1.*sum(log(diag(L_m)));
-                      % 3. term
-                      term3    = sum(logM0);
-                      % 5. term (2/2 element)
-                      term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
-                      
-                      logZep = -(term4+term1+term5_1+term5+term2+term3);
-                      iter=iter+1;
-                      
-                    end
-                    
-                    %==============================
-                    
-                  else
-                    % We might end up here if the likelihood is not log concace
-                    % For example Student-t likelihood.
-                    % NOTE! This does not work reliably yet
-                    Stilde=tautilde;
-                    [Ls, notpositivedefinite] = chol(Sigm);
+                    %B=eye(n)+Stildesqr*C*Stildesqr;
+                    B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
+                    B(1:n+1:end)=B(1:n+1:end)+1;
+                    [L,notpositivedefinite] = chol(B,'lower');
                     if notpositivedefinite
                       [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
                       return
                     end
+                    %V=(L\Stildesqr)*C;
+                    V=L\bsxfun(@times,Stildesqr,C);
+                    Sigm=C-V'*V; 
                     mf=Sigm*nutilde;
-                    
+
                     % Compute the marginal likelihood
+                    % Direct formula (3.65):
+                    % Sigmtilde=diag(1./tautilde);
+                    % mutilde=inv(Stilde)*nutilde;
+                    %
+                    % logZep=-0.5*log(det(Sigmtilde+K))-0.5*mutilde'*inv(K+Sigmtilde)*mutilde+
+                    %         sum(log(normcdf(y.*muvec_i./sqrt(1+sigm2vec_i))))+
+                    %         0.5*sum(log(sigm2vec_i+1./tautilde))+
+                    %         sum((muvec_i-mutilde).^2./(2*(sigm2vec_i+1./tautilde)))
+                    
                     % 4. term & 1. term
-                    [tmp, notpositivedefinite] = chol(C);
-                    if notpositivedefinite
-                      [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                      return
-                    end
-                    term41 = 0.5*sum(log(1+tautilde.*sigm2vec_i)) - sum(log(diag(chol(C)))) + sum(log(diag(Ls)));
+                    term41=0.5*sum(log(1+tautilde.*sigm2vec_i))-sum(log(diag(L)));
                     
                     % 5. term (1/2 element) & 2. term
                     T=1./sigm2vec_i;
-                    term52 = nutilde'*(Ls'*(Ls*nutilde)) - (nutilde'./(T+Stilde)')*nutilde;
+                    Cnutilde = C*nutilde;
+                    L2 = V*nutilde;
+                    term52 = nutilde'*Cnutilde - L2'*L2 - (nutilde'./(T+Stilde)')*nutilde;
                     term52 = term52.*0.5;
                     
                     % 5. term (2/2 element)
@@ -446,15 +356,74 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     
                     logZep = -(term41+term52+term5+term3);
                     iter=iter+1;
-                    B=Ls;
-                    L=Ls;
+                    
+                  else
+                    % mean function used
+                    % help variables
+                    hBh = H'*B_m*H;
+                    C_t = C + hBh;
+                    CHb  = C\H'*b_m;
+                    S   = diag(Stildesqr.^2);
+                    %B = eye(n)+Stildesqroot*C*Stildesqroot;
+                    B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
+                    B(1:n+1:end)=B(1:n+1:end)+1;
+                    %B_h = eye(n) + Stildesqroot*C_t*Stildesqroot;
+                    B_h=bsxfun(@times,bsxfun(@times,Stildesqr,C_t),Stildesqr');
+                    B_h(1:n+1:end)=B_h(1:n+1:end)+1;
+                    % L to return, without the hBh term
+                    [L,notpositivedefinite]=chol(B,'lower');
+                    if notpositivedefinite
+                      [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                      return
+                    end
+                    % L for the calculation with mean term
+                    [L_m,notpositivedefinite]=chol(B_h,'lower');
+                    if notpositivedefinite
+                      [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                      return
+                    end
+                    
+                    % Recompute the approximate posterior parameters
+                    % parallel- and sequential-EP
+                    
+                    %V=(L_m\Stildesqroot)*C_t;
+                    V=L_m\bsxfun(@times,Stildesqr,C_t);
+                    Sigm=C_t-V'*V;
+                    mf=Sigm*(CHb+nutilde);
+                    
+                    T=1./sigm2vec_i;
+                    Cnutilde = (C_t - S^-1)*(S*H'*b_m-nutilde);
+                    L2 = V*(S*H'*b_m-nutilde);
+                    
+                    Stildesqroot = diag(Stildesqr);
+                    zz   = Stildesqroot*(L'\(L\(Stildesqroot*C)));
+                    % inv(K + S^-1)*S^-1
+                    Ks  = eye(size(zz)) - zz;
+                    
+                    % 5. term (1/2 element)
+                    term5_1  = 0.5.*((nutilde'*S^-1)./(T.^-1+Stilde.^-1)')*(S^-1*nutilde);
+                    % 2. term
+                    term2    = 0.5.*((S*H'*b_m-nutilde)'*Cnutilde - L2'*L2);
+                    % 4. term
+                    term4    = 0.5*sum(log(1+tautilde.*sigm2vec_i));
+                    % 1. term
+                    term1    = -1.*sum(log(diag(L_m)));
+                    % 3. term
+                    term3    = sum(logM0);
+                    % 5. term (2/2 element)
+                    term5    = 0.5*muvec_i'.*(T./(Stilde+T))'*(Stilde.*muvec_i-2*nutilde);
+
+                    logZep = -(term4+term1+term5_1+term5+term2+term3);
+                    
+                    iter=iter+1;
                     
                   end
+                  convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
                 end
-                % EP algorithm for compactly supported covariance function (that is
-                % C is sparse)
-                %------------------------------------------------------------------
+
               else
+                % EP algorithm for compactly supported covariance function
+                % (C is a sparse matrix)
                 p = analyze(K);
                 r(p) = 1:n;
                 if ~isempty(z)
@@ -467,61 +436,89 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 sqrtS = sparse(1:n,1:n,0,n,n);
                 mf = zeros(size(y));
                 sigm2 = zeros(size(y));
+                dSigm=full(diag(K));
                 gamma = zeros(size(y));
-                [VD, notpositivedefinite] = ldlchol(Inn);
-                if notpositivedefinite
-                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                  return
-                end
-                
+                VD = sparse(1:n,1:n,1,n,n);
                 
                 % The EP -algorithm
-                while iter<=maxiter && abs(logZep_tmp-logZep)>tol
+                convergence=false;
+                while iter<=maxiter && ~convergence
+                  logZep_old=logZep;
+                  logM0_old=logM0;
                   
-                  logZep_tmp=logZep;
-                  muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                  for i1=1:n
+                  if isequal(gp.latent_opt.parallel,'on')
+                    % parallel-EP
                     % approximate cavity parameters
-                    Ki1 = K(:,i1);
-                    sqrtSKi1 = ssmult(sqrtS, Ki1);
-                    tttt = ldlsolve(VD,sqrtSKi1);
-                    sigm2(i1) = Ki1(i1) - sqrtSKi1'*tttt;
-                    mf(i1) = gamma(i1) - tttt'*sqrtS*gamma;
-                    
-                    tau_i=sigm2(i1)^-1-tautilde(i1);
-                    nu_i=sigm2(i1)^-1*mf(i1)-nutilde(i1);
-                    
-                    mu_i=nu_i/tau_i;
-                    sigm2_i=tau_i^-1;
-                    
-                    % marginal moments
-                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                    
-                    % update site parameters
-                    tautilde_old = tautilde(i1);
-                    deltatautilde=sigm2hati^-1-tau_i-tautilde(i1);
-                    tautilde(i1)=tautilde(i1)+deltatautilde;
-                    nutilde_old = nutilde(i1);
-                    nutilde(i1)=sigm2hati^-1*muhati-nu_i;
-                    deltanutilde = nutilde(i1) - nutilde_old;
-                    
-                    % Update the LDL decomposition
-                    sqrtS(i1,i1) = sqrt(tautilde(i1));
-                    sqrtSKi1(i1) = sqrt(tautilde(i1)).*Ki1(i1);
-                    D2_n = sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
-                    
-                    if tautilde_old == 0
-                      VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
-                      VD = ldlrowupdate(i1,VD,D2_n,'+');
-                    else
-                      VD = ldlrowmodify(VD, D2_n, i1);
+                    sqrtSK = ssmult(sqrtS, K);
+                    tttt = ldlsolve(VD,sqrtSK);
+                    sigm2 = full(diag(K) - sum(sqrtSK.*tttt)');
+                    mf = gamma - tttt'*sqrtS*gamma;
+                    tau=1./sigm2-tautilde;
+                    nu = 1./sigm2.*mf-nutilde;
+                    muvec_i=nu./tau;
+                    sigm2vec_i=1./tau;
+                    % compute moments of tilted distributions
+                    for i1=1:n
+                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
                     end
-                    gamma = gamma + Ki1.*deltanutilde;
-                    
-                    muvec_i(i1,1)=mu_i;
-                    sigm2vec_i(i1,1)=sigm2_i;
+                    if any(isnan(logM0))
+                      [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                      return
+                    end
+                    % update site parameters
+                    deltatautilde=1./sigm2hat-tau-tautilde;
+                    tautilde=tautilde+df*deltatautilde;
+                    deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                    nutilde=nutilde+df*deltanutilde;
+                    gamma = gamma + sum(bsxfun(@times,K,df.*deltanutilde'),2);
+                  else
+                    % sequential-EP
+                    muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                    for i1=1:n
+                      % approximate cavity parameters
+                      Ki1 = K(:,i1);
+                      sqrtSKi1 = ssmult(sqrtS, Ki1);
+                      tttt = ldlsolve(VD,sqrtSKi1);
+                      sigm2(i1) = Ki1(i1) - sqrtSKi1'*tttt;
+                      mf(i1) = gamma(i1) - tttt'*sqrtS*gamma;
+                      
+                      tau_i=sigm2(i1)^-1-tautilde(i1);
+                      nu_i=sigm2(i1)^-1*mf(i1)-nutilde(i1);
+                      
+                      mu_i=nu_i/tau_i;
+                      sigm2_i=tau_i^-1;
+                      
+                      % marginal moments
+                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                      
+                      % update site parameters
+                      tautilde_old = tautilde(i1);
+                      deltatautilde=sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                      tautilde(i1)=tautilde(i1)+df*deltatautilde;
+                      deltanutilde=sigm2hat(i1)^-1*muhat(i1)-nu_i-nutilde(i1);
+                      nutilde(i1)=nutilde(i1)+df*deltanutilde;
+                      gamma = gamma + Ki1.*df*deltanutilde;
+                      
+                      % Update the LDL decomposition
+                      sqrtS(i1,i1) = sqrt(tautilde(i1));
+                      sqrtSKi1(i1) = sqrt(tautilde(i1)).*Ki1(i1);
+                      D2_n = sqrtSKi1.*sqrtS(i1,i1) + Inn(:,i1);
+                      
+                      if tautilde_old == 0
+                        VD = ldlrowupdate(i1,VD,VD(:,i1),'-');
+                        VD = ldlrowupdate(i1,VD,D2_n,'+');
+                      else
+                        VD = ldlrowmodify(VD, D2_n, i1);
+                      end
+                      
+                      muvec_i(i1,1)=mu_i;
+                      sigm2vec_i(i1,1)=sigm2_i;
+                    end
+
                   end
+                  
                   % Recompute the approximate posterior parameters
+                  % parallel- and sequential-EP
                   sqrtS = sparse(1:n,1:n,sqrt(tautilde),n,n);
                   KsqrtS = ssmult(K,sqrtS);
                   B = ssmult(sqrtS,KsqrtS) + Inn;
@@ -552,6 +549,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   
                   iter=iter+1;
                   
+                convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
+                %[iter-1 max(abs(muhat-mf)./abs(mf)) max(abs(sqrt(sigm2hat)-s)./abs(s)) max(abs(logM0_old-logM0)) abs(logZep_old-logZep)]
+                %[iter-1 max(abs(muhat-mf)./abs(mf)) max(abs(logM0_old-logM0)) abs(logZep_old-logZep)]
                 end
                 % Reorder all the returned and stored values
                 
@@ -631,32 +631,57 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               D_vec = Lav;
               Ann=0;
               
-              while iter<=maxiter && abs(logZep_tmp-logZep)>tol
-                
-                logZep_tmp=logZep;
-                muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                for i1=1:n
+              % The EP -algorithm
+              convergence=false;
+              while iter<=maxiter && ~convergence
+                logZep_old=logZep;
+                logM0_old=logM0;
+                  
+                if isequal(gp.latent_opt.parallel,'on')
+                  % parallel-EP
                   % approximate cavity parameters
-                  pn = P(i1,:)';
-                  Ann = D_vec(i1) + sum((R*pn).^2);
-                  tau_i = Ann^-1-tautilde(i1);
-                  mf(i1) = eta(i1) + pn'*gamma;
-                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
-                  
-                  mu_i=nu_i/tau_i;
-                  sigm2_i=tau_i^-1;
-                  
-                  % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                  
+                  Ann = D_vec+sum((P*R').^2,2);
+                  mf = eta + sum(bsxfun(@times,P,gamma'),2);
+                  tau = 1./Ann-tautilde;
+                  nu = 1./Ann.*mf-nutilde;
+                  muvec_i=nu./tau;
+                  sigm2vec_i=1./tau;
+                  % compute moments of tilted distributions
+                  for i1=1:n
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
+                  end
+                  if any(isnan(logM0))
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
                   % update site parameters
-                  deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                  tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
+                  deltatautilde=1./sigm2hat-tau-tautilde;
+                  tautilde=tautilde+df*deltatautilde;
+                  deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                  nutilde=nutilde+df*deltanutilde;
+                else
+                  % sequential-EP
+                  muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                  for i1=1:n
+                    % approximate cavity parameters
+                    pn = P(i1,:)';
+                    Ann = D_vec(i1) + sum((R*pn).^2);
+                    tau_i = Ann^-1-tautilde(i1);
+                    mf(i1) = eta(i1) + pn'*gamma;
+                    nu_i = Ann^-1*mf(i1)-nutilde(i1);
+                    
+                    mu_i=nu_i/tau_i;
+                    sigm2_i=tau_i^-1;
                   
-                  % Standard EP
-                  if isequal(gp.latent_opt.parallel,'off')
+                    % marginal moments
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                  
+                    % update site parameters
+                    deltatautilde = sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                    tautilde(i1) = tautilde(i1)+df*deltatautilde;
+                    deltanutilde = sigm2hat(i1)^-1*muhat(i1)-nu_i - nutilde(i1);
+                    nutilde(i1) = nutilde(i1)+df*deltanutilde;
+                  
                     % Update the parameters
                     dn = D_vec(i1);
                     D_vec(i1) = D_vec(i1) - deltatautilde.*D_vec(i1).^2 ./ (1+deltatautilde.*D_vec(i1));
@@ -672,26 +697,29 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     eta(i1) = eta(i1) + (deltanutilde - deltatautilde.*eta(i1)).*dn./(1+deltatautilde.*dn);
                     gamma = gamma + (deltanutilde - deltatautilde.*mf(i1))./(1+deltatautilde.*dn) * R'*(R*pn);
                     %                            mf = eta + P*gamma;
-                  else
-                    % Parallel EP
-                  end
                   
-                  % Store cavity parameters
-                  muvec_i(i1,1)=mu_i;
-                  sigm2vec_i(i1,1)=sigm2_i;
+                    % Store cavity parameters
+                    muvec_i(i1,1)=mu_i;
+                    sigm2vec_i(i1,1)=sigm2_i;
+                  end
                 end
                 
-                
-                % Re-evaluate the parameters
+                % Recompute the approximate posterior parameters
+                % parallel- and sequential-EP
                 temp1 = (1+Lav.*tautilde).^(-1);
                 D_vec = temp1.*Lav;
                 R0P0t = R0*K_fu';
                 temp2 = zeros(size(R0P0t));
-                for i2 = 1:length(temp1)
-                  P(i2,:) = temp1(i2).*K_fu(i2,:);
-                  temp2(:,i2) = R0P0t(:,i2).*tautilde(i2).*temp1(i2);
-                end
-                R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
+%                for i2 = 1:length(temp1)
+%                  P(i2,:) = temp1(i2).*K_fu(i2,:);
+%                  temp2(:,i2) = R0P0t(:,i2).*tautilde(i2).*temp1(i2);
+%                end
+%                R = chol(inv(eye(size(R0)) + temp2*R0P0t')) * R0;
+                P=bsxfun(@times,temp1,K_fu);
+                temp2=bsxfun(@times,(tautilde.*temp1)',R0P0t);
+                temp2=temp2*R0P0t';
+                temp2(1:m+1:end)=temp2(1:m+1:end)+1;
+                R = chol(inv(temp2)) * R0;
                 eta = D_vec.*nutilde;
                 gamma = R'*(R*(P'*nutilde));
                 mf = eta + P*gamma;
@@ -729,6 +757,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 logZep = term41+term52+term5+term3;
                 
                 iter=iter+1;
+                convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
               end
               edata = logZep;
               %L = iLaKfu;
@@ -807,34 +836,64 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               D = Labl;
               Ann=0;
               
-              while iter<=maxiter && abs(logZep_tmp-logZep)>tol
+              % The EP -algorithm
+              convergence=false;
+              while iter<=maxiter && ~convergence
+                logZep_old=logZep;
+                logM0_old=logM0;
                 
-                logZep_tmp=logZep;
-                muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                for bl=1:length(ind)
-                  bl_ind = ind{bl};
-                  for in=1:length(bl_ind)
-                    i1 = bl_ind(in);
-                    % approximate cavity parameters
-                    Dbl = D{bl}; dn = Dbl(in,in); pn = P(i1,:)';
-                    Ann = dn + sum((R*pn).^2);
-                    tau_i = Ann^-1-tautilde(i1);
-                    mf(i1) = eta(i1) + pn'*gamma;
-                    nu_i = Ann^-1*mf(i1)-nutilde(i1);
+                if isequal(gp.latent_opt.parallel,'on')
+                  % parallel-EP
+                  % approximate cavity parameters
+                  for bl=1:length(ind)
+                    bl_ind = ind{bl};
+                    Pbl=P(bl_ind,:);
+                    Ann = diag(D{bl}) +sum((Pbl*R').^2,2);
+                    tau(bl_ind,1) = 1./Ann-tautilde(bl_ind);
+                    mf(bl_ind,1) = eta(bl_ind) + sum(bsxfun(@times,Pbl,gamma'),2);
+                    nu(bl_ind,1) = 1./Ann.*mf(bl_ind)-nutilde(bl_ind);
+                  end
+                  muvec_i=nu./tau;
+                  sigm2vec_i=1./tau;
+                  % compute moments of tilted distributions
+                  for i1=1:n
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
+                  end
+                  if any(isnan(logM0))
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  % update site parameters
+                  deltatautilde = 1./sigm2hat-tau-tautilde;
+                  tautilde = tautilde+df*deltatautilde;
+                  deltanutilde = 1./sigm2hat.*muhat-nu-nutilde;
+                  nutilde = nutilde+df*deltanutilde;;
+                else
+                
+                  muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                  for bl=1:length(ind)
+                    bl_ind = ind{bl};
+                    for in=1:length(bl_ind)
+                      i1 = bl_ind(in);
+                      % approximate cavity parameters
+                      Dbl = D{bl}; dn = Dbl(in,in); pn = P(i1,:)';
+                      Ann = dn + sum((R*pn).^2);
+                      tau_i = Ann^-1-tautilde(i1);
+                      mf(i1) = eta(i1) + pn'*gamma;
+                      nu_i = Ann^-1*mf(i1)-nutilde(i1);
+                      
+                      mu_i=nu_i/tau_i;
+                      sigm2_i=tau_i^-1;
+                      
+                      % marginal moments
+                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                      
+                      % update site parameters
+                      deltatautilde = sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                      tautilde(i1) = tautilde(i1)+df*deltatautilde;
+                      deltanutilde = sigm2hat(i1)^-1*muhat(i1)-nu_i - nutilde(i1);
+                      nutilde(i1) = nutilde(i1) + df*deltanutilde;
                     
-                    mu_i=nu_i/tau_i;
-                    sigm2_i=tau_i^-1;
-                    
-                    % marginal moments
-                    [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                    
-                    % update site parameters
-                    deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                    tautilde(i1) = tautilde(i1)+deltatautilde;
-                    deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
-                    nutilde(i1) = sigm2hati^-1*muhati-nu_i;
-                    
-                    if isequal(gp.latent_opt.parallel,'off')
                       % Update the parameters
                       Dblin = Dbl(:,in);
                       Dbl = Dbl - deltatautilde ./ (1+deltatautilde.*dn) * Dblin*Dblin';
@@ -851,17 +910,17 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       eta(bl_ind) = eta(bl_ind) + (deltanutilde - deltatautilde.*eta(i1))./(1+deltatautilde.*dn).*Dblin;
                       gamma = gamma + (deltanutilde - deltatautilde.*mf(i1))./(1+deltatautilde.*dn) * (R'*(R*pn));
                       %mf = eta + P*gamma;
-                      
+                        
                       D{bl} = Dbl;
-                    else
-                      % Parallel EP
+                      % Store cavity parameters
+                      muvec_i(i1,1)=mu_i;
+                      sigm2vec_i(i1,1)=sigm2_i;
                     end
-                    % Store cavity parameters
-                    muvec_i(i1,1)=mu_i;
-                    sigm2vec_i(i1,1)=sigm2_i;
                   end
                 end
-                % Re-evaluate the parameters
+                
+                % Recompute the approximate posterior parameters
+                % parallel- and sequential-EP
                 temp2 = zeros(size(R0P0t));
                 
                 Stildesqroot=sqrt(tautilde);
@@ -926,6 +985,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 logZep = term41+term52+term5+term3;
                 
                 iter=iter+1;
+                convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
               end
               edata = logZep;
               
@@ -1034,36 +1094,64 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
                 return
               end
-              while iter<=maxiter && abs(logZep_tmp-logZep)>tol
+              
+              % The EP -algorithm
+              convergence=false;
+              while iter<=maxiter && ~convergence
+                logZep_old=logZep;
+                logM0_old=logM0;
                 
-                logZep_tmp=logZep;
-                muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                for i1=1:n
+                if isequal(gp.latent_opt.parallel,'on')
+                  % parallel-EP
                   % approximate cavity parameters
-                  tttt = ldlsolve(VD,ssmult(sqrtS,La(:,i1)));
-                  Di1 =  La(:,i1) - ssmult(LasqrtS,tttt);
-                  
-                  dn = Di1(i1);
-                  pn = P(i1,:)';
-                  Ann = dn + sum((R*pn).^2);
-                  tau_i = Ann^-1-tautilde(i1);
-                  mf(i1) = eta(i1) + pn'*gamma;
-                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
-                  
-                  mu_i=nu_i/tau_i;
-                  sigm2_i= tau_i^-1;  % 1./tau_i;  %
-                  
-                  % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                  
+                  tttt = ldlsolve(VD,ssmult(sqrtS,La));
+                  D_vec = full(diag(La) - sum(LasqrtS'.*tttt)');
+                  Ann = D_vec+sum((P*R').^2,2);
+                  mf = eta + sum(bsxfun(@times,P,gamma'),2);
+                  tau = 1./Ann-tautilde;
+                  nu = 1./Ann.*mf-nutilde;
+                  muvec_i=nu./tau;
+                  sigm2vec_i= 1./tau;
+                  % compute moments of tilted distributions
+                  for i1=1:n
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
+                  end
+                  if any(isnan(logM0))
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
                   % update site parameters
-                  deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                  tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
+                  deltatautilde=1./sigm2hat-tau-tautilde;
+                  tautilde=tautilde+df*deltatautilde;
+                  deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                  nutilde=nutilde+df*deltanutilde;
+                else
+                  % sequential-EP
+                  muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                  for i1=1:n
+                    % approximate cavity parameters
+                    tttt = ldlsolve(VD,ssmult(sqrtS,La(:,i1)));
+                    Di1 =  La(:,i1) - ssmult(LasqrtS,tttt);
+                    
+                    dn = Di1(i1);
+                    pn = P(i1,:)';
+                    Ann = dn + sum((R*pn).^2);
+                    tau_i = Ann^-1-tautilde(i1);
+                    mf(i1) = eta(i1) + pn'*gamma;
+                    nu_i = Ann^-1*mf(i1)-nutilde(i1);
+                    
+                    mu_i=nu_i/tau_i;
+                    sigm2_i= tau_i^-1;  % 1./tau_i;  %
+                    
+                    % marginal moments
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                    
+                    % update site parameters
+                    deltatautilde = sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                    tautilde(i1) = tautilde(i1)+df*deltatautilde;
+                    deltanutilde = sigm2hat(i1)^-1*muhat(i1)-nu_i - nutilde(i1);
+                    nutilde(i1) = nutilde(i1) + df*deltanutilde;
                   
-                  % Standard EP
-                  if isequal(gp.latent_opt.parallel,'off')
                     % Update the parameters
                     P = P - ((deltatautilde ./ (1+deltatautilde.*dn)).* Di1)*pn';
                     updfact = deltatautilde./(1 + deltatautilde.*Ann);
@@ -1092,14 +1180,11 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                     else
                       VD = ldlrowmodify(VD, D2_n, i1);
                     end
-                  else
-                    % Parallel EP
-                    error('This is not implemented yet')
                   end
-                  
-                  
                 end
-                % Re-evaluate the parameters
+                
+                % Recompute the approximate posterior parameters
+                % parallel- and sequential-EP
                 sqrtS = sparse(1:n,1:n,sqrt(tautilde),n,n);
                 sqrtSLa = ssmult(sqrtS,La);
                 D2 = ssmult(sqrtSLa,sqrtS) + Inn;
@@ -1146,6 +1231,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 logZep = term41+term52+term5+term3;
                 
                 iter=iter+1;
+                convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
               end
               edata = logZep;
               
@@ -1211,32 +1297,57 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               gamma = zeros(m,1);
               Ann=0;
               
-              while iter<=maxiter && abs(logZep_tmp-logZep)>tol
+              % The EP -algorithm
+              convergence=false;
+              while iter<=maxiter && ~convergence
+                logZep_old=logZep;
+                logM0_old=logM0;
                 
-                logZep_tmp=logZep;
-                muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                for i1=1:n
+                if isequal(gp.latent_opt.parallel,'on')
+                  % parallel-EP
                   % approximate cavity parameters
-                  phi = Phi(i1,:)';
-                  Ann = sum((R*phi).^2);
-                  tau_i = Ann^-1-tautilde(i1);
-                  mf(i1) = phi'*gamma;
-                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
-                  
-                  mu_i=nu_i/tau_i;
-                  sigm2_i=tau_i^-1;
-                  
-                  % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                  
+                  Ann = sum((P*R').^2,2);
+                  mf = sum(bsxfun(@times,Phi,gamma'),2);%phi'*gamma;
+                  tau = 1./Ann-tautilde;
+                  nu = 1./Ann.*mf-nutilde;
+                  muvec_i=nu./tau;
+                  sigm2vec_i= 1./tau;
+                  % compute moments of tilted distributions
+                  for i1=1:n
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
+                  end
+                  if any(isnan(logM0))
+                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
                   % update site parameters
-                  deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                  tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
+                  deltatautilde=1./sigm2hat-tau-tautilde;
+                  tautilde=tautilde+df*deltatautilde;
+                  deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                  nutilde=nutilde+df*deltanutilde;
+                else
+                  % sequential-EP
+                  muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                  for i1=1:n
+                    % approximate cavity parameters
+                    phi = Phi(i1,:)';
+                    Ann = sum((R*phi).^2);
+                    tau_i = Ann^-1-tautilde(i1);
+                    mf(i1) = phi'*gamma;
+                    nu_i = Ann^-1*mf(i1)-nutilde(i1);
+                    
+                    mu_i=nu_i/tau_i;
+                    sigm2_i=tau_i^-1;
+                    
+                    % marginal moments
+                    [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                    
+                    % update site parameters
+                    deltatautilde = sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                    tautilde(i1) = tautilde(i1)+df*deltatautilde;
+                    deltanutilde = sigm2hat(i1)^-1*muhat(i1)-nu_i - nutilde(i1);
+                    nutilde(i1) = nutilde(i1) + df*deltanutilde;
                   
-                  % Standard EP
-                  if isequal(gp.latent_opt.parallel,'off')
                     % Update the parameters
                     lnn = sum((R*phi).^2);
                     updfact = deltatautilde/(1 + deltatautilde*lnn);
@@ -1248,18 +1359,14 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                       R = cholupdate(R, RtLphiU, '+');
                     end
                     gamma = gamma - R'*(R*phi)*(deltatautilde*mf(i1)-deltanutilde);
-                  else
-                    % Parallel EP
+                    % Store cavity parameters
+                    muvec_i(i1,1)=mu_i;
+                    sigm2vec_i(i1,1)=sigm2_i;
                   end
-                  
-                  % Store cavity parameters
-                  muvec_i(i1,1)=mu_i;
-                  sigm2vec_i(i1,1)=sigm2_i;
                 end
                 
-                SS = Phi/(eye(m,m)+Phi'*diag(tautilde)*Phi)*Phi' ;
-                
-                % Re-evaluate the parameters
+                % Recompute the approximate posterior parameters
+                % parallel- and sequential-EP
                 R = chol(inv(eye(m,m) + Phi'*(repmat(tautilde,1,m).*Phi)));
                 gamma = R'*(R*(Phi'*nutilde));
                 mf = Phi*gamma;
@@ -1293,6 +1400,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                 logZep = term41+term52+term5+term3;
                 
                 iter=iter+1;
+                convergence=max(abs(logM0_old-logM0))<tol && abs(logZep_old-logZep)<tol;
               end
               edata = logZep;
               %L = iLaKfu;
@@ -1322,115 +1430,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
               La2 = 1./tautilde;
               D = 0;
               
-              % ============================================================
-              % SSGP
-              % ============================================================
-            case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
-              % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
-              % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
-              % NOTE! This does not work at the moment.
-              
-              % First evaluate needed covariance matrices
-              % v defines that parameter is a vector
-              Phi = gp_trcov(gp, x);        % n x m matrix and nxn sparse matrix
-              m = size(Phi,2);
-              
-              R = eye(m,m);
-              P = Phi;
-              mf = zeros(size(y));
-              gamma = zeros(m,1);
-              Ann=0;
-              
-              while iter<=maxiter && abs(logZep_tmp-logZep)>tol
-                
-                logZep_tmp=logZep;
-                muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                for i1=1:n
-                  % approximate cavity parameters
-                  phi = Phi(i1,:)';
-                  Ann = sum((R*phi).^2);
-                  tau_i = Ann^-1-tautilde(i1);
-                  mf(i1) = phi'*gamma;
-                  nu_i = Ann^-1*mf(i1)-nutilde(i1);
-                  
-                  mu_i=nu_i/tau_i;
-                  sigm2_i=tau_i^-1;
-                  
-                  % marginal moments
-                  [logM0(i1), muhati, sigm2hati] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                  
-                  % update site parameters
-                  deltatautilde = sigm2hati^-1-tau_i-tautilde(i1);
-                  tautilde(i1) = tautilde(i1)+deltatautilde;
-                  deltanutilde = sigm2hati^-1*muhati-nu_i - nutilde(i1);
-                  nutilde(i1) = sigm2hati^-1*muhati-nu_i;
-                  
-                  % Update the parameters
-                  lnn = sum((R*phi).^2);
-                  updfact = deltatautilde/(1 + deltatautilde*lnn);
-                  if updfact > 0
-                    RtLphiU = R'*(R*phi).*sqrt(updfact);
-                    R = cholupdate(R, RtLphiU, '-');
-                  elseif updfact < 0
-                    RtLphiU = R'*(R*phi).*sqrt(updfact);
-                    R = cholupdate(R, RtLphiU, '+');
-                  end
-                  gamma = gamma - R'*(R*phi)*(deltatautilde*mf(i1)-deltanutilde);
-                  
-                  % Store cavity parameters
-                  muvec_i(i1,1)=mu_i;
-                  sigm2vec_i(i1,1)=sigm2_i;
-                end
-                
-                SS = Phi/(eye(m,m)+Phi'*diag(tautilde)*Phi)*Phi' ;
-                
-                % Re-evaluate the parameters
-                R = chol(inv(eye(m,m) + Phi'*(repmat(tautilde,1,m).*Phi)));
-                gamma = R'*(R*(Phi'*nutilde));
-                mf = Phi*gamma;
-                
-                % Compute the marginal likelihood, see FULL model for
-                % details about equations
-                % 4. term & 1. term
-                Stildesqroot=sqrt(tautilde);
-                SsqrtPhi = Phi.*repmat(Stildesqroot,1,m);
-                AA = eye(m,m) + SsqrtPhi'*SsqrtPhi; AA = (AA+AA')/2;
-                [AA, notpositivedefinite] = chol(AA,'lower');
-                if notpositivedefinite
-                  [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                  return
-                end
-                term41 = - 0.5*sum(log(1+tautilde.*sigm2vec_i)) + sum(log(diag(AA)));
-                
-                % 5. term (1/2 element) & 2. term
-                T=1./sigm2vec_i;
-                bb = nutilde'*Phi;
-                bb2 = bb*SsqrtPhi';
-                bb3 = bb2*SsqrtPhi/AA';
-                term52 = -0.5*( bb*bb' - bb2*bb2' + bb3*bb3' - (nutilde./(T+tautilde))'*nutilde);
-                
-                % 5. term (2/2 element)
-                term5 = - 0.5*muvec_i'.*(T./(tautilde+T))'*(tautilde.*muvec_i-2*nutilde);
-                
-                % 3. term
-                term3 = -sum(logM0);
-                
-                logZep = term41+term52+term5+term3;
-                
-                iter=iter+1;
-              end
-              edata = logZep;
-              %L = iLaKfu;
-              
-              temp = Phi*(SsqrtPhi'*(SsqrtPhi*bb'));
-              %b = Phi*bb' - temp + Phi*(SsqrtPhi'*(SsqrtPhi*(AA'\(AA\temp))));
-              
-              b = nutilde - bb2'.*Stildesqroot + repmat(tautilde,1,m).*Phi*(AA'\bb3');
-              b = b';
-              
-              L = repmat(tautilde,1,m).*Phi/AA';
-              La2 = tautilde;
-              D = 0;
             otherwise
               error('Unknown type of Gaussian process!')
           end
@@ -1531,6 +1530,7 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           tolInner=gp.latent_opt.tolInner; % inner loop energy tolerance
           tolGrad=gp.latent_opt.tolGrad; % minimum gradient (g) decrease in the search direction, abs(g_new)<tolGrad*abs(g)
           Vc_lim=gp.latent_opt.cavity_var_lim; % limit for the cavity variance Vc, Vc < Vc_lim*diag(K)
+          df0=gp.latent_opt.df; % the intial damping factor
           eta1=gp.latent_opt.eta; % the initial fraction parameter
           eta2=gp.latent_opt.eta2; % the secondary fraction parameter          
           display=gp.latent_opt.display; % control the display
@@ -1541,7 +1541,6 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           n=length(y);      
           pvis=0;
           
-          df0=gp.latent_opt.df; % the intial damping factor
           eta=repmat(eta1,n,1);  % the initial vector of fraction parameters
           fh_tm=@(si,m_c,V_c,eta) likelih.fh.tiltedMoments2(likelih,y,si,V_c,m_c,z,eta);
           
@@ -1734,9 +1733,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
             % start double-loop iterations
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-            up_mode=gp.latent_opt.up_mode;
-            %up_mode='ep'; % choose the moment matching
-            %up_mode='grad'; % choose the gradients
+            up_mode=gp.latent_opt.up_mode; % update mode in double-loop iterations
+                                           %up_mode='ep'; % choose the moment matching
+                                           %up_mode='grad'; % choose the gradients
             df_lim=gp.latent_opt.df_lim; % step size limit (1 suitable for ep updates)
             
             tol_e=inf;  % the energy difference for measuring convergence (tol_e < tolStop)

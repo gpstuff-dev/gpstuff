@@ -81,13 +81,20 @@ function gp = gp_set(varargin)
 %                      'newton' (default except for lik_t)
 %                      'stabilized-newton', 'fminuc_large', or
 %                      'lik_specific' (applicable and default for lik_t)
+%        tol          - Iterations are stopped when change in the log 
+%                       marginal likelihood is smaller than tol. The 
+%                       default is 1e-6.
 %      EP: 
 %        maxiter      - Maximum number of EP iterations. The default is 20.
-%        tol          - Termination tolerance on logZ. The default is 1e-6.
-%        parallel     - use parallel updating of site parameters: 
-%                       'on' or 'off' (default) 
-%        optim_method - method for evaluating EP. Default is basic-EP for log
-%                       concave likelihoods and robust-EP for not log concave.
+%        tol          - Iterations are stopped when all changes in the log 
+%                       predictive densities and the log marginal likelihood 
+%                       are smaller than tol. The default is 1e-4.
+%        parallel     - Use parallel updating of site parameters: 
+%                       'on' (default) or 'off'
+%        df           - Damping factor. Default is 0.8 for parallel-EP and 1.0 
+%                       for sequential-EP.
+%        optim_method - Method for evaluating EP. Default is 'basic-EP' for log
+%                       concave likelihoods and 'robust-EP' for not log concave.
 %
 %      for robust-EP
 %        ninit        - Number of initial parallel iterations. Default is 10.
@@ -410,21 +417,38 @@ function gp = gp_set(varargin)
           ipep.FunctionName = 'GP_SET - latent method EP options';
           ipep.addParamValue('optim_method',[], @(x) ischar(x));
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep.addParamValue('tol',1e-6, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep.addParamValue('parallel','off', @(x) ischar(x));    % default off
-          ipep.addParamValue('ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
-          ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('eta2', .5, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('max_ninner', 4, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
-          ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tolGrad', 0.9, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tolInner', 1e-3, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('cavity_var_lim', 2, @(x) isreal(x) && isfinite(x))
-          ipep.addParamValue('up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}))
-          ipep.addParamValue('df_lim', 1, @(x) isreal(x) && isfinite(x))
           ipep.addParamValue('display', 'off', @(x) ischar(x) && ismember(x,{'off', 'final', 'iter'}))
+          ipep.addParamValue('parallel','on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
+          % Following option is only for basic-EP
+          % all changes in the log predictive densities and the log marginal
+          % likelihood are smaller than tol.
+          ipep.addParamValue('tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipep.addParamValue('LALRSinit','off', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default off
+          % Following options are only for robust-EP
+          % max number of initial parallel iterations
+          ipep.addParamValue('ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
+          % max number of inner loop iterations in the double-loop algorithm
+          ipep.addParamValue('max_ninner', 4, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
+          % converge tolerance with respect to the maximum change in E[f] and Var[f]
+          ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
+          % tolerance for the EP site updates
+          ipep.addParamValue('tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x))
+          % inner loop energy tolerance
+          ipep.addParamValue('tolInner', 1e-3, @(x) isreal(x) && isfinite(x))
+          % minimum gradient (g) decrease in the search direction, abs(g_new)<tolGrad*abs(g)
+          ipep.addParamValue('tolGrad', 0.9, @(x) isreal(x) && isfinite(x))
+          % limit for the cavity variance Vc, Vc < Vc_lim*diag(K)
+          ipep.addParamValue('cavity_var_lim', 2, @(x) isreal(x) && isfinite(x))
+          % the intial damping factor
+          ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
+          % the initial fraction parameter
+          ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
+          % the secondary fraction parameter          
+          ipep.addParamValue('eta2', .5, @(x) isreal(x) && isfinite(x))
+          % update mode in double-loop iterations
+          ipep.addParamValue('up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}))
+          % step size limit (1 suitable for ep updates)
+          ipep.addParamValue('df_lim', 1, @(x) isreal(x) && isfinite(x))
           ipep.parse(latent_opt);
           optim_method = ipep.Results.optim_method;
           if ~isempty(optim_method)
@@ -451,12 +475,19 @@ function gp = gp_set(varargin)
           if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
             gp.latent_opt.parallel = ipep.Results.parallel;
           end
+          if init || ~ismember('df',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df')
+            if strcmp(gp.latent_opt.parallel,'off') && ismember('df',ipep.UsingDefaults)
+              gp.latent_opt.df = 1;
+            else
+              gp.latent_opt.df = ipep.Results.df;
+            end
+          end
+          if init || ~ismember('LALRSinit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'LALRSinit')
+            gp.latent_opt.LALRSinit = ipep.Results.LALRSinit;
+          end
           if strcmp(gp.latent_opt.optim_method, 'robust-EP')
             if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
               gp.latent_opt.ninit = ipep.Results.ninit;
-            end
-            if init || ~ismember('df',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df')
-              gp.latent_opt.df = ipep.Results.df;
             end
             if init || ~ismember('eta',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'eta')
               gp.latent_opt.eta = ipep.Results.eta;
@@ -493,12 +524,11 @@ function gp = gp_set(varargin)
             end
           end
         case 'Laplace'
-          % these options not yet used
-          %gp.latent_opt.tol = 1e-10;
           % Handle latent_opt
           ipla=inputParser;
           ipla.FunctionName = 'GP_SET - latent method Laplace options';
           ipla.addParamValue('optim_method',[], @(x) ischar(x));
+          ipla.addParamValue('tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipla.addParamValue('maxiter', 40, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipla.parse(latent_opt);
           optim_method=ipla.Results.optim_method;
@@ -511,6 +541,9 @@ function gp = gp_set(varargin)
             else
               gp.latent_opt.optim_method='newton';
             end
+          end
+          if init || ~ismember('tol',ipla.UsingDefaults) || ~isfield(gp.latent_opt,'tol')
+            gp.latent_opt.tol = ipla.Results.tol;
           end
           if init || ~ismember('maxiter',ipla.UsingDefaults) || ~isfield(gp,'maxiter')
             gp.latent_opt.maxiter = ipla.Results.maxiter;
