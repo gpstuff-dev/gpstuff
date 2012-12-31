@@ -390,7 +390,6 @@ function DKff = gpcf_periodic_cfg(gpcf, x, x2, mask, i1)
 %    GPCF_PERIODIC_PAK, GPCF_PERIODIC_UNPAK, GPCF_PERIODIC_LP, GP_G
 
   gpp=gpcf.p;
-%   [n, m] =size(x);
 
   i2=1;
   gp_period=gpcf.period;
