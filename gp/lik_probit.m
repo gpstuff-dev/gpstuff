@@ -223,7 +223,7 @@ function llg3 = lik_probit_llg3(lik, y, f, param, z)
   end
 end
 
-function [logM_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
+function [logM_0, m_1, sigm2hati1] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
 %LIK_PROBIT_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
 %
 %  Description
@@ -238,20 +238,22 @@ function [logM_0, m_1, m_2] = lik_probit_tiltedMoments(lik, y, i1, sigm2_i, myy_
 %
 %  See also
 %    GPEP_E
+
+% don't check this, because this function is called so often by EP
+%  if ~isempty(find(abs(y)~=1))
+%    error('lik_probit: The class labels have to be {-1,1}')
+%  end
+
+  a=realsqrt(1+sigm2_i);
+  zi=y(i1).*myy_i./a;
   
-  if ~isempty(find(abs(y)~=1))
-    error('lik_probit: The class labels have to be {-1,1}')
-  end
-  
-  zi=y(i1).*myy_i./sqrt(1+sigm2_i);
-  m_0 = norm_cdf(zi);
-  normp_zi = norm_pdf(zi);
-  normc_zi = m_0;
-  muhati1=myy_i+(y(i1)*sigm2_i*normp_zi)/(normc_zi*sqrt(1+sigm2_i));
-  sigm2hati1=sigm2_i-(sigm2_i^2*normp_zi)/((1+sigm2_i)*normc_zi)*(zi+normp_zi/normc_zi);
-  m_1 = muhati1;
-  m_2 = sigm2hati1;
-  logM_0 = log(m_0);
+  %normc_zi = 0.5.*erfc(-zi./sqrt(2)); % norm_cdf(zi)
+  normc_zi = 0.5.*erfc(-zi./1.414213562373095); % norm_cdf(zi)
+  %normp_zi = exp(-0.5.*zi.^2-log(2.*pi)./2); %norm_pdf(zi)
+  normp_zi = exp(-0.5.*realpow(zi,2)-0.918938533204673); %norm_pdf(zi)
+  m_1=myy_i+(y(i1).*sigm2_i.*normp_zi)./(normc_zi.*a); % muhati1
+  sigm2hati1=sigm2_i-(sigm2_i.^2.*normp_zi)./((1+sigm2_i).*normc_zi).*(zi+normp_zi./normc_zi); % sigm2hati1
+  logM_0 = reallog(normc_zi);
 end
 
 function [lpy, Ey, Vary] = lik_probit_predy(lik, Ef, Varf, yt, zt)

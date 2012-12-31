@@ -195,17 +195,16 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
 %  See also
 %    GPEP_E
   
-  if ~isempty(find(abs(y)~=1))
-    error('lik_logit: The class labels have to be {-1,1}')
-  end
+% don't check this here, because this function is called so often by EP
+%  if ~isempty(find(abs(y)~=1))
+%    error('lik_logit: The class labels have to be {-1,1}')
+%  end
   
   yy = y(i1);
   % get a function handle of an unnormalized tilted distribution 
   % (likelihood * cavity = Logit * Gaussian)
   % and useful integration limits
   [tf,minf,maxf]=init_logit_norm(yy,myy_i,sigm2_i);
-  RTOL = 1.e-6;
-  ATOL = 1.e-10;
   
   if isnan(minf) || isnan(maxf)
     logM_0=NaN; m_1=NaN; sigm2hati1=NaN;
@@ -218,6 +217,8 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
   % approximation, which could be faster, but quadrature also
   % takes only a fraction of the time EP uses overall, so no
   % need to change...)
+  RTOL = 1.e-6;
+  ATOL = 1.e-10;
   [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);        
   sigm2hati1 = m_2 - m_1.^2;
   

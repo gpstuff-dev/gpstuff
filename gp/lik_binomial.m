@@ -239,86 +239,29 @@ function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm
 %  See also
 %    GPEP_E
   
-  if isempty(z)
-    error(['lik_binomial -> lik_binomial_tiltedMoments: missing z!'... 
-           'Binomial likelihood needs the expected number of               '...
-           'occurrences as an extra input z. See, for                     '...
-           'example, lik_binomial and gpla_e.                         ']);
-  end
+%  if isempty(z)
+%    error(['lik_binomial -> lik_binomial_tiltedMoments: missing z!'... 
+%           'Binomial likelihood needs the expected number of               '...
+%           'occurrences as an extra input z. See, for                     '...
+%           'example, lik_binomial and gpla_e.                         ']);
+%  end
   
   yy = y(i1);
   N = z(i1);
   
   % Create function handle for the function to be integrated
-  % (likelihood * cavity).
-%   logbincoef=gammaln(N+1)-gammaln(yy+1)-gammaln(N-yy+1);
-%   zm = @(f)exp( logbincoef + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f))) - 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
-  
-  % Set the integration limits (in this case based only on the prior).
-%   if yy > 0 && yy<N
-%     mean_app = log(yy./(N-yy));
-%     ld0=1/(1+exp(-mean_app));
-%     ld1=(1-ld0)*ld0;
-%     ld2=ld0-3*ld0^2+2*ld0^3;
-%     var_app=inv(-( yy*(ld2*ld0-ld1^2)/ld0^2 + (N-yy)*(ld2*(ld0-1)-ld1^2)/(ld0-1)^2 ));
-%     
-%     mean_app = (myy_i/sigm2_i + mean_app/var_app)/(1/sigm2_i + 1/var_app);
-%     sigm_app = sqrt((1/sigm2_i + 1/var_app)^-1);
-%   else
-%     mean_app = myy_i;
-%     sigm_app = sqrt(sigm2_i);                    
-%   end
-%   
-%   lambdaconf(1) = mean_app - 6.*sigm_app; lambdaconf(2) = mean_app + 6.*sigm_app;
-%   test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-%   test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-%   testiter = 1;
-%   if test1 == 0 
-%     lambdaconf(1) = lambdaconf(1) - 3*sigm_app;
-%     test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-%     if test1 == 0
-%       go=true;
-%       while testiter<10 & go
-%         lambdaconf(1) = lambdaconf(1) - 2*sigm_app;
-%         lambdaconf(2) = lambdaconf(2) - 2*sigm_app;
-%         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-%         test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-%         if test1==1&test2==1
-%           go=false;
-%         end
-%         testiter=testiter+1;
-%       end
-%     end
-%     mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-%   elseif test2 == 0
-%     lambdaconf(2) = lambdaconf(2) + 3*sigm_app;
-%     test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-%     if test2 == 0
-%       go=true;
-%       while testiter<10 & go
-%         lambdaconf(1) = lambdaconf(1) + 2*sigm_app;
-%         lambdaconf(2) = lambdaconf(2) + 2*sigm_app;
-%         test1 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(1));
-%         test2 = zm((lambdaconf(2)+lambdaconf(1))/2)>zm(lambdaconf(2));
-%         if test1==1&test2==1
-%           go=false;
-%         end
-%         testiter=testiter+1;
-%       end
-%     end
-%     mean_app = (lambdaconf(2)+lambdaconf(1))/2;
-%   end
+  % (likelihood * cavity) and useful integration limits
   [tf,minf,maxf]=init_binomial_norm(yy,myy_i,sigm2_i,N);
-  RTOL = 1.e-6;
-  ATOL = 1.e-10;
   
   % Integrate with quadrature
+  RTOL = 1.e-6;
+  ATOL = 1.e-10;
   [m_0, m_1, m_2] = quad_moments(tf,minf, maxf, RTOL, ATOL);        
-  
   sigm2hati1 = m_2 - m_1.^2;
   
-  % If the second central moment is less than cavity variance integrate more
-  % precisely. Theoretically should be sigm2hati1 < sigm2_i.
+  % If the second central moment is less than cavity variance
+  % integrate more precisely. Theoretically for log-concave
+  % likelihood should be sigm2hati1 < sigm2_i.
   if sigm2hati1 >= sigm2_i
     ATOL = ATOL.^2;
     RTOL = RTOL.^2;
