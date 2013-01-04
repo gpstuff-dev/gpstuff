@@ -201,41 +201,47 @@ function [logM_0, m_1, sigm2hati1] = lik_logit_tiltedMoments(lik, y, i1, sigm2_i
 %  end
   
   yy = y(i1);
-  % get a function handle of an unnormalized tilted distribution 
-  % (likelihood * cavity = Logit * Gaussian)
-  % and useful integration limits
-  [tf,minf,maxf]=init_logit_norm(yy,myy_i,sigm2_i);
+  logM_0=zeros(size(yy));
+  m_1=zeros(size(yy));
+  sigm2hati1=zeros(size(yy));
   
-  if isnan(minf) || isnan(maxf)
-    logM_0=NaN; m_1=NaN; sigm2hati1=NaN;
-    return
-  end
-  
-  % Integrate with an adaptive Gauss-Kronrod quadrature
-  % (Rasmussen and Nickish use in GPML interpolation between
-  % a cumulative Gaussian scale mixture and linear tail
-  % approximation, which could be faster, but quadrature also
-  % takes only a fraction of the time EP uses overall, so no
-  % need to change...)
-  RTOL = 1.e-6;
-  ATOL = 1.e-10;
-  [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);        
-  sigm2hati1 = m_2 - m_1.^2;
-  
-  % If the second central moment is less than cavity variance
-  % integrate more precisely. Theoretically should be
-  % sigm2hati1 < sigm2_i.
-  if sigm2hati1 >= sigm2_i
-    ATOL = ATOL.^2;
-    RTOL = RTOL.^2;
-    [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    sigm2hati1 = m_2 - m_1.^2;
-    if sigm2hati1 >= sigm2_i
-      %warning('lik_logit_tilted_moments: sigm2hati1 >= sigm2_i');
-      sigm2hati1=sigm2_i-eps;
+  for i=1:length(i1)
+    % get a function handle of an unnormalized tilted distribution
+    % (likelihood * cavity = Logit * Gaussian)
+    % and useful integration limits
+    [tf,minf,maxf]=init_logit_norm(yy(i),myy_i(i),sigm2_i(i));
+    
+    if isnan(minf) || isnan(maxf)
+      logM_0(i)=NaN; m_1(i)=NaN; sigm2hati1(i)=NaN;
+      continue
     end
+    
+    % Integrate with an adaptive Gauss-Kronrod quadrature
+    % (Rasmussen and Nickish use in GPML interpolation between
+    % a cumulative Gaussian scale mixture and linear tail
+    % approximation, which could be faster, but quadrature also
+    % takes only a fraction of the time EP uses overall, so no
+    % need to change...)
+    RTOL = 1.e-6;
+    ATOL = 1.e-10;
+    [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    sigm2hati1(i) = m_2 - m_1(i).^2;
+    
+    % If the second central moment is less than cavity variance
+    % integrate more precisely. Theoretically should be
+    % sigm2hati1 < sigm2_i.
+    if sigm2hati1(i) >= sigm2_i(i)
+      ATOL = ATOL.^2;
+      RTOL = RTOL.^2;
+      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+      sigm2hati1(i) = m_2 - m_1(i).^2;
+      if sigm2hati1(i) >= sigm2_i(i)
+        %warning('lik_logit_tilted_moments: sigm2hati1 >= sigm2_i');
+        sigm2hati1(i)=sigm2_i(i)-eps;
+      end
+    end
+    logM_0(i) = log(m_0);
   end
-  logM_0 = log(m_0);
 end
 
 function [lpy, Ey, Vary] = lik_logit_predy(lik, Ef, Varf, yt, zt)

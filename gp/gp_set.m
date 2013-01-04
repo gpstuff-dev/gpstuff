@@ -91,10 +91,12 @@ function gp = gp_set(varargin)
 %                       are smaller than tol. The default is 1e-4.
 %        parallel     - Use parallel updating of site parameters: 
 %                       'on' (default) or 'off'
+%        init_prev    - Use parameter values from previous EP-iterations as
+%                       initial parameter values: 'on' (default) or 'off'       
 %        df           - Damping factor. Default is 0.8 for parallel-EP and 1.0 
 %                       for sequential-EP.
 %        optim_method - Method for evaluating EP. Default is 'basic-EP' for log
-%                       concave likelihoods and 'robust-EP' for not log concave.
+%                       concave likelihoods and 'robust-EP' for not log concave.                
 %
 %      for robust-EP
 %        ninit        - Number of initial parallel iterations. Default is 10.
@@ -419,6 +421,7 @@ function gp = gp_set(varargin)
           ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
           ipep.addParamValue('display', 'off', @(x) ischar(x) && ismember(x,{'off', 'final', 'iter'}))
           ipep.addParamValue('parallel','on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
+          ipep.addParamValue('init_prev', 'on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
           % Following option is only for basic-EP
           % all changes in the log predictive densities and the log marginal
           % likelihood are smaller than tol.
@@ -474,6 +477,9 @@ function gp = gp_set(varargin)
           end
           if init || ~ismember('parallel',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'parallel')
             gp.latent_opt.parallel = ipep.Results.parallel;
+          end
+          if init || ~ismember('init_prev',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'init_prev')
+            gp.latent_opt.init_prev = ipep.Results.init_prev;
           end
           if init || ~ismember('df',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'df')
             if strcmp(gp.latent_opt.parallel,'off') && ismember('df',ipep.UsingDefaults)

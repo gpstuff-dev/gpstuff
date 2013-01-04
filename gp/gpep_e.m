@@ -143,6 +143,8 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           df = gp.latent_opt.df;
           nutilde = zeros(size(y));
           tautilde = zeros(size(y));
+          muvec_i=zeros(size(y));
+          sigm2vec_i=zeros(size(y));
           logZep_old=0; logZep=Inf;
           if ~isfield(gp,'meanf')
             mf = zeros(size(y));
@@ -173,136 +175,118 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   meanfp=true;
                 end
                 
-                if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
-                  tautilde = ch.tautilde;
-                  nutilde = ch.nutilde;
-                  Stilde=tautilde;
-                  Stildesqr=sqrt(Stilde);
-                  B=bsxfun(@times,bsxfun(@times,Stildesqr,C),Stildesqr');
-                  B(1:n+1:end)=B(1:n+1:end)+1;
-                  [L,notpositivedefinite] = chol(B,'lower');
-                  if notpositivedefinite
-                    [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                    return
-                  end
-                  V=L\bsxfun(@times,Stildesqr,C);
-                  Sigm=C-V'*V;
-                  mf=Sigm*nutilde;
-                end
-                
                 % The EP -algorithm
                 convergence=false;
                 while iter<=maxiter && ~convergence
                   logZep_old=logZep;
                   logM0_old=logM0;
                   
-                  if isequal(gp.latent_opt.parallel,'on')
-                    % parallel-EP
-                    % compute marginal and cavity parameters
-                    dSigm=diag(Sigm);
-                    tau=1./dSigm-tautilde;
-                    nu = 1./dSigm.*mf-nutilde;
-                    muvec_i=nu./tau;
-                    sigm2vec_i=1./tau;
-                    
-                    % compute moments of tilted distributions
-                    if isequal(gp.lik.type,'Probit')
-                      [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
-                    else
-                      for i1=1:n
-                        [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
-                      end
-                    end
-                    if any(isnan(logM0))
-                      [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
-                      return
-                    end
-                    
-                    % update site parameters
-                    deltatautilde=1./sigm2hat-tau-tautilde;
-                    tautilde=tautilde+df.*deltatautilde;
-                    deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
-                    nutilde=nutilde+df.*deltanutilde;
+                  if isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
+                    tautilde=ch.tautilde;
+                    nutilde=ch.nutilde;
                   else
-                    % sequential-EP
-                    muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
-                    for i1=1:n
-                      % Algorithm utilizing Cholesky updates
-                      % This is numerically more stable but slower
-  % $$$                             % approximate cavity parameters
-  % $$$                             S11 = sum(Ls(:,i1).^2);
-  % $$$                             S1 = Ls'*Ls(:,i1);
-  % $$$                             tau_i=S11^-1-tautilde(i1);
-  % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
-  % $$$
-  % $$$                             mu_i=nu_i/tau_i;
-  % $$$                             sigm2_i=tau_i^-1;
-  % $$$
-  % $$$                             if sigm2_i < 0
-  % $$$                                 [ii i1]
-  % $$$                             end
-  % $$$
-  % $$$                             % marginal moments
-  % $$$                             [M0(i1), muhat, sigm2hat] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, mu_i, z);
-  % $$$
-  % $$$                             % update site parameters
-  % $$$                             deltatautilde = sigm2hat^-1-tau_i-tautilde(i1);
-  % $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
-  % $$$                             nutilde(i1) = sigm2hat^-1*muhat-nu_i;
-  % $$$
-  % $$$                             upfact = 1./(deltatautilde^-1+S11);
-  % $$$                             if upfact > 0
-  % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
-  % $$$                             else
-  % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
-  % $$$                             end
-  % $$$                             Sigm = Ls'*Ls;
-  % $$$                             mf=Sigm*nutilde;
-  % $$$
-  % $$$                             muvec_i(i1,1)=mu_i;
-  % $$$                             sigm2vec_i(i1,1)=sigm2_i;
+                    if isequal(gp.latent_opt.parallel,'on')
+                      % parallel-EP
+                      % compute marginal and cavity parameters
+                      dSigm=diag(Sigm);
+                      tau=1./dSigm-tautilde;
+                      nu = 1./dSigm.*mf-nutilde;
+                      muvec_i=nu./tau;
+                      sigm2vec_i=1./tau;
                       
-                      % Algorithm as in Rasmussen and Williams 2006
-                      % approximate cavity parameters
-                      Sigmi=Sigm(:,i1);
-                      Sigmii=Sigmi(i1);
-                      tau_i=1/Sigmii-tautilde(i1);
-                      nu_i = 1/Sigmii*mf(i1)-nutilde(i1);
-                      mu_i=nu_i/tau_i;
-                      sigm2_i=1/tau_i;
-                      
-                      % marginal moments
-                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
-                      if isnan(logM0(i1))
+                      % compute moments of tilted distributions
+                      [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+                      if any(isnan(logM0))
                         [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
                         return
                       end
+                      
                       % update site parameters
-                      deltatautilde=sigm2hat(i1)^-1-tau_i-tautilde(i1);
-                      tautilde(i1)=tautilde(i1)+df*deltatautilde;
-                      deltanutilde=sigm2hat(i1)^-1*muhat(i1)-nu_i-nutilde(i1);
-                      nutilde(i1)=nutilde(i1)+df*deltanutilde;
-                      
-                      % Update mean and variance after each site update (standard EP)
-                      ds = deltatautilde/(1+deltatautilde*Sigmii);
-                      Sigm = Sigm - ((ds*Sigmi)*Sigmi');
-                      %Sigm = Sigm - ((ds*Sigm(:,i1))*Sigm(:,i1)');
-                      % The below is how Rasmussen and Williams
-                      % (2006) do the update. The above version is
-                      % more robust.
-                      %ds = deltatautilde^-1+Sigm(i1,i1);
-                      %ds = (Sigm(:,i1)/ds)*Sigm(:,i1)';
-                      %Sigm = Sigm - ds;
-                      %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                      deltatautilde=1./sigm2hat-tau-tautilde;
+                      tautilde=tautilde+df.*deltatautilde;
+                      deltanutilde=1./sigm2hat.*muhat-nu-nutilde;
+                      nutilde=nutilde+df.*deltanutilde;
+                    else
+                      % sequential-EP
+                      muvec_i = zeros(n,1); sigm2vec_i = zeros(n,1);
+                      for i1=1:n
+                        % Algorithm utilizing Cholesky updates
+                        % This is numerically more stable but slower
+                        % $$$                             % approximate cavity parameters
+                        % $$$                             S11 = sum(Ls(:,i1).^2);
+                        % $$$                             S1 = Ls'*Ls(:,i1);
+                        % $$$                             tau_i=S11^-1-tautilde(i1);
+                        % $$$                             nu_i=S11^-1*mf(i1)-nutilde(i1);
+                        % $$$
+                        % $$$                             mu_i=nu_i/tau_i;
+                        % $$$                             sigm2_i=tau_i^-1;
+                        % $$$
+                        % $$$                             if sigm2_i < 0
+                        % $$$                                 [ii i1]
+                        % $$$                             end
+                        % $$$
+                        % $$$                             % marginal moments
+                        % $$$                             [M0(i1), muhat, sigm2hat] = feval(gp.lik.fh.tiltedMoments, gp.lik, y, i1, sigm2_i, mu_i, z);
+                        % $$$
+                        % $$$                             % update site parameters
+                        % $$$                             deltatautilde = sigm2hat^-1-tau_i-tautilde(i1);
+                        % $$$                             tautilde(i1) = tautilde(i1)+deltatautilde;
+                        % $$$                             nutilde(i1) = sigm2hat^-1*muhat-nu_i;
+                        % $$$
+                        % $$$                             upfact = 1./(deltatautilde^-1+S11);
+                        % $$$                             if upfact > 0
+                        % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(upfact), '-');
+                        % $$$                             else
+                        % $$$                                 Ls = cholupdate(Ls, S1.*sqrt(-upfact));
+                        % $$$                             end
+                        % $$$                             Sigm = Ls'*Ls;
+                        % $$$                             mf=Sigm*nutilde;
+                        % $$$
+                        % $$$                             muvec_i(i1,1)=mu_i;
+                        % $$$                             sigm2vec_i(i1,1)=sigm2_i;
                         
-                      if ~meanfp
-                        mf=Sigm*nutilde;
-                      else
-                        mf=Sigm*(C\(H'*b_m)+nutilde);
+                        % Algorithm as in Rasmussen and Williams 2006
+                        % approximate cavity parameters
+                        Sigmi=Sigm(:,i1);
+                        Sigmii=Sigmi(i1);
+                        tau_i=1/Sigmii-tautilde(i1);
+                        nu_i = 1/Sigmii*mf(i1)-nutilde(i1);
+                        mu_i=nu_i/tau_i;
+                        sigm2_i=1/tau_i;
+                        
+                        % marginal moments
+                        [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2_i, mu_i, z);
+                        if isnan(logM0(i1))
+                          [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta, ch] = set_output_for_notpositivedefinite();
+                          return
+                        end
+                        % update site parameters
+                        deltatautilde=sigm2hat(i1)^-1-tau_i-tautilde(i1);
+                        tautilde(i1)=tautilde(i1)+df*deltatautilde;
+                        deltanutilde=sigm2hat(i1)^-1*muhat(i1)-nu_i-nutilde(i1);
+                        nutilde(i1)=nutilde(i1)+df*deltanutilde;
+                        
+                        % Update mean and variance after each site update (standard EP)
+                        ds = deltatautilde/(1+deltatautilde*Sigmii);
+                        Sigm = Sigm - ((ds*Sigmi)*Sigmi');
+                        %Sigm = Sigm - ((ds*Sigm(:,i1))*Sigm(:,i1)');
+                        % The below is how Rasmussen and Williams
+                        % (2006) do the update. The above version is
+                        % more robust.
+                        %ds = deltatautilde^-1+Sigm(i1,i1);
+                        %ds = (Sigm(:,i1)/ds)*Sigm(:,i1)';
+                        %Sigm = Sigm - ds;
+                        %Sigm=Sigm-(deltatautilde^-1+Sigm(i1,i1))^-1*(Sigm(:,i1)*Sigm(:,i1)');
+                        
+                        if ~meanfp
+                          mf=Sigm*nutilde;
+                        else
+                          mf=Sigm*(C\(H'*b_m)+nutilde);
+                        end
+                        
+                        muvec_i(i1)=mu_i;
+                        sigm2vec_i(i1)=sigm2_i;
                       end
-                      
-                      muvec_i(i1)=mu_i;
-                      sigm2vec_i(i1)=sigm2_i;
                     end
                   end
                   

@@ -368,31 +368,36 @@ function [logM_0, m_1, sigm2hati1] = lik_negbin_tiltedMoments(lik, y, i1, sigm2_
   yy = y(i1);
   avgE = z(i1);
   r = lik.disper;
+  logM_0=zeros(size(yy));
+  m_1=zeros(size(yy));
+  sigm2hati1=zeros(size(yy));
   
-  % get a function handle of an unnormalized tilted distribution 
-  % (likelihood * cavity = Negative-binomial * Gaussian)
-  % and useful integration limits
-  [tf,minf,maxf]=init_negbin_norm(yy,myy_i,sigm2_i,avgE,r);
-  
-  % Integrate with quadrature
-  RTOL = 1.e-6;
-  ATOL = 1.e-10;
-  [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-  sigm2hati1 = m_2 - m_1.^2;
-  
-  % If the second central moment is less than cavity variance
-  % integrate more precisely. Theoretically for log-concave
-  % likelihood should be sigm2hati1 < sigm2_i.
-  if sigm2hati1 >= sigm2_i
-    ATOL = ATOL.^2;
-    RTOL = RTOL.^2;
-    [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-    sigm2hati1 = m_2 - m_1.^2;
-    if sigm2hati1 >= sigm2_i
-      error('lik_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
+  for i=1:length(i1)
+    % get a function handle of an unnormalized tilted distribution
+    % (likelihood * cavity = Negative-binomial * Gaussian)
+    % and useful integration limits
+    [tf,minf,maxf]=init_negbin_norm(yy(i),myy_i(i),sigm2_i(i),avgE(i),r);
+    
+    % Integrate with quadrature
+    RTOL = 1.e-6;
+    ATOL = 1.e-10;
+    [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+    sigm2hati1(i) = m_2 - m_1(i).^2;
+    
+    % If the second central moment is less than cavity variance
+    % integrate more precisely. Theoretically for log-concave
+    % likelihood should be sigm2hati1 < sigm2_i.
+    if sigm2hati1(i) >= sigm2_i(i)
+      ATOL = ATOL.^2;
+      RTOL = RTOL.^2;
+      [m_0, m_1(i), m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
+      sigm2hati1(i) = m_2 - m_1(i).^2;
+      if sigm2hati1(i) >= sigm2_i(i)
+        error('lik_negbin_tilted_moments: sigm2hati1 >= sigm2_i');
+      end
     end
+    logM_0(i) = log(m_0);
   end
-  logM_0 = log(m_0);
 end
 
 function [g_i] = lik_negbin_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
