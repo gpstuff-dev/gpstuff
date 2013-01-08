@@ -149,12 +149,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
   
   nGP = numel(gp_array);
 
+  nt = size(xt,1);
+  Efts=zeros(nt,nGP); Varfts=zeros(nt,nGP);
+  Eyts=[]; Varyts=[];
+  lpyts=zeros(nt,nGP);
   for i1=1:nGP
     Gp=gp_array{i1};
     P_TH(:,i1) = Gp.ia_weight;
     % make predictions with different models in gp_array
     if nargout > 3
-      [Efts(:,i1), Varfts(:,i1), lpytt, Eyts(:,i1), Varyts(:,i1)]=gp_pred(Gp,x,y,xt,options);
+      [Efts(:,i1), Varfts(:,i1), lpytt, Eytts, Varytts]=gp_pred(Gp,x,y,xt,options);
     elseif nargout > 2
       [Efts(:,i1), Varfts(:,i1), lpytt]=gp_pred(Gp,x,y,xt,options);
     else
@@ -163,10 +167,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
     if ~isempty(yt)
       lpyts(:,i1) = lpytt;
     end
+    if ~isempty(Eytts)
+      Eyts(:,i1) = Eytts;
+      Varyts(:,i1) = Varytts;
+    end
   end
 
   % compute combined predictions
-  nt = size(xt,1);
   Eft = sum(bsxfun(@times,Efts,P_TH), 2);
   Varft = sum(bsxfun(@times, Varfts, P_TH), 2) + sum(bsxfun(@times,bsxfun(@minus,Efts,Eft).^2, P_TH),2);
   if nargout > 2
@@ -176,7 +183,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
       lpyt = log(sum(bsxfun(@times,exp(lpyts),P_TH),2));
     end
     if nargout > 3
-      Eyt = sum(bsxfun(@times,Eyts,P_TH),2);
-      Varyt = sum(bsxfun(@times,Varyts,P_TH),2) + sum(bsxfun(@times,bsxfun(@minus,Eyts,Eyt).^2,P_TH),2);
+      if isempty(Eyts)
+        Eyt = [];
+        Varyt = [];
+      else        
+        Eyt = sum(bsxfun(@times,Eyts,P_TH),2);
+        Varyt = sum(bsxfun(@times,Varyts,P_TH),2) + sum(bsxfun(@times,bsxfun(@minus,Eyts,Eyt).^2,P_TH),2);
+      end
     end
   end
