@@ -679,6 +679,7 @@ function reclik = lik_loglogistic_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_loglogistic_tiltedMoments;
     reclik.fh.invlink = @lik_loglogistic_invlink;
     reclik.fh.predy = @lik_loglogistic_predy;
+    reclik.fh.predcdf=@lik_loglogistic_predcdf;
     reclik.fh.recappend = @lik_loglogistic_recappend;
     reclik.p=[];
     reclik.p.shape=[];

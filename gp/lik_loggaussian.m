@@ -696,6 +696,7 @@ function reclik = lik_loggaussian_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_loggaussian_tiltedMoments;
     reclik.fh.invlink = @lik_loggaussian_invlink;
     reclik.fh.predy = @lik_loggaussian_predy;
+    reclik.fh.predcdf = @lik_loggaussian_predcdf;
     reclik.fh.recappend = @lik_loggaussian_recappend;
     reclik.p=[];
     reclik.p.sigma2=[];

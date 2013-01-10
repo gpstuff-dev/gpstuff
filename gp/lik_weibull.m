@@ -697,6 +697,7 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_weibull_tiltedMoments;
     reclik.fh.invlink = @lik_weibull_invlink;
     reclik.fh.predy = @lik_weibull_predy;
+    reclik.fh.predcdf = @lik_weibull_predcdf;
     reclik.fh.recappend = @lik_weibull_recappend;
     reclik.p=[];
     reclik.p.shape=[];

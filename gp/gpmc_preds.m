@@ -179,6 +179,7 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
   end
   
   % loop over all samples
+  Ey=[]; Vary=[];
   for i1=1:nmc
     Gp = take_nth(gp,i1);
     if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
@@ -209,7 +210,11 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
         warning('gp_mc: Some of the Varf elements are less than or equal to zero. Those are set to 1e-12.') 
       end
       if nargout >= 4
-        [lpy(:,i1), Ey(:,i1), Vary(:,i1)] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+        [lpy(:,i1), Eyt, Varyt] = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
+        if ~isempty(Eyt)
+          Ey(:,i1)=Eyt;
+          Vary(:,i1)=Varyt;
+        end
       elseif nargout == 3
         lpy(:,i1) = Gp.lik.fh.predy(Gp.lik, Ef(:,i1), Varf(:,i1), yt, zt);
       end
