@@ -151,6 +151,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
 
   nt = size(xt,1);
   Efts=zeros(nt,nGP); Varfts=zeros(nt,nGP);
+  Eyts=[]; Varyts=[];
   Eytts=[]; Varytts=[];
   lpyts=zeros(nt,nGP);
   for i1=1:nGP
