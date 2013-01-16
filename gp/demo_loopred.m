@@ -24,13 +24,9 @@
 %    K_ij = k(x_i, x_j | th). The function k(x_i, x_j | th) is
 %    covariance function and th its parameters.
 % 
-%    Here we demonstarte use of Laplace, EP and MCMC methods to
-%    find the posterior of the latent values and parameters. With
-%    these we can make predictions on the class probability of
-%    future observations. See Rasmussen & Willimas (2006) for the
-%    detailed treatment of Laplace and EP for probit and logit
-%    models and Neal (1998) for MCMC approach for probit and logit
-%    models.
+%    Here we demonstrate Laplace leave-one-out with 3 different methods:
+%    Linear response style, EP-style cavity and Inla-style, EP-LOO and
+%    compare LOO-approximations to brute force LOO-CV.
 %
 %   References:
 %
@@ -104,7 +100,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % Inla-style leave-one-out 
 [Eft_inla, Varft_inla, lpyt_inla] = gpla_loopred(gp, x, y, 'method', 'inla');
 
-% Brute-force leave-one-out cross-validation
+% LOO-CV
 % Here we should use 250 folds, but for the sake of computation time, only
 % 100 folds are used (results are almost the same)
 [crit, pred] = gp_kfcv(gp, x, y, 'opt', opt, 'k', 100, 'Display', 'iter');
@@ -123,6 +119,7 @@ gp=gp_optim(gp,x,y,'opt',opt);
 % EP-LOO
 [Eft_ep, Varft_ep, lpyt_ep] = gpep_loopred(gp, x, y);
 
+% LOO-CV
 [crit_ep, pred_ep] = gp_kfcv(gp, x, y, 'opt', opt, 'k', 100, 'Display', 'iter');
 
 % Plot results

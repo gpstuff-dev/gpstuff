@@ -1396,8 +1396,8 @@ function lik = lik_coxph(varargin)
   %    GP_PREDCDF
   
     
-    if isfield(gp.lik, 'stratificationVariables')
-      ntime=size(lik.xtime,1)*gp.lik.n_u;
+    if isfield(lik, 'stratificationVariables')
+      ntime=size(lik.xtime,1)*lik.n_u;
     else
       ntime=size(lik.xtime,1);
     end

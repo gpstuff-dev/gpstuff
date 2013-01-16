@@ -90,8 +90,8 @@ fprintf('Sampling of hyperparameters with HMC.\n')
 hmc_opt.nsamples=1;
 hmc_opt.decay=0.8;
 hmc_opt.persistence=0;
-hmc_opt.stepadj=0.10;
-hmc_opt.steps=3;
+hmc_opt.stepadj=0.04;
+hmc_opt.steps=10;
 
 % gp_mc does the actual sampling. 'Repeat' (default 1) is the number of samples we
 % generate before accepting one, 'hmc_opt', defines the option structure
@@ -215,16 +215,16 @@ fprintf('Sampling of hyperparameters with HMC and latent values with Elliptical 
 hmc_opt.nsamples=1;
 hmc_opt.decay=0.8;
 hmc_opt.persistence=0;
-hmc_opt.stepadj=0.01;
-hmc_opt.steps=3;
+hmc_opt.stepadj=0.03;
+hmc_opt.steps=20;
 
 % As we sample also latent values now, we must set options for that sampler
 % as well if we do not want to use defaulsavet options
 
-% esls only needs the repeat option, which we set to 10 here. This is 
+% esls only needs the repeat option, which we set to 30 here. This is 
 % equivalent for running with repeat = 1 and discarding every sample 
 % besides every 10th
-latent_opt.repeat = 10;
+latent_opt.repeat = 30;
 
 % Do the sampling, latent_opt should be given if user doesn't want to use
 % default options for default latent sampler.
@@ -348,21 +348,14 @@ w2_ssls=gp_pak(rgp);
 
 % Plot some sampling results
 figure,
-subplot(4,1,1)
-plot(w1_hmc),  title('Sampling only hyperparameters, HMC');
-subplot(4,1,2), 
-plot(w1_nuts), title('HMC-NUTS'), subplot(4,1,3)
-plot(w1_sls), title('Slice sampling'); subplot(4,1,4), 
-plot(w1_asls), title('Adaptive Slice sampling (Shrinking-Rank)');
+subplot(4,1,1),plot(w1_hmc),  title('Sampling only hyperparameters, HMC'); ylim([-10 10]), xlim([0 80]);
+subplot(4,1,2),plot(w1_nuts), title('HMC-NUTS'); ylim([-10 10]), xlim([0 80]);
+subplot(4,1,3),plot(w1_sls), title('Slice sampling'); ylim([-10 10]), xlim([0 80]);
+subplot(4,1,4), plot(w1_asls), title('Adaptive Slice sampling (Shrinking-Rank)'); ylim([-10 10]), xlim([0 80]);
 
 figure,
-subplot(4,1,1)
-plot(w2_hmc),  title('Sampling hyperparameters and latent values, HMC');
-subplot(4,1,2), 
-plot(w2_nuts), title('HMC-NUTS'), subplot(4,1,3)
-plot(w2_sls), title('Slice sampling'); subplot(4,1,4), 
-plot(w2_ssls), title('Surrogate Slice sampling');
-
-
-
+subplot(4,1,1),plot(w2_hmc),  title('Sampling hyperparameters and latent values, HMC');ylim([-10 10]), xlim([0 80]);
+subplot(4,1,2),plot(w2_nuts), title('HMC-NUTS');ylim([-10 10]), xlim([0 80]);
+subplot(4,1,3),plot(w2_sls), title('Slice sampling'); ylim([-10 10]), xlim([0 80]);
+subplot(4,1,4),plot(w2_ssls), title('Surrogate Slice sampling'); ylim([-10 10]), xlim([0 80]);
 
