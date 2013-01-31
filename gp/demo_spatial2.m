@@ -73,8 +73,8 @@ if ~exist('ldlchol')
   warning('GPstuff:SuiteSparseMissing',...
     ['SuiteSparse is not properly installed. \n' ...
     'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
-  gpcf = gpcf_sexp('lengthScale', 'lengthScale', 5, 'magnSigma2', 0.05);
-  gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+  gpcf1 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 0.05);
+  gpcf1 = gpcf_sexp(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 else
   gpcf1 = gpcf_ppcs2('nin', 2, 'lengthScale', 5, 'magnSigma2', 0.05);
   gpcf1 = gpcf_ppcs2(gpcf1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
