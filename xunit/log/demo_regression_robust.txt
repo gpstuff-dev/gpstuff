@@ -1,0 +1,143 @@
+Running: demo_regression_robust
+
+gp = 
+
+            type: 'FULL'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-09
+              fh: [1x1 struct]
+
+Gaussian noise model and MAP estimate for parameters
+ TolFun reached. Func-count 23. Final f(x)=27.0141. Elapsed time 0.16
+
+S1 =
+
+length-scale: 1.066, magnSigma2: 5.420  
+
+
+Scale mixture Gaussian (~=Student-t) noise model                
+using MCMC integration over the latent values and parameters    
+ Using SLS sampler for hyperparameters
+ cycle  etr      slsrej  
+   20  -38.105  sls  
+   40  -51.018  sls  
+   60  -54.371  sls  
+   80  -54.989  sls  
+  100  -61.803  sls  
+  120  -65.385  sls  
+  140  -50.697  sls  
+  160  -64.071  sls  
+  180  -47.628  sls  
+  200  -53.372  sls  
+  220  -55.422  sls  
+  240  -55.152  sls  
+  260  -59.509  sls  
+  280  -45.947  sls  
+  300  -53.208  sls  
+
+S2 =
+
+length-scale: 1.051, magnSigma2: 7.908 
+
+
+Student-t noise model using Laplace integration over the 
+latent values and MAP estimate for the parameters        
+ TolFun reached. Func-count 27. Final f(x)=-24.079. Elapsed time 1.10
+
+S3 =
+
+length-scale: 1.047, magnSigma2: 3.093 
+
+
+Student-t noise model using EP integration over the
+latent values and MAP estimate for parameters      
+  Iteration  Func-count      f(x)      Lambda
+      0          1          5.0753    
+      1          3       -0.390577       10
+      2          5        -20.2665        5
+      3          7        -21.8841      2.5
+      4          9        -23.5458     1.25
+      5         11        -23.9733    0.625
+      6         13        -24.8947    0.312
+      7         15        -25.1996    0.156
+      8         17        -25.3812   0.0781
+      9         19        -25.4287   0.0391
+     10         21        -25.5222   0.0195
+     11         23        -25.5357   0.00977
+     12         25        -25.5999   0.00488
+     13         27        -25.6188   0.00244
+     14         29        -25.6517   0.00122
+     15         31        -25.6525   0.00061
+ TolFun reached. Func-count 31. Final f(x)=-25.6525. Elapsed time 18.06
+
+S4 =
+
+length-scale: 1.040, magnSigma2: 2.919 
+
+
+Student-t noise model with nu= 4 and using MCMC integration
+over the latent values and parameters                      
+ Using SSLS sampler for hyperparameters and ESLS for latent values
+ cycle  etr      
+   20  -164.266  
+   40  -187.416  
+   60  -200.662  
+   80  -219.012  
+  100  -236.264  
+  120  -241.545  
+  140  -258.494  
+  160  -264.050  
+  180  -264.817  
+  200  -271.898  
+  220  -270.786  
+  240  -277.278  
+  260  -275.685  
+  280  -289.677  
+  300  -284.182  
+  320  -293.980  
+  340  -291.834  
+  360  -294.377  
+  380  -307.009  
+  400  -303.441  
+
+S5 =
+
+length-scale: 0.897, magnSigma2: 2.133 
+
+
+Student-t noise model with nu=4 using Laplace integration over
+the latent values and MAP estimate for the parameters         
+ TolFun reached. Func-count 19. Final f(x)=-14.9305. Elapsed time 0.67
+
+S6 =
+
+length-scale: 1.040, magnSigma2: 3.095 
+
+
+Student-t noise model with nu=4 using EP integration over
+the latent values and MAP estimate for parameters        
+  Iteration  Func-count      f(x)      Lambda
+      0          1          5.0753    
+      1          3       -0.138385       10
+      2          5        -13.6439        5
+      3          7        -14.0719      2.5
+      4          9        -14.1846     1.25
+      5         11        -14.8554    0.625
+      6         13        -15.1515    0.312
+      7         15        -15.1629    0.156
+      8         17        -15.1788   0.0781
+      9         19        -15.1794   0.0391
+ TolFun reached. Func-count 19. Final f(x)=-15.1794. Elapsed time 8.06
+
+S7 =
+
+length-scale: 1.033, magnSigma2: 2.966 
+
+
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    1.0871    0.0321   -4.6357
+

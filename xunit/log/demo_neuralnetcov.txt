@@ -1,0 +1,10 @@
+Running: demo_neuralnetcov
+ TolFun reached. Func-count 34. Final f(x)=-49.0877. Elapsed time 1.53
+ TolFun reached. Func-count 33. Final f(x)=-92.1279. Elapsed time 2.08
+ TolFun reached. Func-count 48. Final f(x)=-123.011. Elapsed time 0.34
+ TolFun reached. Func-count 25. Final f(x)=-126.821. Elapsed time 0.23
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+   -3.6553   -0.9891   -5.8739
+

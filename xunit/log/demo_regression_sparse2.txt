@@ -1,0 +1,14 @@
+Running: demo_regression_sparse2
+Full GP
+ TolFun reached. Func-count 35. Final f(x)=51.3654. Elapsed time 0.24
+FIC GP
+ TolX reached. Func-count 153. Final f(x)=47.1448. Elapsed time 1.79
+VAR GP
+ TolFun reached. Func-count 70. Final f(x)=65.8332. Elapsed time 0.82
+DTC GP
+ TolX reached. Func-count 15. Final f(x)=48.4383. Elapsed time 0.17
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    1.6935   -0.6707   -2.9350
+
