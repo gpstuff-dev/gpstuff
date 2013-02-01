@@ -154,32 +154,35 @@ dims = [1    60     1    35];
 pl = prior_t('s2',10);
 pm = prior_sqrtunif();
 
-gpcf1 = gpcf_ppcs3('nin',nin,'lengthScale', 1, 'magnSigma2', 0.1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 0.05, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf3 = gpcf_neuralnetwork('weightSigma2', [1 1], 'biasSigma2', 0.05, 'weightSigma2_prior', pl, 'biasSigma2_prior', pm);
 
 lik = lik_negbin();
-% GP without memory save
-gp = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
-            'jitterSigma2', 1e-4, 'infer_params', 'covariance+inducing');
-% GP with memory saving option enabled
-gp2 = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
-            'jitterSigma2', 1e-4, 'infer_params', 'covariance+inducing', 'savememory', 'on');
 opt=optimset('TolFun',1e-2,'TolX',1e-2, 'Display', 'off');
 
-
-fprintf('Spatial process (Laplace), FIC GP, PPCS3 covariance function, without and with memory saving (optimization and prediction)\n');
-
-% Optimization and prediction without memory saving
-tic,gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
-[Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye, 'tstind', [1:n]); toc
-
-% Optimization and prediction with memory saving
-tic,gp2=gp_optim(gp2,x,y,'z',ye,'opt',opt);
-[Ef2, Varf2] = gp_pred(gp2, x, y, x, 'z', ye, 'tstind', [1:n]); toc
-
-% Check that predictions (and optimization) with and without memory saving are same
-assert(all(Ef==Ef2)); assert(all(Varf==Varf2));
+if exist('ldlchol','file')
+  % GP without memory save
+  gp = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
+    'jitterSigma2', 1e-4, 'infer_params', 'covariance+inducing');
+  % GP with memory saving option enabled
+  gp2 = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf1, 'X_u', Xu, ...
+    'jitterSigma2', 1e-4, 'infer_params', 'covariance+inducing', 'savememory', 'on');
+  
+  gpcf1 = gpcf_ppcs3('nin',nin,'lengthScale', 1, 'magnSigma2', 0.1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+  
+  fprintf('Spatial process (Laplace), FIC GP, PPCS3 covariance function, without and with memory saving (optimization and prediction)\n');
+  
+  % Optimization and prediction without memory saving
+  tic,gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
+  [Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye, 'tstind', [1:n]); toc
+  
+  % Optimization and prediction with memory saving
+  tic,gp2=gp_optim(gp2,x,y,'z',ye,'opt',opt);
+  [Ef2, Varf2] = gp_pred(gp2, x, y, x, 'z', ye, 'tstind', [1:n]); toc
+  
+  % Check that predictions (and optimization) with and without memory saving are same
+  assert(all(Ef==Ef2)); assert(all(Varf==Varf2));
+end
 
 gp = gp_set('lik', lik, 'cf', gpcf2, 'jitterSigma2', 1e-4, 'latent_method', 'EP');
 gp2 = gp_set('lik', lik, 'cf', gpcf2, 'jitterSigma2', 1e-4, 'latent_method', 'EP', 'savememory', 'on');

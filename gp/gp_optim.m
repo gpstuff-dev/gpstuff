@@ -39,15 +39,15 @@ function [gp, varargout] = gp_optim(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_OPTIM';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
-ip.addParamValue('opt', [], @isstruct)
-ip.addParamValue('loss', 'e', @(x) ismember(lower(x),{'e', 'loo', 'kfcv', 'waic' 'waic' 'waicv' 'waicg'}))
-ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-ip.parse(gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','optimf', @fminscg, @(x) isa(x,'function_handle'));
+ip=iparser(ip,'addParamValue','opt', [], @isstruct);
+ip=iparser(ip,'addParamValue','loss', 'e', @(x) ismember(lower(x),{'e', 'loo', 'kfcv', 'waic' 'waic' 'waicv' 'waicg'}));
+ip=iparser(ip,'addParamValue','k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+ip=iparser(ip,'parse',gp, x, y, varargin{:});
 z=ip.Results.z;
 optimf=ip.Results.optimf;
 opt=ip.Results.opt;
@@ -148,7 +148,18 @@ end
 
 function opt=setOpt(optdefault, opt)
   % Set default options
-  opttmp=optimset(optdefault,opt);
+  if ~exist('OCTAVE_VERSION','builtin')
+    opttmp=optimset(optdefault,opt);
+  else
+    opttmp=opt;
+    names=fieldnames(optdefault);
+    for i=1:length(names)
+      if ~isfield(opt,names{i})
+        opttmp.(names{i})=optdefault.(names{i});
+      end
+    end
+    
+  end
   
   % Set some additional options for @fminscg
   if isfield(opt,'lambda')

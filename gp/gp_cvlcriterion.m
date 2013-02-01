@@ -27,11 +27,11 @@ function PE2 = gp_cvlcriterion(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_CVLCRITERION';
-  ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   % pass these forward
   options=struct();
   z = ip.Results.z;

@@ -37,13 +37,13 @@ function gpmf = gpmf_linear(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPMF_LINEAR';
-  ip.addOptional('gpmf', [], @isstruct);
-  ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
-  ip.addParamValue('prior_mean',0, @(x) isvector(x));
-  ip.addParamValue('prior_cov',100, @(x) isvector(x));
-  ip.addParamValue('mean_prior', [], @isstruct);
-  ip.addParamValue('cov_prior', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','gpmf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','selectedVariables',[], @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','prior_mean',0, @(x) isvector(x));
+  ip=iparser(ip,'addParamValue','prior_cov',100, @(x) isvector(x));
+  ip=iparser(ip,'addParamValue','mean_prior', [], @isstruct);
+  ip=iparser(ip,'addParamValue','cov_prior', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   gpmf=ip.Results.gpmf;
   
   if isempty(gpmf)

@@ -39,13 +39,13 @@ function gpcf = gpcf_neuralnetwork(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_NEURALNETWORK';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('biasSigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('weightSigma2',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('biasSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('weightSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','biasSigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','weightSigma2',10, @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','biasSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','weightSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','selectedVariables',[], @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
   
   if isempty(gpcf)

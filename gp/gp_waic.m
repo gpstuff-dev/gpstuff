@@ -57,13 +57,13 @@ function waic = gp_waic(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_WAIC';
-  ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('method', 'V', @(x) ismember(x,{'V' 'G'}))
-  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','method', 'V', @(x) ismember(x,{'V' 'G'}));
+  ip=iparser(ip,'addParamValue','form', 'mean', @(x) ismember(x,{'mean','all'}));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   method=ip.Results.method;
   form=ip.Results.form;
   % pass these forward
@@ -158,10 +158,10 @@ function waic = gp_waic(gp, x, y, varargin)
             end
             fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
             fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                       .*llvec(gp_array, y(i), f, z1).^2), fmin, fmax);
-            Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                        .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            Elog(i) = quadgk(@(f) reshape(mean(multi_npdf(f(:),Ef(i,:),(Varf(i,:))) ...
+                                       .*llvec(gp_array, y(i), f(:), z1).^2),size(f,1),size(f,2)), fmin, fmax);
+            Elog2(i) = quadgk(@(f) reshape(mean(multi_npdf(f(:),Ef(i,:),(Varf(i,:))) ...
+                                        .*llvec(gp_array, y(i), f(:), z1)),size(f,1),size(f,2)), fmin, fmax);
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
@@ -181,8 +181,8 @@ function waic = gp_waic(gp, x, y, varargin)
           for i=1:tn
             fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
             fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            GUt(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                      .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
+            GUt(i) = quadgk(@(f) reshape(mean(multi_npdf(f(:),Ef(i,:),(Varf(i,:))) ...
+                                      .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')),size(f,1),size(f,2)), fmin, fmax);
           end
           if strcmp(form, 'mean')
             GUt = mean(GUt);
@@ -199,8 +199,8 @@ function waic = gp_waic(gp, x, y, varargin)
             end
             fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
             fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            GUt(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                      .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            GUt(i) = quadgk(@(f) reshape(mean(multi_npdf(f(:),Ef(i,:),(Varf(i,:))) ...
+                                      .*llvec(gp_array, y(i), f(:), z1)), size(f,1),size(f,2)), fmin, fmax);
           end
           if strcmp(form, 'mean')
             GUt = mean(GUt);
@@ -377,10 +377,12 @@ function waic = gp_waic(gp, x, y, varargin)
         for i=1:tn
           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))').^2), fmin, fmax);
-          Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                     .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
+          Elog(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+                                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), ...
+                                0.5*log(2*pi*sigma2(i,:))').^2),size(f,1),size(f,2)), fmin, fmax);
+          Elog2(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+                                .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), ...
+                                0.5*log(2*pi*sigma2(i,:))')),size(f,1),size(f,2)), fmin, fmax);
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
@@ -399,10 +401,10 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          Elog(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                    .*llvec(gp, y(i), f, z1).^2), fmin, fmax);
-          Elog2(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                     .*llvec(gp, y(i), f, z1)), fmin, fmax);
+          Elog(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+                                    .*llvec(gp, y(i), f, z1).^2),size(f,1),size(f,2)), fmin, fmax);
+          Elog2(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+                                     .*llvec(gp, y(i), f, z1)),size(f,1),size(f,2)), fmin, fmax);
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
@@ -422,8 +424,8 @@ function waic = gp_waic(gp, x, y, varargin)
         for i=1:tn
           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                   .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
+          GUt(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f(:)',Ef(i,:),(Varf(i,:))),weight') ...
+                                   .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f(:)'),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')),size(f,1),size(f,2)), fmin, fmax);
         end
         if strcmp(form, 'mean')
           GUt = mean(GUt);
@@ -441,8 +443,8 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           fmin = sum(weight.*Ef(i,:) - 9*weight.*sqrt(Varf(i,:)));
           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
-          GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
-                                   .*llvec(gp, y(i), f, z1)), fmin, fmax);
+          GUt(i) = quadgk(@(f) reshape(sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
+                                   .*llvec(gp, y(i), f, z1)),size(f,1),size(f,2)), fmin, fmax);
         end
         if strcmp(form, 'mean')
           GUt = mean(GUt);

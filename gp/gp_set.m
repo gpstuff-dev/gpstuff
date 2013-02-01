@@ -188,28 +188,28 @@ function gp = gp_set(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_SET';
-  ip.addOptional('gp', [], @isstruct);
-  ip.addParamValue('cf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
-  ip.addParamValue('meanf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
-  ip.addParamValue('type','FULL', ...
+  ip=iparser(ip,'addOptional','gp', [], @isstruct);
+  ip=iparser(ip,'addParamValue','cf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
+  ip=iparser(ip,'addParamValue','meanf',[], @(x) isempty(x) || isstruct(x) || iscell(x));
+  ip=iparser(ip,'addParamValue','type','FULL', ...
                    @(x) ismember(x,{'FULL' 'FIC' 'PIC' 'PIC_BLOCK' 'VAR' ...
                       'DTC' 'SOR' 'CS+FIC'}));
-  ip.addParamValue('lik',lik_gaussian(), @(x) isstruct(x));
-  ip.addParamValue('jitterSigma2',0, @(x) isscalar(x) && x>=0);
-  ip.addParamValue('infer_params','covariance+likelihood', @(x) ischar(x));
-  ip.addParamValue('latent_method','Laplace', @(x) ischar(x) || iscell(x));
-  ip.addParamValue('latent_opt',struct(), @isstruct);
-  ip.addParamValue('X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
-  ip.addParamValue('Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('tr_index', [], @(x) ~isempty(x) || iscell(x))    
-  ip.addParamValue('comp_cf', [], @(x) iscell(x))    
-  ip.addParamValue('derivobs','off', @(x) islogical(x) || isscalar(x) || ...
+  ip=iparser(ip,'addParamValue','lik',lik_gaussian(), @(x) isstruct(x));
+  ip=iparser(ip,'addParamValue','jitterSigma2',0, @(x) isscalar(x) && x>=0);
+  ip=iparser(ip,'addParamValue','infer_params','covariance+likelihood', @(x) ischar(x));
+  ip=iparser(ip,'addParamValue','latent_method','Laplace', @(x) ischar(x) || iscell(x));
+  ip=iparser(ip,'addParamValue','latent_opt',struct(), @isstruct);
+  ip=iparser(ip,'addParamValue','X_u',[],  @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','Xu_prior',prior_unif,  @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','tr_index', [], @(x) ~isempty(x) || iscell(x));    
+  ip=iparser(ip,'addParamValue','comp_cf', [], @(x) iscell(x));    
+  ip=iparser(ip,'addParamValue','derivobs','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
-  ip.addParamValue('savememory','off', @(x) islogical(x) || isscalar(x) || ...
+  ip=iparser(ip,'addParamValue','savememory','off', @(x) islogical(x) || isscalar(x) || ...
                    (ischar(x) && ismember(x,{'on' 'off'})));
-%   ip.addParamValue('optim_method', [], @(x) isreal(x) && (x==1 || x==2) &&  ...
+%   ip=iparser(ip,'addParamValue','optim_method', [], @(x) isreal(x) && (x==1 || x==2) &&  ...
 %                     isfinite(x))
-  ip.parse(varargin{:});
+  ip=iparser(ip,'parse',varargin{:});
   gp=ip.Results.gp;
 
 
@@ -363,7 +363,7 @@ function gp = gp_set(varargin)
           % Remove traces of other latent methods
           if isfield(gp,'latent_opt'); gp=rmfield(gp,'latent_opt'); end
           if isfield(gp,'fh') && isfield(gp.fh,'ne')
-            gp.fh=rmfield(gp.fh,{'ne' 'e' 'g' 'pred' 'jpred' 'looe' 'loog'}); 
+            gp.fh=rmfield(gp.fh,{'ne' 'e' 'g' 'pred' 'jpred' 'looe'}); 
           end
           % Set latent method
           gp.latent_method=latent_method;
@@ -404,9 +404,9 @@ function gp = gp_set(varargin)
           % Handle latent_opt
           ipmc=inputParser;
           ipmc.FunctionName = 'GP_SET - latent method MCMC options';
-          ipmc.addParamValue('method',@esls, @(x) isa(x,'function_handle'));
-          ipmc.addParamValue('f',[],  @(x) isreal(x) && all(isfinite(x(:))));
-          ipmc.parse(latent_opt);
+          ipmc=iparser(ipmc,'addParamValue','method',@esls, @(x) isa(x,'function_handle'));
+          ipmc=iparser(ipmc,'addParamValue','f',[],  @(x) isreal(x) && all(isfinite(x(:))));
+          ipmc=iparser(ipmc,'parse',latent_opt);
           if init || ~ismember('method',ipmc.UsingDefaults) || ~isfield(gp.fh,'mc')
             gp.fh.mc = ipmc.Results.method;
           end
@@ -417,42 +417,42 @@ function gp = gp_set(varargin)
           % Handle latent_opt
           ipep=inputParser;
           ipep.FunctionName = 'GP_SET - latent method EP options';
-          ipep.addParamValue('optim_method',[], @(x) ischar(x));
-          ipep.addParamValue('maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep.addParamValue('display', 'off', @(x) ischar(x) && ismember(x,{'off', 'final', 'iter'}))
-          ipep.addParamValue('parallel','on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
-          ipep.addParamValue('init_prev', 'on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
+          ipep=iparser(ipep,'addParamValue','optim_method',[], @(x) ischar(x));
+          ipep=iparser(ipep,'addParamValue','maxiter',20, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipep=iparser(ipep,'addParamValue','display', 'off', @(x) ischar(x) && ismember(x,{'off', 'final', 'iter'}));
+          ipep=iparser(ipep,'addParamValue','parallel','on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
+          ipep=iparser(ipep,'addParamValue','init_prev', 'on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on
           % Following option is only for basic-EP
           % all changes in the log predictive densities and the log marginal
           % likelihood are smaller than tol.
-          ipep.addParamValue('tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep.addParamValue('LALRSinit','off', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default off
+          ipep=iparser(ipep,'addParamValue','tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipep=iparser(ipep,'addParamValue','LALRSinit','off', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default off
           % Following options are only for robust-EP
           % max number of initial parallel iterations
-          ipep.addParamValue('ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x));
           % max number of inner loop iterations in the double-loop algorithm
-          ipep.addParamValue('max_ninner', 4, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','max_ninner', 4, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x));
           % converge tolerance with respect to the maximum change in E[f] and Var[f]
-          ipep.addParamValue('tolStop', 1e-4, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','tolStop', 1e-4, @(x) isreal(x) && isfinite(x));
           % tolerance for the EP site updates
-          ipep.addParamValue('tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','tolUpdate', 1e-6, @(x) isreal(x) && isfinite(x));
           % inner loop energy tolerance
-          ipep.addParamValue('tolInner', 1e-3, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','tolInner', 1e-3, @(x) isreal(x) && isfinite(x));
           % minimum gradient (g) decrease in the search direction, abs(g_new)<tolGrad*abs(g)
-          ipep.addParamValue('tolGrad', 0.9, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','tolGrad', 0.9, @(x) isreal(x) && isfinite(x));
           % limit for the cavity variance Vc, Vc < Vc_lim*diag(K)
-          ipep.addParamValue('cavity_var_lim', 2, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','cavity_var_lim', 2, @(x) isreal(x) && isfinite(x));
           % the intial damping factor
-          ipep.addParamValue('df', 0.8, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','df', 0.8, @(x) isreal(x) && isfinite(x));
           % the initial fraction parameter
-          ipep.addParamValue('eta', 1, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','eta', 1, @(x) isreal(x) && isfinite(x));
           % the secondary fraction parameter          
-          ipep.addParamValue('eta2', .5, @(x) isreal(x) && isfinite(x))
+          ipep=iparser(ipep,'addParamValue','eta2', .5, @(x) isreal(x) && isfinite(x));
           % update mode in double-loop iterations
-          ipep.addParamValue('up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}))
+          ipep=iparser(ipep,'addParamValue','up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}));
           % step size limit (1 suitable for ep updates)
-          ipep.addParamValue('df_lim', 1, @(x) isreal(x) && isfinite(x))
-          ipep.parse(latent_opt);
+          ipep=iparser(ipep,'addParamValue','df_lim', 1, @(x) isreal(x) && isfinite(x));
+          ipep=iparser(ipep,'parse',latent_opt);
           optim_method = ipep.Results.optim_method;
           if ~isempty(optim_method)
             gp.latent_opt.optim_method=optim_method;
@@ -533,10 +533,10 @@ function gp = gp_set(varargin)
           % Handle latent_opt
           ipla=inputParser;
           ipla.FunctionName = 'GP_SET - latent method Laplace options';
-          ipla.addParamValue('optim_method',[], @(x) ischar(x));
-          ipla.addParamValue('tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipla.addParamValue('maxiter', 40, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipla.parse(latent_opt);
+          ipla=iparser(ipla,'addParamValue','optim_method',[], @(x) ischar(x));
+          ipla=iparser(ipla,'addParamValue','tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipla=iparser(ipla,'addParamValue','maxiter', 40, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+          ipla=iparser(ipla,'parse',latent_opt);
           optim_method=ipla.Results.optim_method;
           if ~isempty(optim_method)
             gp.latent_opt.optim_method=optim_method;

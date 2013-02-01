@@ -69,7 +69,7 @@ fprintf(['GP with negative-binomial observation model, Laplace\n' ...
 % Create the covariance functions
 pl = prior_t();
 pm = prior_sqrtt('s2', 0.3);
-if ~exist('ldlchol')
+if 1%~exist('ldlchol')
   warning('GPstuff:SuiteSparseMissing',...
     ['SuiteSparse is not properly installed. \n' ...
     'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
@@ -90,7 +90,7 @@ gp = gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-4);
 gp = gp_set(gp, 'latent_method', 'Laplace');
 
 % Set the options for the scaled conjugate optimization
-opt=optimset('TolFun',1e-2,'TolX',1e-2,'Display','iter');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Display','iter');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 
@@ -98,8 +98,8 @@ gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 figure
 C = gp_trcov(gp,x);
 fprintf('Proportion of non-zeros is %.4f\n',nnz(C) / prod(size(C)))
-p = amd(C);
-spy(C(p,p))
+% p = amd(C);
+% spy(C(p,p))
 
 % Make prediction to the data points
 [Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye);
@@ -149,8 +149,8 @@ gp=gp_optim(gp,x,y,'z',ye,'opt',opt);
 figure
 C = gp_trcov(gp,x);
 fprintf('Proportion of non-zeros is %.4f\n',nnz(C) / prod(size(C)))
-p = amd(C);
-spy(C(p,p))
+% p = amd(C);
+% spy(C(p,p))
 
 % make prediction to the data points
 [Ef, Varf] = gp_pred(gp, x, y, x, 'z', ye);

@@ -79,23 +79,23 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_MC';
-  ip.addRequired('gp',@isstruct);
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('nsamples', 1, @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('repeat', 1, @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('display', 1, @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('record',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('hmc_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('sls_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('ssls_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('latent_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lik_hmc_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lik_sls_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lik_gibbs_opt', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@isstruct);
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','nsamples', 1, @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','repeat', 1, @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','display', 1, @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','record',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','hmc_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','sls_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','ssls_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','latent_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','lik_hmc_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','lik_sls_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','lik_gibbs_opt', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   z=ip.Results.z;
   opt.nsamples=ip.Results.nsamples;
   opt.repeat=ip.Results.repeat;
@@ -174,7 +174,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   % Initialize record
   if isempty(record)
     % No old record
-    record=recappend();
+    [record,ri,lrej,indrej,hmcrej,lik_hmcrej]=recappend([],gp, x, y, z, opt);
   else
     ri=size(record.etr,1);
   end
@@ -425,7 +425,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     
     % --- Set record -------    
     ri=ri+1;
-    record=recappend(record);
+    record=recappend(record, gp, x, y, z, opt, ri, hmcrej, lik_hmcrej, lrej);
     
     % Display some statistics  THIS COULD BE DONE NICER ALSO...
     if opt.display && rem(ri,opt.display)==0
@@ -449,9 +449,10 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       fprintf('\n');
     end
   end
-  
+end
+
 %------------------------
-function record = recappend(record)
+function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y, z, opt, ri, hmcrej, lik_hmcrej, lrej)
 % RECAPPEND - Record append
 %          Description
 %          RECORD = RECAPPEND(RECORD, RI, GP, P, T, PP, TT, REJS, U) takes
@@ -462,7 +463,7 @@ function record = recappend(record)
   
   ncf = length(gp.cf);
   
-  if nargin == 0   % Initialize record structure
+  if isempty(record)   % Initialize record structure
     record.type = gp.type;
     record.lik = gp.lik;
     if isfield(gp,'latent_method')
@@ -635,5 +636,4 @@ function g = gpmc_g(w, gp, x, y, f, z)
     g=[g -lik.fh.llg(lik,y,f,'param',z)-lik.fh.lpg(lik)];
   end
 
-end
 end

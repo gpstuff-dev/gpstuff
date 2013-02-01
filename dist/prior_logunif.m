@@ -9,7 +9,7 @@ function p = prior_logunif(varargin)
 %    PRIOR_*
 
 % Copyright (c) 2009 Jarno Vanhatalo
-% Copyright (c) 2010 Jaakko Riihimäki
+% Copyright (c) 2010 Jaakko Riihimï¿½ki
 % Copyright (c) 2010 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -18,8 +18,8 @@ function p = prior_logunif(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_LOGUNIFORM';
-  ip.addOptional('p', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

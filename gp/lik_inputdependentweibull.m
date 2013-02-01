@@ -51,10 +51,10 @@ function lik = lik_inputdependentweibull(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_INPUTDEPENDENTWEIBULL';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('shape',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('shape_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','shape',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','shape_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)

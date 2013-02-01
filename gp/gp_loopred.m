@@ -95,12 +95,12 @@ end
 % Nothing to parse, but check the arguments anyway
 ip=inputParser;
 ip.FunctionName = 'GP_LOOPRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.parse(gp, x, y);
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'parse',gp, x, y);
 
-if isfield(gp,'meanf') & ~isempty(gp.meanf)
+if isfield(gp,'meanf') && ~isempty(gp.meanf)
   error('GP_LOOPRED: Mean functions not yet supported');
 end
 

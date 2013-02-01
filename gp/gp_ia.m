@@ -63,7 +63,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   - 'iter' displays output at each evaluation point
 %       
 
-% Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
+% Copyright (c) 2009-2010 Ville Pietilï¿½inen, Jarno Vanhatalo
 % Copyright (c) 2010,2012 Aki Vehtari
 
 % This software is distributed under the GNU General Public
@@ -72,42 +72,42 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_IA';
-  ip.addRequired('gp', @isstruct);
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('xt',[], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('int_method', 'CCD', @(x) ischar(x) && ...
-                   ismember(x,{'CCD','grid','is_normal','is_t','hmc'}))
-  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-  ip.addParamValue('tstind', [], @(x) isempty(x) || ...
-                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-  ip.addParamValue('rotate', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('autoscale', 'on', @(x) (islogical(x) && isscalar(x))|| ...
-                   ismember(x,{'on' 'off' 'full'}))
-  ip.addParamValue('validate', 1, @(x) ismember(x,[1 2]))
-  ip.addParamValue('threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
-                   isfinite(x) && x>0)
-  ip.addParamValue('step_size', 1, @(x) isscalar(x) && isreal(x) && ...
-                   isfinite(x) && x>0)
-  ip.addParamValue('t_nu', 4, @(x) isscalar(x) && isreal(x) && ...
-                   isfinite(x) && x>=1)
-  ip.addParamValue('nsamples', 40, @(x) isscalar(x) && isreal(x) && ...
-                   isfinite(x) && x>=1)
-  ip.addParamValue('repeat', 10, @(x) isscalar(x) && isreal(x) && ...
-                   isfinite(x) && x>=1)
-  ip.addParamValue('f0', 1.1, @(x) isscalar(x) && isreal(x) && ...
-                   isfinite(x) && x>0)
-  ip.addParamValue('qmc', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
-  ip.addParamValue('opt_optim', [], @isstruct)
-  ip.addParamValue('opt_hmc', [], @isstruct);
-  ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
-  ip.addParamValue('display', 'on', @(x) islogical(x) || isreal(x) || ...
-                   ismember(x,{'on' 'off' 'iter'}))
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp', @isstruct);
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addOptional','xt',[], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','yt', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','int_method', 'CCD', @(x) ischar(x) && ...
+                   ismember(x,{'CCD','grid','is_normal','is_t','hmc'}));
+  ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0));
+  ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0));
+  ip=iparser(ip,'addParamValue','rotate', true, @(x) islogical(x) && isscalar(x));
+  ip=iparser(ip,'addParamValue','autoscale', 'on', @(x) (islogical(x) && isscalar(x))|| ...
+                   ismember(x,{'on' 'off' 'full'}));
+  ip=iparser(ip,'addParamValue','validate', 1, @(x) ismember(x,[1 2]));
+  ip=iparser(ip,'addParamValue','threshold', 2.5, @(x) isscalar(x) && isreal(x) && ...
+                   isfinite(x) && x>0);
+  ip=iparser(ip,'addParamValue','step_size', 1, @(x) isscalar(x) && isreal(x) && ...
+                   isfinite(x) && x>0);
+  ip=iparser(ip,'addParamValue','t_nu', 4, @(x) isscalar(x) && isreal(x) && ...
+                   isfinite(x) && x>=1);
+  ip=iparser(ip,'addParamValue','nsamples', 40, @(x) isscalar(x) && isreal(x) && ...
+                   isfinite(x) && x>=1);
+  ip=iparser(ip,'addParamValue','repeat', 10, @(x) isscalar(x) && isreal(x) && ...
+                   isfinite(x) && x>=1);
+  ip=iparser(ip,'addParamValue','f0', 1.1, @(x) isscalar(x) && isreal(x) && ...
+                   isfinite(x) && x>0);
+  ip=iparser(ip,'addParamValue','qmc', true, @(x) islogical(x) && isscalar(x));
+  ip=iparser(ip,'addParamValue','optimf', @fminscg, @(x) isa(x,'function_handle'));
+  ip=iparser(ip,'addParamValue','opt_optim', struct(), @isstruct);
+  ip=iparser(ip,'addParamValue','opt_hmc', [], @isstruct);
+  ip=iparser(ip,'addParamValue','persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
+  ip=iparser(ip,'addParamValue','display', 'on', @(x) islogical(x) || isreal(x) || ...
+                   ismember(x,{'on' 'off' 'iter'}));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   xt=ip.Results.xt;
   % integration parameters
   int_method=ip.Results.int_method;
@@ -206,7 +206,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       end
       tic
         for i2 = 1:nParam
-          H(:,i2) = hessianMultiplication(w, H(:,i2));
+          H(:,i2) = hessianMultiplication(w, H(:,i2), fh_g, gp, x, y, options);
         end
       et=toc;
       if ismember(opt.display,{'on','iter'}) && et > 1
@@ -217,7 +217,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fprintf(' IA-%s: computing Hessian using finite difference\n',int_method);
         end
         tic
-          H = hessian(w);
+          H = hessian(w, fh_e, fh_g, gp, x, y, options);
         et=toc;
         if ismember(opt.display,{'on','iter'}) && et > 1
           fprintf('    Elapsed time %.2f seconds\n',et);
@@ -589,7 +589,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     case {'is_normal' 'is_normal_qmc' 'is_t'}
       
       % Covariance of the gaussian approximation
-      H = full(hessian(w));
+      H = full(hessian(w, fh_e, fh_g, gp, x, y, options));
       Sigma = inv(H);
       Scale = Sigma;
       [V,D] = eig(full(Sigma));
@@ -983,11 +983,11 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     end
   end
 
-  function H = hessian(w0)
+  function H = hessian(w0, fh_e, fh_g, gp, x, y, options)
   % Compute Hessian using finite differences, which is can be slow
   % if number of parameters is high
     
-    m = length(w);
+    m = length(w0);
     e0 = fh_e(w0,gp,x,y,options);
     delta = 1e-4;
     H = -1*ones(m,m);
@@ -1049,8 +1049,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     end
     
   end
+end
 
-  function vv = hessianMultiplication(w0, v)
+  function vv = hessianMultiplication(w0, v, fh_g, gp, x, y, options)
     if size(w0) ~= size(v)
       v = v';
     end
@@ -1059,5 +1060,3 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     g1 = fh_g(w0+rr*v, gp, x, y, options);
     vv = (g1 - g2) / (2*rr);
   end
-
-end

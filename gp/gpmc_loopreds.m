@@ -39,11 +39,11 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_loopreds(gp, x, y, varargin)
 % Nothing to parse, but check the arguments anyway
 ip=inputParser;
 ip.FunctionName = 'GPMC_LOOPREDS';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'parse',gp, x, y, varargin{:});
 z=ip.Results.z;
 
 if isfield(gp,'meanf') & ~isempty(gp.meanf)

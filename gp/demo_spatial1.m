@@ -236,7 +236,7 @@ opt.hmc_opt.persistence=0;
 opt.hmc_opt.stepadj=0.03;
 opt.hmc_opt.steps=2;
 
-opt.display = 1;
+opt.display = 0;
 opt.hmc_opt.display = 0;
 opt.latent_opt.display=0;
 
@@ -265,8 +265,8 @@ axis equal
 axis([0 35 0 60])
 title('relative risk')
 while length(rgp.edata)<500 %
-  [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt, 'display', 0);
-  fprintf('        mean hmcrej: %.2f latrej: %.2f\n', mean(rgp.hmcrejects), mean(rgp.lrejects))
+  [rgp,gp,opt]=gp_mc(gp, x, y, 'record', rgp, 'z', ye, opt);
+  fprintf('%i / 500  mean hmcrej: %.2f latrej: %.2f\n', length(rgp.edata), mean(rgp.hmcrejects), mean(rgp.lrejects))
   set(h1(1),'XData',rgp.cf{1}.lengthScale,'YData',sqrt(rgp.cf{1}.magnSigma2));
   set(h1(2),'XData',rgp.cf{1}.lengthScale(end),'YData',sqrt(rgp.cf{1}.magnSigma2(end)));
   G=repmat(NaN,size(X1));

@@ -54,17 +54,17 @@ function lik = lik_gaussiansmt(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_GAUSSIANSMT';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('ndata',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
-  ip.addParamValue('sigma2',[], @(x) isvector(x) && all(x>0));
-  ip.addParamValue('U',[], @isvector);
-  ip.addParamValue('tau2',0.1, @isscalar);
-  ip.addParamValue('alpha',0.5, @isscalar);
-  ip.addParamValue('nu',4, @isscalar);
-  ip.addParamValue('nu_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('censored',[], @(x) isstruct);
-  ip.addParamValue('gibbs','on', @(x) ismember(x,{'on' 'off'}));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','ndata',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+  ip=iparser(ip,'addParamValue','sigma2',[], @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','U',[], @isvector);
+  ip=iparser(ip,'addParamValue','tau2',0.1, @isscalar);
+  ip=iparser(ip,'addParamValue','alpha',0.5, @isscalar);
+  ip=iparser(ip,'addParamValue','nu',4, @isscalar);
+  ip=iparser(ip,'addParamValue','nu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','censored',[], @(x) isstruct);
+  ip=iparser(ip,'addParamValue','gibbs','on', @(x) ismember(x,{'on' 'off'}));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
@@ -329,7 +329,6 @@ function reccf = lik_gaussiansmt_recappend(reccf, ri, lik)
     reccf.fh.lp = @lik_gaussiansmt_lp;
     reccf.fh.lpg = @lik_gaussiansmt_lpg;
     reccf.fh.cfg = @lik_gaussiansmt_cfg;
-    reccf.fh.cov = @lik_gaussiansmt_cov;
     reccf.fh.trcov  = @lik_gaussiansmt_trcov;
     reccf.fh.trvar  = @lik_gaussiansmt_trvar;
     reccf.fh.gibbs = @lik_gaussiansmt_gibbs;

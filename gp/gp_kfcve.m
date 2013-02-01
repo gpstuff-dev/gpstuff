@@ -39,17 +39,17 @@ function ekfcv = gp_kfcve(w, gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GPEP_KFCVE';
-ip.addRequired('w', @(x) isempty(x) || ...
+ip=iparser(ip,'addRequired','w', @(x) isempty(x) || ...
                isvector(x) && isreal(x) && all(isfinite(x)));
-ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-ip.addParamValue('rstream', 1, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-ip.addParamValue('trindex', [], @(x) ~isempty(x) || iscell(x))
-ip.addParamValue('tstindex', [], @(x) ~isempty(x) || iscell(x))
-ip.parse(w, gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','gp', @(x) isstruct(x) || iscell(x));
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+ip=iparser(ip,'addParamValue','rstream', 1, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+ip=iparser(ip,'addParamValue','trindex', [], @(x) ~isempty(x) || iscell(x));
+ip=iparser(ip,'addParamValue','tstindex', [], @(x) ~isempty(x) || iscell(x));
+ip=iparser(ip,'parse',w, gp, x, y, varargin{:});
 k=ip.Results.k;
 rstream=ip.Results.rstream;
 trindex=ip.Results.trindex;

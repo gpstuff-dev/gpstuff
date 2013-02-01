@@ -36,12 +36,12 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_loopred(gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPLA_LOOPRED';
-  ip.addRequired('gp', @(x) isstruct(x));
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('method', 'lrs', @(x) ismember(x, {'lrs' 'cavity' 'inla'}))
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp', @(x) isstruct(x));
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','method', 'lrs', @(x) ismember(x, {'lrs' 'cavity' 'inla'}));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   z=ip.Results.z;
   method = ip.Results.method;
   [tn,nin] = size(x);

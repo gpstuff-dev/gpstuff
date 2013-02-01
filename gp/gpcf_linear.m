@@ -37,11 +37,11 @@ function gpcf = gpcf_linear(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_LINEAR';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('coeffSigma2',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('coeffSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('selectedVariables',[], @(x) isvector(x) && all(x>0));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','coeffSigma2',10, @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','coeffSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','selectedVariables',[], @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)

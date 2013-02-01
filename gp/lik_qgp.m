@@ -50,11 +50,11 @@ function lik = lik_qgp(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_QGP';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('quantile',0.5, @(x) isscalar(x) && x>0 && x<1);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','sigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','quantile',0.5, @(x) isscalar(x) && x>0 && x<1);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
@@ -396,10 +396,10 @@ function [g_i] = lik_qgp_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   
   % Integrate with quadgk
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
-  [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
+  [g_i, fhncnt] = quadgk(@(f) td(f, yy, sigma2, tau).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*sigma2;
 
-  function g = deriv(f)
+  function g = deriv(f, yy, sigma2, tau)
 
     g = -1/(2.*sigma2) + (yy-f)./(2.*sigma2^(3/2)).*(tau-(yy<=f));
     
@@ -495,7 +495,7 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
   ldconst = log(tau*(1-tau)/sigma) ...
             - log(sigm2_i)/2 - log(2*pi)/2;
   % Create function handle for the function to be integrated
-  df = @qgp_norm;
+  df = @(f) qgp_norm(f, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_qgp_norm;
   ldg = @log_qgp_norm_g;
@@ -518,17 +518,17 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
   niter=8;       % number of Newton iterations 
   
   minf=modef-6*sigm2_i;
-  while ldg(minf) < 0
+  while ldg(minf, ldconst, yy, sigma2, tau, myy_i, sigm2_i) < 0
     minf=minf-2*sigm2_i;
   end
   maxf=modef+6*sigm2_i;
-  while ldg(maxf) > 0
+  while ldg(maxf, ldconst, yy, sigma2, tau, myy_i, sigm2_i) > 0
     maxf=maxf+2*sigm2_i;
   end
   for ni=1:niter
 %     h=ldg2(modef);
     modef=0.5*(minf+maxf);
-    if ldg(modef) < 0
+    if ldg(modef, ldconst, yy, sigma2, tau, myy_i, sigm2_i) < 0
       maxf=modef;
     else
       minf=modef;
@@ -537,15 +537,15 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
   % integrand limits based on Gaussian approximation at mode
   minf=modef-6*sqrt(sigm2_i);
   maxf=modef+6*sqrt(sigm2_i);
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*sqrt(sigm2_i);
-    minld=ld(minf);
+    minld=ld(minf, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -554,11 +554,11 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*sqrt(sigm2_i);
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, yy, sigma2, tau, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -568,14 +568,14 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
     end
   end
   
-  function integrand = qgp_norm(f)
+  function integrand = qgp_norm(f, ldconst, yy, sigma2, tau, myy_i, sigm2_i)
   % Quantile-GP * Gaussian
     integrand = exp(ldconst ...
                     -(yy-f)./sqrt(sigma2).*(tau-(yy<=f)) ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
   
-  function log_int = log_qgp_norm(f)
+  function log_int = log_qgp_norm(f, ldconst, yy, sigma2, tau, myy_i, sigm2_i)
   % log(Quantile-GP * Gaussian)
   % log_qgp_norm is used to avoid underflow when searching
   % integration interval
@@ -584,7 +584,7 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
   
-  function g = log_qgp_norm_g(f)
+  function g = log_qgp_norm_g(f, ldconst, yy, sigma2, tau, myy_i, sigm2_i)
   % d/df log(Quantile-GP * Gaussian)
   % derivative of log_qgp_norm
     g = (tau-(yy<=f))/sqrt(sigma2) ...

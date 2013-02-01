@@ -47,7 +47,7 @@ S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demodata/coal.txt');
 x=load(L);
 lgcp(x,[1850:1963]','gpcf',@gpcf_exp)
-line([x x],[5 5.3],'color','k')
+line([x x],repmat([5 5.3],size(x,1),1),'color','k')
 line(xlim,[5.15 5.15],'color','k')
 xlim([1850 1963])
 ylim([0 5.29])
@@ -64,7 +64,7 @@ figure
 S = which('demo_lgcp');
 L = strrep(S,'demo_lgcp.m','demodata/redwoodfull.txt');
 x=load(L);
-lgcp(x,'range',[0 1 0 1],'latent_method','Laplace','gridn',20)
+lgcp(x,'range',[0 1 0 1],'latent_method','Laplace','gridn',20);
 h=line(x(:,1),x(:,2),'marker','.','linestyle','none','color','k','markersize',10);
 colorbar
 axis square

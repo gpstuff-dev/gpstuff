@@ -30,8 +30,8 @@ function lik = lik_binomial(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_BINOMIAL';
-  ip.addOptional('lik', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
@@ -239,12 +239,12 @@ function [logM_0, m_1, sigm2hati1] = lik_binomial_tiltedMoments(lik, y, i1, sigm
 %  See also
 %    GPEP_E
   
-%  if isempty(z)
-%    error(['lik_binomial -> lik_binomial_tiltedMoments: missing z!'... 
-%           'Binomial likelihood needs the expected number of               '...
-%           'occurrences as an extra input z. See, for                     '...
-%           'example, lik_binomial and gpla_e.                         ']);
-%  end
+ if isempty(z)
+   error(['lik_binomial -> lik_binomial_tiltedMoments: missing z!'... 
+          'Binomial likelihood needs the expected number of               '...
+          'occurrences as an extra input z. See, for                     '...
+          'example, lik_binomial and gpla_e.                         ']);
+ end
   
   yy = y(i1);
   N = z(i1);
@@ -392,7 +392,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %   ldconst = log(factorial(N)/(factorial(yy)*factorial(N-yy))-log(sigm2_i)/2 -log(2*pi)/2;
   
  % Create function handle for the function to be integrated
-  df = @binomial_norm;
+  df = @(f) binomial_norm(f, ldconst, yy, N, myy_i, sigm2_i);
  % use log to avoid underflow, and derivates for faster search
   ld = @log_binomial_norm;
   ldg = @log_binomial_norm_g;
@@ -422,8 +422,8 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
   niter=3;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-      g = ldg(modef);
-      h = ldg2(modef);
+      g = ldg(modef, ldconst, yy, N, myy_i, sigm2_i);
+      h = ldg2(modef, ldconst, yy, N, myy_i, sigm2_i);
       delta=-g/h;
       modef=modef+delta;
       if abs(delta)<mindelta
@@ -434,15 +434,15 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
   modes=sqrt(-1/h);
   minf=modef-4*modes;
   maxf=modef+4*modes;
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, yy, N, myy_i, sigm2_i);
   iter=0;
   % check that density at end points is low enough
   lddiff=12; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, yy, N, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf);
+    minld=ld(minf, ldconst, yy, N, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -451,11 +451,11 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, yy, N, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, yy, N, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -464,9 +464,9 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
              'even after looking hard!'])
     end
   end
+end
   
-  
-  function integrand = binomial_norm(f)
+  function integrand = binomial_norm(f, ldconst, yy, N, myy_i, sigm2_i)
   % Logit * Gaussian
     integrand = exp(ldconst + yy*log(1./(1.+exp(-f)))+(N-yy)*log(1-1./(1.+exp(-f)))...
                    - 0.5 * (f-myy_i).^2./sigm2_i);
@@ -476,7 +476,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
     integrand(isnan(integrand))=0;
   end
   
-  function log_int = log_binomial_norm(f)
+  function log_int = log_binomial_norm(f, ldconst, yy, N, myy_i, sigm2_i)
   % log(Binomial * Gaussian)
   % log_binomial_norm is used to avoid underflow when searching
   % integration interval
@@ -488,7 +488,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %               -0.5*(f-myy_i).^2./sigm2_i;
   end
   
-  function g = log_binomial_norm_g(f)
+  function g = log_binomial_norm_g(f, ldconst, yy, N, myy_i, sigm2_i)
   % d/df log(Binomial * Gaussian)
   % derivative of log_logit_norm
     g = -(f-myy_i)./sigm2_i - exp(-f).*(N-yy)./((1+exp(-f)).^2.*(1-1./(1+exp(-f)))) ...
@@ -497,7 +497,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %         + (myy_i - f)./sigm2_i;
   end
   
-  function g2 = log_binomial_norm_g2(f)
+  function g2 = log_binomial_norm_g2(f, ldconst, yy, N, myy_i, sigm2_i)
   % d^2/df^2 log(Binomial * Gaussian)
   % second derivate of log_logit_norm
     g2 = - (1+exp(2.*f)+exp(f).*(2+N*sigm2_i)./((1+exp(f))^2*sigm2_i));
@@ -506,7 +506,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %          -1/sigm2_i;
   end
   
-end
+% end
 
 function p = lik_binomial_invlink(lik, f, z)
 %LIK_BINOMIAL_INVLINK  Returns values of inverse link function
@@ -550,7 +550,7 @@ function reclik = lik_binomial_recappend(reclik, ri, lik)
     reclik.fh.invlink = @lik_binomial_invlink;
     reclik.fh.predprcty = @lik_binomial_predprcty;
     reclik.fh.predy = @lik_binomial_predy;
-    reclik.fh.recappend = @likelih_binomial_recappend;
+    reclik.fh.recappend = @lik_binomial_recappend;
     return
   end
 

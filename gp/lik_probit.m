@@ -25,8 +25,8 @@ function lik = lik_probit(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_PROBIT';
-  ip.addOptional('lik', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)

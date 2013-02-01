@@ -75,14 +75,14 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 
   ip=inputParser;
   ip.FunctionName = 'GP_DIC';
-  ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('focus', 'param', @(x) ismember(x,{'param','latent','all'}))
-  ip.addParamValue('output', 'DIC', @(x) ismember(x,{'DIC', 'mlpd'}))
-  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','focus', 'param', @(x) ismember(x,{'param','latent','all'}));
+  ip=iparser(ip,'addParamValue','output', 'DIC', @(x) ismember(x,{'DIC', 'mlpd'}));
+  ip=iparser(ip,'addParamValue','form', 'mean', @(x) ismember(x,{'mean','all'}));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   focus=ip.Results.focus;
   output=ip.Results.output;
   form=ip.Results.form;

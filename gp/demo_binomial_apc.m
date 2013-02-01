@@ -161,8 +161,8 @@ figure; subplot(3,1,1)
 set(gcf, 'color', 'w'), hold on
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;
 % Estimate
-h1=fill([xx1' fliplr(xx1')], [(Eft_1(ind1)+1.96*sqrt(Varft_1(ind1)))' ...
-    fliplr((Eft_1(ind1)-1.96*sqrt(Varft_1(ind1)))')], color1, 'edgecolor', color1);
+% h1=fill([xx1' fliplr(xx1')], [(Eft_1(ind1)+1.96*sqrt(Varft_1(ind1)))' ...
+%     fliplr((Eft_1(ind1)-1.96*sqrt(Varft_1(ind1)))')], color1, 'edgecolor', color1);
 h2=plot(xx1, Eft_1(ind1), 'color', color2, 'linewidth', 3);
 % True function
 h4=plot(xx1, f1o(ind1), 'color', 'r', 'linewidth', 2); hold off
@@ -173,8 +173,8 @@ legend([h4 h2],'True','Estimated')
 % Time period effect
 subplot(3,1,2)
 set(gcf, 'color', 'w'), hold on
-h1=fill([xx2' fliplr(xx2')], [(Eft_2(ind2)+1.96*sqrt(Varft_2(ind2)))' ...
-    fliplr((Eft_2(ind2)-1.96*sqrt(Varft_2(ind2)))')], color1, 'edgecolor', color1);
+% h1=fill([xx2' fliplr(xx2')], [(Eft_2(ind2)+1.96*sqrt(Varft_2(ind2)))' ...
+%     fliplr((Eft_2(ind2)-1.96*sqrt(Varft_2(ind2)))')], color1, 'edgecolor', color1);
 h2=plot(xx2, Eft_2(ind2), 'color', color2, 'linewidth', 3);
 % true function
 h4=plot(xx2, f2o(ind2), 'color', 'r', 'linewidth', 2);
@@ -185,8 +185,8 @@ legend([h4 h2],'True','Estimated')
 % Cohort effect
 subplot(3,1,3)
 set(gcf, 'color', 'w'), hold on
-h1=fill([xx3' fliplr(xx3')], [(Eft_3(ind3)+1.96*sqrt(Varft_3(ind3)))' ...
-    fliplr((Eft_3(ind3)-1.96*sqrt(Varft_3(ind3)))')], color1, 'edgecolor', color1);
+% h1=fill([xx3' fliplr(xx3')], [(Eft_3(ind3)+1.96*sqrt(Varft_3(ind3)))' ...
+%     fliplr((Eft_3(ind3)-1.96*sqrt(Varft_3(ind3)))')], color1, 'edgecolor', color1);
 h2=plot(xx3, Eft_3(ind3), 'color', color2, 'linewidth', 3);
 % true function
 h4=plot(xx3, f3o(ind3), 'color', 'r', 'linewidth', 2);

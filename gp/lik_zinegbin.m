@@ -61,11 +61,11 @@ function lik = lik_zinegbin(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_ZINEGBIN';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('disper',10, @(x) isscalar(x) && x>0);
-  %ip.addParamValue('disper_prior',prior_fixed(), @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('disper_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','disper',10, @(x) isscalar(x) && x>0);
+  %ip=iparser(ip,'addParamValue','disper_prior',prior_fixed(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','disper_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)

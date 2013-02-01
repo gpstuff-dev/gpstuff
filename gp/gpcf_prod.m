@@ -18,9 +18,9 @@ function gpcf = gpcf_prod(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_PROD';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('cf',[], @iscell);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','cf',[], @iscell);
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)

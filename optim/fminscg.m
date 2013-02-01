@@ -103,11 +103,16 @@ switch optimget(opt,'Display',defaultopt,'fast');
   otherwise
     display=2;
 end
-maxiter = optimget(opt,'MaxIter',defaultopt,'fast');
-tolfun = optimget(opt,'TolFun',defaultopt,'fast');
-tolx = optimget(opt,'TolX',defaultopt,'fast');
-lambda = optimget(opt,'lambda', defaultopt, 'fast');
-lambdalim = optimget(opt, 'lambdalim', defaultopt, 'fast');
+maxiter = optimget(opt,'MaxIter',400);
+tolfun = optimget(opt,'TolFun',1e-6);
+tolx = optimget(opt,'TolX',1e-6);
+if ~exist('OCTAVE_VERSION', 'builtin')
+  lambda = optimget(opt,'lambda', defaultopt, 'fast');
+  lambdalim = optimget(opt, 'lambdalim', defaultopt, 'fast');
+else
+  lambda = optimget(opt,'lambda', 10);
+  lambdalim = optimget(opt, 'lambdalim', 1e20);
+end
 GradConstr = optimget(opt, 'GradConstr', defaultopt, 'fast');
 
 nparams = length(x);

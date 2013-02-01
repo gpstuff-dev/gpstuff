@@ -1,4 +1,4 @@
-function [c,bb] = hcs_new(riskscore,y,z,t,varargin)
+function [c,bb] = hcs(riskscore,y,z,t,varargin)
 %HCS Compute Harrell's C for survival model at given time
 %
 %  Description
@@ -26,12 +26,12 @@ function [c,bb] = hcs_new(riskscore,y,z,t,varargin)
 % Copyright (C) 2012 Tomi Peltola, Ernesto Ulloa, Aki Vehtari
 
 ip=inputParser;
-ip.addRequired('riskscore',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
-ip.addParamValue('rsubstream',0,@(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-ip.parse(riskscore,y,z,t,varargin{:})
+ip=iparser(ip,'addRequired','riskscore',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','y', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','z', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
+ip=iparser(ip,'addParamValue','rsubstream',0,@(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
+ip=iparser(ip,'parse',riskscore,y,z,t,varargin{:})
 rsubstream=ip.Results.rsubstream;
 
 

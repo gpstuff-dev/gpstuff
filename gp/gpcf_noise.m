@@ -31,10 +31,10 @@ function gpcf = gpcf_noise(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_NOISE';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('noiseSigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('noiseSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','noiseSigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','noiseSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
   
   if isempty(gpcf)

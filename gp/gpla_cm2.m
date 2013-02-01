@@ -35,19 +35,19 @@ function [p, pc c] = gpla_cm2(gp, x, y, fvec,varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_PRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('fvec',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addOptional('xt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('ind', 1, @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','fvec',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addOptional','xt', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','ind', 1, @(x) isreal(x) && all(isfinite(x(:))));
 if rem(size(varargin,2), 2) == 0
-  ip.parse(gp, x, y, fvec,[],varargin{:});
+  ip=iparser(ip,'parse',gp, x, y, fvec,[],varargin{:});
 else
-  ip.parse(gp, x, y, fvec,varargin{:});
+  ip=iparser(ip,'parse',gp, x, y, fvec,varargin{:});
 end
-% ip.parse(gp, x, y, fvec,varargin{:});
+% ip=iparser(ip,'parse',gp, x, y, fvec,varargin{:});
 z = ip.Results.z;
 ind = ip.Results.ind;
 xt = ip.Results.xt;

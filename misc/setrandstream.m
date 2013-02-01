@@ -43,7 +43,10 @@ else
   if nargin<2
     if nargin<1
       % Get current random stream
-      if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+      if exist('OCTAVE_VERSION', 'builtin')
+        prevstream(1) = randn('seed');        
+        prevstream(2) = rand('seed');
+      elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
         prevstream = RandStream.getDefaultStream(stream0);
       else
         prevstream = rng;
@@ -58,7 +61,15 @@ else
     % Default seed
     seed=0;
   end
-  if str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
+  if exist('OCTAVE_VERSION', 'builtin')
+    prevstream(1) = randn('seed');
+    prevstream(2) = rand('seed');
+    if length(seed)==1
+      seed(2)=seed(1);
+    end
+    randn('seed', seed(1));
+    rand('seed', seed(2));
+  elseif str2double(regexprep(version('-release'), '[a-c]', '')) < 2012
     if ischar(stream)
       stream0 = RandStream(stream,'Seed',seed);
     end

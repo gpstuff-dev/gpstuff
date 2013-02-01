@@ -3,7 +3,7 @@ function [p, pc, c] = gpla_fact(gp, x, y, fvec,varargin)
 %           approximation
 % 
 %  Description
-%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
+%    [P, PC, C]ï¿½= GPLA_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
 %    at given grid points FVEC for given indices. Returns tilted
 %    distribution without any correction P, with factorized correction
 %    terms PC and the corrections terms C.
@@ -35,19 +35,19 @@ function [p, pc, c] = gpla_fact(gp, x, y, fvec,varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_PRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('fvec',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addOptional('xt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('ind', 1, @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','fvec',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addOptional','xt', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','ind', 1, @(x) isreal(x) && all(isfinite(x(:))));
 if rem(size(varargin,2), 2) == 0
-  ip.parse(gp, x, y, fvec,[],varargin{:});
+  ip=iparser(ip,'parse',gp, x, y, fvec,[],varargin{:});
 else
-  ip.parse(gp, x, y, fvec,varargin{:});
+  ip=iparser(ip,'parse',gp, x, y, fvec,varargin{:});
 end
-% ip.parse(gp, x, y, fvec,varargin{:});
+% ip=iparser(ip,'parse',gp, x, y, fvec,varargin{:});
 predictive = false;
 z = ip.Results.z;
 ind = ip.Results.ind;

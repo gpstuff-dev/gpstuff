@@ -113,12 +113,13 @@ clf
 subplot('Position',[0.03 0.7 0.3 0.25])
 hold on
 % GP 95% credible interval
-h2=fill([xgrid' fliplr(xgrid')], [(Eft+1.96*sqrt(Varft))' fliplr((Eft-1.96*sqrt(Varft))')], color1, 'edgecolor', color1);
+% h2=fill([xgrid' fliplr(xgrid')], [(Eft+1.96*sqrt(Varft))' fliplr((Eft-1.96*sqrt(Varft))')], color1, 'edgecolor', color1);
 % GP mean
 h1=plot(xgrid, Eft, 'color', color2, 'linewidth', 3);
 axis([-1.5 1.5 -14 14])
 title('Laplace+grid approximation')
-legend([h1 h2],'Mean of the latent','95% CI',2)
+legend(h1,'Mean of the latent',2)
+% legend([h1 h2],'Mean of the latent','95% CI',2)
 legend('boxoff')
 line(xlim,[0 0],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
@@ -128,12 +129,13 @@ xlabel('log dose')
 subplot('Position',[0.03 0.38 0.3 0.25])
 hold on
 % GP 95% credible interval
-h2=fill([xgrid' fliplr(xgrid')], [(logitinv(Eft+1.96*sqrt(Varft)))' fliplr((logitinv(Eft-1.96*sqrt(Varft)))')], color1, 'edgecolor', color1);
+% h2=fill([xgrid' fliplr(xgrid')], [(logitinv(Eft+1.96*sqrt(Varft)))' fliplr((logitinv(Eft-1.96*sqrt(Varft)))')], color1, 'edgecolor', color1);
 % GP mean
 h1=plot(xgrid, logitinv(Eft), 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y./5, 'xr', 'markersize', 10, 'linewidth', 2);
-legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
+% legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
+legend([h1 h3],'Expected prob.','Observations',2)
 legend('boxoff')
 line(xlim,[.5 .5],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
@@ -148,10 +150,10 @@ h=get(gca,'Children');
 set(gca,'ytick',[])
 ylim([0 2000])
 xlabel('LD50')
-h1=text(prctile(ld50s,2.5),1850,'2.5%','HorizontalAlignment','center');
-h2=text(prctile(ld50s,50),1850,'50%','HorizontalAlignment','center');
-h3=text(prctile(ld50s,97.5),1850,'97.5%','HorizontalAlignment','center');
-hl=line(repmat(prctile(ld50s,[2.5 50 97.5]),2,1),repmat([0 1800]',1,3),'Color','k');
+% h1=text(prctile(ld50s,2.5),1850,'2.5%','HorizontalAlignment','center');
+% h2=text(prctile(ld50s,50),1850,'50%','HorizontalAlignment','center');
+% h3=text(prctile(ld50s,97.5),1850,'97.5%','HorizontalAlignment','center');
+% hl=line(repmat(prctile(ld50s,[2.5 50 97.5]),2,1),repmat([0 1800]',1,3),'Color','k');
 fprintf('Elapsed time %.0fs\n',toc)
 
 % ------- EP approximation --------
@@ -190,12 +192,13 @@ ld50s=-a(b>0)./b(b>0);
 subplot('Position',[0.36 0.7 0.3 0.25])
 hold on
 % GP 95% credible interval
-h2=fill([xgrid' fliplr(xgrid')], [(Eft+1.96*sqrt(Varft))' fliplr((Eft-1.96*sqrt(Varft))')], color1, 'edgecolor', color1);
+% h2=fill([xgrid' fliplr(xgrid')], [(Eft+1.96*sqrt(Varft))' fliplr((Eft-1.96*sqrt(Varft))')], color1, 'edgecolor', color1);
 % GP mean
 h1=plot(xgrid, Eft, 'color', color2, 'linewidth', 3);
 axis([-1.5 1.5 -14 14])
 title('EP+grid approximation')
-legend([h1 h2],'Mean of the latent','95% CI',2)
+legend([h1],'Mean of the latent',2)
+% legend([h1 h2],'Mean of the latent','95% CI',2)
 legend('boxoff')
 line(xlim,[0 0],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
@@ -205,12 +208,13 @@ xlabel('log dose')
 subplot('Position',[0.36 0.38 0.3 0.25])
 hold on
 % GP 95% credible interval
-h2=fill([xgrid' fliplr(xgrid')], [(logitinv(Eft+1.96*sqrt(Varft)))' fliplr((logitinv(Eft-1.96*sqrt(Varft)))')], color1, 'edgecolor', color1);
+% h2=fill([xgrid' fliplr(xgrid')], [(logitinv(Eft+1.96*sqrt(Varft)))' fliplr((logitinv(Eft-1.96*sqrt(Varft)))')], color1, 'edgecolor', color1);
 % GP mean
 h1=plot(xgrid, logitinv(Eft), 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y./5, 'xr', 'markersize', 10, 'linewidth', 2);
-legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
+legend([h1 h3],'Expected prob.','Observations',2)
+% legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
 legend('boxoff')
 line(xlim,[.5 .5],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
@@ -225,10 +229,10 @@ h=get(gca,'Children');
 set(gca,'ytick',[])
 ylim([0 2000])
 xlabel('LD50')
-h1=text(prctile(ld50s,2.5),1850,'2.5%','HorizontalAlignment','center');
-h2=text(prctile(ld50s,50),1850,'50%','HorizontalAlignment','center');
-h3=text(prctile(ld50s,97.5),1850,'97.5%','HorizontalAlignment','center');
-hl=line(repmat(prctile(ld50s,[2.5 50 97.5]),2,1),repmat([0 1800]',1,3),'Color','k');
+% h1=text(prctile(ld50s,2.5),1850,'2.5%','HorizontalAlignment','center');
+% h2=text(prctile(ld50s,50),1850,'50%','HorizontalAlignment','center');
+% h3=text(prctile(ld50s,97.5),1850,'97.5%','HorizontalAlignment','center');
+% hl=line(repmat(prctile(ld50s,[2.5 50 97.5]),2,1),repmat([0 1800]',1,3),'Color','k');
 fprintf('Elapsed time %.0fs\n',toc)
 
 % ------- MCMC approximation --------
@@ -263,12 +267,13 @@ fs=Efts+randn(size(Efts)).*sqrt(Varfts);
 subplot('Position',[0.69 0.7 0.3 0.25])
 hold on
 % GP 95% credible interval
-h2=fill([xgrid' fliplr(xgrid')], [prctile(fs,97.5,2)' fliplr(prctile(fs,2.5,2)')], color1, 'edgecolor', color1);
+% h2=fill([xgrid' fliplr(xgrid')], [prctile(fs,97.5,2)' fliplr(prctile(fs,2.5,2)')], color1, 'edgecolor', color1);
 % GP mean
 h1=plot(xgrid, mean(fs,2), 'color', color2, 'linewidth', 3);
 axis([-1.5 1.5 -14 14])
 title('MCMC approximation')
-legend([h1 h2],'Mean of the latent','95% CI',2)
+legend([h1],'Mean of the latent',2)
+% legend([h1 h2],'Mean of the latent','95% CI',2)
 legend('boxoff')
 line(xlim,[0 0],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
@@ -278,12 +283,13 @@ xlabel('log dose')
 subplot('Position',[0.69 0.38 0.3 0.25])
 hold on
 % GP 95% credible interval
-h2=fill([xgrid' fliplr(xgrid')], [(logitinv(prctile(fs,97.5,2)))' fliplr(logitinv(prctile(fs,2.5,2))')], color1, 'edgecolor', color1);
+% h2=fill([xgrid' fliplr(xgrid')], [(logitinv(prctile(fs,97.5,2)))' fliplr(logitinv(prctile(fs,2.5,2))')], color1, 'edgecolor', color1);
 % GP mean
 h1=plot(xgrid, logitinv(mean(fs,2)), 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y./5, 'xr', 'markersize', 10, 'linewidth', 2);
-legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
+% legend([h1 h2 h3],'Expected prob.','95% CI','Observations',2)
+legend([h1 h3],'Expected prob.','Observations',2)
 legend('boxoff')
 line(xlim,[.5 .5],'Linestyle','--','color','k')
 line([0 0],ylim,'Linestyle','--','color','k')
@@ -298,8 +304,8 @@ h=get(gca,'Children');
 set(gca,'ytick',[])
 ylim([0 2000])
 xlabel('LD50')
-h1=text(prctile(ld50s,2.5),1850,'2.5%','HorizontalAlignment','center');
-h2=text(prctile(ld50s,50),1850,'50%','HorizontalAlignment','center');
-h3=text(prctile(ld50s,97.5),1850,'97.5%','HorizontalAlignment','center');
-hl=line(repmat(prctile(ld50s,[2.5 50 97.5]),2,1),repmat([0 1800]',1,3),'Color','k');
+% h1=text(prctile(ld50s,2.5),1850,'2.5%','HorizontalAlignment','center');
+% h2=text(prctile(ld50s,50),1850,'50%','HorizontalAlignment','center');
+% h3=text(prctile(ld50s,97.5),1850,'97.5%','HorizontalAlignment','center');
+% hl=line(repmat(prctile(ld50s,[2.5 50 97.5]),2,1),repmat([0 1800]',1,3),'Color','k');
 fprintf('Elapsed time %.0fs\n',toc)

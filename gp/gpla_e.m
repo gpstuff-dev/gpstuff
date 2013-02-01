@@ -57,16 +57,16 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
   % parse inputs
   ip=inputParser;
   ip.FunctionName = 'GPLA_E';
-  ip.addRequired('w', @(x) ...
+  ip=iparser(ip,'addRequired','w', @(x) ...
                  isempty(x) || ...
                  (ischar(x) && strcmp(w, 'init')) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)) ...
                  || all(isnan(x)));
-  ip.addRequired('gp',@isstruct);
-  ip.addOptional('x', @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('y', @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.parse(w, gp, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@isstruct);
+  ip=iparser(ip,'addOptional','x', @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addOptional','y', @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',w, gp, varargin{:});
   x=ip.Results.x;
   y=ip.Results.y;
   z=ip.Results.z;
@@ -84,7 +84,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
     gp.fh.pred=@gpla_pred;
     gp.fh.jpred=@gpla_jpred;
     gp.fh.looe=@gpla_looe;
-    gp.fh.loog=@gpla_loog;
+%     gp.fh.loog=@gpla_loog;
     gp.fh.loopred=@gpla_loopred;
     e = gp;
     % remove clutter from the nested workspace
@@ -100,31 +100,31 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
 
   function [e, edata, eprior, f, L, a, La2, p] = laplace_algorithm(w, gp, x, y, z)
       
-  if strcmp(w, 'clearcache')
-      ch=[];
-      return
-  end
+%   if strcmp(w, 'clearcache')
+%       ch=[];
+%       return
+%   end
   % code for the Laplace algorithm
 
   % check whether saved values can be used
-    if isempty(z)
-      datahash=hash_sha512([x y]);
-    else
-      datahash=hash_sha512([x y z]);
-    end
-    if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && ...
-          isequal(datahash,ch.datahash)
-      % The covariance function parameters or data haven't changed so we
-      % can return the energy and the site parameters that are
-      % saved in the cache
-      e = ch.e;
-      edata = ch.edata;
-      eprior = ch.eprior;
-      f = ch.f;
-      L = ch.L;
-      La2 = ch.La2;
-      a = ch.a;
-      p = ch.p;
+%     if isempty(z)
+%       datahash=hash_sha512([x y]);
+%     else
+%       datahash=hash_sha512([x y z]);
+%     end
+    if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && ...
+%           isequal(datahash,ch.datahash)
+%       % The covariance function parameters or data haven't changed so we
+%       % can return the energy and the site parameters that are
+%       % saved in the cache
+%       e = ch.e;
+%       edata = ch.edata;
+%       eprior = ch.eprior;
+%       f = ch.f;
+%       L = ch.L;
+%       La2 = ch.La2;
+%       a = ch.a;
+%       p = ch.p;
     else
       % The parameters or data have changed since
       % the last call for gpla_e. In this case we need to
@@ -2101,24 +2101,24 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
 
       e = edata + eprior;
     
-      % store values to the cache
-      ch.w = w;
-      ch.e = e;
-      ch.edata = edata;
-      ch.eprior = eprior;
-      ch.f = f;
-      ch.L = L;
-%       ch.W = W;
-      ch.n = size(x,1);
-      ch.La2 = La2;
-      ch.a = a;
-      ch.p=p;
-      ch.datahash=datahash;
+%       % store values to the cache
+%       ch.w = w;
+%       ch.e = e;
+%       ch.edata = edata;
+%       ch.eprior = eprior;
+%       ch.f = f;
+%       ch.L = L;
+% %       ch.W = W;
+%       ch.n = size(x,1);
+%       ch.La2 = La2;
+%       ch.a = a;
+%       ch.p=p;
+%       ch.datahash=datahash;
     end
     
 %    assert(isreal(edata))
 %    assert(isreal(eprior))
-
+end
 %
 % ==============================================================
 % Begin of the nested functions
@@ -2168,4 +2168,4 @@ function [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite()
   ch.w = NaN;
 end
 
-end
+

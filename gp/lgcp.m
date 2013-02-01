@@ -33,16 +33,16 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LGCP';
-  ip.addRequired('x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
-  ip.addOptional('xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
-  ip.addParamValue('gridn',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
-  ip.addParamValue('range',[], @(x) isreal(x)&&(length(x)==2||length(x)==4));
-  ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
-  ip.addParamValue('latent_method','EP', @(x) ismember(x,{'EP' 'Laplace'}))
-  ip.addParamValue('int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
-  ip.addParamValue('normalize',false, @islogical);
+  ip=iparser(ip,'addRequired','x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip=iparser(ip,'addOptional','xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip=iparser(ip,'addParamValue','gridn',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+  ip=iparser(ip,'addParamValue','range',[], @(x) isreal(x)&&(length(x)==2||length(x)==4));
+  ip=iparser(ip,'addParamValue','gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
+  ip=iparser(ip,'addParamValue','latent_method','EP', @(x) ismember(x,{'EP' 'Laplace'}));
+  ip=iparser(ip,'addParamValue','int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}));
+  ip=iparser(ip,'addParamValue','normalize',false, @islogical);
   
-  ip.parse(x,varargin{:});
+  ip=iparser(ip,'parse',x,varargin{:});
   x=ip.Results.x;
   xt=ip.Results.xt;
   gridn=ip.Results.gridn;

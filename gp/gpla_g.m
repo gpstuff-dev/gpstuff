@@ -31,12 +31,12 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPLA_G';
-  ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
-  ip.addRequired('gp',@isstruct);
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.parse(w, gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+  ip=iparser(ip,'addRequired','gp',@isstruct);
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',w, gp, x, y, varargin{:});
   z=ip.Results.z;
 
   gp = gp_unpak(gp, w);       % unpak the parameters
@@ -684,15 +684,15 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
             DKffba=zeros(n*nout,1);
             
             % check in which components the covariance function is present
-            do = false(nout,1);
+            doo = false(nout,1);
             if multicf
               for z1=1:nout
                 if any(gp.comp_cf{z1}==i)
-                  do(z1) = true;
+                  doo(z1) = true;
                 end
               end
             else
-              do = true(nout,1);
+              doo = true(nout,1);
             end
             
             i1=0;
@@ -724,7 +724,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               % Derivative of explicit terms
               trace_sum_tmp=0;
               for z1=1:nout
-                if do(z1)
+                if doo(z1)
                   DKffba((1:n)+(z1-1)*n)=DKffb*a((1:n)+(z1-1)*n);
                   trace_sum_tmp = trace_sum_tmp + sum(sum( inv_iWK(:,:,z1) .* DKffb ));
                 end
@@ -734,7 +734,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               
               % Derivative of f w.r.t. theta
               for z1=1:nout
-                if do(z1)
+                if doo(z1)
                   DKllg((1:n)+(z1-1)*n)=DKffb*llg((1:n)+(z1-1)*n);
                   EDKllg((1:n)+(z1-1)*n)=E(:,:,z1)*DKllg((1:n)+(z1-1)*n);
                 end
@@ -898,10 +898,10 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
               gpcf = gp.cf{i};
               
               % check in which components the covariance function is present
-              do = false(nlp,1);
+              doo = false(nlp,1);
               for z1=1:nlp
                 if any(gp.comp_cf{z1}==i)
-                  do(z1) = true;
+                  doo(z1) = true;
                 end
               end
               
@@ -958,7 +958,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                 if ~isfield(gp,'meanf')
                   dKnl = zeros(sum(nl));
                   if isfield(gp.lik,'xtime')
-                    if ~isempty(intersect(gp.comp_cf{1},i)) %do(indnl)
+                    if ~isempty(intersect(gp.comp_cf{1},i)) %doo(indnl)
                       if savememory
                         DKff=gpcf.fh.cfg(gpcf,xtime,[],[],i2);
                       else
@@ -972,7 +972,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                       else
                         DKff=DKffc{i2};
                       end
-                      %if do(indnl)
+                      %if doo(indnl)
                       dKnl(ntime+(1:n),ntime+(1:n)) = DKff;
                       %end
                     end
@@ -983,7 +983,7 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
                       DKff=DKffc{i2};
                     end
                     for indnl=1:nlp
-                      if do(indnl)
+                      if doo(indnl)
                         dKnl((1:n)+(indnl-1)*n,(1:n)+(indnl-1)*n) = DKff;
                       end
                     end

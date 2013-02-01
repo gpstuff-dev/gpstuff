@@ -736,9 +736,11 @@ end
 %   [tmp,tmp, m2(ii,:)] = gp.lik.fh.tiltedMoments(gp.lik, yy, ii, C(ii,ii), 0, z);
 % end
 % S = diag(1./(1./m2 - 1./diag(C)));
-S = 10*eye(size(K));
+S = 10*eye(size(C));
 if isempty(eta) || isempty(g)
-  g = mvnrnd(f,S)';
+  LS=chol(S,'lower');
+  g = f + LS*randn(size(f,1),1);
+  %   g = mvnrnd(f,S)';
 end
 R = S-S*((S+K)\S);
 R = (R+R')./2;

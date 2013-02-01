@@ -119,12 +119,12 @@ else
   warning('GPstuff:SuiteSparseMissing',...
   ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
    'Using gpcf_sexp (non-compact support) instead of gpcf_ppcs2 (compact support)']);
-  gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm);
+  gpcf2 = gpcf_sexp('lengthScale', 5, 'magnSigma2', 1, 'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
 end
 lik = lik_gaussian('sigma2', 0.1, 'sigma2_prior', pn);
 
 % Create the GP structure
-gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9) 
+gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -179,7 +179,7 @@ title('The long and short term trend')
 Xu = [min(x):24:max(x)+10]';
 
 % Create the FIC GP structure
-gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', {gpcf1,gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -227,7 +227,7 @@ for i=1:length(edges)-1
     trindex{i} = find(x>edges(i) & x<edges(i+1));
 end
 % Create the FIC GP structure
-gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-6, 'X_u', Xu)
+gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-6, 'X_u', Xu);
 gp_pic = gp_set(gp_pic, 'tr_index', trindex);
 
 % -----------------------------
@@ -278,82 +278,83 @@ legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Locati
 
 % Create the CS+FIC GP structure
 if ~exist('ldlchol')
-  error('GPstuff:SuiteSparseMissing',...
+  warning('GPstuff:SuiteSparseMissing',...
         ['SuiteSparse is not properly installed. (in BECS try ''use suitesparse'')\n' ...
          'Can not use CS+FIC without SuiteSparse']);
+else
+  gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu);
+  
+  % -----------------------------
+  % --- Conduct the inference ---
+  
+  % --- MAP estimate using modified Newton algorithm ---
+  
+  % Now you can choose, if you want to optimize only parameters or
+  % optimize simultaneously parameters and inducing inputs. Note that
+  % the inducing inputs are not transformed through logarithm when
+  % packed
+  
+  % optimize parameters and inducing inputs
+  %gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood+inducing');
+  % optimize only parameters (default)
+  %gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood');
+  
+  % Set the options for the optimization
+  opt=optimset('TolFun',1e-3,'TolX',1e-3);
+  % Optimize with the scaled conjugate gradient method
+  gp_csfic=gp_optim(gp_csfic,x,y,'opt',opt);
+  
+  % Make the prediction
+  [Eft_csfic, Varft_csfic, lpyt_csfic, Eyt_csfic, Varyt_csfic] = gp_pred(gp_csfic, x, y, x, 'yt', y);
+  
+  % Plot the solution of FIC
+  figure
+  %subplot(4,1,1)
+  hold on
+  plot(x,y,'.', 'MarkerSize',7)
+  plot(x,Eft_csfic,'k', 'LineWidth', 2)
+  plot(x,Eft_csfic-2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
+  plot(gp_csfic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
+  plot(x,Eft_csfic+2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
+  axis tight
+  caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.lik.sigma2);
+  title(caption2)
+  legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
+  
+  [Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp_csfic, x, y, x, 'yt', y);
+  [Eft1, Varft1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
+  [Eft2, Varft2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
+  
+  figure
+  set(gcf,'units','centimeters');
+  set(gcf,'DefaultAxesPosition',[0.08  0.13   0.84   0.85]);
+  set(gcf,'DefaultAxesFontSize',16)   %6 8
+  set(gcf,'DefaultTextFontSize',16)   %6 8
+  hold on
+  [AX, H1, H2] = plotyy(x, Eft2, x, Eft1+avgy);
+  set(H2,'LineStyle','--')
+  set(H2, 'LineWidth', 3)
+  set(H1,'LineStyle','-')
+  set(H1, 'LineWidth', 1)
+  
+  set(AX(2), 'XLim', [-1 559])
+  set(AX(1), 'XLim', [-1 559])
+  set(AX(2), 'YLim', [310 380])
+  set(AX(1), 'YLim', [-5 5])
+  set(AX(2), 'XTick' ,[0 276 557])
+  set(AX(2), 'XTicklabel' ,[1958 1981 2004])
+  set(AX(1), 'XTick' ,[0 276 557])
+  set(AX(1), 'XTicklabel' ,[1958 1981 2004])
+  set(AX(2),'YTick',[310 350 380])
+  set(AX(2),'YTicklabel',[310 350 380])
+  set(AX(1),'YTick',[-5 0 5])
+  set(AX(1),'YTicklabel',[-5 0 5])
+  %set(get(AX(2),'Ylabel'),'String','ppmv')
+  %set(get(AX(1),'Ylabel'),'String','ppmv')
+  set(get(AX(2),'Xlabel'),'String','year')
+  set(get(AX(1),'Xlabel'),'String','year')
+  
+  set(gcf,'pos',[5    3   18  10.7])
+  set(gcf,'paperunits',get(gcf,'units'))
+  set(gcf,'paperpos',get(gcf,'pos'))
 end
-gp_csfic = gp_set('type','CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'jitterSigma2', 1e-9, 'X_u', Xu)
-
-% -----------------------------
-% --- Conduct the inference ---
-
-% --- MAP estimate using modified Newton algorithm ---
-
-% Now you can choose, if you want to optimize only parameters or
-% optimize simultaneously parameters and inducing inputs. Note that
-% the inducing inputs are not transformed through logarithm when
-% packed
-
-% optimize parameters and inducing inputs
-%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood+inducing');  
-% optimize only parameters (default)
-%gp_csfic = gp_set(gp_csfic, 'infer_params', 'covariance+likelihood');           
-
-% Set the options for the optimization
-opt=optimset('TolFun',1e-3,'TolX',1e-3);
-% Optimize with the scaled conjugate gradient method
-gp_csfic=gp_optim(gp_csfic,x,y,'opt',opt);
-
-% Make the prediction
-[Eft_csfic, Varft_csfic, lpyt_csfic, Eyt_csfic, Varyt_csfic] = gp_pred(gp_csfic, x, y, x, 'yt', y);
-
-% Plot the solution of FIC
-figure
-%subplot(4,1,1)
-hold on
-plot(x,y,'.', 'MarkerSize',7)
-plot(x,Eft_csfic,'k', 'LineWidth', 2)
-plot(x,Eft_csfic-2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
-plot(gp_csfic.X_u, -30, 'rx', 'MarkerSize', 5, 'LineWidth', 2)
-plot(x,Eft_csfic+2.*sqrt(Varyt_csfic),'g--', 'LineWidth', 1)
-axis tight
-caption2 = sprintf('CS+FIC:  l_1= %.2f, s^2_1 = %.2f, \n l_2= %.2f, s^2_2 = %.2f \n s^2_{noise} = %.2f', gp_csfic.cf{1}.lengthScale, gp_csfic.cf{1}.magnSigma2, gp_csfic.cf{2}.lengthScale, gp_csfic.cf{2}.magnSigma2, gp_csfic.lik.sigma2);
-title(caption2)
-legend('Data point', 'predicted mean', '2\sigma error', 'inducing input','Location','Northwest')
-
-[Eft, Varft, lpyt, Eyt, Varyt] = gp_pred(gp_csfic, x, y, x, 'yt', y);
-[Eft1, Varft1] = gp_pred(gp_csfic, x, y, x, 'predcf', 1);
-[Eft2, Varft2] = gp_pred(gp_csfic, x, y, x, 'predcf', 2);
-
-figure
-set(gcf,'units','centimeters');
-set(gcf,'DefaultAxesPosition',[0.08  0.13   0.84   0.85]);
-set(gcf,'DefaultAxesFontSize',16)   %6 8
-set(gcf,'DefaultTextFontSize',16)   %6 8
-hold on
-[AX, H1, H2] = plotyy(x, Eft2, x, Eft1+avgy);
-set(H2,'LineStyle','--')
-set(H2, 'LineWidth', 3)
-set(H1,'LineStyle','-')
-set(H1, 'LineWidth', 1)
-
-set(AX(2), 'XLim', [-1 559])
-set(AX(1), 'XLim', [-1 559])
-set(AX(2), 'YLim', [310 380])
-set(AX(1), 'YLim', [-5 5])
-set(AX(2), 'XTick' ,[0 276 557])
-set(AX(2), 'XTicklabel' ,[1958 1981 2004])
-set(AX(1), 'XTick' ,[0 276 557])
-set(AX(1), 'XTicklabel' ,[1958 1981 2004])
-set(AX(2),'YTick',[310 350 380])
-set(AX(2),'YTicklabel',[310 350 380])
-set(AX(1),'YTick',[-5 0 5])
-set(AX(1),'YTicklabel',[-5 0 5])
-%set(get(AX(2),'Ylabel'),'String','ppmv')
-%set(get(AX(1),'Ylabel'),'String','ppmv') 
-set(get(AX(2),'Xlabel'),'String','year')
-set(get(AX(1),'Xlabel'),'String','year') 
-
-set(gcf,'pos',[5    3   18  10.7])
-set(gcf,'paperunits',get(gcf,'units'))
-set(gcf,'paperpos',get(gcf,'pos'))

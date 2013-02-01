@@ -27,6 +27,8 @@ save(path, 'Elth', 'Elth2', 'Ef', 'Varf');
 
 % Set back initial random stream
 setrandstream(prevstream);
+drawnow;clear;close all
+
 
 % Compare test values to real values.
 

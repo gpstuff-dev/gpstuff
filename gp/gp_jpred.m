@@ -106,16 +106,16 @@ end
 
 ip=inputParser;
 ip.FunctionName = 'GP_JPRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
-ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.parse(gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addOptional','xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+ip=iparser(ip,'addParamValue','yt', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0));
+ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
+ip=iparser(ip,'parse',gp, x, y, varargin{:});
 xt=ip.Results.xt;
 yt=ip.Results.yt;
 predcf=ip.Results.predcf;

@@ -39,17 +39,17 @@ function u_g = gp_refpred(gp1, gp2, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_REFPRED';
-  ip.addRequired('gp1',@(x) isstruct(x) || iscell(x));
-  ip.addRequired('gp2',@(x) isstruct(x) || iscell(x));
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('x2', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('y2', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z2', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('method', 'posterior', @(x) ismember(x,{'posterior' 'kfcv' 'loo' 'joint'}))
-  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
-  ip.parse(gp1, gp2, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp1',@(x) isstruct(x) || iscell(x));
+  ip=iparser(ip,'addRequired','gp2',@(x) isstruct(x) || iscell(x));
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','x2', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','y2', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z2', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','method', 'posterior', @(x) ismember(x,{'posterior' 'kfcv' 'loo' 'joint'}));
+  ip=iparser(ip,'addParamValue','form', 'mean', @(x) ismember(x,{'mean','all'}));
+  ip=iparser(ip,'parse',gp1, gp2, x, y, varargin{:});
   % pass these forward
   options=struct();
   x2 = ip.Results.x2;

@@ -17,8 +17,7 @@
 %=================================
 % 1D Demonstration
 %=================================
-stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setGlobalStream(stream0);
+setrandstream(1)
 close all;
 % x = 100*rand([40 1]);
 n =150;
@@ -116,8 +115,7 @@ legend('Predicted noise variance', 'Real noise variance','95% CI',2);
 %====================================
 % 2D Demonstration
 %====================================
-stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setGlobalStream(stream0);
+setrandstream(1)
 
 % Create data from two 2 dimensional gaussians
 nt=10;
@@ -188,8 +186,7 @@ colormap hsv, alpha(.4)
 %============================================
 % Demonstration with homoscedastic noise
 %============================================
-stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setGlobalStream(stream0);
+setrandstream(0)
 
 n =200;
 nt = 200;

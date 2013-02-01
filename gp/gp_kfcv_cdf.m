@@ -63,22 +63,22 @@ function [cdf] = gp_kfcv_cdf(gp,x,y,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GP_KFCV';
-  ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('inf_method', 'MAP', @(x) ...
-    ismember(x,{'MAP' 'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG' 'MCMC' 'IA' 'fixed'}))
-  ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
-  ip.addParamValue('opt', struct(), @isstruct)
-  ip.addParamValue('k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-  ip.addParamValue('rstream', 1, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-  ip.addParamValue('trindex', [], @(x) isempty(x) || iscell(x))
-  ip.addParamValue('tstindex', [], @(x) isempty(x) || iscell(x))
-  ip.addParamValue('display', 'on', @(x) islogical(x) || ...
-                   ismember(x,{'iter' 'fold'}))
-  ip.parse(gp, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','yt', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','inf_method', 'MAP', @(x) ...
+    ismember(x,{'MAP' 'LOO' 'KFCV' 'WAIC' 'WAICV' 'WAICG' 'MCMC' 'IA' 'fixed'}));
+  ip=iparser(ip,'addParamValue','optimf', @fminscg, @(x) isa(x,'function_handle'));
+  ip=iparser(ip,'addParamValue','opt', struct(), @isstruct);
+  ip=iparser(ip,'addParamValue','k', 10, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+  ip=iparser(ip,'addParamValue','rstream', 1, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
+  ip=iparser(ip,'addParamValue','trindex', [], @(x) isempty(x) || iscell(x));
+  ip=iparser(ip,'addParamValue','tstindex', [], @(x) isempty(x) || iscell(x));
+  ip=iparser(ip,'addParamValue','display', 'on', @(x) islogical(x) || ...
+                   ismember(x,{'iter' 'fold'}));
+  ip=iparser(ip,'parse',gp, x, y, varargin{:});
   z=ip.Results.z;
   yt=ip.Results.yt;
   inf_method=ip.Results.inf_method;

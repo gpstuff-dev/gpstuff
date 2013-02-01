@@ -45,11 +45,11 @@ function lik = lik_gaussianbl(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_GAUSSIANBL';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('sigma2',0.1, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('bl_indic',0.1, @(x) isvector(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','sigma2',0.1, @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','bl_indic',0.1, @(x) isvector(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)

@@ -47,16 +47,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpmc_loopred(gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GPMC_LOOPRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('is', 'on', @(x) ismember(x,{'on' 'off'}))
-ip.parse(gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','is', 'on', @(x) ismember(x,{'on' 'off'}));
+ip=iparser(ip,'parse',gp, x, y, varargin{:});
 z=ip.Results.z;
 is=ip.Results.is;
 
-if isfield(gp,'meanf') & ~isempty(gp.meanf)
+if isfield(gp,'meanf') && ~isempty(gp.meanf)
   error('GPMC_LOOPRED: Mean functions not yet supported');
 end
 

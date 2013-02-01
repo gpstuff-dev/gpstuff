@@ -34,29 +34,29 @@ if nargin < 2 || ischar(y)
     % model-based estimator
     model_based_estimator = true;
     
-    ip.addRequired('p', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
+    ip=iparser(ip,'addRequired','p', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addParamValue','rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     if nargin > 1
         % if more than 1 input arguments, there must be 3 as only a
         % single optional parameter is implemented
         if nargin == 3
-            ip.parse(p, y, z);
+            ip=iparser(ip,'parse',p, y, z);
         else
             error('Invalid number of arguments.');
         end
     else
-        ip.parse(p);
+        ip=iparser(ip,'parse',p);
     end
 else
     % Pencina et al. estimator
     model_based_estimator = false;
     
-    ip.addRequired('p', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
-    ip.addParamValue('rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-    ip.parse(p, y, z, t, varargin{:})
+    ip=iparser(ip,'addRequired','p', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','y', @(x) isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','z', @(x) isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
+    ip=iparser(ip,'addParamValue','rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
+    ip=iparser(ip,'parse',p, y, z, t, varargin{:})
 end
 rsubstream=ip.Results.rsubstream;
 

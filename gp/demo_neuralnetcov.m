@@ -130,23 +130,25 @@ xgrid=linspace(min(x)-1.5,max(x)+1.5,200)';
 % Plot the predictions and data
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;
 figure, set(gcf, 'color', 'w'), hold on
-h1=fill([xgrid' fliplr(xgrid')], [(Eyt_map+1.96*sqrt(Varyt_map))' fliplr((Eyt_map-1.96*sqrt(Varyt_map))')], color1, 'edgecolor', color1);
+% h1=fill([xgrid' fliplr(xgrid')], [(Eyt_map+1.96*sqrt(Varyt_map))' fliplr((Eyt_map-1.96*sqrt(Varyt_map))')], color1, 'edgecolor', color1);
 % GP mean
 h2=plot(xgrid, Eyt_map, 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 % true function
 h4=plot(xgrid, norm_pdf(4*xgrid), 'color', 'r', 'linewidth', 2);
-legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
+% legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
+legend([h2 h3 h4], 'GP mean', 'observations', 'true latent function')
 title('GP (squared exponential) predictions and the data points');
 
 figure, set(gcf, 'color', 'w'), hold on
-h1=fill([xgrid' fliplr(xgrid')], [(Eyt_map2+1.96*sqrt(Varyt_map2))' fliplr((Eyt_map2-1.96*sqrt(Varyt_map2))')], color1, 'edgecolor', color1);
+% h1=fill([xgrid' fliplr(xgrid')], [(Eyt_map2+1.96*sqrt(Varyt_map2))' fliplr((Eyt_map2-1.96*sqrt(Varyt_map2))')], color1, 'edgecolor', color1);
 % GP mean
 h2=plot(xgrid, Eyt_map2, 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 % true function
 h4=plot(xgrid, norm_pdf(4*xgrid), 'color', 'r', 'linewidth', 2);
-legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
+legend([h2 h3 h4], 'GP mean', 'observations', 'true latent function')
+% legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
 title('GP (neural network) predictions and the data points');

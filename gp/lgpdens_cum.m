@@ -12,10 +12,10 @@ function [cum] = lgpdens_cum(bb,x1,x2)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 ip=inputParser;
-ip.addRequired('bb',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('x1',@(x) ~isempty(x) && isreal(x))
-ip.addRequired('x2', @(x) ~isempty(x) && isreal(x))
-ip.parse(bb,x1,x2)
+ip=iparser(ip,'addRequired','bb',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','x1',@(x) ~isempty(x) && isreal(x));
+ip=iparser(ip,'addRequired','x2', @(x) ~isempty(x) && isreal(x));
+ip=iparser(ip,'parse',bb,x1,x2);
 
  [p,pq,xt]=lgpdens(bb);
  I1=min(find(xt>x1));

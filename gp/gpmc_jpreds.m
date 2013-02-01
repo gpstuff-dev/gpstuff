@@ -103,22 +103,22 @@ function [Ef, Covf, ljpy, Ey, Covy] = gpmc_jpreds(gp, x, y, varargin)
   
   ip=inputParser;
   ip.FunctionName = 'GPMC_JPREDS';
-  ip.addRequired('gp',@isstruct);
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))))
-  ip.addParamValue('yt', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                   isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-  ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                   (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  ip=iparser(ip,'addRequired','gp',@isstruct);
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addOptional','xt', [], @(x) isempty(x) || (isreal(x) && all(isfinite(x(:)))));
+  ip=iparser(ip,'addParamValue','yt', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','zt', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
+                   isvector(x) && isreal(x) && all(isfinite(x)&x>0));
+  ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
+                   (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
-    ip.parse(gp, x, y, varargin{:});
+    ip=iparser(ip,'parse',gp, x, y, varargin{:});
   else
-    ip.parse(gp, x, y, [], varargin{:});
+    ip=iparser(ip,'parse',gp, x, y, [], varargin{:});
   end
   xt=ip.Results.xt;
   yt=ip.Results.yt;

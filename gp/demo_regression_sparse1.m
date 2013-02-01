@@ -137,7 +137,7 @@ else
                     'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 end
 
-gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8)
+gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-8);
 
 % We have now constructed a GP model with gpcf_ppcs2 covariance
 % function. This is a compact support function which produces
@@ -196,7 +196,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, ...
-                'X_u', X_u, 'jitterSigma2', 1e-4)
+                'X_u', X_u, 'jitterSigma2', 1e-4);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -296,7 +296,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
                  'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 gp_pic = gp_set('type', 'PIC', 'lik', lik, 'cf', gpcf, ...
-                'X_u', X_u, 'tr_index', trindex, 'jitterSigma2', 1e-4)
+                'X_u', X_u, 'tr_index', trindex, 'jitterSigma2', 1e-4);
 
 % -----------------------------
 % --- Conduct the inference ---
@@ -383,7 +383,7 @@ gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', gpcf, ...
 % packed
 
 % optimize parameters and inducing inputs
-gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood+inducing')
+gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood+inducing');
 % optimize only parameters
 %gp_var = gp_set(gp_var, 'infer_params', 'covariance+likelihood');           
 
@@ -447,7 +447,7 @@ gpcf = gpcf_sexp('lengthScale', [1 1], 'magnSigma2', 0.2^2, ...
 [u1,u2]=meshgrid(linspace(-1.8,1.8,6),linspace(-1.8,1.8,6));
 X_u = [u1(:) u2(:)];
 gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, ...
-                'X_u', X_u, 'jitterSigma2', 1e-4)
+                'X_u', X_u, 'jitterSigma2', 1e-4);
 
 % -----------------------------
 % --- Conduct the inference ---

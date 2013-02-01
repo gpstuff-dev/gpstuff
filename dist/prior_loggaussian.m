@@ -29,12 +29,12 @@ function p = prior_loggaussian(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_LOGGAUSSIAN';
-  ip.addOptional('p', [], @isstruct);
-  ip.addParamValue('mu',0, @(x) isscalar(x));
-  ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'addParamValue','mu',0, @(x) isscalar(x));
+  ip=iparser(ip,'addParamValue','mu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','s2',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','s2_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

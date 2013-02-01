@@ -329,7 +329,9 @@ function state = get_state(f)
 
 global HMC_MOM
 state.stream=setrandstream();
-state.streamstate = state.stream.State;
+if ~exist('OCTAVE_VERSION','builtin')
+  state.streamstate = state.stream.State;
+end
 state.mom = HMC_MOM;
 return
 
@@ -347,12 +349,14 @@ else
   if ~isstruct(x)
     error('Second argument to hmc must be number or state structure');
   end
-  if (~isfield(x, 'stream') | ~isfield(x, 'streamstate') ...
+  if (~isfield(x, 'stream') | (~exist('OCTAVE_VERSION','builtin') && ~isfield(x, 'streamstate')) ...
       | ~isfield(x, 'mom'))
     error('Second argument to hmc must contain correct fields')
   end
   setrandstream(x.stream);
-  x.State=x.streamstate;
+  if ~exist('OCTAVE_VERSION','builtin')
+    x.State=x.streamstate;
+  end
   HMC_MOM = x.mom;
 end
 return

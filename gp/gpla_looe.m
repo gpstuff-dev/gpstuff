@@ -34,13 +34,13 @@ function eloo = gpla_looe(w, gp, x, y, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GPLA_LOOE';
-ip.addRequired('w', @(x) isempty(x) || ...
+ip=iparser(ip,'addRequired','w', @(x) isempty(x) || ...
                isvector(x) && isreal(x) && all(isfinite(x)));
-ip.addRequired('gp', @(x) isstruct(x) || iscell(x));
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(w, gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','gp', @(x) isstruct(x) || iscell(x));
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'parse',w, gp, x, y, varargin{:});
 z=ip.Results.z;
 
 gp=gp_unpak(gp, w);

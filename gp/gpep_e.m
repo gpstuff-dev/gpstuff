@@ -55,16 +55,16 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
 % parse inputs
   ip=inputParser;
   ip.FunctionName = 'GPEP_E';
-  ip.addRequired('w', @(x) ...
+  ip=iparser(ip,'addRequired','w', @(x) ...
                  isempty(x) || ...
                  (ischar(x) && ismember(x, {'init' 'clearcache'})) || ...
                  (isvector(x) && isreal(x) && all(isfinite(x))) || ...
                  all(isnan(x)));
-  ip.addRequired('gp',@isstruct);
-  ip.addOptional('x', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('y', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.parse(w, gp, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@isstruct);
+  ip=iparser(ip,'addOptional','x', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addOptional','y', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',w, gp, varargin{:});
   x=ip.Results.x;
   y=ip.Results.y;
   z=ip.Results.z;
@@ -98,36 +98,36 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
 
   function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, logZ_i, eta] = ep_algorithm(w, gp, x, y, z)
     
-    if strcmp(w, 'clearcache')
-      ch=[];
-      return
-    end
-    
+%     if strcmp(w, 'clearcache')
+%       ch=[];
+%       return
+%     end
+
     switch gp.latent_opt.optim_method
       
       case 'basic-EP'
         
-        % check whether saved values can be used
-        if isempty(z)
-          datahash=hash_sha512([x y]);
-        else
-          datahash=hash_sha512([x y z]);
-        end
-        if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
-          % The covariance function parameters or data haven't changed
-          % so we can return the energy and the site parameters that are saved
-          e = ch.e;
-          edata = ch.edata;
-          eprior = ch.eprior;
-          tautilde = ch.tautilde;
-          nutilde = ch.nutilde;
-          L = ch.L;
-          La2 = ch.La2;
-          b = ch.b;
-          muvec_i = ch.muvec_i;
-          sigm2vec_i = ch.sigm2vec_i;
-          logZ_i = ch.logZ_i;
-          eta = ch.eta;
+%         % check whether saved values can be used
+%         if isempty(z)
+%           datahash=hash_sha512([x y]);
+%         else
+%           datahash=hash_sha512([x y z]);
+%         end
+        if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1e-8) && isequal(datahash,ch.datahash)
+%           % The covariance function parameters or data haven't changed
+%           % so we can return the energy and the site parameters that are saved
+%           e = ch.e;
+%           edata = ch.edata;
+%           eprior = ch.eprior;
+%           tautilde = ch.tautilde;
+%           nutilde = ch.nutilde;
+%           L = ch.L;
+%           La2 = ch.La2;
+%           b = ch.b;
+%           muvec_i = ch.muvec_i;
+%           sigm2vec_i = ch.sigm2vec_i;
+%           logZ_i = ch.logZ_i;
+%           eta = ch.eta;
         else
           % The parameters or data have changed since
           % the last call for gpep_e. In this case we need to
@@ -181,9 +181,9 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
                   logZep_old=logZep;
                   logM0_old=logM0;
                   
-                  if isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
-                    tautilde=ch.tautilde;
-                    nutilde=ch.nutilde;
+                  if 0%isequal(gp.latent_opt.init_prev, 'on') && iter==1 && ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w)<1) && isequal(datahash,ch.datahash)
+%                     tautilde=ch.tautilde;
+%                     nutilde=ch.nutilde;
                   else
                     if isequal(gp.latent_opt.parallel,'on')
                       % parallel-EP
@@ -1447,21 +1447,21 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           logZ_i = logM0(:);
           eta = [];
           
-          % store values to the cache
-          ch.w = w;
-          ch.e = e;
-          ch.edata = edata;
-          ch.eprior = eprior;
-          ch.tautilde = tautilde;
-          ch.nutilde = nutilde;
-          ch.L = L;
-          ch.La2 = La2;
-          ch.b = b;
-          ch.muvec_i = muvec_i;
-          ch.sigm2vec_i = sigm2vec_i;
-          ch.logZ_i = logZ_i;
-          ch.eta = eta;
-          ch.datahash=datahash;
+%           % store values to the cache
+%           ch.w = w;
+%           ch.e = e;
+%           ch.edata = edata;
+%           ch.eprior = eprior;
+%           ch.tautilde = tautilde;
+%           ch.nutilde = nutilde;
+%           ch.L = L;
+%           ch.La2 = La2;
+%           ch.b = b;
+%           ch.muvec_i = muvec_i;
+%           ch.sigm2vec_i = sigm2vec_i;
+%           ch.logZ_i = logZ_i;
+%           ch.eta = eta;
+%           ch.datahash=datahash;
           
           global iter_lkm
           iter_lkm=iter;
@@ -1477,28 +1477,28 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
         %     end
         
         % check whether saved values can be used
-        if isempty(z)
-          datahash=hash_sha512([x y]);
-        else
-          datahash=hash_sha512([x y z]);
-        end
+%         if isempty(z)
+%           datahash=hash_sha512([x y]);
+%         else
+%           datahash=hash_sha512([x y z]);
+%         end
         
-        if ~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w) < 1e-8) && isequal(datahash,ch.datahash)
+        if 0%~isempty(ch) && all(size(w)==size(ch.w)) && all(abs(w-ch.w) < 1e-8) && isequal(datahash,ch.datahash)
           % The covariance function parameters haven't changed so just
           % return the Energy and the site parameters that are saved
           
-          e = ch.e;
-          edata = ch.edata;
-          eprior = ch.eprior;
-          L = ch.L;
-          La2 = ch.La2;
-          b = ch.b;
-          nutilde = ch.nu_q;
-          tautilde = ch.tau_q;
-          eta = ch.eta;
-          muvec_i = ch.muvec_i;
-          sigm2vec_i = ch.sigm2vec_i;
-          logZ_i = ch.logZ_i;
+%           e = ch.e;
+%           edata = ch.edata;
+%           eprior = ch.eprior;
+%           L = ch.L;
+%           La2 = ch.La2;
+%           b = ch.b;
+%           nutilde = ch.nu_q;
+%           tautilde = ch.tau_q;
+%           eta = ch.eta;
+%           muvec_i = ch.muvec_i;
+%           sigm2vec_i = ch.sigm2vec_i;
+%           logZ_i = ch.logZ_i;
           
         else
           % The parameters or data have changed since
@@ -2199,21 +2199,21 @@ function [e, edata, eprior, tautilde, nutilde, L, La2, b, muvec_i, sigm2vec_i, l
           nutilde = nu_q;
           tautilde = tau_q;
           
-          % store values to the cache
-          ch.w = w;
-          ch.e = e;
-          ch.edata = edata;
-          ch.eprior = eprior;
-          ch.L = L;
-          ch.nu_q = nu_q;
-          ch.tau_q = tau_q;
-          ch.La2 = La2;
-          ch.b = b;
-          ch.eta = eta;
-          ch.logZ_i = logZ_i;
-          ch.sigm2vec_i = sigm2vec_i;
-          ch.muvec_i = muvec_i;
-          ch.datahash = datahash;
+%           % store values to the cache
+%           ch.w = w;
+%           ch.e = e;
+%           ch.edata = edata;
+%           ch.eprior = eprior;
+%           ch.L = L;
+%           ch.nu_q = nu_q;
+%           ch.tau_q = tau_q;
+%           ch.La2 = La2;
+%           ch.b = b;
+%           ch.eta = eta;
+%           ch.logZ_i = logZ_i;
+%           ch.sigm2vec_i = sigm2vec_i;
+%           ch.muvec_i = muvec_i;
+%           ch.datahash = datahash;
           
         end
       otherwise

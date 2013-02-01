@@ -20,8 +20,8 @@ function lik = lik_multinom(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_MULTINOM';
-  ip.addOptional('lik', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)

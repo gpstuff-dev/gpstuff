@@ -51,19 +51,19 @@ function gpcf = gpcf_periodic(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_PERIODIC';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('lengthScale',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('period',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('lengthScale_sexp',10, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('decay',0, @(x) isscalar(x) && (x==0||x==1));
-  ip.addParamValue('magnSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lengthScale_prior',prior_t, @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lengthScale_sexp_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('period_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('selectedVariables',[], @(x) isempty(x) || ...
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','magnSigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','lengthScale',10, @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','period',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','lengthScale_sexp',10, @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','decay',0, @(x) isscalar(x) && (x==0||x==1));
+  ip=iparser(ip,'addParamValue','magnSigma2_prior',prior_logunif, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','lengthScale_prior',prior_t, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','lengthScale_sexp_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','period_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','selectedVariables',[], @(x) isempty(x) || ...
                    (isvector(x) && all(x>0)));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
   
   if isempty(gpcf)
@@ -118,7 +118,6 @@ function gpcf = gpcf_periodic(varargin)
     gpcf.fh.cfg = @gpcf_periodic_cfg;
     gpcf.fh.ginput = @gpcf_periodic_ginput;
     gpcf.fh.cov = @gpcf_periodic_cov;
-    gpcf.fh.covvec = @gpcf_periodic_covvec;
     gpcf.fh.trcov  = @gpcf_periodic_trcov;
     gpcf.fh.trvar  = @gpcf_periodic_trvar;
     gpcf.fh.recappend = @gpcf_periodic_recappend;

@@ -48,11 +48,11 @@ function lik = lik_gaussian(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_GAUSSIAN';
-  ip.addOptional('lik', [], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('n',[], @(x) isreal(x) && all(x>0));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','sigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','n',[], @(x) isreal(x) && all(x>0));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)

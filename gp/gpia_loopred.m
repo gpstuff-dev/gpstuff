@@ -48,16 +48,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_loopred(gp_array, x, y, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPIA_LOOPRED';
-  ip.addRequired('gp_array',@iscell);
-  ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('is', 'on', @(x) ismember(x,{'on' 'off'}))
-  ip.parse(gp_array, x, y, varargin{:});
+  ip=iparser(ip,'addRequired','gp_array',@iscell);
+  ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','is', 'on', @(x) ismember(x,{'on' 'off'}));
+  ip=iparser(ip,'parse',gp_array, x, y, varargin{:});
   z=ip.Results.z;
   is=ip.Results.is;
 
-  if isfield(gp_array{1},'meanf') & ~isempty(gp_array{1}.meanf)
+  if isfield(gp_array{1},'meanf') && ~isempty(gp_array{1}.meanf)
     error('GPIA_LOOPRED: Mean functions not yet supported');
   end
 

@@ -17,11 +17,11 @@ function at = auct(crit,y,z,tt)
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
 
 ip=inputParser;
-ip.addRequired('crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('tt', @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(crit,y,z,tt)
+ip=iparser(ip,'addRequired','crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','y', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','z', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','tt', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'parse',crit,y,z,tt)
 
 for i=1:size(tt,2)
   comp=bsxfun(@times,bsxfun(@and,y(:,i)<=tt(i),1-z(:,i)),bsxfun(@or,bsxfun(@and,y(:,i)<=tt(i),z(:,i)),y(:,i)>=tt(i))');

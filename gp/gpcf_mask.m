@@ -30,10 +30,10 @@ function gpcf = gpcf_mask(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_MASK';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('selectedVariables',[], ...
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','selectedVariables',[], ...
                    @(x) isempty(x) || (isvector(x) && all(x>0)));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)

@@ -39,19 +39,19 @@ function metric = metric_distancematrix(varargin)
 
     ip=inputParser;
     ip.FunctionName = 'METRIC_DISTANCEMATRIX';
-    ip.addOptional('metric', [], @isstruct);
-%     ip.addParamValue('nin', [], @(x) isreal(x));
-    ip.addParamValue('components',[], @(x) isempty(x) || iscell(x));
-    ip.addParamValue('lengthScales',[] , @(x) isvector(x));
-    ip.addParamValue('Kstarstar',[], @(x) ismatrix(x));
-    ip.addParamValue('lengthScales_prior',prior_unif, ...
+    ip=iparser(ip,'addOptional','metric', [], @isstruct);
+%     ip=iparser(ip,'addParamValue','nin', [], @(x) isreal(x));
+    ip=iparser(ip,'addParamValue','components',[], @(x) isempty(x) || iscell(x));
+    ip=iparser(ip,'addParamValue','lengthScales',[] , @(x) isvector(x));
+    ip=iparser(ip,'addParamValue','Kstarstar',[], @(x) ismatrix(x));
+    ip=iparser(ip,'addParamValue','lengthScales_prior',prior_unif, ...
                    @(x) isstruct(x) || isempty(x));
-%     ip.addParamValue('Kff', [], @(x) ismatrix(x));
-%     ip.addParamValue('Kfu', [], @(x) ismatrix(x));
-%     ip.addParamValue('Kffstar', [], @(x) ismatrix(x));
-%     ip.addParamValue('Kfstaru', [], @(x) ismatrix(x));
-%     ip.addParamValue('X_u', [], @(x) ismatrix(x));
-    ip.parse(varargin{:});
+%     ip=iparser(ip,'addParamValue','Kff', [], @(x) ismatrix(x));
+%     ip=iparser(ip,'addParamValue','Kfu', [], @(x) ismatrix(x));
+%     ip=iparser(ip,'addParamValue','Kffstar', [], @(x) ismatrix(x));
+%     ip=iparser(ip,'addParamValue','Kfstaru', [], @(x) ismatrix(x));
+%     ip=iparser(ip,'addParamValue','X_u', [], @(x) ismatrix(x));
+    ip=iparser(ip,'parse',varargin{:});
     metric=ip.Results.metric;
     
     if isempty(metric)

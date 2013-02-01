@@ -48,10 +48,10 @@ function lik = lik_loglogistic(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_LOGLOGISTIC';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('shape',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('shape_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','shape',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','shape_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)
@@ -418,14 +418,14 @@ function [g_i] = lik_loglogistic_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   % and useful integration limits
   [tf,minf,maxf]=init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r);
   % additionally get function handle for the derivative
-  td = @deriv;
+  td = @(f) deriv(f, yc, yy, r);
   
   % Integrate with quadgk
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
 
-  function g = deriv(f)
+  function g = deriv(f, yc, yy, r)
     g = yc.*(1/r+log(yy)-f) + (-1-yc)./(1+(yy./exp(f)).^r).* ...
              (yy./exp(f)).^r.*(log(yy)-f);
   end
@@ -504,7 +504,7 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
             - log(sigm2_i)/2 - log(2*pi)/2;
   
   % Create function handle for the function to be integrated
-  df = @loglogistic_norm;
+  df = @(f) loglogistic_norm(f, ldconst, yc, r, yy, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_loglogistic_norm;
   ldg = @log_loglogistic_norm_g;
@@ -528,8 +528,8 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
   niter=4;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-    g=ldg(modef);
-    h=ldg2(modef);
+    g=ldg(modef, ldconst, yc, r, yy, myy_i, sigm2_i);
+    h=ldg2(modef, ldconst, yc, r, yy, myy_i, sigm2_i);
     delta=-g/h;
     modef=modef+delta;
     if abs(delta)<mindelta
@@ -540,15 +540,15 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
   modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, yc, r, yy, myy_i, sigm2_i);
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, yc, r, yy, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf);
+    minld=ld(minf, ldconst, yc, r, yy, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -557,11 +557,11 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, yc, r, yy, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, yc, r, yy, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -571,14 +571,14 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   
-  function integrand = loglogistic_norm(f)
+  function integrand = loglogistic_norm(f, ldconst, yc, r, yy, myy_i, sigm2_i)
   % loglogistic * Gaussian
     integrand = exp(ldconst ...
                      - yc.*r.*f +(-1-yc).*log(1+(yy./exp(f)).^r) ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
-  function log_int = log_loglogistic_norm(f)
+  function log_int = log_loglogistic_norm(f, ldconst, yc, r, yy, myy_i, sigm2_i)
   % log(loglogistic * Gaussian)
   % log_loglogistic_norm is used to avoid underflow when searching
   % integration interval
@@ -587,14 +587,14 @@ function [df,minf,maxf] = init_loglogistic_norm(yy,myy_i,sigm2_i,yc,r)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
-  function g = log_loglogistic_norm_g(f)
+  function g = log_loglogistic_norm_g(f, ldconst, yc, r, yy, myy_i, sigm2_i)
   % d/df log(loglogistic * Gaussian)
   % derivative of log_loglogistic_norm
     g = -r.*yc - (-1-yc).*r.*(yy./exp(f)).^r./(1+(yy./exp(f)).^r) ...
         + (myy_i - f)./sigm2_i;
   end
 
-  function g2 = log_loglogistic_norm_g2(f)
+  function g2 = log_loglogistic_norm_g2(f, ldconst, yc, r, yy, myy_i, sigm2_i)
   % d^2/df^2 log(loglogistic * Gaussian)
   % second derivate of log_loglogistic_norm
     g2 =  r.^2.*(-1-yc).*(yy./exp(f)).^r./(1+(yy./exp(f)).^r).^2 ...
@@ -679,7 +679,6 @@ function reclik = lik_loglogistic_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_loglogistic_tiltedMoments;
     reclik.fh.invlink = @lik_loglogistic_invlink;
     reclik.fh.predy = @lik_loglogistic_predy;
-    reclik.fh.predcdf=@lik_loglogistic_predcdf;
     reclik.fh.recappend = @lik_loglogistic_recappend;
     reclik.p=[];
     reclik.p.shape=[];

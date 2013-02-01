@@ -35,31 +35,31 @@ if nargin < 3 || ischar(y)
     % model-based estimator
     model_based_estimator = true;
     
-    ip.addRequired('pt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('pn', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addParamValue('rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
+    ip=iparser(ip,'addRequired','pt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','pn', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addParamValue','rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
     if nargin > 2
         % if more than 2 input arguments, there must be four as only a
         % single optional parameter is implemented
         if nargin == 4
-            ip.parse(pt, pn, y, z);
+            ip=iparser(ip,'parse',pt, pn, y, z);
         else
             error('Invalid number of arguments.');
         end
     else
-        ip.parse(pt, pn); 
+        ip=iparser(ip,'parse',pt, pn); 
     end
 else
     % Pencina et al. estimator
     model_based_estimator = false;
     
-    ip.addRequired('pt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('pn', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-    ip.addRequired('t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
-    ip.addParamValue('rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
-    ip.parse(pt, pn, y, z, t, varargin{:})
+    ip=iparser(ip,'addRequired','pt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','pn', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','y', @(x) isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','z', @(x) isreal(x) && all(isfinite(x(:))))
+    ip=iparser(ip,'addRequired','t', @(x) isreal(x) && isscalar(x) && ~isnan(x))
+    ip=iparser(ip,'addParamValue','rsubstream', 0, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0)
+    ip=iparser(ip,'parse',pt, pn, y, z, t, varargin{:})
 end
 rsubstream=ip.Results.rsubstream;
 

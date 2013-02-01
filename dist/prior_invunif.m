@@ -17,8 +17,8 @@ function p = prior_invunif(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_INVUNIFORM';
-  ip.addOptional('p', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

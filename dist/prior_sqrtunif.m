@@ -18,8 +18,8 @@ function p = prior_sqrtunif(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_SQRTUNIFORM';
-  ip.addOptional('p', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

@@ -46,12 +46,12 @@ end
 
 ip=inputParser;
 ip.FunctionName = 'GP_G';
-ip.addRequired('w', @(x) isvector(x) && isreal(x));
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(w, gp, x, y, varargin{:});
+ip=iparser(ip,'addRequired','w', @(x) isvector(x) && isreal(x));
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'parse',w, gp, x, y, varargin{:});
 z=ip.Results.z;
 if ~all(isfinite(w(:)));
   % instead of stopping to error, return NaN
@@ -204,15 +204,15 @@ switch gp.type
         if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
           % check in which components the covariance function is present
           % for likelihoods with non-diagonal Hessian
-          do = false(nout,1);
+          doo = false(nout,1);
           if multicf
             for z1=1:nout
               if any(gp.comp_cf{z1}==i)
-                do(z1) = true;
+                doo(z1) = true;
               end
             end
           else
-            do = true(nout,1);
+            doo = true(nout,1);
           end         
         end
         
@@ -295,17 +295,17 @@ switch gp.type
               % Non-diagonalizable likelihoods
               Bdl=0; Cdl=0;
               if isfield(gp.lik,'xtime');
-                if do(1)
+                if doo(1)
                   Bdl = Bdl + b(1:ntime)'*(DKff*b(1:ntime));
                   Cdl = Cdl + sum(sum(invC(1:ntime,1:ntime).*DKff)); % help arguments
                 end
-                if do(2)
+                if doo(2)
                   Bdl = Bdl + b(ntime+1:end)'*(DKff*b(ntime+1:end));
                   Cdl = Cdl + sum(sum(invC(ntime+1:end,ntime+1:end).*DKff)); % help arguments
                 end
               else
                 for z1=1:nout
-                  if do(z1)
+                  if doo(z1)
                     Bdl = Bdl + b(1+nl(z1):nl(z1+1))'*(DKff*b(1+nl(z1):nl(z1+1)));
                     Cdl = Cdl + sum(sum(invC(:,:,z1).*DKff)); % help arguments
                   end

@@ -31,10 +31,10 @@ function gpcf = gpcf_scaled(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPCF_SCALED';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('cf',[], @isstruct);
-  ip.addParamValue('scaler',1, @(x) isscalar(x) && x>0);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','cf',[], @isstruct);
+  ip=iparser(ip,'addParamValue','scaler',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)

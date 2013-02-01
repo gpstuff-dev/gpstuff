@@ -52,13 +52,13 @@ end
 
 ip=inputParser;
 ip.FunctionName = 'GPCF_SSSEXP';
-ip.addOptional('gpcf', [], @isstruct);
-ip.addParamValue('nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
-ip.addParamValue('magnSigma2',[], @(x) isscalar(x) && x>0);
-ip.addParamValue('lengthScale',[], @(x) isvector(x) && all(x>0));
-ip.addParamValue('nfreq',[], @isscalar)
-ip.addParamValue('frequency',[], @isvector)
-ip.parse(varargin{:});
+ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+ip=iparser(ip,'addParamValue','nin',[], @(x) isscalar(x) && x>0 && mod(x,1)==0);
+ip=iparser(ip,'addParamValue','magnSigma2',[], @(x) isscalar(x) && x>0);
+ip=iparser(ip,'addParamValue','lengthScale',[], @(x) isvector(x) && all(x>0));
+ip=iparser(ip,'addParamValue','nfreq',[], @isscalar);
+ip=iparser(ip,'addParamValue','frequency',[], @isvector);
+ip=iparser(ip,'parse',varargin{:});
 gpcf=ip.Results.gpcf;
 magnSigma2=ip.Results.magnSigma2;
 lengthScale=ip.Results.lengthScale;

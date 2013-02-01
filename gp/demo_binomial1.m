@@ -95,14 +95,14 @@ figure, set(gcf, 'color', 'w'), hold on
 color1=ones(1,3)*0.8; color2=ones(1,3)*0.5;
 
 % GP 95% credible interval
-h1=fill([xgrid' fliplr(xgrid')], [(Eyt_la+1.96*sqrt(Varyt_la))' fliplr((Eyt_la-1.96*sqrt(Varyt_la))')], color1, 'edgecolor', color1);
+% h1=fill([xgrid' fliplr(xgrid')], [(Eyt_la+1.96*sqrt(Varyt_la))' fliplr((Eyt_la-1.96*sqrt(Varyt_la))')], color1, 'edgecolor', color1);
 % GP mean
 h2=plot(xgrid, Eyt_la, 'color', color2, 'linewidth', 3);
 % observations
 h3=plot(x, y, 'xk', 'markersize', 10, 'linewidth', 2);
 % true function
 h4=plot(xgrid, 1./(1+exp(-(-1.5.*xgrid.^3+0.5*xgrid.^2+0.75*xgrid)))*100, 'color', 'r', 'linewidth', 2);
-legend([h1 h2 h3 h4], 'GP 95% CI', 'GP mean', 'observations', 'true latent function')
+legend([h2 h3 h4], 'GP mean', 'observations', 'true latent function')
 title('Gaussian process prediction with a squared exponential covariance function')
 
 % To compute predictive densities at the test points xt, the total number

@@ -22,8 +22,8 @@ function lik = lik_lgp(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_LGP';
-  ip.addOptional('lik', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
@@ -346,7 +346,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
   ldconst = -gammaln(yy+1) - log(sigm2_i)/2 - log(2*pi)/2;
   
   % Create function handle for the function to be integrated
-  df = @lgp_norm;
+  df = @(f) lgp_norm(f, ldconst, avgE, yy, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_lgp_norm;
   ldg = @log_lgp_norm_g;
@@ -371,8 +371,8 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
   niter=3;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-    g=ldg(modef);
-    h=ldg2(modef);
+    g=ldg(modef, ldconst, avgE, yy, myy_i, sigm2_i);
+    h=ldg2(modef, ldconst, avgE, yy, myy_i, sigm2_i);
     delta=-g/h;
     modef=modef+delta;
     if abs(delta)<mindelta
@@ -383,15 +383,15 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
   modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, avgE, yy, myy_i, sigm2_i);
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, avgE, yy, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf);
+    minld=ld(minf, ldconst, avgE, yy, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -400,11 +400,11 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, avgE, yy, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, avgE, yy, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -414,7 +414,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
     end
   end
 
-  function integrand = lgp_norm(f)
+  function integrand = lgp_norm(f, ldconst, avgE, yy, myy_i, sigm2_i)
   % LGP * Gaussian
     mu = avgE.*exp(f);
     integrand = exp(ldconst ...
@@ -422,7 +422,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
-  function log_int = log_lgp_norm(f)
+  function log_int = log_lgp_norm(f, ldconst, avgE, yy, myy_i, sigm2_i)
   % log(LGP * Gaussian)
   % log_lgp_norm is used to avoid underflow when searching
   % integration interval
@@ -432,7 +432,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
-  function g = log_lgp_norm_g(f)
+  function g = log_lgp_norm_g(f, ldconst, avgE, yy, myy_i, sigm2_i)
   % d/df log(LGP * Gaussian)
   % derivative of log_lgp_norm
     mu = avgE.*exp(f);
@@ -440,7 +440,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
         + (myy_i - f)./sigm2_i;
   end
 
-  function g2 = log_lgp_norm_g2(f)
+  function g2 = log_lgp_norm_g2(f, ldconst, avgE, yy, myy_i, sigm2_i)
   % d^2/df^2 log(LGP * Gaussian)
   % second derivate of log_lgp_norm
     mu = avgE.*exp(f);

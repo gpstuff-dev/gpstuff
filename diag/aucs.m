@@ -19,9 +19,9 @@ function [a,fps,tps] = aucs(crit,z)
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
 
 ip=inputParser;
-ip.addRequired('crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(crit,z)
+ip=iparser(ip,'addRequired','crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','z', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'parse',crit,z)
 
 ye=z;
 tps=0;

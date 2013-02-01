@@ -17,12 +17,12 @@ function ct = hct(crit,y,z,tt)
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
 
 ip=inputParser;
-ip.addRequired('crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y',@(x) ~isempty(x) && isreal(x))
-ip.addRequired('z', @(x) ~isempty(x) && isreal(x))
-ip.addRequired('tt', @(x) ~isempty(x) && isreal(x))
+ip=iparser(ip,'addRequired','crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','y',@(x) ~isempty(x) && isreal(x))
+ip=iparser(ip,'addRequired','z', @(x) ~isempty(x) && isreal(x))
+ip=iparser(ip,'addRequired','tt', @(x) ~isempty(x) && isreal(x))
 
-ip.parse(crit,y,z,tt)
+ip=iparser(ip,'parse',crit,y,z,tt)
 
 if size(y,2) ~= size(z,2)
   error('y and z dimensions must match')   

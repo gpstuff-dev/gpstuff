@@ -18,10 +18,10 @@ function lik = lik_inputdependentnoise(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_INPUTDEPENDENTNOISE';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','sigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)

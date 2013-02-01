@@ -18,8 +18,8 @@ function p = prior_sqinvlogunif(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_SQINVLOGUNIFORM';
-  ip.addOptional('p', [], @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

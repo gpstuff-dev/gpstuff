@@ -44,18 +44,18 @@ function [sampft, sampyt] = gp_rnd(gp, x, y, xt, varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_RND';
-ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
-ip.parse(gp, x, y, xt, varargin{:});
+ip=iparser(ip,'addRequired','gp',@(x) isstruct(x) || iscell(x));
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','xt', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','zt', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0));
+ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
+ip=iparser(ip,'addParamValue','nsamp', 1, @(x) isreal(x) && isscalar(x));
+ip=iparser(ip,'parse',gp, x, y, xt, varargin{:});
 z=ip.Results.z;
 zt=ip.Results.zt;
 predcf=ip.Results.predcf;

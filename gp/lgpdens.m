@@ -55,22 +55,22 @@ function [p,pq,xx] = lgpdens(x,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LGPDENS';
-  ip.addRequired('x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
-  ip.addOptional('xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
-  ip.addParamValue('gridn',[], @(x) isnumeric(x));
-  ip.addParamValue('range',[], @(x) isempty(x)||isreal(x)&&(length(x)==2||length(x)==4));
-  ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
-  ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace' 'MCMC'}))
-  %ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
-  ip.addParamValue('int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
-  ip.addParamValue('normalize',false, @islogical);
-  ip.addParamValue('display', 'off', @(x) islogical(x) || ...
-                   ismember(x,{'on' 'off' 'iter'}))
-  ip.addParamValue('speedup',[], @(x) ismember(x,{'on' 'off'}));
-  ip.addParamValue('cond_dens',[], @(x) ismember(x,{'on' 'off'}));
-  ip.addParamValue('basis_function',[], @(x) ismember(x,{'on' 'off'}));
+  ip=iparser(ip,'addRequired','x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip=iparser(ip,'addOptional','xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip=iparser(ip,'addParamValue','gridn',[], @(x) isnumeric(x));
+  ip=iparser(ip,'addParamValue','range',[], @(x) isempty(x)||isreal(x)&&(length(x)==2||length(x)==4));
+  ip=iparser(ip,'addParamValue','gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
+  ip=iparser(ip,'addParamValue','latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace' 'MCMC'}));
+  %ip=iparser(ip,'addParamValue','latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
+  ip=iparser(ip,'addParamValue','int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}));
+  ip=iparser(ip,'addParamValue','normalize',false, @islogical);
+  ip=iparser(ip,'addParamValue','display', 'off', @(x) islogical(x) || ...
+                   ismember(x,{'on' 'off' 'iter'}));
+  ip=iparser(ip,'addParamValue','speedup',[], @(x) ismember(x,{'on' 'off'}));
+  ip=iparser(ip,'addParamValue','cond_dens',[], @(x) ismember(x,{'on' 'off'}));
+  ip=iparser(ip,'addParamValue','basis_function',[], @(x) ismember(x,{'on' 'off'}));
   
-  ip.parse(x,varargin{:});
+  ip=iparser(ip,'parse',x,varargin{:});
   x=ip.Results.x;
   xt=ip.Results.xt;
   gridn=ip.Results.gridn;

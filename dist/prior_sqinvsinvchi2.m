@@ -32,12 +32,12 @@ function p = prior_sqinvsinvchi2(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_SQINVSINVCHI2';
-  ip.addOptional('p', [], @isstruct);
-  ip.addParamValue('s2',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('s2_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
-  ip.addParamValue('nu_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'addParamValue','s2',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','s2_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','nu',4, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','nu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

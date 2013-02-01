@@ -48,10 +48,10 @@ function lik = lik_weibull(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_WEIBULL';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('shape',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('shape_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','shape',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','shape_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)
@@ -415,14 +415,14 @@ function [g_i] = lik_weibull_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   % and useful integration limits
   [tf,minf,maxf]=init_weibull_norm(yy,myy_i,sigm2_i,yc,r);
   % additionally get function handle for the derivative
-  td = @deriv;
+  td = @(f) deriv(f, yc, r, yy);
   
   % Integrate with quadgk
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
   [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*r;
 
-  function g = deriv(f)
+  function g = deriv(f, yc, r, yy)
     g = yc.*(1./r + log(yy)) - exp(-f).*yy.^r.*log(yy);
   end
 end
@@ -522,7 +522,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
    
   
   % Create function handle for the function to be integrated
-  df = @weibull_norm;
+  df = @(f) weibull_norm(f, ldconst, yc, yy, r, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_weibull_norm;
   ldg = @log_weibull_norm_g;
@@ -546,8 +546,8 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   niter=4;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-    g=ldg(modef);
-    h=ldg2(modef);
+    g=ldg(modef, ldconst, yc, yy, r, myy_i, sigm2_i);
+    h=ldg2(modef, ldconst, yc, yy, r, myy_i, sigm2_i);
     delta=-g/h;
     modef=modef+delta;
     if abs(delta)<mindelta
@@ -558,15 +558,15 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, yc, yy, r, myy_i, sigm2_i);
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, yc, yy, r, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf);
+    minld=ld(minf, ldconst, yc, yy, r, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -575,11 +575,11 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, yc, yy, r, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, yc, yy, r, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -589,14 +589,14 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   
-  function integrand = weibull_norm(f)
+  function integrand = weibull_norm(f, ldconst, yc, yy, r, myy_i, sigm2_i)
   % Weibull * Gaussian
     integrand = exp(ldconst ...
                     -yc.*f -exp(-f).*yy.^r ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
-  function log_int = log_weibull_norm(f)
+  function log_int = log_weibull_norm(f, ldconst, yc, yy, r, myy_i, sigm2_i)
   % log(Weibull * Gaussian)
   % log_weibull_norm is used to avoid underflow when searching
   % integration interval
@@ -605,14 +605,14 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
-  function g = log_weibull_norm_g(f)
+  function g = log_weibull_norm_g(f, ldconst, yc, yy, r, myy_i, sigm2_i)
   % d/df log(Weibull * Gaussian)
   % derivative of log_weibull_norm
     g = -yc + exp(-f).*yy.^r ...
         + (myy_i - f)./sigm2_i;
   end
 
-  function g2 = log_weibull_norm_g2(f)
+  function g2 = log_weibull_norm_g2(f, ldconst, yc, yy, r, myy_i, sigm2_i)
   % d^2/df^2 log(Weibull * Gaussian)
   % second derivate of log_weibull_norm
     g2 = - exp(-f).*yy.^r ...

@@ -19,8 +19,8 @@ function lik = lik_softmax(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_SOFTMAX2';
-  ip.addOptional('lik', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)

@@ -35,9 +35,17 @@ function gp_install(suiteSparse)
 % Compile the 'dist_euclidean' mex-function
 if (~isempty (strfind (computer, '64')))
   % 64-bit MATLAB
-  mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
+  if ~exist('OCTAVE_VERSION','builtin')
+    mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
+  else
+    mex --output private/dist_euclidean.mex linuxCsource/dist_euclidean.c
+  end
 else
-  mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+  if ~exist('OCTAVE_VERSION','builtin')
+    mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+  else
+    mex --output private/dist_euclidean.mex linuxCsource/dist_euclidean.c
+  end
 end
 
 if nargin<1 || isempty(suiteSparse)
@@ -48,11 +56,21 @@ if nargin<1 || isempty(suiteSparse)
     % Compile the 'trcov' mex-function
     if (~isempty (strfind (computer, '64')))
       % 64-bit MATLAB
-      mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
-      mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      if ~exist('OCTAVE_VERSION', 'builtin')
+        mex -O -g -largeArrayDims -output private/trcov linuxCsource/trcov.c
+        mex -O -g -largeArrayDims -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      else
+        mex --output private/trcov.mex linuxCsource/trcov.c
+        mex --output private/dist_euclidean.mex linuxCsource/dist_euclidean.c
+      end
     else
-      mex -O -output private/trcov linuxCsource/trcov.c 
-      mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      if ~exist('OCTAVE_VERSION', 'builtin')
+        mex -O -output private/trcov linuxCsource/trcov.c
+        mex -O -output private/dist_euclidean linuxCsource/dist_euclidean.c
+      else
+        mex --output private/trcov.mex linuxCsource/trcov.c
+        mex --output private/dist_euclidean.mex linuxCsource/dist_euclidean.c
+      end
     end
     
     fprintf ('\n GP package succesfully compiled ') ;
@@ -147,7 +165,6 @@ else
 
     % This is exceedingly ugly.  The MATLAB mex command needs to be told where to
     % fine the LAPACK and BLAS libraries, which is a real portability nightmare.
-
     if (pc)
         if (v < 6.5)
             % MATLAB 6.1 and earlier: use the version supplied here
@@ -266,7 +283,7 @@ else
         'Lib/subdomains', ...
         'Lib/timing', ...
         'Lib/util' } ;
-
+    
     for i = 1:length (metis_src)
         metis_src {i} = [metis_path '/' metis_src{i}] ;
     end
@@ -341,12 +358,18 @@ else
     if (have_metis)
         source = [metis_src source] ;
     end
-
-    source = strrep(source, '../../', suiteSparse);
-    source = strrep(source, '../', cholmod_path);
+    if exist('OCTAVE_VERSION', 'builtin')
+      for i1=1:length(source)
+        source{i1} = strrep(source{i1}, '../../', suiteSparse);
+        source{i1} = strrep(source{i1}, '../', cholmod_path);
+      end
+    else
+      source = strrep(source, '../../', suiteSparse);
+      source = strrep(source, '../', cholmod_path);
+    end
 
     kk = 0 ;
-
+    
     for f = source
         ff = strrep (f {1}, '/', filesep) ;
         slash = strfind (ff, filesep) ;
@@ -357,14 +380,22 @@ else
         end
         o = ff (slash:end) ;
         obj = [obj  ' ' o obj_extension] ;					    %#ok
-        s = sprintf ('mex %s -DDLONG -O %s -c %s.c', d, include, ff) ;
+        if ~exist('OCTAVE_VERSION','builtin')
+          s = sprintf ('mex %s -DDLONG -O %s -c %s.c', d, include, ff) ;
+        else
+          s = sprintf ('mex %s -DDLONG %s -c %s.c', d, include, ff) ;
+        end
         kk = do_cmd (s, kk, details) ;
     end
-
+    
     if pc
         % compile mexFunctions
         mex_src =  'winCsource\spinv';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        if ~exist('OCTAVE_VERSION','builtin')
+          s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        else
+          s = sprintf ('mex %s -DDLONG %s %s.c', d, include, mex_src) ;
+        end
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
@@ -372,7 +403,11 @@ else
         
         %mex_src = 'linuxCsource/ldlrowupdate';
         mex_src = 'winCsource\ldlrowupdate';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        if ~exist('OCTAVE_VERSION','builtin')
+          s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        else
+          s = sprintf ('mex %s -DDLONG %s %s.c', d, include, mex_src) ;
+        end
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
@@ -380,7 +415,11 @@ else
     else
         % compile mexFunctions
         mex_src =  'linuxCsource/spinv';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        if ~exist('OCTAVE_VERSION','builtin')
+          s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        else
+          s = sprintf ('mex %s -DDLONG %s %s.c', d, include, mex_src) ;
+        end
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
@@ -388,15 +427,19 @@ else
         
         %mex_src = 'linuxCsource/ldlrowupdate';
         mex_src = 'linuxCsource/ldlrowupdate';
-        s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        if ~exist('OCTAVE_VERSION','builtin')
+          s = sprintf ('mex %s -DDLONG -O %s %s.c', d, include, mex_src) ;
+        else
+          s = sprintf ('mex %s -DDLONG %s %s.c', d, include, mex_src) ;
+        end
         s = [s obj];
         s = [s ' '];
         s = [s lapack];
         kk = do_cmd (s, kk, details) ;
     end
-
     % clean up
     s = ['delete ' obj] ;
+    
     do_cmd (s, kk, details) ;
     fprintf ('\nGP package succesfully compiled \n') ;
 end
@@ -413,7 +456,18 @@ else
     kk = kk + 1 ;
     fprintf ('.') ;
 end
-eval (s) ;
+if ~exist('OCTAVE_VERSION','builtin')
+  eval (s) ;
+else
+  tmp=regexp(s,'\S+','match');
+  if strcmp(tmp{1},'delete')
+    for i=1:length(tmp)-1
+      eval([tmp{1} ' ' tmp{i+1}]);
+    end
+  else
+    eval (s) ;
+  end
+end
 
 %-------------------------------------------------------------------------------
 function v = getversion

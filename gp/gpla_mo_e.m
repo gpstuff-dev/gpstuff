@@ -55,14 +55,14 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_mo_e(w, gp, varargin)
 
   ip=inputParser;
   ip.FunctionName = 'GPLA_MO_E';
-  ip.addRequired('w', @(x) ...
+  ip=iparser(ip,'addRequired','w', @(x) ...
                  (ischar(x) && strcmp(w, 'init')) || ...
                  isvector(x) && isreal(x) && all(isfinite(x)));
-  ip.addRequired('gp',@isstruct);
-  ip.addOptional('x', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addOptional('y', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addParamValue('z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))))
-  ip.parse(w, gp, varargin{:});
+  ip=iparser(ip,'addRequired','gp',@isstruct);
+  ip=iparser(ip,'addOptional','x', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addOptional','y', @(x) ~isempty(x) && isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'addParamValue','z', [], @(x) isnumeric(x) && isreal(x) && all(isfinite(x(:))));
+  ip=iparser(ip,'parse',w, gp, varargin{:});
   x=ip.Results.x;
   y=ip.Results.y;
   z=ip.Results.z;

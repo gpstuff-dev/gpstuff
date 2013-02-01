@@ -49,11 +49,11 @@ function lik = lik_coxph(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_COXPH';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('S', linspace(0,1.001,50), @(x) isvector(x));
-  ip.addParamValue('stratificationVariables', [], @(x) isvector(x) && all(rem(x,1)==0));
-  ip.addParamValue('removeStratificationVariables', [], @(x) ismember(x, {'on' 'off'}));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','S', linspace(0,1.001,50), @(x) isvector(x));
+  ip=iparser(ip,'addParamValue','stratificationVariables', [], @(x) isvector(x) && all(rem(x,1)==0));
+  ip=iparser(ip,'addParamValue','removeStratificationVariables', [], @(x) ismember(x, {'on' 'off'}));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)

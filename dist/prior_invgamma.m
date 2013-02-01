@@ -33,12 +33,12 @@ function p = prior_invgamma(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_INVGAMMA';
-  ip.addOptional('p', [], @isstruct);
-  ip.addParamValue('sh',4, @(x) isscalar(x) && x>0);
-  ip.addParamValue('sh_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('s',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('s_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'addParamValue','sh',4, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','sh_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','s',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','s_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

@@ -7,12 +7,12 @@ function [au,c] = assess(crit1,crit2,y,z,tt)
 %   
 %   Note: Z dimensions must be size(y,1) X size(tt,2)  
 ip=inputParser;
-ip.addRequired('crit1',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('crit2',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('z', @(x) isreal(x) && all(isfinite(x(:))))
-ip.addRequired('tt', @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(crit1,crit2,y,z,tt)
+ip=iparser(ip,'addRequired','crit1',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','crit2',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','y', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','z', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'addRequired','tt', @(x) isreal(x) && all(isfinite(x(:))))
+ip=iparser(ip,'parse',crit1,crit2,y,z,tt)
  
     for i=1:size(tt,2)
         c1(i)=hct(crit1(:,i),y(:,i),z(:,size(tt,2)),tt(i));

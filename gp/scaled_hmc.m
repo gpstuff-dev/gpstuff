@@ -107,21 +107,34 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
   % Transform the latent values
   switch gp.type
     case 'FULL'
-      getL(f, gp, x, y, u, z);             % Evaluate the help matrix for transformation
+      output=getL(f, gp, x, y, u, z);             % Evaluate the help matrix for transformation
+      L2=output.L2;      
       w = (L2\f)';                   % Rotate f towards prior
     case 'FIC'
-      getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation
+      output=getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation
+      Lp=output.Lp;
+      J=output.J;
+      U=output.U;
+      iJUU=output.iJUU;
       fs = f./Lp;                    % Rotate f towards prior
       w = fs + U*((J*U'-U')*fs);     
     case {'PIC' 'PIC_BLOCK'}
-      getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation
+      output=getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation
+      Lp=output.Lp;
+      U=output.U;
+      J=output.J;
+      iJUU=output.iJUU;
       fs=zeros(size(f));             % Rotate f towards prior
       for i=1:length(ind)
         fs(ind{i}) = Lp{i}\f(ind{i});
       end
       w = fs + U*((J*U'-U')*fs);
     case {'CS+FIC'}
-      getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation
+      output=getL(f, gp, x, y, u, z);          % Evaluate the help matrix for transformation
+      Lp=output.Lp;
+      U=output.U;
+      J=output.J;
+      iJUU=output.iJUU;
       fs = Lp\f;                        % Rotate f towards prior
       w = fs + U*((J*U'-U')*fs);
     otherwise 
@@ -134,7 +147,7 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
   hmc2('state',latent_rstate)
   rej = 0;
   for li=1:opt.repeat 
-    [w, energ, diagn] = hmc2(@f_e, w, opt, @f_g, gp, x, y, u, z);
+    [w, energ, diagn] = hmc2(@f_e, w, opt, @f_g, gp, x, y, u, z, output);
     w = w(end,:);
     % Find an optimal scaling during the first half of repeat
     if li<opt.repeat/2
@@ -172,16 +185,18 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
   diagn.opt = opt;
   diagn.rej = rej;
   diagn.lvs = opt.stepadj;
-
-  function [g, gdata, gprior] = f_g(w, gp, x, y, u, z)
-  %F_G     Evaluate gradient function for transformed GP latent values 
-  %               
+  
+  function [g, gdata, gprior] = f_g(w, gp, x, y, u, z, output)
+    %F_G     Evaluate gradient function for transformed GP latent values
+    %
     
-  % Force f and E to be a column vector
+    % Force f and E to be a column vector
     w=w(:);
-    
+    mincut=-300;
     switch gp.type
       case 'FULL'
+        L2=output.L2;
+        Linv=output.Linv;        
         f = L2*w;
         f = max(f,mincut);
         gdata = - gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -198,6 +213,11 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
         
         g = (L2'*(gdata + gprior))';
       case 'FIC'
+        Lp=output.Lp;
+        U=output.U;
+        iJUU=output.iJUU;
+        Lav=output.Lav;
+        iLaKfuic=output.iLaKfuic;
         %        w(w<eps)=0;
         f = Lp.*(w + U*(iJUU*w));
         gdata = - gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -208,6 +228,11 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
         g = g + U*(iJUU*g);
         g = g';
       case {'PIC' 'PIC_BLOCK'}
+        Lp=output.Lp;
+        U=output.U;
+        iJUU=output.iJUU;
+        Lav=output.Lav;
+        iLaKfuic=output.iLaKfuic;
         w2= w + U*(iJUU*w);
         for i=1:length(ind)
           f(ind{i}) = Lp{i}*w2(ind{i});
@@ -226,6 +251,11 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
         g = g + g*U*(iJUU);
         %g = g';
       case {'CS+FIC'}
+        Lp=output.Lp;
+        U=output.U;
+        iJUU=output.iJUU;
+        Lav=output.Lav;
+        iLaKfuic=output.iLaKfuic;
         w2= w + U*(iJUU*w);
         f = Lp*w2;
         f = max(f,mincut);
@@ -239,13 +269,16 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
     end
   end
 
-  function [e, edata, eprior] = f_e(w, gp, x, y, u, z)
-  % F_E     Evaluate energy function for transformed GP latent values 
+  function [e, edata, eprior] = f_e(w, gp, x, y, u, z, output)
+    % F_E     Evaluate energy function for transformed GP latent values
     
-  % force f and E to be a column vector
+    % force f and E to be a column vector
     w=w(:);
+    mincut=-300;
     switch gp.type
       case 'FULL'
+        L2=output.L2;
+        Linv=output.Linv;
         f = L2*w;
         f = max(f,mincut);
         
@@ -260,11 +293,19 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
         
         eprior=.5*sum(B.^2);
       case 'FIC' 
+        Lp=output.Lp;
+        U=output.U;
+        iJUU=output.iJUU;
+        Lav=output.Lav;
+        iLaKfuic=output.iLaKfuic;
         f = Lp.*(w + U*(iJUU*w));
         f = max(f,mincut);                
         B = f'*iLaKfuic;  % 1 x u
         eprior = 0.5*sum(f.^2./Lav)-0.5*sum(B.^2);
       case {'PIC' 'PIC_BLOCK'}
+        Lp=output.Lp;
+        U=output.U;
+        iJUU=output.iJUU;
         w2= w + U*(iJUU*w);
         for i=1:length(ind)
           f(ind{i}) = Lp{i}*w2(ind{i});
@@ -276,6 +317,10 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           eprior = eprior + 0.5*f(ind{i})'/Labl{i}*f(ind{i});
         end
       case {'CS+FIC'}
+        iJUU=output.iJUU;
+        U=output.U;
+        Labl=output.Labl;
+        iLaKfuic=output.iLaKfuic;
         w2= w + U*(iJUU*w);
         f = Lp*w2;
         f = max(f,mincut);
@@ -287,8 +332,9 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
     e=edata + eprior;
   end
 
-  function getL(w, gp, x, y, u, z)
+  function output=getL(w, gp, x, y, u, z)
   % GETL        Evaluate the transformation matrix (or matrices)
+    n=size(y,1);
     
     if ~isfield(gp.lik, 'nondiagW')
       % Likelihoods with diagonal Hessian
@@ -312,6 +358,8 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           
           L2 = C/chol(diag(1./E) + C);
           L2 = chol(C - L2*L2')';
+          output.L2=L2;
+          output.Linv=Linv;
         case 'FIC'
           [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
           K_fu = gp_cov(gp, x, u);           % f x u
@@ -348,6 +396,12 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           % J = diag(sqrt(2/(1+diag(S))));
           iJUU = J\U'-U';
           iJUU(abs(iJUU)<eps)=0;
+          output.Lav=Lav;
+          output.iLaKfuic=iLaKfuic;
+          output.Lp=Lp;
+          output.U=U;
+          output.J=J;
+          output.iJUU=iJUU;
         case {'PIC' 'PIC_BLOCK'}
           [Kv_ff, Cv_ff] = gp_trvar(gp, x);  % f x 1  vector
           K_fu = gp_cov(gp, x, u);           % f x u
@@ -391,6 +445,13 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           % J = diag(sqrt(2./(1+diag(S))));
           iJUU = J\U'-U';
           iJUU(abs(iJUU)<eps)=0;
+          
+          output.Labl=Labl;
+          output.iLaKfuic=iLaKfuic;
+          output.Lp=Lp;
+          output.U=U;
+          output.J=J;
+          output.iJUU=iJUU;
         case 'CS+FIC'
           
           % Evaluate the FIC part of the prior covariance
@@ -451,9 +512,22 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           
           iJUU = J\U'-U';
           iJUU(abs(iJUU)<eps)=0;
+          
+          output.Lav=Lav;
+          output.Labl=Labl;
+          output.iLaKfuic=iLaKfuic;
+          output.Lp=Lp;
+          output.U=U;
+          output.J=J;
+          output.iJUU=iJUU;
       end
     else
       % Likelihoods with non-diagonal Hessian
+      if isfield(gp, 'comp_cf' ) && ~isempty(gp.comp_cf)
+        nout=length(gp.comp_cf);
+      else
+        nout=size(y,2);
+      end
       switch gp.lik.type
         case {'LGP' 'LGPC'}
           K = gp_trcov(gp, x);
@@ -613,6 +687,8 @@ function [f, energ, diagn] = scaled_hmc(f, opt, gp, x, y, z)
           % L2tmp=chol(inv(inv(K)+W),'lower');
           
       end
+      output.L2=L2;
+      output.Linv=Linv;
     end      
   end
 end

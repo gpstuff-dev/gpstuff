@@ -316,5 +316,6 @@ plot(xtt(:,1),exp(Eft_full-1.96.*sqrt(Varft_full)).*mean(y),'b--')
 plot(xtt(:,1),exp(Eft_full+1.96.*sqrt(Varft_full)).*mean(y),'b--')
 
 legend('Training data', 'Validation data','Predicted mean','95% CI', 'Location', 'NorthWest')
-line(2008,0:80,'LineWidth',2)
+line([2008 2008],[0 80],'LineWidth',2)
+% line(2008,0:80,'LineWidth',2)
 axis tight

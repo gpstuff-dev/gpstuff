@@ -54,19 +54,19 @@ end
 if ~isfield(opt,'checkgrad')
   opt.checkgrad=0;
 end
-if ~isfield(opt,'steps') | opt.steps < 1
+if ~isfield(opt,'steps') || opt.steps < 1
   opt.steps=10;
 end
-if ~isfield(opt,'nsamples') | opt.nsamples < 1
+if ~isfield(opt,'nsamples') || opt.nsamples < 1
   opt.nsamples=1;
 end
-if ~isfield(opt,'nomit') | opt.nomit < 0
+if ~isfield(opt,'nomit') || opt.nomit < 0
   opt.nomit=0;
 end
 if ~isfield(opt,'persistence')
   opt.persistence=0;
 end
-if ~isfield(opt,'decay') | opt.decay < 0 | opt.decay > 1
+if ~isfield(opt,'decay') || opt.decay < 0 || opt.decay > 1
   opt.decay=0.9;
 end
 if ~isfield(opt,'stepadj')
@@ -75,7 +75,7 @@ end
 if ~isfield(opt,'stepsf')
   opt.stepsf=[];
 end
-if ~isfield(opt,'window') | opt.window < 0
+if ~isfield(opt,'window') || opt.window < 0
   opt.window=1;
 end
 if opt.window > opt.steps

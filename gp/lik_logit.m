@@ -23,8 +23,8 @@ function lik = lik_logit(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_LOGIT';
-  ip.addOptional('lik', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
 
   if isempty(lik)
@@ -316,7 +316,7 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
   ldconst = -log(sigm2_i)/2 -log(2*pi)/2;
   
   % Create function handle for the function to be integrated
-  df = @logit_norm;
+  df = @(f) logit_norm(f, ldconst, yy, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_logit_norm;
   ldg = @log_logit_norm_g;
@@ -339,8 +339,8 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
   niter=2;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-    g=ldg(modef);
-    h=ldg2(modef);
+    g=ldg(modef, ldconst, yy, myy_i, sigm2_i);
+    h=ldg2(modef, ldconst, yy, myy_i, sigm2_i);
     delta=-g/h;
     modef=modef+delta;
     if abs(delta)<mindelta
@@ -351,7 +351,7 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
   modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, yy, myy_i, sigm2_i);
   if isinf(modeld) || isnan(modeld)
     minf=NaN;maxf=NaN;
     return
@@ -359,11 +359,11 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, yy, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf);
+    minld=ld(minf, ldconst, yy, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -372,11 +372,11 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, yy, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, yy, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -386,14 +386,14 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
     end
   end
   
-  function integrand = logit_norm(f)
+  function integrand = logit_norm(f, ldconst, yy, myy_i, sigm2_i)
   % Logit * Gaussian
     integrand = exp(ldconst ...
                     -log(1+exp(-yy.*f)) ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
   
-  function log_int = log_logit_norm(f)
+  function log_int = log_logit_norm(f, ldconst, yy, myy_i, sigm2_i)
   % log(Logit * Gaussian)
   % log_logit_norm is used to avoid underflow when searching
   % integration interval
@@ -402,14 +402,14 @@ function [df,minf,maxf] = init_logit_norm(yy,myy_i,sigm2_i)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
   
-  function g = log_logit_norm_g(f)
+  function g = log_logit_norm_g(f, ldconst, yy, myy_i, sigm2_i)
   % d/df log(Logit * Gaussian)
   % derivative of log_logit_norm
     g = yy./(exp(f*yy)+1)...
         + (myy_i - f)./sigm2_i;
   end
   
-  function g2 = log_logit_norm_g2(f)
+  function g2 = log_logit_norm_g2(f, ldconst, yy, myy_i, sigm2_i)
   % d^2/df^2 log(Logit * Gaussian)
   % second derivate of log_logit_norm
     a=exp(f*yy);

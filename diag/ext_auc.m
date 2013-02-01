@@ -16,10 +16,10 @@ function ea = ext_auc(P,tt,t)
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
   
   ip=inputParser;
-  ip.addRequired('P',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('tt', @(x) isreal(x) && all(isfinite(x(:))))
-  ip.addRequired('t', @(x) isreal(x) && all(isfinite(x(:))))
-  ip.parse(P,tt,t);
+  ip=iparser(ip,'addRequired','P',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
+  ip=iparser(ip,'addRequired','tt', @(x) isreal(x) && all(isfinite(x(:))))
+  ip=iparser(ip,'addRequired','t', @(x) isreal(x) && all(isfinite(x(:))))
+  ip=iparser(ip,'parse',P,tt,t);
   
   [n,nin]=size(P);
   S=1-P;

@@ -29,11 +29,11 @@ function eloo = gp_looe(w, gp, x, y)
 % Nothing to parse, but check the arguments anyway
 ip=inputParser;
 ip.FunctionName = 'GP_LOOE';
-ip.addRequired('w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.parse(w, gp, x, y);
+ip=iparser(ip,'addRequired','w', @(x) isvector(x) && isreal(x) && all(isfinite(x)));
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'parse',w, gp, x, y);
 
 if isfield(gp,'mean') & ~isempty(gp.mean.meanFuncs)
   error('GP_LOOE: Mean functions not yet supported');

@@ -29,12 +29,12 @@ function p = prior_laplace(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_LAPLACE';
-  ip.addOptional('p', [], @isstruct);
-  ip.addParamValue('mu',0, @(x) isscalar(x) && x>0);
-  ip.addParamValue('mu_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('s',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('s_prior',[], @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'addParamValue','mu',0, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','mu_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','s',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','s_prior',[], @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

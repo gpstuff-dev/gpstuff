@@ -42,17 +42,17 @@ function gpcf = gpcf_sexp(varargin)
   % inputParser checks the arguments and assigns some default values
   ip=inputParser;
   ip.FunctionName = 'GPCF_SEXP';
-  ip.addOptional('gpcf', [], @isstruct);
-  ip.addParamValue('magnSigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('lengthScale',1, @(x) isvector(x) && all(x>0));
-  ip.addParamValue('metric',[], @isstruct);
-  ip.addParamValue('magnSigma2_prior', prior_logunif(), ...
+  ip=iparser(ip,'addOptional','gpcf', [], @isstruct);
+  ip=iparser(ip,'addParamValue','magnSigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','lengthScale',1, @(x) isvector(x) && all(x>0));
+  ip=iparser(ip,'addParamValue','metric',[], @isstruct);
+  ip=iparser(ip,'addParamValue','magnSigma2_prior', prior_logunif(), ...
                    @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('lengthScale_prior',prior_t(), ...
+  ip=iparser(ip,'addParamValue','lengthScale_prior',prior_t(), ...
                    @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('selectedVariables',[], @(x) isempty(x) || ...
+  ip=iparser(ip,'addParamValue','selectedVariables',[], @(x) isempty(x) || ...
                    (isvector(x) && all(x>0)));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'parse',varargin{:});
   gpcf=ip.Results.gpcf;
 
   if isempty(gpcf)

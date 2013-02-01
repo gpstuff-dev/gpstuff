@@ -17,8 +17,8 @@ function p = prior_sqinvunif(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'PRIOR_SQINVUNIFORM';
-  ip.addOptional('p', [], @isstruct);
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','p', [], @isstruct);
+  ip=iparser(ip,'parse',varargin{:});
   p=ip.Results.p;
   
   if isempty(p)

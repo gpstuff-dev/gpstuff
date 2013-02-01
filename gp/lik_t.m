@@ -43,12 +43,12 @@ function lik = lik_t(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_T';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('sigma2',0.1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.addParamValue('nu',4, @(x) isscalar(x) && x>0);
-  ip.addParamValue('nu_prior',prior_fixed, @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','sigma2',0.1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'addParamValue','nu',4, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','nu_prior',prior_fixed, @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)
@@ -387,12 +387,12 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
 %    GPEP_E
 
   
-  zm = @zeroth_moment;
-  
   tol = 1e-8;
   yy = y(i1);
   nu = lik.nu;
   sigma2 = lik.sigma2;
+
+  zm = @(f) zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i);
   
   % Set the limits for integration and integrate with quad
   % -----------------------------------------------------
@@ -447,7 +447,7 @@ function [logM_0, m_1, sigm2hati1] = lik_t_tiltedMoments(lik, y, i1, sigm2_i, my
   
   sigm2hati1 = m_2 - m_1.^2;
   logM_0 = log(m_0);
-  function integrand = zeroth_moment(f)
+  function integrand = zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i)
     r = yy-f;
     term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
     integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
@@ -475,15 +475,15 @@ function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
 %
 %  See also
 %    GPEP_G
-
-  zm = @zeroth_moment;
-  znu = @deriv_nu;
-  zsigma2 = @deriv_sigma2;
   
   tol = 1e-8;
   yy = y(i1);
   nu = lik.nu;
   sigma2 = lik.sigma2;
+  
+  zm = @(f) zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i);
+  znu = @(f) deriv_nu(f, yy, nu, sigma2, myy_i, sigm2_i);
+  zsigma2 = @(f) deriv_sigma2(f, yy, nu, sigma2, myy_i, sigm2_i);
 
   % Set the limits for integration and integrate with quad
   mean_app = myy_i;
@@ -544,20 +544,20 @@ function [g_i] = lik_t_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
     g_i(2) = g_i(2)/m_0.*nu.*log(nu);
   end
   
-  function integrand = zeroth_moment(f)
+  function integrand = zeroth_moment(f, yy, nu, sigma2, myy_i, sigm2_i)
     r = yy-f;
     term = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
     integrand = exp(term + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2));
     integrand = integrand.*exp(- 0.5 * (f-myy_i).^2./sigm2_i - log(sigm2_i)/2 - log(2*pi)/2);
   end        
 
-  function g = deriv_nu(f)
+  function g = deriv_nu(f, yy, nu, sigma2, myy_i, sigm2_i)
     r = yy-f;
     temp = 1 + r.^2./nu./sigma2;
     g = psi((nu+1)/2)./2 - psi(nu/2)./2 - 1./(2.*nu) - log(temp)./2 + (nu+1)./(2.*temp).*(r./nu).^2./sigma2;
   end
 
-  function g = deriv_sigma2(f)
+  function g = deriv_sigma2(f, yy, nu, sigma2, myy_i, sigm2_i)
     r = yy-f;
     g  = -1/sigma2/2 + (nu+1)./2.*r.^2./(nu.*sigma2.^2 + r.^2.*sigma2);
   end
@@ -708,13 +708,13 @@ function [lnZhat, muhat, sigm2hat] = lik_t_tiltedMoments2(likelih, y, yi, sigm2_
 %     lnZhat = log(m_0) -C;
 %   end
   
-  function lpdf = lpt(f,C)
-    % logarithm of the tilted distribution
-    r = yy-f;
-    lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
-    lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
-    lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
-  end
+%   function lpdf = lpt(f,C)
+%     % logarithm of the tilted distribution
+%     r = yy-f;
+%     lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
+%     lpdf = lpdf + log(1 + r.^2./nu./sigma2) .* (-(nu+1)/2);
+%     lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
+%   end
 end
 
 function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat)
@@ -787,8 +787,8 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
       end
       
       np=numel(fvec);
-      logpt = lpt(fvec,0);
-      lpt_max = max([logpt lpt([myy_i mg],0)]);
+      logpt = lpt(fvec,0,yy,nu,sigma2,myy_i,sigm2_i,eta);
+      lpt_max = max([logpt lpt([myy_i mg],0,nu,sigma2,myy_i,sigm2_i,eta)]);
       lambdaconf=[fvec(1), fvec(end)];
       for i1=2:np-1
         if logpt(i1) < lpt_max+log(1e-7) %(exp(logpt(i1))/exp(lpt_max) < 1e-7)
@@ -814,12 +814,12 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
         lambdaconf=[min(mg-6*sg,myy_i-6*sigm_i),myy_i+6*sigm_i];
         fvec=linspace(mg,myy_i,np);
       end
-      lpt_max=max(lpt(fvec,0));
+      lpt_max=max(lpt(fvec,0,yy,nu,sigma2,myy_i,sigm2_i,eta));
     end
     C=log(1)-lpt_max; % scale the log-density for the quadrature tolerance
   else
     lambdaconf=[mg-6*sg,mg+6*sg];
-    C=log(1)-lpt(mg,0);
+    C=log(1)-lpt(mg,0,yy,nu,sigma2,myy_i,sigm2_i,eta);
   end
   
   if nu>nu_lim
@@ -843,19 +843,19 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
     % Use the normalization determined in the lik_t_tiltedMoments2
     m_0=exp(lnZhat+C);
     
-    zm=@(f) deriv_sigma2(f).*exp(lpt(f,C))*sigma2;
+    zm=@(f) deriv_sigma2(f,yy,nu,sigma2).*exp(lpt(f,C,yy,nu,sigma2,myy_i,sigm2_i,eta))*sigma2;
     [g_i(1), fhncnt] = quadgk( zm, lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
     g_i(1) = g_i(1)/m_0;
     
     if (isfield(likelih,'p') && ~isempty(likelih.p.nu))
-      zm=@(f) deriv_nu(f).*exp(lpt(f,C));
+      zm=@(f) deriv_nu(f,yy,nu,sigma2).*exp(lpt(f,C,yy,nu,sigma2,myy_i,sigm2_i,eta));
       [g_i(2), fhncnt] = quadgk( zm, lambdaconf(1), lambdaconf(2),'AbsTol',ATOL,'RelTol',RTOL);
       g_i(2) = g_i(2)/m_0.*nu.*log(nu);
     end
     
   end
   
-  function lpdf = lpt(f,C)
+  function lpdf = lpt(f,C,yy,nu,sigma2,myy_i,sigm2_i,eta)
     % logarithm of the tilted distribution
     r = yy-f;
     lpdf = gammaln((nu + 1) / 2) - gammaln(nu/2) -log(nu.*pi.*sigma2)/2;
@@ -863,7 +863,7 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
     lpdf = lpdf*eta - (0.5/sigm2_i) * (f-myy_i).^2 + (C-log(2*pi*sigm2_i)/2);
   end
 
-  function g = deriv_nu(f)
+  function g = deriv_nu(f,yy,nu,sigma2)
     % derivative of the log-likelihood wrt nu
     r = yy-f;
     temp = r.^2 ./(nu*sigma2);
@@ -878,7 +878,7 @@ function [g_i] = lik_t_siteDeriv2(likelih, y, yi, sigm2_i, myy_i, z, eta, lnZhat
     
   end
 
-  function g = deriv_sigma2(f)
+  function g = deriv_sigma2(f,yy,nu,sigma2)
     % derivative of the log-likelihood wrt sigma2
     r = yy-f;
     temp = r.^2 /sigma2;

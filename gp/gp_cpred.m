@@ -25,21 +25,21 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt, ind,varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_CPRED';
-ip.addRequired('gp',@isstruct);
-ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
-ip.addRequired('ind', @(x) ~isempty(x) && isvector(x))
-ip.addParamValue('var',  [], @(x) isreal(x))
-ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
-ip.addParamValue('predcf', [], @(x) isempty(x) || ...
-                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
-ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
-                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean'}))
-ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
-ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
-ip.parse(gp, x, y, xt, ind, varargin{:});
+ip=iparser(ip,'addRequired','gp',@isstruct);
+ip=iparser(ip,'addRequired','x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addRequired','ind', @(x) ~isempty(x) && isvector(x));
+ip=iparser(ip,'addParamValue','var',  [], @(x) isreal(x));
+ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'addParamValue','predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0));
+ip=iparser(ip,'addParamValue','tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)));
+ip=iparser(ip,'addParamValue','method', 'mean', @(x)  ismember(x, {'median', 'mean'}));
+ip=iparser(ip,'addParamValue','plot', 'off', @(x)  ismember(x, {'on', 'off'}));
+ip=iparser(ip,'addParamValue','tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))));
+ip=iparser(ip,'parse',gp, x, y, xt, ind, varargin{:});
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 method = ip.Results.method;

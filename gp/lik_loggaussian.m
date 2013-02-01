@@ -48,10 +48,10 @@ function lik = lik_loggaussian(varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LIK_LOGGAUSSIAN';
-  ip.addOptional('lik', [], @isstruct);
-  ip.addParamValue('sigma2',1, @(x) isscalar(x) && x>0);
-  ip.addParamValue('sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
-  ip.parse(varargin{:});
+  ip=iparser(ip,'addOptional','lik', [], @isstruct);
+  ip=iparser(ip,'addParamValue','sigma2',1, @(x) isscalar(x) && x>0);
+  ip=iparser(ip,'addParamValue','sigma2_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
+  ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;
   
   if isempty(lik)
@@ -436,10 +436,10 @@ function [g_i] = lik_loggaussian_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
   
   % Integrate with quadgk
   [m_0, fhncnt] = quadgk(tf, minf, maxf);
-  [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
+  [g_i, fhncnt] = quadgk(@(f) td(f, yy, yc, s2).*tf(f)./m_0, minf, maxf);
   g_i = g_i.*s2;
 
-  function g = deriv(f)
+  function g = deriv(f, yy, yc, s2)
     r=log(yy)-f;
     g = -yc./(2.*s2) + yc.*r.^2./(2.*s2^2) + (1-yc)./(1-norm_cdf(r/sqrt(s2))) ... 
              .* (r./(sqrt(2.*pi).*2.*s2.^(3/2)).*exp(-1/(2.*s2).*r.^2));
@@ -519,7 +519,7 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
             - log(sigm2_i)/2 - log(2*pi)/2;
   
   % Create function handle for the function to be integrated
-  df = @loggaussian_norm;
+  df = @(f) loggaussian_norm(f, ldconst, yy, yc, s2, myy_i, sigm2_i);
   % use log to avoid underflow, and derivates for faster search
   ld = @log_loggaussian_norm;
   ldg = @log_loggaussian_norm_g;
@@ -543,8 +543,8 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
   niter=4;       % number of Newton iterations
   mindelta=1e-6; % tolerance in stopping Newton iterations
   for ni=1:niter
-    g=ldg(modef);
-    h=ldg2(modef);
+    g=ldg(modef, ldconst, yy, yc, s2, myy_i, sigm2_i);
+    h=ldg2(modef, ldconst, yy, yc, s2, myy_i, sigm2_i);
     delta=-g/h;
     modef=modef+delta;
     if abs(delta)<mindelta
@@ -555,15 +555,15 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
   modes=sqrt(-1/h);
   minf=modef-8*modes;
   maxf=modef+8*modes;
-  modeld=ld(modef);
+  modeld=ld(modef, ldconst, yy, yc, s2, myy_i, sigm2_i);
   iter=0;
   % check that density at end points is low enough
   lddiff=20; % min difference in log-density between mode and end-points
-  minld=ld(minf);
+  minld=ld(minf, ldconst, yy, yc, s2, myy_i, sigm2_i);
   step=1;
   while minld>(modeld-lddiff)
     minf=minf-step*modes;
-    minld=ld(minf);
+    minld=ld(minf, ldconst, yy, yc, s2, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -572,11 +572,11 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
              'even after looking hard!'])
     end
   end
-  maxld=ld(maxf);
+  maxld=ld(maxf, ldconst, yy, yc, s2, myy_i, sigm2_i);
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
-    maxld=ld(maxf);
+    maxld=ld(maxf, ldconst, yy, yc, s2, myy_i, sigm2_i);
     iter=iter+1;
     step=step*2;
     if iter>100
@@ -586,14 +586,14 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
     end
   end
   
-  function integrand = loggaussian_norm(f)
+  function integrand = loggaussian_norm(f, ldconst, yy, yc, s2, myy_i, sigm2_i)
   % loggaussian * Gaussian
     integrand = exp(ldconst ...
                     - yc./(2*s2).*(log(yy)-f).^2 + (1-yc).*log(1-norm_cdf((log(yy)-f)/sqrt(s2))) ...
                     -0.5*(f-myy_i).^2./sigm2_i);
   end
 
-  function log_int = log_loggaussian_norm(f)
+  function log_int = log_loggaussian_norm(f, ldconst, yy, yc, s2, myy_i, sigm2_i)
   % log(loggaussian * Gaussian)
   % log_loggaussian_norm is used to avoid underflow when searching
   % integration interval
@@ -602,14 +602,14 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
               -0.5*(f-myy_i).^2./sigm2_i;
   end
 
-  function g = log_loggaussian_norm_g(f)
+  function g = log_loggaussian_norm_g(f, ldconst, yy, yc, s2, myy_i, sigm2_i)
   % d/df log(loggaussian * Gaussian)
   % derivative of log_loggaussian_norm
     g = yc./s2.*(log(yy)-f) + (1-yc)./(1-norm_cdf((log(yy)-f)/sqrt(s2))).*1/sqrt(2*pi*s2)*exp(-(log(yy)-f).^2./(2*s2))  ...
         + (myy_i - f)./sigm2_i;
   end
 
-  function g2 = log_loggaussian_norm_g2(f)
+  function g2 = log_loggaussian_norm_g2(f, ldconst, yy, yc, s2, myy_i, sigm2_i)
   % d^2/df^2 log(loggaussian * Gaussian)
   % second derivate of log_loggaussian_norm
     g2 = -yc./s2 + (1-yc).*(-exp(-(log(yy)-f).^2/s2)./(2*pi*s2.*(1-norm_cdf((log(yy)-f)/sqrt(s2))).^2) ...
@@ -696,7 +696,6 @@ function reclik = lik_loggaussian_recappend(reclik, ri, lik)
     reclik.fh.tiltedMoments = @lik_loggaussian_tiltedMoments;
     reclik.fh.invlink = @lik_loggaussian_invlink;
     reclik.fh.predy = @lik_loggaussian_predy;
-    reclik.fh.predcdf = @lik_loggaussian_predcdf;
     reclik.fh.recappend = @lik_loggaussian_recappend;
     reclik.p=[];
     reclik.p.sigma2=[];
