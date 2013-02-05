@@ -52,7 +52,7 @@ cf = gpcf_matern32('lengthScale', 5, 'magnSigma2', 0.05, ...
                    'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
 % Create the zero part
-likz=lik_logit();
+likz=lik_probit();
 gpz=gp_set('lik',likz,'cf',cf,'jitterSigma2',1e-6,'latent_method','EP','latent_opt',struct('parallel','on'));
 % Create the count part
 likc=lik_negbinztr();
