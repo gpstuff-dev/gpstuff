@@ -560,7 +560,7 @@ function record = recappend(record)
 
   % Set the latent values to record structure
   if isfield(gp, 'latentValues')
-    record.latentValues(ri,:)=gp.latentValues';
+    record.latentValues(ri,:)=gp.latentValues(:)';
   end
 
   % Set the inducing inputs in the record structure

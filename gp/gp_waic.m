@@ -269,8 +269,8 @@ function waic = gp_waic(gp, x, y, varargin)
               Sigma_tmp = Varf([1:ntime ntime+i], [1:ntime ntime+i]);
               Sigma_tmp = (Sigma_tmp + Sigma_tmp') ./ 2;
               f = mvnrnd(Ef([1:ntime ntime+i]), Sigma_tmp, ns);
-              Elog2(i) = 1/ns * sum(llvec(gp, y(i), f', z1));
-              Elog(i) = 1/ns * sum((llvec(gp, y(i), f', z1)).^2);
+              Elog2(i) = 1/ns * sum(llvec(gp, y(i,:), f', z1));
+              Elog(i) = 1/ns * sum((llvec(gp, y(i,:), f', z1)).^2);
             end
           end
           Elog2 = Elog2.^2;
