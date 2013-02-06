@@ -183,7 +183,7 @@ if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
     case {'Softmax', 'Multinom'}
       nout = size(y,1)./tn;
     otherwise
-      nout=size(gp.latentValues,2)/tn;
+      nout=length(gp.comp_cf);
   end
   
   if isfield(gp, 'comp_cf')  % own covariance for each ouput component
@@ -206,7 +206,9 @@ if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
     end
     predcf=predcf2;
   end
-  y = reshape(y, tn, nout);
+  if ~isfield(gp.lik, 'xtime')
+    y = reshape(y, tn, nout);
+  end
 end
 
 switch gp.type
@@ -283,39 +285,63 @@ switch gp.type
         end
       end
     else
-      % Likelihoods with non-diagnoalizable Hessian
-      L = zeros(tn,tn,nout);
-      ntest=size(xt,1);
-      K_nf = zeros(ntest,tn,nout);
-      if multicf
-        for i1=1:nout
-          [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
-          L(:,:,i1) = chol(C)';
-          K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+      if ~isfield(gp.lik, 'xtime')
+        % Likelihoods with non-diagnoalizable Hessian
+        L = zeros(tn,tn,nout);
+        ntest=size(xt,1);
+        K_nf = zeros(ntest,tn,nout);
+        if multicf
+          for i1=1:nout
+            [tmp,C] = gp_trcov(gp, x, gp.comp_cf{i1});
+            L(:,:,i1) = chol(C)';
+            K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+          end
+        else
+          for i1=1:nout
+            [tmp,C] = gp_trcov(gp, x);
+            L(:,:,i1) = chol(C)';
+            K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+          end
         end
+        
+        
+        Eft = zeros(ntest,nout);
+        for i1=1:nout
+          Eft(:,i1) = K_nf(:,:,i1)*(L(:,:,i1)'\(L(:,:,i1)\y(:,i1)));
+        end
+        Varft = zeros(ntest,nout);
+        if nargout > 1
+          for i1=1:nout
+            v = L(:,:,i1)\K_nf(:,:,i1)';
+            V = gp_trvar(gp,xt,predcf{i1});
+            Varft(:,i1) = V - sum(v'.*v',2);
+          end
+        end
+        Eft=Eft(:);
+        Varft=Varft(:);
       else
-        for i1=1:nout
-          [tmp,C] = gp_trcov(gp, x);
-          L(:,:,i1) = chol(C)';
-          K_nf(:,:,i1) = gp_cov(gp,xt,x,predcf{i1});
+        ntime=size(gp.lik.xtime,1);
+        xtime=gp.lik.xtime;
+        L=zeros(size(y,1));
+        ntest=size(xt,1);
+        K_nf = zeros(ntest+ntime,tn+ntime);
+        [tmp,C] = gp_trcov(gp, xtime, gp.comp_cf{1});
+        L(1:ntime,1:ntime) = chol(C,'lower');
+        [tmp,C] = gp_trcov(gp, x, gp.comp_cf{2});
+        L(ntime+(1:tn),ntime+(1:tn)) = chol(C,'lower');
+        K_nf(1:ntime,1:ntime) = gp_cov(gp,xtime,xtime,predcf{1});
+        K_nf((ntime+1):end,(ntime+1):end) = gp_cov(gp,xt,x,predcf{2});
+        
+        Eft = K_nf*(L'\(L\y));
+        if nargout > 1
+          v = L\K_nf';
+          V(1:ntime,:) = gp_trvar(gp,xtime,predcf{1});
+          V(ntime+(1:ntest),:) = gp_trvar(gp,xt,predcf{2});
+          Varft = V - sum(v'.*v',2);
         end
+        Eft=Eft(:);
+        Varft=Varft(:);
       end
-      
-      
-      Eft = zeros(ntest,nout);
-      for i1=1:nout
-        Eft(:,i1) = K_nf(:,:,i1)*(L(:,:,i1)'\(L(:,:,i1)\y(:,i1)));
-      end
-      Varft = zeros(ntest,nout);
-      if nargout > 1
-        for i1=1:nout
-          v = L(:,:,i1)\K_nf(:,:,i1)';
-          V = gp_trvar(gp,xt,predcf{i1});
-          Varft(:,i1) = V - sum(v'.*v',2);
-        end
-      end
-      Eft=Eft(:);
-      Varft=Varft(:);
     end
     
     if nargout > 2
