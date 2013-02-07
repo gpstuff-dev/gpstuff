@@ -279,7 +279,7 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
   end
   for i1=1:ntest
     if mcmc
-      Sigm_tmp = diag(Varf(i1,:));
+      Sigm_tmp = (Varf(i1,:));
       f_star=bsxfun(@plus, Ef(i1,:), bsxfun(@times, sqrt(Sigm_tmp), ...
         randn(S,nout)));      
     else

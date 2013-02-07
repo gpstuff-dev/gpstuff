@@ -179,7 +179,7 @@ end
 if isfield(gp.lik, 'nondiagW') && ~ismember(gp.lik.type, {'LGP' 'LGPC'})
   % Likelihoods with non-diagonal Hessian
   y=y(:);
-  switch gp.type
+  switch gp.lik.type
     case {'Softmax', 'Multinom'}
       nout = size(y,1)./tn;
     otherwise
