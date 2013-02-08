@@ -71,7 +71,7 @@ function lik = lik_gaussiansmt(varargin)
     init=true;
     lik.type = 'Gaussian-smt';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Gaussian-smt')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Gaussian-smt')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

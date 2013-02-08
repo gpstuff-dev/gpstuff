@@ -58,7 +58,7 @@ function lik = lik_loglogistic(varargin)
     init=true;
     lik.type = 'Log-Logistic';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Log-Gaussian')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Log-Logistic')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

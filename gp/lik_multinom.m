@@ -29,7 +29,7 @@ function lik = lik_multinom(varargin)
     lik.type = 'Multinom';
     lik.nondiagW = true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Multinom')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Multinom')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

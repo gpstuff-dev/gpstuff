@@ -62,7 +62,7 @@ function lik = lik_inputdependentweibull(varargin)
     lik.nondiagW=true;
     lik.type = 'Inputdependent-Weibull';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Weibull')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Weibull')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
