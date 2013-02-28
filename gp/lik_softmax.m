@@ -28,7 +28,7 @@ function lik = lik_softmax(varargin)
     lik.type = 'Softmax';
     lik.nondiagW=true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Softmax')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Softmax')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -279,11 +279,13 @@ function [lpy, Ey, Vary] = lik_softmax_predy(lik, Ef, Varf, yt, zt)
   end
   for i1=1:ntest
     if mcmc
-      Sigm_tmp = diag(Varf(i1,:));
+      Sigm_tmp = (Varf(i1,:));
+      f_star=bsxfun(@plus, Ef(i1,:), bsxfun(@times, sqrt(Sigm_tmp), ...
+        randn(S,nout)));      
     else
       Sigm_tmp=(Varf(:,:,i1)'+Varf(:,:,i1))./2;
+      f_star=mvnrnd(Ef(i1,:), Sigm_tmp, S);
     end
-    f_star=mvnrnd(Ef(i1,:), Sigm_tmp, S);
     
     tmp = exp(f_star);
     tmp = tmp./(sum(tmp, 2)*ones(1,size(tmp,2)));

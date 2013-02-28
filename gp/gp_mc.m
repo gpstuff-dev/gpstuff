@@ -138,7 +138,20 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     % Set latent values
     if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
         && ~isfield(gp.lik.fh,'trcov')
-      gp.latentValues=zeros(size(y));
+      if (~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'Softmax', 'Multinom', ...
+          'LGP', 'LGPC'}))
+        gp.latentValues=zeros(size(y));
+      else
+        if ~isfield(gp, 'comp_cf') || isempty(gp.comp_cf)
+          error('Define multiple covariance functions for latent processes using gp.comp_cf (see gp_set)');
+        end        
+        if isfield(gp.lik,'xtime')
+          ntime = size(gp.lik.xtime,1);
+          gp.latentValues=zeros(size(y,1)+ntime,1);
+        else
+          gp.latentValues=zeros(size(y,1)*length(gp.comp_cf),1);
+        end        
+      end
     end
   else
     % latent method is not MCMC
@@ -467,6 +480,9 @@ function record = recappend(record)
     record.lik = gp.lik;
     if isfield(gp,'latent_method')
       record.latent_method = gp.latent_method;
+    end
+    if isfield(gp, 'comp_cf')
+      record.comp_cf = gp.comp_cf;
     end
     % If sparse model is used save the information about which
     switch gp.type

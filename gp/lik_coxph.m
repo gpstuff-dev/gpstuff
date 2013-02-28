@@ -61,7 +61,7 @@ function lik = lik_coxph(varargin)
     lik.type = 'Coxph';
     lik.nondiagW=true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Coxph')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Coxph')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -1090,11 +1090,24 @@ function lik = lik_coxph(varargin)
     sd=lik.stime(2)-lik.stime(1);
     nu=1-zt;
     
+    [nn1,nn2,c] =size(Covf);
+    if (c>1) || (nn1==nn2)
+      mcmc=false;
+    else
+      mcmc=true;      
+    end
+    
     for i1=1:ntest
       i3=i3v(i1);
-      Sigm_tmp=Covf([(1+(i3-1)*ntime):(i3*ntime) i1+nf1],[(1+(i3-1)*ntime):(i3*ntime) i1+nf1]);
-      Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
-      f_star=mvnrnd(Ef([(1+(i3-1)*ntime):(i3*ntime) i1+nf1]), Sigm_tmp, S);
+      if mcmc
+        Sigm_tmp=([Covf(1:ntime,:); Covf(i1+ntime,:)]);
+        f_star=bsxfun(@plus,Ef([(1+(i3-1)*ntime):(i3*ntime) i1+nf1])', ...
+          bsxfun(@times,sqrt(Sigm_tmp'),randn(S,nf1+1)));
+      else
+        Sigm_tmp=Covf([(1+(i3-1)*ntime):(i3*ntime) i1+nf1],[(1+(i3-1)*ntime):(i3*ntime) i1+nf1]);
+        Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
+        f_star=mvnrnd(Ef([(1+(i3-1)*ntime):(i3*ntime) i1+nf1]), Sigm_tmp, S);
+      end
       
       f1=f_star(:,1:ntime);
       f2=f_star(:,(ntime+1):end);
@@ -1378,8 +1391,18 @@ function lik = lik_coxph(varargin)
       reclik.fh.invlink = @lik_coxph_invlink;
       reclik.fh.recappend = @lik_coxph_recappend;
       return
+    else
+      
+      reclik.xtime=lik.xtime;
+      reclik.stime=lik.stime;
+      
+      if isfield(lik, 'stratificationVariables')
+        reclik.stratificationVariables=lik.stratificationVariables;
+        if isfield(lik,removeStratificationVariables)
+          reclik.removeStratificationVariables=lik.removeStratificationVariables;
+        end
+      end
     end
-
   end
 
   function [cdf,Ey,Vary] = lik_coxph_predcdf(lik,Ef,Covf,yt)

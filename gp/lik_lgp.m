@@ -31,7 +31,7 @@ function lik = lik_lgp(varargin)
     lik.type = 'LGP';
     lik.nondiagW = true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'LGP')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'LGP')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
