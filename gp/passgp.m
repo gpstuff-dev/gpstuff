@@ -1,26 +1,26 @@
 function [gp, indA] = passgp(gp, x, y, varargin)
-%LIK_POISSON   Optimize hyperparameters of gp with pass-gp 
+%PASSGP   Optimize active set and hyperparameters of PASS-GP 
 %
 %  Description
 %    [GP, INDA] = PASSGP(GP, X, Y, OPTIONS)
 %    Returns GP structure with hyperparameters optimized according to
 %    PASS-GP routine (Henao & Winther, 2012) and active set indices 
-%    INDA for X and Y. 
+%    INDA for X and Y
 %
 %   OPTIONS is optional parameter-value pair
 %      npass - Number of passes the algorithm takes over the whole training
-%               data set.
-%      ninit - Initial active set size.
+%              data set
+%      ninit - Initial active set size
 %      nsub  - Number of subsets we process at each pass (in how many
-%               parts we divide the whole data).
+%              parts we divide the whole data)
 %      pinc  - Predictive density threshold for inclusion in active set.
-%      pdel  - LOO-Preditive density threshold for deletion from active
-%               set.
-%      pexc  - Exchange proportion for fixed pass-gp
-%      opt   - Options structure for optimizer.
+%      pdel  - LOO-predictive density threshold for deletion from active
+%              set
+%      pexc  - Exchange proportion for fixed PASS-GP
+%      opt   - Options structure for optimizer
 %      fixed - Whether we use fixed size of active set or not. Default
-%               'off'.
-%      display - Whether to display additional info or not. Default 'off'.
+%               'off'
+%      display - Whether to display additional info or not. Default 'off'
 %      optimn - Whether to optimize always or only after every nth
 %               deletion/addition to active set. Default 1 (every time). If
 %               given e.g. value 3, optimizes after every 3rd
@@ -29,8 +29,7 @@ function [gp, indA] = passgp(gp, x, y, varargin)
 %  See also
 %    GP_SET, LIK_*
 %
-%   References:
-%
+%  Reference:
 %    Ricardo Henao & Ole Winther (2012). Preditive active set selection
 %    methods for Gaussian processes. Neurocomputing 80 (2012), 10-18.
 
