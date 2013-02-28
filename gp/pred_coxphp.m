@@ -6,12 +6,12 @@ function p = pred_coxphp(gp, x, y, xt, yt, varargin)
 %    P = PRED_COXPHP(GP,X,Y,XT,YT)
 %    If given 1D vector Y, integrates the model from zero to point yt with 
 %    respect to time. Return P, the probability that event has happened 
-%    before time yt. YT is vector of size 1xM(or Mx1) indicating times in 
-%    scaled interval ~ Unif(0,1). Returns matrix P of size NxM where columns 
-%    correspond to points in YT and rows correspond to rows in X (e.g. people).
-%    In case of 2D Y, Integrate model from starting time YT(:,1) to end time
-%    YT(:,2). YT is matrix of size Mx2, indicating starting time and end
-%    time for every test point.
+%    before time yt. YT is vector of size 1xM(or Mx1) indicating times scaled
+%    to same interval as the time in timeprocess. Returns matrix P of size NxM 
+%    where columns correspond to points in YT and rows correspond to rows in X 
+%    (e.g. people). In case of 2D Y, Integrate model from starting time YT(:,1) 
+%    to end time YT(:,2). YT is matrix of size Mx2, indicating starting time 
+%    and end time for every test point.
 %
 
 % Copyright (c) 2012-2013 Ville Tolvanen
@@ -98,7 +98,9 @@ if ~isfield(gp, 'etr')
     if size(y,2) ~= size(yt,2)
       error('size(y,2) ~= size(yt,2)');
     end
-    
+    if (any(yt(:,2) > gp.lik.stime))
+      error('YT has to be scaled to same interval as the timeprocess');
+    end
     % Integrate from yt(:,1) to yt(:,2)
     sb=sum(bsxfun(@gt,yt(:,1),gp.lik.stime),2);
     se=sum(bsxfun(@gt,yt(:,2),gp.lik.stime),2);
