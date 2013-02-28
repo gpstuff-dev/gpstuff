@@ -1362,8 +1362,7 @@ function lik = lik_coxph(varargin)
 
   % Initialize record
     if nargin == 2
-      reclik.type = 'Coxph';
-      reclik.nondiagW=true;
+      reclik=ri;
 
       % Set the function handles
       reclik.fh.pak = @lik_coxph_pak;

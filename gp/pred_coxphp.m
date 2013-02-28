@@ -20,6 +20,31 @@ function p = pred_coxphp(gp, x, y, xt, yt, varargin)
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
+if iscell(gp)
+  % prediction for GP_IA cell array
+  nGP = numel(gp);
+  pp=zeros(size(xt,1),nGP);
+  P_TH=zeros(1,nGP);
+  for i1=1:nGP
+    % make prediction for each gp in cell array
+    Gp=gp{i1};
+    P_TH(:,i1) = Gp.ia_weight;
+    pp(:,i1)=pred_coxphp(Gp, x, y, xt, yt, varargin{:});
+  end
+  % combine predictions
+  p=sum(bsxfun(@times,pp,P_TH),2);
+  return
+elseif numel(gp.jitterSigma2)>1
+  nmc=size(gp.jitterSigma2,1);
+  pp=zeros(size(xt,1),nmc);
+  for i1=1:nmc
+    Gp = take_nth(gp,i1);
+    pp(:,i1)=pred_coxphp(Gp, x, y, xt, yt, varargin{:});
+  end
+  % combine predictions
+  p=mean(pp,2);
+  return
+end
 
 [Ef1, Ef2, Covf] = pred_coxph(gp,x,y,xt, varargin{:});
 nsamps = 10000;
