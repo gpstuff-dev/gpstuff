@@ -8,7 +8,7 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
 %     XT is optional test points
 %     OPTIONS are optional parameter-value pairs
 %       'gridn' is optional number of grid points used in each axis direction
-%         default is 100 for 1D, 15 for grid 2D, and 7 for Voronoi 2D
+%         default is 100 for 1D, 15 for grid 2D
 %       'range' tells the estimation range, default is data range
 %         for 1D [XMIN XMAX]
 %         for 2D [XMIN XMAX YMIN YMAX]
@@ -84,8 +84,8 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
       % compute mean and quantiles
       A=range(xx);
       lm=exp(Ef+Varf/2)./A.*n;
-      lq5=exp(Ef-sqrt(Varf)*1.96)./A*n;
-      lq95=exp(Ef+sqrt(Varf)*1.96)./A*n;
+      lq5=exp(Ef-sqrt(Varf)*1.645)./A*n;
+      lq95=exp(Ef+sqrt(Varf)*1.645)./A*n;
       lq=[lq5 lq95];
 
       if nargout<1
@@ -152,8 +152,8 @@ function [l,lq,xt,gp] = lgcp(x,varargin)
       % compute mean
       A = range(xx(:,1)).*range(xx(:,2));
       lm=exp(Ef+Varf/2)./A.*n;
-      lq5=exp(Ef-sqrt(Varf)*1.96)./A.*n;
-      lq95=exp(Ef+sqrt(Varf)*1.96)./A.*n;
+      lq5=exp(Ef-sqrt(Varf)*1.645)./A.*n;
+      lq95=exp(Ef+sqrt(Varf)*1.645)./A.*n;
       lq=[lq5 lq95];
 
       if nargout<1
@@ -209,7 +209,7 @@ function [Ef,Varf,gp] = gpsmooth(xx,yy,ye,xt,gpcf,latent_method,int_method)
   end
   
   % Create the GP structure
-  gp = gp_set('lik', lik_poisson, 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
+  gp = gp_set('lik', lik_poisson(), 'cf', {gpcf1}, 'jitterSigma2', 1e-4);
 
   % Set the approximate inference method
   gp = gp_set(gp, 'latent_method', latent_method);
