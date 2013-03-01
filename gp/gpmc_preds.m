@@ -181,7 +181,6 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
   % loop over all samples
   Ey=[]; Vary=[];
   for i1=1:nmc
-    i1
     Gp = take_nth(gp,i1);
     if isfield(Gp,'latent_method') && isequal(Gp.latent_method,'MCMC')
       Gp = rmfield(Gp,'latent_method');
