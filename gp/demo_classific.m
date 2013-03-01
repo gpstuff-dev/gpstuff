@@ -131,7 +131,7 @@ fprintf(['%s model with EP integration over the latent values and\n' ...
          'MAP estimate for the parameters\n'],gp.lik.type)
 
 % Set the approximate inference method
-gp = gp_set(gp, 'latent_method', 'EP','latent_opt',struct('parallel','on'));
+gp = gp_set(gp, 'latent_method', 'EP');
 
 % Set the options for the optimization
 opt=optimset('TolFun',1e-3,'TolX',1e-3);
@@ -179,7 +179,7 @@ gp = gp_set(gp, 'latent_method', 'MCMC', 'jitterSigma2', 1e-6);
 % Sample using default method, that is, surrogate and elliptical slice samplers
 % these samplers are quite robust with default options
 [gp_rec,g,opt]=gp_mc(gp, x, y, 'nsamples', 220, 'display', 20);
-% Remove burn-in
+% Remove burn-in and thin
 gp_rec=thin(gp_rec,21,2);
 
 % Make predictions

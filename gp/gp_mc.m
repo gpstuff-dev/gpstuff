@@ -520,7 +520,7 @@ function record = recappend(record)
       end
     end
     
-    % Initialize the recordord for likelihood
+    % Initialize the record for likelihood
     lik = gp.lik;
     record.lik = lik.fh.recappend([], gp.lik);
     
@@ -529,6 +529,10 @@ function record = recappend(record)
       record.meanf = gp.meanf; 
     end
     
+    if isfield(gp, 'comp_cf')
+      record.comp_cf = gp.comp_cf; 
+    end
+
     if isfield(gp,'p')
       record.p = gp.p;
     end
