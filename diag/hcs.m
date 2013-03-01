@@ -1,4 +1,4 @@
-function [c,bb] = hcs_new(riskscore,y,z,t,varargin)
+function [c,bb] = hcs(riskscore,y,z,t,varargin)
 %HCS Compute Harrell's C for survival model at given time
 %
 %  Description
