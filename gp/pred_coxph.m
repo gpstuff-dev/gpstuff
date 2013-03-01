@@ -26,13 +26,13 @@ if ~strcmp(gp.lik.type, 'Coxph')
   error('Likelihood not Coxph')
 end
 if nargout > 3
-  if ~isfield(gp, 'etr')
+  if numel(gp.jitterSigma2)==1
     [Ef, Covf, lpyt] = gp_pred(gp, x, y, xt, varargin{:});
   else
     [Ef, Covf, lpyt] = gpmc_preds(gp, x, y, xt, varargin{:});
   end
 else
-  if ~isfield(gp, 'etr')
+  if numel(gp.jitterSigma2)==1
     [Ef, Covf] = gp_pred(gp, x, y, xt, varargin{:});
   else
     [Ef, Covf] = gpmc_preds(gp, x, y, xt, varargin{:});    
