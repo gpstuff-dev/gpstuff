@@ -32,6 +32,7 @@
 \DeclareMathOperator{\x}{\mathbf{x}}
 \DeclareMathOperator{\f}{\mathbf{f}}
 \DeclareMathOperator{\y}{\mathbf{y}}
+\DeclareMathOperator{\h}{\mathbf{h}}
 \DeclareMathOperator{\uu}{\mathbf{u}}
 \DeclareMathOperator{\LL}{\mathbf{\Lambda}}
 \DeclareMathOperator{\bb}{\mathbf{b}}
@@ -2745,7 +2746,168 @@ demonstrated in \code{demo\_regression\_meanf}.
 % \label{demo_meanFunc_fig1}
 % \end{figure}
 
+\section{Multilatent models}
 
+\subsection{Multi-class classification}
+
+multinomial x
+softmax x
+
+\subsection{Density estimation and regression}
+
+Logistic Gaussian process can be used for flexible density estimation
+and density regression. GPstuff includes implementation based on
+Laplace (and MCMC) approximation as described in
+\citep{Riihimaki+Vehtari:2012}.
+
+The likelihood is defined as
+\begin{align}
+  p(\x|\f)=\prod_{i=1}^n \frac{\exp(f_i)}{\sum_{j=1}^n \exp(f_j)}.
+\end{align}
+For the latent function $f$, we assume
+the model $f(\x) = g(\x)+\h(\x)^T \bm{\beta}$, where the GP prior
+$g(\x)$ is combined with the explicit basis functions $\h(\x)$.
+Regression coefficients are denoted with $\bm{\beta}$, and by placing
+a Gaussian prior $\bm{\beta}\sim \mathcal{N}(\bb,B)$ with mean $\bb$
+and covariance $B$, the parameters $\bm{\beta}$ can be integrated out
+from the model, which results in the following GP prior for $f$:
+\begin{equation}\label{gp_process}
+  f(\x)\sim \mathcal{GP}\left(\h(\x)^T\bb,\kappa(\x,\x')+\h(\x)^TB\h(\x')\right).
+\end{equation}
+%
+For the explicit basis functions, we use the second-order polynomials
+%
+%$\h(\x)=[x_1 \quad x_1^2 \, \cdots \, x_d \quad x_d^2]^T$,
+%
+which leads to a GP prior that can favour density estimates where the
+tails of the distribution go eventually to zero.
+
+We use finite-dimensional approximation and evaluate the integral and
+the Gaussian process in a grid.
+%
+We approximate inference for logistic Gaussian process density
+estimation in a grid using Laplace's method or MCMC to integrate over
+the non-Gaussian posterior distribution of latent values \citep[see
+details in][]{Riihimaki+Vehtari:2012}.
+
+Logistic Gaussian processes are also suitable for estimating
+conditional densities $p(t|\x)$, where $t$ is a response variable. We
+discretize both input and target space in a finite region to model the
+conditional densities with the logistic GP.
+%
+To approximate the resulting non-Gaussian posterior distribution, we
+use again Laplace's method.
+
+1D and 2D density estimation and density regression are implemented in
+the function \code{lgpdens}. The usage of the function is demonstrated
+in \code{demo\_lgpdens}.
+
+%    The likelihood is defined as follows:
+%               __ n
+%      p(y|f) = || i=1 exp(f_i) / Sum_{j=1}^n exp(f_j),
+%
+%      where f contains latent values.
+
+
+%    LIK = LIK_LGPC creates a logistic Gaussian process likelihood
+%    structure for conditional density estimation
+%
+%    The likelihood contribution for the $k$th conditional slice 
+%    is defined as follows:
+%                   __ n
+%      p(y_k|f_k) = || i=1 exp(f_ki) / Sum_{j=1}^n exp(f_kj),
+%
+%      where f contains latent values.
+
+\subsection{Cox proportional hazard model}
+
+%    creates a proportional hazard model where a piecewise log-constant
+%    baseline hazard is assumed.  
+%    
+%    The likelihood contribution for the ith observation is
+%
+%      l_i = h_i(y_i)^(1-z_i)*[exp(-int_0^y_i*h_i dt)],
+%    
+%    where hazard is h_i=h_0(y_i)*exp(f_i). A zero mean Gaussian process
+%    prior is placed for f = [f_1, f_2,...,f_n] ~ N(0, C). C is the
+%    covariance matrix, whose elements are given as C_ij = c(x_i, x_j |
+%    th). The function c(x_i, x_j| th) is covariance function and th its
+%    parameters, hyperparameters. We place a hyperprior for
+%    hyperparameters, p(th). 
+%
+%    The time axis is partioned into K intervals with equal lengths:
+%    0 = s_0 < s_1 < ... < s_K, where s_K > y_i for all i. The baseline
+%    hazard rate function h_0 is piecewise constant,  
+%
+%      h_0(t) = la_k,
+%
+%    when t belongs to the interval (s_{k-1},s_k] and where ft_k=log(la_k).
+%    The hazard rate function is smoothed by assuming another Gaussian
+%    process prior ft = [ft_1, ft_2,...,ft_K] ~ N(0, C). 
+%
+%    z is a vector of censoring indicators with z = 0 for uncensored event
+%    and z = 1 for right censored event. 
+%
+%    When using the Coxph likelihood you need to give the vector z
+%    as an extra parameter to each function that requires also y. 
+%    For example, you should call gpla_e as follows: gpla_e(w, gp,
+%    x, y, 'z', z)
+
+\subsection{Input dependent noise}
+% missing description
+
++ input dependent overdispersion in Weibull x
+
+\subsection{Zero-inflated negative binomial}
+
+%    The likelihood is defined as follows:
+%     
+%      p + (1-p)*NegBin(y|y=0),    when y=0
+%          (1-p)*NegBin(y|y>0),    when y>0,
+%      where the probability p is given by a binary classifier with Logit
+%      likelihood and NegBin is the Negative-binomial distribution
+%      parametrized for the i'th observation as
+%      NegBin(y_i) =   [ (r/(r+mu_i))^r * gamma(r+y_i)
+%                        / ( gamma(r)*gamma(y_i+1) )
+%                        * (mu/(r+mu_i))^y_i ]
+%
+%    where mu_i = z_i*exp(f_i) and r is the dispersion parameter.
+%    z is a vector of expected mean and f the latent value vector
+%    whose components are transformed to relative risk
+%    exp(f_i). 
+%
+%    The latent value vector f=[f1^T f2^T]^T has length 2*N, where N is the
+%    number of observations. The latents f1 are associated with the
+%    classification process and the latents f2 with Negative-binomial count
+%    process.
+%
+%    When using the Zinegbin likelihood you need to give the vector z
+%    as an extra parameter to each function that requires also y. 
+%    For example, you should call gpla_nd_e as follows: gpla_nd_e(w, gp,
+%    x, y, 'z', z)
+
+\subsection{Quantile regression}
+
+%    The likelihood is defined as follows:
+%                            __ n
+%      p(y|f, sigma2, tau) = || i=1 tau*(1-tau)/sigma*exp(-(y-f)/sigma*
+%                                 (tau - I(t <= f)))
+%    
+%    where tau is the quantile of interest, sigma is the standard deviation
+%    of the distribution and I(t <= f) = 1 if t <= f, 0 otherwise.
+%
+%    Note that because the form of the likelihood, second order derivatives
+%    with respect to latent values are 0. Because this, EP should be used
+%    instead of Laplace approximation.    
+%
+%  See also
+%    GP_SET, PRIOR_*, LIK_*
+%
+%   References
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
+%     Using Expectation Propagation. Appearing in Proceedings of the 29th
+%     International Conference on Machine Learning, Edinburg, Scotland, UK,
+%     2012.
 
 \section{Adding new features in the toolbox}\label{sec_adding_new_features}
 
