@@ -50,37 +50,37 @@ function lik = lik_softmax(varargin)
 end
 
 function [w,s] = lik_softmax_pak(lik)
-%LIK_LOGIT_PAK  Combine likelihood parameters into one vector.
+%LIK_SOFTMAX_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
-%    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
-%    returns an empty verctor W. If Logit likelihood had
+%    W = LIK_SOFTMAX_PAK(LIK) takes a likelihood structure LIK and
+%    returns an empty verctor W. If Softmax likelihood had
 %    parameters this would combine them into a single row vector
 %    W (see e.g. lik_negbin). This is a mandatory subfunction used 
 %    for example in energy and gradient computations.
 %     
 %
 %  See also
-%    LIK_NEGBIN_UNPAK, GP_PAK
+%    LIK_SOFTMAX_UNPAK, GP_PAK
   
   w = []; s = {};
 end
 
 
 function [lik, w] = lik_softmax_unpak(lik, w)
-%LIK_LOGIT_UNPAK  Extract likelihood parameters from the vector.
+%LIK_SOFTMAX_UNPAK  Extract likelihood parameters from the vector.
 %
 %  Description
-%    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
+%    W = LIK_SOFTMAX_UNPAK(W, LIK) Doesn't do anything.
 % 
-%    If Logit likelihood had parameters this would extracts them
+%    If Softmax likelihood had parameters this would extracts them
 %    parameters from the vector W to the LIK structure. This is a 
 %    mandatory subfunction used for example in energy and gradient 
 %    computations.
 %     
 %
 %  See also
-%    LIK_LOGIT_PAK, GP_UNPAK
+%    LIK_SOFTMAX_PAK, GP_UNPAK
 
   lik=lik;
   w=w;
@@ -88,10 +88,10 @@ end
 
 
 function ll = lik_softmax_ll(lik, y, f2, z)
-%LIK_LOGIT_LL  Log likelihood
+%LIK_SOFTMAX_LL  Log likelihood
 %
 %  Description
-%    LL = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
+%    LL = LIK_SOFTMAX_LL(LIK, Y, F) takes a likelihood structure
 %    LIK, class labels Y (NxC matrix), and latent values F (NxC
 %    matrix). Returns the log likelihood, log p(y|f,z). This 
 %    subfunction is needed when using Laplace approximation or 
@@ -100,7 +100,7 @@ function ll = lik_softmax_ll(lik, y, f2, z)
 %    computations.
 %
 %  See also
-%    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
+%    LIK_SOFTMAX_LLG, LIK_SOFTMAX_LLG3, LIK_SOFTMAX_LLG2, GPLA_E
 
   if ~isempty(find(y~=1 & y~=0))
     error('lik_softmax: The class labels have to be {0,1}')
@@ -115,10 +115,10 @@ end
 
 
 function llg = lik_softmax_llg(lik, y, f2, param, z)
-%LIK_LOGIT_LLG    Gradient of the log likelihood
+%LIK_SOFTMAX_LLG    Gradient of the log likelihood
 %
 %  Description
-%    LLG = LIK_LOGIT_LLG(LIK, Y, F, PARAM) takes a likelihood
+%    LLG = LIK_SOFTMAX_LLG(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F. Returns
 %    the gradient of the log likelihood with respect to PARAM. At
 %    the moment PARAM can be 'param' or 'latent'.  This subfunction 
@@ -126,7 +126,7 @@ function llg = lik_softmax_llg(lik, y, f2, param, z)
 %    with non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_LOGIT_LL, LIK_LOGIT_LLG2, LIK_LOGIT_LLG3, GPLA_E
+%    LIK_SOFTMAX_LL, LIK_SOFTMAX_LLG2, LIK_SOFTMAX_LLG3, GPLA_E
   
   if ~isempty(find(y~=1 & y~=0))
     error('lik_softmax: The class labels have to be {0,1}')
@@ -143,10 +143,10 @@ end
 
 
 function [pi_vec, pi_mat] = lik_softmax_llg2(lik, y, f2, param, z)
-%LIK_LOGIT_LLG2  Second gradients of the log likelihood
+%LIK_SOFTMAX_LLG2  Second gradients of the log likelihood
 %
 %  Description        
-%    LLG2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
+%    LLG2 = LIK_SOFTMAX_LLG2(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F. Returns
 %    the Hessian of the log likelihood with respect to PARAM. At
 %    the moment PARAM can be only 'latent'. LLG2 is a vector with
@@ -155,7 +155,7 @@ function [pi_vec, pi_mat] = lik_softmax_llg2(lik, y, f2, param, z)
 %    approximation or EP for inference with non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
+%    LIK_SOFTMAX_LL, LIK_SOFTMAX_LLG, LIK_SOFTMAX_LLG3, GPLA_E
 
 % softmax:    
 
@@ -176,10 +176,10 @@ function [pi_vec, pi_mat] = lik_softmax_llg2(lik, y, f2, param, z)
 end    
 
 function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
-%LIK_LOGIT_LLG3  Third gradients of the log likelihood
+%LIK_SOFTMAX_LLG3  Third gradients of the log likelihood
 %
 %  Description
-%    LLG3 = LIK_LOGIT_LLG3(LIK, Y, F, PARAM) takes a likelihood
+%    LLG3 = LIK_SOFTMAX_LLG3(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F and
 %    returns the third gradients of the log likelihood with
 %    respect to PARAM. At the moment PARAM can be only 'latent'. 
@@ -188,7 +188,7 @@ function dw_mat = lik_softmax_llg3(lik, y, f, param, z)
 %    non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
+%    LIK_SOFTMAX_LL, LIK_SOFTMAX_LLG, LIK_SOFTMAX_LLG2, GPLA_E, GPLA_G
   
   if ~isempty(find(y~=1 & y~=0))
     error('lik_softmax: The class labels have to be {0,1}')
@@ -305,7 +305,7 @@ function reclik = lik_softmax_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
 %  Description 
-%    RECLIK = GPCF_LOGIT_RECAPPEND(RECLIK, RI, LIK) takes a
+%    RECLIK = LIK_SOFTMAX_RECAPPEND(RECLIK, RI, LIK) takes a
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
