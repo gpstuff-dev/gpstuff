@@ -20,20 +20,19 @@
 prevstream=setrandstream(0);
 close all;
 % x = 100*rand([40 1]);
-n =150;
-nt = 150;
+n = 500;
 x=linspace(-100,200,n)';
-xt=x;
 f1 = [5.*sin(-3+0.2.*x(1:ceil(0.23*n))); 20*sin(0.1*x(ceil(0.23*n)+1:ceil(0.85*n))); 5.*sin(2.8+0.2.*x(ceil(0.85*n)+1:end))];
-f2 = 100*norm_pdf(x,110,15) + 100*norm_pdf(x,-10,15);
+f2 = 100*norm_pdf(x,110,20) + 100*norm_pdf(x,-10,20);
 sigma2 = 0.5;
 
 x=x-mean(x); x=x./std(x);
-xt=xt-mean(xt); xt=xt./std(xt);
 f1 = f1-mean(f1); f1=f1./std(f1);
 
 y = f1 + sqrt((sigma2.*exp(f2))).*randn(size(x));
-yt= f1;
+yt = f1(1:5:end);
+xt = x(1:5:end);
+nt = size(xt,1);
 x=x(:); y=y(:); xt=xt(:);
 
 % Create the covariance functions
@@ -59,7 +58,7 @@ gp = gp_set(gp, 'latent_method', 'Laplace');
 % gp.latent_opt.maxiter=1e6;
 
 % Set the options for the optimization
-opt=optimset('TolFun',1e-4,'TolX',1e-4,'Derivativecheck','on');
+opt=optimset('TolFun',1e-4,'TolX',1e-4,'Derivativecheck','off');
 % Optimize with the scaled conjugate gradient method
 gp=gp_optim(gp,x,y,'opt',opt);
 
@@ -115,8 +114,7 @@ legend('Predicted noise variance', 'Real noise variance','95% CI',2);
 %====================================
 % 2D Demonstration
 %====================================
-stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setGlobalStream(stream0);
+setrandstream(0);
 
 % Create data from two 2 dimensional gaussians
 nt=10;
@@ -187,8 +185,7 @@ colormap hsv, alpha(.4)
 %============================================
 % Demonstration with homoscedastic noise
 %============================================
-stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setGlobalStream(stream0);
+setrandstream(0);
 
 n =200;
 nt = 200;
