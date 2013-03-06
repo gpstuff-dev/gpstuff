@@ -7,6 +7,13 @@ function lik = lik_softmax(varargin)
 %    classes is given as 1xC vector where C-1 entries are 0 and the
 %    observed class label is 1.
 %
+%    The likelihood is defined as follows:
+%                             __ n                   
+%      p(y^c|f^1, ..., f^C) = || i=1 exp(f_i^C)/(sum^C_c=1 exp(f_i^c))
+%
+%    where y^c is the observation of cth class, f^c is the latent variable
+%    corresponding to cth class and C is the number of classes.
+%
 %  See also
 %    GP_SET, LIK_*
 

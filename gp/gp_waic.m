@@ -152,7 +152,6 @@ function waic = gp_waic(gp, x, y, varargin)
         else
           % non-Gaussian likelihood
           for i=1:tn
-            i
             if ~isempty(z)
               z1 = z(i);
             else
