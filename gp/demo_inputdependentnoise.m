@@ -17,8 +17,7 @@
 %=================================
 % 1D Demonstration
 %=================================
-stream0 = RandStream('mt19937ar','Seed',0);
-prevstream = RandStream.setGlobalStream(stream0);
+prevstream=setrandstream(0);
 close all;
 % x = 100*rand([40 1]);
 n =150;
@@ -274,3 +273,4 @@ figure
 plot(xt, s2.*exp(Ef12), '-b',x, sigma2.*exp(f2), '-k', xt, s2.*exp(Ef12 + 1.96.*sqrt(diag(Varf(nt+1:end, nt+1:end)))), '-r', xt,s2.*exp(Ef12 - 1.96.*sqrt(diag(Varf(nt+1:end, nt+1:end)))), '-r')
 ylim([0 2.5])
 legend('Predicted noise variance', 'Real noise variance','95% CI',2);
+setrandstream(prevstream);
