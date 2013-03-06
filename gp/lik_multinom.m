@@ -3,9 +3,8 @@ function lik = lik_multinom(varargin)
 %
 %  Description
 %    LIK = LIK_MULTINOM creates multinom likelihood for multi-class
-%    classification problem. The observed class label with C
-%    classes is given as 1xC vector where C-1 entries are 0 and the
-%    observed class label is 1.
+%    count data. The observed numbers in each class with C classes is given
+%    as 1xC vector.
 %
 %    The likelihood is defined as follows:
 %                              __ n                __ C             
@@ -13,7 +12,7 @@ function lik = lik_multinom(varargin)
 %
 %    where p_i^c = exp(f_i^c)/ (sum_c=1^C exp(f_i^c)) is the succes 
 %    probability for class c, which is a function of the latent variable 
-%    f_i^c for the corresponding class and N is the number of trials.
+%    f_i^c for the corresponding class and N=sum(y) is the number of trials.
 %
 %  See also
 %    GP_SET, LIK_*
