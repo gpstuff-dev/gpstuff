@@ -2,7 +2,32 @@ function lik = lik_inputdependentnoise(varargin)
 %lik_inputdependentnoise    Create input-dependent noise likelihood structure 
 %
 %  Description
-%    
+%    LIK = LIK_INPUTDEPENDENTNOISE('PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    creates a Gaussian likelihood with input dependent noise structure 
+%    in which the named parameters have the specified values. Any unspecified
+%    parameters are set to default values.
+%
+%    LIK = LIK_INPUTDEPENDENTNOISE(LIK,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    modify a likelihood function structure with the named
+%    parameters altered with the specified values.
+%
+%    Parameters for Gaussian likelihood function [default]
+%      sigma2       - variance [0.1]
+%      sigma2_prior - prior for sigma2 [prior_logunif]
+%      n            - number of observations per input (See using average
+%                     observations below)
+%
+%    Note! If the prior is 'prior_fixed' then the parameter in
+%    question is considered fixed and it is not handled in
+%    optimization, grid integration, MCMC etc.
+%
+%    The likelihood is defined as follows:
+%                    __ n
+%      p(y|f1, f2) = || i=1 N(y_i | f1_i, sigma2*exp(f2_i))
+%
+%      where f1 is the first latent variable defining the mean of the
+%      gaussian distribution, f2 is the second latent variable defining
+%      the noise structure and sigma2 is coefficient for noise.
 %
 %  See also
 %    GP_SET, LIK_*, PRIOR_*
