@@ -2750,10 +2750,44 @@ demonstrated in \code{demo\_regression\_meanf}.
 \section{Multilatent models}
 \label{sec:multilatent-models}
 
-\subsection{Multi-class classification}
+\subsection{Multinomial}
 
-multinomial x
-softmax x
+\subsection{Multiclass classification}
+
+In multiclass classification problems the target variables have more
+than two possible class labels, $y_i\in\{1,\ldots,c\}$, where $c>2$ is
+the number of classes. In \pkg{GPstuff}, multi-class classification
+can be made using the softmax likelihood (\code{lik\_softmax})
+%
+\begin{eqnarray}
+p(y_i|\f_i)=\frac{\exp(f_i^{y_i})}{\sum_{j=1}^c\exp(f_i^{j})},
+\end{eqnarray}
+where $\f_i=\left[f_i^1,\ldots,f_i^c\right]^T$.
+%
+In Gaussian process literature for multiclass classification, a common
+assumption is to introduce $c$ independent prior processes that are
+associated with $c$ classes \citep[see, e.g.,][]{Rasmussen+Williams:2006}.
+%
+By assuming zero-mean Gaussian processes for latent functions
+associated with different classes, we obtain a zero-mean Gaussian
+prior
+\begin{eqnarray}
+  p(\f|X)=\mathcal{N}(\f|\mathbf{0}, K),
+\end{eqnarray}
+where
+$\f=\left[f_1^1,\ldots,f_n^1,f_1^2,\ldots,f_n^2,\ldots,f_1^c,\ldots,f_n^c\right]^T$
+and $K$ is a $cn \times cn$ block-diagonal covariance matrix with
+matrices $K^1, K^2,\ldots,K^c$ (each of size $n \times n$) on its
+diagonal.
+%
+Inference for softmax can be made with MCMC or Laplace approximation.
+As described by \citet{Williams+Barber:1998} and
+\citet{Rasmussen+Williams:2006}, using the Laplace approximation for
+the softmax likelihood with the uncorrelated prior processes, the
+posterior computations can be done efficiently in a way that scales
+linearly in $c$, which is also implemented in
+\pkg{GPstuff}. Multiclass classification with softmax is demonstrated
+in \code{demo\_multiclass}.
 
 \subsection{Density estimation and regression}
 
