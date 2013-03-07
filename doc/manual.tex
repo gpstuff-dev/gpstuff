@@ -2755,7 +2755,7 @@ The likelihood is defines as
 \begin{align}
 p(y | f, \sigma, \tau) = \frac{\tau(1-\tau)}{\sigma}\exp\left[-\frac{y-f}{\sigma}(\tau - I(y \le f))\right],
 \end{align}
-where $\tau$ is the quantile of interest and $\sigma$ is the standard deviation. $I(y \le f)$ is 1 if the condition inside brackets is true and 0 otherwise. Because the logarithm of the likelihood is not twice differentiable at the mode, Laplace approximation cannot be used for inference with Quantile Regression. Quantile Regression with EP and MCMC is demonsrated in \code{demo\_qgp} with toy data.
+where $\tau$ is the quantile of interest and $\sigma$ is the standard deviation. $I(y \le f)$ is 1 if the condition inside brackets is true and 0 otherwise. Because the logarithm of the likelihood is not twice differentiable at the mode, Laplace approximation cannot be used for inference with Quantile Regression. Quantile Regression with EP and MCMC is demonstrated in \code{demo\_qgp} with toy data.
 
 %    The likelihood is defined as follows:
 %                            __ n
@@ -2854,6 +2854,83 @@ in \code{demo\_lgpdens}.
 
 \subsection{Cox proportional hazard model}
 
+For the individual $i$, where $i=1,\ldots,n$, we have observed
+survival time $y_i$ (possibly right censored) with censoring indicator
+$\delta_i$, where $\delta_i=0$ if the $i$th observation is uncensored
+and $\delta_i=1$ if the observation is right censored. The traditional
+approach to analyze continuous time-to-event data is to assume the Cox
+proportional hazard model \citep{Cox:1972}.
+\begin{equation}
+h_i(t)=h_0(t)\exp(\bm{x}^T_i\bm{\beta}),
+\end{equation}
+where $h_0$ is the unspecified baseline hazard rate, $\bm{x}_i$ is the
+$d\times1$ vector of covariates for the $i$th patient and $\bm{\beta}$
+is the vector of regression coefficients. The matrix
+$X=[\bm{x}_1,\ldots,\bm{x}_n]^T$ of size $n\times d$ includes all
+covariate observations.
+
+The Cox model with linear predictor can be extended to more general
+form to enable, for example, additive and non-linear effects of
+covariates \citep{Kneib:2006,Martino:2011}. We extend the proportional
+hazard model by
+\begin{equation}
+h_i(t)=\exp(\log(h_0(t))+\eta_i(\bm{x}_i)),
+\end{equation}
+where the linear predictor is replaced with the latent predictor
+$\eta_i$ depending on the covariates $\bm{x}_i$. By assuming a
+Gaussian process prior over
+$\bm{\eta}=(\eta_1,\ldots,\eta_n)^T$, smooth nonlinear effects of
+continuous covariates are possible, and if there are dependencies
+between covariates, GP can model these interactions implicitly. 
+
+A piecewise log-constant baseline hazard \citep[see,
+e.g.][]{Ibrahim+Chen+Sinha:2001,Martino:2011} is assumed by
+partitioning the time axis into $K$ intervals with equal lengths:
+$0=s_0<s_1<s_2<\ldots<s_K$, where $s_K>y_i$ for all $i=1,\ldots,n$. In
+the interval $k$ (where $k=1,\ldots,K$), hazard is assumed to be
+constant:
+\begin{eqnarray}
+h_0(t)=\lambda_k&\mathrm{for}&t\in(s_{k-1},s_k].
+\end{eqnarray}
+For the $i$th individual the hazard rate in the $k$th time interval is
+then
+\begin{eqnarray}
+h_i(t)=\exp(f_k+\eta_i(\bm{x}_i)), & t\in(s_{k-1},s_k],
+\end{eqnarray}
+where $f_k=\log(\lambda_k)$. To assume smooth hazard rate functions,
+we place another Gaussian process prior for
+$\bm{f}=(f_1,\ldots,f_K)^T$. We define a vector containing the mean
+locations of $K$ time intervals as
+$\bm{\tau}=(\tau_1,\ldots,\tau_K)^T$. 
+
+% The two latent processes are assumed to a priori
+% independent/uncorrelated, and this leads to a prior covariance matrix
+% with a block diagonal structure.
+
+The likelihood contribution for the possibly right censored $i$th
+observation $(y_i,\delta_i)$ is assumed to be
+\begin{equation}
+l_i=h_i(y_i)^{(1-\delta_i)} \exp \left(
+  -\int_0^{y_i}h_i(t)dt \right).
+\end{equation}
+Using the piecewise log-constant assumption for the hazard rate
+function, the contribution of the observation $i$ for the likelihood
+results in
+\begin{equation}
+l_i=[\lambda_k \exp(\eta_i)]^{(1-\delta_i)}\exp \left( -[(y_i-s_{k-1})\lambda_k
+  + \sum_{g=1}^{k-1}(s_g-s_{g-1})\lambda_g ]\exp(\eta_i) \right),
+\end{equation}
+where $y_i\in(s_{k-1},s_k]$
+\citep{Ibrahim+Chen+Sinha:2001,Martino:2011}. By applying the Bayes
+theorem, the prior information and likelihood contributions are
+combined, and the posterior distribution of the latent variables can
+be computed. Due to the form of the likelihood function, the resulting
+posterior becomes non-Gaussian and analytically exact inference is
+intractable. GPstuff supports MCMC and Laplace approximation to
+integrate over the latents variables. The use of Gaussian process Cox
+proportional hazard model is demonstrated in
+\code{demo\_survival\_coxph}.
+
 %    creates a proportional hazard model where a piecewise log-constant
 %    baseline hazard is assumed.  
 %    
@@ -2891,13 +2968,22 @@ in \code{demo\_lgpdens}.
 In input-dependent models more than one latent variables are used for modeling different parameters of the distribution. Additional latent variables in turn enable modeling dependencies between inputs and parameters. 
 
 \subsubsection{Input-dependent Noise}
-Input-dependent noise model \citep{Goldberg:1997} can be used to model regression data. The model assumes Gaussian distributed data with latent variables defining both mean and variance of the Gaussian distribution instead of just the mean like in the standard Gaussian likelihood. By setting independent GP priors for the two latent variables, it is possible to infer non-constant noise, e.g. input-dependent, in the data. 
+Input-dependent noise model \citep{Goldberg:1997} can be used to model
+regression data. The model assumes Gaussian distributed data with
+latent variables defining both mean and variance of the Gaussian
+distribution instead of just the mean like in the standard Gaussian
+likelihood. Setting independent GP priors for the two latent
+variables, it is possible to infer non-constant noise,
+e.g. input-dependent, in the data.
 
 The likelihood is defined as
 \begin{align}
   p(\y|\f^{(1)}, \f^{(2)}, \sigma^2)=\prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 e^{f_i^{(2)}}),
 \end{align}
-with latent function $f^{(1)}$ defining the mean and $f^{(2)}$ defining the variance. Input-dependent noise is demonstrated in \code{demo\_inputdependentnoise} with both heteroscedastic and constant noise.
+with latent function $f^{(1)}$ defining the mean and $f^{(2)}$
+defining the variance. Input-dependent noise is demonstrated in
+\code{demo\_inputdependentnoise} with both heteroscedastic and
+constant noise.
 % missing description
 
 \subsubsection{Input-dependent overdispersed Weibull}
