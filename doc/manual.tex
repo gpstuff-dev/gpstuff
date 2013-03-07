@@ -2747,6 +2747,37 @@ demonstrated in \code{demo\_regression\_meanf}.
 % \label{demo_meanFunc_fig1}
 % \end{figure}
 
+\subsection{Quantile Regression}
+
+Quantile regression is used for estimating quantiles of the response variable as a function of input variables \citep{Boukouvalas:2012}. 
+
+The likelihood is defines as
+\begin{align}
+p(y | f, \sigma, \tau) = \frac{\tau(1-\tau)}{\sigma}\exp\left[-\frac{y-f}{\sigma}(\tau - I(y \le f))\right],
+\end{align}
+where $\tau$ is the quantile of interest and $\sigma$ is the standard deviation. $I(y \le f)$ is 1 if the condition inside brackets is true and 0 otherwise. Because the logarithm of the likelihood is not twice differentiable at the mode, Laplace approximation cannot be used for inference with Quantile Regression. Quantile Regression with EP and MCMC is demonstrated in \code{demo\_qgp} with toy data.
+
+%    The likelihood is defined as follows:
+%                            __ n
+%      p(y|f, sigma2, tau) = || i=1 tau*(1-tau)/sigma*exp(-(y-f)/sigma*
+%                                 (tau - I(t <= f)))
+%    
+%    where tau is the quantile of interest, sigma is the standard deviation
+%    of the distribution and I(t <= f) = 1 if t <= f, 0 otherwise.
+%
+%    Note that because the form of the likelihood, second order derivatives
+%    with respect to latent values are 0. Because this, EP should be used
+%    instead of Laplace approximation.    
+%
+%  See also
+%    GP_SET, PRIOR_*, LIK_*
+%
+%   References
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
+%     Using Expectation Propagation. Appearing in Proceedings of the 29th
+%     International Conference on Machine Learning, Edinburg, Scotland, UK,
+%     2012.
+
 \section{Multilatent models}
 \label{sec:multilatent-models}
 
@@ -2966,8 +2997,11 @@ proportional hazard model is demonstrated in
 %    For example, you should call gpla_e as follows: gpla_e(w, gp,
 %    x, y, 'z', z)
 
-\subsection{Input dependent noise}
+\subsection{Input dependent models}
 
+In input-dependent models more than one latent variables are used for modeling different parameters of the distribution. Additional latent variables in turn enable modeling dependencies between inputs and parameters. 
+
+\subsubsection{Input-dependent Noise}
 Input-dependent noise model \citep{Goldberg:1997} can be used to model
 regression data. The model assumes Gaussian distributed data with
 latent variables defining both mean and variance of the Gaussian
@@ -2986,7 +3020,16 @@ defining the variance. Input-dependent noise is demonstrated in
 constant noise.
 % missing description
 
-+ input dependent overdispersion in Weibull x
+\subsubsection{Input-dependent overdispersed Weibull}
+
+The likelihood is defined as
+\begin{eqnarray}
+ p( \y |\f^{(1)}, \f_i^{(2)},\mathbf{z}) =&& \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
+ &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
+\end{eqnarray}
+where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
+uncensored event and $z_i = 1$ for right censored event for
+observation $i$.
 
 \subsection{Zero-inflated negative binomial}
 
@@ -3016,30 +3059,6 @@ constant noise.
 %    For example, you should call gpla_nd_e as follows: gpla_nd_e(w, gp,
 %    x, y, 'z', z)
 
-\subsection{Quantile regression}
-
-
-
-%    The likelihood is defined as follows:
-%                            __ n
-%      p(y|f, sigma2, tau) = || i=1 tau*(1-tau)/sigma*exp(-(y-f)/sigma*
-%                                 (tau - I(t <= f)))
-%    
-%    where tau is the quantile of interest, sigma is the standard deviation
-%    of the distribution and I(t <= f) = 1 if t <= f, 0 otherwise.
-%
-%    Note that because the form of the likelihood, second order derivatives
-%    with respect to latent values are 0. Because this, EP should be used
-%    instead of Laplace approximation.    
-%
-%  See also
-%    GP_SET, PRIOR_*, LIK_*
-%
-%   References
-%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
-%     Using Expectation Propagation. Appearing in Proceedings of the 29th
-%     International Conference on Machine Learning, Edinburg, Scotland, UK,
-%     2012.
 
 \section{Adding new features in the toolbox}\label{sec_adding_new_features}
 

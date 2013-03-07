@@ -629,14 +629,14 @@ function e = gpmc_e(w, gp, x, y, f, z)
   if ~isempty(strfind(gp.infer_params, 'covariance'))
     e=e+gp_e(w, gp, x, f, 'z', z);
   end
-  if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
-      && ~isfield(gp.lik.fh,'trcov') ...
-      && isfield(gp.lik.fh,'lp')
-    % Evaluate the contribution to the error from non-Gaussian likelihood
-    gp=gp_unpak(gp,w);
-    lik=gp.lik;
-    e=e-lik.fh.ll(lik,y,f,z)-lik.fh.lp(lik);
-  end
+%   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
+%       && ~isfield(gp.lik.fh,'trcov') ...
+%       && isfield(gp.lik.fh,'lp')
+%     % Evaluate the contribution to the error from non-Gaussian likelihood
+%     gp=gp_unpak(gp,w);
+%     lik=gp.lik;
+%     e=e-lik.fh.ll(lik,y,f,z)-lik.fh.lp(lik);
+%   end
  
 end
 
@@ -646,14 +646,14 @@ function g = gpmc_g(w, gp, x, y, f, z)
   if ~isempty(strfind(gp.infer_params, 'covariance'))
     g=[g gp_g(w, gp, x, f, 'z', z)];
   end
-  if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
-      && ~isfield(gp.lik.fh,'trcov') ...
-      && isfield(gp.lik.fh,'lp')
-    % Evaluate the contribution to the gradient from non-Gaussian likelihood
-    gp=gp_unpak(gp,w);
-    lik=gp.lik;
-    g=[g -lik.fh.llg(lik,y,f,'param',z)-lik.fh.lpg(lik)];
-  end
+%   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
+%       && ~isfield(gp.lik.fh,'trcov') ...
+%       && isfield(gp.lik.fh,'lp')
+%     % Evaluate the contribution to the gradient from non-Gaussian likelihood
+%     gp=gp_unpak(gp,w);
+%     lik=gp.lik;
+%     g=[g -lik.fh.llg(lik,y,f,'param',z)-lik.fh.lpg(lik)];
+%   end
 
 end
 end
