@@ -500,17 +500,15 @@ function lik = lik_inputdependentnoise(varargin)
     Ef = Ef(:);
     ntest = 0.5*size(Ef,1);
     Ef1=Ef(1:ntest); Ef2=Ef(ntest+1:end);
-%     Varf1=squeeze(Varf(1,1,:)); Varf2=squeeze(Varf(2,2,:));
     if size(Varf,2) == size(Varf,1)
       Varf1=diag(Varf(1:ntest,1:ntest));Varf2=diag(Varf(ntest+1:end,ntest+1:end));
     else
+      if size(Varf,2)==1
+        Varf=reshape(Varf,ntest,2);
+      end
       Varf1=Varf(:,1); Varf2=Varf(:,2);
     end
     sigma2=lik.sigma2;
-%     if ntest ~= 0.5*numel(Ef)
-%       error('numel(Ef) must be 2*numel(yt)');
-%     end
-    %avgE = zt;
     
     lpy = zeros(size(yt));
     %Ey = zeros(size(zt));
