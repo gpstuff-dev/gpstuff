@@ -3083,6 +3083,34 @@ observation $i$. Latent variable $f_2$ is used for modeling the dispersion param
 
 \subsection{Zero-inflated negative binomial}
 
+Zero-inflated negative binomial model is suitable for modelling count
+variables with excessive number of zero observations compared to usual
+Poisson and negative binomial count models. Zero-inflated negative
+binomial models assume a two-stage process, where the first process
+determines whether the count is larger than zero, and the second
+process determines the non-zero count \citep{Mullahy:1986}.
+In \pkg{GPstuff}, these processes are assumed independent a priori, but they
+become a posteriori dependent through the likelihood function
+\begin{align}
+  p + & (1-p)\mathrm{NegBin}(y|y=0),  \quad\mathrm{when}\quad y=0\\
+      & (1-p)\mathrm{NegBin}(y|y>0),  \quad\mathrm{when}\quad y>0,
+\end{align}
+where the probability p is given by a binary classifier with logit
+likelihood. NegBin is the Negative-binomial distribution parametrized
+for the $i$'th observation as
+\begin{equation}
+ \y |\f,\mb{e}, r  \sim \prod_{i=1}^n
+ \frac{\Gamma(r+y_i)}{y_i!\Gamma(r)}
+\left(\frac{r}{r+\mu_i}\right)^r \left(\frac{\mu_i}{r+\mu_i}\right)^{y_i},
+\end{equation}
+%
+where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
+governing the variance. In \pkg{GPstuff}, the latent value vector
+$\f=[\f_1^T \f_2^T]^T$ has length $2N$, where $N$ is the number of
+observations. The latents $\f_1$ are associated with the
+classification process and the latents $\f_2$ with the
+negative-binomial count process. %The model is demonstrated in ?.
+
 %    The likelihood is defined as follows:
 %     
 %      p + (1-p)*NegBin(y|y=0),    when y=0
