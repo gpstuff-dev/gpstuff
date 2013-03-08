@@ -46,7 +46,7 @@ start=tic;[gp, indA]=passgp(gp, x, y, 'opt', opt, 'npass', 4, 'ninit', 800, 'nsu
 tt=time;
 [Eft, Varft, lpyt, Eyt, Varyt]=gp_pred(gp, x(indA,:), y(indA,:), xt, 'yt', yt);
 figure, [cc,hh]=contour(reshape(xt(:,1),size(xt1,1), size(xt1,1)), reshape(xt(:,2),size(xt1,1), size(xt1,1)), reshape(exp(lpyt),size(xt1,1), size(xt1,1)), [0.1 0.9]);
-clabel(cc,hh);
+clabel(cc,hh); title('Pr(y==1) (fpass-gp)')
 param=gp_pak(gp);
 
 % PASS-GP with inclusion threshold 0.65, deletion threshold 0.99, intial
@@ -56,7 +56,7 @@ start=tic;[gp, indA2]=passgp(gp, x, y, 'opt', opt, 'pinc', 0.65, 'pdel', 0.99, '
 tt2=time;
 [Eft2, Varft2, lpyt2, Eyt2, Varyt2]=gp_pred(gp, x(indA2,:), y(indA2,:), xt, 'yt', yt);
 figure, [cc,hh]=contour(reshape(xt(:,1),size(xt1,1), size(xt1,1)), reshape(xt(:,2),size(xt1,1), size(xt1,1)), reshape(exp(lpyt2),size(xt1,1), size(xt1,1)), [0.1 0.9]);
-clabel(cc,hh);
+clabel(cc,hh); title('Pr(y==1) (pass-gp)')
 param2=gp_pak(gp);
 
 % Full Gaussian Process for comparison
@@ -65,7 +65,7 @@ opt.Display='iter';
 start=tic;gp=gp_optim(gp,x,y,'opt',opt);tt3=toc;
 [Eft3, Varft3, lpyt3, Eyt3, Varyt3]=gp_pred(gp, x, y, xt, 'yt', yt);
 figure, [cc,hh]=contour(reshape(xt(:,1),size(xt1,1), size(xt1,1)), reshape(xt(:,2),size(xt1,1), size(xt1,1)), reshape(exp(lpyt3),size(xt1,1), size(xt1,1)), [0.1 0.9]);
-clabel(cc,hh);
+clabel(cc,hh); title('Pr(y==1) (full gp)')
 
 % Display some statistics
 
@@ -83,4 +83,4 @@ legend('y=1', 'y=-1', 'Active set for fpass-gp');
 subplot(1,2,2),  plot(x(y==1,1),x(y==1,2),'or',x(y==-1,1),x(y==-1,2),'ob'); 
 hold all; plot(x(indA2,1), x(indA2,2), '.k'); title('Data and active set (pass-gp)')
 legend('y=1', 'y=-1', 'Active set for pass-gp');
-setrandstream(0);
+setrandstream(prevstream);
