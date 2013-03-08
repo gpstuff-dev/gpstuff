@@ -1325,839 +1325,13 @@ Poisson likelihood, discussed in the section \ref{sec_spatial_demo1},
 Laplace and EP approximations work, in our experience, practically as
 well as MCMC.
 
-\section{Sparse Gaussian processes}
-\label{cha:sparse-GP}
+\section{Other single latent models}
 
-%foo
+% In this section, we discuss other example applications where
+% \pkg{GPstuff} has been used. 
 
-The evaluation of the inverse and determinant of the covariance matrix
-in the log marginal likelihood (or its approximation) and its gradient
-scale as $O(n^3)$ in time. This restricts the implementation of GP
-models to moderate size data sets. However, the unfavorable scaling in
-computational time can be alleviated with sparse approximations to GP
-and compactly supported (CS) covariance functions. The sparse
-approximations scale as $O(nm^2)$, where $m<n$ and the CS covariance
-functions lead to computations which scale, in general, as $O(n^3)$
-but with a smaller constant than with traditional globally supported
-covariance functions. Many sparse GPs are proposed in the literature
-and some of them are build into \pkg{GPstuff}.
-
-\subsection{Compactly supported covariance functions}
-
-%foo
-
-A CS covariance function gives zero correlation between data points
-whose distance exceeds a certain threshold. This leads to a sparse
-covariance matrix. The challenge with constructing CS covariance
-functions is to guarantee their positive definiteness and much
-literature has been devoted on the subject \citep[see
-e.g.][]{Sanso+Schuh:1987,Wu:1995,Wendland:1995,Gaspari+Cohn:1999,Gneiting:1999,Gneiting:2002,Buhmann:2000}
-The CS functions implemented in \pkg{GPstuff} are Wendland's piecewise
-polynomials $k_{\text{pp},q}$ \citep{Wendland:2005}, such as
-% 
-\begin{equation}\label{ppcs2}
-k_{\text{pp},2} = 
-\frac{\sigma_{\text{pp}}^2}{3} (1 - r)_+^{j+2} \left( (j^2 + 4j
-   +3) r^2  +   (3j + 6)r + 3\right) , 
-\end{equation}
-%
-where $j = \lfloor d/2 \rfloor + 3$. These functions correspond to
-processes that are $q$ times mean square differentiable and are
-positive definite up to an input dimension $d$. Thus, the degree of
-the polynomial has to be increased alongside the input dimension. The
-dependence of CS covariance functions to the input dimension is very
-fundamental. There are no radial CS functions that are positive
-definite on every $\Re^d$ \citep[see e.g.][theorem
-9.2]{Wendland:1995}.
-
-The key idea with CS covariance functions is that, roughly speaking,
-only the nonzero elements of the covariance matrix are used in the
-calculations. This may speed up the calculations substantially since
-in some situations only a fraction of the elements of the covariance
-matrix are non-zero \citep[see
-e.g.][]{Vanhatalo+Vehtari:2008,Rue+Martino+Chopin:2009}. In practice,
-efficient sparse matrix routines are needed \citep{Davis:2006}. These
-are nowadays a standard utility in many statistical computing packages
-or available as an additional package for them.  \pkg{GPstuff}
-utilizes the sparse matrix routines from \pkg{SuiteSparse} written by
-Tim Davis (\url{http://www.cise.ufl.edu/research/sparse/SuiteSparse/})
-and this package should be installed before using CS covariance
-functions.
-
-The CS covariance functions have been rather widely studied in the
-geostatistics applications \citep[see
-e.g.][]{Gneiting:2002,Furrer+Genton+Nychka:2006,Moreaux:2008}. There
-the computational speed-up relies on efficient linear solvers for the
-predictive mean $[\tilde{\f}] = \Kaf (\Kff +\sigma^2)^{-1}\y$. The
-parameters are either fitted to the empirical covariance, optimized
-using a line search in one dimension
-\citep{Kaufman+Schervish+Nychka:2008} or sampled with Metropolis
-Hastings. The benefits from a sparse covariance matrix have been
-immediate since the problems collapse to solving sparse linear
-systems. However, utilizing the gradient of the log posterior of the
-parameters, as is done in \pkg{GPstuff} needs extra sparse matrix
-tools. These are introduced and discussed by
-\citet{Vanhatalo+Vehtari:2008}.  EP algorithm requires also special
-considerations with CS covariance functions. The posterior covariance
-in EP \eqref{eq_posterior_in_EP_case} does not remain sparse, and
-thereby it has to be expressed implicitly. This issue is discussed by
-\citet{Vanhatalo+Vehtari:2010} and
-\citet{Vanhatalo+Pietilainen+Vehtari:2010}.
-
-\subsubsection{Compactly supported covariance functions in GPstuff}
-
-The demo \code{demo\_regression\_ppcs} contains a regression example
-with CS covariance function $k_{\text{pp},2}$ (\code{gpcf\_ppcs2}).
-The data contain US annual precipitation summaries from year 1995 for
-5776 observation stations. The user interface of \pkg{GPstuff} makes
-no difference between globally and compactly supported covariance
-functions but the code is optimized to use sparse matrix routines
-whenever the covariance matrix is sparse.  Thus, we can construct the
-model, find the MAP estimate for the parameters and predict to new
-input locations in a familiar way:
-%
-\begin{verbatim}
-pn = prior_t('nu', 4, 's2', 0.3);
-lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
-pl2 = prior_gamma('sh', 5, 'is', 1);
-pm2 = prior_sqrtt('nu', 1, 's2', 150);
-gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3, ...
-                   'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
-gp = gp_set('lik', lik, 'cf', gpcf2, 'jitterSigma2', 1e-6);
-gp = gp_optim(gp,x,y,'opt',opt);
-Eft = gp_pred(gp, x, y, xx);
-\end{verbatim}
-%
-With this data the covariance matrix is rather sparse since only about
-5\% of its elements are non-zero. The structure of the covariance
-matrix is plotted after the approximate minimum degree (AMD)
-permutation \citep{Davis:2006} in Figure~\ref{demo_ppcsCov}. The demo
-\code{demo\_spatial2} illustrates the use of compactly supported
-covariance functions with a non-Gaussian likelihood.
-
-\begin{figure}[]
-    \begin{center}
-      \subfigure[The nonzero elements of $\Kff$.]{
-        \label{}
-        \includegraphics[width=3.2cm]{demo_ppcsCov1}
-      }
-      \hspace{-8mm}
-      ~
-      \subfigure[The posterior predictive mean surface.]{ 
-        \label{}
-        \includegraphics[width=9cm]{demo_ppcsCov2}
-       }
-       \caption[]{The nonzero elements of $\Kff$ with
-         $k_{\text{pp,2}}$ function, and the posterior predictive mean
-         of the latent function in the US precipitation data
-         set.}\label{demo_ppcsCov}
-    \end{center}
-\end{figure}
-
-
-\subsection{FIC and PIC sparse approximations}\label{FIC_PICsparse_approximations}
-
-\citet{Snelson+Ghahramani:2006} proposed a sparse pseudo-input GP
-(SPGP), which \citet{Quinonero-Candela+Rasmussen:2005} named later
-fully independent conditional (FIC).
-%  The original idea in SPGP was that the
-% sparse approximation is used only in the training phase and
-% predictions are conducted using the exact covariance matrix, where the
-% word 'training' comes to the name. If the approximation is used also
-% for the predictions, the word training should drop out leading to FIC.
-The partially independent conditional (PIC) sparse approximation is an
-extension of FIC
-\citep{Quinonero-Candela+Rasmussen:2005,Snelson+Ghahramani:2007a}, and
-they are both treated here following
-\citet{Quinonero-Candela+Rasmussen:2005}. See also
-\citep{Vanhatalo+Vehtari:2008,Vanhatalo+Pietilainen+Vehtari:2010} for
-further discussion. The approximations are based on introducing an
-additional set of latent variables $\uu = \{u_i \}_{i=1}^{m}$, called
-\emph{inducing variables}. These correspond to a set of input
-locations $\mb{X}_{u}$, called \emph{inducing inputs}. The latent
-function prior is approximated as
-%
-\begin{equation}\label{cond_independ_joint_prior}   %jätä
-  p(\f|\mb{X}, \theta) \approx q(\f | \mb{X}, \mb{X}_{u}, \theta) = \int q(\f |
-  \mb{X}, \mb{X}_{u}, \uu, \theta)p(\uu | \mb{X}_{u}, \theta)\mathrm{d}\mathbf{u},
-\end{equation}
-%
-where $q(\f|\mb{X}, \mb{X}_{u}, \uu, \theta)$ is an inducing
-conditional. The above decomposition leads to the exact prior if the
-true conditional $\f | \mb{X}, \mb{X}_{u}, \uu, \theta \sim \N(\Kfu \iKuu\uu,
-\Kff-\mb{K}_{\text{f,u}} \iKuu \mb{K}_{\text{u,f}})$ is used. However,
-in FIC framework the latent variables are assumed to be conditionally
-independent given $\uu$, in which case the inducing conditional
-factorizes $q(\f | \mb{X}, \mb{X}_{u}, \uu, \theta)\!= \prod q_i(f_i|\mb{X}, \mb{X}_{u}, \uu, \theta)$. In PIC latent
-variables are set in blocks which are conditionally independent of
-each others, given $\uu$, but the latent variables within a block have
-a multivariate normal distribution with the original covariance. The
-approximate conditionals of FIC and PIC can be summarized as
-%
-\begin{equation}
-q(\f | \mb{X}, \mb{X}_{u}, \uu, \theta, \mb{M}) = \N(\f|\Kfu \iKuu\uu,
-\mathrm{mask}\left(\Kff-\mb{K}_{\text{f,u}} \iKuu
-\mb{K}_{\text{u,f}}|\mb{M}\right)), 
-\end{equation}
-%
-where the function $\LL=\mathrm{mask}\left(\cdot|\mb{M}\right)$, with
-matrix $\mb{M}$ of ones and zeros, returns a matrix $\LL$ of size
-$\mb{M}$ and elements $\LL_{ij} = [\cdot]_{ij}$ if $\mb{M}_{ij} = 1$
-and $\LL_{ij} =0$ otherwise.  An approximation with $\mb{M} = \mb{I}$
-corresponds to FIC and an approximation where $\mb{M}$ is block
-diagonal corresponds to PIC.  The inducing variables are given a
-zero-mean Gaussian prior $\uu|\theta,\mb{X}_u\sim \N(\mb{0},\Kuu)$ so
-that the approximate prior over latent variables is
-%
-\begin{equation}
-  q(\f | \mb{X}, \mb{X}_{u},\theta,\mb{M}) = \N(\f | \mb{0}, \mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}+\LL).
-\label{GP_FITC_prior}
-\end{equation}
-%
-The matrix $\mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}$ is of
-rank $m$ and $\LL$ is a rank $n$ (block) diagonal matrix. The prior
-covariance above can be seen as a non-stationary covariance function of its
-own 
-% %
-% \begin{equation}\label{PIC_covariance}
-% k_{\text{FIC/PIC}}(k(x_i,x_j|\theta),\mb{M},\mb{X}_{u}) = 
-% \begin{cases} 
-%    k(\x_i,\x_j) & \text{if $\mb{M}_{ij}=1$}, \\
-%    \left[\Kfu \iKuu\Kuf\right]_{ij} &
-%   \text{otherwise},
-% \end{cases} 
-% \end{equation}
-% %
-where the inducing inputs $\mb{X}_u$ and the matrix $\mb{M}$ are free
-parameters similar to parameters, which can be optimized
-alongside $\theta$ \citep{Snelson+Ghahramani:2006,Lawrence:2007}.
-
-The computational savings are obtained by using the
-Woodbury-Sherman-Morrison lemma \citep[e.g.][]{Harville:1997} to
-invert the covariance matrix in \eqref{GP_FITC_prior} as
-%
-\begin{equation}\label{Woodbury_eq}
-(\mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}+\LL)^{-1} = \LL^{-1} -
-\mb{V}\mb{V}^{\text{T}},
-\end{equation}
-%
-where $\mb{V} =\LL^{-1}\Kfu \text{chol}[(\Kuu
-+\Kuf\LL^{-1}\Kfu)^{-1}]$. There is a
-similar result also for the determinant. With FIC the computational
-time is dominated by the matrix multiplications, which need time
-$O(m^2n)$. With PIC the cost depends also on the sizes of the blocks
-in $\LL$. If the blocks were of equal size $b\times b$, the time for
-inversion of $\LL$ would be $O(n/b\times b^3)=O(nb^2)$. With blocks at
-most the size of the number of inducing inputs, that is $b=m$, the
-computational cost in PIC and FIC are similar. PIC approaches FIC in
-the limit of a block size one and the exact GP in the limit of a block
-size $n$ \citep{Snelson:2007b}.
-
-\subsubsection{FIC sparse approximation in GPstuff}
-
-The same data that were discussed in the section
-\ref{sec:demo_regression1} is analyzed with sparse approximations in
-the demo \code{demo\_regression\_sparse1}. The sparse approximation is
-a property of the GP structure and we can construct the model
-similarly to the full GP models:
-%
-\begin{verbatim}
-gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, 'X_u', X_u)
-\end{verbatim}
-%
-The difference is that we have to define the type of the sparse
-approximation, here \verb|'FIC'|, and set the inducing inputs
-\code{X\_u} in the GP structure. Since the inducing inputs are
-considered as extra parameters common to all of the covariance
-functions (there may be more than one covariance function in additive
-models) they are set in the GP structure instead of the covariance
-function structure. If we want to optimize the inducing inputs
-alongside the parameters they need to have a prior as well.  GP
-structure initialization gives them a uniform prior by default.
-
-We can optimize all the parameters, including the inducing inputs, as
-with a full GP. Sometimes, for example in spatial problems, it is
-better to fix the inducing inputs
-\citep{Vanhatalo+Pietilainen+Vehtari:2010} or it may be more efficient
-to optimize the parameters and inducing inputs separately, so that we
-iterate the separate optimization steps until convergence
-(demonstrated in \code{demo\_regression\_sparse1}).  The parameters to
-be optimized are defined by the field \code{infer\_params} in the GP
-structure. This field regulates which parameters are considered fixed
-and which are inferred in the group level (covariance function,
-inducing inputs, likelihood).  We may also want to fix one of the
-parameters inside these groups. For example, covariance function
-magnitude.  If this is the case, then the parameter to be fixed should
-be given an empty prior (\code{prior\_fixed}). If the parameter has a
-prior structure it is an indicator that we want to infer that
-parameter.
- 
-\subsubsection{PIC sparse approximation in GPstuff}\label{sec:PIC_regression}
-
-In PIC, in addition to defining the inducing inputs, we need to appoint
-every data point in a block. The block structure is common to all
-covariance functions, similarly to the inducing inputs, for which reason
-the block information is stored in the GP structure. After the
-blocking and initialization of the inducing inputs the GP structure is
-constructed as follows:
-%
-\begin{verbatim}
-gp_pic = gp_set('type','PIC','lik',lik,'cf',gpcf,'X_u',X_u,'tr_index',trindex);
-\end{verbatim}
-%
-Above, the cell array \code{trindex} contains the block index vectors
-for training data. It means that, for example, the inputs and outputs
-\code{x(trindex\{i\},:)} and \code{y(trindex\{i\},:)} belong to the
-i'th block. The optimization of parameters and inducing inputs is
-done the same way as with FIC or a full GP model. In prediction,
-however, we have to give one extra input, \code{tstindex}, for
-\code{gp\_pred}. This defines how the prediction inputs are appointed
-in the blocks in a same manner as \code{trindex} appoints the training
-inputs. 
-%
-\begin{verbatim}
-Eft_pic = gp_pred(gp_pic, x, y, xt, 'tstind', tstindex);
-\end{verbatim}
-%
-\subsection{Deterministic training conditional, subset of regressors and
-  variational sparse approximation}
-
-
-The deterministic training conditional is based on the works by
-\citet{Csato+Opper:2002} and \citet{Seeger+Williams+Lawrence:2003} and
-was earlier called Projected Latent Variables \citep[see][for
-more details]{Quinonero-Candela+Rasmussen:2005}. The approximation 
-can be constructed similarly as FIC and PIC by defining the inducing
-conditional, which in the case of DTC is 
-%
-\begin{equation}
-q(\f | \mb{X}, \mb{X}_{u}, \uu, \theta) = \N(\f|\Kfu \iKuu\uu,0).
-\end{equation}
-%
-This implies that the approximate prior over latent variables is
-%
-\begin{equation}
-  q(\f | \mb{X}, \mb{X}_{u}, \theta) = \N(\f | \mb{0}, \mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}).
-\label{GP_DTC_prior}
-\end{equation}
-%
-The deterministic training conditional is not strictly speaking a
-proper GP since it uses different covariance function for the latent
-variables appointed to the training inputs and for the latent
-variables at the prediction sites, $\tilde{f}$. The prior covariance
-for $\tilde{f}$ is the true covariance $\Kaa$ instead of
-$\Kau\iKuu\Kua$. This does not affect the predictive mean since the
-cross covariance $\COV[\f,\tilde{\f}] = \Kfu\iKuu\Kua$, but it gives a
-larger predictive variance. An older version of DTC is the subset of
-regressors (SOR) sparse approximation which utilizes $\Kau\iKuu\Kua$.
-However, this resembles a singular Gaussian distribution and thus the
-predictive variance may be negative. DTC tries to fix this problem by
-using $\Kaa$ \citep[see][]{Quinonero-Candela+Rasmussen:2005}. DTC and
-SOR are identical in other respects than in the predictive variance
-evaluation. In spatial statistics, SOR has been used by
-\citet{Banerjee+Gelfand+Finley+Sang:2008} with a name Gaussian
-predictive process model.
-
-The approximate prior of the variational approximation by
-\citet{Titsias:2009} is exactly the same as that of DTC. The
-difference between the two approximations is that in the variational
-setting the inducing inputs and covariance function parameters are
-optimized differently. The inducing inputs and parameters can be seen
-as variational parameters that should be chosen to maximize the
-variational lower bound between the true GP posterior and the sparse
-approximation. This leads to optimization of modified log marginal
-likelihood
-%
-\begin{equation}
-V(\theta, \mb{X}_u) = \log [N(\y|0, \sigma^2\mb{I} + \Qff) ] -
-\frac{1}{2\sigma^2} \text{tr}(\Kff - \Kfu\iKuu\Kuf)
-\end{equation}
-%
-with Gaussian likelihood. With non-Gaussian likelihood, the
-variational lower bound is similar but $\sigma^2\mb{I}$ is replaced by
-$\mb{W}^{-1}$ (Laplace approximation) or $\tilde{\mb{\Sigma}}$ (EP).
-
-
-\subsubsection{Variational, DTC and SOR sparse approximation in GPstuff}
-
-%foo
-
-The variational, DTC and SOR sparse approximations are constructed
-similarly to FIC. Only the type of the GP changes:
-%
-\begin{verbatim}
-gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', gpcf, 'X_u', X_u);
-gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, 'X_u', X_u);
-gp_sor = gp_set('type', 'SOR', 'lik', lik, 'cf', gpcf, 'X_u', X_u);
-\end{verbatim}
-%
-The sparse GP approximations are compared in the demo
-\code{demo\_regression\_sparse2}, and, for example,
-\citet{Quinonero-Candela+Rasmussen:2005}, \citet{Snelson:2007b},
-\citet{Titsias:2009}, and \citet{Alvarez+Luengo+Titsias+Lawrence:2010}
-treat them in more detail.
-
-
-\subsection{Sparse GP models with non-Gaussian likelihoods}
-
-The extension of sparse GP models to non-Gaussian likelihoods is
-straightforward in \pkg{GPstuff}. User can define the sparse GP just
-as described in the previous two sections and then continue with the
-construction of likelihood exactly the same way as with a full GP.
-The Laplace approximation, EP and integration methods can be used with
-the same commands as with full GP. This is demonstrated in
-\code{demo\_spatial1}.
-
-\section{Model assessment and comparison}\label{sec:model_assessment}
-
-There are various means to assess the goodness of the model and its
-predictive performance. \pkg{GPstuff} provides four basic approaches:
-marginal likelihood, cross-validation, deviance information
-criterion and widely applicable information criterion.
-
-\subsection{Marginal likelihood}
-
-Marginal likelihood is often used for model selection \citep[see,
-e.g.][]{Kass+Raftery:1995}. It corresponds to ML II or with model
-priors to MAP II estimate in the model space, selecting the model with
-the highest marginal likelihood or highest marginal posterior
-probability. 
-%
-In \pkg{GPstuff} the marginal posterior and marginal likelihood (or
-its approximation in case of non-Gaussian likelihood) given the
-parameters are computed by function \code{gp\_e}.
-
-\subsection{Cross-validation}
-\label{sec:cross-validation}
-
-Cross-validation (CV) is an approach to estimate the predictive
-performance for the future observations while avoiding the double use
-of the data. The $i$th observation $(\x_{i},y_{i})$ in the training
-data is left out, and then the predictive distribution for $y_i$ is
-computed with a model that is fitted to all of the observations except
-$(\x_i,y_i)$.
-%
-By repeating this for every point in the training data, we get a
-collection of leave-one-out cross-validation (LOO-CV) predictive
-densities.
-
-For GP with given hyperparameters the LOO-CV predictions can be
-computed in case of Gaussian likelihood using an analytical
-solution \citep{Sundararajan+Keerthi:2001a} and in case of
-non-Gaussian likelihood using EP approximation
-\citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (to be submitted),
-which have been implemented in \code{gp\_loopred}.
-%
-If set of hyperparameters have been obtained using \code{gp\_mc} or
-\code{gp\_ia} LOO-posterior can be approximated using importance
-sampling \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002},
-which is also implemented in \code{gp\_loopred}.
-
-To reduce computation time, in $k$-fold-CV, $1/k$ part of the training
-data is left out, and then the predictive distribution is computed
-with a model that is fitted to all of the observations except that
-part.  Since the $k$-fold-CV predictive densities are based on smaller
-training data sets than the full data set, the estimate is slightly
-biased. In \pkg{GPstuff} first order bias correction proposed by
-\citet{Burman:1989} is used.  \pkg{GPstuff} provides \code{gp\_kfcv},
-which computes $k$-fold-CV and bias-corrected $k$-fold-CV with
-log-score and root mean squared error (RMSE). The function
-\code{gp\_kfcv} provides also basic variance estimates for the
-predictive performance estimates.  Variance is computed from the
-estimates for each fold ~\citep[see, e.g.,][]{Dietterich:1998}.  See
-\citep{Vehtari+Lampinen:2002} for more details on estimating the
-uncertainty in performance estimates.
-
-\subsection{DIC}
-
-Deviance information criterion (DIC) is another very popular model
-selection criterion
-\citep[][]{Spiegelhalter+Best+Carlin+Linde:2002}. DIC is not fully
-Bayesian approach as it estimates the predictive performance if the
-predictions were made using point-estimate (plug-in estimate) for
-the unknowns, instead of using posterior predictive distribution.
-Additionally DIC is defined only for regular models and thus fails
-for singular models. DIC is included in \pkg{GPstuff} to allow
-comparisons and better alternative WAIC is described in the next
-section.
-
-With parametric models without any hierarchy DIC is usually written as
-%
-\begin{align}
-p_{\text{eff}} &= \E_{\theta|\mathcal{D}}[D(\y, \theta)] - D(\y,
-\E_{\theta|\mathcal{D}}[\theta]) \\
-\text{DIC} & = \E_{\theta|\mathcal{D}}[D(\y, \theta)] + p_{\text{eff}},
-\end{align}
-%
-where $p_{\text{eff}}$ is the effective number of parameters and $D =
--2\log(p(\y|\theta))$ is the deviance. Since our models are
-hierarchical we need to decide the parameters on focus \citep[see][for
-discussion on this]{Spiegelhalter+Best+Carlin+Linde:2002}. The
-parameters on the focus are those over which the expectations are
-taken when evaluating the effective number of parameters and DIC. In
-the above equations, the focus is in the parameters and in the
-case of a hierarchical GP model of \pkg{GPstuff} the latent variables
-would be integrated out before evaluating DIC. If we have a MAP
-estimate for the parameters, we may be interested to evaluate DIC
-statistics with the focus on the latent variables. In this case the
-above formulation would be
-%
-\begin{align}
-p_{D}(\theta) &= \E_{\f|\mathcal{D}, \theta}[D(\y, \f)] - D(\y,
-\E_{\f|\mathcal{D}, \theta}[\f]) \label{DIC_focus_on_latent_variables1}\\
-\text{DIC} & = \E_{\f|\mathcal{D},\theta}[D(\y, \f)] +
-p_{D}(\theta).\label{DIC_focus_on_latent_variables2}
-\end{align}
-%
-Here the effective number of parameters is denoted differently with
-$p_{D}(\theta)$ since now we are approximating the effective number of
-parameters in $\f$ conditionally on $\theta$, which is different from
-the $p_{\text{eff}}$. $p_{D}(\theta)$ is a function of the
-parameters and it measures to what extent the prior correlations
-are preserved in the posterior of the latent variables given $\theta$.
-For non-informative data $p_{D}(\theta)=0$ and the posterior is the
-same as the prior. The greater $p_{D}(\theta)$ is the more the model
-is fitted to the data and large values compared to $n$ indicate
-potential overfit. Also, large $p_{D}(\theta)$ indicates that we
-cannot assume that the conditional posterior approaches normality by
-central limit theorem. Thus, $p_{D}(\theta)$ can be used for assessing
-the goodness of the Laplace or EP approximation for the conditional
-posterior of the latent variables as discussed by
-\citet{Rue+Martino+Chopin:2009} and
-\citet{Vanhatalo+Pietilainen+Vehtari:2010}. The third option is to
-evaluate DIC with focus on all the variables, $[\f, \theta]$. In this
-case the expectations are over $p(\f,\theta|\mathcal{D})$.
-
-\subsection{WAIC}
-
-\citet{Watanabe:2009,Watanabe:2010a,Watanabe:2010d} presented
-widely applicable information criterion (WAIC) and gave a formal
-proof of its properties as an estimate for the predictive
-performance of posterior predictive distributions for both regular
-and singular models. A criterion of similar form was independently
-proposed by \citet{Richardson:2002} as a version of DIC, but
-without formal justification.
-
-Other information criteria are based on Fisher's asymptotic theory
-assuming a regular model for which the likelihood or the posterior
-converges to a single point and MLE, MAP, and plug-in estimates are
-asymptotically equivalent. With singular models the set of true
-parameters consists of more than one point, the Fisher information 
-matrix is not positive definite, plug-in estimates are not
-representative of the posterior and the distribution of the deviance
-does not converge to a $\chi^2_\nu$ distribution. 
-
-Watanabe shows that the Bayesian generalization utility can
-be estimated by a criterion 
-\begin{align}
-  \WAIC_G = BU_{t} - 2(BU_{t} - GU_{t}),
-\end{align}
-where $BU_t$ is Bayes training utility
-\begin{align}
-  BU_t = \frac{1}{n} \sum_{i=1}^n \log p(y_i|D,M_k) 
-\end{align}
-and $GU_g$ is Gibbs generalization utility
-\begin{align}
-  GU_g = \int p_t(\tilde{y}) \int p(\theta|D,M_k) \log
-  p(\tilde{y}|\theta,M_k) d\theta d\tilde{y} 
-\end{align}
-WAIC can also be given as a functional variance form 
-\begin{align}
-  \WAIC_V &= BU_{t} - V/n,
-\end{align}
-where the functional variance
-\begin{align}
-  V = %\frac{1}{n} 
-  \sum_{i=1}^n \Bigg\{ 
-%     \int p(\theta_k|D,M_k) 
-%     (\log p(\dot{y}_i|\dot{x}_i,\bar{\theta}_k,M_k))^2 d\theta_k
-%     -(\int p(\theta_k|D,M_k) 
-%       \log p(\dot{y}_i|\dot{x}_i,\bar{\theta}_k,M_k))^2 
-    & \E_{\theta|D,M_k} \left[ \left( 
-        \log p({y}_i|{x}_i,\theta,M_k)
-      \right)^2 \right] \nonumber \\
-    & \quad 
-    - \left( 
-      \E_{\theta|D,M_k} \left[
-        \log p({y}_i|{x}_i,\theta,M_k)
-      \right]
-    \right)^2
-  \Bigg\},
-\end{align}
-describes the fluctuation of the posterior distribution.
-
-WAIC is asymptotically equal to the true logarithmic utility in
-both regular and singular statistical models and the error in a
-finite case is $o(1/n)$. \citet{Watanabe:2010d} shows also that the
-WAIC estimate is asymptotically equal to the Bayesian
-cross-validation estimate (section \ref{sec:cross-validation}).
-%
-$\WAIC_{G}$ and $\WAIC_V$ are asymptotically equal, but the series
-expansion of $WAIC_V$ has closer resemblance to the series
-expansion of the logarithmic leave-one-out utility.
-
-\subsection{Model assessment demos}
-
-The model assessment methods are demonstrated with the functions
-\code{demo\_modelassesment1} and \code{demo\_modelassesment2}. The
-former compares the sparse GP approximations to the full GP with
-regression data and the latter compares the logit and probit
-likelihoods in GP classification.
-
-Assume that we have built our regression model with a Gaussian noise
-and used optimization method to find the MAP estimate for the
-parameters. We evaluate the effective number of latent
-variables, DIC and WAIC
-%
-\begin{verbatim}
-p_eff_latent = gp_peff(gp, x, y);
-[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent');
-WAIC = gp_waic(gp,x,y);
-\end{verbatim}
-%
-where $p_{\text{eff}}$ is evaluated with two different approximations.
-Since we have the MAP estimate for the parameters the focus is on
-the latent variables. In this case we can also use \code{gp\_peff}
-which returns the effective number of parameters approximated as
-%
-\begin{equation}\label{eq_peff_fast_approx}
-p_{D}(\theta) \approx n - \text{tr}(\iKff (\iKff + \sigma^{-2}\mb{I})^{-1})
-\end{equation}
-%
-\citep{Spiegelhalter+Best+Carlin+Linde:2002}. When the focus is on the
-latent variables, the function \code{gp\_dic} evaluates the DIC
-statistics and the effective number of parameters as described by the
-equations \eqref{DIC_focus_on_latent_variables1} and
-\eqref{DIC_focus_on_latent_variables2}. 
-
-The $k$-fold-CV expected utility estimate can be evaluated as follows:
-%
-\begin{verbatim}
-cvres =  gp_kfcv(gp, x, y);
-\end{verbatim}
-% 
-The \code{gp\_kfcv} takes the ready made model structure \code{gp} and
-the training data \code{x} and \code{y}. The function divides the data
-into $k$ groups, conducts inference separately for each of the
-training groups and evaluates the expected utilities with the test
-groups. Since no optional parameters are given the inference is
-conducted using MAP estimate for the parameters. The default division
-of the data is into 10 groups.  The expected utilities and their
-variance estimates are stored in the structure \code{cvres}.
-\code{gp\_kfcv} returns also other statistics if more information is
-needed and the function can be used to save the results automatically.
-
-
-Assume now that we have a record structure from \code{gp\_mc}
-function with Markov chain samples of the parameters stored in it.
-In this case, we have two options how to evaluate the DIC
-statistics. We can set the focus on the parameters or all the
-parameters (that is parameters and latent variables). The two
-versions of DIC and the effective number of parameters and WAIC are
-evaluated as follows:
-%
-\begin{verbatim}
-rgp = gp_mc(gp, x, y, opt);
-[DIC, p_eff] =  gp_dic(rgp, x, y, 'focus', 'param');
-[DIC2, p_eff2] =  gp_dic(rgp, x, y, 'focus', 'all');
-WAIC = gp_waic(gp,x,y);
-\end{verbatim}
-% 
-Here the first line performs the MCMC sampling with options
-\code{opt}. The next two lines evaluate the DIC statistics and the
-last line evaluates WAIC. With Markov chain samples, we cannot use
-the \code{gp\_peff} function to evaluate $p_{D}(\theta)$ since that
-is a special function for models with fixed parameters.
-
-The functions \code{gp\_peff}, \code{gp\_dic} and \code{gp\_kfcv} work
-similarly for non-Gaussian likelihoods as for a Gaussian one. The only
-difference is that the integration over the latent variables is done
-approximately.  The way the latent variables are treated is defined in
-the field \code{latent\_method} of the GP structure and this is
-initialized when constructing the model as discussed in the section
-\ref{GP_classification}. The effective number of parameters returned
-by \code{gp\_peff} is evaluated as in the equation
-\eqref{eq_peff_fast_approx} with the modification that
-$\sigma^{-2}\mb{I}$ is replaced by $\mb{W}$ in the case of Laplace
-approximation and $\tilde{\mb{\Sigma}}^{-1}$ in the case of EP.
-
-
-\section{Modifying the covariance functions}\label{sec:modifying_covariance}
-
-\subsection{Additive models}\label{sec_additive_models}
-
-In many practical situations, a GP prior with only one covariance
-function may be too restrictive since such a construction can model
-effectively only one phenomenon. For example, the latent function may
-vary rather smoothly across the whole area of interest, but at the
-same time it can have fast local variations. In this case, a more
-reasonable model would be $f(\mb{x}) = g(\mb{x}) + h(\mb{x})$, where
-the latent value function is a sum of two functions, slow and fast
-varying. By placing a separate GP prior for both of the functions $g$
-and $h$ we obtain an additive prior
-%
-\begin{equation}\label{two_length_scale_model}
-f(\x)|\theta \sim \GP(0,k_g(\x,\x') + k_h(\x,\x')).
-\end{equation}
-%
-The marginal likelihood and posterior distribution of the latent
-variables are as before with $\Kff = \mb{K}_{\text{g,g}} +
-\mb{K}_{\text{h,h}}$. However, if we are interested on only, say,
-phenomenon $g$, we can consider the $h$ part of the latent function as
-correlated noise and evaluate the predictive distribution for $g$,
-which with the Gaussian likelihood would be
-%
-\begin{equation}
-  \tilde{g}(\tilde{\x})|\mathcal{D},
-  \theta \sim \GP\left(k_g(\tilde{\x},\mb{X})(\Kff + \sigma^2\mb{I})^{-1}\mb{y}, 
-    k_g(\tilde{\x},\tilde{\x}') -
-    k_g(\tilde{\x},\mb{X})(\Kff + \sigma^2\mb{I})^{-1}  k_g(\mb{X},\tilde{\x}')\right).
-\end{equation}
-%
-With non-Gaussian likelihood, the Laplace and EP approximations for
-this are similar since only $\sigma^2\mb{I}$ and $(\Kff +
-\sigma^2\mb{I})^{-1}\mb{y}$ change in the approximations.
-
-The multiple length-scale model can be formed also using specific
-covariance functions. For example, a rational quadratic covariance
-function (\code{gpcf\_rq}) can be seen as a scale mixture of squared
-exponential covariance functions \citep{Rasmussen+Williams:2006}, and
-could be useful for data that contain both local and global phenomena.
-However, using sparse approximations with the rational quadratic would
-prevent it from modeling local phenomena. The additive model
-\eqref{two_length_scale_model} suits better for sparse GP formalism
-since it enables to combine FIC with CS covariance functions.
-
-As discussed in section \ref{FIC_PICsparse_approximations}, FIC can be
-interpreted as a realization of a special kind of covariance function.
-\citet{Vanhatalo+Vehtari:2008} proposed to add FIC with CS covariance
-function which leads to a latent variable prior
-%
-\begin{equation}\label{GP_CS+FIC_prior}
-\f \mid \mb{X}, \mb{X}_{u}, \theta \sim \N(\mb{0},
-\Kfu\iKuu\Kuf+\hat{\LL}),
-\end{equation}
-%
-referred as CS+FIC. Here, the matrix
-$\hat{\LL}=\LL+k_{\text{pp,q}}(\mb{X},\mb{X})$ is sparse with the same
-sparsity structure as in $k_{\text{pp,q}}(\mb{X},\mb{X})$ and it is
-fast to use in computations and cheap to store. 
-
-\subsubsection{Additive models in GPstuff}
-
-The additive models are demonstrated in \code{demo\_periodic} and
-\code{demo\_regression\_additive1}. Their construction follows closely the
-steps introduced in the previous sections. Consider that we want to
-construct a GP with a covariance function that is a sum of squared
-exponential and piecewise polynomial $k_{\text{se}}(\x,\x') +
-k_{\text{pp},2}(\x,\x')$. In \pkg{GPstuff} this is done as follows:
-%
-\begin{verbatim}
-gpcf1 = gpcf_sexp();
-gpcf2 = gpcf_ppcs2('nin', 2);
-lik = lik_gaussian('sigma2', 0.1);
-gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}); 
-\end{verbatim}
-%
-The difference to previous models is that we give more than one
-covariance function structure in cell array for the \code{gp\_set}.
-The inference with additive model is conducted the same way as
-earlier. If we want to make predictions for the two components
-$k_{\text{se}}$ and $k_{\text{pp},2}$ independently we can do it by
-giving an extra parameter-value pair for the \code{gp\_pred} as
-%
-\begin{verbatim}
-[Ef_sexp, Varf_sexp] = gp_pred(gp, x, y, x, 'predcf', 1);
-[Ef_ppcs2, Varf_ppcs2] = gp_pred(gp, x, y, x, 'predcf', 2);
-\end{verbatim}
-
-Additive models are constructed analogously with sparse approximations
-by changing the type of the GP model. CS+FIC is a special kind of GP
-structure and has its own type definition:
-%
-\begin{verbatim}
-gp = gp_set('type', 'CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'X_u', Xu);
-\end{verbatim}
-
-It is worth mentioning few things that should be noticed in relation
-to sparse approximations. In general, FIC is able to model only
-phenomena whose length-scale is long enough compared to the distance
-between adjacent inducing inputs.  PIC on the other hand is able to
-model also fast varying phenomena inside the blocks. Its drawback,
-however, is that the correlation structure is discontinuous which may
-result in discontinuous predictions. The CS+FIC model corrects these
-deficiencies. In FIC and PIC the inducing inputs are parameters of
-every covariance function, which means that all the correlations are
-induced through the inducing inputs and the shortest length-scale the
-GP is able to model is defined by the locations of the inducing
-inputs. In CS+FIC, the CS covariance functions do not utilise inducing
-inputs but evaluate the covariance exactly for which reason both the
-long and short length-scale phenomena can be captured.  If there are
-more than two covariance functions in CS+FIC all the globally
-supported functions utilize inducing inputs and all the CS functions
-are added to $\hat{\Lambda}$. A detailed treatment on the subject is
-given in
-\citep[][]{Vanhatalo+Vehtari:2008,Vanhatalo+Vehtari:2010,Vanhatalo+Pietilainen+Vehtari:2010}
-
-
-\subsection{Additive covariance functions with selected variables}
-\label{sec:addit-covar-funct}
-
-In the demo (\code{demo\_regression\_additive2}), we demonstrate how
-covariance functions can be modified so that they are functions of
-only a subset of inputs. We model an artificial 2D regression data
-with additive covariance functions that use only either the first or
-second input variable. That is, the covariance is
-$k_1(x_1,x_1'|\theta_1) + k_2(x_2,x_2'|\theta_2): \Re^2 \times
-\Re^2\mapsto \Re$, where the covariance functions are of type
-$k_1(x_1,x_1'|\theta_1): \Re \times \Re \mapsto \Re$. In the example
-the covariance is a sum of a squared exponential, which is a function
-of the first input dimension $x_1$, and a linear covariance function,
-which is a function of the second input dimension $x_2$. The
-covariance functions are constructed as follows:
-%
-\begin{verbatim}
-gpcf_s1 = gpcf_sexp('selectedVariables', 1, 'lengthScale',0.5, ...
-                    'magnSigma2', 0.15);
-gpcf_l2 = gpcf_linear('selectedVariables', 2);
-\end{verbatim}
-%
-The smaller set of inputs is chosen with the field input variable pair
-\code{'selectedVariables',1}.
-
-\subsection{Product of covariance functions}
-
-A product of two or more covariance functions $k_1(\x,\x') \cdot
-k_2(\x,\x')...$ is a valid covariance function as well. Such
-constructions may be useful in situations where the phenomenon is
-assumed to be separable. Combining covariance functions into product
-form is done with a special covariance function \code{gpcf\_prod}. For
-example, multiplying exponential and Mátern covariance functions to
-produce separable spatio-temporal model $k(\x,\x') = k_1(x_1,x_1')
-\cdot k_2([x_2,x_3]^{\text{T}},[x'_2,x'_3]^{\text{T}})$ where the
-temporal component has covariance function $k_1$ and the spatial
-components $k_2$ is done as follows:
-%
-\begin{verbatim}
-gpcf1 = gpcf_exp('selectedVariables', 1);
-gpcf2 = gpcf_matern32('selectedVariables', [2 3];
-gpcf = gpcf_prod('cf', {gpcf1, gpcf2});
-\end{verbatim}
-
-The product covariance \code{gpcf\_prod} can also be used to combine
-categorical covariance \code{gpcf\_cat} with other covariance
-functions to build hierarchical linear and non-linear models, as
-illustrated in \code{demo\_regression\_hier}.
-
-% ==========================
-
-\section{Other models}
-
-In this section, we discuss three more example applications where
-\pkg{GPstuff} has been used. The purpose of this section is to
-introduce few other likelihood functions implemented in \pkg{GPstuff}
-but not discussed yet. 
+In this section, we desribe other likelihood functions, which
+factorize so that each factor depend only on single latent value.
  
 \subsection{Robust regression with Student-$t$ observation model}
 
@@ -2215,14 +1389,15 @@ by][]{Vanhatalo+Jylanki+Vehtari:2009,Jylanki+Vanhatalo+Vehtari:2011}.
 These are demonstrated in \code{demo\_regression\_robust}.
 
 
-\subsection{Disease mapping}\label{sec_spatial_demo1}
+\subsection{Count data}\label{sec_spatial_demo1}
 
-Spatial epidemiology concerns both describing and understanding the
-spatial variation in the disease risk in geographically referenced
-health data. One of the most common tasks in spatial epidemiology is
-disease mapping, where the aim is to describe the overall disease
-distribution on a map and, for example, highlight areas of elevated or
-lowered mortality or morbidity risk
+Count data are observed in applications. One such common application
+is spatial epidemiology, which concerns both describing and
+understanding the spatial variation in the disease risk in
+geographically referenced health data. One of the most common tasks in
+spatial epidemiology is disease mapping, where the aim is to describe
+the overall disease distribution on a map and, for example, highlight
+areas of elevated or lowered mortality or morbidity risk
 \citep[e.g.][]{Lawson:2001,Richardson:2003,Elliot+Wakefield+Best+Briggs:2001}.
 Here we build a disease mapping model following the general approach
 discussed, for example, by \citet{Best+Richardson+Thomson:2005}. The
@@ -2609,7 +1784,394 @@ observations is demonstrated in \code{demo\_derivativeobs}.
 % %  intervals for both GP model with and GP model without derivative
 % %  observations.
 
-\subsection{Mean functions}
+\subsection{Quantile Regression}
+
+Quantile regression is used for estimating quantiles of the response
+variable as a function of input variables \citep{Boukouvalas:2012}.
+
+The likelihood is defines as
+\begin{align}
+p(y | f, \sigma, \tau) = \frac{\tau(1-\tau)}{\sigma}\exp\left[-\frac{y-f}{\sigma}(\tau - I(y \le f))\right],
+\end{align}
+where $\tau$ is the quantile of interest and $\sigma$ is the standard
+deviation. $I(y \le f)$ is 1 if the condition inside brackets is true
+and 0 otherwise. Because the logarithm of the likelihood is not twice
+differentiable at the mode, Laplace approximation cannot be used for
+inference with Quantile Regression. Quantile Regression with EP and
+MCMC is demonstrated in \code{demo\_qgp} with toy data.
+
+%    The likelihood is defined as follows:
+%                            __ n
+%      p(y|f, sigma2, tau) = || i=1 tau*(1-tau)/sigma*exp(-(y-f)/sigma*
+%                                 (tau - I(t <= f)))
+%    
+%    where tau is the quantile of interest, sigma is the standard deviation
+%    of the distribution and I(t <= f) = 1 if t <= f, 0 otherwise.
+%
+%    Note that because the form of the likelihood, second order derivatives
+%    with respect to latent values are 0. Because this, EP should be used
+%    instead of Laplace approximation.    
+%
+%  See also
+%    GP_SET, PRIOR_*, LIK_*
+%
+%   References
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
+%     Using Expectation Propagation. Appearing in Proceedings of the 29th
+%     International Conference on Machine Learning, Edinburg, Scotland, UK,
+%     2012.
+
+
+\section{Multilatent models}
+\label{sec:multilatent-models}
+
+The multilatent models consist of models where individual likelihood
+factors depend on multiple latent variables. In this section we
+shortly summarize such models in GPstuff.
+
+\subsection{Multiclass classification}
+
+In multiclass classification problems the target variables have more
+than two possible class labels, $y_i\in\{1,\ldots,c\}$, where $c>2$ is
+the number of classes. In \pkg{GPstuff}, multi-class classification
+can be made using the softmax likelihood (\code{lik\_softmax})
+%
+\begin{eqnarray}
+p(y_i|\f_i)=\frac{\exp(f_i^{y_i})}{\sum_{j=1}^c\exp(f_i^{j})},
+\end{eqnarray}
+where $\f_i=\left[f_i^1,\ldots,f_i^c\right]^T$.
+%
+In Gaussian process literature for multiclass classification, a common
+assumption is to introduce $c$ independent prior processes that are
+associated with $c$ classes \citep[see, e.g.,][]{Rasmussen+Williams:2006}.
+%
+By assuming zero-mean Gaussian processes for latent functions
+associated with different classes, we obtain a zero-mean Gaussian
+prior
+\begin{eqnarray}
+  p(\f|X)=\mathcal{N}(\f|\mathbf{0}, K),
+\end{eqnarray}
+where
+$\f=\left[f_1^1,\ldots,f_n^1,f_1^2,\ldots,f_n^2,\ldots,f_1^c,\ldots,f_n^c\right]^T$
+and $K$ is a $cn \times cn$ block-diagonal covariance matrix with
+matrices $K^1, K^2,\ldots,K^c$ (each of size $n \times n$) on its
+diagonal.
+%
+Inference for softmax can be made with MCMC or Laplace approximation.
+As described by \citet{Williams+Barber:1998} and
+\citet{Rasmussen+Williams:2006}, using the Laplace approximation for
+the softmax likelihood with the uncorrelated prior processes, the
+posterior computations can be done efficiently in a way that scales
+linearly in $c$, which is also implemented in
+\pkg{GPstuff}. Multiclass classification with softmax is demonstrated
+in \code{demo\_multiclass}.
+
+\subsection{Multinomial}
+
+The multinomial model (\code{lik\_multinomial}) is an extension of the
+multiclass classification to situation where each observation consist
+of counts of class observations. Let $y_i = [y_{i,1},\ldots,y_{i,c}]$,
+where $c>2$, be a vector of counts of class observations related to
+inputs $x_i$ so that
+%
+\begin{equation}
+y_i \sim \text{Multinomial}([p_{i,1},\ldots,p_{i,c}],n_i)
+\end{equation}
+%
+where $n_i=\sum_{j=1}^c y_{i,j}$. The propability to observe class $j$ is
+%
+\begin{eqnarray}
+p_{i,j}=\frac{\exp(f_i^j)}{\sum_{j=1}^c\exp(f_i^j)},
+\end{eqnarray}
+%
+where $\f_i=\left[f_i^1,\ldots,f_i^c\right]^T$. As in multiclass
+classification we can introduce $c$ independent prior processes that
+are associated with $c$ classes.
+%
+By assuming zero-mean Gaussian processes for latent functions
+associated with different classes, we obtain a zero-mean Gaussian
+prior
+\begin{eqnarray}
+  p(\f|X)=\mathcal{N}(\f|\mathbf{0}, K),
+\end{eqnarray}
+where
+$\f=\left[f_1^1,\ldots,f_n^1,f_1^2,\ldots,f_n^2,\ldots,f_1^c,\ldots,f_n^c\right]^T$
+and $K$ is a $cn \times cn$ block-diagonal covariance matrix with
+matrices $K^1, K^2,\ldots,K^c$ (each of size $n \times n$) on its
+diagonal. This model is demonstrated in \code{demo\_multinomial} and
+it has been used, for example, in
+\citep{Juntunen+Vanhatalo+Peltonen+Mantyniemi:2012}.
+
+\subsection{Cox proportional hazard model}
+
+For the individual $i$, where $i=1,\ldots,n$, we have observed
+survival time $y_i$ (possibly right censored) with censoring indicator
+$\delta_i$, where $\delta_i=0$ if the $i$th observation is uncensored
+and $\delta_i=1$ if the observation is right censored. The traditional
+approach to analyze continuous time-to-event data is to assume the Cox
+proportional hazard model \citep{Cox:1972}.
+\begin{equation}
+h_i(t)=h_0(t)\exp(\bm{x}^T_i\bm{\beta}),
+\end{equation}
+where $h_0$ is the unspecified baseline hazard rate, $\bm{x}_i$ is the
+$d\times1$ vector of covariates for the $i$th patient and $\bm{\beta}$
+is the vector of regression coefficients. The matrix
+$X=[\bm{x}_1,\ldots,\bm{x}_n]^T$ of size $n\times d$ includes all
+covariate observations.
+
+The Cox model with linear predictor can be extended to more general
+form to enable, for example, additive and non-linear effects of
+covariates \citep{Kneib:2006,Martino:2011}. We extend the proportional
+hazard model by
+\begin{equation}
+h_i(t)=\exp(\log(h_0(t))+\eta_i(\bm{x}_i)),
+\end{equation}
+where the linear predictor is replaced with the latent predictor
+$\eta_i$ depending on the covariates $\bm{x}_i$. By assuming a
+Gaussian process prior over
+$\bm{\eta}=(\eta_1,\ldots,\eta_n)^T$, smooth nonlinear effects of
+continuous covariates are possible, and if there are dependencies
+between covariates, GP can model these interactions implicitly. 
+
+A piecewise log-constant baseline hazard \citep[see,
+e.g.][]{Ibrahim+Chen+Sinha:2001,Martino:2011} is assumed by
+partitioning the time axis into $K$ intervals with equal lengths:
+$0=s_0<s_1<s_2<\ldots<s_K$, where $s_K>y_i$ for all $i=1,\ldots,n$. In
+the interval $k$ (where $k=1,\ldots,K$), hazard is assumed to be
+constant:
+\begin{eqnarray}
+h_0(t)=\lambda_k&\mathrm{for}&t\in(s_{k-1},s_k].
+\end{eqnarray}
+For the $i$th individual the hazard rate in the $k$th time interval is
+then
+\begin{eqnarray}
+h_i(t)=\exp(f_k+\eta_i(\bm{x}_i)), & t\in(s_{k-1},s_k],
+\end{eqnarray}
+where $f_k=\log(\lambda_k)$. To assume smooth hazard rate functions,
+we place another Gaussian process prior for
+$\bm{f}=(f_1,\ldots,f_K)^T$. We define a vector containing the mean
+locations of $K$ time intervals as
+$\bm{\tau}=(\tau_1,\ldots,\tau_K)^T$. 
+
+% The two latent processes are assumed to a priori
+% independent/uncorrelated, and this leads to a prior covariance matrix
+% with a block diagonal structure.
+
+The likelihood contribution for the possibly right censored $i$th
+observation $(y_i,\delta_i)$ is assumed to be
+\begin{equation}
+l_i=h_i(y_i)^{(1-\delta_i)} \exp \left(
+  -\int_0^{y_i}h_i(t)dt \right).
+\end{equation}
+Using the piecewise log-constant assumption for the hazard rate
+function, the contribution of the observation $i$ for the likelihood
+results in
+\begin{equation}
+l_i=[\lambda_k \exp(\eta_i)]^{(1-\delta_i)}\exp \left( -[(y_i-s_{k-1})\lambda_k
+  + \sum_{g=1}^{k-1}(s_g-s_{g-1})\lambda_g ]\exp(\eta_i) \right),
+\end{equation}
+where $y_i\in(s_{k-1},s_k]$
+\citep{Ibrahim+Chen+Sinha:2001,Martino:2011}. By applying the Bayes
+theorem, the prior information and likelihood contributions are
+combined, and the posterior distribution of the latent variables can
+be computed. Due to the form of the likelihood function, the resulting
+posterior becomes non-Gaussian and analytically exact inference is
+intractable. \pkg{GPstuff} supports MCMC and Laplace approximation to
+integrate over the latent variables. The use of Gaussian process Cox
+proportional hazard model is demonstrated in
+\code{demo\_survival\_coxph}.
+
+%    creates a proportional hazard model where a piecewise log-constant
+%    baseline hazard is assumed.  
+%    
+%    The likelihood contribution for the ith observation is
+%
+%      l_i = h_i(y_i)^(1-z_i)*[exp(-int_0^y_i*h_i dt)],
+%    
+%    where hazard is h_i=h_0(y_i)*exp(f_i). A zero mean Gaussian process
+%    prior is placed for f = [f_1, f_2,...,f_n] ~ N(0, C). C is the
+%    covariance matrix, whose elements are given as C_ij = c(x_i, x_j |
+%    th). The function c(x_i, x_j| th) is covariance function and th its
+%    parameters, hyperparameters. We place a hyperprior for
+%    hyperparameters, p(th). 
+%
+%    The time axis is partioned into K intervals with equal lengths:
+%    0 = s_0 < s_1 < ... < s_K, where s_K > y_i for all i. The baseline
+%    hazard rate function h_0 is piecewise constant,  
+%
+%      h_0(t) = la_k,
+%
+%    when t belongs to the interval (s_{k-1},s_k] and where ft_k=log(la_k).
+%    The hazard rate function is smoothed by assuming another Gaussian
+%    process prior ft = [ft_1, ft_2,...,ft_K] ~ N(0, C). 
+%
+%    z is a vector of censoring indicators with z = 0 for uncensored event
+%    and z = 1 for right censored event. 
+%
+%    When using the Coxph likelihood you need to give the vector z
+%    as an extra parameter to each function that requires also y. 
+%    For example, you should call gpla_e as follows: gpla_e(w, gp,
+%    x, y, 'z', z)
+
+\subsection{Zero-inflated negative binomial}
+
+Zero-inflated negative binomial model is suitable for modelling count
+variables with excessive number of zero observations compared to usual
+Poisson and negative binomial count models. Zero-inflated negative
+binomial models assume a two-stage process, where the first process
+determines whether the count is larger than zero, and the second
+process determines the non-zero count \citep{Mullahy:1986}.
+In \pkg{GPstuff}, these processes are assumed independent a priori, but they
+become a posteriori dependent through the likelihood function
+\begin{align}
+  p + & (1-p)\mathrm{NegBin}(y|y=0),  \quad\mathrm{when}\quad y=0\\
+      & (1-p)\mathrm{NegBin}(y|y>0),  \quad\mathrm{when}\quad y>0,
+\end{align}
+where the probability p is given by a binary classifier with logit
+likelihood. NegBin is the Negative-binomial distribution parametrized
+for the $i$'th observation as
+\begin{equation}
+ \y |\f,\mb{e}, r  \sim \prod_{i=1}^n
+ \frac{\Gamma(r+y_i)}{y_i!\Gamma(r)}
+\left(\frac{r}{r+\mu_i}\right)^r \left(\frac{\mu_i}{r+\mu_i}\right)^{y_i},
+\end{equation}
+%
+where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
+governing the variance. In \pkg{GPstuff}, the latent value vector
+$\f=[\f_1^T \f_2^T]^T$ has length $2N$, where $N$ is the number of
+observations. The latents $\f_1$ are associated with the
+classification process and the latents $\f_2$ with the
+negative-binomial count process. %The model is demonstrated in ?.
+
+%    The likelihood is defined as follows:
+%     
+%      p + (1-p)*NegBin(y|y=0),    when y=0
+%          (1-p)*NegBin(y|y>0),    when y>0,
+%      where the probability p is given by a binary classifier with Logit
+%      likelihood and NegBin is the Negative-binomial distribution
+%      parametrized for the i'th observation as
+%      NegBin(y_i) =   [ (r/(r+mu_i))^r * gamma(r+y_i)
+%                        / ( gamma(r)*gamma(y_i+1) )
+%                        * (mu/(r+mu_i))^y_i ]
+%
+%    where mu_i = z_i*exp(f_i) and r is the dispersion parameter.
+%    z is a vector of expected mean and f the latent value vector
+%    whose components are transformed to relative risk
+%    exp(f_i). 
+%
+%    The latent value vector f=[f1^T f2^T]^T has length 2*N, where N is the
+%    number of observations. The latents f1 are associated with the
+%    classification process and the latents f2 with Negative-binomial count
+%    process.
+%
+%    When using the Zinegbin likelihood you need to give the vector z
+%    as an extra parameter to each function that requires also y. 
+%    For example, you should call gpla_nd_e as follows: gpla_nd_e(w, gp,
+%    x, y, 'z', z)
+
+\subsection{Density estimation and regression}
+
+Logistic Gaussian process can be used for flexible density estimation
+and density regression. \pkg{GPstuff} includes implementation based on
+Laplace (and MCMC) approximation as described in
+\citep{Riihimaki+Vehtari:2012}.
+
+The likelihood is defined as
+\begin{align}
+  p(\x|\f)=\prod_{i=1}^n \frac{\exp(f_i)}{\sum_{j=1}^n \exp(f_j)}.
+\end{align}
+For the latent function $f$, we assume
+the model $f(\x) = g(\x)+\h(\x)^T \bm{\beta}$, where the GP prior
+$g(\x)$ is combined with the explicit basis functions $\h(\x)$.
+Regression coefficients are denoted with $\bm{\beta}$, and by placing
+a Gaussian prior $\bm{\beta}\sim \mathcal{N}(\bb,B)$ with mean $\bb$
+and covariance $B$, the parameters $\bm{\beta}$ can be integrated out
+from the model, which results in the following GP prior for $f$:
+\begin{equation}\label{gp_process}
+  f(\x)\sim \mathcal{GP}\left(\h(\x)^T\bb,\kappa(\x,\x')+\h(\x)^TB\h(\x')\right).
+\end{equation}
+%
+For the explicit basis functions, we use the second-order polynomials
+%
+%$\h(\x)=[x_1 \quad x_1^2 \, \cdots \, x_d \quad x_d^2]^T$,
+%
+which leads to a GP prior that can favour density estimates where the
+tails of the distribution go eventually to zero.
+
+We use finite-dimensional approximation and evaluate the integral and
+the Gaussian process in a grid.
+%
+We approximate inference for logistic Gaussian process density
+estimation in a grid using Laplace's method or MCMC to integrate over
+the non-Gaussian posterior distribution of latent values \citep[see
+details in][]{Riihimaki+Vehtari:2012}.
+
+Logistic Gaussian processes are also suitable for estimating
+conditional densities $p(t|\x)$, where $t$ is a response variable. We
+discretize both input and target space in a finite region to model the
+conditional densities with the logistic GP.
+%
+To approximate the resulting non-Gaussian posterior distribution, we
+use again Laplace's method.
+
+1D and 2D density estimation and density regression are implemented in
+the function \code{lgpdens}. The usage of the function is demonstrated
+in \code{demo\_lgpdens}.
+
+%    The likelihood is defined as follows:
+%               __ n
+%      p(y|f) = || i=1 exp(f_i) / Sum_{j=1}^n exp(f_j),
+%
+%      where f contains latent values.
+
+
+%    LIK = LIK_LGPC creates a logistic Gaussian process likelihood
+%    structure for conditional density estimation
+%
+%    The likelihood contribution for the $k$th conditional slice 
+%    is defined as follows:
+%                   __ n
+%      p(y_k|f_k) = || i=1 exp(f_ki) / Sum_{j=1}^n exp(f_kj),
+%
+%      where f contains latent values.
+
+\subsection{Input dependent models}
+
+In input-dependent models more than one latent variables are used for modeling different parameters of the distribution. Additional latent variables in turn enable modeling dependencies between inputs and parameters. 
+
+\subsubsection{Input-dependent Noise}
+Input-dependent noise model \citep{Goldberg:1997} can be used to model
+regression data. The model assumes Gaussian distributed data with
+latent variables defining both mean and variance of the Gaussian
+distribution instead of just the mean like in the standard Gaussian
+likelihood. Setting independent GP priors for the two latent
+variables, it is possible to infer non-constant noise,
+e.g. input-dependent, in the data.
+
+The likelihood is defined as
+\begin{align}
+  p(\y|\f^{(1)}, \f^{(2)}, \sigma^2)=\prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 \exp(f_i^{(2)})),
+\end{align}
+with latent function $f^{(1)}$ defining the mean and $f^{(2)}$
+defining the variance. Input-dependent noise is demonstrated in
+\code{demo\_inputdependentnoise} with both heteroscedastic and
+constant noise.
+% missing description
+
+\subsubsection{Input-dependent overdispersed Weibull}
+In input-dependent Weibull model additional latent variable is used for modeling dispersion parameter $r$ of the standard Weibull model. 
+
+The likelihood is defined as
+\begin{eqnarray}
+ p( \y |\f^{(1)}, \f_i^{(2)},\mathbf{z}) =&& \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
+ &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
+\end{eqnarray}
+where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
+uncensored event and $z_i = 1$ for right censored event for
+observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
+
+
+\section{Mean functions}
 \label{cha:mean-functions}
 
 In the standard GP regression a zero mean function is assumed for
@@ -2619,7 +2181,7 @@ principle in doing GP regression with a mean function is to apply a
 zero mean GP for the difference between observations and the mean
 function.
 
-\subsubsection{Explicit basis functions}
+\subsection{Explicit basis functions}
 
 Here we follow closely the presentation of
 \citep{Rasmussen+Williams:2006} about the subject and briefly
@@ -2780,391 +2342,832 @@ demonstrated in \code{demo\_regression\_meanf}.
 % \label{demo_meanFunc_fig1}
 % \end{figure}
 
-\subsection{Quantile Regression}
+\section{Sparse Gaussian processes}
+\label{cha:sparse-GP}
 
-Quantile regression is used for estimating quantiles of the response
-variable as a function of input variables \citep{Boukouvalas:2012}.
+%foo
 
-The likelihood is defines as
+The evaluation of the inverse and determinant of the covariance matrix
+in the log marginal likelihood (or its approximation) and its gradient
+scale as $O(n^3)$ in time. This restricts the implementation of GP
+models to moderate size data sets. However, the unfavorable scaling in
+computational time can be alleviated with sparse approximations to GP
+and compactly supported (CS) covariance functions. The sparse
+approximations scale as $O(nm^2)$, where $m<n$ and the CS covariance
+functions lead to computations which scale, in general, as $O(n^3)$
+but with a smaller constant than with traditional globally supported
+covariance functions. Many sparse GPs are proposed in the literature
+and some of them are build into \pkg{GPstuff}.
+
+\subsection{Compactly supported covariance functions}
+
+%foo
+
+A CS covariance function gives zero correlation between data points
+whose distance exceeds a certain threshold. This leads to a sparse
+covariance matrix. The challenge with constructing CS covariance
+functions is to guarantee their positive definiteness and much
+literature has been devoted on the subject \citep[see
+e.g.][]{Sanso+Schuh:1987,Wu:1995,Wendland:1995,Gaspari+Cohn:1999,Gneiting:1999,Gneiting:2002,Buhmann:2000}
+The CS functions implemented in \pkg{GPstuff} are Wendland's piecewise
+polynomials $k_{\text{pp},q}$ \citep{Wendland:2005}, such as
+% 
+\begin{equation}\label{ppcs2}
+k_{\text{pp},2} = 
+\frac{\sigma_{\text{pp}}^2}{3} (1 - r)_+^{j+2} \left( (j^2 + 4j
+   +3) r^2  +   (3j + 6)r + 3\right) , 
+\end{equation}
+%
+where $j = \lfloor d/2 \rfloor + 3$. These functions correspond to
+processes that are $q$ times mean square differentiable and are
+positive definite up to an input dimension $d$. Thus, the degree of
+the polynomial has to be increased alongside the input dimension. The
+dependence of CS covariance functions to the input dimension is very
+fundamental. There are no radial CS functions that are positive
+definite on every $\Re^d$ \citep[see e.g.][theorem
+9.2]{Wendland:1995}.
+
+The key idea with CS covariance functions is that, roughly speaking,
+only the nonzero elements of the covariance matrix are used in the
+calculations. This may speed up the calculations substantially since
+in some situations only a fraction of the elements of the covariance
+matrix are non-zero \citep[see
+e.g.][]{Vanhatalo+Vehtari:2008,Rue+Martino+Chopin:2009}. In practice,
+efficient sparse matrix routines are needed \citep{Davis:2006}. These
+are nowadays a standard utility in many statistical computing packages
+or available as an additional package for them.  \pkg{GPstuff}
+utilizes the sparse matrix routines from \pkg{SuiteSparse} written by
+Tim Davis (\url{http://www.cise.ufl.edu/research/sparse/SuiteSparse/})
+and this package should be installed before using CS covariance
+functions.
+
+The CS covariance functions have been rather widely studied in the
+geostatistics applications \citep[see
+e.g.][]{Gneiting:2002,Furrer+Genton+Nychka:2006,Moreaux:2008}. There
+the computational speed-up relies on efficient linear solvers for the
+predictive mean $[\tilde{\f}] = \Kaf (\Kff +\sigma^2)^{-1}\y$. The
+parameters are either fitted to the empirical covariance, optimized
+using a line search in one dimension
+\citep{Kaufman+Schervish+Nychka:2008} or sampled with Metropolis
+Hastings. The benefits from a sparse covariance matrix have been
+immediate since the problems collapse to solving sparse linear
+systems. However, utilizing the gradient of the log posterior of the
+parameters, as is done in \pkg{GPstuff} needs extra sparse matrix
+tools. These are introduced and discussed by
+\citet{Vanhatalo+Vehtari:2008}.  EP algorithm requires also special
+considerations with CS covariance functions. The posterior covariance
+in EP \eqref{eq_posterior_in_EP_case} does not remain sparse, and
+thereby it has to be expressed implicitly. This issue is discussed by
+\citet{Vanhatalo+Vehtari:2010} and
+\citet{Vanhatalo+Pietilainen+Vehtari:2010}.
+
+\subsubsection{Compactly supported covariance functions in GPstuff}
+
+The demo \code{demo\_regression\_ppcs} contains a regression example
+with CS covariance function $k_{\text{pp},2}$ (\code{gpcf\_ppcs2}).
+The data contain US annual precipitation summaries from year 1995 for
+5776 observation stations. The user interface of \pkg{GPstuff} makes
+no difference between globally and compactly supported covariance
+functions but the code is optimized to use sparse matrix routines
+whenever the covariance matrix is sparse.  Thus, we can construct the
+model, find the MAP estimate for the parameters and predict to new
+input locations in a familiar way:
+%
+\begin{verbatim}
+pn = prior_t('nu', 4, 's2', 0.3);
+lik = lik_gaussian('sigma2', 1, 'sigma2_prior', pn);
+pl2 = prior_gamma('sh', 5, 'is', 1);
+pm2 = prior_sqrtt('nu', 1, 's2', 150);
+gpcf2 = gpcf_ppcs2('nin', nin, 'lengthScale', [1 2], 'magnSigma2', 3, ...
+                   'lengthScale_prior', pl2, 'magnSigma2_prior', pm2);
+gp = gp_set('lik', lik, 'cf', gpcf2, 'jitterSigma2', 1e-6);
+gp = gp_optim(gp,x,y,'opt',opt);
+Eft = gp_pred(gp, x, y, xx);
+\end{verbatim}
+%
+With this data the covariance matrix is rather sparse since only about
+5\% of its elements are non-zero. The structure of the covariance
+matrix is plotted after the approximate minimum degree (AMD)
+permutation \citep{Davis:2006} in Figure~\ref{demo_ppcsCov}. The demo
+\code{demo\_spatial2} illustrates the use of compactly supported
+covariance functions with a non-Gaussian likelihood.
+
+\begin{figure}[]
+    \begin{center}
+      \subfigure[The nonzero elements of $\Kff$.]{
+        \label{}
+        \includegraphics[width=3.2cm]{demo_ppcsCov1}
+      }
+      \hspace{-8mm}
+      ~
+      \subfigure[The posterior predictive mean surface.]{ 
+        \label{}
+        \includegraphics[width=9cm]{demo_ppcsCov2}
+       }
+       \caption[]{The nonzero elements of $\Kff$ with
+         $k_{\text{pp,2}}$ function, and the posterior predictive mean
+         of the latent function in the US precipitation data
+         set.}\label{demo_ppcsCov}
+    \end{center}
+\end{figure}
+
+
+\subsection{FIC and PIC sparse approximations}\label{FIC_PICsparse_approximations}
+
+\citet{Snelson+Ghahramani:2006} proposed a sparse pseudo-input GP
+(SPGP), which \citet{Quinonero-Candela+Rasmussen:2005} named later
+fully independent conditional (FIC).
+%  The original idea in SPGP was that the
+% sparse approximation is used only in the training phase and
+% predictions are conducted using the exact covariance matrix, where the
+% word 'training' comes to the name. If the approximation is used also
+% for the predictions, the word training should drop out leading to FIC.
+The partially independent conditional (PIC) sparse approximation is an
+extension of FIC
+\citep{Quinonero-Candela+Rasmussen:2005,Snelson+Ghahramani:2007a}, and
+they are both treated here following
+\citet{Quinonero-Candela+Rasmussen:2005}. See also
+\citep{Vanhatalo+Vehtari:2008,Vanhatalo+Pietilainen+Vehtari:2010} for
+further discussion. The approximations are based on introducing an
+additional set of latent variables $\uu = \{u_i \}_{i=1}^{m}$, called
+\emph{inducing variables}. These correspond to a set of input
+locations $\mb{X}_{u}$, called \emph{inducing inputs}. The latent
+function prior is approximated as
+%
+\begin{equation}\label{cond_independ_joint_prior}   %jätä
+  p(\f|\mb{X}, \theta) \approx q(\f | \mb{X}, \mb{X}_{u}, \theta) = \int q(\f |
+  \mb{X}, \mb{X}_{u}, \uu, \theta)p(\uu | \mb{X}_{u}, \theta)\mathrm{d}\mathbf{u},
+\end{equation}
+%
+where $q(\f|\mb{X}, \mb{X}_{u}, \uu, \theta)$ is an inducing
+conditional. The above decomposition leads to the exact prior if the
+true conditional $\f | \mb{X}, \mb{X}_{u}, \uu, \theta \sim \N(\Kfu \iKuu\uu,
+\Kff-\mb{K}_{\text{f,u}} \iKuu \mb{K}_{\text{u,f}})$ is used. However,
+in FIC framework the latent variables are assumed to be conditionally
+independent given $\uu$, in which case the inducing conditional
+factorizes $q(\f | \mb{X}, \mb{X}_{u}, \uu, \theta)\!= \prod q_i(f_i|\mb{X}, \mb{X}_{u}, \uu, \theta)$. In PIC latent
+variables are set in blocks which are conditionally independent of
+each others, given $\uu$, but the latent variables within a block have
+a multivariate normal distribution with the original covariance. The
+approximate conditionals of FIC and PIC can be summarized as
+%
+\begin{equation}
+q(\f | \mb{X}, \mb{X}_{u}, \uu, \theta, \mb{M}) = \N(\f|\Kfu \iKuu\uu,
+\mathrm{mask}\left(\Kff-\mb{K}_{\text{f,u}} \iKuu
+\mb{K}_{\text{u,f}}|\mb{M}\right)), 
+\end{equation}
+%
+where the function $\LL=\mathrm{mask}\left(\cdot|\mb{M}\right)$, with
+matrix $\mb{M}$ of ones and zeros, returns a matrix $\LL$ of size
+$\mb{M}$ and elements $\LL_{ij} = [\cdot]_{ij}$ if $\mb{M}_{ij} = 1$
+and $\LL_{ij} =0$ otherwise.  An approximation with $\mb{M} = \mb{I}$
+corresponds to FIC and an approximation where $\mb{M}$ is block
+diagonal corresponds to PIC.  The inducing variables are given a
+zero-mean Gaussian prior $\uu|\theta,\mb{X}_u\sim \N(\mb{0},\Kuu)$ so
+that the approximate prior over latent variables is
+%
+\begin{equation}
+  q(\f | \mb{X}, \mb{X}_{u},\theta,\mb{M}) = \N(\f | \mb{0}, \mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}+\LL).
+\label{GP_FITC_prior}
+\end{equation}
+%
+The matrix $\mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}$ is of
+rank $m$ and $\LL$ is a rank $n$ (block) diagonal matrix. The prior
+covariance above can be seen as a non-stationary covariance function of its
+own 
+% %
+% \begin{equation}\label{PIC_covariance}
+% k_{\text{FIC/PIC}}(k(x_i,x_j|\theta),\mb{M},\mb{X}_{u}) = 
+% \begin{cases} 
+%    k(\x_i,\x_j) & \text{if $\mb{M}_{ij}=1$}, \\
+%    \left[\Kfu \iKuu\Kuf\right]_{ij} &
+%   \text{otherwise},
+% \end{cases} 
+% \end{equation}
+% %
+where the inducing inputs $\mb{X}_u$ and the matrix $\mb{M}$ are free
+parameters similar to parameters, which can be optimized
+alongside $\theta$ \citep{Snelson+Ghahramani:2006,Lawrence:2007}.
+
+The computational savings are obtained by using the
+Woodbury-Sherman-Morrison lemma \citep[e.g.][]{Harville:1997} to
+invert the covariance matrix in \eqref{GP_FITC_prior} as
+%
+\begin{equation}\label{Woodbury_eq}
+(\mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}+\LL)^{-1} = \LL^{-1} -
+\mb{V}\mb{V}^{\text{T}},
+\end{equation}
+%
+where $\mb{V} =\LL^{-1}\Kfu \text{chol}[(\Kuu
++\Kuf\LL^{-1}\Kfu)^{-1}]$. There is a
+similar result also for the determinant. With FIC the computational
+time is dominated by the matrix multiplications, which need time
+$O(m^2n)$. With PIC the cost depends also on the sizes of the blocks
+in $\LL$. If the blocks were of equal size $b\times b$, the time for
+inversion of $\LL$ would be $O(n/b\times b^3)=O(nb^2)$. With blocks at
+most the size of the number of inducing inputs, that is $b=m$, the
+computational cost in PIC and FIC are similar. PIC approaches FIC in
+the limit of a block size one and the exact GP in the limit of a block
+size $n$ \citep{Snelson:2007b}.
+
+\subsubsection{FIC sparse approximation in GPstuff}
+
+The same data that were discussed in the section
+\ref{sec:demo_regression1} is analyzed with sparse approximations in
+the demo \code{demo\_regression\_sparse1}. The sparse approximation is
+a property of the GP structure and we can construct the model
+similarly to the full GP models:
+%
+\begin{verbatim}
+gp_fic = gp_set('type', 'FIC', 'lik', lik, 'cf', gpcf, 'X_u', X_u)
+\end{verbatim}
+%
+The difference is that we have to define the type of the sparse
+approximation, here \verb|'FIC'|, and set the inducing inputs
+\code{X\_u} in the GP structure. Since the inducing inputs are
+considered as extra parameters common to all of the covariance
+functions (there may be more than one covariance function in additive
+models) they are set in the GP structure instead of the covariance
+function structure. If we want to optimize the inducing inputs
+alongside the parameters they need to have a prior as well.  GP
+structure initialization gives them a uniform prior by default.
+
+We can optimize all the parameters, including the inducing inputs, as
+with a full GP. Sometimes, for example in spatial problems, it is
+better to fix the inducing inputs
+\citep{Vanhatalo+Pietilainen+Vehtari:2010} or it may be more efficient
+to optimize the parameters and inducing inputs separately, so that we
+iterate the separate optimization steps until convergence
+(demonstrated in \code{demo\_regression\_sparse1}).  The parameters to
+be optimized are defined by the field \code{infer\_params} in the GP
+structure. This field regulates which parameters are considered fixed
+and which are inferred in the group level (covariance function,
+inducing inputs, likelihood).  We may also want to fix one of the
+parameters inside these groups. For example, covariance function
+magnitude.  If this is the case, then the parameter to be fixed should
+be given an empty prior (\code{prior\_fixed}). If the parameter has a
+prior structure it is an indicator that we want to infer that
+parameter.
+ 
+\subsubsection{PIC sparse approximation in GPstuff}\label{sec:PIC_regression}
+
+In PIC, in addition to defining the inducing inputs, we need to appoint
+every data point in a block. The block structure is common to all
+covariance functions, similarly to the inducing inputs, for which reason
+the block information is stored in the GP structure. After the
+blocking and initialization of the inducing inputs the GP structure is
+constructed as follows:
+%
+\begin{verbatim}
+gp_pic = gp_set('type','PIC','lik',lik,'cf',gpcf,'X_u',X_u,'tr_index',trindex);
+\end{verbatim}
+%
+Above, the cell array \code{trindex} contains the block index vectors
+for training data. It means that, for example, the inputs and outputs
+\code{x(trindex\{i\},:)} and \code{y(trindex\{i\},:)} belong to the
+i'th block. The optimization of parameters and inducing inputs is
+done the same way as with FIC or a full GP model. In prediction,
+however, we have to give one extra input, \code{tstindex}, for
+\code{gp\_pred}. This defines how the prediction inputs are appointed
+in the blocks in a same manner as \code{trindex} appoints the training
+inputs. 
+%
+\begin{verbatim}
+Eft_pic = gp_pred(gp_pic, x, y, xt, 'tstind', tstindex);
+\end{verbatim}
+%
+\subsection{Deterministic training conditional, subset of regressors and
+  variational sparse approximation}
+
+
+The deterministic training conditional is based on the works by
+\citet{Csato+Opper:2002} and \citet{Seeger+Williams+Lawrence:2003} and
+was earlier called Projected Latent Variables \citep[see][for
+more details]{Quinonero-Candela+Rasmussen:2005}. The approximation 
+can be constructed similarly as FIC and PIC by defining the inducing
+conditional, which in the case of DTC is 
+%
+\begin{equation}
+q(\f | \mb{X}, \mb{X}_{u}, \uu, \theta) = \N(\f|\Kfu \iKuu\uu,0).
+\end{equation}
+%
+This implies that the approximate prior over latent variables is
+%
+\begin{equation}
+  q(\f | \mb{X}, \mb{X}_{u}, \theta) = \N(\f | \mb{0}, \mb{K}_{\text{f,u}} \iKuu\mb{K}_{\text{u,f}}).
+\label{GP_DTC_prior}
+\end{equation}
+%
+The deterministic training conditional is not strictly speaking a
+proper GP since it uses different covariance function for the latent
+variables appointed to the training inputs and for the latent
+variables at the prediction sites, $\tilde{f}$. The prior covariance
+for $\tilde{f}$ is the true covariance $\Kaa$ instead of
+$\Kau\iKuu\Kua$. This does not affect the predictive mean since the
+cross covariance $\COV[\f,\tilde{\f}] = \Kfu\iKuu\Kua$, but it gives a
+larger predictive variance. An older version of DTC is the subset of
+regressors (SOR) sparse approximation which utilizes $\Kau\iKuu\Kua$.
+However, this resembles a singular Gaussian distribution and thus the
+predictive variance may be negative. DTC tries to fix this problem by
+using $\Kaa$ \citep[see][]{Quinonero-Candela+Rasmussen:2005}. DTC and
+SOR are identical in other respects than in the predictive variance
+evaluation. In spatial statistics, SOR has been used by
+\citet{Banerjee+Gelfand+Finley+Sang:2008} with a name Gaussian
+predictive process model.
+
+The approximate prior of the variational approximation by
+\citet{Titsias:2009} is exactly the same as that of DTC. The
+difference between the two approximations is that in the variational
+setting the inducing inputs and covariance function parameters are
+optimized differently. The inducing inputs and parameters can be seen
+as variational parameters that should be chosen to maximize the
+variational lower bound between the true GP posterior and the sparse
+approximation. This leads to optimization of modified log marginal
+likelihood
+%
+\begin{equation}
+V(\theta, \mb{X}_u) = \log [N(\y|0, \sigma^2\mb{I} + \Qff) ] -
+\frac{1}{2\sigma^2} \text{tr}(\Kff - \Kfu\iKuu\Kuf)
+\end{equation}
+%
+with Gaussian likelihood. With non-Gaussian likelihood, the
+variational lower bound is similar but $\sigma^2\mb{I}$ is replaced by
+$\mb{W}^{-1}$ (Laplace approximation) or $\tilde{\mb{\Sigma}}$ (EP).
+
+
+\subsubsection{Variational, DTC and SOR sparse approximation in GPstuff}
+
+%foo
+
+The variational, DTC and SOR sparse approximations are constructed
+similarly to FIC. Only the type of the GP changes:
+%
+\begin{verbatim}
+gp_var = gp_set('type', 'VAR', 'lik', lik, 'cf', gpcf, 'X_u', X_u);
+gp_dtc = gp_set('type', 'DTC', 'lik', lik, 'cf', gpcf, 'X_u', X_u);
+gp_sor = gp_set('type', 'SOR', 'lik', lik, 'cf', gpcf, 'X_u', X_u);
+\end{verbatim}
+%
+The sparse GP approximations are compared in the demo
+\code{demo\_regression\_sparse2}, and, for example,
+\citet{Quinonero-Candela+Rasmussen:2005}, \citet{Snelson:2007b},
+\citet{Titsias:2009}, and \citet{Alvarez+Luengo+Titsias+Lawrence:2010}
+treat them in more detail.
+
+
+\subsection{Sparse GP models with non-Gaussian likelihoods}
+
+The extension of sparse GP models to non-Gaussian likelihoods is
+straightforward in \pkg{GPstuff}. User can define the sparse GP just
+as described in the previous two sections and then continue with the
+construction of likelihood exactly the same way as with a full GP.
+The Laplace approximation, EP and integration methods can be used with
+the same commands as with full GP. This is demonstrated in
+\code{demo\_spatial1}.
+
+\section{Modifying the covariance functions}\label{sec:modifying_covariance}
+
+\subsection{Additive models}\label{sec_additive_models}
+
+In many practical situations, a GP prior with only one covariance
+function may be too restrictive since such a construction can model
+effectively only one phenomenon. For example, the latent function may
+vary rather smoothly across the whole area of interest, but at the
+same time it can have fast local variations. In this case, a more
+reasonable model would be $f(\mb{x}) = g(\mb{x}) + h(\mb{x})$, where
+the latent value function is a sum of two functions, slow and fast
+varying. By placing a separate GP prior for both of the functions $g$
+and $h$ we obtain an additive prior
+%
+\begin{equation}\label{two_length_scale_model}
+f(\x)|\theta \sim \GP(0,k_g(\x,\x') + k_h(\x,\x')).
+\end{equation}
+%
+The marginal likelihood and posterior distribution of the latent
+variables are as before with $\Kff = \mb{K}_{\text{g,g}} +
+\mb{K}_{\text{h,h}}$. However, if we are interested on only, say,
+phenomenon $g$, we can consider the $h$ part of the latent function as
+correlated noise and evaluate the predictive distribution for $g$,
+which with the Gaussian likelihood would be
+%
+\begin{equation}
+  \tilde{g}(\tilde{\x})|\mathcal{D},
+  \theta \sim \GP\left(k_g(\tilde{\x},\mb{X})(\Kff + \sigma^2\mb{I})^{-1}\mb{y}, 
+    k_g(\tilde{\x},\tilde{\x}') -
+    k_g(\tilde{\x},\mb{X})(\Kff + \sigma^2\mb{I})^{-1}  k_g(\mb{X},\tilde{\x}')\right).
+\end{equation}
+%
+With non-Gaussian likelihood, the Laplace and EP approximations for
+this are similar since only $\sigma^2\mb{I}$ and $(\Kff +
+\sigma^2\mb{I})^{-1}\mb{y}$ change in the approximations.
+
+The multiple length-scale model can be formed also using specific
+covariance functions. For example, a rational quadratic covariance
+function (\code{gpcf\_rq}) can be seen as a scale mixture of squared
+exponential covariance functions \citep{Rasmussen+Williams:2006}, and
+could be useful for data that contain both local and global phenomena.
+However, using sparse approximations with the rational quadratic would
+prevent it from modeling local phenomena. The additive model
+\eqref{two_length_scale_model} suits better for sparse GP formalism
+since it enables to combine FIC with CS covariance functions.
+
+As discussed in section \ref{FIC_PICsparse_approximations}, FIC can be
+interpreted as a realization of a special kind of covariance function.
+\citet{Vanhatalo+Vehtari:2008} proposed to add FIC with CS covariance
+function which leads to a latent variable prior
+%
+\begin{equation}\label{GP_CS+FIC_prior}
+\f \mid \mb{X}, \mb{X}_{u}, \theta \sim \N(\mb{0},
+\Kfu\iKuu\Kuf+\hat{\LL}),
+\end{equation}
+%
+referred as CS+FIC. Here, the matrix
+$\hat{\LL}=\LL+k_{\text{pp,q}}(\mb{X},\mb{X})$ is sparse with the same
+sparsity structure as in $k_{\text{pp,q}}(\mb{X},\mb{X})$ and it is
+fast to use in computations and cheap to store. 
+
+\subsubsection{Additive models in GPstuff}
+
+The additive models are demonstrated in \code{demo\_periodic} and
+\code{demo\_regression\_additive1}. Their construction follows closely the
+steps introduced in the previous sections. Consider that we want to
+construct a GP with a covariance function that is a sum of squared
+exponential and piecewise polynomial $k_{\text{se}}(\x,\x') +
+k_{\text{pp},2}(\x,\x')$. In \pkg{GPstuff} this is done as follows:
+%
+\begin{verbatim}
+gpcf1 = gpcf_sexp();
+gpcf2 = gpcf_ppcs2('nin', 2);
+lik = lik_gaussian('sigma2', 0.1);
+gp = gp_set('lik', lik, 'cf', {gpcf1, gpcf2}); 
+\end{verbatim}
+%
+The difference to previous models is that we give more than one
+covariance function structure in cell array for the \code{gp\_set}.
+The inference with additive model is conducted the same way as
+earlier. If we want to make predictions for the two components
+$k_{\text{se}}$ and $k_{\text{pp},2}$ independently we can do it by
+giving an extra parameter-value pair for the \code{gp\_pred} as
+%
+\begin{verbatim}
+[Ef_sexp, Varf_sexp] = gp_pred(gp, x, y, x, 'predcf', 1);
+[Ef_ppcs2, Varf_ppcs2] = gp_pred(gp, x, y, x, 'predcf', 2);
+\end{verbatim}
+
+Additive models are constructed analogously with sparse approximations
+by changing the type of the GP model. CS+FIC is a special kind of GP
+structure and has its own type definition:
+%
+\begin{verbatim}
+gp = gp_set('type', 'CS+FIC', 'lik', lik, 'cf', {gpcf1, gpcf2}, 'X_u', Xu);
+\end{verbatim}
+
+It is worth mentioning few things that should be noticed in relation
+to sparse approximations. In general, FIC is able to model only
+phenomena whose length-scale is long enough compared to the distance
+between adjacent inducing inputs.  PIC on the other hand is able to
+model also fast varying phenomena inside the blocks. Its drawback,
+however, is that the correlation structure is discontinuous which may
+result in discontinuous predictions. The CS+FIC model corrects these
+deficiencies. In FIC and PIC the inducing inputs are parameters of
+every covariance function, which means that all the correlations are
+induced through the inducing inputs and the shortest length-scale the
+GP is able to model is defined by the locations of the inducing
+inputs. In CS+FIC, the CS covariance functions do not utilise inducing
+inputs but evaluate the covariance exactly for which reason both the
+long and short length-scale phenomena can be captured.  If there are
+more than two covariance functions in CS+FIC all the globally
+supported functions utilize inducing inputs and all the CS functions
+are added to $\hat{\Lambda}$. A detailed treatment on the subject is
+given in
+\citep[][]{Vanhatalo+Vehtari:2008,Vanhatalo+Vehtari:2010,Vanhatalo+Pietilainen+Vehtari:2010}
+
+
+\subsection{Additive covariance functions with selected variables}
+\label{sec:addit-covar-funct}
+
+In the demo (\code{demo\_regression\_additive2}), we demonstrate how
+covariance functions can be modified so that they are functions of
+only a subset of inputs. We model an artificial 2D regression data
+with additive covariance functions that use only either the first or
+second input variable. That is, the covariance is
+$k_1(x_1,x_1'|\theta_1) + k_2(x_2,x_2'|\theta_2): \Re^2 \times
+\Re^2\mapsto \Re$, where the covariance functions are of type
+$k_1(x_1,x_1'|\theta_1): \Re \times \Re \mapsto \Re$. In the example
+the covariance is a sum of a squared exponential, which is a function
+of the first input dimension $x_1$, and a linear covariance function,
+which is a function of the second input dimension $x_2$. The
+covariance functions are constructed as follows:
+%
+\begin{verbatim}
+gpcf_s1 = gpcf_sexp('selectedVariables', 1, 'lengthScale',0.5, ...
+                    'magnSigma2', 0.15);
+gpcf_l2 = gpcf_linear('selectedVariables', 2);
+\end{verbatim}
+%
+The smaller set of inputs is chosen with the field input variable pair
+\code{'selectedVariables',1}.
+
+\subsection{Product of covariance functions}
+
+A product of two or more covariance functions $k_1(\x,\x') \cdot
+k_2(\x,\x')...$ is a valid covariance function as well. Such
+constructions may be useful in situations where the phenomenon is
+assumed to be separable. Combining covariance functions into product
+form is done with a special covariance function \code{gpcf\_prod}. For
+example, multiplying exponential and Mátern covariance functions to
+produce separable spatio-temporal model $k(\x,\x') = k_1(x_1,x_1')
+\cdot k_2([x_2,x_3]^{\text{T}},[x'_2,x'_3]^{\text{T}})$ where the
+temporal component has covariance function $k_1$ and the spatial
+components $k_2$ is done as follows:
+%
+\begin{verbatim}
+gpcf1 = gpcf_exp('selectedVariables', 1);
+gpcf2 = gpcf_matern32('selectedVariables', [2 3];
+gpcf = gpcf_prod('cf', {gpcf1, gpcf2});
+\end{verbatim}
+
+The product covariance \code{gpcf\_prod} can also be used to combine
+categorical covariance \code{gpcf\_cat} with other covariance
+functions to build hierarchical linear and non-linear models, as
+illustrated in \code{demo\_regression\_hier}.
+
+% ==========================
+
+\section{Model assessment and comparison}\label{sec:model_assessment}
+
+There are various means to assess the goodness of the model and its
+predictive performance. \pkg{GPstuff} provides four basic approaches:
+marginal likelihood, cross-validation, deviance information
+criterion and widely applicable information criterion.
+
+\subsection{Marginal likelihood}
+
+Marginal likelihood is often used for model selection \citep[see,
+e.g.][]{Kass+Raftery:1995}. It corresponds to ML II or with model
+priors to MAP II estimate in the model space, selecting the model with
+the highest marginal likelihood or highest marginal posterior
+probability. 
+%
+In \pkg{GPstuff} the marginal posterior and marginal likelihood (or
+its approximation in case of non-Gaussian likelihood) given the
+parameters are computed by function \code{gp\_e}.
+
+\subsection{Cross-validation}
+\label{sec:cross-validation}
+
+Cross-validation (CV) is an approach to estimate the predictive
+performance for the future observations while avoiding the double use
+of the data. The $i$th observation $(\x_{i},y_{i})$ in the training
+data is left out, and then the predictive distribution for $y_i$ is
+computed with a model that is fitted to all of the observations except
+$(\x_i,y_i)$.
+%
+By repeating this for every point in the training data, we get a
+collection of leave-one-out cross-validation (LOO-CV) predictive
+densities.
+
+For GP with given hyperparameters the LOO-CV predictions can be
+computed in case of Gaussian likelihood using an analytical
+solution \citep{Sundararajan+Keerthi:2001a} and in case of
+non-Gaussian likelihood using EP approximation
+\citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
+approximation using linear response approach (to be submitted),
+which have been implemented in \code{gp\_loopred}.
+%
+If set of hyperparameters have been obtained using \code{gp\_mc} or
+\code{gp\_ia} LOO-posterior can be approximated using importance
+sampling \citep{Gelfand+Dey+Chang:1992,Vehtari+Lampinen:2002},
+which is also implemented in \code{gp\_loopred}.
+
+To reduce computation time, in $k$-fold-CV, $1/k$ part of the training
+data is left out, and then the predictive distribution is computed
+with a model that is fitted to all of the observations except that
+part.  Since the $k$-fold-CV predictive densities are based on smaller
+training data sets than the full data set, the estimate is slightly
+biased. In \pkg{GPstuff} first order bias correction proposed by
+\citet{Burman:1989} is used.  \pkg{GPstuff} provides \code{gp\_kfcv},
+which computes $k$-fold-CV and bias-corrected $k$-fold-CV with
+log-score and root mean squared error (RMSE). The function
+\code{gp\_kfcv} provides also basic variance estimates for the
+predictive performance estimates.  Variance is computed from the
+estimates for each fold ~\citep[see, e.g.,][]{Dietterich:1998}.  See
+\citep{Vehtari+Lampinen:2002} for more details on estimating the
+uncertainty in performance estimates.
+
+\subsection{DIC}
+
+Deviance information criterion (DIC) is another very popular model
+selection criterion
+\citep[][]{Spiegelhalter+Best+Carlin+Linde:2002}. DIC is not fully
+Bayesian approach as it estimates the predictive performance if the
+predictions were made using point-estimate (plug-in estimate) for
+the unknowns, instead of using posterior predictive distribution.
+Additionally DIC is defined only for regular models and thus fails
+for singular models. DIC is included in \pkg{GPstuff} to allow
+comparisons and better alternative WAIC is described in the next
+section.
+
+With parametric models without any hierarchy DIC is usually written as
+%
 \begin{align}
-p(y | f, \sigma, \tau) = \frac{\tau(1-\tau)}{\sigma}\exp\left[-\frac{y-f}{\sigma}(\tau - I(y \le f))\right],
+p_{\text{eff}} &= \E_{\theta|\mathcal{D}}[D(\y, \theta)] - D(\y,
+\E_{\theta|\mathcal{D}}[\theta]) \\
+\text{DIC} & = \E_{\theta|\mathcal{D}}[D(\y, \theta)] + p_{\text{eff}},
 \end{align}
-where $\tau$ is the quantile of interest and $\sigma$ is the standard
-deviation. $I(y \le f)$ is 1 if the condition inside brackets is true
-and 0 otherwise. Because the logarithm of the likelihood is not twice
-differentiable at the mode, Laplace approximation cannot be used for
-inference with Quantile Regression. Quantile Regression with EP and
-MCMC is demonstrated in \code{demo\_qgp} with toy data.
-
-%    The likelihood is defined as follows:
-%                            __ n
-%      p(y|f, sigma2, tau) = || i=1 tau*(1-tau)/sigma*exp(-(y-f)/sigma*
-%                                 (tau - I(t <= f)))
-%    
-%    where tau is the quantile of interest, sigma is the standard deviation
-%    of the distribution and I(t <= f) = 1 if t <= f, 0 otherwise.
 %
-%    Note that because the form of the likelihood, second order derivatives
-%    with respect to latent values are 0. Because this, EP should be used
-%    instead of Laplace approximation.    
+where $p_{\text{eff}}$ is the effective number of parameters and $D =
+-2\log(p(\y|\theta))$ is the deviance. Since our models are
+hierarchical we need to decide the parameters on focus \citep[see][for
+discussion on this]{Spiegelhalter+Best+Carlin+Linde:2002}. The
+parameters on the focus are those over which the expectations are
+taken when evaluating the effective number of parameters and DIC. In
+the above equations, the focus is in the parameters and in the
+case of a hierarchical GP model of \pkg{GPstuff} the latent variables
+would be integrated out before evaluating DIC. If we have a MAP
+estimate for the parameters, we may be interested to evaluate DIC
+statistics with the focus on the latent variables. In this case the
+above formulation would be
 %
-%  See also
-%    GP_SET, PRIOR_*, LIK_*
-%
-%   References
-%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
-%     Using Expectation Propagation. Appearing in Proceedings of the 29th
-%     International Conference on Machine Learning, Edinburg, Scotland, UK,
-%     2012.
-
-\section{Multilatent models}
-\label{sec:multilatent-models}
-
-The multilatent models consist of models where individual likelihood
-factors depend on multiple latent variables. In this section we
-shortly summarize such models in GPstuff.
-
-\subsection{Multiclass classification}
-
-In multiclass classification problems the target variables have more
-than two possible class labels, $y_i\in\{1,\ldots,c\}$, where $c>2$ is
-the number of classes. In \pkg{GPstuff}, multi-class classification
-can be made using the softmax likelihood (\code{lik\_softmax})
-%
-\begin{eqnarray}
-p(y_i|\f_i)=\frac{\exp(f_i^{y_i})}{\sum_{j=1}^c\exp(f_i^{j})},
-\end{eqnarray}
-where $\f_i=\left[f_i^1,\ldots,f_i^c\right]^T$.
-%
-In Gaussian process literature for multiclass classification, a common
-assumption is to introduce $c$ independent prior processes that are
-associated with $c$ classes \citep[see, e.g.,][]{Rasmussen+Williams:2006}.
-%
-By assuming zero-mean Gaussian processes for latent functions
-associated with different classes, we obtain a zero-mean Gaussian
-prior
-\begin{eqnarray}
-  p(\f|X)=\mathcal{N}(\f|\mathbf{0}, K),
-\end{eqnarray}
-where
-$\f=\left[f_1^1,\ldots,f_n^1,f_1^2,\ldots,f_n^2,\ldots,f_1^c,\ldots,f_n^c\right]^T$
-and $K$ is a $cn \times cn$ block-diagonal covariance matrix with
-matrices $K^1, K^2,\ldots,K^c$ (each of size $n \times n$) on its
-diagonal.
-%
-Inference for softmax can be made with MCMC or Laplace approximation.
-As described by \citet{Williams+Barber:1998} and
-\citet{Rasmussen+Williams:2006}, using the Laplace approximation for
-the softmax likelihood with the uncorrelated prior processes, the
-posterior computations can be done efficiently in a way that scales
-linearly in $c$, which is also implemented in
-\pkg{GPstuff}. Multiclass classification with softmax is demonstrated
-in \code{demo\_multiclass}.
-
-\subsection{Multinomial}
-
-The multinomial model (\code{lik\_multinomial}) is an extension of the
-multiclass classification to situation where each observation consist
-of counts of class observations. Let $y_i = [y_{i,1},\ldots,y_{i,c}]$,
-where $c>2$, be a vector of counts of class observations related to
-inputs $x_i$ so that
-%
-\begin{equation}
-y_i \sim \text{Multinomial}([p_{i,1},\ldots,p_{i,c}],n_i)
-\end{equation}
-%
-where $n_i=\sum_{j=1}^c y_{i,j}$. The propability to observe class $j$ is
-%
-\begin{eqnarray}
-p_{i,j}=\frac{\exp(f_i^j)}{\sum_{j=1}^c\exp(f_i^j)},
-\end{eqnarray}
-%
-where $\f_i=\left[f_i^1,\ldots,f_i^c\right]^T$. As in multiclass
-classification we can introduce $c$ independent prior processes that
-are associated with $c$ classes.
-%
-By assuming zero-mean Gaussian processes for latent functions
-associated with different classes, we obtain a zero-mean Gaussian
-prior
-\begin{eqnarray}
-  p(\f|X)=\mathcal{N}(\f|\mathbf{0}, K),
-\end{eqnarray}
-where
-$\f=\left[f_1^1,\ldots,f_n^1,f_1^2,\ldots,f_n^2,\ldots,f_1^c,\ldots,f_n^c\right]^T$
-and $K$ is a $cn \times cn$ block-diagonal covariance matrix with
-matrices $K^1, K^2,\ldots,K^c$ (each of size $n \times n$) on its
-diagonal. This model is demonstrated in \code{demo\_multinomial} and
-it has been used, for example, in
-\citep{Juntunen+Vanhatalo+Peltonen+Mantyniemi:2012}.
-
-
-\subsection{Density estimation and regression}
-
-Logistic Gaussian process can be used for flexible density estimation
-and density regression. \pkg{GPstuff} includes implementation based on
-Laplace (and MCMC) approximation as described in
-\citep{Riihimaki+Vehtari:2012}.
-
-The likelihood is defined as
 \begin{align}
-  p(\x|\f)=\prod_{i=1}^n \frac{\exp(f_i)}{\sum_{j=1}^n \exp(f_j)}.
+p_{D}(\theta) &= \E_{\f|\mathcal{D}, \theta}[D(\y, \f)] - D(\y,
+\E_{\f|\mathcal{D}, \theta}[\f]) \label{DIC_focus_on_latent_variables1}\\
+\text{DIC} & = \E_{\f|\mathcal{D},\theta}[D(\y, \f)] +
+p_{D}(\theta).\label{DIC_focus_on_latent_variables2}
 \end{align}
-For the latent function $f$, we assume
-the model $f(\x) = g(\x)+\h(\x)^T \bm{\beta}$, where the GP prior
-$g(\x)$ is combined with the explicit basis functions $\h(\x)$.
-Regression coefficients are denoted with $\bm{\beta}$, and by placing
-a Gaussian prior $\bm{\beta}\sim \mathcal{N}(\bb,B)$ with mean $\bb$
-and covariance $B$, the parameters $\bm{\beta}$ can be integrated out
-from the model, which results in the following GP prior for $f$:
-\begin{equation}\label{gp_process}
-  f(\x)\sim \mathcal{GP}\left(\h(\x)^T\bb,\kappa(\x,\x')+\h(\x)^TB\h(\x')\right).
-\end{equation}
 %
-For the explicit basis functions, we use the second-order polynomials
-%
-%$\h(\x)=[x_1 \quad x_1^2 \, \cdots \, x_d \quad x_d^2]^T$,
-%
-which leads to a GP prior that can favour density estimates where the
-tails of the distribution go eventually to zero.
+Here the effective number of parameters is denoted differently with
+$p_{D}(\theta)$ since now we are approximating the effective number of
+parameters in $\f$ conditionally on $\theta$, which is different from
+the $p_{\text{eff}}$. $p_{D}(\theta)$ is a function of the
+parameters and it measures to what extent the prior correlations
+are preserved in the posterior of the latent variables given $\theta$.
+For non-informative data $p_{D}(\theta)=0$ and the posterior is the
+same as the prior. The greater $p_{D}(\theta)$ is the more the model
+is fitted to the data and large values compared to $n$ indicate
+potential overfit. Also, large $p_{D}(\theta)$ indicates that we
+cannot assume that the conditional posterior approaches normality by
+central limit theorem. Thus, $p_{D}(\theta)$ can be used for assessing
+the goodness of the Laplace or EP approximation for the conditional
+posterior of the latent variables as discussed by
+\citet{Rue+Martino+Chopin:2009} and
+\citet{Vanhatalo+Pietilainen+Vehtari:2010}. The third option is to
+evaluate DIC with focus on all the variables, $[\f, \theta]$. In this
+case the expectations are over $p(\f,\theta|\mathcal{D})$.
 
-We use finite-dimensional approximation and evaluate the integral and
-the Gaussian process in a grid.
-%
-We approximate inference for logistic Gaussian process density
-estimation in a grid using Laplace's method or MCMC to integrate over
-the non-Gaussian posterior distribution of latent values \citep[see
-details in][]{Riihimaki+Vehtari:2012}.
+\subsection{WAIC}
 
-Logistic Gaussian processes are also suitable for estimating
-conditional densities $p(t|\x)$, where $t$ is a response variable. We
-discretize both input and target space in a finite region to model the
-conditional densities with the logistic GP.
-%
-To approximate the resulting non-Gaussian posterior distribution, we
-use again Laplace's method.
+\citet{Watanabe:2009,Watanabe:2010a,Watanabe:2010d} presented
+widely applicable information criterion (WAIC) and gave a formal
+proof of its properties as an estimate for the predictive
+performance of posterior predictive distributions for both regular
+and singular models. A criterion of similar form was independently
+proposed by \citet{Richardson:2002} as a version of DIC, but
+without formal justification.
 
-1D and 2D density estimation and density regression are implemented in
-the function \code{lgpdens}. The usage of the function is demonstrated
-in \code{demo\_lgpdens}.
+Other information criteria are based on Fisher's asymptotic theory
+assuming a regular model for which the likelihood or the posterior
+converges to a single point and MLE, MAP, and plug-in estimates are
+asymptotically equivalent. With singular models the set of true
+parameters consists of more than one point, the Fisher information 
+matrix is not positive definite, plug-in estimates are not
+representative of the posterior and the distribution of the deviance
+does not converge to a $\chi^2_\nu$ distribution. 
 
-%    The likelihood is defined as follows:
-%               __ n
-%      p(y|f) = || i=1 exp(f_i) / Sum_{j=1}^n exp(f_j),
-%
-%      where f contains latent values.
-
-
-%    LIK = LIK_LGPC creates a logistic Gaussian process likelihood
-%    structure for conditional density estimation
-%
-%    The likelihood contribution for the $k$th conditional slice 
-%    is defined as follows:
-%                   __ n
-%      p(y_k|f_k) = || i=1 exp(f_ki) / Sum_{j=1}^n exp(f_kj),
-%
-%      where f contains latent values.
-
-\subsection{Cox proportional hazard model}
-
-For the individual $i$, where $i=1,\ldots,n$, we have observed
-survival time $y_i$ (possibly right censored) with censoring indicator
-$\delta_i$, where $\delta_i=0$ if the $i$th observation is uncensored
-and $\delta_i=1$ if the observation is right censored. The traditional
-approach to analyze continuous time-to-event data is to assume the Cox
-proportional hazard model \citep{Cox:1972}.
-\begin{equation}
-h_i(t)=h_0(t)\exp(\bm{x}^T_i\bm{\beta}),
-\end{equation}
-where $h_0$ is the unspecified baseline hazard rate, $\bm{x}_i$ is the
-$d\times1$ vector of covariates for the $i$th patient and $\bm{\beta}$
-is the vector of regression coefficients. The matrix
-$X=[\bm{x}_1,\ldots,\bm{x}_n]^T$ of size $n\times d$ includes all
-covariate observations.
-
-The Cox model with linear predictor can be extended to more general
-form to enable, for example, additive and non-linear effects of
-covariates \citep{Kneib:2006,Martino:2011}. We extend the proportional
-hazard model by
-\begin{equation}
-h_i(t)=\exp(\log(h_0(t))+\eta_i(\bm{x}_i)),
-\end{equation}
-where the linear predictor is replaced with the latent predictor
-$\eta_i$ depending on the covariates $\bm{x}_i$. By assuming a
-Gaussian process prior over
-$\bm{\eta}=(\eta_1,\ldots,\eta_n)^T$, smooth nonlinear effects of
-continuous covariates are possible, and if there are dependencies
-between covariates, GP can model these interactions implicitly. 
-
-A piecewise log-constant baseline hazard \citep[see,
-e.g.][]{Ibrahim+Chen+Sinha:2001,Martino:2011} is assumed by
-partitioning the time axis into $K$ intervals with equal lengths:
-$0=s_0<s_1<s_2<\ldots<s_K$, where $s_K>y_i$ for all $i=1,\ldots,n$. In
-the interval $k$ (where $k=1,\ldots,K$), hazard is assumed to be
-constant:
-\begin{eqnarray}
-h_0(t)=\lambda_k&\mathrm{for}&t\in(s_{k-1},s_k].
-\end{eqnarray}
-For the $i$th individual the hazard rate in the $k$th time interval is
-then
-\begin{eqnarray}
-h_i(t)=\exp(f_k+\eta_i(\bm{x}_i)), & t\in(s_{k-1},s_k],
-\end{eqnarray}
-where $f_k=\log(\lambda_k)$. To assume smooth hazard rate functions,
-we place another Gaussian process prior for
-$\bm{f}=(f_1,\ldots,f_K)^T$. We define a vector containing the mean
-locations of $K$ time intervals as
-$\bm{\tau}=(\tau_1,\ldots,\tau_K)^T$. 
-
-% The two latent processes are assumed to a priori
-% independent/uncorrelated, and this leads to a prior covariance matrix
-% with a block diagonal structure.
-
-The likelihood contribution for the possibly right censored $i$th
-observation $(y_i,\delta_i)$ is assumed to be
-\begin{equation}
-l_i=h_i(y_i)^{(1-\delta_i)} \exp \left(
-  -\int_0^{y_i}h_i(t)dt \right).
-\end{equation}
-Using the piecewise log-constant assumption for the hazard rate
-function, the contribution of the observation $i$ for the likelihood
-results in
-\begin{equation}
-l_i=[\lambda_k \exp(\eta_i)]^{(1-\delta_i)}\exp \left( -[(y_i-s_{k-1})\lambda_k
-  + \sum_{g=1}^{k-1}(s_g-s_{g-1})\lambda_g ]\exp(\eta_i) \right),
-\end{equation}
-where $y_i\in(s_{k-1},s_k]$
-\citep{Ibrahim+Chen+Sinha:2001,Martino:2011}. By applying the Bayes
-theorem, the prior information and likelihood contributions are
-combined, and the posterior distribution of the latent variables can
-be computed. Due to the form of the likelihood function, the resulting
-posterior becomes non-Gaussian and analytically exact inference is
-intractable. \pkg{GPstuff} supports MCMC and Laplace approximation to
-integrate over the latent variables. The use of Gaussian process Cox
-proportional hazard model is demonstrated in
-\code{demo\_survival\_coxph}.
-
-%    creates a proportional hazard model where a piecewise log-constant
-%    baseline hazard is assumed.  
-%    
-%    The likelihood contribution for the ith observation is
-%
-%      l_i = h_i(y_i)^(1-z_i)*[exp(-int_0^y_i*h_i dt)],
-%    
-%    where hazard is h_i=h_0(y_i)*exp(f_i). A zero mean Gaussian process
-%    prior is placed for f = [f_1, f_2,...,f_n] ~ N(0, C). C is the
-%    covariance matrix, whose elements are given as C_ij = c(x_i, x_j |
-%    th). The function c(x_i, x_j| th) is covariance function and th its
-%    parameters, hyperparameters. We place a hyperprior for
-%    hyperparameters, p(th). 
-%
-%    The time axis is partioned into K intervals with equal lengths:
-%    0 = s_0 < s_1 < ... < s_K, where s_K > y_i for all i. The baseline
-%    hazard rate function h_0 is piecewise constant,  
-%
-%      h_0(t) = la_k,
-%
-%    when t belongs to the interval (s_{k-1},s_k] and where ft_k=log(la_k).
-%    The hazard rate function is smoothed by assuming another Gaussian
-%    process prior ft = [ft_1, ft_2,...,ft_K] ~ N(0, C). 
-%
-%    z is a vector of censoring indicators with z = 0 for uncensored event
-%    and z = 1 for right censored event. 
-%
-%    When using the Coxph likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_e as follows: gpla_e(w, gp,
-%    x, y, 'z', z)
-
-\subsection{Input dependent models}
-
-In input-dependent models more than one latent variables are used for modeling different parameters of the distribution. Additional latent variables in turn enable modeling dependencies between inputs and parameters. 
-
-\subsubsection{Input-dependent Noise}
-Input-dependent noise model \citep{Goldberg:1997} can be used to model
-regression data. The model assumes Gaussian distributed data with
-latent variables defining both mean and variance of the Gaussian
-distribution instead of just the mean like in the standard Gaussian
-likelihood. Setting independent GP priors for the two latent
-variables, it is possible to infer non-constant noise,
-e.g. input-dependent, in the data.
-
-The likelihood is defined as
+Watanabe shows that the Bayesian generalization utility can
+be estimated by a criterion 
 \begin{align}
-  p(\y|\f^{(1)}, \f^{(2)}, \sigma^2)=\prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 \exp(f_i^{(2)})),
+  \WAIC_G = BU_{t} - 2(BU_{t} - GU_{t}),
 \end{align}
-with latent function $f^{(1)}$ defining the mean and $f^{(2)}$
-defining the variance. Input-dependent noise is demonstrated in
-\code{demo\_inputdependentnoise} with both heteroscedastic and
-constant noise.
-% missing description
-
-\subsubsection{Input-dependent overdispersed Weibull}
-In input-dependent Weibull model additional latent variable is used for modeling dispersion parameter $r$ of the standard Weibull model. 
-
-The likelihood is defined as
-\begin{eqnarray}
- p( \y |\f^{(1)}, \f_i^{(2)},\mathbf{z}) =&& \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
- &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
-\end{eqnarray}
-where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
-uncensored event and $z_i = 1$ for right censored event for
-observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
-
-\subsection{Zero-inflated negative binomial}
-
-Zero-inflated negative binomial model is suitable for modelling count
-variables with excessive number of zero observations compared to usual
-Poisson and negative binomial count models. Zero-inflated negative
-binomial models assume a two-stage process, where the first process
-determines whether the count is larger than zero, and the second
-process determines the non-zero count \citep{Mullahy:1986}.
-In \pkg{GPstuff}, these processes are assumed independent a priori, but they
-become a posteriori dependent through the likelihood function
+where $BU_t$ is Bayes training utility
 \begin{align}
-  p + & (1-p)\mathrm{NegBin}(y|y=0),  \quad\mathrm{when}\quad y=0\\
-      & (1-p)\mathrm{NegBin}(y|y>0),  \quad\mathrm{when}\quad y>0,
+  BU_t = \frac{1}{n} \sum_{i=1}^n \log p(y_i|D,M_k) 
 \end{align}
-where the probability p is given by a binary classifier with logit
-likelihood. NegBin is the Negative-binomial distribution parametrized
-for the $i$'th observation as
-\begin{equation}
- \y |\f,\mb{e}, r  \sim \prod_{i=1}^n
- \frac{\Gamma(r+y_i)}{y_i!\Gamma(r)}
-\left(\frac{r}{r+\mu_i}\right)^r \left(\frac{\mu_i}{r+\mu_i}\right)^{y_i},
+and $GU_g$ is Gibbs generalization utility
+\begin{align}
+  GU_g = \int p_t(\tilde{y}) \int p(\theta|D,M_k) \log
+  p(\tilde{y}|\theta,M_k) d\theta d\tilde{y} 
+\end{align}
+WAIC can also be given as a functional variance form 
+\begin{align}
+  \WAIC_V &= BU_{t} - V/n,
+\end{align}
+where the functional variance
+\begin{align}
+  V = %\frac{1}{n} 
+  \sum_{i=1}^n \Bigg\{ 
+%     \int p(\theta_k|D,M_k) 
+%     (\log p(\dot{y}_i|\dot{x}_i,\bar{\theta}_k,M_k))^2 d\theta_k
+%     -(\int p(\theta_k|D,M_k) 
+%       \log p(\dot{y}_i|\dot{x}_i,\bar{\theta}_k,M_k))^2 
+    & \E_{\theta|D,M_k} \left[ \left( 
+        \log p({y}_i|{x}_i,\theta,M_k)
+      \right)^2 \right] \nonumber \\
+    & \quad 
+    - \left( 
+      \E_{\theta|D,M_k} \left[
+        \log p({y}_i|{x}_i,\theta,M_k)
+      \right]
+    \right)^2
+  \Bigg\},
+\end{align}
+describes the fluctuation of the posterior distribution.
+
+WAIC is asymptotically equal to the true logarithmic utility in
+both regular and singular statistical models and the error in a
+finite case is $o(1/n)$. \citet{Watanabe:2010d} shows also that the
+WAIC estimate is asymptotically equal to the Bayesian
+cross-validation estimate (section \ref{sec:cross-validation}).
+%
+$\WAIC_{G}$ and $\WAIC_V$ are asymptotically equal, but the series
+expansion of $WAIC_V$ has closer resemblance to the series
+expansion of the logarithmic leave-one-out utility.
+
+\subsection{Model assessment demos}
+
+The model assessment methods are demonstrated with the functions
+\code{demo\_modelassesment1} and \code{demo\_modelassesment2}. The
+former compares the sparse GP approximations to the full GP with
+regression data and the latter compares the logit and probit
+likelihoods in GP classification.
+
+Assume that we have built our regression model with a Gaussian noise
+and used optimization method to find the MAP estimate for the
+parameters. We evaluate the effective number of latent
+variables, DIC and WAIC
+%
+\begin{verbatim}
+p_eff_latent = gp_peff(gp, x, y);
+[DIC_latent, p_eff_latent2] = gp_dic(gp, x, y, 'focus', 'latent');
+WAIC = gp_waic(gp,x,y);
+\end{verbatim}
+%
+where $p_{\text{eff}}$ is evaluated with two different approximations.
+Since we have the MAP estimate for the parameters the focus is on
+the latent variables. In this case we can also use \code{gp\_peff}
+which returns the effective number of parameters approximated as
+%
+\begin{equation}\label{eq_peff_fast_approx}
+p_{D}(\theta) \approx n - \text{tr}(\iKff (\iKff + \sigma^{-2}\mb{I})^{-1})
 \end{equation}
 %
-where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
-governing the variance. In \pkg{GPstuff}, the latent value vector
-$\f=[\f_1^T \f_2^T]^T$ has length $2N$, where $N$ is the number of
-observations. The latents $\f_1$ are associated with the
-classification process and the latents $\f_2$ with the
-negative-binomial count process. %The model is demonstrated in ?.
+\citep{Spiegelhalter+Best+Carlin+Linde:2002}. When the focus is on the
+latent variables, the function \code{gp\_dic} evaluates the DIC
+statistics and the effective number of parameters as described by the
+equations \eqref{DIC_focus_on_latent_variables1} and
+\eqref{DIC_focus_on_latent_variables2}. 
 
-%    The likelihood is defined as follows:
-%     
-%      p + (1-p)*NegBin(y|y=0),    when y=0
-%          (1-p)*NegBin(y|y>0),    when y>0,
-%      where the probability p is given by a binary classifier with Logit
-%      likelihood and NegBin is the Negative-binomial distribution
-%      parametrized for the i'th observation as
-%      NegBin(y_i) =   [ (r/(r+mu_i))^r * gamma(r+y_i)
-%                        / ( gamma(r)*gamma(y_i+1) )
-%                        * (mu/(r+mu_i))^y_i ]
+The $k$-fold-CV expected utility estimate can be evaluated as follows:
 %
-%    where mu_i = z_i*exp(f_i) and r is the dispersion parameter.
-%    z is a vector of expected mean and f the latent value vector
-%    whose components are transformed to relative risk
-%    exp(f_i). 
+\begin{verbatim}
+cvres =  gp_kfcv(gp, x, y);
+\end{verbatim}
+% 
+The \code{gp\_kfcv} takes the ready made model structure \code{gp} and
+the training data \code{x} and \code{y}. The function divides the data
+into $k$ groups, conducts inference separately for each of the
+training groups and evaluates the expected utilities with the test
+groups. Since no optional parameters are given the inference is
+conducted using MAP estimate for the parameters. The default division
+of the data is into 10 groups.  The expected utilities and their
+variance estimates are stored in the structure \code{cvres}.
+\code{gp\_kfcv} returns also other statistics if more information is
+needed and the function can be used to save the results automatically.
+
+
+Assume now that we have a record structure from \code{gp\_mc}
+function with Markov chain samples of the parameters stored in it.
+In this case, we have two options how to evaluate the DIC
+statistics. We can set the focus on the parameters or all the
+parameters (that is parameters and latent variables). The two
+versions of DIC and the effective number of parameters and WAIC are
+evaluated as follows:
 %
-%    The latent value vector f=[f1^T f2^T]^T has length 2*N, where N is the
-%    number of observations. The latents f1 are associated with the
-%    classification process and the latents f2 with Negative-binomial count
-%    process.
-%
-%    When using the Zinegbin likelihood you need to give the vector z
-%    as an extra parameter to each function that requires also y. 
-%    For example, you should call gpla_nd_e as follows: gpla_nd_e(w, gp,
-%    x, y, 'z', z)
+\begin{verbatim}
+rgp = gp_mc(gp, x, y, opt);
+[DIC, p_eff] =  gp_dic(rgp, x, y, 'focus', 'param');
+[DIC2, p_eff2] =  gp_dic(rgp, x, y, 'focus', 'all');
+WAIC = gp_waic(gp,x,y);
+\end{verbatim}
+% 
+Here the first line performs the MCMC sampling with options
+\code{opt}. The next two lines evaluate the DIC statistics and the
+last line evaluates WAIC. With Markov chain samples, we cannot use
+the \code{gp\_peff} function to evaluate $p_{D}(\theta)$ since that
+is a special function for models with fixed parameters.
+
+The functions \code{gp\_peff}, \code{gp\_dic} and \code{gp\_kfcv} work
+similarly for non-Gaussian likelihoods as for a Gaussian one. The only
+difference is that the integration over the latent variables is done
+approximately.  The way the latent variables are treated is defined in
+the field \code{latent\_method} of the GP structure and this is
+initialized when constructing the model as discussed in the section
+\ref{GP_classification}. The effective number of parameters returned
+by \code{gp\_peff} is evaluated as in the equation
+\eqref{eq_peff_fast_approx} with the modification that
+$\sigma^{-2}\mb{I}$ is replaced by $\mb{W}$ in the case of Laplace
+approximation and $\tilde{\mb{\Sigma}}^{-1}$ in the case of EP.
+
 
 
 \section{Adding new features in the toolbox}\label{sec_adding_new_features}
