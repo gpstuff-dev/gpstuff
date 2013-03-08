@@ -35,26 +35,22 @@ lik=lik_probit();
 gp=gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6);
 
 opt=optimset('TolX',1e-3,'TolFun',1e-3,'display','on');
+w0=gp_pak(gp);
 
 % fPASS-GP with fixed size of 800 points in active set and data divided to
 % 10 subsets with 4 sweeps over data
-gp=gp_unpak(gp,w0);
-ww=gp_pak(gp);
 start=tic;[gp, indA]=passgp(gp, x, y, 'opt', opt, 'npass', 4, 'ninit', 800, 'nsub', 10, 'display', 'on', 'fixed', 'on', 'pexc', 0.1, 'optimn', 2);time=toc(start);
-tt(i)=time;
+tt=time;
 [Eft, Varft, lpyt, Eyt, Varyt]=gp_pred(gp, x(indA,:), y(indA,:), xt, 'yt', yt);
 param=gp_pak(gp);
-gp=gp_unpak(gp,ww);
 
 % PASS-GP with inclusion threshold 0.65, deletion threshold 0.99, intial
 % size of 400 points in active set and 3 sweeps over data.
 gp=gp_unpak(gp,w0);
-ww=gp_pak(gp);
 start=tic;[gp, indA2]=passgp(gp, x, y, 'opt', opt, 'pinc', 0.65, 'pdel', 0.99, 'npass', 3, 'ninit', 400, 'nsub', 10, 'display', 'on', 'optimn', 2);time=toc(start);
-tt2(i)=time;
+tt2=time;
 [Eft2, Varft2, lpyt2, Eyt2, Varyt2]=gp_pred(gp, x(indA2,:), y(indA2,:), xt, 'yt', yt);
 param2=gp_pak(gp);
-gp=gp_unpak(gp,ww);
 
 % Full Gaussian Process for comparison
 gp=gp_unpak(gp,w0);
