@@ -2421,7 +2421,8 @@ shown in Figure \ref{fig_demo_lgcp}.
   \end{center}
 \end{figure}
 
-\subsection{Survival analysis with Weibull model}
+\subsection{Accelerated failure time survival models}
+\subsubsection{Weibull}
 \label{sec_weibull_demo}
 
 The Weibull distribution is a widely used parametric baseline hazard
@@ -2444,6 +2445,34 @@ where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
 observation $i$. The use of Weibull model with survival data is
 demonstrated in \code{demo\_survival\_weibull}.
+
+\subsubsection{Log-Gaussian}
+With Log-Gaussian survival model the logarithms of survival times are assumed to be normally distributed.
+
+The observation model is defined as
+\begin{eqnarray}
+  \y |\f,\mathbf{z}, \sigma \sim && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
+  &\times & \left(1 - \Phi \left(\frac{\log(y_i) - f(\x_i)}{\sigma}\right)\right)^{z_i} 
+\end{eqnarray}
+where $\sigma$ is the scale parameter.
+
+%      p(y|f, z) = || i=1 [ (2*pi*s^2)^(-(1-z_i)/2)*y_i^-(1-z_i)
+%                            *exp(-1/(2*s^2)*(1-z_i)*(log(y_i) - f_i)^2)
+%                            *(1-norm_cdf((log(y_i)-f_i)/s))^z_i ]
+\subsubsection{Log-logistic}
+
+The observation model is defined as
+
+\begin{equation}
+  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z-2}
+\end{equation}
+
+%    The likelihood is defined as follows:
+%                  __ n
+%      p(y|f, z) = || i=1 [ (r/exp(f_i)*(y_i/exp(f_i))^(r-1)/
+%                               (1+(y_i/exp(f_i))^r))^(1-z_i)
+%                               *(1+(y_i/exp(f_i))^r)^(-z_i) ]
+%                           
 
 \subsection{Derivative observations in GP regression}
 
@@ -3057,7 +3086,7 @@ e.g. input-dependent, in the data.
 
 The likelihood is defined as
 \begin{align}
-  p(\y|\f^{(1)}, \f^{(2)}, \sigma^2)=\prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 e^{f_i^{(2)}}),
+  p(\y|\f^{(1)}, \f^{(2)}, \sigma^2)=\prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 \exp(f_i^{(2)})),
 \end{align}
 with latent function $f^{(1)}$ defining the mean and $f^{(2)}$
 defining the variance. Input-dependent noise is demonstrated in
@@ -3075,7 +3104,7 @@ The likelihood is defined as
 \end{eqnarray}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness.
+observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
 
 \subsection{Zero-inflated negative binomial}
 
