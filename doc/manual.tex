@@ -3066,6 +3066,7 @@ constant noise.
 % missing description
 
 \subsubsection{Input-dependent overdispersed Weibull}
+In input-dependent Weibull model additional latent variable is used for modeling dispersion parameter $r$ of the standard Weibull model. 
 
 The likelihood is defined as
 \begin{eqnarray}
@@ -3074,7 +3075,7 @@ The likelihood is defined as
 \end{eqnarray}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$.
+observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness.
 
 \subsection{Zero-inflated negative binomial}
 
