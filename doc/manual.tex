@@ -2787,7 +2787,9 @@ MCMC is demonstrated in \code{demo\_qgp} with toy data.
 \section{Multilatent models}
 \label{sec:multilatent-models}
 
-\subsection{Multinomial}
+The multilatent models consist of models where individual likelihood
+factors depend on multiple latent variables. In this section we
+shortly summarize such models in GPstuff.
 
 \subsection{Multiclass classification}
 
@@ -2825,6 +2827,43 @@ posterior computations can be done efficiently in a way that scales
 linearly in $c$, which is also implemented in
 \pkg{GPstuff}. Multiclass classification with softmax is demonstrated
 in \code{demo\_multiclass}.
+
+\subsection{Multinomial}
+
+The multinomial model (\code{lik\_multinomial}) is an extension of the
+multiclass classification to situation where each observation consist
+of counts of class observations. Let $y_i = [y_{i,1},\ldots,y_{i,c}]$,
+where $c>2$, be a vector of counts of class observations related to
+inputs $x_i$ so that
+%
+\begin{equation}
+y_i \sim \text{Multinomial}([p_{i,1},\ldots,p_{i,c}],n_i)
+\end{equation}
+%
+where $n_i=\sum_{j=1}^c y_{i,j}$. The propability to observe class $j$ is
+%
+\begin{eqnarray}
+p_{i,j}=\frac{\exp(f_i^j)}{\sum_{j=1}^c\exp(f_i^j)},
+\end{eqnarray}
+%
+where $\f_i=\left[f_i^1,\ldots,f_i^c\right]^T$. As in multiclass
+classification we can introduce $c$ independent prior processes that
+are associated with $c$ classes.
+%
+By assuming zero-mean Gaussian processes for latent functions
+associated with different classes, we obtain a zero-mean Gaussian
+prior
+\begin{eqnarray}
+  p(\f|X)=\mathcal{N}(\f|\mathbf{0}, K),
+\end{eqnarray}
+where
+$\f=\left[f_1^1,\ldots,f_n^1,f_1^2,\ldots,f_n^2,\ldots,f_1^c,\ldots,f_n^c\right]^T$
+and $K$ is a $cn \times cn$ block-diagonal covariance matrix with
+matrices $K^1, K^2,\ldots,K^c$ (each of size $n \times n$) on its
+diagonal. This model is demonstrated in \code{demo\_multinomial} and
+it has been used, for example, in
+\citep{Juntunen+Vanhatalo+Peltonen+Mantyniemi:2012}.
+
 
 \subsection{Density estimation and regression}
 
@@ -3274,6 +3313,7 @@ free software license.
 \section{Comparison of features in GPstuff, 
 GPML and FBM}\label{appendix:compasison}
 
+
    \scriptsize
  \begin{longtable}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
 %    \caption[The comparison of features in GPstuff, GPML and FBM
@@ -3297,6 +3337,11 @@ GPML and FBM}\label{appendix:compasison}
    \hline 
    number of elementary functions & 4 & 4 & 0 \\
    marginalized parameters  & x &  &  \\
+   sums of elements & x & x & \\
+   products of elements &  & x &  \\
+   power of an element &  & x &  \\
+   scaling of elements &  & x &  \\
+   masking of inputs & x & x &  \\
    \multicolumn{4}{l}{\textbf{Single latent likelihood/observation models}}  \\
    \hline 
    Gaussian & x & x &  \\
@@ -3305,30 +3350,29 @@ GPML and FBM}\label{appendix:compasison}
    Poisson & x & Laplace/EP/MCMC & MCMC \\
    negative binomial & x &  & \\
    zero truncated negative binomial  & x & & \\
-   hurdle models & x &  & \\
    log-Gaussian Cox process & x &  & \\
    logistic/logit & x & x & MCMC\\
    erf/probit & x & x & MCMC\\
    sech-squared &  & x & \\
    Laplacian &  & EP,VB,MCMC & \\
    Student's-$t$ & x & Laplace/VB/MCMC & \\
-   Weibull     & x & & \\
+   Weibull with censoring & x & & \\
+   log-Gaussian with censoring & x & & \\
+   log-logistic with censoring & x & & \\
    derivative observations & for sexp covf only &  & \\
-   Mixture of likelihoods &   &  Laplace/EP/MCMC  & \\
-   Uniform for classification & & x & \\
-   Log-Gaussian  & MCMC/EP & & \\
-   Log-logistic  & MCMC/EP & & \\
-   Quantile regression & MCMC/EP & & \\
+   mixture of likelihoods &   &  Laplace/EP/MCMC  & \\
+   uniform for classification & & x & \\
+   quantile regression & MCMC/EP & & \\
    \multicolumn{4}{l}{\textbf{Multilatent likelihood/observation models}} \\
    \hline 
-   multinomial & x &  &  \\
-   softmax & x &  & \\
-   Cox-PH  & x &  & \\
-   density estimation  & x &  &  \\
-   density regression  & x &  & \\
-   input dependent noise   & x &  & \\
-   input dependent overdispersion in Weibull   & x &  & \\
-   zero-inflated negative binomial  & x &  & \\
+   multinomial & MCMC/Laplace &  &  \\
+   softmax & MCMC/Laplace &  & \\
+   Cox proportional hazard model  & MCMC/Laplace &  & \\
+   density estimation  & MCMC/Laplace &  &  \\
+   density regression  & MCMC/Laplace &  & \\
+   input dependent noise   & MCMC/Laplace &  & \\
+   input dependent overdispersion in Weibull   & MCMC/Laplace &  & \\
+   zero-inflated negative binomial  & MCMC/Laplace &  & \\
    \multicolumn{4}{l}{\textbf{Priors for parameters ($\vartheta$)}}  \\
     \hline
    several priors, hierarchical priors & x & & x \\
@@ -3342,6 +3386,7 @@ GPML and FBM}\label{appendix:compasison}
    VAR & Gaussian/EP only &  & \\
    DTC & Gaussian/EP only &  & \\
    SOR & Gaussian/EP only &  & \\
+   PASS-GP & Laplace/EP & & \\
     \multicolumn{4}{l}{\textbf{Latent inference}} \\
     \hline
     Exact (Gaussian only) & x & x & x  \\
@@ -3354,16 +3399,20 @@ GPML and FBM}\label{appendix:compasison}
     \hline
     Type II ML  & x & x & x \\
     Type II MAP  & x & & x \\
-    LOO-CV, Laplace/EP LOO-CV  & x & & \\
-    Metropolis, HMC  & x & x & \\
+    LOO-CV for Gaussian & x & x & \\
+    Laplace/EP LOO-CV for non-Gaussian & x & & \\
+    Least squares LOO-CV for non-Gaussian & & some likelihoods &\\
+    k-fold CV & x & & \\
+    Metropolis, HMC  & x &  & x \\
     NUTS, Slice Sampling (SLS), Surrogate SLS,
     Shrinking-rank SLS, Covariance-matching SLS  & x & & \\
     Grid, CCD, Importance sampling  & x & & \\
    \multicolumn{4}{l}{\textbf{Model assessment}} \\
    \hline 
    marginal likelihood & MAP,ML & ML & \\
-   K-fold CV & x &  & \\
-   LOO CV & x & ML & \\
+   k-fold CV & x &  & \\
+   LOO-CV for fixed hyperparameters & x & x & \\
+   LOO-CV for integrated hyperparameters & x &  & \\
    DIC & x &  & \\
    WAIC & x &  & \\
    average predictive comparison & x &  & \\
@@ -3383,7 +3432,6 @@ GPML and FBM}\label{appendix:compasison}
      inference methods and model assessment methods x means
      that the method is available for all model blocks.\label{table:comparison}}\\
  \end{longtable}
-
 \normalsize
 
 \section{Covariance functions}\label{covariance_functions}
