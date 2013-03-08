@@ -11,6 +11,7 @@
 % License (version 3 or later); please refer to the file 
 % License.txt, included with the software, for details.
 
+prevstream=setrandstream(0);
 % Toy data
 n=200;
 x=linspace(-3,2,n)';
