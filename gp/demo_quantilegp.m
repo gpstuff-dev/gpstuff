@@ -2,6 +2,8 @@
 %
 %  Description 
 %    This demo demonstrates Quantile-GP regression with toy data. QGP can
+%    be used for estimating quantiles of interest of the response variable
+%    with respect to input variables.
 %
 %  See also  LIK_QGP, DEMO_*
 
@@ -46,8 +48,8 @@ gp = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6, 'latent_method', 'MCMC
 gp2 = gp_set('lik', lik2, 'cf', gpcf, 'jitterSigma2', 1e-6, 'latent_method', 'MCMC');
 gp3 = gp_set('lik', lik3, 'cf', gpcf, 'jitterSigma2', 1e-6, 'latent_method', 'MCMC');
 
-% EP for 25% and 75% quantiles (with low number of data points, EP seems to
-% be unstable for very low or high quantiles)
+% EP for 25% and 75% quantiles (with low number of data points, EP is 
+% unstable for very low or high quantiles)
 gp4 = gp_set('lik', lik4, 'cf', gpcf, 'jitterSigma2', 1e-6, 'latent_method', 'EP');
 gp5 = gp_set('lik', lik5, 'cf', gpcf, 'jitterSigma2', 1e-6, 'latent_method', 'EP');
 
