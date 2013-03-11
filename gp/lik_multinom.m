@@ -298,7 +298,11 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
             for z3=1:S
               Var_tmp(:,:,z3) = (diag(tmp(z3,:)) - tmp(z3,:)'*tmp(z3,:));
             end
-            Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+            if mcmc
+              Vary(i1+(0:nout-1)*ntest,:) = diag(N(i1).*mean(Var_tmp,3));
+            else
+              Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+            end
           end
         end
     end
