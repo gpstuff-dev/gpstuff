@@ -30,6 +30,12 @@ function [idi, rt, rn, bb] = idis(pt, pn, y, z, t, varargin)
 %    Extension to survival analysis. Statistics in Medicine
 %    30(1):22-38.
 
+% Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 ip=inputParser;
 if nargin < 3 || ischar(y)
     % model-based estimator

@@ -63,7 +63,6 @@ function lik = lik_zinegbin(varargin)
   ip.FunctionName = 'LIK_ZINEGBIN';
   ip.addOptional('lik', [], @isstruct);
   ip.addParamValue('disper',10, @(x) isscalar(x) && x>0);
-  %ip.addParamValue('disper_prior',prior_fixed(), @(x) isstruct(x) || isempty(x));
   ip.addParamValue('disper_prior',prior_logunif(), @(x) isstruct(x) || isempty(x));
   ip.parse(varargin{:});
   lik=ip.Results.lik;
@@ -305,7 +304,6 @@ function lik = lik_zinegbin(varargin)
   end
 
   function llg2 = lik_zinegbin_llg2(lik, y, ff, param, z)
-%   function [pi_vec, pi_mat] = lik_zinegbin_llg2(lik, y, ff, param, z)
   %LIK_ZINEGBIN_LLG2  Second gradients of the log likelihood
   %
   %  Description        
@@ -667,8 +665,8 @@ function lik = lik_zinegbin(varargin)
         Py(i1)=mean(exp(-log(1+expf1) + r.*(log(r) - log(r+m)) + gammaln(r+yt(i1)) - gammaln(r) - gammaln(yt(i1)+1) + yt(i1).*(log(m) - log(r+m))));
       end
     end
-    Ey = repmat(NaN,size(Ef));
-    Vary = repmat(NaN,size(Ef));
+    Ey = [];
+    Vary = [];
     lpyt=log(Py);
   end
 

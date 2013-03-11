@@ -51,10 +51,11 @@ xt2(:,1)=linspace(min(x(:,1)), max(x(:,1)), 200);
 xt01(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 xt02(:,1)=linspace(min(x0(:,1)), max(x0(:,1)), 200);
 
-
+% Do predictions
 [Ef1, Varf1] = gp_pred(gp, x, y, xt1, 'z', ye);
 [Ef2, Varf2] = gp_pred(gp, x, y, xt2, 'z', ye);
 
+% Create normal weibull model
 lik = lik_weibull();
 gp2 = gp_set('lik', lik, 'cf', gpcf1, 'jitterSigma2', 1e-6);
 gp2 = gp_set(gp2, 'latent_method', 'Laplace');
@@ -71,6 +72,8 @@ gp3=gp_optim(gp3,x,y,'z',ye,'opt',opt);
 [Ef1_3, Varf1_3] = gp_pred(gp3, x, y, xt1, 'z', ye);
 [Ef2_3, Varf2_3] = gp_pred(gp3, x, y, xt2, 'z', ye);
 
+
+% Plot results
 col1=ones(1,3)*0.7;
 col2=ones(1,3)*0.3;
 figure, hold on, set(gcf, 'color', 'w'),

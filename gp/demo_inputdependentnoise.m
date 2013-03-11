@@ -17,8 +17,11 @@
 %=================================
 % 1D Demonstration
 %=================================
+
+% Initialize random stream
 prevstream=setrandstream(0);
-close all;
+
+% Create toy data
 % x = 100*rand([40 1]);
 n = 500;
 x=linspace(-100,200,n)';
@@ -187,6 +190,7 @@ colormap hsv, alpha(.4)
 %============================================
 setrandstream(0);
 
+% Create data
 n =200;
 nt = 200;
 x = linspace(-100,200, n)';

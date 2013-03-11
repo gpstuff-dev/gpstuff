@@ -1,5 +1,10 @@
 function [Eft1, Eft2, Covf, lpyt] = pred_coxph(gp, x, y, xt, varargin)
 % PRED_COXPH Wrapper for returning useful values for coxph likelihood
+%
+%  Description
+%     [EF1, EF2, COVF, LPYT] = PRED_COXPH(GP,X,Y,XT, OPTIONS)
+%     Returns predictions for the two latent processes EF1 and EF2,
+%     covariance matrix COVF and logarithms of predictive densities at XT.
 
 % Copyright (c) 2012-2013 Ville Tolvanen
 

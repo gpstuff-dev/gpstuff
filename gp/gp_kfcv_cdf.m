@@ -343,10 +343,6 @@ for i=1:length(trindex)
       cdftemp = mat2cell(sum(bsxfun(@times,cell2mat(cdftemp),P_TH'),2),repmat(1043,1,10),1);
   end
   
-  
-  % Because parfor loop, must use temporary cells *_cvt/cv, and save
-  % results later in cvtpreds and cvpreds structures.
-  
   for it=1:size(yt,2)
     cdf_cv(tstindex{i},it)=cdftemp{it}(tstindex{i},:);
   end
@@ -354,18 +350,5 @@ for i=1:length(trindex)
 end
 
 cdf=cdf_cv;
-
-% Save values from parfor loop to right indices.
-
-%
-%   for i=1:length(trindex)
-%     if isempty(tstindex{i})
-%       continue
-%     end
-%     for it=1:size(yt,2)
-%     cdf(tstindex{i},it)=cdf_cv(i,it);
-%     end
-%   end
-
 end
 
