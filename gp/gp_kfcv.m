@@ -414,7 +414,12 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         end
         % Pick latent values for the training set in this fold
         if isfield(gp,'latentValues')
-          gp.latentValues=gp_orig.latentValues(trindex{i});
+          if ~isfield(gp.lik, 'xtime')
+            gp.latentValues=gp_orig.latentValues(trindex{i});
+          else
+            ntime=size(gp.lik.xtime,1);
+            gp.latentValues=gp_orig.latentValues([trindex{i} end-ntime+1:end]);
+          end
         end
         gp = gp_mc(gp, xtr, ytr, 'z', ztr, opt);
         nburnin = floor(length(gp.etr)/3);
