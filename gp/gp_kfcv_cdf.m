@@ -248,7 +248,20 @@ for i=1:length(trindex)
       end
       % Pick latent values for the training set in this fold
       if isfield(gp,'latentValues')
-        gp.latentValues=gp_orig.latentValues(trindex{i});
+        if (~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'Softmax', 'Multinom', ...
+            'LGP', 'LGPC'}))
+          latentValues=reshape(gp_orig.latentValues, size(y,1), size(y,2));
+          gp.latentValues=reshape(latentValues(trindex{i},:), size(y,2)*length(trindex{i}), 1);
+          % gp.latentValues=gp_orig.latentValues(trindex{i});
+        else
+          if ~isfield(gp.lik, 'xtime')
+            nl=length(gp.comp_cf);
+            gp.latentValues=gp_orig.latentValues(trindex{i}+(0:nl-1)*n);
+          else
+            ntime=size(gp.lik.xtime,1);
+            gp.latentValues=gp_orig.latentValues([1:ntime, (ntime+trindex{i})]);
+          end
+        end
       end
       if flagz
         gp = gp_mc(gp, xtr, ytr, 'z', ztr(:,size(z,2)), opt);

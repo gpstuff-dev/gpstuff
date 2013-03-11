@@ -1428,9 +1428,15 @@ function lik = lik_coxph(varargin)
     nsamps = 10000;
     sd=lik.stime(2)-lik.stime(1);
     Sigm_tmp=Covf;
-    Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
-    % f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
-    f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
+    [nn1,nn2,cc]=size(Sigm_tmp);
+    if cc==1 || nn1==nn2
+      f_star=bsxfun(@plus,[Ef1;Ef2]', ...
+        bsxfun(@times,sqrt(Sigm_tmp'),randn(nsamps,ntime+size(Ef2,1))));
+    else
+      Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
+      % f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
+      f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
+    end
 
     f1=f_star(:,1:ntime);
     f2=f_star(:,(ntime+1):end);
