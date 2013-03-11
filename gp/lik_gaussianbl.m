@@ -56,7 +56,7 @@ function lik = lik_gaussianbl(varargin)
     init=true;
     lik.type = 'GaussianBL';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'GaussianBL')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'GaussianBL')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

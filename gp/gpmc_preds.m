@@ -221,12 +221,13 @@ function [Ef, Varf, lpy, Ey, Vary] = gpmc_preds(gp, x, y, varargin)
     else 
       % Gaussian likelihood or Laplace/EP for latent values
       if nargout <= 2
-        [Ef(:,i1), Varf(:,i1)] = gp_pred(Gp, x, y, xt, options);
+        [Ef(:,i1), Varf(:,:,i1)] = gp_pred(Gp, x, y, xt, options);
       elseif nargout <=3
-        [Ef(:,i1), Varf(:,i1), lpy(:,i1)] = gp_pred(Gp, x, y, xt, options);
+        [Ef(:,i1), Varf(:,:,i1), lpy(:,i1)] = gp_pred(Gp, x, y, xt, options);
       else
-        [Ef(:,i1), Varf(:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y, xt, options); 
+        [Ef(:,i1), Varf(:,:,i1), lpy(:,i1), Ey(:,i1), Vary(:,i1)] = gp_pred(Gp, x, y, xt, options); 
       end
     end            
   end    
+  Varf=squeeze(Varf);
 end

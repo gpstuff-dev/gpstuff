@@ -35,30 +35,30 @@ initTestSuite;
   function testLrsLOO
     values.real = load('realValuesLoopred.mat','Eft_lrs','Varft_lrs','lpyt_lrs');
     values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_lrs','Varft_lrs','lpyt_lrs');
-    assertElementsAlmostEqual(values.real.Eft_lrs, values.test.Eft_lrs, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_lrs, values.test.Varft_lrs, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_lrs, values.test.lpyt_lrs, 'relative', 0.1);
+    assertElementsAlmostEqual(values.real.Eft_lrs, values.test.Eft_lrs, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.Varft_lrs, values.test.Varft_lrs, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.lpyt_lrs, values.test.lpyt_lrs, 'absolute', 0.1);
 
   function testCavityLOO
     values.real = load('realValuesLoopred.mat','Eft_cav','Varft_cav','lpyt_cav');
     values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_cav','Varft_cav','lpyt_cav');
-    assertElementsAlmostEqual(values.real.Eft_cav, values.test.Eft_cav, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_cav, values.test.Varft_cav, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_cav, values.test.lpyt_cav, 'relative', 0.1);
+    assertElementsAlmostEqual(values.real.Eft_cav, values.test.Eft_cav, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.Varft_cav, values.test.Varft_cav, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.lpyt_cav, values.test.lpyt_cav, 'absolute', 0.1);
     
     
   function testInlaLOO
     values.real = load('realValuesLoopred.mat','Eft_inla','Varft_inla','lpyt_inla');
     values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_inla','Varft_inla','lpyt_inla');
-    assertElementsAlmostEqual(values.real.Eft_inla, values.test.Eft_inla, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_inla, values.test.Varft_inla, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_inla, values.test.lpyt_inla, 'relative', 0.1); 
+    assertElementsAlmostEqual(values.real.Eft_inla, values.test.Eft_inla, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.Varft_inla, values.test.Varft_inla, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.lpyt_inla, values.test.lpyt_inla, 'absolute', 0.1); 
     
   function testEPLOO
     values.real = load('realValuesLoopred.mat','Eft_ep','Varft_ep','lpyt_ep');
     values.test = load(strrep(which('test_loopred.m'), 'test_loopred.m', 'testValues/testLoopred.mat'),'Eft_ep','Varft_ep','lpyt_ep');
-    assertElementsAlmostEqual(values.real.Eft_ep, values.test.Eft_ep, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.Varft_ep, values.test.Varft_ep, 'relative', 0.1);
-    assertElementsAlmostEqual(values.real.lpyt_ep, values.test.lpyt_ep, 'relative', 0.1);    
+    assertElementsAlmostEqual(values.real.Eft_ep, values.test.Eft_ep, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.Varft_ep, values.test.Varft_ep, 'absolute', 0.1);
+    assertElementsAlmostEqual(values.real.lpyt_ep, values.test.lpyt_ep, 'absolute', 0.1);    
  
 

@@ -38,7 +38,7 @@ function lik = lik_binomial(varargin)
     init=true;
     lik.type = 'Binomial';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Binomial')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Binomial')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

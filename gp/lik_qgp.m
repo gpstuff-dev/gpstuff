@@ -61,7 +61,7 @@ function lik = lik_qgp(varargin)
     init=true;
     lik.type = 'QGP';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'QGP')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'QGP')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

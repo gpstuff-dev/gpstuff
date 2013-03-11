@@ -228,7 +228,7 @@ switch gp.type
           MNM = MNM'*MNM;
       end
       
-      edata = 0.5*MNM + logK + 0.5*log(det(B)) + sum(log(diag(LA))) + 0.5*n*log(2*pi);
+      edata = 0.5*MNM + logK + sum(log(diag(chol(B)))) + sum(log(diag(LA))) + 0.5*n*log(2*pi);
       
 %       A = B\eye(size(B)) + H*KH;
 %       M = H'*b-y;

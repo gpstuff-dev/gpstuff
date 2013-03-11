@@ -14,8 +14,8 @@ function testDemo
 % demo & save test values.
 prevstream=setrandstream(0);
 
-disp('Running: demo_multinom2')
-demo_multinom2;
+disp('Running: demo_multinom')
+demo_multinom;
 path = which('test_multinom.m');
 path = strrep(path,'test_multinom.m', 'testValues');
 if ~(exist(path, 'dir') == 7)

@@ -59,7 +59,7 @@ function lik = lik_negbin(varargin)
     init=true;
     lik.type = 'Negbin';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Negbin')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Negbin')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

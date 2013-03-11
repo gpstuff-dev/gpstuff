@@ -134,6 +134,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
       n = size(x,1);
       p = [];
       maxiter = gp.latent_opt.maxiter;
+      tol = gp.latent_opt.tol;
 
       % Initialize latent values
       % zero seems to be a robust choice (Jarno)
@@ -144,7 +145,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
         [H,b_m,B_m]=mean_prep(gp,x,[]);
         f = H'*b_m;
       end
-
+      
       % =================================================
       % First Evaluate the data contribution to the error
       switch gp.type
@@ -170,54 +171,9 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
               end
             end
             switch gp.latent_opt.optim_method
-              % --------------------------------------------------------------------------------
-              % find the posterior mode of latent variables by fminunc
-              case 'fminunc_large'
-                if issparse(K)
-                  [LD,notpositivedefinite] = ldlchol(K);
-                  if notpositivedefinite
-                    [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-                    return
-                  end
-                  fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
-                else
-                  [LD,notpositivedefinite] = chol(K);
-                  if notpositivedefinite
-                    [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-                    return
-                  end
-                  fhm = @(W, f, varargin) (LD\(LD'\f) + repmat(W,1,size(f,2)).*f);  % W*f; %
-                end
-                defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-12,'TolFun', 1e-12,'LargeScale', 'on','Display', 'off');
-                if ~isfield(gp.latent_opt, 'fminunc_opt')
-                  opt = optimset(defopts);
-                else
-                  opt = optimset(defopts,gp.latent_opt.fminunc_opt);
-                end
-                
-                if issparse(K)
-                  fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - gp.lik.fh.ll(gp.lik, y, f', z));
-                  fg = @(f, varargin) (ldlsolve(LD,f') - gp.lik.fh.llg(gp.lik, y, f', 'latent', z))';
-                  fh = @(f, varargin) (-gp.lik.fh.llg2(gp.lik, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.lik)) ; %
-                else
-                  fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - gp.lik.fh.ll(gp.lik, y, f', z));
-                  fg = @(f, varargin) (LD\(LD'\f') - gp.lik.fh.llg(gp.lik, y, f', 'latent', z))';
-                  fh = @(f, varargin) (-gp.lik.fh.llg2(gp.lik, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.lik)) ; %
-                end
-                
-                mydeal = @(varargin)varargin{1:nargout};
-                [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
-                f = f';
-                
-                if issparse(K)
-                  a = ldlsolve(LD,f);
-                else
-                  a = LD\(LD'\f);
-                end
                 % --------------------------------------------------------------------------------
                 % find the posterior mode of latent variables by Newton method
               case 'newton'
-                tol = 1e-12;
                 a = f;
                 if isfield(gp,'meanf')
                   a = a-H'*b_m;
@@ -285,6 +241,7 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                   dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
                 end
+
                 % --------------------------------------------------------------------------------
                 % find the posterior mode of latent variables by stabilized Newton method.
                 % This is implemented as suggested by Hannes Nickisch (personal communication)
@@ -317,7 +274,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                 end
                 Wlim=0;
                 
-                tol = 1e-10;
                 W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 dlp = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
                 lp = -(f'*(K\f))/2 +gp.lik.fh.ll(gp.lik, y, f, z);
@@ -384,6 +340,51 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
                   end
                 end
                 
+              % --------------------------------------------------------------------------------
+              % find the posterior mode of latent variables by fminunc
+              case 'fminunc_large'
+                if issparse(K)
+                  [LD,notpositivedefinite] = ldlchol(K);
+                  if notpositivedefinite
+                    [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  fhm = @(W, f, varargin) (ldlsolve(LD,f) + repmat(W,1,size(f,2)).*f);  % W*f; %
+                else
+                  [LD,notpositivedefinite] = chol(K);
+                  if notpositivedefinite
+                    [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
+                  fhm = @(W, f, varargin) (LD\(LD'\f) + repmat(W,1,size(f,2)).*f);  % W*f; %
+                end
+                defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', tol,'TolFun', tol,'LargeScale', 'on','Display', 'off');
+                if ~isfield(gp.latent_opt, 'fminunc_opt')
+                  opt = optimset(defopts);
+                else
+                  opt = optimset(defopts,gp.latent_opt.fminunc_opt);
+                end
+                
+                if issparse(K)
+                  fe = @(f, varargin) (0.5*f*(ldlsolve(LD,f')) - gp.lik.fh.ll(gp.lik, y, f', z));
+                  fg = @(f, varargin) (ldlsolve(LD,f') - gp.lik.fh.llg(gp.lik, y, f', 'latent', z))';
+                  fh = @(f, varargin) (-gp.lik.fh.llg2(gp.lik, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.lik)) ; %
+                else
+                  fe = @(f, varargin) (0.5*f*(LD\(LD'\f')) - gp.lik.fh.ll(gp.lik, y, f', z));
+                  fg = @(f, varargin) (LD\(LD'\f') - gp.lik.fh.llg(gp.lik, y, f', 'latent', z))';
+                  fh = @(f, varargin) (-gp.lik.fh.llg2(gp.lik, y, f', 'latent', z)); %inv(K) + diag(g2(f', gp.lik)) ; %
+                end
+                
+                mydeal = @(varargin)varargin{1:nargout};
+                [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
+                f = f';
+                
+                if issparse(K)
+                  a = ldlsolve(LD,f);
+                else
+                  a = LD\(LD'\f);
+                end
+                
                 % --------------------------------------------------------------------------------
                 % find the posterior mode of latent variables with likelihood specific algorithm
                 % For example, with Student-t likelihood this mean EM-algorithm which is coded in the
@@ -405,7 +406,8 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
             else
               logZ = 0.5 *((f-H'*b_m)'*(a-K\(H'*b_m))) - gp.lik.fh.ll(gp.lik, y, f, z);
             end
-            if min(W) >= 0             % This is the usual case where likelihood is log concave
+            if min(W) >= 0 
+              % This is the usual case where likelihood is log concave
               % for example, Poisson and probit
               if issparse(K)
                 W = sparse(1:n,1:n, -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z), n,n);

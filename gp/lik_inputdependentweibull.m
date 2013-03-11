@@ -62,7 +62,7 @@ function lik = lik_inputdependentweibull(varargin)
     lik.nondiagW=true;
     lik.type = 'Inputdependent-Weibull';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Weibull')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Weibull')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -561,7 +561,7 @@ function [lpy, Ey, Vary] = lik_inputdependentweibull_predy(lik, Ef, Varf, yt, zt
 end
 
 % function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
-% %INIT_WEIBULL_NORM
+% %INIT_INPUTDEPENDENTWEIBULL__NORM
 % %
 % %  Description
 % %    Return function handle to a function evaluating
@@ -728,7 +728,7 @@ function reclik = lik_inputdependentweibull_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
 %  Description 
-%    RECLIK = GPCF_WEIBULL_RECAPPEND(RECLIK, RI, LIK) takes a
+%    RECLIK = LIK_INPUTDEPENDENTWEIBULL__RECAPPEND(RECLIK, RI, LIK) takes a
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old

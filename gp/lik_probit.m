@@ -33,7 +33,7 @@ function lik = lik_probit(varargin)
     init=true;
     lik.type = 'Probit';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Probit')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Probit')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

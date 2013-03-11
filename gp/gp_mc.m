@@ -138,7 +138,20 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     % Set latent values
     if (~isfield(gp,'latentValues') || isempty(gp.latentValues)) ...
         && ~isfield(gp.lik.fh,'trcov')
-      gp.latentValues=zeros(size(y));
+      if (~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'Softmax', 'Multinom', ...
+          'LGP', 'LGPC'}))
+        gp.latentValues=zeros(size(y));
+      else
+        if ~isfield(gp, 'comp_cf') || isempty(gp.comp_cf)
+          error('Define multiple covariance functions for latent processes using gp.comp_cf (see gp_set)');
+        end        
+        if isfield(gp.lik,'xtime')
+          ntime = size(gp.lik.xtime,1);
+          gp.latentValues=zeros(size(y,1)+ntime,1);
+        else
+          gp.latentValues=zeros(size(y,1)*length(gp.comp_cf),1);
+        end        
+      end
     end
   else
     % latent method is not MCMC
@@ -469,6 +482,9 @@ function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y,
     if isfield(gp,'latent_method')
       record.latent_method = gp.latent_method;
     end
+    if isfield(gp, 'comp_cf')
+      record.comp_cf = gp.comp_cf;
+    end
     % If sparse model is used save the information about which
     switch gp.type
       case 'FIC'
@@ -505,7 +521,7 @@ function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y,
       end
     end
     
-    % Initialize the recordord for likelihood
+    % Initialize the record for likelihood
     lik = gp.lik;
     record.lik = lik.fh.recappend([], gp.lik);
     
@@ -514,6 +530,10 @@ function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y,
       record.meanf = gp.meanf; 
     end
     
+    if isfield(gp, 'comp_cf')
+      record.comp_cf = gp.comp_cf; 
+    end
+
     if isfield(gp,'p')
       record.p = gp.p;
     end
@@ -561,7 +581,7 @@ function [record,ri,lrej,indrej,hmcrej,lik_hmcrej] = recappend(record, gp, x, y,
 
   % Set the latent values to record structure
   if isfield(gp, 'latentValues')
-    record.latentValues(ri,:)=gp.latentValues';
+    record.latentValues(ri,:)=gp.latentValues(:)';
   end
 
   % Set the inducing inputs in the record structure
@@ -612,8 +632,9 @@ function e = gpmc_e(w, gp, x, y, f, z)
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
       && ~isfield(gp.lik.fh,'trcov') ...
-      && isfield(gp.lik.fh,'lp')
+      && isfield(gp.lik.fh,'lp') && ~isequal(y,f)
     % Evaluate the contribution to the error from non-Gaussian likelihood
+    % if latent method is MCMC
     gp=gp_unpak(gp,w);
     lik=gp.lik;
     e=e-lik.fh.ll(lik,y,f,z)-lik.fh.lp(lik);
@@ -629,8 +650,9 @@ function g = gpmc_g(w, gp, x, y, f, z)
   end
   if ~isempty(strfind(gp.infer_params, 'likelihood')) ...
       && ~isfield(gp.lik.fh,'trcov') ...
-      && isfield(gp.lik.fh,'lp')
+      && isfield(gp.lik.fh,'lp') && ~isequal(y,f)
     % Evaluate the contribution to the gradient from non-Gaussian likelihood
+    % if latent method is not MCMC
     gp=gp_unpak(gp,w);
     lik=gp.lik;
     g=[g -lik.fh.llg(lik,y,f,'param',z)-lik.fh.lpg(lik)];

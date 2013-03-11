@@ -73,7 +73,7 @@ function lik = lik_zinegbin(varargin)
     lik.type = 'Zinegbin';
     lik.nondiagW=true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Zinegbin')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Zinegbin')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;

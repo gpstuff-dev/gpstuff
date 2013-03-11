@@ -8,7 +8,7 @@ function gp = gp_set(varargin)
 %    parameters are set to default values. Either 'cf' or 
 %    'meanf' parameter has to be specified. 
 %  
-%    GP = GP_SET(GP,'PARAM1',VALUE1,'PARAM2,VALUE2,...) 
+%    GP = GP_SET(GP,'PARAM1',VALUE1,'PARAM2',VALUE2,...) 
 %    modify a Gaussian process structure with the named
 %    parameters altered with the specified values.
 %

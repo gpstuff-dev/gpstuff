@@ -55,7 +55,7 @@ function lik = lik_t(varargin)
     init=true;
     lik.type = 'Student-t';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Student-t')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Student-t')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
