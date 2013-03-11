@@ -414,11 +414,19 @@ function [criteria, cvpreds, cvws, trpreds, trw, cvtrpreds] = gp_kfcv(gp, x, y, 
         end
         % Pick latent values for the training set in this fold
         if isfield(gp,'latentValues')
-          if ~isfield(gp.lik, 'xtime')
-            gp.latentValues=gp_orig.latentValues(trindex{i});
+          if (~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'Softmax', 'Multinom', ...
+              'LGP', 'LGPC'}))
+            latentValues=reshape(gp_orig.latentValues, size(y,1), size(y,2));
+            gp.latentValues=reshape(latentValues(trindex{i},:), size(y,2)*length(trindex{i}), 1);
+            % gp.latentValues=gp_orig.latentValues(trindex{i});
           else
-            ntime=size(gp.lik.xtime,1);
-            gp.latentValues=gp_orig.latentValues([trindex{i} end-ntime+1:end]);
+            if ~isfield(gp.lik, 'xtime')
+              nl=length(gp.comp_cf);
+              gp.latentValues=gp_orig.latentValues(trindex{i}+(0:nl-1)*n);
+            else
+              ntime=size(gp.lik.xtime,1);
+              gp.latentValues=gp_orig.latentValues([1:ntime, (ntime+trindex{i})]);
+            end
           end
         end
         gp = gp_mc(gp, xtr, ytr, 'z', ztr, opt);
