@@ -33,6 +33,6 @@ drawnow;clear;close all
 function testPredictionsMultinom
 values.real = load('realValuesMultinom', 'Eft', 'pyt2');
 values.test = load(strrep(which('test_multinom.m'), 'test_multinom.m', 'testValues/testMultinom'), 'Eft', 'pyt2');
-assertElementsAlmostEqual(values.real.Eft, values.test.Eft, 'relative', 0.10);
-assertElementsAlmostEqual(values.real.pyt2, values.test.pyt2, 'relative', 0.10);
+assertElementsAlmostEqual(values.real.Eft, values.test.Eft, 'absolute', 0.10);
+assertElementsAlmostEqual(values.real.pyt2, values.test.pyt2, 'absolute', 0.10);
 
