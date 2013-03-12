@@ -11,6 +11,7 @@ function [cum] = lgpdens_cum(bb,x1,x2)
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
+
 ip=inputParser;
 ip=iparser(ip,'addRequired','bb',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))));
 ip=iparser(ip,'addRequired','x1',@(x) ~isempty(x) && isreal(x));

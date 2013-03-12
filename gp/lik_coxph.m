@@ -90,8 +90,6 @@ function lik = lik_coxph(varargin)
     % Set the function handles to the nested functions
     lik.fh.pak = @lik_coxph_pak;
     lik.fh.unpak = @lik_coxph_unpak;
-%   lik.fh.lp = @lik_coxph_lp;
-%   lik.fh.lpg = @lik_coxph_lpg;
     lik.fh.ll = @lik_coxph_ll;
     lik.fh.llg = @lik_coxph_llg;    
     lik.fh.llg2 = @lik_coxph_llg2;
@@ -984,58 +982,6 @@ function lik = lik_coxph(varargin)
       %figure(2),hold on, plot(fg(j1),exp(-logZep),'.')
       
   end
-
-
-%   function [m_0, m_1, sigm2hati1] = lik_coxph_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-%   %LIK_COXPH_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
-%   %
-%   %  Description
-%   %    [M_0, M_1, M2] = LIK_COXPH_TILTEDMOMENTS(LIK, Y, I, S2,
-%   %    MYY, Z) takes a likelihood structure LIK, incedence counts
-%   %    Y, expected counts Z, index I and cavity variance S2 and
-%   %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
-%   %    variance M_2 of the posterior marginal (see Rasmussen and
-%   %    Williams (2006): Gaussian processes for Machine Learning,
-%   %    page 55).
-%   %
-%   %  See also
-%   %    GPEP_E
-%     
-%     if isempty(z)
-%       error(['lik_coxph -> lik_coxph_tiltedMoments: missing z!'... 
-%              'Coxph likelihood needs the expected number of            '...
-%              'occurrences as an extra input z. See, for                 '...
-%              'example, lik_coxph and gpep_e.                       ']);
-%     end
-%     
-%     yy = y(i1);
-%     avgE = z(i1);
-%     
-%     % get a function handle of an unnormalized tilted distribution 
-%     % (likelihood * cavity = Negative-binomial * Gaussian)
-%     % and useful integration limits
-%     [tf,minf,maxf]=init_coxph_norm(yy,myy_i,sigm2_i,avgE,r);
-%     
-%     % Integrate with quadrature
-%     RTOL = 1.e-6;
-%     ATOL = 1.e-10;
-%     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-%     sigm2hati1 = m_2 - m_1.^2;
-%     
-%     % If the second central moment is less than cavity variance
-%     % integrate more precisely. Theoretically for log-concave
-%     % likelihood should be sigm2hati1 < sigm2_i.
-%     if sigm2hati1 >= sigm2_i
-%       ATOL = ATOL.^2;
-%       RTOL = RTOL.^2;
-%       [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-%       sigm2hati1 = m_2 - m_1.^2;
-%       if sigm2hati1 >= sigm2_i
-%         error('lik_coxph_tilted_moments: sigm2hati1 >= sigm2_i');
-%       end
-%     end
-%     
-%   end
   
   function [lpyt,Ey, Vary] = lik_coxph_predy(lik, Ef, Covf, yt, zt)
   %LIK_COXPH_PREDY  Returns the predictive mean, variance and density of y
@@ -1358,6 +1304,67 @@ function lik = lik_coxph(varargin)
   
     p = exp(f);
   end
+
+
+
+  function [cdf,Ey,Vary] = lik_coxph_predcdf(lik,Ef,Covf,yt)
+  %LIK_LOGLOGISTIC_PREDCDF  Returns the predictive cdf evaluated at yt
+  %
+  %  Description
+  %    CDF = LIK_LOGLOGISTIC_PREDCDF(LIK, EF, VARF, YT)
+  %    Returns the predictive cdf evaluated at YT given likelihood
+  %    structure LIK, posterior mean EF and posterior Variance VARF
+  %    of the latent variable. This subfunction is needed when using
+  %    functions gp_predcdf or gp_kfcv_cdf.
+  %
+  %  See also
+  %    GP_PREDCDF
+  
+    
+    if isfield(lik, 'stratificationVariables')
+      ntime=size(lik.xtime,1)*lik.n_u;
+    else
+      ntime=size(lik.xtime,1);
+    end
+    Ef1 = Ef(1:ntime); Ef(1:ntime) = []; Ef2 = Ef;
+    nsamps = 10000;
+    sd=lik.stime(2)-lik.stime(1);
+    Sigm_tmp=Covf;
+    [nn1,nn2,cc]=size(Sigm_tmp);
+    if cc==1 || nn1==nn2
+      f_star=bsxfun(@plus,[Ef1;Ef2]', ...
+        bsxfun(@times,sqrt(Sigm_tmp'),randn(nsamps,ntime+size(Ef2,1))));
+    else
+      Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
+      % f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
+      f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
+    end
+    
+    f1=f_star(:,1:ntime);
+    f2=f_star(:,(ntime+1):end);
+    
+    la1=exp(f1);
+    eta2=exp(f2);
+    
+    mST=zeros(size(eta2,2),1);
+    if size(yt,2) == 1
+      % Integrate from zero to yt
+      cumsumtmp=cumsum(la1'*sd)';
+      %   t=binsgeq(gp.lik.xtime,yt(i));
+      for i1=1:size(eta2,2)
+        Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
+        mStime=mean(Stime);
+        % for i=1:size(yt,1)
+        mST(i1)=mStime(binsgeq(lik.xtime,yt(i1)));
+        %end
+      end
+      cdf = 1- mST;
+      
+    else
+      error('Size(yt,2) ~= 1');
+    end
+    
+  end
   
   function reclik = lik_coxph_recappend(reclik, ri, lik)
   %RECAPPEND  Append the parameters to the record
@@ -1405,58 +1412,6 @@ function lik = lik_coxph(varargin)
     end
   end
 
-  function [cdf,Ey,Vary] = lik_coxph_predcdf(lik,Ef,Covf,yt)
-  %LIK_LOGLOGISTIC_PREDCDF  Returns the predictive cdf evaluated at yt
-  %
-  %  Description
-  %    CDF = LIK_LOGLOGISTIC_PREDCDF(LIK, EF, VARF, YT)
-  %    Returns the predictive cdf evaluated at YT given likelihood
-  %    structure LIK, posterior mean EF and posterior Variance VARF
-  %    of the latent variable. This subfunction is needed when using
-  %    functions gp_predcdf or gp_kfcv_cdf.
-  %
-  %  See also
-  %    GP_PREDCDF
-  
-    
-    if isfield(lik, 'stratificationVariables')
-      ntime=size(lik.xtime,1)*lik.n_u;
-    else
-      ntime=size(lik.xtime,1);
-    end
-    Ef1 = Ef(1:ntime); Ef(1:ntime) = []; Ef2 = Ef;
-    nsamps = 10000;
-    sd=lik.stime(2)-lik.stime(1);
-    Sigm_tmp=Covf;
-    Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
-    % f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
-    f_star=mvnrnd([Ef1;Ef2], Sigm_tmp, nsamps);
-
-    f1=f_star(:,1:ntime);
-    f2=f_star(:,(ntime+1):end);
-
-    la1=exp(f1);
-    eta2=exp(f2);
-
-    mST=zeros(size(eta2,2),1);
-    if size(yt,2) == 1
-      % Integrate from zero to yt
-      cumsumtmp=cumsum(la1'*sd)';
-      %   t=binsgeq(gp.lik.xtime,yt(i));
-      for i1=1:size(eta2,2)
-        Stime=exp(-bsxfun(@times,cumsumtmp,eta2(:,i1)));
-        mStime=mean(Stime);
-       % for i=1:size(yt,1)
-        mST(i1)=mStime(binsgeq(lik.xtime,yt(i1)));
-        %end
-      end
-      cdf = 1- mST;
-
-    else
-        error('Size(yt,2) ~= 1');
-    end
-    
-  end
 
 end
 

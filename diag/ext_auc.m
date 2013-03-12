@@ -14,6 +14,10 @@ function ea = ext_auc(P,tt,t)
 %    30(1):22-38.
   
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
   
   ip=inputParser;
   ip=iparser(ip,'addRequired','P',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

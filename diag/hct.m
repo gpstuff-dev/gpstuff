@@ -16,6 +16,10 @@ function ct = hct(crit,y,z,tt)
 
 % Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 ip=inputParser;
 ip=iparser(ip,'addRequired','crit',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip=iparser(ip,'addRequired','y',@(x) ~isempty(x) && isreal(x))

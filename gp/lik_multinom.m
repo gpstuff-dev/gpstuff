@@ -50,7 +50,6 @@ function lik = lik_multinom(varargin)
     lik.fh.llg = @lik_multinom_llg;    
     lik.fh.llg2 = @lik_multinom_llg2;
     lik.fh.llg3 = @lik_multinom_llg3;
-    lik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     lik.fh.predy = @lik_multinom_predy;
     lik.fh.invlink = @lik_multinom_invlink;
     lik.fh.recappend = @lik_multinom_recappend;
@@ -236,9 +235,6 @@ function [dw_mat] = lik_multinom_llg3(lik, y, f, param, z)
   
 end
 
-function [logM_0, m_1, sigm2hati1] = lik_multinom_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-end
-
 function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
 %LIK_MULTINOM_PREDY  Returns the predictive mean, variance and density of y
 %
@@ -298,7 +294,11 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
             for z3=1:S
               Var_tmp(:,:,z3) = (diag(tmp(z3,:)) - tmp(z3,:)'*tmp(z3,:));
             end
-            Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+            if mcmc
+              Vary(i1+(0:nout-1)*ntest,:) = diag(N(i1).*mean(Var_tmp,3));
+            else
+              Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+            end
           end
         end
     end
@@ -350,7 +350,6 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_multinom_llg;    
     reclik.fh.llg2 = @lik_multinom_llg2;
     reclik.fh.llg3 = @lik_multinom_llg3;
-    reclik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     reclik.fh.predy = @lik_multinom_predy;
     reclik.fh.invlink = @lik_multinom_invlink;
     reclik.fh.recappend = @lik_multinom_recappend;

@@ -157,7 +157,7 @@ function lp = lik_qgp_lp(lik)
 %LIK_QGP_LP  Evaluate the log prior of likelihood parameters
 %
 %  Description
-%    LP = LIK_T_LP(LIK) takes a likelihood structure LIK and
+%    LP = LIK_QGP_LP(LIK) takes a likelihood structure LIK and
 %    returns log(p(th)), where th collects the parameters. This
 %    subfunction is needed when there are likelihood parameters.
 %
@@ -433,34 +433,9 @@ function [lpy, Ey, Vary] = lik_qgp_predy(lik, Ef, Varf, yt, zt)
   sigma2=lik.sigma2;
   tau=lik.quantile;
   
-  lpy = zeros(size(Ef));
-  Ey = zeros(size(Ef));
-  EVary = zeros(size(Ef));
-  VarEy = zeros(size(Ef)); 
+  Ey=[];
+  Vary=[];
   
-  % No need to predict noisy observations with Quantile-GP
-  
-%   if nargout > 1
-%     Evaluate Ey and Vary 
-%     for i1=1:length(Ef)
-%         % With quadrature
-%         myy_i = Ef(i1);
-%         sigm_i = sqrt(Varf(i1));
-%         minf=myy_i-6*sigm_i;
-%         maxf=myy_i+6*sigm_i;
-% 
-%         F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-%         Ey(i1) = quadgk(F,minf,maxf);
-% 
-%         F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-%         EVary(i1) = quadgk(F2,minf,maxf);
-% 
-%         F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-%         VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
-%     end
-%     Vary = EVary + VarEy;
-%   end
-
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
   for i1=1:length(yt)
@@ -612,7 +587,7 @@ function reclik = lik_qgp_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
 %  Description 
-%    RECLIK = GPCF_QGP_RECAPPEND(RECLIK, RI, LIK) takes a
+%    RECLIK = LIK_QGP_RECAPPEND(RECLIK, RI, LIK) takes a
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old

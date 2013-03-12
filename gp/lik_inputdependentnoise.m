@@ -82,11 +82,9 @@ function lik = lik_inputdependentnoise(varargin)
     lik.fh.llg = @lik_inputdependentnoise_llg;    
     lik.fh.llg2 = @lik_inputdependentnoise_llg2;
     lik.fh.llg3 = @lik_inputdependentnoise_llg3;
-%     lik.fh.tiltedMoments = @lik_inputdependentnoise_tiltedMoments;
-%     lik.fh.siteDeriv = @lik_inputdependentnoise_siteDeriv;
     lik.fh.predy = @lik_inputdependentnoise_predy;
+    lik.fh.invlink = @lik_inputdependentnoise_invlink;
     lik.fh.predprcty = @lik_inputdependentnoise_predprcty;
-%     lik.fh.invlink = @lik_inputdependentnoise_invlink;
     lik.fh.recappend = @lik_inputdependentnoise_recappend;
   end
 
@@ -259,7 +257,7 @@ function lik = lik_inputdependentnoise(varargin)
     end
   end
 
-  function [llg2, llg2mat] = lik_inputdependentnoise_llg2(lik, y, ff, param, z)
+  function [llg2] = lik_inputdependentnoise_llg2(lik, y, ff, param, z)
   %function [pi_vec, pi_mat] = lik_inputdependentnoise_llg2(lik, y, ff, param, z)
   %LIK_INPUTDEPENDENTNOISE_LLG2  Second gradients of the log likelihood
   %
@@ -372,107 +370,7 @@ function lik = lik_inputdependentnoise(varargin)
         
     end
   end
-  
-  function [m_0, m_1, sigm2hati1] = lik_inputdependentnoise_tiltedMoments(lik, y, i1, sigm2_i, myy_i)
-  %LIK_INPUTDEPENDENTNOISE_TILTEDMOMENTS  Returns the marginal moments for EP algorithm
-  %
-  %  Description
-  %    [M_0, M_1, M2] = LIK_INPUTDEPENDENTNOISE_TILTEDMOMENTS(LIK, Y, I, S2,
-  %    MYY, Z) takes a likelihood structure LIK, incedence counts
-  %    Y, expected counts Z, index I and cavity variance S2 and
-  %    mean MYY. Returns the zeroth moment M_0, mean M_1 and
-  %    variance M_2 of the posterior marginal (see Rasmussen and
-  %    Williams (2006): Gaussian processes for Machine Learning,
-  %    page 55). This subfunction is needed when using EP for
-  %    inference with non-Gaussian likelihoods.
-  %
-  %  See also
-  %    GPEP_E
-    
-    
-%     yy = y(i1);
-%     avgE = z(i1);
-%     r = lik.sigma2;
-%     
-%     % get a function handle of an unnormalized tilted distribution 
-%     % (likelihood * cavity = Negative-binomial * Gaussian)
-%     % and useful integration limits
-%     [tf,minf,maxf]=init_zeroinflatednegbin_norm(yy,myy_i,sigm2_i,avgE,r);
-%     
-%     % Integrate with quadrature
-%     RTOL = 1.e-6;
-%     ATOL = 1.e-10;
-%     [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-%     sigm2hati1 = m_2 - m_1.^2;
-%     
-%     % If the second central moment is less than cavity variance
-%     % integrate more precisely. Theoretically for log-concave
-%     % likelihood should be sigm2hati1 < sigm2_i.
-%     if sigm2hati1 >= sigm2_i
-%       ATOL = ATOL.^2;
-%       RTOL = RTOL.^2;
-%       [m_0, m_1, m_2] = quad_moments(tf, minf, maxf, RTOL, ATOL);
-%       sigm2hati1 = m_2 - m_1.^2;
-%       if sigm2hati1 >= sigm2_i
-%         error('lik_inputdependentnoise_tilted_moments: sigm2hati1 >= sigm2_i');
-%       end
-%     end
-    
-  end
-  
-  function [g_i] = lik_inputdependentnoise_siteDeriv(lik, y, i1, sigm2_i, myy_i, z)
-  %LIK_INPUTDEPENDENTNOISE_SITEDERIV  Evaluate the expectation of the gradient
-  %                      of the log likelihood term with respect
-  %                      to the likelihood parameters for EP 
-  %
-  %  Description [M_0, M_1, M2] =
-  %    LIK_INPUTDEPENDENTNOISE_SITEDERIV(LIK, Y, I, S2, MYY, Z) takes a
-  %    likelihood structure LIK, incedence counts Y, expected
-  %    counts Z, index I and cavity variance S2 and mean MYY. 
-  %    Returns E_f [d log p(y_i|f_i) /d a], where a is the
-  %    likelihood parameter and the expectation is over the
-  %    marginal posterior. This term is needed when evaluating the
-  %    gradients of the marginal likelihood estimate Z_EP with
-  %    respect to the likelihood parameters (see Seeger (2008):
-  %    Expectation propagation for exponential families). This 
-  %    subfunction is needed when using EP for inference with
-  %    non-Gaussian likelihoods and there are likelihood parameters.
-  %
-  %  See also
-  %    GPEP_G
-
-%     if isempty(z)
-%       error(['lik_inputdependentnoise -> lik_inputdependentnoise_siteDeriv: missing z!'... 
-%              'Zeroinflatednegbin likelihood needs the expected number of        '...
-%              'occurrences as an extra input z. See, for             '...
-%              'example, lik_inputdependentnoise and gpla_e.                   ']);
-%     end
-% 
-%     yy = y(i1);
-%     avgE = z(i1);
-%     r = lik.sigma2;
-%     
-%     % get a function handle of an unnormalized tilted distribution 
-%     % (likelihood * cavity = Negative-binomial * Gaussian)
-%     % and useful integration limits
-%     [tf,minf,maxf]=init_zeroinflatednegbin_norm(yy,myy_i,sigm2_i,avgE,r);
-%     % additionally get function handle for the derivative
-%     td = @deriv;
-%     
-%     % Integrate with quadgk
-%     [m_0, fhncnt] = quadgk(tf, minf, maxf);
-%     [g_i, fhncnt] = quadgk(@(f) td(f).*tf(f)./m_0, minf, maxf);
-%     g_i = g_i.*r;
-% 
-%     function g = deriv(f)
-%       mu = avgE.*exp(f);
-%       g = 0;
-%       g = g + log(r./(r+mu)) + 1 - (r+yy)./(r+mu);
-%       for i2 = 0:yy-1
-%         g = g + 1 ./ (i2 + r);
-%       end
-%     end
-  end
+ 
 
   function [lpy, Ey, Vary] = lik_inputdependentnoise_predy(lik, Ef, Varf, yt, z)
   %LIK_INPUTDEPENDENTNOISE_PREDY  Returns the predictive mean, variance and density of y
@@ -511,37 +409,7 @@ function lik = lik_inputdependentnoise(varargin)
     sigma2=lik.sigma2;
     
     lpy = zeros(size(yt));
-    %Ey = zeros(size(zt));
-    %EVary = zeros(size(zt));
-    %VarEy = zeros(size(zt));
-%     Covf = Varf;
-%     S=10000;
-%     if ~isempty(yt)
-%       for i1=1:ntest
-%         Sigm_tmp=Covf(i1:ntest:(2*ntest),i1:ntest:(2*ntest));
-%         Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
-%         f_star=mvnrnd(Ef(i1:ntest:(2*ntest)), Sigm_tmp, S);
-%         %         expf2=exp(f_star(:,2));
-%         %         f1 = f_star(:,1);
-%         %         f2 = f_star(:,2);
-%         
-%         lpy(i1)=lik.fh.ll(lik,yt(i1),f_star)/S;
-%         
-%         %Eftmp=Ef(i1:ntest:(2*ntest))';
-%         %Stmp=Sigm_tmp;
-%         %minf1=Eftmp(1)-6*sqrt(Stmp(1,1));
-%         %maxf1=Eftmp(1)+6*sqrt(Stmp(1,1));
-%         %minf2=Eftmp(2)-6*sqrt(Stmp(2,2));
-%         %maxf2=Eftmp(2)+6*sqrt(Stmp(2,2));
-%         %F=@(f1,f2) exp(-log(1+exp(f1)) + log( exp(f1) + (r./(r+exp(f2).*zt(i1))).^r ) + mnorm_lpdf([f1 f2],Ef(i1:ntest:(2*ntest))',Sigm_tmp));
-%         %Q = quad2d(F,minf1,maxf1,minf2,maxf2)
-%         
-%         
-%       end
-%     else
-%       lpy = [];
-%     end
-%     lpy=[];
+   
     Ey=zeros(size(yt));
     Vary=zeros(size(yt));
     
@@ -557,38 +425,7 @@ function lik = lik_inputdependentnoise(varargin)
 %     Ey = Ef1;
 %     Vary = Varf + sigma2.*exp(Ef2);
     
-    
-    %     % Evaluate Ey and Vary
-%     for i1=1:length(Ef)
-%       %%% With quadrature
-%       myy_i = Ef(i1);
-%       sigm_i = sqrt(Varf(i1));
-%       minf=myy_i-6*sigm_i;
-%       maxf=myy_i+6*sigm_i;
-% 
-%       F = @(f) exp(log(avgE(i1))+f+norm_lpdf(f,myy_i,sigm_i));
-%       Ey(i1) = quadgk(F,minf,maxf);
-%       
-%       F2 = @(f) exp(log(avgE(i1).*exp(f)+((avgE(i1).*exp(f)).^2/r))+norm_lpdf(f,myy_i,sigm_i));
-%       EVary(i1) = quadgk(F2,minf,maxf);
-%       
-%       F3 = @(f) exp(2*log(avgE(i1))+2*f+norm_lpdf(f,myy_i,sigm_i));
-%       VarEy(i1) = quadgk(F3,minf,maxf) - Ey(i1).^2;
-%     end
-%     Vary = EVary + VarEy;
-% 
-%     % Evaluate the posterior predictive densities of the given observations
-%     if nargout > 2
-%       for i1=1:length(Ef)
-%         % get a function handle of the likelihood times posterior
-%         % (likelihood * posterior = Negative-binomial * Gaussian)
-%         % and useful integration limits
-%         [pdf,minf,maxf]=init_zeroinflatednegbin_norm(...
-%           yt(i1),Ef(i1),Varf(i1),avgE(i1),r);
-%         % integrate over the f to get posterior predictive distribution
-%         Py(i1) = quadgk(pdf, minf, maxf);
-%       end
-%     end
+
   end
 
   function prctys = lik_inputdependentnoise_predprcty(lik, Ef, Varf, zt, prcty)
@@ -608,153 +445,6 @@ function lik = lik_inputdependentnoise(varargin)
   prcty = norminv(prcty, 0, 1);
   prctys = bsxfun(@plus, Ef(1:n), bsxfun(@times, sqrt(Varf(1:n) + lik.sigma2.*exp(Ef(n+1:end))), prcty));
   
-  end
-
-
-  function [df,minf,maxf] = init_zeroinflatednegbin_norm(yy,myy_i,sigm2_i,avgE,r)
-  %INIT_INPUTDEPENDENTNOISE_NORM
-  %
-  %  Description
-  %    Return function handle to a function evaluating
-  %    Negative-Binomial * Gaussian which is used for evaluating
-  %    (likelihood * cavity) or (likelihood * posterior) Return
-  %    also useful limits for integration. This is private function
-  %    for lik_inputdependentnoise. This subfunction is needed by subfunctions
-  %    tiltedMoments, siteDeriv and predy.
-  %  
-  %  See also
-  %    LIK_INPUTDEPENDENTNOISE_TILTEDMOMENTS, LIK_INPUTDEPENDENTNOISE_SITEDERIV,
-  %    LIK_INPUTDEPENDENTNOISE_PREDY
-    
-%   % avoid repetitive evaluation of constant part
-%     ldconst = -gammaln(r)-gammaln(yy+1)+gammaln(r+yy)...
-%               - log(sigm2_i)/2 - log(2*pi)/2;
-%     % Create function handle for the function to be integrated
-%     df = @zeroinflatednegbin_norm;
-%     % use log to avoid underflow, and derivates for faster search
-%     ld = @log_zeroinflatednegbin_norm;
-%     ldg = @log_zeroinflatednegbin_norm_g;
-%     ldg2 = @log_zeroinflatednegbin_norm_g2;
-% 
-%     % Set the limits for integration
-%     % Negative-binomial likelihood is log-concave so the zeroinflatednegbin_norm
-%     % function is unimodal, which makes things easier
-%     if yy==0
-%       % with yy==0, the mode of the likelihood is not defined
-%       % use the mode of the Gaussian (cavity or posterior) as a first guess
-%       modef = myy_i;
-%     else
-%       % use precision weighted mean of the Gaussian approximation
-%       % of the Negative-Binomial likelihood and Gaussian
-%       mu=log(yy/avgE);
-%       s2=(yy+r)./(yy.*r);
-%       modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
-%     end
-%     % find the mode of the integrand using Newton iterations
-%     % few iterations is enough, since the first guess in the right direction
-%     niter=4;       % number of Newton iterations
-%     mindelta=1e-6; % tolerance in stopping Newton iterations
-%     for ni=1:niter
-%       g=ldg(modef);
-%       h=ldg2(modef);
-%       delta=-g/h;
-%       modef=modef+delta;
-%       if abs(delta)<mindelta
-%         break
-%       end
-%     end
-%     % integrand limits based on Gaussian approximation at mode
-%     modes=sqrt(-1/h);
-%     minf=modef-8*modes;
-%     maxf=modef+8*modes;
-%     modeld=ld(modef);
-%     iter=0;
-%     % check that density at end points is low enough
-%     lddiff=20; % min difference in log-density between mode and end-points
-%     minld=ld(minf);
-%     step=1;
-%     while minld>(modeld-lddiff)
-%       minf=minf-step*modes;
-%       minld=ld(minf);
-%       iter=iter+1;
-%       step=step*2;
-%       if iter>100
-%         error(['lik_inputdependentnoise -> init_zeroinflatednegbin_norm: ' ...
-%                'integration interval minimun not found ' ...
-%                'even after looking hard!'])
-%       end
-%     end
-%     maxld=ld(maxf);
-%     step=1;
-%     while maxld>(modeld-lddiff)
-%       maxf=maxf+step*modes;
-%       maxld=ld(maxf);
-%       iter=iter+1;
-%       step=step*2;
-%       if iter>100
-%         error(['lik_inputdependentnoise -> init_zeroinflatednegbin_norm: ' ...
-%                'integration interval maximun not found ' ...
-%                'even after looking hard!'])
-%       end
-%     end
-%     
-% %     while minld>(modeld-lddiff)
-% %       minf=minf-modes;
-% %       minld=ld(minf);
-% %       iter=iter+1;
-% %       if iter>100
-% %         error(['lik_inputdependentnoise -> init_zeroinflatednegbin_norm: ' ...
-% %                'integration interval minimun not found ' ...
-% %                'even after looking hard!'])
-% %       end
-% %     end
-% %     maxld=ld(maxf);
-% %     while maxld>(modeld-lddiff)
-% %       maxf=maxf+modes;
-% %       maxld=ld(maxf);
-% %       iter=iter+1;
-% %       if iter>100
-% %         error(['lik_inputdependentnoise -> init_zeroinflatednegbin_norm: ' ...
-% %                'integration interval maximum not found ' ...
-% %                'even after looking hard!'])
-% %       end
-% %       
-% %     end
-%     
-%     function integrand = zeroinflatednegbin_norm(f)
-%     % Negative-binomial * Gaussian
-%       mu = avgE.*exp(f);
-%       integrand = exp(ldconst ...
-%                       +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu)) ...
-%                       -0.5*(f-myy_i).^2./sigm2_i);
-%     end
-%     
-%     function log_int = log_zeroinflatednegbin_norm(f)
-%     % log(Negative-binomial * Gaussian)
-%     % log_zeroinflatednegbin_norm is used to avoid underflow when searching
-%     % integration interval
-%       mu = avgE.*exp(f);
-%       log_int = ldconst...
-%                 +yy.*(log(mu)-log(r+mu))+r.*(log(r)-log(r+mu))...
-%                 -0.5*(f-myy_i).^2./sigm2_i;
-%     end
-%     
-%     function g = log_zeroinflatednegbin_norm_g(f)
-%     % d/df log(Negative-binomial * Gaussian)
-%     % derivative of log_zeroinflatednegbin_norm
-%       mu = avgE.*exp(f);
-%       g = -(r.*(mu - yy))./(mu.*(mu + r)).*mu ...
-%           + (myy_i - f)./sigm2_i;
-%     end
-%     
-%     function g2 = log_zeroinflatednegbin_norm_g2(f)
-%     % d^2/df^2 log(Negative-binomial * Gaussian)
-%     % second derivate of log_zeroinflatednegbin_norm
-%       mu = avgE.*exp(f);
-%       g2 = -(r*(r + yy))/(mu + r)^2.*mu ...
-%            -1/sigm2_i;
-%     end
-    
   end
 
   function p = lik_inputdependentnoise_invlink(lik, f, z)
@@ -801,7 +491,6 @@ function lik = lik_inputdependentnoise(varargin)
       reclik.fh.llg = @lik_inputdependentnoise_llg;    
       reclik.fh.llg2 = @lik_inputdependentnoise_llg2;
       reclik.fh.llg3 = @lik_inputdependentnoise_llg3;
-%       reclik.fh.tiltedMoments = @lik_inputdependentnoise_tiltedMoments;
       reclik.fh.predy = @lik_inputdependentnoise_predy;
       reclik.fh.predprcty = @lik_inputdependentnoise_predprcty;
       reclik.fh.invlink = @lik_inputdependentnoise_invlink;

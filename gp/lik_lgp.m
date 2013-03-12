@@ -64,7 +64,7 @@ function [w,s] = lik_lgp_pak(lik)
 %    used for example in energy and gradient computations.
 %     
 %  See also
-%    LIK_NEGBIN_UNPAK, GP_PAK
+%    LIK_LGP_UNPAK, GP_PAK
 
   w = []; s = {};
 end
@@ -395,7 +395,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
     iter=iter+1;
     step=step*2;
     if iter>100
-      error(['lik_negbin -> init_negbin_norm: ' ...
+      error(['lik_lgp -> init_lgp_norm: ' ...
              'integration interval minimun not found ' ...
              'even after looking hard!'])
     end
@@ -408,7 +408,7 @@ function [df,minf,maxf] = init_lgp_norm(yy,myy_i,sigm2_i,avgE)
     iter=iter+1;
     step=step*2;
     if iter>100
-      error(['lik_negbin -> init_negbin_norm: ' ...
+      error(['lik_lgp -> init_lgp_norm: ' ...
              'integration interval maximun not found ' ...
              'even after looking hard!'])
     end

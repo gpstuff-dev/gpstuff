@@ -25,6 +25,10 @@ function [c,bb] = hcs(riskscore,y,z,t,varargin)
 
 % Copyright (C) 2012 Tomi Peltola, Ernesto Ulloa, Aki Vehtari
 
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 ip=inputParser;
 ip=iparser(ip,'addRequired','riskscore',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip=iparser(ip,'addRequired','y', @(x) isreal(x) && all(isfinite(x(:))))

@@ -249,7 +249,20 @@ for i=1:length(trindex)
       end
       % Pick latent values for the training set in this fold
       if isfield(gp,'latentValues')
-        gp.latentValues=gp_orig.latentValues(trindex{i});
+        if (~isfield(gp.lik, 'nondiagW') || ismember(gp.lik.type, {'Softmax', 'Multinom', ...
+            'LGP', 'LGPC'}))
+          latentValues=reshape(gp_orig.latentValues, size(y,1), size(y,2));
+          gp.latentValues=reshape(latentValues(trindex{i},:), size(y,2)*length(trindex{i}), 1);
+          % gp.latentValues=gp_orig.latentValues(trindex{i});
+        else
+          if ~isfield(gp.lik, 'xtime')
+            nl=length(gp.comp_cf);
+            gp.latentValues=gp_orig.latentValues(trindex{i}+(0:nl-1)*n);
+          else
+            ntime=size(gp.lik.xtime,1);
+            gp.latentValues=gp_orig.latentValues([1:ntime, (ntime+trindex{i})]);
+          end
+        end
       end
       if flagz
         gp = gp_mc(gp, xtr, ytr, 'z', ztr(:,size(z,2)), opt);
@@ -331,10 +344,6 @@ for i=1:length(trindex)
       cdftemp = mat2cell(sum(bsxfun(@times,cell2mat(cdftemp),P_TH'),2),repmat(1043,1,10),1);
   end
   
-  
-  % Because parfor loop, must use temporary cells *_cvt/cv, and save
-  % results later in cvtpreds and cvpreds structures.
-  
   for it=1:size(yt,2)
     cdf_cv(tstindex{i},it)=cdftemp{it}(tstindex{i},:);
   end
@@ -342,18 +351,5 @@ for i=1:length(trindex)
 end
 
 cdf=cdf_cv;
-
-% Save values from parfor loop to right indices.
-
-%
-%   for i=1:length(trindex)
-%     if isempty(tstindex{i})
-%       continue
-%     end
-%     for it=1:size(yt,2)
-%     cdf(tstindex{i},it)=cdf_cv(i,it);
-%     end
-%   end
-
 end
 

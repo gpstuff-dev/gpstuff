@@ -12,6 +12,11 @@
 ##
 ## You should have received a copy of the GNU General Public License along with
 ## this program; if not, see <http://www.gnu.org/licenses/>.
+##
+## Changelog:
+##   12.03.2013, Ville Tolvanen - Added option to give inputparser optional
+##      parameter & value pairs in structure. 
+
 
 function inPar = subsref (inPar, idx)
 

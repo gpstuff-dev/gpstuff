@@ -2,7 +2,10 @@ function [mh,mS] = pred_coxphhs(gp, x, y, xt, varargin)
 %PRED_COXPHHS  Return hazard and survival functions
 %
 %  Description
-%    [H,S] = PRED_COXPHHS(GP,X,Y,XT)
+%    [H,S] = PRED_COXPHHS(GP,X,Y,XT) 
+%    Returns hazard and survival functions for the inputs XT. GP is the
+%    Gaussian process structure, X and Y are the training inputs and
+%    outputs.
 %
 
 % Copyright (c) 2012-2013 Ville Tolvanen, Aki Vehtari

@@ -26,9 +26,6 @@ y(y>0.15)=1; y(y<=0.15)=-1;
 [xt1, xt2]=meshgrid(-5:0.23:5,-5:0.23:5);
 xt=[xt1(:) xt2(:)];
 yt=ones(size(xt,1),1);
-% yt=2.*mnorm_pdf(xt, [0 0], [0.5 0;0 0.5]) + mnorm_pdf(xt, [3 3], [0.5 0;0 0.5]) + mnorm_pdf(xt, [-3 -3], [0.5 0;0 0.5]);
-% yt=yt+mnorm_pdf(xt, [3 -3], [0.5 0;0 0.5])+mnorm_pdf(xt, [-3 3], [0.5 0;0 0.5]);
-% yt(yt>0.15)=1; yt(yt<=0.15)=-1;
 
 [n, nin] = size(x);
 

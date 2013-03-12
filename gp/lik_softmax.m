@@ -25,7 +25,7 @@ function lik = lik_softmax(varargin)
 % License.txt, included with the software, for details.
 
   ip=inputParser;
-  ip.FunctionName = 'LIK_SOFTMAX2';
+  ip.FunctionName = 'LIK_SOFTMAX';
   ip=iparser(ip,'addOptional','lik', [], @isstruct);
   ip=iparser(ip,'parse',varargin{:});
   lik=ip.Results.lik;

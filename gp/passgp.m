@@ -55,12 +55,10 @@ function [gp, indA] = passgp(gp, x, y, varargin)
   ip=iparser(ip,'addParamValue','display', 'off', @(x) ismember(x,{'on','off'}));
   ip=iparser(ip,'addParamValue','optimn', 1', @(x) isscalar(x) && x > 0 && rem(10*x,2)==0);
   ip=iparser(ip,'addParamValue','z', [], @(x) isreal(x) && all(isfinite(x(:))));
-%   ip.addParamValue('zt', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip=iparser(ip,'parse',gp, x, y, varargin{:});
   opt=ip.Results.opt;
   fixed=ip.Results.fixed;
   options.z = ip.Results.z;
-%   options.zt = ip.Results.zt;
   npass=ip.Results.npass;
   ninit=ip.Results.ninit;
   nsub=ip.Results.nsub;
@@ -134,7 +132,6 @@ function [gp, indA] = passgp(gp, x, y, varargin)
         ind=ii(1:nexc);
       end
       indA=[indA inds(ind)];
-%       indA=unique([indA inds(ind)]);
         
     end
     
