@@ -365,9 +365,9 @@ drawnow;clear;close all;
 load realValuesMultinom.mat
 var=who();
 setrandstream(0);
-diary('demo_multinom2.txt');
+diary('demo_multinom.txt');
 disp('Running: demo_multinom2')
-demo_multinom2
+demo_multinom
 fprintf('\n gp hyperparameters (gp_pak(gp)): \n \n') 
 disp(gp_pak(gp))
 diary off;
