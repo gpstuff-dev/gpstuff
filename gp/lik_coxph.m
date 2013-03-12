@@ -1331,7 +1331,7 @@ function lik = lik_coxph(varargin)
     sd=lik.stime(2)-lik.stime(1);
     Sigm_tmp=Covf;
     [nn1,nn2,cc]=size(Sigm_tmp);
-    if cc==1 || nn1==nn2
+    if cc==1 && nn1~=nn2
       f_star=bsxfun(@plus,[Ef1;Ef2]', ...
         bsxfun(@times,sqrt(Sigm_tmp'),randn(nsamps,ntime+size(Ef2,1))));
     else
