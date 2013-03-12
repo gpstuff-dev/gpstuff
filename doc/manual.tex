@@ -1616,21 +1616,21 @@ Weibull distribution parametrized in \pkg{GPstuff} as
   h_0(y) = r y^{r-1},
 \end{equation}
 where $r>0$ is the shape parameter. This follows the parametrization
-used in \citet{Martino:2011}. The observation model is defined as
+used in \citet{Martino:2011}. The likelihood defined as
 \begin{equation}
-  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
+  L = \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
 \end{equation}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. The use of Weibull model with survival data is
+observation $i$. Here we present only the likelihood function because we don't have observation model for the censoring. The use of Weibull model with survival data is
 demonstrated in \code{demo\_survival\_weibull}.
 
 \subsubsection{Log-Gaussian}
 With Log-Gaussian survival model the logarithms of survival times are assumed to be normally distributed.
 
-The observation model is defined as
+The likelihood is defined as
 \begin{eqnarray}
-  \y |\f,\mathbf{z}, \sigma \sim && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
+  L = && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
   &\times & \left(1 - \Phi \left(\frac{\log(y_i) - f(\x_i)}{\sigma}\right)\right)^{z_i} 
 \end{eqnarray}
 where $\sigma$ is the scale parameter.
@@ -1640,12 +1640,12 @@ where $\sigma$ is the scale parameter.
 %                            *(1-norm_cdf((log(y_i)-f_i)/s))^z_i ]
 \subsubsection{Log-logistic}
 
-The observation model is defined as
+The log-logistic likelihood is defined as
 
 \begin{equation}
-  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z-2}
+  L = \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z_i} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z_i-2},
 \end{equation}
-
+where $r$ is the shape parameter and $z_i$ the censoring indicators.
 %    The likelihood is defined as follows:
 %                  __ n
 %      p(y|f, z) = || i=1 [ (r/exp(f_i)*(y_i/exp(f_i))^(r-1)/
@@ -3787,27 +3787,27 @@ successes.
 
 \subsection*{Weibull (\code{lik\_weibull})}
 
-The Weibull observation model is defined as
+The Weibull likelihood is defined as
 \begin{equation}
-  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
+  L = \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
 \end{equation}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$ and $r$ is the shape parameter.
+observation $i$ and $r$ is the shape parameter. Here we present only the likelihood function because we don't have observation model for the censoring.
 
 \subsection*{Log-Gaussian (\code{lik\_loggaussian})}
 
-The Log-Gaussian observation model is defined as
+The Log-Gaussian likelihood is defined as
 \begin{eqnarray}
-  \y |\f,\mathbf{z}, \sigma \sim && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
+  L =  && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
   &\times & \left(1 - \Phi \left(\frac{\log(y_i) - f(\x_i)}{\sigma}\right)\right)^{z_i} 
 \end{eqnarray}
 where $\sigma$ is the scale parameter.
 
 \subsection*{Log-logistic (\code{lik\_loglogistic})}
-The log-logistic observation model is defined as
+The log-logistic likelihood is defined as
 \begin{equation}
-  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z-2}
+ L = \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z_i} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z_i-2}
 \end{equation}
 
 \subsection*{Cox proportaional hazard model (\code{lik\_coxph})}
