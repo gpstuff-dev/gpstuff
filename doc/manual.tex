@@ -2118,6 +2118,21 @@ use again Laplace's method.
 the function \code{lgpdens}. The usage of the function is demonstrated
 in \code{demo\_lgpdens}.
 
+\begin{figure}[]
+  \begin{center}
+    \subfigure[Student-$t$ data with $\nu=4$ and $\sigma=1$.]{
+      \label{}
+      \includegraphics[width=5.5cm]{demo_lgpdens_fig1}
+    }
+    ~
+    \subfigure[Old faithful data.]{ 
+      \label{}
+      \includegraphics[width=5.5cm]{demo_lgpdens_fig2}
+    }
+    \caption[]{Density estimates for two different distributions. Figures are from \code{demo\_lgpdens}. On the left thick blue line is density estimation of Student-$t$ distribution while gray area is 95\% mean region and on the right is 2D density estimation with countours based on Old faithful data.}\label{fig_demo_lgpdens}
+  \end{center}
+\end{figure}
+
 %    The likelihood is defined as follows:
 %               __ n
 %      p(y|f) = || i=1 exp(f_i) / Sum_{j=1}^n exp(f_j),
@@ -2159,7 +2174,7 @@ constant noise.
 % missing description
 
 \subsubsection{Input-dependent overdispersed Weibull}
-In input-dependent Weibull model additional latent variable is used for modeling dispersion parameter $r$ of the standard Weibull model. 
+In input-dependent Weibull model additional latent variable is used for modeling shape parameter $r$ of the standard Weibull model. 
 
 The likelihood is defined as
 \begin{eqnarray}
@@ -2168,7 +2183,7 @@ The likelihood is defined as
 \end{eqnarray}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. Latent variable $f_2$ is used for modeling the dispersion parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
+observation $i$. Latent variable $f_2$ is used for modeling the shape parameter here. Because the dispersion parameter is constrained to be greater than 0, it must be computed through $\exp(f_2)$ to ensure positiveness. Input-dependent Weibull is demonstrated in \code{demo\_inputdependentweibull}.
 
 
 \section{Mean functions}
@@ -3769,6 +3784,79 @@ The binomial observation model with the probability of success $p_i =
 %
 Here, $z_i$ denotes the number of trials and $y_i$ is the number of
 successes.
+
+\subsection*{Weibull (\code{lik\_weibull})}
+
+The Weibull observation model is defined as
+\begin{equation}
+  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n r^{1-z_i} \exp \left( (1-z_i)f(\x_i)+(1-z_i)(r-1)\log(y_i)-\exp(f(\x_i))y_i^r \right),
+\end{equation}
+where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
+uncensored event and $z_i = 1$ for right censored event for
+observation $i$ and $r$ is the shape parameter.
+
+\subsection*{Log-Gaussian (\code{lik\_loggaussian})}
+
+The Log-Gaussian observation model is defined as
+\begin{eqnarray}
+  \y |\f,\mathbf{z}, \sigma \sim && \prod_{i=1}^n (2\pi \sigma^2)^{-(1-z_i)/2}y_i^{1-z_i} \exp \left(-\frac{1}{2\sigma^2}(1-z_i)(\log (y_i) - f(\x_i))^2\right) \\ \nonumber
+  &\times & \left(1 - \Phi \left(\frac{\log(y_i) - f(\x_i)}{\sigma}\right)\right)^{z_i} 
+\end{eqnarray}
+where $\sigma$ is the scale parameter.
+
+\subsection*{Log-logistic (\code{lik\_loglogistic})}
+The log-logistic observation model is defined as
+\begin{equation}
+  \y |\f,\mathbf{z}, r  \sim \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z-2}
+\end{equation}
+
+\subsection*{Cox proportaional hazard model (\code{lik\_coxph})}
+
+The likelihood contribution for the possibly right censored $i$th
+observation $(y_i,\delta_i)$ is assumed to be
+\begin{equation}
+l_i=h_i(y_i)^{(1-\delta_i)} \exp \left(
+  -\int_0^{y_i}h_i(t)dt \right).
+\end{equation}
+Using the piecewise log-constant assumption for the hazard rate
+function, the contribution of the observation $i$ for the likelihood
+results in
+\begin{equation}
+l_i=[\lambda_k \exp(\eta_i)]^{(1-\delta_i)}\exp \left( -[(y_i-s_{k-1})\lambda_k
+  + \sum_{g=1}^{k-1}(s_g-s_{g-1})\lambda_g ]\exp(\eta_i) \right),
+\end{equation}
+where $y_i\in(s_{k-1},s_k]$
+
+\subsection*{Input-dependent noise (\code{lik\_inputdependentnoise})}
+
+The input-dependent noise observation model is defined as
+\begin{align}
+  \y|\f^{(1)}, \f^{(2)}, \sigma^2 \sim \prod_{i=1}^n N(y_i | f_i^{(1)}, \sigma^2 \exp(f_i^{(2)})),
+\end{align}
+with latent function $f^{(1)}$ defining the mean and $f^{(2)}$
+defining the variance.
+
+\subsection*{Input-dependent Weibull (\code{lik\_inputdependentweibull})}
+
+The input-dependent Weibull observation model is defined as
+\begin{eqnarray}
+\y |\f^{(1)}, \f^{(2)},\mathbf{z}  \sim && \prod_{i=1}^n \exp(f_i^{(2)})^{1-z_i} \exp \Big{(} (1-z_i)f^{(1)}_i \\ \nonumber
+ &+&(1-z_i)(\exp(f_i^{(2)})-1)\log(y_i)\exp(f^{(1)}_i)y_i^{\exp(f_i^{(2)})} \Big{)}, \nonumber
+\end{eqnarray}
+where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
+uncensored event and $z_i = 1$ for right censored event for
+observation $i$. 
+
+\subsection*{Zero-inflated Negative-Binomial (\code{lik\_zinegbin})}
+The Zero-Inflated Negative-Binomial observation model is defined as 
+\begin{equation}
+ \y |\f,\mb{e}, r  \sim \prod_{i=1}^n
+ \frac{\Gamma(r+y_i)}{y_i!\Gamma(r)}
+\left(\frac{r}{r+\mu_i}\right)^r \left(\frac{\mu_i}{r+\mu_i}\right)^{y_i},
+\end{equation}
+%
+where $\mu_i = e_i\exp(f(\x_i))$ and $r$ is the dispersion parameter
+governing the variance.
 
 %===========================================================
 
