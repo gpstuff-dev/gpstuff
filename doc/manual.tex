@@ -1979,7 +1979,10 @@ posterior becomes non-Gaussian and analytically exact inference is
 intractable. \pkg{GPstuff} supports MCMC and Laplace approximation to
 integrate over the latent variables. The use of Gaussian process Cox
 proportional hazard model is demonstrated in
-\code{demo\_survival\_coxph}.
+\code{demo\_survival\_coxph}. The Gaussian process Cox proportional
+hazard model implemented with GPstuff was used in reference
+\citep{Joensuu+etal:2012a} to model risk of gastrointestinal stromal
+tumour recurrence after surgery.
 
 %    creates a proportional hazard model where a piecewise log-constant
 %    baseline hazard is assumed.  
@@ -2740,6 +2743,19 @@ The Laplace approximation, EP and integration methods can be used with
 the same commands as with full GP. This is demonstrated in
 \code{demo\_spatial1}.
 
+\subsection{Predictive active set selection for classification}
+
+Predictive active set selection for Gaussian processes \citep[PASS-GP,
+][]{Henao+Winther:2012} is a sparse approximation for classification
+models. PASS-GP uses predictive distributions to estimate which data
+points to include in the active set, so that it will include points
+with potentially high impact to the classifier decision process while
+removing those that are less relevant.
+%
+Function \code{passgp} accepts classification GP with latent method
+set to EP or Laplace, and selects the active set and optimises the
+hyperparameters. Its use is demonstrated in \code{demo\_passgp}.
+
 \section{Modifying the covariance functions}\label{sec:modifying_covariance}
 
 \subsection{Additive models}\label{sec_additive_models}
@@ -2912,9 +2928,11 @@ illustrated in \code{demo\_regression\_hier}.
 \section{Model assessment and comparison}\label{sec:model_assessment}
 
 There are various means to assess the goodness of the model and its
-predictive performance. \pkg{GPstuff} provides four basic approaches:
-marginal likelihood, cross-validation, deviance information
-criterion and widely applicable information criterion.
+predictive performance \citep[for extensive review,
+see][]{Vehtari+Ojanen:2012}. \pkg{GPstuff} provides four basic
+approaches: marginal likelihood, cross-validation, deviance
+information criterion (DIC) and widely applicable information
+criterion (WAIC).
 
 \subsection{Marginal likelihood}
 
@@ -2947,7 +2965,7 @@ computed in case of Gaussian likelihood using an analytical
 solution \citep{Sundararajan+Keerthi:2001a} and in case of
 non-Gaussian likelihood using EP approximation
 \citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (to be submitted),
+approximation using linear response approach (in preparation),
 which have been implemented in \code{gp\_loopred}.
 %
 If set of hyperparameters have been obtained using \code{gp\_mc} or
@@ -3810,7 +3828,7 @@ The log-logistic likelihood is defined as
  L = \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z_i} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z_i-2}
 \end{equation}
 
-\subsection*{Cox proportaional hazard model (\code{lik\_coxph})}
+\subsection*{Cox proportional hazard model (\code{lik\_coxph})}
 
 The likelihood contribution for the possibly right censored $i$th
 observation $(y_i,\delta_i)$ is assumed to be
