@@ -41,7 +41,6 @@ function matlab_install(SuiteSparse_path)
     else 
         error('Unknown input argument. See help matlab_install for usage.')
     end
-    cd GPstuff
             
     % Go to diag/ and compile the mex-functions
     fprintf('\n Compiling files in diag.\n \n')
