@@ -44,7 +44,7 @@ options=struct();
 options.predcf=ip.Results.predcf;
 options.tstind=ip.Results.tstind;
 method = ip.Results.method;
-var = ip.Results.var;
+vars = ip.Results.var;
 plot_results = ip.Results.plot;
 tr = ip.Results.tr;
 z=ip.Results.z;
@@ -55,7 +55,7 @@ end
 
 [tmp, nin] = size(x);
 
-if ~isempty(var) && (~isvector(var) || length(var) ~= nin)
+if ~isempty(vars) && (~isvector(vars) || length(vars) ~= nin)
   error('Vector defining fixed variable values must be same length as number of covariates')
 end
 
@@ -68,7 +68,6 @@ if length(ind)==1
   else
     xtnn = xt(1,:);
     iu = 1;
-    ind=1:4;
   end
   if ~isempty(z)
     options.zt = options.zt(iu);
@@ -79,16 +78,18 @@ if length(ind)==1
   else
     xt = repmat(median(xt), size(xtnn,1), 1);
   end
-  if ~isempty(var)
-    xt(:,~isnan(var)) = repmat(var(~isnan(var)), length(xtnn), 1);
+  if ~isempty(vars)
+    xt(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(xtnn), 1);
   end
   
-  xt(:,ind) = xtnn;
+  if ind>0
+    xt(:,ind) = xtnn;
+  end
   if ~strcmp(gp.lik.type, 'Coxph')
     [Ef, Varf] = gp_pred(gp, x, y, xt, options);
   else
     [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, options);
-    if isscalar(ind)
+    if ind>0
       Ef = Ef2; Varf = diag(Covf(size(Ef1,1)+1:end,size(Ef1,1)+1:end));
     else
       Ef = Ef1; Varf = diag(Covf(1:size(Ef1,1), 1:size(Ef1,1)));
@@ -96,7 +97,16 @@ if length(ind)==1
     end
   end
   if isequal(plot_results, 'on')
-    plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.96*sqrt(Varf), '--b', xtnn, Ef+1.96*sqrt(Varf), '--b')
+    if ind>0
+      plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.96*sqrt(Varf), '--b', xtnn, Ef+1.96*sqrt(Varf), '--b')
+    else
+      % use stairs for piecewise constant baseline hazard
+      xtnn = gp.lik.stime;
+      [xx,yy]=stairs(xtnn, [Ef;Ef(end)]);
+      [xx,yyl]=stairs(xtnn, [Ef-sqrt(Varf);Ef(end)-sqrt(Varf(end))]);
+      [xx,yyu]=stairs(xtnn, [Ef+sqrt(Varf);Ef(end)+sqrt(Varf(end))]);
+      plot(xx, yy, '-k', xx, yyl, '--b', xx, yyu, '--b')
+    end
   end
   
 elseif length(ind)==2
@@ -133,9 +143,9 @@ elseif length(ind)==2
       xt1 = repmat(median(xt1), length(xtnn1), 1);
       xt2 = repmat(median(xt2), length(xtnn2), 1);
     end
-    if ~isempty(var)
-      xt1(:,~isnan(var)) = repmat(var(~isnan(var)), length(xtnn1), 1);
-      xt2(:,~isnan(var)) = repmat(var(~isnan(var)), length(xtnn2), 1);
+    if ~isempty(vars)
+      xt1(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(xtnn1), 1);
+      xt2(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(xtnn2), 1);
     end
     xt1(:,ind(1)) = uu1(1); xt1(:,ind(2)) = xtnn1;
     xt2(:,ind(1)) = uu1(2); xt2(:,ind(2)) = xtnn2;
@@ -174,8 +184,8 @@ elseif length(ind)==2
     else
       xt = repmat(median(xt), length(XT1), 1);
     end
-    if ~isempty(var)
-      xt(:,~isnan(var)) = repmat(var(~isnan(var)), length(XT1), 1);
+    if ~isempty(vars)
+      xt(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(XT1), 1);
     end
     xt(:,ind) = [XT1 XT2];
     if ~strcmp(gp.lik.type, 'Coxph')
