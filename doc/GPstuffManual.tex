@@ -3412,20 +3412,13 @@ free software license.
 GPML and FBM}\label{appendix:compasison}
 
 
+
    \scriptsize
  \begin{longtable}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
-%    \caption[The comparison of features in GPstuff, GPML and FBM
-%    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
-%      toolboxes. In case of model blocks the notation x means that it
-%      can be inferred with any inference method (EP, Laplace, MCMC and
-%      in case of GPML also with VB). In case of sparse approximations,
-%      inference methods and model assessment methods x means
-%      that the method is available for all model blocks.\label{table:comparison}}\\
-   %\small
    & GPstuff & GPML & FBM \\
    \textbf{Covariance functions} &  &  & \\
    \hline
-   number of elementary functions & 13 & 6 & 13 \\
+   number of elementary functions & 13 & 10 & 13 \\
    sums of elements  & x & x & x \\
    products of elements & x & x &  \\
    positive scaling of elements & x & x &  \\
@@ -3479,11 +3472,11 @@ GPML and FBM}\label{appendix:compasison}
    CS & x &  & \\
    FIC & x &  & \\
    FIC+CS & x &  & \\
-   FITC & x & MCMC/EP/Laplace & \\
+   FITC & x & exact/EP/Laplace & \\
    PIC & x &  & \\
-   VAR & Gaussian/EP only &  & \\
-   DTC & Gaussian/EP only &  & \\
-   SOR & Gaussian/EP only &  & \\
+   VAR & Gaussian/EP &  & \\
+   DTC & Gaussian/EP &  & \\
+   SOR & Gaussian/EP &  & \\
    PASS-GP & Laplace/EP & & \\
     \multicolumn{4}{l}{\textbf{Latent inference}} \\
     \hline
@@ -3492,7 +3485,9 @@ GPML and FBM}\label{appendix:compasison}
     Parallel EP, Robust-EP  & x & & \\
     Variational Bayes (VB) & & x & \\
     Scaled Metropolis, HMC & x &  & x \\
-    Scaled HMC, Elliptical slice sampling  & x & x & \\
+    Scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
+    Scaled HMC (with inverse of prior cov.) &  & x & \\
+    Elliptical slice sampling  & x & x & \\
     \multicolumn{4}{l}{\textbf{Hyperparameter inference}} \\
     \hline
     Type II ML  & x & x & x \\
@@ -3514,14 +3509,6 @@ GPML and FBM}\label{appendix:compasison}
    DIC & x &  & \\
    WAIC & x &  & \\
    average predictive comparison & x &  & \\
- %   \textbf{Optimization} &  &  & \\
- %   \hline 
- %   conjugate gradient & x &  & x\\
- %   scaled conjugate gradient & x &  & \\
- %   LBFGS & x & x & \\
- %   any Matlab optimization function & x &  & \\
-%   \textbf{Other} &  &  & \\
-%   \hline 
    \caption[The comparison of features in GPstuff, GPML and FBM
    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
      toolboxes. In case of model blocks the notation x means that it
