@@ -1,4 +1,4 @@
-2013-03-12 Version 3.5
+2013-03-12 Version 4.0
 
 New features:
   - Multilatent models: multinomial, softmax, Cox-PH, density
@@ -9,6 +9,14 @@ New features:
   - PASS-GP active set selection for classification
   - optional memory save in gradient computation
   - approximative gradient for EP-LOO
+  - Octave compatibility. Please download Octave specific version of GPstuff
+    to use GPstuff with Octave. Following features of v4.0 work only with 
+    Matlab:
+     - Inputdependent multilatent models
+     - Zero-Inflated Negative-Binomial model
+     - Cox proportional hazard model
+     - Compactly Supported (PPCS*) covariance functions
+     - Kronecker speedup for density estimation
 
 Improvements:
   - much faster parallel-EP (now default)
