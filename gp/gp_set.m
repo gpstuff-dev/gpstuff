@@ -426,7 +426,7 @@ function gp = gp_set(varargin)
           % all changes in the log predictive densities and the log marginal
           % likelihood are smaller than tol.
           ipep.addParamValue('tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-          ipep.addParamValue('LALRSinit','off', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default off
+));    % default off
           % Following options are only for robust-EP
           % max number of initial parallel iterations
           ipep.addParamValue('ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
@@ -487,9 +487,6 @@ function gp = gp_set(varargin)
             else
               gp.latent_opt.df = ipep.Results.df;
             end
-          end
-          if init || ~ismember('LALRSinit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'LALRSinit')
-            gp.latent_opt.LALRSinit = ipep.Results.LALRSinit;
           end
           if strcmp(gp.latent_opt.optim_method, 'robust-EP')
             if init || ~ismember('ninit',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'ninit')
