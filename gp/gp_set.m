@@ -426,7 +426,6 @@ function gp = gp_set(varargin)
           % all changes in the log predictive densities and the log marginal
           % likelihood are smaller than tol.
           ipep.addParamValue('tol',1e-4, @(x) isreal(x) && isscalar(x) && isfinite(x) && x>0);
-));    % default off
           % Following options are only for robust-EP
           % max number of initial parallel iterations
           ipep.addParamValue('ninit', 10, @(x) isreal(x) && (x==1 || rem(1,x)==1) && isfinite(x))
