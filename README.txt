@@ -1,4 +1,4 @@
-Last modified: 2013-03-18 14:59:42 EET
+Last modified: 2013-03-20 16:01:42 EET
 -----------------------------------------------------------------
 
 GPstuff: Gaussian process models for Bayesian analysis 4.0
@@ -32,8 +32,9 @@ Table of contents:
   Octave, use the Octave specific package available from the GPstuff
   homepage.
 
-  The code for GPstuff can be found in subfolders, except the
-  SuiteSparse folder contains the SuiteSparse toolbox by Tim Davis:
+  The code for GPstuff can be found in subfolders. The SuiteSparse
+  folder contains an exact copy of the SuiteSparse v3.4 toolbox by Tim
+  Davis:
   http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
   The SuiteSparse is needed when using compactly supported covariance
   functions.
@@ -74,7 +75,7 @@ Table of contents:
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
-   diag  dist  gp  mc  misc  optim  xunit
+   diag  dist  gp  mc  misc  optim  xunit  SuiteSparse
 
    Each folder contains Contents.m, which summarizes the functions
    in the folder. 

@@ -89,5 +89,4 @@ function matlab_install(SuiteSparse_path)
             fprintf ('addpath %s\n', paths {k}) ;
         end
     end
-    cd('..')
 end

@@ -1982,7 +1982,10 @@ posterior becomes non-Gaussian and analytically exact inference is
 intractable. \pkg{GPstuff} supports MCMC and Laplace approximation to
 integrate over the latent variables. The use of Gaussian process Cox
 proportional hazard model is demonstrated in
-\code{demo\_survival\_coxph}.
+\code{demo\_survival\_coxph}. The Gaussian process Cox proportional
+hazard model implemented with GPstuff was used in reference
+\citep{Joensuu+etal:2012a} to model risk of gastrointestinal stromal
+tumour recurrence after surgery.
 
 %    creates a proportional hazard model where a piecewise log-constant
 %    baseline hazard is assumed.  
@@ -2743,6 +2746,19 @@ The Laplace approximation, EP and integration methods can be used with
 the same commands as with full GP. This is demonstrated in
 \code{demo\_spatial1}.
 
+\subsection{Predictive active set selection for classification}
+
+Predictive active set selection for Gaussian processes \citep[PASS-GP,
+][]{Henao+Winther:2012} is a sparse approximation for classification
+models. PASS-GP uses predictive distributions to estimate which data
+points to include in the active set, so that it will include points
+with potentially high impact to the classifier decision process while
+removing those that are less relevant.
+%
+Function \code{passgp} accepts classification GP with latent method
+set to EP or Laplace, and selects the active set and optimises the
+hyperparameters. Its use is demonstrated in \code{demo\_passgp}.
+
 \section{Modifying the covariance functions}\label{sec:modifying_covariance}
 
 \subsection{Additive models}\label{sec_additive_models}
@@ -2915,9 +2931,11 @@ illustrated in \code{demo\_regression\_hier}.
 \section{Model assessment and comparison}\label{sec:model_assessment}
 
 There are various means to assess the goodness of the model and its
-predictive performance. \pkg{GPstuff} provides four basic approaches:
-marginal likelihood, cross-validation, deviance information
-criterion and widely applicable information criterion.
+predictive performance \citep[for extensive review,
+see][]{Vehtari+Ojanen:2012}. \pkg{GPstuff} provides four basic
+approaches: marginal likelihood, cross-validation, deviance
+information criterion (DIC) and widely applicable information
+criterion (WAIC).
 
 \subsection{Marginal likelihood}
 
@@ -2950,7 +2968,7 @@ computed in case of Gaussian likelihood using an analytical
 solution \citep{Sundararajan+Keerthi:2001a} and in case of
 non-Gaussian likelihood using EP approximation
 \citep{Opper+Winther:2000,Rasmussen+Williams:2006} or Laplace
-approximation using linear response approach (to be submitted),
+approximation using linear response approach (in preparation),
 which have been implemented in \code{gp\_loopred}.
 %
 If set of hyperparameters have been obtained using \code{gp\_mc} or
@@ -3366,14 +3384,14 @@ toolbox is available from
 
 \section*{Acknowledgments}
 
-The research leading to \pkg{GPstuff} was funded by the Academy of
-Finland, Finnish Funding Agency for Technology and Innovation
-(TEKES), and the Graduate School in Electronics and
-Telecommunications and Automation (GETA). The first author also
-thanks the Finnish Foundation for Economic and Technology Sciences
-KAUTE, Finnish Cultural Foundation, and Emil Aaltonen Foundation
-for supporting his post graduate studies during which the code
-package was prepared. 
+The research leading to \pkg{GPstuff} has been funded by the Academy
+of Finland (grant 218248), Finnish Funding Agency for Technology and
+Innovation (TEKES), and the Graduate School in Electronics and
+Telecommunications and Automation (GETA). The first author also thanks
+the Finnish Foundation for Economic and Technology Sciences KAUTE,
+Finnish Cultural Foundation, and Emil Aaltonen Foundation for
+supporting his post graduate studies during which the code package was
+prepared.
 
 The package contains pieces of code written by other people than
 the authors. In the Department of Biomedical Engineering and
@@ -3397,20 +3415,13 @@ free software license.
 GPML and FBM}\label{appendix:compasison}
 
 
+
    \scriptsize
  \begin{longtable}{p{5.5cm}p{3cm}p{3cm}p{3cm}}
-%    \caption[The comparison of features in GPstuff, GPML and FBM
-%    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
-%      toolboxes. In case of model blocks the notation x means that it
-%      can be inferred with any inference method (EP, Laplace, MCMC and
-%      in case of GPML also with VB). In case of sparse approximations,
-%      inference methods and model assessment methods x means
-%      that the method is available for all model blocks.\label{table:comparison}}\\
-   %\small
    & GPstuff & GPML & FBM \\
    \textbf{Covariance functions} &  &  & \\
    \hline
-   number of elementary functions & 13 & 6 & 13 \\
+   number of elementary functions & 13 & 10 & 13 \\
    sums of elements  & x & x & x \\
    products of elements & x & x &  \\
    positive scaling of elements & x & x &  \\
@@ -3464,11 +3475,11 @@ GPML and FBM}\label{appendix:compasison}
    CS & x &  & \\
    FIC & x &  & \\
    FIC+CS & x &  & \\
-   FITC & x & MCMC/EP/Laplace & \\
+   FITC & x & exact/EP/Laplace & \\
    PIC & x &  & \\
-   VAR & Gaussian/EP only &  & \\
-   DTC & Gaussian/EP only &  & \\
-   SOR & Gaussian/EP only &  & \\
+   VAR & Gaussian/EP &  & \\
+   DTC & Gaussian/EP &  & \\
+   SOR & Gaussian/EP &  & \\
    PASS-GP & Laplace/EP & & \\
     \multicolumn{4}{l}{\textbf{Latent inference}} \\
     \hline
@@ -3477,7 +3488,9 @@ GPML and FBM}\label{appendix:compasison}
     Parallel EP, Robust-EP  & x & & \\
     Variational Bayes (VB) & & x & \\
     Scaled Metropolis, HMC & x &  & x \\
-    Scaled HMC, Elliptical slice sampling  & x & x & \\
+    Scaled HMC (whitening with approximate posterior covariance) & x  &  & \\
+    Scaled HMC (with inverse of prior cov.) &  & x & \\
+    Elliptical slice sampling  & x & x & \\
     \multicolumn{4}{l}{\textbf{Hyperparameter inference}} \\
     \hline
     Type II ML  & x & x & x \\
@@ -3499,14 +3512,6 @@ GPML and FBM}\label{appendix:compasison}
    DIC & x &  & \\
    WAIC & x &  & \\
    average predictive comparison & x &  & \\
- %   \textbf{Optimization} &  &  & \\
- %   \hline 
- %   conjugate gradient & x &  & x\\
- %   scaled conjugate gradient & x &  & \\
- %   LBFGS & x & x & \\
- %   any Matlab optimization function & x &  & \\
-%   \textbf{Other} &  &  & \\
-%   \hline 
    \caption[The comparison of features in GPstuff, GPML and FBM
    toolboxes.]{The comparison of features in GPstuff, GPML and FBM
      toolboxes. In case of model blocks the notation x means that it
@@ -3813,7 +3818,7 @@ The log-logistic likelihood is defined as
  L = \prod_{i=1}^n \left( \frac{ry^{r-1}}{\exp(f(\x_i))} \right)^{1-z_i} \left( 1 + \left(\frac{y}{\exp(f(\x_i))}\right)^r \right)^{z_i-2}
 \end{equation}
 
-\subsection*{Cox proportaional hazard model (\code{lik\_coxph})}
+\subsection*{Cox proportional hazard model (\code{lik\_coxph})}
 
 The likelihood contribution for the possibly right censored $i$th
 observation $(y_i,\delta_i)$ is assumed to be
