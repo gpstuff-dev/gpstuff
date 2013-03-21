@@ -32,8 +32,9 @@ function waic = gp_waic(gp, x, y, varargin)
 %   OPTIONS is optional parameter-value pair
 %      method - Method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
 %               training utility method (default = 'V')
-%      form -   Return form, 'mean' returns the mean value and 'all'
-%               returns the values for all data points (default = 'mean')
+%      form -   Return form, 'mean' returns the mean value, 'sum' returns the 
+%               sum value, and 'all' returns the values for all data
+%               points (default = 'mean')
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
@@ -61,7 +62,7 @@ function waic = gp_waic(gp, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('method', 'V', @(x) ismember(x,{'V' 'G'}))
-  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all'}))
+  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all','sum'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   method=ip.Results.method;
@@ -144,9 +145,14 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
-          if strcmp(form, 'mean')
-            Vn = mean(Vn);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              Vn = mean(Vn);
+              BUt = mean(BUt);
+            case 'sum'
+              Vn = sum(Vn);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt - Vn;
         else
@@ -180,9 +186,14 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
-          if strcmp(form, 'mean')
-            Vn = mean(Vn);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              Vn = mean(Vn);
+              BUt = mean(BUt);
+            case 'sum'
+              Vn = sum(Vn);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt - Vn;
         end
@@ -199,9 +210,14 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
                                       .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
           end
-          if strcmp(form, 'mean')
-            GUt = mean(GUt);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              GUt = mean(GUt);
+              BUt = mean(BUt);
+            case 'sum'
+              GUt = sum(GUt);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         else
@@ -217,9 +233,14 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
                                       .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
           end
-          if strcmp(form, 'mean')
-            GUt = mean(GUt);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              GUt = mean(GUt);
+              BUt = mean(BUt);
+            case 'sum'
+              GUt = sum(GUt);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         end
@@ -256,9 +277,14 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = Elog-Elog2;
-          if strcmp(form,'mean')
-            BUt = mean(BUt);
-            Vn = mean(Vn);
+          switch form
+            case 'mean'
+              Vn = mean(Vn);
+              BUt = mean(BUt);
+            case 'sum'
+              Vn = sum(Vn);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt - Vn;
 
@@ -290,9 +316,14 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = Elog-Elog2;
-          if strcmp(form, 'mean')
-            Vn = mean(Vn);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              Vn = mean(Vn);
+              BUt = mean(BUt);
+            case 'sum'
+              Vn = sum(Vn);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt - Vn;
           
@@ -316,9 +347,14 @@ function waic = gp_waic(gp, x, y, varargin)
               GUt(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
             end
           end
-          if strcmp(form,'mean')
-            GUt = mean(GUt);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              GUt = mean(GUt);
+              BUt = mean(BUt);
+            case 'sum'
+              GUt = sum(GUt);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         else
@@ -344,9 +380,14 @@ function waic = gp_waic(gp, x, y, varargin)
               GUt(i) = 1/ns * sum(llvec(gp, y(i), f', z1));
             end
           end
-          if strcmp(form,'mean')
-            GUt = mean(GUt);
-            BUt = mean(BUt);
+          switch form
+            case 'mean'
+              GUt = mean(GUt);
+              BUt = mean(BUt);
+            case 'sum'
+              GUt = sum(GUt);
+              BUt = sum(BUt);
+            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         end
@@ -399,9 +440,14 @@ function waic = gp_waic(gp, x, y, varargin)
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
-        if strcmp(form, 'mean')
-          Vn = mean(Vn);
-          BUt = mean(BUt);
+        switch form
+          case 'mean'
+            Vn = mean(Vn);
+            BUt = mean(BUt);
+          case 'sum'
+            Vn = sum(Vn);
+            BUt = sum(BUt);
+          otherwise
         end
         waic = BUt - Vn;
       else
@@ -421,9 +467,14 @@ function waic = gp_waic(gp, x, y, varargin)
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
-        if strcmp(form, 'mean')
-          Vn = mean(Vn);
-          BUt = mean(BUt);
+        switch form
+          case 'mean'
+            Vn = mean(Vn);
+            BUt = mean(BUt);
+          case 'sum'
+            Vn = sum(Vn);
+            BUt = sum(BUt);
+          otherwise
         end
         waic = BUt - Vn;
         
@@ -440,9 +491,14 @@ function waic = gp_waic(gp, x, y, varargin)
           GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
         end
-        if strcmp(form, 'mean')
-          GUt = mean(GUt);
-          BUt = mean(BUt);
+        switch form
+          case 'mean'
+            GUt = mean(GUt);
+            BUt = mean(BUt);
+          case 'sum'
+            GUt = sum(GUt);
+            BUt = sum(BUt);
+          otherwise
         end
         waic = BUt-2*(BUt-GUt);
 
@@ -459,9 +515,14 @@ function waic = gp_waic(gp, x, y, varargin)
           GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
                                    .*llvec(gp, y(i), f, z1)), fmin, fmax);
         end
-        if strcmp(form, 'mean')
-          GUt = mean(GUt);
-          BUt = mean(BUt);
+        switch form
+          case 'mean'
+            GUt = mean(GUt);
+            BUt = mean(BUt);
+          case 'sum'
+            GUt = sum(GUt);
+            BUt = sum(BUt);
+          otherwise
         end
         waic = BUt-2*(BUt-GUt);
 
