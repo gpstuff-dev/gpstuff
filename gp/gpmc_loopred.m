@@ -56,7 +56,7 @@ ip.parse(gp, x, y, varargin{:});
 z=ip.Results.z;
 is=ip.Results.is;
 
-if isfield(gp,'meanf') & ~isempty(gp.meanf)
+if isfield(gp,'meanf') && ~isempty(gp.meanf)
   error('GPMC_LOOPRED: Mean functions not yet supported');
 end
 

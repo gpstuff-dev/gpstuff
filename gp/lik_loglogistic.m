@@ -58,7 +58,7 @@ function lik = lik_loglogistic(varargin)
     init=true;
     lik.type = 'Log-Logistic';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Log-Gaussian')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Log-Logistic')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -339,12 +339,12 @@ function [logM_0, m_1, sigm2hati1] = lik_loglogistic_tiltedMoments(lik, y, i1, s
 %  See also
 %    GPEP_E
   
-%  if isempty(z)
-%    error(['lik_loglogistic -> lik_loglogistic_tiltedMoments: missing z!'... 
-%           'loglogistic likelihood needs the censoring            '...
-%           'indicators as an extra input z. See, for                 '...
-%           'example, lik_loglogistic and gpep_e.                       ']);
-%  end
+ if isempty(z)
+   error(['lik_loglogistic -> lik_loglogistic_tiltedMoments: missing z!'... 
+          'loglogistic likelihood needs the censoring            '...
+          'indicators as an extra input z. See, for                 '...
+          'example, lik_loglogistic and gpep_e.                       ']);
+ end
   
   yy = y(i1);
   yc = 1-z(i1);

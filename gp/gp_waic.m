@@ -53,7 +53,7 @@ function waic = gp_waic(gp, x, y, varargin)
 %     
 %
 
-% Copyright (c) 2011-2012 Ville Tolvanen
+% Copyright (c) 2011-2013 Ville Tolvanen
 
   ip=inputParser;
   ip.FunctionName = 'GP_WAIC';
@@ -89,7 +89,8 @@ function waic = gp_waic(gp, x, y, varargin)
 
     if isfield(gp, 'etr')
       % MCMC solution
-      [tmp, tmp, BUt] = gp_pred(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
+      [Ef, Varf, BUt] = gpmc_preds(gp,x,y, x, 'yt', y, 'tstind', tstind, options);
+      BUt=log(mean(exp(BUt),2));
       GUt = zeros(tn,1);
       Elog = zeros(tn,1);
       Elog2 = zeros(tn,1);
@@ -102,8 +103,8 @@ function waic = gp_waic(gp, x, y, varargin)
         tr_index = [];
       end
       
-      Ef = zeros(tn, nsamples);
-      Varf = zeros(tn, nsamples);
+      %Ef = zeros(tn, nsamples);
+      %Varf = zeros(tn, nsamples);
       sigma2 = zeros(tn, nsamples);
       for j = 1:nsamples
         Gp = take_nth(gp,j);
@@ -113,7 +114,7 @@ function waic = gp_waic(gp, x, y, varargin)
         Gp.tr_index = tr_index;
 
         gp_array{j} = Gp;
-        [Ef(:,j), Varf(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
+        %[Ef(:,j), Varf(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
         if isfield(gp.lik.fh,'trcov')
           sigma2(:,j) = repmat(Gp.lik.sigma2,1,tn);
         end
@@ -156,12 +157,26 @@ function waic = gp_waic(gp, x, y, varargin)
             else
               z1 = [];
             end
-            fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
-            fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
-            Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                       .*llvec(gp_array, y(i), f, z1).^2), fmin, fmax);
-            Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
-                                        .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            if ~isequal(gp.lik.type, 'Coxph')
+              fmin = mean(Ef(i,:) - 9*sqrt(Varf(i,:)));
+              fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
+              Elog(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*llvec(gp_array, y(i), f, z1).^2), fmin, fmax);
+              Elog2(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
+                .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
+            else
+              ntime = size(gp.lik.xtime,1);
+              for i2=1:nsamples
+                % Use MC to integrate over latents
+                ns = 10000;
+                Sigma_tmp = diag(Varf([1:ntime ntime+i],i2));
+                f = mvnrnd(Ef([1:ntime ntime+i],i2), Sigma_tmp, ns);
+                tmp2(i2) =  1/ns * sum(llvec(gp_array{i2}, y(i,:), f', z1));
+                tmp(i2) = 1/ns * sum((llvec(gp_array{i2}, y(i,:), f', z1)).^2);
+              end
+              Elog2(i)=mean(tmp2);
+              Elog(i)=mean(tmp);
+            end
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
@@ -269,8 +284,8 @@ function waic = gp_waic(gp, x, y, varargin)
               Sigma_tmp = Varf([1:ntime ntime+i], [1:ntime ntime+i]);
               Sigma_tmp = (Sigma_tmp + Sigma_tmp') ./ 2;
               f = mvnrnd(Ef([1:ntime ntime+i]), Sigma_tmp, ns);
-              Elog2(i) = 1/ns * sum(llvec(gp, y(i), f', z1));
-              Elog(i) = 1/ns * sum((llvec(gp, y(i), f', z1)).^2);
+              Elog2(i) = 1/ns * sum(llvec(gp, y(i,:), f', z1));
+              Elog(i) = 1/ns * sum((llvec(gp, y(i,:), f', z1)).^2);
             end
           end
           Elog2 = Elog2.^2;
@@ -463,7 +478,6 @@ function lls=llvec(gp, y, fs, z)
 % GP and columns corresponding to all of the GP's.
   
   if isstruct(gp)
-    if ~isfield(gp, 'etr')
       % single gp
       lls=zeros(1,size(fs,2));
       for i1=1:size(fs,2)
@@ -478,7 +492,6 @@ function lls=llvec(gp, y, fs, z)
       %           lls(j,i) = Gp.lik.fh.ll(Gp.lik, y, fs(i), z);
       %         end
       %       end
-    end
   else
     % ia & mc
     lls=zeros(length(gp), length(fs));

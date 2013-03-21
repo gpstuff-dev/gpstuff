@@ -100,7 +100,7 @@ ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.parse(gp, x, y);
 
-if isfield(gp,'meanf') & ~isempty(gp.meanf)
+if isfield(gp,'meanf') && ~isempty(gp.meanf)
   error('GP_LOOPRED: Mean functions not yet supported');
 end
 

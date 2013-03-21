@@ -2,18 +2,53 @@ function [mh,mS] = pred_coxphhs(gp, x, y, xt, varargin)
 %PRED_COXPHHS  Return hazard and survival functions
 %
 %  Description
-%    [H,S] = PRED_COXPHHS(GP,X,Y,XT)
+%    [H,S] = PRED_COXPHHS(GP,X,Y,XT) 
+%    Returns hazard and survival functions for the inputs XT. GP is the
+%    Gaussian process structure, X and Y are the training inputs and
+%    outputs.
 %
 
-% Copyright (c) 2012 Ville Tolvanen, Aki Vehtari
+% Copyright (c) 2012-2013 Ville Tolvanen, Aki Vehtari
 
 % This software is distributed under the GNU General Public
 % License (version 3 or later); please refer to the file
 % License.txt, included with the software, for details.
 
-[Ef1, Ef2, Covf] = pred_coxph(gp,x,y,xt, varargin{:});
-nsamps = 10000;
 ntime=size(gp.lik.xtime,1);
+if iscell(gp)
+  % prediction for GP_IA cell array
+  nGP = numel(gp);
+  mh=zeros(size(xt,1),ntime,nGP);
+  mS=zeros(size(xt,1),ntime,nGP);
+  P_TH=zeros(1,nGP);
+  for i1=1:nGP
+    % make prediction for each gp in cell array
+    Gp=gp{i1};
+    P_TH(:,i1) = Gp.ia_weight;
+    [mh(:,:,i1), mS(:,:,i1)]=pred_coxphhs(Gp, x, y, xt, varargin{:});
+    mh(:,:,i1)=P_TH(:,i1)*mh(:,:,i1);
+    mS(:,:,i1)=P_TH(:,i1)*mS(:,:,i1);
+  end
+  % combine predictions
+  mh=sum(mh,3);
+  mS=sum(mS,3);
+  return
+elseif numel(gp.jitterSigma2)>1
+  nmc=size(gp.jitterSigma2,1);
+  mh=zeros(size(xt,1),ntime,nmc);
+  mS=zeros(size(xt,1),ntime,nmc);
+  for i1=1:nmc
+    Gp = take_nth(gp,i1);
+    [mh(:,:,i1), mS(:,:,i1)]=pred_coxphhs(Gp, x, y, xt, varargin{:});
+  end
+  % combine predictions
+  mh=mean(mh,3);
+  mS=mean(mS,3);
+  return
+end
+
+[Ef1, Ef2, Covf] = pred_coxph(gp,x,y,xt, varargin{:});
+nsamps = 10000;  
 if isfield(gp.lik, 'stratificationVariables')
   ind_str=gp.lik.stratificationVariables;
   ux=unique([x(:,ind_str); xt(:,ind_str)],'rows');
@@ -26,6 +61,7 @@ else
   nf1=ntime;
 end
 sd=gp.lik.stime(2)-gp.lik.stime(1);
+
 Sigm_tmp=Covf;
 Sigm_tmp=(Sigm_tmp+Sigm_tmp')./2;
 % f_star=mvnrnd(Ef1, Sigm_tmp(1:ntime,1:ntime), nsamps);
@@ -56,7 +92,8 @@ else
       mS(ind,:)=mean(Stime);
     end
   end
-end  
+end
+
 
 
 end

@@ -34,7 +34,7 @@ function lik = lik_lgpc(varargin)
     lik.type = 'LGPC';
     lik.nondiagW = true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'LGPC')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'LGPC')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -67,7 +67,7 @@ function [w,s] = lik_lgpc_pak(lik)
 %    used for example in energy and gradient computations.
 %     
 %  See also
-%    LIK_NEGBIN_UNPAK, GP_PAK
+%    LIK_LGPC_UNPAK, GP_PAK
 
   w = []; s = {};
 end
@@ -402,7 +402,7 @@ function [df,minf,maxf] = init_lgpc_norm(yy,myy_i,sigm2_i,avgE)
     iter=iter+1;
     step=step*2;
     if iter>100
-      error(['lik_negbin -> init_negbin_norm: ' ...
+      error(['lik_lgpc -> init_lgpc_norm: ' ...
              'integration interval minimun not found ' ...
              'even after looking hard!'])
     end
@@ -415,7 +415,7 @@ function [df,minf,maxf] = init_lgpc_norm(yy,myy_i,sigm2_i,avgE)
     iter=iter+1;
     step=step*2;
     if iter>100
-      error(['lik_negbin -> init_negbin_norm: ' ...
+      error(['lik_lgpc -> init_lgpc_norm: ' ...
              'integration interval maximun not found ' ...
              'even after looking hard!'])
     end

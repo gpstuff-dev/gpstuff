@@ -1,7 +1,0 @@
-Running: demo_binomial1
- TolFun reached. Func-count 37. Final f(x)=169.569. Elapsed time 0.40
-
- gp hyperparameters: 
- 
-   -0.7903   -1.0035
-

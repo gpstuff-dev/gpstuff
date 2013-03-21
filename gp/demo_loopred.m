@@ -124,21 +124,43 @@ gp=gp_optim(gp,x,y,'opt',opt);
 
 % Plot results
 figure, subplot(2,2,1)
-plot(pred.lpyt, lpyt_lrs,'.'); diagline; title('LA-LOO(lrs) vs. LOO-CV');
+plot(pred.lpyt, lpyt_lrs,'.');ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('LA-LOO(lrs) vs. LOO-CV');
 xlabel('Log-predictive density (CV)'); ylabel('Log-predictive density(LA-LOO)');
-subplot(2,2,2), plot(pred.lpyt, lpyt_cav,'.'); diagline;  title('LA-LOO(cavity) vs. LOO-CV');
+
+subplot(2,2,2), plot(pred.lpyt, lpyt_cav,'.'); ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('LA-LOO(cavity) vs. LOO-CV');
 xlabel('Log-predictive density (CV)'); ylabel('Log-predictive density(LA-LOO)');
-subplot(2,2,3), plot(pred.lpyt, lpyt_inla,'.'); diagline; title('LA-LOO(inla) vs. LOO-CV');
+
+subplot(2,2,3), plot(pred.lpyt, lpyt_inla,'.'); ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('LA-LOO(inla) vs. LOO-CV');
 xlabel('Log-predictive density (CV)'); ylabel('Log-predictive density(LA-LOO)');
-subplot(2,2,4), plot(pred_ep.lpyt, lpyt_ep,'.'); diagline; title('EP-LOO vs. LOO-CV');
+
+subplot(2,2,4), plot(pred_ep.lpyt, lpyt_ep,'.'); ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('EP-LOO vs. LOO-CV');
 xlabel('Log-predictive density (CV)'); ylabel('Log-predictive density(EP-LOO)');
 
 figure, subplot(2,2,1)
-plot(pred.Eft, Eft_lrs,'.'); diagline; title('LA-LOO(lrs) vs. LOO-CV');
+plot(pred.Eft, Eft_lrs,'.');ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('LA-LOO(lrs) vs. LOO-CV');
 xlabel('Latent prediction (CV)'); ylabel('Latent prediction (LA-LOO)');
-subplot(2,2,2), plot(pred.Eft, Eft_cav,'.'); diagline;  title('LA-LOO(cavity) vs. LOO-CV');
+
+subplot(2,2,2), plot(pred.Eft, Eft_cav,'.'); ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('LA-LOO(cavity) vs. LOO-CV');
 xlabel('Latent prediction (CV)'); ylabel('Latent prediction (LA-LOO)');
-subplot(2,2,3), plot(pred.Eft, Eft_inla,'.'); diagline;  title('LA-LOO(inla) vs. LOO-CV');
+
+subplot(2,2,3), plot(pred.Eft, Eft_inla,'.'); ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('LA-LOO(inla) vs. LOO-CV');
 xlabel('Latent prediction (CV)'); ylabel('Latent prediction (LA-LOO)');
-subplot(2,2,4), plot(pred_ep.Eft, Eft_ep,'.'); diagline; title('EP-LOO vs. LOO-CV');
+
+subplot(2,2,4), plot(pred_ep.Eft, Eft_ep,'.'); ax = axis;
+line([min(ax(1),ax(3)) max(ax(2),ax(4))], [min(ax(1),ax(3)) max(ax(2),ax(4))]);
+title('EP-LOO vs. LOO-CV');
 xlabel('Latent prediction (CV)'); ylabel('Latent prediction (LA-LOO)');

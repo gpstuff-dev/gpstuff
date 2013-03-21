@@ -1,4 +1,4 @@
-function [c,bb] = hcs_new(riskscore,y,z,t,varargin)
+function [c,bb] = hcs(riskscore,y,z,t,varargin)
 %HCS Compute Harrell's C for survival model at given time
 %
 %  Description
@@ -24,6 +24,10 @@ function [c,bb] = hcs_new(riskscore,y,z,t,varargin)
 %    30(1):22-38.
 
 % Copyright (C) 2012 Tomi Peltola, Ernesto Ulloa, Aki Vehtari
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
 
 ip=inputParser;
 ip.addRequired('riskscore',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

@@ -159,6 +159,7 @@ ct1=hct(crit1,yy,D,tt);
 ct2=hct(crit2,yy,D,tt);
 auct1=auct(crit1,yy,D,tt);
 auct2=auct(crit2,yy,D,tt);
+c=[ct1 ct2];
 
 % Plot for both models Harrells C in function of time
 plot(tt,c(:,1),'r');
@@ -187,7 +188,7 @@ fprintf('cumulative probability in the (0,inf) interval:  %.2f \n', zc);
 %Estimate R^2 for both models, idi, its density and the cumulative
 %probability in the (0,inf) interval, al at time 1
 
-[idi,bbid,r1,r2] = idis(crit1(:,end),crit2(:,end),'rsubstream',1);
+[idi,r1,r2,bbid] = idis(crit1(:,end),crit2(:,end),'rsubstream',1);
 zidi=lgpdens_cum(bbid,0,inf);
 title('IDI estimated density')
 lgpdens(bbid)

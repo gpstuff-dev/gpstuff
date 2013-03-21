@@ -1,11 +1,18 @@
 function lik = lik_multinom(varargin)
-%LIK_multinom    Create a multinom likelihood structure 
+%LIK_MULTINOM    Create a multinom likelihood structure 
 %
 %  Description
-%    LIK = LIK_multinom creates multinom likelihood for multi-class
-%    classification problem. The observed class label with C
-%    classes is given as 1xC vector where C-1 entries are 0 and the
-%    observed class label is 1.
+%    LIK = LIK_MULTINOM creates multinom likelihood for multi-class
+%    count data. The observed numbers in each class with C classes is given
+%    as 1xC vector.
+%
+%    The likelihood is defined as follows:
+%                              __ n                __ C             
+%      p(y|f^1, ..., f^C, z) = || i=1 [ gamma(N+1) || c=1 p_i^c^(y_i^c)/gamma(y_i^c+1)]
+%
+%    where p_i^c = exp(f_i^c)/ (sum_c=1^C exp(f_i^c)) is the succes 
+%    probability for class c, which is a function of the latent variable 
+%    f_i^c for the corresponding class and N=sum(y) is the number of trials.
 %
 %  See also
 %    GP_SET, LIK_*
@@ -29,7 +36,7 @@ function lik = lik_multinom(varargin)
     lik.type = 'Multinom';
     lik.nondiagW = true;
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Multinom')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Multinom')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
@@ -43,7 +50,6 @@ function lik = lik_multinom(varargin)
     lik.fh.llg = @lik_multinom_llg;    
     lik.fh.llg2 = @lik_multinom_llg2;
     lik.fh.llg3 = @lik_multinom_llg3;
-    lik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     lik.fh.predy = @lik_multinom_predy;
     lik.fh.invlink = @lik_multinom_invlink;
     lik.fh.recappend = @lik_multinom_recappend;
@@ -52,11 +58,11 @@ function lik = lik_multinom(varargin)
 end  
 
 function [w,s] = lik_multinom_pak(lik)
-%LIK_LOGIT_PAK  Combine likelihood parameters into one vector.
+%LIK_MULTINOM_PAK  Combine likelihood parameters into one vector.
 %
 %  Description 
-%    W = LIK_LOGIT_PAK(LIK) takes a likelihood structure LIK and
-%    returns an empty verctor W. If Logit likelihood had
+%    W = LIK_MULTINOM_PAK(LIK) takes a likelihood structure LIK and
+%    returns an empty verctor W. If Multinom likelihood had
 %    parameters this would combine them into a single row vector
 %    W (see e.g. lik_negbin). This is a mandatory subfunction used 
 %    for example in energy and gradient computations.
@@ -70,19 +76,19 @@ end
 
 
 function [lik, w] = lik_multinom_unpak(lik, w)
-%LIK_LOGIT_UNPAK  Extract likelihood parameters from the vector.
+%LIK_MULTINOM_UNPAK  Extract likelihood parameters from the vector.
 %
 %  Description
-%    W = LIK_LOGIT_UNPAK(W, LIK) Doesn't do anything.
+%    W = LIK_MULTINOM_UNPAK(W, LIK) Doesn't do anything.
 % 
-%    If Logit likelihood had parameters this would extracts them
+%    If Multinom likelihood had parameters this would extracts them
 %    parameters from the vector W to the LIK structure. This is a 
 %    mandatory subfunction used for example in energy and gradient 
 %    computations.
 %     
 %
 %  See also
-%    LIK_LOGIT_PAK, GP_UNPAK
+%    LIK_MULTINOM_PAK, GP_UNPAK
 
   lik=lik;
   w=w;
@@ -90,10 +96,10 @@ end
 
 
 function ll = lik_multinom_ll(lik, y, f, z)
-%LIK_LOGIT_LL  Log likelihood
+%LIK_MULTINOM_LL  Log likelihood
 %
 %  Description
-%    LL = LIK_LOGIT_LL(LIK, Y, F) takes a likelihood structure
+%    LL = LIK_MULTINOM_LL(LIK, Y, F) takes a likelihood structure
 %    LIK, class counts Y (NxC matrix), and latent values F (NxC
 %    matrix). Returns the log likelihood, log p(y|f,z). This 
 %    subfunction is needed when using Laplace approximation or 
@@ -102,7 +108,7 @@ function ll = lik_multinom_ll(lik, y, f, z)
 %    (DIC, WAIC) computations.
 %
 %  See also
-%    LIK_LOGIT_LLG, LIK_LOGIT_LLG3, LIK_LOGIT_LLG2, GPLA_E
+%    LIK_MULTINOM_LLG, LIK_MULTINOM_LLG3, LIK_MULTINOM_LLG2, GPLA_E
   
   f=reshape(f,size(y));
   expf = exp(f);
@@ -140,10 +146,10 @@ end
 
 
 function [pi_vec, pi_mat] = lik_multinom_llg2(lik, y, f, param, z)
-%LIK_LOGIT_LLG2  Second gradients of the log likelihood
+%LIK_MULTINOM_LLG2  Second gradients of the log likelihood
 %
 %  Description        
-%    LLG2 = LIK_LOGIT_LLG2(LIK, Y, F, PARAM) takes a likelihood
+%    LLG2 = LIK_MULTINOM_LLG2(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F. Returns
 %    the Hessian of the log likelihood with respect to PARAM. At
 %    the moment PARAM can be only 'latent'. LLG2 is a vector with
@@ -152,7 +158,7 @@ function [pi_vec, pi_mat] = lik_multinom_llg2(lik, y, f, param, z)
 %    approximation or EP for inference with non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG3, GPLA_E
+%    LIK_MULTINOM_LL, LIK_MULTINOM_LLG, LIK_MULTINOM_LLG3, GPLA_E
   
 % multinom:
   [n,nout]=size(y);
@@ -173,10 +179,10 @@ function [pi_vec, pi_mat] = lik_multinom_llg2(lik, y, f, param, z)
 end    
 
 function [dw_mat] = lik_multinom_llg3(lik, y, f, param, z)
-%LIK_LOGIT_LLG3  Third gradients of the log likelihood
+%LIK_MULTINOM_LLG3  Third gradients of the log likelihood
 %
 %  Description
-%    LLG3 = LIK_LOGIT_LLG3(LIK, Y, F, PARAM) takes a likelihood
+%    LLG3 = LIK_MULTINOM_LLG3(LIK, Y, F, PARAM) takes a likelihood
 %    structure LIK, class labels Y, and latent values F and
 %    returns the third gradients of the log likelihood with
 %    respect to PARAM. At the moment PARAM can be only 'latent'. 
@@ -185,7 +191,7 @@ function [dw_mat] = lik_multinom_llg3(lik, y, f, param, z)
 %    non-Gaussian likelihoods.
 %
 %  See also
-%    LIK_LOGIT_LL, LIK_LOGIT_LLG, LIK_LOGIT_LLG2, GPLA_E, GPLA_G
+%    LIK_MULTINOM_LL, LIK_MULTINOM_LLG, LIK_MULTINOM_LLG2, GPLA_E, GPLA_G
   
   [n,nout] = size(y);
   f2 = reshape(f,n,nout);
@@ -229,9 +235,6 @@ function [dw_mat] = lik_multinom_llg3(lik, y, f, param, z)
   
 end
 
-function [logM_0, m_1, sigm2hati1] = lik_multinom_tiltedMoments(lik, y, i1, sigm2_i, myy_i, z)
-end
-
 function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
 %LIK_MULTINOM_PREDY  Returns the predictive mean, variance and density of y
 %
@@ -273,11 +276,13 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
   end
   for i1=1:ntest
     if mcmc
-      Sigm_tmp = diag(Varf(i1,:));
+      Sigm_tmp = (Varf(i1,:));
+      f_star=bsxfun(@plus, Ef(i1,:), bsxfun(@times, sqrt(Sigm_tmp), ...
+        randn(S,nout)));
     else
       Sigm_tmp=(Varf(:,:,i1)'+Varf(:,:,i1))./2;
+      f_star=mvnrnd(Ef(i1,:), Sigm_tmp, S);
     end
-    f_star=mvnrnd(Ef(i1,:), Sigm_tmp, S);
     
     tmp = exp(f_star);
     tmp = tmp./(sum(tmp, 2)*ones(1,size(tmp,2)));
@@ -289,7 +294,11 @@ function [lpy, Ey, Vary] = lik_multinom_predy(lik, Ef, Varf, yt, zt)
             for z3=1:S
               Var_tmp(:,:,z3) = (diag(tmp(z3,:)) - tmp(z3,:)'*tmp(z3,:));
             end
-            Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+            if mcmc
+              Vary(i1+(0:nout-1)*ntest,:) = diag(N(i1).*mean(Var_tmp,3));
+            else
+              Vary(:,:,i1) = N(i1).*mean(Var_tmp,3);
+            end
           end
         end
     end
@@ -313,14 +322,14 @@ function p = lik_multinom_invlink(lik, f, z)
 %
 %     See also
 %     LIK_MULTINOM_LL, LIK_MULTINOM_PREDY
-p = logitinv(f).*z;
+p = multinominv(f).*z;
 end
 
 function reclik = lik_multinom_recappend(reclik, ri, lik)
 %RECAPPEND  Append the parameters to the record
 %
 %  Description 
-%    RECLIK = GPCF_LOGIT_RECAPPEND(RECLIK, RI, LIK) takes a
+%    RECLIK = LIK_MULTINOM_RECAPPEND(RECLIK, RI, LIK) takes a
 %    likelihood record structure RECLIK, record index RI and
 %    likelihood structure LIK with the current MCMC samples of
 %    the parameters. Returns RECLIK which contains all the old
@@ -341,7 +350,6 @@ function reclik = lik_multinom_recappend(reclik, ri, lik)
     reclik.fh.llg = @lik_multinom_llg;    
     reclik.fh.llg2 = @lik_multinom_llg2;
     reclik.fh.llg3 = @lik_multinom_llg3;
-    reclik.fh.tiltedMoments = @lik_multinom_tiltedMoments;
     reclik.fh.predy = @lik_multinom_predy;
     reclik.fh.invlink = @lik_multinom_invlink;
     reclik.fh.recappend = @lik_multinom_recappend;

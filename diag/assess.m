@@ -6,6 +6,13 @@ function [au,c] = assess(crit1,crit2,y,z,tt)
 %   and time vector tt returns Harrel's C and AUC for each value in TT time vector
 %   
 %   Note: Z dimensions must be size(y,1) X size(tt,2)  
+
+% Copyright (C) 2012 Ernesto Ulloa, Aki Vehtari
+
+% This software is distributed under the GNU General Public
+% License (version 3 or later); please refer to the file
+% License.txt, included with the software, for details.
+
 ip=inputParser;
 ip.addRequired('crit1',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('crit2',@(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))

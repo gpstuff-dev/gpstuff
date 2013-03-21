@@ -72,11 +72,21 @@ ip.addRequired('gp',@isstruct);
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('predcf', [], @(x) isempty(x) || ...
+                 isvector(x) && isreal(x) && all(isfinite(x)&x>0))
+ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                 (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 500, @(x) isreal(x) && isscalar(x))
 ip.addParamValue('deltadist',[], @(x) isvector(x));
 
 ip.parse(gp, x, y, varargin{:});
-z=ip.Results.z;
+options=struct();
+options.predcf=ip.Results.predcf;
+options.tstind=ip.Results.tstind;
+z=isempty(ip.Results.z);
+if ~isempty(z)
+  options.z=ip.Results.z;
+end
 nsamp=ip.Results.nsamp;
 deltadist = logical(ip.Results.deltadist);
 
@@ -113,11 +123,10 @@ covx=cov(x);
 covx(deltadist,:)=0;
 covx(:,deltadist)=0;
 for i1=find(deltadist)
-  pdi=1./numel(unique(x(:,i1)));
-  covx(i1,i1)=pdi*(1-pdi);
+  covx(i1,i1)=1;
 end
 
-prevstream=setrandstream(0, 'mrg32k3a');
+prevstream=setrandstream();
 
 % loop through the input variables
 for k1=1:nin
@@ -135,9 +144,8 @@ for k1=1:nin
     W(i1,(i1+1):n)=1./(1+sum(x_diff.*(covx_\x_diff)));
   end
   W=W+W'+eye(n);
-  %-
   
-  rsubstream=round(rand*10e9);
+  seed=round(rand*10e8);
   
   numf=zeros(1,nsamp);
   numfa=zeros(1,nsamp);
@@ -162,9 +170,10 @@ for k1=1:nin
     end
     Udiffa=abs(Udiff);
     Usign=sign(Udiff);
-    stream.Substream = rsubstream;
+
     % draw random samples from the posterior
-    fr = gp_rnd(gp, x, y, xrep, 'z', z, 'nsamp', nsamp);
+    setrandstream(seed);
+    fr = gp_rnd(gp, x, y, xrep, 'nsamp', nsamp, options);
     
     % average change in input
     deni=sum(W(:,i1).*Udiff.*Usign);
@@ -257,3 +266,29 @@ if nargout>1
 end
 
 setrandstream(prevstream);
+
+end
+
+function deltadist = gp_finddeltadist(cf)
+% FINDDELTADIST - Find which covariates are using delta distance
+%   
+deltadist=[];
+if ~iscell(cf) && isfield(cf,'cf')
+  deltadist=union(deltadist,gp_finddeltadist(cf.cf));
+else
+  for cfi=1:numel(cf)
+    if isfield(cf{cfi},'cf')
+      deltadist=union(deltadist,gp_finddeltadist(cf{cfi}.cf));
+    else
+      if isfield(cf{cfi},'metric')
+        if isfield(cf{cfi}.metric,'deltadist')
+          deltadist=union(deltadist,cf{cfi}.metric.deltadist);
+        end
+      elseif ismember(cf{cfi}.type,{'gpcf_cat' 'gpcf_mask'}) && ...
+          isfield(cf{cfi},'selectedVariables')
+        deltadist=union(deltadist,cf{cfi}.selectedVariables);
+      end
+    end
+  end
+end
+end

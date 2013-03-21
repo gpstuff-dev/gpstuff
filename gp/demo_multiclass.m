@@ -74,8 +74,9 @@ fprintf(['Softmax model with Laplace integration over the latent\n' ...
 
 % Set the approximate inference method
 gp = gp_set(gp, 'latent_method', 'Laplace');
-%[Eft, Varft, lpyt] = gp_pred(gp, x, y, xt, 'yt', ones(size(yt)));
 
+% We could also use own covariance function for each output the following
+% way
 % gp2 = gp_set('lik', lik_softmax, 'cf', {gpcf1 gpcf1 gpcf1}, 'jitterSigma2', 1e-2);
 % gp2 = gp_set(gp2, 'latent_method', 'Laplace');
 % gp2.comp_cf = {1 2 3};
@@ -138,9 +139,6 @@ hmc2('state', sum(100*clock))
 
 % Sample
 [r,g,opt]=gp_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
-% sampling with defualt options does not work yet
-%[r,g,opt]=gp2_mc(gp, x, y, 'nsamples', 400, 'repeat', 15);
-%[r,g,opt]=gp2_mc(gp, x, y, 'nsamples', 4);
 
 % re-set some of the sampling options
 hmc_opt.repeat=1;
@@ -155,7 +153,6 @@ hmc2('state', sum(100*clock));
 rgp=thin(rgp,102);
 
 % Make predictions
-%[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
 [Efs_mc, Varfs_mc, pgs_mc] = gpmc_preds(rgp, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc = reshape(mean(Efs_mc,2),900,3);
@@ -199,9 +196,6 @@ hmc2('state', sum(100*clock))
 
 [rgp2,gp2,opt]=gp_mc(gp2, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
 
-% Sample
-% [r,g,opt]=gp2_mc(gp, x, y, 'hmc_opt', hmc_opt, 'latent_opt', latent_opt, 'nsamples', 1, 'repeat', 15);
-
 % re-set some of the sampling options
 hmc_opt.repeat=1;
 hmc_opt.steps=4;
@@ -215,7 +209,6 @@ hmc2('state', sum(100*clock));
 rgp2=thin(rgp2,102);
 
 % Make predictions
-%[Efs_mc, Varfs_mc, Eys_mc, Varys_mc, Pys_mc] = gpmc_mo_preds(rgp, x, y, xt, 'yt', ones(size(xt,1),1) );
 [Efs_mc, Varfs_mc, pgs_mc] = gpmc_preds(rgp2, x, y, xtg, 'yt', ones(size(xtg,1),3));
 
 Ef_mc2 = reshape(mean(Efs_mc,2),900,3);

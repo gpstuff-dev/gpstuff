@@ -31,7 +31,7 @@ function lik = lik_logit(varargin)
     init=true;
     lik.type = 'Logit';
   else
-    if ~isfield(lik,'type') && ~isequal(lik.type,'Logit')
+    if ~isfield(lik,'type') || ~isequal(lik.type,'Logit')
       error('First argument does not seem to be a valid likelihood function structure')
     end
     init=false;
