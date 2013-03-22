@@ -33,7 +33,7 @@ drawnow;clear;close all
 function testPredictionsCoxph
 values.real = load('realValuesSurvival_coxph', 'Ef1', 'Varf1', 'Ef2', 'Varf2');
 values.test = load(strrep(which('test_survival_coxph.m'), 'test_survival_coxph.m', 'testValues/testSurvival_coxph'), 'Ef1', 'Varf1', 'Ef2', 'Varf2');
-assertElementsAlmostEqual(values.real.Ef1, values.test.Ef1, 'relative', 0.10);
-assertElementsAlmostEqual(values.real.Ef2, values.test.Ef2, 'relative', 0.10);
-assertElementsAlmostEqual(values.real.Varf1, values.test.Varf1, 'relative', 0.10);
-assertElementsAlmostEqual(values.real.Varf2, values.test.Varf2, 'relative', 0.10);
+assertElementsAlmostEqual(values.real.Ef1, values.test.Ef1, 'absolute', 0.10);
+assertElementsAlmostEqual(values.real.Ef2, values.test.Ef2, 'absolute', 0.10);
+assertElementsAlmostEqual(values.real.Varf1, values.test.Varf1, 'absolute', 0.10);
+assertElementsAlmostEqual(values.real.Varf2, values.test.Varf2, 'absolute', 0.10);

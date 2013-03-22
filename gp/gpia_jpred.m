@@ -101,9 +101,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
-    ip.parse(gp, x, y, varargin{:});
+    ip.parse(gp_array, x, y, varargin{:});
   else
-    ip.parse(gp, x, y, [], varargin{:});
+    ip.parse(gp_array, x, y, [], varargin{:});
   end
   xt=ip.Results.xt;
   yt=ip.Results.yt;
@@ -161,9 +161,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   % Make predictions with different models in gp_array
   for j = 1:nGP
     if isempty(yt)
-      [Eft_grid(j,:), Covft_grid(:,:,j)]=gp_pred(gp_array{j},x,y,xt,options);            
+      [Eft_grid(j,:), Covft_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt,options);            
     else
-      [Eft_grid(j,:), Covft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Covyt_grid(:,:,j)]=gp_pred(gp_array{j},x,y,xt, options);
+      [Eft_grid(j,:), Covft_grid(:,:,j), ljpyt_grid(j), Eyt_grid(j,:), Covyt_grid(:,:,j)]=gp_jpred(gp_array{j},x,y,xt, options);
     end
   end
   
@@ -183,7 +183,7 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   % Calculate jpyt with weight given in P_TH.
   if nargout > 2
     if ~isempty(yt)
-      ljpyt = log(sum(exp(ljpyt_grid)'.*P_TH);
+      ljpyt = log(sum(exp(ljpyt_grid)'.*P_TH));
     else
       error('yt must be provided to get ljpyt');
     end
