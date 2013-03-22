@@ -1,7 +1,7 @@
-Last modified: 2013-03-14 12:19:46 EET
+Last modified: 2013-03-20 16:01:42 EET
 -----------------------------------------------------------------
 
-GPstuff: Gaussian process models for Bayesian analysis 3.4 (r1086)
+GPstuff: Gaussian process models for Bayesian analysis 4.0
 
 Maintainers: Aki Vehtari <aki.vehtari@aalto.fi>
              Jarno Vanhatalo <jarno.vanhatalo@helsinki.fi>
@@ -11,7 +11,6 @@ This software is distributed under the GNU General Public Licence
 (version 3 or later); please refer to the file Licence.txt,
 included with the software, for details.
 
-
 Table of contents:
 
 1. INTRODUCTION
@@ -19,21 +18,23 @@ Table of contents:
 3. CONTENTS
 4. TESTING THE INSTALLATION
 5. USER GUIDE (VERY SHORT)
-6. KNOWN PROBLEMS WITH INSTALLING SUITESPARSE AND SOLUTIONS TO THEM
-7. DISCLAIMER
+6. REFERENCE
+7. JMLR DISCLAIMER
 
-    ------------------------------------------
+------------------------------------------
 1. INTRODUCTION
 
   GPstuff is a collection of Matlab functions to build and analyze
   Bayesian models build over Gaussian processes. The toolbox is tested
-  with Matlab 7.9 in 64bit Windows and Linux environments (it should
-  work in the 32bit versions as well but they are not tested
-  properly) and with Octave 3.6.4 in 64bit Linux environment.
+  with Matlab R2009b-2012b in 64bit Windows and Linux environments and
+  with Octave 3.6.4 in 64bit Linux environment (it should work in the
+  32bit versions as well but they are not tested properly). NOTE! For
+  Octave, use the Octave specific package available from the GPstuff
+  homepage.
 
-  The code for GPstuff can be found from GPstuff folder and its
-  subfolders. The SuiteSparse folder contains the SuiteSparse toolbox
-  by Tim Davis:
+  The code for GPstuff can be found in subfolders. The SuiteSparse
+  folder contains an exact copy of the SuiteSparse v3.4 toolbox by Tim
+  Davis:
   http://www.cise.ufl.edu/research/sparse/SuiteSparse/current/SuiteSparse/
   The SuiteSparse is needed when using compactly supported covariance
   functions.
@@ -74,14 +75,13 @@ Table of contents:
 3. CONTENTS
    
    The GPstuff packge contains the following subdirectories:
-   diag  dist  gp  mc  misc  optim  xunit
+   diag  dist  gp  mc  misc  optim  xunit  SuiteSparse
 
    Each folder contains Contents.m, which summarizes the functions
    in the folder. 
 
-   From the above 'gp' folder contains the main functionalities and
-   demonstration programs. Other folders contain additional help
-   functions.
+   The 'gp' folder contains the main functionalities and demonstration
+   programs. Other folders contain additional help functions.
 
 4. TESTING THE INSTALLATION
 
@@ -138,17 +138,26 @@ Table of contents:
                         GP_IA - Integration approximations
 			GP_PRED - Predictions with Gaussian Process
 
-7.
+6. REFERENCE
 
-THIS SOURCE CODE IS SUPPLIED \AS IS" WITHOUT WARRANTY OF ANY KIND, AND
-ITS AUTHOR AND THE JOURNAL OF MACHINE LEARNING RESEARCH (JMLR) AND
-JMLR'S PUBLISHERS AND DISTRIBUTORS, DISCLAIM ANY AND ALL WARRANTIES,
-INCLUDING BUT NOT LIMITED TO ANY IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS FOR A PARTICULAR PURPOSE, AND ANYWARRANTIES OR NON
-INFRINGEMENT. THE USER ASSUMES ALL LIABILITY AND RESPONSIBILITY FOR
-USE OF THIS SOURCE CODE, AND NEITHER THE AUTHOR NOR JMLR, NOR JMLR'S
-PUBLISHERS AND DISTRIBUTORS, WILL BE LIABLE FOR DAMAGES OF ANY KIND
-RESULTING FROM ITS USE. Without limiting the generality of the
-foregoing, neither the author, nor JMLR, nor JMLR's publishers and
-distributors, warrant that the Source Code will be error-free, will
-operate without interruption, or will meet the needs of the user.
+   If you use GPstuff, please use the reference:
+
+   Jarno Vanhatalo, Jaakko Riihimäki, Jouni Hartikainen, Pasi Jylänki,
+   Ville Tolvanen, Aki Vehtari (2013). GPstuff: A Toolbox for Bayesian
+   Modeling with Gaussian Processes. In Journal of Machine Learning
+   Research, accepted for publication.
+
+7. JMLR DISCLAIMER
+
+   THIS SOURCE CODE IS SUPPLIED \AS IS" WITHOUT WARRANTY OF ANY KIND, AND
+   ITS AUTHOR AND THE JOURNAL OF MACHINE LEARNING RESEARCH (JMLR) AND
+   JMLR'S PUBLISHERS AND DISTRIBUTORS, DISCLAIM ANY AND ALL WARRANTIES,
+   INCLUDING BUT NOT LIMITED TO ANY IMPLIED WARRANTIES OF MERCHANTABILITY
+   AND FITNESS FOR A PARTICULAR PURPOSE, AND ANYWARRANTIES OR NON
+   INFRINGEMENT. THE USER ASSUMES ALL LIABILITY AND RESPONSIBILITY FOR
+   USE OF THIS SOURCE CODE, AND NEITHER THE AUTHOR NOR JMLR, NOR JMLR'S
+   PUBLISHERS AND DISTRIBUTORS, WILL BE LIABLE FOR DAMAGES OF ANY KIND
+   RESULTING FROM ITS USE. Without limiting the generality of the
+   foregoing, neither the author, nor JMLR, nor JMLR's publishers and
+   distributors, warrant that the Source Code will be error-free, will
+   operate without interruption, or will meet the needs of the user.

@@ -86,7 +86,7 @@
 \begin{document}
 
 \title{Bayesian Modeling with Gaussian Processes using the
-  \proglang{MATLAB} Toolbox \pkg{GPstuff} (v3.4)}
+   \pkg{GPstuff} Toolbox}
 
 \author{\name Jarno Vanhatalo\thanks{Work done mainly while at the
     Department of Biomedical
@@ -112,7 +112,7 @@
 \maketitle
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
-Gaussian processes (GP) are powerful tools for probabilistic
+  Gaussian processes (GP) are powerful tools for probabilistic
   modeling purposes. They can be used to define prior distributions
   over latent functions in hierarchical Bayesian models. The prior
   over functions is defined implicitly by the mean and covariance
@@ -121,12 +121,11 @@ Gaussian processes (GP) are powerful tools for probabilistic
   function space by evaluating or approximating the posterior process.
   Despite their attractive theoretical properties GPs provide
   practical challenges in their implementation. \pkg{GPstuff} is a
-  versatile collection of computational tools for GP models. It has
-  been implemented for Linux and Windows \proglang{MATLAB} and
-  includes, among others, various inference methods, sparse
-  approximations and tools for model assessment. In this work, we
-  review these tools and demonstrate the use of \pkg{GPstuff} in
-  several models.
+  versatile collection of computational tools for GP models compatible
+  with Linux and Windows \proglang{MATLAB} and Octave.  It includes,
+  among others, various inference methods, sparse approximations and
+  tools for model assessment. In this work, we review these tools and
+  demonstrate the use of \pkg{GPstuff} in several models.
 \end{abstract}
 
 \begin{keywords}
@@ -140,10 +139,14 @@ Gaussian process, Bayesian hierarchical model, nonparametric Bayes
 \section{Introduction}
 
 This work reviews a free open source toolbox \pkg{GPstuff} (version
-3.3) which implements a collection of inference methods and tools for
+4.0) which implements a collection of inference methods and tools for
 inference for various Gaussian process (GP) models. The toolbox is
-written for \proglang{MATLAB} \citep{MATLAB:2010} and it is available
-from \url{http://becs.aalto.fi/en/research/bayes/gpstuff/}.
+compatible with Unix and Windows \proglang{MATLAB} \citep{MATLAB:2010}
+(r2009b or later, earlier versions may work, but has not been tested
+extensively) and \proglang{Octave} \citep{octave:2012} (3.6.4 or
+later, compact support covariance functions are not currently working
+in Octave). It is available from
+\url{http://becs.aalto.fi/en/research/bayes/gpstuff/}.
 
 GP is a stochastic process, which provides a powerful tool for
 probabilistic inference directly on distributions over functions
@@ -3208,7 +3211,7 @@ approximation and $\tilde{\mb{\Sigma}}^{-1}$ in the case of EP.
 As described in the previous sections, \pkg{GPstuff} is build
 modularly so that the full model is constructed by combining separate
 building blocks. Each building block, such as the covariance function
-or likelihood, is written in a \proglang{MATLAB} m-file which contains
+or likelihood, is written in a m-file which contains
 all the functions and parameters specific to it. This construction
 makes it easier to add new model blocks in the package. For example, new
 covariance functions can be written by copying one of the existing
@@ -3381,26 +3384,25 @@ toolbox is available from
 
 \section*{Acknowledgments}
 
-The research leading to \pkg{GPstuff} was funded by the Academy of
-Finland, Finnish Funding Agency for Technology and Innovation
-(TEKES), and the Graduate School in Electronics and
-Telecommunications and Automation (GETA). The first author also
-thanks the Finnish Foundation for Economic and Technology Sciences
-KAUTE, Finnish Cultural Foundation, and Emil Aaltonen Foundation
-for supporting his post graduate studies during which the code
-package was prepared. 
+The research leading to \pkg{GPstuff} has been funded by the Academy
+of Finland (grant 218248), Finnish Funding Agency for Technology and
+Innovation (TEKES), and the Graduate School in Electronics and
+Telecommunications and Automation (GETA). The first author also thanks
+the Finnish Foundation for Economic and Technology Sciences KAUTE,
+Finnish Cultural Foundation, and Emil Aaltonen Foundation for
+supporting his post graduate studies during which the code package was
+prepared.
 
-The package contains pieces of code written by other people than
-the authors. In the Department of Biomedical Engineering and
-Computational Science at Aalto University these persons are (in
-alphabetical order): Toni Auranen, Roberto Calandra, Pasi Jylänki,
-Tuomas Nikoskinen, Eero Pennala, Heikki Peura, Ville Pietiläinen,
-Markus Siivola, Simo Särkkä and Ville Tolvanen. People outside
-Aalto University are (in alphabetical order): Christopher M.
-Bishop, Timothy A. Davis, Matthew D. Hoffman, Kurt Hornik, Dirk-Jan
-Kroon, Iain Murray, Ian T. Nabney, Radford M. Neal and Carl E.
-Rasmussen. We want to thank them all for sharing their code under a
-free software license.
+The package contains pieces of code written by other people than the
+authors. In the Department of Biomedical Engineering and Computational
+Science at Aalto University these persons are (in alphabetical order):
+Toni Auranen, Pasi Jylänki, Tuomas Nikoskinen, Tomi Peltola, Eero
+Pennala, Heikki Peura, Ville Pietiläinen, Markus Siivola, Simo Särkkä
+and Ernesto Ulloa. People outside Aalto University are (in
+alphabetical order): Christopher M.  Bishop, Timothy A. Davis, Matthew
+D. Hoffman, Kurt Hornik, Dirk-Jan Kroon, Iain Murray, Ian T. Nabney,
+Radford M. Neal and Carl E. Rasmussen. We want to thank them all for
+sharing their code under a free software license.
 
 \bibliography{GPstuff-nodoi}
 
@@ -4092,7 +4094,7 @@ values. If the new likelihood does not have parameters, see for example,
 
 Function handles to the subfunctions provide object-oriented
 behaviour (at time when GPstuff project was started, real classes
-in Matlab were too inefficient).
+in Matlab were too inefficient and Octave still lacks proper support).
 % , that toolboxes by Mathworks did not use it in computationally
 % intensive cases (e.g. Neural network toolbox).
 If some of the subfunctions have not been implemented,
@@ -4239,7 +4241,7 @@ euclidean metric case.
 
 Function handles to the subfunctions provide object-oriented
 behaviour (at time when GPstuff project was started, real classes
-in Matlab were too inefficient).
+in Matlab were too inefficient and Octave still lacks proper support).
 % At time when GPstuff project was started, real classes in Matlab
 % were so inefficient, that toolboxes by Mathworks did not use it
 % in computationally intensive cases (e.g. Neural network toolbox).
@@ -4366,7 +4368,7 @@ corresponding lines can be removed (see, e.g., \code{prior\_unif}).
 
 Function handles to the subfunctions provide object-oriented
 behaviour (at time when GPstuff project was started, real classes
-in Matlab were too inefficient).
+in Matlab were too inefficient and Octave still lacks proper support).
 % At time when GPstuff project was started, real classes in Matlab
 % were so inefficient, that toolboxes by Mathworks did not use it
 % in computationally intensive cases (e.g. Neural network toolbox).
