@@ -1,0 +1,47 @@
+Running: demo_periodic
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 27
+  Function Count : 47
+  Minimum found : 592.0151
+  Intern Time : 0.029977 seconds
+  Total Time : 7.7959 seconds
+ Iteration  Func-count   Grad-count         f(x)         Step-size
+     0           1           1             594.839    
+     1           6           6             594.693      3.3339e-07
+     2          12          12             212.954      0.00863052
+     3          16          16             204.308      0.00634928
+     4          18          18             201.028             0.1
+     5          21          21             200.216       0.0234747
+     6          25          25             198.293           0.025
+     7          28          28             184.818            0.25
+     8          30          30              183.63             0.1
+     9          31          31             182.288               1
+    10          33          33             181.886        0.347089
+    11          35          35              181.51        0.338729
+    12          37          37             181.175         0.42325
+    13          39          39             181.069         0.44846
+    14          42          42             181.065       0.0412808
+    15          44          44              181.06        0.194428
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Line search cannot find an acceptable point along the current search direction
+  Iterations : 16
+  Function Count : 62
+  Minimum found : 181.0597
+  Intern Time : 0.039376 seconds
+  Total Time : 15.7249 seconds
+ Optimizer Results
+  Algorithm Used: Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+  Exit message : Change in the objective function value was less than TolFun.
+  Iterations : 17
+  Function Count : 25
+  Minimum found : 245.8374
+  Intern Time : 0.013333 seconds
+  Total Time : 4.0708 seconds
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+   -1.7857    3.9625   -0.4798   -0.1300    4.6376   -2.9785   -0.4421    0.9111    2.4305
+

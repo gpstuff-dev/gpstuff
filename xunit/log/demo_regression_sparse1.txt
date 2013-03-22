@@ -1,0 +1,74 @@
+Running: demo_regression_sparse1
+
+gp = 
+
+            type: 'FULL'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-08
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 27. Final f(x)=52.5982. Elapsed time 12.12
+
+gp_fic = 
+
+            type: 'FIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 53. Final f(x)=46.3892. Elapsed time 0.75
+
+gp_pic = 
+
+            type: 'PIC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+        tr_index: {1x16 cell}
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 29. Final f(x)=45.3107. Elapsed time 1.14
+
+gp_var = 
+
+            type: 'VAR'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood+inducing'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 40. Final f(x)=51.8727. Elapsed time 5.13
+
+gp_dtc = 
+
+            type: 'DTC'
+             lik: [1x1 struct]
+              cf: {[1x1 struct]}
+    infer_params: 'covariance+likelihood'
+    jitterSigma2: 1.0000e-04
+             X_u: [36x2 double]
+            nind: 36
+               p: [1x1 struct]
+              fh: [1x1 struct]
+
+ TolFun reached. Func-count 65. Final f(x)=46.3104. Elapsed time 0.86
+
+ gp hyperparameters (gp_pak(gp)): 
+ 
+    0.4291    1.1773    1.0540   -3.2363
+
