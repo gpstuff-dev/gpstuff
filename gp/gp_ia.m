@@ -108,6 +108,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('display', 'on', @(x) islogical(x) || isreal(x) || ...
                    ismember(x,{'on' 'off' 'iter'}))
   ip.parse(gp, x, y, varargin{:});
+  
   xt=ip.Results.xt;
   % integration parameters
   int_method=ip.Results.int_method;
@@ -149,7 +150,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   if ~isempty(ip.Results.z);options.z=ip.Results.z;end
   if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
   if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
-
+  
   % ================================
   % use an inference specific method
   % ================================
@@ -160,6 +161,18 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   fh_g = gp.fh.g;
   fh_p = gp.fh.pred;
 
+  if isempty(gp_pak(gp))
+    % no parameters to integrate over
+    gp_array=gp;
+    P_TH=1;
+    th=[];
+    [Ef, Varf]=fh_p(gp,x,y,xt,options);
+    pf=[];
+    ff=[];
+    H=[];
+    return
+  end
+  
   optdefault.GradObj='on';
   optdefault.LargeScale='off';
   optdefault.Display='off';
