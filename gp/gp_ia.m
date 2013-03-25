@@ -176,8 +176,8 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
       fprintf(' IA-%s: finding the mode\n',int_method);
     end
     tic
-      w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
-      gp = gp_unpak(gp,w);
+    w = optimf(@(ww) gp_eg(ww, gp, x, y, options), w, opt_optim);
+    gp = gp_unpak(gp,w);
     et=toc;
     if ismember(opt.display,{'on','iter'}) && et > 1
       fprintf('    Elapsed time %.2f seconds\n',et);
@@ -205,9 +205,9 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         fprintf(' IA-%s: computing Hessian using multiplication\n',int_method);
       end
       tic
-        for i2 = 1:nParam
-          H(:,i2) = hessianMultiplication(w, H(:,i2));
-        end
+      for i2 = 1:nParam
+        H(:,i2) = hessianMultiplication(w, H(:,i2));
+      end
       et=toc;
       if ismember(opt.display,{'on','iter'}) && et > 1
         fprintf('    Elapsed time %.2f seconds\n',et);
@@ -217,7 +217,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
           fprintf(' IA-%s: computing Hessian using finite difference\n',int_method);
         end
         tic
-          H = hessian(w);
+        H = hessian(w);
         et=toc;
         if ismember(opt.display,{'on','iter'}) && et > 1
           fprintf('    Elapsed time %.2f seconds\n',et);
@@ -589,13 +589,30 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
     case {'is_normal' 'is_normal_qmc' 'is_t'}
       
       % Covariance of the gaussian approximation
-      H = full(hessian(w));
+      H = eye(nParam);
+      if ismember(opt.display,{'on','iter'})
+        fprintf(' IA-%s: computing Hessian using multiplication\n',int_method);
+      end
+      tic
+      for i2 = 1:nParam
+        H(:,i2) = hessianMultiplication(w, H(:,i2));
+      end
+      et=toc;
+      if ismember(opt.display,{'on','iter'}) && et > 1
+        fprintf('    Elapsed time %.2f seconds\n',et);
+      end
+      if any(eig(H))<0
+        if ismember(opt.display,{'on','iter'});
+          fprintf(' IA-%s: computing Hessian using finite difference\n',int_method);
+        end
+        tic
+        H = hessian(w);
+        et=toc;
+        if ismember(opt.display,{'on','iter'}) && et > 1
+          fprintf('    Elapsed time %.2f seconds\n',et);
+        end
+      end
       Sigma = inv(H);
-      Scale = Sigma;
-      [V,D] = eig(full(Sigma));
-      z = (V*sqrt(D))'.*opt.step_size;
-      P0 =  -fh_e(w,gp,x,y,options);
-      
       % Some jitter may be needed to get positive semi-definite covariance
       if any(eig(Sigma)<0)
         jitter = 0;
@@ -605,6 +622,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         end
         warning('gp_ia -> singular Hessian. Jitter of %.4f added.', jitter)
       end
+      Scale = Sigma*(1/(1-1/numel(y).^2)).^2;
+      [V,D] = eig(full(Sigma));
+      z = (V*sqrt(D))'.*opt.step_size;
+      P0 =  -fh_e(w,gp,x,y,options);
       
       N = opt.nsamples;
       
@@ -620,17 +641,19 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
             p_th_appr = mnorm_pdf(th, w, Sigma);
           end
           
-          
-          if ismember(opt.autoscale,{'on' 'full'})
+          if opt.qmc
+            e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
+          else
+            e = randn(N,size(Sigma,1));
+          end
             
-            if opt.qmc
-              e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
-            else
-              e = randn(N,size(Sigma,1));
-            end
+          if ismember(opt.autoscale,{'on' 'full'})
             
             % Scaling of the covariance (see Geweke, 1989, Bayesian
             % inference in econometric models using Monte Carlo integration
+            if ismember(opt.display,{'on','iter'})
+              fprintf(' IA-is_normal: scaling of the covariance\n');
+            end
             delta = -6:.5:6;
             for i0 = 1 : nParam
               for i1 = 1 : length(delta)
@@ -669,20 +692,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
         case 'is_t'
           % Student-t Samples
           nu = opt.t_nu;
-          chi2 = repmat(chi2rnd(nu, [1 N]), nParam, 1);
           Scale = (nu-2)./nu.*Sigma;
-          Scale = Sigma;
-          
-          if opt.qmc
-            e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
-            th = repmat(w,N,1) + ( chol(Scale)' * e' .* sqrt(nu./chi2) )';
-          else
-            th = repmat(w,N,1) + ( chol(Scale)' * randn(nParam, N).*sqrt(nu./chi2) )';
-          end
-          
-          p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);
           
           if opt.autoscale
+            if ismember(opt.display,{'on','iter'})
+              fprintf(' IA-is_t: scaling of the covariance\n');
+            end
+            th=zeros(N,nParam);
+            p_th_appr=zeros(N,nParam);
             delta = -6:.5:6;
             for i0 = 1 : nParam
               ttt = zeros(1,nParam);
@@ -727,12 +744,27 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               p_th_appr(i3) = exp(C - ((nu+nParam)/2)*log(1+sum((e(i3,:)./sqrt(chi)).^2)));
               th(i3,:)=w+(chol(Scale)'*eta(i3,:)')';
             end
+          else
+            chi2 = repmat(chi2rnd(nu, [1 N]), nParam, 1);
+            if opt.qmc
+              e = (sqrt(2).*erfinv(2.*hammersley(size(Sigma,1),N) - 1))';
+              th = repmat(w,N,1) + ( chol(Scale)' * e' .* sqrt(nu./chi2) )';
+            else
+              th = repmat(w,N,1) + ( chol(Scale)' * randn(nParam, N).*sqrt(nu./chi2) )';
+            end
+            
+            p_th_appr = mt_pdf(th - repmat(w,N,1), Sigma, nu);
+          
           end
       end
       gp_array=cell(N,1);
       
       % Densities of the samples in target distribution and predictions,
       % if needed.
+      if ismember(opt.display,{'on','iter'})
+        fprintf(' IA-%s: evaluating density in sampled points\n',int_method);
+      end
+      tic
       for j = 1 : N
         gp_array{j}=gp_unpak(gp,th(j,:));
         % density
@@ -743,6 +775,14 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
               fh_p(gp_array{j},x,y,xt,options);
         end
       end
+      et=toc;
+      if ismember(opt.display,{'on','iter'})
+        fprintf(' IA-%s: evaluated density at %d points\n',int_method,numel(p_th));
+        if et > 1
+          fprintf('    Elapsed time %.2f seconds\n',et);
+        end
+      end
+      % Convert densities from the log-space and normalize them
       p_th = exp(p_th-min(p_th));
       p_th = p_th/sum(p_th);
       
