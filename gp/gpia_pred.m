@@ -165,7 +165,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpia_pred(gp_array, x, y, varargin)
     else
       [Efts(:,i1), Varfts(:,i1)]=gp_pred(Gp,x,y,xt,options);
     end
-    if ~isempty(yt)
+    if ~isempty(yt) && nargout > 2
       lpyts(:,i1) = lpytt;
     end
     if ~isempty(Eytts)
