@@ -110,8 +110,13 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Ef = Ef + repmat(RB,1,nsamp);
               pcov = pcov + RAR;
           end
-          predcov = chol(pcov,'lower');
-          sampft = Ef + predcov*randn(size(Ef));
+          [predcov,notpositivedefinite] = chol(pcov,'lower');
+          if notpositivedefinite
+            warning('GP_RND: Latent predictive covariance is not positive definite')
+            sampft = Ef + NaN;
+          else
+            sampft = Ef + predcov*randn(size(Ef));
+          end
           if nargout > 1
             pcov = C2-v'*v;
             if  isfield(gp,'meanf')
