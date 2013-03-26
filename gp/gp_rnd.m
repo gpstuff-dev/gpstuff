@@ -87,15 +87,16 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Ef = Ef + repmat(RB,1,nsamp);
               pcov = pcov + RAR;
           end
+          rr=randn(size(Ef));
           predcov = chol(pcov,'lower');
-          sampft = Ef + predcov*randn(size(Ef));
+          sampft = Ef + predcov*rr;
           if nargout > 1
             pcov = C2 - K'*ldlsolve(LD,K);
             if  isfield(gp,'meanf')
                 pcov = pcov + RAR;
             end
             predcov = chol(pcov,'lower');
-            sampyt = Ef + predcov*randn(size(Ef));
+            sampyt = Ef + predcov*rr;
           end        
         else
           L = chol(C,'lower');
@@ -110,12 +111,17 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Ef = Ef + repmat(RB,1,nsamp);
               pcov = pcov + RAR;
           end
+          rr=randn(size(Ef));
           [predcov,notpositivedefinite] = chol(pcov,'lower');
           if notpositivedefinite
-            warning('GP_RND: Latent predictive covariance is not positive definite')
-            sampft = Ef + NaN;
+            % use eigendecomposition
+            [V,D] = eig(pcov);
+            D=diag(D)';
+            D(D<0)=0;
+            predcov=bsxfun(@times,V,sqrt(D));
+            sampft = Ef + predcov*rr;
           else
-            sampft = Ef + predcov*randn(size(Ef));
+            sampft = Ef + predcov*rr;
           end
           if nargout > 1
             pcov = C2-v'*v;
@@ -123,7 +129,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
                 pcov = pcov + RAR;
             end
             predcov = chol(pcov,'lower');
-            sampyt = Ef + predcov*randn(size(Ef));
+            sampyt = Ef + predcov*rr;
           end
         end   
         
