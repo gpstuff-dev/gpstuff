@@ -172,7 +172,15 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   pft = zeros(N*size(Eft_grid,1), 1);
   ft = [];
   for j = 1 : size(Eft_grid,1)
-    ftt = repmat(Eft_grid(j,:),N,1)+(chol(Covft_grid(:,:,j))'*randn(size(Covft_grid(:,:,j),1),N))';
+    [predcov,notpositivedefinite] = chol(Covft_grid(:,:,j),'lower');
+    if notpositivedefinite
+      % use eigendecomposition
+      [V,D] = eig(Covft_grid(:,:,j));
+      D=diag(D)';
+      D(D<0)=0;
+      predcov=bsxfun(@times,V,sqrt(D));
+    end
+    ftt = repmat(Eft_grid(j,:),N,1)+(predcov*randn(size(Covft_grid(:,:,j),1),N))';
     ft = [ft; ftt];
   end
   
