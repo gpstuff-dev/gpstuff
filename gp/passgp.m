@@ -21,6 +21,9 @@ function [gp, indA] = passgp(gp, x, y, varargin)
 %      fixed - Whether we use fixed size of active set or not. Default
 %               'off'
 %      display - Whether to display additional info or not. Default 'off'
+%      inf_method - Whether to optimize hyperparameters to MAP values
+%                   ('MAP', default), use MCMC ('MCMC') or use integration
+%                    approximation ('IA').
 %      optimn - Whether to optimize always or only after every nth
 %               deletion/addition to active set. Default 1 (every time). If
 %               given e.g. value 3, optimizes after every 3rd
@@ -51,8 +54,9 @@ function [gp, indA] = passgp(gp, x, y, varargin)
   ip.addParamValue('pdel', 0.99, @(x) isscalar(x) && x > 0)
   ip.addParamValue('pexc', 0.1, @(x) isscalar(x) && x > 0)
   ip.addParamValue('opt', [], @(x) isstruct(x))
+  ip.addParamValue('inf_method', 'MAP', @(x) ismember(x, {'MAP', 'MCMC', 'IA'}));
   ip.addParamValue('fixed', 'off', @(x) ismember(x,{'on','off'}))
-  ip.addParamValue('display', 'off', @(x) ismember(x,{'on','off'}))
+  ip.addParamValue('display', 'off', @(x) ismember(x,{'on','off','iter'}))
   ip.addParamValue('optimn', 1', @(x) isscalar(x) && x > 0 && rem(10*x,2)==0)
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
@@ -67,9 +71,12 @@ function [gp, indA] = passgp(gp, x, y, varargin)
   pexc=ip.Results.pexc;
   display=ip.Results.display;
   optimn=ip.Results.optimn;
+  inf_method=ip.Results.inf_method;
   
   if isequal(display,'on')
     display=1;
+  elseif isequal(display, 'iter')
+    display=2;
   else
     display=0;
   end
@@ -86,30 +93,45 @@ function [gp, indA] = passgp(gp, x, y, varargin)
     error('nsub must be lower than size(x,1) - ninit');
   end
   
-  [n,nin]=size(x);
+  [n,nin]=size(x); 
+  iter=0;
   
-  % Initial active set
-  
+  % Initial active set  
   indA=sort(randperm(n, ninit),'ascend');
+  
+  switch inf_method
+    case 'MAP'
+      % Optimize hyperparameters
+      gp = gp_optim(gp, x(indA,:), y(indA), 'opt', opt, options);
+    case 'MCMC'
+      gpo=gp;
+      optimn=1;
+      % Sample hyperparameters
+      gp = gp_mc(gpo, x(indA,:), y(indA), opt);
+      gp=thin(gp, round(size(gp.etr,1)/3));
+      gpo=gp_unpak(gpo, mean(gp_pak(gp)));
+    case 'IA'
+      gpo=gp;
+      % Integration approximation for hyperparameters
+      [gp,tmp,th] = gp_ia(gpo, x(indA,:), y(indA), opt);
+      gpo=gp_unpak(gpo,th(1,:));
+  end
+  
   % Inclusions/deletions per iteration for fixed pass-gp
   nexc=floor(ninit*pexc);
-  iter=optimn-1;
   for i=1:npass
     if display
       fprintf('Pass %d / %d.\n', i, npass)
     end
     [tmp,indSub]=cvit(n, nsub, floor(10*rand(1)));
     for j=1:nsub      
+      if display==2
+        fprintf('Subset iteration %d / %d.\n', j, nsub);
+      end
       iter=iter+1;
       inds=indSub{j};
       % Remove indices that are already in active set
-      inds(ismember(inds,indA))=[];
-      
-      if iter==optimn
-        % Optimize hyperparameters
-        gp = gp_optim(gp, x(indA,:), y(indA), 'opt', opt, options);
-        iter=0;
-      end
+      inds(ismember(inds,indA))=[];     
       
       % Calculate weights for active set inputs (loo predictive densities)
       [tmp,tmp,lpyt]=gp_loopred(gp,x(indA,:),y(indA), options);
@@ -117,9 +139,15 @@ function [gp, indA] = passgp(gp, x, y, varargin)
       % Remove active set indices according to removal rule      
       if ~fixed
         indA(find(exp(lpyt)>pdel))=[];
+        if isequal(inf_method, 'MCMC')
+          gp.latentValues(:,find(exp(lpyt)>pdel)) = [];
+        end
       else
         [tmp,ii]=sort(lpyt, 'descend');
         indA(ii(1:nexc))=[];
+        if isequal(inf_method, 'MCMC')
+          gp.latentValues(:,ii(1:nexc))=[];
+        end
       end
       % Calculate weights for inputs not in active set (predictive density)
       [tmp,tmp,lpyt]=gp_pred(gp, x(indA,:), y(indA), x(inds,:), 'yt', y(inds), options);
@@ -132,7 +160,24 @@ function [gp, indA] = passgp(gp, x, y, varargin)
         ind=ii(1:nexc);
       end
       indA=[indA inds(ind)];
-        
+            
+      if iter==optimn
+        switch inf_method
+          case 'MAP'
+            % Optimize hyperparameters
+            gp = gp_optim(gp, x(indA,:), y(indA), 'opt', opt, options);
+          case 'MCMC'
+            % Sample hyperparameters
+            gp = gp_mc(gpo, x(indA,:), y(indA), opt);
+            gp=thin(gp, round(size(gp.etr,1)/3));
+            gpo=gp_unpak(gpo, mean(gp_pak(gp)));
+          case 'IA'
+            % Integration approximation for hyperparameters
+            [gp,tmp,th] = gp_ia(gpo, x(indA,:), y(indA), opt);
+            gpo=gp_unpak(gpo,th(1,:));
+        end
+        iter=0;
+      end
     end
     
       
