@@ -22,7 +22,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 %    GP_SET, GP_G, GPEP_E, GPEP_PRED
 
 % Copyright (c) 2007-2010  Jarno Vanhatalo
-% Copyright (c) 2010       Heikki Peura, Aki Vehtari
+% Copyright (c) 2010       Heikki Peura
+% Copyright (c) 2010,2013  Aki Vehtari
   
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -39,7 +40,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
   ip.parse(w, gp, x, y, varargin{:});
   z=ip.Results.z;
   method = ip.Results.method;
-
   
   gp=gp_unpak(gp, w);       % unpak the parameters
   ncf = length(gp.cf);
@@ -48,6 +48,9 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
   g = [];
   gdata = [];
   gprior = [];
+  gdata_inducing = [];
+  gprior_inducing = [];
+  sigm2_i=[];
   
   if isfield(gp,'savememory') && gp.savememory
     savememory=1;
@@ -97,7 +100,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           invC = A;
 
         else                         
-          % We might end up here if the likelihood is not log concace
+          % We might end up here if the likelihood is not log concave
           % For example Student-t likelihood.
           % NOTE! This does not work reliably yet
           S = diag(tautilde);
@@ -175,44 +178,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           end
         end
       end
-      
-      % =================================================================
-      % Gradient with respect to likelihood function parameters
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-%         [Ef, Varf] = gpep_pred(gp, x, y, x, 'z', z);
-        
-%         sigm2_i = (Varf.^-1 - tautilde).^-1;
-%         mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          if isempty(eta)
-            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-          else
-            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
-          end
-        end
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
-      end
-      
+
     case {'FIC'}
       % ============================================================
       % FIC
       % ============================================================
-      g_ind = zeros(1,numel(gp.X_u));
-      gdata_ind = zeros(1,numel(gp.X_u));
-      gprior_ind = zeros(1,numel(gp.X_u));
-      
       u = gp.X_u;
       DKuu_u = 0;
       DKuf_u = 0;
@@ -341,35 +311,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
         
       end
-      % =================================================================
-      % Gradient with respect to a likelihood function parameters        
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-%         [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-%         sigm2_i = (Varf.^-1 - tautilde).^-1;
-%         mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          if ~isequal(gp.latent_opt.optim_method, 'robust-EP')
-            gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-          else
-            gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
-          end
-        end
-
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
-      end
-      
       
       % =================================================================
       % Gradient with respect to inducing inputs
@@ -378,18 +319,15 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
           m = size(gp.X_u,2);
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
-          end
           
-          gdata(st+1:st+length(gp.X_u(:))) = 0;
+          gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
           i1 = st+1;
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
+              gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -419,10 +357,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   
                   KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                   
-                  gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                  gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
                     2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                  gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                  gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
                     sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 end
               end
@@ -437,16 +375,16 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   i1 = i1+1;
                   Dd = -2.*sum(DKuf{i2}.*iKuuKuf)' - sum((-iKuuKuf'*DKuu{i2})'.*iKuuKuf)';
                   DS = Dd.*tautilde;
-                  gdata(i1) = -0.5.*sum(DS./S);
+                  gdata_inducing(i1) = -0.5.*sum(DS./S);
                   DTtilde = DKuu{i2} + DKuf{i2}*bsxfun(@times, WiS, K_fu) - K_fu'*bsxfun(@times, WiS.*DS./S, K_fu) + ...
                     K_fu'*bsxfun(@times, WiS, DKuf{i2}');
-                  gdata(i1) = gdata(i1) - 0.5.*sum(sum(inv(L).*(L\DTtilde)));
-                  gdata(i1) = gdata(i1) - 0.5.*sum(sum(-La^-1.*(La\DKuu{i2})));
+                  gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*sum(sum(inv(L).*(L\DTtilde)));
+                  gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*sum(sum(-La^-1.*(La\DKuu{i2})));
                   iSKfuiL = bsxfun(@times, 1./S, K_fu/L');
                   nud=(nutilde'*iSKfuiL)/L;
                   nuDpcovnu = sum(nutilde.^2.*(-DS.*b./S.^2 + Dd./S)) + 2*(nutilde./S)'*(DKuf{i2}'*nud') - 2*((nutilde.*DS./S)'*iSKfuiL)*(iSKfuiL'*nutilde) - nud*DTtilde*nud';
-                  gdata(i1) = gdata(i1) + 0.5*nuDpcovnu;
-                  gdata(i1) = -gdata(i1);
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5*nuDpcovnu;
+                  gdata_inducing(i1) = -gdata_inducing(i1);
                 end
               end
             end
@@ -454,16 +392,10 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
         end
       end
       
-
-      
     case {'PIC' 'PIC_BLOCK'}
       % ============================================================
       % PIC
       % ============================================================
-      g_ind = zeros(1,numel(gp.X_u));
-      gdata_ind = zeros(1,numel(gp.X_u));
-      gprior_ind = zeros(1,numel(gp.X_u));
-      
       u = gp.X_u;
       ind = gp.tr_index;
       DKuu_u = 0;
@@ -551,34 +483,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       end
       
       % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', gp.tr_index, 'z', z);
-        
-        sigm2_i = (Varf.^-1 - tautilde).^-1;
-        mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-        end
-
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
-      end
-      
-      % =================================================================
       % Gradient with respect to inducing inputs
       
       if ~isempty(strfind(gp.infer_params, 'inducing'))
@@ -586,18 +490,18 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           m = size(gp.X_u,2);
           
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
+          if ~isempty(gprior_inducing)
+            st = length(gprior_inducing);
           end
-          gdata(st+1:st+length(gp.X_u(:))) = 0;
+          gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
           
           i1 = st+1;
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
+              gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -625,11 +529,11 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 i1 = i1+1;
                 KfuiKuuDKuu_u = iKuuKuf'*DKuu{i2};
               
-                gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
+                gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuDKuu_u))*(iKuuKuf*b') + 2.*sum(sum(L'.*((L'*DKuf{i2}')*iKuuKuf))) - ...
                                             sum(sum(L'.*((L'*KfuiKuuDKuu_u)*iKuuKuf))));
               
                 for kk=1:length(ind)
-                  gdata(i1) = gdata(i1) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(2.*b(ind{kk})*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})*b(ind{kk})'- ...
                                               b(ind{kk})*KfuiKuuDKuu_u(ind{kk},:)*iKuuKuf(:,ind{kk})*b(ind{kk})' ...
                                               + 2.*sum(sum(L(ind{kk},:)'.*(L(ind{kk},:)'*DKuf{i2}(:,ind{kk})'*iKuuKuf(:,ind{kk})))) - ...
                                               sum(sum(L(ind{kk},:)'.*((L(ind{kk},:)'*KfuiKuuDKuu_u(ind{kk},:))*iKuuKuf(:,ind{kk})))));
@@ -645,10 +549,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       % ============================================================
       % CS+FIC
       % ============================================================
-      g_ind = zeros(1,numel(gp.X_u));
-      gdata_ind = zeros(1,numel(gp.X_u));
-      gprior_ind = zeros(1,numel(gp.X_u));
-
       u = gp.X_u;
       DKuu_u = 0;
       DKuf_u = 0;
@@ -779,49 +679,24 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       end         
       
       % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-        sigm2_i = (Varf.^-1 - tautilde).^-1;
-        mu_i = sigm2_i.*(Ef./Varf - nutilde);
-        
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
-        end
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
-      end
-      
-      % =================================================================
       % Gradient with respect to inducing inputs
       
       if ~isempty(strfind(gp.infer_params, 'inducing'))
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
           m = size(gp.X_u,2);
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
+          if ~isempty(gprior_inducing)
+            st = length(gprior_inducing);
           end
           
-          gdata(st+1:st+length(gp.X_u(:))) = 0;
+          gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
           i1 = st+1;
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
+              gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -850,15 +725,15 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                   i1 = i1 + 1;
                   KfuiKuuKuu = iKuuKuf'*DKuu{i2};
                 
-                  gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
+                  gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b') + ...
                                               2.*sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))) - sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
-                  gdata(i1) = gdata(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
-                  gdata(i1) = gdata(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(2.*b.*sum(DKuf{i2}'.*iKuuKuf',2)'*b'- b.*sum(KfuiKuuKuu.*iKuuKuf',2)'*b');
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(2.*sum(LL.*sum(DKuf{i2}'.*iKuuKuf',2)) - ...
                                               sum(LL.*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 
-                  gdata(i1) = gdata(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
-                  gdata(i1) = gdata(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
-                  gprior(i1) = gprior_ind(i2);
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*sum(sum(ldlsolve(LD,(2.*DKuf{i2}') - KfuiKuuKuu).*iKuuKuf',2));
+                  gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*( idiagLa'*(sum((2.*DKuf{i2}' - KfuiKuuKuu).*iKuuKuf',2)) ); % corrected
+                  gprior_inducing(i1) = gprior_inducing_ind(i2);
                 end
               end
             end
@@ -870,10 +745,6 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       % ============================================================
       % DTC/SOR
       % ============================================================        
-      g_ind = zeros(1,numel(gp.X_u));
-      gdata_ind = zeros(1,numel(gp.X_u));
-      gprior_ind = zeros(1,numel(gp.X_u));
-      
       u = gp.X_u;
       DKuu_u = 0;
       DKuf_u = 0;
@@ -945,49 +816,23 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       end
       
       % =================================================================
-      % Gradient with respect to likelihood function parameters
-      
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, 'tstind', 1:n, 'z', z);
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          sigm2_i = Varf(k1) ;
-          mu_i = Ef(k1);
-          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i, mu_i, z);
-        end
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
-        else
-          g_logPrior = zeros(size(gdata_lik));
-        end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
-      end
-      
-      
-      % =================================================================
       % Gradient with respect to inducing inputs
-      
       if ~isempty(strfind(gp.infer_params, 'inducing'))
         if isfield(gp.p, 'X_u') && ~isempty(gp.p.X_u)
           m = size(gp.X_u,2);
           st=0;
-          if ~isempty(gprior)
-            st = length(gprior);
+          if ~isempty(gprior_inducing)
+            st = length(gprior_inducing);
           end
           
-          gdata(st+1:st+length(gp.X_u(:))) = 0;
+          gdata_inducing(st+1:st+length(gp.X_u(:))) = 0;
           i1 = st+1;
           for i = 1:size(gp.X_u,1)
             if iscell(gp.p.X_u) % Own prior for each inducing input
               pr = gp.p.X_u{i};
-              gprior(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
+              gprior_inducing(i1:i1+m) = pr.fh.lpg(gp.X_u(i,:), pr);
             else % One prior for all inducing inputs
-              gprior(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
+              gprior_inducing(i1:i1+m-1) = gp.p.X_u.fh.lpg(gp.X_u(i,:), gp.p.X_u);
             end
             i1 = i1 + m;
           end
@@ -1015,12 +860,12 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 i1 = i1+1;
                 
                 KfuiKuuKuu = iKuuKuf'*DKuu{i2};
-                gdata(i1) = gdata(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
-                gdata(i1) = gdata(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))))...
+                gdata_inducing(i1) = gdata_inducing(i1) - 0.5.*((2*b*DKuf{i2}'-(b*KfuiKuuKuu))*(iKuuKuf*b'));
+                gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(2.*(sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2))-sum(sum(L'.*(L'*DKuf{i2}'*iKuuKuf))))...
                                             - sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2))+ sum(sum(L'.*((L'*KfuiKuuKuu)*iKuuKuf))));
 
                 if strcmp(gp.type, 'VAR')
-                  gdata(i1) = gdata(i1) + 0.5.*(0-2.*sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2)) + ...
+                  gdata_inducing(i1) = gdata_inducing(i1) + 0.5.*(0-2.*sum(iLav'*sum(DKuf{i2}'.*iKuuKuf',2)) + ...
                                               sum(iLav'*sum(KfuiKuuKuu.*iKuuKuf',2)));
                 end
               end
@@ -1068,91 +913,49 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       %gdata=numgrad_test(gp_pak(gp), @gpep_e, gp, x, y);
       gprior=0;
 
-    case 'SSGP'        
-      % ============================================================
-      % SSGP
-      % ============================================================        
-      
-      [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(w, gp, x, y, 'z', z);
+  end
 
-      Phi = gp_trcov(gp, x);         % f x u
-      m = size(Phi,2);
+  if ~strcmp(gp.type,'VAR')
+    % =================================================================
+    % Gradient with respect to likelihood function parameters
+    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
 
-      SPhi = repmat(S,1,m).*Phi;                        
-      % =================================================================
-      % Evaluate the gradients from covariance functions
-      for i=1:ncf            
-        i1=0;
-        if ~isempty(gprior)
-          i1 = length(gprior);
-        end
-        
-        gpcf = gp.cf{i};
-        gpcf.GPtype = gp.type;
-        % Covariance function parameters
-        %--------------------------------------
-        if ~isempty(strfind(gp.infer_params, 'covariance'))
-          % Get the gradients of the covariance matrices 
-          % and gprior from gpcf_* structures
-          DKff = gpcf.fh.cfg(gpcf, x);
-          gprior = -gpcf.fh.lpg(gpcf);
-          i1 = i1+1;
-          i2 = 1;
-          
-          % Evaluate the gradient with respect to magnSigma
-          SDPhi = repmat(S,1,m).*DKff{i2};                
-          
-          gdata(i1) = 0.5*( sum(sum(SDPhi.*Phi,2)) + sum(sum(SPhi.*DKff{i2},2)) );
-          gdata(i1) = gdata(i1) - 0.5*( sum(sum(L'.*(L'*DKff{i2}*Phi' + L'*Phi*DKff{i2}'),1)) );
-          gdata(i1) = gdata(i1) - 0.5*(b*DKff{i2}*Phi' + b*Phi*DKff{i2}')*b';
-          
-          
-          if isfield(gpcf.p.lengthScale, 'p') && ~isempty(gpcf.p.lengthScale.p)
-            i1 = i1+1;
-            if any(strcmp(fieldnames(gpcf.p.lengthScale.p),'nu'))
-              i1 = i1+1;
-            end
-          end
-
-          % Evaluate the gradient with respect to lengthScale
-          for i2 = 2:length(DKff)
-            i1 = i1+1;
-            SDPhi = repmat(S,1,m).*DKff{i2};
-            
-            gdata(i1) = 0.5*( sum(sum(SDPhi.*Phi,2)) + sum(sum(SPhi.*DKff{i2},2)) );
-            gdata(i1) = gdata(i1) - 0.5*( sum(sum(L'.*(L'*DKff{i2}*Phi' + L'*Phi*DKff{i2}'),1)) );
-            gdata(i1) = gdata(i1) - 0.5*(b*DKff{i2}*Phi' + b*Phi*DKff{i2}')*b';
-          end
-        end
+      if isempty(sigm2_i)
+        % mu_i and sigm2_i were not computed earlier
+         [Ef, Varf] = gpep_pred(gp, x, y, 'z', z);
+         sigm2_i = (Varf.^-1 - tautilde).^-1;
+         mu_i = sigm2_i.*(Ef./Varf - nutilde);
       end
-
-      % likelihood parameters
-      %--------------------------------------
-      if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
-        [Ef, Varf] = gpep_pred(gp, x, y, x, param);
-        gdata_lik = 0;
-        lik = gp.lik;
-        for k1 = 1:length(y)
-          sigm2_i = Varf(k1) ;
-          mu_i = Ef(k1);
-          gdata_lik = gdata_lik + lik.fh.siteDeriv(lik, y, k1, sigm2_i, mu_i, z);
-        end
-        % evaluate prior contribution for the gradient
-        if isfield(gp.lik, 'p')
-          g_logPrior = -lik.fh.lpg(lik);
+      
+      gdata_lik = 0;
+      lik = gp.lik;
+      for k1 = 1:length(y)
+        if isempty(eta)
+          gdata_lik = gdata_lik - lik.fh.siteDeriv(lik, y, k1, sigm2_i(k1), mu_i(k1), z);
         else
-          g_logPrior = zeros(size(gdata_lik));
+          gdata_lik = gdata_lik - lik.fh.siteDeriv2(lik, y, k1, sigm2_i(k1), mu_i(k1), z, eta(k1), Z_i(k1));
         end
-        % set the gradients into vectors that will be returned
-        gdata = [gdata gdata_lik];
-        gprior = [gprior g_logPrior];
-        i1 = length(gdata);
       end
       
+      % evaluate prior contribution for the gradient
+      if isfield(gp.lik, 'p')
+        gprior_lik = -lik.fh.lpg(lik);
+      else
+        gprior_lik = zeros(size(gdata_lik));
+      end
       
+      % set the gradients into vectors that will be returned
+      gdata = [gdata gdata_lik];
+      gprior = [gprior gprior_lik];
+    end
+    
   end
   
+  % add gradient with respect to inducing inputs (computed in gp.type sepcific way)
+  gdata = [gdata gdata_inducing];
+  gprior = [gprior gprior_inducing];
+  
+  % total gradient
   g = gdata + gprior;
   
 end
-
