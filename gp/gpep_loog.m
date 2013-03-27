@@ -47,7 +47,8 @@ n = size(x,1);
 
 gloo = [];
 
-[tmp, tmp, tmp, tautilde, nutilde, tmp, tmp, tmp, muvec_i, sigma2vec_i, lnZ_i] = gpep_e(w, gp, x, y, 'z', z);
+[tmp, tmp, tmp, p] = gpep_e(w, gp, x, y, 'z', z);
+[tautilde, nutilde,muvec_i, sigma2vec_i] = deal(p.tautilde, p.nutilde, p.muvec_i, p.sigm2vec_i);
 % [m, C] = gpep_jpred(gp, x, y, x);
 zi = muvec_i./sqrt(1+sigma2vec_i);
 Nzi = 1./sqrt(2*pi).*exp(-zi.^2/2);

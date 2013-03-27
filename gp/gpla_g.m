@@ -70,7 +70,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
         K=K+H'*B_m*H;
       end
       
-      [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L, a, W, p] = deal(p.f, p.L, p.a, p.La2, p.p);
       if isnan(e)
         g=NaN; gdata=NaN; gprior=NaN;
         return;
@@ -214,7 +216,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       end
       
       % Get help parameters
-      [e, edata, eprior, f, L, a, E, M] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, E, M] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L, a, E, M] = deal(p.f, p.L, p.a, p.La2, p.p);
       if isnan(e)
         return
       end
@@ -1060,7 +1064,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       u = gp.X_u;
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, a, La1] = deal(p.f, p.a, p.La2);
 
       K_fu = gp_cov(gp, x, u);         % f x u
       K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -1272,7 +1278,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       m = size(u,1);
       ind = gp.tr_index;
 
-      [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, a, La1] = deal(p.f, p.a, p.La2);
 
       K_fu = gp_cov(gp, x, u);         % f x u
       K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -1524,7 +1532,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       u = gp.X_u;
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La1] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L, a, La1] = deal(p.f, p.L, p.a, p.La2);
 
       cf_orig = gp.cf;
 
@@ -1819,7 +1829,9 @@ function [g, gdata, gprior] = gpla_g(w, gp, x, y, varargin)
       u = gp.X_u;
       m = size(u,1);
       
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L, a, La2] = deal(p.f, p.L, p.a, p.La2);
       
       K_fu = gp_cov(gp, x, u);         % f x u
       K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu

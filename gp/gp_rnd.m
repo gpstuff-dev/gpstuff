@@ -550,7 +550,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
 
         switch gp.latent_method
           case 'Laplace'
-            [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, param] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, L] = deal(param.f, param.L);
             
             W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -581,7 +583,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             end
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
             
             [K, C]=gp_trcov(gp,x);
             K = gp_trcov(gp, xt, predcf);
@@ -644,7 +648,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
             m = size(u,1);
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, L, La2] = deal(p.f, p.L, p.La2);
 
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             ntest=size(xt,1);
@@ -706,7 +712,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             sampft = Ef + predcov*randn(size(Ef));
             
           case 'EP'
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [L, La, b] = deal(p.L, p.La2, p.b);
 
             % Here tstind = 1 if the prediction is made for the training set 
             if nargin > 6
@@ -786,7 +794,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         switch gp.latent_method
           case 'Laplace'
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, La2] = deal(p.f, p.La2);
             
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
             
@@ -841,7 +851,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [L, La, b] = deal(p.L, p.La2, p.b);
             
             p = b';
 
@@ -942,7 +954,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
           case 'Laplace'
             
             
-            [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+            [f, La2] = deal(p.f, p.La2);
             
 
             deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
@@ -1017,7 +1031,9 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
           case 'EP'
             
-            [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+            [L, La, b] = deal(p.L, p.La2, p.b);
 
             p = b';
             ntest=size(xt,1);

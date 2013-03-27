@@ -451,6 +451,9 @@ function gp = gp_set(varargin)
           ipep.addParamValue('up_mode', 'ep', @(x) ischar(x) && ismember(x,{'ep' 'grad'}))
           % step size limit (1 suitable for ep updates)
           ipep.addParamValue('df_lim', 1, @(x) isreal(x) && isfinite(x))
+          % whether to do one inner loop-iteration per site ('on') or until
+          % convergence ('off') in nester ep
+          ipep.addParamValue('incremental', 'on', @(x) ischar(x) && ismember(x,{'off', 'on'}));    % default on                    
           ipep.parse(latent_opt);
           optim_method = ipep.Results.optim_method;
           if ~isempty(optim_method)
@@ -522,6 +525,14 @@ function gp = gp_set(varargin)
               gp.latent_opt.df_lim = ipep.Results.df_lim;
             end
             if init || ~ismember('display',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'display')
+              gp.latent_opt.display = ipep.Results.display;
+            end
+          end
+          if isfield(gp.lik, 'nondiagW')
+            if init || ~ismember('display',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'display')
+              gp.latent_opt.display = ipep.Results.display;
+            end
+            if init || ~ismember('incremental',ipep.UsingDefaults) || ~isfield(gp.latent_opt,'incremental')
               gp.latent_opt.display = ipep.Results.display;
             end
           end

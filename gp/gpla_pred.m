@@ -140,7 +140,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       % ============================================================
       if ~isfield(gp.lik, 'nondiagW')
         % Likelihoods with diagonal Hessian
-        [e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        %[e, edata, eprior, f, L, a, W, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, L, W, p] = deal(p.f, p.L, p.La2, p.p);
         
         ntest=size(xt,1);
         % notice the order xt,x to avoid transpose later
@@ -197,7 +199,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         % Likelihoods with non-diagonal Hessian
         
         [tn,nout]=size(y);
-        [e, edata, eprior, f, L, a, E, M] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        %[e, edata, eprior, f, L, a, E, M] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+        [f, L, a, E, M] = deal(p.f, p.L, p.a, p.La2, p.p);
         
         switch gp.lik.type
           
@@ -570,7 +574,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
@@ -637,7 +643,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       ntest = size(xt,1);
       m = size(u,1);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
 
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
 
@@ -702,7 +710,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       u = gp.X_u;
       m = length(u);
 
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, La2] = deal(p.f, p.La2);
       
       % Indexes to all non-compact support and compact support covariances.
       cf1 = [];
@@ -856,7 +866,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       
       m = size(u,1);
       
-      [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+      [f, L] = deal(p.f, p.L, p.a, p.La2);
       
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
