@@ -114,10 +114,10 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   if isempty(xt)
     xt=x;
     if isempty(tstind)
-      if iscell(gp)
-        gptype=gp{1}.type;
+      if iscell(gp_array)
+        gptype=gp_array{1}.type;
       else
-        gptype=gp.type;
+        gptype=gp_array.type;
       end
       switch gptype
         case {'FULL' 'VAR' 'DTC' 'SOR'}
@@ -126,9 +126,9 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
           tstind = 1:size(x,1);
         case 'PIC'
           if iscell(gp)
-            tstind = gp{1}.tr_index;
+            tstind = gp_array{1}.tr_index;
           else
-            tstind = gp.tr_index;
+            tstind = gp_array.tr_index;
           end
       end
     end
@@ -142,11 +142,11 @@ function [Eft, Covft, ljpyt, Eyt, Covyt] = gpia_jpred(gp_array, x, y, varargin)
   
   % pass these forward
   options=struct();
-  if ~isempty(ip.Results.yt);options.yt=ip.Results.yt;end
-  if ~isempty(ip.Results.z);options.z=ip.Results.z;end
-  if ~isempty(ip.Results.zt);options.zt=ip.Results.zt;end
-  if ~isempty(ip.Results.predcf);options.predcf=ip.Results.predcf;end
-  if ~isempty(ip.Results.tstind);options.tstind=ip.Results.tstind;end
+  if ~isempty(yt);options.yt=yt;end
+  if ~isempty(z);options.z=z;end
+  if ~isempty(zt);options.zt=zt;end
+  if ~isempty(predcf);options.predcf=predcf;end
+  if ~isempty(tstind);options.tstind=tstind;end
   
   if nargout > 2 && isempty(yt)
     pyt = NaN;
