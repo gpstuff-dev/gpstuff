@@ -119,10 +119,8 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             D=diag(D)';
             D(D<0)=0;
             predcov=bsxfun(@times,V,sqrt(D));
-            sampft = Ef + predcov*rr;
-          else
-            sampft = Ef + predcov*rr;
           end
+          sampft = Ef + predcov*rr;
           if nargout > 1
             pcov = C2-v'*v;
             if  isfield(gp,'meanf')
