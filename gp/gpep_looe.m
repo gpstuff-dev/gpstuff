@@ -52,5 +52,6 @@ ip.parse(w, gp, x, y, varargin{:});
 z=ip.Results.z;
 
 gp=gp_unpak(gp, w);
-[tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,lnZ_i] = gpep_e(w, gp, x, y, 'z', z);
+[tmp,tmp,tmp,param] = gpep_e(w, gp, x, y, 'z', z);
+lnZ_i = param.logZ_i;
 eloo=-sum(lnZ_i);

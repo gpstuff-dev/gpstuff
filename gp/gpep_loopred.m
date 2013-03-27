@@ -48,8 +48,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_loopred(gp, x, y, varargin)
   ip.parse(gp, x, y, varargin{:});
   z=ip.Results.z;
 
-  [tmp,tmp,tmp,tmp,tmp,tmp,tmp,tmp,muvec_i,sigm2vec_i,lnZ_i] = ...
-      gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+  [tmp,tmp,tmp,param] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+  [muvec_i,sigm2vec_i,lnZ_i] = deal(param.muvec_i, param.sigm2vec_i, param.logZ_i);
 
   Eft=muvec_i;
   Varft=sigm2vec_i;

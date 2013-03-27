@@ -124,7 +124,9 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
     % FULL
     % ============================================================
     case 'FULL'        % Predictions with FULL GP model
-      [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);  
+      %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);  
+      [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);  
+      [tautilde, nutilde, L] = deal(p.tautilde, p.nutilde, p.L);
       
       [K, C]=gp_trcov(gp,x);
       [kstarstar, C_nn] = gp_trcov(gp, xt, predcf);
@@ -192,7 +194,9 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
       % FIC
       % ============================================================        
     case 'FIC'        % Predictions with FIC sparse approximation for GP
-      [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [L, La, b] = deal(p.L, p.La2, p.b);
 
       % Here tstind = 1 if the prediction is made for the training set 
       if nargin > 6
@@ -253,7 +257,10 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
                                     % Calculate some help matrices  
       u = gp.X_u;
       ind = gp.tr_index;
-      [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [L, La, b] = deal(p.L, p.La2, p.b);
+        
       
       K_fu = gp_cov(gp, x, u, predcf);           % f x u
       K_nu = gp_cov(gp, xt, u, predcf);          % n x u   
@@ -319,7 +326,9 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
       n = size(x,1);
       n2 = size(xt,1);
       
-      [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [L, La, b] = deal(p.L, p.La2, p.b);
 
       % Indexes to all non-compact support and compact support covariances.
       cf1 = [];
@@ -421,7 +430,9 @@ function [Eft, Covft, ljpyt] = gpep_jpred(gp, x, y, varargin)
       % DTC/(VAR)
       % ============================================================
     case {'DTC' 'VAR' 'SOR'}        % Predictions with DTC or variational sparse approximation for GP
-      [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+      [L, La, b] = deal(p.L, p.La2, p.b);
 
       % Here tstind = 1 if the prediction is made for the training set 
       if nargin > 6

@@ -217,7 +217,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
           case 'FULL'
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, tautilde, nutilde, L] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [tautilde, L] = deal(p.tautilde, p.L);
                 
                 % The prior variance
                 K=gp_trcov(gp,x);
@@ -239,7 +241,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
                 end
                 
               case 'Laplace'
-                [e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, f, L] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [f, L] = deal(p.f, p.L);
                 
                 W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 
@@ -277,7 +281,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
             
             switch gp.latent_method
               case 'EP'
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [L, La] = deal(p.L, p.La2);
 
                 k = gp_trvar(gp,x);
                 
@@ -291,7 +297,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
 % $$$                 p_eff = trace(C*K);
                 
               case 'Laplace'
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [f, La2] = deal(p.f, p.La2);
                 
                 W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 La = W.*Lav;
@@ -335,7 +343,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
             switch gp.latent_method
               case 'EP'
             
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [L, La] = deal(p.L, p.La2);
         
                 p_eff = - sum(sum(L.*((L'*B')*B)',2));
 
@@ -347,7 +357,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
                 end
                 
               case 'Laplace'               
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [f, La2] = deal(p.f, p.La2);
                 
                 
                 iKuuKuf = K_uu\K_fu';
@@ -424,7 +436,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
             switch gp.latent_method
               case 'EP'
 
-                [e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
+                [L, La] = deal(p.L, p.La2);
             
                 k = gp_trvar(gp,x,cf1);
                 Lav = k - sum(B.^2)';
@@ -442,7 +456,9 @@ function p_eff = gp_peff(gp, x, y, varargin);
 % $$$                 p_eff = trace(C*K);
                 
               case 'Laplace'
-                [e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
+                [f, La2] = deal(p.f, p.La2);
                                 
                 W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
                 sqrtW = sparse(1:tn,1:tn,sqrt(W),tn,tn);
