@@ -3,7 +3,7 @@ function waic = gp_waic(gp, x, y, varargin)
 % 
 %  Description
 %    WAIC = GP_WAIC(GP, X, Y) evaluates WAIC defined by
-%    Watanabe(2010) given a Gaussian process model GP, training
+%    Watanabe (2010) given a Gaussian process model GP, training
 %    inputs X and training outputs Y. Instead of Bayes loss we
 %    compute the Bayes utility which is just the negative of loss
 %    used by Watanabe.
@@ -30,11 +30,12 @@ function waic = gp_waic(gp, x, y, varargin)
 %    from GP_MC or an array of GPs from GP_IA.
 %
 %   OPTIONS is optional parameter-value pair
-%      method - Method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
+%      method - method to evaluate waic, 'V' = Variance method, 'G' = Gibbs
 %               training utility method (default = 'V')
-%      form -   Return form, 'mean' returns the mean value, 'sum' returns the 
-%               sum value, and 'all' returns the values for all data
-%               points (default = 'mean')
+%      form   - return form: 'mean' returns the mean value, 'sum' returns the 
+%               sum value, 'dic' return the -2*sum value (deviance)
+%               and 'all' returns the values for all data points
+%               (default = 'mean')
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
@@ -62,7 +63,7 @@ function waic = gp_waic(gp, x, y, varargin)
   ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
   ip.addParamValue('method', 'V', @(x) ismember(x,{'V' 'G'}))
-  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all','sum'}))
+  ip.addParamValue('form', 'mean', @(x) ismember(x,{'mean','all','sum','dic'}))
   ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
   ip.parse(gp, x, y, varargin{:});
   method=ip.Results.method;
@@ -145,15 +146,6 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
-          switch form
-            case 'mean'
-              Vn = mean(Vn);
-              BUt = mean(BUt);
-            case 'sum'
-              Vn = sum(Vn);
-              BUt = sum(BUt);
-            otherwise
-          end
           waic = BUt - Vn;
         else
           % non-Gaussian likelihood
@@ -186,15 +178,6 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = (Elog-Elog2);
-          switch form
-            case 'mean'
-              Vn = mean(Vn);
-              BUt = mean(BUt);
-            case 'sum'
-              Vn = sum(Vn);
-              BUt = sum(BUt);
-            otherwise
-          end
           waic = BUt - Vn;
         end
         
@@ -210,15 +193,6 @@ function waic = gp_waic(gp, x, y, varargin)
             GUt(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
                                       .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
           end
-          switch form
-            case 'mean'
-              GUt = mean(GUt);
-              BUt = mean(BUt);
-            case 'sum'
-              GUt = sum(GUt);
-              BUt = sum(BUt);
-            otherwise
-          end
           waic = BUt-2*(BUt-GUt);
         else
           % non-Gaussian likelihood
@@ -232,15 +206,6 @@ function waic = gp_waic(gp, x, y, varargin)
             fmax = mean(Ef(i,:) + 9*sqrt(Varf(i,:)));
             GUt(i) = quadgk(@(f) mean(multi_npdf(f,Ef(i,:),(Varf(i,:))) ...
                                       .*llvec(gp_array, y(i), f, z1)), fmin, fmax);
-          end
-          switch form
-            case 'mean'
-              GUt = mean(GUt);
-              BUt = mean(BUt);
-            case 'sum'
-              GUt = sum(GUt);
-              BUt = sum(BUt);
-            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         end
@@ -257,35 +222,31 @@ function waic = gp_waic(gp, x, y, varargin)
 
       if isequal(method,'V')
         % Estimate WAIC with variance form
-        
+        sigma2s=gp.lik.sigma2;
         if isfield(gp.lik.fh,'trcov')
           % Gaussian likelihood
-          sigma2 = gp.lik.sigma2;
-          
+          if strcmp(gp.lik.type,'GaussianBL')
+            sigma2=zeros(tn,1);
+            bl_indic=gp.lik.bl_indic;
+            for i1 = 1:length(bl_indic)
+              ind = find(x(:,end)==bl_indic(i1));
+              sigma2(ind) = sigma2s(i1);
+            end
+          else
+            sigma2 = repmat(sigma2s,tn,1);
+          end
           for i=1:tn
-            
             % Analytical moments for Gaussian distribution
-            
             m0 = 1; m1 = Ef(i); m2 = Ef(i)^2 + Varf(i); m3 = Ef(i)*(Ef(i)^2+3*Varf(i));
             m4 = Ef(i)^4+6*Ef(i)^2*Varf(i)+3*Varf(i)^2;
           
-            Elog2(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
-            Elog(i) = (1/4 * m4 - y(i) * m3 + (3*y(i).^2./2+0.5*log(2*pi*sigma2).*sigma2) * m2 ...
-                       - (y(i).^3 + y(i).*log(2*pi*sigma2).*sigma2) * m1 + (y(i).^4/4 + 0.5*y(i).^2*log(2*pi*sigma2).*sigma2 ...
-                                                              + 0.25*log(2*pi*sigma2).^2.*sigma2.^2) * m0) ./ sigma2.^2;
-            
+            Elog2(i) = (-0.5*log(2*pi*sigma2(i)) - y(i).^2./(2.*sigma2(i)))*m0 - 1./(2.*sigma2(i)) * m2 + y(i)./sigma2(i) * m1;
+            Elog(i) = (1/4 * m4 - y(i) * m3 + (3*y(i).^2./2+0.5*log(2*pi*sigma2(i)).*sigma2(i)) * m2 ...
+                       - (y(i).^3 + y(i).*log(2*pi*sigma2(i)).*sigma2(i)) * m1 + (y(i).^4/4 + 0.5*y(i).^2*log(2*pi*sigma2(i)).*sigma2(i) ...
+                                                              + 0.25*log(2*pi*sigma2(i)).^2.*sigma2(i).^2) * m0) ./ sigma2(i).^2;
           end
           Elog2 = Elog2.^2;
           Vn = Elog-Elog2;
-          switch form
-            case 'mean'
-              Vn = mean(Vn);
-              BUt = mean(BUt);
-            case 'sum'
-              Vn = sum(Vn);
-              BUt = sum(BUt);
-            otherwise
-          end
           waic = BUt - Vn;
 
         else
@@ -316,15 +277,6 @@ function waic = gp_waic(gp, x, y, varargin)
           end
           Elog2 = Elog2.^2;
           Vn = Elog-Elog2;
-          switch form
-            case 'mean'
-              Vn = mean(Vn);
-              BUt = mean(BUt);
-            case 'sum'
-              Vn = sum(Vn);
-              BUt = sum(BUt);
-            otherwise
-          end
           waic = BUt - Vn;
           
         end
@@ -334,7 +286,17 @@ function waic = gp_waic(gp, x, y, varargin)
         
         if isfield(gp.lik.fh,'trcov')
           % Gaussian likelihood
-          sigma2 = gp.lik.sigma2;
+          sigma2s=gp.lik.sigma2;
+          if strcmp(gp.lik.type,'GaussianBL')
+            sigma2=zeros(tn,1);
+            bl_indic=gp.lik.bl_indic;
+            for i1 = 1:length(bl_indic)
+              ind = find(x(:,end)==bl_indic(i1));
+              sigma2(ind) = sigma2s(i1);
+            end
+          else
+            sigma2 = repmat(sigma2s,tn,1);
+          end
           for i=1:tn
             if Varf(i)<eps
               GUt(i)=(-0.5*log(2*pi*sigma2)- (y(i) - Ef(i)).^2/(2.*sigma2));
@@ -344,17 +306,8 @@ function waic = gp_waic(gp, x, y, varargin)
 
               m0 = 1; m1 = Ef(i); m2 = Ef(i)^2 + Varf(i);
               
-              GUt(i) = (-0.5*log(2*pi*sigma2) - y(i).^2./(2.*sigma2))*m0 - 1./(2.*sigma2) * m2 + y(i)./sigma2 * m1;
+              GUt(i) = (-0.5*log(2*pi*sigma2(i)) - y(i).^2./(2.*sigma2(i)))*m0 - 1./(2.*sigma2(i)) * m2 + y(i)./sigma2(i) * m1;
             end
-          end
-          switch form
-            case 'mean'
-              GUt = mean(GUt);
-              BUt = mean(BUt);
-            case 'sum'
-              GUt = sum(GUt);
-              BUt = sum(BUt);
-            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         else
@@ -379,15 +332,6 @@ function waic = gp_waic(gp, x, y, varargin)
               f = mvnrnd(Ef([1:ntime ntime+i]), Sigma_tmp, ns);
               GUt(i) = 1/ns * sum(llvec(gp, y(i), f', z1));
             end
-          end
-          switch form
-            case 'mean'
-              GUt = mean(GUt);
-              BUt = mean(BUt);
-            case 'sum'
-              GUt = sum(GUt);
-              BUt = sum(BUt);
-            otherwise
           end
           waic = BUt-2*(BUt-GUt);
         end
@@ -422,7 +366,17 @@ function waic = gp_waic(gp, x, y, varargin)
       w(j,:) = gp_pak(Gp);
       [Ef(:,j), Varf(:,j)] = gp_pred(Gp, x, y, x, 'yt', y, 'tstind', tstind, options);
       if isfield(Gp.lik.fh,'trcov')
-        sigma2(:,j) = repmat(Gp.lik.sigma2,1,tn);
+        % Gaussian likelihood
+        if strcmp(Gp.lik.type,'GaussianBL')
+          sigma2s=Gp.lik.sigma2;
+          bl_indic=Gp.lik.bl_indic;
+          for i1 = 1:length(bl_indic)
+            ind = find(x(:,end)==bl_indic(i1));
+            sigma2(ind,j) = sigma2s(i1);
+          end
+        else
+          sigma2(:,j) = repmat(Gp.lik.sigma2,1,tn);
+        end
       end
     end
     if isequal(method,'V')
@@ -440,15 +394,6 @@ function waic = gp_waic(gp, x, y, varargin)
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
-        switch form
-          case 'mean'
-            Vn = mean(Vn);
-            BUt = mean(BUt);
-          case 'sum'
-            Vn = sum(Vn);
-            BUt = sum(BUt);
-          otherwise
-        end
         waic = BUt - Vn;
       else
         % non-Gaussian likelihood
@@ -467,15 +412,6 @@ function waic = gp_waic(gp, x, y, varargin)
         end
         Elog2 = Elog2.^2;
         Vn = (Elog-Elog2);
-        switch form
-          case 'mean'
-            Vn = mean(Vn);
-            BUt = mean(BUt);
-          case 'sum'
-            Vn = sum(Vn);
-            BUt = sum(BUt);
-          otherwise
-        end
         waic = BUt - Vn;
         
       end
@@ -490,15 +426,6 @@ function waic = gp_waic(gp, x, y, varargin)
           fmax = sum(weight.*Ef(i,:) + 9*weight.*sqrt(Varf(i,:)));
           GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
                                    .*bsxfun(@minus,-bsxfun(@rdivide,(repmat((y(i)-f),nsamples,1)).^2,(2.*sigma2(i,:))'), 0.5*log(2*pi*sigma2(i,:))')), fmin, fmax);
-        end
-        switch form
-          case 'mean'
-            GUt = mean(GUt);
-            BUt = mean(BUt);
-          case 'sum'
-            GUt = sum(GUt);
-            BUt = sum(BUt);
-          otherwise
         end
         waic = BUt-2*(BUt-GUt);
 
@@ -515,22 +442,22 @@ function waic = gp_waic(gp, x, y, varargin)
           GUt(i) = quadgk(@(f) sum(bsxfun(@times, multi_npdf(f,Ef(i,:),(Varf(i,:))),weight') ...
                                    .*llvec(gp, y(i), f, z1)), fmin, fmax);
         end
-        switch form
-          case 'mean'
-            GUt = mean(GUt);
-            BUt = mean(BUt);
-          case 'sum'
-            GUt = sum(GUt);
-            BUt = sum(BUt);
-          otherwise
-        end
         waic = BUt-2*(BUt-GUt);
 
       end
     end
     
   end
-
+  switch form
+    case 'mean'
+      waic=mean(waic);
+    case 'sum'
+      waic=sum(waic);
+    case 'dic'
+      waic=-2*sum(waic);
+    case 'all'
+  end
+  
 end
 
 function lls=llvec(gp, y, fs, z)
