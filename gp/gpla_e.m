@@ -2019,67 +2019,6 @@ function [e, edata, eprior, f, L, a, La2, p] = gpla_e(w, gp, varargin)
           
           L=A;
           
-          % ============================================================
-          % SSGP
-          % ============================================================
-        case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
-                           % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
-                           % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
-                           % NOTE! This does not work at the moment.
-          
-          % First evaluate needed covariance matrices
-          % v defines that parameter is a vector
-          [Phi, S] = gp_trcov(gp, x);        % n x m matrix and nxn sparse matrix
-          Sv = diag(S);
-          
-          m = size(Phi,2);
-          
-          A = eye(m,m) + Phi'*(S\Phi);
-          [A, notpositivedefinite] = chol(A, 'lower');
-          if notpositivedefinite
-            [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-            return
-          end
-          L = (S\Phi)/A';
-          
-          switch gp.latent_opt.optim_method
-            % find the mode by fminunc large scale method
-            case 'fminunc_large'
-              fhm = @(W, f, varargin) (f./repmat(Sv,1,size(f,2)) - L*(L'*f)  + repmat(W,1,size(f,2)).*f);  % Hessian*f; %
-              defopts=struct('GradObj','on','Hessian','on','HessMult', fhm,'TolX', 1e-8,'TolFun', 1e-8,'LargeScale', 'on','Display', 'off');
-              if ~isfield(gp.latent_opt, 'fminunc_opt')
-                opt=optimset(defopts);
-              else
-                opt = optimset(defopts,gp.latent_opt.fminunc_opt);
-              end
-
-              fe = @(f, varargin) (0.5*f*(f'./repmat(Sv,1,size(f',2)) - L*(L'*f')) - gp.lik.fh.ll(gp.lik, y, f', z));
-              fg = @(f, varargin) (f'./repmat(Sv,1,size(f',2)) - L*(L'*f') - gp.lik.fh.llg(gp.lik, y, f', 'latent', z))';
-              fh = @(f, varargin) (-gp.lik.fh.llg2(gp.lik, y, f', 'latent', z));
-              mydeal = @(varargin)varargin{1:nargout};
-              [f,fval,exitflag,output] = fminunc(@(ww) mydeal(fe(ww), fg(ww), fh(ww)), f', opt);
-              f = f';
-
-              W = -gp.lik.fh.llg2(gp.lik, y, f, 'latent', z);
-              sqrtW = sqrt(W);
-
-              b = L'*f;
-              logZ = 0.5*(f'*(f./Sv) - b'*b) - gp.lik.fh.ll(gp.lik, y, f, z);
-            case 'Newton'
-              error('The Newton''s method is not implemented for FIC!\n')
-          end
-          WPhi = repmat(sqrtW,1,m).*Phi;
-          A = eye(m,m) + WPhi'./repmat((1+Sv.*W)',m,1)*WPhi;   A = (A+A')./2;
-          [A, notpositivedefinite] = chol(A);
-          if notpositivedefinite
-            [edata,e,eprior,f,L,a,La2,p,ch] = set_output_for_notpositivedefinite();
-            return
-          end
-          edata = sum(log(1+Sv.*W)) + 2*sum(log(diag(A)));
-          edata = logZ + 0.5*edata;
-
-          La2 = Sv;
-
         otherwise
           error('Unknown type of Gaussian process!')
       end

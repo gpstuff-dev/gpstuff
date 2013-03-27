@@ -843,25 +843,4 @@ switch gp.type
       end
     end  
     
-  case 'SSGP'
-    if nargin > 4
-      error(['Prediction with a subset of original ' ...
-             'covariance functions not currently implemented with SSGP']);
-    end
-
-    [Phi_f, S] = gp_trcov(gp, x);
-    Phi_a = gp_trcov(gp, xt);
-    m = size(Phi_f,2);
-    ns = eye(m,m)*S(1,1);
-    
-    L = chol(Phi_f'*Phi_f + ns)';
-    Eft = Phi_a*(L'\(L\(Phi_f'*y)));
-
-    
-    if nargout > 1
-      Varft = sum(Phi_a/L',2)*S(1,1);
-    end
-    if nargout > 2
-      error('GP_PRED with three output arguments is not implemented for SSGP!')
-    end
 end

@@ -513,37 +513,6 @@ switch gp.type
           Varft = sum(B2.^2,1)' - Varft;
       end
     end
-    % ============================================================
-    % SSGP
-    % ============================================================
-  case 'SSGP'        % Predictions with sparse spectral sampling approximation for GP
-                     % The approximation is proposed by M. Lazaro-Gredilla, J. Quinonero-Candela and A. Figueiras-Vidal
-                     % in Microsoft Research technical report MSR-TR-2007-152 (November 2007)
-                     % NOTE! This does not work at the moment.
-    [e, edata, eprior, tautilde, nutilde, L, S, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
-    %param = varargin{1};
-
-    Phi_f = gp_trcov(gp, x);
-    Phi_a = gp_trcov(gp, xt);
-
-    m = size(Phi_f,2);
-    ntest=size(xt,1);
-    
-    Eft = Phi_a*(Phi_f'*b');
-    
-    if nargout > 1
-      % Compute variances of predictions
-      %Varft(i1,1)=kstarstar(i1) - (sum(Knf(i1,:).^2./La') - sum((Knf(i1,:)*L).^2));
-      Varft = sum(Phi_a.^2,2) - sum(Phi_a.*((Phi_f'*(repmat(S,1,m).*Phi_f))*Phi_a')',2) + sum((Phi_a*(Phi_f'*L)).^2,2);
-      for i1=1:ntest
-        switch gp.lik.type
-          case 'Probit'
-            p1(i1,1)=norm_cdf(Eft(i1,1)/sqrt(1+Varft(i1))); % Probability p(y_new=1)
-          case 'Poisson'
-            p1 = NaN;
-        end
-      end
-    end
 end
 
 

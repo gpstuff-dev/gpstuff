@@ -89,6 +89,5 @@ switch gp.type
     
   case 'CS+FIC'
     
-  case 'SSGP'
 end
 

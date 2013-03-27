@@ -449,11 +449,6 @@ function [e, edata, eprior, f, L, a, E, M, p] = gpla_softmax_e(w, gp, varargin)
           % ============================================================
         case 'CS+FIC'
           
-          % ============================================================
-          % SSGP
-          % ============================================================
-        case 'SSGP' 
-          
         otherwise
           error('Unknown type of Gaussian process!')
       end

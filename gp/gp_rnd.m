@@ -527,27 +527,6 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
 % $$$     predcov = chol(K2-v'*v)';
 % $$$     sampft = Ef + predcov*randn(size(Ef));
         
-      case 'SSGP'
-        if nargin > 4
-          error(['Prediction with a subset of original ' ...
-                 'covariance functions not currently implemented with SSGP']);
-        end
-
-        [Phi_f, S] = gp_trcov(gp, x);
-        Phi_a = gp_trcov(gp, xt);
-        m = size(Phi_f,2);
-        ns = eye(m,m)*S(1,1);
-        
-        L = chol(Phi_f'*Phi_f + ns,'lower');
-        Ef = Phi_a*(L'\(L\(Phi_f'*y)));
-
-        
-        if nargout > 1
-          Covf = sum(Phi_a/L',2)*S(1,1);
-        end
-        if nargout > 2
-          error('gp_pred with three output arguments is not implemented for SSGP!')
-        end
     end
     
 
