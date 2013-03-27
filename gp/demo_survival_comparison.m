@@ -2,9 +2,9 @@
 %
 %  Description: 
 %    
-%    By using kfc-validation and Bayesian bootstrap we compare the
-%    predictive ability of different models by estimating various
-%    assessment statistics .
+%    By using k-fold cross-validation and Bayesian bootstrap we
+%    compare the predictive ability of different models by estimating
+%    various assessment statistics .
 %
 %    We will compare two Cox proportional hazars model, the first
 %    model will have less covariates than the second model.
@@ -72,11 +72,11 @@ S=linspace(0,max(y)+0.001,ntime+1);
 pl = prior_t('s2',1, 'nu', 4);
 pm = prior_t('s2',1, 'nu', 4); 
 
-% covariance for hazard function
+% covariance for the baseline hazard function
 gpcfh1 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1.1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcfh2 = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1.1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
-% covariance for proportional part
+% covariance for the covariate part
 gpcf1 = gpcf_sexp('lengthScale', ones(1,size(x1,2)), 'magnSigma2', 1.2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 gpcf2 = gpcf_sexp('lengthScale', ones(1,size(x2,2)), 'magnSigma2', 1.2, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
 
