@@ -706,7 +706,7 @@ function reclik = lik_loggaussian_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.sigma2(ri,:)=lik.sigma2;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.sigma2)
       reclik.p.sigma2 = lik.p.sigma2.fh.recappend(reclik.p.sigma2, ri, lik.p.sigma2);
     end
   end

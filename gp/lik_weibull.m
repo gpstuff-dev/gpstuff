@@ -707,7 +707,7 @@ function reclik = lik_weibull_recappend(reclik, ri, lik)
   else
     % Append to the record
     reclik.shape(ri,:)=lik.shape;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.shape)
       reclik.p.shape = lik.p.shape.fh.recappend(reclik.p.shape, ri, lik.p.shape);
     end
   end

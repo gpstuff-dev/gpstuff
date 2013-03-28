@@ -871,7 +871,7 @@ function reclik = lik_negbinztr_recappend(reclik, ri, lik)
     
     % Append to the record
     reclik.disper(ri,:)=lik.disper;
-    if ~isempty(lik.p)
+    if ~isempty(lik.p.disper)
       reclik.p.disper = lik.p.disper.fh.recappend(reclik.p.disper, ri, lik.p.disper);
     end
   end
