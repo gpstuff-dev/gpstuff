@@ -2,10 +2,10 @@
 %                       in Laplace and EP algorithms.
 %
 %  Description
-%       Demonstrates improvements to marginal likelihoods with 
-%       gp*_fact/cm2(LA). *_cm2 improvement is fastest while providing
-%       better or atleast as good corrections (in our test cases) as the
-%       slower *_fact.
+%    Demonstrates improvements to marginal likelihoods with
+%    gpep_fact/gpla_fact/gpla_cm2. gpla_cm2 improvement is the fastest
+%    while providing better or at least as good corrections (in our
+%    test cases) as the slower gpla_fact.
 %
 
 % This software is distributed under the GNU General Public 
@@ -24,7 +24,7 @@ y = 2.*y-1;
 x(:,end)=[];
 [n, nin] = size(x);
 
-% Load sampled results so the demo wont take hours or days to finish..
+% Load sampled results so the demo won't take hours or days to finish...
 L = strrep(S,'demo_improvemarginals.m','demodata/samples_marginal.mat');
 load(L);
 
@@ -33,14 +33,14 @@ xt1=repmat(linspace(min(x(:,1)),max(x(:,1)),20)',1,20);
 xt2=repmat(linspace(min(x(:,2)),max(x(:,2)),20)',1,20)';
 xt=[xt1(:) xt2(:)];
 
-% Create likelihood function
+% Create a likelihood function
 lik = lik_probit();
 %lik = lik_logit();
 
-% Create covariance functions
+% Create a covariance function
 gpcf = gpcf_sexp('lengthScale', [0.9 0.9], 'magnSigma2', 10);
 
-% Set the prior for the parameters of covariance functions 
+% Set the prior for the parameters of the covariance function
 pl = prior_unif();
 pm = prior_sqrtunif();
 gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
@@ -49,7 +49,6 @@ gpcf = gpcf_sexp(gpcf, 'lengthScale_prior', pl,'magnSigma2_prior', pm); %
 gp_probit = gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-9);
 
 % Set the approximate inference method 
-% (Laplace is the default, so this could be skipped)
 gp_probit = gp_set(gp_probit, 'latent_method', 'EP');
 
 ind = 22;
@@ -98,7 +97,6 @@ end
 subplot(2,1,2)
 
 % Predictive corrections
-
 for i=1:length(ind)
 %   [Efs_probit, Varfs_probit] = gpmc_preds(rgp_probit, x, y, xt(ind(i),:));
   [Eft_probit_pred, Varft_probit_pred] = gp_pred(gp_probit,x,y,xt);
@@ -114,7 +112,6 @@ for i=1:length(ind)
   title('Predictive marginal corrections for probit likelihood (EP)');
 end
 % clear('fvec_probit', 'p_probit', 'pc_probit')
-
 
 % ---------------------------
 % Probit likelihood with Laplace
@@ -170,7 +167,6 @@ end
 % clear('fvec_probit_laplace', 'p_probit_laplace', 'pc_probit_laplace', 'p_probit_laplace2', 'pc_probit_laplace2', 'c_probit_laplace','c_probit_laplace2')
 
 % Predictive corrections
-
 subplot(2,1,2);
 
 for i=1:length(ind)

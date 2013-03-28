@@ -35,11 +35,11 @@ function lik = lik_qgp(varargin)
 %  See also
 %    GP_SET, PRIOR_*, LIK_*
 %
-%   References
-%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile Regression
-%     Using Expectation Propagation. Appearing in Proceedings of the 29th
-%     International Conference on Machine Learning, Edinburg, Scotland, UK,
-%     2012.
+%   Reference
+%     Boukouvalas et al. (2012). Direct Gaussian Process Quantile
+%     Regression Using Expectation Propagation. In Proceedings of the
+%     29th International Conference on Machine Learning, Edinburgh,
+%     Scotland, UK, 2012.
 %     
   
 % Copyright (c) 2012 Ville Tolvanen

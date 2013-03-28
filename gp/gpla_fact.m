@@ -3,10 +3,10 @@ function [p, pc, c] = gpla_fact(gp, x, y, fvec,varargin)
 %           approximation
 % 
 %  Description
-%    [P, PC, C]�= GPLA_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
+%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates the marginal likelihood
 %    at given grid points FVEC for given indices. Returns tilted
 %    distribution without any correction P, with factorized correction
-%    terms PC and the corrections terms C.
+%    terms PC and the correction terms C.
 %
 %
 %   OPTIONS is optional parameter-value pair
@@ -19,8 +19,7 @@ function [p, pc, c] = gpla_fact(gp, x, y, fvec,varargin)
 %               be matrix of size n x m, where n is the number of grid
 %               points for each index. Default = 1.
 %
-%
-%   References
+%   Reference
 %     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
 %     Models. Journal of Machine Learning Research 12 (2011), 417-454
 %         

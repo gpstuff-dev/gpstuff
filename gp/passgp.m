@@ -5,7 +5,12 @@ function [gp, indA] = passgp(gp, x, y, varargin)
 %    [GP, INDA] = PASSGP(GP, X, Y, OPTIONS)
 %    Returns GP structure with hyperparameters optimized according to
 %    PASS-GP routine (Henao & Winther, 2012) and active set indices 
-%    INDA for X and Y
+%    INDA for X and Y. 
+% 
+%    PASS-GP uses a predictive active set selection method by Henao &
+%    Winther (2012) to select a subset of training data to be used for
+%    inference in classification problems. PASSGP can be used with
+%    classification models when the latent method is EP or Laplace.
 %
 %   OPTIONS is optional parameter-value pair
 %      npass - Number of passes the algorithm takes over the whole training
@@ -33,7 +38,7 @@ function [gp, indA] = passgp(gp, x, y, varargin)
 %    GP_SET, LIK_*
 %
 %  Reference:
-%    Ricardo Henao & Ole Winther (2012). Preditive active set selection
+%    Ricardo Henao & Ole Winther (2012). Predictive active set selection
 %    methods for Gaussian processes. Neurocomputing 80 (2012), 10-18.
 
 % Copyright (c) 2013 Ville Tolvanen

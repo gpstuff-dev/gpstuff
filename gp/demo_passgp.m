@@ -1,10 +1,18 @@
 %DEMO_PASSGP Demonstration of PASS-GP routine for GP classification
 %
 %  Description
-%    Here we demonstrate pass-gp routine for Gaussian Processes
+%    Here we demonstrate PASS-GP method for Gaussian Processes
 %    classification. Data used is 2-dimensional toy data with Gaussian
 %    bumbs defining classes. We demonstrate with both fixed and not fixed
-%    sizes of active set for pass-gp.
+%    sizes of active set for PASS-GP.
+%
+%    PASS-GP uses a predictive active set selection method by Henao &
+%    Winther (2012) to select a subset of training data to be used for
+%    inference in classification problems.
+%
+%  Reference:
+%    Ricardo Henao & Ole Winther (2012). Predictive active set selection
+%    methods for Gaussian processes. Neurocomputing 80 (2012), 10-18.
 %
 %  See also PASSGP
 
@@ -29,7 +37,7 @@ yt=ones(size(xt,1),1);
 
 [n, nin] = size(x);
 
-% Define covariance and likelihood functions and create model
+% Define covariance and likelihood functions and create the model
 gpcf = gpcf_sexp();
 lik=lik_probit();
 gp=gp_set('lik', lik, 'cf', gpcf, 'jitterSigma2', 1e-6);
@@ -56,7 +64,7 @@ figure, [cc,hh]=contour(reshape(xt(:,1),size(xt1,1), size(xt1,1)), reshape(xt(:,
 clabel(cc,hh); title('Pr(y==1) (pass-gp)')
 param2=gp_pak(gp);
 
-% Full Gaussian Process for comparison
+% Full Gaussian process for comparison
 gp=gp_unpak(gp,w0);
 opt.Display='iter';
 start=tic;gp=gp_optim(gp,x,y,'opt',opt);tt3=toc;
@@ -65,7 +73,6 @@ figure, [cc,hh]=contour(reshape(xt(:,1),size(xt1,1), size(xt1,1)), reshape(xt(:,
 clabel(cc,hh); title('Pr(y==1) (full gp)')
 
 % Display some statistics
-
 mlpd_fpassgp=mean(mean(lpyt,2))
 time_fpassgp=mean(tt)
 mlpd_passgp=mean(mean(lpyt2,2))

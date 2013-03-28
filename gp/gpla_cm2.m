@@ -1,13 +1,12 @@
 function [p, pc c] = gpla_cm2(gp, x, y, fvec,varargin) 
-%GPEP_FACT  CM2 correction for marginal likelihood using laplace
-%           approximation
+%GPLA_CM2  CM2 correction for marginal likelihood using Laplace
+%          approximation
 % 
 %  Description
-%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
+%    [P, PC, C] = GPLA_CM2(GP, X, Y, FVEC) Evaluates the marginal likelihood
 %    at given grind points FVEC for given indices. Returns tilted
-%    distribution without any correction P, with cm2 correction
-%    terms PC and the corrections terms C.
-%
+%    distribution without any correction P, with CM2 correction terms
+%    PC and the correction terms C.
 %
 %   OPTIONS is optional parameter-value pair
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -19,8 +18,7 @@ function [p, pc c] = gpla_cm2(gp, x, y, fvec,varargin)
 %               be matrix of size n x m, where n is the number of grid
 %               points for each index. Default = 1.
 %
-%
-%   References
+%   Reference
 %     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
 %     Models. Journal of Machine Learning Research 12 (2011), 417-454
 %         
