@@ -1099,10 +1099,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
 
         if isempty(sigm2_i)
-          % mu_i and sigm2_i were not computed earlier
-          [Ef, Varf] = gpep_pred(gp, x, y, 'z', z);
-          sigm2_i = (Varf.^-1 - tautilde).^-1;
-          mu_i = sigm2_i.*(Ef./Varf - nutilde);
+          sigm2_i=p.sigm2vec_i;
+          mu_i=p.muvec_i;
         end
 
         gdata_lik = 0;
