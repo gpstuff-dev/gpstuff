@@ -126,7 +126,14 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             if  isfield(gp,'meanf')
                 pcov = pcov + RAR;
             end
-            predcov = chol(pcov,'lower');
+            [predcov,notpositivedefinite] = chol(pcov,'lower');
+            if notpositivedefinite
+              % use eigendecomposition
+              [V,D] = eig(pcov);
+              D=diag(D)';
+              D(D<0)=0;
+              predcov=bsxfun(@times,V,sqrt(D));
+            end
             sampyt = Ef + predcov*rr;
           end
         end   
