@@ -1072,8 +1072,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Move a small way in the ith coordinate of w
           step(i) = 1.0;
           func = fcnchk(func, 3);
-          fplus = func(w+epsilon.*step, gp,x,y);
-          fminus = func(w-epsilon.*step, gp,x,y);
+          fplus = func(w+epsilon.*step, gp,x,y,'z',z);
+          fminus = func(w-epsilon.*step, gp,x,y,'z',z);
           %   fplus  = feval('linef_test', epsilon, func, w, step, varargin{:});
           %   fminus = feval('linef_test', -epsilon, func, w, step, varargin{:});
           % Use central difference formula for approximation
