@@ -1,9 +1,10 @@
 function PE2 = gp_cvlcriterion(gp, x, y, varargin)
-% GP_CVLCRITERION cvlcriterion which is equal to cross-validation version
-%                 of L-criterion
+%GP_CVLCRITERION cross-validation version of L-criterion
 % 
-%   Description
-%     
+%  Description
+%    PE2 = GP_CVLCRITERION(GP, X, Y, OPTIONS) returns cross-validation
+%    version of L-criterion PE2 given a Gaussian process model GP,
+%    training inputs X and training outputs Y.
 %
 %   OPTIONS is optional parameter-value pair
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -11,12 +12,17 @@ function PE2 = gp_cvlcriterion(gp, x, y, varargin)
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
 %
-%   See also
+%  References
+%    Marriott, J. M., Spencer, N. M. and Pettitt, A. N. (2001). A
+%    Bayesian Approach to Selecting Covariates for
+%    Prediction. Scandinavian Journal of Statistics 28 87–97.
 %
-%   References
-%     Vehtari & Ojanen (2011). Bayesian preditive methods for model
-%     assesment and selection. In preparation.
-%     
+%    Vehtari & Ojanen (2011). Bayesian preditive methods for model
+%    assesment and selection. In Statistics Surveys, 6:142-228. 
+%    <http://dx.doi.org/10.1214/12-SS102>
+%
+%  See also
+%    GP_LCRITERION
 %
 
 % Copyright (c) 2011 Ville Tolvanen

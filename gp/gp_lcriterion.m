@@ -1,8 +1,10 @@
 function L2 = gp_lcriterion(gp, x, y, varargin)
-% GP_LCRITERION L-criterion for model selection. 
+%GP_LCRITERION  L-criterion for model selection. 
 %
-%   Description
-%     
+%  Description
+%    PE2 = GP_CVLCRITERION(GP, X, Y, OPTIONS) returns L-criterion L2
+%    given a Gaussian process model GP, training inputs X and training
+%    outputs Y.
 %
 %   OPTIONS is optional parameter-value pair
 %      z      - optional observed quantity in triplet (x_i,y_i,z_i)
@@ -10,12 +12,21 @@ function L2 = gp_lcriterion(gp, x, y, varargin)
 %               Poisson likelihood we have z_i=E_i, that is, expected value 
 %               for ith case. 
 %     
-%   See also
-%     
-%   References
-%     Vehtari & Ojanen (2011). Bayesian preditive methods for model
-%     assesment and selection. In preparation.
+%  References
+%    Gelfand, A. E. and Ghosh, S. K. (1998). Model Choice: A Minimum
+%    Posterior Predictive Loss Approach. Biometrika 85 1–11.
 %
+%    Ibrahim, J. G., Chen, M.-H. and Sinha, D. (2001). Criterion-based
+%    methods for Bayesian model assessment. Statistica Sinica 11
+%    419–443.
+%   
+%    Vehtari & Ojanen (2011). Bayesian preditive methods for model
+%    assesment and selection. In Statistics Surveys, 6:142-228. 
+%    <http://dx.doi.org/10.1214/12-SS102>
+%
+%  See also
+%    GP_CVLCRITERION
+%     
 
 % Copyright (c) 2011 Ville Tolvanen
 

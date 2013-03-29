@@ -2,15 +2,15 @@ function [dic, p_eff, Davg] = gp_dic(gp, x, y, varargin);
 %GP_DIC The DIC and the effective number of parameters in a GP model
 %
 %  Description
-%    [DIC, P_EFF] = GP_DIC(GP, X, Y) evaluates DIC and the effective
-%    number of parameters as defined by Spiegelhalter et al
-%    (2002) given a Gaussian process model GP, training
-%    inputs X and training outputs Y. Instead of deviance we
-%    by default compute the Bayes utility, that is the mean log
-%    predictive density. The statistics are evaluated with focus on
-%    parameters or latent variables depending on the input GP (See
-%    Spiegelhalter et al (2002) for discussion on the parameters in
-%    focus in Bayesian model). 
+%    [DIC, P_EFF] = GP_DIC(GP, X, Y, OPTIONS) evaluates DIC and the
+%    effective number of parameters as defined by Spiegelhalter et al
+%    (2002) given a Gaussian process model GP, training inputs X and
+%    training outputs Y. Instead of deviance we by default compute the
+%    Bayes utility, that is the mean log predictive density. The
+%    statistics are evaluated with focus on parameters or latent
+%    variables depending on the input GP (See Spiegelhalter et al
+%    (2002) for discussion on the parameters in focus in Bayesian
+%    model).
 %
 %    DIC and P_EFF are evaluated as follows:
 %     1) GP is Gaussian process structure:

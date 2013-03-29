@@ -2,7 +2,7 @@ function waic = gp_waic(gp, x, y, varargin)
 %GP_WAIC The widely applicable information criterion (WAIC) for GP model
 % 
 %  Description
-%    WAIC = GP_WAIC(GP, X, Y) evaluates WAIC defined by
+%    WAIC = GP_WAIC(GP, X, Y, OPTIONS) evaluates WAIC defined by
 %    Watanabe (2010) given a Gaussian process model GP, training
 %    inputs X and training outputs Y. Instead of Bayes loss we
 %    compute the Bayes utility which is just the negative of loss
