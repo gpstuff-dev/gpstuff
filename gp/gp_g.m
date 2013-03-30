@@ -345,39 +345,41 @@ switch gp.type
     
     % =================================================================
     % Gradient with respect to Gaussian likelihood function parameters
-    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov')
+    if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh,'trcov') 
       % Evaluate the gradient from Gaussian likelihood
-      DCff = gp.lik.fh.cfg(gp.lik, x);
       gprior_lik = -gp.lik.fh.lpg(gp.lik);
-      for i2 = 1:length(DCff)
-        i1 = i1+1;
-        if ~isfield(gp,'meanf')
-          if size(DCff{i2}) > 1
-            yKy = b'*(DCff{i2}*b);
-            trK = sum(sum(invC.*DCff{i2})); % help arguments
-            gdata_zeromean(i1)=0.5.*(trK - yKy);
-          else 
-            yKy=DCff{i2}.*(b'*b);
-            trK = DCff{i2}.*(trace(invC));
-            gdata_zeromean(i1)=0.5.*(trK - yKy);
+      if ~isempty(gprior_lik)
+        DCff = gp.lik.fh.cfg(gp.lik, x);
+        for i2 = 1:length(DCff)
+          i1 = i1+1;
+          if ~isfield(gp,'meanf')
+            if size(DCff{i2}) > 1
+              yKy = b'*(DCff{i2}*b);
+              trK = sum(sum(invC.*DCff{i2})); % help arguments
+              gdata_zeromean(i1)=0.5.*(trK - yKy);
+            else 
+              yKy=DCff{i2}.*(b'*b);
+              trK = DCff{i2}.*(trace(invC));
+              gdata_zeromean(i1)=0.5.*(trK - yKy);
+            end
+            gdata(i1)=gdata_zeromean(i1);
+          else
+            if size(DCff{i2}) > 1
+              trK = sum(sum(invC.*DCff{i2})); % help arguments
+            else 
+              trK = DCff{i2}.*(trace(invC));
+            end
+            dA = -1*HinvC*DCff{i2}*HinvC';            % d A / d th
+            trA = sum(invAt(:).*dA(:));               % d log(|A|) / dth
+            dMNM = invNM'*(DCff{i2}*invNM);           % d M'*N*M / d th
+            gdata(i1)=0.5*(-1*dMNM + trA + trK);
           end
-          gdata(i1)=gdata_zeromean(i1);
-        else
-          if size(DCff{i2}) > 1
-            trK = sum(sum(invC.*DCff{i2})); % help arguments
-          else 
-            trK = DCff{i2}.*(trace(invC));
-          end
-          dA = -1*HinvC*DCff{i2}*HinvC';            % d A / d th
-          trA = sum(invAt(:).*dA(:));               % d log(|A|) / dth
-          dMNM = invNM'*(DCff{i2}*invNM);           % d M'*N*M / d th
-          gdata(i1)=0.5*(-1*dMNM + trA + trK);
+          gprior(i1) = gprior_lik(i2);
         end
-        gprior(i1) = gprior_lik(i2);
       end
       
       % Set the gradients of hyperparameter
-      if length(gprior_lik) > length(DCff)
+      if ~isempty(gprior_lik) && length(gprior_lik) > length(DCff)
         for i2=length(DCff)+1:length(gprior_lik)
           i1 = i1+1;
           gdata(i1) = 0;
