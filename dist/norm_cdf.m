@@ -1,5 +1,5 @@
 function y = norm_cdf(x,mu,sigma)
-%NORM_CDF Normal cumulative probability density function (cdf).
+%NORM_CDF Normal cumulative probability density function (cdf)
 %
 %   Y = NORMCDF(X,MU,SIGMA) Returns the normal cdf with
 %   mean, MU, and standard deviation, SIGMA, at the values in X.

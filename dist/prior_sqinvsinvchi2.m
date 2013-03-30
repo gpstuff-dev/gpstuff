@@ -1,5 +1,6 @@
 function p = prior_sqinvsinvchi2(varargin)
-%PRIOR_SQINVSINVCHI2  Scaled-Inv-Chi^2 prior structure
+%PRIOR_SQINVSINVCHI2  Scaled-Inv-Chi^2 prior structure for square inverse of
+%                     the parameter
 %       
 %  Description
 %    P = PRIOR_SQINVSINVCHI2('PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
