@@ -453,7 +453,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
                 % FIC sparse approximation of covariance with respect to
                 % hyperparameters
 
-                Dd = DKff{i2} - 2.*sum(DKuf.*iKuuKuf)' - sum((-iKuuKuf'*DKuu)'.*iKuuKuf)'; % d(diag(Kff - Qff)) / dth
+                Dd = DKff - 2.*sum(DKuf.*iKuuKuf)' - sum((-iKuuKuf'*DKuu)'.*iKuuKuf)'; % d(diag(Kff - Qff)) / dth
                 DS = Dd.*tautilde;
                 gdata(i1) = -0.5.*sum(DS./S);
                 DTtilde = DKuu + DKuf*bsxfun(@times, WiS, K_fu) - K_fu'*bsxfun(@times, WiS.*DS./S, K_fu) + ...
@@ -578,7 +578,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(w, gp, x, y, 'z', z);
-        [tautilde, nutilde, L, La, b] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b);
+        [tautilde, nutilde, L, La, b, eta] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b, p.eta);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -732,7 +732,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(w, gp, x, y, 'z', z);
-        [tautilde, nutilde, L, La, b]=deal(p.tautilde, p.nutilde, p.L, p.La2, p.b);
+        [tautilde, nutilde, L, La, b, eta] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b, p.eta);
 
         m = length(u);
         cf_orig = gp.cf;
@@ -930,7 +930,7 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
 
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(w, gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(w, gp, x, y, 'z', z);
-        [L, La, b] = deal(p.L, p.La2, p.b);
+        [tautilde, nutilde, L, La, b, eta] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b, p.eta);
 
         K_fu = gp_cov(gp, x, u);         % f x u
         K_uu = gp_trcov(gp, u);          % u x u, noiseles covariance K_uu
@@ -1072,8 +1072,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
           % Move a small way in the ith coordinate of w
           step(i) = 1.0;
           func = fcnchk(func, 3);
-          fplus = func(w+epsilon.*step, gp,x,y);
-          fminus = func(w-epsilon.*step, gp,x,y);
+          fplus = func(w+epsilon.*step, gp,x,y,'z',z);
+          fminus = func(w-epsilon.*step, gp,x,y,'z',z);
           %   fplus  = feval('linef_test', epsilon, func, w, step, varargin{:});
           %   fminus = feval('linef_test', -epsilon, func, w, step, varargin{:});
           % Use central difference formula for approximation
@@ -1099,10 +1099,8 @@ function [g, gdata, gprior] = gpep_g(w, gp, x, y, varargin)
       if ~isempty(strfind(gp.infer_params, 'likelihood')) && isfield(gp.lik.fh, 'siteDeriv')
 
         if isempty(sigm2_i)
-          % mu_i and sigm2_i were not computed earlier
-          [Ef, Varf] = gpep_pred(gp, x, y, 'z', z);
-          sigm2_i = (Varf.^-1 - tautilde).^-1;
-          mu_i = sigm2_i.*(Ef./Varf - nutilde);
+          sigm2_i=p.sigm2vec_i;
+          mu_i=p.muvec_i;
         end
 
         gdata_lik = 0;

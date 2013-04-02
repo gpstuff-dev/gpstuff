@@ -387,7 +387,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         ind = gp.tr_index;
         %[e, edata, eprior, tautilde, nutilde, L, La, b] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
         [e, edata, eprior, p] = gpep_e(gp_pak(gp), gp, x, y, 'z', z);
-        [L, La, b] = deal(p.tautilde, p.nutilde, p.L, p.La2, p.b);
+        [L, La, b] = deal(p.L, p.La2, p.b);
         
         K_fu = gp_cov(gp, x, u, predcf);         % f x u
         K_nu = gp_cov(gp, xt, u, predcf);         % n x u

@@ -846,9 +846,7 @@ end
                       muvec_i=nu./tau;
                       sigm2vec_i=1./tau;
                       % compute moments of tilted distributions
-                      for i1=1:n
-                        [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
-                      end
+                      [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                       if any(isnan(logM0))
                         [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                         return
@@ -1035,9 +1033,7 @@ end
                     muvec_i=nu./tau;
                     sigm2vec_i=1./tau;
                     % compute moments of tilted distributions
-                    for i1=1:n
-                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
-                    end
+                    [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                     if any(isnan(logM0))
                       [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                       return
@@ -1244,9 +1240,7 @@ end
                     muvec_i=nu./tau;
                     sigm2vec_i=1./tau;
                     % compute moments of tilted distributions
-                    for i1=1:n
-                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
-                    end
+                    [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                     if any(isnan(logM0))
                       [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                       return
@@ -1501,9 +1495,7 @@ end
                     muvec_i=nu./tau;
                     sigm2vec_i= 1./tau;
                     % compute moments of tilted distributions
-                    for i1=1:n
-                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
-                    end
+                    [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                     if any(isnan(logM0))
                       [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                       return
@@ -1701,9 +1693,7 @@ end
                     muvec_i=nu./tau;
                     sigm2vec_i= 1./tau;
                     % compute moments of tilted distributions
-                    for i1=1:n
-                      [logM0(i1), muhat(i1), sigm2hat(i1)] = gp.lik.fh.tiltedMoments(gp.lik, y, i1, sigm2vec_i(i1), muvec_i(i1), z);
-                    end
+                    [logM0, muhat, sigm2hat] = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
                     if any(isnan(logM0))
                       [e, edata, eprior, param, ch] = set_output_for_notpositivedefinite();
                       return
