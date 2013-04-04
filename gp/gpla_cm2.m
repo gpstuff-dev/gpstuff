@@ -1,9 +1,9 @@
 function [p, pc, c] = gpla_cm2(gp, x, y, fvec,varargin) 
-%GPLA_CM2  CM2 correction for marginal likelihood using Laplace
+%GPLA_CM2  CM2 correction for marginal posterior using Laplace
 %          approximation
 % 
 %  Description
-%    [P, PC, C] = GPLA_CM2(GP, X, Y, FVEC) Evaluates the marginal likelihood
+%    [P, PC, C] = GPLA_CM2(GP, X, Y, FVEC) Evaluates the marginal posterior
 %    at given grind points FVEC for given indices. Returns tilted
 %    distribution without any correction P, with CM2 correction terms
 %    PC and the correction terms C.

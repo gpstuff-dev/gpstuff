@@ -1,9 +1,9 @@
 function [p, pc, c] = gpep_fact(gp, x, y,fvec,varargin) 
-%GPEP_FACT  Factorized correction for marginal likelihood using expectation
+%GPEP_FACT  Factorized correction for marginal posterior using expectation
 %           propagation. 
 % 
 %  Description
-%    [P, PC, C] = GPEP_FACT(GP, X, Y, FVEC) Evaluates marginal likelihood
+%    [P, PC, C] = GPEP_FACT(GP, X, Y, FVEC) Evaluates marginal posterior
 %    at given grind points FVEC for given indices. Returns tilted
 %    distribution without any correction P, with factorized correction
 %    terms PC and the corrections terms C.

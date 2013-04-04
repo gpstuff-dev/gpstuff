@@ -1,9 +1,9 @@
 function [p, pc, c] = gpla_fact(gp, x, y, fvec,varargin) 
-%GPLA_FACT  Factorized correction for marginal likelihood using Laplace
+%GPLA_FACT  Factorized correction for marginal posterior using Laplace
 %           approximation
 % 
 %  Description
-%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates the marginal likelihood
+%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates the marginal posterior
 %    at given grid points FVEC for given indices. Returns tilted
 %    distribution without any correction P, with factorized correction
 %    terms PC and the correction terms C.
