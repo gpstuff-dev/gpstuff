@@ -75,7 +75,7 @@ else
 end
 pc = zeros(nin,size(ind,1)); p = zeros(nin,size(ind,1)); c = zeros(nin,size(ind,1));
 ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
-llg = gplik.fh.llg(gplik, y, f_mode, 'latent', z); llg = zeros(size(llg));
+llg = gplik.fh.llg(gplik, y, f_mode, 'latent', z); 
 llg2 = gplik.fh.llg2(gplik, y, f_mode, 'latent', z);
 K_ff = gp_trcov(gp, x);
 % Loop through grid indices
@@ -98,8 +98,8 @@ for i1=1:size(ind,1)
     cii = Covf2(ind(i1), ind(i1));
     fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
   end
-  minf = Ef-6.*sqrt(diag(Covf));
-  maxf = Ef+6.*sqrt(diag(Covf));
+  minf = Ef-9.*sqrt(diag(Covf));
+  maxf = Ef+9.*sqrt(diag(Covf));
   
   
   if ~predictive
@@ -107,16 +107,19 @@ for i1=1:size(ind,1)
     cjj = Covf; %cjj(ind(i1),:) = []; cjj(:,ind(i1)) = [];
     ci = diag(cjj)-(cji'*(1/cii)).*cji';
     mf = Ef; %mf(ind(i1)) = [];
+    inds=[1:(ind(i1)-1) (ind(i1)+1):n];
   else
     K_fstar = gp_cov(gp,  x, xt(ind(i1),:));
     cjj = Covf;
     cji = (K_fstar'/K_ff)*cjj;
     ci = diag(cjj)-cji'.*(1/cii).*cji';
+    inds=1:n;
   end
   % Loop through grid points
   for i=1:nin
 %     sprintf('Grid point %d', i)
     c_ii = ones(n,1);
+    c_ii2 = ones(n,1);
     
     % Variance and mean for global gaussian approximation conditioned on
     % other data grid poins, q(x_j|x_i) or in predictive case, q(x_j,
@@ -126,29 +129,40 @@ for i1=1:size(ind,1)
     else
       mu = Ef+cji'./cii.*(fvec(i,i1)-Ef2(ind(i1)));
     end
+    m1 = (f_mode-llg./llg2);
+    s1 = sqrt(-1./llg2);
+    C1 = exp(ll+llg2.*f_mode.^2-llg2.*m1.^2 - llg.*f_mode);
+    m2 = mu;
+    s2 = sqrt(ci);
+    C2 = 1./sqrt(2*pi*s2.^2);
     
-    % Loop through other points in x, exclude point to which current latent grid
-    % corresponds to (if not predictive).
-    for j=1:n
-      if j==ind(i1) && ~predictive
-        continue;
-      end
-      
-      if isempty(z)
-        z1 = [];
-      else
-        z1 = z(j);
-      end
-      
-      % Function handle for the term approximations of the likelihood
-      t_i = @(f) exp(ll(j) + (f-f_mode(j))*llg(j) + 0.5*(f-f_mode(j)).^2*llg2(j));
-      
-      % Finally calculate the correction term by integrating over latent
-      % value x_j   
-      c_ii(j) = quadgk(@(f) norm_pdf(f,mu(j),sqrt(ci(j))).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f)./t_i(f),minf(j),maxf(j), 'absTol', 1e-1, 'relTol', 1e-1);
-    end
-    c_i = prod(c_ii);
-    c(i,i1) = c_i;
+    s = sqrt(1./(1./s2.^2 - 1./s1.^2));
+    m = (m2./s2.^2 - m1./s1.^2).*s.^2;
+    
+    Z = C1./C2.*exp(-1./(2*(-s1.^2+s2.^2)).*(m1-m2).^2).*sqrt(2*pi*s.^2);
+    c_ii = Z(inds).*exp(gp.lik.fh.tiltedMoments(gplik, y(inds), 1:length(inds), s(inds).^2, m(inds), z));
+
+%     % Loop through other points in x, exclude point to which current latent grid
+%     % corresponds to (if not predictive).
+%     for j=1:n
+%       if j==ind(i1) && ~predictive
+%         continue;
+%       end
+%       
+%       if isempty(z)
+%         z1 = [];
+%       else
+%         z1 = z(j);
+%       end
+%       
+%       % Function handle for the term approximations of the likelihood
+%       t_i = @(f) exp(ll(j) + (f-f_mode(j))*llg(j) + 0.5*(f-f_mode(j)).^2*llg2(j));
+%       
+%       % Finally calculate the correction term by integrating over latent
+%       % value x_j   
+%       c_ii(j) = quadgk(@(f) norm_pdf(f,mu(j),sqrt(ci(j))).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f)./t_i(f),minf(j),maxf(j), 'absTol', 1e-1, 'relTol', 1e-1);
+%     end
+    c(i,i1) = prod(c_ii);
     p(i,i1) = fh_p(fvec(i,i1));
 
   end
