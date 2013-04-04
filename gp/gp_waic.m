@@ -222,8 +222,8 @@ function waic = gp_waic(gp, x, y, varargin)
 
       if isequal(method,'V')
         % Estimate WAIC with variance form
-        sigma2s=gp.lik.sigma2;
         if isfield(gp.lik.fh,'trcov')
+          sigma2s=gp.lik.sigma2;
           % Gaussian likelihood
           if strcmp(gp.lik.type,'GaussianBL')
             sigma2=zeros(tn,1);
