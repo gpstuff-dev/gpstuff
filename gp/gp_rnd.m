@@ -1098,22 +1098,42 @@ elseif isstruct(gp) && numel(gp.jitterSigma2)>1
       if isfield(gp, 'latentValues') && ~isempty(gp.latentValues)
         % Non-Gaussian likelihood. The latent variables should be used in
         % place of observations
-        y = gp.latentValues';
-        ii=i1;
+        for ni=1:nsampi
+          if ni==1
+            % use stored latent values
+            f = gp.latentValues(i1,:);
+          else
+            % need to resample latent values
+            opt=scaled_mh();
+            f=scaled_mh(f, opt, Gp, x, y, z);
+          end
+          if nargout<2
+            tsampft = gp_rnd(Gp, x, f', xt, 'nsamp', 1, ...
+                             'z', z, 'zt', zt, 'predcf', predcf, ...
+                             'tstind', tstind);
+            sampft=[sampft tsampft];
+          else
+            [tsampft, tsampyt] = gp_rnd(Gp, x, f', xt, 'nsamp', ...
+                                        1, 'z', z, 'zt', zt, ...
+                                        'predcf', predcf, 'tstind', tstind);
+            sampft=[sampft tsampft];
+            sampyt=[sampyt tsampyt];
+          end
+        end
       else         
-        ii=1;
-      end
-      if nargout<2
-        tsampft = gp_rnd(Gp, x, y(:,ii), xt, 'nsamp', nsampi, ...
-                         'z', z, 'zt', zt, 'predcf', predcf, ...
-                         'tstind', tstind);
-        sampft=[sampft tsampft];
-      else
-        [tsampft, tsampyt] = gp_rnd(Gp, x, y(:,ii), xt, 'nsamp', ...
-                                    nsampi, 'z', z, 'zt', zt, ...
-                                    'predcf', predcf, 'tstind', tstind);
-        sampft=[sampft tsampft];
-        sampyt=[sampyt tsampyt];
+        % Gaussian likelihood
+        if nargout<2
+          tsampft = gp_rnd(Gp, x, y, xt, 'nsamp', nsampi, ...
+                           'z', z, 'zt', zt, 'predcf', predcf, ...
+                           'tstind', tstind);
+          sampft=[sampft tsampft];
+        else
+          [tsampft, tsampyt] = gp_rnd(Gp, x, y, xt, 'nsamp', ...
+                                      nsampi, 'z', z, 'zt', zt, ...
+                                      'predcf', predcf, 'tstind', tstind);
+          sampft=[sampft tsampft];
+          sampyt=[sampyt tsampyt];
+        end
       end
     end
   end
@@ -1129,7 +1149,7 @@ elseif iscell(gp)
   end
   % resample nsamp cases from nmc samples
   % strafied resampling has has higher variance than deterministic
-  % resapmling, but has smaller bias, and thus it shoould be more
+  % resampling, but has a smaller bias, and thus it should be more
   % suitable for unequal weights
   gi=resampstr(gw,nsamp,1);
   sampft=[];sampyt=[];
