@@ -1,4 +1,4 @@
-function [p, pc c] = gpla_cm2(gp, x, y, fvec,varargin) 
+function [p, pc, c] = gpla_cm2(gp, x, y, fvec,varargin) 
 %GPLA_CM2  CM2 correction for marginal likelihood using Laplace
 %          approximation
 % 
@@ -65,18 +65,20 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z);
 end
-[e, edata, eprior, f_mode, Lf, af, Wf] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
+[e, edata, eprior, param] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
+f_mode = param.f;
 if iscell(gp)
   gplik = gp{1}.lik;
 else
   gplik = gp.lik;
 end
 pc = zeros(nin,size(ind,1)); p = zeros(nin,size(ind,1)); c = zeros(nin,size(ind,1));
-
+ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
+llg = gplik.fh.llg(gplik, y, f_mode, 'latent', z);
+llg2 = gplik.fh.llg2(gplik, y, f_mode, 'latent', z);
 % Loop through grid indices
 for i1=1:size(ind,1)
   if ~predictive
-    n = n-1;
     cii = Covf(ind(i1),ind(i1));
     if isempty(z)
       z_ind = [];
@@ -85,73 +87,58 @@ for i1=1:size(ind,1)
     end
         
     % Function handle to marginal distribution without any correction parameters
-%     K_ff = gp_cov(gp, x(ind(i1),:), x(ind(i1),:));
-    t_tilde = @(b) arrayfun(@(f) exp(gplik.fh.ll(gplik, y(ind(i1)), f_mode(ind(i1)), z_ind) + (f-f_mode(ind(i1)))*gplik.fh.llg(gplik, y(ind(1)), f_mode(ind(i1)), 'latent', z_ind) + 0.5*(f-f_mode(ind(i1)))^2*gplik.fh.llg2(gplik, y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind)), b);
-%     t_tilde = @(f) norm_pdf(f, f_mode(ind(i1))./(-gplik.fh.llg2(gplik,y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind).*K_ff) + f_mode(ind(i1)), 1./(-gplik.fh.llg2(gplik, y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind)));
+    t_tilde = @(f) exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
     fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
   else
     cii = Covf2(ind(i1), ind(i1));
     fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
   end
  
+  if ~predictive
+    cji = Covf(ind(i1),:);
+    cji(ind(i1)) = [];
+    inds=[1:(ind(i1)-1) (ind(i1)+1):n];
+  else
+    K_fstar = gp_cov(gp,  x, xt(ind(i1),:));
+    K_ff = gp_trcov(gp, x);
+    cji = (K_fstar'/K_ff)*Covf;
+    inds=1:n;
+  end
+  mf = Ef(inds);
+  cjj = Covf(inds,inds);
+  y_tmp = y(inds);
+  ci = cjj - cji'*(1/cii)*cji;
+  f_mode_tmp=f_mode(inds);
+  llg2_mode=diag(llg2(inds));
+  llg_mode=llg(inds);
+  ll_mode=sum(ll(inds));
+  
   % Loop through grid points
   for i=1:nin
     
-    % Compute conditional covariance matrices and mean vector
-    if ~predictive
-      if isempty(z)
-        z_tmp = [];
-      else
-        z_tmp = z; z_tmp(ind(i1)) = [];
-      end
-      y_tmp = y; y_tmp(ind(i1)) = [];
-      x_tmp = x; x_tmp(ind(i1),:) = [];
-      Covf_tmp = Covf;
-      cji = Covf_tmp(ind(i1),:);
-      cji(ind(i1)) = [];
-      Covf_tmp(ind(i1),:) = []; Covf_tmp(:,ind(i1)) = [];
-      cjj = Covf_tmp;
-      ci = cjj - cji'*(1/cii)*cji;
-      mf = Ef; mf(ind(i1)) = [];
-      mu = mf+cji'./cii.*(fvec(i,i1)-Ef(ind(i1)));
-      f_mode_tmp = f_mode; f_mode_tmp(ind(i1)) = [];
+    if isempty(z)
+      z_tmp = [];
     else
-      if isempty(z)
-        z_tmp = [];
-      else
-        z_tmp = z;
-      end
-      y_tmp = y; 
-      x_tmp = x;
-      K_fstar = gp_cov(gp,  x, xt(ind(i1),:));
-      K_ff = gp_trcov(gp, x);
-      cjj = Covf;
-      cji = (K_fstar'/K_ff)*cjj;
-      ci = cjj - cji'*(1/cii)*cji;
-      mu = Ef+cji'./cii.*(fvec(i,i1)-Ef2(ind(i1)));
-      f_mode_tmp = f_mode;
+      z_tmp = z;
     end
-%     mu = f_mode_tmp + cji' * (1/cii) * (fvec(ind(i1)) - f_mode(ind(i1)));
-%     Kff = gp_cov(gp, x_tmp, x_tmp);
+      % Compute conditional covariance matrices and mean vector
+    if ~predictive   
+      mu = mf+cji'./cii.*(fvec(i,i1)-Ef(ind(i1)));
+    else
+      mu = mf+cji'./cii.*(fvec(i,i1)-Ef2(ind(i1)));
+    end
     W = -diag(gplik.fh.llg2(gplik, y_tmp, mu, 'latent', z_tmp));
-    llg2_mode = diag(gplik.fh.llg2(gplik, y_tmp, f_mode_tmp, 'latent', z_tmp));
-    llg = gplik.fh.llg(gplik, y_tmp, mu, 'latent', z_tmp);
-    llg_mode = gplik.fh.llg(gplik, y_tmp, f_mode_tmp, 'latent', z_tmp);
-    ll = gplik.fh.ll(gplik,y_tmp, mu, z_tmp);
-    ll_mode = gplik.fh.ll(gplik,y_tmp, f_mode_tmp, z_tmp);
-%     iKffW = eye(n-1)/(Kff*W);
-%     lt_tilde_g = -(mu-iKffW*f_mode_tmp)'*W;
-    
-%     lnZ = mnorm_lpdf(mu', mu', ci) + gplik.fh.ll(gplik, y_tmp, mu, z_tmp) - mnorm_lpdf(mu', (iKffW*f_mode_tmp + f_mode_tmp)', eye(n-1)/W);
-%     lnZ = lnZ - (0.5*(llg-lt_tilde_g')'/(-eye(n-1)/ci - 2.*W))*(llg-lt_tilde_g');
-%     lnZ = lnZ - 0.5*sum(log(diag(chol(eye(n-1)/ci + 2.*W))));
+    deriv = gplik.fh.llg(gplik, y_tmp, mu, 'latent', z_tmp);
+    logll = gplik.fh.ll(gplik,y_tmp, mu, z_tmp);
 
     % Computation of correction term by integrating the second order taylor
     % expansion of product of global gaussian approximation conditioned on latent
-    % value x_i, q(x_-i|x_i), and t_-i(x_-i)/ttilde_-i(x_-i)
-    lnZ = -(sum(log(diag(chol(cjj)))) + 1/cii + sum(log(diag(chol(cii + cji*cjj*cji'))))) + ll - ll_mode - (mu-f_mode_tmp)'*llg_mode - 0.5*(mu-f_mode_tmp)'*llg2_mode*(mu-f_mode_tmp);
-    lnZ = lnZ - (0.5*(llg-llg_mode-((mu-f_mode_tmp)'*llg2_mode)')'/(-eye(n)/ci - W - llg2_mode))*(llg-llg_mode-((mu-f_mode_tmp)'*llg2_mode)');
-    lnZ = lnZ  + sum(log(diag(chol(cjj)))) + 0.5*log(cii) + 0.5*log(cii+cji*cjj*cji') - evaluate_q(diag(W+llg2_mode), ci);
+    % value x_i, q(x_-i|x_i), and t_-i(x_-i)/ttilde_-i(x_-i) 
+    mu1=mu-f_mode_tmp;
+    lnZ = -1/cii + logll - ll_mode - mu1'*llg_mode - 0.5*mu1'*llg2_mode*mu1;
+    mu2=deriv-llg_mode-(mu1'*llg2_mode)';
+    lnZ = lnZ - (0.5*mu2'/(-eye(size(ci))/ci - W - llg2_mode))*mu2;
+    lnZ = lnZ + 0.5*log(cii) - evaluate_q(diag(W+llg2_mode), ci);
     
     c(i,i1) = exp(lnZ);
     p(i,i1) = fh_p(fvec(i,i1));

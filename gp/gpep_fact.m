@@ -67,7 +67,8 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z);
 end
-[tmp, tmp, tmp, tautilde, nutilde, tmp, tmp, tmp, muvec_i, sigm2vec_i] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
+[tmp, tmp, tmp, p] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
+[tautilde, nutilde, muvec_i, sigm2vec_i] = deal(p.tautilde, p.nutilde, p.muvec_i, p.sigm2vec_i);
 if iscell(gp)
   gplik = gp{1}.lik;
 else
@@ -75,9 +76,13 @@ else
 end
 pc = zeros(nin,size(ind,1)); p = zeros(nin,size(ind,1)); c = zeros(nin,size(ind,1));
 
+% Compute tilted moments
+logM02 = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
+
 % Loop through grid indices
 for i1=1:size(ind,1)
   if ~predictive
+    inds=[1:(ind(i1)-1) (ind(i1)+1):n];
     cii = Covf(ind(i1),ind(i1));
     if isempty(z)
       z_ind = [];
@@ -94,11 +99,12 @@ for i1=1:size(ind,1)
     % Function handle to marginal distribution without any correction parameters
     fh_p = @(f) 1/Z_p*exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./norm_pdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
   else
+    inds=1:n;
     cii = Covf2(ind(i1), ind(i1));
     fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
   end
-  minf = Ef-6.*sqrt(diag(Covf));
-  maxf = Ef+6.*sqrt(diag(Covf));
+  minf = Ef-9.*sqrt(diag(Covf));
+  maxf = Ef+9.*sqrt(diag(Covf));
   
   % Loop through grid points
   for i=1:nin
@@ -123,28 +129,43 @@ for i1=1:size(ind,1)
     end
     % Loop through other points in x, exclude point to which current latent grid
     % corresponds to (if not predictive).
-    for j=1:n
-      if j==ind(i1) && ~predictive
-        continue;
-      end
-      % Correction("unnormalizing") constant for gaussian likelihood approximation.
-      logM0 = gp.lik.fh.tiltedMoments(gp.lik, y, j, sigm2vec_i(j), muvec_i(j), z);
-      Ztilde=exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(j)+1./tautilde(j))*exp(0.5*(muvec_i(j)-nutilde(j)./tautilde(j)).^2/(sigm2vec_i(j)+1./tautilde(j)));
-      
-      % Function handle for gaussian approximation of the likelihood
-      t_i = @(f) Ztilde.*norm_pdf(f, nutilde(j)/tautilde(j), 1/sqrt(tautilde(j)));
-      
-      if isempty(z)
-        z1 = [];
-      else
-        z1 = z(j);
-      end
-      
-      % Finally calculate the correction term by integrating over latent
-      % value x_j
-      
-      c_ii(j) = quadgk(@(f) exp(norm_lpdf(f,mu(j),sqrt(ci(j)))).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f)./t_i(f),minf(j),maxf(j));
-    end
+    Ztilde=exp(logM02).*sqrt(2*pi).*sqrt(sigm2vec_i+1./tautilde).*exp(0.5*(muvec_i-nutilde./tautilde).^2./(sigm2vec_i+1./tautilde));
+    m1 = nutilde./tautilde;
+    s1 = 1./sqrt(tautilde);
+    m2 = mu;
+    s2 = sqrt(ci);
+    
+    s = sqrt(1./(1./s2.^2 - 1./s1.^2));
+    m = (m2./s2.^2 - m1./s1.^2).*s.^2;
+    Z = s1./s2.*exp(-1./(2*(-s1.^2+s2.^2)).*(m1-m2).^2).*sqrt(2*pi*s.^2);
+%     Z = s1./s2.*exp(-m2.^2./(2*s2.^2) + m1.^2./(2*s1.^2) + 0.5.*m.^2.*s.^2).*sqrt(2*pi*s.^2);
+    c_ii = Z(inds)./Ztilde(inds).*exp(gp.lik.fh.tiltedMoments(gplik, y(inds), 1:length(inds), s(inds).^2, m(inds), z));
+%     for j=1:n
+%       if j==ind(i1) && ~predictive
+%         continue;
+%       end
+%       % Correction("unnormalizing") constant for gaussian likelihood approximation.
+%       Ztilde=exp(logM02(j))*sqrt(2*pi)*sqrt(sigm2vec_i(j)+1./tautilde(j))*exp(0.5*(muvec_i(j)-nutilde(j)./tautilde(j)).^2/(sigm2vec_i(j)+1./tautilde(j)));
+%       
+%       % Function handle for gaussian approximation of the likelihood
+%       t_i = @(f) Ztilde.*norm_pdf(f, nutilde(j)/tautilde(j), 1/sqrt(tautilde(j)));
+%       
+%       if isempty(z)
+%         z1 = [];
+%       else
+%         z1 = z(j);
+%       end
+%       
+%       % Finally calculate the correction term by integrating over latent
+%       % value x_j
+% %       f = linspace(minf(j), maxf(j),100);
+% %       plot(f, norm_pdf(f,m(j),s(j)).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f));
+% %       pause
+% %       c_ii(j) = Z(j)./Ztilde.*exp(gplik.fh.tiltedMoments(gplik, y(j), 1, s(j)^2, m(j), z));
+% %       c_ii(j) = quadgk(@(f) norm_pdf(f,m(j),s(j)).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f),minf(j),maxf(j));
+% %       c_ii(j) = quadgk(@(f) Z(j)./Ztilde.*norm_pdf(f,m(j),s(j)).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f),minf(j),maxf(j));
+%       c_ii(j) = quadgk(@(f) exp(norm_lpdf(f,mu(j),sqrt(ci(j)))).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f)./t_i(f),minf(j),maxf(j));
+%     end
     c_i = prod(c_ii);
     c(i,i1) = c_i;
     p(i,i1) = fh_p(fvec(i,i1));

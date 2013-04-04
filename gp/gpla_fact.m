@@ -66,15 +66,18 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z);
 end
-[tmp, tmp, tmp, p] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
-f_mode = p.f;
+[tmp, tmp, tmp, param] = gpla_e(gp_pak(gp), gp, x,y,'z',z);
+f_mode = param.f;
 if iscell(gp)
   gplik = gp{1}.lik;
 else
   gplik = gp.lik;
 end
 pc = zeros(nin,size(ind,1)); p = zeros(nin,size(ind,1)); c = zeros(nin,size(ind,1));
-
+ll = arrayfun(@(f,yy) gplik.fh.ll(gplik, yy, f, z), f_mode, y);
+llg = gplik.fh.llg(gplik, y, f_mode, 'latent', z); llg = zeros(size(llg));
+llg2 = gplik.fh.llg2(gplik, y, f_mode, 'latent', z);
+K_ff = gp_trcov(gp, x);
 % Loop through grid indices
 for i1=1:size(ind,1)
   if ~predictive
@@ -86,10 +89,10 @@ for i1=1:size(ind,1)
     end
     
     % Function handle to marginal distribution without any correction parameters
-%     K_ff = gp_cov(gp, x(ind(i1),:), x(ind(i1),:));
-%     Z_p = exp(gplik.fh.ll(gplik,y(ind(i1)),f_mode(ind(i1)), z_ind) - 0.5*(-1/K_ff+gplik.fh.llg2(gplik, y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind)));
-    t_tilde = @(b) arrayfun(@(f) exp(gplik.fh.ll(gplik, y(ind(i1)), f_mode(ind(i1)), z_ind) + (f-f_mode(ind(i1)))*gplik.fh.llg(gplik, y(ind(1)), f_mode(ind(i1)), 'latent', z_ind) + 0.5*(f-f_mode(ind(i1)))^2*gplik.fh.llg2(gplik, y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind)), b);
-%     t_tilde = @(f) norm_pdf(f, f_mode(ind(i1))./(gplik.fh.llg2(gplik,y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind).*K_ff) + f_mode(ind(i1)), 1./(-gplik.fh.llg2(gplik, y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind)));
+%     ll = gplik.fh.ll(gplik, y(ind(i1)), f_mode(ind(i1)), z_ind);
+%     llg = gplik.fh.llg(gplik, y(ind(1)), f_mode(ind(i1)), 'latent', z_ind);
+%     llg2 = gplik.fh.llg2(gplik, y(ind(i1)), f_mode(ind(i1)), 'latent', z_ind);
+    t_tilde = @(f)  exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
     fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
   else
     cii = Covf2(ind(i1), ind(i1));
@@ -98,6 +101,18 @@ for i1=1:size(ind,1)
   minf = Ef-6.*sqrt(diag(Covf));
   maxf = Ef+6.*sqrt(diag(Covf));
   
+  
+  if ~predictive
+    cji = Covf(ind(i1),:); %cji(ind(i1)) = [];
+    cjj = Covf; %cjj(ind(i1),:) = []; cjj(:,ind(i1)) = [];
+    ci = diag(cjj)-(cji'*(1/cii)).*cji';
+    mf = Ef; %mf(ind(i1)) = [];
+  else
+    K_fstar = gp_cov(gp,  x, xt(ind(i1),:));
+    cjj = Covf;
+    cji = (K_fstar'/K_ff)*cjj;
+    ci = diag(cjj)-cji'.*(1/cii).*cji';
+  end
   % Loop through grid points
   for i=1:nin
 %     sprintf('Grid point %d', i)
@@ -107,17 +122,8 @@ for i1=1:size(ind,1)
     % other data grid poins, q(x_j|x_i) or in predictive case, q(x_j,
     % x_*)
     if ~predictive
-      cji = Covf(ind(i1),:); %cji(ind(i1)) = [];
-      cjj = Covf; %cjj(ind(i1),:) = []; cjj(:,ind(i1)) = [];
-      ci = diag(cjj)-(cji'*(1/cii)).*cji';
-      mf = Ef; %mf(ind(i1)) = [];
       mu = mf+cji'./cii.*(fvec(i,i1)-Ef(ind(i1)));
     else
-      K_fstar = gp_cov(gp,  x, xt(ind(i1),:));
-      K_ff = gp_trcov(gp, x);
-      cjj = Covf;
-      cji = (K_fstar'/K_ff)*cjj;
-      ci = diag(cjj)-cji'.*(1/cii).*cji';
       mu = Ef+cji'./cii.*(fvec(i,i1)-Ef2(ind(i1)));
     end
     
@@ -135,12 +141,11 @@ for i1=1:size(ind,1)
       end
       
       % Function handle for the term approximations of the likelihood
-      t_i = @(f) exp(gplik.fh.ll(gplik, y(j), f_mode(j), z1) + (f-f_mode(j))*gplik.fh.llg(gplik, y(j), f_mode(j), 'latent', z1) + 0.5*(f-f_mode(j))^2*gplik.fh.llg2(gplik, y(j), f_mode(j), 'latent', z1));
+      t_i = @(f) exp(ll(j) + (f-f_mode(j))*llg(j) + 0.5*(f-f_mode(j)).^2*llg2(j));
       
       % Finally calculate the correction term by integrating over latent
-      % value x_j
-      
-      c_ii(j) = quadgk(@(f) exp(norm_lpdf(f,mu(j),sqrt(ci(j)))).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f)./arrayfun(t_i,f),minf(j),maxf(j), 'absTol', 1e-1, 'relTol', 1e-1);
+      % value x_j   
+      c_ii(j) = quadgk(@(f) norm_pdf(f,mu(j),sqrt(ci(j))).*arrayfun(@(b) exp(gplik.fh.ll(gplik, y(j), b, z1)),f)./t_i(f),minf(j),maxf(j), 'absTol', 1e-1, 'relTol', 1e-1);
     end
     c_i = prod(c_ii);
     c(i,i1) = c_i;
