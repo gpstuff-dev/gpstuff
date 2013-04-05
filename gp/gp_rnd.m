@@ -55,12 +55,14 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
+ip.addParamValue('fcorrections', 'off', @(x) ismember(x, {'fact','cm2','off'}))
 ip.parse(gp, x, y, xt, varargin{:});
 z=ip.Results.z;
 zt=ip.Results.zt;
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 nsamp=ip.Results.nsamp;
+fcorrections=ip.Results.fcorrections;
 
 tn = size(x,1);
 
@@ -136,7 +138,25 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             end
             sampyt = Ef + predcov*rr;
           end
-        end   
+        end 
+        switch fcorrections
+          case 'fact'
+            fgrid = arrayfun(linspace(@(min,max) linspace(min,max,40), Ef-5.*sqrt(diag(pcov)), Ef+5.*sqrt(diag(pcov))));
+            for i=1:size(xt,1)
+              fvec=fgrid(i,:);
+              [p_pred(:,i), pc_pred(:,i), c_pred(:,i)] = gpla_fact(gp,x,y,fvec,xt, 'z', N, 'ind', i);
+              fsnc(i,:)= normcdf(sampft(i,:), Ef(i), sqrt(diag(pcov(i,i))));
+              fsc(i,:)=interp1(cumsum(pc_pred(:,i)./sum(pc_pred(:,i))),fvec(:,i),fsnc(i,:));
+              sampft=fsc;
+            end
+          case 'cm2'
+            if isequal(gp.latent_method, 'EP')
+              error('Cannot use cm2 corrections for marginal posterior with EP (use fact)');
+            end
+            fgrid = arrayfun(linspace(@(min,max) linspace(min,max,40), Ef-5.*sqrt(diag(pcov)), Ef+5.*sqrt(diag(pcov))));
+          otherwise
+            % Do nothing
+        end
         
       case 'FIC'    
         % Here tstind = 1 if the prediction is made for the training set 
@@ -619,7 +639,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
         
         predcov = chol(Covf,'lower');
         Ef = repmat(Ef,1,nsamp);
-        sampft = Ef + predcov*randn(size(Ef));
+        sampft = Ef + predcov*randn(size(Ef));       
         
         % ---------------------------
       case 'FIC'
@@ -1079,6 +1099,37 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
         end
     end
+     if ~isequal(fcorrections, 'off')
+       % Do marginal corrections for samples
+       fsc=zeros(size(sampft));
+       minf = 5;
+       maxf = 5;
+       tol = 1e-5;
+       for i=1:size(xt,1)
+         fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
+         pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
+         while (pc_pred(1) > tol || pc_pred(end) > tol)
+           % Increase grid length because corrected distribution is too
+           % skewed
+           if pc_pred(1) > tol
+             minf = minf + 1;
+           end
+           if pc_pred(end) > tol
+             maxf = maxf + 1;
+           end
+           fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
+           pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
+         end
+         cumsumpc = cumsum(pc_pred)/sum(pc_pred);
+         % Remove non-unique values from grid vector & distribution
+         [cumsumpc, inds] = unique(cumsumpc);
+         fvec = fvec(inds);
+         fsnc = normcdf(sampft(i,:), Ef(i,1), sqrt(diag(Covf(i,i))));
+         fsc(i,:)=interp1(cumsumpc,fvec,fsnc);
+       end
+       sampft=fsc;
+    end
+    
   end
 elseif isstruct(gp) && numel(gp.jitterSigma2)>1
   % MCMC
@@ -1116,9 +1167,13 @@ elseif isstruct(gp) && numel(gp.jitterSigma2)>1
             [tsampft, tsampyt] = gp_rnd(Gp, x, f', xt, 'nsamp', ...
                                         1, 'z', z, 'zt', zt, ...
                                         'predcf', predcf, 'tstind', tstind);
-            sampft=[sampft tsampft];
+                                      
+                 
             sampyt=[sampyt tsampyt];
+            sampft=[sampft tsampft];
           end
+
+          
         end
       else         
         % Gaussian likelihood
@@ -1158,11 +1213,13 @@ elseif iscell(gp)
     if nsampi>0
       if nargout<2
         tsampft = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
-                         'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
+                         'z', z, 'zt', zt, 'predcf', predcf, ...
+                         'tstind', tstind, 'fcorrections', fcorrections);
         sampft=[sampft tsampft];
       else
         [tsampft, tsampyt] = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
-                                    'z', z, 'zt', zt, 'predcf', predcf, 'tstind', tstind);
+                                    'z', z, 'zt', zt, 'predcf', predcf, ...
+                                    'tstind', tstind, 'fcorrections', fcorrections);
         sampft=[sampft tsampft];
         sampyt=[sampyt tsampyt];
       end
