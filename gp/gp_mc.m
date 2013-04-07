@@ -25,7 +25,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
 %                    (respecting infer_params option). If optional
 %                    argument hmc_opt.nuts = 1, No-U-Turn HMC is used 
 %                    instead. With NUTS, only mandatory parameter is
-%                    number of adaptation steps hmc_opt.nadapt of step-size 
+%                    number of adaptation steps hmc_opt.Madapt of step-size 
 %                    parameter. For additional info, see hmc_nuts.
 %      sls_opt     - Options structure for slice sampler (see sls_opt). 
 %                    When this is given the covariance function and
@@ -212,8 +212,8 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
   if ~isempty(opt.hmc_opt)
     if isfield(opt.hmc_opt, 'nuts') && opt.hmc_opt.nuts
       % Number of step-size adapting stept in hmc_nuts
-      if ~isfield(opt.hmc_opt, 'nadapt')
-        opt.hmc_opt.nadapt = 20;
+      if ~isfield(opt.hmc_opt, 'Madapt')
+        opt.hmc_opt.Madapt = 20;
       end
     end
     if isfield(opt.hmc_opt, 'rstate')
@@ -315,7 +315,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
           % Use NUTS hmc
           w = gp_pak(gp);
           lp = @(w) deal(-gpmc_e(w,gp,x,y,f,z), -gpmc_g(w,gp,x,y,f,z));
-          if k<opt.hmc_opt.nadapt
+          if k<opt.hmc_opt.Madapt
             % Take one sample while adjusting step length
             opt.hmc_opt.Madapt = 1; 
             opt.hmc_opt.M = 0; 
