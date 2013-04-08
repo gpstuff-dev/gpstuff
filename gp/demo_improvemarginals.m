@@ -2,11 +2,14 @@
 %                       in Laplace and EP algorithms.
 %
 %  Description
-%    Demonstrates improvements to marginal likelihoods with
-%    gpep_fact/gpla_fact/gpla_cm2. gpla_cm2 improvement is the fastest
-%    while providing better or at least as good corrections (in our
-%    test cases) as the slower gpla_fact.
+%    Demonstrated marginal posterior corrections of latent variables with
+%    classification task. Demonstrated corrections are 'fact' (EP &
+%    Laplace) and 'cm2' (Laplace). The corrected posteriori distributions
+%    are compared to histograms of MCMC samples to assess the quality of
+%    corrections.
 %
+%  See also
+%    GP_PREDCM
 
 % This software is distributed under the GNU General Public 
 % License (version 3 or later); please refer to the file 
@@ -96,9 +99,9 @@ for i=1:length(ind)
   fvec_probit_pred(:,i) = linspace(Eft_probit_pred(ind(i))-6*sqrt(Varft_probit_pred(ind(i))), Eft_probit_pred(ind(i))+6*sqrt(Varft_probit_pred(ind(i))), 30)';
   start=tic;
   [pc_probit_pred(:,i), p_probit_pred(:,i)] = gp_predcm(gp_probit,x,y,fvec_probit_pred(:,i),xt, 'ind', ind(i), 'correction', 'fact');tt_epfact2=toc(start);
-  plot(fvec_probit_pred(:,i), p_probit_pred(:,i), '-k', fvec_probit_pred(:,i), norm_pdf(fvec_probit_pred(:,i), Eft_probit_pred(ind(i)), sqrt(Varft_probit_pred(ind(i)))), '-m', fvec_probit_pred(:,i), pc_probit_pred(:,i), '-r', fvec_probit_pred(:,i), mean(ptx_prob,1), '-c');
+  plot(fvec_probit_pred(:,i), p_probit_pred(:,i), '-k', fvec_probit_pred(:,i), pc_probit_pred(:,i), '-r', fvec_probit_pred(:,i), mean(ptx_prob,1), '-c');
   set(s,'LineWidth',2)
-  legend('EP-L', 'EP-G', 'EP-FACT', 'MCMC');
+  legend('EP-G', 'EP-FACT', 'MCMC');
   title('Predictive marginal corrections for probit likelihood (EP)');
 end
 
@@ -139,8 +142,8 @@ for i=1:length(ind)
   fvec_probit_laplace_pred(:,i) = linspace(Eft_probit_pred(ind(i))-6*sqrt(Varft_probit_pred(ind(i))), Eft_probit_pred(ind(i))+6*sqrt(Varft_probit_pred(ind(i))), 30)';
   start=tic;[pc_pred(:,i), p_pred(:,i), c_pred(:,i)] = gp_predcm(gp_probit_laplace,x,y,fvec_probit_laplace_pred(:,i),xt, 'ind', ind(i), 'correction', 'cm2'); tt_lacm22=toc(start);
   start=tic;[pc_pred2(:,i), p_pred2(:,i), c_pred2(:,i)] = gp_predcm(gp_probit_laplace,x,y,fvec_probit_laplace_pred(:,i),xt, 'ind', ind(i), 'correction', 'fact'); tt_lafact2=toc(start);
-  s = plot(fvec_probit_laplace_pred(:,i), p_pred2(:,i), '-k', fvec_probit_laplace_pred(:,i), norm_pdf(fvec_probit_laplace_pred(:,i), Eft_probit_pred(ind(i)), sqrt(Varft_probit_pred(ind(i)))), '-m', fvec_probit_laplace_pred(:,i), pc_pred(:,i), '-r', fvec_probit_laplace_pred(:,i), pc_pred2(:,i), '-b', fvec_probit_laplace_pred(:,i), mean(ptx_lap,1), '-c');
-  legend('LA-L', 'LA-G', 'LA-CM2', 'LA-FACT', 'MCMC');
+  s = plot(fvec_probit_laplace_pred(:,i), p_pred2(:,i), '-k', fvec_probit_laplace_pred(:,i), pc_pred(:,i), '-r', fvec_probit_laplace_pred(:,i), pc_pred2(:,i), '-b', fvec_probit_laplace_pred(:,i), mean(ptx_lap,1), '-c');
+  legend('LA-G', 'LA-CM2', 'LA-FACT', 'MCMC');
   title('Predictive marginal corrections for probit likelihood (Laplace)');
 end
 

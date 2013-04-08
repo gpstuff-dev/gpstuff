@@ -1,12 +1,13 @@
 function [pc, p, c] = gp_predcm(gp,x,y,fvec,varargin)
-%GPLA_FACT  Factorized correction for marginal posterior using Laplace
-%           approximation
+%GP_PREDCM  Corrections for marginal posterior 
 %
 %  Description
-%    [P, PC, C] = GPLA_FACT(GP, X, Y, FVEC) Evaluates the marginal posterior
-%    at given grid points FVEC for given indices. Returns tilted
-%    distribution without any correction P, with factorized correction
-%    terms PC and the correction terms C.
+%    [P, PC, C] = GP_PREDCM(GP, X, Y, FVEC, XT, OPTIONS) Evaluates the 
+%    marginal posterior at given grid points FVEC for given indices of XT 
+%    or X (XT not given). Returns tilted distribution P if XT is empty or 
+%    equal to X, otherwise predictive distribution, corrected predictive/tilted 
+%    distribution PC and correction terms C, where PC_i = P_i*C_i for every
+%    grid point i in fvec.
 %
 %
 %   OPTIONS is optional parameter-value pair
@@ -14,17 +15,20 @@ function [pc, p, c] = gp_predcm(gp,x,y,fvec,varargin)
 %               Some likelihoods may use this. For example, in case of
 %               Poisson likelihood we have z_i=E_i, that is, expected value
 %               for ith case.
-%      ind    - Index defining which point in data grid latent grid fvec
+%      ind    - Index defining which point in data (X or XT) latent grid fvec
 %               corresponds to. If ind is vector of size m x 1, fvec must
 %               be matrix of size n x m, where n is the number of grid
 %               points for each index. Default = 1.
+%      correction - Method used for evaluating correction terms C. Possible
+%                   methods are 'fact' (default) for EP and either 'fact'
+%                   or 'cm2' (default) for Laplace.
 %
 %   Reference
 %     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
 %     Models. Journal of Machine Learning Research 12 (2011), 417-454
 %
 %   See also
-%     GPEP_FACT, GPLA_CM2, DEMO_IMPROVEDMARGINALS
+%     DEMO_IMPROVEDMARGINALS
 
 % Copyright (c) 2011,2013 Ville Tolvanen
 
@@ -49,12 +53,16 @@ end
 z = ip.Results.z;
 ind = ip.Results.ind;
 xt = ip.Results.xt;
-correction = ip.Results.correction;
 predictive=false;
 gplik=gp.lik;
 [nin, n_ind] = size(fvec);
 n=size(x,1);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z);
+if isfield(ip.UsingDefaults, 'correction') && isequal(gp.latent_method, 'Laplace')
+  correction='cm2';
+else
+  correction = ip.Results.correction;
+end
 if size(ind,1)==1
   ind=ind';
 end
@@ -71,8 +79,9 @@ switch gp.latent_method
   case 'EP'
     switch correction
       case 'fact'
-        [tmp, tmp, tmp, par] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
-        [tautilde, nutilde, muvec_i, sigm2vec_i] = deal(par.tautilde, par.nutilde, par.muvec_i, par.sigm2vec_i);
+        [tmp, tmp, tmp, param] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
+        [tautilde, nutilde, muvec_i, sigm2vec_i] = ...
+              deal(param.tautilde, param.nutilde, param.muvec_i, param.sigm2vec_i);
         
         pc = zeros(nin,size(ind,1)); p = zeros(nin,size(ind,1)); c = zeros(nin,size(ind,1));
         
@@ -102,11 +111,11 @@ switch gp.latent_method
             inds=1:n;
             cii = Covf2(ind(i1), ind(i1));
             fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
+            K_ff = gp_trcov(gp, x);
           end
           
           % Loop through grid points
           for i=1:nin
-            c_ii = ones(n,1);
             
             % Variance and mean for global gaussian approximation conditioned on
             % other data grid poins, q(x_j|x_i) or in predictive case, q(x_j,
@@ -119,7 +128,6 @@ switch gp.latent_method
               mu = mf+cji'./cii.*(fvec(i,i1)-Ef(ind(i1)));
             else
               K_fstar = gp_cov(gp,  x, xt(ind(i1),:));
-              K_ff = gp_trcov(gp, x);
               cjj = Covf;
               cji = (K_fstar'/K_ff)*cjj;
               ci = diag(cjj)-cji'.*(1/cii).*cji';
