@@ -130,6 +130,7 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
         isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
         isempty(opt.lik_gibbs_opt)
+      opt.latent_opt=gp.fh.mc();
       if ~isempty(gp_pak(gp))
         opt.ssls_opt.latent_opt.repeat = 20;
         if opt.display>0
