@@ -336,7 +336,7 @@ function lik = lik_multinomprobit(varargin)
     
   end
   
-  function [py, Ey, Vary] = lik_multinomprobit_predy(lik, Ef, Varf, yt, zt)
+  function [lpy, Ey, Vary] = lik_multinomprobit_predy(lik, Ef, Varf, yt, zt)
   %LIK_MULTINOMPROBIT_PREDY  Returns the predictive mean, variance and density of
   %y
   %
@@ -374,7 +374,7 @@ function lik = lik_multinomprobit(varargin)
     end
   end
   M0=exp(M0);
-  py=bsxfun(@rdivide,M0,sum(M0,2));
+  lpy=log(bsxfun(@rdivide,M0,sum(M0,2)));  
   Ey=[];
   Vary=[];
   

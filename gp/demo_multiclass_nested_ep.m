@@ -82,10 +82,10 @@ disp(['Optimized magnitude sigma^2: ' num2str(gpep.cf{1}.magnSigma2)])
 disp(['Optimized lengthscales: ' num2str(gpep.cf{1}.lengthScale)])
 
 %- compute the predictions for the test data
-[Eftep, Covftep, pytep] = gpep_pred(gpep, x, y, xt,'yt', ones(size(xt,1),size(y,2)));
+[Eftep, Covftep, lpytep] = gpep_pred(gpep, x, y, xt,'yt', ones(size(xt,1),size(y,2)));
 
 % calculate the percentage of misclassified points
-ttep = (pytep==repmat(max(pytep,[],2),1,size(pytep,2)));
+ttep = (exp(lpytep)==repmat(max(exp(lpytep),[],2),1,size(lpytep,2)));
 disp(['The percentage of misclassified points: ' num2str((sum(sum(abs(ttep-yt)))/2)/size(yt,1))])
 
 %- Create a 2D grid (inputs 1 and 2) for visualizing predictions
@@ -95,7 +95,7 @@ xtg2 = meshgrid(linspace(min(x(:,2))-.1, max(x(:,2))+.1, 30))';
 xtg=[xtg1(:) xtg2(:) repmat(mean(x(:,3:4)), size(xtg1(:),1),1)];
 
 %- compute the predictions in a 2D grid
-[Eft, Covft, pg] = gpep_pred(gpep, x, y, xtg,'yt', ones(size(xtg,1),size(y,2)));
+[Eft, Covft, lpg] = gpep_pred(gpep, x, y, xtg,'yt', ones(size(xtg,1),size(y,2)));
 
 %- plot the training data
 figure, hold on
@@ -103,8 +103,8 @@ plot(x(y(:,1)==1,1),x(y(:,1)==1,2),'ro', 'linewidth', 2);
 plot(x(y(:,2)==1,1),x(y(:,2)==1,2),'x', 'linewidth', 2);
 plot(x(y(:,3)==1,1),x(y(:,3)==1,2),'k+', 'linewidth', 2);
 %- plot the contours of class probabilities
-contour(xtg1, xtg2, reshape(pg(:,1),30,30), [0.1 0.25 0.5 0.75 0.9] ,'r', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg(:,2),30,30), [0.1 0.25 0.5 0.75 0.9], 'b', 'linewidth', 2)
-contour(xtg1, xtg2, reshape(pg(:,3),30,30), [0.1 0.25 0.5 0.75 0.9], 'k', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(lpg(:,1)),30,30), [0.1 0.25 0.5 0.75 0.9] ,'r', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(lpg(:,2)),30,30), [0.1 0.25 0.5 0.75 0.9], 'b', 'linewidth', 2)
+contour(xtg1, xtg2, reshape(exp(lpg(:,3)),30,30), [0.1 0.25 0.5 0.75 0.9], 'k', 'linewidth', 2)
 xlabel('Input 1'), ylabel('Input 2')
 title('Training data points and predicted contours of class probabilities')
