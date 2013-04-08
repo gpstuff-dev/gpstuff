@@ -227,11 +227,16 @@ function [p,pq,xx] = lgpdens(x,varargin)
       else
         xx=xt;
         gridn=[length(unique(xx(:,1))) length(unique(xx(:,2)))];
+        z1=reshape(xx(:,1),gridn(2),gridn(1));
+        z2=reshape(xx(:,2),gridn(2),gridn(1));
+        nz=numel(z1);
       end
       yy=zeros(nz,1);
       zi=interp2(z1,z2,reshape(1:nz,gridn(2),gridn(1)),xu(:,1),xu(:,2),'nearest');
       for i1=1:nu
-        yy(zi(i1),1)=yy(zi(i1),1)+counts(i1);
+        if ~isnan(zi(i1))
+          yy(zi(i1),1)=yy(zi(i1),1)+counts(i1);
+        end
       end
       %ye=ones(nz,1)./nz.*n;
       
