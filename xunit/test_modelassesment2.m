@@ -23,7 +23,7 @@ initTestSuite;
       mkdir(path)
     end
     path = strcat(path, '/testModelAssesment2');
-    save(path, 'DIC', 'DIC2', 'DIC_latent', 'p_eff', ...
+    save(path, 'DIC', 'DIC2', 'DIC_latent', 'p_eff', 'WAIC', ...
       'p_eff2', 'p_eff_latent', 'p_eff_latent2', 'mlpd_cv', 'mlpd_loo');
     
     % Set back initial random stream
@@ -61,7 +61,7 @@ initTestSuite;
     values.real.p_eff(isnan(values.real.p_eff)) = 0;
     values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'),'p_eff');
     values.test.p_eff(isnan(values.test.p_eff)) = 0;
-    assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.4);        
+    assertVectorsAlmostEqual(values.real.p_eff, values.test.p_eff, 'relative', 0.05);        
         
         
 	function testPeffLatent
@@ -89,3 +89,8 @@ initTestSuite;
     values.real = load('realValuesModelAssesment2.mat', 'mlpd_loo');
     values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'), 'mlpd_loo');
     assertVectorsAlmostEqual(values.real.mlpd_loo, values.test.mlpd_loo, 'relative', 0.05);
+    
+  function testWAIC
+    values.real = load('realValuesModelAssesment2.mat', 'WAIC');
+    values.test = load(strrep(which('test_modelassesment2.m'), 'test_modelassesment2.m', 'testValues/testModelAssesment2.mat'), 'WAIC');
+    assertVectorsAlmostEqual(values.real.WAIC, values.test.WAIC, 'relative', 0.05);
