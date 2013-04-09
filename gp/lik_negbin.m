@@ -642,6 +642,7 @@ function [df,minf,maxf] = init_negbin_norm(yy,myy_i,sigm2_i,avgE,r)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;

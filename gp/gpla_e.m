@@ -934,7 +934,11 @@ function [e, edata, eprior, param] = gpla_e(w, gp, varargin)
                   Ltmp=bsxfun(@times,Ztsq.*sqrt(ny).*g2sq,bsxfun(@times,Vt,sqrt(Dt)'));
                   Ltmp=Ltmp'*Ltmp;
                   Ltmp(1:(size(Dt,1)+1):end)=Ltmp(1:(size(Dt,1)+1):end)+1;
-                  L=chol(Ltmp,'lower');
+                  [L,notpositivedefinite]=chol(Ltmp,'lower');
+                  if notpositivedefinite
+                    [edata,e,eprior,param,ch] = set_output_for_notpositivedefinite();
+                    return
+                  end
                   
                   LTtmp=L\( Dtsq.*(Vt'*( (g2sq.*sqrt(ny)).*((1./(1+ny*g2.*Lb)).* (sqrt(ny)*g2sq) ) )) );
                   edata = logZ + sum(log(diag(L)))+0.5*sum(log(1+ny*g2.*Lb)) ...

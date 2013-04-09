@@ -303,11 +303,12 @@ switch gp.latent_method
             lnZ = lnZ - (0.5*mu2'/(-eye(size(ci))/ci - W - llg2_mode))*mu2;
             lnZ = lnZ + 0.5*log(cii) - evaluate_q(diag(W+llg2_mode), ci);
             
-            c(i,i1) = exp(lnZ);
+            lc(i,i1) = lnZ;
             p(i,i1) = fh_p(fvec(i,i1));
             
           end
           p(:,i1) = p(:,i1)./trapz(fvec,p(:,i1));
+          c(:,i1) = exp(lc(:,i1)-mean(lc(:,i1)));
           
           % Take product of correction terms and tilted distribution terms to get
           % the final, corrected, distribution.

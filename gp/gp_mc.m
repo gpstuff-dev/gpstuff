@@ -130,9 +130,14 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
     if isempty(opt.hmc_opt) && isempty(opt.ssls_opt) && isempty(opt.sls_opt) && ...
         isempty(opt.latent_opt) && isempty(opt.lik_hmc_opt) && isempty(opt.lik_sls_opt) && ...
         isempty(opt.lik_gibbs_opt)
-      opt.ssls_opt.latent_opt.repeat = 20;
-      if opt.display>0
-        fprintf(' Using SSLS sampler for hyperparameters and ESLS for latent values\n')
+      opt.latent_opt=gp.fh.mc();
+      if ~isempty(gp_pak(gp))
+        opt.ssls_opt.latent_opt.repeat = 20;
+        if opt.display>0
+          fprintf(' Using SSLS sampler for hyperparameters and ESLS for latent values\n')
+        end
+      else
+        fprintf(' Using ESLS for latent values\n')
       end
     end
     % Set latent values
@@ -214,6 +219,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       % Number of step-size adapting stept in hmc_nuts
       if ~isfield(opt.hmc_opt, 'Madapt')
         opt.hmc_opt.Madapt = 20;
+      end
+      if opt.display>0
+        fprintf(' Using NUTS\n')
       end
     end
     if isfield(opt.hmc_opt, 'rstate')
