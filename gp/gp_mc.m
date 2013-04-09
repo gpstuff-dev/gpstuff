@@ -220,6 +220,9 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
       if ~isfield(opt.hmc_opt, 'Madapt')
         opt.hmc_opt.Madapt = 20;
       end
+      if opt.display>0
+        fprintf(' Using NUTS\n')
+      end
     end
     if isfield(opt.hmc_opt, 'rstate')
       if ~isempty(opt.hmc_opt.rstate)
