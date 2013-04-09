@@ -633,7 +633,6 @@ while(true)
     while isnan(f_alpha) || isinf(f_alpha)
       % NaN or Inf encountered, switch to safe mode
       here_be_dragons=true;
-      alphaMax=alpha;
       alpha = alphaPrev+0.25*(alpha-alphaPrev);
       [data,f_alpha]=gradient_function(data.xInitial(:)+alpha*data.dir(:),funfcn, data, optim);
     end
@@ -644,6 +643,13 @@ while(true)
   % Store values linesearch
   data.storefx=[data.storefx f_alpha]; data.storex=[data.storex alpha];
 
+  if here_be_dragons
+    % near NaN or Inf, safer to return
+    % Update bracket B to current alpha
+    data.b = alpha; data.f_b = f_alpha; data.fPrime_b = fPrime_alpha;
+    data.section_exitflag = []; return,
+  end
+    
   % Store current bracket position of A
   aPrev = data.a;
   f_aPrev = data.f_a;
