@@ -906,47 +906,57 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         end                 
       end
       
-  end
-  
+  end  
   if ~isequal(fcorrections, 'off')
-    % Do marginal corrections
-    minf = 4;
-    maxf = 4;
-    tol = 1e-5;
-    fvecm=zeros(size(xt,1),50);
-    pc_predm=zeros(size(xt,1),50);
+    % Do marginal corrections for samples
+    minf = 5;
+    maxf = 5;
+    ng=50;
+    fvecm=zeros(size(xt,1),7);
+    fvecm2=zeros(size(xt,1),ng);
+    pc_predm2=zeros(size(xt,1),ng);
     for i=1:size(xt,1)
-      i
-      fvec=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),50)';
-      pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
-      while (pc_pred(1) > tol || pc_pred(end) > tol)
-        % Increase grid length because corrected distribution is too
-        % skewed
-        if pc_pred(1) > tol
-          minf = minf + 1;
-        end
-        if pc_pred(end) > tol
-          maxf = maxf + 1;
-        end
-        fvec=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),50)';
-        pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
-      end 
-      Eft(i) = sum(fvec.*(pc_pred/sum(pc_pred)));
-      fvecm(i,:) = fvec;
-      pc_predm(i,:) = pc_pred;
+      fvecm(i,:)=Eft(i)+[-3 -2 -1 0 1 2 3].*sqrt(Varft(i));
+      fvecm2(i,:)=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),ng)';
     end
+    pc_predm = gp_predcm(gp, x, y, fvecm', xt, 'z', z, 'ind', 1:size(xt,1), 'correction', fcorrections);
+    for i=1:size(xt,1)
+      % Fit cubic spline to the points evaluated above and evaluate
+      % density with mode grid points
+      pc_pred=pc_predm(i,:);
+      fvec=fvecm(i,:);
+      pp=spline(fvec,log(pc_pred));
+      fv=fvecm2(i,:);
+      pv=exp(ppval(pp, fv));
+      Eft(i)=sum(fv.*(pv./sum(pv)));
+      pc_predm2(i,:)=pv;
+    end
+    fvecm=fvecm2;
+    pc_predm=pc_predm2;
   end
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================
-  if nargout == 3
-    if isempty(yt)
-      lpyt=[];
-    else
-      lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+  if ~isequal(fcorrections, 'off')
+    if nargout == 3
+      if isempty(yt)
+        lpyt=[];
+      else
+        lpyt = gp.lik.fh.predy(gp.lik, fvecm, pc_predm, yt, zt);
+      end
+    elseif nargout > 3
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, fvecm, pc_predm, yt, zt);
     end
-  elseif nargout > 3
-    [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+  else
+    if nargout == 3
+      if isempty(yt)
+        lpyt=[];
+      else
+        lpyt = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+      end
+    elseif nargout > 3
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, Eft, Varft, yt, zt);
+    end
   end
   
 end

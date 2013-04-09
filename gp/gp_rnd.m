@@ -1104,30 +1104,23 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
        fsc=zeros(size(sampft));
        minf = 5;
        maxf = 5;
-       tol = 1e-3;
+       %tol = 1e-3;
+       ng=50;
+       fvecm=zeros(size(xt,1),7);
+       fvecm2=zeros(size(xt,1),ng);
        for i=1:size(xt,1)
-         fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
-         pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
-         if any(isnan(pc_pred))
-           % grid length was too big
-           minf=3;
-           maxf=3;
-           fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
-           pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
-         end
-         while (pc_pred(1) > tol || pc_pred(end) > tol)...
-             && (pc_pred(1)<pc_pred(2)&&pc_pred(end)<pc_pred(end-1))
-           % Increase grid length because corrected distribution is too
-           % skewed
-           if pc_pred(1) > tol
-             minf = minf + 1;
-           end
-           if pc_pred(end) > tol
-             maxf = maxf + 1;
-           end
-           fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
-           pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
-         end
+         fvecm(i,:)=Ef(i)+[-3 -2 -1 0 1 2 3].*sqrt(Covf(i,i));
+         fvecm2(i,:)=linspace(Ef(i)-minf.*sqrt(Covf(i,i)), Ef(i)+maxf.*sqrt(Covf(i,i)),ng)';
+       end
+       pc_predm = gp_predcm(gp, x, y, fvecm', xt, 'z', z, 'ind', 1:size(xt,1), 'correction', fcorrections);
+       for i=1:size(xt,1)
+         % Fit cubic spline to the points evaluated above and evaluate
+         % density with mode grid points
+         pc_pred=pc_predm(i,:);
+         fvec=fvecm(i,:);
+         pp=spline(fvec,log(pc_pred));
+         fvec=fvecm2(i,:);
+         pc_pred=exp(ppval(pp, fvec));
          cumsumpc = cumsum(pc_pred)/sum(pc_pred);
          % Remove non-unique values from grid vector & distribution
          [cumsumpc, inds] = unique(cumsumpc);
