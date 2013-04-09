@@ -232,6 +232,9 @@ data.timeTotal=tic;
   % Calculate the initial error and gradient
   data.initialStepLength=1;
   [data,fval,grad]=gradient_function(data.xInitial,funfcn, data, optim);
+  if isnan(fval) || any(isnan(grad))
+    error('fminlbfgs: Initial function value or gradient is NaN');
+  end
   data.gradient=grad;
   data.dir = -data.gradient;
   data.fInitial = fval;
