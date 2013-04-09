@@ -90,6 +90,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
+  ip.addParamValue('fcorrections', 'off', @(x) ismember(x, {'off', ...
+                   'cm2', 'fact'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip.parse(gp, x, y, varargin{:});
@@ -102,6 +104,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
+  fcorrections=ip.Results.fcorrections;
   if isempty(xt)
     xt=x;
     if isempty(tstind)
@@ -905,6 +908,34 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       
   end
   
+  if ~isequal(fcorrections, 'off')
+    % Do marginal corrections
+    minf = 4;
+    maxf = 4;
+    tol = 1e-5;
+    fvecm=zeros(size(xt,1),50);
+    pc_predm=zeros(size(xt,1),50);
+    for i=1:size(xt,1)
+      i
+      fvec=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),50)';
+      pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
+      while (pc_pred(1) > tol || pc_pred(end) > tol)
+        % Increase grid length because corrected distribution is too
+        % skewed
+        if pc_pred(1) > tol
+          minf = minf + 1;
+        end
+        if pc_pred(end) > tol
+          maxf = maxf + 1;
+        end
+        fvec=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),50)';
+        pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
+      end 
+      Eft(i) = sum(fvec.*(pc_pred/sum(pc_pred)));
+      fvecm(i,:) = fvec;
+      pc_predm(i,:) = pc_pred;
+    end
+  end
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================
