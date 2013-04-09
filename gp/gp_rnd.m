@@ -613,11 +613,11 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
               Stildesqroot = sparse(1:n, 1:n, sqrttautilde, n, n);
               
               if issparse(L)
-                z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+                zz=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
               else
-                z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+                zz=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
               end
-              Ef=K_nf*(nutilde-z);
+              Ef=K_nf*(nutilde-zz);
 
               % Compute variance
               if issparse(L)
@@ -628,7 +628,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
                 Covf = K - V'*V;
               end
             else
-              z=tautilde.*(L'*(L*nutilde));
+              zz=tautilde.*(L'*(L*nutilde));
               Ef=K_nf*(nutilde-z);
               
               S = diag(tautilde);
