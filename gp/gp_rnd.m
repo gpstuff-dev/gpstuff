@@ -1104,11 +1104,19 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
        fsc=zeros(size(sampft));
        minf = 5;
        maxf = 5;
-       tol = 1e-5;
+       tol = 1e-3;
        for i=1:size(xt,1)
          fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
          pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
-         while (pc_pred(1) > tol || pc_pred(end) > tol)
+         if any(isnan(pc_pred))
+           % grid length was too big
+           minf=3;
+           maxf=3;
+           fvec=linspace(Ef(i,1)-minf.*sqrt(Covf(i,i)), Ef(i,1)+maxf.*sqrt(Covf(i,i)),50)';
+           pc_pred = gp_predcm(gp, x, y, fvec, xt, 'z', z, 'ind', i, 'correction', fcorrections);
+         end
+         while (pc_pred(1) > tol || pc_pred(end) > tol)...
+             && (pc_pred(1)<pc_pred(2)&&pc_pred(end)<pc_pred(end-1))
            % Increase grid length because corrected distribution is too
            % skewed
            if pc_pred(1) > tol
