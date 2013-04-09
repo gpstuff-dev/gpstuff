@@ -56,6 +56,10 @@ xt = ip.Results.xt;
 predictive=false;
 gplik=gp.lik;
 [nin, n_ind] = size(fvec);
+if min(nin,n_ind)==1
+  fvec=fvec(:);
+  [nin, n_ind] = size(fvec);
+end
 n=size(x,1);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z);
 if isfield(ip.UsingDefaults, 'correction') && isequal(gp.latent_method, 'Laplace')
@@ -63,10 +67,8 @@ if isfield(ip.UsingDefaults, 'correction') && isequal(gp.latent_method, 'Laplace
 else
   correction = ip.Results.correction;
 end
-if size(ind,1)==1
-  ind=ind';
-end
-if (size(ind,1) ~= n_ind) || ~(length(ind) == isvector(fvec))
+ind=ind(:);
+if (size(ind,1) ~= n_ind)
   error('Given latent grid matrix fvec must be size n x m, where m is the length of ind vector');
 end
 if ~isempty(xt) && ~isequal(xt, x)
@@ -150,12 +152,12 @@ switch gp.latent_method
             p(i,i1) = fh_p(fvec(i,i1));
             
           end
-          p(:,i1) = p(:,i1)./trapz(fvec,p(:,i1));
+          p(:,i1) = p(:,i1)./trapz(fvec(:,i1),p(:,i1));
           
           % Take product of correction terms and tilted distribution terms to get
           % the final, corrected, distribution.
           pc(:,i1) = p(:,i1).*c(:,i1);
-          pc(:,i1) = pc(:,i1) ./ trapz(fvec, pc(:,i1));
+          pc(:,i1) = pc(:,i1) ./ trapz(fvec(:,i1), pc(:,i1));
         end
       case 'cm2'
         error('Cant use cm2 correction with EP, use fact');
@@ -307,18 +309,22 @@ switch gp.latent_method
             p(i,i1) = fh_p(fvec(i,i1));
             
           end
-          p(:,i1) = p(:,i1)./trapz(fvec,p(:,i1));
+          p(:,i1) = p(:,i1)./trapz(fvec(:,i1),p(:,i1));
           c(:,i1) = exp(lc(:,i1)-mean(lc(:,i1)));
           
           % Take product of correction terms and tilted distribution terms to get
           % the final, corrected, distribution.
           pc(:,i1) = p(:,i1).*c(:,i1);
-          pc(:,i1) = pc(:,i1)./trapz(fvec, pc(:,i1));
+          pc(:,i1) = pc(:,i1)./trapz(fvec(:,i1), pc(:,i1));
         end
     end
     
 end
-
+if ~isvector(pc)
+  pc=pc';
+  p=p';
+  c=c';
+end
 
 end
 
