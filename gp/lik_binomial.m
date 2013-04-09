@@ -375,7 +375,7 @@ function prctys = lik_binomial_predprcty(lik, Ef, Varf, zt, prcty)
 end
 
 function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
-%INIT_LOGIT_NORM
+%INIT_BINOMIAL_NORM
 %
 %  Description
 %    Return function handle to a function evaluating Binomial *
@@ -473,7 +473,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %     integrand = exp(ldconst ...
 %                     +yy*log(x)+(N-yy)*log(1-x) ...
 %                     -0.5*(f-myy_i).^2./sigm2_i);
-    integrand(isnan(integrand))=0;
+    integrand(isnan(integrand)|isinf(integrand))=0;
   end
   
   function log_int = log_binomial_norm(f)
@@ -486,11 +486,12 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
 %     log_int = ldconst ...
 %               -log(1+exp(-yy.*f)) ...
 %               -0.5*(f-myy_i).^2./sigm2_i;
+    log_int(isnan(log_int)|isinf(log_int))=-Inf;
   end
   
   function g = log_binomial_norm_g(f)
   % d/df log(Binomial * Gaussian)
-  % derivative of log_logit_norm
+  % derivative of log_binomial_norm
     g = -(f-myy_i)./sigm2_i - exp(-f).*(N-yy)./((1+exp(-f)).^2.*(1-1./(1+exp(-f)))) ...
         + exp(-f).*yy./(1+exp(-f));
 %     g = yy./(exp(f*yy)+1)...
@@ -499,7 +500,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
   
   function g2 = log_binomial_norm_g2(f)
   % d^2/df^2 log(Binomial * Gaussian)
-  % second derivate of log_logit_norm
+  % second derivate of log_binomial_norm
     g2 = - (1+exp(2.*f)+exp(f).*(2+N*sigm2_i)./((1+exp(f))^2*sigm2_i));
 %     a=exp(f*yy);
 %     g2 = -a*(yy./(a+1)).^2 ...
