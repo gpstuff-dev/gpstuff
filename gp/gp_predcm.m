@@ -153,6 +153,10 @@ switch gp.latent_method
             
           end
           p(:,i1) = p(:,i1)./trapz(fvec(:,i1),p(:,i1));
+          if any(isnan(c(:,i1)))
+            warning('NaNs in moment computations')
+            c(isnan(c(:,i1)),i1)=0;
+          end
           
           % Take product of correction terms and tilted distribution terms to get
           % the final, corrected, distribution.
@@ -233,12 +237,16 @@ switch gp.latent_method
             p(i,i1) = fh_p(fvec(i,i1));
             
           end
-          p(:,i1) = p(:,i1)./trapz(fvec,p(:,i1));
+          p(:,i1) = p(:,i1)./trapz(fvec(:,i1),p(:,i1));
+          if any(isnan(c(:,i1)))
+            warning('NaNs in moment computations')
+            c(isnan(c(:,i1)),i1)=0;
+          end
           
           % Take product of correction terms and tilted distribution terms to get
           % the final, corrected, distribution.
           pc(:,i1) = p(:,i1).*c(:,i1);
-          pc(:,i1) = pc(:,i1)./trapz(fvec, pc(:,i1));
+          pc(:,i1) = pc(:,i1)./trapz(fvec(:,i1), pc(:,i1));
         end
         
       case 'cm2'
