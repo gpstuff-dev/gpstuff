@@ -1219,6 +1219,7 @@ function lik = lik_coxph(varargin)
       end
     end
     maxld=ld(maxf);
+    iter=0;
     step=1;
     while maxld>(modeld-lddiff)
       maxf=maxf+step*modes;

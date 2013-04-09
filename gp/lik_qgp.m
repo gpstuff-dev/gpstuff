@@ -530,6 +530,7 @@ function [df,minf,maxf] = init_qgp_norm(yy,myy_i,sigm2_i,sigma2,tau)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*sqrt(sigm2_i);

@@ -452,6 +452,7 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;

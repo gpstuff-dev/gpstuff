@@ -576,6 +576,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;

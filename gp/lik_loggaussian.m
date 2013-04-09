@@ -573,6 +573,7 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
     end
   end
   maxld=ld(maxf);
+  iter=0;
   step=1;
   while maxld>(modeld-lddiff)
     maxf=maxf+step*modes;
