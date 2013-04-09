@@ -458,11 +458,7 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
     end
   end
   
-  if exist('fminunc')
-    gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminunc);
-  else
-    gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
-  end
+  gp=gp_optim(gp,xx,yy,'opt',opt, 'optimf', @fminlbfgs);
   %gradcheck(gp_pak(gp), @gpla_nd_e, @gpla_nd_g, gp, xx, yy);
   
   if strcmpi(latent_method,'MCMC')
