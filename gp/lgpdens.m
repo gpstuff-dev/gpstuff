@@ -55,13 +55,13 @@ function [p,pq,xx] = lgpdens(x,varargin)
 
   ip=inputParser;
   ip.FunctionName = 'LGPDENS';
-  ip.addRequired('x', @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
+  ip.addRequired('x', @(x) isnumeric(x) && all(isfinite(x(:))) ...
+                 && (size(x,2)==1 || size(x,2)==2));
   ip.addOptional('xt',NaN, @(x) isnumeric(x) && size(x,2)==1 || size(x,2)==2);
   ip.addParamValue('gridn',[], @(x) isnumeric(x));
   ip.addParamValue('range',[], @(x) isempty(x)||isreal(x)&&(length(x)==2||length(x)==4));
   ip.addParamValue('gpcf',@gpcf_sexp,@(x) ischar(x) || isa(x,'function_handle'));
   ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace' 'MCMC'}))
-  %ip.addParamValue('latent_method','Laplace', @(x) ismember(x,{'EP' 'Laplace'}))
   ip.addParamValue('int_method','mode', @(x) ismember(x,{'mode' 'CCD', 'grid'}))
   ip.addParamValue('normalize',false, @islogical);
   ip.addParamValue('display', 'off', @(x) islogical(x) || ...
@@ -83,7 +83,7 @@ function [p,pq,xx] = lgpdens(x,varargin)
   speedup=ip.Results.speedup;
   cond_dens=ip.Results.cond_dens;
   basis_function=ip.Results.basis_function;
-  
+
   [n,m]=size(x);
   
   switch m
