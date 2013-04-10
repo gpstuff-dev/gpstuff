@@ -45,11 +45,14 @@ ip.addOptional('xt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('ind', 1, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('correction', 'fact', @(x) ismember(x, {'fact', 'cm2'}))
+ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
+                   (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 if rem(size(varargin,2), 2) == 0
   ip.parse(gp, x, y, fvec,[],varargin{:});
 else
   ip.parse(gp, x, y, fvec,varargin{:});
 end
+tstind = ip.Results.tstind;
 z = ip.Results.z;
 ind = ip.Results.ind;
 xt = ip.Results.xt;
@@ -61,7 +64,7 @@ if min(nin,n_ind)==1
   [nin, n_ind] = size(fvec);
 end
 n=size(x,1);
-[Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z);
+[Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', tstind);
 if isfield(ip.UsingDefaults, 'correction') && isequal(gp.latent_method, 'Laplace')
   correction='cm2';
 else
@@ -75,7 +78,7 @@ if ~isempty(xt) && ~isequal(xt, x)
   % Predictive equations if given xt, mind that if xt(ind) is in training
   % input x, predictive equations might not work correctly.
   predictive = true;
-  [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z);
+  [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
 end
 switch gp.latent_method
   case 'EP'
@@ -297,7 +300,7 @@ switch gp.latent_method
             if isempty(z)
               z_tmp = [];
             else
-              z_tmp = z;
+              z_tmp = z(inds);
             end
             % Compute conditional covariance matrices and mean vector
             if ~predictive

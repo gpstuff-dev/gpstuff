@@ -637,7 +637,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
       fvecm(i,:)=Eft(i)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Varft(i));
       fvecm2(i,:)=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),ng)';
     end
-    pc_predm = gp_predcm(gp, x, y, fvecm', xt, 'z', z, 'ind', 1:size(xt,1), 'correction', fcorrections);
+    pc_predm = gp_predcm(gp, x, y, fvecm', xt, 'z', z, 'ind', 1:size(xt,1), 'correction', fcorrections, 'tstind', tstind);
     for i=1:size(xt,1)
       % Fit cubic spline to the points evaluated above and evaluate
       % density with mode grid points
