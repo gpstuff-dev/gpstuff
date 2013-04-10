@@ -484,17 +484,27 @@ function [lpy, Ey, Vary] = lik_loggaussian_predy(lik, Ef, Varf, yt, zt)
 
   % Evaluate the posterior predictive densities of the given observations
   lpy = zeros(length(yt),1);
-  for i1=1:length(yt)
-    if abs(Ef(i1))>700
-      lpy(i1) = NaN;
-    else
-      % get a function handle of the likelihood times posterior
-      % (likelihood * posterior = Negative-binomial * Gaussian)
-      % and useful integration limits
-      [pdf,minf,maxf]=init_loggaussian_norm(...
-        yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
-      % integrate over the f to get posterior predictive distribution
-      lpy(i1) = log(quadgk(pdf, minf, maxf));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior pf
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i1=1:length(yt)
+      if abs(Ef(i1))>700
+        lpy(i1) = NaN;
+      else
+        % get a function handle of the likelihood times posterior
+        % (likelihood * posterior = Negative-binomial * Gaussian)
+        % and useful integration limits
+        [pdf,minf,maxf]=init_loggaussian_norm(...
+          yt(i1),Ef(i1),Varf(i1),yc(i1),s2);
+        % integrate over the f to get posterior predictive distribution
+        lpy(i1) = log(quadgk(pdf, minf, maxf));
+      end
     end
   end
 end

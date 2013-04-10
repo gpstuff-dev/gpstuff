@@ -331,10 +331,20 @@ function [lpy, Ey, Vary] = lik_binomial_predy(lik, Ef, Varf, yt, zt)
   
   nt=length(yt);
   lpy=zeros(nt,1);
-  for i1=1:nt
-    ci = sqrt(Varf(i1));
-    F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
-    lpy(i1) = log(quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci));
+  if (min(size(Ef))>1) && (min(size(Varf))>1)
+    % Approximate integral with sum of grid points when using corrected
+    % marginal posterior pf
+    for i1=1:length(yt)
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      pf = Varf(i1,:)./sum(Varf(i1,:));
+      lpy(i1) = log(sum(py.*pf));
+    end
+  else
+    for i1=1:nt
+      ci = sqrt(Varf(i1));
+      F  = @(x)exp(gammaln(zt(i1)+1)-gammaln(yt(i1)+1)-gammaln(zt(i1)-yt(i1)+1) + yt(i1).*log(1./(1+exp(-x))) + (zt(i1)-yt(i1)).*log(1-(1./(1+exp(-x))))).*norm_pdf(x,Ef(i1),sqrt(Varf(i1)));
+      lpy(i1) = log(quadgk(F,Ef(i1)-6*ci,Ef(i1)+6*ci));
+    end
   end
   
 end
