@@ -912,11 +912,11 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
     minf = 5;
     maxf = 5;
     ng=50;
-    fvecm=zeros(size(xt,1),7);
+    fvecm=zeros(size(xt,1),9);
     fvecm2=zeros(size(xt,1),ng);
     pc_predm2=zeros(size(xt,1),ng);
     for i=1:size(xt,1)
-      fvecm(i,:)=Eft(i)+[-3 -2 -1 0 1 2 3].*sqrt(Varft(i));
+      fvecm(i,:)=Eft(i)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Varft(i));
       fvecm2(i,:)=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),ng)';
     end
     pc_predm = gp_predcm(gp, x, y, fvecm', xt, 'z', z, 'ind', 1:size(xt,1), 'correction', fcorrections);
