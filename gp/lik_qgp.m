@@ -442,7 +442,7 @@ function [lpy, Ey, Vary] = lik_qgp_predy(lik, Ef, Varf, yt, zt)
     % Approximate integral with sum of grid points when using corrected
     % marginal posterior
     for i1=1:length(yt)
-      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, zt(i1))), Ef(i1,:));
+      py = arrayfun(@(f) exp(lik.fh.ll(lik, yt(i1), f, [])), Ef(i1,:));
       pf = Varf(i1,:)./sum(Varf(i1,:));
       lpy(i1) = log(sum(py.*pf));
     end
