@@ -26,6 +26,10 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   GP_PRED for additional information.
 %       tstind    - a vector defining, which rows of X belong to which
 %                   training block in *IC type sparse models. Deafult is [].
+%       display   - defines if messages are displayed. 
+%                   - 'off' displays no output
+%                   - 'on' (default) gives some output  
+%                   - 'iter' displays output at each evaluation point
 %      Following options are specific to some methods
 %       rotate    - tells whether CCD and grid method first rotate the
 %                   parameter space according to Hessian at the mode.
@@ -57,10 +61,6 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
 %                   every repeat'th iteration, default 0.
 %       repeat    - number of subiterations in HMC.
 %                   Default is 10.
-%      display    - defines if messages are displayed. 
-%                   - 'off' displays no output
-%                   - 'on' (default) gives some output  
-%                   - 'iter' displays output at each evaluation point
 %       
 
 % Copyright (c) 2009-2010 Ville Pietiläinen, Jarno Vanhatalo
