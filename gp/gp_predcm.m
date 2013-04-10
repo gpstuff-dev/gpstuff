@@ -140,7 +140,7 @@ switch gp.latent_method
             end
             % Loop through other points in x, exclude point to which current latent grid
             % corresponds to (if not predictive).
-            Ztilde=exp(logM02).*sqrt(2*pi).*sqrt(sigm2vec_i+1./tautilde).*exp(0.5*(muvec_i-nutilde./tautilde).^2./(sigm2vec_i+1./tautilde));
+            lZtilde=logM02 + log(sqrt(2*pi)) + log(sqrt(sigm2vec_i+1./tautilde)) + 0.5*(muvec_i-nutilde./tautilde).^2./(sigm2vec_i+1./tautilde);
             m1 = nutilde./tautilde;
             s1 = 1./sqrt(tautilde);
             m2 = mu;
@@ -148,14 +148,14 @@ switch gp.latent_method
             
             s = sqrt(1./(1./s2.^2 - 1./s1.^2));
             m = (m2./s2.^2 - m1./s1.^2).*s.^2;
-            Z = s1./s2.*exp(-1./(2*(-s1.^2+s2.^2)).*(m1-m2).^2).*sqrt(2*pi*s.^2);
-            c_ii = Z(inds)./Ztilde(inds).*exp(gp.lik.fh.tiltedMoments(gplik, y(inds), 1:length(inds), s(inds).^2, m(inds), z));
-            c_i = prod(c_ii);
-            c(i,i1) = c_i;
+            lZ = log(s1) - log(s2) - 1./(2*(-s1.^2+s2.^2)).*(m1-m2).^2 +log(sqrt(2*pi*s.^2));
+            lc_ii = lZ(inds) - lZtilde(inds) + gp.lik.fh.tiltedMoments(gplik, y(inds), 1:length(inds), s(inds).^2, m(inds), z);
+            lc(i,i1) = sum(lc_ii);
             p(i,i1) = fh_p(fvec(i,i1));
             
           end
           p(:,i1) = p(:,i1)./trapz(fvec(:,i1),p(:,i1));
+          c(:,i1) = exp(lc(:,i1)-mean(lc(:,i1)));
           if any(isnan(c(:,i1)))
             warning('NaNs in moment computations')
             c(isnan(c(:,i1)),i1)=0;
@@ -225,22 +225,24 @@ switch gp.latent_method
             end
             m1 = (f_mode-llg./llg2);
             s1 = sqrt(-1./llg2);
-            C1 = exp(ll+llg2.*f_mode.^2-llg2.*m1.^2 - llg.*f_mode);
+            lC1 = ll+llg2.*f_mode.^2-llg2.*m1.^2 - llg.*f_mode;
             m2 = mu;
             s2 = sqrt(ci);
-            C2 = 1./sqrt(2*pi*s2.^2);
+            lC2 = log(1./sqrt(2*pi*s2.^2));
             
             s = sqrt(1./(1./s2.^2 - 1./s1.^2));
             m = (m2./s2.^2 - m1./s1.^2).*s.^2;
             
-            Z = C1./C2.*exp(-1./(2*(-s1.^2+s2.^2)).*(m1-m2).^2).*sqrt(2*pi*s.^2);
-            c_ii = Z(inds).*exp(gp.lik.fh.tiltedMoments(gplik, y(inds), 1:length(inds), s(inds).^2, m(inds), z));
+            lZ = lC1 - lC2 - 1./(2*(-s1.^2+s2.^2)).*(m1-m2).^2 + log(sqrt(2*pi*s.^2));
+            lc_ii = lZ(inds) + gp.lik.fh.tiltedMoments(gplik, y(inds), 1:length(inds), s(inds).^2, m(inds), z);
             
-            c(i,i1) = prod(c_ii);
+            %c(i,i1) = prod(c_ii);
+            lc(i,i1) = sum(lc_ii);
             p(i,i1) = fh_p(fvec(i,i1));
             
           end
           p(:,i1) = p(:,i1)./trapz(fvec(:,i1),p(:,i1));
+          c(:,i1) = exp(lc(:,i1)-mean(lc(:,i1)));
           if any(isnan(c(:,i1)))
             warning('NaNs in moment computations')
             c(isnan(c(:,i1)),i1)=0;
