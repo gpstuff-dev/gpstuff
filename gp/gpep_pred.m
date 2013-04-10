@@ -182,16 +182,16 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         end
         
         % full ep with non-diagonal site covariances
-        z=zeros(n*nout,1);
+        zz=zeros(n*nout,1);
         for k1=1:nout
-          z((1:n)+(k1-1)*n)=BKnu(:,k1)-B(:,:,k1)*invPBKnu;
+          zz((1:n)+(k1-1)*n)=BKnu(:,k1)-B(:,:,k1)*invPBKnu;
         end
         
         
         %- posterior predictive mean
         Eft=zeros(ntest*nout,1);
         for z1=1:nout
-          Eft((1:ntest)+(z1-1)*ntest)=Kt(:,:,z1)*(nutilde(:,z1)-z((1:n)+(z1-1)*n));
+          Eft((1:ntest)+(z1-1)*ntest)=Kt(:,:,z1)*(nutilde(:,z1)-zz((1:n)+(z1-1)*n));
         end
         
         if nargout > 1
@@ -258,17 +258,17 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           if ~isfield(gp,'meanf')
             if issparse(L)          % If compact support covariance functions are used
                                     % the covariance matrix will be sparse
-              z=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
+              zz=Stildesqroot*ldlsolve(L,Stildesqroot*(C*nutilde));
             else
-              z=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
+              zz=Stildesqroot*(L'\(L\(Stildesqroot*(C*nutilde))));
             end
             
-            Eft=K_nf*(nutilde-z);    % The mean, zero mean GP
+            Eft=K_nf*(nutilde-zz);    % The mean, zero mean GP
           else
-            z = Stildesqroot*(L'\(L\(Stildesqroot*(C))));
+            zz = Stildesqroot*(L'\(L\(Stildesqroot*(C))));
             
-            Eft_zm=K_nf*(nutilde-z*nutilde); % The mean, zero mean GP
-            Ks = eye(size(z)) - z;           % inv(K + S^-1)*S^-1
+            Eft_zm=K_nf*(nutilde-zz*nutilde); % The mean, zero mean GP
+            Ks = eye(size(zz)) - zz;           % inv(K + S^-1)*S^-1
             Ksy = Ks*nutilde;
             [RB RAR] = mean_predf(gp,x,xt,K_nf',Ks,Ksy,'EP',Stildesqroot.^2);
             
@@ -293,8 +293,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
           % For example Student-t likelihood.
           
           %{
-          z=tautilde.*(L'*(L*nutilde));
-          Eft=K_nf*(nutilde-z);
+          zz=tautilde.*(L'*(L*nutilde));
+          Eft=K_nf*(nutilde-zz);
           
           if nargout > 1
             S = diag(tautilde);
