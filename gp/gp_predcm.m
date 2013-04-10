@@ -294,6 +294,8 @@ switch gp.latent_method
           llg_mode=llg(inds);
           ll_mode=sum(ll(inds));
           
+          lnZ0 = -1/cii - ll_mode + 0.5*log(cii);
+          icW = -eye(size(ci))/ci  - llg2_mode;
           % Loop through grid points
           for i=1:nin
             
@@ -316,10 +318,10 @@ switch gp.latent_method
             % expansion of product of global gaussian approximation conditioned on latent
             % value x_i, q(x_-i|x_i), and t_-i(x_-i)/ttilde_-i(x_-i)
             mu1=mu-f_mode_tmp;
-            lnZ = -1/cii + logll - ll_mode - mu1'*llg_mode - 0.5*mu1'*llg2_mode*mu1;
+            lnZ = lnZ0 + logll - mu1'*llg_mode - 0.5*mu1'*llg2_mode*mu1;
             mu2=deriv-llg_mode-(mu1'*llg2_mode)';
-            lnZ = lnZ - (0.5*mu2'/(-eye(size(ci))/ci - W - llg2_mode))*mu2;
-            lnZ = lnZ + 0.5*log(cii) - evaluate_q(diag(W+llg2_mode), ci);
+            lnZ = lnZ - (0.5*mu2'/(icW - W))*mu2;
+            lnZ = lnZ  - evaluate_q(diag(W+llg2_mode), ci);
             
             lc(i,i1) = lnZ;
             p(i,i1) = fh_p(fvec(i,i1));
