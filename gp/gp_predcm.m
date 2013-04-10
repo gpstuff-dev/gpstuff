@@ -90,6 +90,10 @@ switch gp.latent_method
         % Compute tilted moments
         logM02 = gp.lik.fh.tiltedMoments(gp.lik, y, 1:n, sigm2vec_i, muvec_i, z);
         
+        if predictive
+          K_ff = gp_trcov(gp, x);
+        end
+        
         % Loop through grid indices
         for i1=1:size(ind,1)
           if ~predictive
@@ -113,7 +117,6 @@ switch gp.latent_method
             inds=1:n;
             cii = Covf2(ind(i1), ind(i1));
             fh_p = @(f) norm_pdf(f,Ef2(ind(i1)),sqrt(cii));
-            K_ff = gp_trcov(gp, x);
           end
           
           % Loop through grid points
