@@ -440,6 +440,27 @@ function [df,minf,maxf] = init_binomial_norm(yy,myy_i,sigm2_i,N)
           break
       end
   end
+  if abs(delta)>1 || isinf(delta) || isnan(delta) 
+    % Newton algorithm didn't work properly so do binary search
+    modef=myy_i;
+    a=modef-5.*sqrt(sigm2_i); b=modef+5.*sqrt(sigm2_i); delta=1;
+    while ldg(a)<0
+      a=a-5.*sqrt(sigm2_i);
+    end
+    while ldg(b)>0
+      b=b+5.*sqrt(sigm2_i);
+    end
+    while delta > 0.1
+      modef=(a+b)/2;
+      if ldg(modef) > 0
+        a=modef;
+      else
+        b=modef;
+      end
+      delta=b-a;
+    end
+    h=ldg2(modef);
+  end
   % integrand limits based on Gaussian approximation at mode
   modes=sqrt(-1/h);
   minf=modef-4*modes;
