@@ -909,31 +909,18 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
   end  
   if ~isequal(fcorrections, 'off')
     % Do marginal corrections for samples
-    minf = 5;
-    maxf = 5;
-    ng=50;
-    fvecm=zeros(size(xt,1),9);
-    fvecm2=zeros(size(xt,1),ng);
-    pc_predm2=zeros(size(xt,1),ng);
-    for i=1:size(xt,1)
-      fvecm(i,:)=Eft(i)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Varft(i));
-      fvecm2(i,:)=linspace(Eft(i)-minf.*sqrt(Varft(i)), Eft(i)+maxf.*sqrt(Varft(i)),ng)';
-    end
-    pc_predm = gp_predcm(gp, x, y, fvecm', xt, 'z', z, 'ind', 1:size(xt,1), 'correction', fcorrections, 'tstind', tstind);
+    [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorrections', fcorrections);
     for i=1:size(xt,1)
       % Fit cubic spline to the points evaluated above and evaluate
-      % density with mode grid points
-      pc_pred=pc_predm(i,:);
-      fvec=fvecm(i,:);
-      pp=spline(fvec,log(pc_pred));
-      fv=fvecm2(i,:);
-      pv=exp(ppval(pp, fv));
-      Eft(i)=sum(fv.*(pv./sum(pv)));
-      pc_predm2(i,:)=pv;
+      % density with more grid points
+      pc_pred=pc_predm(:,i);
+      dii=isnan(pc_pred)|pc_pred==0;
+      pc_pred(dii)=[];
+      fvec=fvecm(:,i);
+      fvec(dii)=[];
+      Eft(i) = trapz(fvec.*(pc_pred./sum(pc_pred)));
     end
-    fvecm=fvecm2;
-    pc_predm=pc_predm2;
-  end
+   end
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================
@@ -942,10 +929,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       if isempty(yt)
         lpyt=[];
       else
-        lpyt = gp.lik.fh.predy(gp.lik, fvecm, pc_predm, yt, zt);
+        lpyt = gp.lik.fh.predy(gp.lik, fvecm', pc_predm', yt, zt);
       end
     elseif nargout > 3
-      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, fvecm, pc_predm, yt, zt);
+      [lpyt, Eyt, Varyt] = gp.lik.fh.predy(gp.lik, fvecm', pc_predm', yt, zt);
     end
   else
     if nargout == 3
