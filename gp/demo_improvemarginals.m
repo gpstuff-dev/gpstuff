@@ -1,12 +1,12 @@
-%DEMO_IMPROVEMARGINALS  Demonstration of marginal likelihood improvements 
+%DEMO_IMPROVEMARGINALS  Demonstration of marginal posterior improvements 
 %                       in Laplace and EP algorithms.
 %
 %  Description
-%    Demonstrated marginal posterior corrections of latent variables with
-%    classification task. Demonstrated corrections are 'fact' (EP &
-%    Laplace) and 'cm2' (Laplace). The corrected posteriori distributions
-%    are compared to histograms of MCMC samples to assess the quality of
-%    corrections.
+%    Demonstration of marginal posterior corrections of latent
+%    variables in classification task. Demonstrated corrections are
+%    'fact' (EP & Laplace) and 'cm2' (Laplace). The corrected
+%    posterior distributions are compared to histograms of MCMC
+%    samples to assess the quality of corrections.
 %
 %  See also
 %    GP_PREDCM
