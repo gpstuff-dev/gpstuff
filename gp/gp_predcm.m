@@ -10,8 +10,8 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %    is empty or equal to X, otherwise predictive distribution, 
 %    corrected predictive/tilted distribution PC and fcorrections terms C, 
 %    where PC_i = P_i*C_i for every grid point i in grid FVEC. FVEC is
-%    linearly spaced grid from predictive distribution between mean minus six
-%    standard deviations and mean plus six standard deviations. 
+%    linearly spaced grid from predictive distribution between mean minus/plus
+%    4 standard deviations
 %
 %
 %   OPTIONS is optional parameter-value pair
@@ -79,7 +79,7 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
 end
-nin = 9;
+nin = 11;
 fvecm=zeros(nin,length(ind));
 fvecm2=zeros(ng,length(ind));
 for i1=1:length(ind)
@@ -89,16 +89,18 @@ for i1=1:length(ind)
   minf = 6;
   maxf = 6;
   if ~predictive
-    fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
+    fvecm(:,i1)=Ef(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf(i2,i2));
+%     fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
     fvecm2(:,i1)=linspace(Ef(i2)-minf.*sqrt(Covf(i2,i2)), Ef(i2)+maxf.*sqrt(Covf(i2,i2)),ng)';
   else
-    fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
+    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
+%     fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
     fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Covf2(i2,i2)), Ef2(i2)+maxf.*sqrt(Covf2(i2,i2)),ng)';
   end
 end
 lc = zeros(nin, length(ind));
 pc = zeros(ng, size(ind,1)); p = zeros(ng,size(ind,1)); c = zeros(ng,size(ind,1));
-p2 = zeros(9,size(ind,1));
+p2 = zeros(nin,size(ind,1));
 
 switch gp.latent_method
   case 'EP'
@@ -331,7 +333,8 @@ switch gp.latent_method
             
           end
           p(:,i1) = fh_p(fvecm2(:,i1));
-          p2(:,i1) = fh_p(fvecm(:,i1));
+          p2(:,i1) = fh_p(fvecm(:,i1));         
+          
         end
     end
     
@@ -342,23 +345,25 @@ for i1=1:length(ind)
   
   % Normalize
   lc(:,i1) = lc(:,i1)-mean(lc(:,i1));
+  lpc=lc(:,i1) + log(p2(:,i1));
   
   % Form spline from evaluations in Gauss-Hermite points
-  pp = spline(fvec, lc(:,i1));
+  pp = spline(fvec, lpc);
   
   % Evaluate spline in these grid points to form the corrected distribution
   fvec2 = fvecm2(:,i1);
-  c(:,i1) = exp(ppval(pp, fvec2));
+  pc(:,i1) = exp(ppval(pp, fvec2));
   
-  if any(isnan(c(:,i1)))
+  if any(isnan(pc(:,i1)))
     warning('NaNs in moment computations')
-    c(isnan(c(:,i1)),i1)=0;
+    pc(isnan(pc(:,i1)),i1)=0;
   end
   
   % Form corrected distribution & normalize
   p(:,i1) = p(:,i1)./trapz(fvec2,p(:,i1));
-  pc(:,i1) = p(:,i1).*c(:,i1);
+  %pc(:,i1) = p(:,i1).*c(:,i1);
   pc(:,i1) = pc(:,i1)./trapz(fvec2, pc(:,i1));
+  c(:,i1) = pc(:,i1)./p(:,i1);
   
 end
 end
