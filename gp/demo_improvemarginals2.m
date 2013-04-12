@@ -91,8 +91,13 @@ for i1=1:2
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   ylabel('beta')
-  hzline
-  vzline
+  ax=axis;
+  h=line([ax(1), ax(2)], [0 0]);
+  set(h, 'Color', 'k');
+  h=line([0 0], [ax(3), ax(4)]);
+  set(h, 'Color', 'k');
+%   hzline
+%   vzline
   title('MCMC')
   %h=contour(XT1,XT2,reshape(pmc,50,50),.05*max(pmc),'k--');
   subplot('Position',[0.050 0.380 0.164 0.250]);
@@ -139,8 +144,13 @@ for i1=1:2
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  hzline
-  vzline
+  ax=axis;
+  h=line([ax(1), ax(2)], [0 0]);
+  set(h, 'Color', 'k');
+  h=line([0 0], [ax(3), ax(4)]);
+  set(h, 'Color', 'k');
+%   hzline
+%   vzline
   title(sprintf('Laplace%s',grids))
   subplot('Position',[0.244 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
@@ -181,8 +191,13 @@ for i1=1:2
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  hzline
-  vzline
+  ax=axis;
+  h=line([ax(1), ax(2)], [0 0]);
+  set(h, 'Color', 'k');
+  h=line([0 0], [ax(3), ax(4)]);
+  set(h, 'Color', 'k');
+%   hzline
+%   vzline
   title(sprintf('Laplace+cm2%s',grids))
   subplot('Position',[0.438 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
@@ -235,8 +250,13 @@ for i1=1:2
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  hzline
-  vzline
+  ax=axis;
+  h=line([ax(1), ax(2)], [0 0]);
+  set(h, 'Color', 'k');
+  h=line([0 0], [ax(3), ax(4)]);
+  set(h, 'Color', 'k');
+%   hzline
+%   vzline
   title(sprintf('EP%s',grids))
   subplot('Position',[0.632 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
@@ -279,8 +299,13 @@ for i1=1:2
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  hzline
-  vzline
+  ax=axis;
+  h=line([ax(1), ax(2)], [0 0]);
+  set(h, 'Color', 'k');
+  h=line([0 0], [ax(3), ax(4)]);
+  set(h, 'Color', 'k');
+%   hzline
+%   vzline
   title(sprintf('EP+fact%s',grids))
   subplot('Position',[0.826 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
