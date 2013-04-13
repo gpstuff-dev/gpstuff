@@ -195,7 +195,7 @@ for m = 2:M+Madapt+1,
     opt.epsilon(end+1) = epsilon;
     opt.epsilonbar = epsilonbar;
     opt.Hbar = Hbar;
-    diagn.rej = diagn.rej + rej;
+    diagn.rej = diagn.rej + rej/j;
 end
 
 diagn.opt = opt;
