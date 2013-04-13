@@ -147,8 +147,8 @@ switch gp.latent_method
           % Loop through grid points
           for i=1:nin
             
-            % Variance and mean for global gaussian approximation conditioned on
-            % other data grid poins, q(x_j|x_i) or in predictive case, q(x_j,
+            % Variance and mean for global Gaussian approximation conditioned on
+            % other data grid points, q(x_j|x_i) or in predictive case, q(x_j,
             % x_*)
             if ~predictive
               cji = Covf(ind(i1),:);% cji(ind(i1)) = [];
