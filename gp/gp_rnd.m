@@ -1104,17 +1104,18 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
      fsc=zeros(size(sampft));
      [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorrections', fcorrections);
      for i=1:size(xt,1)
-       % Fit cubic spline to the points evaluated above and evaluate
-       % density with more grid points
+       % Remove NaNs and zeros
        pc_pred=pc_predm(:,i);
        dii=isnan(pc_pred)|pc_pred==0;
        pc_pred(dii)=[];
        fvec=fvecm(:,i);
        fvec(dii)=[];
+       % compute cdf
        cumsumpc = cumsum(pc_pred)/sum(pc_pred);
        % Remove non-unique values from grid vector & distribution
        [cumsumpc, inds] = unique(cumsumpc);
        fvec = fvec(inds);
+       % use inverse cdf to make marginal transformation
        fsnc = normcdf(sampft(i,:), Ef(i,1), sqrt(diag(Covf(i,i))));
        fsc(i,:)=interp1(cumsumpc,fvec,fsnc);
      end

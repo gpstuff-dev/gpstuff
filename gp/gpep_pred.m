@@ -629,13 +629,13 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
     % Do marginal corrections for samples
     [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorrections', fcorrections);
     for i=1:size(xt,1)
-      % Fit cubic spline to the points evaluated above and evaluate
-      % density with more grid points
+      % Remove NaNs and zeros
       pc_pred=pc_predm(:,i);
       dii=isnan(pc_pred)|pc_pred==0;
       pc_pred(dii)=[];
       fvec=fvecm(:,i);
       fvec(dii)=[];
+      % Compute mean correction
       Eft(i) = trapz(fvec.*(pc_pred./sum(pc_pred)));
     end
    end
