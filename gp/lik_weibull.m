@@ -661,7 +661,7 @@ function cdf = lik_weibull_predcdf(lik, Ef, Varf, yt)
   end
 end
 
-function p = lik_weibull_invlink(lik, f)
+function p = lik_weibull_invlink(lik, f, z)
 %LIK_WEIBULL Returns values of inverse link function
 %             
 %  Description 

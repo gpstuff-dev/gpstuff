@@ -643,7 +643,7 @@ function cdf = lik_loglogistic_predcdf(lik, Ef, Varf, yt)
   end
 end
 
-function p = lik_loglogistic_invlink(lik, f)
+function p = lik_loglogistic_invlink(lik, f, z)
 %LIK_loglogistic Returns values of inverse link function
 %             
 %  Description 

@@ -660,7 +660,7 @@ function cdf = lik_loggaussian_predcdf(lik, Ef, Varf, yt)
   
 end
 
-function p = lik_loggaussian_invlink(lik, f)
+function p = lik_loggaussian_invlink(lik, f, z)
 %LIK_LOGGAUSSIAN Returns values of inverse link function
 %             
 %  Description 
