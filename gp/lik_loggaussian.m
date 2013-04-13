@@ -245,7 +245,7 @@ function llg = lik_loggaussian_llg(lik, y, f, param, z)
       llg = sum(-(1-z)./(2.*s2) + (1-z).*r.^2./(2.*s2^2) + z./(1-norm_cdf(r/sqrt(s2))) ... 
              .* (r./(sqrt(2.*pi).*2.*s2.^(3/2)).*exp(-1/(2.*s2).*r.^2)));
       % correction for the log transformation
-      llg = llg.*lik.sigma2;
+      llg = llg.*s2;
     case 'latent'
       llg = (1-z)./s2.*r + z./(1-norm_cdf(r/sqrt(s2))).*(1/sqrt(2*pi*s2) .* exp(-1/(2.*s2).*r.^2));
   end
@@ -333,7 +333,7 @@ function llg3 = lik_loggaussian_llg3(lik, y, f, param, z)
               - 1./(1-norm_cdf(r./sqrt(s2))).^1.*r./(sqrt(2*pi)*s2^(5/2)).*exp(-r.^2/(2*s2)) ...
               + 1./(1-norm_cdf(r./sqrt(s2))).^1.*r.^3./(sqrt(2*pi)*2*s2^(7/2)).*exp(-r.^2/(2*s2)));
       % correction due to the log transformation
-      llg3 = llg3.*lik.sigma2;
+      llg3 = llg3.*s2;
   end
 end
 
@@ -544,8 +544,6 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
     % use precision weighted mean of the Gaussian approximation
     % of the loggaussian likelihood and Gaussian
     mu=log(yy);
-    %s2=1./(yc+1./sigm2_i);
-%     s2=s2;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
