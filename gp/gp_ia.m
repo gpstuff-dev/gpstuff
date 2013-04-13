@@ -101,7 +101,7 @@ function [gp_array, P_TH, th, Ef, Varf, pf, ff, H] = gp_ia(gp, x, y, varargin)
   ip.addParamValue('f0', 1.1, @(x) isscalar(x) && isreal(x) && ...
                    isfinite(x) && x>0)
   ip.addParamValue('qmc', true, @(x) islogical(x) && isscalar(x))
-  ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle'))
+  ip.addParamValue('optimf', @fminscg, @(x) isa(x,'function_handle')||isempty(x))
   ip.addParamValue('opt_optim', [], @isstruct)
   ip.addParamValue('opt_hmc', [], @isstruct);
   ip.addParamValue('persistence_reset', 0, @(x) ~isempty(x) && isreal(x));
