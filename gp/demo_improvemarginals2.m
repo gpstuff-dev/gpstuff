@@ -28,14 +28,14 @@ y=[0 1 3 5]';
 % n
 [n, nin] = size(x);
 
-xt1=linspace(-2,4.5,50);
-xt2=linspace(-5,25,50);
+xt1=linspace(-2,4.5,40);
+xt2=linspace(-5,25,40);
 [XT1,XT2]=meshgrid(xt1,xt2);
 xt=[XT1(:) XT2(:)];
 
 % Use plotting code to make a model with fixed prior (as in Gelman et
 % al (2004) and a model with prior with hyperparameters
-for i1=1:2
+for i1=2
 
   % Create parts of the covariance function
   switch i1
@@ -49,8 +49,10 @@ for i1=1:2
       % Half-Student's t-prior is used to give flat prior in the
       % interesting region with respect to the likelihood
       fprintf('Binomial model with prior with hyperparameters\n')
-      cfc = gpcf_constant('constSigma2_prior',prior_sqrtt('s2',20^2));
-      cfl = gpcf_linear('coeffSigma2_prior',prior_sqrtt('s2',20^2));
+      % S-InvChi2 prior produces t_nu-prior for weights
+      % Scales are approximately as suggested by Gelman
+      cfc = gpcf_constant('constSigma2_prior',prior_sinvchi2('s2',10^2,'nu',1));
+      cfl = gpcf_linear('coeffSigma2_prior',prior_sinvchi2('s2',2.5^2,'nu',1));
       grids='+grid';
   end
   % Create the GP structure
@@ -86,20 +88,15 @@ for i1=1:2
 
   fprintf('Plotting\n')
   subplot('Position',[0.050 0.700 0.164 0.250]);
-  pmc=lgpdens([a' b'],xt,'range',[-2 3 -1 16],'gridn',40,'speedup','on');
-  contour(XT1,XT2,reshape(pmc,50,50),'k');
+  pmc=lgpdens([a' b'],xt,'speedup','on');
+  contour(XT1,XT2,reshape(pmc,40,40),'k');
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   ylabel('beta')
-  ax=axis;
-  h=line([ax(1), ax(2)], [0 0]);
-  set(h, 'Color', 'k');
-  h=line([0 0], [ax(3), ax(4)]);
-  set(h, 'Color', 'k');
-%   hzline
-%   vzline
+  h=line(xlim,[0 0],'Color', 'k');
+  h=line([0 0],ylim,'Color', 'k');
   title('MCMC')
-  %h=contour(XT1,XT2,reshape(pmc,50,50),.05*max(pmc),'k--');
+  %h=contour(XT1,XT2,reshape(pmc,40,40),.05*max(pmc),'k--');
   subplot('Position',[0.050 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
   h=get(gca,'Children');
@@ -114,7 +111,6 @@ for i1=1:2
   drawnow
   
   % ------- Laplace approximation --------
-  tic
   fprintf('Laplace%s approximation\n',grids)
   gp = gp_set(gp, 'latent_method', 'Laplace');
 
@@ -139,18 +135,13 @@ for i1=1:2
 
   fprintf('Plotting\n')
   subplot('Position',[0.244 0.700 0.164 0.250]);
-  pmc=lgpdens([a' b'],xt,'range',[-2 3 -1 16],'gridn',40,'speedup','on');
-  contour(XT1,XT2,reshape(pmc,50,50),'k');
+  pmc=lgpdens([a' b'],xt,'speedup','on');
+  contour(XT1,XT2,reshape(pmc,40,40),'k');
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  ax=axis;
-  h=line([ax(1), ax(2)], [0 0]);
-  set(h, 'Color', 'k');
-  h=line([0 0], [ax(3), ax(4)]);
-  set(h, 'Color', 'k');
-%   hzline
-%   vzline
+  h=line(xlim,[0 0],'Color', 'k');
+  h=line([0 0],ylim,'Color', 'k');
   title(sprintf('Laplace%s',grids))
   subplot('Position',[0.244 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
@@ -174,7 +165,7 @@ for i1=1:2
   % to compute the corresponding linear model parameters alpha and beta
   % in Gelman et al (2004)
   fprintf('Sampling from the posterior of alpha and beta\n')
-  fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'nsamp', 10000, 'fcorrections', 'cm2');
+  fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'nsamp', 10000, 'fcorr', 'cm2');
   a=fs(1,:);b=fs(2,:)-fs(1,:);
   % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
   ld50s=-a(b>0)./b(b>0);
@@ -186,18 +177,13 @@ for i1=1:2
 
   fprintf('Plotting\n')
   subplot('Position',[0.438 0.700 0.164 0.250]);
-  pmc=lgpdens([a' b'],xt,'range',[-2 3 -1 16],'gridn',40,'speedup','on');
-  contour(XT1,XT2,reshape(pmc,50,50),'k');
+  pmc=lgpdens([a' b'],xt,'speedup','on');
+  contour(XT1,XT2,reshape(pmc,40,40),'k');
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  ax=axis;
-  h=line([ax(1), ax(2)], [0 0]);
-  set(h, 'Color', 'k');
-  h=line([0 0], [ax(3), ax(4)]);
-  set(h, 'Color', 'k');
-%   hzline
-%   vzline
+  h=line(xlim,[0 0],'Color', 'k');
+  h=line([0 0],ylim,'Color', 'k');
   title(sprintf('Laplace+cm2%s',grids))
   subplot('Position',[0.438 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
@@ -245,18 +231,13 @@ for i1=1:2
 
   fprintf('Plotting\n')
   subplot('Position',[0.632 0.700 0.164 0.250]);
-  pmc=lgpdens([a' b'],xt,'range',[-2 3 -1 16],'gridn',40,'speedup','on');
-  contour(XT1,XT2,reshape(pmc,50,50),'k');
+  pmc=lgpdens([a' b'],xt,'speedup','on');
+  contour(XT1,XT2,reshape(pmc,40,40),'k');
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  ax=axis;
-  h=line([ax(1), ax(2)], [0 0]);
-  set(h, 'Color', 'k');
-  h=line([0 0], [ax(3), ax(4)]);
-  set(h, 'Color', 'k');
-%   hzline
-%   vzline
+  h=line(xlim,[0 0],'Color', 'k');
+  h=line([0 0],ylim,'Color', 'k');
   title(sprintf('EP%s',grids))
   subplot('Position',[0.632 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])
@@ -282,7 +263,7 @@ for i1=1:2
   % to compute the corresponding linear model parameters alpha and beta
   % in Gelman et al (2004)
   fprintf('Sampling from the posterior of alpha and beta\n')
-  fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000, 'fcorrections', 'fact');
+  fs = gp_rnd(gpia, x, y, [0 1]', 'z', N, 'zt', [5 5]', 'nsamp', 10000, 'fcorr', 'fact');
   a=fs(1,:);b=fs(2,:)-fs(1,:);
   % compute samples from the LD50 given b>0 (see, Gelman et al (2004))
   ld50s=-a(b>0)./b(b>0);
@@ -294,18 +275,13 @@ for i1=1:2
   
   fprintf('Plotting\n')
   subplot('Position',[0.826 0.700 0.164 0.250]);
-  pmc=lgpdens([a' b'],xt,'range',[-2 3 -1 16],'gridn',40,'speedup','on');
-  contour(XT1,XT2,reshape(pmc,50,50),'k');
+  pmc=lgpdens([a' b'],xt,'speedup','on');
+  contour(XT1,XT2,reshape(pmc,40,40),'k');
   xlim([-2.4 4]),ylim([-4 24])
   xlabel('alpha')
   %ylabel('beta')
-  ax=axis;
-  h=line([ax(1), ax(2)], [0 0]);
-  set(h, 'Color', 'k');
-  h=line([0 0], [ax(3), ax(4)]);
-  set(h, 'Color', 'k');
-%   hzline
-%   vzline
+  h=line(xlim,[0 0],'Color', 'k');
+  h=line([0 0],ylim,'Color', 'k');
   title(sprintf('EP+fact%s',grids))
   subplot('Position',[0.826 0.380 0.164 0.250]);
   hist(ld50s,-0.6:.04:0.6),set(gca,'xlim',[-.6 .6])

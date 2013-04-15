@@ -87,7 +87,7 @@ for i=1:length(ind)
   hold on;
   [Eft_ep, Varft_ep] = gp_pred(gp,x,y,x);
   start=tic;
-  [pc_ep(:,i), fvec_ep(:,i), p_ep(:,i)] = gp_predcm(gp,x,y,'ind', ind(i), 'fcorrections', 'fact'); tt_epfact=toc(start);
+  [pc_ep(:,i), fvec_ep(:,i), p_ep(:,i)] = gp_predcm(gp,x,y,'ind', ind(i), 'fcorr', 'fact'); tt_epfact=toc(start);
   s = plot(fvec_ep(:,i), p_ep(:,i), '-k', fvec_ep(:,i), norm_pdf(fvec_ep(:,i), Eft_ep(ind(i)), sqrt(Varft_ep(ind(i)))),'-m', fvec_ep(:,i), pc_ep(:,i), '-r');
   set(s,'LineWidth',2)
   set(get(get(b,'Annotation'),'LegendInformation'),...
@@ -100,7 +100,7 @@ for i=1:length(ind)
   % Predictive corrections
   [Eft_ep_pred, Varft_ep_pred] = gp_pred(gp,x,y,xt);
   start=tic;
-  [pc_ep_pred(:,i), fvec_ep_pred(:,i), p_ep_pred(:,i)] = gp_predcm(gp,x,y,xt, 'ind', ind(i), 'fcorrections', 'fact', 'ng', ngt);tt_epfact2=toc(start);
+  [pc_ep_pred(:,i), fvec_ep_pred(:,i), p_ep_pred(:,i)] = gp_predcm(gp,x,y,xt, 'ind', ind(i), 'fcorr', 'fact', 'ng', ngt);tt_epfact2=toc(start);
   
 %   if ~exist(p_mc, 'var')
 %     % If sampled before
@@ -143,8 +143,8 @@ for i=1:length(ind)
   set(h,'FaceColor','w')
   hold on;
   [Eft_la, Varft_la] = gp_pred(gp,x,y,x);
-  start=tic;[pc_la(:,i), fvec_la(:,i), p_la(:,i), c_la(:,i)] = gp_predcm(gp,x,y,'ind', ind(i), 'fcorrections', 'cm2'); tt_lacm2=toc(start); 
-  start=tic;[pc_la2(:,i), fvec_la(:,i), p_la2(:,i), c_la2(:,i)] = gp_predcm(gp,x,y,'ind', ind(i), 'fcorrections', 'fact'); tt_lafact=toc(start);
+  start=tic;[pc_la(:,i), fvec_la(:,i), p_la(:,i), c_la(:,i)] = gp_predcm(gp,x,y,'ind', ind(i), 'fcorr', 'cm2'); tt_lacm2=toc(start); 
+  start=tic;[pc_la2(:,i), fvec_la(:,i), p_la2(:,i), c_la2(:,i)] = gp_predcm(gp,x,y,'ind', ind(i), 'fcorr', 'fact'); tt_lafact=toc(start);
   s = plot(fvec_la(:,i), p_la(:,i), '-k', fvec_la(:,i), norm_pdf(fvec_la(:,i), Eft_la(ind(i)), sqrt(Varft_la(ind(i)))), '-m', ...
           fvec_la(:,i), pc_la2(:,i), '-r', fvec_la(:,i), pc_la(:,i), '-b');
   set(s,'LineWidth',2)
@@ -156,8 +156,8 @@ for i=1:length(ind)
   % Predictive corrections
   subplot(2,1,2);
   [Eft_la_pred, Varft_la_pred] = gp_pred(gp,x,y,xt);
-  start=tic;[pc_la_pred(:,i), fvec_la_pred(:,i), p_la_pred(:,i), c_la_pred(:,i)] = gp_predcm(gp,x,y,xt, 'ind', ind(i), 'fcorrections', 'cm2', 'ng', 30); tt_lacm22=toc(start);
-  start=tic;[pc_la_pred2(:,i), fvec_la_pred(:,i), p_la_pred2(:,i), c_la_pred2(:,i)] = gp_predcm(gp,x,y,xt, 'ind', ind(i), 'fcorrections', 'fact','ng', 30); tt_lafact2=toc(start);
+  start=tic;[pc_la_pred(:,i), fvec_la_pred(:,i), p_la_pred(:,i), c_la_pred(:,i)] = gp_predcm(gp,x,y,xt, 'ind', ind(i), 'fcorr', 'cm2', 'ng', 30); tt_lacm22=toc(start);
+  start=tic;[pc_la_pred2(:,i), fvec_la_pred(:,i), p_la_pred2(:,i), c_la_pred2(:,i)] = gp_predcm(gp,x,y,xt, 'ind', ind(i), 'fcorr', 'fact','ng', 30); tt_lafact2=toc(start);
   s = plot(fvec_la_pred(:,i), p_la_pred2(:,i), '-k', fvec_la_pred(:,i), pc_la_pred(:,i), '-r', fvec_la_pred(:,i), pc_la_pred2(:,i), '-b', fvec_la_pred(:,i), ptx_lap, '-c');
   legend('LA-G', 'LA-CM2', 'LA-FACT', 'MCMC');
   title('Predictive marginal corrections for probit likelihood (Laplace)');

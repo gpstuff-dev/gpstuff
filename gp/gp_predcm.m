@@ -2,16 +2,17 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %GP_PREDCM  Corrections for marginal posterior 
 %
 %  Description
-%    [PC, FVEC, P, C] = GP_PREDCM(GP, X, Y, XT, OPTIONS) Evaluates the corrected
-%    marginal posterior of latent variable at given indices of XT or X if 
-%    XT is empty or not given. Marginal posterior corrections are evaluated
-%    in 9 Gauss-Hermite points, after which cubic spline is fit to the
-%    logarithm of the correction terms. Returns tilted distribution P if XT 
-%    is empty or equal to X, otherwise predictive distribution, 
-%    corrected predictive/tilted distribution PC and fcorrections terms C, 
-%    where PC_i = P_i*C_i for every grid point i in grid FVEC. FVEC is
-%    linearly spaced grid from predictive distribution between mean minus/plus
-%    4 standard deviations
+%    [PC, FVEC, P, C] = GP_PREDCM(GP, X, Y, XT, OPTIONS) Evaluates the
+%    corrected marginal posterior of latent variable at given indices
+%    of XT or X if XT is empty or not given. Marginal posterior
+%    corrections are evaluated in 9 Gauss-Hermite points, after which
+%    piecewise cubic Hermite interpolation is used interpolate
+%    logarithm of the correction terms to a finer grid. Returns tilted
+%    distribution P if XT is empty or equal to X, otherwise predictive
+%    distribution, corrected predictive/tilted distribution PC and
+%    correction terms C, where PC_i = P_i*C_i for every grid point i
+%    in grid FVEC. FVEC is linearly spaced grid from predictive
+%    distribution between mean minus/plus 4 standard deviations
 %
 %
 %   OPTIONS is optional parameter-value pair
@@ -23,10 +24,10 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %               corresponds to. If ind is vector of size m x 1, fvec must
 %               be matrix of size n x m, where n is the number of grid
 %               points for each index. Default = 1.
-%      fcorrections - Method used for evaluating correction terms C. Possible
-%                   methods are 'fact' (default) for EP and either 'fact'
-%                   or 'cm2' (default) for Laplace.
-%      ng     - Number of grid points evaluated from the spline. Default 50
+%      fcorr  - Method used for evaluating correction terms C. Possible
+%               methods are 'fact' (default) for EP and either 'fact'
+%               or 'cm2' (default) for Laplace.
+%      ng     - Number of grid points evaluated from the spline. Default is 50.
 %
 %   Reference
 %     Cseke & Heskes (2011). Approximate Marginals in Latent Gaussian
@@ -50,7 +51,7 @@ ip.addOptional('xt', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('z', [], @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('ind', 1, @(x) isreal(x) && all(isfinite(x(:))))
 ip.addParamValue('ng', 50, @(x) isreal(x) && all(isfinite(x(:))) && x > 1)
-ip.addParamValue('fcorrections', 'fact', @(x) ismember(x, {'fact', 'cm2'}))
+ip.addParamValue('fcorr', 'on', @(x) ismember(x, {'fact', 'cm2', 'on'}))
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 if rem(size(varargin,2), 2) == 0
@@ -67,10 +68,10 @@ predictive=false;
 gplik=gp.lik;
 n=size(x,1);
 [Ef, Covf] = gp_jpred(gp,x,y,x, 'z', z, 'tstind', tstind);
-if isfield(ip.UsingDefaults, 'fcorrections') && isequal(gp.latent_method, 'Laplace')
-  fcorrections='cm2';
+if isfield(ip.UsingDefaults, 'fcorr') && isequal(gp.latent_method, 'Laplace')
+  fcorr='cm2';
 else
-  fcorrections = ip.Results.fcorrections;
+  fcorr='fact';
 end
 ind=ind(:);
 if ~isempty(xt) && ~isequal(xt, x)
@@ -79,7 +80,7 @@ if ~isempty(xt) && ~isequal(xt, x)
   predictive = true;
   [Ef2, Covf2] = gp_jpred(gp,x,y,xt,'z',z, 'tstind', tstind);
 end
-nin = 11;
+nin = 9;
 fvecm=zeros(nin,length(ind));
 fvecm2=zeros(ng,length(ind));
 for i1=1:length(ind)
@@ -89,12 +90,12 @@ for i1=1:length(ind)
   minf = 6;
   maxf = 6;
   if ~predictive
-    fvecm(:,i1)=Ef(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf(i2,i2));
-%     fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
+    %fvecm(:,i1)=Ef(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf(i2,i2));
+    fvecm(:,i1)=Ef(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf(i2,i2));
     fvecm2(:,i1)=linspace(Ef(i2)-minf.*sqrt(Covf(i2,i2)), Ef(i2)+maxf.*sqrt(Covf(i2,i2)),ng)';
   else
-    fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
-%     fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
+    %fvecm(:,i1)=Ef2(i2)+[-3.668 -2.783 -2.026 -1.326 -0.657 0 0.657 1.326 2.026 2.783 3.668].*sqrt(Covf2(i2,i2));
+    fvecm(:,i1)=Ef2(i2)+[-3.191 -2.267 -1.469 -0.724 0 0.724 1.469 2.267 3.191].*sqrt(Covf2(i2,i2));
     fvecm2(:,i1)=linspace(Ef2(i2)-minf.*sqrt(Covf2(i2,i2)), Ef2(i2)+maxf.*sqrt(Covf2(i2,i2)),ng)';
   end
 end
@@ -104,7 +105,7 @@ p2 = zeros(nin,size(ind,1));
 
 switch gp.latent_method
   case 'EP'
-    switch fcorrections
+    switch fcorr
       case 'fact'
         [tmp, tmp, tmp, param] = gpep_e(gp_pak(gp), gp, x,y,'z',z);
         [tautilde, nutilde, muvec_i, sigm2vec_i] = ...
@@ -136,7 +137,7 @@ switch gp.latent_method
             logM0 = gp.lik.fh.tiltedMoments(gp.lik, y, ind(i1), sigm2vec_i(ind(i1)), muvec_i(ind(i1)), z);
             Z_p = exp(logM0)*sqrt(2*pi)*sqrt(sigm2vec_i(ind(i1))+1./tautilde(ind(i1)))*exp(0.5*(muvec_i(ind(i1))-nutilde(ind(i1))./tautilde(ind(i1))).^2/(sigm2vec_i(ind(i1))+1./tautilde(ind(i1))));
             
-            % Function handle to marginal distribution without any fcorrections parameters
+            % Function handle to marginal distribution without any fcorr parameters
             fh_p = @(f) 1/Z_p*exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./norm_pdf(f, nutilde(ind(i1))/tautilde(ind(i1)), 1/sqrt(tautilde(ind(i1)))).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
           else
             inds=1:n;
@@ -183,7 +184,7 @@ switch gp.latent_method
           p2(:,i1) = fh_p(fvecm(:,i1));
         end
       case 'cm2'
-        error('Cant use cm2 fcorrections with EP, use fact');
+        error('Cant use cm2 fcorr with EP, use fact');
     end
   case 'Laplace'
     
@@ -194,7 +195,7 @@ switch gp.latent_method
     llg2 = gplik.fh.llg2(gplik, y, f_mode, 'latent', z);
     K_ff = gp_trcov(gp, x);
     
-    switch fcorrections
+    switch fcorr
       case 'fact'
         % Loop through grid indices
         for i1=1:size(ind,1)
@@ -207,7 +208,7 @@ switch gp.latent_method
               z_ind = z(ind(i1));
             end
             
-            % Function handle to marginal distribution without any fcorrections parameters
+            % Function handle to marginal distribution without any fcorr parameters
             t_tilde = @(f)  exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
             fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
           else
@@ -273,7 +274,7 @@ switch gp.latent_method
               z_ind = z(ind(i1));
             end
             
-            % Function handle to marginal distribution without any fcorrections parameters
+            % Function handle to marginal distribution without any fcorr parameters
             t_tilde = @(f) exp(ll(ind(i1)) + (f-f_mode(ind(i1)))*llg(ind(i1)) + 0.5*(f-f_mode(ind(i1))).^2*llg2(ind(i1)));
             fh_p = @(f) exp(arrayfun(@(a) gplik.fh.ll(gplik, y(ind(i1)), a, z_ind), f))./t_tilde(f).*norm_pdf(f,Ef(ind(i1)),sqrt(cii));
           else
@@ -319,8 +320,8 @@ switch gp.latent_method
             deriv = gplik.fh.llg(gplik, y_tmp, mu, 'latent', z_tmp);
             logll = gplik.fh.ll(gplik,y_tmp, mu, z_tmp);
             
-            % Computation of fcorrections term by integrating the second order taylor
-            % expansion of product of global gaussian approximation conditioned on latent
+            % Computation of correction term by integrating the second order Taylor
+            % expansion of product of global Gaussian approximation conditioned on latent
             % value x_i, q(x_-i|x_i), and t_-i(x_-i)/ttilde_-i(x_-i)
             mu1=mu-f_mode_tmp;
             lnZ = lnZ0 + logll - mu1'*llg_mode - 0.5*mu1'*llg2_mode*mu1;
@@ -343,16 +344,13 @@ end
 for i1=1:length(ind)
   fvec = fvecm(:,i1);
   
-  % Normalize
-  lc(:,i1) = lc(:,i1)-mean(lc(:,i1));
-  lpc=lc(:,i1) + log(p2(:,i1));
-  
-  % Form spline from evaluations in Gauss-Hermite points
-  pp = spline(fvec, lpc);
-  
-  % Evaluate spline in these grid points to form the corrected distribution
+  % Interpolate correction to these grid points 
+  % using piecewise cubic Hermite interpolation
   fvec2 = fvecm2(:,i1);
-  pc(:,i1) = exp(ppval(pp, fvec2));
+  lc2(:,i1) = interp1(fvec, lc(:,i1), fvec2, 'cubic');
+
+  % Make correction
+  pc(:,i1)=exp(lc2(:,i1) + log(p(:,i1)));
   
   if any(isnan(pc(:,i1)))
     warning('NaNs in moment computations')
@@ -361,7 +359,6 @@ for i1=1:length(ind)
   
   % Form corrected distribution & normalize
   p(:,i1) = p(:,i1)./trapz(fvec2,p(:,i1));
-  %pc(:,i1) = p(:,i1).*c(:,i1);
   pc(:,i1) = pc(:,i1)./trapz(fvec2, pc(:,i1));
   c(:,i1) = pc(:,i1)./p(:,i1);
   

@@ -55,14 +55,14 @@ ip.addParamValue('predcf', [], @(x) isempty(x) || ...
 ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                  (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
 ip.addParamValue('nsamp', 1, @(x) isreal(x) && isscalar(x))
-ip.addParamValue('fcorrections', 'off', @(x) ismember(x, {'fact','cm2','off'}))
+ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'fact','cm2','off','on'}))
 ip.parse(gp, x, y, xt, varargin{:});
 z=ip.Results.z;
 zt=ip.Results.zt;
 predcf=ip.Results.predcf;
 tstind=ip.Results.tstind;
 nsamp=ip.Results.nsamp;
-fcorrections=ip.Results.fcorrections;
+fcorr=ip.Results.fcorr;
 
 tn = size(x,1);
 
@@ -139,7 +139,7 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             sampyt = Ef + predcov*rr;
           end
         end 
-        switch fcorrections
+        switch fcorr
           case 'fact'
             fgrid = arrayfun(linspace(@(min,max) linspace(min,max,40), Ef-5.*sqrt(diag(pcov)), Ef+5.*sqrt(diag(pcov))));
             for i=1:size(xt,1)
@@ -1099,10 +1099,10 @@ if isstruct(gp) && numel(gp.jitterSigma2)==1
             
         end
     end
-   if ~isequal(fcorrections, 'off')
+   if ~isequal(fcorr, 'off')
      % Do marginal corrections for samples
      fsc=zeros(size(sampft));
-     [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorrections', fcorrections);
+     [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorr', fcorr);
      for i=1:size(xt,1)
        % Remove NaNs and zeros
        pc_pred=pc_predm(:,i);
@@ -1206,12 +1206,12 @@ elseif iscell(gp)
       if nargout<2
         tsampft = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
                          'z', z, 'zt', zt, 'predcf', predcf, ...
-                         'tstind', tstind, 'fcorrections', fcorrections);
+                         'tstind', tstind, 'fcorr', fcorr);
         sampft=[sampft tsampft];
       else
         [tsampft, tsampyt] = gp_rnd(gp{i1}, x, y, xt, 'nsamp', nsampi, ...
                                     'z', z, 'zt', zt, 'predcf', predcf, ...
-                                    'tstind', tstind, 'fcorrections', fcorrections);
+                                    'tstind', tstind, 'fcorr', fcorr);
         sampft=[sampft tsampft];
         sampyt=[sampyt tsampyt];
       end

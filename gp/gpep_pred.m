@@ -91,7 +91,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
                    isvector(x) && isreal(x) && all(isfinite(x)&x>0))
   ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
                    (isvector(x) && isreal(x) && all(isfinite(x)&x>0)))
-  ip.addParamValue('fcorrections', 'off', @(x) ismember(x, {'off', 'fact', 'cm2'}))
+  ip.addParamValue('fcorr', 'off', @(x) ismember(x, {'off', 'fact', 'cm2', 'on'}))
   if numel(varargin)==0 || isnumeric(varargin{1})
     % inputParser should handle this, but it doesn't
     ip.parse(gp, x, y, varargin{:});
@@ -104,7 +104,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
   zt=ip.Results.zt;
   predcf=ip.Results.predcf;
   tstind=ip.Results.tstind;
-  fcorrections=ip.Results.fcorrections;
+  fcorr=ip.Results.fcorr;
   if isempty(xt)
     xt=x;
     if isempty(tstind)
@@ -625,9 +625,9 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
         end
     end
   end
-  if ~isequal(fcorrections, 'off')
+  if ~isequal(fcorr, 'off')
     % Do marginal corrections for samples
-    [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorrections', fcorrections);
+    [pc_predm, fvecm] = gp_predcm(gp, x, y, xt, 'z', z, 'ind', 1:size(xt,1), 'fcorr', fcorr);
     for i=1:size(xt,1)
       % Remove NaNs and zeros
       pc_pred=pc_predm(:,i);
@@ -643,7 +643,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpep_pred(gp, x, y, varargin)
   % ============================================================
   % Evaluate also the predictive mean and variance of new observation(s)
   % ============================================================  
-  if ~isequal(fcorrections, 'off')    
+  if ~isequal(fcorr, 'off')
     if nargout == 3
       if isempty(yt)
         lpyt=[];
