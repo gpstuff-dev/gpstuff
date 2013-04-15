@@ -35,7 +35,7 @@ xt=[XT1(:) XT2(:)];
 
 % Use plotting code to make a model with fixed prior (as in Gelman et
 % al (2004) and a model with prior with hyperparameters
-for i1=2
+for i1=1:2
 
   % Create parts of the covariance function
   switch i1
