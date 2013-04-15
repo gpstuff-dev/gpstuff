@@ -9,6 +9,9 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt, ind,varargin)
 %    is used as a covariate for coxph model.
 %
 %   OPTIONS is optional parameter-value pair
+%      predcf - an index vector telling which covariance functions are 
+%               used for prediction. Default is all (1:gpcfn). 
+%               See additional information below.
 %      method - which value to fix the not used covariates, 'mean'
 %               (default) or 'median'
 %      var    - vector specifying optional values for not used covariates,
@@ -25,7 +28,7 @@ function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt, ind,varargin)
 
 ip=inputParser;
 ip.FunctionName = 'GP_CPRED';
-ip.addRequired('gp',@isstruct);
+ip.addRequired('gp',@(x) isstruct(x) || iscell(x));
 ip.addRequired('x', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('y', @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
 ip.addRequired('xt',  @(x) ~isempty(x) && isreal(x) && all(isfinite(x(:))))
@@ -39,6 +42,7 @@ ip.addParamValue('tstind', [], @(x) isempty(x) || iscell(x) ||...
 ip.addParamValue('method', 'mean', @(x)  ismember(x, {'median', 'mean'}))
 ip.addParamValue('plot', 'off', @(x)  ismember(x, {'on', 'off'}))
 ip.addParamValue('tr', 0.25, @(x) isreal(x) && all(isfinite(x(:))))
+ip.addParamValue('target', 'f', @(x) ismember(x,{'f','mu'}))
 ip.parse(gp, x, y, xt, ind, varargin{:});
 options=struct();
 options.predcf=ip.Results.predcf;
@@ -47,6 +51,7 @@ method = ip.Results.method;
 vars = ip.Results.var;
 plot_results = ip.Results.plot;
 tr = ip.Results.tr;
+target = ip.Results.target;
 z=ip.Results.z;
 if ~isempty(z)
   options.zt=z;
@@ -54,6 +59,12 @@ if ~isempty(z)
 end
 
 [tmp, nin] = size(x);
+
+if iscell(gp)
+  liktype=gp{1}.lik.type;
+else
+  liktype=gp.lik.type;
+end
 
 if ~isempty(vars) && (~isvector(vars) || length(vars) ~= nin)
   error('Vector defining fixed variable values must be same length as number of covariates')
@@ -85,8 +96,14 @@ if length(ind)==1
   if ind>0
     xt(:,ind) = xtnn;
   end
-  if ~strcmp(gp.lik.type, 'Coxph')
-    [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+  if ~strcmp(liktype, 'Coxph')
+    switch target
+      case 'f'
+        [Ef, Varf] = gp_pred(gp, x, y, xt, options);
+      case 'mu'
+        prctmu = gp_predprctmu(gp, x, y, xt, options);
+        Ef = prctmu; Varf = [];
+    end
   else
     [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, options);
     if ind>0
@@ -98,13 +115,18 @@ if length(ind)==1
   end
   if isequal(plot_results, 'on')
     if ind>0
-      plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.96*sqrt(Varf), '--b', xtnn, Ef+1.96*sqrt(Varf), '--b')
+      switch target
+        case 'f'
+          plot(xtnn, Ef, 'ob', xtnn, Ef, '-k', xtnn, Ef-1.64*sqrt(Varf), '--b', xtnn, Ef+1.64*sqrt(Varf), '--b')
+        case 'mu'
+          plot(xtnn, prctmu(:,2), 'ob', xtnn, prctmu(:,2), '-k', xtnn, prctmu(:,1), '--b', xtnn, prctmu(:,3), '--b')
+      end
     else
       % use stairs for piecewise constant baseline hazard
       xtnn = gp.lik.stime;
       [xx,yy]=stairs(xtnn, [Ef;Ef(end)]);
-      [xx,yyl]=stairs(xtnn, [Ef-sqrt(Varf);Ef(end)-sqrt(Varf(end))]);
-      [xx,yyu]=stairs(xtnn, [Ef+sqrt(Varf);Ef(end)+sqrt(Varf(end))]);
+      [xx,yyl]=stairs(xtnn, [Ef-1.64*sqrt(Varf);Ef(end)-1.64*sqrt(Varf(end))]);
+      [xx,yyu]=stairs(xtnn, [Ef+1.64*sqrt(Varf);Ef(end)+1.64*sqrt(Varf(end))]);
       plot(xx, yy, '-k', xx, yyl, '--b', xx, yyu, '--b')
     end
   end
@@ -150,9 +172,15 @@ elseif length(ind)==2
     xt1(:,ind(1)) = uu1(1); xt1(:,ind(2)) = xtnn1;
     xt2(:,ind(1)) = uu1(2); xt2(:,ind(2)) = xtnn2;
     
-    if ~strcmp(gp.lik.type, 'Coxph')
-      [Ef1, Varf1] = gp_pred(gp, x, y, xt1, options1);
-      [Ef2, Varf2] = gp_pred(gp, x, y, xt2, options2);
+    if ~strcmp(liktype, 'Coxph')
+      switch target
+        case 'f'
+          [Ef1, Varf1] = gp_pred(gp, x, y, xt1, options1);
+          [Ef2, Varf2] = gp_pred(gp, x, y, xt2, options2);
+        case 'mu'
+          prctmu1 = gp_predprctmu(gp, x, y, xt1, options1);
+          prctmu2 = gp_predprctmu(gp, x, y, xt2, options2);
+      end
     else
       [Ef11,Ef12,Covf] = pred_coxph(gp,x,y,xt1, options1);
       Ef1 = Ef12; Varf1 = diag(Covf(size(Ef11,1)+1:end,size(Ef11,1)+1:end));
@@ -162,14 +190,27 @@ elseif length(ind)==2
     
     if isequal(plot_results, 'on')
       if nu1>2 && nu2==2
-        plot(xtnn1, Ef1, 'ob', xtnn1, Ef1, '-r', xtnn1, Ef1-sqrt(Varf1), '--r', xtnn1, Ef1+sqrt(Varf1), '--r'); hold on;
-        plot(xtnn2, Ef2, 'ob', xtnn2, Ef2, '-k', xtnn2, Ef2-sqrt(Varf2), '--k', xtnn2, Ef2+sqrt(Varf2), '--k');
+        lstyle10='or';lstyle11='-r';lstyle12='--r';
+        lstyle20='ob';lstyle21='-b';lstyle22='--b';
       else
-        plot(xtnn1, Ef1, 'ob', xtnn1, Ef1, '-k', xtnn1, Ef1-sqrt(Varf1), '--k', xtnn1, Ef1+sqrt(Varf1), '--k'); hold on;
-        plot(xtnn2, Ef2, 'ob', xtnn2, Ef2, '-r', xtnn2, Ef2-sqrt(Varf2), '--r', xtnn2, Ef2+sqrt(Varf2), '--r');
+        lstyle10='ob';lstyle11='-b';lstyle12='--b';
+        lstyle20='or';lstyle21='-r';lstyle22='--r';
+      end
+      switch target
+        case 'f'
+          plot(xtnn1, Ef1, lstyle10, xtnn1, Ef1, lstyle11, xtnn1, Ef1-1.64*sqrt(Varf1), lstyle12, xtnn1, Ef1+1.64*sqrt(Varf1), lstyle12); hold on;
+          plot(xtnn2, Ef2, lstyle20, xtnn2, Ef2, lstyle21, xtnn2, Ef2-1.64*sqrt(Varf2), lstyle22, xtnn2, Ef2+1.64*sqrt(Varf2), lstyle22);
+        case 'mu'
+          plot(xtnn1, prctmu1(:,2), lstyle20, xtnn1, prctmu1(:,2), lstyle11, xtnn1, prctmu1(:,1), lstyle12, xtnn1, prctmu1(:,3), lstyle12); hold on;
+          plot(xtnn2, prctmu2(:,2), lstyle20, xtnn2, prctmu2(:,2), lstyle21, xtnn2, prctmu2(:,1), lstyle22, xtnn2, prctmu2(:,3), lstyle22);
       end
     end
-    Ef = [Ef1; Ef2]; Varf = [Varf1; Varf2]; xtnn=[xtnn1;xtnn2];
+    switch target
+      case 'f'
+        Ef = {Ef1  Ef2}; Varf = {Varf1 Varf2}; xtnn={xtnn1 xtnn2};
+      case 'mu'
+        Ef = {prctmu1 prctmu2}; Varf = {[] []}; xtnn={xtnn1 xtnn2};
+    end
     
   else
     % first or second covariate is not binary
@@ -188,7 +229,7 @@ elseif length(ind)==2
       xt(:,~isnan(vars)) = repmat(vars(~isnan(vars)), length(XT1), 1);
     end
     xt(:,ind) = [XT1 XT2];
-    if ~strcmp(gp.lik.type, 'Coxph')
+    if ~strcmp(liktype, 'Coxph')
       [Ef, Varf] = gp_pred(gp, x, y, xt, options);
     else
       [Ef1,Ef2,Covf] = pred_coxph(gp,x,y,xt, options);
