@@ -47,20 +47,22 @@ title('t_4')
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
 %sum(p0.*log(p))
+drawnow
 
 subplot(2,2,2)
 % Mixture of two t_4
 setrandstream(0,'mrg32k3a');
 n1=sum(rand(100,1)<3/4);
 n2=100-n1;
-x=[trnd(4,n1,1); 3+trnd(4,n2,1)/4];
-xt=linspace(-6,6,400)';
+x=[trnd(4,n1,1); 3+trnd(4,n2,1)/2];
+xt=linspace(-7,7,400)';
 lgpdens(x,xt);
 axis tight
 title('Mixture of two t_4')
 % true density
-p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/4)*1/3;
+p0=t_pdf(xt,4,0,1)*2/3+t_pdf(xt,4,3,1/2)*1/3;
 line(xt,p0,'color','k')
+drawnow
 
 subplot(2,2,3)
 % Galaxy data
@@ -72,6 +74,7 @@ lgpdens(x,xt);
 axis tight
 title('Galaxy data')
 % true density is unknown
+drawnow
 
 subplot(2,2,4)
 % Gamma(1,1)
@@ -83,7 +86,7 @@ axis tight
 title('Gamma(1,1)')
 p0=gam_pdf(xt,1,1);
 line(xt,p0,'color','k')
-
+drawnow
 
 % =====================================
 % 1) 2D-examples
