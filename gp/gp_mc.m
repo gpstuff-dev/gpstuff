@@ -221,7 +221,19 @@ function [record, gp, opt] = gp_mc(gp, x, y, varargin)
         opt.hmc_opt.Madapt = 20;
       end
       if opt.display>0
-        fprintf(' Using NUTS\n')
+        if isfield(gp,'latent_method')
+          fprintf(' Using NUTS-HMC sampler for hyperparameters and %s for latent values\n',gp.latent_method)
+        else
+          fprintf(' Using NUTS-HMC sampler for hyperparameters\n')
+        end
+      end
+    else
+      if opt.display>0
+        if isfield(gp,'latent_method')
+          fprintf(' Using HMC sampler for hyperparameters and %s for latent values\n',gp.latent_method)
+        else
+          fprintf(' Using HMC sampler for hyperparameters\n')
+        end
       end
     end
     if isfield(opt.hmc_opt, 'rstate')
