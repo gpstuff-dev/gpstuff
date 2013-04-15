@@ -537,9 +537,15 @@ function [df,minf,maxf] = init_loggaussian_norm(yy,myy_i,sigm2_i,yc,s2)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+sqrt(s2));
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the loggaussian likelihood and Gaussian

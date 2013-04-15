@@ -529,8 +529,6 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   ldconst = yc*log(r)+yc*(r-1)*log(yy)...
             - log(sigm2_i)/2 - log(2*pi)/2;
   
-   
-  
   % Create function handle for the function to be integrated
   df = @weibull_norm;
   % use log to avoid underflow, and derivates for faster search
@@ -540,15 +538,20 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
 
   % Set the limits for integration
   if yc==0
-    % with yy==0, the mode of the likelihood is not defined
-    % use the mode of the Gaussian (cavity or posterior) as a first guess
-    modef = myy_i;
+    % with yc==0, the mode of the likelihood is not defined
+    if myy_i>log(yy)
+      % the log likelihood is flat on this side
+      % use the mode of the Gaussian (cavity or posterior)
+      modef = myy_i;
+    else
+      % the log likelihood is approximately f on this side
+      modef = min(myy_i+sigm2_i,log(yy)+1);
+    end
   else
     % use precision weighted mean of the Gaussian approximation
     % of the Weibull likelihood and Gaussian
-    mu=-log(yc./(yy.^r));
-    %s2=1./(yc+1./sigm2_i);
-    s2=1./yc;
+    mu=log(yy);
+    s2=1;
     modef = (myy_i/sigm2_i + mu/s2)/(1/sigm2_i + 1/s2);
   end
   % find the mode of the integrand using Newton iterations
@@ -626,7 +629,7 @@ function [df,minf,maxf] = init_weibull_norm(yy,myy_i,sigm2_i,yc,r)
   function g2 = log_weibull_norm_g2(f)
   % d^2/df^2 log(Weibull * Gaussian)
   % second derivate of log_weibull_norm
-    g2 = - exp(-f).*yy.^r ...
+    g2 = -exp(-f).*yy.^r ...
          -1/sigm2_i;
   end
 
