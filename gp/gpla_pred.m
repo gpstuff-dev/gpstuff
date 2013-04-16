@@ -871,7 +871,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       
       %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
       [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [f, L] = deal(p.f, p.L, p.a, p.La2);
+      [f, L] = deal(p.f, p.L);
       
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
@@ -899,7 +899,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         
         switch gp.type
           case 'SOR'
-            Varft = sum((K_nu/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+%             Varft = sum((K_nu'/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            Varft = sum(BB2.^2,1)'  - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
           case {'VAR' 'DTC'}
             kstarstar = gp_trvar(gp,xt,predcf);
             Varft = kstarstar - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
