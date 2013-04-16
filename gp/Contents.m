@@ -137,5 +137,5 @@
 %   DEMO_SPATIAL2           Demonstration for a disease mapping problem with 
 %                           Gaussian process prior and negative binomial 
 %                           observation model
-%   DEMO_SURVIVAL_WEIBULL   Survival model using Weibull baseline hazard
+%   DEMO_SURVIVAL_AFT       Survival model using accelerated failure time models
 %
