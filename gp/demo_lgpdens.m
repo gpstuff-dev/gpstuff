@@ -104,6 +104,7 @@ lgpdens(x);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-4 4 -4 4])
 title('Student t_4')
+drawnow
 
 subplot(2,2,2)
 % Old faithful
@@ -112,6 +113,7 @@ x=load(L);
 lgpdens(x,'range',[1 6 40 100]);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 title('Old faithful')
+drawnow
 
 subplot(2,2,3)
 % Banana-shaped
@@ -122,6 +124,7 @@ lgpdens(x,'range',[-30 30 -5 20],'gridn',26);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-25 25 -5 10])
 title('Banana')
+drawnow
 
 subplot(2,2,4)
 % Ring
@@ -133,6 +136,7 @@ lgpdens(x,'gridn',30);
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-2.5 2.5 -2.5 2.5])
 title('Ring')
+drawnow
 
 
 % =====================================
@@ -144,6 +148,7 @@ lgpdens(x,'gridn',30, 'cond_dens', 'on');
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 axis([-2.5 2.5 -2.5 2.5])
 title('Ring - conditional density')
+drawnow
 
 
 % =====================================
@@ -163,6 +168,7 @@ subplot(2,2,2)
 tic,lgpdens(x,xt,'speedup', 'on');t1=toc;
 axis tight
 title(['Galaxy, FFT speed-up, elapsed time: ' num2str(t1)])
+drawnow
 
 % Old faithful, 2D
 L = strrep(S,'demo_lgpdens.m','demodata/faithful.txt');
@@ -175,6 +181,7 @@ subplot(2,2,4)
 tic,lgpdens(x,'range',[1 6 40 100],'gridn', 30, 'speedup', 'on');t1=toc;
 line(x(:,1),x(:,2),'LineStyle','none','Marker','.')
 title(['Old faithful, KRON speed-up, elapsed time: ' num2str(t1)])
+drawnow
 
 % =====================================
 % 1) 1D-example MCMC vs Laplace
@@ -195,6 +202,7 @@ title('t_4 (Laplace)')
 % true density
 p0=t_pdf(xt,4,0,1);
 line(xt,p0,'color','k')
+drawnow
 
 subplot(2,1,2)
 [p,pq]=lgpdens(x,xt,'latent_method','MCMC');
@@ -204,6 +212,7 @@ line(xt,pq,'color','r','marker','none','linewidth',1,'linestyle','--')
 xlim([-7 7])
 title('t_4 (MCMC)')
 line(xt,p0,'color','k')
+drawnow
 
 [pks] = ksdensity(x,xt);
 
