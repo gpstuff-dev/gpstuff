@@ -1,4 +1,4 @@
-%DEMO_SURVIVAL_COXPH  Survival model using Cox proportional model 
+%DEMO_SURVIVAL_COXPH  Survival model using Cox proportional hazard model 
 %
 %  Description 
 %    Survival model using Cox proportional model with a piecewise
@@ -76,13 +76,14 @@ ntime=50;
 S=linspace(0,max(y)+0.001,ntime+1);
 
 % Create the covariance functions
+plh = prior_invt('s2',1, 'nu', 4);
 pl = prior_t('s2',1, 'nu', 4);
 pm = prior_t('s2',1, 'nu', 4); 
 
 % covariance for hazard function
 cfhc = gpcf_constant('constSigma2_prior',prior_sinvchi2('s2',1^2,'nu',1));
 cfhl = gpcf_linear('coeffSigma2',1,'coeffSigma2_prior',prior_sinvchi2('s2',1^2,'nu',1));
-cfhs = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1.1, 'lengthScale_prior', pl, 'magnSigma2_prior', pm);
+cfhs = gpcf_sexp('lengthScale', 1, 'magnSigma2', 1.1, 'lengthScale_prior', plh, 'magnSigma2_prior', pm);
 % covariance for proportional part
 cfc = gpcf_constant('constSigma2_prior',prior_sinvchi2('s2',1^2,'nu',1));
 cfl = gpcf_linear('coeffSigma2',1,'coeffSigma2_prior',prior_sinvchi2('s2',1^2,'nu',1));
