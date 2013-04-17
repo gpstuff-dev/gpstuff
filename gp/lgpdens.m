@@ -400,8 +400,10 @@ function [Ef,Covf] = gpsmooth(xx,yy,xxt,gpcf,latent_method,int_method,display,sp
   % weakly informative priors
   % prior based on guess of maximum differences in log densities
   pm = prior_sqrtt('s2',10^2,'nu',4);
-  % Prior width for lengthscale using Silverman's rule of thumb of min grid distance
-  h=min(diff(xx(1:2,end)).^2,sum(yy).^-1/5);
+  % Weakly informative prior states that probability is smaller for
+  % lengthscales which are much smaller than Silverman's rule of thumb
+  % or min grid distance
+  h=min(diff(xx(1:2,end)).^2,1/sum(yy).^(1/5)/4);
   pl = prior_invt('s2', 1./h, 'nu', 1);
   pa = prior_t('s2', 20^2, 'nu', 1);
   %pm = prior_sqrtt('s2', 10^2, 'nu', 4);

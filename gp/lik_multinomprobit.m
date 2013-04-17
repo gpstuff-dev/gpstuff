@@ -1,11 +1,11 @@
 function lik = lik_multinomprobit(varargin)
-%LIK_MULTINOMPROBIT    Create a multinomial probit likelihood structure 
+%LIK_MULTINOMPROBIT  Create a multinomial probit likelihood structure 
 %
 %  Description
-%    LIK = LIK_MULTINOMPROBIT creates the multinomial probit likelihood for multi-class
-%    classification problem. The observed class label with C
-%    classes is given as 1xC vector where C-1 entries are 0 and the
-%    observed class label is 1.
+%    LIK = LIK_MULTINOMPROBIT creates the multinomial probit
+%    likelihood for multi-class classification problem. The observed
+%    class label with C classes is given as 1xC vector where C-1
+%    entries are 0 and the observed class label is 1.
 %
 %  See also
 %    GP_SET, LIK_*

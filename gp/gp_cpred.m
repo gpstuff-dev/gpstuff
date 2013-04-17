@@ -1,4 +1,4 @@
-function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt, ind,varargin)
+function [Ef, Varf, xtnn] = gp_cpred(gp,x,y,xt,ind,varargin)
 %GP_CPRED Conditional predictions using specific covariates
 %
 %  Description
@@ -64,6 +64,10 @@ if iscell(gp)
   liktype=gp{1}.lik.type;
 else
   liktype=gp.lik.type;
+end
+
+if isequal(liktype, 'Coxph') && isequal(target,'mu')
+  error('GP_CPRED: Target ''mu'' not applicable for a Cox-PH model')
 end
 
 if ~isempty(vars) && (~isvector(vars) || length(vars) ~= nin)

@@ -1604,6 +1604,10 @@ shown in Figure \ref{fig_demo_lgcp}.
 \end{figure}
 
 \subsection{Accelerated failure time survival models}
+
+The accelerated failure time survival models are demonstrated in
+\code{demo\_survival\_aft}.
+
 \subsubsection{Weibull}
 \label{sec_weibull_demo}
 
@@ -1625,8 +1629,7 @@ used in \citet{Martino:2011}. The likelihood defined as
 \end{equation}
 where $\mathbf{z}$ is a vector of censoring indicators with $z_i = 0$ for
 uncensored event and $z_i = 1$ for right censored event for
-observation $i$. Here we present only the likelihood function because we don't have observation model for the censoring. The use of Weibull model with survival data is
-demonstrated in \code{demo\_survival\_weibull}.
+observation $i$. Here we present only the likelihood function because we don't have observation model for the censoring. 
 
 \subsubsection{Log-Gaussian}
 With Log-Gaussian survival model the logarithms of survival times are assumed to be normally distributed.

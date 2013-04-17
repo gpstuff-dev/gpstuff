@@ -43,6 +43,10 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
 %               Some likelihoods may use this. For example, in case of 
 %               Poisson likelihood we have z_i=E_i, that is, the expected 
 %               value for the ith case. 
+%      fcorr  - Method used for latent marginal posterior corrections. 
+%               Default is 'off'. For Laplace possible methods are
+%               'fact' and 'cm2'.  If method is 'on', 'cm2' is used
+%               for Laplace.
 %
 %    NOTE! In case of FIC and PIC sparse approximation the
 %    prediction for only some PREDCF covariance functions is just
@@ -871,7 +875,7 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
       
       %[e, edata, eprior, f, L, a, La2] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
       [e, edata, eprior, p] = gpla_e(gp_pak(gp), gp, x, y, 'z', z);
-      [f, L] = deal(p.f, p.L, p.a, p.La2);
+      [f, L] = deal(p.f, p.L);
       
       deriv = gp.lik.fh.llg(gp.lik, y, f, 'latent', z);
       ntest=size(xt,1);
@@ -899,7 +903,8 @@ function [Eft, Varft, lpyt, Eyt, Varyt] = gpla_pred(gp, x, y, varargin)
         
         switch gp.type
           case 'SOR'
-            Varft = sum((K_nu/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+%             Varft = sum((K_nu'/Luu).^2,2)' - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
+            Varft = sum(BB2.^2,1)'  - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);
           case {'VAR' 'DTC'}
             kstarstar = gp_trvar(gp,xt,predcf);
             Varft = kstarstar - sum(BB2'.*(BB*(BB')*BB2)',2)  + sum((K_nu*(K_uu\(B'*L2))).^2, 2);

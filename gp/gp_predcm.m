@@ -1,5 +1,5 @@
 function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
-%GP_PREDCM  Corrections for marginal posterior 
+%GP_PREDCM  Corrections for latent marginal posterior
 %
 %  Description
 %    [PC, FVEC, P, C] = GP_PREDCM(GP, X, Y, XT, OPTIONS) Evaluates the
@@ -26,7 +26,8 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %               points for each index. Default = 1.
 %      fcorr  - Method used for evaluating correction terms C. Possible
 %               methods are 'fact' (default) for EP and either 'fact'
-%               or 'cm2' (default) for Laplace.
+%               or 'cm2' (default) for Laplace. If method is 'on',
+%               the default methods are used.
 %      ng     - Number of grid points evaluated from the spline. Default is 50.
 %
 %   Reference
@@ -35,7 +36,8 @@ function [pc, fvecm2, p, c] = gp_predcm(gp,x,y,varargin)
 %
 %   See also
 %     DEMO_IMPROVEDMARGINALS
-
+%
+  
 % Copyright (c) 2011,2013 Ville Tolvanen
 
 % This software is distributed under the GNU General Public
